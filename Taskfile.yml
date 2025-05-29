@@ -1,0 +1,27 @@
+version: '3'
+
+tasks:
+  unit:
+    cmds:
+      - pytest -q tests/unit
+    desc: "Run unit tests"
+
+  integration:
+    cmds:
+      - pytest -q integration
+    desc: "Run integration tests"
+
+  behavior:
+    cmds:
+      - pytest -q tests/behavior
+    desc: "Run BDD (behavior) tests"
+
+  test:
+    deps: [unit, integration, behavior]
+    desc: "Run all tests"
+
+  coverage:
+    cmds:
+      - pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml --cov-report=term-missing tests
+    desc: "Run full test suite with coverage reporting"
+

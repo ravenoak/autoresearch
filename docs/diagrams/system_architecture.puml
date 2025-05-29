@@ -1,0 +1,48 @@
+@startuml
+"User" as user
+
+node "Client Interfaces" {
+  component "CLI" as CLI
+  component "FastAPI API" as FastAPI
+  component "MCP Tool" as MCP
+}
+
+node "Core Components" {
+  component "Orchestrator" as Orchestrator
+  component "ConfigLoader" as ConfigLoader
+}
+
+package "Agents" {
+  component "Synthesizer" as Synthesizer
+  component "Contrarian" as Contrarian
+  component "Fact-Checker" as FactChecker
+}
+
+package "Storage Layers" {
+  component "NetworkXGraph" as NX
+  component "DuckDB Store" as DuckDB
+  component "RDFLib Store" as RDF
+  component "TinyDB Cache" as TinyDB
+}
+
+user -> CLI : search(query)
+CLI -> Orchestrator : run_query(query)
+
+user -> FastAPI : POST /query
+FastAPI -> Orchestrator : run_query(query)
+
+user -> MCP : search(query)
+MCP -> Orchestrator : run_query(query)
+
+Orchestrator -> ConfigLoader : load_config()
+ConfigLoader --> Orchestrator : config
+
+Orchestrator -> Synthesizer : invoke
+Orchestrator -> Contrarian : invoke
+Orchestrator -> FactChecker : invoke
+
+Synthesizer --> NX : persist claims
+Synthesizer --> DuckDB : insert nodes/edges/embeddings
+Synthesizer --> RDF : add quads
+Synthesizer --> TinyDB : cache snippets
+@enduml
