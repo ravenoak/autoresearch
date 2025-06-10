@@ -10,39 +10,45 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...synthesis import build_answer, build_rationale
+from ...llm import get_llm_adapter
 
 log = get_logger(__name__)
 
 
 class SynthesizerAgent(Agent):
     """Creates initial thesis and final synthesis."""
-    role = AgentRole.SYNTHESIZER
+    role: AgentRole = AgentRole.SYNTHESIZER
 
     def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Synthesize claims and sources into coherent thesis or synthesis."""
         log.info(f"SynthesizerAgent executing (cycle {state.cycle})")
 
-        # Implementation would call LLM with appropriate prompts
-        # based on whether this is first cycle (thesis) or later (synthesis)
+        adapter = get_llm_adapter(config.llm_backend)
+        model_cfg = config.agent_config.get("Synthesizer")
+        model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
 
         is_first_cycle = state.cycle == 0
 
         if is_first_cycle:
-            # Generate initial thesis
+            prompt = f"Provide a thesis for the query: {state.query}"
+            thesis_text = adapter.generate(prompt, model=model)
             result = {
                 "claims": [
                     {
                         "id": str(uuid4()),
                         "type": "thesis",
-                        "content": f"Initial thesis for: {state.query}"
+                        "content": thesis_text,
                     }
                 ],
                 "metadata": {"phase": DialoguePhase.THESIS},
-                "results": {"thesis": f"Initial thesis for: {state.query}"}
+                "results": {"thesis": thesis_text},
             }
         else:
-            # Generate synthesis from existing claims and evidence
-            synthesis_text = build_rationale(state.claims)
+            prompt = (
+                "Synthesize an answer from the following claims:\n" +
+                "\n".join(c.get("content", "") for c in state.claims)
+            )
+            synthesis_text = adapter.generate(prompt, model=model)
             result = {
                 "claims": [
                     {
@@ -53,7 +59,7 @@ class SynthesizerAgent(Agent):
                 ],
                 "metadata": {"phase": DialoguePhase.SYNTHESIS},
                 "results": {
-                    "final_answer": build_answer(state.query, state.claims),
+                    "final_answer": synthesis_text,
                     "synthesis": synthesis_text,
                 },
             }

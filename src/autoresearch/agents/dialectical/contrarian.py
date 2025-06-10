@@ -9,30 +9,38 @@ from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
+from ...llm import get_llm_adapter
 
 log = get_logger(__name__)
 
 
 class ContrarianAgent(Agent):
     """Challenges thesis with alternative viewpoints."""
-    role = AgentRole.CONTRARIAN
+    role: AgentRole = AgentRole.CONTRARIAN
 
     def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Generate counterpoints to existing claims."""
         log.info(f"ContrarianAgent executing (cycle {state.cycle})")
 
-        # Implementation would analyze existing claims and generate counterpoints
+        adapter = get_llm_adapter(config.llm_backend)
+        model_cfg = config.agent_config.get("Contrarian")
+        model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
+
+        thesis = next((c for c in state.claims if c.get("type") == "thesis"), None)
+        thesis_text = thesis.get("content") if thesis else state.query
+        prompt = f"Provide an antithesis to the following thesis:\n{thesis_text}"
+        antithesis = adapter.generate(prompt, model=model)
 
         return {
             "claims": [
                 {
                     "id": str(uuid4()),
                     "type": "antithesis",
-                    "content": f"Counterpoint to existing claims for: {state.query}"
+                    "content": antithesis,
                 }
             ],
             "metadata": {"phase": DialoguePhase.ANTITHESIS},
-            "results": {"antithesis": f"Counterpoint for: {state.query}"}
+            "results": {"antithesis": antithesis},
         }
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
