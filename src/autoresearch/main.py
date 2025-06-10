@@ -2,6 +2,7 @@
 CLI entry point for Autoresearch with adaptive output formatting.
 """
 import sys
+import atexit
 from typing import Optional
 
 import typer
@@ -13,6 +14,13 @@ from .logging_utils import configure_logging
 
 app = typer.Typer(help="Autoresearch CLI entry point")
 configure_logging()
+_config_loader = ConfigLoader()
+
+@app.callback(invoke_without_command=False)
+def start_watcher(ctx: typer.Context):
+    """Start configuration watcher before executing commands."""
+    _config_loader.watch_changes()
+    atexit.register(_config_loader.stop_watching)
 
 @app.command()
 def search(
@@ -20,7 +28,7 @@ def search(
     output: Optional[str] = typer.Option(None, "-o", "--output", help="Output format: json|markdown|plain"),
 ):
     """Run a search query through the orchestrator and format the result."""
-    config = ConfigLoader.load_config()
+    config = _config_loader.load_config()
     result = Orchestrator.run_query(query, config)
     fmt = output or ("json" if not sys.stdout.isatty() else "markdown")
     OutputFormatter.format(result, fmt)
@@ -28,7 +36,7 @@ def search(
 @app.command()
 def config():
     """Display current configuration."""
-    config = ConfigLoader.load_config()
+    config = _config_loader.load_config()
     typer.echo(config.json(indent=2))
 
 @app.command()
