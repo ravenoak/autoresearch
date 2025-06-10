@@ -3,14 +3,15 @@ SynthesizerAgent responsible for thesis creation and final synthesis.
 """
 from typing import Dict, Any
 from uuid import uuid4
-import logging
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...logging_utils import get_logger
+from ...synthesis import build_answer, build_rationale
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class SynthesizerAgent(Agent):
@@ -41,19 +42,20 @@ class SynthesizerAgent(Agent):
             }
         else:
             # Generate synthesis from existing claims and evidence
+            synthesis_text = build_rationale(state.claims)
             result = {
                 "claims": [
                     {
                         "id": str(uuid4()),
                         "type": "synthesis",
-                        "content": f"Synthesis for query: {state.query}"
+                        "content": synthesis_text,
                     }
                 ],
                 "metadata": {"phase": DialoguePhase.SYNTHESIS},
                 "results": {
-                    "final_answer": f"Final synthesis for: {state.query}",
-                    "synthesis": f"Synthesis of {len(state.claims)} claims"
-                }
+                    "final_answer": build_answer(state.query, state.claims),
+                    "synthesis": synthesis_text,
+                },
             }
 
         return result

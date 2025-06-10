@@ -2,7 +2,6 @@
 Orchestration system for coordinating multi-agent dialectical cycles.
 """
 from typing import List, Dict, Any, Callable
-import logging
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -14,8 +13,9 @@ from ..models import QueryResponse
 from ..storage import StorageManager
 from .state import QueryState
 from .metrics import OrchestrationMetrics
+from ..logging_utils import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class Orchestrator:

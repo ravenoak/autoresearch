@@ -3,14 +3,14 @@ ContrarianAgent for challenging existing thesis with alternative viewpoints.
 """
 from typing import Dict, Any
 from uuid import uuid4
-import logging
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...logging_utils import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class ContrarianAgent(Agent):
