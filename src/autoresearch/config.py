@@ -38,7 +38,8 @@ class AgentConfig(BaseModel):
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
     # Core settings
-    backend: str = Field(default="lmstudio")
+    backend: str = Field(default="lmstudio")  # backward compatibility
+    llm_backend: str = Field(default="lmstudio")
     loops: int = Field(default=2, ge=1)
     ram_budget_mb: int = Field(default=1024, ge=0)
     agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
@@ -137,6 +138,9 @@ class ConfigLoader:
 
         # Extract core settings
         core_settings = raw.get("core", {})
+        # Map legacy `backend` to `llm_backend` if provided
+        if "backend" in core_settings and "llm_backend" not in core_settings:
+            core_settings["llm_backend"] = core_settings["backend"]
 
         # Handle storage settings
         storage_cfg = raw.get("storage", {})
