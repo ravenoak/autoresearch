@@ -3,13 +3,16 @@ CLI entry point for Autoresearch with adaptive output formatting.
 """
 import sys
 from typing import Optional
+
 import typer
 
 from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
 from .output_format import OutputFormatter
+from .logging_utils import configure_logging
 
 app = typer.Typer(help="Autoresearch CLI entry point")
+configure_logging()
 
 @app.command()
 def search(

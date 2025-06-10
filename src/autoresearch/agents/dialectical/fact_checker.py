@@ -3,14 +3,15 @@ FactChecker agent for verifying claims against external sources.
 """
 from typing import Dict, Any
 from uuid import uuid4
-import logging
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...logging_utils import get_logger
+from ...search import Search
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class FactChecker(Agent):
@@ -21,8 +22,10 @@ class FactChecker(Agent):
         """Check existing claims for factual accuracy."""
         log.info(f"FactChecker executing (cycle {state.cycle})")
 
-        # Implementation would consult external knowledge sources
-        # and validate claims against trustworthy references
+        # Retrieve external references
+        sources = Search.external_lookup(
+            state.query, max_results=config.max_results_per_query
+        )
 
         return {
             "claims": [
@@ -32,14 +35,7 @@ class FactChecker(Agent):
                     "content": f"Fact verification for claims regarding: {state.query}"
                 }
             ],
-            "sources": [
-                {
-                    "id": str(uuid4()),
-                    "citation": "Sample citation for fact verification",
-                    "url": "https://example.com/reference",
-                    "relevance": 0.85
-                }
-            ],
+            "sources": sources,
             "metadata": {"phase": DialoguePhase.VERIFICATION},
             "results": {"verification": f"Fact check results for: {state.query}"}
         }
