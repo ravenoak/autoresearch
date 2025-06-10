@@ -46,3 +46,15 @@ the process exits.
 For a detailed breakdown of the requirements and architecture, see
 [docs/requirements.md](docs/requirements.md) and
 [docs/specification.md](docs/specification.md).
+
+## Running tests
+
+Install development dependencies and execute all tests:
+
+```bash
+poetry install --with dev
+poetry run flake8 src tests
+poetry run mypy src
+poetry run pytest
+poetry run pytest tests/behavior
+```
