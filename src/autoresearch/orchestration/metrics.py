@@ -4,6 +4,26 @@ Metrics collection for orchestration system.
 from typing import Dict, Any
 import time
 
+from prometheus_client import Counter
+
+QUERY_COUNTER = Counter(
+    "autoresearch_queries_total", "Total number of queries processed"
+)
+ERROR_COUNTER = Counter(
+    "autoresearch_errors_total", "Total number of errors during processing"
+)
+TOKENS_IN_COUNTER = Counter(
+    "autoresearch_tokens_in_total", "Total input tokens processed"
+)
+TOKENS_OUT_COUNTER = Counter(
+    "autoresearch_tokens_out_total", "Total output tokens produced"
+)
+
+
+def record_query() -> None:
+    """Increment the global query counter."""
+    QUERY_COUNTER.inc()
+
 
 class OrchestrationMetrics:
     """Collects metrics during query execution."""
@@ -38,12 +58,15 @@ class OrchestrationMetrics:
             self.token_counts[agent_name] = {"in": 0, "out": 0}
         self.token_counts[agent_name]["in"] += tokens_in
         self.token_counts[agent_name]["out"] += tokens_out
+        TOKENS_IN_COUNTER.inc(tokens_in)
+        TOKENS_OUT_COUNTER.inc(tokens_out)
 
     def record_error(self, agent_name: str):
         """Record an error for an agent."""
         if agent_name not in self.error_counts:
             self.error_counts[agent_name] = 0
         self.error_counts[agent_name] += 1
+        ERROR_COUNTER.inc()
 
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of all metrics."""
@@ -55,7 +78,8 @@ class OrchestrationMetrics:
         return {
             "total_duration_seconds": total_duration,
             "cycles_completed": len(self.cycle_durations),
-            "avg_cycle_duration_seconds": total_duration / max(1, len(self.cycle_durations)),
+            "avg_cycle_duration_seconds": total_duration
+            / max(1, len(self.cycle_durations)),
             "total_tokens": {
                 "input": total_tokens_in,
                 "output": total_tokens_out,
