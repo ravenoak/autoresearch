@@ -12,7 +12,7 @@ from ..config import ConfigModel
 from ..models import QueryResponse
 from ..storage import StorageManager
 from .state import QueryState
-from .metrics import OrchestrationMetrics
+from .metrics import OrchestrationMetrics, record_query
 from ..logging_utils import get_logger
 
 log = get_logger(__name__)
@@ -35,6 +35,7 @@ class Orchestrator:
         Returns:
             QueryResponse with answer, citations, reasoning, and metrics
         """
+        record_query()
         # Initialize metrics collector
         metrics = OrchestrationMetrics()
 
@@ -84,7 +85,7 @@ class Orchestrator:
                     start_time = time.time()
 
                     # Execute agent and update state
-                    with Orchestrator._capture_token_usage(agent_name, metrics) as token_counter:
+                    with Orchestrator._capture_token_usage(agent_name, metrics) as _token_counter:
                         result = agent.execute(state, config)
                         # Token counter gets updated in the context manager
 

@@ -23,7 +23,10 @@ dependencies = [
     "responses (>=0.25.7,<0.26.0)",
     "networkx (>=3.4.2,<4.0.0)",
     "duckdb (>=1.2.2,<2.0.0)",
-    "rdflib (>=7.1.4,<8.0.0)"
+    "rdflib (>=7.1.4,<8.0.0)",
+    "fastapi (>=0.115.0,<0.116.0)",
+    "loguru (>=0.7.2,<0.8.0)",
+    "prometheus_client (>=0.20.0,<0.21.0)"
 ]
 
 [tool.poetry.group.dev.dependencies]
