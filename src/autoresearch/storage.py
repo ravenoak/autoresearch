@@ -2,12 +2,17 @@
 Hybrid DKG persistence: NetworkX, DuckDB, RDFLib.
 """
 import os
+import time
+from collections import OrderedDict
 from threading import Lock
 from typing import Optional
 
 import duckdb
 import networkx as nx
 import rdflib
+from .config import ConfigLoader
+from .logging_utils import get_logger
+from .orchestration.metrics import EVICTION_COUNTER
 
 # Global containers initialised in `setup`
 _graph: Optional[nx.DiGraph] = None
@@ -15,6 +20,8 @@ _db_path: Optional[str] = None
 _db_conn: Optional[duckdb.DuckDBPyConnection] = None
 _rdf_store: Optional[rdflib.Graph] = None
 _lock = Lock()
+_lru: "OrderedDict[str, float]" = OrderedDict()
+log = get_logger(__name__)
 
 
 def setup(db_path: Optional[str] = None) -> None:
@@ -55,6 +62,37 @@ def teardown(remove_db: bool = False) -> None:
 
 class StorageManager:
     @staticmethod
+    def _current_ram_mb() -> float:
+        """Return approximate RAM usage of the current process in MB."""
+        try:
+            import psutil  # type: ignore
+
+            return psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)
+        except Exception:  # pragma: no cover - psutil may not be available
+            try:
+                import resource
+
+                usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+                # ru_maxrss is KB on Linux, bytes on macOS
+                if usage > 1024 ** 2:
+                    return usage / (1024 ** 2)
+                return usage / 1024
+            except Exception:
+                return 0.0
+
+    @staticmethod
+    def _enforce_ram_budget(budget_mb: int) -> None:
+        """Evict least recently used nodes when memory exceeds budget."""
+        if budget_mb <= 0:
+            return
+        while _graph and StorageManager._current_ram_mb() > budget_mb and _lru:
+            node_id, _ = _lru.popitem(last=False)
+            if _graph.has_node(node_id):
+                _graph.remove_node(node_id)
+                EVICTION_COUNTER.inc()
+                log.info(f"Evicted node {node_id} due to RAM budget")
+
+    @staticmethod
     def persist_claim(claim: dict):
         """Persist claim to NetworkX, DuckDB, and RDFLib."""
         with _lock:
@@ -62,6 +100,7 @@ class StorageManager:
                 setup()
             # NetworkX
             _graph.add_node(claim['id'], **claim.get('attributes', {}))
+            _lru[claim['id']] = time.time()
             for rel in claim.get('relations', []):
                 _graph.add_edge(rel['src'], rel['dst'], **rel.get('attributes', {}))
             # DuckDB
@@ -100,12 +139,24 @@ class StorageManager:
                 obj = rdflib.Literal(v)
                 _rdf_store.add((subj, pred, obj))
 
+            # Check RAM usage and evict if needed
+            budget = ConfigLoader().config.ram_budget_mb
+            StorageManager._enforce_ram_budget(budget)
+
     @staticmethod
     def get_graph():
         with _lock:
             if _graph is None:
                 setup()
             return _graph
+
+    @staticmethod
+    def touch_node(node_id: str) -> None:
+        """Update access time for a node in the LRU cache."""
+        with _lock:
+            if node_id in _lru:
+                _lru[node_id] = time.time()
+                _lru.move_to_end(node_id)
 
     @staticmethod
     def get_duckdb_conn():

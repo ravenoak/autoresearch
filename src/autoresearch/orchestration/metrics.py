@@ -18,6 +18,10 @@ TOKENS_IN_COUNTER = Counter(
 TOKENS_OUT_COUNTER = Counter(
     "autoresearch_tokens_out_total", "Total output tokens produced"
 )
+EVICTION_COUNTER = Counter(
+    "autoresearch_duckdb_evictions_total",
+    "Total nodes evicted from RAM to DuckDB"
+)
 
 
 def record_query() -> None:
