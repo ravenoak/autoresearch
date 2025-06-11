@@ -45,8 +45,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--maxfail=1 --disable-warnings -q --cov=src --cov-report=xml --cov-report=term-missing"
-testpaths = ["tests/unit", "integration", "tests/behavior"]
+addopts = "--maxfail=1 --disable-warnings -q --cov=src --cov=tests --cov-report=xml --cov-report=term-missing"
+testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
 markers = [
     "behavior: mark behavior (BDD) tests",
     "integration: mark integration tests",
