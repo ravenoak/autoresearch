@@ -1,11 +1,14 @@
 import responses
 from responses import matchers
+from autoresearch.config import ConfigModel
 
 from autoresearch.search import Search
 
 
 @responses.activate
-def test_external_lookup():
+def test_external_lookup(monkeypatch):
+    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
     params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
@@ -20,7 +23,9 @@ def test_external_lookup():
 
 
 @responses.activate
-def test_external_lookup_special_chars():
+def test_external_lookup_special_chars(monkeypatch):
+    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "C++ tutorial & basics"
     url = "https://api.duckduckgo.com/"
     params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
