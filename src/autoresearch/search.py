@@ -18,11 +18,15 @@ class Search:
     @staticmethod
     def external_lookup(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         """Perform an external search and return simplified results."""
-        url = (
-            f"https://api.duckduckgo.com/?q={query}&format=json&no_redirect=1&no_html=1"
-        )
+        url = "https://api.duckduckgo.com/"
+        params = {
+            "q": query,
+            "format": "json",
+            "no_redirect": 1,
+            "no_html": 1,
+        }
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, params=params, timeout=5)
             data = response.json()
             results = []
             for item in data.get("RelatedTopics", [])[:max_results]:
