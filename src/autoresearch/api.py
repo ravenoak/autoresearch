@@ -4,7 +4,7 @@ FastAPI API for Autoresearch.
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from .config import ConfigLoader
+from .config import get_config
 from .orchestration.orchestrator import Orchestrator
 from .models import QueryResponse
 
@@ -18,7 +18,7 @@ def query_endpoint(payload: dict):
         raise HTTPException(
             status_code=400, detail="`query` field is required"
         )
-    config = ConfigLoader.load_config()
+    config = get_config()
     result = Orchestrator.run_query(query, config)
     return result
 
