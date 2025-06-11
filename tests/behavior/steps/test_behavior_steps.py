@@ -20,75 +20,6 @@ from autoresearch.models import QueryResponse
 runner = CliRunner()
 client = TestClient(api_app)
 
-# Scenario: Submit query via CLI
-@scenario('../features/query_interface.feature', 'Submit query via CLI')
-def test_cli_query():
-    pass
-
-# Scenario: Submit query via HTTP API
-@scenario('../features/query_interface.feature', 'Submit query via HTTP API')
-def test_http_query():
-    pass
-
-# Scenario: Submit query via MCP tool
-@scenario('../features/query_interface.feature', 'Submit query via MCP tool')
-def test_mcp_query():
-    pass
-
-# Scenario: Load configuration on startup
-@scenario('../features/configuration_hot_reload.feature', 'Load configuration on startup')
-def test_load_config_startup():
-    pass
-
-# Scenario: Hot-reload on config change
-@scenario('../features/configuration_hot_reload.feature', 'Hot-reload on config change')
-def test_hot_reload_config():
-    pass
-
-# Scenario: Persist claim in RAM
-@scenario('../features/dkg_persistence.feature', 'Persist claim in RAM')
-def test_persist_ram():
-    pass
-
-# Scenario: Persist claim in DuckDB
-@scenario('../features/dkg_persistence.feature', 'Persist claim in DuckDB')
-def test_persist_duckdb():
-    pass
-
-# Scenario: Persist claim in RDF quad-store
-@scenario('../features/dkg_persistence.feature', 'Persist claim in RDF quad-store')
-def test_persist_rdf():
-    pass
-
-# Scenario: One dialectical cycle
-@scenario('../features/agent_orchestration.feature', 'One dialectical cycle')
-def test_one_cycle():
-    pass
-
-# Scenario: Rotating Primus across loops
-@scenario('../features/agent_orchestration.feature', 'Rotating Primus across loops')
-def test_rotating_primus():
-    pass
-
-# Scenario: Default TTY output
-@scenario('../features/output_formatting.feature', 'Default TTY output')
-def test_default_tty_output():
-    pass
-
-# Scenario: Piped output defaults to JSON
-@scenario('../features/output_formatting.feature', 'Piped output defaults to JSON')
-def test_piped_json_output():
-    pass
-
-# Scenario: Explicit JSON flag
-@scenario('../features/output_formatting.feature', 'Explicit JSON flag')
-def test_explicit_json_flag():
-    pass
-
-# Scenario: Explicit Markdown flag
-@scenario('../features/output_formatting.feature', 'Explicit Markdown flag')
-def test_explicit_markdown_flag():
-    pass
 
 # Shared fixtures and steps
 @given('the Autoresearch application is running')
@@ -102,6 +33,16 @@ def application_running(tmp_path, monkeypatch):
         f.write(tomli_w.dumps(cfg))
     return
 
+@given('the application is running with default configuration')
+def app_running_with_default(application_running):
+    """Alias for application_running used in config tests."""
+    return application_running
+
+@given('the application is running')
+def app_running(application_running):
+    """Alias for application_running."""
+    return application_running
+
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
 def run_cli_query(query, monkeypatch):
     # Simulate TTY
@@ -110,9 +51,10 @@ def run_cli_query(query, monkeypatch):
     return result
 
 @then('I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections')
-def check_cli_output(result):
-    assert result.exit_code == 0
-    out = result.stdout
+def check_cli_output(run_cli_query):
+    """Validate CLI output."""
+    assert run_cli_query.exit_code == 0
+    out = run_cli_query.stdout
     assert '# Answer' in out
     assert '## Citations' in out
     assert '## Reasoning' in out
@@ -124,29 +66,67 @@ def send_http_query(query):
     return response
 
 @then('the response should be a valid JSON document with keys `answer`, `citations`, `reasoning`, and `metrics`')
-def check_http_response(response):
-    assert response.status_code == 200
-    data = response.json()
+def check_http_response(send_http_query):
+    """Validate HTTP response structure."""
+    assert send_http_query.status_code == 200
+    data = send_http_query.json()
     for key in ['answer', 'citations', 'reasoning', 'metrics']:
         assert key in data
 
 @when(parsers.parse('I modify "{file}" to enable a new agent'))
 def modify_config_enable_agent(file, tmp_path):
-    cfg = {'core': {'backend': 'lmstudio', 'loops': 1, 'ram_budget_mb': 512}, 'agent': {'NewAgent': {'enabled': True}}}
+    """Write a new agent into the config and wait for reload."""
+    loader = ConfigLoader()
+    reloaded: list[ConfigModel] = []
+
+    def _observer(cfg: ConfigModel) -> None:
+        reloaded.append(cfg)
+
+    loader.watch_changes(_observer)
+
+    cfg = {
+        'core': {'backend': 'lmstudio', 'loops': 1, 'ram_budget_mb': 512},
+        'agent': {'NewAgent': {'enabled': True}},
+    }
     import tomli_w
     with open(file, 'w') as f:
         f.write(tomli_w.dumps(cfg))
-    time.sleep(0.1)
+
+    # Wait for watcher to detect the change
+    timeout = time.time() + 2
+    while time.time() < timeout and not reloaded:
+        time.sleep(0.1)
+
+    loader.stop_watching()
+    assert reloaded, 'Config watcher did not detect change'
+    return reloaded[-1]
 
 @then('the orchestrator should reload the configuration automatically')
-def check_hot_reload(monkeypatch):
-    # Watcher not implemented; simulate reload
-    new_cfg = ConfigLoader().load_config()
+def check_hot_reload(modify_config_enable_agent: ConfigModel):
+    new_cfg = modify_config_enable_agent
     assert 'NewAgent' in new_cfg.agents
+    return new_cfg
 
 @then('the new agent should be visible in the next iteration cycle')
-def check_agent_visible(new_cfg):
-    assert 'NewAgent' in new_cfg.agents
+def check_agent_visible(check_hot_reload: ConfigModel):
+    assert 'NewAgent' in check_hot_reload.agents
+
+@when('I start the application')
+def start_application():
+    """Load configuration on startup."""
+    loader = ConfigLoader()
+    cfg = loader.load_config()
+    return cfg
+
+@then(parsers.parse('it should load settings from "{file}"'))
+def check_config_loaded(start_application: ConfigModel, file: str):
+    assert os.path.exists(file)
+    assert isinstance(start_application, ConfigModel)
+
+@then('the active agents should match the config file')
+def check_agents_match(start_application: ConfigModel):
+    file_cfg = ConfigLoader().load_config()
+    assert start_application.agents == file_cfg.agents
 
 # DKG Persistence steps
 @given('I have a valid claim with source metadata')
@@ -254,8 +234,8 @@ def enable_agents(monkeypatch):
     monkeypatch.setattr('autoresearch.config.ConfigLoader.load_config', lambda: config)
     return config
 
-@given(parsers.parse('loops is set to {loops:d}'))
-def set_loops(loops, monkeypatch):
+@given(parsers.re(r"loops is set to (?P<loops>\d+)(?: in configuration)?"))
+def set_loops(loops: int, monkeypatch):
     from autoresearch.config import ConfigModel
     config = ConfigModel(
         agents=["Synthesizer", "Contrarian", "FactChecker"],
@@ -426,3 +406,60 @@ def check_markdown_output_with_flag(run_with_markdown_flag):
     assert '## Citations' in output
     assert '## Reasoning' in output
     assert '## Metrics' in output
+
+# Scenario definitions (placed after step implementations)
+@scenario('../features/query_interface.feature', 'Submit query via CLI')
+def test_cli_query():
+    pass
+
+@scenario('../features/query_interface.feature', 'Submit query via HTTP API')
+def test_http_query():
+    pass
+
+@scenario('../features/query_interface.feature', 'Submit query via MCP tool')
+def test_mcp_query():
+    pass
+
+@scenario('../features/configuration_hot_reload.feature', 'Load configuration on startup')
+def test_load_config_startup():
+    pass
+
+@scenario('../features/configuration_hot_reload.feature', 'Hot-reload on config change')
+def test_hot_reload_config():
+    pass
+
+@scenario('../features/dkg_persistence.feature', 'Persist claim in RAM')
+def test_persist_ram():
+    pass
+
+@scenario('../features/dkg_persistence.feature', 'Persist claim in DuckDB')
+def test_persist_duckdb():
+    pass
+
+@scenario('../features/dkg_persistence.feature', 'Persist claim in RDF quad-store')
+def test_persist_rdf():
+    pass
+
+@scenario('../features/agent_orchestration.feature', 'One dialectical cycle')
+def test_one_cycle():
+    pass
+
+@scenario('../features/agent_orchestration.feature', 'Rotating Primus across loops')
+def test_rotating_primus():
+    pass
+
+@scenario('../features/output_formatting.feature', 'Default TTY output')
+def test_default_tty_output():
+    pass
+
+@scenario('../features/output_formatting.feature', 'Piped output defaults to JSON')
+def test_piped_json_output():
+    pass
+
+@scenario('../features/output_formatting.feature', 'Explicit JSON flag')
+def test_explicit_json_flag():
+    pass
+
+@scenario('../features/output_formatting.feature', 'Explicit Markdown flag')
+def test_explicit_markdown_flag():
+    pass
