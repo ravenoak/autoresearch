@@ -6,6 +6,9 @@ import atexit
 from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.table import Table
+from rich.prompt import Prompt
 
 from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
@@ -42,7 +45,30 @@ def config():
 @app.command()
 def monitor():
     """Start interactive resource and metrics monitor (TUI)."""
-    typer.echo("Monitor mode not implemented yet.")
+    console = Console()
+    config = _config_loader.load_config()
+
+    query = Prompt.ask("Enter query")
+    abort_flag = {"stop": False}
+
+    def on_cycle_end(loop: int, state):
+        metrics = state.metadata.get("execution_metrics", {})
+        table = Table(title=f"Cycle {loop + 1} Metrics")
+        table.add_column("Metric")
+        table.add_column("Value")
+        for k, v in metrics.items():
+            table.add_row(str(k), str(v))
+        console.print(table)
+        feedback = Prompt.ask("Feedback (q to quit)", default="")
+        if feedback.lower() == "q":
+            state.error_count = config.max_errors
+            abort_flag["stop"] = True
+        elif feedback:
+            state.claims.append({"type": "feedback", "text": feedback})
+
+    result = Orchestrator.run_query(query, config, {"on_cycle_end": on_cycle_end})
+    fmt = config.output_format or ("json" if not sys.stdout.isatty() else "markdown")
+    OutputFormatter.format(result, fmt)
 
 if __name__ == "__main__":
     app()
