@@ -21,72 +21,72 @@ runner = CliRunner()
 client = TestClient(api_app)
 
 # Scenario: Submit query via CLI
-@scenario('../../features/query_interface.feature', 'Submit query via CLI')
+@scenario('../features/query_interface.feature', 'Submit query via CLI')
 def test_cli_query():
     pass
 
 # Scenario: Submit query via HTTP API
-@scenario('../../features/query_interface.feature', 'Submit query via HTTP API')
+@scenario('../features/query_interface.feature', 'Submit query via HTTP API')
 def test_http_query():
     pass
 
 # Scenario: Submit query via MCP tool
-@scenario('../../features/query_interface.feature', 'Submit query via MCP tool')
+@scenario('../features/query_interface.feature', 'Submit query via MCP tool')
 def test_mcp_query():
     pass
 
 # Scenario: Load configuration on startup
-@scenario('../../features/configuration_hot_reload.feature', 'Load configuration on startup')
+@scenario('../features/configuration_hot_reload.feature', 'Load configuration on startup')
 def test_load_config_startup():
     pass
 
 # Scenario: Hot-reload on config change
-@scenario('../../features/configuration_hot_reload.feature', 'Hot-reload on config change')
+@scenario('../features/configuration_hot_reload.feature', 'Hot-reload on config change')
 def test_hot_reload_config():
     pass
 
 # Scenario: Persist claim in RAM
-@scenario('../../features/dkg_persistence.feature', 'Persist claim in RAM')
+@scenario('../features/dkg_persistence.feature', 'Persist claim in RAM')
 def test_persist_ram():
     pass
 
 # Scenario: Persist claim in DuckDB
-@scenario('../../features/dkg_persistence.feature', 'Persist claim in DuckDB')
+@scenario('../features/dkg_persistence.feature', 'Persist claim in DuckDB')
 def test_persist_duckdb():
     pass
 
 # Scenario: Persist claim in RDF quad-store
-@scenario('../../features/dkg_persistence.feature', 'Persist claim in RDF quad-store')
+@scenario('../features/dkg_persistence.feature', 'Persist claim in RDF quad-store')
 def test_persist_rdf():
     pass
 
 # Scenario: One dialectical cycle
-@scenario('../../features/agent_orchestration.feature', 'One dialectical cycle')
+@scenario('../features/agent_orchestration.feature', 'One dialectical cycle')
 def test_one_cycle():
     pass
 
 # Scenario: Rotating Primus across loops
-@scenario('../../features/agent_orchestration.feature', 'Rotating Primus across loops')
+@scenario('../features/agent_orchestration.feature', 'Rotating Primus across loops')
 def test_rotating_primus():
     pass
 
 # Scenario: Default TTY output
-@scenario('../../features/output_formatting.feature', 'Default TTY output')
+@scenario('../features/output_formatting.feature', 'Default TTY output')
 def test_default_tty_output():
     pass
 
 # Scenario: Piped output defaults to JSON
-@scenario('../../features/output_formatting.feature', 'Piped output defaults to JSON')
+@scenario('../features/output_formatting.feature', 'Piped output defaults to JSON')
 def test_piped_json_output():
     pass
 
 # Scenario: Explicit JSON flag
-@scenario('../../features/output_formatting.feature', 'Explicit JSON flag')
+@scenario('../features/output_formatting.feature', 'Explicit JSON flag')
 def test_explicit_json_flag():
     pass
 
 # Scenario: Explicit Markdown flag
-@scenario('../../features/output_formatting.feature', 'Explicit Markdown flag')
+@scenario('../features/output_formatting.feature', 'Explicit Markdown flag')
 def test_explicit_markdown_flag():
     pass
 
