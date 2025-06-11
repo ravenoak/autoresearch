@@ -7,6 +7,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from .config import ConfigLoader, get_config
 from .orchestration.orchestrator import Orchestrator
 from .models import QueryResponse
+from pydantic import ValidationError
 
 config_loader = ConfigLoader()
 app = FastAPI()
@@ -31,7 +32,11 @@ def query_endpoint(payload: dict):
         )
     config = get_config()
     result = Orchestrator.run_query(query, config)
-    return result
+    try:
+        validated = result if isinstance(result, QueryResponse) else QueryResponse.model_validate(result)
+    except ValidationError as exc:  # pragma: no cover - should not happen
+        raise HTTPException(status_code=500, detail="Invalid response format") from exc
+    return validated
 
 
 @app.get("/metrics")
