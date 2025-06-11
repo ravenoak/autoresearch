@@ -22,3 +22,20 @@ def test_format_markdown(capsys):
     assert "- c" in captured
     assert "## Reasoning" in captured
     assert "## Metrics" in captured
+
+
+def test_format_plain(capsys):
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m":1})
+    OutputFormatter.format(resp, "plain")
+    captured = capsys.readouterr().out
+    assert captured.startswith("Answer:")
+    assert "Citations:" in captured
+    assert "- c" not in captured
+    assert "#" not in captured
+
+
+def test_format_text_alias(capsys):
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m":1})
+    OutputFormatter.format(resp, "text")
+    captured = capsys.readouterr().out
+    assert captured.startswith("Answer:")
