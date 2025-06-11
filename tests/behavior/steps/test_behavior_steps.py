@@ -45,36 +45,53 @@ def app_running(application_running):
     return application_running
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
-def run_cli_query(query, monkeypatch):
-    # Simulate TTY
+def run_cli_query(query, monkeypatch, bdd_context):
+    """Execute CLI query and store result in context."""
     monkeypatch.setattr('sys.stdout.isatty', lambda: True)
     result = runner.invoke(cli_app, ['search', query])
-    return result
+    bdd_context['cli_result'] = result
 
 @then('I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections')
-def check_cli_output(run_cli_query):
+def check_cli_output(bdd_context):
     """Validate CLI output."""
-    assert run_cli_query.exit_code == 0
-    out = run_cli_query.stdout
+    result = bdd_context['cli_result']
+    assert result.exit_code == 0
+    out = result.stdout
     assert '# Answer' in out
     assert '## Citations' in out
     assert '## Reasoning' in out
     assert '## Metrics' in out
 
 @when('I send a POST request to `/query` with JSON `{ "query": "{query}" }`')
-def send_http_query(query):
+def send_http_query(query, bdd_context):
     response = client.post('/query', json={'query': query})
-    return response
+    bdd_context['http_response'] = response
 
 @then('the response should be a valid JSON document with keys `answer`, `citations`, `reasoning`, and `metrics`')
-def check_http_response(send_http_query):
+def check_http_response(bdd_context):
     """Validate HTTP response structure."""
-    assert send_http_query.status_code == 200
-    data = send_http_query.json()
+    response = bdd_context['http_response']
+    assert response.status_code == 200
+    data = response.json()
     for key in ['answer', 'citations', 'reasoning', 'metrics']:
         assert key in data
 
-@when(parsers.parse('I modify "{file}" to enable a new agent'))
+@when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
+def run_mcp_cli_query(query, monkeypatch, bdd_context):
+    """Simulate running a query via the MCP tool."""
+    monkeypatch.setattr('sys.stdout.isatty', lambda: False)
+    result = runner.invoke(cli_app, ['search', query])
+    bdd_context['mcp_result'] = result
+
+@then('I should receive a JSON output matching the defined schema for `answer`, `citations`, `reasoning`, and `metrics`')
+def check_mcp_cli_output(bdd_context):
+    result = bdd_context['mcp_result']
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    for key in ['answer', 'citations', 'reasoning', 'metrics']:
+        assert key in data
+
+@when(parsers.parse('I modify "{file}" to enable a new agent'), target_fixture="modify_config_enable_agent")
 def modify_config_enable_agent(file, tmp_path):
     """Write a new agent into the config and wait for reload."""
     loader = ConfigLoader()
@@ -112,7 +129,7 @@ def check_hot_reload(modify_config_enable_agent: ConfigModel):
 def check_agent_visible(check_hot_reload: ConfigModel):
     assert 'NewAgent' in check_hot_reload.agents
 
-@when('I start the application')
+@when('I start the application', target_fixture="start_application")
 def start_application():
     """Load configuration on startup."""
     loader = ConfigLoader()
@@ -250,7 +267,7 @@ def set_reasoning_mode(mode, set_loops):
     set_loops.reasoning_mode = mode
     return set_loops
 
-@when(parsers.parse('I run the orchestrator on query "{query}"'))
+@when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_orchestrator_on_query")
 def run_orchestrator_on_query(query):
     cfg = ConfigLoader().load_config()
     record = []
@@ -277,7 +294,7 @@ def check_agents_executed(run_orchestrator_on_query, order):
     expected = [a.strip() for a in order.split(',')]
     assert run_orchestrator_on_query == expected
 
-@when(parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'))
+@when(parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'), target_fixture="submit_query_via_cli")
 def submit_query_via_cli(query, monkeypatch):
     from autoresearch.orchestration.orchestrator import Orchestrator
     from autoresearch.models import QueryResponse
@@ -323,7 +340,7 @@ def check_agent_logging(submit_query_via_cli, caplog):
     # so we'll just verify the CLI command succeeded
     assert submit_query_via_cli['result'].exit_code == 0
 
-@when('I run two separate queries')
+@when('I run two separate queries', target_fixture="run_two_queries")
 def run_two_queries(monkeypatch):
     from autoresearch.orchestration.orchestrator import Orchestrator
     from autoresearch.models import QueryResponse
@@ -379,30 +396,28 @@ def check_agent_order_rotation(run_two_queries):
 
 # Output Formatting steps
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
-def run_in_terminal(query, monkeypatch):
-    # Simulate TTY
+def run_in_terminal(query, monkeypatch, bdd_context):
     monkeypatch.setattr('sys.stdout.isatty', lambda: True)
     result = runner.invoke(cli_app, ['search', query])
-    return result
+    bdd_context['terminal_result'] = result
 
 @then('the output should be in Markdown with sections `# Answer`, `## Citations`, `## Reasoning`, and `## Metrics`')
-def check_markdown_output(run_in_terminal):
-    output = run_in_terminal.stdout
+def check_markdown_output(bdd_context):
+    output = bdd_context['terminal_result'].stdout
     assert '# Answer' in output
     assert '## Citations' in output
     assert '## Reasoning' in output
     assert '## Metrics' in output
 
 @when(parsers.parse('I run `autoresearch search "{query}" | cat`'))
-def run_piped(query, monkeypatch):
-    # Simulate non-TTY (piped)
+def run_piped(query, monkeypatch, bdd_context):
     monkeypatch.setattr('sys.stdout.isatty', lambda: False)
     result = runner.invoke(cli_app, ['search', query])
-    return result
+    bdd_context['piped_result'] = result
 
 @then('the output should be valid JSON with keys `answer`, `citations`, `reasoning`, and `metrics`')
-def check_json_output(run_piped):
-    output = run_piped.stdout
+def check_json_output(bdd_context):
+    output = bdd_context['piped_result'].stdout
     # Parse JSON to verify it's valid
     data = json.loads(output)
     assert 'answer' in data
@@ -410,15 +425,14 @@ def check_json_output(run_piped):
     assert 'reasoning' in data
     assert 'metrics' in data
 
-@when(parsers.parse('I run `autoresearch search "{query}" --output json`'))
-def run_with_json_flag(query, monkeypatch):
-    # Run with explicit JSON flag
+@when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output json`'))
+def run_with_json_flag(query, monkeypatch, bdd_context):
     result = runner.invoke(cli_app, ['search', query, '--output', 'json'])
-    return result
+    bdd_context['json_flag_result'] = result
 
 @then('the output should be valid JSON regardless of terminal context')
-def check_json_output_with_flag(run_with_json_flag):
-    output = run_with_json_flag.stdout
+def check_json_output_with_flag(bdd_context):
+    output = bdd_context['json_flag_result'].stdout
     # Parse JSON to verify it's valid
     data = json.loads(output)
     assert 'answer' in data
@@ -426,15 +440,14 @@ def check_json_output_with_flag(run_with_json_flag):
     assert 'reasoning' in data
     assert 'metrics' in data
 
-@when(parsers.parse('I run `autoresearch search "{query}" --output markdown`'))
-def run_with_markdown_flag(query, monkeypatch):
-    # Run with explicit Markdown flag
+@when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output markdown`'))
+def run_with_markdown_flag(query, monkeypatch, bdd_context):
     result = runner.invoke(cli_app, ['search', query, '--output', 'markdown'])
-    return result
+    bdd_context['markdown_flag_result'] = result
 
 @then('the output should be Markdown-formatted as in TTY mode')
-def check_markdown_output_with_flag(run_with_markdown_flag):
-    output = run_with_markdown_flag.stdout
+def check_markdown_output_with_flag(bdd_context):
+    output = bdd_context['markdown_flag_result'].stdout
     assert '# Answer' in output
     assert '## Citations' in output
     assert '## Reasoning' in output
