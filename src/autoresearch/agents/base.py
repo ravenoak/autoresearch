@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ..config import ConfigModel
 from ..orchestration.state import QueryState
 
+
 class AgentRole(str, Enum):
     """Enumeration of standard agent roles in the dialectical system."""
     SYNTHESIZER = "Synthesizer"
@@ -27,7 +28,9 @@ class Agent(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
+    def execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> Dict[str, Any]:
         """Execute agent's task on the given state."""
         raise NotImplementedError("Agent subclasses must implement execute()")
 

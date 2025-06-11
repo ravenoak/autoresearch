@@ -10,7 +10,7 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...synthesis import build_answer, build_rationale
+
 from ...llm import get_llm_adapter
 
 log = get_logger(__name__)
@@ -20,13 +20,19 @@ class SynthesizerAgent(Agent):
     """Creates initial thesis and final synthesis."""
     role: AgentRole = AgentRole.SYNTHESIZER
 
-    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
+    def execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> Dict[str, Any]:
         """Synthesize claims and sources into coherent thesis or synthesis."""
         log.info(f"SynthesizerAgent executing (cycle {state.cycle})")
 
         adapter = get_llm_adapter(config.llm_backend)
         model_cfg = config.agent_config.get("Synthesizer")
-        model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
+        model = (
+            model_cfg.model
+            if model_cfg and model_cfg.model
+            else config.default_model
+        )
 
         mode = config.reasoning_mode
         is_first_cycle = state.cycle == 0

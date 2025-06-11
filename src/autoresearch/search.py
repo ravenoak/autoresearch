@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Callable, List, Dict
+from typing import Callable, List, Dict, Any
 import requests
 
 from .config import get_config
@@ -34,7 +34,7 @@ class Search:
         return [query]
 
     @staticmethod
-    def external_lookup(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+    def external_lookup(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends."""
         cfg = get_config()
 
@@ -59,14 +59,14 @@ class Search:
 
 
 @Search.register_backend("duckduckgo")
-def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Retrieve results from the DuckDuckGo API."""
     url = "https://api.duckduckgo.com/"
-    params = {
+    params: Dict[str, str] = {
         "q": query,
         "format": "json",
-        "no_redirect": 1,
-        "no_html": 1,
+        "no_redirect": "1",
+        "no_html": "1",
     }
     response = requests.get(url, params=params, timeout=5)
     data = response.json()
@@ -81,7 +81,7 @@ def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, str]
 
 
 @Search.register_backend("serper")
-def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Retrieve results from the Serper API."""
     api_key = os.getenv("SERPER_API_KEY", "")
     url = "https://google.serper.dev/search"

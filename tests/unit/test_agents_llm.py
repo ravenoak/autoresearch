@@ -25,7 +25,10 @@ def test_synthesizer_dynamic(mock_get):
 @patch("autoresearch.agents.dialectical.contrarian.get_llm_adapter")
 def test_contrarian_dynamic(mock_get):
     mock_get.return_value = MockAdapter()
-    state = QueryState(query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}])
+    state = QueryState(
+        query="q",
+        claims=[{"id": "1", "type": "thesis", "content": "a"}],
+    )
     cfg = ConfigModel()
     agent = ContrarianAgent(name="Contrarian")
     result = agent.execute(state, cfg)
@@ -38,7 +41,10 @@ def test_contrarian_dynamic(mock_get):
 def test_fact_checker_sources(mock_search, mock_get):
     mock_get.return_value = MockAdapter()
     mock_search.return_value = [{"title": "t", "url": "u"}]
-    state = QueryState(query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}])
+    state = QueryState(
+        query="q",
+        claims=[{"id": "1", "type": "thesis", "content": "a"}],
+    )
     cfg = ConfigModel()
     agent = FactChecker(name="FactChecker")
     result = agent.execute(state, cfg)

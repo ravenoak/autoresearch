@@ -2,11 +2,9 @@
 Configuration loader with validation and hot-reload support.
 """
 
-import os
-import time
 import tomllib
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Any
+from typing import Callable, Dict, List, Optional, Set
 import threading
 import logging
 
@@ -16,7 +14,9 @@ from watchfiles import watch, Change
 
 from .orchestration import ReasoningMode
 
+
 logger = logging.getLogger(__name__)
+
 
 class StorageConfig(BaseModel):
     """Storage configuration for DuckDB, RDF, and more."""
@@ -35,10 +35,12 @@ class StorageConfig(BaseModel):
             raise ValueError(f"RDF backend must be one of {valid_backends}")
         return v
 
+
 class AgentConfig(BaseModel):
     """Configuration for a single agent."""
     enabled: bool = Field(default=True)
     model: Optional[str] = None
+
 
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
@@ -47,10 +49,13 @@ class ConfigModel(BaseSettings):
     llm_backend: str = Field(default="lmstudio")
     loops: int = Field(default=2, ge=1)
     ram_budget_mb: int = Field(default=1024, ge=0)
-    agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
+    agents: List[str] = Field(
+        default=["Synthesizer", "Contrarian", "FactChecker"]
+    )
     primus_start: int = Field(default=0)
     reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)
-    output_format: Optional[str] = None  # Defaults to None (auto-detect in CLI)
+    output_format: Optional[str] = None
+    # Defaults to None (auto-detect in CLI)
 
     # Storage settings
     storage: StorageConfig = Field(default_factory=StorageConfig)
@@ -91,8 +96,11 @@ class ConfigModel(BaseSettings):
     def validate_eviction_policy(cls, v):
         valid_policies = ["LRU", "score"]
         if v not in valid_policies:
-            raise ValueError(f"Graph eviction policy must be one of {valid_policies}")
+            raise ValueError(
+                f"Graph eviction policy must be one of {valid_policies}"
+            )
         return v
+
 
 class ConfigLoader:
     """Loads and watches configuration changes."""
@@ -168,7 +176,9 @@ class ConfigLoader:
 
         # Extract agent configuration
         agent_cfg = raw.get("agent", {})
-        enabled_agents = [name for name, a in agent_cfg.items() if a.get("enabled", True)]
+        enabled_agents = [
+            name for name, a in agent_cfg.items() if a.get("enabled", True)
+        ]
 
         # Only override agents list if explicitly defined
         if enabled_agents:
@@ -235,10 +245,16 @@ class ConfigLoader:
 
     def _watch_config_files(self) -> None:
         """Watch for changes in config files (runs in separate thread)."""
-        abs_paths = [str(Path(p).absolute()) for p in self.watch_paths if Path(p).exists()]
+        abs_paths = [
+            str(Path(p).absolute())
+            for p in self.watch_paths
+            if Path(p).exists()
+        ]
 
         if not abs_paths:
-            logger.warning(f"None of the config paths exist: {self.watch_paths}")
+            logger.warning(
+                f"None of the config paths exist: {self.watch_paths}"
+            )
             return
 
         try:

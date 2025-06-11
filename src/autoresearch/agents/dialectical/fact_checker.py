@@ -20,13 +20,19 @@ class FactChecker(Agent):
     """Verifies claims against external knowledge sources."""
     role: AgentRole = AgentRole.FACT_CHECKER
 
-    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
+    def execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> Dict[str, Any]:
         """Check existing claims for factual accuracy."""
         log.info(f"FactChecker executing (cycle {state.cycle})")
 
         adapter = get_llm_adapter(config.llm_backend)
         model_cfg = config.agent_config.get("FactChecker")
-        model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
+        model = (
+            model_cfg.model
+            if model_cfg and model_cfg.model
+            else config.default_model
+        )
 
         # Retrieve external references
         raw_sources = Search.external_lookup(
@@ -54,7 +60,10 @@ class FactChecker(Agent):
                 }
             ],
             "sources": sources,
-            "metadata": {"phase": DialoguePhase.VERIFICATION, "source_count": len(sources)},
+            "metadata": {
+                "phase": DialoguePhase.VERIFICATION,
+                "source_count": len(sources),
+            },
             "results": {"verification": verification},
         }
 

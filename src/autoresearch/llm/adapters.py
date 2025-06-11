@@ -10,14 +10,18 @@ class LLMAdapter(ABC):
     """Abstract LLM adapter interface."""
 
     @abstractmethod
-    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+    def generate(
+        self, prompt: str, model: str | None = None, **kwargs: Any
+    ) -> str:
         """Generate text from the given prompt using the specified model."""
 
 
 class DummyAdapter(LLMAdapter):
     """Simple adapter used for testing."""
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+    def generate(
+        self, prompt: str, model: str | None = None, **kwargs: Any
+    ) -> str:
         return f"Dummy response for {prompt}"
 
 
@@ -32,10 +36,18 @@ class LMStudioAdapter(LLMAdapter):
             "messages": [{"role": "user", "content": prompt}],
         }
         try:
-            resp = requests.post(self.endpoint, json=payload, timeout=30)
+            resp = requests.post(
+                self.endpoint,
+                json=payload,
+                timeout=30,
+            )
             resp.raise_for_status()
             data: Dict[str, Any] = resp.json()
-            return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            return (
+                data.get("choices", [{}])[0]
+                .get("message", {})
+                .get("content", "")
+            )
         except Exception as exc:  # pragma: no cover - network errors
             return f"Error: {exc}"
 
@@ -46,7 +58,7 @@ class OpenAIAdapter(LLMAdapter):
     def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         import openai
 
-        response = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
             model=model or "gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
         )

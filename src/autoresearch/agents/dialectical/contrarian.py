@@ -19,17 +19,28 @@ class ContrarianAgent(Agent):
     """Challenges thesis with alternative viewpoints."""
     role: AgentRole = AgentRole.CONTRARIAN
 
-    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
+    def execute(
+        self, state: QueryState, config: ConfigModel
+    ) -> Dict[str, Any]:
         """Generate counterpoints to existing claims."""
         log.info(f"ContrarianAgent executing (cycle {state.cycle})")
 
         adapter = get_llm_adapter(config.llm_backend)
         model_cfg = config.agent_config.get("Contrarian")
-        model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
+        model = (
+            model_cfg.model
+            if model_cfg and model_cfg.model
+            else config.default_model
+        )
 
-        thesis = next((c for c in state.claims if c.get("type") == "thesis"), None)
+        thesis = next(
+            (c for c in state.claims if c.get("type") == "thesis"),
+            None,
+        )
         thesis_text = thesis.get("content") if thesis else state.query
-        prompt = f"Provide an antithesis to the following thesis:\n{thesis_text}"
+        prompt = (
+            f"Provide an antithesis to the following thesis:\n{thesis_text}"
+        )
         antithesis = adapter.generate(prompt, model=model)
 
         return {
@@ -48,5 +59,7 @@ class ContrarianAgent(Agent):
         """Only execute in dialectical mode when there's a thesis."""
         if config.reasoning_mode != ReasoningMode.DIALECTICAL:
             return False
-        has_thesis = any(claim.get("type") == "thesis" for claim in state.claims)
+        has_thesis = any(
+            claim.get("type") == "thesis" for claim in state.claims
+        )
         return super().can_execute(state, config) and has_thesis

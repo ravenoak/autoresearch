@@ -1,11 +1,7 @@
+# flake8: noqa
 import os
 import json
 import time
-import shutil
-import networkx as nx
-import duckdb
-import rdflib
-import pytest
 from unittest.mock import patch
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
@@ -15,8 +11,6 @@ from autoresearch.main import app as cli_app
 from autoresearch.api import app as api_app
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.storage import StorageManager
-from autoresearch.models import QueryResponse
 
 runner = CliRunner()
 client = TestClient(api_app)
@@ -51,7 +45,10 @@ def run_cli_query(query, monkeypatch, bdd_context):
     result = runner.invoke(cli_app, ['search', query])
     bdd_context['cli_result'] = result
 
-@then('I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections')
+@then(
+    'I should receive a readable Markdown answer with `answer`, `citations`, '
+    '`reasoning`, and `metrics` sections'
+)  # noqa: E501
 def check_cli_output(bdd_context):
     """Validate CLI output."""
     result = bdd_context['cli_result']
@@ -67,7 +64,10 @@ def send_http_query(query, bdd_context):
     response = client.post('/query', json={'query': query})
     bdd_context['http_response'] = response
 
-@then('the response should be a valid JSON document with keys `answer`, `citations`, `reasoning`, and `metrics`')
+@then(
+    'the response should be a valid JSON document with keys `answer`, '
+    '`citations`, `reasoning`, and `metrics`'
+)  # noqa: E501
 def check_http_response(bdd_context):
     """Validate HTTP response structure."""
     response = bdd_context['http_response']
@@ -76,14 +76,19 @@ def check_http_response(bdd_context):
     for key in ['answer', 'citations', 'reasoning', 'metrics']:
         assert key in data
 
-@when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
+@when(
+    parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI')
+)  # noqa: E501
 def run_mcp_cli_query(query, monkeypatch, bdd_context):
     """Simulate running a query via the MCP tool."""
     monkeypatch.setattr('sys.stdout.isatty', lambda: False)
     result = runner.invoke(cli_app, ['search', query])
     bdd_context['mcp_result'] = result
 
-@then('I should receive a JSON output matching the defined schema for `answer`, `citations`, `reasoning`, and `metrics`')
+@then(
+    'I should receive a JSON output matching the defined schema for `answer`, '
+    '`citations`, `reasoning`, and `metrics`'
+)  # noqa: E501
 def check_mcp_cli_output(bdd_context):
     result = bdd_context['mcp_result']
     assert result.exit_code == 0
