@@ -141,7 +141,7 @@ def modify_config_enable_agent(file, tmp_path):
 @then('the orchestrator should reload the configuration automatically')
 def check_hot_reload(monkeypatch):
     # Watcher not implemented; simulate reload
-    new_cfg = ConfigLoader.load_config()
+    new_cfg = ConfigLoader().load_config()
     assert 'NewAgent' in new_cfg.agents
 
 @then('the new agent should be visible in the next iteration cycle')
