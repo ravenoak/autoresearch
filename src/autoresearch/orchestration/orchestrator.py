@@ -22,8 +22,14 @@ class Orchestrator:
     """Coordinates multi-agent dialectical cycles with rotating Primus."""
 
     @staticmethod
-    def run_query(query: str, config: ConfigModel,
-                  callbacks: Dict[str, Callable] = None) -> QueryResponse:
+    def run_query(
+        query: str,
+        config: ConfigModel,
+        callbacks: Dict[str, Callable] | None = None,
+        *,
+        agent_factory: type[AgentFactory] = AgentFactory,
+        storage_manager: type[StorageManager] = StorageManager,
+    ) -> QueryResponse:
         """Run a query through dialectical agent cycles.
 
         Args:
@@ -31,6 +37,8 @@ class Orchestrator:
             config: System configuration
             callbacks: Optional callbacks for monitoring execution
                 Supported: on_cycle_start, on_cycle_end, on_agent_start, on_agent_end
+            agent_factory: Factory class used to retrieve agent instances
+            storage_manager: Storage manager class for persisting claims
 
         Returns:
             QueryResponse with answer, citations, reasoning, and metrics
@@ -69,7 +77,7 @@ class Orchestrator:
                     break
 
                 try:
-                    agent = AgentFactory.get(agent_name)
+                    agent = agent_factory.get(agent_name)
 
                     # Check if agent should execute in current state
                     if not agent.can_execute(state, config):
@@ -111,7 +119,7 @@ class Orchestrator:
                     # Persist any claims to storage
                     for claim in result.get("claims", []):
                         if isinstance(claim, dict) and "id" in claim:
-                            StorageManager.persist_claim(claim)
+                            storage_manager.persist_claim(claim)
 
                 except Exception as e:
                     error_info = {
