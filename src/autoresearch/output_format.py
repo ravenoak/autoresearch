@@ -15,8 +15,22 @@ class OutputFormatter:
         except ValidationError as exc:  # pragma: no cover - handled by caller
             raise ValueError(f"Invalid response: {exc}") from exc
 
-        if format_type.lower() == "json":
+        fmt = format_type.lower()
+
+        if fmt == "json":
             sys.stdout.write(response.model_dump_json(indent=2) + "\n")
+        elif fmt in {"plain", "text"}:
+            sys.stdout.write("Answer:\n")
+            sys.stdout.write(response.answer + "\n\n")
+            sys.stdout.write("Citations:\n")
+            for c in response.citations:
+                sys.stdout.write(f"{c}\n")
+            sys.stdout.write("\nReasoning:\n")
+            for r in response.reasoning:
+                sys.stdout.write(f"{r}\n")
+            sys.stdout.write("\nMetrics:\n")
+            for k, v in response.metrics.items():
+                sys.stdout.write(f"{k}: {v}\n")
         else:
             # Markdown output
             sys.stdout.write("# Answer\n")
