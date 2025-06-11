@@ -6,6 +6,7 @@ import networkx as nx
 import duckdb
 import rdflib
 import pytest
+from unittest.mock import patch
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
 from pytest_bdd import scenario, given, when, then, parsers
@@ -244,6 +245,38 @@ def set_loops(loops: int, monkeypatch):
     monkeypatch.setattr('autoresearch.config.ConfigLoader.load_config', lambda: config)
     return config
 
+@given(parsers.parse('reasoning mode is "{mode}"'))
+def set_reasoning_mode(mode, set_loops):
+    set_loops.reasoning_mode = mode
+    return set_loops
+
+@when(parsers.parse('I run the orchestrator on query "{query}"'))
+def run_orchestrator_on_query(query):
+    cfg = ConfigLoader().load_config()
+    record = []
+
+    class DummyAgent:
+        def __init__(self, name):
+            self.name = name
+        def can_execute(self, state, config):
+            return True
+        def execute(self, state, config):
+            record.append(self.name)
+            return {}
+
+    def get_agent(name):
+        return DummyAgent(name)
+
+    with patch('autoresearch.orchestration.orchestrator.AgentFactory.get', side_effect=get_agent):
+        Orchestrator.run_query(query, cfg)
+
+    return record
+
+@then(parsers.parse('the agents executed should be "{order}"'))
+def check_agents_executed(run_orchestrator_on_query, order):
+    expected = [a.strip() for a in order.split(',')]
+    assert run_orchestrator_on_query == expected
+
 @when(parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'))
 def submit_query_via_cli(query, monkeypatch):
     from autoresearch.orchestration.orchestrator import Orchestrator
@@ -462,4 +495,12 @@ def test_explicit_json_flag():
 
 @scenario('../features/output_formatting.feature', 'Explicit Markdown flag')
 def test_explicit_markdown_flag():
+    pass
+
+@scenario('../features/reasoning_mode.feature', 'Direct mode runs Synthesizer only')
+def test_reasoning_direct():
+    pass
+
+@scenario('../features/reasoning_mode.feature', 'Chain-of-thought mode loops Synthesizer')
+def test_reasoning_chain():
     pass

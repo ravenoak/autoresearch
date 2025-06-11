@@ -7,6 +7,7 @@ from uuid import uuid4
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
+from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...llm import get_llm_adapter
@@ -44,6 +45,8 @@ class ContrarianAgent(Agent):
         }
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
-        """Only execute if there's at least one thesis claim."""
+        """Only execute in dialectical mode when there's a thesis."""
+        if config.reasoning_mode != ReasoningMode.DIALECTICAL:
+            return False
         has_thesis = any(claim.get("type") == "thesis" for claim in state.claims)
         return super().can_execute(state, config) and has_thesis

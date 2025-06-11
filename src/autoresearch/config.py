@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from watchfiles import watch, Change
 
+from .orchestration import ReasoningMode
+
 logger = logging.getLogger(__name__)
 
 class StorageConfig(BaseModel):
@@ -47,7 +49,7 @@ class ConfigModel(BaseSettings):
     ram_budget_mb: int = Field(default=1024, ge=0)
     agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
     primus_start: int = Field(default=0)
-    reasoning_mode: str = Field(default="dialectical")
+    reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)
     output_format: Optional[str] = None  # Defaults to None (auto-detect in CLI)
 
     # Storage settings
@@ -74,12 +76,16 @@ class ConfigModel(BaseSettings):
         extra="ignore"
     )
 
-    @field_validator("reasoning_mode")
+    @field_validator("reasoning_mode", mode="before")
     def validate_reasoning_mode(cls, v):
-        valid_modes = ["direct", "dialectical", "chain-of-thought"]
-        if v not in valid_modes:
-            raise ValueError(f"Reasoning mode must be one of {valid_modes}")
-        return v
+        if isinstance(v, ReasoningMode):
+            return v
+        try:
+            return ReasoningMode(v)
+        except Exception as exc:
+            valid_modes = [m.value for m in ReasoningMode]
+            raise ValueError(
+                f"Reasoning mode must be one of {valid_modes}") from exc
 
     @field_validator("graph_eviction_policy")
     def validate_eviction_policy(cls, v):

@@ -7,6 +7,7 @@ from uuid import uuid4
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
+from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...synthesis import build_answer, build_rationale
@@ -27,9 +28,24 @@ class SynthesizerAgent(Agent):
         model_cfg = config.agent_config.get("Synthesizer")
         model = model_cfg.model if model_cfg and model_cfg.model else config.default_model
 
+        mode = config.reasoning_mode
         is_first_cycle = state.cycle == 0
 
-        if is_first_cycle:
+        if mode == ReasoningMode.DIRECT:
+            prompt = f"Answer the query directly: {state.query}"
+            answer = adapter.generate(prompt, model=model)
+            result = {
+                "claims": [
+                    {
+                        "id": str(uuid4()),
+                        "type": "synthesis",
+                        "content": answer,
+                    }
+                ],
+                "metadata": {"phase": DialoguePhase.SYNTHESIS},
+                "results": {"final_answer": answer, "synthesis": answer},
+            }
+        elif is_first_cycle:
             prompt = f"Provide a thesis for the query: {state.query}"
             thesis_text = adapter.generate(prompt, model=model)
             result = {
