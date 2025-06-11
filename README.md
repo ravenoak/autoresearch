@@ -47,12 +47,22 @@ For a detailed breakdown of the requirements and architecture, see
 [docs/requirements.md](docs/requirements.md) and
 [docs/specification.md](docs/specification.md).
 
-## Running tests
+## Development setup
 
-Install development dependencies and execute all tests:
+Install the development dependencies:
 
 ```bash
 poetry install --with dev
+```
+
+This installs tools such as `flake8`, `mypy`, `pytest` and `tomli_w` which is
+used to write TOML files during testing.
+
+## Running tests
+
+Execute all tests once the development environment is ready:
+
+```bash
 poetry run flake8 src tests
 poetry run mypy src
 poetry run pytest
