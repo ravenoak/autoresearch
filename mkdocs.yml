@@ -1,0 +1,14 @@
+site_name: Autoresearch
+nav:
+  - Getting Started: docs/getting_started.md
+  - Configuration: docs/configuration.md
+  - Agents: docs/agents.md
+  - API Usage: docs/api.md
+  - Contributing: docs/contributing.md
+  - Requirements: docs/requirements.md
+  - Specification: docs/specification.md
+  - Plan: docs/plan.md
+  - Pseudocode: docs/pseudocode.md
+  - Requirements Tracability Matrix: docs/requirements_tracability_matrix.md
+markdown_extensions:
+  - toc

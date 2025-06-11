@@ -58,3 +58,14 @@ poetry run mypy src
 poetry run pytest
 poetry run pytest tests/behavior
 ```
+
+## Building the documentation
+
+Install MkDocs and generate the static site:
+
+```bash
+pip install mkdocs
+mkdocs build
+```
+
+Use `mkdocs serve` to preview the documentation locally.
