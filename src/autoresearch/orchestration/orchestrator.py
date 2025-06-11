@@ -126,6 +126,8 @@ class Orchestrator:
 
             # End cycle and record metrics
             metrics.end_cycle()
+            # Update state with current metrics so callbacks can display them
+            state.metadata["execution_metrics"] = metrics.get_summary()
 
             if callbacks.get('on_cycle_end'):
                 callbacks['on_cycle_end'](loop, state)
