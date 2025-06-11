@@ -7,6 +7,7 @@ from uuid import uuid4
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
+from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
@@ -58,6 +59,8 @@ class FactChecker(Agent):
         }
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
-        """Only execute if there are claims to check."""
+        """Only execute in dialectical mode if there are claims."""
+        if config.reasoning_mode != ReasoningMode.DIALECTICAL:
+            return False
         has_claims = len(state.claims) > 0
         return super().can_execute(state, config) and has_claims

@@ -9,6 +9,7 @@ from contextlib import contextmanager
 
 from ..agents.registry import AgentFactory
 from ..config import ConfigModel
+from .reasoning import ReasoningMode
 from ..models import QueryResponse
 from ..storage import StorageManager
 from .state import QueryState
@@ -50,10 +51,17 @@ class Orchestrator:
         # Setup callbacks
         callbacks = callbacks or {}
 
-        # Get enabled agents from config
+        # Get enabled agents and reasoning mode from config
         agents = getattr(config, 'agents', ["Synthesizer", "Contrarian", "FactChecker"])
         primus_index = 0 if not hasattr(config, 'primus_start') else config.primus_start
         loops = config.loops if hasattr(config, 'loops') else 2
+        mode = getattr(config, 'reasoning_mode', ReasoningMode.DIALECTICAL)
+
+        if mode == ReasoningMode.DIRECT:
+            agents = ["Synthesizer"]
+            loops = 1
+        elif mode == ReasoningMode.CHAIN_OF_THOUGHT:
+            agents = ["Synthesizer"]
         max_errors = config.max_errors if hasattr(config, 'max_errors') else 3
 
         # Initialize query state
