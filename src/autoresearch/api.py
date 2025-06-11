@@ -33,9 +33,15 @@ def query_endpoint(payload: dict):
     config = get_config()
     result = Orchestrator.run_query(query, config)
     try:
-        validated = result if isinstance(result, QueryResponse) else QueryResponse.model_validate(result)
+        validated = (
+            result
+            if isinstance(result, QueryResponse)
+            else QueryResponse.model_validate(result)
+        )
     except ValidationError as exc:  # pragma: no cover - should not happen
-        raise HTTPException(status_code=500, detail="Invalid response format") from exc
+        raise HTTPException(
+            status_code=500, detail="Invalid response format"
+        ) from exc
     return validated
 
 

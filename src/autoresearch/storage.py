@@ -32,8 +32,11 @@ def setup(db_path: Optional[str] = None) -> None:
             return
 
         _graph = nx.DiGraph()
-        _db_path = db_path or os.getenv("DUCKDB_PATH", "kg.duckdb")
-        _db_conn = duckdb.connect(_db_path)
+        path: str = (
+            db_path if db_path is not None else os.getenv("DUCKDB_PATH", "kg.duckdb")
+        )
+        _db_path = path
+        _db_conn = duckdb.connect(path)
         _rdf_store = rdflib.Graph()
 
         cfg = ConfigLoader().config.storage
@@ -107,8 +110,11 @@ class StorageManager:
     def persist_claim(claim: dict):
         """Persist claim to NetworkX, DuckDB, and RDFLib."""
         with _lock:
-            if _db_conn is None:
+            if _db_conn is None or _graph is None or _rdf_store is None:
                 setup()
+            assert _db_conn is not None
+            assert _graph is not None
+            assert _rdf_store is not None
             # NetworkX
             _graph.add_node(claim['id'], **claim.get('attributes', {}))
             _lru[claim['id']] = time.time()
@@ -159,6 +165,7 @@ class StorageManager:
         """Create HNSW index on the embeddings table."""
         if _db_conn is None:
             setup()
+        assert _db_conn is not None
         cfg = ConfigLoader().config.storage
         try:
             _db_conn.execute(

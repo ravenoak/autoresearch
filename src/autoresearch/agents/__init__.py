@@ -1,8 +1,4 @@
-"""
-Module initialization for the agents package.
-
-This module provides the agent infrastructure for the dialectical reasoning system.
-"""
+"""Dialectical agent infrastructure."""
 
 from .base import Agent, AgentRole
 from .registry import AgentRegistry, AgentFactory

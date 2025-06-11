@@ -53,7 +53,7 @@ class QueryState(BaseModel):
 
     def get_dialectical_structure(self) -> Dict[str, Any]:
         """Extract the dialectical components (thesis, antithesis, synthesis)."""
-        structure = {
+        structure: Dict[str, Any] = {
             "thesis": None,
             "antithesis": [],
             "verification": [],

@@ -1,4 +1,3 @@
-import pytest
 
 from autoresearch.search import Search
 from autoresearch.config import ConfigModel
