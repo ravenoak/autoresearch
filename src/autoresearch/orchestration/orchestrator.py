@@ -43,7 +43,7 @@ class Orchestrator:
         callbacks = callbacks or {}
 
         # Get enabled agents from config
-        agents = config.agent_roster if hasattr(config, 'agent_roster') else ["Synthesizer", "Contrarian", "FactChecker"]
+        agents = getattr(config, 'agents', ["Synthesizer", "Contrarian", "FactChecker"])
         primus_index = 0 if not hasattr(config, 'primus_start') else config.primus_start
         loops = config.loops if hasattr(config, 'loops') else 2
         max_errors = config.max_errors if hasattr(config, 'max_errors') else 3
@@ -170,7 +170,7 @@ class Orchestrator:
         def run_group(group):
             # Create a config copy for this group
             group_config = config.model_copy()
-            group_config.agent_roster = group
+            group_config.agents = group
 
             # Run the group
             result = Orchestrator.run_query(query, group_config)
