@@ -20,6 +20,9 @@ class StorageConfig(BaseModel):
     """Storage configuration for DuckDB, RDF, and more."""
     duckdb_path: str = Field(default="autoresearch.duckdb")
     vector_extension: bool = Field(default=True)
+    hnsw_m: int = Field(default=16, ge=4)
+    hnsw_ef_construction: int = Field(default=200, ge=32)
+    hnsw_metric: str = Field(default="l2")
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
 
@@ -150,6 +153,9 @@ class ConfigLoader:
         storage_settings = {
             "duckdb_path": duckdb_cfg.get("path", "autoresearch.duckdb"),
             "vector_extension": duckdb_cfg.get("vector_extension", True),
+            "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
+            "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
+            "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store")
         }

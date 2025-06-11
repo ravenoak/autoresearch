@@ -36,6 +36,14 @@ def setup(db_path: Optional[str] = None) -> None:
         _db_conn = duckdb.connect(_db_path)
         _rdf_store = rdflib.Graph()
 
+        cfg = ConfigLoader().config.storage
+        if cfg.vector_extension:
+            try:
+                _db_conn.execute("INSTALL vector")
+                _db_conn.execute("LOAD vector")
+            except Exception as e:  # pragma: no cover - extension may fail
+                log.error(f"Failed to load vector extension: {e}")
+
         # Ensure required tables exist
         _db_conn.execute(
             "CREATE TABLE IF NOT EXISTS nodes(id VARCHAR, type VARCHAR, content VARCHAR, conf DOUBLE, ts TIMESTAMP)"
@@ -46,6 +54,9 @@ def setup(db_path: Optional[str] = None) -> None:
         _db_conn.execute(
             "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding DOUBLE[])"
         )
+
+        if cfg.vector_extension:
+            StorageManager.create_hnsw_index()
 
 
 def teardown(remove_db: bool = False) -> None:
@@ -142,6 +153,41 @@ class StorageManager:
             # Check RAM usage and evict if needed
             budget = ConfigLoader().config.ram_budget_mb
             StorageManager._enforce_ram_budget(budget)
+
+    @staticmethod
+    def create_hnsw_index() -> None:
+        """Create HNSW index on the embeddings table."""
+        if _db_conn is None:
+            setup()
+        cfg = ConfigLoader().config.storage
+        try:
+            _db_conn.execute(
+                f"CREATE INDEX IF NOT EXISTS embeddings_hnsw ON embeddings USING hnsw (embedding) "
+                f"WITH (m={cfg.hnsw_m}, ef_construction={cfg.hnsw_ef_construction}, metric='{cfg.hnsw_metric}')"
+            )
+        except Exception as e:  # pragma: no cover - index creation may fail
+            log.error(f"Failed to create HNSW index: {e}")
+
+    @staticmethod
+    def vector_search(query_embedding: list[float], k: int = 5):
+        """Return nearest nodes by vector similarity."""
+        conn = StorageManager.get_duckdb_conn()
+        cfg = ConfigLoader().config
+        try:
+            try:
+                conn.execute(f"SET hnsw_ef_search={cfg.vector_nprobe}")
+            except Exception:
+                pass
+            vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
+            sql = (
+                "SELECT node_id, embedding FROM embeddings "
+                f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+            )
+            rows = conn.execute(sql).fetchall()
+            return [{"node_id": r[0], "embedding": r[1]} for r in rows]
+        except Exception as e:
+            log.error(f"Vector search failed: {e}")
+            return []
 
     @staticmethod
     def get_graph():
