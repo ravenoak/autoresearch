@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from ..agents.registry import AgentFactory
 from ..config import ConfigModel
-from .reasoning import ReasoningMode
+from .reasoning import ReasoningMode, ChainOfThoughtStrategy
 from ..models import QueryResponse
 from ..storage import StorageManager
 from .state import QueryState
@@ -64,7 +64,8 @@ class Orchestrator:
             agents = ["Synthesizer"]
             loops = 1
         elif mode == ReasoningMode.CHAIN_OF_THOUGHT:
-            agents = ["Synthesizer"]
+            strategy = ChainOfThoughtStrategy()
+            return strategy.run_query(query, config, agent_factory=agent_factory)
         max_errors = config.max_errors if hasattr(config, 'max_errors') else 3
 
         # Initialize query state
