@@ -1,5 +1,5 @@
 """Orchestration module for agent coordination."""
 
-from .reasoning import ReasoningMode, ReasoningStrategy
+from .reasoning import ReasoningMode, ReasoningStrategy, ChainOfThoughtStrategy
 
-__all__ = ["ReasoningMode", "ReasoningStrategy"]
+__all__ = ["ReasoningMode", "ReasoningStrategy", "ChainOfThoughtStrategy"]
