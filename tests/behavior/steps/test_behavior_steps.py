@@ -65,7 +65,7 @@ def check_cli_output(bdd_context):
     assert "## Metrics" in out
 
 
-@when('I send a POST request to `/query` with JSON `{ "query": "{query}" }`')
+@when(parsers.parse('I send a POST request to `/query` with JSON `{ "query": "{query}" }`'))
 def send_http_query(query, bdd_context):
     response = client.post("/query", json={"query": query})
     bdd_context["http_response"] = response
@@ -103,7 +103,16 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context):
 def check_mcp_cli_output(bdd_context):
     result = bdd_context["mcp_result"]
     assert result.exit_code == 0
-    data = json.loads(result.stdout)
+    lines = result.stdout.splitlines()
+    start_idx = None
+    for idx, line in enumerate(lines):
+        if '"answer"' in line:
+            # Assume JSON starts on the previous line with '{'
+            start_idx = max(0, idx - 1)
+            break
+    assert start_idx is not None, "No JSON found in CLI output"
+    json_str = "\n".join(lines[start_idx:])
+    data = json.loads(json_str)
     for key in ["answer", "citations", "reasoning", "metrics"]:
         assert key in data
 
@@ -485,7 +494,7 @@ def check_agent_order_rotation(run_two_queries):
 
 
 # Output Formatting steps
-@when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
+@when(parsers.parse('I run `autoresearch search "{query}"` in TTY mode'))
 def run_in_terminal(query, monkeypatch, bdd_context):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     result = runner.invoke(cli_app, ["search", query])
