@@ -44,5 +44,5 @@ Orchestrator -> FactChecker : invoke
 Synthesizer --> NX : persist claims
 Synthesizer --> DuckDB : insert nodes/edges/embeddings
 Synthesizer --> RDF : add quads
-Synthesizer --> TinyDB : cache snippets
+Synthesizer --> TinyDB : cache snippets/results
 @enduml
