@@ -1,6 +1,7 @@
 """
 FactChecker agent for verifying claims against external sources.
 """
+
 from typing import Dict, Any
 from uuid import uuid4
 
@@ -18,6 +19,7 @@ log = get_logger(__name__)
 
 class FactChecker(Agent):
     """Verifies claims against external knowledge sources."""
+
     role: AgentRole = AgentRole.FACT_CHECKER
 
     def execute(
@@ -45,9 +47,8 @@ class FactChecker(Agent):
             s["agent"] = self.name
             sources.append(s)
 
-        prompt = (
-            "Verify the following claims:\n" +
-            "\n".join(c.get("content", "") for c in state.claims)
+        prompt = "Verify the following claims:\n" + "\n".join(
+            c.get("content", "") for c in state.claims
         )
         verification = adapter.generate(prompt, model=model)
 

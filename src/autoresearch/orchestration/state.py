@@ -1,16 +1,17 @@
 """
 State management for the dialectical reasoning process.
 """
+
 from typing import List, Dict, Any
 import time
 from pydantic import BaseModel, Field
 
 from ..models import QueryResponse
-from ..orchestration.phases import DialoguePhase
 
 
 class QueryState(BaseModel):
     """State object passed between agents during dialectical cycles."""
+
     query: str
     claims: List[Dict[str, Any]] = Field(default_factory=list)
     sources: List[Dict[str, Any]] = Field(default_factory=list)
@@ -48,16 +49,16 @@ class QueryState(BaseModel):
             answer=self.results.get("final_answer", "No answer synthesized"),
             citations=self.sources,
             reasoning=self.claims,
-            metrics=self.metadata
+            metrics=self.metadata,
         )
 
     def get_dialectical_structure(self) -> Dict[str, Any]:
-        """Extract the dialectical components (thesis, antithesis, synthesis)."""
+        """Extract thesis, antithesis, verification, and synthesis claims."""
         structure: Dict[str, Any] = {
             "thesis": None,
             "antithesis": [],
             "verification": [],
-            "synthesis": None
+            "synthesis": None,
         }
 
         # Extract claims by type

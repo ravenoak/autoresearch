@@ -1,6 +1,7 @@
 """
 Hybrid DKG persistence: NetworkX, DuckDB, RDFLib.
 """
+
 import os
 import time
 from collections import OrderedDict
@@ -33,7 +34,9 @@ def setup(db_path: Optional[str] = None) -> None:
 
         _graph = nx.DiGraph()
         path: str = (
-            db_path if db_path is not None else os.getenv("DUCKDB_PATH", "kg.duckdb")
+            db_path
+            if db_path is not None
+            else os.getenv("DUCKDB_PATH", "kg.duckdb")
         )
         _db_path = path
         _db_conn = duckdb.connect(path)
@@ -49,13 +52,18 @@ def setup(db_path: Optional[str] = None) -> None:
 
         # Ensure required tables exist
         _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS nodes(id VARCHAR, type VARCHAR, content VARCHAR, conf DOUBLE, ts TIMESTAMP)"
+            "CREATE TABLE IF NOT EXISTS nodes("
+            "id VARCHAR, type VARCHAR, content VARCHAR, "
+            "conf DOUBLE, ts TIMESTAMP)"
         )
         _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS edges(src VARCHAR, dst VARCHAR, rel VARCHAR, w DOUBLE)"
+            "CREATE TABLE IF NOT EXISTS edges("
+            "src VARCHAR, dst VARCHAR, rel VARCHAR, "
+            "w DOUBLE)"
         )
         _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding DOUBLE[])"
+            "CREATE TABLE IF NOT EXISTS embeddings("
+            "node_id VARCHAR, embedding DOUBLE[])"
         )
 
         if cfg.vector_extension:
@@ -64,7 +72,7 @@ def setup(db_path: Optional[str] = None) -> None:
 
 def teardown(remove_db: bool = False) -> None:
     """Close connections and optionally remove the DuckDB file."""
-    global _graph, _db_path, _db_conn, _rdf_store
+    global _graph, _db_conn, _rdf_store
     with _lock:
         if _db_conn is not None:
             _db_conn.close()
@@ -74,6 +82,7 @@ def teardown(remove_db: bool = False) -> None:
         _db_conn = None
         _rdf_store = None
 
+
 class StorageManager:
     @staticmethod
     def _current_ram_mb() -> float:
@@ -81,15 +90,15 @@ class StorageManager:
         try:
             import psutil  # type: ignore
 
-            return psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)
+            return psutil.Process(os.getpid()).memory_info().rss / (1024**2)
         except Exception:  # pragma: no cover - psutil may not be available
             try:
                 import resource
 
                 usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 # ru_maxrss is KB on Linux, bytes on macOS
-                if usage > 1024 ** 2:
-                    return usage / (1024 ** 2)
+                if usage > 1024**2:
+                    return usage / (1024**2)
                 return usage / 1024
             except Exception:
                 return 0.0
@@ -116,42 +125,49 @@ class StorageManager:
             assert _graph is not None
             assert _rdf_store is not None
             # NetworkX
-            _graph.add_node(claim['id'], **claim.get('attributes', {}))
-            _lru[claim['id']] = time.time()
-            for rel in claim.get('relations', []):
-                _graph.add_edge(rel['src'], rel['dst'], **rel.get('attributes', {}))
+            _graph.add_node(
+                claim["id"],
+                **claim.get("attributes", {}),
+            )
+            _lru[claim["id"]] = time.time()
+            for rel in claim.get("relations", []):
+                _graph.add_edge(
+                    rel["src"],
+                    rel["dst"],
+                    **rel.get("attributes", {}),
+                )
             # DuckDB
             # insert node row
             _db_conn.execute(
                 "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
                 [
-                    claim['id'],
-                    claim.get('type', ''),
-                    claim.get('content', ''),
-                    claim.get('confidence', 0.0),
-                ]
+                    claim["id"],
+                    claim.get("type", ""),
+                    claim.get("content", ""),
+                    claim.get("confidence", 0.0),
+                ],
             )
             # insert edges
-            for rel in claim.get('relations', []):
+            for rel in claim.get("relations", []):
                 _db_conn.execute(
                     "INSERT INTO edges VALUES (?, ?, ?, ?)",
                     [
-                        rel['src'],
-                        rel['dst'],
-                        rel.get('rel', ''),
-                        rel.get('weight', 1.0),
-                    ]
+                        rel["src"],
+                        rel["dst"],
+                        rel.get("rel", ""),
+                        rel.get("weight", 1.0),
+                    ],
                 )
             # insert embedding
-            embedding = claim.get('embedding')
+            embedding = claim.get("embedding")
             if embedding is not None:
                 _db_conn.execute(
                     "INSERT INTO embeddings VALUES (?, ?)",
-                    [claim['id'], embedding]
+                    [claim["id"], embedding],
                 )
             # RDFLib quad persistence
             subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
-            for k,v in claim.get('attributes', {}).items():
+            for k, v in claim.get("attributes", {}).items():
                 pred = rdflib.URIRef(f"urn:prop:{k}")
                 obj = rdflib.Literal(v)
                 _rdf_store.add((subj, pred, obj))
@@ -169,8 +185,11 @@ class StorageManager:
         cfg = ConfigLoader().config.storage
         try:
             _db_conn.execute(
-                f"CREATE INDEX IF NOT EXISTS embeddings_hnsw ON embeddings USING hnsw (embedding) "
-                f"WITH (m={cfg.hnsw_m}, ef_construction={cfg.hnsw_ef_construction}, metric='{cfg.hnsw_metric}')"
+                "CREATE INDEX IF NOT EXISTS embeddings_hnsw "
+                "ON embeddings USING hnsw (embedding) "
+                f"WITH (m={cfg.hnsw_m}, "
+                f"ef_construction={cfg.hnsw_ef_construction}, "
+                f"metric='{cfg.hnsw_metric}')"
             )
         except Exception as e:  # pragma: no cover - index creation may fail
             log.error(f"Failed to create HNSW index: {e}")
@@ -240,4 +259,3 @@ class StorageManager:
 
 # Initialise storage on module import using default path
 setup()
-

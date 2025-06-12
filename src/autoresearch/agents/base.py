@@ -1,6 +1,7 @@
 """
 Base Agent class and role definitions for the dialectical system.
 """
+
 from typing import Dict, Any
 from enum import Enum
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from ..orchestration.state import QueryState
 
 class AgentRole(str, Enum):
     """Enumeration of standard agent roles in the dialectical system."""
+
     SYNTHESIZER = "Synthesizer"
     CONTRARIAN = "Contrarian"
     FACT_CHECKER = "FactChecker"
@@ -21,6 +23,7 @@ class AgentRole(str, Enum):
 
 class Agent(BaseModel):
     """Base agent interface for dialectical cycle."""
+
     name: str
     role: AgentRole = AgentRole.SPECIALIST
     enabled: bool = True

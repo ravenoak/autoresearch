@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class StorageConfig(BaseModel):
     """Storage configuration for DuckDB, RDF, and more."""
+
     duckdb_path: str = Field(default="autoresearch.duckdb")
     vector_extension: bool = Field(default=True)
     hnsw_m: int = Field(default=16, ge=4)
@@ -38,12 +39,14 @@ class StorageConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     """Configuration for a single agent."""
+
     enabled: bool = Field(default=True)
     model: Optional[str] = None
 
 
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
+
     # Core settings
     backend: str = Field(default="lmstudio")  # backward compatibility
     llm_backend: str = Field(default="lmstudio")
@@ -79,7 +82,7 @@ class ConfigModel(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("reasoning_mode", mode="before")
@@ -91,7 +94,8 @@ class ConfigModel(BaseSettings):
         except Exception as exc:
             valid_modes = [m.value for m in ReasoningMode]
             raise ValueError(
-                f"Reasoning mode must be one of {valid_modes}") from exc
+                f"Reasoning mode must be one of {valid_modes}"
+            ) from exc
 
     @field_validator("graph_eviction_policy")
     def validate_eviction_policy(cls, v):
@@ -105,6 +109,7 @@ class ConfigModel(BaseSettings):
 
 class ConfigLoader:
     """Loads and watches configuration changes."""
+
     _instance = None
     _lock = threading.Lock()
 
@@ -117,7 +122,7 @@ class ConfigLoader:
             return cls._instance
 
     def __init__(self):
-        if getattr(self, '_initialized', False):
+        if getattr(self, "_initialized", False):
             return
 
         self._config = None
@@ -169,10 +174,12 @@ class ConfigLoader:
             "duckdb_path": duckdb_cfg.get("path", "autoresearch.duckdb"),
             "vector_extension": duckdb_cfg.get("vector_extension", True),
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
-            "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
+            "hnsw_ef_construction": duckdb_cfg.get(
+                "hnsw_ef_construction", 200
+            ),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
-            "rdf_path": rdf_cfg.get("path", "rdf_store")
+            "rdf_path": rdf_cfg.get("path", "rdf_store"),
         }
 
         # Extract agent configuration
@@ -203,11 +210,15 @@ class ConfigLoader:
             # Raise with more helpful message
             raise ValueError(f"Error in configuration: {e}") from e
 
-    def register_observer(self, callback: Callable[[ConfigModel], None]) -> None:
+    def register_observer(
+        self, callback: Callable[[ConfigModel], None]
+    ) -> None:
         """Register a callback to be notified of config changes."""
         self._observers.add(callback)
 
-    def unregister_observer(self, callback: Callable[[ConfigModel], None]) -> None:
+    def unregister_observer(
+        self, callback: Callable[[ConfigModel], None]
+    ) -> None:
         """Unregister a previously registered callback."""
         self._observers.discard(callback)
 
@@ -219,7 +230,9 @@ class ConfigLoader:
             except Exception as e:
                 logger.error(f"Error in config observer: {e}")
 
-    def watch_changes(self, callback: Optional[Callable[[ConfigModel], None]] = None) -> None:
+    def watch_changes(
+        self, callback: Optional[Callable[[ConfigModel], None]] = None
+    ) -> None:
         """Start watching config files and invoke callback on change."""
         if callback:
             self.register_observer(callback)
@@ -230,9 +243,7 @@ class ConfigLoader:
 
         self._stop_event.clear()
         self._watch_thread = threading.Thread(
-            target=self._watch_config_files,
-            daemon=True,
-            name="ConfigWatcher"
+            target=self._watch_config_files, daemon=True, name="ConfigWatcher"
         )
         self._watch_thread.start()
         logger.info(f"Started config watcher for paths: {self.watch_paths}")
@@ -266,7 +277,9 @@ class ConfigLoader:
 
                 # Only reload if there are actual changes
                 if changes and any(c == Change.modified for c, _ in changes):
-                    logger.info("Config files changed, reloading configuration")
+                    logger.info(
+                        "Config files changed, reloading configuration"
+                    )
                     try:
                         new_config = self.load_config()
                         self._config = new_config
@@ -280,6 +293,7 @@ class ConfigLoader:
     def on_config_change(self, config: ConfigModel) -> None:
         """Default handler for config change events."""
         logger.info("Configuration changed")
+
 
 # Convenience function to get the global config
 def get_config() -> ConfigModel:

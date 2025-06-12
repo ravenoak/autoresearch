@@ -1,6 +1,7 @@
 """
 SynthesizerAgent responsible for thesis creation and final synthesis.
 """
+
 from typing import Dict, Any
 from uuid import uuid4
 
@@ -18,6 +19,7 @@ log = get_logger(__name__)
 
 class SynthesizerAgent(Agent):
     """Creates initial thesis and final synthesis."""
+
     role: AgentRole = AgentRole.SYNTHESIZER
 
     def execute(
@@ -67,8 +69,8 @@ class SynthesizerAgent(Agent):
             }
         else:
             prompt = (
-                "Synthesize an answer from the following claims:\n" +
-                "\n".join(c.get("content", "") for c in state.claims)
+                "Synthesize an answer from the following claims:\n"
+                + "\n".join(c.get("content", "") for c in state.claims)
             )
             synthesis_text = adapter.generate(prompt, model=model)
             result = {

@@ -1,4 +1,5 @@
 """TinyDB-backed caching utilities."""
+
 from __future__ import annotations
 
 import os

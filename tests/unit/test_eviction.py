@@ -15,4 +15,3 @@ def test_ram_eviction(monkeypatch):
     StorageManager.persist_claim(claim)
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
     assert "c1" not in StorageManager.get_graph().nodes
-

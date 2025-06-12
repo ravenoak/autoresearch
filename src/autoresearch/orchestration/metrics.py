@@ -1,6 +1,7 @@
 """
 Metrics collection for orchestration system.
 """
+
 from typing import Dict, Any
 import time
 
@@ -20,7 +21,7 @@ TOKENS_OUT_COUNTER = Counter(
 )
 EVICTION_COUNTER = Counter(
     "autoresearch_duckdb_evictions_total",
-    "Total nodes evicted from RAM to DuckDB"
+    "Total nodes evicted from RAM to DuckDB",
 )
 
 
@@ -87,12 +88,9 @@ class OrchestrationMetrics:
             "total_tokens": {
                 "input": total_tokens_in,
                 "output": total_tokens_out,
-                "total": total_tokens_in + total_tokens_out
+                "total": total_tokens_in + total_tokens_out,
             },
             "agent_timings": self.agent_timings,
             "agent_tokens": self.token_counts,
-            "errors": {
-                "total": total_errors,
-                "by_agent": self.error_counts
-            }
+            "errors": {"total": total_errors, "by_agent": self.error_counts},
         }
