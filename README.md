@@ -79,3 +79,7 @@ mkdocs build
 ```
 
 Use `mkdocs serve` to preview the documentation locally.
+
+## Accessibility
+
+CLI output uses Markdown headings and plain-text lists so screen readers can navigate sections. Help messages avoid color-only cues and respect the `NO_COLOR` environment variable for ANSI-free output.

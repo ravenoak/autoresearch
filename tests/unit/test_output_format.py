@@ -48,3 +48,21 @@ def test_format_text_alias(capsys):
     OutputFormatter.format(resp, "text")
     captured = capsys.readouterr().out
     assert captured.startswith("Answer:")
+
+
+def test_json_no_ansi(capsys):
+    resp = QueryResponse(
+        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
+    )
+    OutputFormatter.format(resp, "json")
+    out = capsys.readouterr().out
+    assert "\x1b[" not in out
+
+
+def test_markdown_no_ansi(capsys):
+    resp = QueryResponse(
+        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
+    )
+    OutputFormatter.format(resp, "markdown")
+    out = capsys.readouterr().out
+    assert "\x1b[" not in out
