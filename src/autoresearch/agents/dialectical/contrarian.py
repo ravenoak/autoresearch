@@ -1,6 +1,7 @@
 """
 ContrarianAgent for challenging existing thesis with alternative viewpoints.
 """
+
 from typing import Dict, Any
 from uuid import uuid4
 
@@ -17,6 +18,7 @@ log = get_logger(__name__)
 
 class ContrarianAgent(Agent):
     """Challenges thesis with alternative viewpoints."""
+
     role: AgentRole = AgentRole.CONTRARIAN
 
     def execute(

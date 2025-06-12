@@ -1,6 +1,7 @@
 """
 FastAPI API for Autoresearch.
 """
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest

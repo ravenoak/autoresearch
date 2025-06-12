@@ -1,6 +1,7 @@
 """
 Registry and Factory for agent management.
 """
+
 from typing import Dict, Type, List
 from threading import Lock
 import logging
@@ -12,6 +13,7 @@ log = logging.getLogger(__name__)
 
 class AgentRegistry:
     """Registry of available agent types."""
+
     _registry: Dict[str, Type[Agent]] = {}
 
     @classmethod
@@ -35,6 +37,7 @@ class AgentRegistry:
 
 class AgentFactory:
     """Factory for creating and retrieving agents."""
+
     _registry: Dict[str, Type[Agent]] = {}
     _instances: Dict[str, Agent] = {}
     _lock = Lock()

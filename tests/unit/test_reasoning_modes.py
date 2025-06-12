@@ -24,7 +24,10 @@ def _run(cfg):
     def get_agent(name):
         return DummyAgent(name, record)
 
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory.get", side_effect=get_agent):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        side_effect=get_agent,
+    ):
         Orchestrator.run_query("q", cfg)
 
     return record
@@ -56,12 +59,21 @@ def test_chain_of_thought_records_steps():
             self.idx += 1
             content = f"step-{self.idx}"
             return {
-                "claims": [{"id": str(self.idx), "type": "thought", "content": content}],
+                "claims": [
+                    {
+                        "id": str(self.idx),
+                        "type": "thought",
+                        "content": content,
+                    }
+                ],
                 "results": {"final_answer": content},
             }
 
     agent = DummySynth()
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory.get", return_value=agent):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        return_value=agent,
+    ):
         resp = Orchestrator.run_query("q", cfg)
 
     steps = [c["content"] for c in resp.reasoning]

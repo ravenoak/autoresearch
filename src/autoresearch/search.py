@@ -1,4 +1,5 @@
 """Utility functions for query generation and external lookups."""
+
 from __future__ import annotations
 
 import os
@@ -20,10 +21,15 @@ class Search:
     backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
 
     @classmethod
-    def register_backend(cls, name: str) -> Callable[[Callable[[str, int], List[Dict[str, str]]]], Callable[[str, int], List[Dict[str, str]]]]:
+    def register_backend(cls, name: str) -> Callable[
+        [Callable[[str, int], List[Dict[str, str]]]],
+        Callable[[str, int], List[Dict[str, str]]],
+    ]:
         """Decorator to register a search backend."""
 
-        def decorator(func: Callable[[str, int], List[Dict[str, str]]]) -> Callable[[str, int], List[Dict[str, str]]]:
+        def decorator(
+            func: Callable[[str, int], List[Dict[str, str]]],
+        ) -> Callable[[str, int], List[Dict[str, str]]]:
             cls.backends[name] = func
             return func
 
@@ -35,7 +41,9 @@ class Search:
         return [query]
 
     @staticmethod
-    def external_lookup(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    def external_lookup(
+        query: str, max_results: int = 5
+    ) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends."""
         cached = get_cached_results(query)
         if cached:
@@ -60,12 +68,15 @@ class Search:
 
         # Fallback results when all backends fail
         return [
-            {"title": f"Result {i+1} for {query}", "url": ""} for i in range(max_results)
+            {"title": f"Result {i+1} for {query}", "url": ""}
+            for i in range(max_results)
         ]
 
 
 @Search.register_backend("duckduckgo")
-def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+def _duckduckgo_backend(
+    query: str, max_results: int = 5
+) -> List[Dict[str, Any]]:
     """Retrieve results from the DuckDuckGo API."""
     url = "https://api.duckduckgo.com/"
     params: Dict[str, str] = {
@@ -79,10 +90,12 @@ def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
     results: List[Dict[str, str]] = []
     for item in data.get("RelatedTopics", [])[:max_results]:
         if isinstance(item, dict):
-            results.append({
-                "title": item.get("Text", ""),
-                "url": item.get("FirstURL", ""),
-            })
+            results.append(
+                {
+                    "title": item.get("Text", ""),
+                    "url": item.get("FirstURL", ""),
+                }
+            )
     return results
 
 
@@ -92,13 +105,16 @@ def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     api_key = os.getenv("SERPER_API_KEY", "")
     url = "https://google.serper.dev/search"
     headers = {"X-API-KEY": api_key}
-    response = requests.post(url, json={"q": query}, headers=headers, timeout=5)
+    response = requests.post(
+        url, json={"q": query}, headers=headers, timeout=5
+    )
     data = response.json()
     results: List[Dict[str, str]] = []
     for item in data.get("organic", [])[:max_results]:
-        results.append({
-            "title": item.get("title", ""),
-            "url": item.get("link", ""),
-        })
+        results.append(
+            {
+                "title": item.get("title", ""),
+                "url": item.get("link", ""),
+            }
+        )
     return results
-

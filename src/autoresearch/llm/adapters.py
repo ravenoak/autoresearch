@@ -1,4 +1,5 @@
 """LLM adapter implementations for various backends."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -30,7 +31,9 @@ class LMStudioAdapter(LLMAdapter):
 
     endpoint: str = "http://localhost:1234/v1/chat/completions"
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+    def generate(
+        self, prompt: str, model: str | None = None, **kwargs: Any
+    ) -> str:
         payload = {
             "model": model or "lmstudio",
             "messages": [{"role": "user", "content": prompt}],
@@ -55,7 +58,9 @@ class LMStudioAdapter(LLMAdapter):
 class OpenAIAdapter(LLMAdapter):
     """Adapter for the OpenAI API."""
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+    def generate(
+        self, prompt: str, model: str | None = None, **kwargs: Any
+    ) -> str:
         import openai
 
         response = openai.ChatCompletion.create(  # type: ignore[attr-defined]

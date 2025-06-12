@@ -1,4 +1,5 @@
 """Simple synthesis helpers for answer and rationale generation."""
+
 from typing import List, Dict
 
 from .logging_utils import get_logger
@@ -15,4 +16,3 @@ def build_answer(query: str, claims: List[Dict[str, str]]) -> str:
 def build_rationale(claims: List[Dict[str, str]]) -> str:
     """Summarize reasoning based on the provided claims."""
     return f"Rationale derived from {len(claims)} claims."
-

@@ -16,6 +16,7 @@ class DummyAgent:
         self.record.append(self.name)
         return {}
 
+
 def test_custom_agents_order():
     record = []
 
@@ -23,7 +24,10 @@ def test_custom_agents_order():
         return DummyAgent(name, record)
 
     cfg = ConfigModel(agents=["A1", "A2", "A3"], loops=1)
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory.get", side_effect=get_agent):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        side_effect=get_agent,
+    ):
         Orchestrator.run_query("q", cfg)
 
     assert record == ["A1", "A2", "A3"]

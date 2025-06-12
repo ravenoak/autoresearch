@@ -1,6 +1,7 @@
 """
 Orchestration system for coordinating multi-agent dialectical cycles.
 """
+
 from typing import List, Dict, Any, Callable
 import time
 import traceback
@@ -38,7 +39,8 @@ class Orchestrator:
             query: The user's query string
             config: System configuration
             callbacks: Optional callbacks for monitoring execution
-                Supported: on_cycle_start, on_cycle_end, on_agent_start, on_agent_end
+                Supported callbacks: on_cycle_start, on_cycle_end,
+                on_agent_start, on_agent_end
             agent_factory: Factory class used to retrieve agent instances
             storage_manager: Storage manager class for persisting claims
 
@@ -55,30 +57,43 @@ class Orchestrator:
         callbacks = callbacks or {}
 
         # Get enabled agents and reasoning mode from config
-        agents = getattr(config, 'agents', ["Synthesizer", "Contrarian", "FactChecker"])
-        primus_index = 0 if not hasattr(config, 'primus_start') else config.primus_start
-        loops = config.loops if hasattr(config, 'loops') else 2
-        mode = getattr(config, 'reasoning_mode', ReasoningMode.DIALECTICAL)
+        agents = getattr(
+            config,
+            "agents",
+            ["Synthesizer", "Contrarian", "FactChecker"],
+        )
+        primus_index = (
+            0 if not hasattr(config, "primus_start") else config.primus_start
+        )
+        loops = config.loops if hasattr(config, "loops") else 2
+        mode = getattr(config, "reasoning_mode", ReasoningMode.DIALECTICAL)
 
         if mode == ReasoningMode.DIRECT:
             agents = ["Synthesizer"]
             loops = 1
         elif mode == ReasoningMode.CHAIN_OF_THOUGHT:
             strategy = ChainOfThoughtStrategy()
-            return strategy.run_query(query, config, agent_factory=agent_factory)
-        max_errors = config.max_errors if hasattr(config, 'max_errors') else 3
+            return strategy.run_query(
+                query,
+                config,
+                agent_factory=agent_factory,
+            )
+        max_errors = config.max_errors if hasattr(config, "max_errors") else 3
 
         # Initialize query state
         state = QueryState(query=query, primus_index=primus_index)
 
         # Execute dialectical cycles
         for loop in range(loops):
-            with tracer.start_as_current_span("cycle", attributes={"cycle": loop}):
+            with tracer.start_as_current_span(
+                "cycle",
+                attributes={"cycle": loop},
+            ):
                 log.info(f"Starting loop {loop+1}/{loops}")
                 metrics.start_cycle()
 
-                if callbacks.get('on_cycle_start'):
-                    callbacks['on_cycle_start'](loop, state)
+                if callbacks.get("on_cycle_start"):
+                    callbacks["on_cycle_start"](loop, state)
 
                 # Rotate agent order based on primus_index
                 order = Orchestrator._rotate_list(agents, primus_index)
@@ -87,7 +102,8 @@ class Orchestrator:
                     # Skip execution if too many errors
                     if state.error_count >= max_errors:
                         log.warning(
-                            f"Skipping remaining agents due to error threshold ({max_errors}) reached"
+                            "Skipping remaining agents due to error threshold "
+                            f"({max_errors}) reached"
                         )
                         break
 
@@ -96,7 +112,8 @@ class Orchestrator:
 
                         if not agent.can_execute(state, config):
                             log.info(
-                                f"Agent {agent_name} skipped execution (can_execute=False)"
+                                f"Agent {agent_name} skipped execution "
+                                "(can_execute=False)"
                             )
                             continue
 
@@ -107,25 +124,38 @@ class Orchestrator:
 
                         start_time = time.time()
 
-                        with Orchestrator._capture_token_usage(agent_name, metrics) as _token_counter:
+                        with Orchestrator._capture_token_usage(
+                            agent_name, metrics
+                        ):
                             result = agent.execute(state, config)
 
                         duration = time.time() - start_time
                         metrics.record_agent_timing(agent_name, duration)
 
                         if callbacks.get("on_agent_end"):
-                            callbacks["on_agent_end"](agent_name, result, state)
+                            callbacks["on_agent_end"](
+                                agent_name,
+                                result,
+                                state,
+                            )
 
                         log.info(
-                            f"Agent {agent_name} completed turn (loop {loop+1}, cycle {state.cycle}) in {duration:.2f}s"
+                            f"Agent {agent_name} completed turn "
+                            f"(loop {loop+1}, cycle {state.cycle}) "
+                            f"in {duration:.2f}s"
                         )
 
                         state.update(result)
 
                         if "sources" in result and result["sources"]:
-                            log.info(f"Agent {agent_name} provided {len(result['sources'])} sources")
+                            log.info(
+                                f"Agent {agent_name} provided "
+                                f"{len(result['sources'])} sources"
+                            )
                         else:
-                            log.warning(f"Agent {agent_name} provided no sources")
+                            log.warning(
+                                f"Agent {agent_name} provided no sources"
+                            )
 
                         for claim in result.get("claims", []):
                             if isinstance(claim, dict) and "id" in claim:
@@ -141,7 +171,8 @@ class Orchestrator:
                         state.add_error(error_info)
                         metrics.record_error(agent_name)
                         log.error(
-                            f"Error during agent {agent_name} execution: {str(e)}",
+                            f"Error during agent {agent_name} execution: "
+                            f"{str(e)}",
                             exc_info=True,
                         )
 
@@ -153,7 +184,8 @@ class Orchestrator:
 
                 if state.error_count >= max_errors:
                     log.error(
-                        f"Aborting dialectical process due to error threshold reached ({state.error_count}/{max_errors})"
+                        "Aborting dialectical process due to error "
+                        f"threshold reached ({state.error_count}/{max_errors})"
                     )
                     state.results["error"] = (
                         f"Process aborted after {state.error_count} errors"
@@ -172,8 +204,9 @@ class Orchestrator:
         return state.synthesize()
 
     @staticmethod
-    def run_parallel_query(query: str, config: ConfigModel,
-                           agent_groups: List[List[str]]) -> QueryResponse:
+    def run_parallel_query(
+        query: str, config: ConfigModel, agent_groups: List[List[str]]
+    ) -> QueryResponse:
         """Run multiple parallel agent groups and synthesize results.
 
         Args:
@@ -202,7 +235,9 @@ class Orchestrator:
 
         # Run agent groups in parallel
         with tracer.start_as_current_span("parallel_query"):
-            with ThreadPoolExecutor(max_workers=min(len(agent_groups), 4)) as executor:
+            with ThreadPoolExecutor(
+                max_workers=min(len(agent_groups), 4)
+            ) as executor:
                 results = list(executor.map(run_group, agent_groups))
 
         # Merge results into final state
@@ -212,7 +247,7 @@ class Orchestrator:
                 "claims": result.reasoning,
                 "sources": result.citations,
                 "metadata": result.metrics,
-                "results": {"group_answer": result.answer}
+                "results": {"group_answer": result.answer},
             }
             final_state.update(result_dict)
 
@@ -246,4 +281,8 @@ class Orchestrator:
             yield token_counter
         finally:
             # Record tokens in metrics
-            metrics.record_tokens(agent_name, token_counter["in"], token_counter["out"])
+            metrics.record_tokens(
+                agent_name,
+                token_counter["in"],
+                token_counter["out"],
+            )
