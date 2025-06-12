@@ -15,6 +15,7 @@ from ..storage import StorageManager
 from .state import QueryState
 from .metrics import OrchestrationMetrics, record_query
 from ..logging_utils import get_logger
+from ..tracing import setup_tracing, get_tracer
 
 log = get_logger(__name__)
 
@@ -44,6 +45,8 @@ class Orchestrator:
         Returns:
             QueryResponse with answer, citations, reasoning, and metrics
         """
+        setup_tracing(getattr(config, "tracing_enabled", False))
+        tracer = get_tracer(__name__)
         record_query()
         # Initialize metrics collector
         metrics = OrchestrationMetrics()
@@ -69,98 +72,97 @@ class Orchestrator:
 
         # Execute dialectical cycles
         for loop in range(loops):
-            log.info(f"Starting loop {loop+1}/{loops}")
-            metrics.start_cycle()
+            with tracer.start_as_current_span("cycle", attributes={"cycle": loop}):
+                log.info(f"Starting loop {loop+1}/{loops}")
+                metrics.start_cycle()
 
-            if callbacks.get('on_cycle_start'):
-                callbacks['on_cycle_start'](loop, state)
+                if callbacks.get('on_cycle_start'):
+                    callbacks['on_cycle_start'](loop, state)
 
-            # Rotate agent order based on primus_index
-            order = Orchestrator._rotate_list(agents, primus_index)
+                # Rotate agent order based on primus_index
+                order = Orchestrator._rotate_list(agents, primus_index)
 
-            for agent_name in order:
-                # Skip execution if too many errors
+                for agent_name in order:
+                    # Skip execution if too many errors
+                    if state.error_count >= max_errors:
+                        log.warning(
+                            f"Skipping remaining agents due to error threshold ({max_errors}) reached"
+                        )
+                        break
+
+                    try:
+                        agent = agent_factory.get(agent_name)
+
+                        if not agent.can_execute(state, config):
+                            log.info(
+                                f"Agent {agent_name} skipped execution (can_execute=False)"
+                            )
+                            continue
+
+                        log.info(f"Executing agent: {agent_name}")
+
+                        if callbacks.get("on_agent_start"):
+                            callbacks["on_agent_start"](agent_name, state)
+
+                        start_time = time.time()
+
+                        with Orchestrator._capture_token_usage(agent_name, metrics) as _token_counter:
+                            result = agent.execute(state, config)
+
+                        duration = time.time() - start_time
+                        metrics.record_agent_timing(agent_name, duration)
+
+                        if callbacks.get("on_agent_end"):
+                            callbacks["on_agent_end"](agent_name, result, state)
+
+                        log.info(
+                            f"Agent {agent_name} completed turn (loop {loop+1}, cycle {state.cycle}) in {duration:.2f}s"
+                        )
+
+                        state.update(result)
+
+                        if "sources" in result and result["sources"]:
+                            log.info(f"Agent {agent_name} provided {len(result['sources'])} sources")
+                        else:
+                            log.warning(f"Agent {agent_name} provided no sources")
+
+                        for claim in result.get("claims", []):
+                            if isinstance(claim, dict) and "id" in claim:
+                                storage_manager.persist_claim(claim)
+
+                    except Exception as e:
+                        error_info = {
+                            "agent": agent_name,
+                            "error": str(e),
+                            "traceback": traceback.format_exc(),
+                            "timestamp": time.time(),
+                        }
+                        state.add_error(error_info)
+                        metrics.record_error(agent_name)
+                        log.error(
+                            f"Error during agent {agent_name} execution: {str(e)}",
+                            exc_info=True,
+                        )
+
+                metrics.end_cycle()
+                state.metadata["execution_metrics"] = metrics.get_summary()
+
+                if callbacks.get("on_cycle_end"):
+                    callbacks["on_cycle_end"](loop, state)
+
                 if state.error_count >= max_errors:
-                    log.warning(f"Skipping remaining agents due to error threshold ({max_errors}) reached")
+                    log.error(
+                        f"Aborting dialectical process due to error threshold reached ({state.error_count}/{max_errors})"
+                    )
+                    state.results["error"] = (
+                        f"Process aborted after {state.error_count} errors"
+                    )
                     break
 
-                try:
-                    agent = agent_factory.get(agent_name)
+                state.cycle += 1
 
-                    # Check if agent should execute in current state
-                    if not agent.can_execute(state, config):
-                        log.info(f"Agent {agent_name} skipped execution (can_execute=False)")
-                        continue
-
-                    log.info(f"Executing agent: {agent_name}")
-
-                    if callbacks.get('on_agent_start'):
-                        callbacks['on_agent_start'](agent_name, state)
-
-                    # Time the execution
-                    start_time = time.time()
-
-                    # Execute agent and update state
-                    with Orchestrator._capture_token_usage(agent_name, metrics) as _token_counter:
-                        result = agent.execute(state, config)
-                        # Token counter gets updated in the context manager
-
-                    # Record timing
-                    duration = time.time() - start_time
-                    metrics.record_agent_timing(agent_name, duration)
-
-                    if callbacks.get('on_agent_end'):
-                        callbacks['on_agent_end'](agent_name, result, state)
-
-                    # Log agent output
-                    log.info(f"Agent {agent_name} completed turn (loop {loop+1}, cycle {state.cycle}) in {duration:.2f}s")
-
-                    # Update shared state
-                    state.update(result)
-
-                    # Check for source metadata
-                    if "sources" in result and result["sources"]:
-                        log.info(f"Agent {agent_name} provided {len(result['sources'])} sources")
-                    else:
-                        log.warning(f"Agent {agent_name} provided no sources")
-
-                    # Persist any claims to storage
-                    for claim in result.get("claims", []):
-                        if isinstance(claim, dict) and "id" in claim:
-                            storage_manager.persist_claim(claim)
-
-                except Exception as e:
-                    error_info = {
-                        "agent": agent_name,
-                        "error": str(e),
-                        "traceback": traceback.format_exc(),
-                        "timestamp": time.time()
-                    }
-                    state.add_error(error_info)
-                    metrics.record_error(agent_name)
-                    log.error(f"Error during agent {agent_name} execution: {str(e)}", exc_info=True)
-
-            # End cycle and record metrics
-            metrics.end_cycle()
-            # Update state with current metrics so callbacks can display them
-            state.metadata["execution_metrics"] = metrics.get_summary()
-
-            if callbacks.get('on_cycle_end'):
-                callbacks['on_cycle_end'](loop, state)
-
-            # Check if we should abort due to errors
-            if state.error_count >= max_errors:
-                log.error(f"Aborting dialectical process due to error threshold reached ({state.error_count}/{max_errors})")
-                # Add error information to results
-                state.results["error"] = f"Process aborted after {state.error_count} errors"
-                break
-
-            # Increment cycle counter
-            state.cycle += 1
-
-            # Rotate primus for next loop
-            primus_index = (primus_index + 1) % len(agents)
-            state.primus_index = primus_index
+                primus_index = (primus_index + 1) % len(agents)
+                state.primus_index = primus_index
 
         # Add metrics to state
         state.metadata["execution_metrics"] = metrics.get_summary()
@@ -181,6 +183,9 @@ class Orchestrator:
         Returns:
             Synthesized QueryResponse from all agent groups
         """
+        setup_tracing(getattr(config, "tracing_enabled", False))
+        tracer = get_tracer(__name__)
+
         # Create a state for the final synthesis
         final_state = QueryState(query=query)
 
@@ -195,8 +200,9 @@ class Orchestrator:
             return result
 
         # Run agent groups in parallel
-        with ThreadPoolExecutor(max_workers=min(len(agent_groups), 4)) as executor:
-            results = list(executor.map(run_group, agent_groups))
+        with tracer.start_as_current_span("parallel_query"):
+            with ThreadPoolExecutor(max_workers=min(len(agent_groups), 4)) as executor:
+                results = list(executor.map(run_group, agent_groups))
 
         # Merge results into final state
         for result in results:

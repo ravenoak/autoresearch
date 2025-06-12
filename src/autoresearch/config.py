@@ -56,6 +56,7 @@ class ConfigModel(BaseSettings):
     reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)
     output_format: Optional[str] = None
     # Defaults to None (auto-detect in CLI)
+    tracing_enabled: bool = Field(default=False)
 
     # Storage settings
     storage: StorageConfig = Field(default_factory=StorageConfig)

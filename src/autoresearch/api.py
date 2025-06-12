@@ -6,6 +6,7 @@ from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from .config import ConfigLoader, get_config
 from .orchestration.orchestrator import Orchestrator
+from .tracing import get_tracer, setup_tracing
 from .models import QueryResponse
 from pydantic import ValidationError
 
@@ -31,7 +32,10 @@ def query_endpoint(payload: dict):
             status_code=400, detail="`query` field is required"
         )
     config = get_config()
-    result = Orchestrator.run_query(query, config)
+    setup_tracing(getattr(config, "tracing_enabled", False))
+    tracer = get_tracer(__name__)
+    with tracer.start_as_current_span("/query"):
+        result = Orchestrator.run_query(query, config)
     try:
         validated = (
             result
