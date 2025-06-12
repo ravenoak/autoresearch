@@ -272,15 +272,33 @@ class Orchestrator:
     @staticmethod
     @contextmanager
     def _capture_token_usage(agent_name: str, metrics: OrchestrationMetrics):
-        """Context manager to capture token usage during agent execution."""
-        # This would be connected to the actual token counting logic
-        # of the LLM backend in a real implementation
+        """Capture token usage for all LLM calls within the block."""
+        import autoresearch.llm as llm
+
         token_counter = {"in": 0, "out": 0}
+        original_get = llm.get_llm_adapter
+
+        def _wrapped_get(name: str):
+            adapter = original_get(name)
+            original_generate = adapter.generate
+
+            def _wrapped_generate(
+                prompt: str, model: str | None = None, **kwargs
+            ) -> str:
+                result = original_generate(prompt, model=model, **kwargs)
+                token_counter["in"] += len(prompt.split())
+                token_counter["out"] += len(str(result).split())
+                return result
+
+            adapter.generate = _wrapped_generate  # type: ignore[assignment]
+            return adapter
+
+        llm.get_llm_adapter = _wrapped_get
 
         try:
             yield token_counter
         finally:
-            # Record tokens in metrics
+            llm.get_llm_adapter = original_get
             metrics.record_tokens(
                 agent_name,
                 token_counter["in"],

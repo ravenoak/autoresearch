@@ -40,9 +40,17 @@ def setup(db_path: Optional[str] = None) -> None:
         )
         _db_path = path
         _db_conn = duckdb.connect(path)
-        _rdf_store = rdflib.Graph()
 
         cfg = ConfigLoader().config.storage
+        store_name = (
+            "Sleepycat" if cfg.rdf_backend == "berkeleydb" else "SQLite"
+        )
+        try:
+            _rdf_store = rdflib.Graph(store=store_name)
+            _rdf_store.open(cfg.rdf_path, create=True)
+        except Exception as e:  # pragma: no cover - store may fail
+            log.error(f"Failed to open RDF store: {e}")
+            _rdf_store = rdflib.Graph()
         if cfg.vector_extension:
             try:
                 _db_conn.execute("INSTALL vector")
@@ -76,8 +84,21 @@ def teardown(remove_db: bool = False) -> None:
     with _lock:
         if _db_conn is not None:
             _db_conn.close()
+        if _rdf_store is not None:
+            try:
+                _rdf_store.close()
+            except Exception:  # pragma: no cover - optional close
+                pass
         if remove_db and _db_path and os.path.exists(_db_path):
             os.remove(_db_path)
+        cfg = ConfigLoader().config.storage
+        if remove_db and os.path.exists(cfg.rdf_path):
+            if os.path.isdir(cfg.rdf_path):
+                import shutil
+
+                shutil.rmtree(cfg.rdf_path, ignore_errors=True)
+            else:
+                os.remove(cfg.rdf_path)
         _graph = None
         _db_conn = None
         _rdf_store = None
@@ -105,15 +126,45 @@ class StorageManager:
 
     @staticmethod
     def _enforce_ram_budget(budget_mb: int) -> None:
-        """Evict least recently used nodes when memory exceeds budget."""
+        """Evict nodes when memory exceeds the configured budget."""
         if budget_mb <= 0:
             return
-        while _graph and StorageManager._current_ram_mb() > budget_mb and _lru:
+
+        policy = ConfigLoader().config.graph_eviction_policy
+
+        def _pop_lru() -> str | None:
+            if not _lru:
+                return None
             node_id, _ = _lru.popitem(last=False)
+            return node_id
+
+        def _pop_low_score() -> str | None:
+            if not _graph or not _graph.nodes:
+                return None
+            node_id = min(
+                _graph.nodes,
+                key=lambda n: _graph.nodes[n].get("confidence", 0.0),
+            )
+            if node_id in _lru:
+                del _lru[node_id]
+            return node_id
+
+        while _graph and StorageManager._current_ram_mb() > budget_mb:
+            node_id: str | None
+            if policy == "score":
+                node_id = _pop_low_score()
+            else:
+                node_id = _pop_lru()
+            if node_id is None:
+                break
             if _graph.has_node(node_id):
                 _graph.remove_node(node_id)
                 EVICTION_COUNTER.inc()
-                log.info(f"Evicted node {node_id} due to RAM budget")
+                log.info(
+                    "Evicted node %s due to RAM budget (policy=%s)",
+                    node_id,
+                    policy,
+                )
 
     @staticmethod
     def persist_claim(claim: dict):
@@ -125,10 +176,10 @@ class StorageManager:
             assert _graph is not None
             assert _rdf_store is not None
             # NetworkX
-            _graph.add_node(
-                claim["id"],
-                **claim.get("attributes", {}),
-            )
+            attrs = dict(claim.get("attributes", {}))
+            if "confidence" in claim:
+                attrs["confidence"] = claim["confidence"]
+            _graph.add_node(claim["id"], **attrs)
             _lru[claim["id"]] = time.time()
             for rel in claim.get("relations", []):
                 _graph.add_edge(
