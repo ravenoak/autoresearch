@@ -51,7 +51,9 @@ def test_cli_flow(monkeypatch):
     _common_patches(monkeypatch)
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = runner.invoke(cli_app, ["search", "test query"])
+    result = runner.invoke(
+        cli_app, ["search", "test query", "--output", "markdown"]
+    )
     assert result.exit_code == 0
     assert "# Answer" in result.stdout
     assert DummyStorage.persisted
@@ -66,3 +68,11 @@ def test_http_flow(monkeypatch):
     for key in ["answer", "citations", "reasoning", "metrics"]:
         assert key in data
     assert DummyStorage.persisted
+
+
+def test_http_no_query_field(monkeypatch):
+    _common_patches(monkeypatch)
+    client = TestClient(api_app)
+    resp = client.post("/query", json={})
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "`query` field is required"
