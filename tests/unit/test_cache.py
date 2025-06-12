@@ -3,9 +3,7 @@ from autoresearch.search import Search
 from autoresearch.config import ConfigModel
 
 
-def test_search_uses_cache(tmp_path, monkeypatch):
-    db_path = tmp_path / "cache.json"
-    cache.setup(str(db_path))
+def test_search_uses_cache(monkeypatch):
     cache.clear()
 
     calls = {"count": 0}
@@ -29,5 +27,4 @@ def test_search_uses_cache(tmp_path, monkeypatch):
     assert calls["count"] == 1
     assert results2 == results1
 
-    cache.teardown(remove_file=True)
     Search.backends = old_backends

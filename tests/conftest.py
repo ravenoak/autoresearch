@@ -6,7 +6,58 @@ src_path = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(src_path))  # noqa: E402
 
 import pytest  # noqa: E402
+
+from autoresearch import cache, storage  # noqa: E402
 from autoresearch.config import ConfigLoader  # noqa: E402
+from autoresearch.agents.registry import (  # noqa: E402
+    AgentFactory,
+    AgentRegistry,
+)
+from autoresearch.llm.registry import LLMFactory  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def isolate_paths(tmp_path, monkeypatch):
+    """Use temporary working directory and cache file for each test."""
+    monkeypatch.chdir(tmp_path)
+    cache_path = tmp_path / "cache.json"
+    monkeypatch.setenv("TINYDB_PATH", str(cache_path))
+    cache.teardown(remove_file=True)
+    cache.setup(str(cache_path))
+    yield
+    cache.teardown(remove_file=True)
+    monkeypatch.delenv("TINYDB_PATH", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def reset_registries():
+    """Restore global registries after each test."""
+    agent_reg = AgentRegistry._registry.copy()
+    agent_fact = AgentFactory._registry.copy()
+    llm_reg = LLMFactory._registry.copy()
+    yield
+    AgentFactory._instances.clear()
+    AgentRegistry._registry = agent_reg
+    AgentFactory._registry = agent_fact
+    LLMFactory._registry = llm_reg
+
+
+@pytest.fixture
+def storage_manager(tmp_path):
+    """Initialise storage in a temporary location and clean up."""
+    db_file = tmp_path / "kg.duckdb"
+    storage.teardown(remove_db=True)
+    storage.setup(str(db_file))
+    yield storage
+    storage.teardown(remove_db=True)
+
+
+@pytest.fixture
+def config_watcher():
+    """Provide a ConfigLoader that is cleaned up after use."""
+    loader = ConfigLoader()
+    yield loader
+    loader.stop_watching()
 
 
 @pytest.fixture(autouse=True)
