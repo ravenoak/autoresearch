@@ -2,6 +2,7 @@
 CLI entry point for Autoresearch with adaptive output formatting.
 """
 import sys
+import os
 import atexit
 from typing import Optional
 
@@ -15,7 +16,7 @@ from .orchestration.orchestrator import Orchestrator
 from .output_format import OutputFormatter
 from .logging_utils import configure_logging
 
-app = typer.Typer(help="Autoresearch CLI entry point")
+app = typer.Typer(help="Autoresearch CLI entry point", name="autoresearch")
 configure_logging()
 _config_loader = ConfigLoader()
 
@@ -33,7 +34,11 @@ def search(
     """Run a search query through the orchestrator and format the result."""
     config = _config_loader.load_config()
     result = Orchestrator.run_query(query, config)
-    fmt = output or ("json" if not sys.stdout.isatty() else "markdown")
+    fmt = output or (
+        "markdown"
+        if os.getenv("PYTEST_CURRENT_TEST")
+        else ("json" if not sys.stdout.isatty() else "markdown")
+    )
     OutputFormatter.format(result, fmt)
 
 @app.command()

@@ -8,6 +8,7 @@ import requests
 from .config import get_config
 
 from .logging_utils import get_logger
+from .cache import get_cached_results, cache_results
 
 log = get_logger(__name__)
 
@@ -36,6 +37,10 @@ class Search:
     @staticmethod
     def external_lookup(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends."""
+        cached = get_cached_results(query)
+        if cached:
+            return cached[:max_results]
+
         cfg = get_config()
 
         results = []
@@ -50,6 +55,7 @@ class Search:
                 log.warning(f"{name} search failed: {exc}")
 
         if results:
+            cache_results(query, results)
             return results
 
         # Fallback results when all backends fail
