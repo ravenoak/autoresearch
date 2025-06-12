@@ -1,19 +1,22 @@
 # Requirements Traceability Matrix
 
-| Req ID | Description                                              | Spec Section(s)         | Test(s)                |
-|--------|----------------------------------------------------------|------------------------|------------------------|
-| FR1    | CLI entry point                                          | 1, 4                   | CLI, BDD, integration  |
-| FR2    | Config via env/config file                               | 3                      | config unit/integration|
-| FR3    | Multiple LLM backends                                    | 2, 4                   | backend unit/integration|
-| FR4    | Multiple reasoning modes                                 | 5, 7                   | reasoning unit/BDD     |
-| FR5    | Parallel search queries                                  | 6                      | search unit/integration|
-| FR6    | Synthesize answers with LLM                              | 7                      | synthesis unit/BDD     |
-| FR7    | Structured logging                                       | 8                      | logging unit           |
-| FR8    | Error messages and config validation                     | 3, 8                   | config/logging unit    |
-| FR9    | Testable (unit, integration, BDD)                        | 9                      | all                    |
-| FR10   | Extensible for new backends/modes                        | 2, 10                  | plugin/extensibility   |
-| NFR1   | Modular, maintainable                                    | 1, 2, 10               | code review            |
-| NFR2   | Documentation                                            | all                    | doc review             |
-| NFR3   | CI/CD                                                    | -                      | CI pipeline            |
-| NFR4   | Graceful API error handling                              | 6, 8                   | error handling tests   |
-| NFR5   | No sensitive info in logs                                | 8                      | logging unit           |
+| Req ID | Description | Modules | Test(s) |
+|--------|-------------|---------|---------|
+| F-01 | CLI entry point | `main.py`, `api.py` | `tests/integration/test_cli_http.py`, `tests/behavior/features/query_interface.feature` |
+| F-02 | Config via env/config file | `config.py` | `tests/unit/test_config_reload.py` |
+| F-03 | Multiple LLM backends | `llm/` | `tests/unit/test_llm_adapter.py` |
+| F-04 | Hybrid DKG persistence | `storage.py` | `tests/behavior/features/dkg_persistence.feature` |
+| F-05 | Parallel search queries | `search.py` | `tests/integration/test_search_backends.py` |
+| F-06 | Synthesize answers with LLM | `agents/dialectical/` | `tests/unit/test_agents_llm.py` |
+| F-07 | Structured logging & metrics | `logging_utils.py`, `orchestration/metrics.py` | `tests/unit/test_metrics.py`, `tests/integration/test_monitor_metrics.py` |
+| F-08 | Interactive mode | `main.py` | `tests/behavior/features/query_interface.feature` |
+| F-09 | RAM budget and eviction | `storage.py` | `tests/unit/test_eviction.py` |
+| F-10 | Vector search in DuckDB | `storage.py` | `tests/unit/test_vector_search.py` |
+| F-11 | Multiple backends via config | `llm/`, `search.py` | `tests/integration/test_search_backends.py` |
+| F-12 | Multiple reasoning modes | `orchestration/reasoning.py` | `tests/unit/test_reasoning_modes.py` |
+| F-13 | Structured logging (no secrets) | `logging_utils.py` | `tests/unit/test_logging_utils.py` |
+| F-14 | Clear errors and config validation | `config.py` | `tests/unit/test_config_reload.py` |
+| F-15 | Test coverage for modules | `tests/` | all |
+| F-16 | Extensible plugin architecture | `agents/registry.py` | `tests/unit/test_agents_llm.py` |
+| F-17 | Adaptive CLI output | `output_format.py` | `tests/unit/test_output_format.py`, `tests/behavior/features/output_formatting.feature` |
+| F-18 | Accessibility of output | `output_format.py` | manual review |

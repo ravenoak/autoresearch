@@ -15,3 +15,28 @@ def test_ram_eviction(monkeypatch):
     StorageManager.persist_claim(claim)
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
     assert "c1" not in StorageManager.get_graph().nodes
+
+
+def test_score_eviction(monkeypatch):
+    StorageManager.clear_all()
+    config = ConfigModel(ram_budget_mb=1, graph_eviction_policy="score")
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
+    StorageManager.persist_claim(
+        {"id": "low", "type": "fact", "content": "a", "confidence": 0.1}
+    )
+    StorageManager.persist_claim(
+        {"id": "high", "type": "fact", "content": "b", "confidence": 0.9}
+    )
+    calls = [0]
+
+    def fake_ram():
+        calls[0] += 1
+        return 1000 if calls[0] == 1 else 0
+
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram)
+    StorageManager._enforce_ram_budget(1)
+    graph = StorageManager.get_graph()
+    assert "low" not in graph.nodes
+    assert "high" in graph.nodes
