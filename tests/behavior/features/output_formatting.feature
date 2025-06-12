@@ -7,7 +7,7 @@ Feature: Adaptive Output Formatting
     Given the application is running
 
   Scenario: Default TTY output
-    When I run `autoresearch search "Test formatting"` in a terminal
+    When I run `autoresearch search "Test formatting"` in TTY mode
     Then the output should be in Markdown with sections `# Answer`, `## Citations`, `## Reasoning`, and `## Metrics`
 
   Scenario: Piped output defaults to JSON
