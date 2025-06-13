@@ -8,11 +8,25 @@ log = get_logger(__name__)
 
 
 def build_answer(query: str, claims: List[Dict[str, str]]) -> str:
-    """Create a brief answer given a query and supporting claims."""
+    """Create a concise answer incorporating provided claim content."""
+
     log.info("Generating answer")
-    return f"Answer for '{query}' using {len(claims)} claims."
+
+    if not claims:
+        return f"No answer found for '{query}'."
+
+    summary = "; ".join(c.get("content", "") for c in claims[:3])
+    if len(claims) > 3:
+        summary += f" ... ({len(claims)} claims total)"
+
+    return summary
 
 
 def build_rationale(claims: List[Dict[str, str]]) -> str:
     """Summarize reasoning based on the provided claims."""
-    return f"Rationale derived from {len(claims)} claims."
+
+    if not claims:
+        return "No rationale available."
+
+    bullet_points = "\n".join(f"- {c.get('content', '')}" for c in claims)
+    return f"The reasoning is based on:\n{bullet_points}"

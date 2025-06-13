@@ -48,4 +48,11 @@ def test_external_lookup_special_chars(monkeypatch):
 
 
 def test_generate_queries():
-    assert Search.generate_queries("q") == ["q"]
+    queries = Search.generate_queries("some topic")
+    assert "some topic" in queries
+    assert any(q.startswith("What is") for q in queries)
+    assert len(queries) >= 2
+
+    emb = Search.generate_queries("abc", return_embeddings=True)
+    assert isinstance(emb, list)
+    assert all(isinstance(v, float) for v in emb)
