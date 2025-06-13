@@ -12,10 +12,18 @@ from .config import ConfigLoader, get_config
 from .orchestration.orchestrator import Orchestrator
 from .tracing import get_tracer, setup_tracing
 from .models import QueryResponse
+from .storage import StorageManager
 from pydantic import ValidationError
 
 config_loader = ConfigLoader()
 app = FastAPI()
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    """Initialize storage on API startup."""
+    StorageManager.setup()
+
 
 # Start watching the main configuration file so that changes
 # to ``autoresearch.toml`` are picked up while the API is running.

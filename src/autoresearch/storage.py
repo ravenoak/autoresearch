@@ -106,6 +106,11 @@ def teardown(remove_db: bool = False) -> None:
 
 class StorageManager:
     @staticmethod
+    def setup(db_path: Optional[str] = None) -> None:
+        """Proxy to module-level setup function."""
+        setup(db_path)
+
+    @staticmethod
     def _current_ram_mb() -> float:
         """Return approximate RAM usage of the current process in MB."""
         try:
@@ -306,7 +311,3 @@ class StorageManager:
                 _db_conn.execute("DELETE FROM embeddings")
             if _rdf_store is not None:
                 _rdf_store.remove((None, None, None))
-
-
-# Initialise storage on module import using default path
-setup()

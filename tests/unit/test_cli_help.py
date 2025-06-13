@@ -12,6 +12,10 @@ def test_cli_help_no_ansi(monkeypatch):
         def persist_claim(claim):
             pass
 
+        @staticmethod
+        def setup(*a, **k):
+            pass
+
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)

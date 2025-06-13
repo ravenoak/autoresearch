@@ -63,6 +63,7 @@ def config_watcher():
 @pytest.fixture(autouse=True)
 def stop_config_watcher():
     """Ensure ConfigLoader watcher threads are cleaned up."""
+    ConfigLoader().stop_watching()
     yield
     ConfigLoader().stop_watching()
 
