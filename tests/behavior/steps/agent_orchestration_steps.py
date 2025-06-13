@@ -2,7 +2,7 @@
 from unittest.mock import patch
 from pytest_bdd import scenario, given, when, then, parsers
 
-from .common_steps import runner, cli_app
+from .common_steps import *  # noqa: F401,F403
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 
