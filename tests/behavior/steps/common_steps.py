@@ -30,6 +30,18 @@ def application_running(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
     )
+    monkeypatch.setattr(
+        "autoresearch.agents.dialectical.synthesizer.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
+    monkeypatch.setattr(
+        "autoresearch.agents.dialectical.contrarian.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
+    monkeypatch.setattr(
+        "autoresearch.agents.dialectical.fact_checker.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
     return
 
 

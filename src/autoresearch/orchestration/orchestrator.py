@@ -18,6 +18,17 @@ from .metrics import OrchestrationMetrics, record_query
 from ..logging_utils import get_logger
 from ..tracing import setup_tracing, get_tracer
 
+
+class OrchestrationError(Exception):
+    """Raised when a query fails during orchestration."""
+
+    def __init__(
+        self, message: str, errors: List[Dict[str, Any]] | None = None
+    ) -> None:
+        super().__init__(message)
+        self.errors = errors or []
+
+
 log = get_logger(__name__)
 
 
@@ -49,6 +60,7 @@ class Orchestrator:
         """
         setup_tracing(getattr(config, "tracing_enabled", False))
         tracer = get_tracer(__name__)
+        record_query()
         record_query()
         # Initialize metrics collector
         metrics = OrchestrationMetrics()
@@ -199,6 +211,12 @@ class Orchestrator:
 
         # Add metrics to state
         state.metadata["execution_metrics"] = metrics.get_summary()
+
+        # Raise error if process aborted
+        if "error" in state.results:
+            raise OrchestrationError(
+                state.results["error"], state.metadata.get("errors", [])
+            )
 
         # Synthesize final response
         return state.synthesize()

@@ -41,6 +41,18 @@ def _common_patches(monkeypatch):
         "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
     )
     monkeypatch.setattr(
+        "autoresearch.agents.dialectical.synthesizer.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
+    monkeypatch.setattr(
+        "autoresearch.agents.dialectical.contrarian.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
+    monkeypatch.setattr(
+        "autoresearch.agents.dialectical.fact_checker.get_llm_adapter",
+        lambda name: DummyAdapter(),
+    )
+    monkeypatch.setattr(
         "autoresearch.search.Search.external_lookup",
         lambda q, max_results=5: [{"title": "t", "url": "u"}],
     )

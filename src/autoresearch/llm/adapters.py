@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+import os
 import requests
 
 
@@ -29,7 +30,11 @@ class DummyAdapter(LLMAdapter):
 class LMStudioAdapter(LLMAdapter):
     """Adapter for the LM Studio local API."""
 
-    endpoint: str = "http://localhost:1234/v1/chat/completions"
+    def __init__(self) -> None:
+        # Allow custom endpoint via env for tests/config
+        self.endpoint = os.getenv(
+            "LMSTUDIO_ENDPOINT", "http://localhost:1234/v1/chat/completions"
+        )
 
     def generate(
         self, prompt: str, model: str | None = None, **kwargs: Any
@@ -38,33 +43,38 @@ class LMStudioAdapter(LLMAdapter):
             "model": model or "lmstudio",
             "messages": [{"role": "user", "content": prompt}],
         }
-        try:
-            resp = requests.post(
-                self.endpoint,
-                json=payload,
-                timeout=30,
-            )
-            resp.raise_for_status()
-            data: Dict[str, Any] = resp.json()
-            return (
-                data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-            )
-        except Exception as exc:  # pragma: no cover - network errors
-            return f"Error: {exc}"
+        resp = requests.post(self.endpoint, json=payload, timeout=30)
+        resp.raise_for_status()
+        data: Dict[str, Any] = resp.json()
+        return (
+            data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        )
 
 
 class OpenAIAdapter(LLMAdapter):
-    """Adapter for the OpenAI API."""
+    """Adapter for the OpenAI API using raw HTTP calls."""
+
+    def __init__(self) -> None:
+        self.api_key = os.getenv("OPENAI_API_KEY", "")
+        self.endpoint = os.getenv(
+            "OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions"
+        )
 
     def generate(
         self, prompt: str, model: str | None = None, **kwargs: Any
     ) -> str:
-        import openai  # type: ignore[import]
-
-        response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
-            model=model or "gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
+        payload = {
+            "model": model or "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        headers = {}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        resp = requests.post(
+            self.endpoint, json=payload, headers=headers, timeout=30
         )
-        return response.choices[0].message["content"]
+        resp.raise_for_status()
+        data: Dict[str, Any] = resp.json()
+        return (
+            data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        )
