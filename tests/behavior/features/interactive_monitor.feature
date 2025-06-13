@@ -9,3 +9,7 @@ Feature: Interactive Monitoring
   Scenario: Interactive monitoring
     When I start `autoresearch monitor` and enter "test"
     Then the monitor should exit successfully
+
+  Scenario: Exit immediately
+    When I start `autoresearch monitor` and enter "q"
+    Then the monitor should exit successfully

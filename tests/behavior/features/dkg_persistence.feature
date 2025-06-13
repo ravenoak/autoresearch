@@ -20,3 +20,9 @@ Feature: Hybrid Dynamic Knowledge Graph (DKG) Persistence
     When the system writes provenance data
     Then a new quad should appear in the RDFlib store
     And queries should return the quad via SPARQL
+
+  Scenario: Clear DKG removes persisted data
+    When an agent commits a new claim
+    And I clear the knowledge graph
+    Then the NetworkX graph should be empty
+    And the DuckDB tables should be empty
