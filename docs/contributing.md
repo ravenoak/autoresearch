@@ -1,13 +1,9 @@
 # Contributing
 
-We welcome contributions via pull requests. To get started, install the development dependencies and run the tests:
+We welcome contributions via pull requests. Install the development dependencies first:
 
 ```bash
 poetry install --with dev
-poetry run flake8 src tests
-poetry run mypy src
-poetry run pytest
-poetry run pytest tests/behavior
 ```
 
 You can alternatively run the helper script to install all dependencies:
@@ -15,5 +11,18 @@ You can alternatively run the helper script to install all dependencies:
 ```bash
 ./scripts/setup.sh
 ```
+
+## Running tests
+
+Execute the commands below before opening a pull request:
+
+```bash
+poetry run flake8 src tests
+poetry run mypy src
+pytest -q
+pytest tests/behavior
+```
+
+Maintain at least 90% test coverage and remove temporary files before submitting your changes.
 
 Please keep commits focused and descriptive.
