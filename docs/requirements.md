@@ -30,9 +30,10 @@ Autoresearch is a **local-first, Python 3.12+** research assistant that performs
 | **F-08** | Provide **interactive mode** allowing user or peer-agent input each loop.                                                                        | Should   | Manual QA script; BDD.                     |
 | **F-09** | Allow **RAM/Disc tuning**: user sets `ram_budget_mb`; system evicts least-recent graph nodes to DuckDB when exceeded.                            | Should   | Memory profiler; eviction log.             |
 | **F-10** | Enable **vector search** on DuckDB (`CREATE INDEX … USING hnsw`) for embeddings; k-NN latency < 150 ms for 10 k vectors.                         | Should   | Benchmark test.                            |
-| **F-11** | Support **multiple LLM/search backends** (OpenAI, LM Studio, Anthropic, local) via config.                                                       | Must     | Unit/integration tests; config reload.     |
-| **F-12** | Support **multiple reasoning modes** (direct, dialectical, chain-of-thought, extensible).                                                        | Must     | BDD/unit tests; plugin registration.       |
-| **F-13** | Provide **structured logging** (JSON, loguru/structlog) with no secrets in logs.                                                                 | Must     | Log review; unit tests.                    |
+| **F-11** | Support **multiple LLM/search backends** (OpenAI, LM Studio, Anthropic, local) via config. HTTP adapters call each provider's REST API. |
+Must     | Unit/integration tests; config reload.     |
+| **F-12** | Support **multiple reasoning modes** (direct, dialectical, chain-of-thought, extensible). |
+Must     | BDD/unit tests; plugin registration.       |
 | **F-14** | All errors and config issues are clear, actionable, and logged.                                                                                  | Must     | Unit/integration tests.                    |
 | **F-15** | All modules are testable and covered by unit, integration, and BDD tests.                                                                       | Must     | Coverage report; BDD.                      |
 | **F-16** | System is extensible for new backends, reasoning modes, and agent types via config/plugins.                                                      | Must     | Plugin test; config reload.                |
@@ -68,7 +69,7 @@ Autoresearch is a **local-first, Python 3.12+** research assistant that performs
 ## 5  Observability & Metrics
 
 * **loguru + structlog** → JSON logs include `msg_id`, `agent`, `lat_ms`, `tokens_in/out`.
-* **prometheus_client** metrics.
+* **prometheus_client** metrics: counters for queries and token usage.
 * **OpenTelemetry** tracer spans.
 * CLI `autoresearch monitor` opens a live TUI (Rich) summarizing CPU/RAM, token spend.
 

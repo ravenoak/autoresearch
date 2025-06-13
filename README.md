@@ -37,6 +37,10 @@ curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning
 curl http://localhost:8000/metrics
 ```
 
+LLM adapters communicate with their backends over HTTP. Select one with
+`llm_backend` in `autoresearch.toml` (e.g. `lmstudio` or `openai`).
+Prometheus counters expose query and token statistics at `/metrics`.
+
 ### Configuration hot reload
 
 When you run any CLI command, Autoresearch starts watching `autoresearch.toml`

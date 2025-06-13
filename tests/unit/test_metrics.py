@@ -33,3 +33,4 @@ def test_metrics_collection_and_endpoint(monkeypatch):
     assert resp.status_code == 200
     body = resp.text
     assert "autoresearch_queries_total" in body
+    assert "autoresearch_tokens_in_total" in body
