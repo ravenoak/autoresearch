@@ -2,6 +2,7 @@
 import os
 from pytest_bdd import scenario, when, then, parsers
 
+from . import common_steps
 from autoresearch.config import ConfigLoader, ConfigModel
 
 
