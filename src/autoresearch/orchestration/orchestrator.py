@@ -2,7 +2,7 @@
 Orchestration system for coordinating multi-agent dialectical cycles.
 """
 
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Any, Callable, Iterator, cast
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -39,7 +39,7 @@ class Orchestrator:
     def run_query(
         query: str,
         config: ConfigModel,
-        callbacks: Dict[str, Callable] | None = None,
+        callbacks: Dict[str, Callable[..., None]] | None = None,
         *,
         agent_factory: type[AgentFactory] = AgentFactory,
         storage_manager: type[StorageManager] = StorageManager,
@@ -241,7 +241,7 @@ class Orchestrator:
         final_state = QueryState(query=query)
 
         # Function to run a single agent group
-        def run_group(group):
+        def run_group(group: List[str]) -> QueryResponse:
             # Create a config copy for this group
             group_config = config.model_copy()
             group_config.agents = group
@@ -288,26 +288,32 @@ class Orchestrator:
 
     @staticmethod
     @contextmanager
-    def _capture_token_usage(agent_name: str, metrics: OrchestrationMetrics):
+    def _capture_token_usage(
+        agent_name: str, metrics: OrchestrationMetrics
+    ) -> Iterator[dict[str, int]]:
         """Capture token usage for all LLM calls within the block."""
         import autoresearch.llm as llm
 
         token_counter = {"in": 0, "out": 0}
         original_get = llm.get_llm_adapter
 
-        def _wrapped_get(name: str):
+        def _wrapped_get(name: str) -> Any:
             adapter = original_get(name)
             original_generate = adapter.generate
 
             def _wrapped_generate(
-                prompt: str, model: str | None = None, **kwargs
+                prompt: str, model: str | None = None, **kwargs: Any
             ) -> str:
                 result = original_generate(prompt, model=model, **kwargs)
                 token_counter["in"] += len(prompt.split())
                 token_counter["out"] += len(str(result).split())
                 return result
 
-            adapter.generate = _wrapped_generate  # type: ignore[assignment]
+            setattr(
+                adapter,
+                "generate",
+                cast(Callable[..., str], _wrapped_generate),
+            )
             return adapter
 
         llm.get_llm_adapter = _wrapped_get

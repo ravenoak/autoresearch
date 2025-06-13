@@ -7,7 +7,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, List, Optional
 
-from tinydb import TinyDB, Query  # type: ignore
+from tinydb import TinyDB, Query
 
 _db_lock = Lock()
 _db: Optional[TinyDB] = None

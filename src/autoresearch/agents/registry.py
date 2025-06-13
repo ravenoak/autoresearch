@@ -2,7 +2,7 @@
 Registry and Factory for agent management.
 """
 
-from typing import Dict, Type, List
+from typing import Any, Dict, Type, List
 from threading import Lock
 import logging
 
@@ -76,7 +76,7 @@ class AgentFactory:
             return cls._instances[name]
 
     @classmethod
-    def create(cls, name: str, **kwargs) -> Agent:
+    def create(cls, name: str, **kwargs: Any) -> Agent:
         """Create a new agent instance with custom parameters."""
         if cls._delegate and cls._delegate is not cls:
             return cls._delegate.create(name, **kwargs)

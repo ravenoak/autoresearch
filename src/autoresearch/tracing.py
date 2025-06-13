@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from opentelemetry import trace  # type: ignore[import]
-from opentelemetry.sdk.resources import (  # type: ignore[import]
+from opentelemetry import trace
+from opentelemetry.sdk.resources import (
     SERVICE_NAME,
     Resource,
 )
-from opentelemetry.sdk.trace import (  # type: ignore[import]
+from opentelemetry.sdk.trace import (
     TracerProvider,
 )
-from opentelemetry.sdk.trace.export import (  # type: ignore[import]
+from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
 )
@@ -33,6 +33,6 @@ def setup_tracing(enabled: bool) -> None:
     _tracer_provider = provider
 
 
-def get_tracer(name: str = __name__):
+def get_tracer(name: str = __name__) -> trace.Tracer:
     """Return a tracer from the global provider."""
     return trace.get_tracer(name)
