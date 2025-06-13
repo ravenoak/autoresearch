@@ -28,3 +28,40 @@ def test_search_uses_cache(monkeypatch):
     assert results2 == results1
 
     Search.backends = old_backends
+
+
+def test_cache_is_backend_specific(monkeypatch):
+    cache.clear()
+
+    calls = {"b1": 0, "b2": 0}
+
+    def backend1(query: str, max_results: int = 5):
+        calls["b1"] += 1
+        return [{"title": "B1", "url": "u1"}]
+
+    def backend2(query: str, max_results: int = 5):
+        calls["b2"] += 1
+        return [{"title": "B2", "url": "u2"}]
+
+    old_backends = Search.backends.copy()
+    Search.backends = {"b1": backend1, "b2": backend2}
+
+    cfg1 = ConfigModel(search_backends=["b1"], loops=1)
+    cfg2 = ConfigModel(search_backends=["b2"], loops=1)
+
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
+    results1 = Search.external_lookup("python")
+    assert calls == {"b1": 1, "b2": 0}
+    assert results1 == [{"title": "B1", "url": "u1"}]
+
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg2)
+    results2 = Search.external_lookup("python")
+    assert calls == {"b1": 1, "b2": 1}
+    assert results2 == [{"title": "B2", "url": "u2"}]
+
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
+    results3 = Search.external_lookup("python")
+    assert calls == {"b1": 1, "b2": 1}
+    assert results3 == results1
+
+    Search.backends = old_backends
