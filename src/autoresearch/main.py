@@ -16,6 +16,7 @@ from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
 from .output_format import OutputFormatter
 from .logging_utils import configure_logging
+from .storage import StorageManager
 
 app = typer.Typer(help="Autoresearch CLI entry point", name="autoresearch")
 configure_logging()
@@ -25,6 +26,7 @@ _config_loader = ConfigLoader()
 @app.callback(invoke_without_command=False)
 def start_watcher(ctx: typer.Context):
     """Start configuration watcher before executing commands."""
+    StorageManager.setup()
     _config_loader.watch_changes()
     atexit.register(_config_loader.stop_watching)
 
