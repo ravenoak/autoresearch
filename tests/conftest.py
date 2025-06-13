@@ -14,6 +14,7 @@ from autoresearch.agents.registry import (  # noqa: E402
     AgentRegistry,
 )
 from autoresearch.llm.registry import LLMFactory  # noqa: E402
+from autoresearch.storage import set_delegate as set_storage_delegate
 
 
 @pytest.fixture(autouse=True)
@@ -43,6 +44,8 @@ def reset_registries():
     agent_reg = AgentRegistry._registry.copy()
     agent_fact = AgentFactory._registry.copy()
     llm_reg = LLMFactory._registry.copy()
+    AgentFactory.set_delegate(None)
+    set_storage_delegate(None)
     yield
     AgentFactory._instances.clear()
     AgentRegistry._registry = agent_reg
@@ -56,8 +59,10 @@ def storage_manager(tmp_path):
     db_file = tmp_path / "kg.duckdb"
     storage.teardown(remove_db=True)
     storage.setup(str(db_file))
+    set_storage_delegate(storage.StorageManager)
     yield storage
     storage.teardown(remove_db=True)
+    set_storage_delegate(None)
 
 
 @pytest.fixture
