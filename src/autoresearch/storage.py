@@ -24,6 +24,20 @@ _lock = Lock()
 _lru: "OrderedDict[str, float]" = OrderedDict()
 log = get_logger(__name__)
 
+# Optional injection point for tests
+_delegate: type["StorageManager"] | None = None
+
+
+def set_delegate(delegate: type["StorageManager"] | None) -> None:
+    """Replace StorageManager implementation globally."""
+    global _delegate
+    _delegate = delegate
+
+
+def get_delegate() -> type["StorageManager"] | None:
+    """Return the injected StorageManager class if any."""
+    return _delegate
+
 
 def setup(db_path: Optional[str] = None) -> None:
     """Initialise storage components if not already initialised."""
@@ -107,7 +121,9 @@ def teardown(remove_db: bool = False) -> None:
 class StorageManager:
     @staticmethod
     def setup(db_path: Optional[str] = None) -> None:
-        """Proxy to module-level setup function."""
+        """Initialise storage, delegating if a custom implementation is set."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.setup(db_path)
         setup(db_path)
 
     @staticmethod
@@ -173,6 +189,9 @@ class StorageManager:
 
     @staticmethod
     def persist_claim(claim: dict):
+        """Persist claim, delegating if a custom implementation is set."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.persist_claim(claim)
         """Persist claim to NetworkX, DuckDB, and RDFLib."""
         with _lock:
             if _db_conn is None or _graph is None or _rdf_store is None:
@@ -234,7 +253,9 @@ class StorageManager:
 
     @staticmethod
     def create_hnsw_index() -> None:
-        """Create HNSW index on the embeddings table."""
+        """Create HNSW index on the embeddings table or delegate."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.create_hnsw_index()
         if _db_conn is None:
             setup()
         assert _db_conn is not None
@@ -252,7 +273,9 @@ class StorageManager:
 
     @staticmethod
     def vector_search(query_embedding: list[float], k: int = 5):
-        """Return nearest nodes by vector similarity."""
+        """Return nearest nodes by vector similarity or delegate."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.vector_search(query_embedding, k)
         conn = StorageManager.get_duckdb_conn()
         cfg = ConfigLoader().config
         try:
@@ -273,6 +296,8 @@ class StorageManager:
 
     @staticmethod
     def get_graph():
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.get_graph()
         with _lock:
             if _graph is None:
                 setup()
@@ -280,7 +305,9 @@ class StorageManager:
 
     @staticmethod
     def touch_node(node_id: str) -> None:
-        """Update access time for a node in the LRU cache."""
+        """Update access time for a node in the LRU cache or delegate."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.touch_node(node_id)
         with _lock:
             if node_id in _lru:
                 _lru[node_id] = time.time()
@@ -288,6 +315,8 @@ class StorageManager:
 
     @staticmethod
     def get_duckdb_conn():
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.get_duckdb_conn()
         with _lock:
             if _db_conn is None:
                 setup()
@@ -295,6 +324,8 @@ class StorageManager:
 
     @staticmethod
     def get_rdf_store():
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.get_rdf_store()
         with _lock:
             if _rdf_store is None:
                 setup()
@@ -302,6 +333,8 @@ class StorageManager:
 
     @staticmethod
     def clear_all():
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.clear_all()
         with _lock:
             if _graph is not None:
                 _graph.clear()

@@ -41,10 +41,23 @@ class AgentFactory:
     _registry: Dict[str, Type[Agent]] = {}
     _instances: Dict[str, Agent] = {}
     _lock = Lock()
+    _delegate: type["AgentFactory"] | None = None
+
+    @classmethod
+    def set_delegate(cls, delegate: type["AgentFactory"] | None) -> None:
+        """Replace the active AgentFactory implementation."""
+        cls._delegate = delegate
+
+    @classmethod
+    def get_delegate(cls) -> type["AgentFactory"] | None:
+        """Return the injected AgentFactory class if any."""
+        return cls._delegate
 
     @classmethod
     def register(cls, name: str, agent_class: Type[Agent]) -> None:
         """Register an agent class."""
+        if cls._delegate and cls._delegate is not cls:
+            return cls._delegate.register(name, agent_class)
         with cls._lock:
             cls._registry[name] = agent_class
             AgentRegistry.register(name, agent_class)
@@ -53,6 +66,8 @@ class AgentFactory:
     @classmethod
     def get(cls, name: str) -> Agent:
         """Get or create an agent instance."""
+        if cls._delegate and cls._delegate is not cls:
+            return cls._delegate.get(name)
         with cls._lock:
             if name not in cls._instances:
                 if name not in cls._registry:
@@ -63,6 +78,8 @@ class AgentFactory:
     @classmethod
     def create(cls, name: str, **kwargs) -> Agent:
         """Create a new agent instance with custom parameters."""
+        if cls._delegate and cls._delegate is not cls:
+            return cls._delegate.create(name, **kwargs)
         with cls._lock:
             if name not in cls._registry:
                 raise ValueError(f"Unknown agent: {name}")
@@ -71,10 +88,14 @@ class AgentFactory:
     @classmethod
     def list_available(cls) -> List[str]:
         """List available agent types."""
+        if cls._delegate and cls._delegate is not cls:
+            return cls._delegate.list_available()
         return list(cls._registry.keys())
 
     @classmethod
     def reset_instances(cls) -> None:
         """Clear all cached instances."""
+        if cls._delegate and cls._delegate is not cls:
+            return cls._delegate.reset_instances()
         with cls._lock:
             cls._instances.clear()
