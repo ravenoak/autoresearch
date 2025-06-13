@@ -61,7 +61,6 @@ class Orchestrator:
         setup_tracing(getattr(config, "tracing_enabled", False))
         tracer = get_tracer(__name__)
         record_query()
-        record_query()
         # Initialize metrics collector
         metrics = OrchestrationMetrics()
 
