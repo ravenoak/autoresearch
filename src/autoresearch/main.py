@@ -60,7 +60,6 @@ def monitor():
     console = Console()
     config = _config_loader.load_config()
 
-    query = Prompt.ask("Enter query")
     abort_flag = {"stop": False}
 
     def on_cycle_end(loop: int, state):
@@ -71,20 +70,28 @@ def monitor():
         for k, v in metrics.items():
             table.add_row(str(k), str(v))
         console.print(table)
-        feedback = Prompt.ask("Feedback (q to quit)", default="")
+        feedback = Prompt.ask("Feedback (q to stop)", default="")
         if feedback.lower() == "q":
             state.error_count = config.max_errors
             abort_flag["stop"] = True
         elif feedback:
             state.claims.append({"type": "feedback", "text": feedback})
 
-    result = Orchestrator.run_query(
-        query, config, {"on_cycle_end": on_cycle_end}
-    )
-    fmt = config.output_format or (
-        "json" if not sys.stdout.isatty() else "markdown"
-    )
-    OutputFormatter.format(result, fmt)
+    while True:
+        query = Prompt.ask("Enter query (q to quit)")
+        if not query or query.lower() == "q":
+            break
+
+        result = Orchestrator.run_query(
+            query, config, {"on_cycle_end": on_cycle_end}
+        )
+        fmt = config.output_format or (
+            "json" if not sys.stdout.isatty() else "markdown"
+        )
+        OutputFormatter.format(result, fmt)
+
+        if abort_flag["stop"]:
+            break
 
 
 if __name__ == "__main__":
