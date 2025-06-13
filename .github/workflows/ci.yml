@@ -21,10 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry install --with dev
-        poetry run pip install networkx duckdb rdflib
+        ./scripts/setup.sh
     - name: Lint with flake8
       run: |
         poetry run flake8 src tests
