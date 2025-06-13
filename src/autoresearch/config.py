@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 import threading
 import logging
+import sys
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -265,7 +266,8 @@ class ConfigLoader:
         if self._watch_thread and self._watch_thread.is_alive():
             self._stop_event.set()
             self._watch_thread.join(timeout=1.0)
-            logger.info("Stopped config watcher")
+            if not getattr(sys.stderr, "closed", False):
+                logger.info("Stopped config watcher")
 
     def _watch_config_files(self) -> None:
         """Watch for changes in config files (runs in separate thread)."""

@@ -14,6 +14,13 @@ class InterceptHandler(logging.Handler):
     """Redirect standard logging messages to loguru."""
 
     def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover
+        if getattr(sys.stderr, "closed", False):
+            return
+        handlers = logger._core.handlers.values()  # type: ignore[attr-defined]
+        for handler in handlers:
+            stream = getattr(getattr(handler, "_sink", None), "_stream", None)
+            if getattr(stream, "closed", False):
+                return
         try:
             level: int | str = logger.level(record.levelname).name
         except ValueError:
