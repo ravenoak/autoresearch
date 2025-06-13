@@ -31,9 +31,10 @@ Start the HTTP API with Uvicorn:
 ```bash
 uvicorn autoresearch.api:app --reload
 ```
-Send a request once the server is running:
+Send a query and check collected metrics:
 ```bash
-curl -X POST http://localhost:8000/query -d '{"query": "explain machine learning"}' -H "Content-Type: application/json"
+curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning"}' -H "Content-Type: application/json"
+curl http://localhost:8000/metrics
 ```
 
 ### Configuration hot reload
