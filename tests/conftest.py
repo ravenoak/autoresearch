@@ -37,6 +37,8 @@ def isolate_paths(tmp_path, monkeypatch):
     cache.setup(str(cache_path))
     yield
     cache.teardown(remove_file=True)
+    if cache_path.exists():
+        cache_path.unlink()
     monkeypatch.delenv("TINYDB_PATH", raising=False)
 
 
