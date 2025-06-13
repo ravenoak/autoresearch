@@ -20,3 +20,8 @@ def monitor_exit_successfully(bdd_context):
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
 def test_interactive_monitor():
     pass
+
+
+@scenario("../features/interactive_monitor.feature", "Exit immediately")
+def test_monitor_exit_immediately():
+    pass

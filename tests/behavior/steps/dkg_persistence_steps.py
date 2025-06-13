@@ -139,3 +139,30 @@ def test_persist_duckdb():
 @scenario("../features/dkg_persistence.feature", "Persist claim in RDF quad-store")
 def test_persist_rdf():
     pass
+
+
+@when("I clear the knowledge graph")
+def clear_knowledge_graph():
+    from autoresearch.storage import StorageManager
+
+    StorageManager.clear_all()
+
+
+@then("the NetworkX graph should be empty")
+def graph_should_be_empty():
+    from autoresearch.storage import StorageManager
+
+    assert StorageManager.get_graph().number_of_nodes() == 0
+
+
+@then("the DuckDB tables should be empty")
+def duckdb_tables_empty():
+    from autoresearch.storage import StorageManager
+
+    conn = StorageManager.get_duckdb_conn()
+    assert conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0] == 0
+
+
+@scenario("../features/dkg_persistence.feature", "Clear DKG removes persisted data")
+def test_clear_dkg():
+    pass

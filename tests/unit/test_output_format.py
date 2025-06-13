@@ -1,4 +1,5 @@
 import json
+import pytest
 from autoresearch.models import QueryResponse
 from autoresearch.output_format import OutputFormatter
 
@@ -66,3 +67,23 @@ def test_markdown_no_ansi(capsys):
     OutputFormatter.format(resp, "markdown")
     out = capsys.readouterr().out
     assert "\x1b[" not in out
+
+
+@pytest.mark.parametrize(
+    "fmt, start",
+    [
+        ("json", "{"),
+        ("markdown", "# Answer"),
+        ("plain", "Answer:"),
+    ],
+)
+def test_format_dict_input(fmt, start, capsys):
+    data = {
+        "answer": "a",
+        "citations": ["c"],
+        "reasoning": ["r"],
+        "metrics": {"m": 1},
+    }
+    OutputFormatter.format(data, fmt)
+    out = capsys.readouterr().out
+    assert out.startswith(start)
