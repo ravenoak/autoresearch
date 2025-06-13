@@ -36,9 +36,36 @@ class Search:
         return decorator
 
     @staticmethod
-    def generate_queries(query: str) -> List[str]:
-        """Return a list of search queries derived from the user query."""
-        return [query]
+    def generate_queries(
+        query: str, return_embeddings: bool = False
+    ) -> List[Any]:
+        """Generate search query variants or a simple embedding.
+
+        Parameters
+        ----------
+        query:
+            The raw user query string.
+        return_embeddings:
+            When ``True`` return a numeric embedding instead of query strings.
+        """
+
+        cleaned = query.strip()
+
+        if return_embeddings:
+            # Create a trivial embedding using character codes. This keeps the
+            # implementation lightweight and deterministic for unit tests.
+            return [float(ord(c)) for c in cleaned][:10]
+
+        queries = [cleaned]
+
+        # Add a simple variation emphasising examples or tutorials
+        if len(cleaned.split()) > 1:
+            queries.append(f"{cleaned} examples")
+
+        # Include a question style variant
+        queries.append(f"What is {cleaned}?")
+
+        return queries
 
     @staticmethod
     def external_lookup(
