@@ -113,6 +113,18 @@ class ConfigLoader:
     _instance = None
     _lock = threading.Lock()
 
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the singleton instance for testing purposes."""
+        with cls._lock:
+            if cls._instance is not None:
+                try:
+                    cls._instance.stop_watching()
+                except Exception:
+                    pass
+                cls._instance._config = None
+                cls._instance = None
+
     def __new__(cls):
         """Singleton pattern implementation."""
         with cls._lock:
