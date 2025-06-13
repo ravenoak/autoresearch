@@ -4,7 +4,10 @@ FastAPI API for Autoresearch.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest  # type: ignore[import]
+from prometheus_client import (  # type: ignore[import]
+    CONTENT_TYPE_LATEST,
+    generate_latest,
+)
 from .config import ConfigLoader, get_config
 from .orchestration.orchestrator import Orchestrator
 from .tracing import get_tracer, setup_tracing
