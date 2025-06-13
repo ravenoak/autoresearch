@@ -2,7 +2,7 @@
 Metrics collection for orchestration system.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 import time
 
 from prometheus_client import Counter
@@ -33,31 +33,33 @@ def record_query() -> None:
 class OrchestrationMetrics:
     """Collects metrics during query execution."""
 
-    def __init__(self):
-        self.agent_timings = {}
-        self.token_counts = {}
-        self.cycle_durations = []
-        self.error_counts = {}
-        self.last_cycle_start = None
+    def __init__(self) -> None:
+        self.agent_timings: Dict[str, List[float]] = {}
+        self.token_counts: Dict[str, Dict[str, int]] = {}
+        self.cycle_durations: List[float] = []
+        self.error_counts: Dict[str, int] = {}
+        self.last_cycle_start: float | None = None
 
-    def start_cycle(self):
+    def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
         self.last_cycle_start = time.time()
 
-    def end_cycle(self):
+    def end_cycle(self) -> None:
         """Mark the end of a cycle and record duration."""
         if self.last_cycle_start:
             duration = time.time() - self.last_cycle_start
             self.cycle_durations.append(duration)
             self.last_cycle_start = None
 
-    def record_agent_timing(self, agent_name: str, duration: float):
+    def record_agent_timing(self, agent_name: str, duration: float) -> None:
         """Record execution time for an agent."""
         if agent_name not in self.agent_timings:
             self.agent_timings[agent_name] = []
         self.agent_timings[agent_name].append(duration)
 
-    def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int):
+    def record_tokens(
+        self, agent_name: str, tokens_in: int, tokens_out: int
+    ) -> None:
         """Record token usage for an agent."""
         if agent_name not in self.token_counts:
             self.token_counts[agent_name] = {"in": 0, "out": 0}
@@ -66,7 +68,7 @@ class OrchestrationMetrics:
         TOKENS_IN_COUNTER.inc(tokens_in)
         TOKENS_OUT_COUNTER.inc(tokens_out)
 
-    def record_error(self, agent_name: str):
+    def record_error(self, agent_name: str) -> None:
         """Record an error for an agent."""
         if agent_name not in self.error_counts:
             self.error_counts[agent_name] = 0

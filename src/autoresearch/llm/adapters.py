@@ -46,7 +46,7 @@ class LMStudioAdapter(LLMAdapter):
         resp = requests.post(self.endpoint, json=payload, timeout=30)
         resp.raise_for_status()
         data: Dict[str, Any] = resp.json()
-        return (
+        return str(
             data.get("choices", [{}])[0].get("message", {}).get("content", "")
         )
 
@@ -75,6 +75,6 @@ class OpenAIAdapter(LLMAdapter):
         )
         resp.raise_for_status()
         data: Dict[str, Any] = resp.json()
-        return (
+        return str(
             data.get("choices", [{}])[0].get("message", {}).get("content", "")
         )

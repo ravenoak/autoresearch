@@ -4,7 +4,7 @@ FastAPI API for Autoresearch.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
-from prometheus_client import (  # type: ignore[import]
+from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
@@ -37,7 +37,7 @@ def _stop_config_watcher() -> None:
 
 
 @app.post("/query", response_model=QueryResponse)
-def query_endpoint(payload: dict):
+def query_endpoint(payload: dict[str, str]) -> QueryResponse:
     query = payload.get("query")
     if not query:
         raise HTTPException(

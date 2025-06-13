@@ -1,6 +1,6 @@
-"""
-Configuration loader with validation and hot-reload support.
-"""
+"""Configuration loader with validation and hot-reload support."""
+
+from __future__ import annotations
 
 import tomllib
 from pathlib import Path
@@ -30,7 +30,7 @@ class StorageConfig(BaseModel):
     rdf_path: str = Field(default="rdf_store")
 
     @field_validator("rdf_backend")
-    def validate_rdf_backend(cls, v):
+    def validate_rdf_backend(cls, v: str) -> str:
         valid_backends = ["sqlite", "berkeleydb"]
         if v not in valid_backends:
             raise ValueError(f"RDF backend must be one of {valid_backends}")
@@ -86,7 +86,7 @@ class ConfigModel(BaseSettings):
     )
 
     @field_validator("reasoning_mode", mode="before")
-    def validate_reasoning_mode(cls, v):
+    def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
         if isinstance(v, ReasoningMode):
             return v
         try:
@@ -98,7 +98,7 @@ class ConfigModel(BaseSettings):
             ) from exc
 
     @field_validator("graph_eviction_policy")
-    def validate_eviction_policy(cls, v):
+    def validate_eviction_policy(cls, v: str) -> str:
         valid_policies = ["LRU", "score"]
         if v not in valid_policies:
             raise ValueError(
@@ -125,7 +125,7 @@ class ConfigLoader:
                 cls._instance._config = None
                 cls._instance = None
 
-    def __new__(cls):
+    def __new__(cls) -> "ConfigLoader":
         """Singleton pattern implementation."""
         with cls._lock:
             if cls._instance is None:
@@ -133,16 +133,16 @@ class ConfigLoader:
                 cls._instance._initialized = False
             return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if getattr(self, "_initialized", False):
             return
 
-        self._config = None
-        self._watch_thread = None
+        self._config: ConfigModel | None = None
+        self._watch_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._observers: Set[Callable[[ConfigModel], None]] = set()
-        self._config_time = 0
-        self._watch_paths = ["autoresearch.toml", ".env"]
+        self._config_time: float = 0.0
+        self._watch_paths: List[str] = ["autoresearch.toml", ".env"]
         self._initialized = True
 
     @property

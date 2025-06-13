@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Optional
+from typing import Optional, cast
 
-import structlog  # type: ignore[import]
-from loguru import logger  # type: ignore[import]
+import structlog
+from loguru import logger
 
 
 class InterceptHandler(logging.Handler):
@@ -42,4 +42,4 @@ def configure_logging(level: int = logging.INFO) -> None:
 def get_logger(name: Optional[str] = None) -> structlog.BoundLogger:
     """Return a structlog logger instance."""
 
-    return structlog.get_logger(name)
+    return cast(structlog.BoundLogger, structlog.get_logger(name))

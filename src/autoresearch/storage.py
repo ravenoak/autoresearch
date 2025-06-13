@@ -1,12 +1,12 @@
-"""
-Hybrid DKG persistence: NetworkX, DuckDB, RDFLib.
-"""
+"""Hybrid DKG persistence: NetworkX, DuckDB, RDFLib."""
+
+from __future__ import annotations
 
 import os
 import time
 from collections import OrderedDict
 from threading import Lock
-from typing import Optional
+from typing import Any, Optional, cast
 
 import duckdb
 import networkx as nx
@@ -16,7 +16,7 @@ from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 
 # Global containers initialised in `setup`
-_graph: Optional[nx.DiGraph] = None
+_graph: Optional[nx.DiGraph[Any]] = None
 _db_path: Optional[str] = None
 _db_conn: Optional[duckdb.DuckDBPyConnection] = None
 _rdf_store: Optional[rdflib.Graph] = None
@@ -130,9 +130,10 @@ class StorageManager:
     def _current_ram_mb() -> float:
         """Return approximate RAM usage of the current process in MB."""
         try:
-            import psutil  # type: ignore
+            import psutil  # type: ignore[import-untyped]
 
-            return psutil.Process(os.getpid()).memory_info().rss / (1024**2)
+            mem = psutil.Process(os.getpid()).memory_info().rss
+            return float(mem) / (1024**2)
         except Exception:  # pragma: no cover - psutil may not be available
             try:
                 import resource
@@ -162,9 +163,12 @@ class StorageManager:
         def _pop_low_score() -> str | None:
             if not _graph or not _graph.nodes:
                 return None
-            node_id = min(
-                _graph.nodes,
-                key=lambda n: _graph.nodes[n].get("confidence", 0.0),
+            node_id = cast(
+                str,
+                min(
+                    _graph.nodes,
+                    key=lambda n: _graph.nodes[n].get("confidence", 0.0),
+                ),
             )
             if node_id in _lru:
                 del _lru[node_id]
@@ -188,7 +192,7 @@ class StorageManager:
                 )
 
     @staticmethod
-    def persist_claim(claim: dict):
+    def persist_claim(claim: dict[str, Any]) -> None:
         """Persist claim, delegating if a custom implementation is set."""
         if _delegate and _delegate is not StorageManager:
             return _delegate.persist_claim(claim)
@@ -272,7 +276,9 @@ class StorageManager:
             log.error(f"Failed to create HNSW index: {e}")
 
     @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5):
+    def vector_search(
+        query_embedding: list[float], k: int = 5
+    ) -> list[dict[str, Any]]:
         """Return nearest nodes by vector similarity or delegate."""
         if _delegate and _delegate is not StorageManager:
             return _delegate.vector_search(query_embedding, k)
@@ -295,12 +301,13 @@ class StorageManager:
             return []
 
     @staticmethod
-    def get_graph():
+    def get_graph() -> nx.DiGraph[Any]:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_graph()
         with _lock:
             if _graph is None:
                 setup()
+            assert _graph is not None
             return _graph
 
     @staticmethod
@@ -314,25 +321,27 @@ class StorageManager:
                 _lru.move_to_end(node_id)
 
     @staticmethod
-    def get_duckdb_conn():
+    def get_duckdb_conn() -> duckdb.DuckDBPyConnection:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_duckdb_conn()
         with _lock:
             if _db_conn is None:
                 setup()
+            assert _db_conn is not None
             return _db_conn
 
     @staticmethod
-    def get_rdf_store():
+    def get_rdf_store() -> rdflib.Graph:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_rdf_store()
         with _lock:
             if _rdf_store is None:
                 setup()
+            assert _rdf_store is not None
             return _rdf_store
 
     @staticmethod
-    def clear_all():
+    def clear_all() -> None:
         if _delegate and _delegate is not StorageManager:
             return _delegate.clear_all()
         with _lock:
