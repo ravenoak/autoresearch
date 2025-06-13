@@ -6,8 +6,8 @@ import logging
 import sys
 from typing import Optional
 
-import structlog
-from loguru import logger
+import structlog  # type: ignore[import]
+from loguru import logger  # type: ignore[import]
 
 
 class InterceptHandler(logging.Handler):

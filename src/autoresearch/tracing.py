@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from opentelemetry import trace
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import (
+from opentelemetry import trace  # type: ignore[import]
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource  # type: ignore[import]
+from opentelemetry.sdk.trace import TracerProvider  # type: ignore[import]
+from opentelemetry.sdk.trace.export import (  # type: ignore[import]
     BatchSpanProcessor,
     ConsoleSpanExporter,
 )

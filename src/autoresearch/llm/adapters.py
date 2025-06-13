@@ -61,7 +61,7 @@ class OpenAIAdapter(LLMAdapter):
     def generate(
         self, prompt: str, model: str | None = None, **kwargs: Any
     ) -> str:
-        import openai
+        import openai  # type: ignore[import]
 
         response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
             model=model or "gpt-3.5-turbo",
