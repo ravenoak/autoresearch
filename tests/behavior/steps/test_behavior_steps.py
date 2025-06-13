@@ -13,8 +13,6 @@ from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 import pytest
 
-pytest.skip("Behavior tests disabled in this environment", allow_module_level=True)
-
 runner = CliRunner()
 client = TestClient(api_app)
 
@@ -331,12 +329,15 @@ def enable_agents(monkeypatch):
         agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2
     )
     monkeypatch.setattr(
-        "autoresearch.config.ConfigLoader.load_config", lambda: config
+        "autoresearch.config.ConfigLoader.load_config", lambda self: config
     )
     return config
 
 
-@given(parsers.re(r"loops is set to (?P<loops>\d+)(?: in configuration)?"))
+@given(
+    parsers.re(r"loops is set to (?P<loops>\d+)(?: in configuration)?"),
+    target_fixture="set_loops",
+)
 def set_loops(loops: int, monkeypatch):
     from autoresearch.config import ConfigModel
 
@@ -344,7 +345,7 @@ def set_loops(loops: int, monkeypatch):
         agents=["Synthesizer", "Contrarian", "FactChecker"], loops=loops
     )
     monkeypatch.setattr(
-        "autoresearch.config.ConfigLoader.load_config", lambda: config
+        "autoresearch.config.ConfigLoader.load_config", lambda self: config
     )
     return config
 
@@ -361,6 +362,15 @@ def set_reasoning_mode(mode, set_loops):
 )
 def run_orchestrator_on_query(query):
     cfg = ConfigLoader().load_config()
+
+    # Normalize reasoning mode to enum for deterministic behavior
+    from autoresearch.orchestration.reasoning import ReasoningMode
+
+    if isinstance(getattr(cfg, "reasoning_mode", None), str):
+        try:
+            cfg.reasoning_mode = ReasoningMode(getattr(cfg, "reasoning_mode"))
+        except ValueError:
+            cfg.reasoning_mode = ReasoningMode.DIALECTICAL
     record = []
 
     class DummyAgent:
