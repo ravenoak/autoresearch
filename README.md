@@ -57,6 +57,12 @@ Install the development dependencies:
 poetry install --with dev
 ```
 
+Alternatively you can run the helper script:
+
+```bash
+./scripts/setup.sh
+```
+
 This installs tools such as `flake8`, `mypy`, `pytest` and `tomli_w` which is
 used to write TOML files during testing.
 

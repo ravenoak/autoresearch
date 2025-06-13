@@ -10,4 +10,10 @@ poetry run pytest
 poetry run pytest tests/behavior
 ```
 
+You can alternatively run the helper script to install all dependencies:
+
+```bash
+./scripts/setup.sh
+```
+
 Please keep commits focused and descriptive.
