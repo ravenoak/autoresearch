@@ -5,6 +5,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from .common_steps import *  # noqa: F401,F403
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration import ReasoningMode
 
 
 @given("the agents Synthesizer, Contrarian, and Fact-Checker are enabled")
@@ -34,7 +35,7 @@ def set_loops(loops: int, monkeypatch):
 
 @given(parsers.parse('reasoning mode is "{mode}"'))
 def set_reasoning_mode(mode, set_loops):
-    set_loops.reasoning_mode = mode
+    set_loops.reasoning_mode = ReasoningMode(mode)
     return set_loops
 
 

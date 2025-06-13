@@ -17,6 +17,14 @@ from autoresearch.llm.registry import LLMFactory  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
+def reset_config_loader_instance():
+    """Reset ConfigLoader singleton before each test."""
+    ConfigLoader.reset_instance()
+    yield
+    ConfigLoader.reset_instance()
+
+
+@pytest.fixture(autouse=True)
 def isolate_paths(tmp_path, monkeypatch):
     """Use temporary working directory and cache file for each test."""
     monkeypatch.chdir(tmp_path)
