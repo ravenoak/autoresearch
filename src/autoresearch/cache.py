@@ -41,16 +41,24 @@ def get_db() -> TinyDB:
     return setup()
 
 
-def cache_results(query: str, results: List[Dict[str, Any]]) -> None:
-    """Store search results for a query."""
+def cache_results(
+    query: str, backend: str, results: List[Dict[str, Any]]
+) -> None:
+    """Store search results for a query/backend combination."""
     db = get_db()
-    db.upsert({"query": query, "results": results}, Query().query == query)
+    db.upsert(
+        {"query": query, "backend": backend, "results": results},
+        (Query().query == query) & (Query().backend == backend),
+    )
 
 
-def get_cached_results(query: str) -> Optional[List[Dict[str, Any]]]:
-    """Retrieve cached results for a query if present."""
+def get_cached_results(
+    query: str, backend: str
+) -> Optional[List[Dict[str, Any]]]:
+    """Retrieve cached results for a query/backend if present."""
     db = get_db()
-    row = db.get(Query().query == query)
+    condition = (Query().query == query) & (Query().backend == backend)
+    row = db.get(condition)
     if row:
         return list(row.get("results", []))
     return None

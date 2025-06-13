@@ -45,25 +45,31 @@ class Search:
         query: str, max_results: int = 5
     ) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends."""
-        cached = get_cached_results(query)
-        if cached:
-            return cached[:max_results]
-
         cfg = get_config()
 
         results = []
         for name in cfg.search_backends:
+            cached = get_cached_results(query, name)
+            if cached is not None:
+                results.extend(cached[:max_results])
+                continue
+
             backend = Search.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
                 continue
             try:
-                results.extend(backend(query, max_results))
+                backend_results = backend(query, max_results)
             except Exception as exc:  # pragma: no cover - network errors
                 log.warning(f"{name} search failed: {exc}")
+                backend_results = []
+
+            if backend_results:
+                cache_results(query, name, backend_results)
+
+            results.extend(backend_results)
 
         if results:
-            cache_results(query, results)
             return results
 
         # Fallback results when all backends fail

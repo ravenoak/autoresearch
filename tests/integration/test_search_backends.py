@@ -1,8 +1,10 @@
 from autoresearch.search import Search
+from autoresearch import cache
 from autoresearch.config import ConfigModel
 
 
 def test_multiple_backends_called_and_merged(monkeypatch):
+    cache.clear()
     calls = []
 
     def backend1(query, max_results=5):
