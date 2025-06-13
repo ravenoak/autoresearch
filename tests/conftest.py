@@ -14,7 +14,9 @@ from autoresearch.agents.registry import (  # noqa: E402
     AgentRegistry,
 )
 from autoresearch.llm.registry import LLMFactory  # noqa: E402
-from autoresearch.storage import set_delegate as set_storage_delegate
+from autoresearch.storage import (  # noqa: E402
+    set_delegate as set_storage_delegate,
+)
 
 
 @pytest.fixture(autouse=True)

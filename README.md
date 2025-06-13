@@ -78,9 +78,11 @@ Execute all tests once the development environment is ready:
 ```bash
 poetry run flake8 src tests
 poetry run mypy src
-poetry run pytest
-poetry run pytest tests/behavior
+pytest -q
+pytest tests/behavior
 ```
+
+Maintain at least 90% test coverage and remove temporary files before submitting a pull request.
 
 ### Troubleshooting
 
