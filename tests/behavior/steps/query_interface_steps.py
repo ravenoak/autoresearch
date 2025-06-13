@@ -2,7 +2,7 @@
 import json
 from pytest_bdd import scenario, when, then, parsers
 
-from .common_steps import runner, client, cli_app
+from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
