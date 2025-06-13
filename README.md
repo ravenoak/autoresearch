@@ -43,6 +43,8 @@ and `.env` for changes. Updates to these files are picked up automatically and
 the configuration is reloaded on the fly. The watcher shuts down gracefully when
 the process exits.
 
+A starter configuration is available under [`examples/autoresearch.toml`](examples/autoresearch.toml).
+
 For a detailed breakdown of the requirements and architecture, see
 [docs/requirements.md](docs/requirements.md) and
 [docs/specification.md](docs/specification.md).
@@ -68,6 +70,11 @@ poetry run mypy src
 poetry run pytest
 poetry run pytest tests/behavior
 ```
+
+### Troubleshooting
+
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed using `pip install -e .` or `poetry install --with dev`.
+- When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ## Building the documentation
 

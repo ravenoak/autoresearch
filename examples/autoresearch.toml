@@ -1,0 +1,16 @@
+[core]
+llm_backend = "lmstudio"
+loops = 3
+tracing_enabled = false
+
+[storage.duckdb]
+path = "data/research.duckdb"
+
+[agent.Synthesizer]
+model = "gpt-3.5-turbo"
+
+[agent.Contrarian]
+enabled = true
+
+[agent.FactChecker]
+enabled = true
