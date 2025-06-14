@@ -41,6 +41,22 @@ LLM adapters communicate with their backends over HTTP. Select one with
 `llm_backend` in `autoresearch.toml` (e.g. `lmstudio` or `openai`).
 Prometheus counters expose query and token statistics at `/metrics`.
 
+Example metrics output:
+
+```
+# HELP autoresearch_queries_total Total number of queries processed
+# TYPE autoresearch_queries_total counter
+autoresearch_queries_total 1.0
+# HELP autoresearch_tokens_total Total tokens consumed by direction
+# TYPE autoresearch_tokens_total counter
+autoresearch_tokens_total{direction="input"} 14.0
+autoresearch_tokens_total{direction="output"} 29.0
+```
+
+Set the reasoning mode with `reasoning_mode` under `[core]` in
+`autoresearch.toml`. Valid values are `direct`, `dialectical` (default), and
+`chain-of-thought`.
+
 ### Configuration hot reload
 
 When you run any CLI command, Autoresearch starts watching `autoresearch.toml`

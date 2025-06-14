@@ -12,14 +12,20 @@
 ## 2. Modules
 
 - **config.py**: Loads, validates, and hot-reloads configuration from `.env`, environment, and TOML.
-- **agentic_serper_search_v2.py**: Contains agent, search, and synthesis logic (to be split).
 - **main.py**: CLI entry point, parses args, loads config, runs agent, outputs context-adaptive results.
-- **output_format.py**: Adapts output for human (Markdown/plaintext) or machine (JSON) context.
+- **api.py**: FastAPI server exposing query and metrics endpoints.
 - **logging_utils.py**: Logging setup and helpers.
-- **agent.py**: Agent orchestration, dialectical reasoning, agent cycling.
-- **search.py**: Search execution, result processing, source metadata.
-- **synthesis.py**: Answer/rationale synthesis, schema validation.
-- **utils.py**: Shared helpers/utilities.
+- **output_format.py**: Adapts output for human (Markdown/plaintext) or machine (JSON) context.
+- **storage.py**: Persistence for search results and knowledge graph.
+- **models.py**: Pydantic models for structured data.
+- **tracing.py**: OpenTelemetry tracing configuration helpers.
+- **orchestration/orchestrator.py**: Coordinates multi-agent cycles.
+- **orchestration/state.py**: Tracks query state between agents.
+- **orchestration/reasoning.py**: Reasoning mode definitions and strategies.
+- **orchestration/metrics.py**: Prometheus metrics collection utilities.
+- **orchestration/phases.py**: Agent execution phases.
+- **agents/**: Implementations of Synthesizer, Contrarian, FactChecker, etc.
+- **llm/**: Backend adapters for language models.
 
 ## 3. Configuration
 
