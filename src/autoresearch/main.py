@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 import os
-import atexit
 from typing import Optional
 
 import typer
@@ -36,8 +35,9 @@ _config_loader: ConfigLoader = ConfigLoader()
 def start_watcher(ctx: typer.Context) -> None:
     """Start configuration watcher before executing commands."""
     StorageManager.setup()
-    _config_loader.watch_changes()
-    atexit.register(_config_loader.stop_watching)
+    watch_ctx = _config_loader.watching()
+    watch_ctx.__enter__()
+    ctx.call_on_close(lambda: watch_ctx.__exit__(None, None, None))
 
 
 @app.command()

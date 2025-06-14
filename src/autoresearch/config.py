@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set, Iterator
+from contextlib import contextmanager
 import threading
 import logging
 import sys
+import atexit
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -144,6 +146,7 @@ class ConfigLoader:
         self._observers: Set[Callable[[ConfigModel], None]] = set()
         self._config_time: float = 0.0
         self._watch_paths: List[str] = ["autoresearch.toml", ".env"]
+        self._atexit_registered = False
         self._initialized = True
 
     @property
@@ -258,6 +261,9 @@ class ConfigLoader:
         self._watch_thread = threading.Thread(
             target=self._watch_config_files, daemon=True, name="ConfigWatcher"
         )
+        if not self._atexit_registered:
+            atexit.register(self.stop_watching)
+            self._atexit_registered = True
         self._watch_thread.start()
         logger.info(f"Started config watcher for paths: {self.watch_paths}")
 
@@ -268,6 +274,17 @@ class ConfigLoader:
             self._watch_thread.join(timeout=1.0)
             if not getattr(sys.stderr, "closed", False):
                 logger.info("Stopped config watcher")
+
+    @contextmanager
+    def watching(
+        self, callback: Optional[Callable[[ConfigModel], None]] = None
+    ) -> Iterator[None]:
+        """Context manager to automatically stop the watcher."""
+        self.watch_changes(callback)
+        try:
+            yield
+        finally:
+            self.stop_watching()
 
     def _watch_config_files(self) -> None:
         """Watch for changes in config files (runs in separate thread)."""

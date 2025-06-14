@@ -17,23 +17,28 @@ from pydantic import ValidationError
 
 config_loader = ConfigLoader()
 app = FastAPI()
+_watch_ctx = None
 
 
 @app.on_event("startup")
 def _startup() -> None:
     """Initialize storage on API startup."""
     StorageManager.setup()
+    global _watch_ctx
+    _watch_ctx = config_loader.watching()
+    _watch_ctx.__enter__()
 
 
-# Start watching the main configuration file so that changes
-# to ``autoresearch.toml`` are picked up while the API is running.
-config_loader.watch_changes()
+# Start watching the main configuration file during the application's lifetime.
 
 
 @app.on_event("shutdown")
 def _stop_config_watcher() -> None:
     """Stop the configuration watcher thread when the app shuts down."""
-    config_loader.stop_watching()
+    global _watch_ctx
+    if _watch_ctx is not None:
+        _watch_ctx.__exit__(None, None, None)
+        _watch_ctx = None
 
 
 @app.post("/query", response_model=QueryResponse)
