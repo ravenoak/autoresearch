@@ -25,3 +25,9 @@ tasks:
       - pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml --cov-report=term-missing tests
     desc: "Run full test suite with coverage reporting"
 
+  clean:
+    cmds:
+      - find . -type d -name '__pycache__' -exec rm -rf {} +
+      - find . -type d -name '.mypy_cache' -exec rm -rf {} +
+    desc: "Remove Python cache directories"
+

@@ -24,4 +24,9 @@ Thank you for considering a contribution! Follow these steps to set up the devel
    poetry run pytest tests/behavior
    ```
 
+4. Remove Python cache directories:
+   ```bash
+   task clean
+   ```
+
 Please keep commits focused and descriptive.
