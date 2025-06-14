@@ -29,3 +29,23 @@ def test_orchestrator_raises_after_error(monkeypatch):
 
     with pytest.raises(OrchestrationError):
         Orchestrator.run_query("q", cfg)
+
+
+def test_invalid_agent_name_raises():
+    cfg = Cfg(agents=["Unknown"], loops=1)
+    with pytest.raises(OrchestrationError):
+        Orchestrator.run_query("q", cfg)
+
+
+def test_callback_error_propagates():
+    cfg = ConfigModel(agents=["Synthesizer"], loops=1)
+
+    def bad_callback(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError):
+        Orchestrator.run_query(
+            "q",
+            cfg,
+            callbacks={"on_cycle_start": bad_callback},
+        )
