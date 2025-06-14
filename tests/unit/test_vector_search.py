@@ -53,4 +53,25 @@ def test_vector_search_builds_query(monkeypatch):
 
     results = StorageManager.vector_search([0.1, 0.2], k=3)
     assert results == [{"node_id": "n1", "embedding": [0.1, 0.2]}]
-    assert any("<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands)
+    assert any(
+        "<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands
+    )
+
+
+class FailingConn(DummyConn):
+    def execute(self, sql, params=None):
+        raise RuntimeError("db fail")
+
+
+def test_vector_search_failure(monkeypatch):
+    dummy = FailingConn()
+    monkeypatch.setattr(StorageManager, "get_duckdb_conn", lambda: dummy)
+    monkeypatch.setattr("autoresearch.storage._db_conn", dummy, raising=False)
+    monkeypatch.setattr(
+        ConfigLoader,
+        "load_config",
+        lambda self: _mock_config(),
+    )
+    ConfigLoader()._config = None
+    results = StorageManager.vector_search([0.0, 0.0], k=1)
+    assert results == []
