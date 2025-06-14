@@ -19,7 +19,15 @@ from .output_format import OutputFormatter
 from .logging_utils import configure_logging
 from .storage import StorageManager
 
-app = typer.Typer(help="Autoresearch CLI entry point", name="autoresearch")
+app = typer.Typer(
+    help=(
+        "Autoresearch CLI entry point.\n\n"
+        "Set the reasoning mode in autoresearch.toml under "
+        "[core.reasoning_mode]. Valid values: direct, dialectical, "
+        "chain-of-thought."
+    ),
+    name="autoresearch",
+)
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
