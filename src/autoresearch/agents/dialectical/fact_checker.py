@@ -2,7 +2,7 @@
 FactChecker agent for verifying claims against external sources.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
 from ...agents.base import Agent, AgentRole
@@ -12,7 +12,7 @@ from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
-from ...llm import get_llm_adapter
+from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -28,13 +28,8 @@ class FactChecker(Agent):
         """Check existing claims for factual accuracy."""
         log.info(f"FactChecker executing (cycle {state.cycle})")
 
-        adapter = get_llm_adapter(config.llm_backend)
-        model_cfg = config.agent_config.get("FactChecker")
-        model = (
-            model_cfg.model
-            if model_cfg and model_cfg.model
-            else config.default_model
-        )
+        adapter = self.get_adapter(config)
+        model = self.get_model(config)
 
         # Retrieve external references
         raw_sources = Search.external_lookup(
@@ -47,26 +42,22 @@ class FactChecker(Agent):
             s["agent"] = self.name
             sources.append(s)
 
-        prompt = "Verify the following claims:\n" + "\n".join(
-            c.get("content", "") for c in state.claims
-        )
+        # Generate verification using the prompt template
+        claims_text = "\n".join(c.get("content", "") for c in state.claims)
+        prompt = self.generate_prompt("fact_checker.verification", claims=claims_text)
         verification = adapter.generate(prompt, model=model)
 
-        return {
-            "claims": [
-                {
-                    "id": str(uuid4()),
-                    "type": "verification",
-                    "content": verification,
-                }
-            ],
-            "sources": sources,
-            "metadata": {
+        # Create and return the result
+        claim = self.create_claim(verification, "verification")
+        return self.create_result(
+            claims=[claim],
+            metadata={
                 "phase": DialoguePhase.VERIFICATION,
                 "source_count": len(sources),
             },
-            "results": {"verification": verification},
-        }
+            results={"verification": verification},
+            sources=sources
+        )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute in dialectical mode if there are claims."""

@@ -49,13 +49,31 @@ def search(
 ) -> None:
     """Run a search query through the orchestrator and format the result."""
     config = _config_loader.load_config()
-    result = Orchestrator.run_query(query, config)
-    fmt = output or (
-        "markdown"
-        if os.getenv("PYTEST_CURRENT_TEST")
-        else ("json" if not sys.stdout.isatty() else "markdown")
-    )
-    OutputFormatter.format(result, fmt)
+    console = Console()
+
+    try:
+        result = Orchestrator.run_query(query, config)
+        fmt = output or (
+            "markdown"
+            if os.getenv("PYTEST_CURRENT_TEST")
+            else ("json" if not sys.stdout.isatty() else "markdown")
+        )
+        OutputFormatter.format(result, fmt)
+    except Exception as e:
+        # Create a valid QueryResponse object with error information
+        from .models import QueryResponse
+        error_result = QueryResponse(
+            answer=f"Error: {str(e)}",
+            citations=[],
+            reasoning=["An error occurred during processing.", "Please check the logs for details."],
+            metrics={"error": str(e)}
+        )
+        fmt = output or (
+            "markdown"
+            if os.getenv("PYTEST_CURRENT_TEST")
+            else ("json" if not sys.stdout.isatty() else "markdown")
+        )
+        OutputFormatter.format(error_result, fmt)
 
 
 @app.command()
@@ -93,13 +111,17 @@ def monitor() -> None:
         if not query or query.lower() == "q":
             break
 
-        result = Orchestrator.run_query(
-            query, config, {"on_cycle_end": on_cycle_end}
-        )
-        fmt = config.output_format or (
-            "json" if not sys.stdout.isatty() else "markdown"
-        )
-        OutputFormatter.format(result, fmt)
+        try:
+            result = Orchestrator.run_query(
+                query, config, {"on_cycle_end": on_cycle_end}
+            )
+            fmt = config.output_format or (
+                "json" if not sys.stdout.isatty() else "markdown"
+            )
+            OutputFormatter.format(result, fmt)
+        except Exception as e:
+            console.print(f"[bold red]Error:[/bold red] {str(e)}")
+            # Continue with the next query instead of exiting with error
 
         if abort_flag["stop"]:
             break

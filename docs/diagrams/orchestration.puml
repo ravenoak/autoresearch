@@ -1,0 +1,127 @@
+@startuml
+title Orchestration Component
+
+package "Orchestration" {
+  class Orchestrator {
+    + {static} run_query(query, config, callbacks, agent_factory, storage_manager): QueryResponse
+    + {static} run_parallel_query(query, config, agent_groups): QueryResponse
+    - {static} _parse_config(config): Dict
+    - {static} _get_agent(agent_name, agent_factory): Agent
+    - {static} _check_agent_can_execute(agent, agent_name, state, config): bool
+    - {static} _log_agent_execution(agent_name, state, loop): void
+    - {static} _call_agent_start_callback(agent_name, state, callbacks): void
+    - {static} _execute_agent_with_token_counting(agent, agent_name, state, config, metrics): Dict
+    - {static} _handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop): void
+    - {static} _log_sources(agent_name, result): void
+    - {static} _persist_claims(agent_name, result, storage_manager): void
+    - {static} _handle_agent_error(agent_name, e, state, metrics): void
+    - {static} _execute_agent(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop): void
+    - {static} _execute_cycle(loop, loops, agents, primus_index, max_errors, state, config, metrics, callbacks, agent_factory, storage_manager, tracer): int
+    - {static} _execute_with_adapter(agent, state, config, adapter): Dict
+    - {static} _rotate_list(items, start_idx): List
+    - {static} _capture_token_usage(agent_name, metrics, config): Iterator
+  }
+
+  class QueryState {
+    + query: str
+    + cycle: int
+    + primus_index: int
+    + results: Dict
+    + metadata: Dict
+    + error_count: int
+    + update(result): void
+    + add_error(error_info): void
+    + synthesize(): QueryResponse
+  }
+
+  class OrchestrationMetrics {
+    + start_cycle(): void
+    + end_cycle(): void
+    + record_agent_timing(agent_name, duration): void
+    + record_token_usage(agent_name, tokens): void
+    + record_error(agent_name): void
+    + get_summary(): Dict
+  }
+
+  enum ReasoningMode {
+    DIRECT
+    DIALECTICAL
+    CHAIN_OF_THOUGHT
+  }
+
+  class ChainOfThoughtStrategy {
+    + run_query(query, config, agent_factory): QueryResponse
+  }
+}
+
+package "Agents" {
+  interface Agent {
+    + execute(state, config): Dict
+    + can_execute(state, config): bool
+  }
+
+  class AgentFactory {
+    + {static} get(agent_name): Agent
+  }
+}
+
+package "Storage" {
+  class StorageManager {
+    + persist_claim(claim): void
+  }
+}
+
+package "Models" {
+  class QueryResponse {
+    + answer: str
+    + citations: List
+    + reasoning: List
+    + metrics: Dict
+  }
+}
+
+package "LLM" {
+  class TokenCountingAdapter {
+    + generate(prompt, model, temperature): str
+  }
+}
+
+package "Errors" {
+  class OrchestrationError
+  class AgentError
+  class NotFoundError
+  class TimeoutError
+}
+
+' Relationships
+Orchestrator --> QueryState: creates and updates
+Orchestrator --> OrchestrationMetrics: records metrics
+Orchestrator --> ReasoningMode: uses
+Orchestrator --> ChainOfThoughtStrategy: delegates to
+Orchestrator --> Agent: executes
+Orchestrator --> AgentFactory: gets agents from
+Orchestrator --> StorageManager: persists claims
+Orchestrator --> QueryResponse: returns
+Orchestrator --> TokenCountingAdapter: uses for token counting
+Orchestrator --> OrchestrationError: throws
+Orchestrator --> AgentError: throws
+Orchestrator --> NotFoundError: throws
+Orchestrator --> TimeoutError: throws
+
+QueryState --> QueryResponse: synthesizes
+
+' Execution flow
+note right of Orchestrator
+  Execution Flow:
+  1. run_query() parses config and initializes state
+  2. For each loop:
+     a. _execute_cycle() rotates agents and executes them
+     b. For each agent:
+        i. _execute_agent() gets agent and checks if it can execute
+        ii. _execute_agent_with_token_counting() executes agent with token counting
+        iii. _handle_agent_completion() processes result
+        iv. _persist_claims() stores claims
+  3. State is synthesized into QueryResponse
+end note
+
+@enduml

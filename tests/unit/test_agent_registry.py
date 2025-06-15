@@ -1,11 +1,11 @@
 import pytest
 
+from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.registry import AgentFactory, AgentRegistry
 
 
-class DummyAgent:
-    def __init__(self, name: str):
-        self.name = name
+class DummyAgent(Agent):
+    role: AgentRole = AgentRole.SPECIALIST
 
     def can_execute(self, state, config):
         return True

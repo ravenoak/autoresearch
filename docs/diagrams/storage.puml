@@ -1,0 +1,137 @@
+@startuml
+title Storage Component
+
+package "Storage" {
+  class StorageManager {
+    + {static} setup(db_path): void
+    + {static} teardown(remove_db): void
+    + {static} persist_claim(claim): void
+    + {static} create_hnsw_index(): void
+    + {static} vector_search(query_embedding, k): List[Dict]
+    + {static} get_graph(): nx.DiGraph
+    + {static} touch_node(node_id): void
+    + {static} get_duckdb_conn(): duckdb.Connection
+    + {static} get_rdf_store(): rdflib.Graph
+    + {static} clear_all(): void
+    - {static} _current_ram_mb(): float
+    - {static} _pop_lru(): str
+    - {static} _pop_low_score(): str
+    - {static} _enforce_ram_budget(budget_mb): void
+    - {static} _validate_claim(claim): void
+    - {static} _ensure_storage_initialized(): void
+    - {static} _persist_to_networkx(claim): void
+    - {static} _persist_to_duckdb(claim): void
+    - {static} _persist_to_rdf(claim): void
+    - {static} _validate_vector_search_params(query_embedding, k): void
+    - {static} _format_vector_literal(query_embedding): str
+  }
+
+  class "Global Storage State" as GlobalState {
+    - _delegate: type[StorageManager] | None
+    - _lock: Lock
+    - _graph: nx.DiGraph
+    - _db_conn: duckdb.Connection
+    - _rdf_store: rdflib.Graph
+    - _access_times: OrderedDict[str, float]
+    - _initialized: bool
+    + set_delegate(delegate): void
+    + get_delegate(): type[StorageManager] | None
+    + setup(db_path): void
+    + teardown(remove_db): void
+  }
+}
+
+package "Config" {
+  class ConfigLoader {
+    + config: ConfigModel
+    + reload(): void
+  }
+
+  class ConfigModel {
+    + ram_budget_mb: int
+    + storage: StorageConfig
+  }
+
+  class StorageConfig {
+    + hnsw_m: int
+    + hnsw_ef_construction: int
+    + hnsw_metric: str
+    + vector_nprobe: int
+  }
+}
+
+package "Errors" {
+  class StorageError {
+    + message: str
+    + cause: Exception
+    + suggestion: str
+  }
+
+  class NotFoundError {
+    + resource_type: str
+    + resource_id: str
+  }
+}
+
+package "External Libraries" {
+  class "NetworkX" as NetworkX {
+    + DiGraph
+  }
+
+  class "DuckDB" as DuckDB {
+    + Connection
+    + execute(sql): Result
+  }
+
+  class "RDFLib" as RDFLib {
+    + Graph
+    + URIRef
+    + Literal
+  }
+}
+
+package "Metrics" {
+  class "EVICTION_COUNTER" as EvictionCounter
+}
+
+' Relationships
+StorageManager --> GlobalState : uses
+StorageManager --> ConfigLoader : gets config from
+StorageManager --> StorageError : throws
+StorageManager --> NotFoundError : throws
+StorageManager --> NetworkX : uses for graph storage
+StorageManager --> DuckDB : uses for vector storage
+StorageManager --> RDFLib : uses for semantic storage
+StorageManager --> EvictionCounter : increments on eviction
+
+ConfigLoader --> ConfigModel : provides
+ConfigModel --> StorageConfig : contains
+
+' Storage flow
+note right of StorageManager
+  Storage Flow:
+  1. setup() initializes storage backends
+  2. persist_claim() validates and stores claims
+     a. _validate_claim() checks claim format
+     b. _ensure_storage_initialized() verifies storage is ready
+     c. _persist_to_* methods store in each backend
+     d. _enforce_ram_budget() evicts old claims if needed
+  3. vector_search() finds similar claims
+     a. _validate_vector_search_params() checks parameters
+     b. _format_vector_literal() formats for SQL
+     c. DuckDB executes vector similarity search
+  4. teardown() closes connections and cleans up
+end note
+
+' Eviction flow
+note right of StorageManager
+  Eviction Flow:
+  1. _enforce_ram_budget() checks current RAM usage
+  2. If over budget, eviction is triggered:
+     a. _pop_lru() removes least recently used claim
+     b. _pop_low_score() removes lowest scoring claim
+  3. EVICTION_COUNTER is incremented
+  4. Process repeats until under budget
+end note
+
+@enduml

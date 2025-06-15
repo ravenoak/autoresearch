@@ -49,6 +49,8 @@ def test_vector_search_builds_query(monkeypatch):
         "load_config",
         lambda self: _mock_config(),
     )
+    # Mock _ensure_storage_initialized to do nothing
+    monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     ConfigLoader()._config = None
 
     results = StorageManager.vector_search([0.1, 0.2], k=3)
@@ -72,6 +74,14 @@ def test_vector_search_failure(monkeypatch):
         "load_config",
         lambda self: _mock_config(),
     )
+    # Mock _ensure_storage_initialized to do nothing
+    monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     ConfigLoader()._config = None
-    results = StorageManager.vector_search([0.0, 0.0], k=1)
-    assert results == []
+
+    # The vector_search method should raise a StorageError when the database fails
+    from autoresearch.errors import StorageError
+    import pytest
+    with pytest.raises(StorageError) as excinfo:
+        StorageManager.vector_search([0.0, 0.0], k=1)
+    assert "Vector search failed" in str(excinfo.value)
+    assert excinfo.value.__cause__ is not None
