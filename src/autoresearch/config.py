@@ -1,4 +1,21 @@
-"""Configuration loader with validation and hot-reload support."""
+"""Configuration loader with validation and hot-reload support.
+
+This module provides a configuration system that supports:
+1. Loading configuration from TOML files and environment variables
+2. Validation of configuration values with helpful error messages
+3. Hot-reloading of configuration when files change
+4. Observer pattern for notifying components of configuration changes
+
+The configuration system uses Pydantic for validation and watchfiles for
+file monitoring. It follows a singleton pattern to ensure consistent
+configuration across the application.
+
+Key components:
+- ConfigModel: Main configuration schema with validation
+- ConfigLoader: Singleton that loads and watches configuration
+- StorageConfig: Configuration for storage backends
+- AgentConfig: Configuration for individual agents
+"""
 
 from __future__ import annotations
 
@@ -16,6 +33,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from watchfiles import watch, Change
 
 from .orchestration import ReasoningMode
+from .errors import ConfigError
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +44,7 @@ class StorageConfig(BaseModel):
 
     duckdb_path: str = Field(default="autoresearch.duckdb")
     vector_extension: bool = Field(default=True)
+    vector_extension_path: Optional[str] = Field(default=None)
     hnsw_m: int = Field(default=16, ge=4)
     hnsw_ef_construction: int = Field(default=200, ge=32)
     hnsw_metric: str = Field(default="l2")
@@ -34,9 +53,26 @@ class StorageConfig(BaseModel):
 
     @field_validator("rdf_backend")
     def validate_rdf_backend(cls, v: str) -> str:
+        """Validate the RDF backend configuration.
+
+        This validator ensures that the specified RDF backend is supported.
+        Currently, only 'sqlite' and 'berkeleydb' backends are supported.
+
+        Args:
+            cls: The class (StorageConfig)
+            v: The RDF backend value to validate
+
+        Returns:
+            str: The validated RDF backend value
+
+        Raises:
+            ConfigError: If the specified backend is not in the list of valid backends
+        """
         valid_backends = ["sqlite", "berkeleydb"]
         if v not in valid_backends:
-            raise ValueError(f"RDF backend must be one of {valid_backends}")
+            raise ConfigError(f"Invalid RDF backend", 
+                             valid_backends=valid_backends, 
+                             provided=v)
         return v
 
 
@@ -90,22 +126,60 @@ class ConfigModel(BaseSettings):
 
     @field_validator("reasoning_mode", mode="before")
     def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
+        """Validate and convert the reasoning mode configuration.
+
+        This validator ensures that the specified reasoning mode is valid and
+        converts string values to ReasoningMode enum instances. It accepts either
+        a ReasoningMode enum instance or a string that matches a valid enum value.
+
+        Args:
+            cls: The class (ConfigModel)
+            v: The reasoning mode value to validate (enum or string)
+
+        Returns:
+            ReasoningMode: The validated reasoning mode as an enum instance
+
+        Raises:
+            ConfigError: If the specified mode is not a valid ReasoningMode value,
+                        with a helpful suggestion of valid modes
+        """
         if isinstance(v, ReasoningMode):
             return v
         try:
             return ReasoningMode(v)
         except Exception as exc:
             valid_modes = [m.value for m in ReasoningMode]
-            raise ValueError(
-                f"Reasoning mode must be one of {valid_modes}"
+            raise ConfigError(
+                "Invalid reasoning mode",
+                valid_modes=valid_modes,
+                provided=v,
+                suggestion=f"Try using one of the valid modes: {', '.join(valid_modes)}",
+                cause=exc
             ) from exc
 
     @field_validator("graph_eviction_policy")
     def validate_eviction_policy(cls, v: str) -> str:
+        """Validate the graph eviction policy configuration.
+
+        This validator ensures that the specified graph eviction policy is supported.
+        Currently, only 'LRU' (Least Recently Used) and 'score' policies are supported.
+
+        Args:
+            cls: The class (ConfigModel)
+            v: The eviction policy value to validate
+
+        Returns:
+            str: The validated eviction policy value
+
+        Raises:
+            ConfigError: If the specified policy is not in the list of valid policies
+        """
         valid_policies = ["LRU", "score"]
         if v not in valid_policies:
-            raise ValueError(
-                f"Graph eviction policy must be one of {valid_policies}"
+            raise ConfigError(
+                "Invalid graph eviction policy",
+                valid_policies=valid_policies,
+                provided=v
             )
         return v
 
@@ -118,18 +192,44 @@ class ConfigLoader:
 
     @classmethod
     def reset_instance(cls) -> None:
-        """Reset the singleton instance for testing purposes."""
+        """Reset the singleton instance for testing purposes.
+
+        This method is primarily used in tests to ensure a clean state between test cases.
+        It stops the config watcher thread if it's running, clears the configuration,
+        and sets the singleton instance to None.
+
+        Args:
+            cls: The class (ConfigLoader)
+
+        Raises:
+            ConfigError: If there's an error stopping the config watcher thread
+        """
         with cls._lock:
             if cls._instance is not None:
                 try:
                     cls._instance.stop_watching()
-                except Exception:
-                    pass
+                except Exception as e:
+                    # Raise a ConfigError with the original exception as the cause
+                    raise ConfigError(
+                        "Error stopping config watcher",
+                        cause=e
+                    ) from e
                 cls._instance._config = None
                 cls._instance = None
 
     def __new__(cls) -> "ConfigLoader":
-        """Singleton pattern implementation."""
+        """Create or return the singleton instance of ConfigLoader.
+
+        This method implements the singleton pattern to ensure that only one
+        instance of ConfigLoader exists throughout the application. It uses
+        a thread lock to ensure thread safety.
+
+        Args:
+            cls: The class (ConfigLoader)
+
+        Returns:
+            ConfigLoader: The singleton instance of ConfigLoader
+        """
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super(ConfigLoader, cls).__new__(cls)
@@ -137,6 +237,18 @@ class ConfigLoader:
             return cls._instance
 
     def __init__(self) -> None:
+        """Initialize the ConfigLoader instance.
+
+        This method initializes the ConfigLoader instance with default values.
+        It is designed to be called only once per instance due to the singleton pattern.
+        If the instance is already initialized, it returns early.
+
+        The initialization sets up:
+        - Configuration storage
+        - Thread management for config watching
+        - Observer pattern for config change notifications
+        - Default paths to watch for changes
+        """
         if getattr(self, "_initialized", False):
             return
 
@@ -151,18 +263,56 @@ class ConfigLoader:
 
     @property
     def watch_paths(self) -> List[str]:
-        """Return the list of paths to watch for changes."""
+        """Get the list of configuration file paths to watch for changes.
+
+        This property returns the list of file paths that the ConfigLoader
+        is monitoring for changes. By default, this includes 'autoresearch.toml'
+        and '.env' in the current directory.
+
+        Returns:
+            List[str]: A list of file paths being watched for configuration changes
+        """
         return self._watch_paths
 
     @property
     def config(self) -> ConfigModel:
-        """Get the current configuration."""
+        """Get the current configuration model.
+
+        This property returns the current configuration model. If the configuration
+        has not been loaded yet, it loads it by calling load_config().
+
+        The configuration is cached, so subsequent calls to this property will
+        return the same instance unless the configuration is reloaded due to
+        file changes or a manual reload.
+
+        Returns:
+            ConfigModel: The current configuration model with validated settings
+        """
         if self._config is None:
             self._config = self.load_config()
         return self._config
 
     def load_config(self) -> ConfigModel:
-        """Read TOML and environment, return validated config."""
+        """Load and validate configuration from TOML and environment variables.
+
+        This method reads configuration from the 'autoresearch.toml' file if it exists,
+        and combines it with environment variables. It handles the conversion of
+        the raw configuration data into a validated ConfigModel instance.
+
+        The method performs several steps:
+        1. Loads the TOML file if it exists
+        2. Extracts core settings
+        3. Maps legacy settings to new names
+        4. Processes storage configuration
+        5. Extracts agent configuration
+        6. Creates a ConfigModel instance with validation
+
+        Returns:
+            ConfigModel: A validated configuration model
+
+        Raises:
+            ConfigError: If the configuration file cannot be loaded or validation fails
+        """
         raw = {}
         config_path = Path("autoresearch.toml")
 
@@ -173,7 +323,12 @@ class ConfigLoader:
                     raw = tomllib.load(f)
             except Exception as e:
                 logger.error(f"Error loading config file: {e}")
-                # Continue with defaults if file exists but can't be loaded
+                # Raise a ConfigError with the original exception as the cause
+                raise ConfigError(
+                    "Error loading config file",
+                    file=str(config_path),
+                    cause=e
+                ) from e
 
         # Extract core settings
         core_settings = raw.get("core", {})
@@ -189,6 +344,7 @@ class ConfigLoader:
         storage_settings = {
             "duckdb_path": duckdb_cfg.get("path", "autoresearch.duckdb"),
             "vector_extension": duckdb_cfg.get("vector_extension", True),
+            "vector_extension_path": duckdb_cfg.get("vector_extension_path", None),
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
             "hnsw_ef_construction": duckdb_cfg.get(
                 "hnsw_ef_construction", 200
@@ -224,32 +380,91 @@ class ConfigLoader:
         except ValidationError as e:
             logger.error(f"Configuration validation error: {e}")
             # Raise with more helpful message
-            raise ValueError(f"Error in configuration: {e}") from e
+            raise ConfigError(
+                "Configuration validation error",
+                details=str(e),
+                cause=e
+            ) from e
 
     def register_observer(
         self, callback: Callable[[ConfigModel], None]
     ) -> None:
-        """Register a callback to be notified of config changes."""
+        """Register a callback to be notified of configuration changes.
+
+        This method adds a callback function to the set of observers that will be
+        notified when the configuration changes. The callback will be called with
+        the new configuration model as its argument.
+
+        This implements the Observer pattern, allowing components to react to
+        configuration changes without polling.
+
+        Args:
+            callback: A callable that takes a ConfigModel as its argument and returns None.
+                     This will be called whenever the configuration changes.
+        """
         self._observers.add(callback)
 
     def unregister_observer(
         self, callback: Callable[[ConfigModel], None]
     ) -> None:
-        """Unregister a previously registered callback."""
+        """Unregister a previously registered configuration change observer.
+
+        This method removes a callback function from the set of observers that are
+        notified when the configuration changes. If the callback is not in the set
+        of observers, this method does nothing (no error is raised).
+
+        Args:
+            callback: The callback function to remove from the observers set.
+                     This should be the same function object that was previously
+                     registered with register_observer.
+        """
         self._observers.discard(callback)
 
     def notify_observers(self, config: ConfigModel) -> None:
-        """Notify all registered observers of a config change."""
+        """Notify all registered observers of a configuration change.
+
+        This method calls each registered observer callback with the new configuration
+        model as its argument. If any observer raises an exception, the notification
+        process is halted and a ConfigError is raised.
+
+        Args:
+            config: The new configuration model to pass to the observers
+
+        Raises:
+            ConfigError: If any observer callback raises an exception during execution.
+                        The original exception is included as the cause.
+        """
         for observer in self._observers:
             try:
                 observer(config)
             except Exception as e:
                 logger.error(f"Error in config observer: {e}")
+                # Raise a ConfigError with the original exception as the cause
+                raise ConfigError(
+                    "Error in config observer",
+                    observer=str(observer),
+                    cause=e
+                ) from e
 
     def watch_changes(
         self, callback: Optional[Callable[[ConfigModel], None]] = None
     ) -> None:
-        """Start watching config files and invoke callback on change."""
+        """Start watching configuration files for changes.
+
+        This method starts a background thread that monitors the configuration files
+        for changes. When a change is detected, the configuration is reloaded and
+        all registered observers are notified.
+
+        If a callback is provided, it is registered as an observer before starting
+        the watcher. If the watcher is already running, this method does nothing.
+
+        The watcher thread is automatically stopped when the program exits via
+        an atexit handler.
+
+        Args:
+            callback: Optional callback function to register as an observer.
+                     If provided, it will be called whenever the configuration changes.
+        """
         if callback:
             self.register_observer(callback)
 
@@ -268,7 +483,20 @@ class ConfigLoader:
         logger.info(f"Started config watcher for paths: {self.watch_paths}")
 
     def stop_watching(self) -> None:
-        """Stop the config file watcher thread."""
+        """Stop the configuration file watcher thread.
+
+        This method signals the configuration watcher thread to stop and waits
+        for it to terminate (with a timeout). If the thread is not running,
+        this method does nothing.
+
+        The method is automatically called when the program exits via an atexit
+        handler registered in watch_changes(). It can also be called manually
+        to stop watching for configuration changes.
+
+        Note:
+            This method uses a timeout when joining the thread to prevent
+            hanging if the thread is blocked. The timeout is set to 1 second.
+        """
         if self._watch_thread and self._watch_thread.is_alive():
             self._stop_event.set()
             self._watch_thread.join(timeout=1.0)
@@ -279,7 +507,29 @@ class ConfigLoader:
     def watching(
         self, callback: Optional[Callable[[ConfigModel], None]] = None
     ) -> Iterator[None]:
-        """Context manager to automatically stop the watcher."""
+        """Context manager to watch configuration files within a scope.
+
+        This method provides a context manager that starts watching configuration
+        files when entering the context and automatically stops watching when
+        exiting the context, even if an exception occurs.
+
+        This is useful for ensuring that the watcher thread is properly cleaned up
+        in scripts or applications that have a defined lifecycle.
+
+        Args:
+            callback: Optional callback function to register as an observer.
+                     If provided, it will be called whenever the configuration changes.
+
+        Yields:
+            None: This context manager doesn't yield a value.
+
+        Example:
+            ```python
+            with config_loader.watching(on_config_change):
+                # Do something while watching for config changes
+                # When this block exits, the watcher will be stopped
+            ```
+        """
         self.watch_changes(callback)
         try:
             yield
@@ -287,7 +537,25 @@ class ConfigLoader:
             self.stop_watching()
 
     def _watch_config_files(self) -> None:
-        """Watch for changes in config files (runs in separate thread)."""
+        """Watch for changes in configuration files (runs in separate thread).
+
+        This private method is the target function for the watcher thread started
+        by watch_changes(). It continuously monitors the configuration files for
+        changes using the watchfiles library.
+
+        When a change is detected, it:
+        1. Reloads the configuration
+        2. Updates the internal configuration state
+        3. Notifies all registered observers
+
+        The method runs until the stop event is set by stop_watching() or when
+        an unhandled exception occurs.
+
+        Raises:
+            ConfigError: If there's an error watching the files, reloading the
+                        configuration, or notifying observers. The error is logged
+                        before being raised.
+        """
         abs_paths = [
             str(Path(p).absolute())
             for p in self.watch_paths
@@ -307,26 +575,62 @@ class ConfigLoader:
                     break
 
                 # Only reload if there are actual changes
-                if changes and any(c == Change.modified for c, _ in changes):
-                    logger.info(
-                        "Config files changed, reloading configuration"
-                    )
+                if changes:
+                    logger.info(f"{len(changes)} change detected")
+                    # Check for any type of change, not just modifications
                     try:
                         new_config = self.load_config()
                         self._config = new_config
+                        logger.info("Configuration reloaded successfully")
                         self.notify_observers(new_config)
                     except Exception as e:
                         logger.error(f"Error reloading config: {e}")
+                        # Raise a ConfigError with the original exception as the cause
+                        raise ConfigError(
+                            "Error reloading config",
+                            cause=e
+                        ) from e
 
         except Exception as e:
             logger.error(f"Error in config watcher: {e}")
+            # Raise a ConfigError with the original exception as the cause
+            raise ConfigError(
+                "Error in config watcher",
+                paths=self.watch_paths,
+                cause=e
+            ) from e
 
     def on_config_change(self, config: ConfigModel) -> None:
-        """Default handler for config change events."""
+        """Default handler for configuration change events.
+
+        This method is a simple default observer that logs when the configuration
+        changes. It can be used as a callback for watch_changes() or as a base
+        for more complex handlers.
+
+        Args:
+            config: The new configuration model that was loaded after a change
+                  was detected.
+        """
         logger.info("Configuration changed")
 
 
 # Convenience function to get the global config
 def get_config() -> ConfigModel:
-    """Get the current configuration."""
+    """Get the current configuration from the global ConfigLoader instance.
+
+    This function provides a convenient way to access the current configuration
+    without having to create a ConfigLoader instance explicitly. It returns the
+    same configuration that would be obtained by calling ConfigLoader().config.
+
+    Returns:
+        ConfigModel: The current configuration model with validated settings
+
+    Example:
+        ```python
+        from autoresearch.config import get_config
+
+        config = get_config()
+        print(f"Using LLM backend: {config.llm_backend}")
+        ```
+    """
     return ConfigLoader().config

@@ -1,0 +1,171 @@
+@startuml
+title Agents Component
+
+package "Agents" {
+  class Agent {
+    + name: str
+    + role: AgentRole
+    + enabled: bool
+    + llm_adapter: Optional[LLMAdapter]
+    + execute(state, config): Dict
+    + can_execute(state, config): bool
+    + get_adapter(config): LLMAdapter
+    + get_model(config): str
+  }
+
+  enum AgentRole {
+    SYNTHESIZER
+    CONTRARIAN
+    FACT_CHECKER
+    SPECIALIST
+    MODERATOR
+    USER
+  }
+
+  class AgentConfig {
+    + model: Optional[str]
+    + enabled: bool
+    + prompt_templates: Dict[str, Dict[str, Any]]
+    + validate_prompt_templates(v): Dict
+  }
+
+  class PromptGeneratorMixin {
+    + generate_prompt(template_name, **kwargs): str
+  }
+
+  class ModelConfigMixin {
+    + get_model_config(config, agent_name): str
+  }
+
+  class ClaimGeneratorMixin {
+    + create_claim(content, claim_type, metadata): Dict
+  }
+
+  class ResultGeneratorMixin {
+    + create_result(claims, metadata, results, sources): Dict
+  }
+
+  class AgentRegistry {
+    - _registry: Dict[str, Type[Agent]]
+    + {static} register(name, agent_class): void
+    + {static} get_class(name): Type[Agent]
+    + {static} list_available(): List[str]
+  }
+
+  class AgentFactory {
+    - _registry: Dict[str, Type[Agent]]
+    - _instances: Dict[str, Agent]
+    - _lock: Lock
+    - _delegate: type["AgentFactory"] | None
+    + {static} set_delegate(delegate): void
+    + {static} get_delegate(): type["AgentFactory"] | None
+    + {static} register(name, agent_class): void
+    + {static} get(name, llm_adapter): Agent
+    + {static} create(name, llm_adapter, **kwargs): Agent
+    + {static} list_available(): List[str]
+    + {static} reset_instances(): void
+  }
+
+  class SynthesizerAgent {
+    + role: AgentRole = AgentRole.SYNTHESIZER
+    + execute(state, config): Dict
+  }
+
+  class ContrarianAgent {
+    + role: AgentRole = AgentRole.CONTRARIAN
+    + execute(state, config): Dict
+    + can_execute(state, config): bool
+  }
+
+  class FactChecker {
+    + role: AgentRole = AgentRole.FACT_CHECKER
+    + execute(state, config): Dict
+    + can_execute(state, config): bool
+  }
+}
+
+package "Prompts" {
+  class PromptTemplate {
+    + template: str
+    + variables: Dict[str, Any]
+  }
+}
+
+package "LLM" {
+  interface LLMAdapter {
+    + generate(prompt, model, temperature): str
+  }
+}
+
+package "Orchestration" {
+  class QueryState {
+    + query: str
+    + cycle: int
+    + claims: List[Dict]
+    + update(result): void
+  }
+
+  enum DialoguePhase {
+    THESIS
+    ANTITHESIS
+    VERIFICATION
+    SYNTHESIS
+  }
+
+  enum ReasoningMode {
+    DIRECT
+    DIALECTICAL
+    CHAIN_OF_THOUGHT
+  }
+}
+
+package "Search" {
+  class Search {
+    + {static} external_lookup(query, max_results): List[Dict]
+  }
+}
+
+' Inheritance relationships
+Agent --|> PromptGeneratorMixin
+Agent --|> ModelConfigMixin
+Agent --|> ClaimGeneratorMixin
+Agent --|> ResultGeneratorMixin
+SynthesizerAgent --|> Agent
+ContrarianAgent --|> Agent
+FactChecker --|> Agent
+
+' Associations
+Agent --> AgentRole : has role
+Agent --> LLMAdapter : uses
+AgentFactory --> Agent : creates
+AgentFactory --> AgentRegistry : uses
+SynthesizerAgent --> DialoguePhase : uses
+SynthesizerAgent --> ReasoningMode : uses
+ContrarianAgent --> DialoguePhase : uses
+ContrarianAgent --> ReasoningMode : uses
+FactChecker --> DialoguePhase : uses
+FactChecker --> ReasoningMode : uses
+FactChecker --> Search : uses
+PromptGeneratorMixin --> PromptTemplate : uses
+
+' Execution flow
+note right of Agent
+  Agent Execution Flow:
+  1. Orchestrator calls agent.execute(state, config)
+  2. Agent gets adapter and model
+  3. Agent generates prompt using PromptGeneratorMixin
+  4. Agent calls adapter.generate() to get response
+  5. Agent creates claim using ClaimGeneratorMixin
+  6. Agent creates result using ResultGeneratorMixin
+  7. Agent returns result to Orchestrator
+end note
+
+note right of AgentFactory
+  Agent Creation Flow:
+  1. Orchestrator calls AgentFactory.get(agent_name)
+  2. AgentFactory checks if instance exists in cache
+  3. If not, AgentFactory creates new instance
+  4. AgentFactory returns agent instance
+end note
+
+@enduml

@@ -37,25 +37,99 @@ curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning
 curl http://localhost:8000/metrics
 ```
 
-LLM adapters communicate with their backends over HTTP. Select one with
-`llm_backend` in `autoresearch.toml` (e.g. `lmstudio` or `openai`).
-Prometheus counters expose query and token statistics at `/metrics`.
+## Configuration
 
-Example metrics output:
+Autoresearch uses a TOML configuration file (`autoresearch.toml`) and environment variables (`.env`). A starter configuration is available under [`examples/autoresearch.toml`](examples/autoresearch.toml).
 
+### Core Configuration Options
+
+```toml
+[core]
+# LLM backend to use (lmstudio, openai, dummy)
+llm_backend = "lmstudio"
+
+# Number of reasoning loops to perform
+loops = 3
+
+# Enable distributed tracing
+tracing_enabled = false
+
+# Reasoning mode: direct, dialectical, chain-of-thought
+reasoning_mode = "dialectical"
+
+# Starting agent index for dialectical reasoning
+primus_start = 0
+
+# Maximum RAM budget in MB (0 = unlimited)
+ram_budget_mb = 1024
+
+# Output format (markdown, json, or null for auto-detect)
+output_format = null
 ```
-# HELP autoresearch_queries_total Total number of queries processed
-# TYPE autoresearch_queries_total counter
-autoresearch_queries_total 1.0
-# HELP autoresearch_tokens_total Total tokens consumed by direction
-# TYPE autoresearch_tokens_total counter
-autoresearch_tokens_total{direction="input"} 14.0
-autoresearch_tokens_total{direction="output"} 29.0
+
+### Storage Configuration
+
+```toml
+[storage.duckdb]
+# Path to DuckDB database file
+path = "data/research.duckdb"
+
+# Enable vector extension for similarity search
+vector_extension = true
+
+# HNSW index parameters for vector search
+hnsw_m = 16
+hnsw_ef_construction = 200
+hnsw_metric = "l2"
+
+[storage.rdf]
+# RDF backend (sqlite or berkeleydb)
+backend = "sqlite"
+
+# Path to RDF store
+path = "rdf_store"
 ```
 
-Set the reasoning mode with `reasoning_mode` under `[core]` in
-`autoresearch.toml`. Valid values are `direct`, `dialectical` (default), and
-`chain-of-thought`.
+### Agent Configuration
+
+```toml
+[agent.Synthesizer]
+# Enable or disable the agent
+enabled = true
+
+# Model to use for this agent
+model = "gpt-3.5-turbo"
+
+[agent.Contrarian]
+enabled = true
+model = "gpt-4"
+
+[agent.FactChecker]
+enabled = true
+model = "gpt-3.5-turbo"
+```
+
+### Search Configuration
+
+```toml
+[search]
+# Search backends to use
+backends = ["serper"]
+
+# Maximum results per query
+max_results_per_query = 5
+```
+
+### Dynamic Knowledge Graph Settings
+
+```toml
+[graph]
+# Eviction policy (LRU or score)
+eviction_policy = "LRU"
+
+# Number of probes for vector search
+vector_nprobe = 10
+```
 
 ### Configuration hot reload
 
@@ -64,7 +138,60 @@ and `.env` for changes. Updates to these files are picked up automatically and
 the configuration is reloaded on the fly. The watcher shuts down gracefully when
 the process exits.
 
-A starter configuration is available under [`examples/autoresearch.toml`](examples/autoresearch.toml).
+## Usage Examples
+
+### Different Reasoning Modes
+
+Autoresearch supports three reasoning modes:
+
+1. **Direct**: Uses only the Synthesizer agent for a straightforward answer
+   ```bash
+   autoresearch search --reasoning-mode direct "What is quantum computing?"
+   ```
+
+2. **Dialectical** (default): Rotates through agents in a thesis→antithesis→synthesis cycle
+   ```bash
+   autoresearch search --reasoning-mode dialectical "What are the pros and cons of nuclear energy?"
+   ```
+
+3. **Chain-of-thought**: Loops the Synthesizer agent for iterative refinement
+   ```bash
+   autoresearch search --reasoning-mode chain-of-thought "Explain the theory of relativity step by step"
+   ```
+
+### Using Different LLM Backends
+
+```bash
+# Using LM Studio (local)
+autoresearch search --llm-backend lmstudio "What is machine learning?"
+
+# Using OpenAI
+autoresearch search --llm-backend openai "What is machine learning?"
+```
+
+### API Usage with Custom Parameters
+
+```bash
+# Send a query with custom parameters
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Explain quantum computing",
+    "reasoning_mode": "dialectical",
+    "loops": 2,
+    "agents": ["Synthesizer", "Contrarian"]
+  }'
+```
+
+### Parallel Query Execution
+
+Run multiple agent groups in parallel for faster results and comparison:
+
+```bash
+autoresearch search --parallel \
+  --agent-groups "Synthesizer,Contrarian" "FactChecker,Synthesizer" \
+  "What are the environmental impacts of cryptocurrency mining?"
+```
 
 For a detailed breakdown of the requirements and architecture, see
 [docs/requirements.md](docs/requirements.md) and

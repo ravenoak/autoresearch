@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+from unittest.mock import patch, MagicMock
+import networkx as nx
 
 # Ensure package can be imported without installation
 src_path = Path(__file__).resolve().parents[1] / "src"
@@ -89,3 +91,143 @@ def stop_config_watcher():
 def bdd_context():
     """Mutable mapping for sharing data between BDD steps."""
     return {}
+
+
+@pytest.fixture
+def mock_storage_components():
+    """Mock the storage components (_graph, _db_conn, _rdf_store).
+
+    This fixture provides a function that creates a context manager for patching
+    the storage components with mock objects.
+
+    Usage:
+        def test_something(mock_storage_components):
+            # Create mocks if needed
+            mock_graph = MagicMock()
+
+            # Use the context manager
+            with mock_storage_components(graph=mock_graph):
+                # Test code that uses the storage components
+
+    Args:
+        graph: Optional mock graph to use (default: None)
+        db: Optional mock database connection to use (default: None)
+        rdf: Optional mock RDF store to use (default: None)
+
+    Returns:
+        A function that creates a context manager for patching storage components
+    """
+    class StorageComponentsMocker:
+        def __init__(self, **kwargs):
+            # Store the components to patch
+            self.graph = kwargs.get('graph', None)
+            self.db = kwargs.get('db', None)
+            self.rdf = kwargs.get('rdf', None)
+
+            # Keep track of which components were explicitly passed
+            self.has_graph = 'graph' in kwargs
+            self.has_db = 'db' in kwargs
+            self.has_rdf = 'rdf' in kwargs
+
+            self.patches = []
+
+        def __enter__(self):
+            # Add patches for all components that were explicitly passed
+            # This allows patching a component to None
+            if self.has_graph:
+                self.patches.append(patch('autoresearch.storage._graph', self.graph))
+            if self.has_db:
+                self.patches.append(patch('autoresearch.storage._db_conn', self.db))
+            if self.has_rdf:
+                self.patches.append(patch('autoresearch.storage._rdf_store', self.rdf))
+
+            # Start all patches
+            for p in self.patches:
+                p.start()
+
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            # Stop all patches in reverse order
+            for p in reversed(self.patches):
+                p.stop()
+
+    def create_mocker(**kwargs):
+        return StorageComponentsMocker(**kwargs)
+
+    return create_mocker
+
+
+@pytest.fixture
+def mock_config():
+    """Mock the ConfigLoader.config object.
+
+    This fixture provides a function that creates a context manager for patching
+    the ConfigLoader.config property with a mock object.
+
+    Usage:
+        def test_something(mock_config):
+            # Create a mock config if needed
+            config = MagicMock()
+            config.some_property = "some value"
+
+            # Use the context manager
+            with mock_config(config=config):
+                # Test code that uses ConfigLoader.config
+
+    Args:
+        config: Optional mock config to use (default: MagicMock())
+
+    Returns:
+        A function that creates a context manager for patching ConfigLoader.config
+    """
+    class ConfigMocker:
+        def __init__(self, **kwargs):
+            self.config = kwargs.get('config', MagicMock())
+            self.patcher = None
+
+        def __enter__(self):
+            self.patcher = patch('autoresearch.config.ConfigLoader.config', self.config)
+            self.patcher.start()
+            return self.config
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.patcher.stop()
+
+    def create_mocker(**kwargs):
+        return ConfigMocker(**kwargs)
+
+    return create_mocker
+
+
+@pytest.fixture
+def assert_error():
+    """Fixture for asserting error messages and causes.
+
+    This fixture provides a function for asserting that an exception has the
+    expected error message and cause.
+
+    Usage:
+        def test_something(assert_error):
+            with pytest.raises(SomeError) as excinfo:
+                # Code that raises an error
+            assert_error(excinfo, "Expected error message", has_cause=True)
+
+    Returns:
+        A function for asserting error messages and causes
+    """
+    def _assert_error(excinfo, expected_message, has_cause=False):
+        """Assert that an exception has the expected error message and cause.
+
+        Args:
+            excinfo: The pytest.raises context
+            expected_message: The expected error message (substring)
+            has_cause: Whether the exception should have a cause
+        """
+        assert expected_message in str(excinfo.value)
+        if has_cause:
+            assert excinfo.value.__cause__ is not None
+        else:
+            assert excinfo.value.__cause__ is None
+
+    return _assert_error

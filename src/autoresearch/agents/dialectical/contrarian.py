@@ -2,7 +2,7 @@
 ContrarianAgent for challenging existing thesis with alternative viewpoints.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
 from ...agents.base import Agent, AgentRole
@@ -11,7 +11,7 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...llm import get_llm_adapter
+from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -27,35 +27,27 @@ class ContrarianAgent(Agent):
         """Generate counterpoints to existing claims."""
         log.info(f"ContrarianAgent executing (cycle {state.cycle})")
 
-        adapter = get_llm_adapter(config.llm_backend)
-        model_cfg = config.agent_config.get("Contrarian")
-        model = (
-            model_cfg.model
-            if model_cfg and model_cfg.model
-            else config.default_model
-        )
+        adapter = self.get_adapter(config)
+        model = self.get_model(config)
 
+        # Find the thesis to challenge
         thesis = next(
             (c for c in state.claims if c.get("type") == "thesis"),
             None,
         )
         thesis_text = thesis.get("content") if thesis else state.query
-        prompt = (
-            f"Provide an antithesis to the following thesis:\n{thesis_text}"
-        )
+
+        # Generate an antithesis using the prompt template
+        prompt = self.generate_prompt("contrarian.antithesis", thesis=thesis_text)
         antithesis = adapter.generate(prompt, model=model)
 
-        return {
-            "claims": [
-                {
-                    "id": str(uuid4()),
-                    "type": "antithesis",
-                    "content": antithesis,
-                }
-            ],
-            "metadata": {"phase": DialoguePhase.ANTITHESIS},
-            "results": {"antithesis": antithesis},
-        }
+        # Create and return the result
+        claim = self.create_claim(antithesis, "antithesis")
+        return self.create_result(
+            claims=[claim],
+            metadata={"phase": DialoguePhase.ANTITHESIS},
+            results={"antithesis": antithesis}
+        )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute in dialectical mode when there's a thesis."""

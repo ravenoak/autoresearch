@@ -4,25 +4,49 @@
 node "Client Interfaces" {
   component "CLI" as CLI
   component "FastAPI API" as FastAPI
-  component "MCP Tool" as MCP
+  component "Monitor" as Monitor
 }
 
 node "Core Components" {
   component "Orchestrator" as Orchestrator
   component "ConfigLoader" as ConfigLoader
+  component "Error Hierarchy" as Errors
+  component "Metrics Collector" as Metrics
+  component "Tracing" as Tracing
 }
 
 package "Agents" {
+  component "Agent Factory" as AgentFactory
+  component "Agent Registry" as AgentRegistry
+  component "Prompt Templates" as PromptTemplates
+
   component "Synthesizer" as Synthesizer
   component "Contrarian" as Contrarian
   component "Fact-Checker" as FactChecker
+
+  component "Agent Mixins" as AgentMixins
 }
 
-package "Storage Layers" {
-  component "NetworkXGraph" as NX
-  component "DuckDB Store" as DuckDB
-  component "RDFLib Store" as RDF
-  component "TinyDB Cache" as TinyDB
+package "LLM Integration" {
+  component "LLM Registry" as LLMRegistry
+  component "LLM Adapters" as LLMAdapters
+  component "Token Counting" as TokenCounting
+}
+
+package "Storage & Search" {
+  component "Storage Manager" as StorageManager
+  component "Search" as Search
+  component "Vector Search" as VectorSearch
+
+  database "NetworkX Graph" as NX
+  database "DuckDB Store" as DuckDB
+  database "RDFLib Store" as RDF
+  database "TinyDB Cache" as TinyDB
+}
+
+package "Output Formatting" {
+  component "Output Formatter" as OutputFormatter
+  component "Synthesis" as Synthesis
 }
 
 user -> CLI : search(query)
@@ -31,18 +55,46 @@ CLI -> Orchestrator : run_query(query)
 user -> FastAPI : POST /query
 FastAPI -> Orchestrator : run_query(query)
 
-user -> MCP : search(query)
-MCP -> Orchestrator : run_query(query)
+user -> Monitor : interactive session
+Monitor -> Orchestrator : run_query(query)
 
 Orchestrator -> ConfigLoader : load_config()
 ConfigLoader --> Orchestrator : config
 
-Orchestrator -> Synthesizer : invoke
-Orchestrator -> Contrarian : invoke
-Orchestrator -> FactChecker : invoke
+Orchestrator -> Metrics : record_metrics()
+Orchestrator -> Tracing : trace_execution()
+Orchestrator <-> Errors : handle_errors()
 
-Synthesizer --> NX : persist claims
-Synthesizer --> DuckDB : insert nodes/edges/embeddings
-Synthesizer --> RDF : add quads
-Synthesizer --> TinyDB : cache snippets/results
+Orchestrator -> AgentFactory : get(agent_name)
+AgentFactory -> AgentRegistry : get_class(agent_name)
+AgentFactory --> Orchestrator : agent_instance
+
+AgentFactory -> PromptTemplates : get_prompt_template()
+AgentMixins <-- Synthesizer : uses
+AgentMixins <-- Contrarian : uses
+AgentMixins <-- FactChecker : uses
+
+Orchestrator -> Synthesizer : execute()
+Orchestrator -> Contrarian : execute()
+Orchestrator -> FactChecker : execute()
+
+Synthesizer -> LLMAdapters : generate()
+Contrarian -> LLMAdapters : generate()
+FactChecker -> LLMAdapters : generate()
+
+LLMAdapters -> TokenCounting : count_tokens()
+LLMAdapters -> LLMRegistry : get_adapter()
+
+Orchestrator -> StorageManager : persist_claim()
+StorageManager -> NX : add_node/add_edge
+StorageManager -> DuckDB : insert
+StorageManager -> RDF : add
+StorageManager -> TinyDB : insert
+
+Orchestrator -> Search : search()
+Search -> VectorSearch : vector_search()
+VectorSearch -> DuckDB : query
+
+Orchestrator -> OutputFormatter : format_result()
+OutputFormatter -> Synthesis : build_answer()/build_rationale()
 @enduml

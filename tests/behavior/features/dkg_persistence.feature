@@ -26,3 +26,18 @@ Feature: Hybrid Dynamic Knowledge Graph (DKG) Persistence
     And I clear the knowledge graph
     Then the NetworkX graph should be empty
     And the DuckDB tables should be empty
+
+  Scenario: Handle missing claim ID
+    Given I have a claim without an ID
+    When I try to persist the claim
+    Then a StorageError should be raised with a message about missing ID
+
+  Scenario: Handle uninitialized storage
+    Given the storage system is not initialized
+    When I try to persist a valid claim
+    Then a StorageError should be raised with a message about uninitialized storage
+
+  Scenario: Vector search returns nearest neighbors
+    Given I have persisted claims with embeddings
+    When I perform a vector search with a query embedding
+    Then I should receive the nearest claims by vector similarity

@@ -3,6 +3,8 @@ nav:
   - Getting Started: docs/getting_started.md
   - Configuration: docs/configuration.md
   - Agents: docs/agents.md
+  - Storage: docs/storage.md
+  - Orchestration: docs/orchestration.md
   - API Usage: docs/api.md
   - Contributing: docs/contributing.md
   - Requirements: docs/requirements.md
