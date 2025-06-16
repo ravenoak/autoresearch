@@ -220,3 +220,84 @@ class OpenAIAdapter(LLMAdapter):
                 model=model,
                 suggestion="Check your API key and internet connection, or try a different model"
             )
+
+
+class OpenRouterAdapter(LLMAdapter):
+    """Adapter for the OpenRouter.ai API using raw HTTP calls."""
+
+    available_models = [
+        "anthropic/claude-3-opus", 
+        "anthropic/claude-3-sonnet", 
+        "anthropic/claude-3-haiku",
+        "mistralai/mistral-large", 
+        "mistralai/mistral-medium", 
+        "mistralai/mistral-small",
+        "google/gemini-pro", 
+        "google/gemini-1.5-pro",
+        "meta-llama/llama-3-70b-instruct", 
+        "meta-llama/llama-3-8b-instruct"
+    ]
+
+    def __init__(self) -> None:
+        """Initialize the OpenRouter adapter.
+
+        The API key is read from the OPENROUTER_API_KEY environment variable.
+        The endpoint can be customized using the OPENROUTER_ENDPOINT environment variable.
+        """
+        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+        self.endpoint = os.getenv(
+            "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
+        )
+
+    def generate(
+        self, prompt: str, model: str | None = None, **kwargs: Any
+    ) -> str:
+        """Generate text using the OpenRouter.ai API.
+
+        Args:
+            prompt: The prompt to generate text from
+            model: Optional model name to use, defaults to the first available model
+            **kwargs: Additional arguments to pass to the API
+
+        Returns:
+            The generated text response
+
+        Raises:
+            LLMError: If the API key is missing or there's an error communicating with the OpenRouter API
+        """
+        model = self.validate_model(model)
+
+        if not self.api_key:
+            from ..errors import LLMError
+            raise LLMError(
+                "OpenRouter API key not found",
+                model=model,
+                suggestion="Set the OPENROUTER_API_KEY environment variable with your API key"
+            )
+
+        try:
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
+                "X-Title": "Autoresearch"
+            }
+            resp = requests.post(
+                self.endpoint, json=payload, headers=headers, timeout=60
+            )
+            resp.raise_for_status()
+            data: Dict[str, Any] = resp.json()
+            return str(
+                data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            )
+        except requests.RequestException as e:
+            from ..errors import LLMError
+            raise LLMError(
+                f"Failed to generate response from OpenRouter API",
+                cause=e,
+                model=model,
+                suggestion="Check your API key and internet connection, or try a different model"
+            )

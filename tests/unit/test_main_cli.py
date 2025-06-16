@@ -1,4 +1,5 @@
 from typer.testing import CliRunner
+from unittest.mock import patch, MagicMock
 from autoresearch.main import app
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -41,3 +42,39 @@ def test_config_command(monkeypatch):
     result = runner.invoke(app, ["config"])
     assert result.exit_code == 0
     assert '"loops"' in result.stdout
+
+
+@patch("autoresearch.main.Server")
+def test_serve_command(mock_server, monkeypatch):
+    """Test the serve command that starts an MCP server."""
+    runner = CliRunner()
+
+    # Create mock objects
+    mock_server_instance = MagicMock()
+    mock_server.return_value = mock_server_instance
+
+    # Mock the config loader
+    class Cfg:
+        def __init__(self):
+            pass
+
+    monkeypatch.setattr(
+        "autoresearch.main._config_loader.load_config",
+        lambda: Cfg(),
+    )
+
+    # Run the command with Ctrl+C simulation
+    mock_server_instance.run.side_effect = KeyboardInterrupt()
+    result = runner.invoke(app, ["serve", "--host", "localhost", "--port", "8888"])
+
+    # Verify the command executed successfully
+    assert result.exit_code == 0
+
+    # Verify the server was created with the correct parameters
+    mock_server.assert_called_once_with("Autoresearch", host="localhost", port=8888)
+
+    # Verify the server was started
+    mock_server_instance.run.assert_called_once()
+
+    # Verify that a tool was registered (tool is a decorator)
+    assert hasattr(mock_server_instance, "tool")

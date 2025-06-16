@@ -44,3 +44,53 @@ To add a custom storage backend:
 3. Add cleanup in `teardown()`
 4. Add persistence in `persist_claim()`
 5. Update the configuration schema in `ConfigModel`
+
+## Troubleshooting
+
+### HNSW Index Creation Error
+
+If you encounter an error like:
+
+```
+Failed to create HNSW index: Binder Error: HNSW indexes can only be created in in-memory databases, or when the configuration option 'hnsw_enable_experimental_persistence' is set to true.
+```
+
+This occurs because HNSW indexes in DuckDB require special handling for persistent databases. The system now automatically enables experimental persistence for HNSW indexes, but if you're using an older version or a custom implementation, you may need to:
+
+1. Ensure you're using the latest version of the code
+2. Manually set the configuration option before creating the index:
+   ```python
+   conn.execute("SET hnsw_enable_experimental_persistence=true")
+   ```
+
+### RDF Store Plugin Error
+
+If you encounter an error like:
+
+```
+Failed to open RDF store: No plugin registered for (SQLite, <class 'rdflib.store.Store'>)
+```
+
+This indicates that the RDFLib SQLite plugin is not properly registered. To fix this:
+
+1. Ensure the `rdflib-sqlalchemy` package is installed:
+   ```bash
+   pip install rdflib-sqlalchemy
+   ```
+
+2. If using Poetry, make sure it's in your dependencies:
+   ```toml
+   [tool.poetry.dependencies]
+   rdflib-sqlalchemy = "^0.5.0"
+   ```
+
+3. If the error persists, try installing additional dependencies:
+   ```bash
+   pip install sqlalchemy
+   ```
+
+4. For development environments, you can also use the in-memory store by setting:
+   ```toml
+   [storage]
+   rdf_backend = "memory"
+   ```

@@ -13,15 +13,37 @@ mkdir -p extensions
 echo "Downloading VSS extension for offline use..."
 python scripts/download_duckdb_extensions.py --output-dir ./extensions
 
-# Get the platform-specific path
-PLATFORM=$(python -c "import platform; system=platform.system().lower(); machine=platform.machine().lower(); print('osx_arm64' if system=='darwin' and (machine=='arm64' or machine=='aarch64') else ('osx' if system=='darwin' else ('windows' if system=='windows' else 'linux')))")
+# Get the platform-specific path using the same logic as the download script
+PLATFORM=$(python -c "
+import platform
+system = platform.system().lower()
+machine = platform.machine().lower()
+if system == 'linux':
+    if machine in ['x86_64', 'amd64']:
+        print('linux_amd64')
+    elif machine in ['arm64', 'aarch64']:
+        print('linux_arm64')
+    else:
+        print('linux_amd64')
+elif system == 'darwin':
+    if machine in ['arm64', 'aarch64']:
+        print('osx_arm64')
+    else:
+        print('osx_amd64')
+elif system == 'windows':
+    print('windows_amd64')
+else:
+    print('linux_amd64')
+")
 
 # Find the VSS extension file
 VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
 
-# If extension not found, use platform-specific path as fallback
+# If extension not found, use a default path with the correct filename
 if [ -z "$VSS_EXTENSION" ]; then
-    VSS_EXTENSION="./extensions/vss"
+    VSS_EXTENSION="./extensions/vss/vss.duckdb_extension"
+    echo "Warning: VSS extension file not found. Using default path: $VSS_EXTENSION"
+    echo "You may need to run 'python scripts/download_duckdb_extensions.py' to download the extension."
 fi
 
 # Set up .env file with vector_extension_path if it doesn't exist

@@ -1,0 +1,298 @@
+"""
+Extended tests for the vector extension functionality.
+
+This module contains additional tests for the vector extension functionality
+to improve test coverage, focusing on edge cases, different vector dimensions,
+and error handling in vector search.
+"""
+
+import pytest
+import logging
+import numpy as np
+from unittest.mock import patch, MagicMock
+
+from autoresearch.storage import StorageManager
+from autoresearch.config import (
+    ConfigModel,
+    StorageConfig,
+    ConfigLoader,
+)
+from autoresearch.errors import StorageError
+
+logger = logging.getLogger(__name__)
+
+
+def test_vector_search_with_different_dimensions(
+    storage_manager, tmp_path, monkeypatch
+):
+    """Test vector search with different embedding dimensions.
+
+    This test verifies that:
+    1. Claims with embeddings of different dimensions can be persisted
+    2. Vector search works correctly with different dimensions
+    """
+    # Configure storage with vector extension enabled
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            vector_extension=True,
+            duckdb_path=str(tmp_path / "kg.duckdb"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    # Clear storage and prepare test data
+    StorageManager.clear_all()
+    conn = StorageManager.get_duckdb_conn()
+
+    # Check if vector extension is available
+    try:
+        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        vector_extension_available = result and len(result) > 0
+        if vector_extension_available:
+            logger.info("Vector extension is available")
+        else:
+            logger.info("Vector extension is not available")
+            pytest.skip("Vector extension is not available")
+    except Exception as e:
+        vector_extension_available = False
+        logger.info(f"Vector extension is not available: {e}")
+        pytest.skip("Vector extension is not available")
+
+    # Persist test claims with embeddings of different dimensions
+    dimensions = [2, 3, 4, 10]
+    for dim in dimensions:
+        # Create a vector of the specified dimension
+        vec = [float(i) / dim for i in range(dim)]
+        StorageManager.persist_claim(
+            {
+                "id": f"dim{dim}",
+                "type": "fact",
+                "content": f"Dimension {dim}",
+                "embedding": vec,
+            }
+        )
+
+    # Verify claims were persisted
+    for dim in dimensions:
+        # Query the database directly to check if the claim exists
+        result = conn.execute(f"SELECT id, content FROM nodes WHERE id = 'dim{dim}'").fetchone()
+        assert result is not None, f"Claim with ID 'dim{dim}' should exist"
+        assert result[0] == f"dim{dim}", f"Claim ID should be 'dim{dim}'"
+        assert result[1] == f"Dimension {dim}", f"Claim content should be 'Dimension {dim}'"
+
+        # Check that the embedding was stored with the correct dimension
+        embedding = conn.execute(f"SELECT embedding FROM embeddings WHERE node_id = 'dim{dim}'").fetchone()
+        assert embedding is not None, f"Embedding for 'dim{dim}' should exist"
+        assert len(embedding[0]) == dim, f"Embedding dimension should be {dim}"
+
+    # Test vector search with each dimension
+    for dim in dimensions:
+        # Create a query vector of the same dimension
+        query_vec = [float(i) / dim for i in range(dim)]
+
+        # Perform vector search
+        results = StorageManager.vector_search(query_vec, k=1)
+
+        # Verify that the correct claim was found
+        assert results[0]["node_id"] == f"dim{dim}", f"Vector search with dimension {dim} should find 'dim{dim}'"
+
+
+def test_vector_search_edge_cases(
+    storage_manager, tmp_path, monkeypatch
+):
+    """Test vector search edge cases.
+
+    This test verifies that:
+    1. Vector search works with zero vectors
+    2. Vector search works with very large vectors
+    3. Vector search works with very small k values
+    4. Vector search works with large k values
+    """
+    # Configure storage with vector extension enabled
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            vector_extension=True,
+            duckdb_path=str(tmp_path / "kg.duckdb"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    # Clear storage and prepare test data
+    StorageManager.clear_all()
+    conn = StorageManager.get_duckdb_conn()
+
+    # Check if vector extension is available
+    try:
+        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        vector_extension_available = result and len(result) > 0
+        if vector_extension_available:
+            logger.info("Vector extension is available")
+        else:
+            logger.info("Vector extension is not available")
+            pytest.skip("Vector extension is not available")
+    except Exception as e:
+        vector_extension_available = False
+        logger.info(f"Vector extension is not available: {e}")
+        pytest.skip("Vector extension is not available")
+
+    # Persist test claims with different vectors
+    test_vectors = {
+        "zero": [0.0, 0.0, 0.0],
+        "large": [1000.0, 2000.0, 3000.0],
+        "small": [0.000001, 0.000002, 0.000003],
+        "mixed": [0.0, 1.0, -1.0],
+        "negative": [-1.0, -2.0, -3.0],
+    }
+
+    for name, vec in test_vectors.items():
+        StorageManager.persist_claim(
+            {
+                "id": name,
+                "type": "fact",
+                "content": f"Vector {name}",
+                "embedding": vec,
+            }
+        )
+
+    # Test vector search with zero vector
+    results = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
+    assert results[0]["node_id"] == "zero", "Vector search with zero vector should find 'zero'"
+
+    # Test vector search with large vector
+    results = StorageManager.vector_search([1000.0, 2000.0, 3000.0], k=1)
+    assert results[0]["node_id"] == "large", "Vector search with large vector should find 'large'"
+
+    # Test vector search with small vector
+    results = StorageManager.vector_search([0.000001, 0.000002, 0.000003], k=1)
+    assert results[0]["node_id"] == "small", "Vector search with small vector should find 'small'"
+
+    # Test vector search with k=1
+    results = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
+    assert len(results) == 1, "Vector search with k=1 should return 1 result"
+
+    # Test vector search with k=10 (more than the number of vectors)
+    results = StorageManager.vector_search([0.0, 0.0, 0.0], k=10)
+    assert len(results) == 5, "Vector search with k=10 should return all 5 vectors"
+
+
+def test_vector_search_error_handling(
+    storage_manager, tmp_path, monkeypatch
+):
+    """Test error handling in vector search.
+
+    This test verifies that:
+    1. Vector search handles invalid query vectors gracefully
+    2. Vector search handles invalid k values gracefully
+    3. Vector search handles database errors gracefully
+    """
+    # Configure storage with vector extension enabled
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            vector_extension=True,
+            duckdb_path=str(tmp_path / "kg.duckdb"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    # Clear storage and prepare test data
+    StorageManager.clear_all()
+    conn = StorageManager.get_duckdb_conn()
+
+    # Check if vector extension is available
+    try:
+        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        vector_extension_available = result and len(result) > 0
+        if vector_extension_available:
+            logger.info("Vector extension is available")
+        else:
+            logger.info("Vector extension is not available")
+            pytest.skip("Vector extension is not available")
+    except Exception as e:
+        vector_extension_available = False
+        logger.info(f"Vector extension is not available: {e}")
+        pytest.skip("Vector extension is not available")
+
+    # Persist a test claim with a vector
+    StorageManager.persist_claim(
+        {
+            "id": "test",
+            "type": "fact",
+            "content": "Test vector",
+            "embedding": [0.1, 0.2, 0.3],
+        }
+    )
+
+    # Test vector search with empty query vector
+    with pytest.raises(Exception):
+        StorageManager.vector_search([], k=1)
+
+    # Test vector search with non-numeric query vector
+    with pytest.raises(Exception):
+        StorageManager.vector_search(["a", "b", "c"], k=1)
+
+    # Test vector search with k=0
+    with pytest.raises(Exception):
+        StorageManager.vector_search([0.1, 0.2, 0.3], k=0)
+
+    # Test vector search with negative k
+    with pytest.raises(Exception):
+        StorageManager.vector_search([0.1, 0.2, 0.3], k=-1)
+
+    # Test vector search with database error
+    with patch("autoresearch.storage_backends.DuckDBStorageBackend.vector_search", 
+               side_effect=StorageError("Test error")):
+        with pytest.raises(StorageError):
+            StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
+
+
+def test_vector_search_with_no_embeddings(
+    storage_manager, tmp_path, monkeypatch
+):
+    """Test vector search when no embeddings are stored.
+
+    This test verifies that:
+    1. Vector search returns empty results when no embeddings are stored
+    """
+    # Configure storage with vector extension enabled
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            vector_extension=True,
+            duckdb_path=str(tmp_path / "kg.duckdb"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    # Clear storage
+    StorageManager.clear_all()
+    conn = StorageManager.get_duckdb_conn()
+
+    # Check if vector extension is available
+    try:
+        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        vector_extension_available = result and len(result) > 0
+        if vector_extension_available:
+            logger.info("Vector extension is available")
+        else:
+            logger.info("Vector extension is not available")
+            pytest.skip("Vector extension is not available")
+    except Exception as e:
+        vector_extension_available = False
+        logger.info(f"Vector extension is not available: {e}")
+        pytest.skip("Vector extension is not available")
+
+    # Persist a claim without an embedding
+    StorageManager.persist_claim(
+        {
+            "id": "no_embedding",
+            "type": "fact",
+            "content": "No embedding",
+        }
+    )
+
+    # Test vector search
+    results = StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
+    assert len(results) == 0, "Vector search with no embeddings should return empty results"

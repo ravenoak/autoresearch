@@ -32,8 +32,9 @@ class FactChecker(Agent):
         model = self.get_model(config)
 
         # Retrieve external references
+        max_results = getattr(config, 'max_results_per_query', 5)  # Default to 5 if not specified
         raw_sources = Search.external_lookup(
-            state.query, max_results=config.max_results_per_query
+            state.query, max_results=max_results
         )
         sources = []
         for s in raw_sources:

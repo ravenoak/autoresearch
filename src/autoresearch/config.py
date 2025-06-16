@@ -35,6 +35,84 @@ from watchfiles import watch, Change
 from .orchestration import ReasoningMode
 from .errors import ConfigError
 
+class ContextAwareSearchConfig(BaseModel):
+    """Configuration for context-aware search functionality."""
+
+    # Context-aware search settings
+    enabled: bool = Field(default=True)
+
+    # Query expansion settings
+    use_query_expansion: bool = Field(default=True)
+    expansion_factor: float = Field(default=0.3, ge=0.0, le=1.0)
+
+    # Entity recognition settings
+    use_entity_recognition: bool = Field(default=True)
+    entity_weight: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    # Topic modeling settings
+    use_topic_modeling: bool = Field(default=True)
+    num_topics: int = Field(default=5, ge=1, le=20)
+    topic_weight: float = Field(default=0.3, ge=0.0, le=1.0)
+
+    # Search history settings
+    use_search_history: bool = Field(default=True)
+    history_weight: float = Field(default=0.2, ge=0.0, le=1.0)
+    max_history_items: int = Field(default=10, ge=1, le=100)
+
+
+class SearchConfig(BaseModel):
+    """Configuration for search functionality."""
+
+    backends: List[str] = Field(default=["serper"])
+    max_results_per_query: int = Field(default=5, ge=1)
+
+    # Enhanced relevance ranking settings
+    use_semantic_similarity: bool = Field(default=True)
+    use_bm25: bool = Field(default=True)
+    semantic_similarity_weight: float = Field(default=0.5, ge=0.0, le=1.0)
+    bm25_weight: float = Field(default=0.3, ge=0.0, le=1.0)
+    source_credibility_weight: float = Field(default=0.2, ge=0.0, le=1.0)
+
+    # Source credibility settings
+    use_source_credibility: bool = Field(default=True)
+    domain_authority_factor: float = Field(default=0.6, ge=0.0, le=1.0)
+    citation_count_factor: float = Field(default=0.4, ge=0.0, le=1.0)
+
+    # User feedback settings
+    use_feedback: bool = Field(default=False)
+    feedback_weight: float = Field(default=0.3, ge=0.0, le=1.0)
+
+    # Context-aware search settings
+    context_aware: ContextAwareSearchConfig = Field(default_factory=ContextAwareSearchConfig)
+
+    @field_validator("semantic_similarity_weight", "bm25_weight", "source_credibility_weight")
+    def validate_weights_sum_to_one(cls, v: float, info) -> float:
+        """Validate that the weights sum to 1.0."""
+        # Get the current values of all weights
+        values = info.data
+
+        # Calculate the sum of all weights
+        weights_sum = (
+            values.get("semantic_similarity_weight", 0.5) +
+            values.get("bm25_weight", 0.3) +
+            values.get("source_credibility_weight", 0.2)
+        )
+
+        # Allow a small tolerance for floating-point errors
+        if abs(weights_sum - 1.0) > 0.001:
+            raise ConfigError(
+                "Relevance ranking weights must sum to 1.0",
+                current_sum=weights_sum,
+                weights={
+                    "semantic_similarity_weight": values.get("semantic_similarity_weight", 0.5),
+                    "bm25_weight": values.get("bm25_weight", 0.3),
+                    "source_credibility_weight": values.get("source_credibility_weight", 0.2)
+                },
+                suggestion="Adjust the weights so they sum to 1.0"
+            )
+
+        return v
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +125,7 @@ class StorageConfig(BaseModel):
     vector_extension_path: Optional[str] = Field(default=None)
     hnsw_m: int = Field(default=16, ge=4)
     hnsw_ef_construction: int = Field(default=200, ge=32)
-    hnsw_metric: str = Field(default="l2")
+    hnsw_metric: str = Field(default="l2sq")
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
 
@@ -107,8 +185,7 @@ class ConfigModel(BaseSettings):
     agent_config: Dict[str, AgentConfig] = Field(default_factory=dict)
 
     # Search settings
-    search_backends: List[str] = Field(default=["serper"])
-    max_results_per_query: int = Field(default=5, ge=1)
+    search: SearchConfig = Field(default_factory=SearchConfig)
 
     # Dynamic knowledge graph settings
     graph_eviction_policy: str = Field(default="LRU")
@@ -116,6 +193,9 @@ class ConfigModel(BaseSettings):
 
     # Model settings
     default_model: str = Field(default="gpt-3.5-turbo")
+
+    # Profile settings
+    active_profile: Optional[str] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -247,7 +327,7 @@ class ConfigLoader:
         - Configuration storage
         - Thread management for config watching
         - Observer pattern for config change notifications
-        - Default paths to watch for changes
+        - Default search paths for configuration files
         """
         if getattr(self, "_initialized", False):
             return
@@ -257,17 +337,53 @@ class ConfigLoader:
         self._stop_event = threading.Event()
         self._observers: Set[Callable[[ConfigModel], None]] = set()
         self._config_time: float = 0.0
-        self._watch_paths: List[str] = ["autoresearch.toml", ".env"]
+        self._active_profile: Optional[str] = None
+        self._profiles: Dict[str, Dict[str, Any]] = {}
+
+        # Define search paths for configuration files with precedence:
+        # 1. Current directory
+        # 2. User config directory
+        # 3. System-wide config directory
+        self._search_paths: List[Path] = [
+            Path.cwd() / "autoresearch.toml",  # Current directory
+            Path.home() / ".config/autoresearch/autoresearch.toml",  # User config
+            Path("/etc/autoresearch/autoresearch.toml"),  # System-wide config
+        ]
+
+        # Environment file is only searched in the current directory
+        self._env_path: Path = Path.cwd() / ".env"
+
+        # Initialize watch paths with files that exist
+        self._watch_paths: List[str] = []
+        self._update_watch_paths()
+
         self._atexit_registered = False
         self._initialized = True
+
+    def _update_watch_paths(self) -> None:
+        """Update the list of configuration file paths to watch for changes.
+
+        This method updates the _watch_paths list with the paths of files that exist.
+        It checks all search paths for the configuration file and the environment file.
+        """
+        self._watch_paths = []
+
+        # Add existing config files to watch paths
+        for path in self._search_paths:
+            if path.exists():
+                self._watch_paths.append(str(path))
+
+        # Add environment file if it exists
+        if self._env_path.exists():
+            self._watch_paths.append(str(self._env_path))
 
     @property
     def watch_paths(self) -> List[str]:
         """Get the list of configuration file paths to watch for changes.
 
         This property returns the list of file paths that the ConfigLoader
-        is monitoring for changes. By default, this includes 'autoresearch.toml'
-        and '.env' in the current directory.
+        is monitoring for changes. This includes any existing configuration files
+        from the search paths and the environment file if it exists.
 
         Returns:
             List[str]: A list of file paths being watched for configuration changes
@@ -295,17 +411,24 @@ class ConfigLoader:
     def load_config(self) -> ConfigModel:
         """Load and validate configuration from TOML and environment variables.
 
-        This method reads configuration from the 'autoresearch.toml' file if it exists,
-        and combines it with environment variables. It handles the conversion of
-        the raw configuration data into a validated ConfigModel instance.
+        This method reads configuration from the first existing 'autoresearch.toml' file
+        in the search paths, and combines it with environment variables. It handles 
+        the conversion of the raw configuration data into a validated ConfigModel instance.
+
+        The search paths are checked in the following order:
+        1. Current directory
+        2. User config directory (~/.config/autoresearch)
+        3. System-wide config directory (/etc/autoresearch)
 
         The method performs several steps:
-        1. Loads the TOML file if it exists
+        1. Loads the TOML file if it exists in any of the search paths
         2. Extracts core settings
         3. Maps legacy settings to new names
         4. Processes storage configuration
         5. Extracts agent configuration
-        6. Creates a ConfigModel instance with validation
+        6. Extracts profile configurations
+        7. Applies the active profile settings if one is set
+        8. Creates a ConfigModel instance with validation
 
         Returns:
             ConfigModel: A validated configuration model
@@ -314,13 +437,23 @@ class ConfigLoader:
             ConfigError: If the configuration file cannot be loaded or validation fails
         """
         raw = {}
-        config_path = Path("autoresearch.toml")
+        config_path = None
 
-        if config_path.exists():
+        # Update watch paths to ensure we're watching all existing config files
+        self._update_watch_paths()
+
+        # Find the first existing config file in the search paths
+        for path in self._search_paths:
+            if path.exists():
+                config_path = path
+                break
+
+        if config_path and config_path.exists():
             try:
                 self._config_time = config_path.stat().st_mtime
                 with open(config_path, "rb") as f:
                     raw = tomllib.load(f)
+                logger.info(f"Loaded configuration from {config_path}")
             except Exception as e:
                 logger.error(f"Error loading config file: {e}")
                 # Raise a ConfigError with the original exception as the cause
@@ -374,6 +507,18 @@ class ConfigLoader:
 
         # Add agent configs
         core_settings["agent_config"] = agent_config_dict
+
+        # Extract profile configurations
+        self._profiles = raw.get("profiles", {})
+
+        # Apply active profile settings if one is set
+        if self._active_profile and self._active_profile in self._profiles:
+            profile_settings = self._profiles[self._active_profile]
+            # Merge profile settings with core settings (profile takes precedence)
+            for key, value in profile_settings.items():
+                core_settings[key] = value
+            # Set the active profile in the config
+            core_settings["active_profile"] = self._active_profile
 
         try:
             return ConfigModel(**core_settings)
@@ -556,6 +701,9 @@ class ConfigLoader:
                         configuration, or notifying observers. The error is logged
                         before being raised.
         """
+        # Update watch paths to ensure we're watching all existing config files
+        self._update_watch_paths()
+
         abs_paths = [
             str(Path(p).absolute())
             for p in self.watch_paths
@@ -564,7 +712,7 @@ class ConfigLoader:
 
         if not abs_paths:
             logger.warning(
-                f"None of the config paths exist: {self.watch_paths}"
+                f"No configuration files found in search paths: {[str(p) for p in self._search_paths]}"
             )
             return
 
@@ -599,6 +747,46 @@ class ConfigLoader:
                 paths=self.watch_paths,
                 cause=e
             ) from e
+
+    def set_active_profile(self, profile_name: str) -> None:
+        """Set the active configuration profile.
+
+        This method sets the active configuration profile to the specified name.
+        If the profile doesn't exist, a ConfigError is raised with a helpful
+        message suggesting valid profiles.
+
+        The configuration is reloaded after setting the profile, and all
+        registered observers are notified of the change.
+
+        Args:
+            profile_name: The name of the profile to activate.
+
+        Raises:
+            ConfigError: If the specified profile doesn't exist in the configuration.
+        """
+        # Load the configuration if it hasn't been loaded yet
+        if not self._profiles:
+            self.load_config()
+
+        # Check if the profile exists
+        if profile_name not in self._profiles:
+            valid_profiles = list(self._profiles.keys())
+            raise ConfigError(
+                "Invalid profile",
+                valid_profiles=valid_profiles,
+                provided=profile_name,
+                suggestion=f"Valid profiles: {', '.join(valid_profiles)}"
+            )
+
+        # Set the active profile
+        self._active_profile = profile_name
+
+        # Reload the configuration with the new profile
+        self._config = None  # Force reload
+        new_config = self.config
+
+        # Notify observers of the change
+        self.notify_observers(new_config)
 
     def on_config_change(self, config: ConfigModel) -> None:
         """Default handler for configuration change events.

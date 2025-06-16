@@ -39,7 +39,7 @@ class DuckDBStorageBackend:
         self._lock = Lock()
         self._has_vss: bool = False
 
-    def setup(self, db_path: Optional[str] = None) -> None:
+    def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
         """
         Initialize the DuckDB connection and create required tables.
 
@@ -49,6 +49,8 @@ class DuckDBStorageBackend:
                     1. config.storage.duckdb.path
                     2. DUCKDB_PATH environment variable
                     3. Default to "kg.duckdb".
+            skip_migrations: If True, skip running migrations after creating tables.
+                            This is useful for testing.
 
         Raises:
             StorageError: If the connection cannot be established or tables cannot be created.
@@ -72,7 +74,13 @@ class DuckDBStorageBackend:
                 else os.getenv("DUCKDB_PATH", "kg.duckdb")
             )
             self._path = path
-            self._conn = duckdb.connect(path)
+
+            try:
+                self._conn = duckdb.connect(path)
+            except Exception as e:
+                log.error(f"Failed to connect to DuckDB database: {e}")
+                self._conn = None
+                raise StorageError("Failed to connect to DuckDB database", cause=e)
 
             # Load VSS extension if enabled
             if cfg.vector_extension:
@@ -91,13 +99,13 @@ class DuckDBStorageBackend:
                         raise StorageError("Failed to load VSS extension", cause=e)
 
             # Ensure required tables exist
-            self._create_tables()
+            self._create_tables(skip_migrations)
 
             # Create HNSW index if vector extension is enabled and available
             if cfg.vector_extension and self._has_vss:
                 self.create_hnsw_index()
 
-    def _create_tables(self) -> None:
+    def _create_tables(self, skip_migrations: bool = False) -> None:
         """
         Create the required tables in the DuckDB database.
 
@@ -106,6 +114,10 @@ class DuckDBStorageBackend:
         - edges: Stores relationships between nodes
         - embeddings: Stores vector embeddings for nodes
         - metadata: Stores database metadata including schema_version
+
+        Args:
+            skip_migrations: If True, skip running migrations after creating tables.
+                            This is useful for testing.
 
         Raises:
             StorageError: If the tables cannot be created.
@@ -125,9 +137,11 @@ class DuckDBStorageBackend:
                 "src VARCHAR, dst VARCHAR, rel VARCHAR, "
                 "w DOUBLE)"
             )
+            # Create embeddings table with a fixed dimension for the embedding column
+            # Using FLOAT[384] instead of DOUBLE[] to ensure compatibility with HNSW index
             self._conn.execute(
                 "CREATE TABLE IF NOT EXISTS embeddings("
-                "node_id VARCHAR, embedding DOUBLE[])"
+                "node_id VARCHAR, embedding FLOAT[384])"
             )
 
             # Create metadata table for schema versioning
@@ -139,8 +153,9 @@ class DuckDBStorageBackend:
             # Initialize schema version if it doesn't exist
             self._initialize_schema_version()
 
-            # Run migrations if needed
-            self._run_migrations()
+            # Run migrations if needed and not skipped
+            if not skip_migrations:
+                self._run_migrations()
 
         except Exception as e:
             raise StorageError("Failed to create tables", cause=e)
@@ -168,17 +183,22 @@ class DuckDBStorageBackend:
             if result is None:
                 log.info("Initializing schema version to 1")
                 self._conn.execute(
-                    "INSERT INTO metadata VALUES ('schema_version', '1')"
+                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
                 )
         except Exception as e:
             raise StorageError("Failed to initialize schema version", cause=e)
 
-    def get_schema_version(self) -> int:
+    def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
         """
         Get the current schema version from the metadata table.
 
+        Args:
+            initialize_if_missing: If True, initialize the schema version to 1 if it doesn't exist.
+                                  If False, return None if the schema version doesn't exist.
+
         Returns:
-            The current schema version as an integer.
+            The current schema version as an integer, or None if the schema version doesn't exist
+            and initialize_if_missing is False.
 
         Raises:
             StorageError: If the schema version cannot be retrieved.
@@ -192,10 +212,13 @@ class DuckDBStorageBackend:
             ).fetchone()
 
             if result is None:
-                # This should not happen as _initialize_schema_version should have been called
-                log.warning("Schema version not found in metadata table, initializing to 1")
-                self._initialize_schema_version()
-                return 1
+                if initialize_if_missing:
+                    # This should not happen as _initialize_schema_version should have been called
+                    log.warning("Schema version not found in metadata table, initializing to 1")
+                    self._initialize_schema_version()
+                    return 1
+                else:
+                    return None
 
             return int(result[0])
         except Exception as e:
@@ -243,7 +266,7 @@ class DuckDBStorageBackend:
             log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
 
             # Run migrations sequentially
-            if current_version < latest_version:
+            if current_version is None or current_version < latest_version:
                 log.info(f"Running migrations from version {current_version} to {latest_version}")
 
                 # Example migration pattern for future use:
@@ -276,25 +299,66 @@ class DuckDBStorageBackend:
 
         # Check if the VSS extension is loaded and load it if needed
         try:
-            # Try to use a vss function to check if the extension is loaded
-            if not VSSExtensionLoader.verify_extension(self._conn):
+            # Check if the VSS extension is loaded by querying duckdb_extensions()
+            if not VSSExtensionLoader.verify_extension(self._conn, verbose=False):
                 log.warning("VSS extension not loaded. Attempting to load it now.")
                 VSSExtensionLoader.load_extension(self._conn)
             else:
-                log.info("VSS extension is already loaded")
+                log.debug("VSS extension is already loaded")
         except Exception as e:
             log.error(f"Failed to check or load VSS extension: {e}")
             # Continue anyway, as the CREATE INDEX will fail if the extension is not available
 
         try:
+            # Enable experimental persistence for HNSW indexes in persistent databases
+            log.info("Enabling experimental persistence for HNSW indexes")
+            self._conn.execute("SET hnsw_enable_experimental_persistence=true")
+
             log.info("Creating HNSW index on embeddings table...")
-            self._conn.execute(
-                "CREATE INDEX IF NOT EXISTS embeddings_hnsw "
-                "ON embeddings USING hnsw (embedding) "
-                f"WITH (m={cfg.hnsw_m}, "
-                f"ef_construction={cfg.hnsw_ef_construction}, "
-                f"metric='{cfg.hnsw_metric}')"
-            )
+            # Ensure metric is one of the valid values: 'ip', 'cosine', 'l2sq'
+            metric = cfg.hnsw_metric
+            if metric not in ['ip', 'cosine', 'l2sq']:
+                log.warning(f"Invalid HNSW metric '{metric}', falling back to 'l2sq'")
+                metric = 'l2sq'
+
+            # Check if the embeddings table is empty
+            count = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+
+            if count == 0:
+                # If the table is empty, insert a dummy embedding to ensure the HNSW index can be created
+                # Use a 384-dimensional vector (common for many embedding models)
+                dummy_id = "__dummy_for_index__"
+                dummy_embedding = [0.0] * 384
+                try:
+                    # Insert the dummy embedding
+                    self._conn.execute(
+                        "INSERT INTO embeddings VALUES (?, ?)",
+                        [dummy_id, dummy_embedding]
+                    )
+                    log.debug("Inserted dummy embedding for HNSW index creation")
+                except Exception as e:
+                    log.warning(f"Failed to insert dummy embedding: {e}")
+
+            try:
+                # Create the HNSW index
+                self._conn.execute(
+                    "CREATE INDEX IF NOT EXISTS embeddings_hnsw "
+                    "ON embeddings USING hnsw (embedding) "
+                    f"WITH (m={cfg.hnsw_m}, "
+                    f"ef_construction={cfg.hnsw_ef_construction}, "
+                    f"metric='{metric}')"
+                )
+
+                # If we inserted a dummy embedding, remove it now
+                if count == 0:
+                    try:
+                        self._conn.execute("DELETE FROM embeddings WHERE node_id = ?", [dummy_id])
+                        log.debug("Removed dummy embedding after HNSW index creation")
+                    except Exception as e:
+                        log.warning(f"Failed to remove dummy embedding: {e}")
+            except Exception as e:
+                log.error(f"Failed to create HNSW index: {e}")
+                raise
             log.info("HNSW index created successfully")
 
             # Verify the index was created
@@ -463,6 +527,7 @@ class DuckDBStorageBackend:
                 try:
                     self._conn.close()
                     self._conn = None
+                    self._path = None
                 except Exception as e:
                     log.warning(f"Failed to close DuckDB connection: {e}")
                     # We don't raise here as this is cleanup code

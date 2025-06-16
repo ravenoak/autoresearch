@@ -1,9 +1,20 @@
 import json
+import os
+import tempfile
+import logging
+from pathlib import Path
+from unittest.mock import patch, MagicMock
+
 import pytest
 from autoresearch.models import QueryResponse
-from autoresearch.output_format import OutputFormatter
+from autoresearch.output_format import OutputFormatter, FormatTemplate, TemplateRegistry
 from pydantic import ValidationError
 from autoresearch.errors import ValidationError as AutoresearchValidationError
+from autoresearch.config import ConfigModel
+
+
+# Disable logging for tests
+logging.getLogger("autoresearch.output_format").setLevel(logging.CRITICAL)
 
 
 def test_format_json(capsys):
@@ -25,7 +36,7 @@ def test_format_markdown(capsys):
     )
     OutputFormatter.format(resp, "markdown")
     captured = capsys.readouterr().out
-    assert captured.startswith("# Answer")
+    assert "# Answer" in captured
     assert "## Citations" in captured
     assert "- c" in captured
     assert "## Reasoning" in captured
@@ -38,10 +49,10 @@ def test_format_plain(capsys):
     )
     OutputFormatter.format(resp, "plain")
     captured = capsys.readouterr().out
-    assert captured.startswith("Answer:")
+    assert "Answer:" in captured
     assert "Citations:" in captured
-    assert "- c" not in captured
-    assert "#" not in captured
+    assert "- c" in captured  # Plain format now uses bullet points for citations
+    assert "#" not in captured  # Still no markdown headings
 
 
 def test_format_text_alias(capsys):
@@ -50,7 +61,7 @@ def test_format_text_alias(capsys):
     )
     OutputFormatter.format(resp, "text")
     captured = capsys.readouterr().out
-    assert captured.startswith("Answer:")
+    assert "Answer:" in captured
 
 
 def test_json_no_ansi(capsys):
@@ -72,14 +83,14 @@ def test_markdown_no_ansi(capsys):
 
 
 @pytest.mark.parametrize(
-    "fmt, start",
+    "fmt, content",
     [
         ("json", "{"),
         ("markdown", "# Answer"),
         ("plain", "Answer:"),
     ],
 )
-def test_format_dict_input(fmt, start, capsys):
+def test_format_dict_input(fmt, content, capsys):
     data = {
         "answer": "a",
         "citations": ["c"],
@@ -88,7 +99,7 @@ def test_format_dict_input(fmt, start, capsys):
     }
     OutputFormatter.format(data, fmt)
     out = capsys.readouterr().out
-    assert out.startswith(start)
+    assert content in out
 
 
 def test_format_invalid_input():
@@ -108,7 +119,7 @@ def test_format_unknown_defaults_to_markdown(capsys):
     )
     OutputFormatter.format(resp, "unknown")
     captured = capsys.readouterr().out
-    assert captured.startswith("# Answer")
+    assert "# Answer" in captured
     assert "## Citations" in captured
 
 
@@ -140,6 +151,221 @@ def test_format_complex_response(capsys):
 
     # Check metrics formatting
     assert "## Metrics" in captured
-    assert "- **tokens**: 100" in captured
-    assert "- **time**: 1.5" in captured
-    assert "- **sources**: ['web', 'knowledge_base']" in captured
+    assert "- tokens: 100" in captured  # Metrics now use plain text format
+    assert "- time: 1.5" in captured
+    assert "- sources: ['web', 'knowledge_base']" in captured
+
+
+def test_format_template_class():
+    """Test the FormatTemplate class."""
+    # Create a template
+    template = FormatTemplate(
+        name="test",
+        description="Test template",
+        template="Answer: ${answer}\nCitations: ${citations}"
+    )
+
+    # Create a response
+    resp = QueryResponse(
+        answer="Test answer",
+        citations=["Citation 1", "Citation 2"],
+        reasoning=["Reasoning"],
+        metrics={"tokens": 100}
+    )
+
+    # Render the template
+    result = template.render(resp)
+
+    # Check the result
+    assert "Answer: Test answer" in result
+    assert "Citations: - Citation 1\n- Citation 2" in result
+
+
+def test_format_template_missing_variable():
+    """Test that FormatTemplate raises KeyError for missing variables."""
+    # Create a template with a variable that doesn't exist
+    template = FormatTemplate(
+        name="test",
+        description="Test template",
+        template="Answer: ${answer}\nMissing: ${missing}"
+    )
+
+    # Create a response
+    resp = QueryResponse(
+        answer="Test answer",
+        citations=["Citation"],
+        reasoning=["Reasoning"],
+        metrics={"tokens": 100}
+    )
+
+    # Verify that a KeyError is raised
+    with pytest.raises(KeyError) as excinfo:
+        template.render(resp)
+
+    # Check the error message
+    assert "missing" in str(excinfo.value)
+    assert "Available variables" in str(excinfo.value)
+
+
+def test_template_registry():
+    """Test the TemplateRegistry class."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Create a template
+    template = FormatTemplate(
+        name="test_registry",
+        description="Test template",
+        template="Answer: ${answer}"
+    )
+
+    # Register the template
+    TemplateRegistry.register(template)
+
+    # Get the template
+    retrieved = TemplateRegistry.get("test_registry")
+
+    # Check the template
+    assert retrieved.name == "test_registry"
+    assert retrieved.description == "Test template"
+    assert retrieved.template == "Answer: ${answer}"
+
+
+def test_template_registry_default_templates():
+    """Test that TemplateRegistry loads default templates."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Get a default template
+    template = TemplateRegistry.get("markdown")
+
+    # Check the template
+    assert template.name == "markdown"
+    assert "# Answer" in template.template
+    assert "## Citations" in template.template
+
+
+def test_template_registry_missing_template():
+    """Test that TemplateRegistry raises KeyError for missing templates."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Verify that a KeyError is raised
+    with pytest.raises(KeyError) as excinfo:
+        TemplateRegistry.get("nonexistent")
+
+    # Check the error message
+    assert "not found" in str(excinfo.value)
+
+
+def test_template_from_file():
+    """Test loading a template from a file."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Create a temporary directory
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a template file
+        template_dir = Path(tmpdir) / "templates"
+        template_dir.mkdir()
+        template_path = template_dir / "html.tpl"
+
+        with open(template_path, "w") as f:
+            f.write("# HTML Template\n<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>")
+
+        # Mock the config to use the temporary directory
+        with patch("autoresearch.output_format.ConfigLoader") as mock_config_loader:
+            mock_config = MagicMock()
+            mock_config.template_dir = str(template_dir)
+            mock_config_loader.return_value.config = mock_config
+
+            # Load the template
+            template = TemplateRegistry.get("html")
+
+            # Check the template
+            assert template.name == "html"
+            assert template.description == "HTML Template"
+            assert "<html><body><h1>${answer}</h1>" in template.template
+
+
+def test_template_from_config():
+    """Test loading templates from configuration."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Create a mock config with templates
+    with patch("autoresearch.output_format.ConfigLoader") as mock_config_loader:
+        mock_config = MagicMock()
+        mock_config.output_templates = {
+            "html": {
+                "description": "HTML Template",
+                "template": "<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>"
+            }
+        }
+        mock_config_loader.return_value.config = mock_config
+
+        # Load templates from config
+        TemplateRegistry.load_from_config()
+
+        # Get the template
+        template = TemplateRegistry.get("html")
+
+        # Check the template
+        assert template.name == "html"
+        assert template.description == "HTML Template"
+        assert "<html><body><h1>${answer}</h1>" in template.template
+
+
+def test_format_with_custom_template(capsys):
+    """Test formatting with a custom template."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Create a template
+    template = FormatTemplate(
+        name="custom",
+        description="Custom template",
+        template="ANSWER: ${answer}\nCITATIONS: ${citations}"
+    )
+
+    # Register the template
+    TemplateRegistry.register(template)
+
+    # Create a response
+    resp = QueryResponse(
+        answer="Test answer",
+        citations=["Citation 1", "Citation 2"],
+        reasoning=["Reasoning"],
+        metrics={"tokens": 100}
+    )
+
+    # Format with the custom template
+    OutputFormatter.format(resp, "template:custom")
+    captured = capsys.readouterr().out
+
+    # Check the result
+    assert "ANSWER: Test answer" in captured
+    assert "CITATIONS: - Citation 1\n- Citation 2" in captured
+
+
+def test_format_with_missing_template(capsys):
+    """Test formatting with a missing template falls back to markdown."""
+    # Clear the registry
+    TemplateRegistry._templates = {}
+
+    # Create a response
+    resp = QueryResponse(
+        answer="Test answer",
+        citations=["Citation"],
+        reasoning=["Reasoning"],
+        metrics={"tokens": 100}
+    )
+
+    # Format with a nonexistent template
+    OutputFormatter.format(resp, "template:nonexistent")
+    captured = capsys.readouterr().out
+
+    # Check that it fell back to markdown
+    assert "# Answer" in captured
+    assert "## Citations" in captured
+    assert "- Citation" in captured

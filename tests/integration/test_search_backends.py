@@ -48,7 +48,9 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
 
-    cfg = ConfigModel(loops=1, search_backends=["b1", "b2"])
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["b1", "b2"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
 
     # Execute
@@ -56,7 +58,16 @@ def test_multiple_backends_called_and_merged(monkeypatch):
 
     # Verify
     assert calls == ["b1", "b2"]
-    assert results == [
-        {"title": "t1", "url": "u1"},
-        {"title": "t2", "url": "u2"},
-    ]
+
+    # Check that we have the expected number of results
+    assert len(results) == 2
+
+    # Check that the results contain the expected titles and URLs
+    # The order might be different due to ranking
+    titles = [r["title"] for r in results]
+    urls = [r["url"] for r in results]
+
+    assert "t1" in titles
+    assert "t2" in titles
+    assert "u1" in urls
+    assert "u2" in urls

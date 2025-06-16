@@ -11,19 +11,24 @@ Usage:
 
 Arguments:
     --output-dir DIR       Directory to save extensions to (default: ./extensions)
-    --extensions EXT1,...  Comma-separated list of extensions to download (default: vector)
+    --extensions EXT1,...  Comma-separated list of extensions to download (default: vss)
     --platform PLATFORM    Platform to download extensions for (default: auto-detect)
-                           Options: linux, osx, windows, osx_arm64
+                           Options: linux_amd64, linux_arm64, osx_amd64, osx_arm64, windows_amd64
 
 Examples:
-    # Download vector extension to default directory
+    # Download vss extension to default directory
     python download_duckdb_extensions.py
 
-    # Download vector and json extensions to custom directory
-    python download_duckdb_extensions.py --output-dir /path/to/extensions --extensions vector,json
+    # Download vss and json extensions to custom directory
+    python download_duckdb_extensions.py --output-dir /path/to/extensions --extensions vss,json
 
-    # Download vector extension for macOS ARM64
+    # Download vss extension for macOS ARM64
     python download_duckdb_extensions.py --platform osx_arm64
+
+Note:
+    The script uses DuckDB's native extension installation mechanism and will download
+    the appropriate extension for your platform. The vss extension is also available
+    as a Python package (duckdb-extension-vss) which can be installed via pip or poetry.
 """
 
 import argparse
@@ -55,17 +60,27 @@ def detect_platform():
     machine = platform.machine().lower()
 
     if system == "linux":
-        return "linux"
+        if machine in ["x86_64", "amd64"]:
+            return "linux_amd64"
+        elif machine in ["arm64", "aarch64"]:
+            return "linux_arm64"
+        else:
+            logger.warning(f"Unknown Linux architecture: {machine}. Defaulting to linux_amd64.")
+            return "linux_amd64"
     elif system == "darwin":
-        if machine == "arm64" or machine == "aarch64":
+        if machine in ["arm64", "aarch64"]:
             return "osx_arm64"
         else:
-            return "osx"
+            return "osx_amd64"
     elif system == "windows":
-        return "windows"
+        if machine in ["x86_64", "amd64"]:
+            return "windows_amd64"
+        else:
+            logger.warning(f"Unknown Windows architecture: {machine}. Defaulting to windows_amd64.")
+            return "windows_amd64"
     else:
-        logger.warning(f"Unknown platform: {system} {machine}. Defaulting to linux.")
-        return "linux"
+        logger.warning(f"Unknown platform: {system} {machine}. Defaulting to linux_amd64.")
+        return "linux_amd64"
 
 def download_extension(extension_name, output_dir, platform_name=None):
     """
@@ -82,46 +97,56 @@ def download_extension(extension_name, output_dir, platform_name=None):
     if platform_name is None:
         platform_name = detect_platform()
 
+    # Create the output directory structure
+    output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
+    os.makedirs(output_extension_dir, exist_ok=True)
+
     # Create a temporary database to download the extension
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_db_path = os.path.join(temp_dir, "temp.duckdb")
         conn = duckdb.connect(temp_db_path)
 
         try:
-            # Install the extension to the temporary database
+            # Set the extension directory to our output directory
+            extension_dir_path = os.path.join(output_dir, "extensions")
+            logger.info(f"Setting extension directory to: {extension_dir_path}")
+            conn.execute(f"SET extension_directory='{extension_dir_path}'")
+
+            # Install the extension using the Python API
             logger.info(f"Downloading {extension_name} extension for {platform_name}...")
-            conn.execute(f"INSTALL {extension_name}")
+            conn.install_extension(extension_name)
 
-            # Get the extension directory
-            extension_dir = os.path.join(temp_dir, ".duckdb", "extensions", platform_name)
-
-            # Check if the extension was downloaded
-            if not os.path.exists(extension_dir):
-                logger.error(f"Failed to download {extension_name} extension. Extension directory not found.")
+            # Verify the extension was installed
+            result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = ?", [extension_name]).fetchall()
+            if not result:
+                logger.error(f"Failed to install {extension_name} extension.")
                 return None
 
             # Find the extension files
             extension_files = []
-            for root, _, files in os.walk(extension_dir):
+            for root, _, files in os.walk(output_extension_dir):
                 for file in files:
-                    if extension_name in file and file.endswith(".duckdb_extension"):
+                    if file.endswith(".duckdb_extension"):
                         extension_files.append(os.path.join(root, file))
 
             if not extension_files:
-                logger.error(f"No {extension_name} extension files found in {extension_dir}")
+                # If no files found in output directory, check the default DuckDB extension directory
+                default_ext_dir = os.path.join(temp_dir, ".duckdb", "extensions", platform_name)
+                if os.path.exists(default_ext_dir):
+                    for root, _, files in os.walk(default_ext_dir):
+                        for file in files:
+                            if extension_name in file and file.endswith(".duckdb_extension"):
+                                src_path = os.path.join(root, file)
+                                dst_path = os.path.join(output_extension_dir, file)
+                                shutil.copy2(src_path, dst_path)
+                                extension_files.append(dst_path)
+                                logger.info(f"Copied {file} to {output_extension_dir}")
+
+            if not extension_files:
+                logger.error(f"No {extension_name} extension files found")
                 return None
 
-            # Create the output directory structure
-            output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
-            os.makedirs(output_extension_dir, exist_ok=True)
-
-            # Copy the extension files
-            for file_path in extension_files:
-                file_name = os.path.basename(file_path)
-                output_file_path = os.path.join(output_extension_dir, file_name)
-                shutil.copy2(file_path, output_file_path)
-                logger.info(f"Copied {file_name} to {output_extension_dir}")
-
+            logger.info(f"Successfully downloaded {extension_name} extension to {output_extension_dir}")
             return output_extension_dir
 
         except Exception as e:
@@ -162,7 +187,22 @@ def main():
         logger.info("\nExtensions downloaded successfully!")
         logger.info("\nTo use the downloaded extensions, add the following to your autoresearch.toml file:")
         logger.info("\n[storage.duckdb]")
-        logger.info(f"vector_extension_path = \"{os.path.join(output_dir, 'extensions', 'vss')}\"")
+
+        # Find the actual vss extension file to provide the correct path
+        vss_extension_file = None
+        vss_dir = os.path.join(output_dir, 'extensions', 'vss')
+        if os.path.exists(vss_dir):
+            for file in os.listdir(vss_dir):
+                if file.endswith('.duckdb_extension'):
+                    vss_extension_file = os.path.join(vss_dir, file)
+                    break
+
+        if vss_extension_file:
+            logger.info(f"vector_extension_path = \"{vss_extension_file}\"")
+            logger.info("\nNote: The vector_extension_path must point to the .duckdb_extension file, not just the directory.")
+        else:
+            logger.info(f"vector_extension_path = \"{os.path.join(output_dir, 'extensions', 'vss', 'vss.duckdb_extension')}\"")
+            logger.info("\nNote: The vector_extension_path must point to the .duckdb_extension file. Please verify the exact filename.")
     else:
         logger.error("\nFailed to download some extensions. See errors above.")
         sys.exit(1)

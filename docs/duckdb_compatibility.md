@@ -22,31 +22,65 @@ The VSS extension (formerly known as "vector") is used for vector similarity sea
 
 The VSS extension is available for the following platforms:
 
-### Linux (x86_64)
+### Linux (x86_64/AMD64)
 - Full support for DuckDB and VSS extension
-- Extension path: `./extensions/vss/linux/vss.duckdb_extension`
+- Platform identifier: `linux_amd64`
+- Extension path: `./extensions/vss/vss.duckdb_extension`
+
+### Linux (ARM64/AArch64)
+- Full support for DuckDB and VSS extension
+- Platform identifier: `linux_arm64`
+- Extension path: `./extensions/vss/vss.duckdb_extension`
 
 ### macOS (Intel)
 - Full support for DuckDB and VSS extension
-- Extension path: `./extensions/vss/osx/vss.duckdb_extension`
+- Platform identifier: `osx_amd64`
+- Extension path: `./extensions/vss/vss.duckdb_extension`
 
 ### macOS (ARM64/M1/M2)
 - Full support for DuckDB and VSS extension
-- Extension path: `./extensions/vss/osx_arm64/vss.duckdb_extension`
+- Platform identifier: `osx_arm64`
+- Extension path: `./extensions/vss/vss.duckdb_extension`
 
-### Windows
+### Windows (x86_64/AMD64)
 - Limited testing, but should work
-- Extension path: `./extensions/vss/windows/vss.duckdb_extension`
+- Platform identifier: `windows_amd64`
+- Extension path: `./extensions/vss/vss.duckdb_extension`
+
+Note: The download script automatically detects your platform and downloads the appropriate extension. The extension file is placed directly in the `./extensions/vss/` directory without platform-specific subdirectories.
 
 ## Offline Usage
 
 For offline environments, the VSS extension can be pre-downloaded using the provided script:
 
 ```bash
+# Download for the current platform (auto-detected)
 python scripts/download_duckdb_extensions.py --output-dir ./extensions
+
+# Download for a specific platform
+python scripts/download_duckdb_extensions.py --output-dir ./extensions --platform linux_amd64
+
+# Download multiple extensions
+python scripts/download_duckdb_extensions.py --output-dir ./extensions --extensions vss,json
 ```
 
-This will download the appropriate VSS extension for your platform and store it in the specified directory.
+This will download the appropriate VSS extension for the specified platform and store it in the specified directory. The script will output the exact path to use in your configuration file.
+
+### Configuration for Offline Use
+
+After downloading the extension, update your `autoresearch.toml` file with the path to the extension file:
+
+```toml
+[storage.duckdb]
+vector_extension = true
+vector_extension_path = "./extensions/vss/vss.duckdb_extension"
+```
+
+Note that the `vector_extension_path` must point to the actual `.duckdb_extension` file, not just the directory.
+
+### Alternative: Using the Python Package
+
+As an alternative to manually downloading the extension, you can use the `duckdb-extension-vss` Python package, which is included as a dependency in the project. This package automatically provides the correct VSS extension for your platform.
 
 ## Troubleshooting
 
