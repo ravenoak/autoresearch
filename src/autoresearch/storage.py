@@ -534,8 +534,7 @@ class StorageManager:
         delegated to that implementation.
 
         Raises:
-            StorageError: If the index creation fails and AUTORESEARCH_STRICT_EXTENSIONS
-                         environment variable is set to "true".
+            StorageError: If the index creation fails.
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.create_hnsw_index()
@@ -546,7 +545,10 @@ class StorageManager:
         assert _db_backend is not None
 
         # Use the DuckDBStorageBackend to create the HNSW index
-        _db_backend.create_hnsw_index()
+        try:
+            _db_backend.create_hnsw_index()
+        except Exception as e:
+            raise StorageError("Failed to create HNSW index", cause=e)
 
     @staticmethod
     def _validate_vector_search_params(query_embedding: list[float], k: int) -> None:

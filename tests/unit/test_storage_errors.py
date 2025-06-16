@@ -4,12 +4,34 @@ from unittest.mock import patch, MagicMock
 from autoresearch.storage import StorageManager, setup, teardown
 from autoresearch.errors import StorageError, NotFoundError
 
-@pytest.mark.skip(reason="Test needs to be updated for new storage architecture")
 def test_setup_rdf_store_error(mock_config, assert_error):
     """Test that setup handles RDF store errors properly."""
-    # This test needs to be updated for the new storage architecture
-    # For now, we'll skip it and focus on implementing the remaining task from TASK_PROGRESS.md
-    pass
+    # Setup
+    # Create a mock config
+    config = MagicMock()
+    config.storage.rdf_backend = "sqlite"
+    config.storage.rdf_path = "/tmp/test.rdf"
+
+    # Create a mock DuckDBStorageBackend
+    mock_db_backend = MagicMock()
+
+    # Create a mock Graph that raises an exception when opened
+    mock_graph_instance = MagicMock()
+    mock_graph_instance.open.side_effect = Exception("RDF store error")
+
+    # Execute
+    with patch('autoresearch.storage._graph', None):
+        with patch('autoresearch.storage._db_backend', None):
+            with patch('autoresearch.storage._rdf_store', None):
+                with patch('autoresearch.storage.DuckDBStorageBackend', return_value=mock_db_backend):
+                    with patch('rdflib.Graph', return_value=mock_graph_instance):
+                        with mock_config(config=config):
+                            with pytest.raises(StorageError) as excinfo:
+                                setup()
+
+    # Verify
+    mock_graph_instance.open.assert_called_once_with("/tmp/test.rdf", create=True)
+    assert_error(excinfo, "Failed to open RDF store", has_cause=True)
 
 def test_setup_vector_extension_error(mock_storage_components, mock_config, assert_error):
     """Test that setup handles vector extension errors properly."""
@@ -50,12 +72,28 @@ def test_setup_vector_extension_error(mock_storage_components, mock_config, asse
             # Verify
             assert_error(excinfo, "Failed to load vector extension", has_cause=True)
 
-@pytest.mark.skip(reason="Test needs to be updated for new storage architecture")
-def test_create_hnsw_index_error(mock_config, assert_error):
+def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_error):
     """Test that create_hnsw_index handles errors properly."""
-    # This test needs to be updated for the new storage architecture
-    # For now, we'll skip it and focus on implementing the remaining task from TASK_PROGRESS.md
-    pass
+    # Setup
+    # Create a mock DuckDB backend that raises an exception when create_hnsw_index is called
+    mock_db_backend = MagicMock()
+    mock_db_backend.create_hnsw_index.side_effect = Exception("HNSW index creation error")
+
+    # Create a mock graph and RDF store
+    mock_graph = nx.DiGraph()
+    mock_rdf = MagicMock()
+
+    # Create a mock config
+    config = MagicMock()
+
+    # Execute
+    with mock_storage_components(graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf):
+        with mock_config(config=config):
+            with pytest.raises(StorageError) as excinfo:
+                StorageManager.create_hnsw_index()
+
+    # Verify
+    assert_error(excinfo, "Failed to create HNSW index", has_cause=True)
 
 def test_vector_search_error(mock_storage_components, mock_config, assert_error):
     """Test that vector_search handles errors properly."""

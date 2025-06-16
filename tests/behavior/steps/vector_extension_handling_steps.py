@@ -110,10 +110,10 @@ def local_extension(tmp_path, monkeypatch):
             mock_info(f"Loading vss extension from filesystem: {extension_dir}")
             mock_info("VSS extension loaded successfully from filesystem")
             return original_execute(self, "SELECT 1", *args, **kwargs)
-        elif query == "SELECT hnsw_version()":
-            # Mock successful version check after loading
-            print("DEBUG: Mocked hnsw_version check")
-            return original_execute(self, "SELECT '1.0.0'", *args, **kwargs)
+        elif query == "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'":
+            # Mock successful extension check after loading
+            print("DEBUG: Mocked duckdb_extensions check for vss")
+            return original_execute(self, "SELECT 'vss', 'loaded'", *args, **kwargs)
         else:
             return original_execute(self, query, *args, **kwargs)
 

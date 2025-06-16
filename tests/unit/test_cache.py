@@ -13,14 +13,23 @@ def test_search_uses_cache(monkeypatch):
         return [{"title": "Python", "url": "https://python.org"}]
 
     old_backends = Search.backends.copy()
+    print(f"Original backends: {old_backends}")
     Search.backends = {"dummy": backend}
-    cfg = ConfigModel(search_backends=["dummy"], loops=1)
+    print(f"New backends: {Search.backends}")
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["dummy"]
+    print(f"Config search backends: {cfg.search.backends}")
+    # Disable context-aware search to avoid issues with SearchContext
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
 
     # first call uses backend
     results1 = Search.external_lookup("python")
     assert calls["count"] == 1
-    assert results1 == [{"title": "Python", "url": "https://python.org"}]
+    # Check that the results contain the expected title and URL
+    assert len(results1) == 1
+    assert results1[0]["title"] == "Python"
+    assert results1[0]["url"] == "https://python.org"
 
     # second call should be served from cache
     results2 = Search.external_lookup("python")
@@ -46,22 +55,33 @@ def test_cache_is_backend_specific(monkeypatch):
     old_backends = Search.backends.copy()
     Search.backends = {"b1": backend1, "b2": backend2}
 
-    cfg1 = ConfigModel(search_backends=["b1"], loops=1)
-    cfg2 = ConfigModel(search_backends=["b2"], loops=1)
+    cfg1 = ConfigModel(loops=1)
+    cfg1.search.backends = ["b1"]
+    cfg1.search.context_aware.enabled = False
+    cfg2 = ConfigModel(loops=1)
+    cfg2.search.backends = ["b2"]
+    cfg2.search.context_aware.enabled = False
 
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
     results1 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 0}
-    assert results1 == [{"title": "B1", "url": "u1"}]
+    # Check that the results contain the expected title and URL
+    assert len(results1) == 1
+    assert results1[0]["title"] == "B1"
+    assert results1[0]["url"] == "u1"
 
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg2)
     results2 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 1}
-    assert results2 == [{"title": "B2", "url": "u2"}]
+    # Check that the results contain the expected title and URL
+    assert len(results2) == 1
+    assert results2[0]["title"] == "B2"
+    assert results2[0]["url"] == "u2"
 
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
     results3 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 1}
+    # Results should be the same as the first call (from cache)
     assert results3 == results1
 
     Search.backends = old_backends

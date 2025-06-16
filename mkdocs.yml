@@ -6,11 +6,53 @@ nav:
   - Storage: docs/storage.md
   - Orchestration: docs/orchestration.md
   - API Usage: docs/api.md
+  - Advanced Usage: docs/advanced_usage.md
+  - Agent System: docs/agent_system.md
+  - Component Interactions: docs/component_interactions.md
+  - API Reference:
+    - Overview: docs/api_reference/index.md
+    - Agents: docs/api_reference/agents.md
+    - Orchestration: docs/api_reference/orchestration.md
+    - Storage: docs/api_reference/storage.md
+    - LLM: docs/api_reference/llm.md
+    - Search: docs/api_reference/search.md
+    - Config: docs/api_reference/config.md
   - Contributing: docs/contributing.md
   - Requirements: docs/requirements.md
   - Specification: docs/specification.md
   - Plan: docs/plan.md
   - Pseudocode: docs/pseudocode.md
   - Requirements Tracability Matrix: docs/requirements_tracability_matrix.md
+  - Testing Guidelines: docs/testing_guidelines.md
 markdown_extensions:
   - toc
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            docstring_style: google
+          rendering:
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_category_heading: true
+            show_if_no_docstring: false
+            heading_level: 2
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - navigation.indexes
+    - content.code.copy

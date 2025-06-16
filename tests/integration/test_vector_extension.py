@@ -51,10 +51,13 @@ def test_vector_search_with_real_duckdb(
 
     # Check if vector extension is available
     try:
-        # Try to use a vector function to check if the extension is loaded
-        conn.execute("SELECT hnsw_version()")
-        vector_extension_available = True
-        logger.info("Vector extension is available")
+        # Check if the VSS extension is loaded
+        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        vector_extension_available = result and len(result) > 0
+        if vector_extension_available:
+            logger.info("Vector extension is available")
+        else:
+            logger.info("Vector extension is not available")
     except Exception as e:
         vector_extension_available = False
         logger.info(f"Vector extension is not available: {e}")

@@ -3,6 +3,50 @@ llm_backend = "lmstudio"
 loops = 3
 tracing_enabled = false
 
+[search]
+backends = ["serper"]
+max_results_per_query = 5
+
+# Enhanced relevance ranking settings
+use_semantic_similarity = true
+use_bm25 = true
+use_source_credibility = true
+
+# Weights for different ranking factors (must sum to 1.0)
+semantic_similarity_weight = 0.5
+bm25_weight = 0.3
+source_credibility_weight = 0.2
+
+# Source credibility settings
+domain_authority_factor = 0.6
+citation_count_factor = 0.4
+
+# User feedback settings (experimental)
+use_feedback = false
+feedback_weight = 0.3
+
+# Context-aware search settings
+[search.context_aware]
+enabled = true
+
+# Query expansion settings
+use_query_expansion = true
+expansion_factor = 0.3  # Controls how many expansion terms to use (0.0-1.0)
+
+# Entity recognition settings
+use_entity_recognition = true
+entity_weight = 0.5
+
+# Topic modeling settings
+use_topic_modeling = true
+num_topics = 5  # Number of topics to model
+topic_weight = 0.3
+
+# Search history settings
+use_search_history = true
+history_weight = 0.2
+max_history_items = 10  # Maximum number of queries to keep in history
+
 [storage.duckdb]
 path = "data/research.duckdb"
 vector_extension = true

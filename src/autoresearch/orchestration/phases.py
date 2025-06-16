@@ -13,3 +13,9 @@ class DialoguePhase(str, Enum):
     VERIFICATION = "verification"
     SYNTHESIS = "synthesis"
     INTERVENTION = "intervention"
+
+    # Specialized agent phases
+    RESEARCH = "research"
+    CRITIQUE = "critique"
+    SUMMARY = "summary"
+    PLANNING = "planning"

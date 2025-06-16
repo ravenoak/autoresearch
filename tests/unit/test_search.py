@@ -11,7 +11,9 @@ from autoresearch.search import Search
 
 @responses.activate
 def test_external_lookup(monkeypatch):
-    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -27,12 +29,17 @@ def test_external_lookup(monkeypatch):
         },
     )
     results = Search.external_lookup(query, max_results=1)
-    assert results == [{"title": "Python", "url": "https://python.org"}]
+    # Check that the results contain the expected title and URL
+    assert len(results) == 1
+    assert results[0]["title"] == "Python"
+    assert results[0]["url"] == "https://python.org"
 
 
 @responses.activate
 def test_external_lookup_special_chars(monkeypatch):
-    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "C++ tutorial & basics"
     url = "https://api.duckduckgo.com/"
@@ -48,7 +55,10 @@ def test_external_lookup_special_chars(monkeypatch):
         },
     )
     results = Search.external_lookup(query, max_results=1)
-    assert results == [{"title": "C++", "url": "https://cplusplus.com"}]
+    # Check that the results contain the expected title and URL
+    assert len(results) == 1
+    assert results[0]["title"] == "C++"
+    assert results[0]["url"] == "https://cplusplus.com"
 
 
 def test_generate_queries():
@@ -65,7 +75,9 @@ def test_generate_queries():
 @responses.activate
 def test_external_lookup_backend_error(monkeypatch):
     """Test that a SearchError is raised when a search backend fails."""
-    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -92,7 +104,9 @@ def test_external_lookup_backend_error(monkeypatch):
 @responses.activate
 def test_duckduckgo_timeout_error(monkeypatch):
     """Test that a TimeoutError is raised when DuckDuckGo search times out."""
-    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -118,7 +132,9 @@ def test_duckduckgo_timeout_error(monkeypatch):
 @responses.activate
 def test_duckduckgo_json_decode_error(monkeypatch):
     """Test that a SearchError is raised when DuckDuckGo returns invalid JSON."""
-    cfg = ConfigModel(search_backends=["duckduckgo"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["duckduckgo"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -145,7 +161,9 @@ def test_duckduckgo_json_decode_error(monkeypatch):
 @responses.activate
 def test_serper_backend_error(monkeypatch):
     """Test that a SearchError is raised when Serper search fails."""
-    cfg = ConfigModel(search_backends=["serper"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["serper"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     monkeypatch.setenv("SERPER_API_KEY", "test_key")
     query = "python"
@@ -173,7 +191,9 @@ def test_serper_backend_error(monkeypatch):
 @responses.activate
 def test_serper_timeout_error(monkeypatch):
     """Test that a TimeoutError is raised when Serper search times out."""
-    cfg = ConfigModel(search_backends=["serper"], loops=1)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["serper"]
+    cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
     monkeypatch.setenv("SERPER_API_KEY", "test_key")
     query = "python"

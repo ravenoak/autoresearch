@@ -136,3 +136,24 @@ class NotFoundError(AutoresearchError):
             kwargs["resource_id"] = resource_id
 
         super().__init__(message, cause, **kwargs)
+
+
+class BackupError(AutoresearchError):
+    """Error related to backup and restore operations."""
+
+    def __init__(
+        self, message: str, cause: Optional[Exception] = None, 
+        suggestion: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Initialize the error with backup-specific context.
+
+        Args:
+            message: The error message
+            cause: The original exception that caused this error
+            suggestion: A suggestion for how to fix the error
+            **kwargs: Additional context for the error
+        """
+        if suggestion is not None:
+            kwargs["suggestion"] = suggestion
+
+        super().__init__(message, cause, **kwargs)
