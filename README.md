@@ -77,10 +77,16 @@ path = "data/research.duckdb"
 # Enable vector extension for similarity search
 vector_extension = true
 
+# Path to the VSS extension file (optional, auto-detected if not specified)
+# vector_extension_path = "./extensions/vss/vss.duckdb_extension"
+
 # HNSW index parameters for vector search
 hnsw_m = 16
 hnsw_ef_construction = 200
 hnsw_metric = "l2"
+
+# For detailed information about DuckDB and VSS extension compatibility,
+# see docs/duckdb_compatibility.md
 
 [storage.rdf]
 # RDF backend (sqlite or berkeleydb)

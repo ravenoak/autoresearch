@@ -8,10 +8,20 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest, macos-14]
         python-version: [3.12]
+        test-mode: [offline, online]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos-intel
+          - os: macos-14
+            platform: macos-arm64
 
     steps:
     - uses: actions/checkout@v3
@@ -23,11 +33,24 @@ jobs:
       run: |
         ./scripts/setup.sh
     - name: Lint with flake8
+      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       run: |
         poetry run flake8 src tests
     - name: Type check with mypy
+      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       run: |
         poetry run mypy --strict src
+    - name: Set up offline environment for tests
+      if: matrix.test-mode == 'offline'
+      run: |
+        cp .env.offline .env
+        echo "Using offline environment for tests"
+        cat .env
+    - name: Set up online environment for tests
+      if: matrix.test-mode == 'online'
+      run: |
+        echo "Using online environment for tests"
+        echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
     - name: Test with pytest
       run: |
         poetry run pytest tests/
@@ -35,6 +58,7 @@ jobs:
       run: |
         poetry run pytest tests/behavior/
     - name: Upload coverage report
+      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
@@ -44,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
