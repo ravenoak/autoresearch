@@ -32,8 +32,26 @@ _config_loader: ConfigLoader = ConfigLoader()
 
 
 @app.callback(invoke_without_command=False)
-def start_watcher(ctx: typer.Context) -> None:
+def start_watcher(
+    ctx: typer.Context,
+    vss_path: Optional[str] = typer.Option(
+        None,
+        "--vss-path",
+        help="Path to VSS extension file. Overrides config and environment settings.",
+    ),
+    no_vss: bool = typer.Option(
+        False,
+        "--no-vss",
+        help="Disable VSS extension loading even if enabled in config.",
+    ),
+) -> None:
     """Start configuration watcher before executing commands."""
+    # Set environment variables for VSS extension control if CLI options are provided
+    if no_vss:
+        os.environ["VECTOR_EXTENSION"] = "false"
+    if vss_path:
+        os.environ["VECTOR_EXTENSION_PATH"] = vss_path
+
     StorageManager.setup()
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()

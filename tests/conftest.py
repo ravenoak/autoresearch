@@ -95,7 +95,7 @@ def bdd_context():
 
 @pytest.fixture
 def mock_storage_components():
-    """Mock the storage components (_graph, _db_conn, _rdf_store).
+    """Mock the storage components (_graph, _db_backend, _rdf_store).
 
     This fixture provides a function that creates a context manager for patching
     the storage components with mock objects.
@@ -111,7 +111,7 @@ def mock_storage_components():
 
     Args:
         graph: Optional mock graph to use (default: None)
-        db: Optional mock database connection to use (default: None)
+        db_backend: Optional mock database backend to use (default: None)
         rdf: Optional mock RDF store to use (default: None)
 
     Returns:
@@ -121,12 +121,15 @@ def mock_storage_components():
         def __init__(self, **kwargs):
             # Store the components to patch
             self.graph = kwargs.get('graph', None)
-            self.db = kwargs.get('db', None)
+            self.db_backend = kwargs.get('db_backend', None)
+            # For backward compatibility, also accept 'db' parameter
+            if 'db' in kwargs and 'db_backend' not in kwargs:
+                self.db_backend = kwargs.get('db', None)
             self.rdf = kwargs.get('rdf', None)
 
             # Keep track of which components were explicitly passed
             self.has_graph = 'graph' in kwargs
-            self.has_db = 'db' in kwargs
+            self.has_db_backend = 'db_backend' in kwargs or 'db' in kwargs
             self.has_rdf = 'rdf' in kwargs
 
             self.patches = []
@@ -136,8 +139,8 @@ def mock_storage_components():
             # This allows patching a component to None
             if self.has_graph:
                 self.patches.append(patch('autoresearch.storage._graph', self.graph))
-            if self.has_db:
-                self.patches.append(patch('autoresearch.storage._db_conn', self.db))
+            if self.has_db_backend:
+                self.patches.append(patch('autoresearch.storage._db_backend', self.db_backend))
             if self.has_rdf:
                 self.patches.append(patch('autoresearch.storage._rdf_store', self.rdf))
 

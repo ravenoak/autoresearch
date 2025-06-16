@@ -14,6 +14,27 @@ class DummyConn:
         return [("n1", [0.1, 0.2])]
 
 
+class MockDuckDBBackend:
+    def __init__(self, conn):
+        self._conn = conn
+        self._has_vss = True
+
+    def create_hnsw_index(self):
+        self._conn.execute("CREATE INDEX IF NOT EXISTS embeddings_hnsw ON embeddings USING hnsw (embedding)")
+
+    def get_connection(self):
+        return self._conn
+
+    def has_vss(self):
+        return self._has_vss
+
+    def vector_search(self, query_embedding, k=5):
+        vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
+        sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+        self._conn.execute(sql)
+        return [{"node_id": "n1", "embedding": [0.1, 0.2]}]
+
+
 def _mock_config():
     return ConfigModel(
         storage=StorageConfig(
@@ -27,8 +48,8 @@ def _mock_config():
 
 def test_create_hnsw_index(monkeypatch):
     dummy = DummyConn()
-    monkeypatch.setattr(StorageManager, "get_duckdb_conn", lambda: dummy)
-    monkeypatch.setattr("autoresearch.storage._db_conn", dummy, raising=False)
+    mock_backend = MockDuckDBBackend(dummy)
+    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -42,8 +63,8 @@ def test_create_hnsw_index(monkeypatch):
 
 def test_vector_search_builds_query(monkeypatch):
     dummy = DummyConn()
-    monkeypatch.setattr(StorageManager, "get_duckdb_conn", lambda: dummy)
-    monkeypatch.setattr("autoresearch.storage._db_conn", dummy, raising=False)
+    mock_backend = MockDuckDBBackend(dummy)
+    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -51,6 +72,8 @@ def test_vector_search_builds_query(monkeypatch):
     )
     # Mock _ensure_storage_initialized to do nothing
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
+    # Mock has_vss to return True
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     ConfigLoader()._config = None
 
     results = StorageManager.vector_search([0.1, 0.2], k=3)
@@ -65,10 +88,15 @@ class FailingConn(DummyConn):
         raise RuntimeError("db fail")
 
 
+class FailingBackend(MockDuckDBBackend):
+    def vector_search(self, query_embedding, k=5):
+        raise RuntimeError("db fail")
+
+
 def test_vector_search_failure(monkeypatch):
     dummy = FailingConn()
-    monkeypatch.setattr(StorageManager, "get_duckdb_conn", lambda: dummy)
-    monkeypatch.setattr("autoresearch.storage._db_conn", dummy, raising=False)
+    mock_backend = FailingBackend(dummy)
+    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -76,6 +104,8 @@ def test_vector_search_failure(monkeypatch):
     )
     # Mock _ensure_storage_initialized to do nothing
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
+    # Mock has_vss to return True
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     ConfigLoader()._config = None
 
     # The vector_search method should raise a StorageError when the database fails

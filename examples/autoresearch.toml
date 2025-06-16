@@ -6,9 +6,9 @@ tracing_enabled = false
 [storage.duckdb]
 path = "data/research.duckdb"
 vector_extension = true
-# Path to the vector extension file for offline use
+# Path to the VSS extension file for offline use
 # Use the download_duckdb_extensions.py script to download the extension
-# vector_extension_path = "./extensions/vector"
+# vector_extension_path = "./extensions/vss/vss.duckdb_extension"
 
 [agent.Synthesizer]
 model = "gpt-3.5-turbo"

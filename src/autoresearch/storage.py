@@ -9,12 +9,12 @@ This module provides a storage system that combines three backends:
 The storage system supports claim persistence, vector search, and automatic
 resource management with configurable eviction policies.
 
-Note on Vector Extension:
-The vector search functionality requires the DuckDB vector extension.
+Note on VSS Extension:
+The vector search functionality requires the DuckDB VSS extension.
 If the extension is not available, the system will still work, but
 vector search operations will fail. Claims and embeddings will still
 be stored in the database, but similarity search will not be available.
-The system attempts to install and load the vector extension automatically
+The system attempts to install and load the VSS extension automatically
 if it's enabled in the configuration.
 """
 
@@ -31,13 +31,14 @@ import networkx as nx
 import rdflib
 from .config import ConfigLoader
 from .errors import StorageError, NotFoundError
+from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
+from .storage_backends import DuckDBStorageBackend
 
 # Global containers initialised in `setup`
 _graph: Optional[nx.DiGraph[Any]] = None
-_db_path: Optional[str] = None
-_db_conn: Optional[duckdb.DuckDBPyConnection] = None
+_db_backend: Optional[DuckDBStorageBackend] = None
 _rdf_store: Optional[rdflib.Graph] = None
 _lock = Lock()
 _lru: "OrderedDict[str, float]" = OrderedDict()
@@ -60,21 +61,19 @@ def get_delegate() -> type["StorageManager"] | None:
 
 def setup(db_path: Optional[str] = None) -> None:
     """Initialise storage components if not already initialised."""
-    global _graph, _db_path, _db_conn, _rdf_store
+    global _graph, _db_backend, _rdf_store
     with _lock:
-        if _db_conn is not None:
+        if _db_backend is not None and _db_backend.get_connection() is not None:
             return
 
         _graph = nx.DiGraph()
-        path: str = (
-            db_path
-            if db_path is not None
-            else os.getenv("DUCKDB_PATH", "kg.duckdb")
-        )
-        _db_path = path
-        _db_conn = duckdb.connect(path)
-
         cfg = ConfigLoader().config.storage
+
+        # Initialize DuckDB backend
+        _db_backend = DuckDBStorageBackend()
+        _db_backend.setup(db_path)
+
+        # Initialize RDF store
         store_name = (
             "Sleepycat" if cfg.rdf_backend == "berkeleydb" else "SQLite"
         )
@@ -88,78 +87,6 @@ def setup(db_path: Optional[str] = None) -> None:
             # in test environments where the full RDF dependencies might not be installed
             if "No plugin registered" not in str(e):
                 raise StorageError("Failed to open RDF store", cause=e)
-        if cfg.vector_extension:
-            # First try to load from filesystem if path is configured
-            extension_loaded = False
-            if cfg.vector_extension_path:
-                try:
-                    extension_path = cfg.vector_extension_path
-                    log.info(f"Loading vector extension from filesystem: {extension_path}")
-
-                    # Check if the path exists
-                    if not os.path.exists(extension_path):
-                        log.warning(f"Vector extension path does not exist: {extension_path}")
-                        raise FileNotFoundError(f"Vector extension path does not exist: {extension_path}")
-
-                    # Load the extension from the filesystem
-                    _db_conn.execute(f"LOAD '{extension_path}'")
-
-                    # Verify the extension is loaded
-                    try:
-                        _db_conn.execute("SELECT hnsw_version()")
-                        log.info("Vector extension loaded successfully from filesystem")
-                        extension_loaded = True
-                    except Exception as e:
-                        log.warning(f"Vector extension may not be fully loaded from filesystem: {e}")
-                        raise Exception(f"Failed to verify vector extension from filesystem: {e}")
-
-                except Exception as e:
-                    log.warning(f"Failed to load vector extension from filesystem: {e}")
-                    # Continue to try downloading if loading from filesystem fails
-
-            # If extension wasn't loaded from filesystem, try to download and install
-            if not extension_loaded:
-                try:
-                    # Try to install the vector extension
-                    # If it's already installed, this will be a no-op
-                    log.info("Installing vector extension...")
-                    _db_conn.execute("INSTALL vector")
-
-                    # Load the vector extension
-                    log.info("Loading vector extension...")
-                    _db_conn.execute("LOAD vector")
-
-                    # Verify the extension is loaded by trying to use a vector function
-                    try:
-                        _db_conn.execute("SELECT hnsw_version()")
-                        log.info("Vector extension loaded successfully")
-                    except Exception as e:
-                        log.warning(f"Vector extension may not be fully loaded: {e}")
-                except Exception as e:  # pragma: no cover - extension may fail
-                    log.error(f"Failed to load vector extension: {e}")
-                    # In test environments, we don't want to fail if the vector extension is not available
-                    # Only raise in non-test environments or if explicitly configured to fail
-                    if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
-                        raise StorageError("Failed to load vector extension", cause=e)
-
-        # Ensure required tables exist
-        _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS nodes("
-            "id VARCHAR, type VARCHAR, content VARCHAR, "
-            "conf DOUBLE, ts TIMESTAMP)"
-        )
-        _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS edges("
-            "src VARCHAR, dst VARCHAR, rel VARCHAR, "
-            "w DOUBLE)"
-        )
-        _db_conn.execute(
-            "CREATE TABLE IF NOT EXISTS embeddings("
-            "node_id VARCHAR, embedding DOUBLE[])"
-        )
-
-        if cfg.vector_extension:
-            StorageManager.create_hnsw_index()
 
 
 def teardown(remove_db: bool = False) -> None:
@@ -173,32 +100,48 @@ def teardown(remove_db: bool = False) -> None:
         remove_db: If True, also removes the database files from disk.
                   Default is False.
     """
-    global _graph, _db_conn, _rdf_store
+    global _graph, _db_backend, _rdf_store
     with _lock:
-        if _db_conn is not None:
+        # Close DuckDB connection
+        if _db_backend is not None:
             try:
-                _db_conn.close()
+                # Get the path before closing the connection
+                db_path = None
+                try:
+                    db_path = _db_backend._path
+                except Exception:
+                    pass
+
+                # Close the connection
+                _db_backend.close()
+
+                # Remove the database file if requested
+                if remove_db and db_path and os.path.exists(db_path):
+                    os.remove(db_path)
             except Exception as e:  # pragma: no cover - optional close
                 log.warning(f"Failed to close DuckDB connection: {e}")
                 # We don't raise here as this is cleanup code
+
+        # Close RDF store
         if _rdf_store is not None:
             try:
                 _rdf_store.close()
             except Exception as e:  # pragma: no cover - optional close
                 log.warning(f"Failed to close RDF store: {e}")
                 # We don't raise here as this is cleanup code
-        if remove_db and _db_path and os.path.exists(_db_path):
-            os.remove(_db_path)
+
+        # Remove RDF store files if requested
         cfg = ConfigLoader().config.storage
         if remove_db and os.path.exists(cfg.rdf_path):
             if os.path.isdir(cfg.rdf_path):
                 import shutil
-
                 shutil.rmtree(cfg.rdf_path, ignore_errors=True)
             else:
                 os.remove(cfg.rdf_path)
+
+        # Reset global variables
         _graph = None
-        _db_conn = None
+        _db_backend = None
         _rdf_store = None
 
 
@@ -226,10 +169,13 @@ class StorageManager:
 
         Args:
             db_path: Optional path to the DuckDB database file. If not provided,
-                     uses the DUCKDB_PATH environment variable or defaults to "kg.duckdb".
+                     the path is determined with the following precedence:
+                     1. config.storage.duckdb.path
+                     2. DUCKDB_PATH environment variable
+                     3. Default to "kg.duckdb".
 
         Raises:
-            StorageError: If the RDF store or vector extension fails to initialize
+            StorageError: If the RDF store or VSS extension fails to initialize
                           and the failure is not due to a plugin registration issue.
         """
         if _delegate and _delegate is not StorageManager:
@@ -417,7 +363,7 @@ class StorageManager:
     def _ensure_storage_initialized() -> None:
         """Ensure all storage components are initialized before performing operations.
 
-        This method checks if the DuckDB connection, NetworkX graph, and RDF store
+        This method checks if the DuckDB backend, NetworkX graph, and RDF store
         are initialized. If any of them are not initialized, it attempts to initialize
         them by calling setup(). If initialization fails or any component remains
         uninitialized after setup, a StorageError is raised with a specific message
@@ -428,15 +374,15 @@ class StorageManager:
                          uninitialized after calling setup(). The error message includes
                          a suggestion to call StorageManager.setup() before performing operations.
         """
-        if _db_conn is None or _graph is None or _rdf_store is None:
+        if _db_backend is None or _graph is None or _rdf_store is None:
             try:
                 setup()
             except Exception as e:
                 raise StorageError("Failed to initialize storage components", cause=e)
 
-        if _db_conn is None:
+        if _db_backend is None:
             raise StorageError(
-                "DuckDB connection not initialized",
+                "DuckDB backend not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations"
             )
         if _graph is None:
@@ -493,7 +439,7 @@ class StorageManager:
         3. embeddings: Stores the claim's vector embedding (if available)
 
         The DuckDB database provides persistent storage and supports vector search
-        through the vector extension. Unlike the NetworkX graph, data in DuckDB
+        through the VSS extension. Unlike the NetworkX graph, data in DuckDB
         is not subject to eviction when the RAM budget is exceeded.
 
         Args:
@@ -506,36 +452,8 @@ class StorageManager:
             has been validated. It should be called by persist_claim, which
             handles these prerequisites.
         """
-        # Insert node row
-        _db_conn.execute(
-            "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
-            [
-                claim["id"],
-                claim.get("type", ""),
-                claim.get("content", ""),
-                claim.get("confidence", 0.0),
-            ],
-        )
-
-        # Insert edges
-        for rel in claim.get("relations", []):
-            _db_conn.execute(
-                "INSERT INTO edges VALUES (?, ?, ?, ?)",
-                [
-                    rel["src"],
-                    rel["dst"],
-                    rel.get("rel", ""),
-                    rel.get("weight", 1.0),
-                ],
-            )
-
-        # Insert embedding
-        embedding = claim.get("embedding")
-        if embedding is not None:
-            _db_conn.execute(
-                "INSERT INTO embeddings VALUES (?, ?)",
-                [claim["id"], embedding],
-            )
+        # Use the DuckDBStorageBackend to persist the claim
+        _db_backend.persist_claim(claim)
 
     @staticmethod
     def _persist_to_rdf(claim: dict[str, Any]) -> None:
@@ -621,71 +539,14 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.create_hnsw_index()
-        if _db_conn is None:
+
+        # Ensure storage is initialized
+        if _db_backend is None:
             setup()
-        assert _db_conn is not None
-        cfg = ConfigLoader().config.storage
+        assert _db_backend is not None
 
-        # First check if the vector extension is loaded
-        try:
-            # Try to use a vector function to check if the extension is loaded
-            try:
-                _db_conn.execute("SELECT hnsw_version()")
-                log.info("Vector extension is loaded")
-            except Exception:
-                log.warning("Vector extension not loaded. Attempting to load it now.")
-
-                # First try to load from filesystem if path is configured
-                extension_loaded = False
-                if cfg.vector_extension_path:
-                    try:
-                        extension_path = cfg.vector_extension_path
-                        log.info(f"Loading vector extension from filesystem: {extension_path}")
-                        _db_conn.execute(f"LOAD '{extension_path}'")
-                        extension_loaded = True
-                    except Exception as e:
-                        log.warning(f"Failed to load vector extension from filesystem: {e}")
-
-                # If not loaded from filesystem, try the default way
-                if not extension_loaded:
-                    _db_conn.execute("LOAD vector")
-
-                # Verify it loaded
-                try:
-                    _db_conn.execute("SELECT hnsw_version()")
-                    log.info("Vector extension loaded successfully")
-                except Exception as e:
-                    log.warning(f"Vector extension may not be fully loaded: {e}")
-        except Exception as e:
-            log.error(f"Failed to check or load vector extension: {e}")
-            # Continue anyway, as the CREATE INDEX will fail if the extension is not available
-
-        try:
-            log.info("Creating HNSW index on embeddings table...")
-            _db_conn.execute(
-                "CREATE INDEX IF NOT EXISTS embeddings_hnsw "
-                "ON embeddings USING hnsw (embedding) "
-                f"WITH (m={cfg.hnsw_m}, "
-                f"ef_construction={cfg.hnsw_ef_construction}, "
-                f"metric='{cfg.hnsw_metric}')"
-            )
-            log.info("HNSW index created successfully")
-
-            # Verify the index was created
-            indexes = _db_conn.execute(
-                "SELECT index_name FROM duckdb_indexes() WHERE table_name='embeddings'"
-            ).fetchall()
-            if not indexes:
-                log.warning("HNSW index creation appeared to succeed, but no index was found")
-            else:
-                log.info(f"Verified index creation: {indexes}")
-
-        except Exception as e:  # pragma: no cover - index creation may fail
-            log.error(f"Failed to create HNSW index: {e}")
-            # In test environments, we don't want to fail if the HNSW index creation fails
-            # Only raise in non-test environments or if explicitly configured to fail
-            if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
-                raise StorageError("Failed to create HNSW index", cause=e)
+        # Use the DuckDBStorageBackend to create the HNSW index
+        _db_backend.create_hnsw_index()
 
     @staticmethod
     def _validate_vector_search_params(query_embedding: list[float], k: int) -> None:
@@ -759,7 +620,7 @@ class StorageManager:
 
         This method performs a vector similarity search using the provided query embedding.
         It validates the search parameters, ensures storage is initialized, and then
-        executes the search using the DuckDB vector extension if available.
+        executes the search using the DuckDB VSS extension if available.
 
         The search uses cosine similarity by default (configurable via storage.hnsw_metric)
         and returns the k most similar claims, ordered by similarity score.
@@ -776,12 +637,11 @@ class StorageManager:
         Returns:
             list[dict[str, Any]]: List of nearest nodes with their embeddings and
                                  similarity scores, ordered by similarity (highest first).
-                                 Each result contains 'id', 'content', 'embedding',
-                                 'similarity', and other claim attributes.
+                                 Each result contains 'node_id' and 'embedding'.
 
         Raises:
             StorageError: If the search parameters are invalid, storage is not initialized,
-                         or the vector extension is not available.
+                         or the VSS extension is not available.
             NotFoundError: If no embeddings are found in the database.
         """
         if _delegate and _delegate is not StorageManager:
@@ -793,32 +653,21 @@ class StorageManager:
         # Ensure storage is initialized
         StorageManager._ensure_storage_initialized()
 
-        conn = StorageManager.get_duckdb_conn()
-        cfg = ConfigLoader().config
-
-        try:
-            # Set search parameters
-            try:
-                conn.execute(f"SET hnsw_ef_search={cfg.vector_nprobe}")
-            except Exception as e:
-                log.debug(f"Failed to set hnsw_ef_search: {e}, continuing with default")
-
-            # Format query and execute search
-            vector_literal = StorageManager._format_vector_literal(query_embedding)
-            sql = (
-                "SELECT node_id, embedding FROM embeddings "
-                f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+        # Check if VSS extension is available
+        if not StorageManager.has_vss():
+            raise StorageError(
+                "Vector search not available: VSS extension not loaded",
+                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration"
             )
-            rows = conn.execute(sql).fetchall()
 
-            # Format results
-            return [{"node_id": r[0], "embedding": r[1]} for r in rows]
+        # Use the DuckDBStorageBackend to perform the vector search
+        try:
+            return _db_backend.vector_search(query_embedding, k)
         except Exception as e:
-            log.error(f"Vector search failed: {e}")
             raise StorageError(
                 "Vector search failed", 
                 cause=e,
-                suggestion="Check that the vector extension is properly installed and that embeddings exist in the database"
+                suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database"
             )
 
     @staticmethod
@@ -892,14 +741,14 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_duckdb_conn()
         with _lock:
-            if _db_conn is None:
+            if _db_backend is None:
                 try:
                     setup()
                 except Exception as e:
                     raise NotFoundError("DuckDB connection not initialized", cause=e)
-            if _db_conn is None:
+            if _db_backend is None:
                 raise NotFoundError("DuckDB connection not initialized")
-            return _db_conn
+            return _db_backend.get_connection()
 
     @staticmethod
     def get_rdf_store() -> rdflib.Graph:
@@ -931,6 +780,32 @@ class StorageManager:
             return _rdf_store
 
     @staticmethod
+    def has_vss() -> bool:
+        """Check if the VSS extension is available for vector search.
+
+        This method checks if the VSS extension is loaded and available for
+        vector search operations. If the storage system is not initialized,
+        it attempts to initialize it by calling setup().
+
+        If a custom implementation is set via set_delegate(), the call is
+        delegated to that implementation.
+
+        Returns:
+            bool: True if the VSS extension is loaded and available, False otherwise.
+        """
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.has_vss()
+        with _lock:
+            if _db_backend is None:
+                try:
+                    setup()
+                except Exception:
+                    return False
+            if _db_backend is None:
+                return False
+            return _db_backend.has_vss()
+
+    @staticmethod
     def clear_all() -> None:
         """Clear all data from all storage backends.
 
@@ -949,9 +824,7 @@ class StorageManager:
         with _lock:
             if _graph is not None:
                 _graph.clear()
-            if _db_conn is not None:
-                _db_conn.execute("DELETE FROM nodes")
-                _db_conn.execute("DELETE FROM edges")
-                _db_conn.execute("DELETE FROM embeddings")
+            if _db_backend is not None:
+                _db_backend.clear()
             if _rdf_store is not None:
                 _rdf_store.remove((None, None, None))
