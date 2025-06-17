@@ -75,22 +75,25 @@ def setup(db_path: Optional[str] = None) -> None:
         _db_backend.setup(db_path)
 
         # Initialize RDF store
-        if cfg.rdf_backend == "berkeleydb":
-            store_name = "Sleepycat"
-            rdf_path = cfg.rdf_path
-        else:
-            store_name = "SQLAlchemy"
-            rdf_path = f"sqlite:///{cfg.rdf_path}"
-        try:
-            _rdf_store = rdflib.Graph(store=store_name)
-            _rdf_store.open(rdf_path, create=True)
-        except Exception as e:  # pragma: no cover - store may fail
-            log.error(f"Failed to open RDF store: {e}")
+        if cfg.rdf_backend == "memory":
             _rdf_store = rdflib.Graph()
-            # Don't raise if it's a plugin registration issue, as this is a common case
-            # in test environments where the full RDF dependencies might not be installed
-            if "No plugin registered" not in str(e):
-                raise StorageError("Failed to open RDF store", cause=e)
+        else:
+            if cfg.rdf_backend == "berkeleydb":
+                store_name = "Sleepycat"
+                rdf_path = cfg.rdf_path
+            else:
+                store_name = "SQLAlchemy"
+                rdf_path = f"sqlite:///{cfg.rdf_path}"
+            try:
+                _rdf_store = rdflib.Graph(store=store_name)
+                _rdf_store.open(rdf_path, create=True)
+            except Exception as e:  # pragma: no cover - store may fail
+                log.error(f"Failed to open RDF store: {e}")
+                _rdf_store = rdflib.Graph()
+                # Don't raise if it's a plugin registration issue, as this is a common case
+                # in test environments where the full RDF dependencies might not be installed
+                if "No plugin registered" not in str(e):
+                    raise StorageError("Failed to open RDF store", cause=e)
 
 
 def teardown(remove_db: bool = False) -> None:

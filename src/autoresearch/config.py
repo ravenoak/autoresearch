@@ -146,7 +146,7 @@ class StorageConfig(BaseModel):
         Raises:
             ConfigError: If the specified backend is not in the list of valid backends
         """
-        valid_backends = ["sqlite", "berkeleydb"]
+        valid_backends = ["sqlite", "berkeleydb", "memory"]
         if v not in valid_backends:
             raise ConfigError(f"Invalid RDF backend", 
                              valid_backends=valid_backends, 
