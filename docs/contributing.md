@@ -19,8 +19,8 @@ Execute the commands below before opening a pull request:
 ```bash
 poetry run flake8 src tests
 poetry run mypy src
-pytest -q
-pytest tests/behavior
+poetry run pytest -q
+poetry run pytest tests/behavior
 ```
 
 Maintain at least 90% test coverage and remove temporary files before submitting your changes.
