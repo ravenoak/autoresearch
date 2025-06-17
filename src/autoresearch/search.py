@@ -40,12 +40,8 @@ try:
     import spacy
     import spacy.cli
     SPACY_AVAILABLE = True
-    # Download the small English model if not already downloaded
-    try:
-        spacy.load("en_core_web_sm")
-    except OSError:
-        spacy.cli.download("en_core_web_sm")
-except ImportError:
+except ImportError:  # pragma: no cover - optional dependency
+    spacy = None
     SPACY_AVAILABLE = False
 
 try:
@@ -102,14 +98,29 @@ class SearchContext:
         self.nlp = None
         self._initialize_nlp()
 
-    def _initialize_nlp(self):
+    def _initialize_nlp(self) -> None:
         """Initialize the NLP model if available."""
-        if SPACY_AVAILABLE:
-            try:
-                self.nlp = spacy.load("en_core_web_sm")
-                log.info("Initialized spaCy NLP model")
-            except Exception as e:
-                log.warning(f"Failed to initialize spaCy NLP model: {e}")
+        if not SPACY_AVAILABLE:
+            return
+
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+            log.info("Initialized spaCy NLP model")
+        except OSError:
+            if os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower() == "true":
+                try:
+                    spacy.cli.download("en_core_web_sm")
+                    self.nlp = spacy.load("en_core_web_sm")
+                    log.info("Downloaded spaCy model")
+                except Exception as e:  # pragma: no cover - unexpected
+                    log.warning(f"Failed to download spaCy model: {e}")
+            else:
+                log.warning(
+                    "spaCy model 'en_core_web_sm' not found. Set "
+                    "AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL=true to download automatically."
+                )
+        except Exception as e:  # pragma: no cover - unexpected
+            log.warning(f"Failed to initialize spaCy NLP model: {e}")
 
     def add_to_history(self, query: str, results: List[Dict[str, str]]):
         """Add a query and its results to the search history.
