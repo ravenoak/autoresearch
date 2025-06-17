@@ -29,6 +29,7 @@ from typing import Any, Optional, cast
 import duckdb
 import networkx as nx
 import rdflib
+import rdflib_sqlalchemy
 from .config import ConfigLoader
 from .errors import StorageError, NotFoundError
 from .extensions import VSSExtensionLoader
@@ -75,11 +76,14 @@ def setup(db_path: Optional[str] = None) -> None:
 
         # Initialize RDF store
         store_name = (
-            "Sleepycat" if cfg.rdf_backend == "berkeleydb" else "SQLite"
+            "Sleepycat" if cfg.rdf_backend == "berkeleydb" else "SQLAlchemy"
         )
+        rdf_path = cfg.rdf_path
+        if store_name == "SQLAlchemy" and "://" not in rdf_path:
+            rdf_path = f"sqlite:///{rdf_path}"
         try:
             _rdf_store = rdflib.Graph(store=store_name)
-            _rdf_store.open(cfg.rdf_path, create=True)
+            _rdf_store.open(rdf_path, create=True)
         except Exception as e:  # pragma: no cover - store may fail
             log.error(f"Failed to open RDF store: {e}")
             _rdf_store = rdflib.Graph()

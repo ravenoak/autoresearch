@@ -68,10 +68,10 @@ This occurs because HNSW indexes in DuckDB require special handling for persiste
 If you encounter an error like:
 
 ```
-Failed to open RDF store: No plugin registered for (SQLite, <class 'rdflib.store.Store'>)
+Failed to open RDF store: No plugin registered for (SQLAlchemy, <class 'rdflib.store.Store'>)
 ```
 
-This indicates that the RDFLib SQLite plugin is not properly registered. To fix this:
+This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To fix this:
 
 1. Ensure the `rdflib-sqlalchemy` package is installed:
    ```bash
