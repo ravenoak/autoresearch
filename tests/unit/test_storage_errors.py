@@ -33,6 +33,29 @@ def test_setup_rdf_store_error(mock_config, assert_error):
     mock_graph_instance.open.assert_called_once_with("/tmp/test.rdf", create=True)
     assert_error(excinfo, "Failed to open RDF store", has_cause=True)
 
+
+def test_setup_rdf_plugin_missing(mock_config, assert_error):
+    """Test that setup raises a clear error when the RDF plugin is missing."""
+    config = MagicMock()
+    config.storage.rdf_backend = "sqlite"
+    config.storage.rdf_path = "/tmp/test.rdf"
+
+    mock_db_backend = MagicMock()
+    mock_graph_instance = MagicMock()
+    mock_graph_instance.open.side_effect = Exception("No plugin registered: SQLite")
+
+    with patch('autoresearch.storage._graph', None):
+        with patch('autoresearch.storage._db_backend', None):
+            with patch('autoresearch.storage._rdf_store', None):
+                with patch('autoresearch.storage.DuckDBStorageBackend', return_value=mock_db_backend):
+                    with patch('rdflib.Graph', return_value=mock_graph_instance):
+                        with mock_config(config=config):
+                            with pytest.raises(StorageError) as excinfo:
+                                setup()
+
+    mock_graph_instance.open.assert_called_once()
+    assert_error(excinfo, "Missing RDF backend plugin", has_cause=True)
+
 def test_setup_vector_extension_error(mock_storage_components, mock_config, assert_error):
     """Test that setup handles vector extension errors properly."""
     # Setup

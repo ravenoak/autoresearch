@@ -89,11 +89,16 @@ def setup(db_path: Optional[str] = None) -> None:
                 _rdf_store.open(rdf_path, create=True)
             except Exception as e:  # pragma: no cover - store may fail
                 log.error(f"Failed to open RDF store: {e}")
-                _rdf_store = rdflib.Graph()
-                # Don't raise if it's a plugin registration issue, as this is a common case
-                # in test environments where the full RDF dependencies might not be installed
-                if "No plugin registered" not in str(e):
-                    raise StorageError("Failed to open RDF store", cause=e)
+                _rdf_store = None
+                if "No plugin registered" in str(e):
+                    raise StorageError(
+                        f"Missing RDF backend plugin: {store_name}",
+                        cause=e,
+                        suggestion=(
+                            "Install the required rdflib plugin or choose a different backend"
+                        ),
+                    )
+                raise StorageError("Failed to open RDF store", cause=e)
 
 
 def teardown(remove_db: bool = False) -> None:

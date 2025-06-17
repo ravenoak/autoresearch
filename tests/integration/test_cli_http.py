@@ -9,6 +9,7 @@ from autoresearch.orchestration.orchestrator import (
     AgentFactory,
 )
 from autoresearch.llm import DummyAdapter
+from autoresearch.errors import StorageError
 
 
 class DummyStorage:
@@ -164,3 +165,22 @@ def test_http_no_query_field(monkeypatch):
         from autoresearch.storage import set_delegate
         set_delegate(None)
         DummyStorage.persisted = []
+
+
+def test_cli_storage_error(monkeypatch):
+    """CLI should exit with a message when storage initialization fails."""
+    _common_patches(monkeypatch)
+    runner = CliRunner()
+
+    def fail_setup(*_args, **_kwargs):
+        raise StorageError("boom")
+
+    monkeypatch.setattr(
+        "autoresearch.storage.StorageManager.setup",
+        fail_setup,
+    )
+
+    result = runner.invoke(cli_app, ["search", "q"])
+
+    assert result.exit_code == 1
+    assert "Storage initialization failed" in result.stdout

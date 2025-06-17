@@ -23,7 +23,7 @@ from .output_format import OutputFormatter
 from .logging_utils import configure_logging
 from .storage import StorageManager
 from .storage_backup import BackupManager, BackupConfig, BackupInfo
-from .errors import BackupError
+from .errors import BackupError, StorageError
 
 app = typer.Typer(
     help=(
@@ -59,7 +59,12 @@ def start_watcher(
     if vss_path:
         os.environ["VECTOR_EXTENSION_PATH"] = vss_path
 
-    StorageManager.setup()
+    try:
+        StorageManager.setup()
+    except StorageError as e:
+        typer.echo(f"Storage initialization failed: {e}")
+        raise typer.Exit(code=1)
+
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()
     ctx.call_on_close(lambda: watch_ctx.__exit__(None, None, None))
