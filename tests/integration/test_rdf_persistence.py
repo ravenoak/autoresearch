@@ -58,3 +58,21 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     subj = rdflib.URIRef("urn:claim:n1")
     results = list(store.triples((subj, None, None)))
     assert results, "Claim was not persisted to the RDF store"
+
+
+def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
+    """RDF store should use SQLAlchemy backend when configured."""
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            rdf_backend="sqlite",
+            rdf_path=str(tmp_path / "rdf_store"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    StorageManager.teardown(remove_db=True)
+    StorageManager.setup()
+
+    store = StorageManager.get_rdf_store()
+    assert store.store.name == "SQLAlchemy"
