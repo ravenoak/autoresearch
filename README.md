@@ -89,7 +89,7 @@ hnsw_metric = "l2"
 # see docs/duckdb_compatibility.md
 
 [storage.rdf]
-# RDF backend (sqlite or berkeleydb)
+# RDF backend (sqlite, berkeleydb, or memory)
 backend = "sqlite"
 
 # Path to RDF store

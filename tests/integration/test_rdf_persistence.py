@@ -77,3 +77,21 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     store = StorageManager.get_rdf_store()
     assert store.store.__class__.__name__ == "SQLAlchemy"
     assert str(store.store.engine.url).startswith("sqlite:///")
+
+
+def test_memory_backend_initializes(tmp_path, monkeypatch):
+    """RDF store should use in-memory backend when configured."""
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            rdf_backend="memory",
+            rdf_path=str(tmp_path / "rdf_store"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    StorageManager.teardown(remove_db=True)
+    StorageManager.setup()
+
+    store = StorageManager.get_rdf_store()
+    assert store.store.__class__.__name__ == "IOMemory"
