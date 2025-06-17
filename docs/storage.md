@@ -45,6 +45,19 @@ To add a custom storage backend:
 4. Add persistence in `persist_claim()`
 5. Update the configuration schema in `ConfigModel`
 
+## RDF Storage Backends
+
+RDFLib provides two supported backends: `sqlite` (the default) and `berkeleydb`.
+When using the `sqlite` backend the **SQLAlchemy** plugin is required. The
+storage manager constructs a connection string in the format:
+
+```text
+sqlite:///path/to/rdf_store
+```
+
+Make sure the `rdflib-sqlalchemy` package is installed so that RDFLib can load
+the SQLAlchemy plugin and open the SQLite store correctly.
+
 ## Troubleshooting
 
 ### HNSW Index Creation Error
