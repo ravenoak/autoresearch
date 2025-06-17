@@ -75,4 +75,5 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     StorageManager.setup()
 
     store = StorageManager.get_rdf_store()
-    assert store.store.name == "SQLAlchemy"
+    assert store.store.__class__.__name__ == "SQLAlchemy"
+    assert str(store.store.engine.url).startswith("sqlite:///")
