@@ -227,15 +227,15 @@ Execute all tests once the development environment is ready:
 ```bash
 poetry run flake8 src tests
 poetry run mypy src
-pytest -q
-pytest tests/behavior
+poetry run pytest -q
+poetry run pytest tests/behavior
 ```
 
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request.
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed using `pip install -e .` or `poetry install --with dev`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed inside the Poetry environment using `poetry install --with dev` or `poetry run pip install -e .`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ## Building the documentation
