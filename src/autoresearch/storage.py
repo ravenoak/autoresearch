@@ -75,12 +75,12 @@ def setup(db_path: Optional[str] = None) -> None:
         _db_backend.setup(db_path)
 
         # Initialize RDF store
-        store_name = (
-            "Sleepycat" if cfg.rdf_backend == "berkeleydb" else "SQLAlchemy"
-        )
-        rdf_path = cfg.rdf_path
-        if store_name == "SQLAlchemy" and "://" not in rdf_path:
-            rdf_path = f"sqlite:///{rdf_path}"
+        if cfg.rdf_backend == "berkeleydb":
+            store_name = "Sleepycat"
+            rdf_path = cfg.rdf_path
+        else:
+            store_name = "SQLAlchemy"
+            rdf_path = f"sqlite:///{cfg.rdf_path}"
         try:
             _rdf_store = rdflib.Graph(store=store_name)
             _rdf_store.open(rdf_path, create=True)
