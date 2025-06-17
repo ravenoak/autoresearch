@@ -11,7 +11,7 @@ mkdir -p extensions
 
 # Download VSS extension for offline use
 echo "Downloading VSS extension for offline use..."
-python scripts/download_duckdb_extensions.py --output-dir ./extensions
+poetry run scripts/download_duckdb_extensions.py --output-dir ./extensions
 
 # Get the platform-specific path using the same logic as the download script
 PLATFORM=$(python -c "

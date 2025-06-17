@@ -57,6 +57,7 @@ except ImportError:
 from .logging_utils import get_logger
 from .orchestration.orchestrator import Orchestrator
 from .config import get_config
+from .error_utils import get_error_info, format_error_for_a2a
 
 logger = get_logger(__name__)
 
@@ -122,8 +123,15 @@ class A2AInterface:
             # Return the result
             return {"status": "success", "result": result.to_dict()}
         except Exception as e:
-            logger.error(f"Error processing query: {e}")
-            return {"status": "error", "error": str(e)}
+            # Get error information with suggestions and code examples
+            error_info = get_error_info(e)
+            error_data = format_error_for_a2a(error_info)
+
+            # Log the error
+            logger.error(f"Error processing query: {e}", exc_info=e)
+
+            # Return error response
+            return error_data
 
     def _handle_command(self, message: A2AMessage) -> Dict[str, Any]:
         """Handle a command message from another agent.
@@ -154,8 +162,15 @@ class A2AInterface:
             else:
                 return {"status": "error", "error": f"Unknown command: {command}"}
         except Exception as e:
-            logger.error(f"Error handling command {command}: {e}")
-            return {"status": "error", "error": str(e)}
+            # Get error information with suggestions and code examples
+            error_info = get_error_info(e)
+            error_data = format_error_for_a2a(error_info)
+
+            # Log the error
+            logger.error(f"Error handling command {command}: {e}", exc_info=e)
+
+            # Return error response
+            return error_data
 
     def _handle_info(self, message: Any) -> Dict[str, Any]:
         """Handle an info message from another agent.
@@ -181,8 +196,15 @@ class A2AInterface:
                 }
             }
         except Exception as e:
-            logger.error(f"Error handling info message: {e}")
-            return {"status": "error", "error": str(e)}
+            # Get error information with suggestions and code examples
+            error_info = get_error_info(e)
+            error_data = format_error_for_a2a(error_info)
+
+            # Log the error
+            logger.error(f"Error handling info message: {e}", exc_info=e)
+
+            # Return error response
+            return error_data
 
     def _handle_get_capabilities(self) -> Any:
         """Handle a get_capabilities command.
