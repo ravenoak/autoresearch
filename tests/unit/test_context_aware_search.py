@@ -76,6 +76,33 @@ def test_initialize_nlp(mock_spacy, reset_search_context):
     assert context.nlp is mock_nlp
 
 
+@patch.dict(os.environ, {"AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL": "true"})
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.spacy")
+def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_context):
+    """spaCy model is downloaded if missing and env var is set."""
+    mock_spacy.load.side_effect = [OSError(), MagicMock()]
+
+    context = SearchContext.get_instance()
+
+    mock_spacy.cli.download.assert_called_once_with("en_core_web_sm")
+    assert mock_spacy.load.call_count == 2
+    assert context.nlp is mock_spacy.load.return_value
+
+
+@patch.dict(os.environ, {}, clear=True)
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.spacy")
+def test_initialize_nlp_no_download_by_default(mock_spacy, reset_search_context):
+    """No download occurs if model missing and env var is unset."""
+    mock_spacy.load.side_effect = OSError()
+
+    context = SearchContext.get_instance()
+
+    mock_spacy.cli.download.assert_not_called()
+    assert context.nlp is None
+
+
 @patch("autoresearch.search.get_config")
 def test_add_to_history(mock_get_config, mock_context_config, sample_results, reset_search_context):
     """Test adding queries to the search history."""
