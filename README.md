@@ -37,6 +37,9 @@ curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning
 curl http://localhost:8000/metrics
 ```
 
+To search your own documents or repositories, enable the `local_file` or
+`local_git` backends in `autoresearch.toml`.
+
 ## Configuration
 
 Autoresearch uses a TOML configuration file (`autoresearch.toml`) and environment variables (`.env`). A starter configuration is available under [`examples/autoresearch.toml`](examples/autoresearch.toml).
@@ -128,14 +131,15 @@ max_results_per_query = 5
 
 ### Enabling Local File and Git Search
 
-Add the `local_files` or `local_git` backends in `autoresearch.toml` to search
-documents on your machine or a Git repository:
+Add the `local_file` or `local_git` backends in `autoresearch.toml` to search
+documents on your machine or a Git repository. Results from these backends are
+ranked together with web search results:
 
 ```toml
 [search]
-backends = ["serper", "local_files", "local_git"]
+backends = ["serper", "local_file", "local_git"]
 
-[search.local_files]
+[search.local_file]
 path = "/path/to/docs"
 file_types = ["md", "pdf", "txt"]
 

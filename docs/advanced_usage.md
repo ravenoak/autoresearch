@@ -119,14 +119,16 @@ history_weight = 0.3
 
 ### Local File Backend
 
-The `local_files` backend searches documents stored on disk. Provide a `path`
-to the root directory and specify which `file_types` should be indexed. All
-matching files are scanned recursively.
+The `local_file` backend searches documents stored on disk. Enable this backend
+when you have notes, PDFs, or other reference materials you want included in
+results. Provide a `path` to the root directory and specify which `file_types`
+should be indexed. All matching files are scanned recursively and merged with
+web search results during ranking.
 
 ```toml
 # autoresearch.toml
-[search.local_files]
-path = "/path/to/research_docs"
+[search.local_file]
+path = "/path/to/docs"
 file_types = ["md", "pdf", "txt"]
 ```
 
@@ -145,9 +147,10 @@ search results.
 
 ### Local Git Backend
 
-The `local_git` backend indexes the history of a Git repository. Set
-`repo_path` to your repository, list the `branches` you want indexed, and limit
-how far back in history to search with `history_depth`.
+The `local_git` backend indexes the history of a Git repository. Enable this
+when you want search results to include commit messages and file snapshots from
+your own projects. Set `repo_path` to your repository, list the `branches` you
+want indexed, and limit how far back in history to search with `history_depth`.
 
 ```toml
 # autoresearch.toml
@@ -165,9 +168,13 @@ To enable both local backends along with other providers:
 ```toml
 # autoresearch.toml
 [search]
-backends = ["serper", "local_files", "local_git"]
+backends = ["serper", "local_file", "local_git"]
 results_per_backend = 5
 ```
+
+When multiple backends are enabled, Autoresearch merges the top
+`results_per_backend` entries from each provider into a single ranked list so
+local documents appear alongside web results.
 
 ## Storage and Knowledge Graph
 

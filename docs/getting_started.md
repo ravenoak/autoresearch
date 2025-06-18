@@ -57,10 +57,11 @@ autoresearch search "What is quantum computing?"
 Enable local search backends in `autoresearch.toml`:
 
 ```toml
-[search]
-backends = ["serper", "local_files", "local_git"]
 
-[search.local_files]
+[search]
+backends = ["serper", "local_file", "local_git"]
+
+[search.local_file]
 path = "/path/to/docs"
 file_types = ["md", "pdf", "txt"]
 
@@ -69,6 +70,9 @@ repo_path = "/path/to/repo"
 branches = ["main"]
 history_depth = 50
 ```
+
+Local search results are merged with those from web backends so your documents
+and code appear alongside external sources.
 
 Then query your directory or repository just like any other search:
 
