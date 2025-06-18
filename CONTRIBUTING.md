@@ -35,6 +35,18 @@ By participating in this project, you agree to maintain a respectful and inclusi
    poetry install --with dev
    ```
 
+   Some packages such as `hdbscan` require compilation. Make sure GCC, G++, and
+   the Python development headers are available before running the command
+   above. On Debian/Ubuntu-based systems you can install them with:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install build-essential python3-dev
+   ```
+
+   If OpenMP support causes build errors, disable it by setting
+   `HDBSCAN_NO_OPENMP=1` in your environment when installing.
+
    Alternatively, you can use the helper script:
    ```bash
    ./scripts/setup.sh

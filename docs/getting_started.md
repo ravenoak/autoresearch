@@ -24,6 +24,20 @@ Use `poetry install` to set up a development environment:
 poetry install
 ```
 
+`hdbscan` is built from source and needs compilation tools. Install `gcc`, `g++`,
+and the Python development headers first. On Debian/Ubuntu run:
+
+```bash
+sudo apt-get update
+sudo apt-get install build-essential python3-dev
+```
+
+If OpenMP support causes build issues you can disable it with:
+
+```bash
+export HDBSCAN_NO_OPENMP=1
+```
+
 Alternatively install via pip:
 
 ```bash
