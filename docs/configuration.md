@@ -123,6 +123,16 @@ These options are set in the `[search]` section.
 
 **Note**: `semantic_similarity_weight`, `bm25_weight`, and `source_credibility_weight` must sum to 1.0.
 
+### Search Backends
+
+| Backend | Description | Required Keys |
+|---------|-------------|---------------|
+| `serper` | Uses the Serper.dev web search API | `api_key` |
+| `brave` | Integrates with Brave Search API | `api_key` |
+| `duckduckgo` | Queries DuckDuckGo anonymously | _none_ |
+| `local_file` | Indexes documents from a directory on disk | `path`, `file_types` |
+| `local_git` | Searches a local Git repository's history | `repo_path`, `branches`, `history_depth` |
+
 ## Context-Aware Search Configuration
 
 These options are set in the `[search.context_aware]` section.
@@ -167,6 +177,20 @@ enabled = true
 ## Complete Example
 
 A complete example configuration is provided in [`examples/autoresearch.toml`](../examples/autoresearch.toml). You can use this as a starting point for your own configuration.
+
+```toml
+[search]
+backends = ["serper", "local_file", "local_git"]
+
+[search.local_file]
+path = "/path/to/research_docs"
+file_types = ["md", "pdf", "txt"]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 50
+```
 
 ## Tracing
 
