@@ -126,6 +126,35 @@ backends = ["serper"]
 max_results_per_query = 5
 ```
 
+### Enabling Local File and Git Search
+
+Add the `local_files` or `local_git` backends in `autoresearch.toml` to search
+documents on your machine or a Git repository:
+
+```toml
+[search]
+backends = ["serper", "local_files", "local_git"]
+
+[search.local_files]
+path = "/path/to/docs"
+file_types = ["md", "pdf", "txt"]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 50
+```
+
+Example queries:
+
+```bash
+# Search a local directory
+autoresearch search "neural networks in notes"
+
+# Search a Git repository
+autoresearch search "bug fix commit"
+```
+
 ### Dynamic Knowledge Graph Settings
 
 ```toml
