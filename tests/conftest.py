@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -18,6 +19,23 @@ from autoresearch.llm.registry import LLMFactory  # noqa: E402
 from autoresearch.storage import (  # noqa: E402
     set_delegate as set_storage_delegate,
 )
+from autoresearch.extensions import VSSExtensionLoader
+
+
+@pytest.fixture(autouse=True)
+def stub_vss_extension_download(monkeypatch):
+    """Prevent network calls when loading the DuckDB VSS extension."""
+    if os.getenv("REAL_VSS_TEST"):
+        yield
+        return
+
+    monkeypatch.setattr(VSSExtensionLoader, "load_extension", lambda _c: False)
+    monkeypatch.setattr(
+        VSSExtensionLoader,
+        "verify_extension",
+        lambda _c, verbose=True: False,
+    )
+    yield
 
 
 @pytest.fixture(autouse=True)
