@@ -1,4 +1,13 @@
+import os
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def enable_real_vss(monkeypatch):
+    """Allow real VSS extension loading in behavior tests."""
+    monkeypatch.setenv("REAL_VSS_TEST", "1")
+    yield
+    monkeypatch.delenv("REAL_VSS_TEST", raising=False)
 
 
 @pytest.fixture(autouse=True)

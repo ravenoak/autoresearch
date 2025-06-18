@@ -90,13 +90,14 @@ def test_initialize_nlp(mock_spacy, reset_search_context):
 @patch("autoresearch.search.spacy")
 def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_context):
     """spaCy model is downloaded if missing and env var is set."""
-    mock_spacy.load.side_effect = [OSError(), MagicMock()]
+    second_load = MagicMock()
+    mock_spacy.load.side_effect = [OSError(), second_load]
 
     context = SearchContext.get_instance()
 
     mock_spacy.cli.download.assert_called_once_with("en_core_web_sm")
     assert mock_spacy.load.call_count == 2
-    assert context.nlp is mock_spacy.load.return_value
+    assert context.nlp is second_load
 
 
 @patch.dict(os.environ, {}, clear=True)
