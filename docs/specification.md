@@ -26,6 +26,10 @@
 - **orchestration/phases.py**: Agent execution phases.
 - **agents/**: Implementations of Synthesizer, Contrarian, FactChecker, etc.
 - **llm/**: Backend adapters for language models.
+- **search/backends/local_files.py**: Parses PDF, DOCX, and text files from
+  user-specified directories for the local search backend.
+- **search/backends/local_git.py**: Indexes Git repositories, storing commit
+  history and file revisions for search.
 
 ## 3. Configuration
 
@@ -59,6 +63,15 @@
 - Execute queries in parallel (thread pool, rate-limited).
 - Truncate/summarize results to fit context window.
 - Attach source metadata to every claim.
+- Backends include web APIs (Serper, Brave) and local options
+  (`local_files`, `local_git`).
+- `local_files` recursively indexes directories specified in `autoresearch.toml`;
+  PDF files are parsed with **pdfminer**, DOCX with **python-docx**, and text
+  files directly. Specify `path` and `file_types` in `[search.local_files]`.
+- `local_git` scans repositories configured with `repo_path`, `branches`, and
+  `history_depth`, indexing commit messages, diffs, and file revisions.
+- Results from all backends are persisted via `storage.py` and inserted into the
+  knowledge graph for later reasoning.
 
 ## 7. Synthesis
 
