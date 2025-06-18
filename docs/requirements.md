@@ -39,7 +39,8 @@ Must     | BDD/unit tests; plugin registration.       |
 | **F-16** | System is extensible for new backends, reasoning modes, and agent types via config/plugins.                                                      | Must     | Plugin test; config reload.                |
 | **F-17** | **CLI output adapts to context**: Markdown/plaintext for humans (TTY), JSON for automation (pipe/flag); dialectical structure is visually distinct for humans and explicit in JSON for machines. | Must | BDD/manual review/unit tests.              |
 | **F-18** | **Accessibility**: Output is screen-reader friendly, avoids color-only cues, and is actionable for all users.                                    | Must     | Accessibility review/manual test.          |
-| **F-19** | Search local Git repositories by path, with results referencing files, commit messages, or diffs. | Should   | Unit tests for git repository search; BDD scenario. |
+| **F-19** | Search local directories. User can select a path to index text and code files. Results must cite the file path and snippet so provenance is clear. | Should   | Unit tests for local file indexing; BDD scenario. |
+| **F-20** | Search Git repositories by path. The system scans working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
 
 ---
 
@@ -93,6 +94,7 @@ Must     | BDD/unit tests; plugin registration.       |
 | Vector lib         | DuckDB ext vs FAISS          | Default DuckDB‐vector; expose plugin interface.                        |
 | GUI                | Streamlit vs nothing in v0.8 | Defer; CLI/API + Prometheus first.                                     |
 | Distributed add-on | Ray vs Dask                  | Prototype Ray transport adapter later; keep single-process by default. |
+| Local search tool  | `ripgrep` CLI vs pure Python | Default to **ripgrep** when available for fast indexing; fall back to Python scanning. |
 | Licensing          | MIT + “AGPL preferred”       | Tag core MIT; provide AGPL switch for users who need copyleft.         |
 
 ---
