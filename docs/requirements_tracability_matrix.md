@@ -20,5 +20,5 @@
 | F-16 | Extensible plugin architecture | `agents/registry.py` | `tests/unit/test_agents_llm.py` |
 | F-17 | Adaptive CLI output | `output_format.py` | `tests/unit/test_output_format.py`, `tests/behavior/features/output_formatting.feature` |
 | F-18 | Accessibility of output | `output_format.py` | manual review |
-| F-19 | Local directory search | `search.py` | `tests/unit/test_local_search.py` |
-| F-20 | Local Git repository search by path | `search.py` | `tests/unit/test_git_search.py` |
+| F-19 | Local directory search | `search_backends/local_files.py` | `tests/unit/test_local_search.py`, `tests/behavior/features/local_file_search.feature` |
+| F-20 | Local Git repository search by path | `search_backends/local_git.py` | `tests/unit/test_git_search.py`, `tests/behavior/features/git_repository_search.feature` |
