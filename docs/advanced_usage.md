@@ -117,6 +117,58 @@ topic_weight = 0.3
 history_weight = 0.3
 ```
 
+### Local File Backend
+
+The `local_files` backend searches documents stored on disk. Provide a `path`
+to the root directory and specify which `file_types` should be indexed. All
+matching files are scanned recursively.
+
+```toml
+# autoresearch.toml
+[search.local_files]
+path = "/path/to/research_docs"
+file_types = ["md", "pdf", "txt"]
+```
+
+A typical layout might look like:
+
+```
+research_docs/
+├─ papers/
+│  └─ example.pdf
+├─ notes/
+│  └─ summary.txt
+```
+
+Every matching file is added to the local index so it can be retrieved in
+search results.
+
+### Local Git Backend
+
+The `local_git` backend indexes the history of a Git repository. Set
+`repo_path` to your repository, list the `branches` you want indexed, and limit
+how far back in history to search with `history_depth`.
+
+```toml
+# autoresearch.toml
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main", "experiment"]
+history_depth = 50
+```
+
+Each commit on the selected branches is scanned up to the specified depth, and
+file revisions are stored individually for historical search.
+
+To enable both local backends along with other providers:
+
+```toml
+# autoresearch.toml
+[search]
+backends = ["serper", "local_files", "local_git"]
+results_per_backend = 5
+```
+
 ## Storage and Knowledge Graph
 
 ### Configuring Storage for Large Research Projects
