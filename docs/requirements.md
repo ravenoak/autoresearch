@@ -39,6 +39,7 @@ Must     | BDD/unit tests; plugin registration.       |
 | **F-16** | System is extensible for new backends, reasoning modes, and agent types via config/plugins.                                                      | Must     | Plugin test; config reload.                |
 | **F-17** | **CLI output adapts to context**: Markdown/plaintext for humans (TTY), JSON for automation (pipe/flag); dialectical structure is visually distinct for humans and explicit in JSON for machines. | Must | BDD/manual review/unit tests.              |
 | **F-18** | **Accessibility**: Output is screen-reader friendly, avoids color-only cues, and is actionable for all users.                                    | Must     | Accessibility review/manual test.          |
+| **F-19** | Search local Git repositories by path, with results referencing files, commit messages, or diffs. | Should   | Unit tests for git repository search; BDD scenario. |
 
 ---
 
