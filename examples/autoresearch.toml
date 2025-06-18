@@ -47,6 +47,17 @@ use_search_history = true
 history_weight = 0.2
 max_history_items = 10  # Maximum number of queries to keep in history
 
+# Local file search settings
+[search.local_file]
+path = "/path/to/research_docs"
+file_types = ["md", "pdf", "txt"]
+
+# Local Git repository search settings
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 50
+
 [storage.duckdb]
 path = "data/research.duckdb"
 vector_extension = true
