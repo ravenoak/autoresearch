@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Iterator
+from typing import Callable, Dict, List, Optional, Set, Iterator, Any
 from contextlib import contextmanager
 import threading
 import logging
