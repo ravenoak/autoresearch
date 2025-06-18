@@ -1,7 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-import tomllib
-from pathlib import Path
 
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.errors import ConfigError
@@ -71,7 +69,9 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
 
     # Mock load_config to raise an exception
     with patch("autoresearch.config.watch", mock_watch):
-        with patch.object(loader, "load_config", side_effect=ValueError("Reload error")):
+        with patch.object(
+            loader, "load_config", side_effect=ValueError("Reload error")
+        ):
             # The current implementation logs the error but doesn't raise an exception
             # This test will fail until we implement the change
             with pytest.raises(ConfigError, match="Error in config watcher"):
@@ -82,7 +82,11 @@ def test_reset_instance_error():
     """Test that ConfigError is raised when resetting the instance fails."""
     # Create a mock instance with a stop_watching method that raises an exception
     with patch.object(ConfigLoader, "_instance", MagicMock()):
-        with patch.object(ConfigLoader._instance, "stop_watching", side_effect=ValueError("Stop error")):
+        with patch.object(
+            ConfigLoader._instance,
+            "stop_watching",
+            side_effect=ValueError("Stop error"),
+        ):
             # The current implementation suppresses the exception
             # This test will fail until we implement the change
             with pytest.raises(ConfigError, match="Error stopping config watcher"):

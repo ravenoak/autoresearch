@@ -18,11 +18,13 @@ class DummyStorage:
     @staticmethod
     def setup(db_path=None):
         # Add a dummy claim to ensure the test passes
-        DummyStorage.persisted.append({
-            "id": "dummy-claim-id",
-            "type": "thesis",
-            "content": "Dummy claim for testing"
-        })
+        DummyStorage.persisted.append(
+            {
+                "id": "dummy-claim-id",
+                "type": "thesis",
+                "content": "Dummy claim for testing",
+            }
+        )
 
     @staticmethod
     def persist_claim(claim):
@@ -35,6 +37,7 @@ def _patch_run_query(monkeypatch):
     def wrapper(query, config, callbacks=None, **kwargs):
         # Set DummyStorage as the delegate
         from autoresearch.storage import set_delegate
+
         set_delegate(DummyStorage)
 
         try:
@@ -47,15 +50,17 @@ def _patch_run_query(monkeypatch):
             )
         except Exception as e:
             import traceback
+
             print(f"Error in run_query: {e}")
             print(traceback.format_exc())
             # Return a dummy response to avoid failing the test
             from autoresearch.models import QueryResponse
+
             return QueryResponse(
                 answer="# Answer\n\nDummy answer for testing",
                 citations=[],
                 reasoning=[],
-                metrics={}
+                metrics={},
             )
 
     monkeypatch.setattr(Orchestrator, "run_query", wrapper)
@@ -64,9 +69,7 @@ def _patch_run_query(monkeypatch):
 def _common_patches(monkeypatch):
     cfg = ConfigModel(loops=1)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
-    )
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
     monkeypatch.setattr(
         "autoresearch.search.Search.external_lookup",
         lambda q, max_results=5: [{"title": "t", "url": "u"}],
@@ -86,11 +89,9 @@ def test_cli_flow(monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
     # Add a dummy claim to ensure the test passes
-    DummyStorage.persisted.append({
-        "id": "dummy-claim-id",
-        "type": "thesis",
-        "content": "Dummy claim for testing"
-    })
+    DummyStorage.persisted.append(
+        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+    )
 
     try:
         # Execute
@@ -105,6 +106,7 @@ def test_cli_flow(monkeypatch):
     finally:
         # Cleanup
         from autoresearch.storage import set_delegate
+
         set_delegate(None)
         DummyStorage.persisted = []
 
@@ -120,11 +122,9 @@ def test_http_flow(monkeypatch):
     client = TestClient(api_app)
 
     # Add a dummy claim to ensure the test passes
-    DummyStorage.persisted.append({
-        "id": "dummy-claim-id",
-        "type": "thesis",
-        "content": "Dummy claim for testing"
-    })
+    DummyStorage.persisted.append(
+        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+    )
 
     try:
         # Execute
@@ -139,6 +139,7 @@ def test_http_flow(monkeypatch):
     finally:
         # Cleanup
         from autoresearch.storage import set_delegate
+
         set_delegate(None)
         DummyStorage.persisted = []
 
@@ -163,6 +164,7 @@ def test_http_no_query_field(monkeypatch):
     finally:
         # Cleanup
         from autoresearch.storage import set_delegate
+
         set_delegate(None)
         DummyStorage.persisted = []
 

@@ -89,12 +89,20 @@ Autoresearch follows strict code style guidelines to maintain consistency across
 Before submitting a pull request, ensure your code passes all linting and type checking:
 
 ```bash
+# Format and automatically fix issues using ruff
+poetry run ruff format src tests
+poetry run ruff check --fix src tests
+```
+
+```bash
 # Run flake8 for linting
 poetry run flake8 src tests
 
 # Run mypy for type checking
 poetry run mypy src
 ```
+
+For additional dialectical reasoning tips, consult `AGENTS.md` in the repository root.
 
 ### Imports
 

@@ -30,10 +30,11 @@ import atexit
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from watchfiles import watch, Change
+from watchfiles import watch
 
 from .orchestration import ReasoningMode
 from .errors import ConfigError
+
 
 class ContextAwareSearchConfig(BaseModel):
     """Configuration for context-aware search functionality."""
@@ -83,9 +84,13 @@ class SearchConfig(BaseModel):
     feedback_weight: float = Field(default=0.3, ge=0.0, le=1.0)
 
     # Context-aware search settings
-    context_aware: ContextAwareSearchConfig = Field(default_factory=ContextAwareSearchConfig)
+    context_aware: ContextAwareSearchConfig = Field(
+        default_factory=ContextAwareSearchConfig
+    )
 
-    @field_validator("semantic_similarity_weight", "bm25_weight", "source_credibility_weight")
+    @field_validator(
+        "semantic_similarity_weight", "bm25_weight", "source_credibility_weight"
+    )
     def validate_weights_sum_to_one(cls, v: float, info) -> float:
         """Validate that the weights sum to 1.0."""
         # Get the current values of all weights
@@ -93,9 +98,9 @@ class SearchConfig(BaseModel):
 
         # Calculate the sum of all weights
         weights_sum = (
-            values.get("semantic_similarity_weight", 0.5) +
-            values.get("bm25_weight", 0.3) +
-            values.get("source_credibility_weight", 0.2)
+            values.get("semantic_similarity_weight", 0.5)
+            + values.get("bm25_weight", 0.3)
+            + values.get("source_credibility_weight", 0.2)
         )
 
         # Allow a small tolerance for floating-point errors
@@ -104,11 +109,15 @@ class SearchConfig(BaseModel):
                 "Relevance ranking weights must sum to 1.0",
                 current_sum=weights_sum,
                 weights={
-                    "semantic_similarity_weight": values.get("semantic_similarity_weight", 0.5),
+                    "semantic_similarity_weight": values.get(
+                        "semantic_similarity_weight", 0.5
+                    ),
                     "bm25_weight": values.get("bm25_weight", 0.3),
-                    "source_credibility_weight": values.get("source_credibility_weight", 0.2)
+                    "source_credibility_weight": values.get(
+                        "source_credibility_weight", 0.2
+                    ),
                 },
-                suggestion="Adjust the weights so they sum to 1.0"
+                suggestion="Adjust the weights so they sum to 1.0",
             )
 
         return v
@@ -148,9 +157,9 @@ class StorageConfig(BaseModel):
         """
         valid_backends = ["sqlite", "berkeleydb", "memory"]
         if v not in valid_backends:
-            raise ConfigError(f"Invalid RDF backend", 
-                             valid_backends=valid_backends, 
-                             provided=v)
+            raise ConfigError(
+                "Invalid RDF backend", valid_backends=valid_backends, provided=v
+            )
         return v
 
 
@@ -169,9 +178,7 @@ class ConfigModel(BaseSettings):
     llm_backend: str = Field(default="lmstudio")
     loops: int = Field(default=2, ge=1)
     ram_budget_mb: int = Field(default=1024, ge=0)
-    agents: List[str] = Field(
-        default=["Synthesizer", "Contrarian", "FactChecker"]
-    )
+    agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
     primus_start: int = Field(default=0)
     reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)
     output_format: Optional[str] = None
@@ -234,7 +241,7 @@ class ConfigModel(BaseSettings):
                 valid_modes=valid_modes,
                 provided=v,
                 suggestion=f"Try using one of the valid modes: {', '.join(valid_modes)}",
-                cause=exc
+                cause=exc,
             ) from exc
 
     @field_validator("graph_eviction_policy")
@@ -259,7 +266,7 @@ class ConfigModel(BaseSettings):
             raise ConfigError(
                 "Invalid graph eviction policy",
                 valid_policies=valid_policies,
-                provided=v
+                provided=v,
             )
         return v
 
@@ -290,10 +297,7 @@ class ConfigLoader:
                     cls._instance.stop_watching()
                 except Exception as e:
                     # Raise a ConfigError with the original exception as the cause
-                    raise ConfigError(
-                        "Error stopping config watcher",
-                        cause=e
-                    ) from e
+                    raise ConfigError("Error stopping config watcher", cause=e) from e
                 cls._instance._config = None
                 cls._instance = None
 
@@ -412,7 +416,7 @@ class ConfigLoader:
         """Load and validate configuration from TOML and environment variables.
 
         This method reads configuration from the first existing 'autoresearch.toml' file
-        in the search paths, and combines it with environment variables. It handles 
+        in the search paths, and combines it with environment variables. It handles
         the conversion of the raw configuration data into a validated ConfigModel instance.
 
         The search paths are checked in the following order:
@@ -458,9 +462,7 @@ class ConfigLoader:
                 logger.error(f"Error loading config file: {e}")
                 # Raise a ConfigError with the original exception as the cause
                 raise ConfigError(
-                    "Error loading config file",
-                    file=str(config_path),
-                    cause=e
+                    "Error loading config file", file=str(config_path), cause=e
                 ) from e
 
         # Extract core settings
@@ -479,9 +481,7 @@ class ConfigLoader:
             "vector_extension": duckdb_cfg.get("vector_extension", True),
             "vector_extension_path": duckdb_cfg.get("vector_extension_path", None),
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
-            "hnsw_ef_construction": duckdb_cfg.get(
-                "hnsw_ef_construction", 200
-            ),
+            "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
@@ -526,14 +526,10 @@ class ConfigLoader:
             logger.error(f"Configuration validation error: {e}")
             # Raise with more helpful message
             raise ConfigError(
-                "Configuration validation error",
-                details=str(e),
-                cause=e
+                "Configuration validation error", details=str(e), cause=e
             ) from e
 
-    def register_observer(
-        self, callback: Callable[[ConfigModel], None]
-    ) -> None:
+    def register_observer(self, callback: Callable[[ConfigModel], None]) -> None:
         """Register a callback to be notified of configuration changes.
 
         This method adds a callback function to the set of observers that will be
@@ -549,9 +545,7 @@ class ConfigLoader:
         """
         self._observers.add(callback)
 
-    def unregister_observer(
-        self, callback: Callable[[ConfigModel], None]
-    ) -> None:
+    def unregister_observer(self, callback: Callable[[ConfigModel], None]) -> None:
         """Unregister a previously registered configuration change observer.
 
         This method removes a callback function from the set of observers that are
@@ -586,9 +580,7 @@ class ConfigLoader:
                 logger.error(f"Error in config observer: {e}")
                 # Raise a ConfigError with the original exception as the cause
                 raise ConfigError(
-                    "Error in config observer",
-                    observer=str(observer),
-                    cause=e
+                    "Error in config observer", observer=str(observer), cause=e
                 ) from e
 
     def watch_changes(
@@ -705,9 +697,7 @@ class ConfigLoader:
         self._update_watch_paths()
 
         abs_paths = [
-            str(Path(p).absolute())
-            for p in self.watch_paths
-            if Path(p).exists()
+            str(Path(p).absolute()) for p in self.watch_paths if Path(p).exists()
         ]
 
         if not abs_paths:
@@ -734,18 +724,13 @@ class ConfigLoader:
                     except Exception as e:
                         logger.error(f"Error reloading config: {e}")
                         # Raise a ConfigError with the original exception as the cause
-                        raise ConfigError(
-                            "Error reloading config",
-                            cause=e
-                        ) from e
+                        raise ConfigError("Error reloading config", cause=e) from e
 
         except Exception as e:
             logger.error(f"Error in config watcher: {e}")
             # Raise a ConfigError with the original exception as the cause
             raise ConfigError(
-                "Error in config watcher",
-                paths=self.watch_paths,
-                cause=e
+                "Error in config watcher", paths=self.watch_paths, cause=e
             ) from e
 
     def set_active_profile(self, profile_name: str) -> None:
@@ -775,7 +760,7 @@ class ConfigLoader:
                 "Invalid profile",
                 valid_profiles=valid_profiles,
                 provided=profile_name,
-                suggestion=f"Valid profiles: {', '.join(valid_profiles)}"
+                suggestion=f"Valid profiles: {', '.join(valid_profiles)}",
             )
 
         # Set the active profile

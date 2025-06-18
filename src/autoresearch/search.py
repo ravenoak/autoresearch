@@ -19,19 +19,21 @@ import re
 import sys
 import time
 import threading
-from typing import Callable, List, Dict, Any, Tuple, Optional
+from typing import Callable, List, Dict, Any, Optional
 from collections import defaultdict
 import requests
 import numpy as np
 
 try:
     from rank_bm25 import BM25Okapi
+
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -39,6 +41,7 @@ except ImportError:
 try:
     import spacy
     import spacy.cli
+
     SPACY_AVAILABLE = True
 except ImportError:  # pragma: no cover - optional dependency
     spacy = None
@@ -46,6 +49,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 try:
     from bertopic import BERTopic
+
     BERTOPIC_AVAILABLE = True
 except ImportError:
     BERTOPIC_AVAILABLE = False
@@ -78,7 +82,7 @@ class SearchContext:
     _lock = threading.Lock()
 
     @classmethod
-    def get_instance(cls) -> 'SearchContext':
+    def get_instance(cls) -> "SearchContext":
         """Get or create the singleton instance of SearchContext.
 
         Returns:
@@ -107,7 +111,10 @@ class SearchContext:
             self.nlp = spacy.load("en_core_web_sm")
             log.info("Initialized spaCy NLP model")
         except OSError:
-            if os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower() == "true":
+            if (
+                os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower()
+                == "true"
+            ):
                 try:
                     spacy.cli.download("en_core_web_sm")
                     self.nlp = spacy.load("en_core_web_sm")
@@ -133,11 +140,9 @@ class SearchContext:
         max_history = cfg.search.context_aware.max_history_items
 
         # Add to history
-        self.search_history.append({
-            "query": query,
-            "results": results,
-            "timestamp": time.time()
-        })
+        self.search_history.append(
+            {"query": query, "results": results, "timestamp": time.time()}
+        )
 
         # Trim history if needed
         if len(self.search_history) > max_history:
@@ -161,14 +166,27 @@ class SearchContext:
         try:
             doc = self.nlp(text)
             for ent in doc.ents:
-                if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "PRODUCT", "EVENT", "WORK_OF_ART", "LAW"]:
+                if ent.label_ in [
+                    "PERSON",
+                    "ORG",
+                    "GPE",
+                    "LOC",
+                    "PRODUCT",
+                    "EVENT",
+                    "WORK_OF_ART",
+                    "LAW",
+                ]:
                     self.entities[ent.text.lower()] += 1
         except Exception as e:
             log.warning(f"Entity extraction failed: {e}")
 
     def build_topic_model(self):
         """Build a topic model from the search history."""
-        if not BERTOPIC_AVAILABLE or not self.search_history or not SENTENCE_TRANSFORMERS_AVAILABLE:
+        if (
+            not BERTOPIC_AVAILABLE
+            or not self.search_history
+            or not SENTENCE_TRANSFORMERS_AVAILABLE
+        ):
             return
 
         try:
@@ -203,8 +221,7 @@ class SearchContext:
 
             # Initialize BERTopic with the sentence transformer model
             self.topic_model = BERTopic(
-                embedding_model=sentence_transformer,
-                nr_topics=num_topics
+                embedding_model=sentence_transformer, nr_topics=num_topics
             )
 
             # Fit the model on the documents
@@ -235,14 +252,20 @@ class SearchContext:
         expanded_terms = []
 
         # Add terms from entities
-        if context_cfg.use_entity_recognition and SPACY_AVAILABLE and self.nlp is not None:
+        if (
+            context_cfg.use_entity_recognition
+            and SPACY_AVAILABLE
+            and self.nlp is not None
+        ):
             # Extract entities from the query
             try:
                 doc = self.nlp(query)
                 query_entities = [ent.text.lower() for ent in doc.ents]
 
                 # Find related entities from history
-                for entity, count in sorted(self.entities.items(), key=lambda x: x[1], reverse=True):
+                for entity, count in sorted(
+                    self.entities.items(), key=lambda x: x[1], reverse=True
+                ):
                     if entity not in query_entities and count > 1:
                         expanded_terms.append(entity)
                         if len(expanded_terms) >= 3:  # Limit to top 3 entities
@@ -251,12 +274,19 @@ class SearchContext:
                 log.warning(f"Entity-based query expansion failed: {e}")
 
         # Add terms from topic model
-        if context_cfg.use_topic_modeling and BERTOPIC_AVAILABLE and self.topic_model is not None and hasattr(self, 'documents'):
+        if (
+            context_cfg.use_topic_modeling
+            and BERTOPIC_AVAILABLE
+            and self.topic_model is not None
+            and hasattr(self, "documents")
+        ):
             try:
                 # Get sentence transformer model
                 sentence_transformer = Search.get_sentence_transformer()
                 if sentence_transformer is None:
-                    log.warning("Sentence transformer model not available for query expansion")
+                    log.warning(
+                        "Sentence transformer model not available for query expansion"
+                    )
                 else:
                     # Get the topic for the query
                     query_embedding = sentence_transformer.encode(query)
@@ -268,7 +298,10 @@ class SearchContext:
                         # Get the top terms for the topic
                         topic_info = self.topic_model.get_topic(topic)
                         for term, _ in topic_info[:3]:  # Get top 3 terms
-                            if term.lower() not in query.lower() and term not in expanded_terms:
+                            if (
+                                term.lower() not in query.lower()
+                                and term not in expanded_terms
+                            ):
                                 expanded_terms.append(term)
             except Exception as e:
                 log.warning(f"Topic-based query expansion failed: {e}")
@@ -336,13 +369,15 @@ class Search:
             SentenceTransformer: The sentence transformer model, or None if not available
         """
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
-            log.warning("sentence-transformers package is not installed. Semantic similarity scoring will be disabled.")
+            log.warning(
+                "sentence-transformers package is not installed. Semantic similarity scoring will be disabled."
+            )
             return None
 
         if cls._sentence_transformer is None:
             try:
                 # Use a small, fast model for semantic similarity
-                cls._sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
+                cls._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
                 log.info("Initialized sentence transformer model")
             except Exception as e:
                 log.warning(f"Failed to initialize sentence transformer model: {e}")
@@ -364,8 +399,8 @@ class Search:
         text = text.lower()
 
         # Remove special characters and numbers
-        text = re.sub(r'[^\w\s]', ' ', text)
-        text = re.sub(r'\d+', ' ', text)
+        text = re.sub(r"[^\w\s]", " ", text)
+        text = re.sub(r"\d+", " ", text)
 
         # Split into tokens and remove empty tokens
         tokens = [token for token in text.split() if token]
@@ -373,7 +408,9 @@ class Search:
         return tokens
 
     @staticmethod
-    def calculate_bm25_scores(query: str, documents: List[Dict[str, str]]) -> List[float]:
+    def calculate_bm25_scores(
+        query: str, documents: List[Dict[str, str]]
+    ) -> List[float]:
         """Calculate BM25 scores for a query and documents.
 
         Args:
@@ -384,7 +421,9 @@ class Search:
             List[float]: The BM25 scores for each document
         """
         if not BM25_AVAILABLE:
-            log.warning("rank-bm25 package is not installed. BM25 scoring will be disabled.")
+            log.warning(
+                "rank-bm25 package is not installed. BM25 scoring will be disabled."
+            )
             return [1.0] * len(documents)  # Return neutral scores
 
         # Preprocess the query
@@ -394,9 +433,9 @@ class Search:
         corpus = []
         for doc in documents:
             # Combine title and snippet if available
-            doc_text = doc.get('title', '')
-            if 'snippet' in doc:
-                doc_text += ' ' + doc.get('snippet', '')
+            doc_text = doc.get("title", "")
+            if "snippet" in doc:
+                doc_text += " " + doc.get("snippet", "")
             corpus.append(Search.preprocess_text(doc_text))
 
         # If corpus is empty, return neutral scores
@@ -420,7 +459,9 @@ class Search:
             return [1.0] * len(documents)  # Return neutral scores
 
     @classmethod
-    def calculate_semantic_similarity(cls, query: str, documents: List[Dict[str, str]]) -> List[float]:
+    def calculate_semantic_similarity(
+        cls, query: str, documents: List[Dict[str, str]]
+    ) -> List[float]:
         """Calculate semantic similarity scores for a query and documents.
 
         Args:
@@ -442,9 +483,9 @@ class Search:
             doc_texts = []
             for doc in documents:
                 # Combine title and snippet if available
-                doc_text = doc.get('title', '')
-                if 'snippet' in doc:
-                    doc_text += ' ' + doc.get('snippet', '')
+                doc_text = doc.get("title", "")
+                if "snippet" in doc:
+                    doc_text += " " + doc.get("snippet", "")
                 doc_texts.append(doc_text)
 
             # If no documents, return neutral scores
@@ -499,11 +540,11 @@ class Search:
 
         scores = []
         for doc in documents:
-            url = doc.get('url', '')
+            url = doc.get("url", "")
 
             # Extract domain from URL
             domain = ""
-            match = re.search(r'https?://(?:www\.)?([^/]+)', url)
+            match = re.search(r"https?://(?:www\.)?([^/]+)", url)
             if match:
                 domain = match.group(1)
 
@@ -525,7 +566,9 @@ class Search:
         return scores
 
     @classmethod
-    def rank_results(cls, query: str, results: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    def rank_results(
+        cls, query: str, results: List[Dict[str, str]]
+    ) -> List[Dict[str, str]]:
         """Rank search results using configurable relevance algorithms.
 
         Args:
@@ -542,38 +585,53 @@ class Search:
         search_cfg = cfg.search
 
         # Calculate scores using different algorithms
-        bm25_scores = cls.calculate_bm25_scores(query, results) if search_cfg.use_bm25 else [1.0] * len(results)
-        semantic_scores = cls.calculate_semantic_similarity(query, results) if search_cfg.use_semantic_similarity else [1.0] * len(results)
-        credibility_scores = cls.assess_source_credibility(results) if search_cfg.use_source_credibility else [1.0] * len(results)
+        bm25_scores = (
+            cls.calculate_bm25_scores(query, results)
+            if search_cfg.use_bm25
+            else [1.0] * len(results)
+        )
+        semantic_scores = (
+            cls.calculate_semantic_similarity(query, results)
+            if search_cfg.use_semantic_similarity
+            else [1.0] * len(results)
+        )
+        credibility_scores = (
+            cls.assess_source_credibility(results)
+            if search_cfg.use_source_credibility
+            else [1.0] * len(results)
+        )
 
         # Combine scores using configurable weights
         combined_scores = []
         for i in range(len(results)):
             score = (
-                bm25_scores[i] * search_cfg.bm25_weight +
-                semantic_scores[i] * search_cfg.semantic_similarity_weight +
-                credibility_scores[i] * search_cfg.source_credibility_weight
+                bm25_scores[i] * search_cfg.bm25_weight
+                + semantic_scores[i] * search_cfg.semantic_similarity_weight
+                + credibility_scores[i] * search_cfg.source_credibility_weight
             )
             combined_scores.append(score)
 
         # Add scores to results for debugging/transparency
         for i, result in enumerate(results):
-            result['relevance_score'] = combined_scores[i]
-            result['bm25_score'] = bm25_scores[i]
-            result['semantic_score'] = semantic_scores[i]
-            result['credibility_score'] = credibility_scores[i]
+            result["relevance_score"] = combined_scores[i]
+            result["bm25_score"] = bm25_scores[i]
+            result["semantic_score"] = semantic_scores[i]
+            result["credibility_score"] = credibility_scores[i]
 
         # Sort results by combined score (descending)
-        ranked_results = [result for _, result in sorted(
-            zip(combined_scores, results),
-            key=lambda pair: pair[0],
-            reverse=True
-        )]
+        ranked_results = [
+            result
+            for _, result in sorted(
+                zip(combined_scores, results), key=lambda pair: pair[0], reverse=True
+            )
+        ]
 
         return ranked_results
 
     @classmethod
-    def register_backend(cls, name: str) -> Callable[
+    def register_backend(
+        cls, name: str
+    ) -> Callable[
         [Callable[[str, int], List[Dict[str, str]]]],
         Callable[[str, int], List[Dict[str, str]]],
     ]:
@@ -607,9 +665,7 @@ class Search:
         return decorator
 
     @staticmethod
-    def generate_queries(
-        query: str, return_embeddings: bool = False
-    ) -> List[Any]:
+    def generate_queries(query: str, return_embeddings: bool = False) -> List[Any]:
         """Generate search query variants or a simple embedding for a query.
 
         This method takes a raw user query and either generates multiple variants
@@ -627,7 +683,7 @@ class Search:
 
         Args:
             query: The raw user query string to generate variants or embeddings for.
-            return_embeddings: When True, return a numeric embedding instead of 
+            return_embeddings: When True, return a numeric embedding instead of
                               query strings. Default is False.
 
         Returns:
@@ -661,9 +717,7 @@ class Search:
         return queries
 
     @classmethod
-    def external_lookup(
-        cls, query: str, max_results: int = 5
-    ) -> List[Dict[str, Any]]:
+    def external_lookup(cls, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends.
 
         This method performs a search using all backends configured in the
@@ -741,45 +795,43 @@ class Search:
                         f"Unknown search backend '{name}'",
                         available_backends=available_backends,
                         provided=name,
-                        suggestion="Configure a valid search backend in your configuration file"
+                        suggestion="Configure a valid search backend in your configuration file",
                     )
             try:
                 backend_results = backend(search_query, max_results)
             except requests.exceptions.Timeout as exc:
                 log.warning(f"{name} search timed out: {exc}")
                 from .errors import TimeoutError
+
                 raise TimeoutError(
-                    f"{name} search timed out", 
-                    cause=exc, 
-                    backend=name, 
-                    query=query
+                    f"{name} search timed out", cause=exc, backend=name, query=query
                 )
             except requests.exceptions.RequestException as exc:
                 log.warning(f"{name} search request failed: {exc}")
                 raise SearchError(
-                    f"{name} search failed", 
-                    cause=exc, 
-                    backend=name, 
+                    f"{name} search failed",
+                    cause=exc,
+                    backend=name,
                     query=query,
-                    suggestion="Check your network connection and ensure the search backend is properly configured"
+                    suggestion="Check your network connection and ensure the search backend is properly configured",
                 )
             except json.JSONDecodeError as exc:
                 log.warning(f"{name} search returned invalid JSON: {exc}")
                 raise SearchError(
-                    f"{name} search failed: invalid JSON response", 
-                    cause=exc, 
-                    backend=name, 
+                    f"{name} search failed: invalid JSON response",
+                    cause=exc,
+                    backend=name,
                     query=query,
-                    suggestion="The search backend returned an invalid response. Try a different search query or backend."
+                    suggestion="The search backend returned an invalid response. Try a different search query or backend.",
                 )
             except Exception as exc:  # pragma: no cover - unexpected errors
                 log.warning(f"{name} search failed with unexpected error: {exc}")
                 raise SearchError(
-                    f"{name} search failed", 
-                    cause=exc, 
-                    backend=name, 
+                    f"{name} search failed",
+                    cause=exc,
+                    backend=name,
                     query=query,
-                    suggestion="An unexpected error occurred. Check the logs for more details and consider using a different search backend."
+                    suggestion="An unexpected error occurred. Check the logs for more details and consider using a different search backend.",
                 )
 
             if backend_results:
@@ -806,7 +858,7 @@ class Search:
 
         # Fallback results when all backends fail
         fallback_results = [
-            {"title": f"Result {i+1} for {query}", "url": ""}
+            {"title": f"Result {i + 1} for {query}", "url": ""}
             for i in range(max_results)
         ]
 
@@ -814,9 +866,7 @@ class Search:
 
 
 @Search.register_backend("duckduckgo")
-def _duckduckgo_backend(
-    query: str, max_results: int = 5
-) -> List[Dict[str, Any]]:
+def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Retrieve search results from the DuckDuckGo API.
 
     This function queries the DuckDuckGo API with the given search query
@@ -896,9 +946,7 @@ def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     api_key = os.getenv("SERPER_API_KEY", "")
     url = "https://google.serper.dev/search"
     headers = {"X-API-KEY": api_key}
-    response = requests.post(
-        url, json={"q": query}, headers=headers, timeout=5
-    )
+    response = requests.post(url, json={"q": query}, headers=headers, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
     data = response.json()
@@ -946,9 +994,7 @@ def _brave_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     headers = {"Accept": "application/json", "X-Subscription-Token": api_key}
     params = {"q": query, "count": max_results}
 
-    response = requests.get(
-        url, params=params, headers=headers, timeout=5
-    )
+    response = requests.get(url, params=params, headers=headers, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
     data = response.json()

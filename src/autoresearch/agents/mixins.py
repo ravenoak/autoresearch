@@ -8,9 +8,7 @@ from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
 from ..config import ConfigModel
-from ..orchestration.state import QueryState
 from ..logging_utils import get_logger
-from ..llm.adapters import LLMAdapter
 from .prompts import render_prompt
 
 log = get_logger(__name__)
@@ -47,9 +45,7 @@ class ModelConfigMixin:
         """
         model_cfg = config.agent_config.get(agent_name)
         return (
-            model_cfg.model
-            if model_cfg and model_cfg.model
-            else config.default_model
+            model_cfg.model if model_cfg and model_cfg.model else config.default_model
         )
 
 

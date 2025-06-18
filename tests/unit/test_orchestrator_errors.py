@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.errors import OrchestrationError, AgentError, NotFoundError
+from autoresearch.errors import OrchestrationError
 from autoresearch.config import ConfigModel
 
 
@@ -16,11 +16,7 @@ from autoresearch.config import ConfigModel
 @pytest.fixture
 def test_config():
     """Create a test configuration with minimal settings."""
-    return ConfigModel(
-        agents=["TestAgent"],
-        loops=1,
-        max_errors=1
-    )
+    return ConfigModel(agents=["TestAgent"], loops=1, max_errors=1)
 
 
 @pytest.fixture
@@ -87,6 +83,7 @@ def test_callback_error_propagates(test_config):
     the exception is not caught by the orchestrator but propagates to the caller.
     This ensures that callback errors are visible and not silently ignored.
     """
+
     # Setup
     def bad_callback(*args, **kwargs):
         raise RuntimeError("boom")

@@ -18,7 +18,6 @@ from typing import (
     Tuple,
     Callable,
     TypeVar,
-    cast,
 )
 from contextlib import contextmanager
 import functools
@@ -37,7 +36,9 @@ class LLMAdapter(Protocol):
 class TokenCountingAdapter:
     """Wrapper for LLM adapters that counts tokens without modifying the original adapter."""
 
-    def __init__(self, adapter: LLMAdapter, agent_name: str, metrics: OrchestrationMetrics):
+    def __init__(
+        self, adapter: LLMAdapter, agent_name: str, metrics: OrchestrationMetrics
+    ):
         """Initialize the token counting adapter.
 
         Args:
@@ -99,7 +100,9 @@ def count_tokens(
 T = TypeVar("T")
 
 
-def with_token_counting(agent_name: str, metrics: OrchestrationMetrics) -> Callable[[Callable[[LLMAdapter, Any], T]], Callable[[LLMAdapter, Any], T]]:
+def with_token_counting(
+    agent_name: str, metrics: OrchestrationMetrics
+) -> Callable[[Callable[[LLMAdapter, Any], T]], Callable[[LLMAdapter, Any], T]]:
     """Decorator for functions that use LLM adapters to count tokens.
 
     Args:
@@ -109,7 +112,10 @@ def with_token_counting(agent_name: str, metrics: OrchestrationMetrics) -> Calla
     Returns:
         A decorator function
     """
-    def decorator(func: Callable[[LLMAdapter, Any], T]) -> Callable[[LLMAdapter, Any], T]:
+
+    def decorator(
+        func: Callable[[LLMAdapter, Any], T],
+    ) -> Callable[[LLMAdapter, Any], T]:
         @functools.wraps(func)
         def wrapper(adapter: LLMAdapter, *args: Any, **kwargs: Any) -> T:
             with count_tokens(agent_name, adapter, metrics) as (
@@ -119,4 +125,5 @@ def with_token_counting(agent_name: str, metrics: OrchestrationMetrics) -> Calla
                 return func(counting_adapter, *args, **kwargs)
 
         return wrapper
+
     return decorator

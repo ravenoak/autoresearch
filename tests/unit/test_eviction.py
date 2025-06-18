@@ -46,6 +46,7 @@ def test_score_eviction(storage_manager, monkeypatch):
 def test_lru_eviction_order(storage_manager, monkeypatch):
     StorageManager.clear_all()
     from autoresearch import storage
+
     storage._lru.clear()
     config = ConfigModel(ram_budget_mb=1)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)

@@ -20,9 +20,7 @@ def setup_patches(monkeypatch):
         lambda self: ConfigModel(loops=1, output_format="json"),
     )
     responses = iter(["test", ""])
-    monkeypatch.setattr(
-        "autoresearch.main.Prompt.ask", lambda *a, **k: next(responses)
-    )
+    monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 

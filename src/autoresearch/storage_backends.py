@@ -8,7 +8,7 @@ focuses on DuckDB as the primary backend for relational storage and vector searc
 
 import os
 from threading import Lock
-from typing import Any, Optional, List, Dict, Tuple
+from typing import Any, Optional, List, Dict
 
 import duckdb
 
@@ -39,7 +39,9 @@ class DuckDBStorageBackend:
         self._lock = Lock()
         self._has_vss: bool = False
 
-    def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
+    def setup(
+        self, db_path: Optional[str] = None, skip_migrations: bool = False
+    ) -> None:
         """
         Initialize the DuckDB connection and create required tables.
 
@@ -70,7 +72,7 @@ class DuckDBStorageBackend:
                 db_path
                 if db_path is not None
                 else cfg.duckdb.path
-                if hasattr(cfg, 'duckdb') and hasattr(cfg.duckdb, 'path')
+                if hasattr(cfg, "duckdb") and hasattr(cfg.duckdb, "path")
                 else os.getenv("DUCKDB_PATH", "kg.duckdb")
             )
             self._path = path
@@ -95,7 +97,10 @@ class DuckDBStorageBackend:
                     self._has_vss = False
                     # In test environments, we don't want to fail if the VSS extension is not available
                     # Only raise in non-test environments or if explicitly configured to fail
-                    if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
+                    if (
+                        os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower()
+                        == "true"
+                    ):
                         raise StorageError("Failed to load VSS extension", cause=e)
 
             # Ensure required tables exist
@@ -146,8 +151,7 @@ class DuckDBStorageBackend:
 
             # Create metadata table for schema versioning
             self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS metadata("
-                "key VARCHAR, value VARCHAR)"
+                "CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"
             )
 
             # Initialize schema version if it doesn't exist
@@ -214,7 +218,9 @@ class DuckDBStorageBackend:
             if result is None:
                 if initialize_if_missing:
                     # This should not happen as _initialize_schema_version should have been called
-                    log.warning("Schema version not found in metadata table, initializing to 1")
+                    log.warning(
+                        "Schema version not found in metadata table, initializing to 1"
+                    )
                     self._initialize_schema_version()
                     return 1
                 else:
@@ -240,7 +246,7 @@ class DuckDBStorageBackend:
         try:
             self._conn.execute(
                 "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
-                [str(version)]
+                [str(version)],
             )
             log.info(f"Updated schema version to {version}")
         except Exception as e:
@@ -263,11 +269,15 @@ class DuckDBStorageBackend:
             current_version = self.get_schema_version()
             latest_version = 1  # Update this when adding new migrations
 
-            log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
+            log.info(
+                f"Current schema version: {current_version}, latest version: {latest_version}"
+            )
 
             # Run migrations sequentially
             if current_version is None or current_version < latest_version:
-                log.info(f"Running migrations from version {current_version} to {latest_version}")
+                log.info(
+                    f"Running migrations from version {current_version} to {latest_version}"
+                )
 
                 # Example migration pattern for future use:
                 # if current_version < 2:
@@ -317,9 +327,9 @@ class DuckDBStorageBackend:
             log.info("Creating HNSW index on embeddings table...")
             # Ensure metric is one of the valid values: 'ip', 'cosine', 'l2sq'
             metric = cfg.hnsw_metric
-            if metric not in ['ip', 'cosine', 'l2sq']:
+            if metric not in ["ip", "cosine", "l2sq"]:
                 log.warning(f"Invalid HNSW metric '{metric}', falling back to 'l2sq'")
-                metric = 'l2sq'
+                metric = "l2sq"
 
             # Check if the embeddings table is empty
             count = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
@@ -333,7 +343,7 @@ class DuckDBStorageBackend:
                     # Insert the dummy embedding
                     self._conn.execute(
                         "INSERT INTO embeddings VALUES (?, ?)",
-                        [dummy_id, dummy_embedding]
+                        [dummy_id, dummy_embedding],
                     )
                     log.debug("Inserted dummy embedding for HNSW index creation")
                 except Exception as e:
@@ -352,7 +362,9 @@ class DuckDBStorageBackend:
                 # If we inserted a dummy embedding, remove it now
                 if count == 0:
                     try:
-                        self._conn.execute("DELETE FROM embeddings WHERE node_id = ?", [dummy_id])
+                        self._conn.execute(
+                            "DELETE FROM embeddings WHERE node_id = ?", [dummy_id]
+                        )
                         log.debug("Removed dummy embedding after HNSW index creation")
                     except Exception as e:
                         log.warning(f"Failed to remove dummy embedding: {e}")
@@ -366,7 +378,9 @@ class DuckDBStorageBackend:
                 "SELECT index_name FROM duckdb_indexes() WHERE table_name='embeddings'"
             ).fetchall()
             if not indexes:
-                log.warning("HNSW index creation appeared to succeed, but no index was found")
+                log.warning(
+                    "HNSW index creation appeared to succeed, but no index was found"
+                )
             else:
                 log.info(f"Verified index creation: {indexes}")
 
@@ -432,7 +446,9 @@ class DuckDBStorageBackend:
             except Exception as e:
                 raise StorageError("Failed to persist claim to DuckDB", cause=e)
 
-    def vector_search(self, query_embedding: List[float], k: int = 5) -> List[Dict[str, Any]]:
+    def vector_search(
+        self, query_embedding: List[float], k: int = 5
+    ) -> List[Dict[str, Any]]:
         """
         Search for claims by vector similarity.
 
@@ -461,7 +477,7 @@ class DuckDBStorageBackend:
         if not self._has_vss:
             raise StorageError(
                 "Vector search not available: VSS extension not loaded",
-                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration"
+                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration",
             )
 
         cfg = ConfigLoader().config
@@ -486,9 +502,9 @@ class DuckDBStorageBackend:
         except Exception as e:
             log.error(f"Vector search failed: {e}")
             raise StorageError(
-                "Vector search failed", 
+                "Vector search failed",
                 cause=e,
-                suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database"
+                suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database",
             )
 
     def get_connection(self) -> duckdb.DuckDBPyConnection:

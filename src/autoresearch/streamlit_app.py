@@ -8,7 +8,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any
 import random
 import io
 import time
@@ -28,7 +28,7 @@ from .orchestration import ReasoningMode
 from .error_utils import get_error_info, format_error_for_gui
 
 # Configure matplotlib to use a non-interactive backend
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 
 # Set page configuration
 st.set_page_config(
@@ -39,7 +39,8 @@ st.set_page_config(
 )
 
 # Add custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -67,7 +68,10 @@ st.markdown("""
         padding: 1rem;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 def save_config_to_toml(config_dict):
     """Save the configuration to the TOML file.
@@ -147,7 +151,7 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
-            }
+            },
         },
         "Fast Mode": {
             "llm_backend": "lmstudio",
@@ -160,7 +164,7 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 3,
                 "use_semantic_similarity": False,
-            }
+            },
         },
         "Thorough Mode": {
             "llm_backend": "lmstudio",
@@ -173,7 +177,7 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 8,
                 "use_semantic_similarity": True,
-            }
+            },
         },
         "Chain of Thought": {
             "llm_backend": "lmstudio",
@@ -186,7 +190,7 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
-            }
+            },
         },
         "OpenAI Mode": {
             "llm_backend": "openai",
@@ -199,8 +203,8 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
-            }
-        }
+            },
+        },
     }
 
 
@@ -237,7 +241,7 @@ def display_config_editor():
             "Select a preset",
             options=["Custom"] + preset_names,
             index=0,
-            help="Select a predefined configuration preset or 'Custom' to configure manually"
+            help="Select a predefined configuration preset or 'Custom' to configure manually",
         )
 
         # Apply preset button
@@ -252,8 +256,8 @@ def display_config_editor():
             preset_config = apply_preset(selected_preset)
 
         llm_backend = st.text_input(
-            "LLM Backend", 
-            value=preset_config["llm_backend"] if preset_config else config.llm_backend
+            "LLM Backend",
+            value=preset_config["llm_backend"] if preset_config else config.llm_backend,
         )
 
         # Get the reasoning mode options
@@ -261,9 +265,13 @@ def display_config_editor():
 
         # Determine the index for the reasoning mode
         if preset_config and "reasoning_mode" in preset_config:
-            reasoning_mode_index = reasoning_mode_options.index(preset_config["reasoning_mode"])
+            reasoning_mode_index = reasoning_mode_options.index(
+                preset_config["reasoning_mode"]
+            )
         else:
-            reasoning_mode_index = reasoning_mode_options.index(config.reasoning_mode.value)
+            reasoning_mode_index = reasoning_mode_options.index(
+                config.reasoning_mode.value
+            )
 
         reasoning_mode = st.selectbox(
             "Reasoning Mode",
@@ -272,48 +280,56 @@ def display_config_editor():
         )
 
         loops = st.number_input(
-            "Loops", 
-            min_value=1, 
-            max_value=10, 
+            "Loops",
+            min_value=1,
+            max_value=10,
             value=preset_config["loops"] if preset_config else config.loops,
-            help="Number of reasoning loops to perform"
+            help="Number of reasoning loops to perform",
         )
 
         # Storage settings
         st.markdown("#### Storage Settings")
         duckdb_path = st.text_input(
-            "DuckDB Path", 
-            value=preset_config["storage"]["duckdb_path"] if preset_config and "storage" in preset_config else config.storage.duckdb_path,
-            help="Path to the DuckDB database file"
+            "DuckDB Path",
+            value=preset_config["storage"]["duckdb_path"]
+            if preset_config and "storage" in preset_config
+            else config.storage.duckdb_path,
+            help="Path to the DuckDB database file",
         )
 
         vector_extension = st.checkbox(
-            "Enable Vector Extension", 
-            value=preset_config["storage"]["vector_extension"] if preset_config and "storage" in preset_config else config.storage.vector_extension,
-            help="Enable the DuckDB vector extension for similarity search"
+            "Enable Vector Extension",
+            value=preset_config["storage"]["vector_extension"]
+            if preset_config and "storage" in preset_config
+            else config.storage.vector_extension,
+            help="Enable the DuckDB vector extension for similarity search",
         )
 
         # Search settings
         st.markdown("#### Search Settings")
         max_results = st.number_input(
-            "Max Results Per Query", 
-            min_value=1, 
-            max_value=20, 
-            value=preset_config["search"]["max_results_per_query"] if preset_config and "search" in preset_config else config.search.max_results_per_query,
-            help="Maximum number of search results to return per query"
+            "Max Results Per Query",
+            min_value=1,
+            max_value=20,
+            value=preset_config["search"]["max_results_per_query"]
+            if preset_config and "search" in preset_config
+            else config.search.max_results_per_query,
+            help="Maximum number of search results to return per query",
         )
 
         use_semantic_similarity = st.checkbox(
-            "Use Semantic Similarity", 
-            value=preset_config["search"]["use_semantic_similarity"] if preset_config and "search" in preset_config else config.search.use_semantic_similarity,
-            help="Use semantic similarity for search result ranking"
+            "Use Semantic Similarity",
+            value=preset_config["search"]["use_semantic_similarity"]
+            if preset_config and "search" in preset_config
+            else config.search.use_semantic_similarity,
+            help="Use semantic similarity for search result ranking",
         )
 
         # Hot-reload option
         enable_hot_reload = st.checkbox(
-            "Enable Hot-Reload", 
+            "Enable Hot-Reload",
             value=True,
-            help="Automatically reload the configuration when changes are detected"
+            help="Automatically reload the configuration when changes are detected",
         )
 
         # Submit button
@@ -333,7 +349,7 @@ def display_config_editor():
                     "search": {
                         "max_results_per_query": max_results,
                         "use_semantic_similarity": use_semantic_similarity,
-                    }
+                    },
                 }
 
                 # Save the configuration to the TOML file
@@ -362,7 +378,7 @@ def on_config_change(config):
         config: The new configuration
     """
     # Use Streamlit's session state to store the updated configuration
-    if 'config' not in st.session_state:
+    if "config" not in st.session_state:
         st.session_state.config = config
     else:
         st.session_state.config = config
@@ -372,7 +388,9 @@ def on_config_change(config):
     st.session_state.config_change_time = time.time()
 
 
-def track_agent_performance(agent_name: str, duration: float, tokens: int, success: bool = True):
+def track_agent_performance(
+    agent_name: str, duration: float, tokens: int, success: bool = True
+):
     """Track agent performance metrics.
 
     Args:
@@ -393,7 +411,7 @@ def track_agent_performance(agent_name: str, duration: float, tokens: int, succe
             "total_tokens": 0,
             "successes": 0,
             "failures": 0,
-            "history": []
+            "history": [],
         }
 
     # Update metrics
@@ -407,17 +425,21 @@ def track_agent_performance(agent_name: str, duration: float, tokens: int, succe
         metrics["failures"] += 1
 
     # Add to history (keep last 100 executions)
-    metrics["history"].append({
-        "timestamp": datetime.now(),
-        "duration": duration,
-        "tokens": tokens,
-        "success": success
-    })
+    metrics["history"].append(
+        {
+            "timestamp": datetime.now(),
+            "duration": duration,
+            "tokens": tokens,
+            "success": success,
+        }
+    )
     if len(metrics["history"]) > 100:
         metrics["history"].pop(0)
 
     # Log the performance
-    logging.info(f"Agent {agent_name} performance: duration={duration:.2f}s, tokens={tokens}, success={success}")
+    logging.info(
+        f"Agent {agent_name} performance: duration={duration:.2f}s, tokens={tokens}, success={success}"
+    )
 
 
 def collect_system_metrics() -> Dict[str, Any]:
@@ -441,12 +463,9 @@ def collect_system_metrics() -> Dict[str, Any]:
 
     # Get token usage (this would need to be tracked elsewhere)
     # For now, we'll use a placeholder
-    token_usage = st.session_state.get("token_usage", {
-        "total": 0,
-        "prompt": 0,
-        "completion": 0,
-        "last_query": 0
-    })
+    token_usage = st.session_state.get(
+        "token_usage", {"total": 0, "prompt": 0, "completion": 0, "last_query": 0}
+    )
 
     # Get agent performance metrics
     agent_performance = st.session_state.get("agent_performance", {})
@@ -458,7 +477,7 @@ def collect_system_metrics() -> Dict[str, Any]:
         "memory_total": memory_total,
         "process_memory": process_memory,
         "token_usage": token_usage,
-        "agent_performance": agent_performance
+        "agent_performance": agent_performance,
     }
 
 
@@ -506,7 +525,7 @@ def display_agent_performance():
                         agent_name=agent,
                         duration=random.uniform(0.5, 3.0),
                         tokens=random.randint(100, 1000),
-                        success=random.random() > 0.2
+                        success=random.random() > 0.2,
                     )
 
             st.success("Sample data added")
@@ -523,20 +542,35 @@ def display_agent_performance():
 
         # Create a DataFrame for the summary
         import pandas as pd
+
         summary_data = []
 
         for agent_name, metrics in agent_performance.items():
-            avg_duration = metrics["total_duration"] / metrics["executions"] if metrics["executions"] > 0 else 0
-            avg_tokens = metrics["total_tokens"] / metrics["executions"] if metrics["executions"] > 0 else 0
-            success_rate = metrics["successes"] / metrics["executions"] * 100 if metrics["executions"] > 0 else 0
+            avg_duration = (
+                metrics["total_duration"] / metrics["executions"]
+                if metrics["executions"] > 0
+                else 0
+            )
+            avg_tokens = (
+                metrics["total_tokens"] / metrics["executions"]
+                if metrics["executions"] > 0
+                else 0
+            )
+            success_rate = (
+                metrics["successes"] / metrics["executions"] * 100
+                if metrics["executions"] > 0
+                else 0
+            )
 
-            summary_data.append({
-                "Agent": agent_name,
-                "Executions": metrics["executions"],
-                "Avg Duration (s)": round(avg_duration, 2),
-                "Avg Tokens": round(avg_tokens, 0),
-                "Success Rate (%)": round(success_rate, 1)
-            })
+            summary_data.append(
+                {
+                    "Agent": agent_name,
+                    "Executions": metrics["executions"],
+                    "Avg Duration (s)": round(avg_duration, 2),
+                    "Avg Tokens": round(avg_tokens, 0),
+                    "Success Rate (%)": round(success_rate, 1),
+                }
+            )
 
         summary_df = pd.DataFrame(summary_data)
         st.dataframe(summary_df, use_container_width=True)
@@ -546,19 +580,29 @@ def display_agent_performance():
         st.markdown("### Agent Performance Comparison")
 
         # Create a DataFrame for the comparison
-        comparison_data = {
-            "Agent": [],
-            "Metric": [],
-            "Value": []
-        }
+        comparison_data = {"Agent": [], "Metric": [], "Value": []}
 
         for agent_name, metrics in agent_performance.items():
-            avg_duration = metrics["total_duration"] / metrics["executions"] if metrics["executions"] > 0 else 0
-            avg_tokens = metrics["total_tokens"] / metrics["executions"] if metrics["executions"] > 0 else 0
-            success_rate = metrics["successes"] / metrics["executions"] * 100 if metrics["executions"] > 0 else 0
+            avg_duration = (
+                metrics["total_duration"] / metrics["executions"]
+                if metrics["executions"] > 0
+                else 0
+            )
+            avg_tokens = (
+                metrics["total_tokens"] / metrics["executions"]
+                if metrics["executions"] > 0
+                else 0
+            )
+            success_rate = (
+                metrics["successes"] / metrics["executions"] * 100
+                if metrics["executions"] > 0
+                else 0
+            )
 
             comparison_data["Agent"].extend([agent_name, agent_name, agent_name])
-            comparison_data["Metric"].extend(["Avg Duration (s)", "Avg Tokens", "Success Rate (%)"])
+            comparison_data["Metric"].extend(
+                ["Avg Duration (s)", "Avg Tokens", "Success Rate (%)"]
+            )
             comparison_data["Value"].extend([avg_duration, avg_tokens, success_rate])
 
         comparison_df = pd.DataFrame(comparison_data)
@@ -573,16 +617,20 @@ def display_agent_performance():
             if pivot_df[col].max() > 0:
                 normalized_df[col] = pivot_df[col] / pivot_df[col].max()
 
-        normalized_df = normalized_df.reset_index().melt(id_vars=["Agent"], var_name="Metric", value_name="Value")
+        normalized_df = normalized_df.reset_index().melt(
+            id_vars=["Agent"], var_name="Metric", value_name="Value"
+        )
 
-        chart = alt.Chart(normalized_df).mark_bar().encode(
-            x=alt.X("Agent:N", title="Agent"),
-            y=alt.Y("Value:Q", title="Normalized Value"),
-            color=alt.Color("Metric:N", title="Metric"),
-            tooltip=["Agent", "Metric", "Value"]
-        ).properties(
-            width=600,
-            height=400
+        chart = (
+            alt.Chart(normalized_df)
+            .mark_bar()
+            .encode(
+                x=alt.X("Agent:N", title="Agent"),
+                y=alt.Y("Value:Q", title="Normalized Value"),
+                color=alt.Color("Metric:N", title="Metric"),
+                tooltip=["Agent", "Metric", "Value"],
+            )
+            .properties(width=600, height=400)
         )
 
         st.altair_chart(chart, use_container_width=True)
@@ -609,7 +657,7 @@ def display_agent_performance():
                     "timestamp": [h["timestamp"] for h in history],
                     "duration": [h["duration"] for h in history],
                     "tokens": [h["tokens"] for h in history],
-                    "success": [h["success"] for h in history]
+                    "success": [h["success"] for h in history],
                 }
 
                 history_df = pd.DataFrame(history_data)
@@ -619,23 +667,30 @@ def display_agent_performance():
 
                 # Normalize the values for better visualization
                 chart_data = history_df.copy()
-                chart_data["normalized_duration"] = chart_data["duration"] / chart_data["duration"].max() if chart_data["duration"].max() > 0 else 0
-                chart_data["normalized_tokens"] = chart_data["tokens"] / chart_data["tokens"].max() if chart_data["tokens"].max() > 0 else 0
+                chart_data["normalized_duration"] = (
+                    chart_data["duration"] / chart_data["duration"].max()
+                    if chart_data["duration"].max() > 0
+                    else 0
+                )
+                chart_data["normalized_tokens"] = (
+                    chart_data["tokens"] / chart_data["tokens"].max()
+                    if chart_data["tokens"].max() > 0
+                    else 0
+                )
 
                 # Create a line chart
                 line_chart = alt.Chart(chart_data).mark_line(point=True).encode(
                     x=alt.X("timestamp:T", title="Time"),
                     y=alt.Y("normalized_duration:Q", title="Normalized Value"),
                     color=alt.value("#1f77b4"),
-                    tooltip=["timestamp", "duration"]
-                ).properties(
-                    width=600,
-                    height=300
-                ) + alt.Chart(chart_data).mark_line(point=True).encode(
+                    tooltip=["timestamp", "duration"],
+                ).properties(width=600, height=300) + alt.Chart(chart_data).mark_line(
+                    point=True
+                ).encode(
                     x=alt.X("timestamp:T", title="Time"),
                     y=alt.Y("normalized_tokens:Q", title="Normalized Value"),
                     color=alt.value("#ff7f0e"),
-                    tooltip=["timestamp", "tokens"]
+                    tooltip=["timestamp", "tokens"],
                 )
 
                 st.altair_chart(line_chart, use_container_width=True)
@@ -643,9 +698,15 @@ def display_agent_performance():
                 # Create a legend
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown("<span style='color:#1f77b4'>● Duration</span>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<span style='color:#1f77b4'>● Duration</span>",
+                        unsafe_allow_html=True,
+                    )
                 with col2:
-                    st.markdown("<span style='color:#ff7f0e'>● Tokens</span>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<span style='color:#ff7f0e'>● Tokens</span>",
+                        unsafe_allow_html=True,
+                    )
 
                 # Create a bar chart for success rate
                 st.markdown("#### Success Rate Over Time")
@@ -656,7 +717,7 @@ def display_agent_performance():
 
                 for i in range(len(history)):
                     start_idx = max(0, i - window_size + 1)
-                    window = history[start_idx:i+1]
+                    window = history[start_idx : i + 1]
                     success_count = sum(1 for h in window if h["success"])
                     success_rate = success_count / len(window) * 100
                     rolling_success.append(success_rate)
@@ -664,22 +725,28 @@ def display_agent_performance():
                 chart_data["rolling_success"] = rolling_success
 
                 # Create a bar chart
-                bar_chart = alt.Chart(chart_data).mark_bar().encode(
-                    x=alt.X("timestamp:T", title="Time"),
-                    y=alt.Y("rolling_success:Q", title="Success Rate (%)", scale=alt.Scale(domain=[0, 100])),
-                    color=alt.condition(
-                        alt.datum.rolling_success >= 80,
-                        alt.value("#2ecc71"),  # Green for high success rate
-                        alt.condition(
-                            alt.datum.rolling_success >= 50,
-                            alt.value("#f39c12"),  # Orange for medium success rate
-                            alt.value("#e74c3c")  # Red for low success rate
-                        )
-                    ),
-                    tooltip=["timestamp", "rolling_success"]
-                ).properties(
-                    width=600,
-                    height=300
+                bar_chart = (
+                    alt.Chart(chart_data)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("timestamp:T", title="Time"),
+                        y=alt.Y(
+                            "rolling_success:Q",
+                            title="Success Rate (%)",
+                            scale=alt.Scale(domain=[0, 100]),
+                        ),
+                        color=alt.condition(
+                            alt.datum.rolling_success >= 80,
+                            alt.value("#2ecc71"),  # Green for high success rate
+                            alt.condition(
+                                alt.datum.rolling_success >= 50,
+                                alt.value("#f39c12"),  # Orange for medium success rate
+                                alt.value("#e74c3c"),  # Red for low success rate
+                            ),
+                        ),
+                        tooltip=["timestamp", "rolling_success"],
+                    )
+                    .properties(width=600, height=300)
                 )
 
                 st.altair_chart(bar_chart, use_container_width=True)
@@ -713,7 +780,9 @@ def display_metrics_dashboard():
         with col2:
             st.markdown("### Memory Usage")
             st.progress(metrics["memory_percent"] / 100)
-            st.markdown(f"{metrics['memory_used']:.1f} GB / {metrics['memory_total']:.1f} GB ({metrics['memory_percent']:.1f}%)")
+            st.markdown(
+                f"{metrics['memory_used']:.1f} GB / {metrics['memory_total']:.1f} GB ({metrics['memory_percent']:.1f}%)"
+            )
 
         # Display process memory
         with col3:
@@ -740,18 +809,24 @@ def display_metrics_dashboard():
             st.metric("Last Query Tokens", token_usage["last_query"])
 
         # Display metrics history chart
-        if "system_metrics" in st.session_state and len(st.session_state.system_metrics) > 1:
+        if (
+            "system_metrics" in st.session_state
+            and len(st.session_state.system_metrics) > 1
+        ):
             st.markdown("### Metrics History")
 
             # Create a chart for CPU and memory usage
             chart_data = {
                 "time": list(range(len(st.session_state.system_metrics))),
                 "cpu": [m["cpu_percent"] for m in st.session_state.system_metrics],
-                "memory": [m["memory_percent"] for m in st.session_state.system_metrics]
+                "memory": [
+                    m["memory_percent"] for m in st.session_state.system_metrics
+                ],
             }
 
             # Create a DataFrame for the chart
             import pandas as pd
+
             df = pd.DataFrame(chart_data)
 
             # Display the chart
@@ -767,9 +842,9 @@ class StreamlitLogHandler(logging.Handler):
     def __init__(self, level=logging.INFO):
         """Initialize the handler with the specified log level."""
         super().__init__(level)
-        self.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
+        self.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
 
     def emit(self, record):
         """Store the log record in Streamlit's session state."""
@@ -778,16 +853,16 @@ class StreamlitLogHandler(logging.Handler):
             log_entry = self.format(record)
 
             # Initialize logs list in session state if it doesn't exist
-            if 'logs' not in st.session_state:
+            if "logs" not in st.session_state:
                 st.session_state.logs = []
 
             # Add the log entry to the session state
             log_dict = {
-                'timestamp': datetime.fromtimestamp(record.created),
-                'level': record.levelname,
-                'logger': record.name,
-                'message': record.getMessage(),
-                'formatted': log_entry
+                "timestamp": datetime.fromtimestamp(record.created),
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "formatted": log_entry,
             }
             st.session_state.logs.append(log_dict)
 
@@ -817,9 +892,9 @@ def setup_logging():
 
     # Add a console handler for debugging
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
+    console_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
     root_logger.addHandler(console_handler)
 
     # Log that the logging system is set up
@@ -831,7 +906,7 @@ def display_log_viewer():
     st.markdown("<h2 class='subheader'>Log Viewer</h2>", unsafe_allow_html=True)
 
     # Get logs from session state
-    logs = st.session_state.get('logs', [])
+    logs = st.session_state.get("logs", [])
 
     if not logs:
         st.info("No logs available yet")
@@ -845,12 +920,12 @@ def display_log_viewer():
 
     with col1:
         # Filter by log level
-        log_levels = ["ALL"] + sorted(set(log['level'] for log in logs))
+        log_levels = ["ALL"] + sorted(set(log["level"] for log in logs))
         selected_level = st.selectbox("Log Level", log_levels)
 
     with col2:
         # Filter by logger name
-        logger_names = ["ALL"] + sorted(set(log['logger'] for log in logs))
+        logger_names = ["ALL"] + sorted(set(log["logger"] for log in logs))
         selected_logger = st.selectbox("Logger", logger_names)
 
     with col3:
@@ -861,16 +936,17 @@ def display_log_viewer():
     filtered_logs = logs
 
     if selected_level != "ALL":
-        filtered_logs = [log for log in filtered_logs if log['level'] == selected_level]
+        filtered_logs = [log for log in filtered_logs if log["level"] == selected_level]
 
     if selected_logger != "ALL":
-        filtered_logs = [log for log in filtered_logs if log['logger'] == selected_logger]
+        filtered_logs = [
+            log for log in filtered_logs if log["logger"] == selected_logger
+        ]
 
     if filter_text:
         pattern = re.compile(filter_text, re.IGNORECASE)
         filtered_logs = [
-            log for log in filtered_logs 
-            if pattern.search(log['formatted'])
+            log for log in filtered_logs if pattern.search(log["formatted"])
         ]
 
     # Display log count
@@ -878,27 +954,30 @@ def display_log_viewer():
 
     # Create a download button for logs
     if filtered_logs:
-        log_text = "\n".join(log['formatted'] for log in filtered_logs)
+        log_text = "\n".join(log["formatted"] for log in filtered_logs)
         st.download_button(
             label="Download Logs",
             data=log_text,
             file_name=f"autoresearch_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            mime="text/plain"
+            mime="text/plain",
         )
 
     # Display logs in a table
     if filtered_logs:
         # Create a DataFrame for the logs
         import pandas as pd
-        log_df = pd.DataFrame([
-            {
-                'Time': log['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
-                'Level': log['level'],
-                'Logger': log['logger'],
-                'Message': log['message']
-            }
-            for log in filtered_logs
-        ])
+
+        log_df = pd.DataFrame(
+            [
+                {
+                    "Time": log["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
+                    "Level": log["level"],
+                    "Logger": log["logger"],
+                    "Message": log["message"],
+                }
+                for log in filtered_logs
+            ]
+        )
 
         # Display the DataFrame
         st.dataframe(log_df, use_container_width=True)
@@ -909,7 +988,7 @@ def display_log_viewer():
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
     # Initialize configuration
-    if 'config' not in st.session_state:
+    if "config" not in st.session_state:
         config_loader = ConfigLoader()
         st.session_state.config = config_loader.load_config()
 
@@ -917,28 +996,28 @@ def initialize_session_state():
         config_loader.watch_changes(on_config_change)
 
     # Initialize token usage metrics
-    if 'token_usage' not in st.session_state:
+    if "token_usage" not in st.session_state:
         st.session_state.token_usage = {
             "total": 0,
             "prompt": 0,
             "completion": 0,
-            "last_query": 0
+            "last_query": 0,
         }
 
     # Initialize query history
-    if 'query_history' not in st.session_state:
+    if "query_history" not in st.session_state:
         st.session_state.query_history = []
 
     # Initialize rerun state
-    if 'rerun_triggered' not in st.session_state:
+    if "rerun_triggered" not in st.session_state:
         st.session_state.rerun_triggered = False
 
     # Initialize current query
-    if 'current_query' not in st.session_state:
+    if "current_query" not in st.session_state:
         st.session_state.current_query = ""
 
     # Initialize current result
-    if 'current_result' not in st.session_state:
+    if "current_result" not in st.session_state:
         st.session_state.current_result = None
 
 
@@ -951,9 +1030,7 @@ def main():
     if not any(thread.name == "MetricsCollector" for thread in threading.enumerate()):
         # Start background thread for metrics collection
         metrics_thread = threading.Thread(
-            target=update_metrics_periodically, 
-            daemon=True,
-            name="MetricsCollector"
+            target=update_metrics_periodically, daemon=True, name="MetricsCollector"
         )
         metrics_thread.start()
 
@@ -976,7 +1053,9 @@ def main():
         # Display current configuration
         st.markdown("### Current Settings")
         st.markdown(f"**LLM Backend:** {st.session_state.config.llm_backend}")
-        st.markdown(f"**Reasoning Mode:** {st.session_state.config.reasoning_mode.value}")
+        st.markdown(
+            f"**Reasoning Mode:** {st.session_state.config.reasoning_mode.value}"
+        )
         st.markdown(f"**Loops:** {st.session_state.config.loops}")
 
         # Add a button to reload configuration
@@ -986,7 +1065,7 @@ def main():
             st.success("Configuration reloaded")
 
         # Show notification if configuration has changed
-        if st.session_state.get('config_changed', False):
+        if st.session_state.get("config_changed", False):
             st.success("Configuration updated")
             # Reset the notification flag
             st.session_state.config_changed = False
@@ -996,25 +1075,38 @@ def main():
             display_config_editor()
 
     # Create tabs for main content, metrics dashboard, logs, and history
-    main_tab, metrics_tab, logs_tab, history_tab = st.tabs(["Main", "Metrics Dashboard", "Logs", "History"])
+    main_tab, metrics_tab, logs_tab, history_tab = st.tabs(
+        ["Main", "Metrics Dashboard", "Logs", "History"]
+    )
 
     with main_tab:
         # Main content area
-        query = st.text_area("Enter your query:", height=100, placeholder="What would you like to research?")
+        st.session_state.current_query = st.text_area(
+            "Enter your query:",
+            height=100,
+            placeholder="What would you like to research?",
+        )
 
         # Query options
         col1, col2 = st.columns(2)
         with col1:
-            reasoning_mode = st.selectbox(
+            st.session_state.reasoning_mode = st.selectbox(
                 "Reasoning Mode:",
                 options=[mode.value for mode in ReasoningMode],
-                index=[mode.value for mode in ReasoningMode].index(st.session_state.config.reasoning_mode.value),
+                index=[mode.value for mode in ReasoningMode].index(
+                    st.session_state.config.reasoning_mode.value
+                ),
             )
         with col2:
-            loops = st.slider("Loops:", min_value=1, max_value=5, value=st.session_state.config.loops)
+            st.session_state.loops = st.slider(
+                "Loops:",
+                min_value=1,
+                max_value=5,
+                value=st.session_state.config.loops,
+            )
 
         # Run button
-        run_button = st.button("Run Query", type="primary")
+        st.session_state.run_button = st.button("Run Query", type="primary")
 
     with metrics_tab:
         # Display metrics dashboard
@@ -1027,6 +1119,7 @@ def main():
     with history_tab:
         # Display query history
         display_query_history()
+
 
 def store_query_history(query: str, result: QueryResponse, config: Dict[str, Any]):
     """Store query history in the session state.
@@ -1048,8 +1141,8 @@ def store_query_history(query: str, result: QueryResponse, config: Dict[str, Any
         "config": {
             "reasoning_mode": config.reasoning_mode.value,
             "loops": config.loops,
-            "llm_backend": config.llm_backend
-        }
+            "llm_backend": config.llm_backend,
+        },
     }
 
     # Add to history
@@ -1076,17 +1169,22 @@ def display_query_history():
 
     # Create a DataFrame for the history
     import pandas as pd
+
     history_data = []
 
     for i, entry in enumerate(reversed(history)):
-        history_data.append({
-            "ID": len(history) - i,
-            "Time": entry["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-            "Query": entry["query"][:50] + "..." if len(entry["query"]) > 50 else entry["query"],
-            "Mode": entry["config"]["reasoning_mode"],
-            "Loops": entry["config"]["loops"],
-            "Backend": entry["config"]["llm_backend"]
-        })
+        history_data.append(
+            {
+                "ID": len(history) - i,
+                "Time": entry["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
+                "Query": entry["query"][:50] + "..."
+                if len(entry["query"]) > 50
+                else entry["query"],
+                "Mode": entry["config"]["reasoning_mode"],
+                "Loops": entry["config"]["loops"],
+                "Backend": entry["config"]["llm_backend"],
+            }
+        )
 
     history_df = pd.DataFrame(history_data)
 
@@ -1103,7 +1201,7 @@ def display_query_history():
             min_value=1,
             max_value=len(history),
             value=1,
-            step=1
+            step=1,
         )
 
         # Option to modify the query
@@ -1113,9 +1211,7 @@ def display_query_history():
         if modify_query:
             selected_entry = history[len(history) - query_id]
             modified_query = st.text_area(
-                "Edit Query",
-                value=selected_entry["query"],
-                height=100
+                "Edit Query", value=selected_entry["query"], height=100
             )
 
         # Submit button
@@ -1137,36 +1233,50 @@ def display_query_history():
             # Rerun the app to process the query
             st.experimental_rerun()
 
-
     # Process query when button is clicked
-    if run_button and query:
+    if st.session_state.run_button and st.session_state.current_query:
         # Update config with selected options
-        st.session_state.config.reasoning_mode = ReasoningMode(reasoning_mode)
-        st.session_state.config.loops = loops
+        st.session_state.config.reasoning_mode = ReasoningMode(
+            st.session_state.reasoning_mode
+        )
+        st.session_state.config.loops = st.session_state.loops
 
         # Show spinner while processing
         with st.spinner("Processing query..."):
             try:
                 # Run the query
-                result = Orchestrator.run_query(query, st.session_state.config)
+                result = Orchestrator.run_query(
+                    st.session_state.current_query,
+                    st.session_state.config,
+                )
 
                 # Update token usage metrics
-                if hasattr(result, "metrics") and result.metrics and "tokens" in result.metrics:
+                if (
+                    hasattr(result, "metrics")
+                    and result.metrics
+                    and "tokens" in result.metrics
+                ):
                     tokens = result.metrics["tokens"]
                     if "token_usage" not in st.session_state:
                         st.session_state.token_usage = {
                             "total": 0,
                             "prompt": 0,
                             "completion": 0,
-                            "last_query": 0
+                            "last_query": 0,
                         }
 
                     # Update token usage metrics
                     if isinstance(tokens, dict):
                         # If tokens is a dictionary with detailed metrics
-                        st.session_state.token_usage["prompt"] += tokens.get("prompt", 0)
-                        st.session_state.token_usage["completion"] += tokens.get("completion", 0)
-                        st.session_state.token_usage["last_query"] = tokens.get("total", 0)
+                        st.session_state.token_usage["prompt"] += tokens.get(
+                            "prompt", 0
+                        )
+                        st.session_state.token_usage["completion"] += tokens.get(
+                            "completion", 0
+                        )
+                        st.session_state.token_usage["last_query"] = tokens.get(
+                            "total", 0
+                        )
                         st.session_state.token_usage["total"] += tokens.get("total", 0)
                     else:
                         # If tokens is just a number
@@ -1174,7 +1284,11 @@ def display_query_history():
                         st.session_state.token_usage["total"] += tokens
 
                 # Store query in history
-                store_query_history(query, result, st.session_state.config)
+                store_query_history(
+                    st.session_state.current_query,
+                    result,
+                    st.session_state.config,
+                )
 
                 # Display results
                 display_results(result)
@@ -1188,7 +1302,7 @@ def display_query_history():
 
                 # Log the error
                 logging.error(f"Error processing query: {str(e)}", exc_info=e)
-    elif run_button and not query:
+    elif st.session_state.run_button and not st.session_state.current_query:
         st.warning("Please enter a query")
 
     # Process rerun query if triggered
@@ -1201,7 +1315,9 @@ def display_query_history():
         st.session_state.rerun_triggered = False
 
         # Update the configuration
-        st.session_state.config.reasoning_mode = ReasoningMode(rerun_config["reasoning_mode"])
+        st.session_state.config.reasoning_mode = ReasoningMode(
+            rerun_config["reasoning_mode"]
+        )
         st.session_state.config.loops = rerun_config["loops"]
 
         # Show spinner while processing
@@ -1211,22 +1327,32 @@ def display_query_history():
                 result = Orchestrator.run_query(rerun_query, st.session_state.config)
 
                 # Update token usage metrics
-                if hasattr(result, "metrics") and result.metrics and "tokens" in result.metrics:
+                if (
+                    hasattr(result, "metrics")
+                    and result.metrics
+                    and "tokens" in result.metrics
+                ):
                     tokens = result.metrics["tokens"]
                     if "token_usage" not in st.session_state:
                         st.session_state.token_usage = {
                             "total": 0,
                             "prompt": 0,
                             "completion": 0,
-                            "last_query": 0
+                            "last_query": 0,
                         }
 
                     # Update token usage metrics
                     if isinstance(tokens, dict):
                         # If tokens is a dictionary with detailed metrics
-                        st.session_state.token_usage["prompt"] += tokens.get("prompt", 0)
-                        st.session_state.token_usage["completion"] += tokens.get("completion", 0)
-                        st.session_state.token_usage["last_query"] = tokens.get("total", 0)
+                        st.session_state.token_usage["prompt"] += tokens.get(
+                            "prompt", 0
+                        )
+                        st.session_state.token_usage["completion"] += tokens.get(
+                            "completion", 0
+                        )
+                        st.session_state.token_usage["last_query"] = tokens.get(
+                            "total", 0
+                        )
                         st.session_state.token_usage["total"] += tokens.get("total", 0)
                     else:
                         # If tokens is just a number
@@ -1252,6 +1378,7 @@ def display_query_history():
                 # Log the error
                 logging.error(f"Error rerunning query: {str(e)}", exc_info=e)
 
+
 def create_knowledge_graph(result: QueryResponse) -> Image.Image:
     """Create a knowledge graph visualization from the query response.
 
@@ -1275,13 +1402,13 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
 
     # Add citation nodes
     for i, citation in enumerate(result.citations):
-        citation_id = f"Citation {i+1}"
+        citation_id = f"Citation {i + 1}"
         G.add_node(citation_id, type="citation")
         G.add_edge(answer, citation_id)
 
     # Add reasoning nodes
     for i, step in enumerate(result.reasoning):
-        reasoning_id = f"Reasoning {i+1}"
+        reasoning_id = f"Reasoning {i + 1}"
         G.add_node(reasoning_id, type="reasoning")
         if i == 0:
             G.add_edge(main_query, reasoning_id)
@@ -1299,7 +1426,7 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
         "query": "#3498db",  # Blue
         "answer": "#2ecc71",  # Green
         "citation": "#e74c3c",  # Red
-        "reasoning": "#f39c12"  # Orange
+        "reasoning": "#f39c12",  # Orange
     }
 
     # Get node positions using spring layout
@@ -1307,13 +1434,22 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
 
     # Draw nodes with different colors based on type
     for node_type in node_colors:
-        nodes = [node for node, data in G.nodes(data=True) if data.get("type") == node_type]
-        nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_color=node_colors[node_type], 
-                              node_size=1000, alpha=0.8)
+        nodes = [
+            node for node, data in G.nodes(data=True) if data.get("type") == node_type
+        ]
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            nodelist=nodes,
+            node_color=node_colors[node_type],
+            node_size=1000,
+            alpha=0.8,
+        )
 
     # Draw edges
-    nx.draw_networkx_edges(G, pos, width=1.5, alpha=0.7, arrows=True, 
-                          arrowstyle='->', arrowsize=15)
+    nx.draw_networkx_edges(
+        G, pos, width=1.5, alpha=0.7, arrows=True, arrowstyle="->", arrowsize=15
+    )
 
     # Draw labels
     nx.draw_networkx_labels(G, pos, font_size=10, font_weight="bold")
@@ -1334,6 +1470,7 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
     img = Image.open(buf)
 
     return img
+
 
 def format_result_as_markdown(result: QueryResponse) -> str:
     """Format the query result as Markdown.
@@ -1357,7 +1494,7 @@ def format_result_as_markdown(result: QueryResponse) -> str:
     markdown.append("")
     if result.citations:
         for i, citation in enumerate(result.citations):
-            markdown.append(f"{i+1}. {citation}")
+            markdown.append(f"{i + 1}. {citation}")
             markdown.append("")
     else:
         markdown.append("No citations provided")
@@ -1368,7 +1505,7 @@ def format_result_as_markdown(result: QueryResponse) -> str:
     markdown.append("")
     if result.reasoning:
         for i, step in enumerate(result.reasoning):
-            markdown.append(f"{i+1}. {step}")
+            markdown.append(f"{i + 1}. {step}")
             markdown.append("")
     else:
         markdown.append("No reasoning steps provided")
@@ -1404,7 +1541,7 @@ def format_result_as_json(result: QueryResponse) -> str:
         "answer": result.answer,
         "citations": result.citations,
         "reasoning": result.reasoning,
-        "metrics": result.metrics
+        "metrics": result.metrics,
     }
 
     # Convert to JSON with pretty formatting
@@ -1439,7 +1576,7 @@ def display_results(result: QueryResponse):
             label="Export as Markdown",
             data=markdown_result,
             file_name=f"autoresearch_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-            mime="text/markdown"
+            mime="text/markdown",
         )
 
     with col2:
@@ -1449,11 +1586,13 @@ def display_results(result: QueryResponse):
             label="Export as JSON",
             data=json_result,
             file_name=f"autoresearch_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-            mime="application/json"
+            mime="application/json",
         )
 
     # Create tabs for citations, reasoning, metrics, and knowledge graph
-    tab1, tab2, tab3, tab4 = st.tabs(["Citations", "Reasoning", "Metrics", "Knowledge Graph"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["Citations", "Reasoning", "Metrics", "Knowledge Graph"]
+    )
 
     # Citations tab
     with tab1:
@@ -1461,7 +1600,10 @@ def display_results(result: QueryResponse):
         if result.citations:
             for i, citation in enumerate(result.citations):
                 with st.container():
-                    st.markdown(f"<div class='citation'>{citation}</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div class='citation'>{citation}</div>",
+                        unsafe_allow_html=True,
+                    )
         else:
             st.info("No citations provided")
 
@@ -1470,7 +1612,10 @@ def display_results(result: QueryResponse):
         st.markdown("<h3>Reasoning</h3>", unsafe_allow_html=True)
         if result.reasoning:
             for i, step in enumerate(result.reasoning):
-                st.markdown(f"<div class='reasoning-step'>{i+1}. {step}</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='reasoning-step'>{i + 1}. {step}</div>",
+                    unsafe_allow_html=True,
+                )
         else:
             st.info("No reasoning steps provided")
 
@@ -1495,6 +1640,7 @@ def display_results(result: QueryResponse):
             st.image(graph_image, use_column_width=True)
         else:
             st.info("Not enough information to create a knowledge graph")
+
 
 if __name__ == "__main__":
     main()

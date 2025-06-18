@@ -1,6 +1,6 @@
 """Error hierarchy for Autoresearch."""
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 
 class AutoresearchError(Exception):
@@ -21,9 +21,7 @@ class AutoresearchError(Exception):
 
         # Format the error message with context if provided
         if kwargs:
-            context_str = ", ".join(
-                f"{k}: {v}" for k, v in kwargs.items()
-            )
+            context_str = ", ".join(f"{k}: {v}" for k, v in kwargs.items())
             full_message = f"{message} ({context_str})"
         else:
             full_message = message
@@ -96,8 +94,11 @@ class TimeoutError(AutoresearchError):
     """Error raised when an operation times out."""
 
     def __init__(
-        self, message: str, timeout: Optional[int] = None, 
-        cause: Optional[Exception] = None, **kwargs: Any
+        self,
+        message: str,
+        timeout: Optional[int] = None,
+        cause: Optional[Exception] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the error with timeout-specific context.
 
@@ -117,9 +118,12 @@ class NotFoundError(AutoresearchError):
     """Error raised when a resource is not found."""
 
     def __init__(
-        self, message: str, resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None, cause: Optional[Exception] = None,
-        **kwargs: Any
+        self,
+        message: str,
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        cause: Optional[Exception] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the error with resource-specific context.
 
@@ -142,8 +146,11 @@ class BackupError(AutoresearchError):
     """Error related to backup and restore operations."""
 
     def __init__(
-        self, message: str, cause: Optional[Exception] = None, 
-        suggestion: Optional[str] = None, **kwargs: Any
+        self,
+        message: str,
+        cause: Optional[Exception] = None,
+        suggestion: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the error with backup-specific context.
 

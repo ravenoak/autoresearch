@@ -20,7 +20,9 @@ class MockDuckDBBackend:
         self._has_vss = True
 
     def create_hnsw_index(self):
-        self._conn.execute("CREATE INDEX IF NOT EXISTS embeddings_hnsw ON embeddings USING hnsw (embedding)")
+        self._conn.execute(
+            "CREATE INDEX IF NOT EXISTS embeddings_hnsw ON embeddings USING hnsw (embedding)"
+        )
 
     def get_connection(self):
         return self._conn
@@ -78,9 +80,7 @@ def test_vector_search_builds_query(monkeypatch):
 
     results = StorageManager.vector_search([0.1, 0.2], k=3)
     assert results == [{"node_id": "n1", "embedding": [0.1, 0.2]}]
-    assert any(
-        "<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands
-    )
+    assert any("<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands)
 
 
 class FailingConn(DummyConn):
@@ -111,6 +111,7 @@ def test_vector_search_failure(monkeypatch):
     # The vector_search method should raise a StorageError when the database fails
     from autoresearch.errors import StorageError
     import pytest
+
     with pytest.raises(StorageError) as excinfo:
         StorageManager.vector_search([0.0, 0.0], k=1)
     assert "Vector search failed" in str(excinfo.value)

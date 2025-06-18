@@ -26,7 +26,11 @@ def check_cli_output(bdd_context):
     assert "## Metrics" in out
 
 
-@when(parsers.parse('I send a POST request to `/query` with JSON `{ "query": "{query}" }`'))
+@when(
+    parsers.parse(
+        'I send a POST request to `/query` with JSON `{ "query": "{query}" }`'
+    )
+)
 def send_http_query(query, bdd_context):
     response = client.post("/query", json={"query": query})
     bdd_context["http_response"] = response
@@ -43,9 +47,7 @@ def check_http_response(bdd_context):
         assert key in data
 
 
-@when(
-    parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI')
-)
+@when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
 def run_mcp_cli_query(query, monkeypatch, bdd_context):
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)

@@ -8,12 +8,12 @@ handlers and adapters to expose Autoresearch functionality through the A2A SDK.
 from __future__ import annotations
 
 import os
-import json
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, Callable
 from functools import wraps
 
 try:
     from a2a.client import A2AClient
+
     # The A2AServer, A2AMessage, and A2AMessageType classes are not directly available
     # in the a2a package. We'll need to adapt our code to use the available classes.
     A2A_AVAILABLE = True
@@ -21,6 +21,7 @@ try:
     # Define stub classes for testing purposes
     class A2AServer:
         """Stub class for A2AServer."""
+
         def __init__(self, host=None, port=None):
             self.host = host
             self.port = port
@@ -39,12 +40,14 @@ try:
 
     class A2AMessage:
         """Stub class for A2AMessage."""
+
         def __init__(self, type=None, content=None):
             self.type = type
             self.content = content or {}
 
     class A2AMessageType:
         """Stub class for A2AMessageType."""
+
         QUERY = "query"
         COMMAND = "command"
         INFO = "info"
@@ -56,7 +59,6 @@ except ImportError:
 
 from .logging_utils import get_logger
 from .orchestration.orchestrator import Orchestrator
-from .config import get_config
 from .error_utils import get_error_info, format_error_for_a2a
 
 logger = get_logger(__name__)
@@ -192,8 +194,12 @@ class A2AInterface:
                     "name": "Autoresearch",
                     "version": version,
                     "description": "A local-first research assistant",
-                    "capabilities": ["research", "dialectical_reasoning", "fact_checking"]
-                }
+                    "capabilities": [
+                        "research",
+                        "dialectical_reasoning",
+                        "fact_checking",
+                    ],
+                },
             }
         except Exception as e:
             # Get error information with suggestions and code examples
@@ -215,8 +221,12 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error("A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities.")
-        raise NotImplementedError("A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities.")
+        logger.error(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities."
+        )
+        raise NotImplementedError(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities."
+        )
 
     def _handle_get_config(self) -> Any:
         """Handle a get_config command.
@@ -227,8 +237,12 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error("A2AMessage and A2AMessageType are not implemented. Cannot handle get_config.")
-        raise NotImplementedError("A2AMessage and A2AMessageType are not implemented. Cannot handle get_config.")
+        logger.error(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_config."
+        )
+        raise NotImplementedError(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_config."
+        )
 
     def _handle_set_config(self, args: Dict[str, Any]) -> Any:
         """Handle a set_config command.
@@ -242,8 +256,12 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error("A2AMessage and A2AMessageType are not implemented. Cannot handle set_config.")
-        raise NotImplementedError("A2AMessage and A2AMessageType are not implemented. Cannot handle set_config.")
+        logger.error(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle set_config."
+        )
+        raise NotImplementedError(
+            "A2AMessage and A2AMessageType are not implemented. Cannot handle set_config."
+        )
 
 
 class A2AClientWrapper:
@@ -264,7 +282,9 @@ class A2AClientWrapper:
 
         # A2AClient is available from a2a.client, but A2AMessage and A2AMessageType are not available
         self.client = A2AClient()
-        logger.warning("A2AMessage and A2AMessageType are not implemented. Client functionality is limited.")
+        logger.warning(
+            "A2AMessage and A2AMessageType are not implemented. Client functionality is limited."
+        )
 
     def query_agent(self, agent_url: str, query: str) -> Dict[str, Any]:
         """Send a query to another agent.
@@ -285,7 +305,9 @@ class A2AClientWrapper:
 
             # Check for errors
             if response.get("status") != "success":
-                logger.error(f"Error querying agent: {response.get('error', 'Unknown error')}")
+                logger.error(
+                    f"Error querying agent: {response.get('error', 'Unknown error')}"
+                )
                 return {"error": response.get("error", "Unknown error")}
 
             # Return the result
@@ -312,7 +334,9 @@ class A2AClientWrapper:
 
             # Check for errors
             if response.get("status") != "success":
-                logger.error(f"Error getting agent capabilities: {response.get('error', 'Unknown error')}")
+                logger.error(
+                    f"Error getting agent capabilities: {response.get('error', 'Unknown error')}"
+                )
                 return {"error": response.get("error", "Unknown error")}
 
             # Return the result
@@ -339,7 +363,9 @@ class A2AClientWrapper:
 
             # Check for errors
             if response.get("status") != "success":
-                logger.error(f"Error getting agent config: {response.get('error', 'Unknown error')}")
+                logger.error(
+                    f"Error getting agent config: {response.get('error', 'Unknown error')}"
+                )
                 return {"error": response.get("error", "Unknown error")}
 
             # Return the result
@@ -348,7 +374,9 @@ class A2AClientWrapper:
             logger.error(f"Error getting agent config: {e}")
             return {"error": str(e)}
 
-    def set_agent_config(self, agent_url: str, config_updates: Dict[str, Any]) -> Dict[str, Any]:
+    def set_agent_config(
+        self, agent_url: str, config_updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Update the configuration of another agent.
 
         Args:
@@ -360,17 +388,16 @@ class A2AClientWrapper:
         """
         try:
             # Create message content
-            message_content = {
-                "command": "set_config",
-                "args": config_updates
-            }
+            message_content = {"command": "set_config", "args": config_updates}
 
             # Send message to agent
             response = self.client.send_message(agent_url, "command", message_content)
 
             # Check for errors
             if response.get("status") != "success":
-                logger.error(f"Error setting agent config: {response.get('error', 'Unknown error')}")
+                logger.error(
+                    f"Error setting agent config: {response.get('error', 'Unknown error')}"
+                )
                 return {"error": response.get("error", "Unknown error")}
 
             # Return the result
@@ -378,6 +405,7 @@ class A2AClientWrapper:
         except Exception as e:
             logger.error(f"Error setting agent config: {e}")
             return {"error": str(e)}
+
 
 # Alias for backward compatibility
 A2AClient = A2AClientWrapper
@@ -406,9 +434,13 @@ def requires_a2a(func: Callable) -> Callable:
     Returns:
         The decorated function
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not A2A_AVAILABLE:
-            raise ImportError("A2A SDK is not available. Install it with: pip install a2a-sdk")
+            raise ImportError(
+                "A2A SDK is not available. Install it with: pip install a2a-sdk"
+            )
         return func(*args, **kwargs)
+
     return wrapper

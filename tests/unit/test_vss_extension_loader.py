@@ -1,11 +1,9 @@
 import os
 import pytest
 from unittest.mock import patch, MagicMock
-import duckdb
 
 from autoresearch.extensions import VSSExtensionLoader
 from autoresearch.errors import StorageError
-from autoresearch.config import ConfigModel, StorageConfig
 
 
 class TestVSSExtensionLoader:
@@ -21,7 +19,9 @@ class TestVSSExtensionLoader:
 
         # Verify that the extension is reported as loaded
         assert VSSExtensionLoader.verify_extension(conn) is True
-        conn.execute.assert_called_once_with("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'")
+        conn.execute.assert_called_once_with(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        )
 
     def test_verify_extension_failure(self):
         """Test that verify_extension returns False when the extension is not loaded."""
@@ -31,14 +31,18 @@ class TestVSSExtensionLoader:
 
         # Verify that the extension is reported as not loaded
         assert VSSExtensionLoader.verify_extension(conn) is False
-        conn.execute.assert_called_once_with("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'")
+        conn.execute.assert_called_once_with(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        )
 
     @patch("autoresearch.extensions.ConfigLoader")
     def test_load_extension_from_filesystem_success(self, mock_config_loader):
         """Test loading the extension from the filesystem."""
         # Configure the mock config loader
         mock_config = MagicMock()
-        mock_config.config.storage.vector_extension_path = "/path/to/vss.duckdb_extension"
+        mock_config.config.storage.vector_extension_path = (
+            "/path/to/vss.duckdb_extension"
+        )
         mock_config_loader.return_value = mock_config
 
         # Create a mock connection
@@ -47,13 +51,17 @@ class TestVSSExtensionLoader:
         # Mock os.path.exists to return True
         with patch("os.path.exists", return_value=True):
             # Mock verify_extension to return True
-            with patch.object(VSSExtensionLoader, "verify_extension", return_value=True):
+            with patch.object(
+                VSSExtensionLoader, "verify_extension", return_value=True
+            ):
                 # Load the extension
                 result = VSSExtensionLoader.load_extension(conn)
 
                 # Verify that the extension was loaded
                 assert result is True
-                conn.execute.assert_called_once_with("LOAD '/path/to/vss.duckdb_extension'")
+                conn.execute.assert_called_once_with(
+                    "LOAD '/path/to/vss.duckdb_extension'"
+                )
 
     @patch("autoresearch.extensions.ConfigLoader")
     def test_load_extension_from_filesystem_invalid_path(self, mock_config_loader):
@@ -81,7 +89,9 @@ class TestVSSExtensionLoader:
         """Test loading the extension from a non-existent filesystem path."""
         # Configure the mock config loader
         mock_config = MagicMock()
-        mock_config.config.storage.vector_extension_path = "/path/to/vss.duckdb_extension"
+        mock_config.config.storage.vector_extension_path = (
+            "/path/to/vss.duckdb_extension"
+        )
         mock_config_loader.return_value = mock_config
 
         # Create a mock connection
@@ -90,7 +100,9 @@ class TestVSSExtensionLoader:
         # Mock os.path.exists to return False
         with patch("os.path.exists", return_value=False):
             # Mock the download and install to succeed
-            with patch.object(VSSExtensionLoader, "verify_extension", return_value=True):
+            with patch.object(
+                VSSExtensionLoader, "verify_extension", return_value=True
+            ):
                 # Load the extension
                 result = VSSExtensionLoader.load_extension(conn)
 
@@ -100,11 +112,15 @@ class TestVSSExtensionLoader:
                 conn.execute.assert_any_call("LOAD vss")
 
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_from_filesystem_verification_failure(self, mock_config_loader):
+    def test_load_extension_from_filesystem_verification_failure(
+        self, mock_config_loader
+    ):
         """Test loading the extension from the filesystem but verification fails."""
         # Configure the mock config loader
         mock_config = MagicMock()
-        mock_config.config.storage.vector_extension_path = "/path/to/vss.duckdb_extension"
+        mock_config.config.storage.vector_extension_path = (
+            "/path/to/vss.duckdb_extension"
+        )
         mock_config_loader.return_value = mock_config
 
         # Create a mock connection
@@ -113,7 +129,9 @@ class TestVSSExtensionLoader:
         # Mock os.path.exists to return True
         with patch("os.path.exists", return_value=True):
             # Mock verify_extension to return False for filesystem but True for download
-            with patch.object(VSSExtensionLoader, "verify_extension", side_effect=[False, True]):
+            with patch.object(
+                VSSExtensionLoader, "verify_extension", side_effect=[False, True]
+            ):
                 # Load the extension
                 result = VSSExtensionLoader.load_extension(conn)
 

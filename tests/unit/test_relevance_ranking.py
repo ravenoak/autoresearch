@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel, SearchConfig
+from autoresearch.config import SearchConfig
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mock_config():
         use_source_credibility=True,
         bm25_weight=0.3,
         semantic_similarity_weight=0.5,
-        source_credibility_weight=0.2
+        source_credibility_weight=0.2,
     )
     config = MagicMock()
     config.search = search_config
@@ -32,10 +32,26 @@ def mock_config():
 def sample_results():
     """Create sample search results for testing."""
     return [
-        {"title": "Python Programming", "url": "https://python.org", "snippet": "Official Python website"},
-        {"title": "Learn Python", "url": "https://example.com/python", "snippet": "Python tutorials"},
-        {"title": "Python (programming language) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Python_(programming_language)", "snippet": "Python is a high-level programming language"},
-        {"title": "Unrelated Result", "url": "https://example.com/unrelated", "snippet": "Something completely different"}
+        {
+            "title": "Python Programming",
+            "url": "https://python.org",
+            "snippet": "Official Python website",
+        },
+        {
+            "title": "Learn Python",
+            "url": "https://example.com/python",
+            "snippet": "Python tutorials",
+        },
+        {
+            "title": "Python (programming language) - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+            "snippet": "Python is a high-level programming language",
+        },
+        {
+            "title": "Unrelated Result",
+            "url": "https://example.com/unrelated",
+            "snippet": "Something completely different",
+        },
     ]
 
 
@@ -95,18 +111,24 @@ def test_calculate_semantic_similarity(sample_results):
             return np.array([0.1, 0.2, 0.3])
         else:
             # Document embeddings
-            return np.array([
-                [0.1, 0.2, 0.3],  # Similar to query
-                [0.2, 0.3, 0.4],  # Somewhat similar
-                [0.1, 0.2, 0.3],  # Similar to query
-                [-0.1, -0.2, -0.3]  # Opposite direction (negative similarity)
-            ])
+            return np.array(
+                [
+                    [0.1, 0.2, 0.3],  # Similar to query
+                    [0.2, 0.3, 0.4],  # Somewhat similar
+                    [0.1, 0.2, 0.3],  # Similar to query
+                    [-0.1, -0.2, -0.3],  # Opposite direction (negative similarity)
+                ]
+            )
 
     mock_transformer.encode = mock_encode
 
     # Patch the get_sentence_transformer method
-    with patch.object(Search, "get_sentence_transformer", return_value=mock_transformer):
-        scores = Search.calculate_semantic_similarity("python programming", sample_results)
+    with patch.object(
+        Search, "get_sentence_transformer", return_value=mock_transformer
+    ):
+        scores = Search.calculate_semantic_similarity(
+            "python programming", sample_results
+        )
 
     # Check that scores are in the expected range
     assert all(-1 <= score <= 1 for score in scores)
@@ -126,15 +148,21 @@ def test_assess_source_credibility(sample_results):
     assert all(0 <= score <= 1 for score in scores)
 
     # Check that Wikipedia has a high credibility score
-    wikipedia_index = next(i for i, r in enumerate(sample_results) if "wikipedia.org" in r["url"])
+    wikipedia_index = next(
+        i for i, r in enumerate(sample_results) if "wikipedia.org" in r["url"]
+    )
     assert scores[wikipedia_index] > 0.8
 
     # Check that python.org has a good credibility score
-    python_index = next(i for i, r in enumerate(sample_results) if "python.org" in r["url"])
+    python_index = next(
+        i for i, r in enumerate(sample_results) if "python.org" in r["url"]
+    )
     assert scores[python_index] >= 0.5
 
     # Check that unknown domains have a default score
-    unknown_index = next(i for i, r in enumerate(sample_results) if "example.com" in r["url"])
+    unknown_index = next(
+        i for i, r in enumerate(sample_results) if "example.com" in r["url"]
+    )
     assert scores[unknown_index] == 0.5
 
 
@@ -144,14 +172,24 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
     mock_get_config.return_value = mock_config
 
     # Mock the scoring methods to return predictable scores
-    with patch.object(Search, "calculate_bm25_scores", return_value=[0.8, 0.6, 0.9, 0.1]), \
-         patch.object(Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]), \
-         patch.object(Search, "assess_source_credibility", return_value=[0.7, 0.5, 0.9, 0.5]):
-
+    with (
+        patch.object(
+            Search, "calculate_bm25_scores", return_value=[0.8, 0.6, 0.9, 0.1]
+        ),
+        patch.object(
+            Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]
+        ),
+        patch.object(
+            Search, "assess_source_credibility", return_value=[0.7, 0.5, 0.9, 0.5]
+        ),
+    ):
         ranked_results = Search.rank_results("python programming", sample_results)
 
     # Check that results are ranked in the expected order
-    assert ranked_results[0]["url"] == "https://en.wikipedia.org/wiki/Python_(programming_language)"  # Highest overall score
+    assert (
+        ranked_results[0]["url"]
+        == "https://en.wikipedia.org/wiki/Python_(programming_language)"
+    )  # Highest overall score
     assert ranked_results[1]["url"] == "https://python.org"  # Second highest
     assert ranked_results[2]["url"] == "https://example.com/python"  # Third
     assert ranked_results[3]["url"] == "https://example.com/unrelated"  # Lowest
@@ -164,7 +202,9 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
 
 
 @patch("autoresearch.search.get_config")
-def test_rank_results_with_disabled_features(mock_get_config, mock_config, sample_results):
+def test_rank_results_with_disabled_features(
+    mock_get_config, mock_config, sample_results
+):
     """Test ranking with some features disabled."""
     # Disable BM25 and source credibility
     mock_config.search.use_bm25 = False
@@ -172,11 +212,16 @@ def test_rank_results_with_disabled_features(mock_get_config, mock_config, sampl
     mock_get_config.return_value = mock_config
 
     # Mock the semantic similarity method to return predictable scores
-    with patch.object(Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]):
+    with patch.object(
+        Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]
+    ):
         ranked_results = Search.rank_results("python programming", sample_results)
 
     # Check that results are ranked based only on semantic similarity
-    assert ranked_results[0]["url"] == "https://en.wikipedia.org/wiki/Python_(programming_language)"  # Highest semantic score
+    assert (
+        ranked_results[0]["url"]
+        == "https://en.wikipedia.org/wiki/Python_(programming_language)"
+    )  # Highest semantic score
     assert ranked_results[1]["url"] == "https://python.org"  # Second highest
     assert ranked_results[2]["url"] == "https://example.com/python"  # Third
     assert ranked_results[3]["url"] == "https://example.com/unrelated"  # Lowest
@@ -189,7 +234,9 @@ def test_rank_results_with_disabled_features(mock_get_config, mock_config, sampl
 @patch("autoresearch.search.get_config")
 @patch("autoresearch.search.BM25_AVAILABLE", False)
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", False)
-def test_rank_results_with_unavailable_libraries(mock_get_config, mock_config, sample_results):
+def test_rank_results_with_unavailable_libraries(
+    mock_get_config, mock_config, sample_results
+):
     """Test ranking when required libraries are not available."""
     mock_get_config.return_value = mock_config
 

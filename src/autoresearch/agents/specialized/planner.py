@@ -6,16 +6,13 @@ structured plans, identifying key questions to answer, and organizing the
 research process to ensure comprehensive coverage of the topic.
 """
 
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
+from typing import Dict, Any
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
-from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -26,9 +23,7 @@ class PlannerAgent(Agent):
     role: AgentRole = AgentRole.SPECIALIST
     name: str = "Planner"
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Create a structured research plan for the query."""
         log.info(f"PlannerAgent executing (cycle {state.cycle})")
 
@@ -46,7 +41,7 @@ class PlannerAgent(Agent):
             metadata={
                 "phase": DialoguePhase.PLANNING,
             },
-            results={"research_plan": research_plan}
+            results={"research_plan": research_plan},
         )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:

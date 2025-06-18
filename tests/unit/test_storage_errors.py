@@ -1,8 +1,9 @@
 import pytest
 import networkx as nx
 from unittest.mock import patch, MagicMock
-from autoresearch.storage import StorageManager, setup, teardown
+from autoresearch.storage import StorageManager, setup
 from autoresearch.errors import StorageError, NotFoundError
+
 
 def test_setup_rdf_store_error(mock_config, assert_error):
     """Test that setup handles RDF store errors properly."""
@@ -20,11 +21,14 @@ def test_setup_rdf_store_error(mock_config, assert_error):
     mock_graph_instance.open.side_effect = Exception("RDF store error")
 
     # Execute
-    with patch('autoresearch.storage._graph', None):
-        with patch('autoresearch.storage._db_backend', None):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage.DuckDBStorageBackend', return_value=mock_db_backend):
-                    with patch('rdflib.Graph', return_value=mock_graph_instance):
+    with patch("autoresearch.storage._graph", None):
+        with patch("autoresearch.storage._db_backend", None):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch(
+                    "autoresearch.storage.DuckDBStorageBackend",
+                    return_value=mock_db_backend,
+                ):
+                    with patch("rdflib.Graph", return_value=mock_graph_instance):
                         with mock_config(config=config):
                             with pytest.raises(StorageError) as excinfo:
                                 setup()
@@ -44,11 +48,14 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
     mock_graph_instance = MagicMock()
     mock_graph_instance.open.side_effect = Exception("No plugin registered: SQLite")
 
-    with patch('autoresearch.storage._graph', None):
-        with patch('autoresearch.storage._db_backend', None):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage.DuckDBStorageBackend', return_value=mock_db_backend):
-                    with patch('rdflib.Graph', return_value=mock_graph_instance):
+    with patch("autoresearch.storage._graph", None):
+        with patch("autoresearch.storage._db_backend", None):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch(
+                    "autoresearch.storage.DuckDBStorageBackend",
+                    return_value=mock_db_backend,
+                ):
+                    with patch("rdflib.Graph", return_value=mock_graph_instance):
                         with mock_config(config=config):
                             with pytest.raises(StorageError) as excinfo:
                                 setup()
@@ -56,7 +63,10 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
     mock_graph_instance.open.assert_called_once()
     assert_error(excinfo, "Missing RDF backend plugin", has_cause=True)
 
-def test_setup_vector_extension_error(mock_storage_components, mock_config, assert_error):
+
+def test_setup_vector_extension_error(
+    mock_storage_components, mock_config, assert_error
+):
     """Test that setup handles vector extension errors properly."""
     # Setup
     # Create a mock for the DuckDB connection that raises an exception for LOAD vector
@@ -95,12 +105,15 @@ def test_setup_vector_extension_error(mock_storage_components, mock_config, asse
             # Verify
             assert_error(excinfo, "Failed to load vector extension", has_cause=True)
 
+
 def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_error):
     """Test that create_hnsw_index handles errors properly."""
     # Setup
     # Create a mock DuckDB backend that raises an exception when create_hnsw_index is called
     mock_db_backend = MagicMock()
-    mock_db_backend.create_hnsw_index.side_effect = Exception("HNSW index creation error")
+    mock_db_backend.create_hnsw_index.side_effect = Exception(
+        "HNSW index creation error"
+    )
 
     # Create a mock graph and RDF store
     mock_graph = nx.DiGraph()
@@ -110,13 +123,16 @@ def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_er
     config = MagicMock()
 
     # Execute
-    with mock_storage_components(graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf):
+    with mock_storage_components(
+        graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf
+    ):
         with mock_config(config=config):
             with pytest.raises(StorageError) as excinfo:
                 StorageManager.create_hnsw_index()
 
     # Verify
     assert_error(excinfo, "Failed to create HNSW index", has_cause=True)
+
 
 def test_vector_search_error(mock_storage_components, mock_config, assert_error):
     """Test that vector_search handles errors properly."""
@@ -139,13 +155,16 @@ def test_vector_search_error(mock_storage_components, mock_config, assert_error)
     config.vector_nprobe = 10
 
     # Execute
-    with mock_storage_components(graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf):
+    with mock_storage_components(
+        graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf
+    ):
         with mock_config(config=config):
             with pytest.raises(StorageError) as excinfo:
                 StorageManager.vector_search([0.1, 0.2])
 
             # Verify
             assert_error(excinfo, "Vector search failed", has_cause=True)
+
 
 def test_get_graph_not_initialized(mock_storage_components, assert_error):
     """Test that get_graph raises NotFoundError when graph is not initialized."""
@@ -155,12 +174,13 @@ def test_get_graph_not_initialized(mock_storage_components, assert_error):
 
     # Execute
     with mock_storage_components(graph=None):
-        with patch('autoresearch.storage.setup', side_effect=setup_error):
+        with patch("autoresearch.storage.setup", side_effect=setup_error):
             with pytest.raises(NotFoundError) as excinfo:
                 StorageManager.get_graph()
 
             # Verify
             assert_error(excinfo, "Graph not initialized", has_cause=True)
+
 
 def test_get_duckdb_conn_not_initialized(mock_storage_components, assert_error):
     """Test that get_duckdb_conn raises NotFoundError when connection is not initialized."""
@@ -170,12 +190,13 @@ def test_get_duckdb_conn_not_initialized(mock_storage_components, assert_error):
 
     # Execute
     with mock_storage_components(db_backend=None):
-        with patch('autoresearch.storage.setup', side_effect=setup_error):
+        with patch("autoresearch.storage.setup", side_effect=setup_error):
             with pytest.raises(NotFoundError) as excinfo:
                 StorageManager.get_duckdb_conn()
 
             # Verify
             assert_error(excinfo, "DuckDB connection not initialized", has_cause=True)
+
 
 def test_get_rdf_store_not_initialized(mock_storage_components, assert_error):
     """Test that get_rdf_store raises NotFoundError when store is not initialized."""
@@ -185,7 +206,7 @@ def test_get_rdf_store_not_initialized(mock_storage_components, assert_error):
 
     # Execute
     with mock_storage_components(rdf=None):
-        with patch('autoresearch.storage.setup', side_effect=setup_error):
+        with patch("autoresearch.storage.setup", side_effect=setup_error):
             with pytest.raises(NotFoundError) as excinfo:
                 StorageManager.get_rdf_store()
 

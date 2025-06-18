@@ -2,8 +2,7 @@
 FactChecker agent for verifying claims against external sources.
 """
 
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
+from typing import Dict, Any
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
@@ -12,7 +11,6 @@ from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
-from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -22,9 +20,7 @@ class FactChecker(Agent):
 
     role: AgentRole = AgentRole.FACT_CHECKER
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Check existing claims for factual accuracy."""
         log.info(f"FactChecker executing (cycle {state.cycle})")
 
@@ -32,10 +28,10 @@ class FactChecker(Agent):
         model = self.get_model(config)
 
         # Retrieve external references
-        max_results = getattr(config, 'max_results_per_query', 5)  # Default to 5 if not specified
-        raw_sources = Search.external_lookup(
-            state.query, max_results=max_results
-        )
+        max_results = getattr(
+            config, "max_results_per_query", 5
+        )  # Default to 5 if not specified
+        raw_sources = Search.external_lookup(state.query, max_results=max_results)
         sources = []
         for s in raw_sources:
             s = dict(s)
@@ -57,7 +53,7 @@ class FactChecker(Agent):
                 "source_count": len(sources),
             },
             results={"verification": verification},
-            sources=sources
+            sources=sources,
         )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:

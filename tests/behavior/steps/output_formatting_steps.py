@@ -59,11 +59,7 @@ def check_json_output_with_flag(bdd_context):
     assert "metrics" in data
 
 
-@when(
-    parsers.re(
-        r'I run `autoresearch search "(?P<query>.+)" --output markdown`'
-    )
-)
+@when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output markdown`'))
 def run_with_markdown_flag(query, monkeypatch, bdd_context):
     result = runner.invoke(cli_app, ["search", query, "--output", "markdown"])
     bdd_context["markdown_flag_result"] = result

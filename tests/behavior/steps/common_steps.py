@@ -27,9 +27,7 @@ def application_running(tmp_path, monkeypatch):
     )
     from autoresearch.llm import DummyAdapter
 
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
-    )
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
     return
 
 

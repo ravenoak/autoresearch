@@ -6,8 +6,8 @@ and execution conditions.
 """
 
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import MagicMock, patch, call
+from pytest_bdd import scenario, given, when, then
+from unittest.mock import MagicMock, patch
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config import ConfigModel
@@ -39,7 +39,10 @@ def mock_agent_factory():
             agent = MagicMock()
             agent.name = name
             agent.can_execute.return_value = True
-            agent.execute.return_value = {"agent": name, "result": f"Result from {name}"}
+            agent.execute.return_value = {
+                "agent": name,
+                "result": f"Result from {name}",
+            }
             agents[name] = agent
         return agents[name]
 
@@ -48,19 +51,28 @@ def mock_agent_factory():
 
 
 # Scenarios
-@scenario("../features/orchestrator_agents_integration.feature", "Orchestrator executes agents in the correct order")
+@scenario(
+    "../features/orchestrator_agents_integration.feature",
+    "Orchestrator executes agents in the correct order",
+)
 def test_orchestrator_executes_agents_in_order():
     """Test that the orchestrator executes agents in the correct order."""
     pass
 
 
-@scenario("../features/orchestrator_agents_integration.feature", "Orchestrator handles agent errors gracefully")
+@scenario(
+    "../features/orchestrator_agents_integration.feature",
+    "Orchestrator handles agent errors gracefully",
+)
 def test_orchestrator_handles_agent_errors():
     """Test that the orchestrator handles agent errors gracefully."""
     pass
 
 
-@scenario("../features/orchestrator_agents_integration.feature", "Orchestrator respects agent execution conditions")
+@scenario(
+    "../features/orchestrator_agents_integration.feature",
+    "Orchestrator respects agent execution conditions",
+)
 def test_orchestrator_respects_agent_conditions():
     """Test that the orchestrator respects agent execution conditions."""
     pass
@@ -73,7 +85,7 @@ def system_configured_with_multiple_agents(test_context):
     test_context["config"] = ConfigModel(
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="dialectical",
-        loops=1
+        loops=1,
     )
     test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
 
@@ -81,10 +93,7 @@ def system_configured_with_multiple_agents(test_context):
 @given("the system is using a dummy LLM adapter for testing")
 def system_using_dummy_llm_adapter(monkeypatch):
     """Configure the system to use a dummy LLM adapter."""
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter",
-        lambda name: DummyAdapter()
-    )
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
 
 
 # Scenario: Orchestrator executes agents in the correct order
@@ -105,19 +114,38 @@ def run_query_with_dialectical_reasoning(test_context, mock_agent_factory, monke
     mock_agent_factory.get.side_effect = get_and_track
 
     # Track agent states
-    def execute_and_track_state(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop):
+    def execute_and_track_state(
+        agent_name,
+        state,
+        config,
+        metrics,
+        callbacks,
+        agent_factory,
+        storage_manager,
+        loop,
+    ):
         test_context["agent_states"][agent_name] = state.copy()
-        return test_context["original_execute_agent"](agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop)
+        return test_context["original_execute_agent"](
+            agent_name,
+            state,
+            config,
+            metrics,
+            callbacks,
+            agent_factory,
+            storage_manager,
+            loop,
+        )
 
     # Use monkeypatch for automatic cleanup
     monkeypatch.setattr(Orchestrator, "_execute_agent", execute_and_track_state)
 
     # Run the query using a context manager for proper cleanup
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
+    ):
         try:
             test_context["result"] = Orchestrator.run_query(
-                "test query",
-                test_context["config"]
+                "test query", test_context["config"]
             )
         except Exception as e:
             test_context["exception"] = e
@@ -145,7 +173,7 @@ def agents_receive_state_from_previous(test_context):
 
     for i, agent_name in enumerate(test_context["executed_agents"]):
         if i > 0:
-            prev_agent = test_context["executed_agents"][i-1]
+            prev_agent = test_context["executed_agents"][i - 1]
             assert prev_agent in str(test_context["agent_states"][agent_name])
 
 
@@ -169,13 +197,15 @@ def agent_that_raises_error(mock_agent_factory, test_context):
     error_agent.can_execute.return_value = True
     error_agent.execute.side_effect = ValueError("Test error")
 
-    mock_agent_factory.get.side_effect = lambda name: error_agent if name == "ErrorAgent" else MagicMock()
+    mock_agent_factory.get.side_effect = (
+        lambda name: error_agent if name == "ErrorAgent" else MagicMock()
+    )
 
     test_context["config"] = ConfigModel(
         agents=["ErrorAgent", "Synthesizer"],
         reasoning_mode="direct",
         loops=1,
-        max_errors=1
+        max_errors=1,
     )
 
 
@@ -188,17 +218,20 @@ def run_query_with_error_agent(test_context, mock_agent_factory, monkeypatch):
     # Track errors
     def handle_and_track_error(self, error, agent_name, state, config):
         test_context["errors"].append((agent_name, error))
-        return test_context["original_handle_error"](self, error, agent_name, state, config)
+        return test_context["original_handle_error"](
+            self, error, agent_name, state, config
+        )
 
     # Use monkeypatch for automatic cleanup
     monkeypatch.setattr(Orchestrator, "_handle_agent_error", handle_and_track_error)
 
     # Run the query using a context manager for proper cleanup
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
+    ):
         try:
             test_context["result"] = Orchestrator.run_query(
-                "test query",
-                test_context["config"]
+                "test query", test_context["config"]
             )
         except Exception as e:
             test_context["exception"] = e
@@ -249,15 +282,16 @@ def agent_with_specific_execution_conditions(mock_agent_factory, test_context):
             agent = MagicMock()
             agent.name = name
             agent.can_execute.return_value = True
-            agent.execute.return_value = {"agent": name, "result": f"Result from {name}"}
+            agent.execute.return_value = {
+                "agent": name,
+                "result": f"Result from {name}",
+            }
             return agent
 
     mock_agent_factory.get.side_effect = get_agent
 
     test_context["config"] = ConfigModel(
-        agents=["ConditionalAgent", "Synthesizer"],
-        reasoning_mode="direct",
-        loops=1
+        agents=["ConditionalAgent", "Synthesizer"], reasoning_mode="direct", loops=1
     )
 
 
@@ -278,11 +312,12 @@ def run_query_not_meeting_conditions(test_context, mock_agent_factory, monkeypat
     mock_agent_factory.get.side_effect = get_and_track
 
     # Run the query using a context manager for proper cleanup
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
+    ):
         try:
             test_context["result"] = Orchestrator.run_query(
-                "test query",
-                test_context["config"]
+                "test query", test_context["config"]
             )
         except Exception as e:
             test_context["exception"] = e

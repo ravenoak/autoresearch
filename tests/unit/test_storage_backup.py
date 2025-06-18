@@ -7,15 +7,12 @@ including scheduled backups, rotation policies, compression, and point-in-time r
 import os
 import shutil
 import tempfile
-from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 import duckdb
 import rdflib
 
-from autoresearch.storage import StorageManager, setup, teardown
 from autoresearch.storage_backup import (
     BackupManager,
     create_backup,
@@ -23,9 +20,8 @@ from autoresearch.storage_backup import (
     list_backups,
     schedule_backup,
     BackupConfig,
-    BackupInfo,
 )
-from autoresearch.errors import StorageError, BackupError
+from autoresearch.errors import BackupError
 
 
 @pytest.fixture
@@ -50,26 +46,26 @@ def mock_storage(temp_dir):
     # Create a test RDF store
     rdf_path = os.path.join(temp_dir, "test.rdf")
     g = rdflib.Graph()
-    g.add((rdflib.URIRef("http://example.org/subject"), 
-           rdflib.URIRef("http://example.org/predicate"), 
-           rdflib.Literal("Test object")))
+    g.add(
+        (
+            rdflib.URIRef("http://example.org/subject"),
+            rdflib.URIRef("http://example.org/predicate"),
+            rdflib.Literal("Test object"),
+        )
+    )
     g.serialize(destination=rdf_path, format="turtle")
 
     # Mock the StorageManager to use these test files
-    with patch("autoresearch.storage._db_backend") as mock_db_backend, \
-         patch("autoresearch.storage._rdf_store") as mock_rdf_store:
-
+    with (
+        patch("autoresearch.storage._db_backend") as mock_db_backend,
+        patch("autoresearch.storage._rdf_store") as mock_rdf_store,
+    ):
         mock_db_backend._path = db_path
         mock_db_backend.get_connection.return_value = conn
 
         mock_rdf_store.serialize.return_value = g.serialize(format="turtle")
 
-        yield {
-            "db_path": db_path,
-            "rdf_path": rdf_path,
-            "conn": conn,
-            "graph": g
-        }
+        yield {"db_path": db_path, "rdf_path": rdf_path, "conn": conn, "graph": g}
 
     # Clean up
     conn.close()
@@ -85,7 +81,7 @@ def test_create_backup_basic(mock_storage, temp_dir):
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=False
+        compress=False,
     )
 
     # Verify backup was created
@@ -109,7 +105,7 @@ def test_create_backup_with_compression(mock_storage, temp_dir):
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=True
+        compress=True,
     )
 
     # Verify backup was created
@@ -132,7 +128,7 @@ def test_restore_backup_basic(mock_storage, temp_dir):
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=False
+        compress=False,
     )
 
     # Modify the original data
@@ -144,8 +140,7 @@ def test_restore_backup_basic(mock_storage, temp_dir):
 
     # Restore the backup
     restored_paths = restore_backup(
-        backup_path=backup_info.path,
-        target_dir=restore_dir
+        backup_path=backup_info.path, target_dir=restore_dir
     )
 
     # Verify restored files exist
@@ -169,7 +164,7 @@ def test_restore_backup_with_compression(mock_storage, temp_dir):
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=True
+        compress=True,
     )
 
     # Create a new destination directory
@@ -178,8 +173,7 @@ def test_restore_backup_with_compression(mock_storage, temp_dir):
 
     # Restore the backup
     restored_paths = restore_backup(
-        backup_path=backup_info.path,
-        target_dir=restore_dir
+        backup_path=backup_info.path, target_dir=restore_dir
     )
 
     # Verify restored files exist
@@ -197,18 +191,19 @@ def test_list_backups(mock_storage, temp_dir):
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=False
+        compress=False,
     )
 
     # Wait a moment to ensure different timestamps
     import time
+
     time.sleep(1)
 
     backup2 = create_backup(
         backup_dir=backup_dir,
         db_path=mock_storage["db_path"],
         rdf_path=mock_storage["rdf_path"],
-        compress=True
+        compress=True,
     )
 
     # List backups
@@ -230,10 +225,7 @@ def test_backup_rotation_policy(mock_storage, temp_dir):
 
     # Create a backup config with rotation policy
     config = BackupConfig(
-        backup_dir=backup_dir,
-        compress=True,
-        max_backups=2,
-        retention_days=30
+        backup_dir=backup_dir, compress=True, max_backups=2, retention_days=30
     )
 
     # Create multiple backups
@@ -243,10 +235,11 @@ def test_backup_rotation_policy(mock_storage, temp_dir):
             db_path=mock_storage["db_path"],
             rdf_path=mock_storage["rdf_path"],
             compress=True,
-            config=config
+            config=config,
         )
         # Wait a moment to ensure different timestamps
         import time
+
         time.sleep(1)
 
     # List backups
@@ -270,7 +263,7 @@ def test_scheduled_backup(mock_storage, temp_dir):
             rdf_path=mock_storage["rdf_path"],
             interval_hours=24,
             compress=True,
-            max_backups=5
+            max_backups=5,
         )
 
         # Verify scheduler was called with correct parameters
@@ -296,15 +289,18 @@ def test_point_in_time_recovery(mock_storage, temp_dir):
             backup_dir=backup_dir,
             db_path=mock_storage["db_path"],
             rdf_path=mock_storage["rdf_path"],
-            compress=False
+            compress=False,
         )
         backup_times.append(backup_info.timestamp)
 
         # Modify the data for the next backup
-        mock_storage["conn"].execute(f"INSERT INTO test_table VALUES ({i+3}, 'Test {i+3}')")
+        mock_storage["conn"].execute(
+            f"INSERT INTO test_table VALUES ({i + 3}, 'Test {i + 3}')"
+        )
 
         # Wait a moment to ensure different timestamps
         import time
+
         time.sleep(1)
 
     # Restore to a point in time (the second backup)
@@ -315,9 +311,7 @@ def test_point_in_time_recovery(mock_storage, temp_dir):
 
     # Perform point-in-time recovery
     restored_paths = BackupManager.restore_point_in_time(
-        backup_dir=backup_dir,
-        target_time=target_time,
-        target_dir=restore_dir
+        backup_dir=backup_dir, target_time=target_time, target_dir=restore_dir
     )
 
     # Verify restored files exist
@@ -342,12 +336,12 @@ def test_backup_error_handling(mock_storage, temp_dir):
             backup_dir=backup_dir,
             db_path="/nonexistent/path.duckdb",
             rdf_path=mock_storage["rdf_path"],
-            compress=False
+            compress=False,
         )
 
     # Test with invalid backup path during restore
     with pytest.raises(BackupError):
         restore_backup(
             backup_path="/nonexistent/backup",
-            target_dir=os.path.join(temp_dir, "restore")
+            target_dir=os.path.join(temp_dir, "restore"),
         )

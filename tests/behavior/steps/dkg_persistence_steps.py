@@ -35,20 +35,22 @@ def uninit_storage(monkeypatch):
     from autoresearch.errors import StorageError
 
     # Save the original methods
-    original_ensure_storage_initialized = storage.StorageManager._ensure_storage_initialized
+    original_ensure_storage_initialized = (
+        storage.StorageManager._ensure_storage_initialized
+    )
 
     # Mock the _ensure_storage_initialized method to raise a StorageError
     def mock_ensure_storage_initialized():
         raise StorageError(
             "Storage components not initialized",
-            suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations"
+            suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
         )
 
     # Apply the mock
     monkeypatch.setattr(
         storage.StorageManager,
         "_ensure_storage_initialized",
-        mock_ensure_storage_initialized
+        mock_ensure_storage_initialized,
     )
 
     # Define a function to restore the state (not needed with monkeypatch)
@@ -88,7 +90,9 @@ def agent_asserts_claim(valid_claim):
 @then("the claim node should be added to the NetworkX graph in RAM")
 def check_networkx_graph(valid_claim, claim_factory):
     """Verify that the claim node is added to the NetworkX graph in RAM."""
-    assert claim_factory.verify_in_networkx(valid_claim), "Claim not found in NetworkX graph"
+    assert claim_factory.verify_in_networkx(valid_claim), (
+        "Claim not found in NetworkX graph"
+    )
 
 
 @when("an agent commits a new claim")
@@ -103,10 +107,13 @@ def agent_commits_claim(valid_claim):
 @then("a row should be inserted into the `nodes` table")
 def check_duckdb_nodes(valid_claim, claim_factory):
     """Verify that a row is inserted into the nodes table in DuckDB."""
-    assert claim_factory.verify_in_duckdb(valid_claim), "Claim not found in DuckDB nodes table"
+    assert claim_factory.verify_in_duckdb(valid_claim), (
+        "Claim not found in DuckDB nodes table"
+    )
 
     # Additional verification of specific fields
     from autoresearch.storage import StorageManager
+
     conn = StorageManager.get_duckdb_conn()
     result = conn.execute(
         f"SELECT * FROM nodes WHERE id = '{valid_claim['id']}'"
@@ -125,11 +132,15 @@ def check_duckdb_edges(valid_claim, claim_factory):
     result = conn.execute(
         f"SELECT * FROM edges WHERE src = '{valid_claim['id']}'"
     ).fetchall()
-    assert len(result) == len(valid_claim["relations"]), "Number of edges doesn't match number of relations"
+    assert len(result) == len(valid_claim["relations"]), (
+        "Number of edges doesn't match number of relations"
+    )
     assert result[0][0] == valid_claim["relations"][0]["src"], "Source ID mismatch"
     assert result[0][1] == valid_claim["relations"][0]["dst"], "Destination ID mismatch"
     assert result[0][2] == valid_claim["relations"][0]["rel"], "Relation type mismatch"
-    assert result[0][3] == valid_claim["relations"][0]["weight"], "Relation weight mismatch"
+    assert result[0][3] == valid_claim["relations"][0]["weight"], (
+        "Relation weight mismatch"
+    )
 
 
 @then("the embedding should be stored in the `embeddings` vector column")
@@ -180,7 +191,7 @@ def check_sparql_query(valid_claim):
     query = f"""
     SELECT ?p ?o
     WHERE {{
-        <urn:claim:{valid_claim['id']}> ?p ?o .
+        <urn:claim:{valid_claim["id"]}> ?p ?o .
     }}
     """
     results = list(store.query(query))
@@ -229,9 +240,15 @@ def duckdb_tables_empty():
     from autoresearch.storage import StorageManager
 
     conn = StorageManager.get_duckdb_conn()
-    assert conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0] == 0, "Nodes table is not empty"
-    assert conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 0, "Edges table is not empty"
-    assert conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0, "Embeddings table is not empty"
+    assert conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0] == 0, (
+        "Nodes table is not empty"
+    )
+    assert conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 0, (
+        "Edges table is not empty"
+    )
+    assert conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0, (
+        "Embeddings table is not empty"
+    )
 
 
 @scenario("../features/dkg_persistence.feature", "Clear DKG removes persisted data")
@@ -249,12 +266,14 @@ def try_persist_invalid_claim(invalid_claim, bdd_context, storage_error_handler)
     storage_error_handler.attempt_operation(
         lambda: StorageManager.persist_claim(invalid_claim),
         bdd_context,
-        'storage_error'
+        "storage_error",
     )
 
 
 @when("I try to persist a valid claim")
-def try_persist_valid_claim_uninit(valid_claim, uninit_storage, bdd_context, storage_error_handler):
+def try_persist_valid_claim_uninit(
+    valid_claim, uninit_storage, bdd_context, storage_error_handler
+):
     """Attempt to persist a valid claim to uninitialized storage and store any exception raised in the context."""
     from autoresearch.storage import StorageManager
 
@@ -262,13 +281,16 @@ def try_persist_valid_claim_uninit(valid_claim, uninit_storage, bdd_context, sto
     result = storage_error_handler.attempt_operation(
         lambda: StorageManager.persist_claim(valid_claim),
         bdd_context,
-        'uninit_storage_error'
+        "uninit_storage_error",
     )
 
     # No need to call uninit_storage() as monkeypatch will automatically restore the original methods
 
 
-@when("I perform a vector search with a query embedding", target_fixture="perform_vector_search")
+@when(
+    "I perform a vector search with a query embedding",
+    target_fixture="perform_vector_search",
+)
 def perform_vector_search(persisted_claims):
     """Perform a vector search with a query embedding and return the results."""
     from autoresearch.storage import StorageManager
@@ -280,13 +302,21 @@ def perform_vector_search(persisted_claims):
 
     # Create mock results that match the expected format
     mock_results = [
-        {"node_id": persisted_claims[0]["id"], "embedding": persisted_claims[0]["embedding"]},
-        {"node_id": persisted_claims[1]["id"], "embedding": persisted_claims[1]["embedding"]}
+        {
+            "node_id": persisted_claims[0]["id"],
+            "embedding": persisted_claims[0]["embedding"],
+        },
+        {
+            "node_id": persisted_claims[1]["id"],
+            "embedding": persisted_claims[1]["embedding"],
+        },
     ]
 
     # Mock has_vss to return True and _db_backend.vector_search to return mock_results
-    with patch('autoresearch.storage.StorageManager.has_vss', return_value=True):
-        with patch('autoresearch.storage._db_backend.vector_search', return_value=mock_results):
+    with patch("autoresearch.storage.StorageManager.has_vss", return_value=True):
+        with patch(
+            "autoresearch.storage._db_backend.vector_search", return_value=mock_results
+        ):
             # Limit to 2 results since we only have 3 claims now
             results = StorageManager.vector_search(query_embedding, k=2)
 
@@ -305,7 +335,7 @@ def check_missing_id_error(bdd_context, storage_error_handler):
     storage_error_handler.verify_error(
         bdd_context,
         expected_message="missing required field",
-        context_key='storage_error'
+        context_key="storage_error",
     )
 
 
@@ -315,7 +345,7 @@ def check_uninit_storage_error(bdd_context, storage_error_handler):
     storage_error_handler.verify_error(
         bdd_context,
         expected_message="not initialized",
-        context_key='uninit_storage_error'
+        context_key="uninit_storage_error",
     )
 
 
@@ -324,14 +354,19 @@ def check_vector_search_results(perform_vector_search):
     """Verify that vector search returns the nearest claims by vector similarity."""
     results = perform_vector_search
     assert len(results) > 0, "No results returned from vector search"
-    assert all("node_id" in result for result in results), "Some results are missing node_id"
-    assert all("embedding" in result for result in results), "Some results are missing embedding"
+    assert all("node_id" in result for result in results), (
+        "Some results are missing node_id"
+    )
+    assert all("embedding" in result for result in results), (
+        "Some results are missing embedding"
+    )
 
     # Verify that results are ordered by similarity (closest first)
     if len(results) > 1:
         for i in range(len(results) - 1):
-            assert results[i]["similarity"] >= results[i + 1]["similarity"], \
+            assert results[i]["similarity"] >= results[i + 1]["similarity"], (
                 "Results are not ordered by similarity (closest first)"
+            )
 
 
 @scenario("../features/dkg_persistence.feature", "Handle missing claim ID")
@@ -354,7 +389,9 @@ def test_handle_uninit_storage():
     pass
 
 
-@scenario("../features/dkg_persistence.feature", "Vector search returns nearest neighbors")
+@scenario(
+    "../features/dkg_persistence.feature", "Vector search returns nearest neighbors"
+)
 def test_vector_search():
     """Test scenario: Vector search returns nearest neighbors.
 

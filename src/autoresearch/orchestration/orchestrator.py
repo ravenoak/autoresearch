@@ -21,7 +21,7 @@ The system is designed to be extensible, allowing for custom agents, reasoning m
 and execution strategies.
 """
 
-from typing import List, Dict, Any, Callable, Iterator, cast
+from typing import List, Dict, Any, Callable, Iterator
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -36,12 +36,7 @@ from .state import QueryState
 from .metrics import OrchestrationMetrics, record_query
 from ..logging_utils import get_logger
 from ..tracing import setup_tracing, get_tracer
-from ..errors import (
-    OrchestrationError, 
-    AgentError, 
-    NotFoundError, 
-    TimeoutError
-)
+from ..errors import OrchestrationError, AgentError, NotFoundError, TimeoutError
 
 
 log = get_logger(__name__)
@@ -66,9 +61,7 @@ class Orchestrator:
             "agents",
             ["Synthesizer", "Contrarian", "FactChecker"],
         )
-        primus_index = (
-            0 if not hasattr(config, "primus_start") else config.primus_start
-        )
+        primus_index = 0 if not hasattr(config, "primus_start") else config.primus_start
         loops = config.loops if hasattr(config, "loops") else 2
         mode = getattr(config, "reasoning_mode", ReasoningMode.DIALECTICAL)
         max_errors = config.max_errors if hasattr(config, "max_errors") else 3
@@ -108,11 +101,13 @@ class Orchestrator:
                 f"Agent '{agent_name}' not found",
                 resource_type="agent",
                 resource_id=agent_name,
-                cause=e
+                cause=e,
             )
 
     @staticmethod
-    def _check_agent_can_execute(agent: Any, agent_name: str, state: QueryState, config: ConfigModel) -> bool:
+    def _check_agent_can_execute(
+        agent: Any, agent_name: str, state: QueryState, config: ConfigModel
+    ) -> bool:
         """Check if an agent can execute.
 
         Args:
@@ -125,10 +120,7 @@ class Orchestrator:
             True if the agent can execute, False otherwise
         """
         if not agent.can_execute(state, config):
-            log.info(
-                f"Agent {agent_name} skipped execution "
-                "(can_execute=False)"
-            )
+            log.info(f"Agent {agent_name} skipped execution (can_execute=False)")
             return False
         return True
 
@@ -142,17 +134,21 @@ class Orchestrator:
             loop: Current loop number
         """
         log.info(
-            f"Executing agent: {agent_name} (loop {loop+1}, cycle {state.cycle})",
+            f"Executing agent: {agent_name} (loop {loop + 1}, cycle {state.cycle})",
             extra={
                 "agent": agent_name,
-                "loop": loop+1,
+                "loop": loop + 1,
                 "cycle": state.cycle,
-                "query": state.query[:100] + "..." if len(state.query) > 100 else state.query
-            }
+                "query": state.query[:100] + "..."
+                if len(state.query) > 100
+                else state.query,
+            },
         )
 
     @staticmethod
-    def _call_agent_start_callback(agent_name: str, state: QueryState, callbacks: Dict[str, Callable[..., None]]) -> None:
+    def _call_agent_start_callback(
+        agent_name: str, state: QueryState, callbacks: Dict[str, Callable[..., None]]
+    ) -> None:
         """Call the on_agent_start callback if it exists.
 
         Args:
@@ -166,11 +162,11 @@ class Orchestrator:
 
     @staticmethod
     def _execute_agent_with_token_counting(
-        agent: Any, 
-        agent_name: str, 
-        state: QueryState, 
-        config: ConfigModel, 
-        metrics: OrchestrationMetrics
+        agent: Any,
+        agent_name: str,
+        state: QueryState,
+        config: ConfigModel,
+        metrics: OrchestrationMetrics,
     ) -> Dict[str, Any]:
         """Execute an agent with token counting.
 
@@ -190,12 +186,17 @@ class Orchestrator:
         """
         try:
             log.debug(f"Starting token counting for {agent_name}")
-            with Orchestrator._capture_token_usage(
-                agent_name, metrics, config
-            ) as (token_counter, wrapped_adapter):
-                log.debug(f"Executing {agent_name}.execute() with token counting adapter")
+            with Orchestrator._capture_token_usage(agent_name, metrics, config) as (
+                token_counter,
+                wrapped_adapter,
+            ):
+                log.debug(
+                    f"Executing {agent_name}.execute() with token counting adapter"
+                )
                 # Inject the wrapped adapter into the agent's context
-                result = Orchestrator._execute_with_adapter(agent, state, config, wrapped_adapter)
+                result = Orchestrator._execute_with_adapter(
+                    agent, state, config, wrapped_adapter
+                )
                 log.debug(f"Finished {agent_name}.execute()")
             return result
         except TimeoutError:
@@ -206,24 +207,24 @@ class Orchestrator:
             log.error(
                 f"Error during {agent_name} execution: {str(e)}",
                 exc_info=True,
-                extra={"agent": agent_name, "error": str(e)}
+                extra={"agent": agent_name, "error": str(e)},
             )
             # Wrap agent execution errors in AgentError
             raise AgentError(
                 f"Error during agent {agent_name} execution",
                 cause=e,
-                agent_name=agent_name
+                agent_name=agent_name,
             )
 
     @staticmethod
     def _handle_agent_completion(
-        agent_name: str, 
-        result: Dict[str, Any], 
-        state: QueryState, 
-        metrics: OrchestrationMetrics, 
-        callbacks: Dict[str, Callable[..., None]], 
-        duration: float, 
-        loop: int
+        agent_name: str,
+        result: Dict[str, Any],
+        state: QueryState,
+        metrics: OrchestrationMetrics,
+        callbacks: Dict[str, Callable[..., None]],
+        duration: float,
+        loop: int,
     ) -> None:
         """Handle agent completion (timing, callbacks, logging).
 
@@ -251,17 +252,17 @@ class Orchestrator:
         # Log completion with detailed context
         log.info(
             f"Agent {agent_name} completed turn "
-            f"(loop {loop+1}, cycle {state.cycle}) "
+            f"(loop {loop + 1}, cycle {state.cycle}) "
             f"in {duration:.2f}s",
             extra={
                 "agent": agent_name,
-                "loop": loop+1,
+                "loop": loop + 1,
                 "cycle": state.cycle,
                 "duration": duration,
                 "has_claims": "claims" in result and bool(result["claims"]),
                 "has_sources": "sources" in result and bool(result["sources"]),
-                "result_keys": list(result.keys())
-            }
+                "result_keys": list(result.keys()),
+            },
         )
 
     @staticmethod
@@ -282,17 +283,19 @@ class Orchestrator:
                     "sources": [
                         s.get("title", "Untitled") if isinstance(s, dict) else str(s)
                         for s in result["sources"][:5]  # Log first 5 sources only
-                    ]
-                }
+                    ],
+                },
             )
         else:
             log.warning(
                 f"Agent {agent_name} provided no sources",
-                extra={"agent": agent_name, "result_keys": list(result.keys())}
+                extra={"agent": agent_name, "result_keys": list(result.keys())},
             )
 
     @staticmethod
-    def _persist_claims(agent_name: str, result: Dict[str, Any], storage_manager: type[StorageManager]) -> None:
+    def _persist_claims(
+        agent_name: str, result: Dict[str, Any], storage_manager: type[StorageManager]
+    ) -> None:
         """Persist claims with error handling.
 
         Args:
@@ -305,11 +308,13 @@ class Orchestrator:
             if claims:
                 log.debug(
                     f"Persisting {len(claims)} claims for agent {agent_name}",
-                    extra={"agent": agent_name, "claim_count": len(claims)}
+                    extra={"agent": agent_name, "claim_count": len(claims)},
                 )
                 for i, claim in enumerate(claims):
                     if isinstance(claim, dict) and "id" in claim:
-                        log.debug(f"Persisting claim {i+1}/{len(claims)}: {claim.get('id')}")
+                        log.debug(
+                            f"Persisting claim {i + 1}/{len(claims)}: {claim.get('id')}"
+                        )
                         storage_manager.persist_claim(claim)
                     else:
                         log.warning(
@@ -318,19 +323,21 @@ class Orchestrator:
                                 "agent": agent_name,
                                 "claim_index": i,
                                 "claim_type": type(claim).__name__,
-                                "has_id": isinstance(claim, dict) and "id" in claim
-                            }
+                                "has_id": isinstance(claim, dict) and "id" in claim,
+                            },
                         )
         except Exception as e:
             log.warning(
                 f"Error persisting claims for agent {agent_name}: {str(e)}",
                 exc_info=True,
-                extra={"agent": agent_name, "error": str(e)}
+                extra={"agent": agent_name, "error": str(e)},
             )
             # Don't fail the whole process for storage errors
 
     @staticmethod
-    def _handle_agent_error(agent_name: str, e: Exception, state: QueryState, metrics: OrchestrationMetrics) -> None:
+    def _handle_agent_error(
+        agent_name: str, e: Exception, state: QueryState, metrics: OrchestrationMetrics
+    ) -> None:
         """Handle agent errors.
 
         Args:
@@ -349,8 +356,7 @@ class Orchestrator:
         state.add_error(error_info)
         metrics.record_error(agent_name)
         log.error(
-            f"Error during agent {agent_name} execution: "
-            f"{str(e)}",
+            f"Error during agent {agent_name} execution: {str(e)}",
             exc_info=True,
         )
 
@@ -387,7 +393,9 @@ class Orchestrator:
             agent = Orchestrator._get_agent(agent_name, agent_factory)
 
             # Check if agent can execute
-            if not Orchestrator._check_agent_can_execute(agent, agent_name, state, config):
+            if not Orchestrator._check_agent_can_execute(
+                agent, agent_name, state, config
+            ):
                 return
 
             # Log agent execution
@@ -459,7 +467,7 @@ class Orchestrator:
             "cycle",
             attributes={"cycle": loop},
         ):
-            log.info(f"Starting loop {loop+1}/{loops}")
+            log.info(f"Starting loop {loop + 1}/{loops}")
             metrics.start_cycle()
 
             # Call on_cycle_start callback
@@ -576,14 +584,18 @@ class Orchestrator:
                 "loops": loops,
                 "primus_index": primus_index,
                 "max_errors": max_errors,
-                "reasoning_mode": str(mode)
-            }
+                "reasoning_mode": str(mode),
+            },
         )
 
         for loop in range(loops):
             log.debug(
-                f"Starting loop {loop+1}/{loops} with primus_index {primus_index}",
-                extra={"loop": loop+1, "total_loops": loops, "primus_index": primus_index}
+                f"Starting loop {loop + 1}/{loops} with primus_index {primus_index}",
+                extra={
+                    "loop": loop + 1,
+                    "total_loops": loops,
+                    "primus_index": primus_index,
+                },
             )
 
             primus_index = Orchestrator._execute_cycle(
@@ -605,19 +617,22 @@ class Orchestrator:
             if "error" in state.results:
                 log.error(
                     f"Aborting dialectical process due to error: {state.results['error']}",
-                    extra={"error": state.results["error"], "error_count": state.error_count}
+                    extra={
+                        "error": state.results["error"],
+                        "error_count": state.error_count,
+                    },
                 )
                 break
 
             log.debug(
-                f"Completed loop {loop+1}/{loops}, new primus_index: {primus_index}",
+                f"Completed loop {loop + 1}/{loops}, new primus_index: {primus_index}",
                 extra={
-                    "loop": loop+1,
+                    "loop": loop + 1,
                     "total_loops": loops,
                     "primus_index": primus_index,
                     "cycle": state.cycle,
-                    "error_count": state.error_count
-                }
+                    "error_count": state.error_count,
+                },
             )
 
         # Add final metrics to state
@@ -625,12 +640,14 @@ class Orchestrator:
 
         # Raise error if process aborted or if there were any errors
         if "error" in state.results or state.error_count > 0:
-            error_message = state.results.get("error", f"Process completed with {state.error_count} errors")
+            error_message = state.results.get(
+                "error", f"Process completed with {state.error_count} errors"
+            )
             raise OrchestrationError(
-                error_message, 
+                error_message,
                 cause=None,
                 errors=state.metadata.get("errors", []),
-                suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured"
+                suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured",
             )
 
         # Synthesize final response
@@ -667,16 +684,13 @@ class Orchestrator:
                 result = Orchestrator.run_query(query, group_config)
                 return result
             except Exception as e:
-                log.error(
-                    f"Error running agent group {group}: {str(e)}",
-                    exc_info=True
-                )
+                log.error(f"Error running agent group {group}: {str(e)}", exc_info=True)
                 # Re-raise as OrchestrationError
                 raise OrchestrationError(
                     f"Error running agent group {group}",
                     cause=e,
                     agent_group=group,
-                    suggestion="Check the agent configuration and ensure all agents are properly registered"
+                    suggestion="Check the agent configuration and ensure all agents are properly registered",
                 )
 
         # Run agent groups in parallel
@@ -684,9 +698,7 @@ class Orchestrator:
         results = []
 
         with tracer.start_as_current_span("parallel_query"):
-            with ThreadPoolExecutor(
-                max_workers=min(len(agent_groups), 4)
-            ) as executor:
+            with ThreadPoolExecutor(max_workers=min(len(agent_groups), 4)) as executor:
                 # Submit all tasks
                 futures = [executor.submit(run_group, group) for group in agent_groups]
 
@@ -704,7 +716,7 @@ class Orchestrator:
                 "All parallel agent groups failed",
                 cause=None,
                 errors=errors,
-                suggestion="Check the agent configurations and ensure all required agents are properly registered and configured"
+                suggestion="Check the agent configurations and ensure all required agents are properly registered and configured",
             )
 
         # Merge results into final state
@@ -723,7 +735,7 @@ class Orchestrator:
             error_info = {
                 "claims": [f"Error in parallel execution: {error}" for error in errors],
                 "metadata": {"errors": errors},
-                "results": {"error": f"Some agent groups failed: {', '.join(errors)}"}
+                "results": {"error": f"Some agent groups failed: {', '.join(errors)}"},
             }
             final_state.update(error_info)
 
@@ -744,7 +756,9 @@ class Orchestrator:
         return response
 
     @staticmethod
-    def _execute_with_adapter(agent: Any, state: QueryState, config: ConfigModel, adapter: Any) -> Dict[str, Any]:
+    def _execute_with_adapter(
+        agent: Any, state: QueryState, config: ConfigModel, adapter: Any
+    ) -> Dict[str, Any]:
         """Execute an agent with a specific adapter.
 
         This method handles executing an agent with a specific adapter, either by:
@@ -762,14 +776,17 @@ class Orchestrator:
         """
         # Check if the agent's execute method accepts an adapter parameter
         import inspect
+
         sig = inspect.signature(agent.execute)
 
-        if 'adapter' in sig.parameters:
+        if "adapter" in sig.parameters:
             # Agent supports direct adapter injection
             return agent.execute(state, config, adapter=adapter)
-        elif hasattr(agent, 'set_adapter'):
+        elif hasattr(agent, "set_adapter"):
             # Agent supports adapter setting via method
-            original_adapter = agent.get_adapter() if hasattr(agent, 'get_adapter') else None
+            original_adapter = (
+                agent.get_adapter() if hasattr(agent, "get_adapter") else None
+            )
             try:
                 agent.set_adapter(adapter)
                 return agent.execute(state, config)
@@ -808,7 +825,7 @@ class Orchestrator:
         """Capture token usage for all LLM calls within the block.
 
         This method uses the TokenCountingAdapter to count tokens for all LLM calls
-        made within the context manager block. It yields a tuple containing a dictionary 
+        made within the context manager block. It yields a tuple containing a dictionary
         with token counts and the wrapped adapter that should be used for LLM calls.
 
         Args:
@@ -828,5 +845,8 @@ class Orchestrator:
 
         # Use the count_tokens context manager to count tokens
         # It now returns both the token counter and the wrapped adapter
-        with count_tokens(agent_name, adapter, metrics) as (token_counter, wrapped_adapter):
+        with count_tokens(agent_name, adapter, metrics) as (
+            token_counter,
+            wrapped_adapter,
+        ):
             yield token_counter, wrapped_adapter

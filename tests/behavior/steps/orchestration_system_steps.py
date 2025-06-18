@@ -1,16 +1,16 @@
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import scenario, given, when, then
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config import ConfigModel
 from autoresearch.llm import get_llm_adapter
-from autoresearch.agents.registry import AgentFactory
-from autoresearch.storage import StorageManager
 
 
 # Scenarios
-@scenario("../features/orchestration_system.feature", "Token counting without monkey patching")
+@scenario(
+    "../features/orchestration_system.feature", "Token counting without monkey patching"
+)
 def test_token_counting():
     pass
 
@@ -67,7 +67,10 @@ def run_query_with_token_counting(config, context):
     # Create mock factory and agent
     mock_factory = MagicMock()
     mock_agent = MagicMock()
-    mock_agent.execute.return_value = {"claims": ["Test claim"], "results": {"answer": "Test answer"}}
+    mock_agent.execute.return_value = {
+        "claims": ["Test claim"],
+        "results": {"answer": "Test answer"},
+    }
     mock_agent.can_execute.return_value = True
     mock_factory.get.return_value = mock_agent
 
@@ -76,6 +79,7 @@ def run_query_with_token_counting(config, context):
 
     # Create a mock metrics object that we can manipulate
     from autoresearch.orchestration.metrics import OrchestrationMetrics
+
     mock_metrics = MagicMock(spec=OrchestrationMetrics)
 
     # Create a real metrics object to use for the actual execution
@@ -100,12 +104,15 @@ def run_query_with_token_counting(config, context):
 
     # Run query with patched get_llm_adapter and metrics
     with patch("autoresearch.llm.get_llm_adapter", return_value=mock_adapter):
-        with patch("autoresearch.orchestration.metrics.OrchestrationMetrics", return_value=mock_metrics):
+        with patch(
+            "autoresearch.orchestration.metrics.OrchestrationMetrics",
+            return_value=mock_metrics,
+        ):
             result = Orchestrator.run_query(
-                "Test query", 
+                "Test query",
                 config,
                 agent_factory=mock_factory,
-                storage_manager=MagicMock()
+                storage_manager=MagicMock(),
             )
 
     # Store for later assertions
@@ -153,7 +160,7 @@ def run_query_with_multiple_agents(config, context):
         mock_agent = MagicMock()
         mock_agent.execute.return_value = {
             "claims": [f"{agent_name} claim"],
-            "results": {"answer": f"{agent_name} answer"}
+            "results": {"answer": f"{agent_name} answer"},
         }
         mock_agent.can_execute.return_value = True
         mock_agents[agent_name] = mock_agent
@@ -165,10 +172,7 @@ def run_query_with_multiple_agents(config, context):
 
     # Run query
     result = Orchestrator.run_query(
-        "Test query", 
-        config,
-        agent_factory=mock_factory,
-        storage_manager=MagicMock()
+        "Test query", config, agent_factory=mock_factory, storage_manager=MagicMock()
     )
 
     context["result"] = result
@@ -204,7 +208,7 @@ def agent_fails_during_execution(config, context):
         else:
             mock_agent.execute.return_value = {
                 "claims": [f"{agent_name} claim"],
-                "results": {"answer": f"{agent_name} answer"}
+                "results": {"answer": f"{agent_name} answer"},
             }
         mock_agent.can_execute.return_value = True
         mock_agents[agent_name] = mock_agent
@@ -218,10 +222,10 @@ def agent_fails_during_execution(config, context):
     with patch("autoresearch.orchestration.orchestrator.log") as mock_log:
         try:
             result = Orchestrator.run_query(
-                "Test query", 
+                "Test query",
                 config,
                 agent_factory=mock_factory,
-                storage_manager=MagicMock()
+                storage_manager=MagicMock(),
             )
             context["result"] = result
             context["exception"] = None
@@ -245,6 +249,7 @@ def check_error_captured(context):
         assert context["exception"] is not None
         # Check that it's using the new error hierarchy
         from autoresearch.errors import OrchestrationError, AgentError
+
         assert isinstance(context["exception"], (OrchestrationError, AgentError))
 
 
@@ -273,17 +278,20 @@ def run_query_with_debug_logging(config, context):
     # Create mock agents
     mock_factory = MagicMock()
     mock_agent = MagicMock()
-    mock_agent.execute.return_value = {"claims": ["Test claim"], "results": {"answer": "Test answer"}}
+    mock_agent.execute.return_value = {
+        "claims": ["Test claim"],
+        "results": {"answer": "Test answer"},
+    }
     mock_agent.can_execute.return_value = True
     mock_factory.get.return_value = mock_agent
 
     # Run query and capture logs
     with patch("autoresearch.orchestration.orchestrator.log") as mock_log:
         result = Orchestrator.run_query(
-            "Test query", 
+            "Test query",
             config,
             agent_factory=mock_factory,
-            storage_manager=MagicMock()
+            storage_manager=MagicMock(),
         )
 
         context["result"] = result

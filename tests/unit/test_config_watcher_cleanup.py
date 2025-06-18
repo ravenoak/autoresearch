@@ -19,8 +19,7 @@ def test_cli_watcher_cleanup(monkeypatch):
     result = runner.invoke(cli_app, ["search", "q"])
     assert result.exit_code == 0
     assert not any(
-        t.name == "ConfigWatcher" and t.is_alive()
-        for t in threading.enumerate()
+        t.name == "ConfigWatcher" and t.is_alive() for t in threading.enumerate()
     )
 
 
@@ -30,6 +29,5 @@ def test_api_watcher_cleanup(monkeypatch):
         resp = client.post("/query", json={"query": "q"})
         assert resp.status_code == 200
     assert not any(
-        t.name == "ConfigWatcher" and t.is_alive()
-        for t in threading.enumerate()
+        t.name == "ConfigWatcher" and t.is_alive() for t in threading.enumerate()
     )

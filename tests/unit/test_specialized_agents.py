@@ -23,7 +23,9 @@ from autoresearch.config import ConfigModel
 def mock_llm_adapter():
     """Create a mock LLM adapter for testing."""
     # Create a proper mock of the LLMAdapter class
-    with patch("autoresearch.agents.base.LLMAdapter", autospec=True) as mock_adapter_class:
+    with patch(
+        "autoresearch.agents.base.LLMAdapter", autospec=True
+    ) as mock_adapter_class:
         # Create an instance of the mocked class
         adapter = mock_adapter_class.return_value
         adapter.generate.return_value = "Mock response from LLM"
@@ -37,7 +39,11 @@ def mock_state():
     state.claims = [
         {"id": "1", "type": "thesis", "content": "This is a thesis claim"},
         {"id": "2", "type": "antithesis", "content": "This is an antithesis claim"},
-        {"id": "3", "type": "research_findings", "content": "These are research findings"}
+        {
+            "id": "3",
+            "type": "research_findings",
+            "content": "These are research findings",
+        },
     ]
     return state
 
@@ -65,7 +71,7 @@ def test_researcher_agent_execute(mock_llm_adapter, mock_state, mock_config):
     with patch("autoresearch.search.Search.external_lookup") as mock_search:
         mock_search.return_value = [
             {"title": "Source 1", "content": "Content 1"},
-            {"title": "Source 2", "content": "Content 2"}
+            {"title": "Source 2", "content": "Content 2"},
         ]
 
         # Act
@@ -83,12 +89,17 @@ def test_researcher_agent_execute(mock_llm_adapter, mock_state, mock_config):
         assert len(result["sources"]) == 2
 
         # Verify the search was called with the correct parameters
-        mock_search.assert_called_once_with(mock_state.query, max_results=mock_config.max_results_per_query * 2)
+        mock_search.assert_called_once_with(
+            mock_state.query, max_results=mock_config.max_results_per_query * 2
+        )
 
         # Verify the LLM adapter was called with the correct parameters
         mock_llm_adapter.generate.assert_called_once()
         args, kwargs = mock_llm_adapter.generate.call_args
-        assert "You are a Researcher agent responsible for conducting in-depth research on a topic" in args[0]
+        assert (
+            "You are a Researcher agent responsible for conducting in-depth research on a topic"
+            in args[0]
+        )
         assert "Your research findings should be thorough, well-organized" in args[0]
         assert kwargs["model"] == "test-model"
 
@@ -111,13 +122,21 @@ def test_critic_agent_execute(mock_llm_adapter, mock_state, mock_config):
     assert result["results"]["critique"] == "Mock response from LLM"
     assert "metadata" in result
     assert "evaluated_claims" in result["metadata"]
-    assert len(result["metadata"]["evaluated_claims"]) == 2  # thesis and research_findings
+    assert (
+        len(result["metadata"]["evaluated_claims"]) == 2
+    )  # thesis and research_findings
 
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
-    assert "You are a Critic agent responsible for evaluating the quality of research" in args[0]
-    assert "Your critique should be balanced, highlighting both strengths and areas for improvement" in args[0]
+    assert (
+        "You are a Critic agent responsible for evaluating the quality of research"
+        in args[0]
+    )
+    assert (
+        "Your critique should be balanced, highlighting both strengths and areas for improvement"
+        in args[0]
+    )
     assert kwargs["model"] == "test-model"
 
 
@@ -144,8 +163,14 @@ def test_summarizer_agent_execute(mock_llm_adapter, mock_state, mock_config):
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
-    assert "You are a Summarizer agent responsible for generating concise, clear summaries" in args[0]
-    assert "Your summary should be significantly shorter than the original content" in args[0]
+    assert (
+        "You are a Summarizer agent responsible for generating concise, clear summaries"
+        in args[0]
+    )
+    assert (
+        "Your summary should be significantly shorter than the original content"
+        in args[0]
+    )
     assert kwargs["model"] == "test-model"
 
 
@@ -169,7 +194,10 @@ def test_planner_agent_execute(mock_llm_adapter, mock_state, mock_config):
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
     args, kwargs = mock_llm_adapter.generate.call_args
-    assert "You are a Planner agent responsible for structuring complex research tasks" in args[0]
+    assert (
+        "You are a Planner agent responsible for structuring complex research tasks"
+        in args[0]
+    )
     assert "Your research plan should be comprehensive, well-organized" in args[0]
     assert kwargs["model"] == "test-model"
 

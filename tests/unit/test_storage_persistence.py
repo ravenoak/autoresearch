@@ -1,16 +1,16 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from autoresearch.storage import StorageManager, setup, teardown
+from autoresearch.storage import StorageManager
 from autoresearch.errors import StorageError
 
 
 def test_ensure_storage_initialized_success():
     """Test that _ensure_storage_initialized succeeds when storage is initialized."""
     # Mock the global variables
-    with patch('autoresearch.storage._db_backend', MagicMock()):
-        with patch('autoresearch.storage._graph', MagicMock()):
-            with patch('autoresearch.storage._rdf_store', MagicMock()):
+    with patch("autoresearch.storage._db_backend", MagicMock()):
+        with patch("autoresearch.storage._graph", MagicMock()):
+            with patch("autoresearch.storage._rdf_store", MagicMock()):
                 # Should not raise an exception
                 StorageManager._ensure_storage_initialized()
 
@@ -18,13 +18,14 @@ def test_ensure_storage_initialized_success():
 def test_ensure_storage_initialized_calls_setup():
     """Test that _ensure_storage_initialized calls setup when storage is not initialized."""
     # Mock the global variables to be None
-    with patch('autoresearch.storage._db_backend', None):
-        with patch('autoresearch.storage._graph', None):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage.setup') as mock_setup:
+    with patch("autoresearch.storage._db_backend", None):
+        with patch("autoresearch.storage._graph", None):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch("autoresearch.storage.setup") as mock_setup:
                     # Mock the setup function to set the global variables
                     def mock_setup_impl():
                         import autoresearch.storage as storage
+
                         storage._db_backend = MagicMock()
                         storage._graph = MagicMock()
                         storage._rdf_store = MagicMock()
@@ -41,25 +42,29 @@ def test_ensure_storage_initialized_calls_setup():
 def test_ensure_storage_initialized_setup_fails():
     """Test that _ensure_storage_initialized raises StorageError when setup fails."""
     # Mock the global variables to be None
-    with patch('autoresearch.storage._db_backend', None):
-        with patch('autoresearch.storage._graph', None):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage.setup', side_effect=Exception("Setup failed")):
+    with patch("autoresearch.storage._db_backend", None):
+        with patch("autoresearch.storage._graph", None):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch(
+                    "autoresearch.storage.setup", side_effect=Exception("Setup failed")
+                ):
                     # Should raise StorageError
                     with pytest.raises(StorageError) as excinfo:
                         StorageManager._ensure_storage_initialized()
 
-                    assert "Failed to initialize storage components" in str(excinfo.value)
+                    assert "Failed to initialize storage components" in str(
+                        excinfo.value
+                    )
                     assert excinfo.value.__cause__ is not None
 
 
 def test_ensure_storage_initialized_db_still_none():
     """Test that _ensure_storage_initialized raises StorageError when db_backend is still None after setup."""
     # Mock the global variables
-    with patch('autoresearch.storage._db_backend', None):
-        with patch('autoresearch.storage._graph', MagicMock()):
-            with patch('autoresearch.storage._rdf_store', MagicMock()):
-                with patch('autoresearch.storage.setup'):
+    with patch("autoresearch.storage._db_backend", None):
+        with patch("autoresearch.storage._graph", MagicMock()):
+            with patch("autoresearch.storage._rdf_store", MagicMock()):
+                with patch("autoresearch.storage.setup"):
                     # Should raise StorageError
                     with pytest.raises(StorageError) as excinfo:
                         StorageManager._ensure_storage_initialized()
@@ -70,10 +75,10 @@ def test_ensure_storage_initialized_db_still_none():
 def test_ensure_storage_initialized_graph_still_none():
     """Test that _ensure_storage_initialized raises StorageError when graph is still None after setup."""
     # Mock the global variables
-    with patch('autoresearch.storage._db_backend', MagicMock()):
-        with patch('autoresearch.storage._graph', None):
-            with patch('autoresearch.storage._rdf_store', MagicMock()):
-                with patch('autoresearch.storage.setup'):
+    with patch("autoresearch.storage._db_backend", MagicMock()):
+        with patch("autoresearch.storage._graph", None):
+            with patch("autoresearch.storage._rdf_store", MagicMock()):
+                with patch("autoresearch.storage.setup"):
                     # Should raise StorageError
                     with pytest.raises(StorageError) as excinfo:
                         StorageManager._ensure_storage_initialized()
@@ -84,10 +89,10 @@ def test_ensure_storage_initialized_graph_still_none():
 def test_ensure_storage_initialized_rdf_still_none():
     """Test that _ensure_storage_initialized raises StorageError when rdf_store is still None after setup."""
     # Mock the global variables
-    with patch('autoresearch.storage._db_backend', MagicMock()):
-        with patch('autoresearch.storage._graph', MagicMock()):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage.setup'):
+    with patch("autoresearch.storage._db_backend", MagicMock()):
+        with patch("autoresearch.storage._graph", MagicMock()):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch("autoresearch.storage.setup"):
                     # Should raise StorageError
                     with pytest.raises(StorageError) as excinfo:
                         StorageManager._ensure_storage_initialized()
@@ -114,27 +119,23 @@ def test_persist_to_networkx():
                 "dst": "source-1",
                 "rel": "cites",
                 "weight": 1.0,
-                "attributes": {"quality": "high"}
+                "attributes": {"quality": "high"},
             }
-        ]
+        ],
     }
 
-    with patch('autoresearch.storage._graph', mock_graph):
-        with patch('autoresearch.storage._lru', mock_lru):
+    with patch("autoresearch.storage._graph", mock_graph):
+        with patch("autoresearch.storage._lru", mock_lru):
             # Call the method
             StorageManager._persist_to_networkx(claim)
 
             # Verify the graph was updated correctly
             mock_graph.add_node.assert_called_once_with(
-                "test-id", 
-                verified=True, 
-                confidence=0.9
+                "test-id", verified=True, confidence=0.9
             )
 
             mock_graph.add_edge.assert_called_once_with(
-                "test-id",
-                "source-1",
-                quality="high"
+                "test-id", "source-1", quality="high"
             )
 
             # Verify the LRU cache was updated
@@ -153,17 +154,12 @@ def test_persist_to_duckdb():
         "content": "test content",
         "confidence": 0.9,
         "relations": [
-            {
-                "src": "test-id",
-                "dst": "source-1",
-                "rel": "cites",
-                "weight": 1.0
-            }
+            {"src": "test-id", "dst": "source-1", "rel": "cites", "weight": 1.0}
         ],
-        "embedding": [0.1, 0.2, 0.3]
+        "embedding": [0.1, 0.2, 0.3],
     }
 
-    with patch('autoresearch.storage._db_backend', mock_db_backend):
+    with patch("autoresearch.storage._db_backend", mock_db_backend):
         # Call the method
         StorageManager._persist_to_duckdb(claim)
 
@@ -177,17 +173,11 @@ def test_persist_to_rdf():
     mock_rdf_store = MagicMock()
 
     # Create a test claim
-    claim = {
-        "id": "test-id",
-        "attributes": {
-            "verified": True,
-            "source": "test-source"
-        }
-    }
+    claim = {"id": "test-id", "attributes": {"verified": True, "source": "test-source"}}
 
-    with patch('autoresearch.storage._rdf_store', mock_rdf_store):
-        with patch('rdflib.URIRef') as mock_uri_ref:
-            with patch('rdflib.Literal') as mock_literal:
+    with patch("autoresearch.storage._rdf_store", mock_rdf_store):
+        with patch("rdflib.URIRef") as mock_uri_ref:
+            with patch("rdflib.Literal") as mock_literal:
                 # Set up the mocks
                 mock_uri_ref.side_effect = lambda x: x
                 mock_literal.side_effect = lambda x: x

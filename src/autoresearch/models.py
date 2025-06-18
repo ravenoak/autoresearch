@@ -19,6 +19,7 @@ class ReasoningMode(str, Enum):
         DIALECTICAL: Rotates through agents in a thesis→antithesis→synthesis cycle
         CHAIN_OF_THOUGHT: Loops the Synthesizer agent
     """
+
     DIRECT = "direct"
     DIALECTICAL = "dialectical"
     CHAIN_OF_THOUGHT = "chain-of-thought"
@@ -37,20 +38,17 @@ class QueryRequest(BaseModel):
         loops (Optional[int]): The number of reasoning loops to perform.
         llm_backend (Optional[str]): The LLM backend to use for this query.
     """
+
     query: str = Field(..., description="The natural language query to process")
     reasoning_mode: Optional[ReasoningMode] = Field(
-        None, 
-        description="The reasoning mode to use (direct, dialectical, chain-of-thought)"
+        None,
+        description="The reasoning mode to use (direct, dialectical, chain-of-thought)",
     )
     loops: Optional[int] = Field(
-        None, 
-        description="The number of reasoning loops to perform",
-        ge=1,
-        le=10
+        None, description="The number of reasoning loops to perform", ge=1, le=10
     )
     llm_backend: Optional[str] = Field(
-        None, 
-        description="The LLM backend to use (e.g., 'openai', 'lmstudio')"
+        None, description="The LLM backend to use (e.g., 'openai', 'lmstudio')"
     )
 
 
@@ -67,6 +65,7 @@ class QueryResponse(BaseModel):
         reasoning (List[Any]): A list of reasoning steps or explanations that led to the answer.
         metrics (Dict[str, Any]): Performance and execution metrics for the query processing.
     """
+
     answer: str
     citations: List[Any]
     reasoning: List[Any]

@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch, MagicMock
 
 from autoresearch.storage import StorageManager
 from autoresearch.errors import StorageError

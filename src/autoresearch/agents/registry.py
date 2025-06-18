@@ -137,7 +137,9 @@ class AgentFactory:
             if name not in cls._instances:
                 if name not in cls._registry:
                     raise ValueError(f"Unknown agent: {name}")
-                cls._instances[name] = cls._registry[name](name=name, llm_adapter=llm_adapter)
+                cls._instances[name] = cls._registry[name](
+                    name=name, llm_adapter=llm_adapter
+                )
             return cls._instances[name]
 
     @classmethod

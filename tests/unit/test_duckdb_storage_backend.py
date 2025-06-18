@@ -1,11 +1,8 @@
-import os
 import pytest
 from unittest.mock import patch, MagicMock, call
-import duckdb
 
 from autoresearch.storage_backends import DuckDBStorageBackend
-from autoresearch.errors import StorageError, NotFoundError
-from autoresearch.config import ConfigModel, StorageConfig
+from autoresearch.errors import StorageError
 
 
 class TestDuckDBStorageBackend:
@@ -35,7 +32,9 @@ class TestDuckDBStorageBackend:
             mock_config_loader.return_value = mock_config
 
             # Mock the _create_tables method
-            with patch.object(DuckDBStorageBackend, "_create_tables") as mock_create_tables:
+            with patch.object(
+                DuckDBStorageBackend, "_create_tables"
+            ) as mock_create_tables:
                 # Setup the backend
                 backend = DuckDBStorageBackend()
                 backend.setup()
@@ -103,9 +102,15 @@ class TestDuckDBStorageBackend:
 
         # Verify that the execute method was called for each table creation
         expected_calls = [
-            call("CREATE TABLE IF NOT EXISTS nodes(id VARCHAR, type VARCHAR, content VARCHAR, conf DOUBLE, ts TIMESTAMP)"),
-            call("CREATE TABLE IF NOT EXISTS edges(src VARCHAR, dst VARCHAR, rel VARCHAR, w DOUBLE)"),
-            call("CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding DOUBLE[])"),
+            call(
+                "CREATE TABLE IF NOT EXISTS nodes(id VARCHAR, type VARCHAR, content VARCHAR, conf DOUBLE, ts TIMESTAMP)"
+            ),
+            call(
+                "CREATE TABLE IF NOT EXISTS edges(src VARCHAR, dst VARCHAR, rel VARCHAR, w DOUBLE)"
+            ),
+            call(
+                "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding DOUBLE[])"
+            ),
             call("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"),
         ]
         mock_conn.execute.assert_has_calls(expected_calls, any_order=True)
@@ -124,7 +129,9 @@ class TestDuckDBStorageBackend:
 
         # Setup the backend
         backend = DuckDBStorageBackend()
-        backend.setup(db_path=":memory:", skip_migrations=True)  # Skip migrations to isolate the test
+        backend.setup(
+            db_path=":memory:", skip_migrations=True
+        )  # Skip migrations to isolate the test
 
         # Call the _initialize_schema_version method directly
         backend._initialize_schema_version()
@@ -204,8 +211,7 @@ class TestDuckDBStorageBackend:
 
         # Verify that the execute method was called with the correct query and parameters
         mock_conn.execute.assert_any_call(
-            "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
-            ["3"]
+            "UPDATE metadata SET value = ? WHERE key = 'schema_version'", ["3"]
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
@@ -218,7 +224,9 @@ class TestDuckDBStorageBackend:
         # Mock the get_schema_version method to return version 1
         with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=1):
             # Mock the update_schema_version method
-            with patch.object(DuckDBStorageBackend, "update_schema_version") as mock_update_version:
+            with patch.object(
+                DuckDBStorageBackend, "update_schema_version"
+            ) as mock_update_version:
                 # Setup the backend
                 backend = DuckDBStorageBackend()
                 backend.setup(db_path=":memory:")
@@ -247,7 +255,9 @@ class TestDuckDBStorageBackend:
         has_vss = backend.has_vss()
 
         # Verify that the execute method was called with the correct query
-        mock_conn.execute.assert_any_call("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'")
+        mock_conn.execute.assert_any_call(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        )
 
         # Verify that has_vss returns True
         assert has_vss is True
@@ -261,7 +271,12 @@ class TestDuckDBStorageBackend:
 
         # Create a side effect function that raises an exception only for VSS-related calls
         def side_effect(query, *args, **kwargs):
-            if "duckdb_extensions()" in query and "extension_name = 'vss'" in query or "INSTALL vss" in query or "LOAD vss" in query:
+            if (
+                "duckdb_extensions()" in query
+                and "extension_name = 'vss'" in query
+                or "INSTALL vss" in query
+                or "LOAD vss" in query
+            ):
                 raise Exception("VSS not available")
             mock_result = MagicMock()
             mock_result.fetchone.return_value = ["1"]  # For schema version query
@@ -274,9 +289,15 @@ class TestDuckDBStorageBackend:
         backend = DuckDBStorageBackend()
 
         # Patch the VSSExtensionLoader.verify_extension method to return False
-        with patch("autoresearch.extensions.VSSExtensionLoader.verify_extension", return_value=False):
+        with patch(
+            "autoresearch.extensions.VSSExtensionLoader.verify_extension",
+            return_value=False,
+        ):
             # Patch the VSSExtensionLoader.load_extension method to return False
-            with patch("autoresearch.extensions.VSSExtensionLoader.load_extension", return_value=False):
+            with patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                return_value=False,
+            ):
                 # Setup the backend
                 backend.setup(db_path=":memory:", skip_migrations=True)
 
