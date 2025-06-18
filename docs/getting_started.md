@@ -51,3 +51,27 @@ Run a search from the command line:
 ```bash
 autoresearch search "What is quantum computing?"
 ```
+
+## Local file and Git search
+
+Enable local search backends in `autoresearch.toml`:
+
+```toml
+[search]
+backends = ["serper", "local_files", "local_git"]
+
+[search.local_files]
+path = "/path/to/docs"
+file_types = ["md", "pdf", "txt"]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 50
+```
+
+Then query your directory or repository just like any other search:
+
+```bash
+autoresearch search "neural networks in docs"
+```
