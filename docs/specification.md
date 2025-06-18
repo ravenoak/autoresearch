@@ -70,6 +70,12 @@
   files directly. Specify `path` and `file_types` in `[search.local_files]`.
 - `local_git` scans repositories configured with `repo_path`, `branches`, and
   `history_depth`, indexing commit messages, diffs, and file revisions.
+
+Local directories are ingested using **ripgrep** when available for fast content extraction. Each file is chunked, embedded, and stored in DuckDB with its path and modification time. On subsequent runs only changed files are re-indexed to keep the index fresh.
+
+Git repositories are processed via **GitPython**. The backend walks the commit history, storing commit metadata and file snapshots so queries can reference the exact revision. Incremental indexing keeps the database in sync with the repository without reprocessing unchanged commits.
+
+Queries against these local indexes leverage DuckDB vector search. Matches return the snippet, file path, and commit hash when applicable so every result is fully attributable.
 - Results from all backends are persisted via `storage.py` and inserted into the
   knowledge graph for later reasoning.
 

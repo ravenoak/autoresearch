@@ -41,6 +41,7 @@ Must     | BDD/unit tests; plugin registration.       |
 | **F-18** | **Accessibility**: Output is screen-reader friendly, avoids color-only cues, and is actionable for all users.                                    | Must     | Accessibility review/manual test.          |
 | **F-19** | Search local directories. User can select a path to index text and code files. Results must cite the file path and snippet so provenance is clear. | Should   | Unit tests for local file indexing; BDD scenario. |
 | **F-20** | Search Git repositories by path. The system scans working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
+| **F-21** | Maintain local indexes for directories and Git repositories. Indexing occurs at startup or on user command, capturing file contents and commit history for offline queries. | Should   | Unit tests verifying incremental updates; BDD scenario. |
 
 ---
 
@@ -53,10 +54,12 @@ Must     | BDD/unit tests; plugin registration.       |
 | **Extensibility** | Agents, databases, protocols registered via entry-points; config-driven.    |
 | **Observability** | JSON logs (structlog), Prometheus metrics, OpenTelemetry traces.            |
 | **Security**      | No outbound HTTP except user-enabled search/LLM; secrets only via env/TOML. |
+| **Security (Indexing)** | Local indexing never transmits file contents externally and respects OS permissions. |
 | **Licensing**     | All first-party code MIT/AGPL-compatible; closed LLMs optional.             |
 | **Usability**     | CLI `--help`, OpenAPI docs, Markdown-formatted answers for humans, JSON for automation. |
 | **Accessibility** | Output is readable and actionable for humans by default; dialectical structure is visually distinct and accessible. |
 | **Testability**   | 90%+ code coverage, including error paths and output adaptation.             |
+| **Performance (Indexing)** | Indexing up to 10k files or commits completes within 2 min; queries from the index respond in under 1 s. |
 
 ---
 
