@@ -8,8 +8,7 @@ and error handling in vector search.
 
 import pytest
 import logging
-import numpy as np
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from autoresearch.storage import StorageManager
 from autoresearch.config import (
@@ -47,7 +46,9 @@ def test_vector_search_with_different_dimensions(
 
     # Check if vector extension is available
     try:
-        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        ).fetchall()
         vector_extension_available = result and len(result) > 0
         if vector_extension_available:
             logger.info("Vector extension is available")
@@ -76,13 +77,19 @@ def test_vector_search_with_different_dimensions(
     # Verify claims were persisted
     for dim in dimensions:
         # Query the database directly to check if the claim exists
-        result = conn.execute(f"SELECT id, content FROM nodes WHERE id = 'dim{dim}'").fetchone()
+        result = conn.execute(
+            f"SELECT id, content FROM nodes WHERE id = 'dim{dim}'"
+        ).fetchone()
         assert result is not None, f"Claim with ID 'dim{dim}' should exist"
         assert result[0] == f"dim{dim}", f"Claim ID should be 'dim{dim}'"
-        assert result[1] == f"Dimension {dim}", f"Claim content should be 'Dimension {dim}'"
+        assert result[1] == f"Dimension {dim}", (
+            f"Claim content should be 'Dimension {dim}'"
+        )
 
         # Check that the embedding was stored with the correct dimension
-        embedding = conn.execute(f"SELECT embedding FROM embeddings WHERE node_id = 'dim{dim}'").fetchone()
+        embedding = conn.execute(
+            f"SELECT embedding FROM embeddings WHERE node_id = 'dim{dim}'"
+        ).fetchone()
         assert embedding is not None, f"Embedding for 'dim{dim}' should exist"
         assert len(embedding[0]) == dim, f"Embedding dimension should be {dim}"
 
@@ -95,12 +102,12 @@ def test_vector_search_with_different_dimensions(
         results = StorageManager.vector_search(query_vec, k=1)
 
         # Verify that the correct claim was found
-        assert results[0]["node_id"] == f"dim{dim}", f"Vector search with dimension {dim} should find 'dim{dim}'"
+        assert results[0]["node_id"] == f"dim{dim}", (
+            f"Vector search with dimension {dim} should find 'dim{dim}'"
+        )
 
 
-def test_vector_search_edge_cases(
-    storage_manager, tmp_path, monkeypatch
-):
+def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
     """Test vector search edge cases.
 
     This test verifies that:
@@ -125,7 +132,9 @@ def test_vector_search_edge_cases(
 
     # Check if vector extension is available
     try:
-        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        ).fetchall()
         vector_extension_available = result and len(result) > 0
         if vector_extension_available:
             logger.info("Vector extension is available")
@@ -158,15 +167,21 @@ def test_vector_search_edge_cases(
 
     # Test vector search with zero vector
     results = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
-    assert results[0]["node_id"] == "zero", "Vector search with zero vector should find 'zero'"
+    assert results[0]["node_id"] == "zero", (
+        "Vector search with zero vector should find 'zero'"
+    )
 
     # Test vector search with large vector
     results = StorageManager.vector_search([1000.0, 2000.0, 3000.0], k=1)
-    assert results[0]["node_id"] == "large", "Vector search with large vector should find 'large'"
+    assert results[0]["node_id"] == "large", (
+        "Vector search with large vector should find 'large'"
+    )
 
     # Test vector search with small vector
     results = StorageManager.vector_search([0.000001, 0.000002, 0.000003], k=1)
-    assert results[0]["node_id"] == "small", "Vector search with small vector should find 'small'"
+    assert results[0]["node_id"] == "small", (
+        "Vector search with small vector should find 'small'"
+    )
 
     # Test vector search with k=1
     results = StorageManager.vector_search([0.0, 0.0, 0.0], k=1)
@@ -177,9 +192,7 @@ def test_vector_search_edge_cases(
     assert len(results) == 5, "Vector search with k=10 should return all 5 vectors"
 
 
-def test_vector_search_error_handling(
-    storage_manager, tmp_path, monkeypatch
-):
+def test_vector_search_error_handling(storage_manager, tmp_path, monkeypatch):
     """Test error handling in vector search.
 
     This test verifies that:
@@ -203,7 +216,9 @@ def test_vector_search_error_handling(
 
     # Check if vector extension is available
     try:
-        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        ).fetchall()
         vector_extension_available = result and len(result) > 0
         if vector_extension_available:
             logger.info("Vector extension is available")
@@ -242,15 +257,15 @@ def test_vector_search_error_handling(
         StorageManager.vector_search([0.1, 0.2, 0.3], k=-1)
 
     # Test vector search with database error
-    with patch("autoresearch.storage_backends.DuckDBStorageBackend.vector_search", 
-               side_effect=StorageError("Test error")):
+    with patch(
+        "autoresearch.storage_backends.DuckDBStorageBackend.vector_search",
+        side_effect=StorageError("Test error"),
+    ):
         with pytest.raises(StorageError):
             StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
 
 
-def test_vector_search_with_no_embeddings(
-    storage_manager, tmp_path, monkeypatch
-):
+def test_vector_search_with_no_embeddings(storage_manager, tmp_path, monkeypatch):
     """Test vector search when no embeddings are stored.
 
     This test verifies that:
@@ -272,7 +287,9 @@ def test_vector_search_with_no_embeddings(
 
     # Check if vector extension is available
     try:
-        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        ).fetchall()
         vector_extension_available = result and len(result) > 0
         if vector_extension_available:
             logger.info("Vector extension is available")
@@ -295,4 +312,6 @@ def test_vector_search_with_no_embeddings(
 
     # Test vector search
     results = StorageManager.vector_search([0.1, 0.2, 0.3], k=1)
-    assert len(results) == 0, "Vector search with no embeddings should return empty results"
+    assert len(results) == 0, (
+        "Vector search with no embeddings should return empty results"
+    )

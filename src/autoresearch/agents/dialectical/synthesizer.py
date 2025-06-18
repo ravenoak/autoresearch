@@ -2,8 +2,7 @@
 SynthesizerAgent responsible for thesis creation and final synthesis.
 """
 
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
+from typing import Dict, Any
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
@@ -11,7 +10,6 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -21,9 +19,7 @@ class SynthesizerAgent(Agent):
 
     role: AgentRole = AgentRole.SYNTHESIZER
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Synthesize claims and sources into coherent thesis or synthesis."""
         log.info(f"SynthesizerAgent executing (cycle {state.cycle})")
 
@@ -41,7 +37,7 @@ class SynthesizerAgent(Agent):
             return self.create_result(
                 claims=[claim],
                 metadata={"phase": DialoguePhase.SYNTHESIS},
-                results={"final_answer": answer, "synthesis": answer}
+                results={"final_answer": answer, "synthesis": answer},
             )
 
         elif is_first_cycle:
@@ -53,7 +49,7 @@ class SynthesizerAgent(Agent):
             return self.create_result(
                 claims=[claim],
                 metadata={"phase": DialoguePhase.THESIS},
-                results={"thesis": thesis_text}
+                results={"thesis": thesis_text},
             )
 
         else:
@@ -66,5 +62,5 @@ class SynthesizerAgent(Agent):
             return self.create_result(
                 claims=[claim],
                 metadata={"phase": DialoguePhase.SYNTHESIS},
-                results={"final_answer": synthesis_text, "synthesis": synthesis_text}
+                results={"final_answer": synthesis_text, "synthesis": synthesis_text},
             )

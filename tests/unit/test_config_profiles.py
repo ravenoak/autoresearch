@@ -5,13 +5,11 @@ users to define and switch between different configuration profiles.
 """
 
 import pytest
-from unittest.mock import patch, mock_open, MagicMock
-import tomllib
+from unittest.mock import patch, mock_open
 import time
 import stat
-from pathlib import Path
 
-from autoresearch.config import ConfigLoader, ConfigModel, get_config
+from autoresearch.config import ConfigLoader
 from autoresearch.errors import ConfigError
 
 
@@ -43,8 +41,8 @@ def test_config_profiles_default():
             "online": {
                 "llm_backend": "openai",
                 "loops": 5,
-            }
-        }
+            },
+        },
     }
 
     with patch("builtins.open", mock_open()):
@@ -77,8 +75,8 @@ def test_config_profiles_switch():
             "online": {
                 "llm_backend": "openai",
                 "loops": 5,
-            }
-        }
+            },
+        },
     }
 
     with patch("builtins.open", mock_open()):
@@ -121,7 +119,7 @@ def test_config_profiles_invalid():
                 "llm_backend": "lmstudio",
                 "loops": 1,
             }
-        }
+        },
     }
 
     with patch("builtins.open", mock_open()):
@@ -139,7 +137,9 @@ def test_config_profiles_invalid():
                     # Check that the error message is helpful
                     assert "Invalid profile" in str(excinfo.value)
                     assert "nonexistent" in str(excinfo.value)
-                    assert "offline" in str(excinfo.value)  # Should suggest valid profiles
+                    assert "offline" in str(
+                        excinfo.value
+                    )  # Should suggest valid profiles
 
 
 def test_config_profiles_merge():
@@ -158,7 +158,7 @@ def test_config_profiles_merge():
                 "loops": 1,
                 # Doesn't override agents or reasoning_mode
             }
-        }
+        },
     }
 
     with patch("builtins.open", mock_open()):

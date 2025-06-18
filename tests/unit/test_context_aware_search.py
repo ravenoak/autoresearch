@@ -4,12 +4,12 @@ This module tests the SearchContext class and its integration with the Search cl
 for context-aware search functionality.
 """
 
+import os
 import pytest
 from unittest.mock import patch, MagicMock
-import time
 
 from autoresearch.search import Search, SearchContext
-from autoresearch.config import ConfigModel, SearchConfig, ContextAwareSearchConfig
+from autoresearch.config import SearchConfig, ContextAwareSearchConfig
 
 
 @pytest.fixture
@@ -30,12 +30,9 @@ def mock_context_config():
         use_query_expansion=True,
         use_entity_recognition=True,
         use_topic_modeling=True,
-        use_search_history=True
+        use_search_history=True,
     )
-    search_config = SearchConfig(
-        backends=["serper"],
-        context_aware=context_config
-    )
+    search_config = SearchConfig(backends=["serper"], context_aware=context_config)
     config = MagicMock()
     config.search = search_config
     return config
@@ -45,9 +42,21 @@ def mock_context_config():
 def sample_results():
     """Create sample search results for testing."""
     return [
-        {"title": "Python Programming", "url": "https://python.org", "snippet": "Official Python website"},
-        {"title": "Learn Python", "url": "https://example.com/python", "snippet": "Python tutorials"},
-        {"title": "Python (programming language) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Python_(programming_language)", "snippet": "Python is a high-level programming language"}
+        {
+            "title": "Python Programming",
+            "url": "https://python.org",
+            "snippet": "Official Python website",
+        },
+        {
+            "title": "Learn Python",
+            "url": "https://example.com/python",
+            "snippet": "Python tutorials",
+        },
+        {
+            "title": "Python (programming language) - Wikipedia",
+            "url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+            "snippet": "Python is a high-level programming language",
+        },
     ]
 
 
@@ -104,7 +113,9 @@ def test_initialize_nlp_no_download_by_default(mock_spacy, reset_search_context)
 
 
 @patch("autoresearch.search.get_config")
-def test_add_to_history(mock_get_config, mock_context_config, sample_results, reset_search_context):
+def test_add_to_history(
+    mock_get_config, mock_context_config, sample_results, reset_search_context
+):
     """Test adding queries to the search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -159,7 +170,13 @@ def test_extract_entities(mock_get_config, mock_context_config, reset_search_con
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", True)
 @patch("autoresearch.search.get_config")
 @patch("autoresearch.search.Search.get_sentence_transformer")
-def test_build_topic_model(mock_get_transformer, mock_get_config, mock_context_config, sample_results, reset_search_context):
+def test_build_topic_model(
+    mock_get_transformer,
+    mock_get_config,
+    mock_context_config,
+    sample_results,
+    reset_search_context,
+):
     """Test building a topic model from search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -189,7 +206,7 @@ def test_build_topic_model(mock_get_transformer, mock_get_config, mock_context_c
 
     # Verify
     assert context.topic_model is not None
-    assert hasattr(context, 'documents')
+    assert hasattr(context, "documents")
     assert len(context.documents) > 0
 
     # Restore the original method
@@ -197,7 +214,9 @@ def test_build_topic_model(mock_get_transformer, mock_get_config, mock_context_c
 
 
 @patch("autoresearch.search.get_config")
-def test_expand_query_with_history(mock_get_config, mock_context_config, sample_results, reset_search_context):
+def test_expand_query_with_history(
+    mock_get_config, mock_context_config, sample_results, reset_search_context
+):
     """Test query expansion based on search history."""
     mock_get_config.return_value = mock_context_config
 
@@ -216,7 +235,9 @@ def test_expand_query_with_history(mock_get_config, mock_context_config, sample_
 
 
 @patch("autoresearch.search.get_config")
-def test_context_aware_search_integration(mock_get_config, mock_context_config, sample_results, reset_search_context):
+def test_context_aware_search_integration(
+    mock_get_config, mock_context_config, sample_results, reset_search_context
+):
     """Test the integration of context-aware search with the Search class."""
     # Ensure context-aware search is enabled in the config
     mock_context_config.search.context_aware.enabled = True
@@ -231,7 +252,9 @@ def test_context_aware_search_integration(mock_get_config, mock_context_config, 
     # Create a mock for the actual lookup function to avoid making real requests
     mock_lookup = MagicMock(return_value=sample_results)
 
-    with patch("autoresearch.search.SearchContext.get_instance", return_value=mock_context):
+    with patch(
+        "autoresearch.search.SearchContext.get_instance", return_value=mock_context
+    ):
         with patch.dict("autoresearch.search.Search.backends", {"serper": mock_lookup}):
             # Perform a search
             result = Search.external_lookup("python")
@@ -248,7 +271,9 @@ def test_context_aware_search_integration(mock_get_config, mock_context_config, 
 
 
 @patch("autoresearch.search.get_config")
-def test_context_aware_search_disabled(mock_get_config, mock_context_config, reset_search_context):
+def test_context_aware_search_disabled(
+    mock_get_config, mock_context_config, reset_search_context
+):
     """Test that context-aware search can be disabled."""
     # Disable context-aware search
     mock_context_config.search.context_aware.enabled = False
@@ -257,9 +282,14 @@ def test_context_aware_search_disabled(mock_get_config, mock_context_config, res
     # Create a mock for SearchContext.get_instance
     mock_context = MagicMock()
 
-    with patch("autoresearch.search.SearchContext.get_instance", return_value=mock_context):
+    with patch(
+        "autoresearch.search.SearchContext.get_instance", return_value=mock_context
+    ):
         # Perform a search with a mock for the actual lookup
-        with patch("autoresearch.search.Search.backends", {"serper": MagicMock(return_value=[])}):
+        with patch(
+            "autoresearch.search.Search.backends",
+            {"serper": MagicMock(return_value=[])},
+        ):
             Search.external_lookup("python")
 
             # Verify that the context was not used

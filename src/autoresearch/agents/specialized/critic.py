@@ -6,16 +6,13 @@ identifying strengths and weaknesses, and providing constructive feedback
 to improve the quality of the research.
 """
 
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
+from typing import Dict, Any
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
-from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -26,9 +23,7 @@ class CriticAgent(Agent):
     role: AgentRole = AgentRole.SPECIALIST
     name: str = "Critic"
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Evaluate the quality of research findings and provide feedback."""
         log.info(f"CriticAgent executing (cycle {state.cycle})")
 
@@ -48,15 +43,17 @@ class CriticAgent(Agent):
             claims_to_evaluate = state.claims
 
         # Extract content from claims
-        claims_text = "\n\n".join([
-            f"Claim ({claim.get('type', 'unknown')}): {claim.get('content', 'No content')}"
-            for claim in claims_to_evaluate
-        ])
+        claims_text = "\n\n".join(
+            [
+                f"Claim ({claim.get('type', 'unknown')}): {claim.get('content', 'No content')}"
+                for claim in claims_to_evaluate
+            ]
+        )
 
         # Generate critique using the prompt template
-        prompt = self.generate_prompt("critic.evaluation", 
-                                     query=state.query, 
-                                     claims=claims_text)
+        prompt = self.generate_prompt(
+            "critic.evaluation", query=state.query, claims=claims_text
+        )
         critique = adapter.generate(prompt, model=model)
 
         # Create and return the result
@@ -67,7 +64,7 @@ class CriticAgent(Agent):
                 "phase": DialoguePhase.CRITIQUE,
                 "evaluated_claims": [c.get("id") for c in claims_to_evaluate],
             },
-            results={"critique": critique}
+            results={"critique": critique},
         )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:

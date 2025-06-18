@@ -6,7 +6,6 @@ particularly the VSS extension used for vector similarity search.
 """
 
 import os
-from typing import Optional
 
 import duckdb
 
@@ -56,14 +55,20 @@ class VSSExtensionLoader:
                 log.info(f"Loading VSS extension from filesystem: {extension_path}")
 
                 # Validate extension path
-                if not extension_path.endswith('.duckdb_extension'):
-                    log.warning(f"VSS extension path does not end with .duckdb_extension: {extension_path}")
-                    raise ValueError(f"VSS extension path must end with .duckdb_extension: {extension_path}")
+                if not extension_path.endswith(".duckdb_extension"):
+                    log.warning(
+                        f"VSS extension path does not end with .duckdb_extension: {extension_path}"
+                    )
+                    raise ValueError(
+                        f"VSS extension path must end with .duckdb_extension: {extension_path}"
+                    )
 
                 # Check if the path exists
                 if not os.path.exists(extension_path):
                     log.warning(f"VSS extension path does not exist: {extension_path}")
-                    raise FileNotFoundError(f"VSS extension path does not exist: {extension_path}")
+                    raise FileNotFoundError(
+                        f"VSS extension path does not exist: {extension_path}"
+                    )
 
                 # Load the extension from the filesystem
                 conn.execute(f"LOAD '{extension_path}'")
@@ -123,7 +128,9 @@ class VSSExtensionLoader:
             bool: True if the extension is loaded and functioning, False otherwise
         """
         try:
-            result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+            result = conn.execute(
+                "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+            ).fetchall()
             if result and len(result) > 0:
                 if verbose:
                     log.info("VSS extension is loaded")

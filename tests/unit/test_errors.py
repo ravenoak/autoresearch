@@ -1,4 +1,3 @@
-import pytest
 from autoresearch.errors import (
     AutoresearchError,
     ConfigError,
@@ -30,13 +29,13 @@ def test_error_messages():
     """Test that error messages are properly formatted."""
     error = AutoresearchError("Test message")
     assert str(error) == "Test message"
-    
+
     error = ConfigError("Invalid config")
     assert str(error) == "Invalid config"
-    
+
     error = AgentError("Agent failed", agent_name="TestAgent")
     assert str(error) == "Agent failed (agent: TestAgent)"
-    
+
     error = LLMError("LLM request failed", model="gpt-3.5-turbo")
     assert str(error) == "LLM request failed (model: gpt-3.5-turbo)"
 

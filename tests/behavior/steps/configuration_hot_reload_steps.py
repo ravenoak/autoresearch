@@ -67,7 +67,9 @@ def check_agents_match(start_application: ConfigModel):
     assert start_application.agents == file_cfg.agents
 
 
-@scenario("../features/configuration_hot_reload.feature", "Load configuration on startup")
+@scenario(
+    "../features/configuration_hot_reload.feature", "Load configuration on startup"
+)
 def test_load_config_startup():
     pass
 

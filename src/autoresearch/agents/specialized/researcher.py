@@ -6,17 +6,14 @@ gathering information from multiple sources, and providing comprehensive
 research results.
 """
 
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
+from typing import Dict, Any
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
-from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
-from ...llm.adapters import LLMAdapter
 
 log = get_logger(__name__)
 
@@ -27,9 +24,7 @@ class ResearcherAgent(Agent):
     role: AgentRole = AgentRole.SPECIALIST
     name: str = "Researcher"
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Conduct in-depth research on the query topic."""
         log.info(f"ResearcherAgent executing (cycle {state.cycle})")
 
@@ -38,9 +33,7 @@ class ResearcherAgent(Agent):
 
         # Retrieve external references with more results than standard fact checking
         max_results = config.max_results_per_query * 2  # Double the standard results
-        raw_sources = Search.external_lookup(
-            state.query, max_results=max_results
-        )
+        raw_sources = Search.external_lookup(state.query, max_results=max_results)
         sources = []
         for s in raw_sources:
             s = dict(s)
@@ -48,15 +41,17 @@ class ResearcherAgent(Agent):
             sources.append(s)
 
         # Extract key information from sources
-        sources_text = "\n\n".join([
-            f"Source {i+1}: {s.get('title', 'Untitled')}\n{s.get('content', 'No content')}"
-            for i, s in enumerate(sources)
-        ])
+        sources_text = "\n\n".join(
+            [
+                f"Source {i + 1}: {s.get('title', 'Untitled')}\n{s.get('content', 'No content')}"
+                for i, s in enumerate(sources)
+            ]
+        )
 
         # Generate research findings using the prompt template
-        prompt = self.generate_prompt("researcher.findings", 
-                                     query=state.query, 
-                                     sources=sources_text)
+        prompt = self.generate_prompt(
+            "researcher.findings", query=state.query, sources=sources_text
+        )
         research_findings = adapter.generate(prompt, model=model)
 
         # Create and return the result
@@ -68,7 +63,7 @@ class ResearcherAgent(Agent):
                 "source_count": len(sources),
             },
             results={"research_findings": research_findings},
-            sources=sources
+            sources=sources,
         )
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:

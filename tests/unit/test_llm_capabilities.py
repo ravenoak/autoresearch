@@ -4,11 +4,8 @@ This module tests the functionality of the LLM capability probing system,
 including the ModelCapabilities class, CapabilityProber class, and helper functions.
 """
 
-import pytest
-import json
 import os
-from unittest.mock import patch, MagicMock, Mock
-import requests
+from unittest.mock import patch, MagicMock
 import responses
 
 from autoresearch.llm.capabilities import (
@@ -16,7 +13,7 @@ from autoresearch.llm.capabilities import (
     CapabilityProber,
     get_capability_prober,
     probe_all_providers,
-    get_model_capabilities
+    get_model_capabilities,
 )
 from autoresearch.llm.registry import LLMFactory
 
@@ -35,7 +32,7 @@ class TestModelCapabilities:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
 
         # Verify
@@ -59,7 +56,7 @@ class TestModelCapabilities:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
 
         # Execute
@@ -98,17 +95,19 @@ class TestCapabilityProber:
         prober._capabilities_cache = {}
 
         # Mock the _probe_dummy method
-        with patch.object(prober, '_probe_dummy') as mock_probe:
-            mock_probe.return_value = {"dummy": ModelCapabilities(
-                name="dummy",
-                provider="dummy",
-                context_length=1000,
-                supports_function_calling=False,
-                supports_vision=False,
-                supports_streaming=False,
-                cost_per_1k_input_tokens=0.0,
-                cost_per_1k_output_tokens=0.0
-            )}
+        with patch.object(prober, "_probe_dummy") as mock_probe:
+            mock_probe.return_value = {
+                "dummy": ModelCapabilities(
+                    name="dummy",
+                    provider="dummy",
+                    context_length=1000,
+                    supports_function_calling=False,
+                    supports_vision=False,
+                    supports_streaming=False,
+                    cost_per_1k_input_tokens=0.0,
+                    cost_per_1k_output_tokens=0.0,
+                )
+            }
 
             # Execute - first call should use the mock
             result1 = prober.probe_provider("dummy")
@@ -132,7 +131,7 @@ class TestCapabilityProber:
         # Verify
         assert result == {}
 
-    @patch.object(LLMFactory, '_registry', {"openai": None, "dummy": None})
+    @patch.object(LLMFactory, "_registry", {"openai": None, "dummy": None})
     def test_probe_all_providers(self):
         """Test probing all providers."""
         # Setup
@@ -141,7 +140,7 @@ class TestCapabilityProber:
         prober._providers_probed = set()
 
         # Mock the probe_provider method
-        with patch.object(prober, 'probe_provider') as mock_probe:
+        with patch.object(prober, "probe_provider") as mock_probe:
             mock_probe.return_value = {}
 
             # Execute
@@ -166,7 +165,7 @@ class TestCapabilityProber:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
 
         # Set up the cache
@@ -194,7 +193,7 @@ class TestCapabilityProber:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
 
         # Set up the cache
@@ -234,22 +233,24 @@ class TestCapabilityProber:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
 
         # Set up the cache with multiple providers
         prober._capabilities_cache = {
-            "provider1": {"other-model": ModelCapabilities(
-                name="other-model",
-                provider="provider1",
-                context_length=2048,
-                supports_function_calling=False,
-                supports_vision=False,
-                supports_streaming=True,
-                cost_per_1k_input_tokens=0.0005,
-                cost_per_1k_output_tokens=0.001
-            )},
-            "provider2": {"test-model": test_capabilities}
+            "provider1": {
+                "other-model": ModelCapabilities(
+                    name="other-model",
+                    provider="provider1",
+                    context_length=2048,
+                    supports_function_calling=False,
+                    supports_vision=False,
+                    supports_streaming=True,
+                    cost_per_1k_input_tokens=0.0005,
+                    cost_per_1k_output_tokens=0.001,
+                )
+            },
+            "provider2": {"test-model": test_capabilities},
         }
 
         # Execute
@@ -278,14 +279,11 @@ class TestCapabilityProber:
                             "supports_function_calling": True,
                             "supports_vision": True,
                             "supports_streaming": True,
-                            "pricing": {
-                                "input": 0.015,
-                                "output": 0.075
-                            }
+                            "pricing": {"input": 0.015, "output": 0.075},
                         }
                     ]
                 },
-                status=200
+                status=200,
             )
 
             # Execute
@@ -327,14 +325,16 @@ class TestCapabilityProber:
                 responses.GET,
                 "https://openrouter.ai/api/v1/models",
                 json={"error": "API error"},
-                status=500
+                status=500,
             )
 
             # Execute
             result = prober._probe_openrouter()
 
         # Verify
-        assert "anthropic/claude-3-opus" in result  # Should fall back to default capabilities
+        assert (
+            "anthropic/claude-3-opus" in result
+        )  # Should fall back to default capabilities
         assert "anthropic/claude-3-sonnet" in result
         assert "mistralai/mistral-large" in result
 
@@ -405,7 +405,7 @@ class TestHelperFunctions:
         assert isinstance(prober, CapabilityProber)
         assert prober is CapabilityProber.get_instance()
 
-    @patch('autoresearch.llm.capabilities.get_capability_prober')
+    @patch("autoresearch.llm.capabilities.get_capability_prober")
     def test_probe_all_providers_helper(self, mock_get_prober):
         """Test the probe_all_providers helper function."""
         # Setup
@@ -420,7 +420,7 @@ class TestHelperFunctions:
         assert result == {"test": {}}
         mock_prober.probe_all_providers.assert_called_once()
 
-    @patch('autoresearch.llm.capabilities.get_capability_prober')
+    @patch("autoresearch.llm.capabilities.get_capability_prober")
     def test_get_model_capabilities_helper(self, mock_get_prober):
         """Test the get_model_capabilities helper function."""
         # Setup
@@ -434,7 +434,7 @@ class TestHelperFunctions:
             supports_vision=False,
             supports_streaming=True,
             cost_per_1k_input_tokens=0.001,
-            cost_per_1k_output_tokens=0.002
+            cost_per_1k_output_tokens=0.002,
         )
         mock_prober.get_model_capabilities.return_value = test_capabilities
 
@@ -443,4 +443,6 @@ class TestHelperFunctions:
 
         # Verify
         assert result == test_capabilities
-        mock_prober.get_model_capabilities.assert_called_once_with("test-model", "test-provider")
+        mock_prober.get_model_capabilities.assert_called_once_with(
+            "test-model", "test-provider"
+        )

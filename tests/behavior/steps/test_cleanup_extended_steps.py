@@ -6,15 +6,11 @@ and handling cleanup errors.
 """
 
 import os
-import sys
 import tempfile
 import pytest
 from pytest_bdd import scenario, given, when, then
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.config import ConfigModel
-from autoresearch.llm import DummyAdapter
 
 
 # Fixtures
@@ -30,19 +26,28 @@ def cleanup_extended_context():
 
 
 # Scenarios
-@scenario("../features/test_cleanup_extended.feature", "Tests clean up temporary files properly")
+@scenario(
+    "../features/test_cleanup_extended.feature",
+    "Tests clean up temporary files properly",
+)
 def test_cleanup_temporary_files():
     """Test that temporary files are properly cleaned up."""
     pass
 
 
-@scenario("../features/test_cleanup_extended.feature", "Tests clean up environment variables properly")
+@scenario(
+    "../features/test_cleanup_extended.feature",
+    "Tests clean up environment variables properly",
+)
 def test_cleanup_environment_variables():
     """Test that environment variables are properly restored."""
     pass
 
 
-@scenario("../features/test_cleanup_extended.feature", "Tests handle cleanup errors gracefully")
+@scenario(
+    "../features/test_cleanup_extended.feature",
+    "Tests handle cleanup errors gracefully",
+)
 def test_cleanup_errors():
     """Test that cleanup errors are handled gracefully."""
     pass
@@ -71,7 +76,7 @@ def run_test_creating_temporary_files(cleanup_extended_context):
     # Create some temporary files
     for _ in range(3):
         fd, path = tempfile.mkstemp()
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             f.write("Test content")
 
     # Verify that the files were created and tracked
@@ -93,7 +98,9 @@ def temporary_files_properly_cleaned_up(cleanup_extended_context):
             os.unlink(path)
         except OSError as e:
             # File might already be deleted
-            cleanup_extended_context["cleanup_errors"].append(f"Failed to delete {path}: {e}")
+            cleanup_extended_context["cleanup_errors"].append(
+                f"Failed to delete {path}: {e}"
+            )
 
     # Verify that all files were deleted
     for _, path in cleanup_extended_context["temp_files"]:

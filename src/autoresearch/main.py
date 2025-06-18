@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 import os
-import json
 import difflib
 from typing import Optional, Dict, Any, List, Sequence
 
@@ -14,8 +13,8 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from mcp.server import Server
-from mcp import Tool
 from datetime import datetime
+import time
 
 from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
@@ -23,15 +22,28 @@ from .orchestration.state import QueryState
 from .output_format import OutputFormatter
 from .logging_utils import configure_logging
 from .storage import StorageManager
-from .storage_backup import BackupManager, BackupConfig, BackupInfo
+from .storage_backup import BackupManager, BackupConfig
 from .errors import BackupError, StorageError
 from .cli_utils import (
-    console, print_success, print_error, print_warning, print_info, 
-    print_command_example, format_success, format_error, format_warning, format_info
+    console,
+    print_success,
+    print_error,
+    print_warning,
+    print_info,
+    print_command_example,
+    format_success,
+    format_info,
+    print_verbose,
+    set_verbosity,
+    get_verbosity,
+    Verbosity,
 )
 from .error_utils import get_error_info, format_error_for_cli
 
-def find_similar_commands(command: str, valid_commands: Sequence[str], threshold: float = 0.6) -> List[str]:
+
+def find_similar_commands(
+    command: str, valid_commands: Sequence[str], threshold: float = 0.6
+) -> List[str]:
     """Find similar commands to the given command.
 
     Args:
@@ -43,8 +55,14 @@ def find_similar_commands(command: str, valid_commands: Sequence[str], threshold
         A list of similar commands
     """
     # Use difflib to find similar commands
-    matches = difflib.get_close_matches(command, valid_commands, n=3, cutoff=threshold)
+    matches = difflib.get_close_matches(
+        command,
+        valid_commands,
+        n=3,
+        cutoff=threshold,
+    )
     return list(matches)
+
 
 def handle_command_not_found(ctx: typer.Context, command: str) -> None:
     """Handle command not found errors with helpful suggestions.
@@ -68,8 +86,11 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
         for cmd in similar_commands:
             print_command_example(cmd)
 
-    console.print("\nRun [cyan]autoresearch --help[/cyan] to see all available commands.")
+    console.print(
+        "\nRun [cyan]autoresearch --help[/cyan] to see all available commands."
+    )
     raise typer.Exit(code=1)
+
 
 app = typer.Typer(
     help=(
@@ -80,7 +101,8 @@ app = typer.Typer(
     ),
     name="autoresearch",
     no_args_is_help=True,  # Show help when no arguments are provided
-    pretty_exceptions_enable=False,  # Disable pretty exceptions to handle them ourselves
+    pretty_exceptions_enable=False,
+    # Disable pretty exceptions to handle them ourselves
 )
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
@@ -92,7 +114,7 @@ def start_watcher(
     vss_path: Optional[str] = typer.Option(
         None,
         "--vss-path",
-        help="Path to VSS extension file. Overrides config and environment settings.",
+        help=("Path to VSS extension file. Overrides config and environment settings."),
     ),
     no_vss: bool = typer.Option(
         False,
@@ -141,20 +163,24 @@ def start_watcher(
     # Show welcome message on first run
     if is_first_run and ctx.invoked_subcommand is None:
         console.print("\n" + format_success("Welcome to Autoresearch!", symbol=False))
-        console.print("A local-first research assistant that coordinates multiple agents to produce evidence-backed answers.\n")
+        console.print(
+            "A local-first research assistant that coordinates multiple agents to produce evidence-backed answers.\n"
+        )
 
         print_info("Getting Started:", symbol=False)
         console.print("1. Initialize configuration:")
         print_command_example("autoresearch config init")
         console.print("2. Run a search query:")
-        print_command_example("autoresearch search \"Your question here\"")
+        print_command_example('autoresearch search "Your question here"')
         console.print("3. Start interactive mode:")
         print_command_example("autoresearch monitor")
         console.print("")
 
         print_info("Available Commands:", symbol=False)
         print_command_example("search", "Run a search query")
-        print_command_example("monitor", "Start interactive resource and metrics monitor")
+        print_command_example(
+            "monitor", "Start interactive resource and metrics monitor"
+        )
         print_command_example("config", "Configuration management commands")
         print_command_example("backup", "Backup and restore operations")
         print_command_example("serve", "Start an MCP server")
@@ -165,7 +191,9 @@ def start_watcher(
         console.print("")
 
         # Suggest initializing configuration
-        if typer.confirm("Would you like to initialize the configuration now?", default=True):
+        if typer.confirm(
+            "Would you like to initialize the configuration now?", default=True
+        ):
             ctx.invoke(config_init)
             return
 
@@ -207,13 +235,19 @@ def search(
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
     if not query or query.strip() == "":
         print_warning("You need to provide a query to search for.")
-        print_command_example("autoresearch search \"What is quantum computing?\"", "Example query")
-        print_command_example("autoresearch search --help", "Show help for search command")
+        print_command_example(
+            'autoresearch search "What is quantum computing?"', "Example query"
+        )
+        print_command_example(
+            "autoresearch search --help", "Show help for search command"
+        )
         return
 
     try:
         # Show a spinner while processing the query
-        with console.status(format_info("Processing query...", symbol=False), spinner="dots"):
+        with console.status(
+            format_info("Processing query...", symbol=False), spinner="dots"
+        ):
             result = Orchestrator.run_query(query, config)
 
         fmt = output or (
@@ -236,9 +270,9 @@ def search(
 
         # Log the error with a user-friendly message and suggestion
         print_error(
-            f"Error processing query: {error_msg}", 
+            f"Error processing query: {error_msg}",
             suggestion=suggestion,
-            code_example=code_example
+            code_example=code_example,
         )
 
         if get_verbosity() == Verbosity.VERBOSE:
@@ -246,6 +280,7 @@ def search(
                 print_verbose(f"Traceback:\n{''.join(error_info.traceback)}")
             else:
                 import traceback
+
                 print_verbose(f"Traceback:\n{traceback.format_exc()}")
         else:
             print_info("Run with --verbose for more details")
@@ -262,7 +297,11 @@ def search(
             answer=f"Error: {error_msg}",
             citations=[],
             reasoning=reasoning,
-            metrics={"error": error_msg, "suggestions": error_info.suggestions, "code_examples": error_info.code_examples}
+            metrics={
+                "error": error_msg,
+                "suggestions": error_info.suggestions,
+                "code_examples": error_info.code_examples,
+            },
         )
         fmt = output or (
             "markdown"
@@ -275,6 +314,7 @@ def search(
 config_app = typer.Typer(help="Configuration management commands")
 app.add_typer(config_app, name="config")
 
+
 @config_app.callback(invoke_without_command=True)
 def config_callback(ctx: typer.Context) -> None:
     """Configuration management commands."""
@@ -282,6 +322,7 @@ def config_callback(ctx: typer.Context) -> None:
         # Display current configuration if no subcommand is provided
         config = _config_loader.load_config()
         typer.echo(config.json(indent=2))
+
 
 @config_app.command("init")
 def config_init(
@@ -329,11 +370,15 @@ def config_init(
 
     # Check if files already exist
     if toml_path.exists() and not force:
-        typer.echo(f"Configuration file already exists at {toml_path}. Use --force to overwrite.")
+        typer.echo(
+            f"Configuration file already exists at {toml_path}. Use --force to overwrite."
+        )
         return
 
     if env_path.exists() and not force:
-        typer.echo(f"Environment file already exists at {env_path}. Use --force to overwrite.")
+        typer.echo(
+            f"Environment file already exists at {env_path}. Use --force to overwrite."
+        )
         return
 
     # Find the example configuration files
@@ -364,6 +409,7 @@ def config_init(
     typer.echo("Configuration initialized successfully.")
     typer.echo("Edit these files to customize your configuration.")
 
+
 @config_app.command("validate")
 def config_validate() -> None:
     """Validate configuration files.
@@ -376,7 +422,6 @@ def config_validate() -> None:
         # Validate configuration files
         autoresearch config validate
     """
-    from pathlib import Path
     from .config import ConfigLoader, ConfigError
 
     config_loader = ConfigLoader()
@@ -399,7 +444,7 @@ def config_validate() -> None:
         typer.echo(f"  - {env_path}")
 
     try:
-        config = config_loader.load_config()
+        config_loader.load_config()
         typer.echo("Configuration is valid.")
     except ConfigError as e:
         typer.echo(f"Configuration error: {e}")
@@ -461,8 +506,12 @@ def monitor() -> None:
 
 @app.command()
 def serve(
-    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the MCP server to"),
-    port: int = typer.Option(8080, "--port", "-p", help="Port to bind the MCP server to"),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Host to bind the MCP server to"
+    ),
+    port: int = typer.Option(
+        8080, "--port", "-p", help="Port to bind the MCP server to"
+    ),
 ) -> None:
     """Start an MCP server that exposes Autoresearch as a tool.
 
@@ -503,15 +552,18 @@ def serve(
                 "answer": result.answer,
                 "citations": [citation.dict() for citation in result.citations],
                 "reasoning": result.reasoning,
-                "metrics": result.metrics
+                "metrics": result.metrics,
             }
         except Exception as e:
             return {
                 "error": str(e),
                 "answer": f"Error: {str(e)}",
                 "citations": [],
-                "reasoning": ["An error occurred during processing.", "Please check the logs for details."],
-                "metrics": {"error": str(e)}
+                "reasoning": [
+                    "An error occurred during processing.",
+                    "Please check the logs for details.",
+                ],
+                "metrics": {"error": str(e)},
             }
 
     console.print(f"[bold green]Starting MCP server on {host}:{port}[/bold green]")
@@ -527,8 +579,12 @@ def serve(
 
 @app.command()
 def serve_a2a(
-    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the A2A server to"),
-    port: int = typer.Option(8765, "--port", "-p", help="Port to bind the A2A server to"),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Host to bind the A2A server to"
+    ),
+    port: int = typer.Option(
+        8765, "--port", "-p", help="Port to bind the A2A server to"
+    ),
 ) -> None:
     """Start an A2A server that exposes Autoresearch as an agent.
 
@@ -550,7 +606,9 @@ def serve_a2a(
         from .a2a_interface import A2AInterface
     except ImportError:
         console = Console()
-        console.print("[bold red]Error:[/bold red] The a2a-sdk package is required for A2A integration.")
+        console.print(
+            "[bold red]Error:[/bold red] The a2a-sdk package is required for A2A integration."
+        )
         console.print("Install it with: [bold]pip install a2a-sdk[/bold]")
         return
 
@@ -573,6 +631,7 @@ def serve_a2a(
         # Keep the main thread running until interrupted
         try:
             import time
+
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
@@ -639,7 +698,7 @@ def backup_create(
             backup_dir=backup_dir or "backups",
             compress=compress,
             max_backups=max_backups,
-            retention_days=retention_days
+            retention_days=retention_days,
         )
 
         # Show progress
@@ -648,15 +707,13 @@ def backup_create(
 
             # Create backup
             backup_info = BackupManager.create_backup(
-                backup_dir=backup_dir,
-                compress=compress,
-                config=config
+                backup_dir=backup_dir, compress=compress, config=config
             )
 
             progress.update(task, completed=1)
 
         # Show backup info
-        console.print(f"[bold green]Backup created successfully:[/bold green]")
+        console.print("[bold green]Backup created successfully:[/bold green]")
         console.print(f"  Path: {backup_info.path}")
         console.print(f"  Timestamp: {backup_info.timestamp}")
         console.print(f"  Size: {_format_size(backup_info.size)}")
@@ -709,10 +766,20 @@ def backup_restore(
     try:
         # Confirm restore if not forced
         if not force:
-            console.print("[bold yellow]Warning:[/bold yellow] Restoring a backup will create new database files.")
-            console.print("The original files will not be modified, but you will need to configure")
-            console.print("the application to use the restored files if you want to use them.")
-            confirm = Prompt.ask("Are you sure you want to restore this backup?", choices=["y", "n"], default="n")
+            console.print(
+                "[bold yellow]Warning:[/bold yellow] Restoring a backup will create new database files."
+            )
+            console.print(
+                "The original files will not be modified, but you will need to configure"
+            )
+            console.print(
+                "the application to use the restored files if you want to use them."
+            )
+            confirm = Prompt.ask(
+                "Are you sure you want to restore this backup?",
+                choices=["y", "n"],
+                default="n",
+            )
             if confirm.lower() != "y":
                 console.print("Restore cancelled.")
                 return
@@ -723,17 +790,18 @@ def backup_restore(
 
             # Restore backup
             restored_paths = BackupManager.restore_backup(
-                backup_path=backup_path,
-                target_dir=target_dir
+                backup_path=backup_path, target_dir=target_dir
             )
 
             progress.update(task, completed=1)
 
         # Show restored paths
-        console.print(f"[bold green]Backup restored successfully:[/bold green]")
+        console.print("[bold green]Backup restored successfully:[/bold green]")
         console.print(f"  DuckDB database: {restored_paths['db_path']}")
         console.print(f"  RDF store: {restored_paths['rdf_path']}")
-        console.print("\nTo use the restored files, update your configuration to point to these paths.")
+        console.print(
+            "\nTo use the restored files, update your configuration to point to these paths."
+        )
 
     except BackupError as e:
         console.print(f"[bold red]Error restoring backup:[/bold red] {str(e)}")
@@ -795,14 +863,16 @@ def backup_list(
                 backup.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
                 backup.path,
                 _format_size(backup.size),
-                "Yes" if backup.compressed else "No"
+                "Yes" if backup.compressed else "No",
             )
 
         # Show table
         console.print(table)
 
         if len(backups) > limit:
-            console.print(f"Showing {limit} of {len(backups)} backups. Use --limit to show more.")
+            console.print(
+                f"Showing {limit} of {len(backups)} backups. Use --limit to show more."
+            )
 
     except BackupError as e:
         console.print(f"[bold red]Error listing backups:[/bold red] {str(e)}")
@@ -861,12 +931,16 @@ def backup_schedule(
             interval_hours=interval_hours,
             compress=compress,
             max_backups=max_backups,
-            retention_days=retention_days
+            retention_days=retention_days,
         )
 
-        console.print(f"[bold green]Scheduled backups every {interval_hours} hours to {backup_dir or 'backups'}[/bold green]")
+        console.print(
+            f"[bold green]Scheduled backups every {interval_hours} hours to {backup_dir or 'backups'}[/bold green]"
+        )
         console.print("The first backup will be created immediately.")
-        console.print("Press Ctrl+C to stop the application and cancel scheduled backups.")
+        console.print(
+            "Press Ctrl+C to stop the application and cancel scheduled backups."
+        )
 
         # Keep the application running
         try:
@@ -921,41 +995,61 @@ def backup_recover(
         try:
             target_time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
         except ValueError:
-            console.print("[bold red]Error:[/bold red] Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS.")
+            console.print(
+                "[bold red]Error:[/bold red] Invalid timestamp format. Use YYYY-MM-DD HH:MM:SS."
+            )
             raise typer.Exit(code=1)
 
         # Confirm recovery if not forced
         if not force:
-            console.print("[bold yellow]Warning:[/bold yellow] Point-in-time recovery will create new database files.")
-            console.print("The original files will not be modified, but you will need to configure")
-            console.print("the application to use the recovered files if you want to use them.")
-            confirm = Prompt.ask("Are you sure you want to perform point-in-time recovery?", choices=["y", "n"], default="n")
+            console.print(
+                "[bold yellow]Warning:[/bold yellow] Point-in-time recovery will create new database files."
+            )
+            console.print(
+                "The original files will not be modified, but you will need to configure"
+            )
+            console.print(
+                "the application to use the recovered files if you want to use them."
+            )
+            confirm = Prompt.ask(
+                "Are you sure you want to perform point-in-time recovery?",
+                choices=["y", "n"],
+                default="n",
+            )
             if confirm.lower() != "y":
                 console.print("Recovery cancelled.")
                 return
 
         # Show progress
         with Progress() as progress:
-            task = progress.add_task("[green]Performing point-in-time recovery...", total=1)
+            task = progress.add_task(
+                "[green]Performing point-in-time recovery...", total=1
+            )
 
             # Perform recovery
             restored_paths = BackupManager.restore_point_in_time(
                 backup_dir=backup_dir or "backups",
                 target_time=target_time,
-                target_dir=target_dir
+                target_dir=target_dir,
             )
 
             progress.update(task, completed=1)
 
         # Show restored paths
-        console.print(f"[bold green]Point-in-time recovery completed successfully:[/bold green]")
+        console.print(
+            "[bold green]Point-in-time recovery completed successfully:[/bold green]"
+        )
         console.print(f"  Target time: {target_time}")
         console.print(f"  DuckDB database: {restored_paths['db_path']}")
         console.print(f"  RDF store: {restored_paths['rdf_path']}")
-        console.print("\nTo use the recovered files, update your configuration to point to these paths.")
+        console.print(
+            "\nTo use the recovered files, update your configuration to point to these paths."
+        )
 
     except BackupError as e:
-        console.print(f"[bold red]Error performing point-in-time recovery:[/bold red] {str(e)}")
+        console.print(
+            f"[bold red]Error performing point-in-time recovery:[/bold red] {str(e)}"
+        )
         if hasattr(e, "context") and "suggestion" in e.context:
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
         raise typer.Exit(code=1)
@@ -997,7 +1091,6 @@ def completion(
         # Generate fish completion script and save to the default location
         autoresearch completion fish -o ~/.config/fish/completions/autoresearch.fish
     """
-    import subprocess
     from pathlib import Path
 
     # Validate shell
@@ -1006,7 +1099,7 @@ def completion(
         print_error(
             f"Invalid shell: {shell}",
             suggestion=f"Valid shells are: {', '.join(valid_shells)}",
-            code_example="autoresearch completion bash"
+            code_example="autoresearch completion bash",
         )
         raise typer.Exit(1)
 
@@ -1048,10 +1141,10 @@ _{cmd.upper()}_COMPLETE=fish_source {cmd} | source
 
             # Print instructions
             if shell == "bash":
-                print_info(f"Add the following line to your ~/.bashrc:")
+                print_info("Add the following line to your ~/.bashrc:")
                 print_command_example(f"source {output_file}")
             elif shell == "zsh":
-                print_info(f"Add the following line to your ~/.zshrc:")
+                print_info("Add the following line to your ~/.zshrc:")
                 print_command_example(f"source {output_file}")
             elif shell == "fish":
                 print_info(f"The script has been installed to {output_file}")
@@ -1064,7 +1157,7 @@ _{cmd.upper()}_COMPLETE=fish_source {cmd} | source
         print_error(
             f"Error generating completion script: {e}",
             suggestion="Try specifying an output file with --output",
-            code_example=f"autoresearch completion {shell} --output ~/autoresearch.{shell}"
+            code_example=f"autoresearch completion {shell} --output ~/autoresearch.{shell}",
         )
         raise typer.Exit(1)
 
@@ -1118,16 +1211,16 @@ def capabilities(
     agent_info = {
         "synthesizer": {
             "description": "Generates answers based on evidence",
-            "role": "thesis"
+            "role": "thesis",
         },
         "contrarian": {
             "description": "Challenges answers and identifies weaknesses",
-            "role": "antithesis"
+            "role": "antithesis",
         },
         "factchecker": {
             "description": "Verifies factual accuracy of claims",
-            "role": "synthesis"
-        }
+            "role": "synthesis",
+        },
     }
 
     capabilities_data = {
@@ -1141,7 +1234,7 @@ def capabilities(
             "reasoning_mode": config.reasoning_mode.value,
             "loops": config.loops,
             "llm_backend": config.llm_backend,
-        }
+        },
     }
 
     # Determine output format
@@ -1154,6 +1247,7 @@ def capabilities(
     # Format and display the capabilities
     if fmt == "json":
         import json
+
         print(json.dumps(capabilities_data, indent=2))
     elif fmt == "plain":
         print("Autoresearch Capabilities:")
@@ -1201,9 +1295,15 @@ def capabilities(
 
 @app.command("test_mcp")
 def test_mcp(
-    host: str = typer.Option("127.0.0.1", "--host", help="Host where the MCP server is running"),
-    port: int = typer.Option(8080, "--port", "-p", help="Port where the MCP server is running"),
-    query: Optional[str] = typer.Option(None, "--query", "-q", help="Query to test with"),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Host where the MCP server is running"
+    ),
+    port: int = typer.Option(
+        8080, "--port", "-p", help="Port where the MCP server is running"
+    ),
+    query: Optional[str] = typer.Option(
+        None, "--query", "-q", help="Query to test with"
+    ),
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
@@ -1238,10 +1338,7 @@ def test_mcp(
         research_test = client.test_research_tool(query)
         results = {
             "connection_test": connection_test,
-            "research_tests": [{
-                "query": query,
-                "result": research_test
-            }]
+            "research_tests": [{"query": query, "result": research_test}],
         }
     else:
         # Run the full test suite
@@ -1261,9 +1358,15 @@ def test_mcp(
 
 @app.command("test_a2a")
 def test_a2a(
-    host: str = typer.Option("127.0.0.1", "--host", help="Host where the A2A server is running"),
-    port: int = typer.Option(8765, "--port", "-p", help="Port where the A2A server is running"),
-    query: Optional[str] = typer.Option(None, "--query", "-q", help="Query to test with"),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Host where the A2A server is running"
+    ),
+    port: int = typer.Option(
+        8765, "--port", "-p", help="Port where the A2A server is running"
+    ),
+    query: Optional[str] = typer.Option(
+        None, "--query", "-q", help="Query to test with"
+    ),
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
@@ -1300,10 +1403,7 @@ def test_a2a(
         results = {
             "connection_test": connection_test,
             "capabilities_test": capabilities_test,
-            "query_tests": [{
-                "query": query,
-                "result": query_test
-            }]
+            "query_tests": [{"query": query, "result": query_test}],
         }
     else:
         # Run the full test suite
@@ -1323,8 +1423,12 @@ def test_a2a(
 
 @app.command("gui")
 def gui(
-    port: int = typer.Option(8501, "--port", "-p", help="Port to run the Streamlit app on"),
-    browser: bool = typer.Option(True, "--browser/--no-browser", help="Open browser automatically"),
+    port: int = typer.Option(
+        8501, "--port", "-p", help="Port to run the Streamlit app on"
+    ),
+    browser: bool = typer.Option(
+        True, "--browser/--no-browser", help="Open browser automatically"
+    ),
 ) -> None:
     """Launch the Streamlit GUI.
 
@@ -1343,7 +1447,6 @@ def gui(
         autoresearch gui --no-browser
     """
     import subprocess
-    import os
     from pathlib import Path
 
     # Get the path to the streamlit_app.py file
@@ -1359,8 +1462,11 @@ def gui(
 
     # Build the command to run streamlit
     cmd = [
-        "streamlit", "run", str(app_path),
-        "--server.port", str(port),
+        "streamlit",
+        "run",
+        str(app_path),
+        "--server.port",
+        str(port),
     ]
 
     if not browser:
@@ -1379,7 +1485,7 @@ def gui(
         print_error(
             f"Error launching Streamlit GUI: {e}",
             suggestion="Make sure Streamlit is installed and working correctly",
-            code_example="pip install streamlit>=1.45.1"
+            code_example="pip install streamlit>=1.45.1",
         )
         raise typer.Exit(1)
 
@@ -1397,6 +1503,7 @@ if __name__ == "__main__":
     except Exception as e:
         # Handle command not found errors
         import sys
+
         cmd_name = sys.argv[1] if len(sys.argv) > 1 else ""
         if "No such command" in str(e) and cmd_name:
             # Create a dummy context for the handler

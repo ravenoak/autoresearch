@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import MagicMock
 
 
 @pytest.fixture(autouse=True)
@@ -18,8 +17,11 @@ def storage_error_handler():
     Returns:
         A handler object with methods for working with storage errors.
     """
+
     class StorageErrorHandler:
-        def attempt_operation(self, operation, bdd_context, context_key='storage_error'):
+        def attempt_operation(
+            self, operation, bdd_context, context_key="storage_error"
+        ):
             """Attempt an operation that might raise an exception.
 
             Args:
@@ -45,12 +47,14 @@ def storage_error_handler():
                 storage_error = StorageError(
                     f"Unexpected error: {str(e)}",
                     cause=e,
-                    suggestion="This is likely a bug in the test or the storage system"
+                    suggestion="This is likely a bug in the test or the storage system",
                 )
                 bdd_context[context_key] = storage_error
                 return None
 
-        def verify_error(self, bdd_context, expected_message=None, context_key='storage_error'):
+        def verify_error(
+            self, bdd_context, expected_message=None, context_key="storage_error"
+        ):
             """Verify that a StorageError was raised with the expected message.
 
             Args:
@@ -66,8 +70,9 @@ def storage_error_handler():
 
             if expected_message:
                 error_message = str(storage_error).lower()
-                assert expected_message.lower() in error_message, \
+                assert expected_message.lower() in error_message, (
                     f"Error message '{error_message}' does not contain '{expected_message}'"
+                )
 
     return StorageErrorHandler()
 
@@ -83,10 +88,18 @@ def claim_factory():
     Returns:
         A factory object with methods for creating different types of claims.
     """
+
     class ClaimFactory:
-        def create_valid_claim(self, claim_id="test-claim-123", claim_type="fact", 
-                              content="This is a test claim", confidence=0.9,
-                              attributes=None, relations=None, embedding=None):
+        def create_valid_claim(
+            self,
+            claim_id="test-claim-123",
+            claim_type="fact",
+            content="This is a test claim",
+            confidence=0.9,
+            attributes=None,
+            relations=None,
+            embedding=None,
+        ):
             """Create a valid claim with the specified properties.
 
             Args:
@@ -172,8 +185,10 @@ def claim_factory():
             from autoresearch.storage import StorageManager
 
             graph = StorageManager.get_graph()
-            return (claim["id"] in graph.nodes and 
-                    graph.nodes[claim["id"]].get("verified") is True)
+            return (
+                claim["id"] in graph.nodes
+                and graph.nodes[claim["id"]].get("verified") is True
+            )
 
         def verify_in_duckdb(self, claim):
             """Verify that a claim exists in the DuckDB database.

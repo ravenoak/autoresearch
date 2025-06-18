@@ -91,7 +91,9 @@ def test_agent_factory_with_injected_adapter():
     assert fact_checker.llm_adapter is mock_adapter
 
     # Test that the agents work with the injected adapter
-    state = QueryState(query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}])
+    state = QueryState(
+        query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}]
+    )
     cfg = ConfigModel()
 
     # Test synthesizer

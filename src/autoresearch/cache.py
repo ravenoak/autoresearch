@@ -121,9 +121,7 @@ def get_db() -> TinyDB:
     return setup()
 
 
-def cache_results(
-    query: str, backend: str, results: List[Dict[str, Any]]
-) -> None:
+def cache_results(query: str, backend: str, results: List[Dict[str, Any]]) -> None:
     """Store search results for a specific query and backend combination.
 
     This function caches the search results for a given query and backend
@@ -159,9 +157,7 @@ def cache_results(
     )
 
 
-def get_cached_results(
-    query: str, backend: str
-) -> Optional[List[Dict[str, Any]]]:
+def get_cached_results(query: str, backend: str) -> Optional[List[Dict[str, Any]]]:
     """Retrieve cached search results for a specific query and backend combination.
 
     This function attempts to retrieve previously cached search results for the

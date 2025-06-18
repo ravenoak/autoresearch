@@ -32,12 +32,13 @@ class LLMFactory:
         with cls._lock:
             if name not in cls._registry:
                 from ..errors import LLMError
+
                 available_backends = list(cls._registry.keys())
                 raise LLMError(
                     f"Unknown LLM backend: {name}",
                     available_backends=available_backends,
                     provided=name,
-                    suggestion=f"Configure a valid LLM backend in your configuration file. Available backends: {', '.join(available_backends)}"
+                    suggestion=f"Configure a valid LLM backend in your configuration file. Available backends: {', '.join(available_backends)}",
                 )
             return cls._registry[name]()
 

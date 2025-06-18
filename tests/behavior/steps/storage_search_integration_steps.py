@@ -7,12 +7,10 @@ eviction policies, and error handling.
 
 import os
 import pytest
-import logging
 from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from autoresearch.storage import StorageManager
-from autoresearch.search import Search
 from autoresearch.config import ConfigLoader
 
 
@@ -20,12 +18,7 @@ from autoresearch.config import ConfigLoader
 @pytest.fixture
 def test_context():
     """Create a context for storing test state."""
-    return {
-        "claims": [],
-        "search_results": [],
-        "errors": [],
-        "logs": []
-    }
+    return {"claims": [], "search_results": [], "errors": [], "logs": []}
 
 
 @pytest.fixture
@@ -44,10 +37,12 @@ def cleanup_storage(monkeypatch):
     """
     # Mock os.remove to prevent it from trying to remove files that don't exist
     original_remove = os.remove
+
     def mock_remove(path):
         # Only try to remove files that actually exist
         if os.path.exists(path):
             original_remove(path)
+
     monkeypatch.setattr(os, "remove", mock_remove)
 
     # Setup is done in the test steps
@@ -72,13 +67,19 @@ def cleanup_storage(monkeypatch):
 
 
 # Scenarios
-@scenario("../features/storage_search_integration.feature", "Store and retrieve claims using vector search")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "Store and retrieve claims using vector search",
+)
 def test_store_and_retrieve_claims():
     """Test storing and retrieving claims using vector search."""
     pass
 
 
-@scenario("../features/storage_search_integration.feature", "Search results respect LRU eviction policy")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "Search results respect LRU eviction policy",
+)
 def test_search_respects_lru_eviction(test_context):
     """Test that search results respect the LRU eviction policy."""
     # Set a flag to identify this test
@@ -86,13 +87,19 @@ def test_search_respects_lru_eviction(test_context):
     pass
 
 
-@scenario("../features/storage_search_integration.feature", "Search results respect score-based eviction policy")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "Search results respect score-based eviction policy",
+)
 def test_search_respects_score_eviction():
     """Test that search results respect the score-based eviction policy."""
     pass
 
 
-@scenario("../features/storage_search_integration.feature", "LRU eviction policy respects claim access patterns")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "LRU eviction policy respects claim access patterns",
+)
 def test_lru_eviction_respects_access_patterns(test_context):
     """Test that the LRU eviction policy respects claim access patterns."""
     # Set a flag to identify this test
@@ -100,7 +107,10 @@ def test_lru_eviction_respects_access_patterns(test_context):
     pass
 
 
-@scenario("../features/storage_search_integration.feature", "Search handles storage errors gracefully")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "Search handles storage errors gracefully",
+)
 def test_search_handles_errors(test_context):
     """Test that search handles storage errors gracefully."""
     # Set a flag to identify this test
@@ -108,7 +118,10 @@ def test_search_handles_errors(test_context):
     pass
 
 
-@scenario("../features/storage_search_integration.feature", "Update existing claims and search for updated content")
+@scenario(
+    "../features/storage_search_integration.feature",
+    "Update existing claims and search for updated content",
+)
 def test_update_existing_claims():
     """Test updating existing claims and searching for updated content."""
     pass
@@ -133,10 +146,12 @@ def storage_system_initialized(monkeypatch, tmp_path):
 
     # Mock os.path.exists to return False for the RDF path to avoid deletion attempts
     original_exists = os.path.exists
+
     def mock_exists(path):
         if str(path).startswith(str(tmp_path)):
             return False
         return original_exists(path)
+
     monkeypatch.setattr(os.path, "exists", mock_exists)
 
     # Create an in-memory storage system for testing
@@ -154,14 +169,22 @@ def storage_system_initialized(monkeypatch, tmp_path):
         claims = []
         for claim in getattr(mock_vector_search, "claims", []):
             # For AI queries, return claims about artificial intelligence
-            if query_embedding == [0.1, 0.2, 0.3] and "artificial intelligence" in claim.get("content", "").lower():
+            if (
+                query_embedding == [0.1, 0.2, 0.3]
+                and "artificial intelligence" in claim.get("content", "").lower()
+            ):
                 claims.append(claim)
             # For other queries, return claims that match the query
-            elif query_embedding == [0.4, 0.5, 0.6] and "testing" in claim.get("content", "").lower():
+            elif (
+                query_embedding == [0.4, 0.5, 0.6]
+                and "testing" in claim.get("content", "").lower()
+            ):
                 claims.append(claim)
 
         # Sort claims by relevance (just use a simple heuristic for testing)
-        claims.sort(key=lambda c: c.get("attributes", {}).get("confidence", 0), reverse=True)
+        claims.sort(
+            key=lambda c: c.get("attributes", {}).get("confidence", 0), reverse=True
+        )
 
         # Add a score field to each claim for testing
         for claim in claims:
@@ -180,6 +203,7 @@ def storage_system_initialized(monkeypatch, tmp_path):
 @given("the search system is configured")
 def search_system_configured(monkeypatch):
     """Configure the search system for testing."""
+
     # Create a mock Search class with a vector_search method
     class MockSearch:
         @staticmethod
@@ -201,8 +225,8 @@ def store_claim_with_text(text, test_context):
         "content": text,
         "attributes": {
             "confidence": 0.9,
-            "embedding": [0.1, 0.2, 0.3]  # Simplified embedding for testing
-        }
+            "embedding": [0.1, 0.2, 0.3],  # Simplified embedding for testing
+        },
     }
     StorageManager.persist_claim(claim)
     test_context["claims"].append(claim)
@@ -210,7 +234,9 @@ def store_claim_with_text(text, test_context):
     # Add the claim to the mock vector_search's claims list
     if hasattr(StorageManager.vector_search, "claims"):
         # Remove any existing claim with the same ID (in case of updates)
-        StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != claim_id]
+        StorageManager.vector_search.claims = [
+            c for c in StorageManager.vector_search.claims if c.get("id") != claim_id
+        ]
         StorageManager.vector_search.claims.append(claim)
 
     # For the LRU eviction policy tests, we need to simulate eviction
@@ -220,22 +246,50 @@ def store_claim_with_text(text, test_context):
             # After storing the third claim, the first claim should be evicted
             if hasattr(StorageManager.vector_search, "claims"):
                 # Find the first claim and remove it from the mock's claims list
-                first_claim = next((c for c in StorageManager.vector_search.claims if "First claim for testing" in c.get("content", "")), None)
+                first_claim = next(
+                    (
+                        c
+                        for c in StorageManager.vector_search.claims
+                        if "First claim for testing" in c.get("content", "")
+                    ),
+                    None,
+                )
                 if first_claim:
-                    StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != first_claim.get("id")]
+                    StorageManager.vector_search.claims = [
+                        c
+                        for c in StorageManager.vector_search.claims
+                        if c.get("id") != first_claim.get("id")
+                    ]
 
         # Check if this is the "LRU eviction policy respects claim access patterns" scenario
         # In this scenario, we want to evict the second claim instead of the first claim
         # We can identify this scenario by checking if we have a claim with "First claim for testing" that has been accessed
-        elif "Third claim for testing" in text and hasattr(StorageManager, "_accessed_claim") and StorageManager._accessed_claim:
+        elif (
+            "Third claim for testing" in text
+            and hasattr(StorageManager, "_accessed_claim")
+            and StorageManager._accessed_claim
+        ):
             if hasattr(StorageManager.vector_search, "claims"):
                 # Find the second claim and remove it from the mock's claims list
-                second_claim = next((c for c in StorageManager.vector_search.claims if "Second claim for testing" in c.get("content", "")), None)
+                second_claim = next(
+                    (
+                        c
+                        for c in StorageManager.vector_search.claims
+                        if "Second claim for testing" in c.get("content", "")
+                    ),
+                    None,
+                )
                 if second_claim:
-                    StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != second_claim.get("id")]
+                    StorageManager.vector_search.claims = [
+                        c
+                        for c in StorageManager.vector_search.claims
+                        if c.get("id") != second_claim.get("id")
+                    ]
 
 
-@when(parsers.parse('I store a claim with text "{text}" with relevance score {score:f}'))
+@when(
+    parsers.parse('I store a claim with text "{text}" with relevance score {score:f}')
+)
 def store_claim_with_relevance_score(text, score, test_context):
     """Store a claim with the specified text and relevance score."""
     claim_id = f"claim-{len(test_context['claims']) + 1}"
@@ -245,8 +299,8 @@ def store_claim_with_relevance_score(text, score, test_context):
         "content": text,
         "attributes": {
             "confidence": score,  # Use the specified relevance score
-            "embedding": [0.1, 0.2, 0.3]  # Simplified embedding for testing
-        }
+            "embedding": [0.1, 0.2, 0.3],  # Simplified embedding for testing
+        },
     }
     StorageManager.persist_claim(claim)
     test_context["claims"].append(claim)
@@ -254,7 +308,9 @@ def store_claim_with_relevance_score(text, score, test_context):
     # Add the claim to the mock vector_search's claims list
     if hasattr(StorageManager.vector_search, "claims"):
         # Remove any existing claim with the same ID (in case of updates)
-        StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != claim_id]
+        StorageManager.vector_search.claims = [
+            c for c in StorageManager.vector_search.claims if c.get("id") != claim_id
+        ]
         StorageManager.vector_search.claims.append(claim)
 
     # For the score-based eviction policy test, we need to simulate eviction
@@ -264,9 +320,20 @@ def store_claim_with_relevance_score(text, score, test_context):
         # After storing the third claim, the claim with the lowest score should be evicted
         if hasattr(StorageManager.vector_search, "claims"):
             # Find the claim with the lowest score and remove it from the mock's claims list
-            low_relevance_claim = next((c for c in StorageManager.vector_search.claims if "Low relevance claim" in c.get("content", "")), None)
+            low_relevance_claim = next(
+                (
+                    c
+                    for c in StorageManager.vector_search.claims
+                    if "Low relevance claim" in c.get("content", "")
+                ),
+                None,
+            )
             if low_relevance_claim:
-                StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != low_relevance_claim.get("id")]
+                StorageManager.vector_search.claims = [
+                    c
+                    for c in StorageManager.vector_search.claims
+                    if c.get("id") != low_relevance_claim.get("id")
+                ]
 
 
 @when(parsers.parse('I access the claim "{text}"'))
@@ -329,7 +396,9 @@ def update_claim(old_text, new_text, test_context):
     # Update the claim in the mock vector_search's claims list
     if hasattr(StorageManager.vector_search, "claims"):
         # Remove the old claim
-        StorageManager.vector_search.claims = [c for c in StorageManager.vector_search.claims if c.get("id") != claim_id]
+        StorageManager.vector_search.claims = [
+            c for c in StorageManager.vector_search.claims if c.get("id") != claim_id
+        ]
         # Add the updated claim
         StorageManager.vector_search.claims.append(updated_claim)
 
@@ -390,11 +459,17 @@ def perform_vector_search(query, test_context, storage_error_handler):
         # but not the low relevance claim
         results = []
         for claim in StorageManager.vector_search.claims:
-            if "Medium relevance claim" in claim.get("content", "") or "High relevance claim" in claim.get("content", ""):
+            if "Medium relevance claim" in claim.get(
+                "content", ""
+            ) or "High relevance claim" in claim.get("content", ""):
                 results.append(claim)
         test_context["search_results"] = results
     # Special handling for the "testing" query in the LRU eviction policy respects claim access patterns test
-    elif "testing" in query and hasattr(StorageManager, "_accessed_claim") and hasattr(StorageManager.vector_search, "claims"):
+    elif (
+        "testing" in query
+        and hasattr(StorageManager, "_accessed_claim")
+        and hasattr(StorageManager.vector_search, "claims")
+    ):
         print("Using special handling for testing query with _accessed_claim")
         # For the LRU eviction policy respects claim access patterns test, we want to return the first and third claims
         # but not the second claim, because we accessed the first claim after adding the second claim
@@ -402,7 +477,9 @@ def perform_vector_search(query, test_context, storage_error_handler):
 
         # Add the accessed claim (first claim) directly from the _accessed_claim property
         accessed_claim = StorageManager._accessed_claim
-        if accessed_claim and "First claim for testing" in accessed_claim.get("content", ""):
+        if accessed_claim and "First claim for testing" in accessed_claim.get(
+            "content", ""
+        ):
             results.append(accessed_claim)
 
         # Add the third claim from the claims list
@@ -414,7 +491,11 @@ def perform_vector_search(query, test_context, storage_error_handler):
         print(f"Results: {results}")
     # Special handling for the "testing" query in the LRU eviction policy tests
     # without checking for _accessed_claim
-    elif "testing" in query and hasattr(StorageManager.vector_search, "claims") and len(test_context["claims"]) >= 3:
+    elif (
+        "testing" in query
+        and hasattr(StorageManager.vector_search, "claims")
+        and len(test_context["claims"]) >= 3
+    ):
         print("Using special handling for testing query without _accessed_claim")
 
         # Check the test_type flag in the test_context to determine which test is running
@@ -436,8 +517,22 @@ def perform_vector_search(query, test_context, storage_error_handler):
             print("This is the test_lru_eviction_respects_access_patterns test")
             results = []
             # Manually create the results with the first and third claims
-            first_claim = next((c for c in test_context["claims"] if "First claim for testing" in c.get("content", "")), None)
-            third_claim = next((c for c in test_context["claims"] if "Third claim for testing" in c.get("content", "")), None)
+            first_claim = next(
+                (
+                    c
+                    for c in test_context["claims"]
+                    if "First claim for testing" in c.get("content", "")
+                ),
+                None,
+            )
+            third_claim = next(
+                (
+                    c
+                    for c in test_context["claims"]
+                    if "Third claim for testing" in c.get("content", "")
+                ),
+                None,
+            )
             if first_claim:
                 results.append(first_claim)
             if third_claim:
@@ -459,7 +554,7 @@ def perform_vector_search(query, test_context, storage_error_handler):
         result = storage_error_handler.attempt_operation(
             lambda: StorageManager.vector_search(query_embedding, k=10),
             test_context,
-            'storage_error'
+            "storage_error",
         )
 
         if result is not None:
@@ -468,9 +563,9 @@ def perform_vector_search(query, test_context, storage_error_handler):
             # If an error occurred, return an empty result
             test_context["search_results"] = []
             # Log the error if available
-            if 'storage_error' in test_context and test_context['storage_error']:
+            if "storage_error" in test_context and test_context["storage_error"]:
                 print(f"Caught error in vector search: {test_context['storage_error']}")
-                test_context["errors"].append(str(test_context['storage_error']))
+                test_context["errors"].append(str(test_context["storage_error"]))
     else:
         print("Using default handling")
         # Use StorageManager.vector_search directly instead of going through the Search class
@@ -478,7 +573,7 @@ def perform_vector_search(query, test_context, storage_error_handler):
         result = storage_error_handler.attempt_operation(
             lambda: StorageManager.vector_search(query_embedding, k=10),
             test_context,
-            'storage_error'
+            "storage_error",
         )
 
         if result is not None:
@@ -486,16 +581,19 @@ def perform_vector_search(query, test_context, storage_error_handler):
         else:
             # If an error occurred, raise it unless it's the search_handles_errors test
             if test_context.get("test_type") != "search_handles_errors":
-                print(f"Unexpected error in vector search: {test_context.get('storage_error')}")
-                raise test_context.get('storage_error')
+                print(
+                    f"Unexpected error in vector search: {test_context.get('storage_error')}"
+                )
+                raise test_context.get("storage_error")
 
 
-@then(parsers.parse('the search results should include claims about {topic}'))
+@then(parsers.parse("the search results should include claims about {topic}"))
 def search_results_include_topic(topic, test_context):
     """Verify that the search results include claims about the specified topic."""
     results = test_context["search_results"]
-    assert any(topic.lower() in result.get("content", "").lower() for result in results), \
-        f"Search results do not include claims about {topic}"
+    assert any(
+        topic.lower() in result.get("content", "").lower() for result in results
+    ), f"Search results do not include claims about {topic}"
 
 
 @then("the search results should be ordered by relevance")
@@ -504,21 +602,28 @@ def search_results_ordered_by_relevance(test_context):
     results = test_context["search_results"]
     if len(results) >= 2:
         # Check that results have a score field and are ordered by it
-        assert all("score" in result for result in results), "Search results missing score field"
+        assert all("score" in result for result in results), (
+            "Search results missing score field"
+        )
         scores = [result.get("score", 0) for result in results]
-        assert scores == sorted(scores, reverse=True), "Search results not ordered by score"
+        assert scores == sorted(scores, reverse=True), (
+            "Search results not ordered by score"
+        )
 
 
-@then(parsers.parse('the search results should not include claims about {topic}'))
+@then(parsers.parse("the search results should not include claims about {topic}"))
 def search_results_exclude_topic(topic, test_context):
     """Verify that the search results do not include claims about the specified topic."""
     results = test_context["search_results"]
-    assert not any(topic.lower() in result.get("content", "").lower() for result in results), \
-        f"Search results include claims about {topic} when they should not"
+    assert not any(
+        topic.lower() in result.get("content", "").lower() for result in results
+    ), f"Search results include claims about {topic} when they should not"
 
 
 # Scenario: Search results respect storage eviction policies
-@given(parsers.parse('the storage system has a maximum capacity of {capacity:d} claims'))
+@given(
+    parsers.parse("the storage system has a maximum capacity of {capacity:d} claims")
+)
 def storage_system_with_capacity(capacity, monkeypatch, tmp_path):
     """Configure the storage system with a maximum capacity."""
     # Create a mock config with a small RAM budget to force eviction
@@ -535,10 +640,12 @@ def storage_system_with_capacity(capacity, monkeypatch, tmp_path):
 
     # Mock os.path.exists to return False for the RDF path to avoid deletion attempts
     original_exists = os.path.exists
+
     def mock_exists(path):
         if str(path).startswith(str(tmp_path)):
             return False
         return original_exists(path)
+
     monkeypatch.setattr(os.path, "exists", mock_exists)
 
     # Clear any existing data
@@ -566,10 +673,12 @@ def storage_system_with_eviction_policy(policy, monkeypatch, tmp_path):
 
     # Mock os.path.exists to return False for the RDF path to avoid deletion attempts
     original_exists = os.path.exists
+
     def mock_exists(path):
         if str(path).startswith(str(tmp_path)):
             return False
         return original_exists(path)
+
     monkeypatch.setattr(os.path, "exists", mock_exists)
 
     # Clear any existing data
@@ -583,16 +692,18 @@ def storage_system_with_eviction_policy(policy, monkeypatch, tmp_path):
 def search_results_include_text(text, test_context):
     """Verify that the search results include the specified text."""
     results = test_context["search_results"]
-    assert any(text.lower() in result.get("content", "").lower() for result in results), \
-        f"Search results do not include '{text}'"
+    assert any(
+        text.lower() in result.get("content", "").lower() for result in results
+    ), f"Search results do not include '{text}'"
 
 
 @then(parsers.parse('the search results should not include "{text}"'))
 def search_results_exclude_text(text, test_context):
     """Verify that the search results do not include the specified text."""
     results = test_context["search_results"]
-    assert not any(text.lower() in result.get("content", "").lower() for result in results), \
-        f"Search results include '{text}' when they should not"
+    assert not any(
+        text.lower() in result.get("content", "").lower() for result in results
+    ), f"Search results include '{text}' when they should not"
 
 
 # Scenario: Search handles storage errors gracefully
@@ -615,8 +726,8 @@ def storage_system_raises_error(monkeypatch, test_context):
     # Create a mock vector_search function that raises a StorageError
     def mock_vector_search(*args, **kwargs):
         raise StorageError(
-            "Test error in vector search", 
-            suggestion="This is a test error and can be ignored"
+            "Test error in vector search",
+            suggestion="This is a test error and can be ignored",
         )
 
     # Replace the real vector_search with our mock
@@ -626,7 +737,9 @@ def storage_system_raises_error(monkeypatch, test_context):
 @then("the search should return an empty result")
 def search_returns_empty_result(test_context):
     """Verify that the search returns an empty result when an error occurs."""
-    assert len(test_context["search_results"]) == 0, "Search results not empty after error"
+    assert len(test_context["search_results"]) == 0, (
+        "Search results not empty after error"
+    )
 
 
 @then("the error should be logged")
@@ -643,18 +756,22 @@ def error_is_logged(monkeypatch, mock_logger, test_context, storage_error_handle
         storage_error_handler: Fixture for handling storage errors
     """
     # First verify that the search returns empty results
-    assert len(test_context["search_results"]) == 0, "Search results not empty after error"
+    assert len(test_context["search_results"]) == 0, (
+        "Search results not empty after error"
+    )
 
     # Verify that the error was captured and contains the expected message
     storage_error_handler.verify_error(
         test_context,
         expected_message="Test error in vector search",
-        context_key='storage_error'
+        context_key="storage_error",
     )
 
     # Verify that the error was added to the errors list in the test context
     assert len(test_context["errors"]) > 0, "Error not added to errors list"
-    assert "Test error in vector search" in test_context["errors"][0], "Error message not in errors list"
+    assert "Test error in vector search" in test_context["errors"][0], (
+        "Error message not in errors list"
+    )
 
     # Note: In a real implementation, we would also verify that the error was logged
     # by checking the mock_logger, but that would require modifying the search code

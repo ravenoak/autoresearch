@@ -76,8 +76,8 @@ def test_component_with_context_manager():
     Use context managers for mocking when the mock is only needed for a specific part of the test.
     """
     # Setup
-    with patch('module.function') as mock_function:
-        mock_function.return_value = 'mocked value'
+    with patch("module.function") as mock_function:
+        mock_function.return_value = "mocked value"
 
         # Execute
         # Call the function that uses the mocked function

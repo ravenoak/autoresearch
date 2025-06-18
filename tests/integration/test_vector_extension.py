@@ -1,4 +1,3 @@
-import pytest
 import logging
 
 from autoresearch.storage import StorageManager
@@ -10,9 +9,8 @@ from autoresearch.config import (
 
 logger = logging.getLogger(__name__)
 
-def test_vector_search_with_real_duckdb(
-    storage_manager, tmp_path, monkeypatch
-):
+
+def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
     """Test vector search functionality with a real DuckDB instance.
 
     This test verifies that:
@@ -52,7 +50,9 @@ def test_vector_search_with_real_duckdb(
     # Check if vector extension is available
     try:
         # Check if the VSS extension is loaded
-        result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'").fetchall()
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        ).fetchall()
         vector_extension_available = result and len(result) > 0
         if vector_extension_available:
             logger.info("Vector extension is available")
@@ -76,17 +76,27 @@ def test_vector_search_with_real_duckdb(
         else:
             logger.warning("Vector extension is available but no indexes were created")
             # Test that embeddings were stored even without indexes
-            embeddings = conn.execute("SELECT node_id, embedding FROM embeddings").fetchall()
-            assert len(embeddings) == 3, "Embeddings should be stored even without vector indexes"
+            embeddings = conn.execute(
+                "SELECT node_id, embedding FROM embeddings"
+            ).fetchall()
+            assert len(embeddings) == 3, (
+                "Embeddings should be stored even without vector indexes"
+            )
     else:
         # Even without vector extension, embeddings should be stored
-        embeddings = conn.execute("SELECT node_id, embedding FROM embeddings").fetchall()
-        assert len(embeddings) == 3, "Embeddings should be stored even without vector extension"
+        embeddings = conn.execute(
+            "SELECT node_id, embedding FROM embeddings"
+        ).fetchall()
+        assert len(embeddings) == 3, (
+            "Embeddings should be stored even without vector extension"
+        )
 
         # Test that we can still retrieve claims by ID directly from the database
         for idx in range(3):
             # Query the database directly to check if the claim exists
-            result = conn.execute(f"SELECT id, content FROM nodes WHERE id = 'n{idx}'").fetchone()
+            result = conn.execute(
+                f"SELECT id, content FROM nodes WHERE id = 'n{idx}'"
+            ).fetchone()
             assert result is not None, f"Claim with ID 'n{idx}' should exist"
             assert result[0] == f"n{idx}", f"Claim ID should be 'n{idx}'"
             assert result[1] == str(idx), f"Claim content should be '{idx}'"

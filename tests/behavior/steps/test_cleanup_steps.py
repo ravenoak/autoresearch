@@ -29,7 +29,10 @@ def cleanup_context():
 
 
 # Scenarios
-@scenario("../features/test_cleanup.feature", "Orchestrator and agents integration tests clean up properly")
+@scenario(
+    "../features/test_cleanup.feature",
+    "Orchestrator and agents integration tests clean up properly",
+)
 def test_orchestrator_agents_cleanup():
     """Test that orchestrator and agents integration tests clean up properly."""
     pass
@@ -42,7 +45,7 @@ def system_configured_with_multiple_agents(cleanup_context):
     cleanup_context["config"] = ConfigModel(
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="dialectical",
-        loops=1
+        loops=1,
     )
 
     # Track initial state
@@ -57,11 +60,10 @@ def run_query_with_dialectical_reasoning(cleanup_context, monkeypatch):
     from autoresearch.llm import get_llm_adapter as original_get_llm_adapter
 
     # Track monkeypatches
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter",
-        lambda name: DummyAdapter()
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
+    cleanup_context["monkeypatches"].append(
+        ("autoresearch.llm.get_llm_adapter", original_get_llm_adapter)
     )
-    cleanup_context["monkeypatches"].append(("autoresearch.llm.get_llm_adapter", original_get_llm_adapter))
 
     # Create and track mocks
     mock_agent_factory = MagicMock()
@@ -72,7 +74,10 @@ def run_query_with_dialectical_reasoning(cleanup_context, monkeypatch):
             agent = MagicMock()
             agent.name = name
             agent.can_execute.return_value = True
-            agent.execute.return_value = {"agent": name, "result": f"Result from {name}"}
+            agent.execute.return_value = {
+                "agent": name,
+                "result": f"Result from {name}",
+            }
             agents[name] = agent
         return agents[name]
 
@@ -80,11 +85,12 @@ def run_query_with_dialectical_reasoning(cleanup_context, monkeypatch):
     cleanup_context["mocks"].append(mock_agent_factory)
 
     # Run the query
-    with patch("autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory):
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
+    ):
         try:
             cleanup_context["result"] = Orchestrator.run_query(
-                "test query",
-                cleanup_context["config"]
+                "test query", cleanup_context["config"]
             )
         except Exception as e:
             # Store the exception in the context instead of letting it propagate
@@ -109,9 +115,13 @@ def monkeypatches_properly_cleaned_up(cleanup_context):
         # If original was None, verify current is not None
         # Otherwise, verify they're the same object
         if original_value is None:
-            assert current_value is not None, f"Monkeypatch for {path} was not properly cleaned up"
+            assert current_value is not None, (
+                f"Monkeypatch for {path} was not properly cleaned up"
+            )
         else:
-            assert current_value == original_value, f"Monkeypatch for {path} was not properly cleaned up"
+            assert current_value == original_value, (
+                f"Monkeypatch for {path} was not properly cleaned up"
+            )
 
 
 @then("all mocks should be properly cleaned up")
@@ -139,7 +149,9 @@ def temp_files_properly_cleaned_up(cleanup_context):
     """Verify that all temporary files are properly cleaned up."""
     # Check that environment variables are restored
     for key, value in cleanup_context["initial_env_vars"].items():
-        assert os.environ.get(key) == value, f"Environment variable {key} was not properly cleaned up"
+        assert os.environ.get(key) == value, (
+            f"Environment variable {key} was not properly cleaned up"
+        )
 
     # Check that no new modules were added to sys.modules
     current_modules = set(sys.modules.keys())

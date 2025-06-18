@@ -34,6 +34,7 @@ class LLMAdapter(ABC):
             An instance of the requested LLM adapter
         """
         from .registry import LLMFactory
+
         return LLMFactory.get(name)
 
     def validate_model(self, model: str | None) -> str:
@@ -61,13 +62,11 @@ class LLMAdapter(ABC):
             f"Invalid model: {model}",
             available_models=self.available_models,
             provided=model,
-            suggestion=f"Configure a valid model in your configuration file. Available models: {', '.join(self.available_models)}"
+            suggestion=f"Configure a valid model in your configuration file. Available models: {', '.join(self.available_models)}",
         )
 
     @abstractmethod
-    def generate(
-        self, prompt: str, model: str | None = None, **kwargs: Any
-    ) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text from the given prompt using the specified model.
 
         Args:
@@ -85,9 +84,7 @@ class DummyAdapter(LLMAdapter):
 
     available_models = ["dummy-model"]
 
-    def generate(
-        self, prompt: str, model: str | None = None, **kwargs: Any
-    ) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate a dummy response for testing purposes.
 
         Args:
@@ -117,9 +114,7 @@ class LMStudioAdapter(LLMAdapter):
             "LMSTUDIO_ENDPOINT", "http://localhost:1234/v1/chat/completions"
         )
 
-    def generate(
-        self, prompt: str, model: str | None = None, **kwargs: Any
-    ) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the LM Studio local API.
 
         Args:
@@ -148,11 +143,12 @@ class LMStudioAdapter(LLMAdapter):
             )
         except requests.RequestException as e:
             from ..errors import LLMError
+
             raise LLMError(
-                f"Failed to generate response from LM Studio",
+                "Failed to generate response from LM Studio",
                 cause=e,
                 model=model,
-                suggestion="Ensure LM Studio is running and accessible at the configured endpoint"
+                suggestion="Ensure LM Studio is running and accessible at the configured endpoint",
             )
 
 
@@ -172,9 +168,7 @@ class OpenAIAdapter(LLMAdapter):
             "OPENAI_ENDPOINT", "https://api.openai.com/v1/chat/completions"
         )
 
-    def generate(
-        self, prompt: str, model: str | None = None, **kwargs: Any
-    ) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the OpenAI API.
 
         Args:
@@ -192,10 +186,11 @@ class OpenAIAdapter(LLMAdapter):
 
         if not self.api_key:
             from ..errors import LLMError
+
             raise LLMError(
                 "OpenAI API key not found",
                 model=model,
-                suggestion="Set the OPENAI_API_KEY environment variable with your API key"
+                suggestion="Set the OPENAI_API_KEY environment variable with your API key",
             )
 
         try:
@@ -214,11 +209,12 @@ class OpenAIAdapter(LLMAdapter):
             )
         except requests.RequestException as e:
             from ..errors import LLMError
+
             raise LLMError(
-                f"Failed to generate response from OpenAI API",
+                "Failed to generate response from OpenAI API",
                 cause=e,
                 model=model,
-                suggestion="Check your API key and internet connection, or try a different model"
+                suggestion="Check your API key and internet connection, or try a different model",
             )
 
 
@@ -226,16 +222,16 @@ class OpenRouterAdapter(LLMAdapter):
     """Adapter for the OpenRouter.ai API using raw HTTP calls."""
 
     available_models = [
-        "anthropic/claude-3-opus", 
-        "anthropic/claude-3-sonnet", 
+        "anthropic/claude-3-opus",
+        "anthropic/claude-3-sonnet",
         "anthropic/claude-3-haiku",
-        "mistralai/mistral-large", 
-        "mistralai/mistral-medium", 
+        "mistralai/mistral-large",
+        "mistralai/mistral-medium",
         "mistralai/mistral-small",
-        "google/gemini-pro", 
+        "google/gemini-pro",
         "google/gemini-1.5-pro",
-        "meta-llama/llama-3-70b-instruct", 
-        "meta-llama/llama-3-8b-instruct"
+        "meta-llama/llama-3-70b-instruct",
+        "meta-llama/llama-3-8b-instruct",
     ]
 
     def __init__(self) -> None:
@@ -249,9 +245,7 @@ class OpenRouterAdapter(LLMAdapter):
             "OPENROUTER_ENDPOINT", "https://openrouter.ai/api/v1/chat/completions"
         )
 
-    def generate(
-        self, prompt: str, model: str | None = None, **kwargs: Any
-    ) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
         """Generate text using the OpenRouter.ai API.
 
         Args:
@@ -269,10 +263,11 @@ class OpenRouterAdapter(LLMAdapter):
 
         if not self.api_key:
             from ..errors import LLMError
+
             raise LLMError(
                 "OpenRouter API key not found",
                 model=model,
-                suggestion="Set the OPENROUTER_API_KEY environment variable with your API key"
+                suggestion="Set the OPENROUTER_API_KEY environment variable with your API key",
             )
 
         try:
@@ -283,7 +278,7 @@ class OpenRouterAdapter(LLMAdapter):
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
-                "X-Title": "Autoresearch"
+                "X-Title": "Autoresearch",
             }
             resp = requests.post(
                 self.endpoint, json=payload, headers=headers, timeout=60
@@ -295,9 +290,10 @@ class OpenRouterAdapter(LLMAdapter):
             )
         except requests.RequestException as e:
             from ..errors import LLMError
+
             raise LLMError(
-                f"Failed to generate response from OpenRouter API",
+                "Failed to generate response from OpenRouter API",
                 cause=e,
                 model=model,
-                suggestion="Check your API key and internet connection, or try a different model"
+                suggestion="Check your API key and internet connection, or try a different model",
             )

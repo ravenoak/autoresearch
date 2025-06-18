@@ -33,7 +33,7 @@ def test_config_command(monkeypatch):
 
     class Cfg:
         def json(self, indent=2):
-            return "{\n  \"loops\": 1\n}"
+            return '{\n  "loops": 1\n}'
 
     monkeypatch.setattr(
         "autoresearch.main._config_loader.load_config",

@@ -29,10 +29,8 @@ from typing import Any, Optional, cast
 import duckdb
 import networkx as nx
 import rdflib
-import rdflib_sqlalchemy
 from .config import ConfigLoader
 from .errors import StorageError, NotFoundError
-from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend
@@ -147,6 +145,7 @@ def teardown(remove_db: bool = False) -> None:
         if remove_db and os.path.exists(cfg.rdf_path):
             if os.path.isdir(cfg.rdf_path):
                 import shutil
+
                 shutil.rmtree(cfg.rdf_path, ignore_errors=True)
             else:
                 os.remove(cfg.rdf_path)
@@ -172,6 +171,7 @@ class StorageManager:
     Most methods are class methods that operate on global storage instances,
     which are initialized by the `setup` function.
     """
+
     @staticmethod
     def setup(db_path: Optional[str] = None) -> None:
         """Initialize storage components if not already initialized.
@@ -215,7 +215,9 @@ class StorageManager:
             mem = psutil.Process(os.getpid()).memory_info().rss
             return float(mem) / (1024**2)
         except Exception as e:  # pragma: no cover - psutil may not be available
-            log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
+            log.debug(
+                f"Failed to get memory usage with psutil: {e}, falling back to resource"
+            )
             try:
                 import resource
 
@@ -352,7 +354,7 @@ class StorageManager:
         if not isinstance(claim, dict):
             raise StorageError(
                 "Invalid claim format: expected dictionary",
-                suggestion="Ensure the claim is a dictionary with required fields"
+                suggestion="Ensure the claim is a dictionary with required fields",
             )
 
         # Check for required fields
@@ -361,14 +363,14 @@ class StorageManager:
             if field not in claim:
                 raise StorageError(
                     f"Missing required field: '{field}'",
-                    suggestion=f"Ensure the claim has a '{field}' field"
+                    suggestion=f"Ensure the claim has a '{field}' field",
                 )
 
             # Check that the field is a string
             if not isinstance(claim[field], str):
                 raise StorageError(
                     f"Invalid '{field}' field: expected string",
-                    suggestion=f"Ensure the '{field}' field is a string"
+                    suggestion=f"Ensure the '{field}' field is a string",
                 )
 
     @staticmethod
@@ -395,17 +397,17 @@ class StorageManager:
         if _db_backend is None:
             raise StorageError(
                 "DuckDB backend not initialized",
-                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations"
+                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
         if _graph is None:
             raise StorageError(
                 "Graph not initialized",
-                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations"
+                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
         if _rdf_store is None:
             raise StorageError(
                 "RDF store not initialized",
-                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations"
+                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
 
     @staticmethod
@@ -584,25 +586,25 @@ class StorageManager:
         if not isinstance(query_embedding, list):
             raise StorageError(
                 "Invalid query_embedding format: expected list of floats",
-                suggestion="Ensure the query_embedding is a list of float values"
+                suggestion="Ensure the query_embedding is a list of float values",
             )
 
         if not all(isinstance(x, (int, float)) for x in query_embedding):
             raise StorageError(
                 "Invalid query_embedding values: expected numeric values",
-                suggestion="Ensure all values in query_embedding are numbers"
+                suggestion="Ensure all values in query_embedding are numbers",
             )
 
         if len(query_embedding) == 0:
             raise StorageError(
                 "Empty query_embedding",
-                suggestion="Provide a non-empty list of float values for query_embedding"
+                suggestion="Provide a non-empty list of float values for query_embedding",
             )
 
         if not isinstance(k, int) or k <= 0:
             raise StorageError(
                 "Invalid k value: expected positive integer",
-                suggestion="Ensure k is a positive integer"
+                suggestion="Ensure k is a positive integer",
             )
 
     @staticmethod
@@ -627,9 +629,7 @@ class StorageManager:
         return f"[{', '.join(str(x) for x in query_embedding)}]"
 
     @staticmethod
-    def vector_search(
-        query_embedding: list[float], k: int = 5
-    ) -> list[dict[str, Any]]:
+    def vector_search(query_embedding: list[float], k: int = 5) -> list[dict[str, Any]]:
         """Search for claims by vector similarity.
 
         This method performs a vector similarity search using the provided query embedding.
@@ -671,7 +671,7 @@ class StorageManager:
         if not StorageManager.has_vss():
             raise StorageError(
                 "Vector search not available: VSS extension not loaded",
-                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration"
+                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration",
             )
 
         # Use the DuckDBStorageBackend to perform the vector search
@@ -679,9 +679,9 @@ class StorageManager:
             return _db_backend.vector_search(query_embedding, k)
         except Exception as e:
             raise StorageError(
-                "Vector search failed", 
+                "Vector search failed",
                 cause=e,
-                suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database"
+                suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database",
             )
 
     @staticmethod

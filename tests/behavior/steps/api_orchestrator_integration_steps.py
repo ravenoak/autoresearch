@@ -6,10 +6,9 @@ parameter handling, and concurrent request handling.
 """
 
 import pytest
-import asyncio
 import concurrent.futures
 from pytest_bdd import scenario, given, when, then, parsers
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app
@@ -46,31 +45,42 @@ def mock_orchestrator():
         answer="# Test Answer\n\nThis is a test answer.",
         citations=[{"text": "Test citation", "url": "https://example.com"}],
         reasoning=["Test reasoning step 1", "Test reasoning step 2"],
-        metrics={"time": 1.0, "tokens": 100}
+        metrics={"time": 1.0, "tokens": 100},
     )
     return mock
 
 
 # Scenarios
-@scenario("../features/api_orchestrator_integration.feature", "API forwards queries to the orchestrator")
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API forwards queries to the orchestrator",
+)
 def test_api_forwards_queries():
     """Test that the API forwards queries to the orchestrator."""
     pass
 
 
-@scenario("../features/api_orchestrator_integration.feature", "API handles orchestrator errors gracefully")
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API handles orchestrator errors gracefully",
+)
 def test_api_handles_errors():
     """Test that the API handles orchestrator errors gracefully."""
     pass
 
 
-@scenario("../features/api_orchestrator_integration.feature", "API respects query parameters")
+@scenario(
+    "../features/api_orchestrator_integration.feature", "API respects query parameters"
+)
 def test_api_respects_parameters():
     """Test that the API respects query parameters."""
     pass
 
 
-@scenario("../features/api_orchestrator_integration.feature", "API handles concurrent requests")
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API handles concurrent requests",
+)
 def test_api_handles_concurrent_requests():
     """Test that the API handles concurrent requests."""
     pass
@@ -105,14 +115,18 @@ def orchestrator_receives_query(test_context):
     mock_orchestrator = test_context["mock_orchestrator"]
     mock_orchestrator.run_query.assert_called_once()
     args, kwargs = mock_orchestrator.run_query.call_args
-    assert args[0] == test_context["query"], f"Expected query '{test_context['query']}', got '{args[0]}'"
+    assert args[0] == test_context["query"], (
+        f"Expected query '{test_context['query']}', got '{args[0]}'"
+    )
 
 
 @then("the API should return the orchestrator's response")
 def api_returns_orchestrator_response(test_context):
     """Verify that the API returns the orchestrator's response."""
     response = test_context["response"]
-    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+    assert response.status_code == 200, (
+        f"Expected status code 200, got {response.status_code}"
+    )
 
     # The response should match the mock orchestrator's response
     mock_response = test_context["mock_orchestrator"].run_query.return_value
@@ -151,6 +165,7 @@ def response_includes_reasoning(test_context):
 @given("the orchestrator is configured to raise an error")
 def orchestrator_raises_error(test_context, monkeypatch):
     """Configure the orchestrator to raise an error."""
+
     def mock_run_query(*args, **kwargs):
         raise OrchestrationError("Test error")
 
@@ -169,7 +184,9 @@ def api_returns_error_response(test_context):
         # Error information in the response body
         data = response.json()
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
+        assert "Error:" in data["answer"], (
+            f"Answer does not indicate an error: {data['answer']}"
+        )
 
 
 @then("the error response should include a helpful message")
@@ -184,8 +201,12 @@ def error_response_includes_message(test_context):
         assert data["detail"], "Error detail is empty"
     else:
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
-        assert len(data["answer"]) > 7, "Error message is too short"  # "Error: " is 7 characters
+        assert "Error:" in data["answer"], (
+            f"Answer does not indicate an error: {data['answer']}"
+        )
+        assert len(data["answer"]) > 7, (
+            "Error message is too short"
+        )  # "Error: " is 7 characters
 
 
 @then("the error should be logged")
@@ -203,7 +224,9 @@ def error_is_logged(test_context, monkeypatch, caplog):
         assert True, "API returned an error status code"
     else:
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
+        assert "Error:" in data["answer"], (
+            f"Answer does not indicate an error: {data['answer']}"
+        )
 
 
 # Scenario: API respects query parameters
@@ -215,7 +238,7 @@ def send_query_with_parameters(test_context):
         "query": query,
         "reasoning_mode": "dialectical",
         "max_sources": 5,
-        "format": "markdown"
+        "format": "markdown",
     }
     response = test_context["client"].post("/query", json=parameters)
     test_context["query"] = query
@@ -253,28 +276,22 @@ def response_reflects_parameters(test_context):
     # The response format should match the requested format
     if "format" in test_context["parameters"]:
         if test_context["parameters"]["format"] == "markdown":
-            assert "# " in response.json()["answer"], "Response is not in markdown format"
+            assert "# " in response.json()["answer"], (
+                "Response is not in markdown format"
+            )
 
 
 # Scenario: API handles concurrent requests
 @when("I send multiple concurrent queries to the API")
 def send_concurrent_queries(test_context):
     """Send multiple concurrent queries to the API."""
-    queries = [
-        "Query 1",
-        "Query 2",
-        "Query 3",
-        "Query 4",
-        "Query 5"
-    ]
+    queries = ["Query 1", "Query 2", "Query 3", "Query 4", "Query 5"]
 
     # Use ThreadPoolExecutor to send concurrent requests
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [
             executor.submit(
-                test_context["client"].post,
-                "/query",
-                json={"query": query}
+                test_context["client"].post, "/query", json={"query": query}
             )
             for query in queries
         ]
@@ -288,8 +305,12 @@ def send_concurrent_queries(test_context):
 def all_queries_processed(test_context):
     """Verify that all queries were processed."""
     responses = test_context["concurrent_responses"]
-    assert len(responses) == len(test_context["queries"]), "Not all queries were processed"
-    assert all(response.status_code == 200 for response in responses), "Some queries failed"
+    assert len(responses) == len(test_context["queries"]), (
+        "Not all queries were processed"
+    )
+    assert all(response.status_code == 200 for response in responses), (
+        "Some queries failed"
+    )
 
 
 @then("each response should be correct for its query")

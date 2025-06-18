@@ -21,11 +21,12 @@ def streamlit_app_running(monkeypatch, bdd_context):
     }
 
     # Patch Streamlit functions
-    with patch("streamlit.markdown", bdd_context["st_mocks"]["markdown"]), \
-         patch("streamlit.tabs", bdd_context["st_mocks"]["tabs"]), \
-         patch("streamlit.container", bdd_context["st_mocks"]["container"]), \
-         patch("streamlit.image", bdd_context["st_mocks"]["image"]):
-
+    with (
+        patch("streamlit.markdown", bdd_context["st_mocks"]["markdown"]),
+        patch("streamlit.tabs", bdd_context["st_mocks"]["tabs"]),
+        patch("streamlit.container", bdd_context["st_mocks"]["container"]),
+        patch("streamlit.image", bdd_context["st_mocks"]["image"]),
+    ):
         # Store the patchers in the context
         bdd_context["streamlit_patchers"] = [
             patch("streamlit.markdown"),
@@ -71,7 +72,7 @@ def enter_markdown_query(bdd_context):
         answer=markdown_content,
         citations=["Citation 1", "Citation 2"],
         reasoning=["Reasoning step 1", "Reasoning step 2"],
-        metrics={"tokens": 100, "time": "1.2s"}
+        metrics={"tokens": 100, "time": "1.2s"},
     )
 
     # Store the mock response in the context
@@ -79,6 +80,7 @@ def enter_markdown_query(bdd_context):
 
     # Call the display_results function with the mock response
     from autoresearch.streamlit_app import display_results
+
     display_results(mock_response)
 
 
@@ -86,19 +88,29 @@ def enter_markdown_query(bdd_context):
 def check_markdown_rendering(bdd_context):
     """Check that the answer is displayed with proper Markdown rendering."""
     # Check that st.markdown was called with the answer content
-    bdd_context["st_mocks"]["markdown"].assert_any_call(bdd_context["query_response"].answer)
+    bdd_context["st_mocks"]["markdown"].assert_any_call(
+        bdd_context["query_response"].answer
+    )
 
 
-@then("formatting elements like headers, lists, and code blocks should be properly styled")
+@then(
+    "formatting elements like headers, lists, and code blocks should be properly styled"
+)
 def check_formatting_elements(bdd_context):
     """Check that formatting elements are properly styled."""
     # This is a visual check that's hard to automate, but we can check that
     # the markdown content was passed to st.markdown
-    markdown_calls = [call[0][0] for call in bdd_context["st_mocks"]["markdown"].call_args_list]
+    markdown_calls = [
+        call[0][0] for call in bdd_context["st_mocks"]["markdown"].call_args_list
+    ]
 
     # Check for headers, lists, and code blocks in the markdown calls
-    assert any("# Main Heading" in call for call in markdown_calls if isinstance(call, str))
-    assert any("- List item" in call for call in markdown_calls if isinstance(call, str))
+    assert any(
+        "# Main Heading" in call for call in markdown_calls if isinstance(call, str)
+    )
+    assert any(
+        "- List item" in call for call in markdown_calls if isinstance(call, str)
+    )
     assert any("```python" in call for call in markdown_calls if isinstance(call, str))
 
 
@@ -107,7 +119,9 @@ def check_math_rendering(bdd_context):
     """Check that math expressions in LaTeX format are properly rendered."""
     # This is a visual check that's hard to automate, but we can check that
     # the markdown content with LaTeX was passed to st.markdown
-    markdown_calls = [call[0][0] for call in bdd_context["st_mocks"]["markdown"].call_args_list]
+    markdown_calls = [
+        call[0][0] for call in bdd_context["st_mocks"]["markdown"].call_args_list
+    ]
 
     # Check for LaTeX math expressions in the markdown calls
     assert any("$E = mc^2$" in call for call in markdown_calls if isinstance(call, str))
@@ -121,7 +135,7 @@ def run_query_in_streamlit(bdd_context):
         answer="This is the answer",
         citations=["Citation 1", "Citation 2"],
         reasoning=["Reasoning step 1", "Reasoning step 2"],
-        metrics={"tokens": 100, "time": "1.2s"}
+        metrics={"tokens": 100, "time": "1.2s"},
     )
 
     # Store the mock response in the context
@@ -129,6 +143,7 @@ def run_query_in_streamlit(bdd_context):
 
     # Call the display_results function with the mock response
     from autoresearch.streamlit_app import display_results
+
     display_results(mock_response)
 
 
@@ -139,11 +154,15 @@ def check_tabbed_interface(bdd_context):
     bdd_context["st_mocks"]["tabs"].assert_called_once()
 
 
-@then('there should be tabs for "Citations", "Reasoning", "Metrics", and "Knowledge Graph"')
+@then(
+    'there should be tabs for "Citations", "Reasoning", "Metrics", and "Knowledge Graph"'
+)
 def check_tab_names(bdd_context):
     """Check that there are tabs for Citations, Reasoning, Metrics, and Knowledge Graph."""
     # Check that st.tabs was called with the correct tab names
-    bdd_context["st_mocks"]["tabs"].assert_called_with(["Citations", "Reasoning", "Metrics", "Knowledge Graph"])
+    bdd_context["st_mocks"]["tabs"].assert_called_with(
+        ["Citations", "Reasoning", "Metrics", "Knowledge Graph"]
+    )
 
 
 @then("I should be able to switch between tabs without losing information")
@@ -170,7 +189,7 @@ def run_query_with_knowledge_graph(bdd_context):
         answer="This is the answer",
         citations=["Citation 1", "Citation 2"],
         reasoning=["Reasoning step 1", "Reasoning step 2"],
-        metrics={"tokens": 100, "time": "1.2s"}
+        metrics={"tokens": 100, "time": "1.2s"},
     )
 
     # Store the mock response in the context
@@ -178,6 +197,7 @@ def run_query_with_knowledge_graph(bdd_context):
 
     # Call the display_results function with the mock response
     from autoresearch.streamlit_app import display_results
+
     display_results(mock_response)
 
 
@@ -212,7 +232,10 @@ def check_node_coloring(bdd_context):
     # to verify this, which is beyond the scope of this test
 
 
-@scenario("../features/streamlit_gui.feature", "Formatted Answer Display with Markdown Rendering")
+@scenario(
+    "../features/streamlit_gui.feature",
+    "Formatted Answer Display with Markdown Rendering",
+)
 def test_formatted_answer_display():
     """Test the Formatted Answer Display with Markdown Rendering scenario."""
     pass
@@ -241,6 +264,7 @@ def navigate_to_config_section(bdd_context):
     with patch("streamlit.sidebar", bdd_context["st_mocks"]["sidebar"]):
         # Call the function that would display the configuration section
         from autoresearch.streamlit_app import display_config_editor
+
         display_config_editor()
 
 
@@ -286,8 +310,10 @@ def check_save_feedback(bdd_context):
     """Check that feedback is displayed when the configuration is saved."""
     # Check that a success message is displayed when the form is submitted
     # This is typically done with st.success
-    assert bdd_context["st_mocks"]["sidebar"].success.called or \
-           bdd_context["st_mocks"]["success"].called
+    assert (
+        bdd_context["st_mocks"]["sidebar"].success.called
+        or bdd_context["st_mocks"]["success"].called
+    )
 
 
 @scenario("../features/streamlit_gui.feature", "Configuration Editor Interface")

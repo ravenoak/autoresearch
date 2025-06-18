@@ -10,17 +10,20 @@ from enum import Enum
 from typing import Optional
 from rich.console import Console
 
+
 # Verbosity levels
 class Verbosity(str, Enum):
     QUIET = "quiet"
     NORMAL = "normal"
     VERBOSE = "verbose"
 
+
 # Global verbosity setting (default: NORMAL)
 VERBOSITY = Verbosity.NORMAL
 
 # Global console instance
 console = Console()
+
 
 def set_verbosity(level: Verbosity) -> None:
     """Set the global verbosity level.
@@ -34,6 +37,7 @@ def set_verbosity(level: Verbosity) -> None:
     # Set environment variable for other components
     os.environ["AUTORESEARCH_VERBOSITY"] = level.value
 
+
 def get_verbosity() -> Verbosity:
     """Get the current verbosity level.
 
@@ -41,6 +45,7 @@ def get_verbosity() -> Verbosity:
         The current verbosity level
     """
     return VERBOSITY
+
 
 def format_success(message: str, symbol: bool = True) -> str:
     """Format a success message with color and optional symbol.
@@ -56,6 +61,7 @@ def format_success(message: str, symbol: bool = True) -> str:
         return f"[bold green]✓[/bold green] {message}"
     return f"[bold green]{message}[/bold green]"
 
+
 def format_error(message: str, symbol: bool = True) -> str:
     """Format an error message with color and optional symbol.
 
@@ -69,6 +75,7 @@ def format_error(message: str, symbol: bool = True) -> str:
     if symbol:
         return f"[bold red]✗[/bold red] {message}"
     return f"[bold red]Error:[/bold red] {message}"
+
 
 def format_warning(message: str, symbol: bool = True) -> str:
     """Format a warning message with color and optional symbol.
@@ -84,6 +91,7 @@ def format_warning(message: str, symbol: bool = True) -> str:
         return f"[bold yellow]⚠[/bold yellow] {message}"
     return f"[bold yellow]Warning:[/bold yellow] {message}"
 
+
 def format_info(message: str, symbol: bool = True) -> str:
     """Format an info message with color and optional symbol.
 
@@ -98,7 +106,10 @@ def format_info(message: str, symbol: bool = True) -> str:
         return f"[bold blue]ℹ[/bold blue] {message}"
     return f"[bold blue]Info:[/bold blue] {message}"
 
-def print_success(message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL) -> None:
+
+def print_success(
+    message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL
+) -> None:
     """Print a success message with color and optional symbol.
 
     Args:
@@ -109,12 +120,13 @@ def print_success(message: str, symbol: bool = True, min_verbosity: Verbosity = 
     if VERBOSITY.value >= min_verbosity.value:
         console.print(format_success(message, symbol))
 
+
 def print_error(
-    message: str, 
-    symbol: bool = True, 
+    message: str,
+    symbol: bool = True,
     min_verbosity: Verbosity = Verbosity.QUIET,
     suggestion: Optional[str] = None,
-    code_example: Optional[str] = None
+    code_example: Optional[str] = None,
 ) -> None:
     """Print an error message with color, optional symbol, and actionable suggestions.
 
@@ -136,7 +148,10 @@ def print_error(
         if code_example:
             console.print(f"[yellow]Example:[/yellow] [cyan]{code_example}[/cyan]")
 
-def print_warning(message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL) -> None:
+
+def print_warning(
+    message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL
+) -> None:
     """Print a warning message with color and optional symbol.
 
     Args:
@@ -147,7 +162,10 @@ def print_warning(message: str, symbol: bool = True, min_verbosity: Verbosity = 
     if VERBOSITY.value >= min_verbosity.value:
         console.print(format_warning(message, symbol))
 
-def print_info(message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL) -> None:
+
+def print_info(
+    message: str, symbol: bool = True, min_verbosity: Verbosity = Verbosity.NORMAL
+) -> None:
     """Print an info message with color and optional symbol.
 
     Args:
@@ -157,6 +175,7 @@ def print_info(message: str, symbol: bool = True, min_verbosity: Verbosity = Ver
     """
     if VERBOSITY.value >= min_verbosity.value:
         console.print(format_info(message, symbol))
+
 
 def print_verbose(message: str, symbol: bool = True) -> None:
     """Print a verbose message with color and optional symbol.
@@ -168,7 +187,12 @@ def print_verbose(message: str, symbol: bool = True) -> None:
     if VERBOSITY == Verbosity.VERBOSE:
         console.print(format_info(message, symbol))
 
-def print_command_example(command: str, description: Optional[str] = None, min_verbosity: Verbosity = Verbosity.NORMAL) -> None:
+
+def print_command_example(
+    command: str,
+    description: Optional[str] = None,
+    min_verbosity: Verbosity = Verbosity.NORMAL,
+) -> None:
     """Print a command example with optional description.
 
     Args:

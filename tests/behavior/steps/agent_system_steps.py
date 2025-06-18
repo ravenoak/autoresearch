@@ -5,9 +5,6 @@ Step definitions for agent system feature.
 from pytest_bdd import scenario, given, when, then
 import pytest
 import inspect
-import os
-import importlib
-from pathlib import Path
 
 from autoresearch.agents.base import Agent
 from autoresearch.agents.dialectical.synthesizer import SynthesizerAgent
@@ -69,17 +66,33 @@ def check_common_functionality_extraction(examine_their_code):
 
     # Check if the Agent class inherits from the mixins
     agent_base_source = inspect.getsource(Agent)
-    assert "PromptGeneratorMixin" in agent_base_source, "Agent should inherit from PromptGeneratorMixin"
-    assert "ModelConfigMixin" in agent_base_source, "Agent should inherit from ModelConfigMixin"
-    assert "ClaimGeneratorMixin" in agent_base_source, "Agent should inherit from ClaimGeneratorMixin"
-    assert "ResultGeneratorMixin" in agent_base_source, "Agent should inherit from ResultGeneratorMixin"
+    assert "PromptGeneratorMixin" in agent_base_source, (
+        "Agent should inherit from PromptGeneratorMixin"
+    )
+    assert "ModelConfigMixin" in agent_base_source, (
+        "Agent should inherit from ModelConfigMixin"
+    )
+    assert "ClaimGeneratorMixin" in agent_base_source, (
+        "Agent should inherit from ClaimGeneratorMixin"
+    )
+    assert "ResultGeneratorMixin" in agent_base_source, (
+        "Agent should inherit from ResultGeneratorMixin"
+    )
 
     # Check if the agent implementations use the mixins
     for agent_name, source in agent_sources.items():
-        assert "generate_prompt" in source or "self.generate_prompt" in source, f"{agent_name} should use generate_prompt"
-        assert "get_model" in source or "self.get_model" in source, f"{agent_name} should use get_model"
-        assert "create_claim" in source or "self.create_claim" in source, f"{agent_name} should use create_claim"
-        assert "create_result" in source or "self.create_result" in source, f"{agent_name} should use create_result"
+        assert "generate_prompt" in source or "self.generate_prompt" in source, (
+            f"{agent_name} should use generate_prompt"
+        )
+        assert "get_model" in source or "self.get_model" in source, (
+            f"{agent_name} should use get_model"
+        )
+        assert "create_claim" in source or "self.create_claim" in source, (
+            f"{agent_name} should use create_claim"
+        )
+        assert "create_result" in source or "self.create_result" in source, (
+            f"{agent_name} should use create_result"
+        )
 
 
 @then("each agent should only implement its unique behavior")
@@ -95,10 +108,18 @@ def check_unique_behavior_implementation(examine_their_code):
         assert "def execute" in source, f"{agent_name} should implement execute"
 
         # The agent should not implement methods that are provided by mixins
-        assert "def generate_prompt" not in source, f"{agent_name} should not implement generate_prompt"
-        assert "def get_model_config" not in source, f"{agent_name} should not implement get_model_config"
-        assert "def create_claim" not in source, f"{agent_name} should not implement create_claim"
-        assert "def create_result" not in source, f"{agent_name} should not implement create_result"
+        assert "def generate_prompt" not in source, (
+            f"{agent_name} should not implement generate_prompt"
+        )
+        assert "def get_model_config" not in source, (
+            f"{agent_name} should not implement get_model_config"
+        )
+        assert "def create_claim" not in source, (
+            f"{agent_name} should not implement create_claim"
+        )
+        assert "def create_result" not in source, (
+            f"{agent_name} should not implement create_result"
+        )
 
 
 @pytest.fixture
@@ -143,7 +164,6 @@ Guidelines:
 5. Highlight key points that might be important for further discussion
 
 Your thesis will serve as the foundation for a dialectical reasoning process, so make it substantive and thought-provoking.""",
-
         "synthesizer.direct": """You are a Synthesizer agent responsible for providing a direct answer to a user query.
 
 Your task is to answer the following query directly and comprehensively: What is the capital of France?
@@ -155,7 +175,7 @@ Guidelines:
 4. Structure your response in a logical, easy-to-follow manner
 5. Be concise but thorough
 
-Your answer should be informative, balanced, and helpful to the user."""
+Your answer should be informative, balanced, and helpful to the user.""",
     }
 
     # No need to actually execute the agent, just return the sample prompts
@@ -176,8 +196,12 @@ def check_prompt_includes_context(generated_prompts):
 
     # Check that the prompts include relevant context
     for template_name, prompt in generated_prompts.items():
-        assert "You are a" in prompt, f"Prompt '{template_name}' should include role context"
-        assert "Your task is to" in prompt, f"Prompt '{template_name}' should include task context"
+        assert "You are a" in prompt, (
+            f"Prompt '{template_name}' should include role context"
+        )
+        assert "Your task is to" in prompt, (
+            f"Prompt '{template_name}' should include task context"
+        )
 
 
 @then("the prompt should provide clear guidance")
@@ -185,8 +209,12 @@ def check_prompt_provides_guidance(generated_prompts):
     """Check that the prompt provides clear guidance."""
     # Check that the prompts provide clear guidance
     for template_name, prompt in generated_prompts.items():
-        assert "Guidelines:" in prompt, f"Prompt '{template_name}' should include guidelines"
-        assert any(str(i) in prompt for i in range(1, 10)), f"Prompt '{template_name}' should include numbered guidelines"
+        assert "Guidelines:" in prompt, (
+            f"Prompt '{template_name}' should include guidelines"
+        )
+        assert any(str(i) in prompt for i in range(1, 10)), (
+            f"Prompt '{template_name}' should include numbered guidelines"
+        )
 
 
 @then("the prompt should be tailored to the specific agent role")
@@ -195,23 +223,35 @@ def check_prompt_tailored_to_role(generated_prompts):
     # Check that the prompts are tailored to the specific agent role
     for template_name, prompt in generated_prompts.items():
         if "synthesizer" in template_name:
-            assert "Synthesizer agent" in prompt, f"Prompt '{template_name}' should be tailored to Synthesizer role"
+            assert "Synthesizer agent" in prompt, (
+                f"Prompt '{template_name}' should be tailored to Synthesizer role"
+            )
         elif "contrarian" in template_name:
-            assert "Contrarian agent" in prompt, f"Prompt '{template_name}' should be tailored to Contrarian role"
+            assert "Contrarian agent" in prompt, (
+                f"Prompt '{template_name}' should be tailored to Contrarian role"
+            )
         elif "fact_checker" in template_name:
-            assert "Fact Checker agent" in prompt, f"Prompt '{template_name}' should be tailored to Fact Checker role"
+            assert "Fact Checker agent" in prompt, (
+                f"Prompt '{template_name}' should be tailored to Fact Checker role"
+            )
 
 
 @pytest.fixture
 @given("I have a prompt template system")
 def have_prompt_template_system():
     """Check that a prompt template system exists."""
-    from autoresearch.agents.prompts import PromptTemplateRegistry, PromptTemplate
+    from autoresearch.agents.prompts import PromptTemplateRegistry
 
     # Check that the prompt template system exists
-    assert hasattr(PromptTemplateRegistry, "register"), "PromptTemplateRegistry should have a register method"
-    assert hasattr(PromptTemplateRegistry, "get"), "PromptTemplateRegistry should have a get method"
-    assert hasattr(PromptTemplateRegistry, "load_from_config"), "PromptTemplateRegistry should have a load_from_config method"
+    assert hasattr(PromptTemplateRegistry, "register"), (
+        "PromptTemplateRegistry should have a register method"
+    )
+    assert hasattr(PromptTemplateRegistry, "get"), (
+        "PromptTemplateRegistry should have a get method"
+    )
+    assert hasattr(PromptTemplateRegistry, "load_from_config"), (
+        "PromptTemplateRegistry should have a load_from_config method"
+    )
 
     return PromptTemplateRegistry
 
@@ -232,19 +272,21 @@ def create_prompt_with_template(template_registry):
     test_template = PromptTemplate(
         template="This is a test template for ${agent_name} with ${variable}",
         description="Test template",
-        variables={"agent_name": "The name of the agent", "variable": "A test variable"}
+        variables={
+            "agent_name": "The name of the agent",
+            "variable": "A test variable",
+        },
     )
 
     # Register the template
     template_registry.register("test.template", test_template)
 
     # Render the template
-    rendered = render_prompt("test.template", agent_name="TestAgent", variable="test value")
+    rendered = render_prompt(
+        "test.template", agent_name="TestAgent", variable="test value"
+    )
 
-    return {
-        "template": test_template,
-        "rendered": rendered
-    }
+    return {"template": test_template, "rendered": rendered}
 
 
 @pytest.fixture
@@ -259,8 +301,12 @@ def check_template_with_placeholders(template_test):
     template = template_test["template"]
 
     # Check that the template has placeholders
-    assert "${agent_name}" in template.template, "Template should have agent_name placeholder"
-    assert "${variable}" in template.template, "Template should have variable placeholder"
+    assert "${agent_name}" in template.template, (
+        "Template should have agent_name placeholder"
+    )
+    assert "${variable}" in template.template, (
+        "Template should have variable placeholder"
+    )
 
 
 @then("the template should be loaded from a configuration file")
@@ -274,7 +320,7 @@ def check_template_loaded_from_config(template_registry):
         "test.config_template": {
             "template": "This is a template loaded from config for ${agent_name}",
             "description": "Test config template",
-            "variables": {"agent_name": "The name of the agent"}
+            "variables": {"agent_name": "The name of the agent"},
         }
     }
 
@@ -285,9 +331,15 @@ def check_template_loaded_from_config(template_registry):
     template = template_registry.get("test.config_template")
 
     # Check that the template was loaded correctly
-    assert template.template == "This is a template loaded from config for ${agent_name}", "Template should be loaded from config"
-    assert template.description == "Test config template", "Template description should be loaded from config"
-    assert template.variables == {"agent_name": "The name of the agent"}, "Template variables should be loaded from config"
+    assert (
+        template.template == "This is a template loaded from config for ${agent_name}"
+    ), "Template should be loaded from config"
+    assert template.description == "Test config template", (
+        "Template description should be loaded from config"
+    )
+    assert template.variables == {"agent_name": "The name of the agent"}, (
+        "Template variables should be loaded from config"
+    )
 
 
 @then("the template should support variable substitution")
@@ -296,12 +348,20 @@ def check_template_variable_substitution(template_test):
     rendered = template_test["rendered"]
 
     # Check that the variables were substituted
-    assert "TestAgent" in rendered, "agent_name should be substituted in the rendered template"
-    assert "test value" in rendered, "variable should be substituted in the rendered template"
+    assert "TestAgent" in rendered, (
+        "agent_name should be substituted in the rendered template"
+    )
+    assert "test value" in rendered, (
+        "variable should be substituted in the rendered template"
+    )
 
     # Check that the rendered template doesn't contain placeholders
-    assert "${agent_name}" not in rendered, "Rendered template should not contain agent_name placeholder"
-    assert "${variable}" not in rendered, "Rendered template should not contain variable placeholder"
+    assert "${agent_name}" not in rendered, (
+        "Rendered template should not contain agent_name placeholder"
+    )
+    assert "${variable}" not in rendered, (
+        "Rendered template should not contain variable placeholder"
+    )
 
 
 @pytest.fixture
@@ -318,9 +378,9 @@ def have_agent_specific_configuration():
             "test.template": {
                 "template": "This is a test template for ${agent_name}",
                 "description": "Test template",
-                "variables": {"agent_name": "The name of the agent"}
+                "variables": {"agent_name": "The name of the agent"},
             }
-        }
+        },
     )
 
     # Create an invalid agent configuration (missing template field)
@@ -330,15 +390,12 @@ def have_agent_specific_configuration():
         "prompt_templates": {
             "test.invalid_template": {
                 "description": "Invalid test template",
-                "variables": {"agent_name": "The name of the agent"}
+                "variables": {"agent_name": "The name of the agent"},
             }
-        }
+        },
     }
 
-    return {
-        "valid": valid_config,
-        "invalid": invalid_config
-    }
+    return {"valid": valid_config, "invalid": invalid_config}
 
 
 @pytest.fixture
@@ -362,10 +419,7 @@ def load_configuration(agent_configs):
     with pytest.raises(ValueError) as excinfo:
         AgentConfig(**invalid_config)
 
-    return {
-        "valid_config": valid_config,
-        "error": str(excinfo.value)
-    }
+    return {"valid_config": valid_config, "error": str(excinfo.value)}
 
 
 @pytest.fixture
@@ -379,9 +433,13 @@ def check_configuration_validation(config_loading_result):
     """Check that the system validates the configuration."""
     # Check that the valid configuration was loaded successfully
     valid_config = config_loading_result["valid_config"]
-    assert valid_config.model == "gpt-4", "Valid configuration should have model='gpt-4'"
+    assert valid_config.model == "gpt-4", (
+        "Valid configuration should have model='gpt-4'"
+    )
     assert valid_config.enabled is True, "Valid configuration should have enabled=True"
-    assert "test.template" in valid_config.prompt_templates, "Valid configuration should have test.template"
+    assert "test.template" in valid_config.prompt_templates, (
+        "Valid configuration should have test.template"
+    )
 
     # Check that an error was raised for the invalid configuration
     error = config_loading_result["error"]
@@ -395,7 +453,9 @@ def check_specific_error_reporting(config_loading_result):
 
     # Check that the error message is specific
     assert "prompt_templates" in error, "Error should mention prompt_templates"
-    assert "test.invalid_template" in error, "Error should mention the specific invalid template"
+    assert "test.invalid_template" in error, (
+        "Error should mention the specific invalid template"
+    )
     assert "template" in error, "Error should mention the missing field"
 
 
@@ -405,4 +465,6 @@ def check_helpful_suggestions(config_loading_result):
     error = config_loading_result["error"]
 
     # Check that the error message provides helpful suggestions
-    assert "must have a 'template' field" in error, "Error should suggest adding a template field"
+    assert "must have a 'template' field" in error, (
+        "Error should suggest adding a template field"
+    )

@@ -2,7 +2,7 @@
 Base Agent class and role definitions for the dialectical system.
 """
 
-from typing import Dict, Any, Optional, List, Type
+from typing import Dict, Any, Optional
 from enum import Enum
 from pydantic import BaseModel, Field, validator
 
@@ -10,7 +10,12 @@ from ..config import ConfigModel
 from ..orchestration.state import QueryState
 from ..llm.adapters import LLMAdapter
 from ..logging_utils import get_logger
-from .mixins import PromptGeneratorMixin, ModelConfigMixin, ClaimGeneratorMixin, ResultGeneratorMixin
+from .mixins import (
+    PromptGeneratorMixin,
+    ModelConfigMixin,
+    ClaimGeneratorMixin,
+    ResultGeneratorMixin,
+)
 
 log = get_logger(__name__)
 
@@ -38,11 +43,19 @@ class AgentConfig(BaseModel):
         """Validate prompt templates."""
         for name, template in v.items():
             if "template" not in template:
-                raise ValueError(f"Prompt template '{name}' must have a 'template' field")
+                raise ValueError(
+                    f"Prompt template '{name}' must have a 'template' field"
+                )
         return v
 
 
-class Agent(BaseModel, PromptGeneratorMixin, ModelConfigMixin, ClaimGeneratorMixin, ResultGeneratorMixin):
+class Agent(
+    BaseModel,
+    PromptGeneratorMixin,
+    ModelConfigMixin,
+    ClaimGeneratorMixin,
+    ResultGeneratorMixin,
+):
     """Base agent interface for dialectical cycle."""
 
     name: str
@@ -53,9 +66,7 @@ class Agent(BaseModel, PromptGeneratorMixin, ModelConfigMixin, ClaimGeneratorMix
     class Config:
         arbitrary_types_allowed = True
 
-    def execute(
-        self, state: QueryState, config: ConfigModel
-    ) -> Dict[str, Any]:
+    def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Execute agent's task on the given state."""
         raise NotImplementedError("Agent subclasses must implement execute()")
 
@@ -72,6 +83,7 @@ class Agent(BaseModel, PromptGeneratorMixin, ModelConfigMixin, ClaimGeneratorMix
             return self.llm_adapter
 
         from ..llm import get_llm_adapter
+
         return get_llm_adapter(config.llm_backend)
 
     def get_model(self, config: ConfigModel) -> str:

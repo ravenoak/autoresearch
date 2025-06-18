@@ -4,12 +4,10 @@ This module contains tests for the teardown function, which is responsible
 for cleaning up storage resources.
 """
 
-import os
-import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from autoresearch.storage import teardown, _db_backend, _graph, _rdf_store, _lru
+from autoresearch.storage import teardown
 
 
 def test_teardown_closes_resources():
@@ -20,10 +18,10 @@ def test_teardown_closes_resources():
     mock_rdf = MagicMock()
     mock_lru = MagicMock()
 
-    with patch('autoresearch.storage._db_backend', mock_backend):
-        with patch('autoresearch.storage._graph', mock_graph):
-            with patch('autoresearch.storage._rdf_store', mock_rdf):
-                with patch('autoresearch.storage._lru', mock_lru):
+    with patch("autoresearch.storage._db_backend", mock_backend):
+        with patch("autoresearch.storage._graph", mock_graph):
+            with patch("autoresearch.storage._rdf_store", mock_rdf):
+                with patch("autoresearch.storage._lru", mock_lru):
                     # Execute
                     teardown()
 
@@ -33,6 +31,7 @@ def test_teardown_closes_resources():
                     # Check that the global variables are set to None
                     # We need to import them again to get the current values
                     from autoresearch.storage import _db_backend, _graph, _rdf_store
+
                     assert _db_backend is None
                     assert _graph is None
                     assert _rdf_store is None
@@ -53,7 +52,7 @@ def test_teardown_removes_db_file():
     # Set the _path attribute on the mock backend
     mock_backend._path = str(mock_path)
 
-    with patch('autoresearch.storage._db_backend', mock_backend):
+    with patch("autoresearch.storage._db_backend", mock_backend):
         # Execute
         teardown(remove_db=True)
 
@@ -69,10 +68,10 @@ def test_teardown_removes_db_file():
 def test_teardown_handles_none_resources():
     """Test that teardown handles None resources gracefully."""
     # Setup
-    with patch('autoresearch.storage._db_backend', None):
-        with patch('autoresearch.storage._graph', None):
-            with patch('autoresearch.storage._rdf_store', None):
-                with patch('autoresearch.storage._lru', None):
+    with patch("autoresearch.storage._db_backend", None):
+        with patch("autoresearch.storage._graph", None):
+            with patch("autoresearch.storage._rdf_store", None):
+                with patch("autoresearch.storage._lru", None):
                     # Execute
                     teardown()
 
@@ -85,7 +84,7 @@ def test_teardown_handles_close_error():
     mock_backend = MagicMock()
     mock_backend.close.side_effect = Exception("Close error")
 
-    with patch('autoresearch.storage._db_backend', mock_backend):
+    with patch("autoresearch.storage._db_backend", mock_backend):
         # Execute
         teardown()
 

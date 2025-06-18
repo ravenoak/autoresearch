@@ -5,7 +5,6 @@ in the orchestration system, ensuring that token counts are properly
 recorded when using LLM adapters.
 """
 
-import pytest
 from unittest.mock import MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -35,7 +34,10 @@ def test_capture_token_usage_counts_correctly(monkeypatch):
     monkeypatch.setattr(llm, "get_llm_adapter", lambda name: dummy_adapter)
 
     # Execute
-    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (token_counter, wrapped_adapter):
+    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+        token_counter,
+        wrapped_adapter,
+    ):
         # Use the wrapped adapter returned by the context manager
         wrapped_adapter.generate("hello world")
 

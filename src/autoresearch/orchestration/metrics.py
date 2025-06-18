@@ -57,9 +57,7 @@ class OrchestrationMetrics:
             self.agent_timings[agent_name] = []
         self.agent_timings[agent_name].append(duration)
 
-    def record_tokens(
-        self, agent_name: str, tokens_in: int, tokens_out: int
-    ) -> None:
+    def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int) -> None:
         """Record token usage for an agent."""
         if agent_name not in self.token_counts:
             self.token_counts[agent_name] = {"in": 0, "out": 0}

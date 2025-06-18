@@ -10,9 +10,7 @@ from autoresearch.orchestration import ReasoningMode
 
 @given("the agents Synthesizer, Contrarian, and Fact-Checker are enabled")
 def enable_agents(monkeypatch):
-    config = ConfigModel(
-        agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2
-    )
+    config = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2)
     monkeypatch.setattr(
         "autoresearch.config.ConfigLoader.load_config", lambda self: config
     )
@@ -109,6 +107,7 @@ def submit_query_via_cli(query, monkeypatch):
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "Synthesizer"], loops=1)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     from autoresearch import main as main_mod
+
     main_mod._config_loader = ConfigLoader()
     main_mod._config_loader._config = cfg
 

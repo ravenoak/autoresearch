@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-import networkx as nx
 
 # Ensure package can be imported without installation
 src_path = Path(__file__).resolve().parents[1] / "src"
@@ -117,20 +116,21 @@ def mock_storage_components():
     Returns:
         A function that creates a context manager for patching storage components
     """
+
     class StorageComponentsMocker:
         def __init__(self, **kwargs):
             # Store the components to patch
-            self.graph = kwargs.get('graph', None)
-            self.db_backend = kwargs.get('db_backend', None)
+            self.graph = kwargs.get("graph", None)
+            self.db_backend = kwargs.get("db_backend", None)
             # For backward compatibility, also accept 'db' parameter
-            if 'db' in kwargs and 'db_backend' not in kwargs:
-                self.db_backend = kwargs.get('db', None)
-            self.rdf = kwargs.get('rdf', None)
+            if "db" in kwargs and "db_backend" not in kwargs:
+                self.db_backend = kwargs.get("db", None)
+            self.rdf = kwargs.get("rdf", None)
 
             # Keep track of which components were explicitly passed
-            self.has_graph = 'graph' in kwargs
-            self.has_db_backend = 'db_backend' in kwargs or 'db' in kwargs
-            self.has_rdf = 'rdf' in kwargs
+            self.has_graph = "graph" in kwargs
+            self.has_db_backend = "db_backend" in kwargs or "db" in kwargs
+            self.has_rdf = "rdf" in kwargs
 
             self.patches = []
 
@@ -138,11 +138,13 @@ def mock_storage_components():
             # Add patches for all components that were explicitly passed
             # This allows patching a component to None
             if self.has_graph:
-                self.patches.append(patch('autoresearch.storage._graph', self.graph))
+                self.patches.append(patch("autoresearch.storage._graph", self.graph))
             if self.has_db_backend:
-                self.patches.append(patch('autoresearch.storage._db_backend', self.db_backend))
+                self.patches.append(
+                    patch("autoresearch.storage._db_backend", self.db_backend)
+                )
             if self.has_rdf:
-                self.patches.append(patch('autoresearch.storage._rdf_store', self.rdf))
+                self.patches.append(patch("autoresearch.storage._rdf_store", self.rdf))
 
             # Start all patches
             for p in self.patches:
@@ -184,13 +186,14 @@ def mock_config():
     Returns:
         A function that creates a context manager for patching ConfigLoader.config
     """
+
     class ConfigMocker:
         def __init__(self, **kwargs):
-            self.config = kwargs.get('config', MagicMock())
+            self.config = kwargs.get("config", MagicMock())
             self.patcher = None
 
         def __enter__(self):
-            self.patcher = patch('autoresearch.config.ConfigLoader.config', self.config)
+            self.patcher = patch("autoresearch.config.ConfigLoader.config", self.config)
             self.patcher.start()
             return self.config
 
@@ -219,6 +222,7 @@ def assert_error():
     Returns:
         A function for asserting error messages and causes
     """
+
     def _assert_error(excinfo, expected_message, has_cause=False):
         """Assert that an exception has the expected error message and cause.
 

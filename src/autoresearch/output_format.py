@@ -31,7 +31,6 @@ Typical usage:
     ```
 """
 
-import os
 import sys
 import string
 from pathlib import Path
@@ -57,6 +56,7 @@ class FormatTemplate(BaseModel):
         description: An optional description of the template.
         template: The template text with variable placeholders.
     """
+
     name: str
     description: Optional[str] = None
     template: str
@@ -104,6 +104,7 @@ class TemplateRegistry:
     It maintains a dictionary of templates indexed by name and provides methods for
     registering, retrieving, and loading templates from configuration and files.
     """
+
     _templates: Dict[str, FormatTemplate] = {}
     _default_templates: Dict[str, Dict[str, Any]] = {
         "markdown": {
@@ -120,7 +121,7 @@ ${reasoning}
 
 ## Metrics
 ${metrics}
-"""
+""",
         },
         "plain": {
             "name": "plain",
@@ -136,8 +137,8 @@ ${reasoning}
 
 Metrics:
 ${metrics}
-"""
-        }
+""",
+        },
     }
 
     @classmethod
@@ -219,9 +220,7 @@ ${metrics}
                 template_text = "\n".join(lines[1:])
 
             template = FormatTemplate(
-                name=name,
-                description=description,
-                template=template_text
+                name=name, description=description, template=template_text
             )
             cls.register(template)
         except Exception as e:
@@ -267,6 +266,7 @@ class OutputFormatter:
             TemplateRegistry.load_from_config()
         except Exception as e:
             log.warning(f"Failed to load templates from config: {e}")
+
     @classmethod
     def format(cls, result: Any, format_type: str = "markdown") -> None:
         """Validate and format a query result to the specified output format.
@@ -309,7 +309,9 @@ class OutputFormatter:
                 else QueryResponse.model_validate(result)
             )
         except ValidationError as exc:  # pragma: no cover - handled by caller
-            raise AutoresearchValidationError(f"Invalid response format", cause=exc) from exc
+            raise AutoresearchValidationError(
+                "Invalid response format", cause=exc
+            ) from exc
 
         fmt = format_type.lower()
 
@@ -325,7 +327,9 @@ class OutputFormatter:
             except KeyError as e:
                 log.error(f"Template error: {e}")
                 # Fall back to markdown if template not found
-                log.warning(f"Template '{template_name}' not found, falling back to markdown")
+                log.warning(
+                    f"Template '{template_name}' not found, falling back to markdown"
+                )
                 cls.format(result, "markdown")
         elif fmt in {"plain", "text"}:
             try:

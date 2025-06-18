@@ -1,5 +1,4 @@
 import json
-import os
 import tempfile
 import logging
 from pathlib import Path
@@ -8,9 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 from autoresearch.models import QueryResponse
 from autoresearch.output_format import OutputFormatter, FormatTemplate, TemplateRegistry
-from pydantic import ValidationError
 from autoresearch.errors import ValidationError as AutoresearchValidationError
-from autoresearch.config import ConfigModel
 
 
 # Disable logging for tests
@@ -18,9 +15,7 @@ logging.getLogger("autoresearch.output_format").setLevel(logging.CRITICAL)
 
 
 def test_format_json(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "json")
     captured = capsys.readouterr().out
     data = json.loads(captured)
@@ -31,9 +26,7 @@ def test_format_json(capsys):
 
 
 def test_format_markdown(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "markdown")
     captured = capsys.readouterr().out
     assert "# Answer" in captured
@@ -44,9 +37,7 @@ def test_format_markdown(capsys):
 
 
 def test_format_plain(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "plain")
     captured = capsys.readouterr().out
     assert "Answer:" in captured
@@ -56,27 +47,21 @@ def test_format_plain(capsys):
 
 
 def test_format_text_alias(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "text")
     captured = capsys.readouterr().out
     assert "Answer:" in captured
 
 
 def test_json_no_ansi(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "json")
     out = capsys.readouterr().out
     assert "\x1b[" not in out
 
 
 def test_markdown_no_ansi(capsys):
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "markdown")
     out = capsys.readouterr().out
     assert "\x1b[" not in out
@@ -114,9 +99,7 @@ def test_format_invalid_input():
 
 def test_format_unknown_defaults_to_markdown(capsys):
     """Test that unknown format types default to Markdown."""
-    resp = QueryResponse(
-        answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1}
-    )
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=["r"], metrics={"m": 1})
     OutputFormatter.format(resp, "unknown")
     captured = capsys.readouterr().out
     assert "# Answer" in captured
@@ -129,7 +112,7 @@ def test_format_complex_response(capsys):
         answer="This is a complex answer with multiple paragraphs.\n\nSecond paragraph.",
         citations=["Citation 1", "Citation 2 with [link](https://example.com)"],
         reasoning=["Reasoning step 1", "Reasoning step 2 with *emphasis*"],
-        metrics={"tokens": 100, "time": 1.5, "sources": ["web", "knowledge_base"]}
+        metrics={"tokens": 100, "time": 1.5, "sources": ["web", "knowledge_base"]},
     )
     OutputFormatter.format(resp, "markdown")
     captured = capsys.readouterr().out
@@ -162,7 +145,7 @@ def test_format_template_class():
     template = FormatTemplate(
         name="test",
         description="Test template",
-        template="Answer: ${answer}\nCitations: ${citations}"
+        template="Answer: ${answer}\nCitations: ${citations}",
     )
 
     # Create a response
@@ -170,7 +153,7 @@ def test_format_template_class():
         answer="Test answer",
         citations=["Citation 1", "Citation 2"],
         reasoning=["Reasoning"],
-        metrics={"tokens": 100}
+        metrics={"tokens": 100},
     )
 
     # Render the template
@@ -187,7 +170,7 @@ def test_format_template_missing_variable():
     template = FormatTemplate(
         name="test",
         description="Test template",
-        template="Answer: ${answer}\nMissing: ${missing}"
+        template="Answer: ${answer}\nMissing: ${missing}",
     )
 
     # Create a response
@@ -195,7 +178,7 @@ def test_format_template_missing_variable():
         answer="Test answer",
         citations=["Citation"],
         reasoning=["Reasoning"],
-        metrics={"tokens": 100}
+        metrics={"tokens": 100},
     )
 
     # Verify that a KeyError is raised
@@ -214,9 +197,7 @@ def test_template_registry():
 
     # Create a template
     template = FormatTemplate(
-        name="test_registry",
-        description="Test template",
-        template="Answer: ${answer}"
+        name="test_registry", description="Test template", template="Answer: ${answer}"
     )
 
     # Register the template
@@ -271,7 +252,9 @@ def test_template_from_file():
         template_path = template_dir / "html.tpl"
 
         with open(template_path, "w") as f:
-            f.write("# HTML Template\n<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>")
+            f.write(
+                "# HTML Template\n<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>"
+            )
 
         # Mock the config to use the temporary directory
         with patch("autoresearch.output_format.ConfigLoader") as mock_config_loader:
@@ -299,7 +282,7 @@ def test_template_from_config():
         mock_config.output_templates = {
             "html": {
                 "description": "HTML Template",
-                "template": "<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>"
+                "template": "<html><body><h1>${answer}</h1><ul>${citations}</ul></body></html>",
             }
         }
         mock_config_loader.return_value.config = mock_config
@@ -325,7 +308,7 @@ def test_format_with_custom_template(capsys):
     template = FormatTemplate(
         name="custom",
         description="Custom template",
-        template="ANSWER: ${answer}\nCITATIONS: ${citations}"
+        template="ANSWER: ${answer}\nCITATIONS: ${citations}",
     )
 
     # Register the template
@@ -336,7 +319,7 @@ def test_format_with_custom_template(capsys):
         answer="Test answer",
         citations=["Citation 1", "Citation 2"],
         reasoning=["Reasoning"],
-        metrics={"tokens": 100}
+        metrics={"tokens": 100},
     )
 
     # Format with the custom template
@@ -358,7 +341,7 @@ def test_format_with_missing_template(capsys):
         answer="Test answer",
         citations=["Citation"],
         reasoning=["Reasoning"],
-        metrics={"tokens": 100}
+        metrics={"tokens": 100},
     )
 
     # Format with a nonexistent template

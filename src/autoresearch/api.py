@@ -14,7 +14,7 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -207,7 +207,7 @@ def query_endpoint(request: QueryRequest) -> QueryResponse:
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
-                metrics={"error": error_info.message, "error_details": error_data}
+                metrics={"error": error_info.message, "error_details": error_data},
             )
     try:
         validated = (
@@ -230,10 +230,14 @@ def query_endpoint(request: QueryRequest) -> QueryResponse:
 
         # Create a valid QueryResponse object with error information
         return QueryResponse(
-            answer=f"Error: Invalid response format",
+            answer="Error: Invalid response format",
             citations=[],
             reasoning=reasoning,
-            metrics={"error": "Invalid response format", "validation_error": str(exc), "error_details": error_data}
+            metrics={
+                "error": "Invalid response format",
+                "validation_error": str(exc),
+                "error_details": error_data,
+            },
         )
     return validated
 
@@ -276,10 +280,12 @@ def capabilities_endpoint() -> dict:
 
     # Get available reasoning modes
     from .models import ReasoningMode
+
     reasoning_modes = [mode.value for mode in ReasoningMode]
 
     # Get available LLM backends
     from .llm.adapters import get_available_adapters
+
     llm_backends = list(get_available_adapters().keys())
 
     # Get storage information
@@ -298,16 +304,16 @@ def capabilities_endpoint() -> dict:
     agent_info = {
         "synthesizer": {
             "description": "Generates answers based on evidence",
-            "role": "thesis"
+            "role": "thesis",
         },
         "contrarian": {
             "description": "Challenges answers and identifies weaknesses",
-            "role": "antithesis"
+            "role": "antithesis",
         },
         "factchecker": {
             "description": "Verifies factual accuracy of claims",
-            "role": "synthesis"
-        }
+            "role": "synthesis",
+        },
     }
 
     return {
@@ -321,5 +327,5 @@ def capabilities_endpoint() -> dict:
             "reasoning_mode": config.reasoning_mode.value,
             "loops": config.loops,
             "llm_backend": config.llm_backend,
-        }
+        },
     }

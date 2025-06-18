@@ -22,11 +22,7 @@ def test_external_lookup(monkeypatch):
         responses.GET,
         url,
         match=[matchers.query_param_matcher(params)],
-        json={
-            "RelatedTopics": [
-                {"Text": "Python", "FirstURL": "https://python.org"}
-            ]
-        },
+        json={"RelatedTopics": [{"Text": "Python", "FirstURL": "https://python.org"}]},
     )
     results = Search.external_lookup(query, max_results=1)
     # Check that the results contain the expected title and URL
@@ -48,11 +44,7 @@ def test_external_lookup_special_chars(monkeypatch):
         responses.GET,
         url,
         match=[matchers.query_param_matcher(params)],
-        json={
-            "RelatedTopics": [
-                {"Text": "C++", "FirstURL": "https://cplusplus.com"}
-            ]
-        },
+        json={"RelatedTopics": [{"Text": "C++", "FirstURL": "https://cplusplus.com"}]},
     )
     results = Search.external_lookup(query, max_results=1)
     # Check that the results contain the expected title and URL
@@ -87,7 +79,7 @@ def test_external_lookup_backend_error(monkeypatch):
         responses.GET,
         url,
         status=500,  # Server error
-        json={"error": "Internal Server Error"}
+        json={"error": "Internal Server Error"},
     )
 
     # The external_lookup method should raise a SearchError
@@ -113,9 +105,7 @@ def test_duckduckgo_timeout_error(monkeypatch):
 
     # Mock a timeout
     responses.add(
-        responses.GET,
-        url,
-        body=requests.exceptions.Timeout("Connection timed out")
+        responses.GET, url, body=requests.exceptions.Timeout("Connection timed out")
     )
 
     # The external_lookup method should raise a TimeoutError
@@ -141,10 +131,7 @@ def test_duckduckgo_json_decode_error(monkeypatch):
 
     # Mock an invalid JSON response
     responses.add(
-        responses.GET,
-        url,
-        body="Invalid JSON",
-        content_type="application/json"
+        responses.GET, url, body="Invalid JSON", content_type="application/json"
     )
 
     # The external_lookup method should raise a SearchError
@@ -174,7 +161,7 @@ def test_serper_backend_error(monkeypatch):
         responses.POST,
         url,
         status=403,  # Forbidden (e.g., invalid API key)
-        json={"error": "Invalid API key"}
+        json={"error": "Invalid API key"},
     )
 
     # The external_lookup method should raise a SearchError
@@ -201,9 +188,7 @@ def test_serper_timeout_error(monkeypatch):
 
     # Mock a timeout
     responses.add(
-        responses.POST,
-        url,
-        body=requests.exceptions.Timeout("Connection timed out")
+        responses.POST, url, body=requests.exceptions.Timeout("Connection timed out")
     )
 
     # The external_lookup method should raise a TimeoutError

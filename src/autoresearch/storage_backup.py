@@ -7,12 +7,9 @@ including scheduled backups, rotation policies, compression, and point-in-time r
 import os
 import shutil
 import tarfile
-import logging
 import threading
-import time
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
 from .errors import BackupError
@@ -25,6 +22,7 @@ log = get_logger(__name__)
 @dataclass
 class BackupInfo:
     """Information about a backup."""
+
     path: str
     timestamp: datetime
     compressed: bool
@@ -35,6 +33,7 @@ class BackupInfo:
 @dataclass
 class BackupConfig:
     """Configuration for backup operations."""
+
     backup_dir: str
     compress: bool = True
     max_backups: int = 5
@@ -46,7 +45,7 @@ def create_backup(
     db_path: str,
     rdf_path: str,
     compress: bool = True,
-    config: Optional[BackupConfig] = None
+    config: Optional[BackupConfig] = None,
 ) -> BackupInfo:
     """Create a backup of the storage system.
 
@@ -95,8 +94,7 @@ def create_backup(
                             for file in files:
                                 file_path = os.path.join(root, file)
                                 arcname = os.path.join(
-                                    "store.rdf",
-                                    os.path.relpath(file_path, rdf_path)
+                                    "store.rdf", os.path.relpath(file_path, rdf_path)
                                 )
                                 tar.add(file_path, arcname=arcname)
                     else:
@@ -118,7 +116,7 @@ def create_backup(
                     shutil.copytree(
                         rdf_path,
                         os.path.join(backup_path, "store.rdf"),
-                        dirs_exist_ok=True
+                        dirs_exist_ok=True,
                     )
                 else:
                     # If it's a file, copy it directly
@@ -145,7 +143,7 @@ def create_backup(
             metadata={
                 "db_path": db_path,
                 "rdf_path": rdf_path,
-            }
+            },
         )
 
         log.info(
@@ -168,7 +166,7 @@ def restore_backup(
     backup_path: str,
     target_dir: str,
     db_filename: str = "db.duckdb",
-    rdf_filename: str = "store.rdf"
+    rdf_filename: str = "store.rdf",
 ) -> Dict[str, str]:
     """Restore a backup to the specified directory.
 
@@ -214,11 +212,17 @@ def restore_backup(
                 # Extract RDF store
                 try:
                     # Check if store.rdf is a file or directory in the archive
-                    rdf_members = [m for m in tar.getmembers() if m.name.startswith("store.rdf")]
+                    rdf_members = [
+                        m for m in tar.getmembers() if m.name.startswith("store.rdf")
+                    ]
                     if not rdf_members:
                         raise BackupError("RDF store not found in backup")
 
-                    if len(rdf_members) == 1 and rdf_members[0].name == "store.rdf" and not rdf_members[0].isdir():
+                    if (
+                        len(rdf_members) == 1
+                        and rdf_members[0].name == "store.rdf"
+                        and not rdf_members[0].isdir()
+                    ):
                         # It's a single file
                         rdf_file = tar.extractfile(rdf_members[0])
                         if rdf_file:
@@ -232,14 +236,16 @@ def restore_backup(
                                 # Extract to the target directory
                                 member_path = os.path.join(
                                     rdf_target_path,
-                                    os.path.relpath(member.name, "store.rdf")
+                                    os.path.relpath(member.name, "store.rdf"),
                                 )
                                 if member.isdir():
                                     os.makedirs(member_path, exist_ok=True)
                                 else:
                                     member_file = tar.extractfile(member)
                                     if member_file:
-                                        os.makedirs(os.path.dirname(member_path), exist_ok=True)
+                                        os.makedirs(
+                                            os.path.dirname(member_path), exist_ok=True
+                                        )
                                         with open(member_path, "wb") as f:
                                             f.write(member_file.read())
                 except KeyError:
@@ -263,9 +269,7 @@ def restore_backup(
                 if os.path.isdir(rdf_source_path):
                     # If it's a directory, copy the whole directory
                     shutil.copytree(
-                        rdf_source_path,
-                        rdf_target_path,
-                        dirs_exist_ok=True
+                        rdf_source_path, rdf_target_path, dirs_exist_ok=True
                     )
                 else:
                     # If it's a file, copy it directly
@@ -275,10 +279,7 @@ def restore_backup(
 
         log.info(f"Restored backup from {backup_path} to {target_dir}")
 
-        return {
-            "db_path": db_target_path,
-            "rdf_path": rdf_target_path
-        }
+        return {"db_path": db_target_path, "rdf_path": rdf_target_path}
 
     except Exception as e:
         log.error(f"Restore failed: {e}")
@@ -305,11 +306,17 @@ def list_backups(backup_dir: str) -> List[BackupInfo]:
 
         # Look for compressed backups
         for filename in os.listdir(backup_dir):
-            if filename.startswith("backup_") and (filename.endswith(".tar.gz") or filename.endswith(".tgz")):
+            if filename.startswith("backup_") and (
+                filename.endswith(".tar.gz") or filename.endswith(".tgz")
+            ):
                 path = os.path.join(backup_dir, filename)
 
                 # Extract timestamp from filename
-                timestamp_str = filename.replace("backup_", "").replace(".tar.gz", "").replace(".tgz", "")
+                timestamp_str = (
+                    filename.replace("backup_", "")
+                    .replace(".tar.gz", "")
+                    .replace(".tgz", "")
+                )
                 try:
                     timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
                 except ValueError:
@@ -318,16 +325,17 @@ def list_backups(backup_dir: str) -> List[BackupInfo]:
 
                 size = os.path.getsize(path)
 
-                backups.append(BackupInfo(
-                    path=path,
-                    timestamp=timestamp,
-                    compressed=True,
-                    size=size
-                ))
+                backups.append(
+                    BackupInfo(
+                        path=path, timestamp=timestamp, compressed=True, size=size
+                    )
+                )
 
         # Look for uncompressed backups
         for dirname in os.listdir(backup_dir):
-            if dirname.startswith("backup_") and os.path.isdir(os.path.join(backup_dir, dirname)):
+            if dirname.startswith("backup_") and os.path.isdir(
+                os.path.join(backup_dir, dirname)
+            ):
                 path = os.path.join(backup_dir, dirname)
 
                 # Extract timestamp from dirname
@@ -345,12 +353,11 @@ def list_backups(backup_dir: str) -> List[BackupInfo]:
                     for filename in filenames
                 )
 
-                backups.append(BackupInfo(
-                    path=path,
-                    timestamp=timestamp,
-                    compressed=False,
-                    size=size
-                ))
+                backups.append(
+                    BackupInfo(
+                        path=path, timestamp=timestamp, compressed=False, size=size
+                    )
+                )
 
         # Sort by timestamp (newest first)
         backups.sort(key=lambda b: b.timestamp, reverse=True)
@@ -388,7 +395,7 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
 
         # Apply max_backups policy (keep the newest ones)
         if config.max_backups > 0 and len(backups) > config.max_backups:
-            to_delete.extend(backups[config.max_backups:])
+            to_delete.extend(backups[config.max_backups :])
 
         # Apply retention_days policy
         if config.retention_days > 0:
@@ -427,7 +434,7 @@ class BackupScheduler:
         interval_hours: int = 24,
         compress: bool = True,
         max_backups: int = 5,
-        retention_days: int = 30
+        retention_days: int = 30,
     ) -> None:
         """Schedule periodic backups.
 
@@ -451,7 +458,7 @@ class BackupScheduler:
                 backup_dir=backup_dir,
                 compress=compress,
                 max_backups=max_backups,
-                retention_days=retention_days
+                retention_days=retention_days,
             )
 
             # Define the backup function
@@ -462,7 +469,7 @@ class BackupScheduler:
                         db_path=db_path,
                         rdf_path=rdf_path,
                         compress=compress,
-                        config=config
+                        config=config,
                     )
                 except Exception as e:
                     log.error(f"Scheduled backup failed: {e}")
@@ -472,7 +479,7 @@ class BackupScheduler:
                         if self._running:
                             self._timer = threading.Timer(
                                 interval_hours * 3600,  # Convert hours to seconds
-                                do_backup
+                                do_backup,
                             )
                             self._timer.daemon = True
                             self._timer.start()
@@ -512,7 +519,7 @@ class BackupManager:
         db_path: Optional[str] = None,
         rdf_path: Optional[str] = None,
         compress: bool = True,
-        config: Optional[BackupConfig] = None
+        config: Optional[BackupConfig] = None,
     ) -> BackupInfo:
         """Create a backup of the storage system.
 
@@ -531,13 +538,12 @@ class BackupManager:
         Raises:
             BackupError: If the backup operation fails
         """
-        from .storage import StorageManager
 
         # Get paths from configuration if not provided
         cfg = ConfigLoader().config.storage
 
         if backup_dir is None:
-            backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
+            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
 
         if db_path is None:
             db_path = (
@@ -547,14 +553,14 @@ class BackupManager:
             )
 
         if rdf_path is None:
-            rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
+            rdf_path = cfg.rdf_path if hasattr(cfg, "rdf_path") else "kg.rdf"
 
         return create_backup(
             backup_dir=backup_dir,
             db_path=db_path,
             rdf_path=rdf_path,
             compress=compress,
-            config=config
+            config=config,
         )
 
     @staticmethod
@@ -562,7 +568,7 @@ class BackupManager:
         backup_path: str,
         target_dir: Optional[str] = None,
         db_filename: str = "db.duckdb",
-        rdf_filename: str = "store.rdf"
+        rdf_filename: str = "store.rdf",
     ) -> Dict[str, str]:
         """Restore a backup to the specified directory.
 
@@ -585,7 +591,7 @@ class BackupManager:
             backup_path=backup_path,
             target_dir=target_dir,
             db_filename=db_filename,
-            rdf_filename=rdf_filename
+            rdf_filename=rdf_filename,
         )
 
     @staticmethod
@@ -603,7 +609,7 @@ class BackupManager:
         """
         if backup_dir is None:
             cfg = ConfigLoader().config.storage
-            backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
+            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
 
         return list_backups(backup_dir)
 
@@ -615,7 +621,7 @@ class BackupManager:
         interval_hours: int = 24,
         compress: bool = True,
         max_backups: int = 5,
-        retention_days: int = 30
+        retention_days: int = 30,
     ) -> None:
         """Schedule periodic backups.
 
@@ -632,7 +638,7 @@ class BackupManager:
         cfg = ConfigLoader().config.storage
 
         if backup_dir is None:
-            backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
+            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
 
         if db_path is None:
             db_path = (
@@ -642,7 +648,7 @@ class BackupManager:
             )
 
         if rdf_path is None:
-            rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
+            rdf_path = cfg.rdf_path if hasattr(cfg, "rdf_path") else "kg.rdf"
 
         # Schedule the backup
         scheduler = BackupManager.get_scheduler()
@@ -653,7 +659,7 @@ class BackupManager:
             interval_hours=interval_hours,
             compress=compress,
             max_backups=max_backups,
-            retention_days=retention_days
+            retention_days=retention_days,
         )
 
     @staticmethod
@@ -664,9 +670,7 @@ class BackupManager:
 
     @staticmethod
     def restore_point_in_time(
-        backup_dir: str,
-        target_time: datetime,
-        target_dir: Optional[str] = None
+        backup_dir: str, target_time: datetime, target_dir: Optional[str] = None
     ) -> Dict[str, str]:
         """Restore to a specific point in time.
 
@@ -691,22 +695,23 @@ class BackupManager:
             raise BackupError(f"No backups found in {backup_dir}")
 
         # Find the backup closest to the target time
-        closest_backup = min(backups, key=lambda b: abs((b.timestamp - target_time).total_seconds()))
+        closest_backup = min(
+            backups, key=lambda b: abs((b.timestamp - target_time).total_seconds())
+        )
 
-        log.info(f"Restoring to point in time {target_time} using backup from {closest_backup.timestamp}")
+        log.info(
+            f"Restoring to point in time {target_time} using backup from {closest_backup.timestamp}"
+        )
 
         # Restore the backup
         if target_dir is None:
             target_dir = f"restore_pit_{target_time.strftime('%Y%m%d_%H%M%S')}"
 
-        return restore_backup(
-            backup_path=closest_backup.path,
-            target_dir=target_dir
-        )
-
+        return restore_backup(backup_path=closest_backup.path, target_dir=target_dir)
 
 
 # Convenience wrapper functions
+
 
 def create_backup(
     backup_dir: Optional[str] = None,

@@ -15,12 +15,10 @@ Default templates for common agent types are provided, but custom templates can 
 defined in configuration files or registered programmatically.
 """
 
-import os
 import string
 from typing import Dict, Any, Optional
-from pathlib import Path
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 from ..config import ConfigModel
 from ..errors import ConfigError
@@ -120,9 +118,7 @@ Guidelines:
 Your research plan should be comprehensive, well-organized, and provide a clear roadmap for conducting thorough research on the topic.
 """,
             "description": "Create a structured research plan for a complex query",
-            "variables": {
-                "query": "The research query"
-            },
+            "variables": {"query": "The research query"},
         },
         "summarizer.concise": {
             "template": """You are a Summarizer agent responsible for generating concise, clear summaries of complex information.
@@ -147,7 +143,7 @@ Your summary should be significantly shorter than the original content while pre
             "description": "Generate a concise summary of complex information",
             "variables": {
                 "query": "The original query",
-                "content": "The content to summarize"
+                "content": "The content to summarize",
             },
         },
         "critic.evaluation": {
@@ -173,7 +169,7 @@ Your critique should be balanced, highlighting both strengths and areas for impr
             "description": "Evaluate research quality and provide constructive feedback",
             "variables": {
                 "query": "The research query",
-                "claims": "The claims to evaluate"
+                "claims": "The claims to evaluate",
             },
         },
         "researcher.findings": {
@@ -199,7 +195,7 @@ Your research findings should be thorough, well-organized, and provide a solid f
             "description": "Generate comprehensive research findings from multiple sources",
             "variables": {
                 "query": "The research query",
-                "sources": "The sources to analyze"
+                "sources": "The sources to analyze",
             },
         },
         "synthesizer.thesis": {
@@ -351,7 +347,9 @@ Your verification should be objective, balanced, and focused on factual accuracy
         Raises:
             ConfigError: If the prompt templates configuration is invalid.
         """
-        prompt_config = config.prompt_templates if hasattr(config, "prompt_templates") else {}
+        prompt_config = (
+            config.prompt_templates if hasattr(config, "prompt_templates") else {}
+        )
 
         for name, template_config in prompt_config.items():
             try:

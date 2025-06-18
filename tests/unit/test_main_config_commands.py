@@ -18,11 +18,14 @@ def test_config_init_command(mock_config_loader_class, mock_config_loader, tmp_p
     # Setup
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
-    mock_config_loader.initialize_config_files.return_value = ["autoresearch.toml", ".env"]
-    
+    mock_config_loader.initialize_config_files.return_value = [
+        "autoresearch.toml",
+        ".env",
+    ]
+
     # Execute
     result = runner.invoke(app, ["config", "init", "--config-dir", str(tmp_path)])
-    
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
@@ -31,22 +34,28 @@ def test_config_init_command(mock_config_loader_class, mock_config_loader, tmp_p
 
 
 @patch("autoresearch.main.ConfigLoader")
-def test_config_init_command_force(mock_config_loader_class, mock_config_loader, tmp_path):
+def test_config_init_command_force(
+    mock_config_loader_class, mock_config_loader, tmp_path
+):
     """Test the config init command with force flag."""
     # Setup
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
-    mock_config_loader.initialize_config_files.return_value = ["autoresearch.toml", ".env"]
-    
+    mock_config_loader.initialize_config_files.return_value = [
+        "autoresearch.toml",
+        ".env",
+    ]
+
     # Execute
-    result = runner.invoke(app, ["config", "init", "--config-dir", str(tmp_path), "--force"])
-    
+    result = runner.invoke(
+        app, ["config", "init", "--config-dir", str(tmp_path), "--force"]
+    )
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
     mock_config_loader.initialize_config_files.assert_called_once_with(
-        config_dir=str(tmp_path),
-        force=True
+        config_dir=str(tmp_path), force=True
     )
     assert "Configuration files created" in result.stdout
 
@@ -58,10 +67,10 @@ def test_config_validate_command_valid(mock_config_loader_class, mock_config_loa
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
     mock_config_loader.validate_config.return_value = (True, [])
-    
+
     # Execute
     result = runner.invoke(app, ["config", "validate"])
-    
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
@@ -76,10 +85,10 @@ def test_config_validate_command_invalid(mock_config_loader_class, mock_config_l
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
     mock_config_loader.validate_config.return_value = (False, ["Error 1", "Error 2"])
-    
+
     # Execute
     result = runner.invoke(app, ["config", "validate"])
-    
+
     # Verify
     assert result.exit_code == 1
     mock_config_loader_class.assert_called_once()
@@ -95,13 +104,13 @@ def test_start_watcher_command(mock_config_loader_class, mock_config_loader):
     # Setup
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
-    
+
     # Mock the start_watcher method to raise KeyboardInterrupt after being called
     mock_config_loader.start_watcher.side_effect = KeyboardInterrupt()
-    
+
     # Execute
     result = runner.invoke(app, ["start-watcher"])
-    
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
@@ -111,24 +120,25 @@ def test_start_watcher_command(mock_config_loader_class, mock_config_loader):
 
 
 @patch("autoresearch.main.ConfigLoader")
-def test_start_watcher_command_with_vss_path(mock_config_loader_class, mock_config_loader):
+def test_start_watcher_command_with_vss_path(
+    mock_config_loader_class, mock_config_loader
+):
     """Test the start-watcher command with VSS path."""
     # Setup
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
-    
+
     # Mock the start_watcher method to raise KeyboardInterrupt after being called
     mock_config_loader.start_watcher.side_effect = KeyboardInterrupt()
-    
+
     # Execute
     result = runner.invoke(app, ["start-watcher", "--vss-path", "/path/to/vss.so"])
-    
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
     mock_config_loader.start_watcher.assert_called_once_with(
-        vss_path="/path/to/vss.so",
-        no_vss=False
+        vss_path="/path/to/vss.so", no_vss=False
     )
     assert "Starting configuration watcher" in result.stdout
 
@@ -139,18 +149,15 @@ def test_start_watcher_command_no_vss(mock_config_loader_class, mock_config_load
     # Setup
     runner = CliRunner()
     mock_config_loader_class.return_value = mock_config_loader
-    
+
     # Mock the start_watcher method to raise KeyboardInterrupt after being called
     mock_config_loader.start_watcher.side_effect = KeyboardInterrupt()
-    
+
     # Execute
     result = runner.invoke(app, ["start-watcher", "--no-vss"])
-    
+
     # Verify
     assert result.exit_code == 0
     mock_config_loader_class.assert_called_once()
-    mock_config_loader.start_watcher.assert_called_once_with(
-        vss_path=None,
-        no_vss=True
-    )
+    mock_config_loader.start_watcher.assert_called_once_with(vss_path=None, no_vss=True)
     assert "Starting configuration watcher" in result.stdout
