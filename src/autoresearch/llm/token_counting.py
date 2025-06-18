@@ -9,7 +9,17 @@ It includes:
 These utilities help monitor resource usage and costs when interacting with LLMs.
 """
 
-from typing import Dict, Any, Optional, Protocol, cast
+from typing import (
+    Dict,
+    Any,
+    Optional,
+    Protocol,
+    Iterator,
+    Tuple,
+    Callable,
+    TypeVar,
+    cast,
+)
 from contextlib import contextmanager
 import functools
 
@@ -66,7 +76,9 @@ class TokenCountingAdapter:
 
 
 @contextmanager
-def count_tokens(agent_name: str, adapter: LLMAdapter, metrics: OrchestrationMetrics) -> Dict[str, int]:
+def count_tokens(
+    agent_name: str, adapter: LLMAdapter, metrics: OrchestrationMetrics
+) -> Iterator[Tuple[Dict[str, int], "TokenCountingAdapter"]]:
     """Context manager for counting tokens.
 
     Args:
@@ -84,7 +96,10 @@ def count_tokens(agent_name: str, adapter: LLMAdapter, metrics: OrchestrationMet
         token_counter.record_usage()
 
 
-def with_token_counting(agent_name: str, metrics: OrchestrationMetrics):
+T = TypeVar("T")
+
+
+def with_token_counting(agent_name: str, metrics: OrchestrationMetrics) -> Callable[[Callable[[LLMAdapter, Any], T]], Callable[[LLMAdapter, Any], T]]:
     """Decorator for functions that use LLM adapters to count tokens.
 
     Args:
@@ -94,10 +109,14 @@ def with_token_counting(agent_name: str, metrics: OrchestrationMetrics):
     Returns:
         A decorator function
     """
-    def decorator(func):
+    def decorator(func: Callable[[LLMAdapter, Any], T]) -> Callable[[LLMAdapter, Any], T]:
         @functools.wraps(func)
-        def wrapper(adapter, *args, **kwargs):
-            with count_tokens(agent_name, adapter, metrics) as (token_counter, counting_adapter):
+        def wrapper(adapter: LLMAdapter, *args: Any, **kwargs: Any) -> T:
+            with count_tokens(agent_name, adapter, metrics) as (
+                token_counter,
+                counting_adapter,
+            ):
                 return func(counting_adapter, *args, **kwargs)
+
         return wrapper
     return decorator

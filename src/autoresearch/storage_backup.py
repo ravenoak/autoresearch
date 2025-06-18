@@ -29,7 +29,7 @@ class BackupInfo:
     timestamp: datetime
     compressed: bool
     size: int
-    metadata: Dict[str, Any] = None
+    metadata: Dict[str, Any] | None = None
 
 
 @dataclass
@@ -540,18 +540,11 @@ class BackupManager:
             backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
 
         if db_path is None:
-            # Get the path from the DuckDB backend
-            try:
-                db_backend = StorageManager._db_backend
-                if db_backend is None:
-                    StorageManager.setup()
-                    db_backend = StorageManager._db_backend
-
-                db_path = db_backend._path
-                if db_path is None:
-                    db_path = cfg.duckdb.path if hasattr(cfg, 'duckdb') and hasattr(cfg.duckdb, 'path') else "kg.duckdb"
-            except Exception as e:
-                raise BackupError(f"Failed to determine DuckDB path: {e}")
+            db_path = (
+                cfg.duckdb.path
+                if hasattr(cfg, "duckdb") and hasattr(cfg.duckdb, "path")
+                else "kg.duckdb"
+            )
 
         if rdf_path is None:
             rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
@@ -642,19 +635,11 @@ class BackupManager:
             backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
 
         if db_path is None:
-            # Get the path from the DuckDB backend
-            from .storage import StorageManager
-            try:
-                db_backend = StorageManager._db_backend
-                if db_backend is None:
-                    StorageManager.setup()
-                    db_backend = StorageManager._db_backend
-
-                db_path = db_backend._path
-                if db_path is None:
-                    db_path = cfg.duckdb.path if hasattr(cfg, 'duckdb') and hasattr(cfg.duckdb, 'path') else "kg.duckdb"
-            except Exception as e:
-                raise BackupError(f"Failed to determine DuckDB path: {e}")
+            db_path = (
+                cfg.duckdb.path
+                if hasattr(cfg, "duckdb") and hasattr(cfg.duckdb, "path")
+                else "kg.duckdb"
+            )
 
         if rdf_path is None:
             rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
@@ -720,322 +705,44 @@ class BackupManager:
         )
 
 
-# Convenience functions that delegate to the internal implementation
+
+# Convenience wrapper functions
+
 def create_backup(
     backup_dir: Optional[str] = None,
     db_path: Optional[str] = None,
     rdf_path: Optional[str] = None,
     compress: bool = True,
-    config: Optional[BackupConfig] = None
+    config: Optional[BackupConfig] = None,
 ) -> BackupInfo:
-    """Create a backup of the storage system."""
-    # Get paths from configuration if not provided
-    from .storage import StorageManager
-
-    cfg = ConfigLoader().config.storage
-
-    if backup_dir is None:
-        backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
-
-    if db_path is None:
-        # Get the path from the DuckDB backend
-        try:
-            db_backend = StorageManager._db_backend
-            if db_backend is None:
-                StorageManager.setup()
-                db_backend = StorageManager._db_backend
-
-            db_path = db_backend._path
-            if db_path is None:
-                db_path = cfg.duckdb.path if hasattr(cfg, 'duckdb') and hasattr(cfg.duckdb, 'path') else "kg.duckdb"
-        except Exception as e:
-            raise BackupError(f"Failed to determine DuckDB path: {e}")
-
-    if rdf_path is None:
-        rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
-
-    # Create the backup using the internal implementation
-    try:
-        # Create backup directory if it doesn't exist
-        os.makedirs(backup_dir, exist_ok=True)
-
-        # Generate timestamp for backup
-        timestamp = datetime.now()
-        timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
-
-        # Create backup path
-        if compress:
-            backup_path = os.path.join(backup_dir, f"backup_{timestamp_str}.tar.gz")
-        else:
-            backup_path = os.path.join(backup_dir, f"backup_{timestamp_str}")
-            os.makedirs(backup_path, exist_ok=True)
-
-        # Copy files to backup location
-        if compress:
-            with tarfile.open(backup_path, "w:gz") as tar:
-                # Add DuckDB file
-                if os.path.exists(db_path):
-                    tar.add(db_path, arcname="db.duckdb")
-                else:
-                    raise BackupError(f"DuckDB file not found: {db_path}")
-
-                # Add RDF store
-                if os.path.exists(rdf_path):
-                    if os.path.isdir(rdf_path):
-                        # If it's a directory, add all files
-                        for root, _, files in os.walk(rdf_path):
-                            for file in files:
-                                file_path = os.path.join(root, file)
-                                arcname = os.path.join(
-                                    "store.rdf",
-                                    os.path.relpath(file_path, rdf_path)
-                                )
-                                tar.add(file_path, arcname=arcname)
-                    else:
-                        # If it's a file, add it directly
-                        tar.add(rdf_path, arcname="store.rdf")
-                else:
-                    raise BackupError(f"RDF store not found: {rdf_path}")
-        else:
-            # Copy DuckDB file
-            if os.path.exists(db_path):
-                shutil.copy2(db_path, os.path.join(backup_path, "db.duckdb"))
-            else:
-                raise BackupError(f"DuckDB file not found: {db_path}")
-
-            # Copy RDF store
-            if os.path.exists(rdf_path):
-                if os.path.isdir(rdf_path):
-                    # If it's a directory, copy the whole directory
-                    shutil.copytree(
-                        rdf_path,
-                        os.path.join(backup_path, "store.rdf"),
-                        dirs_exist_ok=True
-                    )
-                else:
-                    # If it's a file, copy it directly
-                    shutil.copy2(rdf_path, os.path.join(backup_path, "store.rdf"))
-            else:
-                raise BackupError(f"RDF store not found: {rdf_path}")
-
-        # Get backup size
-        if compress:
-            size = os.path.getsize(backup_path)
-        else:
-            size = sum(
-                os.path.getsize(os.path.join(dirpath, filename))
-                for dirpath, _, filenames in os.walk(backup_path)
-                for filename in filenames
-            )
-
-        # Create backup info
-        backup_info = BackupInfo(
-            path=backup_path,
-            timestamp=timestamp,
-            compressed=compress,
-            size=size,
-            metadata={
-                "db_path": db_path,
-                "rdf_path": rdf_path,
-            }
-        )
-
-        log.info(
-            f"Created backup at {backup_path} "
-            f"({'compressed' if compress else 'uncompressed'}, {size} bytes)"
-        )
-
-        # Apply rotation policy if configured
-        if config:
-            _apply_rotation_policy(backup_dir, config)
-
-        return backup_info
-
-    except Exception as e:
-        log.error(f"Backup failed: {e}")
-        raise BackupError(f"Failed to create backup: {e}")
+    """Public API to create a storage backup."""
+    return BackupManager.create_backup(
+        backup_dir=backup_dir,
+        db_path=db_path,
+        rdf_path=rdf_path,
+        compress=compress,
+        config=config,
+    )
 
 
 def restore_backup(
     backup_path: str,
     target_dir: Optional[str] = None,
     db_filename: str = "db.duckdb",
-    rdf_filename: str = "store.rdf"
+    rdf_filename: str = "store.rdf",
 ) -> Dict[str, str]:
-    """Restore a backup to the specified directory."""
-    if target_dir is None:
-        target_dir = "restore_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    try:
-        # Create target directory if it doesn't exist
-        os.makedirs(target_dir, exist_ok=True)
-
-        # Determine if the backup is compressed
-        is_compressed = backup_path.endswith(".tar.gz") or backup_path.endswith(".tgz")
-
-        # Paths for restored files
-        db_target_path = os.path.join(target_dir, db_filename)
-        rdf_target_path = os.path.join(target_dir, rdf_filename)
-
-        # Restore from compressed backup
-        if is_compressed:
-            if not os.path.exists(backup_path):
-                raise BackupError(f"Backup file not found: {backup_path}")
-
-            with tarfile.open(backup_path, "r:gz") as tar:
-                # Extract DuckDB file
-                try:
-                    db_member = tar.getmember("db.duckdb")
-                    db_file = tar.extractfile(db_member)
-                    if db_file:
-                        with open(db_target_path, "wb") as f:
-                            f.write(db_file.read())
-                except KeyError:
-                    raise BackupError("DuckDB file not found in backup")
-
-                # Extract RDF store
-                try:
-                    # Check if store.rdf is a file or directory in the archive
-                    rdf_members = [m for m in tar.getmembers() if m.name.startswith("store.rdf")]
-                    if not rdf_members:
-                        raise BackupError("RDF store not found in backup")
-
-                    if len(rdf_members) == 1 and rdf_members[0].name == "store.rdf" and not rdf_members[0].isdir():
-                        # It's a single file
-                        rdf_file = tar.extractfile(rdf_members[0])
-                        if rdf_file:
-                            with open(rdf_target_path, "wb") as f:
-                                f.write(rdf_file.read())
-                    else:
-                        # It's a directory
-                        os.makedirs(rdf_target_path, exist_ok=True)
-                        for member in rdf_members:
-                            if member.name != "store.rdf":  # Skip the directory itself
-                                # Extract to the target directory
-                                member_path = os.path.join(
-                                    rdf_target_path,
-                                    os.path.relpath(member.name, "store.rdf")
-                                )
-                                if member.isdir():
-                                    os.makedirs(member_path, exist_ok=True)
-                                else:
-                                    member_file = tar.extractfile(member)
-                                    if member_file:
-                                        os.makedirs(os.path.dirname(member_path), exist_ok=True)
-                                        with open(member_path, "wb") as f:
-                                            f.write(member_file.read())
-                except KeyError:
-                    raise BackupError("RDF store not found in backup")
-
-        # Restore from uncompressed backup
-        else:
-            if not os.path.exists(backup_path):
-                raise BackupError(f"Backup directory not found: {backup_path}")
-
-            # Copy DuckDB file
-            db_source_path = os.path.join(backup_path, "db.duckdb")
-            if os.path.exists(db_source_path):
-                shutil.copy2(db_source_path, db_target_path)
-            else:
-                raise BackupError("DuckDB file not found in backup")
-
-            # Copy RDF store
-            rdf_source_path = os.path.join(backup_path, "store.rdf")
-            if os.path.exists(rdf_source_path):
-                if os.path.isdir(rdf_source_path):
-                    # If it's a directory, copy the whole directory
-                    shutil.copytree(
-                        rdf_source_path,
-                        rdf_target_path,
-                        dirs_exist_ok=True
-                    )
-                else:
-                    # If it's a file, copy it directly
-                    shutil.copy2(rdf_source_path, rdf_target_path)
-            else:
-                raise BackupError("RDF store not found in backup")
-
-        log.info(f"Restored backup from {backup_path} to {target_dir}")
-
-        return {
-            "db_path": db_target_path,
-            "rdf_path": rdf_target_path
-        }
-
-    except Exception as e:
-        log.error(f"Restore failed: {e}")
-        raise BackupError(f"Failed to restore backup: {e}")
+    """Public API to restore a backup."""
+    return BackupManager.restore_backup(
+        backup_path=backup_path,
+        target_dir=target_dir,
+        db_filename=db_filename,
+        rdf_filename=rdf_filename,
+    )
 
 
 def list_backups(backup_dir: Optional[str] = None) -> List[BackupInfo]:
-    """List all backups in the specified directory."""
-    if backup_dir is None:
-        cfg = ConfigLoader().config.storage
-        backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
-
-    try:
-        if not os.path.exists(backup_dir):
-            return []
-
-        backups = []
-
-        # Look for compressed backups
-        for filename in os.listdir(backup_dir):
-            if filename.startswith("backup_") and (filename.endswith(".tar.gz") or filename.endswith(".tgz")):
-                path = os.path.join(backup_dir, filename)
-
-                # Extract timestamp from filename
-                timestamp_str = filename.replace("backup_", "").replace(".tar.gz", "").replace(".tgz", "")
-                try:
-                    timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-                except ValueError:
-                    # Skip files with invalid timestamp format
-                    continue
-
-                size = os.path.getsize(path)
-
-                backups.append(BackupInfo(
-                    path=path,
-                    timestamp=timestamp,
-                    compressed=True,
-                    size=size
-                ))
-
-        # Look for uncompressed backups
-        for dirname in os.listdir(backup_dir):
-            if dirname.startswith("backup_") and os.path.isdir(os.path.join(backup_dir, dirname)):
-                path = os.path.join(backup_dir, dirname)
-
-                # Extract timestamp from dirname
-                timestamp_str = dirname.replace("backup_", "")
-                try:
-                    timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-                except ValueError:
-                    # Skip directories with invalid timestamp format
-                    continue
-
-                # Calculate total size
-                size = sum(
-                    os.path.getsize(os.path.join(dirpath, filename))
-                    for dirpath, _, filenames in os.walk(path)
-                    for filename in filenames
-                )
-
-                backups.append(BackupInfo(
-                    path=path,
-                    timestamp=timestamp,
-                    compressed=False,
-                    size=size
-                ))
-
-        # Sort by timestamp (newest first)
-        backups.sort(key=lambda b: b.timestamp, reverse=True)
-
-        return backups
-
-    except Exception as e:
-        log.error(f"Failed to list backups: {e}")
-        raise BackupError(f"Failed to list backups: {e}")
+    """Public API to list available backups."""
+    return BackupManager.list_backups(backup_dir)
 
 
 def schedule_backup(
@@ -1045,41 +752,33 @@ def schedule_backup(
     interval_hours: int = 24,
     compress: bool = True,
     max_backups: int = 5,
-    retention_days: int = 30
+    retention_days: int = 30,
 ) -> None:
-    """Schedule periodic backups."""
-    # Get paths from configuration if not provided
-    cfg = ConfigLoader().config.storage
-
-    if backup_dir is None:
-        backup_dir = cfg.backup_dir if hasattr(cfg, 'backup_dir') else "backups"
-
-    if db_path is None:
-        # Get the path from the DuckDB backend
-        from .storage import StorageManager
-        try:
-            db_backend = StorageManager._db_backend
-            if db_backend is None:
-                StorageManager.setup()
-                db_backend = StorageManager._db_backend
-
-            db_path = db_backend._path
-            if db_path is None:
-                db_path = cfg.duckdb.path if hasattr(cfg, 'duckdb') and hasattr(cfg.duckdb, 'path') else "kg.duckdb"
-        except Exception as e:
-            raise BackupError(f"Failed to determine DuckDB path: {e}")
-
-    if rdf_path is None:
-        rdf_path = cfg.rdf_path if hasattr(cfg, 'rdf_path') else "kg.rdf"
-
-    # Schedule the backup
-    scheduler = BackupManager.get_scheduler()
-    scheduler.schedule(
+    """Public API to schedule recurring backups."""
+    BackupManager.schedule_backup(
         backup_dir=backup_dir,
         db_path=db_path,
         rdf_path=rdf_path,
         interval_hours=interval_hours,
         compress=compress,
         max_backups=max_backups,
-        retention_days=retention_days
+        retention_days=retention_days,
+    )
+
+
+def stop_scheduled_backups() -> None:
+    """Public API to stop any scheduled backups."""
+    BackupManager.stop_scheduled_backups()
+
+
+def restore_point_in_time(
+    backup_dir: str,
+    target_time: datetime,
+    target_dir: Optional[str] = None,
+) -> Dict[str, str]:
+    """Public API to restore to a specific point in time."""
+    return BackupManager.restore_point_in_time(
+        backup_dir=backup_dir,
+        target_time=target_time,
+        target_dir=target_dir,
     )
