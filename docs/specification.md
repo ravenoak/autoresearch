@@ -26,8 +26,8 @@
 - **orchestration/phases.py**: Agent execution phases.
 - **agents/**: Implementations of Synthesizer, Contrarian, FactChecker, etc.
 - **llm/**: Backend adapters for language models.
-- **search/backends/local_files.py**: Parses PDF, DOCX, and text files from
-  user-specified directories for the local search backend.
+ - **search/backends/local_file.py**: Parses PDF, DOCX, and text files from
+   user-specified directories for the local search backend.
 - **search/backends/local_git.py**: Indexes Git repositories, storing commit
   history and file revisions for search.
 
@@ -64,12 +64,21 @@
 - Truncate/summarize results to fit context window.
 - Attach source metadata to every claim.
 - Backends include web APIs (Serper, Brave) and local options
-  (`local_files`, `local_git`).
-- `local_files` recursively indexes directories specified in `autoresearch.toml`;
+  (`local_file`, `local_git`).
+- `local_file` recursively indexes directories specified in `[search.local_file]`;
   PDF files are parsed with **pdfminer**, DOCX with **python-docx**, and text
-  files directly. Specify `path` and `file_types` in `[search.local_files]`.
-- `local_git` scans repositories configured with `repo_path`, `branches`, and
-  `history_depth`, indexing commit messages, diffs, and file revisions.
+  files directly. Provide a `path` to the directory, an optional list of
+  allowed `file_types`, and an `index_strategy` (e.g., `embedding` or `bm25`).
+- `local_git` scans repositories configured with `[search.local_git]` using
+  `repo_path` to the repository, optional `branches`, `history_depth`, and
+  `index_strategy` for incremental or full indexing. Commit messages, diffs,
+  and file revisions are stored for search.
+
+These backends register themselves with the `Search` class via the standard
+`register_backend` decorator. When enabled in configuration they participate in
+the search workflow like any web provider. Indexed documents are persisted
+through `storage.py`, so local results are cached, retrieved, and inserted into
+the knowledge graph alongside external data.
 
 Local directories are ingested using **ripgrep** when available for fast content extraction. Each file is chunked, embedded, and stored in DuckDB with its path and modification time. On subsequent runs only changed files are re-indexed to keep the index fresh.
 
