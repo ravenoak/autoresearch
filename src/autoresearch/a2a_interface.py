@@ -14,6 +14,9 @@ from functools import wraps
 try:
     from a2a.client import A2AClient
 
+    from a2a.utils.message import new_agent_text_message
+    from a2a.types import Message
+
     # The A2AServer, A2AMessage, and A2AMessageType classes are not directly available
     # in the a2a package. We'll need to adapt our code to use the available classes.
     A2A_AVAILABLE = True
@@ -60,6 +63,9 @@ except ImportError:
 from .logging_utils import get_logger
 from .orchestration.orchestrator import Orchestrator
 from .error_utils import get_error_info, format_error_for_a2a
+from .config import get_config, ConfigLoader, ConfigModel
+from .api import capabilities_endpoint
+from pydantic import ValidationError
 
 logger = get_logger(__name__)
 
@@ -120,10 +126,14 @@ class A2AInterface:
 
         try:
             # Process the query using the orchestrator
-            result = self.orchestrator.run_query(query, None)
+            result = self.orchestrator.run_query(query, get_config())
 
-            # Return the result
-            return {"status": "success", "result": result.to_dict()}
+            response_msg: Message = new_agent_text_message(result.answer)
+
+            return {
+                "status": "success",
+                "message": response_msg.model_dump(mode="json"),
+            }
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
@@ -187,20 +197,20 @@ class A2AInterface:
             # Get package version from the environment or use a default
             version = os.environ.get("AUTORESEARCH_VERSION", "0.1.0")
 
-            # Return agent information
-            return {
-                "status": "success",
-                "agent_info": {
-                    "name": "Autoresearch",
-                    "version": version,
-                    "description": "A local-first research assistant",
-                    "capabilities": [
-                        "research",
-                        "dialectical_reasoning",
-                        "fact_checking",
-                    ],
-                },
+            agent_info = {
+                "name": "Autoresearch",
+                "version": version,
+                "description": "A local-first research assistant",
+                "capabilities": [
+                    "research",
+                    "dialectical_reasoning",
+                    "fact_checking",
+                ],
             }
+
+            info_msg: Message = new_agent_text_message("info")
+
+            return {"status": "success", "agent_info": agent_info, "message": info_msg.model_dump(mode="json")}
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
@@ -221,12 +231,8 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities."
-        )
-        raise NotImplementedError(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_capabilities."
-        )
+        capabilities = capabilities_endpoint()
+        return capabilities
 
     def _handle_get_config(self) -> Any:
         """Handle a get_config command.
@@ -237,12 +243,8 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_config."
-        )
-        raise NotImplementedError(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle get_config."
-        )
+        config = get_config()
+        return config.model_dump(mode="json")
 
     def _handle_set_config(self, args: Dict[str, Any]) -> Any:
         """Handle a set_config command.
@@ -256,12 +258,18 @@ class A2AInterface:
         Raises:
             NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
-        logger.error(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle set_config."
-        )
-        raise NotImplementedError(
-            "A2AMessage and A2AMessageType are not implemented. Cannot handle set_config."
-        )
+        loader = ConfigLoader()
+        current = loader.config.model_dump(mode="python")
+        current.update(args)
+        try:
+            new_config = ConfigModel(**current)
+        except ValidationError as exc:
+            error_info = get_error_info(exc)
+            return format_error_for_a2a(error_info)
+
+        loader._config = new_config
+        loader.notify_observers(new_config)
+        return new_config.model_dump(mode="json")
 
 
 class A2AClientWrapper:

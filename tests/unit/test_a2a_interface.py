@@ -56,9 +56,11 @@ def mock_orchestrator():
 def mock_config():
     """Create a mock config."""
     with patch("autoresearch.a2a_interface.get_config") as mock_get_config:
-        mock_config = MagicMock()
-        mock_get_config.return_value = mock_config
-        yield mock_config
+        from autoresearch.config import ConfigModel
+
+        cfg = ConfigModel()
+        mock_get_config.return_value = cfg
+        yield cfg
 
 
 class TestA2AInterface:
@@ -101,66 +103,47 @@ class TestA2AInterface:
         # Setup
         interface = A2AInterface()
         mock_a2a_message.content = {"query": "test query"}
-        mock_orchestrator.run_query.return_value.to_dict.return_value = {
-            "answer": "test answer"
-        }
+        mock_orchestrator.run_query.return_value.answer = "test answer"
 
         # Execute
         result = interface._handle_query(mock_a2a_message)
 
         # Verify
-        assert result == {"status": "success", "result": {"answer": "test answer"}}
-        mock_orchestrator.run_query.assert_called_once_with("test query", None)
+        assert result["status"] == "success"
+        assert result["message"]["role"] == "agent"
+        mock_orchestrator.run_query.assert_called_once()
 
     def test_handle_command_get_capabilities(self, mock_a2a_server, mock_a2a_message):
         """Test handling a get_capabilities command."""
-        # Setup
         interface = A2AInterface()
         mock_a2a_message.content = {"command": "get_capabilities"}
 
-        # Mock the _handle_get_capabilities method
-        interface._handle_get_capabilities = MagicMock(
-            return_value={"capabilities": "test"}
-        )
+        with patch("autoresearch.a2a_interface.capabilities_endpoint") as cap:
+            cap.return_value = {"version": "1"}
+            result = interface._handle_command(mock_a2a_message)
 
-        # Execute
-        result = interface._handle_command(mock_a2a_message)
+        assert result == {"status": "success", "result": {"version": "1"}}
+        cap.assert_called_once()
 
-        # Verify
-        assert result == {"status": "success", "result": {"capabilities": "test"}}
-        interface._handle_get_capabilities.assert_called_once()
-
-    def test_handle_command_get_config(self, mock_a2a_server, mock_a2a_message):
+    def test_handle_command_get_config(self, mock_a2a_server, mock_a2a_message, mock_config):
         """Test handling a get_config command."""
-        # Setup
         interface = A2AInterface()
         mock_a2a_message.content = {"command": "get_config"}
 
-        # Mock the _handle_get_config method
-        interface._handle_get_config = MagicMock(return_value={"config": "test"})
-
-        # Execute
         result = interface._handle_command(mock_a2a_message)
 
-        # Verify
-        assert result == {"status": "success", "result": {"config": "test"}}
-        interface._handle_get_config.assert_called_once()
+        assert result["status"] == "success"
+        assert "llm_backend" in result["result"]
 
-    def test_handle_command_set_config(self, mock_a2a_server, mock_a2a_message):
+    def test_handle_command_set_config(self, mock_a2a_server, mock_a2a_message, mock_config):
         """Test handling a set_config command."""
-        # Setup
         interface = A2AInterface()
-        mock_a2a_message.content = {"command": "set_config", "args": {"key": "value"}}
+        mock_a2a_message.content = {"command": "set_config", "args": {"loops": 3}}
 
-        # Mock the _handle_set_config method
-        interface._handle_set_config = MagicMock(return_value={"updated": True})
-
-        # Execute
         result = interface._handle_command(mock_a2a_message)
 
-        # Verify
-        assert result == {"status": "success", "result": {"updated": True}}
-        interface._handle_set_config.assert_called_once_with({"key": "value"})
+        assert result["status"] == "success"
+        assert result["result"]["loops"] == 3
 
     def test_handle_command_unknown(self, mock_a2a_server, mock_a2a_message):
         """Test handling an unknown command."""
