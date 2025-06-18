@@ -72,3 +72,7 @@ markers = [
     "integration: mark integration tests",
     "unit: mark unit tests"
 ]
+
+[tool.mypy]
+python_version = "3.13"
+ignore_missing_imports = true
