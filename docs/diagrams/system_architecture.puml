@@ -39,6 +39,8 @@ package "Storage & Search" {
   component "Vector Search" as VectorSearch
   component "File Loader" as FileLoader
   component "Git Repo Indexer" as GitRepoIndexer
+  component "Local File Backend" as LocalFileBackend
+  component "Git Backend" as GitBackend
 
   database "NetworkX Graph" as NX
   database "DuckDB Store" as DuckDB
@@ -97,6 +99,8 @@ Orchestrator -> Search : search()
 Search -> VectorSearch : vector_search()
 Search -> FileLoader : load_files()
 Search -> GitRepoIndexer : index_repo()
+Search -> LocalFileBackend
+Search -> GitBackend
 VectorSearch -> DuckDB : query
 
 Orchestrator -> OutputFormatter : format_result()
