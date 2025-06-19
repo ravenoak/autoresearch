@@ -37,6 +37,8 @@ package "Storage & Search" {
   component "Storage Manager" as StorageManager
   component "Search" as Search
   component "Vector Search" as VectorSearch
+  component "File Loader" as FileLoader
+  component "Git Repo Indexer" as GitRepoIndexer
 
   database "NetworkX Graph" as NX
   database "DuckDB Store" as DuckDB
@@ -93,6 +95,8 @@ StorageManager -> TinyDB : insert
 
 Orchestrator -> Search : search()
 Search -> VectorSearch : vector_search()
+Search -> FileLoader : load_files()
+Search -> GitRepoIndexer : index_repo()
 VectorSearch -> DuckDB : query
 
 Orchestrator -> OutputFormatter : format_result()

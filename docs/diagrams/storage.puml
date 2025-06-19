@@ -1,7 +1,7 @@
 @startuml
-title Storage Component
+title Storage & Search Component
 
-package "Storage" {
+package "Storage & Search" {
   class StorageManager {
     + {static} setup(db_path): void
     + {static} teardown(remove_db): void
@@ -24,6 +24,18 @@ package "Storage" {
     - {static} _persist_to_rdf(claim): void
     - {static} _validate_vector_search_params(query_embedding, k): void
     - {static} _format_vector_literal(query_embedding): str
+  }
+
+  class FileLoader {
+    + load_files(path): List[str]
+  }
+
+  class GitRepoIndexer {
+    + index_repo(path): void
+  }
+
+  class Search {
+    + external_lookup(query, max_results): List[Dict]
   }
 
   class "Global Storage State" as GlobalState {
@@ -103,6 +115,9 @@ StorageManager --> NetworkX : uses for graph storage
 StorageManager --> DuckDB : uses for vector storage
 StorageManager --> RDFLib : uses for semantic storage
 StorageManager --> EvictionCounter : increments on eviction
+
+Search --> FileLoader : load_files
+Search --> GitRepoIndexer : index_repo
 
 ConfigLoader --> ConfigModel : provides
 ConfigModel --> StorageConfig : contains
