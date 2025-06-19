@@ -54,6 +54,8 @@ graph TD
     CLI --> ConfigCommand[Config Command]
     CLI --> MonitorCommand[Monitor Command]
     CLI --> GuiCommand[GUI Command]
+    ConfigCommand --> LocalFileSetup[Configure Local File Backend]
+    ConfigCommand --> GitRepoSetup[Configure Git Backend]
     
     QueryCommand --> OutputFormat[Output Formatting]
     ConfigCommand --> OutputFormat
@@ -81,6 +83,8 @@ graph TD
     GUI --> QueryInput[Query Input]
     GUI --> ResultsTabs[Results Tabs]
     GUI --> ConfigEditor[Config Editor]
+    ConfigEditor --> LocalFileSetupGUI[Configure Local File Backend]
+    ConfigEditor --> GitRepoSetupGUI[Configure Git Backend]
     GUI --> MetricsDashboard[Metrics Dashboard]
     
     ResultsTabs --> AnswerTab[Answer Tab]
@@ -149,6 +153,8 @@ graph TD
     
     ViewGUIResults --> ExportResults[Export Results]
     ViewGUIResults --> ModifyConfig[Modify Configuration]
+    ModifyConfig --> ConfigureLocalFiles[Set Local File Backend]
+    ModifyConfig --> ConfigureGitRepo[Set Git Backend]
     ModifyConfig --> EnterGUIQuery
 ```
 
