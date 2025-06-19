@@ -26,6 +26,15 @@ The diagram below shows the relationships between these classes and their intera
 3. The `vector_search()` method finds similar claims using vector similarity
 4. The `teardown()` method closes connections and cleans up resources
 
+## Local Data Persistence
+
+Search backends that operate on the filesystem or Git repositories generate
+claims from extracted text. Each snippet from a file becomes a claim node with a
+`file_path` attribute pointing to its location on disk. Git backends additionally
+record the `commit_hash` so that claims reference the exact revision. This
+metadata is stored alongside the claim `content` and is available through the
+regular storage APIs.
+
 ## Eviction Policies
 
 The storage system supports automatic eviction of claims when the memory usage exceeds the configured budget:
