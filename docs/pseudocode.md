@@ -64,20 +64,30 @@ class Orchestrator:
 ## 4. Search Retrieval & Source Tagging (search.py)
 ```
 class SearchExecutor:
+    function load_local_files(path):
+        results = []
+        for file in scan_directory(path):
+            text = parse_file(file)
+            results.append({ text: text, meta: { path: file, backend: "local_files" } })
+        return results
+
+    function index_git_repo(repo_path):
+        results = []
+        repo = open_repo(repo_path)
+        for commit in repo.history():
+            diff = read_commit_diff(repo, commit)
+            results.append({ text: diff, meta: { commit: commit.sha, backend: "local_git" } })
+        return results
+
     function execute(query):
         backends = config.search_backends
         raw_results = []
         for b in backends:
             if b.name == "local_files":
                 for dir in b.paths:
-                    for file in scan_directory(dir):
-                        text = parse_file(file)
-                        raw_results.append({ text: text, meta: { path: file, backend: "local_files" } })
+                    raw_results.extend(load_local_files(dir))
             elif b.name == "local_git":
-                repo = open_repo(b.path)
-                for commit in repo.history():
-                    diff = read_commit_diff(repo, commit)
-                    raw_results.append({ text: diff, meta: { commit: commit.sha, backend: "local_git" } })
+                raw_results.extend(index_git_repo(b.path))
             else:
                 raw_results.extend(b.search(query))
 
