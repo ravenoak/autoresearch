@@ -115,6 +115,16 @@ Key interactions:
 - TinyDB provides caching
 - Vector search enables semantic retrieval
 
+#### File and Git Backends
+
+The **LocalFileBackend** and **GitBackend** extend the search pipeline with local
+sources. The Orchestrator invokes the Search module, which uses the
+FileLoader and GitRepoIndexer to crawl directories and repositories. Retrieved
+snippets flow back to the Orchestrator and are persisted by the StorageManager.
+The updated *Storage & Search* and *System Architecture* diagrams illustrate
+this interaction chain:
+Orchestrator → Search → FileLoader/GitRepoIndexer → StorageManager.
+
 ## Component Interaction Scenarios
 
 ### Query Execution Scenario
