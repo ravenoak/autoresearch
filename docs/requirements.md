@@ -39,8 +39,8 @@ Must     | BDD/unit tests; plugin registration.       |
 | **F-16** | System is extensible for new backends, reasoning modes, and agent types via config/plugins.                                                      | Must     | Plugin test; config reload.                |
 | **F-17** | **CLI output adapts to context**: Markdown/plaintext for humans (TTY), JSON for automation (pipe/flag); dialectical structure is visually distinct for humans and explicit in JSON for machines. | Must | BDD/manual review/unit tests.              |
 | **F-18** | **Accessibility**: Output is screen-reader friendly, avoids color-only cues, and is actionable for all users.                                    | Must     | Accessibility review/manual test.          |
-| **F-19** | Search local directories. User can select a path to index text and code files. Results must cite the file path and snippet so provenance is clear. | Should   | Unit tests for local file indexing; BDD scenario. |
-| **F-20** | Search Git repositories by path. The system scans working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
+| **F-19** | Search local directories for text and code. Users choose a path to index and results must cite the file path and snippet for provenance. | Should   | Unit tests for local file indexing; BDD scenario. |
+| **F-20** | Search local Git repositories by path. The system scans the working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
 | **F-21** | Maintain local indexes for directories and Git repositories. Indexing occurs at startup or on user command, capturing file contents and commit history for offline queries. | Should   | Unit tests verifying incremental updates; BDD scenario. |
 
 ---
