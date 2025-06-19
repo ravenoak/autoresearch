@@ -88,7 +88,7 @@ Configure multiple search backends for comprehensive research:
 ```toml
 # autoresearch.toml
 [search]
-backends = ["serper", "brave", "local"]
+backends = ["serper", "brave", "local_file", "local_git"]
 results_per_backend = 5
 
 [search.serper]
@@ -97,9 +97,21 @@ api_key = "${SERPER_API_KEY}"
 [search.brave]
 api_key = "${BRAVE_SEARCH_API_KEY}"
 
-[search.local]
-path = "/path/to/local/documents"
+[search.local_file]
+path = "/path/to/docs"
+file_types = ["md", "pdf", "txt"]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 50
 ```
+
+Local backends build a searchable index of your files and repository history the
+first time they run. You may optionally preprocess documents—for example by
+converting PDFs to text—before indexing them. When local and web backends are
+enabled together, Autoresearch merges the top `results_per_backend` entries from
+each provider into a unified ranking.
 
 ### Context-Aware Search with Entity Recognition
 
@@ -124,6 +136,10 @@ when you have notes, PDFs, or other reference materials you want included in
 results. Provide a `path` to the root directory and specify which `file_types`
 should be indexed. All matching files are scanned recursively and merged with
 web search results during ranking.
+
+Indexing occurs the first time the backend runs. You can optionally preprocess
+documents (for example using `pandoc` to convert PDFs) before they are added to
+the index.
 
 ```toml
 # autoresearch.toml
@@ -162,6 +178,9 @@ history_depth = 50
 
 Each commit on the selected branches is scanned up to the specified depth, and
 file revisions are stored individually for historical search.
+
+As with local files, indexing happens automatically on first use. You can run a
+pre-processing step to filter or transform repository content before indexing.
 
 To enable both local backends along with other providers:
 
