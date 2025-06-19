@@ -57,6 +57,37 @@ This document describes the typical user flows for all interface modalities of t
 4. **Exit Monitor**
    - Press Ctrl+C to exit the monitor
 
+### Local Directory and Git Repository Search Flow
+
+1. **Enable Local Backends**
+   - Edit your configuration file or use the CLI to enable local search:
+   ```toml
+   [search]
+   backends = ["serper", "local_file", "local_git"]
+
+   [search.local_file]
+   path = "/path/to/docs"
+   file_types = ["md", "pdf", "txt"]
+
+   [search.local_git]
+   repo_path = "/path/to/repo"
+   branches = ["main"]
+   history_depth = 50
+   ```
+   Or set the same values via CLI commands:
+   ```bash
+   autoresearch config set search.backends "['serper','local_file','local_git']"
+   autoresearch config set search.local_file.path /path/to/docs
+   autoresearch config set search.local_git.repo_path /path/to/repo
+   ```
+
+2. **Run a Query**
+   - Execute a search that includes your local files and repository history:
+   ```bash
+   autoresearch search "neural networks in docs"
+   ```
+   - Results from the local directory and Git repo are merged with web sources.
+
 ## Streamlit GUI User Flows
 
 ### Basic Query Flow
