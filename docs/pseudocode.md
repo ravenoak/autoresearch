@@ -66,13 +66,27 @@ class Orchestrator:
 class SearchExecutor:
     function execute(query):
         backends = config.search_backends
-        results = parallel_map(backends, lambda b: b.search(query))
+        raw_results = []
+        for b in backends:
+            if b.name == "local_files":
+                for dir in b.paths:
+                    for file in scan_directory(dir):
+                        text = parse_file(file)
+                        raw_results.append({ text: text, meta: { path: file, backend: "local_files" } })
+            elif b.name == "local_git":
+                repo = open_repo(b.path)
+                for commit in repo.history():
+                    diff = read_commit_diff(repo, commit)
+                    raw_results.append({ text: diff, meta: { commit: commit.sha, backend: "local_git" } })
+            else:
+                raw_results.extend(b.search(query))
+
         sources = []
-        for res in results:
-            for item in res.items:
-                embedding = Embedder.embed(item.text)
-                sources.append({ text: item.text, source: item.meta, embedding: embedding })
-        return sources
+        for item in raw_results:
+            embedding = Embedder.embed(item.text)
+            sources.append({ text: item.text, source: item.meta, embedding: embedding })
+
+        return merge_sources(sources)
 ```
 
 ## 5. Graph Persistence & Eviction (storage.py)
