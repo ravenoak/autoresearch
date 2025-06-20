@@ -14,8 +14,12 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
+import os
+import time
+from collections import defaultdict
+
+from fastapi import FastAPI, Header, HTTPException, Request, Depends
+from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from prometheus_client import (
@@ -39,6 +43,31 @@ app = FastAPI(
     redoc_url=None,  # Disable default redoc
 )
 _watch_ctx = None
+
+# In-memory request log for simple rate limiting
+REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
+
+
+async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
+    """Validate API key if authentication is enabled."""
+    expected = os.getenv("AUTORESEARCH_API_KEY", "")
+    if expected and x_api_key != expected:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+@app.middleware("http")
+async def throttle_middleware(request: Request, call_next):
+    """Apply simple request throttling based on client IP."""
+    limit = int(os.getenv("AUTORESEARCH_RATE_LIMIT", "0"))
+    if limit > 0:
+        ip = request.client.host if request.client else "unknown"
+        now = time.monotonic()
+        timestamps = [t for t in REQUEST_LOG[ip] if now - t < 60]
+        if len(timestamps) >= limit:
+            return JSONResponse({"detail": "Too many requests"}, status_code=429)
+        timestamps.append(now)
+        REQUEST_LOG[ip] = timestamps
+    return await call_next(request)
 
 
 @app.get("/docs", include_in_schema=False)
@@ -82,13 +111,13 @@ async def get_openapi_schema():
 
         ## Authentication
 
-        No authentication is required for local usage. For remote usage, implement your own authentication
-        mechanism in front of this API.
+        Set `AUTORESEARCH_API_KEY` to require clients to pass the key in the `X-API-Key` header.
+        If the variable is unset authentication is disabled.
 
         ## Rate Limiting
 
-        No rate limiting is implemented by default. For production usage, consider implementing rate
-        limiting in front of this API.
+        Set `AUTORESEARCH_RATE_LIMIT` to the number of requests allowed per minute per client IP.
+        When unset or `0`, throttling is disabled.
 
         ## Endpoints
 
@@ -146,7 +175,9 @@ def _stop_config_watcher() -> None:
 
 
 @app.post("/query", response_model=QueryResponse)
-def query_endpoint(request: QueryRequest) -> QueryResponse:
+def query_endpoint(
+    request: QueryRequest, _: None = Depends(require_api_key)
+) -> QueryResponse:
     """Process a query and return a structured response.
 
     This endpoint accepts a JSON payload containing a query string and optional
@@ -243,7 +274,7 @@ def query_endpoint(request: QueryRequest) -> QueryResponse:
 
 
 @app.get("/metrics")
-def metrics_endpoint() -> PlainTextResponse:
+def metrics_endpoint(_: None = Depends(require_api_key)) -> PlainTextResponse:
     """Expose Prometheus metrics for monitoring the application.
 
     This endpoint generates and returns the latest Prometheus metrics in the
@@ -266,7 +297,7 @@ def metrics_endpoint() -> PlainTextResponse:
 
 
 @app.get("/capabilities")
-def capabilities_endpoint() -> dict:
+def capabilities_endpoint(_: None = Depends(require_api_key)) -> dict:
     """Discover the capabilities of the Autoresearch system.
 
     This endpoint returns information about the capabilities of the Autoresearch system,

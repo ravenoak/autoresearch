@@ -55,3 +55,15 @@ curl http://localhost:8000/metrics
 autoresearch_queries_total 1.0
 ...
 ```
+
+## Authentication
+
+Set the `AUTORESEARCH_API_KEY` environment variable to enable API key
+authentication. Clients must include this key in the `X-API-Key` header for
+every request.
+
+## Throttling
+
+Requests can be rate limited by setting `AUTORESEARCH_RATE_LIMIT` to the number
+of requests allowed per minute for each client IP. The feature is disabled when
+the variable is unset or set to `0`.
