@@ -5,6 +5,8 @@ This page documents the Search API, which provides search functionality and back
 ## Search Functions
 
 The search module provides functions for searching external sources for information.
+`Search.external_lookup` now also performs an embedding-based lookup using the
+local storage index so that results from all backends benefit from semantic search.
 
 ::: autoresearch.search.external_lookup
 ::: autoresearch.search.search

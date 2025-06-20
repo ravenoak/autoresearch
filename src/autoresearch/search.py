@@ -60,6 +60,7 @@ from .config import get_config
 from .errors import SearchError
 from .logging_utils import get_logger
 from .cache import get_cached_results, cache_results
+from .storage import StorageManager
 
 log = get_logger(__name__)
 
@@ -777,6 +778,23 @@ class Search:
             search_query = query
 
         results = []
+
+        # Perform embedding-based search across stored data
+        try:
+            model = cls.get_sentence_transformer()
+            if model is not None:
+                query_embedding = model.encode(search_query)
+                vec_results = StorageManager.vector_search(query_embedding, k=max_results)
+                for r in vec_results:
+                    results.append(
+                        {
+                            "title": r.get("content", "")[:60],
+                            "url": r.get("node_id", ""),
+                            "snippet": r.get("content", ""),
+                        }
+                    )
+        except Exception as exc:  # pragma: no cover - optional failure
+            log.warning(f"Vector search failed: {exc}")
         for name in cfg.search.backends:
             cached = get_cached_results(search_query, name)
             if cached is not None:
