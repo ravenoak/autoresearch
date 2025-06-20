@@ -794,6 +794,13 @@ class StorageManager:
                 _db_backend.persist_claim(claim_to_persist)
                 StorageManager._persist_to_rdf(claim_to_persist)
 
+            # Refresh vector index if embeddings were provided
+            if claim.get("embedding") is not None and StorageManager.has_vss():
+                try:
+                    StorageManager.refresh_vector_index()
+                except Exception as e:
+                    log.warning(f"Failed to refresh vector index: {e}")
+
             # Update LRU cache to mark this claim as recently used
             StorageManager.touch_node(claim_id)
 
@@ -833,6 +840,15 @@ class StorageManager:
             _rdf_store.add((subj, pred, obj))
 
     @staticmethod
+    def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        """Public wrapper around :func:`_update_rdf_claim`."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.update_rdf_claim(claim, partial_update)
+
+        StorageManager._ensure_storage_initialized()
+        StorageManager._update_rdf_claim(claim, partial_update)
+
+    @staticmethod
     def create_hnsw_index() -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index on the embeddings table.
 
@@ -859,6 +875,19 @@ class StorageManager:
             _db_backend.create_hnsw_index()
         except Exception as e:
             raise StorageError("Failed to create HNSW index", cause=e)
+
+    @staticmethod
+    def refresh_vector_index() -> None:
+        """Rebuild the vector index to include new embeddings."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.refresh_vector_index()
+
+        StorageManager._ensure_storage_initialized()
+        assert _db_backend is not None
+        try:
+            _db_backend.refresh_hnsw_index()
+        except Exception as e:
+            raise StorageError("Failed to refresh HNSW index", cause=e)
 
     @staticmethod
     def _validate_vector_search_params(query_embedding: list[float], k: int) -> None:

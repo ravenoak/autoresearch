@@ -78,6 +78,17 @@ vector_extension_path = "./extensions/vss/vss.duckdb_extension"
 
 Note that the `vector_extension_path` must point to the actual `.duckdb_extension` file, not just the directory.
 
+### Refreshing the Vector Index
+
+When new embeddings are inserted, refresh the HNSW index so that vector search
+includes them:
+
+```python
+from autoresearch.storage import StorageManager
+
+StorageManager.refresh_vector_index()
+```
+
 ### Alternative: Using the Python Package
 
 As an alternative to manually downloading the extension, you can use the `duckdb-extension-vss` Python package, which is included as a dependency in the project. This package automatically provides the correct VSS extension for your platform.
