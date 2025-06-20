@@ -186,3 +186,61 @@ def test_cli_storage_error(monkeypatch):
 
     assert result.exit_code == 1
     assert "Storage initialization failed" in result.stdout
+
+
+def test_http_api_key(monkeypatch):
+    """API should require the correct key when enabled."""
+    _common_patches(monkeypatch)
+    monkeypatch.setenv("AUTORESEARCH_API_KEY", "secret")
+    client = TestClient(api_app)
+
+    DummyStorage.persisted.append(
+        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+    )
+
+    try:
+        resp = client.post(
+            "/query",
+            json={"query": "test query"},
+            headers={"X-API-Key": "secret"},
+        )
+        assert resp.status_code == 200
+
+        resp = client.post(
+            "/query",
+            json={"query": "test query"},
+            headers={"X-API-Key": "bad"},
+        )
+        assert resp.status_code == 401
+    finally:
+        from autoresearch.storage import set_delegate
+
+        set_delegate(None)
+        DummyStorage.persisted = []
+        monkeypatch.delenv("AUTORESEARCH_API_KEY", raising=False)
+
+
+def test_http_throttling(monkeypatch):
+    """Exceeding the rate limit should return 429."""
+    _common_patches(monkeypatch)
+    monkeypatch.setenv("AUTORESEARCH_RATE_LIMIT", "1")
+    client = TestClient(api_app)
+
+    DummyStorage.persisted.append(
+        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+    )
+
+    from autoresearch import api as api_mod
+
+    try:
+        resp1 = client.post("/query", json={"query": "test"})
+        assert resp1.status_code == 200
+        resp2 = client.post("/query", json={"query": "test"})
+        assert resp2.status_code == 429
+    finally:
+        from autoresearch.storage import set_delegate
+
+        set_delegate(None)
+        DummyStorage.persisted = []
+        api_mod.REQUEST_LOG.clear()
+        monkeypatch.delenv("AUTORESEARCH_RATE_LIMIT", raising=False)
