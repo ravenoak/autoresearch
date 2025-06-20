@@ -81,6 +81,10 @@ class SearchConfig(BaseModel):
 
     backends: List[str] = Field(default=["serper"])
     max_results_per_query: int = Field(default=5, ge=1)
+    hybrid_query: bool = Field(
+        default=True,
+        description="Combine keyword and semantic search when true",
+    )
 
     # Enhanced relevance ranking settings
     use_semantic_similarity: bool = Field(default=True)

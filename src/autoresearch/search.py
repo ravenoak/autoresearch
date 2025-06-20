@@ -465,7 +465,10 @@ class Search:
 
     @classmethod
     def calculate_semantic_similarity(
-        cls, query: str, documents: List[Dict[str, str]]
+        cls,
+        query: str,
+        documents: List[Dict[str, Any]],
+        query_embedding: Optional[List[float]] = None,
     ) -> List[float]:
         """Calculate semantic similarity scores for a query and documents.
 
@@ -477,39 +480,49 @@ class Search:
             List[float]: The semantic similarity scores for each document
         """
         model = cls.get_sentence_transformer()
-        if model is None:
+        if model is None and query_embedding is None:
             return [1.0] * len(documents)  # Return neutral scores
 
         try:
-            # Encode the query
-            query_embedding = model.encode(query)
+            if query_embedding is None:
+                # Encode the query
+                query_embedding = model.encode(query)
 
             # Encode the documents
-            doc_texts = []
-            for doc in documents:
-                # Combine title and snippet if available
+            similarities: List[Optional[float]] = []
+            to_encode: List[str] = []
+            encode_map: List[int] = []
+
+            for idx, doc in enumerate(documents):
+                if "similarity" in doc:
+                    similarities.append(float(doc["similarity"]))
+                    continue
+                if "embedding" in doc:
+                    doc_embedding = np.array(doc["embedding"], dtype=float)
+                    sim = np.dot(query_embedding, doc_embedding) / (
+                        np.linalg.norm(query_embedding)
+                        * np.linalg.norm(doc_embedding)
+                    )
+                    similarities.append(float(sim))
+                    continue
+
+                # Fallback to encoding text
                 doc_text = doc.get("title", "")
                 if "snippet" in doc:
                     doc_text += " " + doc.get("snippet", "")
-                doc_texts.append(doc_text)
+                to_encode.append(doc_text)
+                encode_map.append(idx)
+                similarities.append(None)
 
-            # If no documents, return neutral scores
-            if not doc_texts:
-                return [1.0] * len(documents)
+            if to_encode:
+                doc_embeddings = model.encode(to_encode)
+                for emb, index in zip(doc_embeddings, encode_map):
+                    sim = np.dot(query_embedding, emb) / (
+                        np.linalg.norm(query_embedding) * np.linalg.norm(emb)
+                    )
+                    similarities[index] = float(sim)
 
-            # Calculate embeddings for all documents at once (more efficient)
-            doc_embeddings = model.encode(doc_texts)
-
-            # Calculate cosine similarity
-            similarities = []
-            for doc_embedding in doc_embeddings:
-                # Calculate cosine similarity
-                similarity = np.dot(query_embedding, doc_embedding) / (
-                    np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
-                )
-                similarities.append(float(similarity))
-
-            return similarities
+            return [s if s is not None else 1.0 for s in similarities]
         except Exception as e:
             log.warning(f"Semantic similarity calculation failed: {e}")
             return [1.0] * len(documents)  # Return neutral scores
@@ -572,8 +585,11 @@ class Search:
 
     @classmethod
     def rank_results(
-        cls, query: str, results: List[Dict[str, str]]
-    ) -> List[Dict[str, str]]:
+        cls,
+        query: str,
+        results: List[Dict[str, Any]],
+        query_embedding: Optional[List[float]] = None,
+    ) -> List[Dict[str, Any]]:
         """Rank search results using configurable relevance algorithms.
 
         Args:
@@ -596,7 +612,7 @@ class Search:
             else [1.0] * len(results)
         )
         semantic_scores = (
-            cls.calculate_semantic_similarity(query, results)
+            cls.calculate_semantic_similarity(query, results, query_embedding)
             if search_cfg.use_semantic_similarity
             else [1.0] * len(results)
         )
@@ -722,7 +738,9 @@ class Search:
         return queries
 
     @classmethod
-    def external_lookup(cls, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    def external_lookup(
+        cls, query: str | Dict[str, Any], max_results: int = 5
+    ) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends.
 
         This method performs a search using all backends configured in the
@@ -761,6 +779,13 @@ class Search:
         """
         cfg = get_config()
 
+        if isinstance(query, dict):
+            text_query = str(query.get("text", ""))
+            query_embedding = query.get("embedding")
+        else:
+            text_query = query
+            query_embedding = None
+
         # Apply context-aware search if enabled
         context_cfg = cfg.search.context_aware
         if context_cfg.enabled:
@@ -768,24 +793,31 @@ class Search:
             context = SearchContext.get_instance()
 
             # Expand the query based on context
-            expanded_query = context.expand_query(query)
+            expanded_query = context.expand_query(text_query)
 
             # Use the expanded query if available
-            if expanded_query != query:
+            if expanded_query != text_query:
                 log.info(f"Using context-aware expanded query: '{expanded_query}'")
                 search_query = expanded_query
             else:
-                search_query = query
+                search_query = text_query
         else:
-            search_query = query
+            search_query = text_query
 
         results = []
 
+        # Determine query embedding when hybrid search is enabled
+        if query_embedding is None and cfg.search.hybrid_query:
+            try:
+                model = cls.get_sentence_transformer()
+                if model is not None:
+                    query_embedding = model.encode(search_query).tolist()
+            except Exception as exc:  # pragma: no cover - optional failure
+                log.warning(f"Embedding generation failed: {exc}")
+
         # Perform embedding-based search across stored data
-        try:
-            model = cls.get_sentence_transformer()
-            if model is not None:
-                query_embedding = model.encode(search_query)
+        if query_embedding is not None:
+            try:
                 vec_results = StorageManager.vector_search(query_embedding, k=max_results)
                 for r in vec_results:
                     results.append(
@@ -793,10 +825,12 @@ class Search:
                             "title": r.get("content", "")[:60],
                             "url": r.get("node_id", ""),
                             "snippet": r.get("content", ""),
+                            "embedding": r.get("embedding"),
+                            "similarity": r.get("similarity"),
                         }
                     )
-        except Exception as exc:  # pragma: no cover - optional failure
-            log.warning(f"Vector search failed: {exc}")
+            except Exception as exc:  # pragma: no cover - optional failure
+                log.warning(f"Vector search failed: {exc}")
         for name in cfg.search.backends:
             cached = get_cached_results(search_query, name)
             if cached is not None:
@@ -826,7 +860,10 @@ class Search:
                 from .errors import TimeoutError
 
                 raise TimeoutError(
-                    f"{name} search timed out", cause=exc, backend=name, query=query
+                    f"{name} search timed out",
+                    cause=exc,
+                    backend=name,
+                    query=text_query,
                 )
             except requests.exceptions.RequestException as exc:
                 log.warning(f"{name} search request failed: {exc}")
@@ -834,7 +871,7 @@ class Search:
                     f"{name} search failed",
                     cause=exc,
                     backend=name,
-                    query=query,
+                    query=text_query,
                     suggestion="Check your network connection and ensure the search backend is properly configured",
                 )
             except json.JSONDecodeError as exc:
@@ -843,7 +880,7 @@ class Search:
                     f"{name} search failed: invalid JSON response",
                     cause=exc,
                     backend=name,
-                    query=query,
+                    query=text_query,
                     suggestion="The search backend returned an invalid response. Try a different search query or backend.",
                 )
             except Exception as exc:  # pragma: no cover - unexpected errors
@@ -852,25 +889,25 @@ class Search:
                     f"{name} search failed",
                     cause=exc,
                     backend=name,
-                    query=query,
+                    query=text_query,
                     suggestion="An unexpected error occurred. Check the logs for more details and consider using a different search backend.",
                 )
 
             if backend_results:
-                cache_results(query, name, backend_results)
+                cache_results(text_query, name, backend_results)
 
             results.extend(backend_results)
 
         if results:
             # Rank the results using the enhanced relevance ranking
-            ranked_results = cls.rank_results(query, results)
+            ranked_results = cls.rank_results(text_query, results, query_embedding)
 
             # Update search context if context-aware search is enabled
             if cfg.search.context_aware.enabled:
                 context = SearchContext.get_instance()
 
                 # Add the query and results to the search history
-                context.add_to_history(query, ranked_results)
+                context.add_to_history(text_query, ranked_results)
 
                 # Build or update the topic model if topic modeling is enabled
                 if cfg.search.context_aware.use_topic_modeling:
@@ -880,7 +917,7 @@ class Search:
 
         # Fallback results when all backends fail
         fallback_results = [
-            {"title": f"Result {i + 1} for {query}", "url": ""}
+            {"title": f"Result {i + 1} for {text_query}", "url": ""}
             for i in range(max_results)
         ]
 
