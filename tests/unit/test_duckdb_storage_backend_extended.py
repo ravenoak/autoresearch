@@ -340,3 +340,49 @@ class TestDuckDBStorageBackendExtended:
 
         # Verify that the error message is correct
         assert "DuckDB connection not initialized" in str(excinfo.value)
+
+    def test_update_claim_full_replace(self):
+        """Update existing claim with full replacement."""
+        conn = MagicMock()
+        backend = DuckDBStorageBackend()
+        backend._conn = conn
+
+        claim = {
+            "id": "c1",
+            "type": "fact",
+            "content": "new",
+            "confidence": 0.5,
+            "relations": [{"src": "c1", "dst": "c2", "rel": "r", "weight": 1.0}],
+            "embedding": [0.1, 0.2],
+        }
+
+        backend.update_claim(claim, partial_update=False)
+
+        expected = [
+            call(
+                "UPDATE nodes SET type=?, content=?, conf=?, ts=CURRENT_TIMESTAMP WHERE id=?",
+                ["fact", "new", 0.5, "c1"],
+            ),
+            call("DELETE FROM edges WHERE src=? OR dst=?", ["c1", "c1"]),
+            call(
+                "INSERT INTO edges VALUES (?, ?, ?, ?)",
+                ["c1", "c2", "r", 1.0],
+            ),
+            call("DELETE FROM embeddings WHERE node_id=?", ["c1"]),
+            call("INSERT INTO embeddings VALUES (?, ?)", ["c1", [0.1, 0.2]]),
+        ]
+        conn.execute.assert_has_calls(expected)
+
+    def test_update_claim_partial(self):
+        """Update only provided fields when partial_update=True."""
+        conn = MagicMock()
+        backend = DuckDBStorageBackend()
+        backend._conn = conn
+
+        claim = {"id": "c1", "content": "partial"}
+
+        backend.update_claim(claim, partial_update=True)
+
+        conn.execute.assert_called_once_with(
+            "UPDATE nodes SET content=? WHERE id=?", ["partial", "c1"]
+        )
