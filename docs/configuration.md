@@ -110,6 +110,7 @@ These options are set in the `[search]` section.
 |--------|------|---------|-------------|-------------|
 | `backends` | list of strings | `["serper"]` | Search backends to use | `"serper"`, `"brave"`, `"duckduckgo"` |
 | `max_results_per_query` | integer | `5` | Maximum number of results per query | ≥ 1 |
+| `hybrid_query` | boolean | `true` | Combine keyword and semantic search | `true`, `false` |
 | `use_semantic_similarity` | boolean | `true` | Use semantic similarity for ranking | `true`, `false` |
 | `use_bm25` | boolean | `true` | Use BM25 algorithm for ranking | `true`, `false` |
 | `semantic_similarity_weight` | float | `0.5` | Weight for semantic similarity | 0.0 to 1.0 |
@@ -127,6 +128,8 @@ The `semantic_similarity_weight` and `bm25_weight` options let you tune how
 semantic embeddings and keyword matches influence the final ranking.
 Setting a higher `semantic_similarity_weight` favors embedding-based scores,
 while increasing `bm25_weight` prioritizes traditional keyword matching.
+When `hybrid_query` is enabled the system automatically mixes keyword
+and vector search for each query.
 
 ### Search Backends
 

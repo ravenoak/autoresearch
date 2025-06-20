@@ -129,3 +129,40 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
     urls = [r["url"] for r in results]
     assert str(file_path) in urls
     assert str(repo_path / "README.md") in urls
+
+
+def test_ranking_across_backends(monkeypatch):
+    """Results from different backends should be ranked together."""
+
+    def b1(query, max_results=5):
+        return [{"title": "python foo", "url": "u1"}]
+
+    def b2(query, max_results=5):
+        return [{"title": "other", "url": "u2"}]
+
+    monkeypatch.setitem(Search.backends, "b1", b1)
+    monkeypatch.setitem(Search.backends, "b2", b2)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["b1", "b2"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.semantic_similarity_weight = 0.6
+    cfg.search.bm25_weight = 0.4
+    cfg.search.source_credibility_weight = 0.0
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        lambda q, docs: [0.3, 0.9],
+    )
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, docs, query_embedding=None: [0.9, 0.1],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda docs: [1.0, 1.0])
+
+    results = Search.external_lookup("python", max_results=1)
+
+    assert results[0]["url"] == "u1"
