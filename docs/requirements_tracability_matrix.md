@@ -23,3 +23,4 @@
 | F-19 | Local directory search | `search/`, `search_backends/local_files.py` | `tests/unit/test_local_search.py`, `tests/behavior/features/local_file_search.feature` |
 | F-20 | Local Git repository search by path | `search/`, `search_backends/local_git.py` | `tests/unit/test_git_search.py`, `tests/behavior/features/git_repository_search.feature` |
 | F-21 | Maintain local indexes for directories and Git repositories | `search.py`, `storage.py` | `tests/unit/test_indexing.py`, `tests/behavior/features/offline_indexing.feature` |
+| F-22 | Cross-modal interface consistency | various | `tests/behavior/features/cross_modal_integration.feature` |

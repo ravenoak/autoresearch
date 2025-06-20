@@ -316,6 +316,10 @@ def test_streamlit_screen_reader_compatibility():
 
 Cross-modal tests verify that behavior is consistent across different interfaces.
 
+The BDD scenarios in `tests/behavior/features/cross_modal_integration.feature`
+demonstrate this by validating error handling, configuration synchronization, and
+result consistency across the CLI, Streamlit GUI, A2A, and MCP interfaces.
+
 ```python
 # Example: Testing cross-modal consistency
 from unittest.mock import patch, MagicMock

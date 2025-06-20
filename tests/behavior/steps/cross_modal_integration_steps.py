@@ -1,7 +1,13 @@
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import scenario, when, then, parsers, given
 from unittest.mock import patch
 
 from .common_steps import *  # noqa: F401,F403
+
+
+@given("the Autoresearch system is running")
+def autoresearch_system_running(tmp_path, monkeypatch):
+    """Set up the Autoresearch system for testing."""
+    return application_running(tmp_path, monkeypatch)
 from autoresearch.models import QueryResponse
 
 
@@ -41,20 +47,19 @@ def test_mcp_interface_consistency():
 def execute_query_via_cli(bdd_context, query):
     """Execute a query via CLI."""
     # Mock CLI query execution
-    with patch("autoresearch.main.query_command") as mock_query_command:
+    with patch("autoresearch.main.search") as mock_query_command:
         mock_response = QueryResponse(
-            query=query,
             answer="Paris is the capital of France.",
-            reasoning="France has Paris as its capital city.",
+            reasoning=["France has Paris as its capital city."],
             citations=["Wikipedia: France"],
-            confidence=0.95,
+            metrics={"confidence": 0.95},
         )
         mock_query_command.return_value = mock_response
 
         # Execute the query
-        from autoresearch.main import query_command
+        from autoresearch.main import search
 
-        result = query_command(query=query)
+        result = search(query=query)
 
         # Store the result in the context
         bdd_context["cli_query"] = query
@@ -129,27 +134,26 @@ def check_consistent_results(bdd_context):
     gui_result = bdd_context["gui_result"]
 
     # Check that the results are the same
-    assert cli_result.query == gui_result.query
     assert cli_result.answer == gui_result.answer
     assert cli_result.reasoning == gui_result.reasoning
     assert cli_result.citations == gui_result.citations
-    assert cli_result.confidence == gui_result.confidence
+    assert cli_result.metrics == gui_result.metrics
 
 
 @when("I execute an invalid query via CLI")
 def execute_invalid_query_cli(bdd_context):
     """Execute an invalid query via CLI."""
     # Mock CLI query execution with an error
-    with patch("autoresearch.main.query_command") as mock_query_command:
+    with patch("autoresearch.main.search") as mock_query_command:
         mock_query_command.side_effect = ValueError(
             "Invalid query: Query cannot be empty"
         )
 
         # Execute the query and catch the error
-        from autoresearch.main import query_command
+        from autoresearch.main import search
 
         try:
-            query_command(query="")
+            search(query="")
         except ValueError as e:
             bdd_context["cli_error"] = str(e)
 
@@ -261,11 +265,10 @@ def execute_query_via_a2a(bdd_context):
     # Mock A2A query execution
     with patch("autoresearch.a2a_interface.query") as mock_a2a_query:
         mock_response = {
-            "query": "What is the capital of France?",
             "answer": "Paris is the capital of France.",
-            "reasoning": "France has Paris as its capital city.",
+            "reasoning": ["France has Paris as its capital city."],
             "citations": ["Wikipedia: France"],
-            "confidence": 0.95,
+            "metrics": {"confidence": 0.95},
         }
         mock_a2a_query.return_value = mock_response
 
@@ -279,58 +282,69 @@ def execute_query_via_a2a(bdd_context):
 
 
 @then("the response format should match the CLI response format")
-def check_a2a_format(bdd_context):
-    """Check that the A2A response format matches the CLI format."""
-    # Create a mock CLI result for comparison
+def check_response_format(bdd_context):
+    """Check that the interface response format matches the CLI format."""
     cli_result = QueryResponse(
-        query="What is the capital of France?",
         answer="Paris is the capital of France.",
-        reasoning="France has Paris as its capital city.",
+        reasoning=["France has Paris as its capital city."],
         citations=["Wikipedia: France"],
-        confidence=0.95,
+        metrics={"confidence": 0.95},
     )
 
-    # Convert CLI result to dict for comparison
     cli_dict = {
-        "query": cli_result.query,
         "answer": cli_result.answer,
         "reasoning": cli_result.reasoning,
         "citations": cli_result.citations,
-        "confidence": cli_result.confidence,
+        "metrics": cli_result.metrics,
     }
 
-    # Compare A2A result with CLI result
-    assert bdd_context["a2a_result"] == cli_dict
+    result = bdd_context.get("a2a_result") or bdd_context.get("mcp_result")
+    assert result == cli_dict
 
 
 @then("the response should contain the same fields as the GUI response")
-def check_a2a_fields(bdd_context):
-    """Check that the A2A response contains the same fields as the GUI response."""
-    # Define expected fields
-    expected_fields = ["query", "answer", "reasoning", "citations", "confidence"]
+def check_response_fields(bdd_context):
+    """Check that the response contains the same fields as the GUI response."""
+    expected_fields = ["answer", "reasoning", "citations", "metrics"]
 
-    # Check that all expected fields are present
+    result = bdd_context.get("a2a_result") or bdd_context.get("mcp_result")
     for field in expected_fields:
-        assert field in bdd_context["a2a_result"]
+        assert field in result
 
 
 @then("the error handling should be consistent with other interfaces")
-def check_a2a_error_handling(bdd_context):
-    """Check that A2A error handling is consistent with other interfaces."""
-    # Mock A2A query execution with an error
-    with patch("autoresearch.a2a_interface.query") as mock_a2a_query:
-        mock_a2a_query.side_effect = ValueError("Invalid query: Query cannot be empty")
-
-        # Execute the query and catch the error
-        from autoresearch.a2a_interface import query
+def check_error_handling(bdd_context):
+    """Ensure interface errors match CLI errors."""
+    # Generate CLI error
+    with patch("autoresearch.main.search") as mock_cli_query:
+        mock_cli_query.side_effect = ValueError("Invalid query: Query cannot be empty")
+        from autoresearch.main import search
 
         try:
-            query("")
+            search(query="")
         except ValueError as e:
-            bdd_context["a2a_error"] = str(e)
+            bdd_context["cli_error"] = str(e)
 
-    # Check that the error message is the same as the CLI error
-    assert bdd_context["a2a_error"] == bdd_context["cli_error"]
+    # Determine interface under test
+    if "a2a_result" in bdd_context:
+        patch_path = "autoresearch.a2a_interface.query"
+        module_name = "autoresearch.a2a_interface"
+        error_key = "a2a_error"
+    else:
+        patch_path = "autoresearch.mcp_interface.query"
+        module_name = "autoresearch.mcp_interface"
+        error_key = "mcp_error"
+
+    with patch(patch_path) as mock_query:
+        mock_query.side_effect = ValueError("Invalid query: Query cannot be empty")
+        module = __import__(module_name, fromlist=["query"])
+
+        try:
+            module.query("")
+        except ValueError as e:
+            bdd_context[error_key] = str(e)
+
+    assert bdd_context[error_key] == bdd_context["cli_error"]
 
 
 @when("I execute a query via the MCP interface")
@@ -339,11 +353,10 @@ def execute_query_via_mcp(bdd_context):
     # Mock MCP query execution
     with patch("autoresearch.mcp_interface.query") as mock_mcp_query:
         mock_response = {
-            "query": "What is the capital of France?",
             "answer": "Paris is the capital of France.",
-            "reasoning": "France has Paris as its capital city.",
+            "reasoning": ["France has Paris as its capital city."],
             "citations": ["Wikipedia: France"],
-            "confidence": 0.95,
+            "metrics": {"confidence": 0.95},
         }
         mock_mcp_query.return_value = mock_response
 
@@ -354,3 +367,4 @@ def execute_query_via_mcp(bdd_context):
 
         # Store the result
         bdd_context["mcp_result"] = result
+
