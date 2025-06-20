@@ -28,8 +28,8 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 ### 1.3 Storage System
 - **Complete the DuckDB integration**
   - Optimize vector search capabilities
-  - Implement efficient eviction policies
-  - Add support for incremental updates
+  - ~~Implement efficient eviction policies~~ (implemented in `StorageManager._enforce_ram_budget`)
+  - ~~Add support for incremental updates~~ (implemented in `StorageManager.persist_claim`)
 - **Enhance the RDF knowledge graph**
   - Implement more sophisticated reasoning capabilities
   - Add support for ontology-based reasoning
