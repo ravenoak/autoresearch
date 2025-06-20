@@ -20,10 +20,12 @@ import sys
 import time
 import threading
 import subprocess
+import shutil
 from pathlib import Path
 from typing import Callable, List, Dict, Any, Optional
 from collections import defaultdict
 import requests
+from git import Repo
 import numpy as np
 
 try:
@@ -1047,22 +1049,43 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
         return []
 
     results: List[Dict[str, str]] = []
-    patterns = [f"**/*.{ext}" for ext in file_types]
 
-    for pattern in patterns:
-        for file in root.rglob(pattern):
-            if not file.is_file():
-                continue
+    # Prefer ripgrep for fast searching when available
+    rg_path = shutil.which("rg")
+    if rg_path:
+        for ext in file_types:
+            if len(results) >= max_results:
+                break
+            cmd = [rg_path, "-n", "--no-heading", "-i", f"-m{max_results - len(results)}", "-g", f"*.{ext}", query, str(root)]
             try:
-                text = file.read_text(errors="ignore")
-            except Exception as exc:  # pragma: no cover - unexpected file errors
-                log.warning("Failed to read %s: %s", file, exc)
-                continue
-            if query.lower() in text.lower():
-                snippet = text[:200]
-                results.append({"title": file.name, "url": str(file), "snippet": snippet})
+                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
+                output = exc.output or ""
+            for line in output.splitlines():
+                parts = line.split(":", 2)
+                if len(parts) < 3:
+                    continue
+                file_path, _line_no, snippet = parts
+                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet.strip()})
                 if len(results) >= max_results:
-                    return results
+                    break
+    else:
+        patterns = [f"**/*.{ext}" for ext in file_types]
+        for pattern in patterns:
+            for file in root.rglob(pattern):
+                if not file.is_file():
+                    continue
+                try:
+                    text = file.read_text(errors="ignore")
+                except Exception as exc:  # pragma: no cover - unexpected file errors
+                    log.warning("Failed to read %s: %s", file, exc)
+                    continue
+                idx = text.lower().find(query.lower())
+                if idx != -1:
+                    snippet = text[idx : idx + 200]
+                    results.append({"title": file.name, "url": str(file), "snippet": snippet})
+                    if len(results) >= max_results:
+                        return results
 
     return results
 
@@ -1080,39 +1103,57 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
         log.warning("local_git backend repo_path not configured")
         return []
 
-    repo = Path(repo_path)
-    if not repo.exists():
+    repo_root = Path(repo_path)
+    if not repo_root.exists():
         log.warning("local_git repo_path does not exist: %s", repo_path)
         return []
 
+    repo = Repo(repo_path)
+    head_hash = repo.head.commit.hexsha
+
     results: List[Dict[str, str]] = []
 
-    # Search current files
-    for file in repo.rglob("*"):
-        if not file.is_file():
-            continue
-        try:
-            text = file.read_text(errors="ignore")
-        except Exception:  # pragma: no cover - unexpected
-            continue
-        if query.lower() in text.lower():
-            snippet = text[:200]
-            results.append({"title": file.name, "url": str(file), "snippet": snippet})
+    # Search working tree files using ripgrep/Python scanning
+    rg_path = shutil.which("rg")
+    file_types = cfg.search.local_file.file_types
+    if rg_path:
+        for ext in file_types:
             if len(results) >= max_results:
-                return results
+                break
+            cmd = [rg_path, "-n", "--no-heading", "-i", f"-m{max_results - len(results)}", "-g", f"*.{ext}", query, str(repo_root)]
+            try:
+                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
+                output = exc.output or ""
+            for line in output.splitlines():
+                parts = line.split(":", 2)
+                if len(parts) < 3:
+                    continue
+                file_path, _line_no, snippet = parts
+                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet.strip(), "commit": head_hash})
+                if len(results) >= max_results:
+                    break
+    else:
+        for file in repo_root.rglob("*"):
+            if not file.is_file():
+                continue
+            try:
+                text = file.read_text(errors="ignore")
+            except Exception:  # pragma: no cover - unexpected
+                continue
+            idx = text.lower().find(query.lower())
+            if idx != -1:
+                snippet = text[idx : idx + 200]
+                results.append({"title": file.name, "url": str(file), "snippet": snippet, "commit": head_hash})
+                if len(results) >= max_results:
+                    return results
 
-    # Search commit messages
-    log_cmd = ["git", "log", "--pretty=%B", f"-n{depth}"]
-    log_cmd.extend(branches)
-    try:
-        output = subprocess.check_output(log_cmd, cwd=repo_path).decode()
-    except Exception as exc:  # pragma: no cover - unexpected
-        log.warning("Failed to run git log: %s", exc)
-        return results
-
-    for line in output.splitlines():
-        if query.lower() in line.lower():
-            results.append({"title": "commit", "url": line.strip(), "snippet": line.strip()})
+    # Search commit messages using GitPython
+    for commit in repo.iter_commits(branches or None, max_count=depth):
+        if query.lower() in commit.message.lower():
+            snippet = commit.message.strip()[:200]
+            commit_hash = commit.hexsha
+            results.append({"title": "commit message", "url": commit_hash, "snippet": snippet, "commit": commit_hash})
             if len(results) >= max_results:
                 break
 

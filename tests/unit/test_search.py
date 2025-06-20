@@ -219,6 +219,7 @@ def test_local_file_backend(monkeypatch, tmp_path):
     results = Search.external_lookup("hello", max_results=5)
 
     assert any(r["url"] == str(file_path) for r in results)
+    assert any("hello" in r["snippet"].lower() for r in results)
 
 
 def test_local_git_backend(monkeypatch, tmp_path):
@@ -242,7 +243,10 @@ def test_local_git_backend(monkeypatch, tmp_path):
 
     results = Search.external_lookup("TODO", max_results=5)
 
-    assert any("TODO" in r["url"] or r["url"] == str(readme) for r in results)
+    commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo).decode().strip()
+
+    assert any(r.get("commit") == commit_hash for r in results)
+    assert any(r["url"] == str(readme) for r in results)
 
 
 def test_external_lookup_vector_search(monkeypatch):

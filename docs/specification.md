@@ -74,6 +74,22 @@
   `index_strategy` for incremental or full indexing. Commit messages, diffs,
   and file revisions are stored for search.
 
+Example configuration enabling local sources:
+
+```toml
+[search]
+backends = ["serper", "local_file", "local_git"]
+
+[search.local_file]
+path = "/path/to/docs"
+file_types = ["md", "txt"]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = ["main"]
+history_depth = 100
+```
+
 These backends register themselves with the `Search` class via the standard
 `register_backend` decorator. When enabled in configuration they participate in
 the search workflow like any web provider. Indexed documents are persisted
