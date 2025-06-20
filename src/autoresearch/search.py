@@ -22,7 +22,7 @@ import threading
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Callable, List, Dict, Any, Optional
+from typing import Any, Callable, Dict, List, Optional, Iterable, Sequence, cast
 from collections import defaultdict
 import requests
 from git import Repo
@@ -48,7 +48,7 @@ try:
 
     SPACY_AVAILABLE = True
 except ImportError:  # pragma: no cover - optional dependency
-    spacy = None
+    spacy = None  # type: ignore[assignment]
     SPACY_AVAILABLE = False
 
 try:
@@ -485,6 +485,7 @@ class Search:
         try:
             if query_embedding is None:
                 # Encode the query
+                assert model is not None
                 query_embedding = model.encode(query)
 
             # Encode the documents
@@ -514,6 +515,7 @@ class Search:
                 similarities.append(None)
 
             if to_encode:
+                assert model is not None
                 doc_embeddings = model.encode(to_encode)
                 for emb, index in zip(doc_embeddings, encode_map):
                     sim = np.dot(query_embedding, emb) / (
@@ -1050,7 +1052,7 @@ def _brave_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     api_key = os.getenv("BRAVE_SEARCH_API_KEY", "")
     url = "https://api.search.brave.com/res/v1/web/search"
     headers = {"Accept": "application/json", "X-Subscription-Token": api_key}
-    params = {"q": query, "count": max_results}
+    params: Dict[str, str | int] = {"q": query, "count": max_results}
 
     response = requests.get(url, params=params, headers=headers, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
@@ -1185,9 +1187,9 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     return results
 
     # Search commit messages using GitPython
-    for commit in repo.iter_commits(branches or None, max_count=depth):
+    for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
         if query.lower() in commit.message.lower():
-            snippet = commit.message.strip()[:200]
+            snippet = str(commit.message).strip()[:200]
             commit_hash = commit.hexsha
             results.append({"title": "commit message", "url": commit_hash, "snippet": snippet, "commit": commit_hash})
             if len(results) >= max_results:

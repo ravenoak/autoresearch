@@ -6,7 +6,7 @@ on particular subjects, offering specialized insights, and applying
 domain-specific methodologies to analyze problems.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel

@@ -32,7 +32,7 @@ class ResearcherAgent(Agent):
         model = self.get_model(config)
 
         # Retrieve external references with more results than standard fact checking
-        max_results = config.max_results_per_query * 2  # Double the standard results
+        max_results = config.search.max_results_per_query * 2
         raw_sources = Search.external_lookup(state.query, max_results=max_results)
         sources = []
         for s in raw_sources:

@@ -78,5 +78,5 @@ python_version = "3.13"
 ignore_missing_imports = true
 
 [tool.flake8]
-max-line-length = 120
+max-line-length = 100
 extend-ignore = ["E501"]

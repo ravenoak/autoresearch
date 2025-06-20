@@ -5,7 +5,8 @@ from __future__ import annotations
 import sys
 import os
 import difflib
-from typing import Optional, Dict, Any, List, Sequence
+from typing import Optional, List, Sequence, Any
+import click
 
 import typer
 from rich.console import Console
@@ -74,9 +75,11 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
     print_error(f"Command '{command}' not found.")
 
     # Get all available commands
-    available_commands = []
-    for cmd in ctx.command.commands.values():
-        available_commands.append(cmd.name)
+    available_commands: List[str] = []
+    if isinstance(ctx.command, click.Group):
+        for command_obj in ctx.command.commands.values():
+            if command_obj.name:
+                available_commands.append(command_obj.name)
 
     # Find similar commands
     similar_commands = find_similar_commands(command, available_commands)
@@ -1152,7 +1155,7 @@ def capabilities(
         # Display capabilities in Markdown format
         autoresearch capabilities --output markdown
     """
-    from .llm.adapters import get_available_adapters
+    from .llm import get_available_adapters
     from .orchestration import ReasoningMode
 
     config = _config_loader.load_config()
@@ -1191,7 +1194,7 @@ def capabilities(
         },
     }
 
-    capabilities_data = {
+    capabilities_data: dict[str, Any] = {
         "version": "1.0.0",
         "reasoning_modes": reasoning_modes,
         "llm_backends": llm_backends,
@@ -1475,7 +1478,7 @@ if __name__ == "__main__":
         cmd_name = sys.argv[1] if len(sys.argv) > 1 else ""
         if "No such command" in str(e) and cmd_name:
             # Create a dummy context for the handler
-            ctx = typer.Context(app)
+            ctx = typer.Context(app)  # type: ignore[arg-type]
             handle_command_not_found(ctx, cmd_name)
         else:
             # Re-raise other exceptions
