@@ -44,14 +44,14 @@ def test_config_command(monkeypatch):
     assert '"loops"' in result.stdout
 
 
-@patch("autoresearch.main.Server")
-def test_serve_command(mock_server, monkeypatch):
+@patch("autoresearch.mcp_interface.create_server")
+def test_serve_command(mock_create_server, monkeypatch):
     """Test the serve command that starts an MCP server."""
     runner = CliRunner()
 
     # Create mock objects
     mock_server_instance = MagicMock()
-    mock_server.return_value = mock_server_instance
+    mock_create_server.return_value = mock_server_instance
 
     # Mock the config loader
     class Cfg:
@@ -71,7 +71,7 @@ def test_serve_command(mock_server, monkeypatch):
     assert result.exit_code == 0
 
     # Verify the server was created with the correct parameters
-    mock_server.assert_called_once_with("Autoresearch", host="localhost", port=8888)
+    mock_create_server.assert_called_once_with(host="localhost", port=8888)
 
     # Verify the server was started
     mock_server_instance.run.assert_called_once()

@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
-from mcp.server import Server
+from .mcp_interface import create_server
 from datetime import datetime
 import time
 
@@ -529,42 +529,10 @@ def serve(
         # Start the MCP server on a specific host and port
         autoresearch serve --host 0.0.0.0 --port 8888
     """
-    config = _config_loader.load_config()
     console = Console()
 
-    # Create an MCP server
-    server = Server("Autoresearch", host=host, port=port)
-
-    @server.tool
-    def research(query: str) -> Dict[str, Any]:
-        """Run a research query through Autoresearch and return the results.
-
-        Args:
-            query: The natural language query to research
-
-        Returns:
-            A dictionary containing the research results with answer, citations, and reasoning
-        """
-        try:
-            result = Orchestrator.run_query(query, config)
-            # Convert the QueryResponse to a dictionary
-            return {
-                "answer": result.answer,
-                "citations": [citation.dict() for citation in result.citations],
-                "reasoning": result.reasoning,
-                "metrics": result.metrics,
-            }
-        except Exception as e:
-            return {
-                "error": str(e),
-                "answer": f"Error: {str(e)}",
-                "citations": [],
-                "reasoning": [
-                    "An error occurred during processing.",
-                    "Please check the logs for details.",
-                ],
-                "metrics": {"error": str(e)},
-            }
+    # Create an MCP server using the dedicated interface module
+    server = create_server(host=host, port=port)
 
     console.print(f"[bold green]Starting MCP server on {host}:{port}[/bold green]")
     console.print("Available tools:")
