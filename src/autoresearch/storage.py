@@ -1138,3 +1138,66 @@ class StorageManager:
                 _db_backend.clear()
             if _rdf_store is not None:
                 _rdf_store.remove((None, None, None))
+
+    # ------------------------------------------------------------------
+    # Ontology-based reasoning utilities
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def load_ontology(path: str) -> None:
+        """Load an ontology file into the RDF store.
+
+        The ontology is parsed and all triples are added to the current
+        RDF store. Supported formats are those understood by ``rdflib``
+        (e.g. ``ttl``, ``xml``).
+        """
+        StorageManager._ensure_storage_initialized()
+        store = StorageManager.get_rdf_store()
+        store.parse(path)
+
+    @staticmethod
+    def apply_ontology_reasoning() -> None:
+        """Apply OWL RL reasoning over the RDF store."""
+        StorageManager._ensure_storage_initialized()
+        store = StorageManager.get_rdf_store()
+        try:  # pragma: no cover - owlrl is optional
+            import owlrl  # type: ignore
+
+            owlrl.DeductiveClosure(owlrl.OWLRL_Semantics).expand(store)
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise StorageError(
+                "Failed to apply ontology reasoning",
+                cause=exc,
+                suggestion="Ensure the owlrl package is installed",
+            )
+
+    @staticmethod
+    def query_rdf(query: str):
+        """Run a SPARQL query against the RDF store."""
+        StorageManager._ensure_storage_initialized()
+        store = StorageManager.get_rdf_store()
+        return store.query(query)
+
+    @staticmethod
+    def visualize_rdf(output_path: str) -> None:
+        """Generate a simple PNG visualization of the RDF graph."""
+        StorageManager._ensure_storage_initialized()
+        store = StorageManager.get_rdf_store()
+
+        g = nx.DiGraph()
+        for s, p, o in store:
+            g.add_edge(str(s), str(o), label=str(p))
+
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(8, 6))
+        pos = nx.spring_layout(g, seed=42)
+        nx.draw(g, pos, with_labels=True, node_color="lightblue", font_size=8)
+        edge_labels = nx.get_edge_attributes(g, "label")
+        nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=6)
+        plt.tight_layout()
+        plt.savefig(output_path)
+        plt.close()

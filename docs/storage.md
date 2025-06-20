@@ -116,3 +116,24 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
    [storage]
    rdf_backend = "memory"
    ```
+
+## Ontology Reasoning and Visualization
+
+The RDF store supports optional ontology-based reasoning using the
+`owlrl` package. Load an ontology file and expand the graph:
+
+```python
+from autoresearch.storage import StorageManager
+
+StorageManager.load_ontology("ontology.ttl")
+StorageManager.apply_ontology_reasoning()
+results = StorageManager.query_rdf("""SELECT ?s ?o WHERE { ?s a <http://example.com/B> . }""")
+```
+
+To visualize the current RDF graph as a PNG image, run:
+
+```bash
+poetry run python scripts/visualize_rdf.py graph.png
+```
+
+The script writes `graph.png` containing a simple diagram of all triples.
