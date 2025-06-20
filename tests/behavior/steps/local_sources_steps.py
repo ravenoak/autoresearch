@@ -3,8 +3,8 @@ import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
 from .common_steps import *  # noqa: F401,F403
-from autoresearch.search import Search
 from autoresearch.config import ConfigModel
+from autoresearch.search import Search
 
 
 @given("a directory with text files")
@@ -73,6 +73,7 @@ def check_git_results(bdd_context):
     repo_path = bdd_context["repo_path"]
     term = bdd_context["term"]
     assert any(term in r["url"] or r["url"] == str(repo_path / "README.md") for r in results)
+    assert any(r.get("commit") for r in results)
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for text files")
