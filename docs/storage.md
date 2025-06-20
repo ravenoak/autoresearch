@@ -26,6 +26,15 @@ The diagram below shows the relationships between these classes and their intera
 3. The `vector_search()` method finds similar claims using vector similarity
 4. The `teardown()` method closes connections and cleans up resources
 
+## Incremental Updates
+
+`StorageManager.persist_claim()` supports partial updates. When a claim with an
+existing ID is persisted with `partial_update=True`, only the provided fields are
+merged into the stored record. Vector embeddings are inserted into DuckDB and
+the HNSW index is refreshed using `StorageManager.refresh_vector_index()`. RDF
+triples are updated with `StorageManager.update_rdf_claim()` so that semantic
+queries remain consistent.
+
 ## Local Data Persistence
 
 Search backends that operate on the filesystem or Git repositories generate

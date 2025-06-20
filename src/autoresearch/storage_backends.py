@@ -391,6 +391,18 @@ class DuckDBStorageBackend:
             if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
                 raise StorageError("Failed to create HNSW index", cause=e)
 
+    def refresh_hnsw_index(self) -> None:
+        """Rebuild the HNSW index to include new embeddings."""
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        with self._lock:
+            try:
+                self._conn.execute("DROP INDEX IF EXISTS embeddings_hnsw")
+                self.create_hnsw_index()
+            except Exception as e:  # pragma: no cover - unexpected DB failure
+                raise StorageError("Failed to refresh HNSW index", cause=e)
+
     def persist_claim(self, claim: Dict[str, Any]) -> None:
         """
         Persist a claim to the DuckDB database.
