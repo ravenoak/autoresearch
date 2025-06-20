@@ -131,13 +131,13 @@ def test_calculate_semantic_similarity(sample_results):
         )
 
     # Check that scores are in the expected range
-    assert all(-1 <= score <= 1 for score in scores)
+    assert all(0 <= score <= 1 for score in scores)
 
     # Check that similar documents have higher scores
     assert scores[0] > 0.9  # Very similar
     assert scores[2] > 0.9  # Very similar
     assert 0 < scores[1] < 1  # Somewhat similar
-    assert scores[3] < 0  # Negative similarity
+    assert scores[3] < 0.5  # Dissimilar
 
 
 def test_assess_source_credibility(sample_results):

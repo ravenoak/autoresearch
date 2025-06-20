@@ -163,3 +163,40 @@ def test_ranking_across_backends(monkeypatch):
     results = Search.external_lookup("python", max_results=1)
 
     assert results[0]["url"] == "u1"
+
+
+def test_vector_and_backend_ranking(monkeypatch):
+    """Vector results should be ranked alongside backend results."""
+
+    def b1(query, max_results=5):
+        return [{"title": "python foo", "url": "u1"}]
+
+    monkeypatch.setitem(Search.backends, "b1", b1)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["b1"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.hybrid_query = True
+    cfg.search.semantic_similarity_weight = 0.6
+    cfg.search.bm25_weight = 0.4
+    cfg.search.source_credibility_weight = 0.0
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    class DummyModel:
+        def encode(self, _):
+            return [0.1, 0.2]
+
+    monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
+
+    def mock_vector_search(embed, k=5):
+        return [{"node_id": "vec", "content": "vector", "embedding": [0.1, 0.2], "similarity": 0.9}]
+
+    monkeypatch.setattr(StorageManager, "vector_search", mock_vector_search)
+
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, docs: [0.1, 0.9])
+    monkeypatch.setattr(Search, "calculate_semantic_similarity", lambda q, docs, query_embedding=None: [0.9, 0.1])
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda docs: [1.0, 1.0])
+
+    results = Search.external_lookup("python", max_results=1)
+
+    assert results[0]["url"] == "vec"
