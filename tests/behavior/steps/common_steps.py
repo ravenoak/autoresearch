@@ -15,16 +15,15 @@ client = TestClient(api_app)
 @given("the Autoresearch application is running")
 def application_running(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    cfg = {"core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512}}
+    cfg = {
+        "core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512},
+        "search": {"backends": [], "context_aware": {"enabled": False}},
+    }
     with open("autoresearch.toml", "w") as f:
         import tomli_w
 
         f.write(tomli_w.dumps(cfg))
 
-    monkeypatch.setattr(
-        "autoresearch.search.Search.external_lookup",
-        lambda q, max_results=5: [{"title": "t", "url": "u"}],
-    )
     from autoresearch.llm import DummyAdapter
 
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
