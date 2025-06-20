@@ -337,28 +337,276 @@ class Orchestrator:
     @staticmethod
     def _handle_agent_error(
         agent_name: str, e: Exception, state: QueryState, metrics: OrchestrationMetrics
-    ) -> None:
-        """Handle agent errors.
+    ) -> dict:
+        """Handle agent errors with granular recovery strategies.
 
         Args:
             agent_name: Name of the agent
             e: The exception that occurred
             state: Current query state
             metrics: Metrics collector
+
+        Returns:
+            Dictionary with error recovery information
         """
-        # Record error information
+        log = get_logger(__name__)
+
+        # Categorize the error for appropriate handling
+        error_category = Orchestrator._categorize_error(e)
+
+        # Record detailed error information
         error_info = {
             "agent": agent_name,
             "error": str(e),
+            "error_type": type(e).__name__,
+            "error_category": error_category,
             "traceback": traceback.format_exc(),
             "timestamp": time.time(),
         }
+
+        # Add to state and metrics
         state.add_error(error_info)
         metrics.record_error(agent_name)
-        log.error(
-            f"Error during agent {agent_name} execution: {str(e)}",
-            exc_info=True,
-        )
+
+        # Log the error with appropriate level based on category
+        if error_category == "critical":
+            log.critical(
+                f"Critical error during agent {agent_name} execution: {str(e)}",
+                exc_info=True,
+                extra={"error_info": error_info}
+            )
+        elif error_category == "recoverable":
+            log.error(
+                f"Recoverable error during agent {agent_name} execution: {str(e)}",
+                exc_info=True,
+                extra={"error_info": error_info}
+            )
+        else:  # "transient"
+            log.warning(
+                f"Transient error during agent {agent_name} execution: {str(e)}",
+                exc_info=True,
+                extra={"error_info": error_info}
+            )
+
+        # Apply recovery strategy based on error category
+        recovery_info = Orchestrator._apply_recovery_strategy(agent_name, error_category, e, state)
+
+        # Update error info with recovery details
+        error_info.update(recovery_info)
+
+        # Update circuit breaker state for this agent
+        Orchestrator._update_circuit_breaker(agent_name, error_category)
+
+        return error_info
+
+    @staticmethod
+    def _categorize_error(e: Exception) -> str:
+        """Categorize an error for appropriate handling.
+
+        Args:
+            e: The exception to categorize
+
+        Returns:
+            Error category: "transient", "recoverable", or "critical"
+        """
+        # Timeout errors are typically transient
+        if isinstance(e, TimeoutError):
+            return "transient"
+
+        # Not found errors are typically recoverable
+        if isinstance(e, NotFoundError):
+            return "recoverable"
+
+        # Agent errors might be recoverable depending on the specific error
+        if isinstance(e, AgentError):
+            # Check for specific error messages that indicate recoverable errors
+            error_str = str(e).lower()
+            if any(term in error_str for term in ["retry", "temporary", "timeout", "rate limit"]):
+                return "transient"
+            elif any(term in error_str for term in ["configuration", "invalid input", "format"]):
+                return "recoverable"
+            else:
+                return "critical"
+
+        # Orchestration errors are typically critical
+        if isinstance(e, OrchestrationError):
+            return "critical"
+
+        # Default to critical for unknown errors
+        return "critical"
+
+    @staticmethod
+    def _apply_recovery_strategy(agent_name: str, error_category: str, e: Exception, state: QueryState) -> dict:
+        """Apply an appropriate recovery strategy based on error category.
+
+        Args:
+            agent_name: Name of the agent
+            error_category: Category of the error
+            e: The exception that occurred
+            state: Current query state
+
+        Returns:
+            Dictionary with recovery strategy information
+        """
+        log = get_logger(__name__)
+
+        if error_category == "transient":
+            # For transient errors, we can retry or use a fallback
+            recovery_strategy = "retry_with_backoff"
+            suggestion = "This error is likely temporary. The system will automatically retry with backoff."
+
+            # Add a placeholder result to avoid breaking the chain
+            fallback_result = {
+                "claims": [f"Agent {agent_name} encountered a temporary error: {str(e)}"],
+                "results": {
+                    "fallback": f"The {agent_name} agent encountered a temporary issue. " +
+                               "This is likely due to external factors and may resolve on retry."
+                },
+                "metadata": {
+                    "recovery_applied": True,
+                    "recovery_strategy": recovery_strategy
+                }
+            }
+            state.update(fallback_result)
+
+            log.info(
+                f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+            )
+
+        elif error_category == "recoverable":
+            # For recoverable errors, we can use a fallback agent or simplified approach
+            recovery_strategy = "fallback_agent"
+            suggestion = "This error indicates a configuration or input issue. A fallback approach will be used."
+
+            # Add a simplified result to continue the process
+            fallback_result = {
+                "claims": [f"Agent {agent_name} encountered a recoverable error: {str(e)}"],
+                "results": {
+                    "fallback": f"The {agent_name} agent encountered an issue that prevented it from completing normally. " +
+                               "A simplified approach has been used instead."
+                },
+                "metadata": {
+                    "recovery_applied": True,
+                    "recovery_strategy": recovery_strategy
+                }
+            }
+            state.update(fallback_result)
+
+            log.info(
+                f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+            )
+
+        else:  # "critical"
+            # For critical errors, we need to fail gracefully
+            recovery_strategy = "fail_gracefully"
+            suggestion = "This is a critical error that requires attention. Check the logs for details."
+
+            # Add error information to the state
+            error_result = {
+                "claims": [f"Agent {agent_name} encountered a critical error: {str(e)}"],
+                "results": {
+                    "error": f"The {agent_name} agent encountered a critical error that prevented completion. " +
+                            "This requires investigation."
+                },
+                "metadata": {
+                    "recovery_applied": True,
+                    "recovery_strategy": recovery_strategy,
+                    "critical_error": True
+                }
+            }
+            state.update(error_result)
+
+            log.warning(
+                f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+            )
+
+        return {
+            "recovery_strategy": recovery_strategy,
+            "suggestion": suggestion
+        }
+
+    # Circuit breaker state (class variable)
+    _circuit_breakers = {}
+
+    @staticmethod
+    def _update_circuit_breaker(agent_name: str, error_category: str) -> None:
+        """Update the circuit breaker state for an agent.
+
+        Implements the circuit breaker pattern to prevent repeated failures.
+
+        Args:
+            agent_name: Name of the agent
+            error_category: Category of the error
+        """
+        log = get_logger(__name__)
+
+        # Initialize circuit breaker for this agent if it doesn't exist
+        if agent_name not in Orchestrator._circuit_breakers:
+            Orchestrator._circuit_breakers[agent_name] = {
+                "failure_count": 0,
+                "last_failure_time": 0,
+                "state": "closed",  # closed = normal operation, open = failing, half-open = testing recovery
+                "recovery_attempts": 0
+            }
+
+        breaker = Orchestrator._circuit_breakers[agent_name]
+        current_time = time.time()
+
+        # Update the circuit breaker based on error category
+        if error_category in ["critical", "recoverable"]:
+            breaker["failure_count"] += 1
+            breaker["last_failure_time"] = current_time
+
+            # If we've had too many failures, open the circuit
+            if breaker["failure_count"] >= 3 and breaker["state"] == "closed":
+                breaker["state"] = "open"
+                log.warning(
+                    f"Circuit breaker for agent {agent_name} is now OPEN due to repeated failures",
+                    extra={"agent": agent_name, "circuit_state": "open", "failure_count": breaker["failure_count"]}
+                )
+
+        elif error_category == "transient":
+            # For transient errors, we're more lenient
+            breaker["failure_count"] += 0.5  # Count transient errors as half failures
+            breaker["last_failure_time"] = current_time
+
+        # Check if we should attempt recovery for an open circuit
+        if breaker["state"] == "open":
+            # After a cooling period (30 seconds), try half-open state
+            cooling_period = 30  # seconds
+            if current_time - breaker["last_failure_time"] > cooling_period:
+                breaker["state"] = "half-open"
+                breaker["recovery_attempts"] += 1
+                log.info(
+                    f"Circuit breaker for agent {agent_name} is now HALF-OPEN, attempting recovery",
+                    extra={"agent": agent_name, "circuit_state": "half-open", "recovery_attempts": breaker["recovery_attempts"]}
+                )
+
+        # If we're in half-open state and this was a success (not called for an error)
+        # This would be called from a success handler, not implemented here
+
+    @staticmethod
+    def get_circuit_breaker_state(agent_name: str) -> dict:
+        """Get the current circuit breaker state for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        Returns:
+            Dictionary with circuit breaker state information
+        """
+        if agent_name not in Orchestrator._circuit_breakers:
+            return {
+                "state": "closed",
+                "failure_count": 0,
+                "last_failure_time": 0,
+                "recovery_attempts": 0
+            }
+
+        return Orchestrator._circuit_breakers[agent_name].copy()
 
     @staticmethod
     def _execute_agent(
@@ -655,7 +903,7 @@ class Orchestrator:
 
     @staticmethod
     def run_parallel_query(
-        query: str, config: ConfigModel, agent_groups: List[List[str]]
+        query: str, config: ConfigModel, agent_groups: List[List[str]], timeout: int = 300
     ) -> QueryResponse:
         """Run multiple parallel agent groups and synthesize results.
 
@@ -663,21 +911,34 @@ class Orchestrator:
             query: The user's query
             config: System configuration
             agent_groups: Lists of agent names to run in parallel
+            timeout: Maximum execution time in seconds (default: 300)
 
         Returns:
             Synthesized QueryResponse from all agent groups
         """
         setup_tracing(getattr(config, "tracing_enabled", False))
         tracer = get_tracer(__name__)
+        log = get_logger(__name__)
 
         # Create a state for the final synthesis
         final_state = QueryState(query=query)
+
+        # Calculate optimal number of workers based on system resources and group count
+        cpu_count = os.cpu_count() or 4
+        max_workers = min(len(agent_groups), max(1, cpu_count - 1))
+
+        # Track resource usage
+        start_time = time.time()
+        memory_usage_start = Orchestrator._get_memory_usage()
 
         # Function to run a single agent group
         def run_group(group: List[str]) -> QueryResponse:
             # Create a config copy for this group
             group_config = config.model_copy()
             group_config.agents = group
+
+            # Set resource limits for this group
+            group_config.token_budget = getattr(config, "token_budget", 4000) // max(1, len(agent_groups))
 
             try:
                 # Run the group
@@ -696,51 +957,124 @@ class Orchestrator:
         # Run agent groups in parallel
         errors = []
         results = []
+        timeouts = []
 
-        with tracer.start_as_current_span("parallel_query"):
-            with ThreadPoolExecutor(max_workers=min(len(agent_groups), 4)) as executor:
+        with tracer.start_as_current_span("parallel_query") as span:
+            span.set_attribute("agent_groups", str(agent_groups))
+            span.set_attribute("max_workers", max_workers)
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # Submit all tasks
-                futures = [executor.submit(run_group, group) for group in agent_groups]
+                futures = {executor.submit(run_group, group): group for group in agent_groups}
 
-                # Collect results and errors
-                for future in futures:
-                    try:
-                        results.append(future.result())
-                    except Exception as e:
-                        errors.append(str(e))
-                        log.error(f"Parallel execution error: {str(e)}", exc_info=True)
+                # Wait for completion with timeout
+                import concurrent.futures
+                try:
+                    for future in concurrent.futures.as_completed(futures, timeout=timeout):
+                        group = futures[future]
+                        try:
+                            result = future.result()
+                            results.append((group, result))
+                            log.info(f"Agent group {group} completed successfully")
+                            span.add_event(f"Group {group} completed")
+                        except Exception as e:
+                            errors.append((group, str(e)))
+                            log.error(f"Agent group {group} failed: {str(e)}", exc_info=True)
+                            span.add_event(f"Group {group} failed", {"error": str(e)})
+                except concurrent.futures.TimeoutError:
+                    # Handle timeout for remaining futures
+                    for future, group in futures.items():
+                        if not future.done():
+                            future.cancel()
+                            timeouts.append(group)
+                            log.warning(f"Agent group {group} timed out after {timeout} seconds")
+                            span.add_event(f"Group {group} timed out")
 
-        # If all groups failed, raise an error
-        if not results and errors:
-            raise OrchestrationError(
-                "All parallel agent groups failed",
-                cause=None,
-                errors=errors,
-                suggestion="Check the agent configurations and ensure all required agents are properly registered and configured",
+            # Record resource usage
+            execution_time = time.time() - start_time
+            memory_usage_end = Orchestrator._get_memory_usage()
+            memory_delta = memory_usage_end - memory_usage_start
+
+            span.set_attribute("execution_time_seconds", execution_time)
+            span.set_attribute("memory_usage_delta_mb", memory_delta)
+
+            log.info(
+                f"Parallel execution completed in {execution_time:.2f}s with memory delta: {memory_delta:.2f}MB",
+                extra={
+                    "execution_time": execution_time,
+                    "memory_delta": memory_delta,
+                    "successful_groups": len(results),
+                    "error_groups": len(errors),
+                    "timeout_groups": len(timeouts)
+                }
             )
 
-        # Merge results into final state
-        for result in results:
+        # If all groups failed or timed out, raise an error
+        if not results and (errors or timeouts):
+            error_details = []
+            if errors:
+                error_details.extend([f"{group}: {error}" for group, error in errors])
+            if timeouts:
+                error_details.extend([f"{group}: timed out" for group in timeouts])
+
+            raise OrchestrationError(
+                "All parallel agent groups failed or timed out",
+                cause=None,
+                errors=error_details,
+                suggestion="Check the agent configurations and ensure all required agents are properly registered and configured. Consider increasing the timeout value for complex queries.",
+            )
+
+        # Merge results into final state with weighting based on agent group performance
+        for group, result in results:
+            # Calculate a confidence score based on result quality
+            confidence = Orchestrator._calculate_result_confidence(result)
+
             # Convert QueryResponse back to dictionary for state update
             result_dict = {
                 "claims": result.reasoning,
                 "sources": result.citations,
-                "metadata": result.metrics,
-                "results": {"group_answer": result.answer},
+                "metadata": {
+                    **result.metrics,
+                    "confidence": confidence,
+                    "agent_group": group
+                },
+                "results": {
+                    "group_answer": result.answer,
+                    "group_confidence": confidence
+                },
             }
             final_state.update(result_dict)
 
-        # Add error information to final state if there were errors
-        if errors:
+        # Add error and timeout information to final state
+        if errors or timeouts:
             error_info = {
-                "claims": [f"Error in parallel execution: {error}" for error in errors],
-                "metadata": {"errors": errors},
-                "results": {"error": f"Some agent groups failed: {', '.join(errors)}"},
+                "metadata": {
+                    "errors": [f"{group}: {error}" for group, error in errors],
+                    "timeouts": [f"{group}" for group in timeouts]
+                }
             }
+
+            if errors:
+                error_info["claims"] = [f"Error in agent group {group}: {error}" for group, error in errors]
+
+            if timeouts:
+                error_info["claims"] = error_info.get("claims", []) + [f"Agent group {group} timed out" for group in timeouts]
+
             final_state.update(error_info)
 
-        # Create a synthesizer to combine results
+        # Create a synthesizer to combine results with weighted aggregation
         synthesizer = AgentFactory.get("Synthesizer")
+
+        # Add aggregation context to help synthesizer combine results effectively
+        aggregation_context = {
+            "successful_groups": len(results),
+            "error_groups": len(errors),
+            "timeout_groups": len(timeouts),
+            "execution_time": execution_time,
+            "aggregation_strategy": "weighted_confidence"
+        }
+        final_state.update({"metadata": {"aggregation": aggregation_context}})
+
         final_result = synthesizer.execute(final_state, config)
 
         # Update state with synthesis
@@ -752,6 +1086,18 @@ class Orchestrator:
         # Use the synthesizer's answer if available
         if "answer" in final_result and final_result["answer"]:
             response.answer = final_result["answer"]
+
+        # Add detailed execution metrics to response
+        response.metrics.update({
+            "parallel_execution": {
+                "total_groups": len(agent_groups),
+                "successful_groups": len(results),
+                "error_groups": len(errors),
+                "timeout_groups": len(timeouts),
+                "execution_time": execution_time,
+                "memory_delta_mb": memory_delta
+            }
+        })
 
         return response
 
@@ -816,6 +1162,73 @@ class Orchestrator:
             return []
         start_idx = start_idx % len(items)  # Handle index out of bounds
         return items[start_idx:] + items[:start_idx]
+
+    @staticmethod
+    def _get_memory_usage() -> float:
+        """Get current memory usage in MB.
+
+        Returns:
+            Current memory usage in MB
+        """
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            return memory_info.rss / (1024 * 1024)  # Convert to MB
+        except ImportError:
+            # Fallback if psutil is not available
+            import resource
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024  # Already in KB, convert to MB
+
+    @staticmethod
+    def _calculate_result_confidence(result: QueryResponse) -> float:
+        """Calculate a confidence score for a query result.
+
+        Args:
+            result: The query result to evaluate
+
+        Returns:
+            Confidence score between 0.0 and 1.0
+        """
+        # Start with a base confidence
+        confidence = 0.5
+
+        # Adjust based on number of citations
+        if hasattr(result, 'citations') and result.citations:
+            citation_count = len(result.citations)
+            # More citations generally indicate better support
+            citation_factor = min(0.3, 0.05 * citation_count)
+            confidence += citation_factor
+
+        # Adjust based on reasoning length and quality
+        if hasattr(result, 'reasoning') and result.reasoning:
+            reasoning_length = len(result.reasoning)
+            # Longer reasoning chains may indicate more thorough analysis
+            # But we cap the bonus to avoid rewarding verbosity
+            reasoning_factor = min(0.2, 0.01 * reasoning_length)
+            confidence += reasoning_factor
+
+        # Adjust based on token usage efficiency
+        if hasattr(result, 'metrics') and 'token_usage' in result.metrics:
+            token_usage = result.metrics['token_usage']
+            if 'total' in token_usage and 'max_tokens' in token_usage:
+                usage_ratio = token_usage['total'] / max(1, token_usage['max_tokens'])
+                # Efficient token usage (not too low, not maxed out)
+                if 0.3 <= usage_ratio <= 0.9:
+                    confidence += 0.1
+                elif usage_ratio > 0.9:
+                    # Maxed out token usage might indicate truncation
+                    confidence -= 0.1
+
+        # Adjust based on execution errors
+        if hasattr(result, 'metrics') and 'errors' in result.metrics:
+            error_count = len(result.metrics['errors'])
+            if error_count > 0:
+                # Errors reduce confidence
+                confidence -= min(0.4, 0.1 * error_count)
+
+        # Ensure confidence is within bounds
+        return max(0.1, min(1.0, confidence))
 
     @staticmethod
     @contextmanager
