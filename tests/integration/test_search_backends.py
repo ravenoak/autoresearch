@@ -100,23 +100,20 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
 
     calls = []
 
-    def local_file(query, max_results=5):
+    # Wrap existing backends to track invocation order
+    original_file_backend = Search.backends["local_file"]
+    original_git_backend = Search.backends["local_git"]
+
+    def file_wrapper(query, max_results=5):
         calls.append("file")
-        results = []
-        for f in docs_dir.rglob("*.txt"):
-            if query in f.read_text():
-                results.append({"title": f.name, "url": str(f)})
-        return results[:max_results]
+        return original_file_backend(query, max_results)
 
-    def local_git(query, max_results=5):
+    def git_wrapper(query, max_results=5):
         calls.append("git")
-        readme = repo_path / "README.md"
-        if query in readme.read_text():
-            return [{"title": readme.name, "url": str(readme)}]
-        return []
+        return original_git_backend(query, max_results)
 
-    monkeypatch.setitem(Search.backends, "local_file", local_file)
-    monkeypatch.setitem(Search.backends, "local_git", local_git)
+    monkeypatch.setitem(Search.backends, "local_file", file_wrapper)
+    monkeypatch.setitem(Search.backends, "local_git", git_wrapper)
 
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["local_file", "local_git"]

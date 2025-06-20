@@ -294,7 +294,6 @@ class SearchContext:
                     )
                 else:
                     # Get the topic for the query
-                    query_embedding = sentence_transformer.encode(query)
                     topic, _ = self.topic_model.transform([query])
                     topic = topic[0]  # Get the first (and only) topic
 
@@ -1119,7 +1118,7 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
                     continue
                 idx = text.lower().find(query.lower())
                 if idx != -1:
-                    snippet = text[idx : idx + 200]
+                    snippet = text[idx:idx + 200]
                     results.append({"title": file.name, "url": str(file), "snippet": snippet})
                     if len(results) >= max_results:
                         return results
@@ -1180,7 +1179,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 continue
             idx = text.lower().find(query.lower())
             if idx != -1:
-                snippet = text[idx : idx + 200]
+                snippet = text[idx:idx + 200]
                 results.append({"title": file.name, "url": str(file), "snippet": snippet, "commit": head_hash})
                 if len(results) >= max_results:
                     return results
