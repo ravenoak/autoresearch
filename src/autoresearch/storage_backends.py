@@ -446,6 +446,82 @@ class DuckDBStorageBackend:
             except Exception as e:
                 raise StorageError("Failed to persist claim to DuckDB", cause=e)
 
+    def update_claim(self, claim: Dict[str, Any], partial_update: bool = False) -> None:
+        """Update an existing claim in the DuckDB database.
+
+        Parameters
+        ----------
+        claim:
+            The claim data with at least an ``id`` field. Other fields are
+            updated if provided.
+        partial_update:
+            If ``True`` only the supplied fields are updated, otherwise the
+            existing rows are fully replaced.
+        """
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        with self._lock:
+            try:
+                if not partial_update:
+                    # Replace node row completely
+                    self._conn.execute(
+                        "UPDATE nodes SET type=?, content=?, conf=?, ts=CURRENT_TIMESTAMP WHERE id=?",
+                        [
+                            claim.get("type", ""),
+                            claim.get("content", ""),
+                            claim.get("confidence", 0.0),
+                            claim["id"],
+                        ],
+                    )
+                else:
+                    if "type" in claim:
+                        self._conn.execute(
+                            "UPDATE nodes SET type=? WHERE id=?",
+                            [claim["type"], claim["id"]],
+                        )
+                    if "content" in claim:
+                        self._conn.execute(
+                            "UPDATE nodes SET content=? WHERE id=?",
+                            [claim["content"], claim["id"]],
+                        )
+                    if "confidence" in claim:
+                        self._conn.execute(
+                            "UPDATE nodes SET conf=? WHERE id=?",
+                            [claim["confidence"], claim["id"]],
+                        )
+
+                # Replace edges and embeddings if provided
+                if "relations" in claim:
+                    self._conn.execute(
+                        "DELETE FROM edges WHERE src=? OR dst=?",
+                        [claim["id"], claim["id"]],
+                    )
+                    for rel in claim.get("relations", []):
+                        self._conn.execute(
+                            "INSERT INTO edges VALUES (?, ?, ?, ?)",
+                            [
+                                rel["src"],
+                                rel["dst"],
+                                rel.get("rel", ""),
+                                rel.get("weight", 1.0),
+                            ],
+                        )
+
+                if "embedding" in claim:
+                    self._conn.execute(
+                        "DELETE FROM embeddings WHERE node_id=?",
+                        [claim["id"]],
+                    )
+                    embedding = claim.get("embedding")
+                    if embedding is not None:
+                        self._conn.execute(
+                            "INSERT INTO embeddings VALUES (?, ?)",
+                            [claim["id"], embedding],
+                        )
+            except Exception as e:  # pragma: no cover - unexpected DB failure
+                raise StorageError("Failed to update claim in DuckDB", cause=e)
+
     def vector_search(
         self, query_embedding: List[float], k: int = 5, 
         similarity_threshold: float = 0.0, include_metadata: bool = False,
