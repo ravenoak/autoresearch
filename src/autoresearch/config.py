@@ -61,6 +61,21 @@ class ContextAwareSearchConfig(BaseModel):
     max_history_items: int = Field(default=10, ge=1, le=100)
 
 
+class LocalFileConfig(BaseModel):
+    """Configuration for the local_file search backend."""
+
+    path: str = ""
+    file_types: List[str] = Field(default_factory=lambda: ["txt"])
+
+
+class LocalGitConfig(BaseModel):
+    """Configuration for the local_git search backend."""
+
+    repo_path: str = ""
+    branches: List[str] = Field(default_factory=lambda: ["main"])
+    history_depth: int = Field(default=50, ge=1)
+
+
 class SearchConfig(BaseModel):
     """Configuration for search functionality."""
 
@@ -87,6 +102,10 @@ class SearchConfig(BaseModel):
     context_aware: ContextAwareSearchConfig = Field(
         default_factory=ContextAwareSearchConfig
     )
+
+    # Local search backends
+    local_file: LocalFileConfig = Field(default_factory=LocalFileConfig)
+    local_git: LocalGitConfig = Field(default_factory=LocalGitConfig)
 
     @field_validator(
         "semantic_similarity_weight", "bm25_weight", "source_credibility_weight"

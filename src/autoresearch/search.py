@@ -19,6 +19,8 @@ import re
 import sys
 import time
 import threading
+import subprocess
+from pathlib import Path
 from typing import Callable, List, Dict, Any, Optional
 from collections import defaultdict
 import requests
@@ -1006,4 +1008,94 @@ def _brave_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
                 "url": item.get("url", ""),
             }
         )
+    return results
+
+
+@Search.register_backend("local_file")
+def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """Search plain text files on disk for a query."""
+
+    cfg = get_config()
+    path = cfg.search.local_file.path
+    file_types = cfg.search.local_file.file_types
+
+    if not path:
+        log.warning("local_file backend path not configured")
+        return []
+
+    root = Path(path)
+    if not root.exists():
+        log.warning("local_file path does not exist: %s", path)
+        return []
+
+    results: List[Dict[str, str]] = []
+    patterns = [f"**/*.{ext}" for ext in file_types]
+
+    for pattern in patterns:
+        for file in root.rglob(pattern):
+            if not file.is_file():
+                continue
+            try:
+                text = file.read_text(errors="ignore")
+            except Exception as exc:  # pragma: no cover - unexpected file errors
+                log.warning("Failed to read %s: %s", file, exc)
+                continue
+            if query.lower() in text.lower():
+                snippet = text[:200]
+                results.append({"title": file.name, "url": str(file), "snippet": snippet})
+                if len(results) >= max_results:
+                    return results
+
+    return results
+
+
+@Search.register_backend("local_git")
+def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """Search a local Git repository's files and commit messages."""
+
+    cfg = get_config()
+    repo_path = cfg.search.local_git.repo_path
+    branches = cfg.search.local_git.branches
+    depth = cfg.search.local_git.history_depth
+
+    if not repo_path:
+        log.warning("local_git backend repo_path not configured")
+        return []
+
+    repo = Path(repo_path)
+    if not repo.exists():
+        log.warning("local_git repo_path does not exist: %s", repo_path)
+        return []
+
+    results: List[Dict[str, str]] = []
+
+    # Search current files
+    for file in repo.rglob("*"):
+        if not file.is_file():
+            continue
+        try:
+            text = file.read_text(errors="ignore")
+        except Exception:  # pragma: no cover - unexpected
+            continue
+        if query.lower() in text.lower():
+            snippet = text[:200]
+            results.append({"title": file.name, "url": str(file), "snippet": snippet})
+            if len(results) >= max_results:
+                return results
+
+    # Search commit messages
+    log_cmd = ["git", "log", "--pretty=%B", f"-n{depth}"]
+    log_cmd.extend(branches)
+    try:
+        output = subprocess.check_output(log_cmd, cwd=repo_path).decode()
+    except Exception as exc:  # pragma: no cover - unexpected
+        log.warning("Failed to run git log: %s", exc)
+        return results
+
+    for line in output.splitlines():
+        if query.lower() in line.lower():
+            results.append({"title": "commit", "url": line.strip(), "snippet": line.strip()})
+            if len(results) >= max_results:
+                break
+
     return results

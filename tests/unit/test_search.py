@@ -3,6 +3,7 @@ import responses
 from responses import matchers
 import pytest
 import requests
+import subprocess
 from autoresearch.config import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 
@@ -200,3 +201,45 @@ def test_serper_timeout_error(monkeypatch):
     assert isinstance(excinfo.value.__cause__, requests.exceptions.Timeout)
     assert "backend" in excinfo.value.context
     assert excinfo.value.context["backend"] == "serper"
+
+
+def test_local_file_backend(monkeypatch, tmp_path):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    file_path = docs_dir / "note.txt"
+    file_path.write_text("hello from file")
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_file"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.local_file.path = str(docs_dir)
+    cfg.search.local_file.file_types = ["txt"]
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    results = Search.external_lookup("hello", max_results=5)
+
+    assert any(r["url"] == str(file_path) for r in results)
+
+
+def test_local_git_backend(monkeypatch, tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "you@example.com"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Your Name"], cwd=repo, check=True)
+    readme = repo / "README.md"
+    readme.write_text("TODO in code")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add TODO"], cwd=repo, check=True)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_git"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.local_git.repo_path = str(repo)
+    cfg.search.local_git.branches = ["master"]
+    cfg.search.local_git.history_depth = 10
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    results = Search.external_lookup("TODO", max_results=5)
+
+    assert any("TODO" in r["url"] or r["url"] == str(readme) for r in results)
