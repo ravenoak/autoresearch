@@ -85,6 +85,10 @@ class SearchConfig(BaseModel):
         default=True,
         description="Combine keyword and semantic search when true",
     )
+    embedding_model: str = Field(
+        default="all-MiniLM-L6-v2",
+        description="SentenceTransformer model used for semantic search",
+    )
 
     # Enhanced relevance ranking settings
     use_semantic_similarity: bool = Field(default=True)

@@ -380,8 +380,9 @@ class Search:
 
         if cls._sentence_transformer is None:
             try:
-                # Use a small, fast model for semantic similarity
-                cls._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
+                cfg = get_config()
+                model_name = getattr(cfg.search, "embedding_model", "all-MiniLM-L6-v2")
+                cls._sentence_transformer = SentenceTransformer(model_name)
                 log.info("Initialized sentence transformer model")
             except Exception as e:
                 log.warning(f"Failed to initialize sentence transformer model: {e}")
@@ -494,7 +495,11 @@ class Search:
 
             for idx, doc in enumerate(documents):
                 if "similarity" in doc:
-                    similarities.append(float(doc["similarity"]))
+                    sim_val = float(doc["similarity"])
+                    if -1.0 <= sim_val <= 1.0:
+                        sim_val = (sim_val + 1.0) / 2.0
+                    sim_val = max(0.0, min(sim_val, 1.0))
+                    similarities.append(sim_val)
                     continue
                 if "embedding" in doc:
                     doc_embedding = np.array(doc["embedding"], dtype=float)
@@ -502,7 +507,7 @@ class Search:
                         np.linalg.norm(query_embedding)
                         * np.linalg.norm(doc_embedding)
                     )
-                    similarities.append(float(sim))
+                    similarities.append(float((sim + 1.0) / 2.0))
                     continue
 
                 # Fallback to encoding text
@@ -519,7 +524,7 @@ class Search:
                     sim = np.dot(query_embedding, emb) / (
                         np.linalg.norm(query_embedding) * np.linalg.norm(emb)
                     )
-                    similarities[index] = float(sim)
+                    similarities[index] = float((sim + 1.0) / 2.0)
 
             return [s if s is not None else 1.0 for s in similarities]
         except Exception as e:
