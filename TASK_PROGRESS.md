@@ -30,8 +30,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 - [ ] Complete the DuckDB integration
   - [ ] Optimize vector search capabilities
-  - [ ] Implement efficient eviction policies
-  - [ ] Add support for incremental updates
+  - [x] Implement efficient eviction policies (see `StorageManager._enforce_ram_budget`)
+  - [x] Add support for incremental updates (see `StorageManager.persist_claim`)
 - [ ] Enhance the RDF knowledge graph
   - [ ] Implement more sophisticated reasoning capabilities
   - [ ] Add support for ontology-based reasoning
