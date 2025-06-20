@@ -19,3 +19,6 @@ class DialoguePhase(str, Enum):
     CRITIQUE = "critique"
     SUMMARY = "summary"
     PLANNING = "planning"
+    ANALYSIS = "analysis"
+    FEEDBACK = "feedback"
+    MODERATION = "moderation"

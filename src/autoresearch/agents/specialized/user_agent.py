@@ -6,7 +6,7 @@ preferences, and requirements in the dialogue, ensuring that the
 research and analysis remain aligned with the user's needs.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
@@ -121,11 +121,12 @@ class UserAgent(Agent):
     def _extract_current_results(self, state: QueryState) -> Dict[str, Any]:
         """Extract current results from the state."""
         # Collect all results from the state
-        all_results = {}
+        all_results: Dict[str, Any] = {}
         
         # Combine results from all agents
-        for agent_result in state.results:
-            all_results.update(agent_result)
+        for agent_result in state.results.values():
+            if isinstance(agent_result, dict):
+                all_results.update(agent_result)
             
         return all_results
     

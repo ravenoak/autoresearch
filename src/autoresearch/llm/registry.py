@@ -56,3 +56,9 @@ def get_llm_adapter(name: str) -> LLMAdapter:
         LLMError: If the requested adapter is not registered
     """
     return LLMFactory.get(name)
+
+
+def get_available_adapters() -> Dict[str, Type[LLMAdapter]]:
+    """Return a copy of the registered adapter mapping."""
+    with LLMFactory._lock:
+        return dict(LLMFactory._registry)

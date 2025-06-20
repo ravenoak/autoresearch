@@ -4,7 +4,7 @@ This module provides adapters for different LLM backends, a factory for creating
 adapters, and utilities for token counting and management.
 """
 
-from .registry import LLMFactory, get_llm_adapter
+from .registry import LLMFactory, get_llm_adapter, get_available_adapters
 from .adapters import (
     LLMAdapter,
     DummyAdapter,
@@ -23,6 +23,7 @@ __all__ = [
     "LLMAdapter",
     "LLMFactory",
     "get_llm_adapter",
+    "get_available_adapters",
     "DummyAdapter",
     "LMStudioAdapter",
     "OpenAIAdapter",
