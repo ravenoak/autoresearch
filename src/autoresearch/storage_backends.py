@@ -447,24 +447,33 @@ class DuckDBStorageBackend:
                 raise StorageError("Failed to persist claim to DuckDB", cause=e)
 
     def vector_search(
-        self, query_embedding: List[float], k: int = 5
+        self, query_embedding: List[float], k: int = 5, 
+        similarity_threshold: float = 0.0, include_metadata: bool = False,
+        filter_types: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Search for claims by vector similarity.
+        Search for claims by vector similarity with advanced options.
 
-        This method performs a vector similarity search using the provided query embedding.
+        This method performs an optimized vector similarity search using the provided query embedding.
         It uses the DuckDB VSS extension to find the k most similar claims, ordered by
-        similarity score.
+        similarity score, with options for filtering and metadata inclusion.
 
         Args:
             query_embedding: The query embedding vector as a list of floats.
                            Must be non-empty and contain only numeric values.
             k: The number of results to return. Must be a positive integer.
                Default is 5.
+            similarity_threshold: Minimum similarity score (0.0 to 1.0) for results.
+                                 Default is 0.0 (no threshold).
+            include_metadata: Whether to include node metadata in results.
+                            Default is False.
+            filter_types: Optional list of claim types to filter by.
+                        Default is None (no filtering).
 
         Returns:
-            List of nearest nodes with their embeddings, ordered by similarity (highest first).
-            Each result contains 'node_id' and 'embedding'.
+            List of nearest nodes with their embeddings and metadata, ordered by 
+            similarity (highest first). Each result contains 'node_id', 'embedding',
+            'similarity', and optionally 'type', 'content', and 'confidence'.
 
         Raises:
             StorageError: If the search fails or the VSS extension is not available.
@@ -482,23 +491,144 @@ class DuckDBStorageBackend:
 
         cfg = ConfigLoader().config
 
+        # Start timing for performance metrics
+        import time
+        start_time = time.time()
+
         try:
-            # Set search parameters
+            # Set search parameters for better recall
             try:
+                # Higher ef_search value improves recall at the cost of search speed
                 self._conn.execute(f"SET hnsw_ef_search={cfg.vector_nprobe}")
+
+                # Set additional optimization parameters if available in config
+                if hasattr(cfg, 'vector_search_batch_size'):
+                    self._conn.execute(f"SET vss_search_batch_size={cfg.vector_search_batch_size}")
             except Exception as e:
-                log.debug(f"Failed to set hnsw_ef_search: {e}, continuing with default")
+                log.debug(f"Failed to set search parameters: {e}, continuing with defaults")
 
-            # Format query and execute search
+            # Format query embedding as vector literal
             vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
-            sql = (
-                "SELECT node_id, embedding FROM embeddings "
-                f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
-            )
-            rows = self._conn.execute(sql).fetchall()
 
-            # Format results
-            return [{"node_id": r[0], "embedding": r[1]} for r in rows]
+            # Build the SQL query with optimizations
+            if include_metadata:
+                # Join with nodes table to include metadata
+                select_clause = """
+                    e.node_id, 
+                    e.embedding, 
+                    n.type, 
+                    n.content, 
+                    n.confidence,
+                    CASE 
+                        WHEN '{metric}' = 'cosine' THEN 1 - (e.embedding <-> {vector})
+                        WHEN '{metric}' = 'ip' THEN 1 - (e.embedding <=> {vector})
+                        ELSE 1 / (1 + (e.embedding <-> {vector}))
+                    END AS similarity
+                """.format(
+                    vector=vector_literal,
+                    metric=cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'
+                )
+
+                from_clause = "FROM embeddings e JOIN nodes n ON e.node_id = n.id"
+
+                # Add type filtering if specified
+                where_clause = ""
+                if filter_types and len(filter_types) > 0:
+                    type_list = ", ".join([f"'{t}'" for t in filter_types])
+                    where_clause = f"WHERE n.type IN ({type_list})"
+
+                # Add similarity threshold filtering
+                if similarity_threshold > 0:
+                    similarity_condition = f"""
+                        CASE 
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (e.embedding <-> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (e.embedding <=> {vector_literal})
+                            ELSE 1 / (1 + (e.embedding <-> {vector_literal}))
+                        END >= {similarity_threshold}
+                    """
+                    where_clause = f"WHERE {similarity_condition}" if not where_clause else f"{where_clause} AND {similarity_condition}"
+
+                # Order by similarity and limit results
+                order_clause = f"ORDER BY e.embedding <-> {vector_literal} LIMIT {k}"
+
+                # Combine all clauses
+                sql = f"SELECT {select_clause} {from_clause} {where_clause} {order_clause}"
+            else:
+                # Simplified query without metadata
+                select_clause = """
+                    node_id, 
+                    embedding,
+                    CASE 
+                        WHEN '{metric}' = 'cosine' THEN 1 - (embedding <-> {vector})
+                        WHEN '{metric}' = 'ip' THEN 1 - (embedding <=> {vector})
+                        ELSE 1 / (1 + (embedding <-> {vector}))
+                    END AS similarity
+                """.format(
+                    vector=vector_literal,
+                    metric=cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'
+                )
+
+                # Add similarity threshold filtering
+                where_clause = ""
+                if similarity_threshold > 0:
+                    similarity_condition = f"""
+                        CASE 
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (embedding <-> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (embedding <=> {vector_literal})
+                            ELSE 1 / (1 + (embedding <-> {vector_literal}))
+                        END >= {similarity_threshold}
+                    """
+                    where_clause = f"WHERE {similarity_condition}"
+
+                # Order by similarity and limit results
+                order_clause = f"ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+
+                # Combine all clauses
+                sql = f"SELECT {select_clause} FROM embeddings {where_clause} {order_clause}"
+
+            # Execute the query with a timeout
+            try:
+                # Set a query timeout if configured
+                if hasattr(cfg, 'vector_search_timeout_ms'):
+                    self._conn.execute(f"SET query_timeout_ms={cfg.vector_search_timeout_ms}")
+
+                # Execute the query
+                rows = self._conn.execute(sql).fetchall()
+            except Exception as e:
+                log.warning(f"Vector search query failed, falling back to simpler query: {e}")
+                # Fall back to a simpler query if the optimized one fails
+                simple_sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+                rows = self._conn.execute(simple_sql).fetchall()
+                # Format results without metadata or similarity scores
+                return [{"node_id": r[0], "embedding": r[1]} for r in rows]
+
+            # Format results based on query type
+            results = []
+            if include_metadata:
+                for r in rows:
+                    result = {
+                        "node_id": r[0],
+                        "embedding": r[1],
+                        "type": r[2],
+                        "content": r[3],
+                        "confidence": r[4],
+                        "similarity": r[5]
+                    }
+                    results.append(result)
+            else:
+                for r in rows:
+                    result = {
+                        "node_id": r[0],
+                        "embedding": r[1],
+                        "similarity": r[2]
+                    }
+                    results.append(result)
+
+            # Log performance metrics
+            search_time = time.time() - start_time
+            log.debug(f"Vector search completed in {search_time:.4f}s with {len(results)} results")
+
+            return results
         except Exception as e:
             log.error(f"Vector search failed: {e}")
             raise StorageError(

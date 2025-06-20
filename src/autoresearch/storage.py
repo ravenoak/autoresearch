@@ -294,9 +294,12 @@ class StorageManager:
 
         This method monitors the current RAM usage and evicts nodes from the graph
         when it exceeds the specified budget. The eviction policy is determined by
-        the configuration (either "lru" or "score"):
+        the configuration:
         - "lru": Evicts the least recently used nodes first
         - "score": Evicts nodes with the lowest confidence scores first
+        - "hybrid": Uses a combination of recency and confidence score
+        - "adaptive": Dynamically selects the best policy based on usage patterns
+        - "priority": Evicts nodes based on configurable priority tiers
 
         The method continues evicting nodes until the RAM usage falls below the budget
         or there are no more nodes to evict.
@@ -313,24 +316,205 @@ class StorageManager:
         if budget_mb <= 0:
             return
 
-        policy = ConfigLoader().config.graph_eviction_policy
+        # Get current memory usage
+        current_mb = StorageManager._current_ram_mb()
 
-        while _graph and StorageManager._current_ram_mb() > budget_mb:
-            node_id: str | None
-            if policy == "score":
-                node_id = StorageManager._pop_low_score()
-            else:
-                node_id = StorageManager._pop_lru()
-            if node_id is None:
-                break
-            if _graph.has_node(node_id):
-                _graph.remove_node(node_id)
-                EVICTION_COUNTER.inc()
-                log.info(
-                    "Evicted node %s due to RAM budget (policy=%s)",
-                    node_id,
-                    policy,
+        # If we're under budget, no need to evict
+        if current_mb <= budget_mb:
+            return
+
+        # Calculate how much memory we need to free
+        target_reduction_mb = current_mb - budget_mb
+
+        # Get configuration
+        cfg = ConfigLoader().config
+        policy = cfg.graph_eviction_policy
+
+        # Track eviction metrics
+        eviction_start_time = time.time()
+        nodes_evicted = 0
+        starting_mb = current_mb
+
+        # Get the safety margin (percentage of budget to keep free)
+        safety_margin = getattr(cfg, "eviction_safety_margin", 0.1)  # Default 10%
+        target_mb = budget_mb * (1 - safety_margin)
+
+        # Batch size for eviction to improve performance
+        batch_size = min(
+            getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
+            len(_graph.nodes) // 10 if _graph and _graph.nodes else 1  # Don't exceed 10% of nodes
+        )
+
+        # Determine if we should use aggressive eviction (when memory usage is critically high)
+        aggressive_threshold = budget_mb * 1.5  # 50% over budget
+        aggressive_eviction = current_mb > aggressive_threshold
+
+        log.info(
+            f"Starting eviction with policy={policy}, current={current_mb:.1f}MB, "
+            f"target={target_mb:.1f}MB, aggressive={aggressive_eviction}, batch_size={batch_size}"
+        )
+
+        # Implement different eviction policies
+        while _graph and StorageManager._current_ram_mb() > target_mb:
+            nodes_to_evict = []
+
+            if policy == "hybrid":
+                # Hybrid policy: combine recency and confidence score
+                # Calculate a hybrid score for each node: 0.7*recency_rank + 0.3*confidence_score
+                hybrid_scores = {}
+
+                # Get recency information
+                recency_ranks = {}
+                for i, (node_id, _) in enumerate(_lru.items()):
+                    recency_ranks[node_id] = i / max(1, len(_lru))  # Normalize to 0-1
+
+                # Calculate hybrid scores
+                for node_id in _graph.nodes:
+                    if node_id in recency_ranks:
+                        recency_weight = getattr(cfg, "recency_weight", 0.7)  # Default 70% weight to recency
+                        confidence_weight = 1.0 - recency_weight
+
+                        recency_score = recency_ranks.get(node_id, 1.0)  # Higher is worse (more recent = 0)
+                        confidence_score = 1.0 - _graph.nodes[node_id].get("confidence", 0.5)  # Higher is worse
+
+                        hybrid_scores[node_id] = (
+                            recency_weight * recency_score + 
+                            confidence_weight * confidence_score
+                        )
+
+                # Sort by hybrid score (highest first = worst candidates)
+                candidates = sorted(
+                    hybrid_scores.items(), 
+                    key=lambda x: x[1], 
+                    reverse=True
                 )
+
+                # Take the top batch_size candidates
+                nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
+
+            elif policy == "adaptive":
+                # Adaptive policy: dynamically select based on usage patterns
+                # Check if we have usage statistics
+                if not hasattr(StorageManager, "_access_frequency"):
+                    StorageManager._access_frequency = {}
+                    StorageManager._last_adaptive_policy = "lru"  # Default to LRU
+
+                # Determine which policy to use based on access patterns
+                access_variance = 0
+                if StorageManager._access_frequency:
+                    # Calculate variance in access frequency
+                    frequencies = list(StorageManager._access_frequency.values())
+                    if frequencies:
+                        mean = sum(frequencies) / len(frequencies)
+                        variance = sum((f - mean) ** 2 for f in frequencies) / len(frequencies)
+                        access_variance = variance
+
+                # If high variance, use score-based (some nodes much more important)
+                # If low variance, use LRU (all nodes similarly important)
+                variance_threshold = getattr(cfg, "adaptive_variance_threshold", 5.0)
+                if access_variance > variance_threshold:
+                    policy_to_use = "score"
+                else:
+                    policy_to_use = "lru"
+
+                # Remember which policy we used
+                StorageManager._last_adaptive_policy = policy_to_use
+
+                # Use the selected policy
+                if policy_to_use == "score":
+                    for _ in range(batch_size):
+                        node_id = StorageManager._pop_low_score()
+                        if node_id and _graph.has_node(node_id):
+                            nodes_to_evict.append(node_id)
+                else:
+                    for _ in range(batch_size):
+                        node_id = StorageManager._pop_lru()
+                        if node_id and _graph.has_node(node_id):
+                            nodes_to_evict.append(node_id)
+
+            elif policy == "priority":
+                # Priority policy: evict based on configurable priority tiers
+                # Define priority tiers (lower tier = higher priority = keep longer)
+                priority_tiers = {
+                    "system": 0,      # System-critical nodes
+                    "user": 1,        # User-created nodes
+                    "synthesis": 2,   # Synthesis results
+                    "research": 3,    # Research findings
+                    "default": 4      # Default tier
+                }
+
+                # Get custom tiers from config if available
+                if hasattr(cfg, "priority_tiers") and isinstance(cfg.priority_tiers, dict):
+                    priority_tiers.update(cfg.priority_tiers)
+
+                # Assign priority to each node
+                node_priorities = {}
+                for node_id in _graph.nodes:
+                    node_type = _graph.nodes[node_id].get("type", "default")
+                    # Map node type to priority tier
+                    tier = priority_tiers.get(node_type, priority_tiers["default"])
+                    # Adjust by confidence
+                    confidence_boost = _graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                    # Final priority score (lower = higher priority)
+                    node_priorities[node_id] = tier - confidence_boost
+
+                # Sort by priority (highest first = worst candidates)
+                candidates = sorted(
+                    node_priorities.items(), 
+                    key=lambda x: x[1], 
+                    reverse=True
+                )
+
+                # Take the top batch_size candidates
+                nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
+
+            elif policy == "score":
+                # Score-based policy: evict nodes with lowest confidence
+                for _ in range(batch_size):
+                    node_id = StorageManager._pop_low_score()
+                    if node_id and _graph.has_node(node_id):
+                        nodes_to_evict.append(node_id)
+            else:
+                # Default to LRU policy
+                for _ in range(batch_size):
+                    node_id = StorageManager._pop_lru()
+                    if node_id and _graph.has_node(node_id):
+                        nodes_to_evict.append(node_id)
+
+            # If we couldn't find any nodes to evict, break
+            if not nodes_to_evict:
+                break
+
+            # Evict the selected nodes
+            for node_id in nodes_to_evict:
+                if _graph.has_node(node_id):
+                    _graph.remove_node(node_id)
+                    if node_id in _lru:
+                        del _lru[node_id]
+                    EVICTION_COUNTER.inc()
+                    nodes_evicted += 1
+
+            # Check if we've made enough progress
+            if nodes_evicted % (batch_size * 5) == 0:  # Check every 5 batches
+                current_mb = StorageManager._current_ram_mb()
+                if current_mb <= target_mb:
+                    break
+
+                # If we're not making progress fast enough and in aggressive mode,
+                # double the batch size
+                if aggressive_eviction and nodes_evicted > 50:
+                    batch_size = min(batch_size * 2, len(_graph.nodes) // 5 if _graph and _graph.nodes else 1)
+
+        # Log eviction results
+        eviction_time = time.time() - eviction_start_time
+        final_mb = StorageManager._current_ram_mb()
+        mb_freed = starting_mb - final_mb
+
+        log.info(
+            f"Eviction completed: policy={policy}, nodes_evicted={nodes_evicted}, "
+            f"time={eviction_time:.2f}s, memory_freed={mb_freed:.1f}MB, "
+            f"final={final_mb:.1f}MB"
+        )
 
     @staticmethod
     def _validate_claim(claim: dict[str, Any]) -> None:
@@ -498,11 +682,14 @@ class StorageManager:
             _rdf_store.add((subj, pred, obj))
 
     @staticmethod
-    def persist_claim(claim: dict[str, Any]) -> None:
-        """Persist a claim to all storage backends.
+    def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        """Persist a claim to all storage backends with support for incremental updates.
 
         This method validates the claim, ensures storage is initialized, and then
         persists the claim to all three backends (NetworkX, DuckDB, and RDF).
+        It supports incremental updates to existing claims, allowing for efficient
+        updates without replacing the entire claim.
+
         After persistence, it checks RAM usage and evicts older claims if needed
         based on the configured RAM budget.
 
@@ -512,13 +699,16 @@ class StorageManager:
         Args:
             claim: The claim to persist as a dictionary. Must contain 'id', 'content',
                   and may contain 'embedding', 'sources', and other attributes.
+            partial_update: If True, treat this as a partial update to an existing claim,
+                          merging with existing data rather than replacing it completely.
+                          Default is False.
 
         Raises:
             StorageError: If the claim is invalid (missing required fields or
                          incorrect types) or if storage is not initialized properly.
         """
         if _delegate and _delegate is not StorageManager:
-            return _delegate.persist_claim(claim)
+            return _delegate.persist_claim(claim, partial_update)
 
         # Validate claim
         StorageManager._validate_claim(claim)
@@ -527,14 +717,120 @@ class StorageManager:
             # Ensure storage is initialized
             StorageManager._ensure_storage_initialized()
 
-            # Persist to all backends
-            StorageManager._persist_to_networkx(claim)
-            StorageManager._persist_to_duckdb(claim)
-            StorageManager._persist_to_rdf(claim)
+            # Check if this is an update to an existing claim
+            claim_id = claim['id']
+            existing_claim = None
+            is_update = False
+
+            # Track timing for performance metrics
+            import time
+            start_time = time.time()
+
+            # Check if the claim already exists in the graph
+            if _graph.has_node(claim_id):
+                is_update = True
+                if partial_update:
+                    # Get the existing claim data
+                    existing_claim = _graph.nodes[claim_id].copy()
+
+                    # Merge the new claim data with the existing data
+                    # Note: We're careful not to modify the input claim
+                    merged_claim = existing_claim.copy()
+
+                    # Update basic fields if provided
+                    if 'type' in claim:
+                        merged_claim['type'] = claim['type']
+                    if 'content' in claim:
+                        merged_claim['content'] = claim['content']
+
+                    # Update nested fields
+                    for key, value in claim.items():
+                        if key not in ['id', 'type', 'content']:
+                            if isinstance(value, dict) and key in merged_claim and isinstance(merged_claim[key], dict):
+                                # Deep merge dictionaries
+                                merged_claim[key].update(value)
+                            else:
+                                # Replace or add other fields
+                                merged_claim[key] = value
+
+                    # Use the merged claim for persistence
+                    claim_to_persist = merged_claim
+
+                    log.debug(
+                        f"Performing partial update of claim {claim_id} "
+                        f"(merged {len(claim)} fields with existing data)"
+                    )
+                else:
+                    # Full replacement of existing claim
+                    claim_to_persist = claim
+                    log.debug(f"Replacing existing claim {claim_id}")
+            else:
+                # New claim
+                claim_to_persist = claim
+                log.debug(f"Persisting new claim {claim_id}")
+
+            # Add timestamp for tracking
+            if 'metadata' not in claim_to_persist:
+                claim_to_persist['metadata'] = {}
+
+            # Add or update timestamps
+            current_time = time.time()
+            if is_update:
+                claim_to_persist['metadata']['updated_at'] = current_time
+            else:
+                claim_to_persist['metadata']['created_at'] = current_time
+                claim_to_persist['metadata']['updated_at'] = current_time
+
+            # Persist to all backends with appropriate update mode
+            StorageManager._persist_to_networkx(claim_to_persist)
+
+            # For database backends, use different methods for updates vs. new claims
+            if is_update:
+                # Update existing records
+                _db_backend.update_claim(claim_to_persist, partial_update)
+                StorageManager._update_rdf_claim(claim_to_persist, partial_update)
+            else:
+                # Insert new records
+                _db_backend.persist_claim(claim_to_persist)
+                StorageManager._persist_to_rdf(claim_to_persist)
+
+            # Update LRU cache to mark this claim as recently used
+            StorageManager.touch_node(claim_id)
+
+            # Log performance metrics
+            persistence_time = time.time() - start_time
+            log.debug(
+                f"Claim persistence completed in {persistence_time:.4f}s "
+                f"(id={claim_id}, update={is_update}, partial={partial_update})"
+            )
 
             # Check RAM usage and evict if needed
             budget = ConfigLoader().config.ram_budget_mb
             StorageManager._enforce_ram_budget(budget)
+
+    @staticmethod
+    def _update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        """Update an existing claim in the RDF store.
+
+        This method updates an existing claim in the RDF store, either by completely
+        replacing it or by merging new data with existing data.
+
+        Args:
+            claim: The claim to update
+            partial_update: If True, merge with existing data rather than replacing
+        """
+        subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
+
+        if not partial_update:
+            # Remove all existing triples for this subject
+            for s, p, o in _rdf_store.triples((subj, None, None)):
+                _rdf_store.remove((s, p, o))
+
+        # Add new triples
+        for k, v in claim.get("attributes", {}).items():
+            pred = rdflib.URIRef(f"urn:prop:{k}")
+            obj = rdflib.Literal(v)
+            _rdf_store.add((subj, pred, obj))
 
     @staticmethod
     def create_hnsw_index() -> None:
