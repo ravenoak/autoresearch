@@ -123,6 +123,11 @@ These options are set in the `[search]` section.
 
 **Note**: `semantic_similarity_weight`, `bm25_weight`, and `source_credibility_weight` must sum to 1.0.
 
+The `semantic_similarity_weight` and `bm25_weight` options let you tune how
+semantic embeddings and keyword matches influence the final ranking.
+Setting a higher `semantic_similarity_weight` favors embedding-based scores,
+while increasing `bm25_weight` prioritizes traditional keyword matching.
+
 ### Search Backends
 
 | Backend | Description | Required Keys |

@@ -243,3 +243,29 @@ def test_local_git_backend(monkeypatch, tmp_path):
     results = Search.external_lookup("TODO", max_results=5)
 
     assert any("TODO" in r["url"] or r["url"] == str(readme) for r in results)
+
+
+def test_external_lookup_vector_search(monkeypatch):
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = []
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    class DummyModel:
+        def encode(self, text):
+            return [0.1, 0.2]
+
+    monkeypatch.setattr(
+        "autoresearch.search.Search.get_sentence_transformer", lambda: DummyModel()
+    )
+
+    def mock_vector_search(embed, k=5):
+        return [{"node_id": "n1", "content": "vector snippet"}]
+
+    monkeypatch.setattr(
+        "autoresearch.search.StorageManager.vector_search", mock_vector_search
+    )
+
+    results = Search.external_lookup("query", max_results=1)
+
+    assert any(r.get("snippet") == "vector snippet" for r in results)

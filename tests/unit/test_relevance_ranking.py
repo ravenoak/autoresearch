@@ -249,3 +249,22 @@ def test_rank_results_with_unavailable_libraries(
     # Check that all scores are neutral (1.0) for unavailable features
     assert all(result["bm25_score"] == 1.0 for result in ranked_results)
     assert all(result["semantic_score"] == 1.0 for result in ranked_results)
+
+
+@patch("autoresearch.search.get_config")
+def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_results):
+    """Ranking should respect configured weights for keyword and semantic scores."""
+    mock_config.search.semantic_similarity_weight = 0.8
+    mock_config.search.bm25_weight = 0.2
+    mock_config.search.source_credibility_weight = 0.0
+    mock_get_config.return_value = mock_config
+
+    with (
+        patch.object(Search, "calculate_bm25_scores", return_value=[0.1, 0.9, 0.1, 0.1]),
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.9, 0.1, 0.2, 0.3]),
+        patch.object(Search, "assess_source_credibility", return_value=[1.0]*4),
+    ):
+        ranked_results = Search.rank_results("test query", sample_results)
+
+    # Semantic score weight dominates so first result should be index 0
+    assert ranked_results[0]["url"] == "https://python.org"
