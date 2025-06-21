@@ -70,7 +70,8 @@ python_files = ["test_*.py", "*_steps.py"]
 markers = [
     "behavior: mark behavior (BDD) tests",
     "integration: mark integration tests",
-    "unit: mark unit tests"
+    "unit: mark unit tests",
+    "real_vss: enable actual VSS extension logic"
 ]
 
 [tool.mypy]
