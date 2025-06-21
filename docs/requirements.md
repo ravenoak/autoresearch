@@ -34,6 +34,8 @@ Autoresearch is a **local-first, Python 3.12+** research assistant that performs
 Must     | Unit/integration tests; config reload.     |
 | **F-12** | Support **multiple reasoning modes** (direct, dialectical, chain-of-thought, extensible). |
 Must     | BDD/unit tests; plugin registration.       |
+| **F-13** | **Structured logging** that never leaks secrets. |
+Must     | Unit tests for logging utilities.          |
 | **F-14** | All errors and config issues are clear, actionable, and logged.                                                                                  | Must     | Unit/integration tests.                    |
 | **F-15** | All modules are testable and covered by unit, integration, and BDD tests.                                                                       | Must     | Coverage report; BDD.                      |
 | **F-16** | System is extensible for new backends, reasoning modes, and agent types via config/plugins.                                                      | Must     | Plugin test; config reload.                |
@@ -42,6 +44,8 @@ Must     | BDD/unit tests; plugin registration.       |
 | **F-19** | Search local directories for text and code. Users choose a path to index and results must cite the file path and snippet for provenance. | Should   | Unit tests for local file indexing; BDD scenario. |
 | **F-20** | Search local Git repositories by path. The system scans the working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
 | **F-21** | Maintain local indexes for directories and Git repositories. Indexing occurs at startup or on user command, capturing file contents and commit history for offline queries. | Should   | Unit tests verifying incremental updates; BDD scenario. |
+| **F-22** | Interfaces behave consistently across CLI and GUI. |
+Must     | BDD tests for cross-modal consistency.       |
 
 ---
 
