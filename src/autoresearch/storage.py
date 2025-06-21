@@ -1198,11 +1198,37 @@ class StorageManager:
             )
 
     @staticmethod
+    def infer_relations() -> None:
+        """Infer new triples using the configured ontology reasoner."""
+        StorageManager._ensure_storage_initialized()
+        reasoner = getattr(
+            ConfigLoader().config.storage, "ontology_reasoner", "owlrl"
+        )
+        if reasoner == "owlrl":
+            StorageManager.apply_ontology_reasoning()
+        else:  # pragma: no cover - external reasoners are optional
+            try:
+                module, func = reasoner.split(":", maxsplit=1)
+                engine = __import__(module, fromlist=[func])
+                getattr(engine, func)(StorageManager.get_rdf_store())
+            except Exception as exc:  # pragma: no cover - optional dependency
+                raise StorageError(
+                    "Failed to run external ontology reasoner",
+                    cause=exc,
+                    suggestion="Check storage.ontology_reasoner configuration",
+                )
+
+    @staticmethod
     def query_rdf(query: str):
         """Run a SPARQL query against the RDF store."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
         return store.query(query)
+
+    @staticmethod
+    def query_ontology(query: str):
+        """Run a SPARQL query against the ontology graph."""
+        return StorageManager.query_rdf(query)
 
     @staticmethod
     def visualize_rdf(output_path: str) -> None:

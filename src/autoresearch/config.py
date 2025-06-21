@@ -163,6 +163,7 @@ class StorageConfig(BaseModel):
     vector_nprobe: int = Field(default=10, ge=1)  # backward compatibility
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
+    ontology_reasoner: str = Field(default="owlrl")
 
     @field_validator("rdf_backend")
     def validate_rdf_backend(cls, v: str) -> str:
