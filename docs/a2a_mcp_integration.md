@@ -200,6 +200,10 @@ print(f"Answer: {result['answer']}")
 
 The Multi-Agent Communication Protocol (MCP) is designed for more complex integration scenarios where agents need to communicate with each other in a structured way.
 
+Autoresearch exposes this protocol via a **FastMCP** server. Start it with
+`autoresearch serve` and send messages to the `/mcp` endpoint using the
+`fastmcp` Python client or any MCP-compatible agent.
+
 ### Protocol Overview
 
 MCP is a message-based protocol where each message has a type, content, and metadata. Messages are exchanged via the `/mcp` endpoint.

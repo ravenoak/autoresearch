@@ -6,6 +6,16 @@ Autoresearch orchestrates multiple agents in a dialectical cycle. The default ro
 - **Contrarian** – challenges assumptions and provides counter arguments.
 - **Fact Checker** – verifies claims against reliable sources.
 
+Additional specialized agents extend these roles:
+
+- **Researcher** – performs in-depth information gathering.
+- **Critic** – evaluates research quality and methodology.
+- **Summarizer** – condenses complex information into short summaries.
+- **Planner** – breaks down large tasks into manageable steps.
+- **Moderator** – manages multi-agent discussions.
+- **Domain Specialist** – provides expert knowledge for a field.
+- **User Agent** – represents user preferences in the dialogue.
+
 Agents communicate via a shared state object and can be customized in `autoresearch.toml`.
 
 ## Architecture

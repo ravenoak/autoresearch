@@ -48,6 +48,9 @@ Additional specialized agents extend the system's capabilities:
 2. **Critic**: Evaluates the quality of research and provides constructive feedback
 3. **Summarizer**: Generates concise summaries of complex information
 4. **Planner**: Structures complex research tasks into manageable steps
+5. **Moderator**: Facilitates productive discussions between agents
+6. **Domain Specialist**: Provides deep expertise in a specific field
+7. **User Agent**: Represents user intent and preferences
 
 ## Reasoning Modes
 

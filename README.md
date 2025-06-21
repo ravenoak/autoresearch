@@ -31,6 +31,15 @@ Start the HTTP API with Uvicorn:
 ```bash
 uvicorn autoresearch.api:app --reload
 ```
+Start the FastMCP server to allow other agents to call Autoresearch as a tool:
+```bash
+autoresearch serve
+```
+Then send a request with the helper client:
+```python
+from autoresearch.mcp_interface import query
+print(query("What is quantum computing?")["answer"])
+```
 Send a query and check collected metrics:
 ```bash
 curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning"}' -H "Content-Type: application/json"
@@ -118,6 +127,10 @@ enabled = true
 model = "gpt-3.5-turbo"
 ```
 
+Additional specialized agents such as `Researcher`, `Critic`, `Summarizer`,
+`Planner`, `Moderator`, `DomainSpecialist`, and `UserAgent` can be enabled by
+adding corresponding `[agent.AgentName]` sections.
+
 ### Search Configuration
 
 ```toml
@@ -128,6 +141,10 @@ backends = ["serper"]
 # Maximum results per query
 max_results_per_query = 5
 ```
+
+Ranking now mixes keyword and semantic similarity. Adjust the weights for
+embedding scores, BM25 matching and source credibility in `[search]` to fine
+tune the hybrid algorithm.
 
 ### Enabling Local File and Git Search
 

@@ -35,6 +35,13 @@ the HNSW index is refreshed using `StorageManager.refresh_vector_index()`. RDF
 triples are updated with `StorageManager.update_rdf_claim()` so that semantic
 queries remain consistent.
 
+### Updating Existing Claims
+
+Existing claims can be modified directly using `StorageManager.update_claim()`.
+Set `partial_update=True` to merge only the supplied fields or `False` to
+replace the stored record entirely. The method automatically refreshes the
+vector index and updates RDF triples so all search modalities remain in sync.
+
 ## Local Data Persistence
 
 Search backends that operate on the filesystem or Git repositories generate

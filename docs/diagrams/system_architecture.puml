@@ -4,6 +4,7 @@
 node "Client Interfaces" {
   component "CLI" as CLI
   component "FastAPI API" as FastAPI
+  component "FastMCP" as FastMCP
   component "Monitor" as Monitor
 }
 
@@ -58,6 +59,9 @@ CLI -> Orchestrator : run_query(query)
 
 user -> FastAPI : POST /query
 FastAPI -> Orchestrator : run_query(query)
+
+user -> FastMCP : MCP message
+FastMCP -> Orchestrator : run_query(query)
 
 user -> Monitor : interactive session
 Monitor -> Orchestrator : run_query(query)

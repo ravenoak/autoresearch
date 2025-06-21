@@ -82,6 +82,34 @@ package "Agents" {
     + execute(state, config): Dict
     + can_execute(state, config): bool
   }
+  class ResearcherAgent {
+    + role: AgentRole = AgentRole.SPECIALIST
+    + execute(state, config): Dict
+  }
+  class CriticAgent {
+    + role: AgentRole = AgentRole.SPECIALIST
+    + execute(state, config): Dict
+  }
+  class SummarizerAgent {
+    + role: AgentRole = AgentRole.SPECIALIST
+    + execute(state, config): Dict
+  }
+  class PlannerAgent {
+    + role: AgentRole = AgentRole.SPECIALIST
+    + execute(state, config): Dict
+  }
+  class ModeratorAgent {
+    + role: AgentRole = AgentRole.MODERATOR
+    + execute(state, config): Dict
+  }
+  class DomainSpecialistAgent {
+    + role: AgentRole = AgentRole.SPECIALIST
+    + execute(state, config): Dict
+  }
+  class UserAgent {
+    + role: AgentRole = AgentRole.USER
+    + execute(state, config): Dict
+  }
 }
 
 package "Prompts" {
@@ -133,6 +161,13 @@ Agent --|> ResultGeneratorMixin
 SynthesizerAgent --|> Agent
 ContrarianAgent --|> Agent
 FactChecker --|> Agent
+ResearcherAgent --|> Agent
+CriticAgent --|> Agent
+SummarizerAgent --|> Agent
+PlannerAgent --|> Agent
+ModeratorAgent --|> Agent
+DomainSpecialistAgent --|> Agent
+UserAgent --|> Agent
 
 ' Associations
 Agent --> AgentRole : has role

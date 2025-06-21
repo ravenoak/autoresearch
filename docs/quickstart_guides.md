@@ -145,6 +145,12 @@ This will start the Streamlit server and open the GUI in your default web browse
 uvicorn autoresearch.api:app --host 0.0.0.0 --port 8000
 ```
 
+### Starting the FastMCP Server
+
+```bash
+autoresearch serve
+```
+
 ### Basic Usage with Python
 
 ```python
