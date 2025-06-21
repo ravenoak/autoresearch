@@ -41,3 +41,14 @@ Feature: Hybrid Dynamic Knowledge Graph (DKG) Persistence
     Given I have persisted claims with embeddings
     When I perform a vector search with a query embedding
     Then I should receive the nearest claims by vector similarity
+
+  Scenario: Ontology reasoning infers subclass relationships
+    Given I have loaded an ontology defining subclasses
+    And I have an instance of the subclass
+    When I apply ontology reasoning
+    Then querying for the superclass should include the instance
+
+  Scenario: RDF graph visualization
+    Given the RDF store has some triples
+    When I visualize the RDF graph to "graph.png"
+    Then the visualization file "graph.png" should exist

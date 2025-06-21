@@ -1548,6 +1548,15 @@ def format_result_as_json(result: QueryResponse) -> str:
     return json.dumps(result_dict, indent=2)
 
 
+def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
+    """Generate a PNG visualization of the current RDF graph."""
+    from .storage import StorageManager
+
+    StorageManager.setup()
+    StorageManager.visualize_rdf(output_path)
+    print(f"Graph written to {output_path}")
+
+
 def display_results(result: QueryResponse):
     """Display the query results in a formatted way.
 
