@@ -22,6 +22,7 @@ and execution strategies.
 """
 
 from typing import List, Dict, Any, Callable, Iterator
+import os
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -457,15 +458,19 @@ class Orchestrator:
 
             # Add a placeholder result to avoid breaking the chain
             fallback_result = {
-                "claims": [f"Agent {agent_name} encountered a temporary error: {str(e)}"],
+                "claims": [
+                    f"Agent {agent_name} encountered a temporary error: {str(e)}"
+                ],
                 "results": {
-                    "fallback": f"The {agent_name} agent encountered a temporary issue. " +
-                               "This is likely due to external factors and may resolve on retry."
+                    "fallback": (
+                        f"The {agent_name} agent encountered a temporary issue. "
+                        "This is likely due to external factors and may resolve on retry."
+                    )
                 },
                 "metadata": {
                     "recovery_applied": True,
-                    "recovery_strategy": recovery_strategy
-                }
+                    "recovery_strategy": recovery_strategy,
+                },
             }
             state.update(fallback_result)
 
@@ -481,15 +486,19 @@ class Orchestrator:
 
             # Add a simplified result to continue the process
             fallback_result = {
-                "claims": [f"Agent {agent_name} encountered a recoverable error: {str(e)}"],
+                "claims": [
+                    f"Agent {agent_name} encountered a recoverable error: {str(e)}"
+                ],
                 "results": {
-                    "fallback": f"The {agent_name} agent encountered an issue that prevented it from completing normally. " +
-                               "A simplified approach has been used instead."
+                    "fallback": (
+                        f"The {agent_name} agent encountered an issue that prevented it from completing normally. "
+                        "A simplified approach has been used instead."
+                    )
                 },
                 "metadata": {
                     "recovery_applied": True,
-                    "recovery_strategy": recovery_strategy
-                }
+                    "recovery_strategy": recovery_strategy,
+                },
             }
             state.update(fallback_result)
 
@@ -505,16 +514,20 @@ class Orchestrator:
 
             # Add error information to the state
             error_result = {
-                "claims": [f"Agent {agent_name} encountered a critical error: {str(e)}"],
+                "claims": [
+                    f"Agent {agent_name} encountered a critical error: {str(e)}"
+                ],
                 "results": {
-                    "error": f"The {agent_name} agent encountered a critical error that prevented completion. " +
-                            "This requires investigation."
+                    "error": (
+                        f"The {agent_name} agent encountered a critical error that prevented completion. "
+                        "This requires investigation."
+                    )
                 },
                 "metadata": {
                     "recovery_applied": True,
                     "recovery_strategy": recovery_strategy,
-                    "critical_error": True
-                }
+                    "critical_error": True,
+                },
             }
             state.update(error_result)
 

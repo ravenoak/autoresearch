@@ -1,7 +1,4 @@
-import types
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from autoresearch.storage import StorageManager
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
@@ -54,4 +51,3 @@ def test_update_rdf_claim_wrapper(monkeypatch):
     with patch("autoresearch.storage.StorageManager._update_rdf_claim") as upd:
         StorageManager.update_rdf_claim({"id": "x"}, partial_update=True)
         upd.assert_called_once()
-

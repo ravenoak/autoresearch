@@ -717,7 +717,7 @@ def display_agent_performance():
 
                 for i in range(len(history)):
                     start_idx = max(0, i - window_size + 1)
-                    window = history[start_idx : i + 1]
+                    window = history[start_idx:i + 1]
                     success_count = sum(1 for h in window if h["success"])
                     success_rate = success_count / len(window) * 100
                     rolling_success.append(success_rate)

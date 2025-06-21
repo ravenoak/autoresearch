@@ -32,10 +32,10 @@ class ModeratorAgent(Agent):
 
         # Extract recent claims from different agents to analyze the dialogue
         recent_claims = self._get_recent_claims(state)
-        
+
         # Identify any conflicts or disagreements between agents
         conflicts = self._identify_conflicts(recent_claims)
-        
+
         # Extract the dialogue history as a formatted conversation
         dialogue_history = self._format_dialogue_history(recent_claims)
 
@@ -47,7 +47,7 @@ class ModeratorAgent(Agent):
             conflicts=conflicts,
             cycle=state.cycle
         )
-        
+
         moderation = adapter.generate(prompt, model=model)
 
         # Create guidance for next steps in the dialogue
@@ -58,13 +58,13 @@ class ModeratorAgent(Agent):
             moderation=moderation,
             cycle=state.cycle
         )
-        
+
         guidance = adapter.generate(guidance_prompt, model=model)
 
         # Create and return the result
         moderation_claim = self.create_claim(moderation, "moderation")
         guidance_claim = self.create_claim(guidance, "guidance")
-        
+
         return self.create_result(
             claims=[moderation_claim, guidance_claim],
             metadata={
@@ -83,37 +83,37 @@ class ModeratorAgent(Agent):
         """Only execute when there are multiple claims from different agents."""
         # Need at least 3 claims to have a meaningful dialogue to moderate
         has_sufficient_claims = len(state.claims) >= 3
-        
+
         # Check if we have claims from at least 2 different agents
         agent_set = set()
         for claim in state.claims:
             if "agent" in claim:
                 agent_set.add(claim["agent"])
-        
+
         has_multiple_agents = len(agent_set) >= 2
-        
+
         return (
-            super().can_execute(state, config) 
-            and has_sufficient_claims 
+            super().can_execute(state, config)
+            and has_sufficient_claims
             and has_multiple_agents
         )
-    
+
     def _get_recent_claims(self, state: QueryState) -> List[Dict[str, Any]]:
         """Get the most recent claims from the state, up to a limit."""
         # Get the most recent 10 claims, or all if fewer than 10
         max_claims = 10
         return state.claims[-max_claims:] if len(state.claims) > max_claims else state.claims
-    
+
     def _identify_conflicts(self, claims: List[Dict[str, Any]]) -> List[str]:
         """Identify potential conflicts or disagreements between claims."""
         conflicts = []
-        
+
         # Simple heuristic: look for claims with contradictory language
         contradiction_markers = [
-            "however", "but", "contrary", "disagree", "incorrect", 
+            "however", "but", "contrary", "disagree", "incorrect",
             "false", "misleading", "inaccurate", "dispute"
         ]
-        
+
         for claim in claims:
             content = claim.get("content", "").lower()
             for marker in contradiction_markers:
@@ -123,18 +123,18 @@ class ModeratorAgent(Agent):
                         f"'{content[:100]}...'"
                     )
                     break
-        
+
         return conflicts
-    
+
     def _format_dialogue_history(self, claims: List[Dict[str, Any]]) -> str:
         """Format the claims as a dialogue history."""
         dialogue = []
-        
+
         for claim in claims:
             agent = claim.get("agent", "Unknown Agent")
             content = claim.get("content", "No content")
             claim_type = claim.get("type", "statement")
-            
+
             dialogue.append(f"{agent} ({claim_type}): {content}")
-        
+
         return "\n\n".join(dialogue)

@@ -19,7 +19,7 @@ from autoresearch.llm.registry import LLMFactory  # noqa: E402
 from autoresearch.storage import (  # noqa: E402
     set_delegate as set_storage_delegate,
 )
-from autoresearch.extensions import VSSExtensionLoader
+from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

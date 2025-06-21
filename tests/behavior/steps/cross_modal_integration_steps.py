@@ -1,14 +1,14 @@
 from pytest_bdd import scenario, when, then, parsers, given
 from unittest.mock import patch
 
-from .common_steps import *  # noqa: F401,F403
+from .common_steps import application_running
+from autoresearch.models import QueryResponse
 
 
 @given("the Autoresearch system is running")
 def autoresearch_system_running(tmp_path, monkeypatch):
     """Set up the Autoresearch system for testing."""
     return application_running(tmp_path, monkeypatch)
-from autoresearch.models import QueryResponse
 
 
 @scenario("../features/cross_modal_integration.feature", "Shared Query History")
@@ -170,7 +170,7 @@ def execute_invalid_query_gui(bdd_context):
     with patch(
         "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
         side_effect=ValueError("Invalid query: Query cannot be empty"),
-    ) as mock_run_query:
+    ):
         from autoresearch.orchestration.orchestrator import Orchestrator
         from autoresearch.config import ConfigModel
 
@@ -365,4 +365,3 @@ def execute_query_via_mcp(bdd_context):
 
         # Store the result
         bdd_context["mcp_result"] = result
-

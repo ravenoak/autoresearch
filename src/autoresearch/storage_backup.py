@@ -40,7 +40,7 @@ class BackupConfig:
     retention_days: int = 30
 
 
-def create_backup(
+def _create_backup(
     backup_dir: str,
     db_path: str,
     rdf_path: str,
@@ -162,7 +162,7 @@ def create_backup(
         raise BackupError(f"Failed to create backup: {e}")
 
 
-def restore_backup(
+def _restore_backup(
     backup_path: str,
     target_dir: str,
     db_filename: str = "db.duckdb",
@@ -286,7 +286,7 @@ def restore_backup(
         raise BackupError(f"Failed to restore backup: {e}")
 
 
-def list_backups(backup_dir: str) -> List[BackupInfo]:
+def _list_backups(backup_dir: str) -> List[BackupInfo]:
     """List all backups in the specified directory.
 
     Args:
@@ -381,7 +381,7 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
         config: Backup configuration with rotation policy settings
     """
     try:
-        backups = list_backups(backup_dir)
+        backups = _list_backups(backup_dir)
 
         # Skip if no backups or only one backup
         if len(backups) <= 1:
@@ -395,7 +395,7 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
 
         # Apply max_backups policy (keep the newest ones)
         if config.max_backups > 0 and len(backups) > config.max_backups:
-            to_delete.extend(backups[config.max_backups :])
+            to_delete.extend(backups[config.max_backups:])
 
         # Apply retention_days policy
         if config.retention_days > 0:
@@ -464,7 +464,7 @@ class BackupScheduler:
             # Define the backup function
             def do_backup():
                 try:
-                    create_backup(
+                    _create_backup(
                         backup_dir=backup_dir,
                         db_path=db_path,
                         rdf_path=rdf_path,
@@ -555,7 +555,7 @@ class BackupManager:
         if rdf_path is None:
             rdf_path = cfg.rdf_path if hasattr(cfg, "rdf_path") else "kg.rdf"
 
-        return create_backup(
+        return _create_backup(
             backup_dir=backup_dir,
             db_path=db_path,
             rdf_path=rdf_path,
@@ -587,7 +587,7 @@ class BackupManager:
         if target_dir is None:
             target_dir = "restore_" + datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        return restore_backup(
+        return _restore_backup(
             backup_path=backup_path,
             target_dir=target_dir,
             db_filename=db_filename,
@@ -611,7 +611,7 @@ class BackupManager:
             cfg = ConfigLoader().config.storage
             backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
 
-        return list_backups(backup_dir)
+        return _list_backups(backup_dir)
 
     @staticmethod
     def schedule_backup(
@@ -689,7 +689,7 @@ class BackupManager:
             BackupError: If no suitable backup is found or restore fails
         """
         # List all backups
-        backups = list_backups(backup_dir)
+        backups = _list_backups(backup_dir)
 
         if not backups:
             raise BackupError(f"No backups found in {backup_dir}")

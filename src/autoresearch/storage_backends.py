@@ -549,7 +549,7 @@ class DuckDBStorageBackend:
                 raise StorageError("Failed to update claim in DuckDB", cause=e)
 
     def vector_search(
-        self, query_embedding: List[float], k: int = 5, 
+        self, query_embedding: List[float], k: int = 5,
         similarity_threshold: float = 0.0, include_metadata: bool = False,
         filter_types: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
@@ -573,7 +573,7 @@ class DuckDBStorageBackend:
                         Default is None (no filtering).
 
         Returns:
-            List of nearest nodes with their embeddings and metadata, ordered by 
+            List of nearest nodes with their embeddings and metadata, ordered by
             similarity (highest first). Each result contains 'node_id', 'embedding',
             'similarity', and optionally 'type', 'content', and 'confidence'.
 
@@ -622,12 +622,12 @@ class DuckDBStorageBackend:
             if include_metadata:
                 # Join with nodes table to include metadata
                 select_clause = """
-                    e.node_id, 
-                    e.embedding, 
-                    n.type, 
-                    n.content, 
+                    e.node_id,
+                    e.embedding,
+                    n.type,
+                    n.content,
                     n.confidence,
-                    CASE 
+                    CASE
                         WHEN '{metric}' = 'cosine' THEN 1 - (e.embedding <-> {vector})
                         WHEN '{metric}' = 'ip' THEN 1 - (e.embedding <=> {vector})
                         ELSE 1 / (1 + (e.embedding <-> {vector}))
@@ -648,7 +648,7 @@ class DuckDBStorageBackend:
                 # Add similarity threshold filtering
                 if similarity_threshold > 0:
                     similarity_condition = f"""
-                        CASE 
+                        CASE
                             WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (e.embedding <-> {vector_literal})
                             WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (e.embedding <=> {vector_literal})
                             ELSE 1 / (1 + (e.embedding <-> {vector_literal}))
@@ -664,9 +664,9 @@ class DuckDBStorageBackend:
             else:
                 # Simplified query without metadata
                 select_clause = """
-                    node_id, 
+                    node_id,
                     embedding,
-                    CASE 
+                    CASE
                         WHEN '{metric}' = 'cosine' THEN 1 - (embedding <-> {vector})
                         WHEN '{metric}' = 'ip' THEN 1 - (embedding <=> {vector})
                         ELSE 1 / (1 + (embedding <-> {vector}))
@@ -680,7 +680,7 @@ class DuckDBStorageBackend:
                 where_clause = ""
                 if similarity_threshold > 0:
                     similarity_condition = f"""
-                        CASE 
+                        CASE
                             WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (embedding <-> {vector_literal})
                             WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (embedding <=> {vector_literal})
                             ELSE 1 / (1 + (embedding <-> {vector_literal}))

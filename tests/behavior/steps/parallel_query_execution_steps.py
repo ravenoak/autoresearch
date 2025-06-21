@@ -112,7 +112,6 @@ def run_parallel_query_with_multiple_groups(
 ):
     """Run a parallel query with multiple agent groups."""
     # Mock run_query to track executed groups
-    original_run_query = Orchestrator.run_query
 
     def mock_run_query(query, config, callbacks=None, **kwargs):
         test_context["executed_groups"].append(config.agents)
