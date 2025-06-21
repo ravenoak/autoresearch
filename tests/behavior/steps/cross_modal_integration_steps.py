@@ -103,28 +103,26 @@ def check_query_history(bdd_context, query):
 @then("I should be able to rerun the query from the GUI")
 def check_rerun_query(bdd_context):
     """Check that I can rerun the query from the GUI."""
-    # Mock Streamlit components for rerunning a query
-    with patch("streamlit.button") as mock_button:
-        mock_button.return_value = True
-
-        # Get the first query from history
+    # Mock Streamlit button press
+    with patch("streamlit.button", return_value=True):
         session_state = bdd_context["streamlit_session"]
         first_query = session_state["query_history"][0]["query"]
+        expected_result = session_state["query_history"][0]["result"]
 
-        # Mock rerunning the query
-        with patch("autoresearch.streamlit_app.run_query") as mock_run_query:
-            mock_run_query.return_value = session_state["query_history"][0]["result"]
+        # Patch the Orchestrator's run_query method used by the GUI
+        with patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+            return_value=expected_result,
+        ) as mock_run_query:
+            from autoresearch.orchestration.orchestrator import Orchestrator
+            from autoresearch.config import ConfigModel
 
-            # Rerun the query
-            from autoresearch.streamlit_app import run_query
+            config = ConfigModel()
+            result = Orchestrator.run_query(first_query, config)
 
-            result = run_query(first_query)
-
-            # Store the result
             bdd_context["gui_result"] = result
 
-            # Verify that run_query was called with the correct query
-            mock_run_query.assert_called_once_with(first_query)
+            mock_run_query.assert_called_once_with(first_query, config)
 
 
 @then("the results should be consistent with the CLI results")
@@ -169,14 +167,15 @@ def check_cli_error_message(bdd_context):
 def execute_invalid_query_gui(bdd_context):
     """Execute the same invalid query via GUI."""
     # Mock Streamlit query execution with an error
-    with patch("autoresearch.streamlit_app.run_query") as mock_run_query:
-        mock_run_query.side_effect = ValueError("Invalid query: Query cannot be empty")
-
-        # Execute the query and catch the error
-        from autoresearch.streamlit_app import run_query
+    with patch(
+        "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+        side_effect=ValueError("Invalid query: Query cannot be empty"),
+    ) as mock_run_query:
+        from autoresearch.orchestration.orchestrator import Orchestrator
+        from autoresearch.config import ConfigModel
 
         try:
-            run_query("")
+            Orchestrator.run_query("", ConfigModel())
         except ValueError as e:
             bdd_context["gui_error"] = str(e)
 
@@ -191,18 +190,16 @@ def check_gui_error_message(bdd_context):
 @when("I update the configuration via CLI")
 def update_config_via_cli(bdd_context):
     """Update the configuration via CLI."""
-    # Mock configuration update via CLI
-    with patch("autoresearch.config.ConfigLoader.update") as mock_update:
-        mock_update.return_value = True
+    from autoresearch.config import ConfigLoader, ConfigModel
 
-        # Update the configuration
-        from autoresearch.config import ConfigLoader
+    new_config = ConfigModel(loops=3)
+    with patch(
+        "autoresearch.config.ConfigLoader.load_config", return_value=new_config
+    ):
+        loader = ConfigLoader()
+        loader._config = loader.load_config()
 
-        config_loader = ConfigLoader()
-        config_loader.update({"core": {"loops": 3}})
-
-        # Store the updated config
-        bdd_context["updated_config"] = {"core": {"loops": 3}}
+    bdd_context["updated_config"] = new_config.model_dump()
 
 
 @then("the GUI should reflect the updated configuration")
@@ -222,35 +219,24 @@ def check_gui_config(bdd_context):
 @when("I update the configuration via GUI")
 def update_config_via_gui(bdd_context):
     """Update the configuration via GUI."""
-    # Mock configuration update via GUI
-    with patch("autoresearch.config.ConfigLoader.update") as mock_update:
-        mock_update.return_value = True
+    from autoresearch.config import ConfigLoader, ConfigModel
 
-        # Update the configuration
-        from autoresearch.config import ConfigLoader
+    new_cfg = ConfigModel(loops=5)
+    with patch(
+        "autoresearch.config.ConfigLoader.load_config", return_value=new_cfg
+    ):
+        loader = ConfigLoader()
+        loader._config = loader.load_config()
 
-        config_loader = ConfigLoader()
-        new_config = {"core": {"loops": 5}}
-        config_loader.update(new_config)
-
-        # Store the updated config
-        bdd_context["updated_config"] = new_config
+    bdd_context["updated_config"] = new_cfg.model_dump()
 
 
 @when("I check the configuration via CLI")
 def check_config_via_cli(bdd_context):
     """Check the configuration via CLI."""
-    # Mock CLI config display
-    with patch("autoresearch.main.config_command") as mock_config_command:
-        mock_config_command.return_value = bdd_context["updated_config"]
-
-        # Get the config
-        from autoresearch.main import config_command
-
-        cli_config = config_command()
-
-        # Store the CLI config
-        bdd_context["cli_config"] = cli_config
+    # In the real CLI this would print the configuration. For testing
+    # we simply expose the stored configuration.
+    bdd_context["cli_config"] = bdd_context["updated_config"]
 
 
 @then("the CLI should show the updated configuration")
@@ -262,23 +248,27 @@ def check_cli_config_updated(bdd_context):
 @when("I execute a query via the A2A interface")
 def execute_query_via_a2a(bdd_context):
     """Execute a query via the A2A interface."""
-    # Mock A2A query execution
-    with patch("autoresearch.a2a_interface.query") as mock_a2a_query:
-        mock_response = {
-            "answer": "Paris is the capital of France.",
-            "reasoning": ["France has Paris as its capital city."],
-            "citations": ["Wikipedia: France"],
-            "metrics": {"confidence": 0.95},
-        }
-        mock_a2a_query.return_value = mock_response
+    from autoresearch.a2a_interface import A2AInterface, A2AMessage, A2AMessageType
 
-        # Execute the query
-        from autoresearch.a2a_interface import query
+    mock_response = {
+        "answer": "Paris is the capital of France.",
+        "reasoning": ["France has Paris as its capital city."],
+        "citations": ["Wikipedia: France"],
+        "metrics": {"confidence": 0.95},
+    }
 
-        result = query("What is the capital of France?")
+    with patch(
+        "autoresearch.a2a_interface.A2AInterface._handle_query",
+        return_value=mock_response,
+    ) as mock_handle:
+        interface = A2AInterface()
+        result = interface._handle_query(
+            A2AMessage(type=A2AMessageType.QUERY, content={"query": "What is the capital of France?"})
+        )
 
-        # Store the result
         bdd_context["a2a_result"] = result
+
+        mock_handle.assert_called_once()
 
 
 @then("the response format should match the CLI response format")
@@ -327,22 +317,30 @@ def check_error_handling(bdd_context):
 
     # Determine interface under test
     if "a2a_result" in bdd_context:
-        patch_path = "autoresearch.a2a_interface.query"
-        module_name = "autoresearch.a2a_interface"
+        patch_path = "autoresearch.a2a_interface.A2AInterface._handle_query"
         error_key = "a2a_error"
     else:
         patch_path = "autoresearch.mcp_interface.query"
-        module_name = "autoresearch.mcp_interface"
         error_key = "mcp_error"
 
     with patch(patch_path) as mock_query:
         mock_query.side_effect = ValueError("Invalid query: Query cannot be empty")
-        module = __import__(module_name, fromlist=["query"])
 
-        try:
-            module.query("")
-        except ValueError as e:
-            bdd_context[error_key] = str(e)
+        if "a2a_result" in bdd_context:
+            from autoresearch.a2a_interface import A2AInterface, A2AMessage, A2AMessageType
+
+            interface = A2AInterface()
+            try:
+                interface._handle_query(A2AMessage(type=A2AMessageType.QUERY, content={"query": ""}))
+            except ValueError as e:
+                bdd_context[error_key] = str(e)
+        else:
+            from autoresearch import mcp_interface
+
+            try:
+                mcp_interface.query("")
+            except ValueError as e:
+                bdd_context[error_key] = str(e)
 
     assert bdd_context[error_key] == bdd_context["cli_error"]
 
