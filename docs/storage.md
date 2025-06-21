@@ -162,8 +162,14 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
 ## Ontology Reasoning and Visualization
 
 The RDF store supports optional ontology-based reasoning using the
-`owlrl` package. The following tutorial walks through a typical
-ontology workflow.
+`owlrl` package or a custom engine. Configure the desired reasoner with
+
+```toml
+[storage]
+ontology_reasoner = "owlrl"           # or "my_module:run_reasoner"
+```
+
+The following tutorial walks through a typical ontology workflow.
 
 1. **Load an ontology file** to add schema triples:
 
@@ -173,16 +179,16 @@ ontology workflow.
    StorageManager.load_ontology("ontology.ttl")
    ```
 
-2. **Apply reasoning** to materialize OWL‑RL inferences:
+2. **Infer relations** to materialize OWL‑RL inferences:
 
    ```python
-   StorageManager.apply_ontology_reasoning()
+   StorageManager.infer_relations()
    ```
 
-3. **Query the inferred graph** using SPARQL:
+3. **Query the ontology** using SPARQL:
 
    ```python
-   results = StorageManager.query_rdf(
+   results = StorageManager.query_ontology(
        "SELECT ?s WHERE { ?s a <http://example.com/B> }"
    )
    ```

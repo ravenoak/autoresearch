@@ -1276,3 +1276,17 @@ class Orchestrator:
             wrapped_adapter,
         ):
             yield token_counter, wrapped_adapter
+
+    # --------------------------------------------------------------
+    # Storage helper shortcuts
+    # --------------------------------------------------------------
+
+    @staticmethod
+    def infer_relations() -> None:
+        """Infer ontology relations via the storage manager."""
+        StorageManager.infer_relations()
+
+    @staticmethod
+    def query_ontology(query: str):
+        """Query the ontology graph via the storage manager."""
+        return StorageManager.query_ontology(query)
