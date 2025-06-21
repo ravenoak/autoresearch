@@ -8,15 +8,23 @@ handlers and adapters to expose Autoresearch functionality through the A2A SDK.
 from __future__ import annotations
 
 import os
-from typing import Dict, Any, Callable
+import asyncio
 from functools import wraps
+from typing import Any, Callable, Dict
+from uuid import uuid4
+
+import httpx
 
 try:
-    from a2a.client import A2AClient
+    from a2a.client import A2AClient as SDKA2AClient
 
     from a2a.utils.message import new_agent_text_message
-    from a2a.types import Message
-
+    from a2a.types import (
+        Message,
+        MessageSendParams,
+        SendMessageRequest,
+        SendMessageResponse,
+    )
     # The A2AServer, A2AMessage, and A2AMessageType classes are not directly available
     # in the a2a package. We'll need to adapt our code to use the available classes.
     A2A_AVAILABLE = True
@@ -280,7 +288,6 @@ class A2AClientWrapper:
 
         Raises:
             ImportError: If the a2a-sdk package is not installed
-            NotImplementedError: A2AMessage and A2AMessageType are not implemented
         """
         if not A2A_AVAILABLE:
             raise ImportError(
@@ -288,11 +295,21 @@ class A2AClientWrapper:
                 "Install it with: pip install a2a-sdk"
             )
 
-        # A2AClient is available from a2a.client, but A2AMessage and A2AMessageType are not available
-        self.client = A2AClient()
         logger.warning(
             "A2AMessage and A2AMessageType are not implemented. Client functionality is limited."
         )
+
+    def _send_request(self, agent_url: str, params: MessageSendParams) -> Dict[str, Any]:
+        """Send a message request and return the raw response as a dict."""
+
+        async def _run() -> SendMessageResponse:
+            async with httpx.AsyncClient() as http_client:
+                client = SDKA2AClient(http_client, url=agent_url)
+                request = SendMessageRequest(id=str(uuid4()), params=params)
+                return await client.send_message(request)
+
+        response = asyncio.run(_run())
+        return response.model_dump(mode="python")
 
     def query_agent(self, agent_url: str, query: str) -> Dict[str, Any]:
         """Send a query to another agent.
@@ -305,21 +322,25 @@ class A2AClientWrapper:
             The response from the agent
         """
         try:
-            # Create message content
-            message_content = {"query": query}
+            params = MessageSendParams(message=new_agent_text_message(query))
+            response = self._send_request(agent_url, params)
 
-            # Send message to agent
-            response = self.client.send_message(agent_url, "query", message_content)
-
-            # Check for errors
-            if response.get("status") != "success":
+            if "error" in response:
                 logger.error(
-                    f"Error querying agent: {response.get('error', 'Unknown error')}"
-                )
-                return {"error": response.get("error", "Unknown error")}
+                    f"Error querying agent: {response.get('error')}")
+                return {"error": response.get("error")}
 
-            # Return the result
-            return response.get("result", {})
+            result = response.get("result", {})
+            if (
+                isinstance(result, dict)
+                and result.get("kind") == "message"
+                and result.get("parts")
+            ):
+                part = result["parts"][0]
+                if isinstance(part, dict) and "text" in part:
+                    return {"answer": part["text"]}
+
+            return result
         except Exception as e:
             logger.error(f"Error querying agent: {e}")
             return {"error": str(e)}
@@ -334,20 +355,15 @@ class A2AClientWrapper:
             The capabilities of the agent
         """
         try:
-            # Create message content
-            message_content = {"command": "get_capabilities"}
+            params = MessageSendParams(message=new_agent_text_message("get_capabilities"))
+            response = self._send_request(agent_url, params)
 
-            # Send message to agent
-            response = self.client.send_message(agent_url, "command", message_content)
-
-            # Check for errors
-            if response.get("status") != "success":
+            if "error" in response:
                 logger.error(
-                    f"Error getting agent capabilities: {response.get('error', 'Unknown error')}"
+                    f"Error getting agent capabilities: {response.get('error')}"
                 )
-                return {"error": response.get("error", "Unknown error")}
+                return {"error": response.get("error")}
 
-            # Return the result
             return response.get("result", {})
         except Exception as e:
             logger.error(f"Error getting agent capabilities: {e}")
@@ -363,20 +379,15 @@ class A2AClientWrapper:
             The configuration of the agent
         """
         try:
-            # Create message content
-            message_content = {"command": "get_config"}
+            params = MessageSendParams(message=new_agent_text_message("get_config"))
+            response = self._send_request(agent_url, params)
 
-            # Send message to agent
-            response = self.client.send_message(agent_url, "command", message_content)
-
-            # Check for errors
-            if response.get("status") != "success":
+            if "error" in response:
                 logger.error(
-                    f"Error getting agent config: {response.get('error', 'Unknown error')}"
+                    f"Error getting agent config: {response.get('error')}"
                 )
-                return {"error": response.get("error", "Unknown error")}
+                return {"error": response.get("error")}
 
-            # Return the result
             return response.get("result", {})
         except Exception as e:
             logger.error(f"Error getting agent config: {e}")
@@ -395,20 +406,18 @@ class A2AClientWrapper:
             The result of the configuration update
         """
         try:
-            # Create message content
-            message_content = {"command": "set_config", "args": config_updates}
+            params = MessageSendParams(
+                message=new_agent_text_message("set_config"),
+                metadata={"args": config_updates},
+            )
+            response = self._send_request(agent_url, params)
 
-            # Send message to agent
-            response = self.client.send_message(agent_url, "command", message_content)
-
-            # Check for errors
-            if response.get("status") != "success":
+            if "error" in response:
                 logger.error(
-                    f"Error setting agent config: {response.get('error', 'Unknown error')}"
+                    f"Error setting agent config: {response.get('error')}"
                 )
-                return {"error": response.get("error", "Unknown error")}
+                return {"error": response.get("error")}
 
-            # Return the result
             return response.get("result", {})
         except Exception as e:
             logger.error(f"Error setting agent config: {e}")
