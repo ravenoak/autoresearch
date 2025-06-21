@@ -22,7 +22,7 @@ import threading
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Iterable, Sequence, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 from collections import defaultdict
 import requests
 from git import Repo

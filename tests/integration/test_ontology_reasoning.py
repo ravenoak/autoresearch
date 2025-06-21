@@ -75,4 +75,3 @@ def test_visualization_creates_file(tmp_path, monkeypatch):
     out = tmp_path / "graph.png"
     StorageManager.visualize_rdf(str(out))
     assert out.exists() and out.stat().st_size > 0
-

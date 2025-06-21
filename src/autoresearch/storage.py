@@ -323,9 +323,6 @@ class StorageManager:
         if current_mb <= budget_mb:
             return
 
-        # Calculate how much memory we need to free
-        target_reduction_mb = current_mb - budget_mb
-
         # Get configuration
         cfg = ConfigLoader().config
         policy = cfg.graph_eviction_policy
@@ -378,14 +375,14 @@ class StorageManager:
                         confidence_score = 1.0 - _graph.nodes[node_id].get("confidence", 0.5)  # Higher is worse
 
                         hybrid_scores[node_id] = (
-                            recency_weight * recency_score + 
+                            recency_weight * recency_score +
                             confidence_weight * confidence_score
                         )
 
                 # Sort by hybrid score (highest first = worst candidates)
                 candidates = sorted(
-                    hybrid_scores.items(), 
-                    key=lambda x: x[1], 
+                    hybrid_scores.items(),
+                    key=lambda x: x[1],
                     reverse=True
                 )
 
@@ -460,8 +457,8 @@ class StorageManager:
 
                 # Sort by priority (highest first = worst candidates)
                 candidates = sorted(
-                    node_priorities.items(), 
-                    key=lambda x: x[1], 
+                    node_priorities.items(),
+                    key=lambda x: x[1],
                     reverse=True
                 )
 

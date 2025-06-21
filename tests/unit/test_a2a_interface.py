@@ -185,7 +185,7 @@ class TestA2AClient:
         with patch(
             "autoresearch.a2a_interface.A2AClient.__init__", return_value=None
         ) as mock_init:
-            client = A2AClient()
+            A2AClient()
             mock_init.assert_called_once()
 
     def test_query_agent(self, mock_a2a_client):

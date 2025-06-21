@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import rdflib
-
 from autoresearch.storage import StorageManager
 
 
@@ -37,4 +35,3 @@ def test_update_rdf_claim_partial():
     # ensure no removal happened for partial update
     store.remove.assert_not_called()
     store.add.assert_called_once_with(("urn:claim:x", "urn:prop:b", 2))
-

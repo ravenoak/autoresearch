@@ -1,7 +1,7 @@
 from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import patch
 
-from .common_steps import *  # noqa: F401,F403
+from .common_steps import application_running
 from autoresearch.cli_utils import format_error, format_success, format_info
 
 
@@ -13,7 +13,7 @@ def autoresearch_system_running(tmp_path, monkeypatch):
 
 
 @given("the Streamlit application is running")
-def streamlit_app_running(monkeypatch, bdd_context):
+def streamlit_app_running(monkeypatch, bdd_context, tmp_path):
     """Set up the Streamlit application for testing."""
     # First ensure the Autoresearch system is running
     autoresearch_system_running(tmp_path, monkeypatch)

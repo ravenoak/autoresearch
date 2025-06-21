@@ -416,7 +416,7 @@ class A2AClientWrapper:
 
 
 # Alias for backward compatibility
-A2AClient = A2AClientWrapper
+A2AClient = A2AClientWrapper  # noqa: F811
 
 
 def get_a2a_client() -> A2AClientWrapper:

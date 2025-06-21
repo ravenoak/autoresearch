@@ -12,7 +12,6 @@ from pytest_bdd import scenario, given, when, then
 from unittest.mock import MagicMock
 
 
-
 # Fixtures
 @pytest.fixture
 def cleanup_extended_context():
