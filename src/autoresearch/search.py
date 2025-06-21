@@ -623,12 +623,20 @@ class Search:
             else [1.0] * len(results)
         )
 
+        # Include vector similarity from DuckDB results when available
+        duckdb_scores = [r.get("similarity", 0.0) for r in results]
+
+        # Average semantic embedding similarity with DuckDB score
+        embedding_scores = [
+            (semantic_scores[i] + duckdb_scores[i]) / 2 for i in range(len(results))
+        ]
+
         # Combine scores using configurable weights
         combined_scores = []
         for i in range(len(results)):
             score = (
                 bm25_scores[i] * search_cfg.bm25_weight
-                + semantic_scores[i] * search_cfg.semantic_similarity_weight
+                + embedding_scores[i] * search_cfg.semantic_similarity_weight
                 + credibility_scores[i] * search_cfg.source_credibility_weight
             )
             combined_scores.append(score)
@@ -638,6 +646,8 @@ class Search:
             result["relevance_score"] = combined_scores[i]
             result["bm25_score"] = bm25_scores[i]
             result["semantic_score"] = semantic_scores[i]
+            result["duckdb_score"] = duckdb_scores[i]
+            result["embedding_score"] = embedding_scores[i]
             result["credibility_score"] = credibility_scores[i]
 
         # Sort results by combined score (descending)

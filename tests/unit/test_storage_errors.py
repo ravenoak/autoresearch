@@ -152,7 +152,7 @@ def test_vector_search_error(mock_storage_components, mock_config, assert_error)
 
     # Create a mock config with vector search settings
     config = MagicMock()
-    config.vector_nprobe = 10
+    config.storage.vector_nprobe = 10
 
     # Execute
     with mock_storage_components(

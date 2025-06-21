@@ -76,7 +76,6 @@ These options are set in the `[core]` section of the configuration file.
 | `output_format` | string | `null` | Format for output (null = auto-detect) | `null`, `"markdown"`, `"json"`, `"terminal"` |
 | `tracing_enabled` | boolean | `false` | Enable OpenTelemetry tracing | `true`, `false` |
 | `graph_eviction_policy` | string | `"LRU"` | Policy for evicting items from the knowledge graph | `"LRU"`, `"score"` |
-| `vector_nprobe` | integer | `10` | Number of probes for vector search | ≥ 1 |
 | `default_model` | string | `"gpt-3.5-turbo"` | Default LLM model to use | Any valid model name |
 | `active_profile` | string | `null` | Active configuration profile | Any defined profile name |
 
@@ -94,6 +93,7 @@ These options are set in the `[storage.duckdb]` and `[storage.rdf]` sections.
 | `hnsw_m` | integer | `16` | HNSW M parameter for vector index | ≥ 4 |
 | `hnsw_ef_construction` | integer | `200` | HNSW ef_construction parameter | ≥ 32 |
 | `hnsw_metric` | string | `"l2"` | Distance metric for vector search | `"l2"`, `"ip"`, `"cosine"` |
+| `vector_nprobe` | integer | `10` | Number of probes for vector search | ≥ 1 |
 
 ### RDF Storage
 

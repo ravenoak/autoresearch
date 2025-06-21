@@ -70,6 +70,31 @@ To add a custom storage backend:
 4. Add persistence in `persist_claim()`
 5. Update the configuration schema in `ConfigModel`
 
+## Vector Search Tuning
+
+The `StorageConfig` section of `autoresearch.toml` exposes parameters to
+control vector search performance.  Adjust these to trade off recall and
+speed:
+
+```toml
+[storage]
+hnsw_m = 16               # Higher improves recall but uses more memory
+hnsw_ef_construction = 200  # Controls index build quality
+vector_nprobe = 10          # Number of probes used during search
+```
+
+After changing these values run:
+
+```python
+from autoresearch.storage import StorageManager
+StorageManager.create_hnsw_index()
+```
+
+to rebuild the index with the new parameters.
+
+The `vector_search_performance.feature` BDD scenario demonstrates how these
+settings impact search latency.
+
 ## RDF Storage Backends
 
 RDFLib provides two supported backends: `sqlite` (the default) and `berkeleydb`.
