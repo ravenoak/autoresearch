@@ -23,9 +23,9 @@ from autoresearch.extensions import VSSExtensionLoader
 
 
 @pytest.fixture(autouse=True)
-def stub_vss_extension_download(monkeypatch):
+def stub_vss_extension_download(monkeypatch, request):
     """Prevent network calls when loading the DuckDB VSS extension."""
-    if os.getenv("REAL_VSS_TEST"):
+    if os.getenv("REAL_VSS_TEST") or request.node.get_closest_marker("real_vss"):
         yield
         return
 

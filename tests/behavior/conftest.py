@@ -137,7 +137,7 @@ def claim_factory():
                 ]
 
             if embedding is None:
-                embedding = [0.1, 0.2, 0.3, 0.4]
+                embedding = [0.1] * 384
 
             claim = {
                 "id": claim_id,
@@ -177,7 +177,7 @@ def claim_factory():
                 claim = self.create_valid_claim(
                     claim_id=f"test-claim-{i}",
                     content=f"This is test claim {i}",
-                    embedding=[0.1 * i, 0.2 * i, 0.3 * i, 0.4 * i],
+                    embedding=[0.1 * i] * 384,
                 )
                 claims.append(claim)
             return claims

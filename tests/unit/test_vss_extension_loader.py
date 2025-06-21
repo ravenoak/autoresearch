@@ -9,6 +9,7 @@ from autoresearch.errors import StorageError
 class TestVSSExtensionLoader:
     """Test the VSSExtensionLoader class."""
 
+    @pytest.mark.real_vss
     def test_verify_extension_success(self):
         """Test that verify_extension returns True when the extension is loaded."""
         # Create a mock connection that successfully executes the verification query
@@ -23,6 +24,7 @@ class TestVSSExtensionLoader:
             "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
         )
 
+    @pytest.mark.real_vss
     def test_verify_extension_failure(self):
         """Test that verify_extension returns False when the extension is not loaded."""
         # Create a mock connection that raises an exception when executing the verification query
