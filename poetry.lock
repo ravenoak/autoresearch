@@ -4118,6 +4118,21 @@ files = [
 ]
 
 [[package]]
+name = "owlrl"
+version = "6.0.2"
+description = "OWL-RL and RDFS based RDF Closure inferencing for Python"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "owlrl-6.0.2-py3-none-any.whl", hash = "sha256:57eca06b221edbbc682376c8d42e2ddffc99f61e82c0da02e26735592f08bacc"},
+    {file = "owlrl-6.0.2.tar.gz", hash = "sha256:904e3310ff4df15101475776693d2427d1f8244ee9a6a9f9e13c3c57fae90b74"},
+]
+
+[package.dependencies]
+rdflib = ">=6.0.2"
+
+[[package]]
 name = "packaging"
 version = "24.2"
 description = "Core utilities for Python packages"
@@ -8132,4 +8147,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "d5154561ac5f885187db62706cc0f3b986960bd8198d3673f9674fafd3098f24"
+content-hash = "44182050fa73e708af9ce5fd78ee32c65bd0fe4ae5441c5deff9386c9990cda8"

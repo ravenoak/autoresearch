@@ -1,6 +1,6 @@
 # flake8: noqa
 import pytest
-from pytest_bdd import scenario, given, when, then
+from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import patch
 
 
@@ -398,4 +398,93 @@ def test_vector_search():
     This test verifies that vector search returns the nearest claims by vector similarity,
     ordered by similarity (closest first).
     """
+    pass
+
+
+@given("I have loaded an ontology defining subclasses")
+def load_subclass_ontology(tmp_path):
+    from autoresearch.storage import StorageManager
+
+    onto = tmp_path / "onto.ttl"
+    onto.write_text(
+        """
+@prefix ex: <http://example.com/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+ex:A rdfs:subClassOf ex:B .
+"""
+    )
+    StorageManager.load_ontology(str(onto))
+
+
+@given("I have an instance of the subclass")
+def add_subclass_instance():
+    from autoresearch.storage import StorageManager
+    import rdflib
+
+    store = StorageManager.get_rdf_store()
+    store.add(
+        (
+            rdflib.URIRef("http://example.com/x"),
+            rdflib.RDF.type,
+            rdflib.URIRef("http://example.com/A"),
+        )
+    )
+
+
+@when("I apply ontology reasoning")
+def apply_reasoning():
+    from autoresearch.storage import StorageManager
+
+    StorageManager.apply_ontology_reasoning()
+
+
+@then("querying for the superclass should include the instance")
+def check_superclass_query():
+    from autoresearch.storage import StorageManager
+
+    res = StorageManager.query_rdf(
+        "ASK { <http://example.com/x> a <http://example.com/B> }"
+    )
+    assert res.askAnswer
+
+
+@given("the RDF store has some triples")
+def add_simple_triple():
+    from autoresearch.storage import StorageManager
+    import rdflib
+
+    store = StorageManager.get_rdf_store()
+    store.add(
+        (
+            rdflib.URIRef("urn:a"),
+            rdflib.URIRef("urn:rel"),
+            rdflib.URIRef("urn:b"),
+        )
+    )
+
+
+@when(parsers.parse("I visualize the RDF graph to \"{file}\""), target_fixture="viz_path")
+def visualize_graph(tmp_path, file):
+    from autoresearch.storage import StorageManager
+
+    out = tmp_path / file
+    StorageManager.visualize_rdf(str(out))
+    return out
+
+
+@then(parsers.parse("the visualization file \"{file}\" should exist"))
+def check_visualization(tmp_path, file, viz_path):
+    path = viz_path
+    assert path.exists() and path.stat().st_size > 0
+
+
+@scenario("../features/dkg_persistence.feature", "Ontology reasoning infers subclass relationships")
+def test_ontology_reasoning():
+    """Test scenario: Ontology reasoning infers subclass relationships."""
+    pass
+
+
+@scenario("../features/dkg_persistence.feature", "RDF graph visualization")
+def test_rdf_visualization():
+    """Test scenario: RDF graph visualization."""
     pass

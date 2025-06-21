@@ -1392,6 +1392,27 @@ def test_a2a(
     print(formatted_results)
 
 
+@app.command("visualize-rdf")
+def visualize_rdf_cli(
+    output: str = typer.Argument(
+        "rdf_graph.png",
+        help="Output PNG path for the RDF graph visualization",
+    ),
+) -> None:
+    """Generate a PNG visualization of the RDF knowledge graph."""
+    from .streamlit_app import visualize_rdf as _visualize
+
+    try:
+        _visualize(output)
+        print_success(f"Graph written to {output}")
+    except Exception as e:  # pragma: no cover - optional dependency
+        print_error(
+            f"Failed to visualize RDF graph: {e}",
+            suggestion="Ensure matplotlib is installed",
+        )
+        raise typer.Exit(1)
+
+
 @app.command("gui")
 def gui(
     port: int = typer.Option(

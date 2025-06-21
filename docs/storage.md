@@ -162,20 +162,35 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
 ## Ontology Reasoning and Visualization
 
 The RDF store supports optional ontology-based reasoning using the
-`owlrl` package. Load an ontology file and expand the graph:
+`owlrl` package. The following tutorial walks through a typical
+ontology workflow.
 
-```python
-from autoresearch.storage import StorageManager
+1. **Load an ontology file** to add schema triples:
 
-StorageManager.load_ontology("ontology.ttl")
-StorageManager.apply_ontology_reasoning()
-results = StorageManager.query_rdf("""SELECT ?s ?o WHERE { ?s a <http://example.com/B> . }""")
-```
+   ```python
+   from autoresearch.storage import StorageManager
 
-To visualize the current RDF graph as a PNG image, run:
+   StorageManager.load_ontology("ontology.ttl")
+   ```
 
-```bash
-poetry run python scripts/visualize_rdf.py graph.png
-```
+2. **Apply reasoning** to materialize OWL‑RL inferences:
 
-The script writes `graph.png` containing a simple diagram of all triples.
+   ```python
+   StorageManager.apply_ontology_reasoning()
+   ```
+
+3. **Query the inferred graph** using SPARQL:
+
+   ```python
+   results = StorageManager.query_rdf(
+       "SELECT ?s WHERE { ?s a <http://example.com/B> }"
+   )
+   ```
+
+4. **Visualize the graph** as a PNG image:
+
+   ```bash
+   poetry run autoresearch visualize-rdf graph.png
+   ```
+
+The command writes `graph.png` containing a simple diagram of all triples.
