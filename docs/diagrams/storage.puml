@@ -6,6 +6,7 @@ package "Storage & Search" {
     + {static} setup(db_path): void
     + {static} teardown(remove_db): void
     + {static} persist_claim(claim): void
+    + {static} update_claim(claim, partial_update): void
     + {static} create_hnsw_index(): void
     + {static} vector_search(query_embedding, k): List[Dict]
     + {static} get_graph(): nx.DiGraph

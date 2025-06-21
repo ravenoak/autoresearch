@@ -8,8 +8,8 @@ Autoresearch uses a modular architecture with several key components:
 
 ![System Architecture](diagrams/system_architecture.png)
 
-The system consists of:
-- **Client Interfaces**: CLI, API, and Monitor
+- The system consists of:
+- **Client Interfaces**: CLI, API, Monitor, and FastMCP
 - **Core Components**: Orchestrator, ConfigLoader, Error Hierarchy, Metrics, and Tracing
 - **Agents**: Synthesizer, Contrarian, and Fact-Checker
 - **LLM Integration**: Adapters for different LLM backends
@@ -78,4 +78,22 @@ Then query your directory or repository just like any other search:
 
 ```bash
 autoresearch search "neural networks in docs"
+```
+
+## MCP Interface
+
+Autoresearch also exposes a **FastMCP** server so other agents can use it as a
+tool. Start the server with:
+
+```bash
+autoresearch serve
+```
+
+Send a query using the provided client helper:
+
+```python
+from autoresearch.mcp_interface import query
+
+result = query("What is the capital of France?")
+print(result["answer"])
 ```
