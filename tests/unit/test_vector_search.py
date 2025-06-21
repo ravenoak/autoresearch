@@ -31,8 +31,11 @@ class MockDuckDBBackend:
         return self._has_vss
 
     def vector_search(self, query_embedding, k=5):
+        self._conn.execute("SET hnsw_ef_search=10")
         vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
-        sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+        sql = (
+            f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
+        )
         self._conn.execute(sql)
         return [{"node_id": "n1", "embedding": [0.1, 0.2]}]
 
@@ -44,6 +47,7 @@ def _mock_config():
             hnsw_m=8,
             hnsw_ef_construction=100,
             hnsw_metric="cosine",
+            vector_nprobe=10,
         )
     )
 
@@ -60,7 +64,7 @@ def test_create_hnsw_index(monkeypatch):
     ConfigLoader()._config = None
 
     StorageManager.create_hnsw_index()
-    assert any("USING hnsw" in cmd for cmd in dummy.commands)
+    assert any("m=8" in cmd and "ef_construction=100" in cmd for cmd in dummy.commands)
 
 
 def test_vector_search_builds_query(monkeypatch):
@@ -80,7 +84,21 @@ def test_vector_search_builds_query(monkeypatch):
 
     results = StorageManager.vector_search([0.1, 0.2], k=3)
     assert results == [{"node_id": "n1", "embedding": [0.1, 0.2]}]
+    assert any("SET hnsw_ef_search=10" in cmd for cmd in dummy.commands)
     assert any("<->" in cmd and "LIMIT 3" in cmd for cmd in dummy.commands)
+
+
+def test_vector_search_uses_config_nprobe(monkeypatch):
+    dummy = DummyConn()
+    mock_backend = MockDuckDBBackend(dummy)
+    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: _mock_config())
+    monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
+    ConfigLoader()._config = None
+
+    StorageManager.vector_search([0.1, 0.2], k=2)
+    assert "SET hnsw_ef_search=10" in dummy.commands[0]
 
 
 class FailingConn(DummyConn):

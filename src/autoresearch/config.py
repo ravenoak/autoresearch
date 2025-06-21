@@ -158,6 +158,7 @@ class StorageConfig(BaseModel):
     hnsw_m: int = Field(default=16, ge=4)
     hnsw_ef_construction: int = Field(default=200, ge=32)
     hnsw_metric: str = Field(default="l2sq")
+    vector_nprobe: int = Field(default=10, ge=1)
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
 
@@ -219,7 +220,6 @@ class ConfigModel(BaseSettings):
 
     # Dynamic knowledge graph settings
     graph_eviction_policy: str = Field(default="LRU")
-    vector_nprobe: int = Field(default=10, ge=1)
 
     # Model settings
     default_model: str = Field(default="gpt-3.5-turbo")
@@ -506,6 +506,7 @@ class ConfigLoader:
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
             "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
+            "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
         }

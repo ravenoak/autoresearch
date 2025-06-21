@@ -183,6 +183,7 @@ autoresearch search "bug fix commit"
 # Eviction policy (LRU or score)
 eviction_policy = "LRU"
 
+[storage]
 # Number of probes for vector search
 vector_nprobe = 10
 ```

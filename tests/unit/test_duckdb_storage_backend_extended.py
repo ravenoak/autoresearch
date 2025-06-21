@@ -228,7 +228,7 @@ class TestDuckDBStorageBackendExtended:
         # Mock the ConfigLoader
         with patch("autoresearch.storage_backends.ConfigLoader") as mock_config_loader:
             mock_config = MagicMock()
-            mock_config.config.vector_nprobe = 10
+            mock_config.config.storage.vector_nprobe = 10
             mock_config_loader.return_value = mock_config
 
             # Mock the fetchall method to return search results
@@ -292,7 +292,7 @@ class TestDuckDBStorageBackendExtended:
         # Mock the ConfigLoader
         with patch("autoresearch.storage_backends.ConfigLoader") as mock_config_loader:
             mock_config = MagicMock()
-            mock_config.config.vector_nprobe = 10
+            mock_config.config.storage.vector_nprobe = 10
             mock_config_loader.return_value = mock_config
 
             # Mock the execute method to raise an exception

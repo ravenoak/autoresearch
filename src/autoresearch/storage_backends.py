@@ -587,7 +587,7 @@ class DuckDBStorageBackend:
             # Set search parameters for better recall
             try:
                 # Higher ef_search value improves recall at the cost of search speed
-                self._conn.execute(f"SET hnsw_ef_search={cfg.vector_nprobe}")
+                self._conn.execute(f"SET hnsw_ef_search={cfg.storage.vector_nprobe}")
 
                 # Set additional optimization parameters if available in config
                 if hasattr(cfg, 'vector_search_batch_size'):
