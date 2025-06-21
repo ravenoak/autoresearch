@@ -158,7 +158,9 @@ class StorageConfig(BaseModel):
     hnsw_m: int = Field(default=16, ge=4)
     hnsw_ef_construction: int = Field(default=200, ge=32)
     hnsw_metric: str = Field(default="l2sq")
-    vector_nprobe: int = Field(default=10, ge=1)
+    hnsw_ef_search: int = Field(default=10, ge=1)
+    hnsw_auto_tune: bool = Field(default=True)
+    vector_nprobe: int = Field(default=10, ge=1)  # backward compatibility
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
 
@@ -506,6 +508,8 @@ class ConfigLoader:
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
             "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
+            "hnsw_ef_search": duckdb_cfg.get("hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)),
+            "hnsw_auto_tune": duckdb_cfg.get("hnsw_auto_tune", True),
             "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),

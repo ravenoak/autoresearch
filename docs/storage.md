@@ -80,7 +80,8 @@ speed:
 [storage]
 hnsw_m = 16               # Higher improves recall but uses more memory
 hnsw_ef_construction = 200  # Controls index build quality
-vector_nprobe = 10          # Number of probes used during search
+hnsw_ef_search = 32         # Number of neighbors explored during search
+hnsw_auto_tune = true       # Automatically adjust ef_search for large indexes
 ```
 
 After changing these values run:

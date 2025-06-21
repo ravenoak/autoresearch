@@ -1,0 +1,46 @@
+import time
+import numpy as np
+import pytest
+from autoresearch.storage import StorageManager
+from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+
+
+def test_knn_latency_benchmark(tmp_path, monkeypatch):
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            vector_extension=True,
+            duckdb_path=str(tmp_path / "bench.duckdb"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    StorageManager.clear_all()
+    conn = StorageManager.get_duckdb_conn()
+
+    try:
+        result = conn.execute(
+            "SELECT * FROM duckdb_extensions() WHERE extension_name='vss'"
+        ).fetchall()
+        if not result:
+            pytest.skip("Vector extension not available")
+    except Exception:
+        pytest.skip("Vector extension not available")
+
+    dim = 384
+    n = 10000
+    nodes = [(f"n{i}", "", "", 0.0) for i in range(n)]
+    vectors = [(f"n{i}", np.random.rand(dim).astype(float).tolist()) for i in range(n)]
+
+    conn.executemany(
+        "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)", nodes
+    )
+    conn.executemany("INSERT INTO embeddings VALUES (?, ?)", vectors)
+
+    StorageManager.refresh_vector_index()
+
+    query = vectors[0][1]
+    start = time.perf_counter()
+    StorageManager.vector_search(query, k=5)
+    latency = time.perf_counter() - start
+    assert latency < 0.15, f"Latency {latency:.3f}s exceeds 150ms"

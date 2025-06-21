@@ -359,6 +359,20 @@ class DuckDBStorageBackend:
                     f"metric='{metric}')"
                 )
 
+                # Set ef_search after index creation
+                ef_search = getattr(cfg, "hnsw_ef_search", cfg.vector_nprobe)
+                if getattr(cfg, "hnsw_auto_tune", False):
+                    tuned = max(cfg.hnsw_m * 2, cfg.hnsw_ef_construction // 2)
+                    if tuned > ef_search:
+                        log.debug(
+                            f"Auto-tuned ef_search from {ef_search} to {tuned}"
+                        )
+                        ef_search = tuned
+                try:
+                    self._conn.execute(f"SET hnsw_ef_search={ef_search}")
+                except Exception as e:
+                    log.debug(f"Failed to set ef_search: {e}")
+
                 # If we inserted a dummy embedding, remove it now
                 if count == 0:
                     try:
@@ -586,8 +600,14 @@ class DuckDBStorageBackend:
         try:
             # Set search parameters for better recall
             try:
+                ef_search = getattr(cfg.storage, 'hnsw_ef_search', cfg.storage.vector_nprobe)
+                if getattr(cfg.storage, 'hnsw_auto_tune', False):
+                    tuned = max(cfg.storage.hnsw_m * 2, cfg.storage.hnsw_ef_construction // 2)
+                    if tuned > ef_search:
+                        log.debug(f"Auto-tuned ef_search from {ef_search} to {tuned}")
+                        ef_search = tuned
                 # Higher ef_search value improves recall at the cost of search speed
-                self._conn.execute(f"SET hnsw_ef_search={cfg.storage.vector_nprobe}")
+                self._conn.execute(f"SET hnsw_ef_search={ef_search}")
 
                 # Set additional optimization parameters if available in config
                 if hasattr(cfg, 'vector_search_batch_size'):
