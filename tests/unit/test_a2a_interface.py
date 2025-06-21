@@ -1,7 +1,7 @@
 """Unit tests for the A2A interface module."""
 
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
 from autoresearch.a2a_interface import (
     A2AInterface,
@@ -26,12 +26,10 @@ def mock_a2a_server():
 
 
 @pytest.fixture
-def mock_a2a_client():
-    """Create a mock A2A client."""
-    with patch("autoresearch.a2a_interface.A2AClient") as mock_client:
-        mock_instance = MagicMock()
-        mock_client.return_value = mock_instance
-        yield mock_instance
+def mock_send_request():
+    """Patch the internal send_request helper."""
+    with patch("autoresearch.a2a_interface.A2AClientWrapper._send_request") as mock:
+        yield mock
 
 
 @pytest.fixture
@@ -182,87 +180,56 @@ class TestA2AClient:
 
     def test_init(self):
         """Test initialization of A2AClient."""
-        with patch(
-            "autoresearch.a2a_interface.A2AClient.__init__", return_value=None
-        ) as mock_init:
-            A2AClient()
-            mock_init.assert_called_once()
+        client = A2AClient()
+        assert isinstance(client, A2AClient)
 
-    def test_query_agent(self, mock_a2a_client):
+    def test_query_agent(self, mock_send_request):
         """Test querying an agent."""
-        # Setup
-        with patch(
-            "autoresearch.a2a_interface.A2AClient", return_value=mock_a2a_client
-        ):
-            client = A2AClient()
-            mock_a2a_client.send_message.return_value = {
-                "status": "success",
-                "result": {"answer": "test answer"},
+        client = A2AClient()
+        mock_send_request.return_value = {
+            "result": {
+                "kind": "message",
+                "parts": [{"kind": "text", "text": "test answer"}],
             }
+        }
 
-            # Execute
-            result = client.query_agent("http://test-agent", "test query")
+        result = client.query_agent("http://test-agent", "test query")
 
-            # Verify
-            assert result == {"answer": "test answer"}
-            mock_a2a_client.send_message.assert_called_once()
+        assert result == {"answer": "test answer"}
+        mock_send_request.assert_called_once()
 
-    def test_get_agent_capabilities(self, mock_a2a_client):
+    def test_get_agent_capabilities(self, mock_send_request):
         """Test getting agent capabilities."""
         # Setup
-        with patch(
-            "autoresearch.a2a_interface.A2AClient", return_value=mock_a2a_client
-        ):
-            client = A2AClient()
-            mock_a2a_client.send_message.return_value = {
-                "status": "success",
-                "result": {"capabilities": "test"},
-            }
+        client = A2AClient()
+        mock_send_request.return_value = {"result": {"capabilities": "test"}}
 
-            # Execute
-            result = client.get_agent_capabilities("http://test-agent")
+        result = client.get_agent_capabilities("http://test-agent")
 
-            # Verify
-            assert result == {"capabilities": "test"}
-            mock_a2a_client.send_message.assert_called_once()
+        assert result == {"capabilities": "test"}
+        mock_send_request.assert_called_once()
 
-    def test_get_agent_config(self, mock_a2a_client):
+    def test_get_agent_config(self, mock_send_request):
         """Test getting agent config."""
         # Setup
-        with patch(
-            "autoresearch.a2a_interface.A2AClient", return_value=mock_a2a_client
-        ):
-            client = A2AClient()
-            mock_a2a_client.send_message.return_value = {
-                "status": "success",
-                "result": {"config": "test"},
-            }
+        client = A2AClient()
+        mock_send_request.return_value = {"result": {"config": "test"}}
 
-            # Execute
-            result = client.get_agent_config("http://test-agent")
+        result = client.get_agent_config("http://test-agent")
 
-            # Verify
-            assert result == {"config": "test"}
-            mock_a2a_client.send_message.assert_called_once()
+        assert result == {"config": "test"}
+        mock_send_request.assert_called_once()
 
-    def test_set_agent_config(self, mock_a2a_client):
+    def test_set_agent_config(self, mock_send_request):
         """Test setting agent config."""
         # Setup
-        with patch(
-            "autoresearch.a2a_interface.A2AClient", return_value=mock_a2a_client
-        ):
-            client = A2AClient()
-            mock_a2a_client.send_message.return_value = {
-                "status": "success",
-                "result": {"updated": True},
-            }
+        client = A2AClient()
+        mock_send_request.return_value = {"result": {"updated": True}}
 
-            # Execute
-            result = client.set_agent_config("http://test-agent", {"key": "value"})
+        result = client.set_agent_config("http://test-agent", {"key": "value"})
 
-            # Verify
-            assert result == {"updated": True}
-            mock_a2a_client.send_message.assert_called_once()
+        assert result == {"updated": True}
+        mock_send_request.assert_called_once()
 
 
 def test_get_a2a_client():
