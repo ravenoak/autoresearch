@@ -18,6 +18,7 @@ def streamlit_app_running(monkeypatch, bdd_context):
         "tabs": MagicMock(),
         "container": MagicMock(),
         "image": MagicMock(),
+        "graphviz": MagicMock(),
     }
 
     # Patch Streamlit functions
@@ -26,6 +27,7 @@ def streamlit_app_running(monkeypatch, bdd_context):
         patch("streamlit.tabs", bdd_context["st_mocks"]["tabs"]),
         patch("streamlit.container", bdd_context["st_mocks"]["container"]),
         patch("streamlit.image", bdd_context["st_mocks"]["image"]),
+        patch("streamlit.graphviz_chart", bdd_context["st_mocks"]["graphviz"]),
     ):
         # Store the patchers in the context
         bdd_context["streamlit_patchers"] = [
@@ -33,6 +35,7 @@ def streamlit_app_running(monkeypatch, bdd_context):
             patch("streamlit.tabs"),
             patch("streamlit.container"),
             patch("streamlit.image"),
+            patch("streamlit.graphviz_chart"),
         ]
 
         # Start the patchers
@@ -319,4 +322,22 @@ def check_save_feedback(bdd_context):
 @scenario("../features/streamlit_gui.feature", "Configuration Editor Interface")
 def test_config_editor():
     """Test the Configuration Editor Interface scenario."""
+    pass
+
+
+@then("an interaction trace should be displayed")
+def check_trace_display(bdd_context):
+    """Ensure a graphviz chart was rendered for the trace."""
+    assert bdd_context["st_mocks"]["graphviz"].called
+
+
+@then("progress metrics should be visualized")
+def check_progress_metrics(bdd_context):
+    """Ensure progress metrics graph was shown."""
+    assert bdd_context["st_mocks"]["graphviz"].call_count >= 2
+
+
+@scenario("../features/streamlit_gui.feature", "Agent Interaction Trace Visualization")
+def test_agent_trace():
+    """Test the Agent Interaction Trace Visualization scenario."""
     pass

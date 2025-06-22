@@ -86,11 +86,14 @@ graph TD
     ConfigEditor --> LocalFileSetupGUI[Configure Local File Backend]
     ConfigEditor --> GitRepoSetupGUI[Configure Git Backend]
     GUI --> MetricsDashboard[Metrics Dashboard]
-    
+
+    MetricsDashboard --> ProgressMetrics[Progress Metrics]
+
     ResultsTabs --> AnswerTab[Answer Tab]
     ResultsTabs --> ReasoningTab[Reasoning Tab]
     ResultsTabs --> CitationsTab[Citations Tab]
     ResultsTabs --> KnowledgeGraphTab[Knowledge Graph Tab]
+    ResultsTabs --> TraceTab[Trace Tab]
     
     subgraph "Accessibility Features"
         KeyboardNavigation[Keyboard Navigation]

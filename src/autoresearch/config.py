@@ -802,6 +802,12 @@ class ConfigLoader:
         # Notify observers of the change
         self.notify_observers(new_config)
 
+    def available_profiles(self) -> List[str]:
+        """Return the list of available configuration profiles."""
+        if not self._profiles:
+            self.load_config()
+        return list(self._profiles.keys())
+
     def on_config_change(self, config: ConfigModel) -> None:
         """Default handler for configuration change events.
 

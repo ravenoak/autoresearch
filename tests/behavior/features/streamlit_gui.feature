@@ -30,3 +30,8 @@ Feature: Streamlit GUI Features
     And the form should have validation for input fields
     And I should be able to save changes to the configuration
     And I should see feedback when the configuration is saved
+
+  Scenario: Agent Interaction Trace Visualization
+    When I run a query in the Streamlit interface
+    Then an interaction trace should be displayed
+    And progress metrics should be visualized
