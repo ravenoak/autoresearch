@@ -530,6 +530,43 @@ class Search:
             log.warning(f"Semantic similarity calculation failed: {e}")
             return [1.0] * len(documents)  # Return neutral scores
 
+    @classmethod
+    def add_embeddings(
+        cls,
+        documents: List[Dict[str, Any]],
+        query_embedding: Optional[List[float]] = None,
+    ) -> None:
+        """Add embeddings and similarity scores to documents in-place."""
+
+        model = cls.get_sentence_transformer()
+        if model is None:
+            return
+
+        texts: List[str] = []
+        indices: List[int] = []
+        for idx, doc in enumerate(documents):
+            if "embedding" in doc:
+                continue
+            text = doc.get("title", "")
+            if "snippet" in doc:
+                text += " " + doc.get("snippet", "")
+            texts.append(text)
+            indices.append(idx)
+
+        if not texts:
+            return
+
+        try:
+            doc_embeddings = model.encode(texts)
+            for emb, index in zip(doc_embeddings, indices):
+                documents[index]["embedding"] = emb.tolist()
+                if query_embedding is not None:
+                    q = np.array(query_embedding, dtype=float)
+                    sim = float(np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb)))
+                    documents[index]["similarity"] = sim
+        except Exception as e:  # pragma: no cover - unexpected
+            log.warning(f"Failed to add embeddings: {e}")
+
     @staticmethod
     def assess_source_credibility(documents: List[Dict[str, str]]) -> List[float]:
         """Assess the credibility of sources based on domain authority and other factors.
@@ -847,6 +884,7 @@ class Search:
         for name in cfg.search.backends:
             cached = get_cached_results(search_query, name)
             if cached is not None:
+                cls.add_embeddings(cached, query_embedding)
                 results.extend(cached[:max_results])
                 continue
 
@@ -908,6 +946,8 @@ class Search:
 
             if backend_results:
                 cache_results(text_query, name, backend_results)
+
+            cls.add_embeddings(backend_results, query_embedding)
 
             results.extend(backend_results)
 
@@ -1190,7 +1230,17 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
         for ext in file_types:
             if len(results) >= max_results:
                 break
-            cmd = [rg_path, "-n", "--no-heading", "-i", f"-m{max_results - len(results)}", "-g", f"*.{ext}", query, str(repo_root)]
+            cmd = [
+                rg_path,
+                "-n",
+                "--no-heading",
+                "-i",
+                f"-m{max_results - len(results)}",
+                "-g",
+                f"*.{ext}",
+                query,
+                str(repo_root),
+            ]
             try:
                 output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
@@ -1199,8 +1249,21 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 parts = line.split(":", 2)
                 if len(parts) < 3:
                     continue
-                file_path, _line_no, snippet = parts
-                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet.strip(), "commit": head_hash})
+                file_path, line_no_str, _snippet = parts
+                try:
+                    line_no = int(line_no_str)
+                except ValueError:
+                    line_no = 0
+                context_lines = []
+                try:
+                    file_lines = Path(file_path).read_text(errors="ignore").splitlines()
+                    start = max(0, line_no - 3)
+                    end = min(len(file_lines), line_no + 2)
+                    context_lines = file_lines[start:end]
+                except Exception:
+                    context_lines = [_snippet.strip()]
+                snippet = "\n".join(context_lines)
+                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet, "commit": head_hash})
                 if len(results) >= max_results:
                     break
     else:
@@ -1208,15 +1271,18 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             if not file.is_file():
                 continue
             try:
-                text = file.read_text(errors="ignore")
+                lines = file.read_text(errors="ignore").splitlines()
             except Exception:  # pragma: no cover - unexpected
                 continue
-            idx = text.lower().find(query.lower())
-            if idx != -1:
-                snippet = text[idx:idx + 200]
-                results.append({"title": file.name, "url": str(file), "snippet": snippet, "commit": head_hash})
-                if len(results) >= max_results:
-                    return results
+            for idx, line in enumerate(lines):
+                if query.lower() in line.lower():
+                    start = max(0, idx - 2)
+                    end = min(len(lines), idx + 3)
+                    snippet = "\n".join(lines[start:end])
+                    results.append({"title": file.name, "url": str(file), "snippet": snippet, "commit": head_hash})
+                    break
+            if len(results) >= max_results:
+                return results
 
     conn = None
     indexed: set[str] = set()
@@ -1235,7 +1301,33 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
         commit_hash = commit.hexsha
         diff_text = ""
         try:
-            diff_text = repo.git.show(commit_hash, '--patch')
+            parent = commit.parents[0] if commit.parents else None
+            diffs = commit.diff(parent, create_patch=True)
+            for d in diffs:
+                part = d.diff.decode("utf-8", "ignore")
+                diff_text += part
+                if query.lower() in part.lower():
+                    snippet_match = re.search(
+                        rf".{{0,80}}{re.escape(query)}.{{0,80}}",
+                        part,
+                        re.IGNORECASE,
+                    )
+                    snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
+                    results.append(
+                        {
+                            "title": d.b_path or d.a_path or "diff",
+                            "url": commit_hash,
+                            "snippet": snippet,
+                            "commit": commit_hash,
+                            "author": commit.author.name,
+                            "date": commit.committed_datetime.isoformat(),
+                            "diff": part[:2000],
+                        }
+                    )
+                    if len(results) >= max_results:
+                        break
+            if len(results) >= max_results:
+                break
         except Exception as exc:  # pragma: no cover - git issues
             log.warning(f"Failed to get diff for {commit_hash}: {exc}")
         if conn and commit_hash not in indexed:
@@ -1254,11 +1346,11 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             except Exception as exc:  # pragma: no cover - db insert issues
                 log.warning(f"Failed to index commit {commit_hash}: {exc}")
 
-        if query.lower() in commit.message.lower() or query.lower() in diff_text.lower():
+        if query.lower() in commit.message.lower() and len(results) < max_results:
             snippet = commit.message.strip()[:200]
             results.append(
                 {
-                    "title": "commit diff",
+                    "title": "commit message",
                     "url": commit_hash,
                     "snippet": snippet,
                     "commit": commit_hash,

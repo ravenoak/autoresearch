@@ -145,6 +145,18 @@ def check_git_diff_results(bdd_context):
     assert any(r.get("author") and r.get("date") for r in results if r.get("diff"))
 
 
+@then("the diff results should include surrounding code context")
+def check_diff_code_context(bdd_context):
+    results = bdd_context["search_results"]
+    term = bdd_context["term"]
+    for r in results:
+        if r.get("diff"):
+            assert term.lower() in r["snippet"].lower()
+            assert "\n" in r["snippet"]
+            return
+    assert False, "No diff result with context found"
+
+
 @scenario("../features/local_sources.feature", "Searching a directory for text files")
 def test_search_directory():
     pass
@@ -168,4 +180,12 @@ def test_search_document_directory():
     "Searching commit diffs and metadata in a local Git repository",
 )
 def test_search_git_diffs():
+    pass
+
+
+@scenario(
+    "../features/local_sources.feature",
+    "Searching commit diffs with code context",
+)
+def test_search_git_diff_context():
     pass

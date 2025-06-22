@@ -163,3 +163,55 @@ def test_ranking_across_backends(monkeypatch):
     results = Search.external_lookup("python", max_results=1)
 
     assert results[0]["url"] == "u1"
+
+
+def test_embeddings_added_to_results(monkeypatch):
+    """Ensure embeddings are added for all backend results."""
+
+    class DummyModel:
+        def encode(self, texts):
+            if isinstance(texts, str):
+                return [0.1, 0.2]
+            return [[0.1, 0.2] for _ in texts]
+
+    def b1(query, max_results=5):
+        return [{"title": "t", "url": "u"}]
+
+    monkeypatch.setitem(Search.backends, "b1", b1)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["b1"]
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
+
+    results = Search.external_lookup("q", max_results=1)
+
+    assert "embedding" in results[0]
+    assert "similarity" in results[0]
+
+
+def test_git_backend_returns_context(monkeypatch, tmp_path):
+    """Git backend should include context lines in snippets."""
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    subprocess.run(["git", "init"], cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.email", "you@example.com"], cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Your Name"], cwd=repo_path, check=True)
+    code_file = repo_path / "code.txt"
+    code_file.write_text("line1\ncontext\nline3")
+    subprocess.run(["git", "add", "code.txt"], cwd=repo_path, check=True)
+    subprocess.run(["git", "commit", "-m", "add context"], cwd=repo_path, check=True)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_git"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.local_git.repo_path = str(repo_path)
+    cfg.search.local_git.branches = ["main"]
+    cfg.search.local_git.history_depth = 10
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    results = Search.external_lookup("context", max_results=5)
+
+    assert any("\n" in r["snippet"] for r in results)
