@@ -80,9 +80,10 @@ class SearchConfig(BaseModel):
     """Configuration for search functionality."""
 
     backends: List[str] = Field(default=["serper"])
+    embedding_backends: List[str] = Field(default_factory=list)
     max_results_per_query: int = Field(default=5, ge=1)
     hybrid_query: bool = Field(
-        default=True,
+        default=False,
         description="Combine keyword and semantic search when true",
     )
 

@@ -64,6 +64,16 @@ def test_offline_without_local_extension(bdd_context):
     pass
 
 
+@scenario(
+    "../features/vector_extension_handling.feature",
+    "Embedding search wrapper dispatches to backend",
+)
+def test_embedding_wrapper(bdd_context):
+    """Test scenario: Embedding search wrapper dispatches to backend."""
+    bdd_context["scenario_name"] = "Embedding search wrapper dispatches to backend"
+    pass
+
+
 # Fixtures
 @pytest.fixture
 def mock_duckdb_conn():
@@ -636,3 +646,42 @@ def check_vector_search_error(bdd_context, monkeypatch):
             # we don't need to raise this exception
             print(f"DEBUG: Unexpected error in check_vector_search_error: {e}")
             raise
+
+
+@when(
+    "I perform an embedding lookup with a query embedding",
+    target_fixture="embedding_lookup_results",
+)
+def perform_embedding_lookup(persisted_claims):
+    """Perform embedding search via the Search wrapper."""
+    from autoresearch.search import Search
+    from unittest.mock import patch
+
+    query_embedding = [0.0] * len(persisted_claims[0]["embedding"])
+    mock_results = [
+        {
+            "node_id": persisted_claims[0]["id"],
+            "embedding": persisted_claims[0]["embedding"],
+            "content": persisted_claims[0]["content"],
+            "similarity": 1.0,
+        }
+    ]
+
+    with patch(
+        "autoresearch.storage.StorageManager.vector_search",
+        return_value=mock_results,
+    ):
+        res = Search.embedding_lookup(query_embedding, max_results=1)
+
+    # Flatten the results dictionary
+    flat = []
+    for docs in res.values():
+        flat.extend(docs)
+    return flat
+
+
+@then("I should receive embedding search results")
+def check_embedding_results(embedding_lookup_results):
+    """Verify embedding search returned results."""
+    assert len(embedding_lookup_results) > 0
+    assert "embedding" in embedding_lookup_results[0]
