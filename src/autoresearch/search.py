@@ -27,6 +27,8 @@ from collections import defaultdict
 import requests
 from git import Repo
 import numpy as np
+from pdfminer.high_level import extract_text as extract_pdf_text
+from docx import Document
 
 try:
     from rank_bm25 import BM25Okapi
@@ -1098,13 +1100,25 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
 
     results: List[Dict[str, str]] = []
 
-    # Prefer ripgrep for fast searching when available
     rg_path = shutil.which("rg")
-    if rg_path:
-        for ext in file_types:
+    text_exts = [ext for ext in file_types if ext not in {"pdf", "docx", "doc"}]
+    doc_exts = [ext for ext in file_types if ext in {"pdf", "docx", "doc"}]
+
+    if rg_path and text_exts:
+        for ext in text_exts:
             if len(results) >= max_results:
                 break
-            cmd = [rg_path, "-n", "--no-heading", "-i", f"-m{max_results - len(results)}", "-g", f"*.{ext}", query, str(root)]
+            cmd = [
+                rg_path,
+                "-n",
+                "--no-heading",
+                "-i",
+                f"-m{max_results - len(results)}",
+                "-g",
+                f"*.{ext}",
+                query,
+                str(root),
+            ]
             try:
                 output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
@@ -1117,23 +1131,31 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
                 results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet.strip()})
                 if len(results) >= max_results:
                     break
-    else:
-        patterns = [f"**/*.{ext}" for ext in file_types]
-        for pattern in patterns:
-            for file in root.rglob(pattern):
-                if not file.is_file():
-                    continue
-                try:
+
+    patterns = [f"**/*.{ext}" for ext in doc_exts] if doc_exts else []
+    patterns += [f"**/*.{ext}" for ext in text_exts] if not rg_path else []
+    for pattern in patterns:
+        for file in root.rglob(pattern):
+            if not file.is_file():
+                continue
+            try:
+                if file.suffix.lower() == ".pdf":
+                    text = extract_pdf_text(str(file))
+                elif file.suffix.lower() in {".docx", ".doc"}:
+                    doc = Document(str(file))
+                    text = "\n".join(p.text for p in doc.paragraphs)
+                else:
                     text = file.read_text(errors="ignore")
-                except Exception as exc:  # pragma: no cover - unexpected file errors
-                    log.warning("Failed to read %s: %s", file, exc)
-                    continue
-                idx = text.lower().find(query.lower())
-                if idx != -1:
-                    snippet = text[idx:idx + 200]
-                    results.append({"title": file.name, "url": str(file), "snippet": snippet})
-                    if len(results) >= max_results:
-                        return results
+            except Exception as exc:  # pragma: no cover - unexpected file errors
+                log.warning("Failed to read %s: %s", file, exc)
+                continue
+
+            idx = text.lower().find(query.lower())
+            if idx != -1:
+                snippet = text[idx: idx + 200]
+                results.append({"title": file.name, "url": str(file), "snippet": snippet})
+                if len(results) >= max_results:
+                    return results
 
     return results
 
@@ -1196,12 +1218,55 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 if len(results) >= max_results:
                     return results
 
-    # Search commit messages using GitPython
+    conn = None
+    indexed: set[str] = set()
+    try:
+        conn = StorageManager.get_duckdb_conn()
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS git_index("
+            "commit_hash VARCHAR PRIMARY KEY, author VARCHAR, date TIMESTAMP, message VARCHAR, diff VARCHAR)"
+        )
+        rows = conn.execute("SELECT commit_hash FROM git_index").fetchall()
+        indexed = {r[0] for r in rows}
+    except Exception as exc:  # pragma: no cover - db errors
+        log.warning(f"Failed to prepare git_index table: {exc}")
+
     for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
-        if query.lower() in commit.message.lower():
-            snippet = str(commit.message).strip()[:200]
-            commit_hash = commit.hexsha
-            results.append({"title": "commit message", "url": commit_hash, "snippet": snippet, "commit": commit_hash})
+        commit_hash = commit.hexsha
+        diff_text = ""
+        try:
+            diff_text = repo.git.show(commit_hash, '--patch')
+        except Exception as exc:  # pragma: no cover - git issues
+            log.warning(f"Failed to get diff for {commit_hash}: {exc}")
+        if conn and commit_hash not in indexed:
+            try:
+                conn.execute(
+                    "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
+                    [
+                        commit_hash,
+                        commit.author.name,
+                        commit.committed_datetime.isoformat(),
+                        commit.message,
+                        diff_text,
+                    ],
+                )
+                indexed.add(commit_hash)
+            except Exception as exc:  # pragma: no cover - db insert issues
+                log.warning(f"Failed to index commit {commit_hash}: {exc}")
+
+        if query.lower() in commit.message.lower() or query.lower() in diff_text.lower():
+            snippet = commit.message.strip()[:200]
+            results.append(
+                {
+                    "title": "commit diff",
+                    "url": commit_hash,
+                    "snippet": snippet,
+                    "commit": commit_hash,
+                    "author": commit.author.name,
+                    "date": commit.committed_datetime.isoformat(),
+                    "diff": diff_text[:2000],
+                }
+            )
             if len(results) >= max_results:
                 break
 
