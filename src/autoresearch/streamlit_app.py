@@ -105,6 +105,10 @@ def save_config_to_toml(config_dict):
             if key not in ["storage", "search"]:
                 existing_config["core"][key] = value
 
+        # Handle active profile separately so preferences persist
+        if "active_profile" in config_dict:
+            existing_config["core"]["active_profile"] = config_dict["active_profile"]
+
         # Update storage settings
         if "storage" in config_dict:
             if "storage" not in existing_config:
@@ -279,6 +283,17 @@ def display_config_editor():
             index=reasoning_mode_index,
         )
 
+        # Profile selection
+        profiles = ["None"] + config_loader.available_profiles()
+        current_profile = config.active_profile if config.active_profile else "None"
+        profile_index = profiles.index(current_profile) if current_profile in profiles else 0
+        selected_profile = st.selectbox(
+            "Active Profile",
+            options=profiles,
+            index=profile_index,
+            help="Select a saved profile of preferences",
+        )
+
         loops = st.number_input(
             "Loops",
             min_value=1,
@@ -350,6 +365,7 @@ def display_config_editor():
                         "max_results_per_query": max_results,
                         "use_semantic_similarity": use_semantic_similarity,
                     },
+                    "active_profile": selected_profile if selected_profile != "None" else None,
                 }
 
                 # Save the configuration to the TOML file
@@ -357,6 +373,10 @@ def display_config_editor():
                     st.sidebar.success("Configuration saved successfully!")
 
                     # Reload the configuration
+                    if selected_profile != "None":
+                        config_loader.set_active_profile(selected_profile)
+                    else:
+                        config_loader.set_active_profile(config_loader.available_profiles()[0]) if config_loader.available_profiles() else None
                     config = config_loader.load_config()
 
                     # Start watching for configuration changes if hot-reload is enabled
@@ -1057,6 +1077,9 @@ def main():
             f"**Reasoning Mode:** {st.session_state.config.reasoning_mode.value}"
         )
         st.markdown(f"**Loops:** {st.session_state.config.loops}")
+        st.markdown(
+            f"**Active Profile:** {st.session_state.config.active_profile or 'None'}"
+        )
 
         # Add a button to reload configuration
         if st.button("Reload Configuration"):
@@ -1250,6 +1273,13 @@ def display_query_history():
                     st.session_state.config,
                 )
 
+                if hasattr(result, "metrics") and result.metrics:
+                    track_agent_performance(
+                        agent_name="Query",
+                        duration=result.metrics.get("time", 0),
+                        tokens=result.metrics.get("tokens", 0),
+                    )
+
                 # Update token usage metrics
                 if (
                     hasattr(result, "metrics")
@@ -1358,6 +1388,13 @@ def display_query_history():
                         # If tokens is just a number
                         st.session_state.token_usage["last_query"] = tokens
                         st.session_state.token_usage["total"] += tokens
+
+                if hasattr(result, "metrics") and result.metrics:
+                    track_agent_performance(
+                        agent_name="Query",
+                        duration=result.metrics.get("time", 0),
+                        tokens=result.metrics.get("tokens", 0),
+                    )
 
                 # Store query in history
                 store_query_history(rerun_query, result, st.session_state.config)
@@ -1470,6 +1507,35 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
     img = Image.open(buf)
 
     return img
+
+
+def create_interaction_trace(reasoning_steps: list[str]) -> str:
+    """Create a GraphViz description of the agent interaction trace."""
+    lines = ["digraph Trace {", "rankdir=LR;"]
+    prev = "Start"
+    lines.append('Start [shape=circle,label="Start"];')
+    for idx, step in enumerate(reasoning_steps, start=1):
+        node = f"step{idx}"
+        label = re.sub(r"[\n\"]", "", step)[:20]
+        lines.append(f'{node} [label="{label}"];')
+        lines.append(f'{prev} -> {node};')
+        prev = node
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def create_progress_graph(agent_perf: Dict[str, Any]) -> str:
+    """Create a GraphViz chart for agent progress metrics."""
+    lines = ["digraph Progress {", "rankdir=LR;"]
+    agents = list(agent_perf.keys())
+    for name in agents:
+        metrics = agent_perf[name]
+        label = f"{name}\n{metrics.get('executions', 0)} runs"
+        lines.append(f'"{name}" [label="{label}"];')
+    for i in range(len(agents) - 1):
+        lines.append(f'"{agents[i]}" -> "{agents[i+1]}";')
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def format_result_as_markdown(result: QueryResponse) -> str:
@@ -1598,9 +1664,9 @@ def display_results(result: QueryResponse):
             mime="application/json",
         )
 
-    # Create tabs for citations, reasoning, metrics, and knowledge graph
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["Citations", "Reasoning", "Metrics", "Knowledge Graph"]
+    # Create tabs for citations, reasoning, metrics, knowledge graph and trace
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["Citations", "Reasoning", "Metrics", "Knowledge Graph", "Trace"]
     )
 
     # Citations tab
@@ -1649,6 +1715,18 @@ def display_results(result: QueryResponse):
             st.image(graph_image, use_column_width=True)
         else:
             st.info("Not enough information to create a knowledge graph")
+
+    # Trace tab
+    with tab5:
+        st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)
+        if result.reasoning:
+            trace_graph = create_interaction_trace(result.reasoning)
+            st.graphviz_chart(trace_graph)
+        metrics = st.session_state.get("agent_performance", {})
+        if metrics:
+            st.markdown("### Progress Metrics")
+            progress_graph = create_progress_graph(metrics)
+            st.graphviz_chart(progress_graph)
 
 
 if __name__ == "__main__":
