@@ -38,3 +38,4 @@ The storage setup and teardown functions initialize and clean up storage resourc
 The `VSSExtensionLoader` class manages the loading of vector search extensions.
 
 ::: autoresearch.extensions.VSSExtensionLoader
+

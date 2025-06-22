@@ -44,3 +44,4 @@ The diagram below shows the relationships between these classes and their intera
 1. Subclass `LLMAdapter` in `src/autoresearch/llm/adapters.py`.
 2. Register the adapter via `LLMFactory.register("mybackend", MyAdapter)` (for example in `src/autoresearch/llm/__init__.py`).
 3. Select it by setting `llm_backend = "mybackend"` in your configuration.
+

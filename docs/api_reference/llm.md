@@ -14,11 +14,6 @@ The `OpenAIAdapter` class provides integration with OpenAI's language models.
 
 ::: autoresearch.llm.adapters.OpenAIAdapter
 
-### Anthropic Adapter
-
-The `AnthropicAdapter` class provides integration with Anthropic's language models.
-
-::: autoresearch.llm.adapters.AnthropicAdapter
 
 ### OpenRouter Adapter
 
@@ -26,11 +21,11 @@ The `OpenRouterAdapter` class provides integration with OpenRouter.ai, which off
 
 ::: autoresearch.llm.adapters.OpenRouterAdapter
 
-## LLM Registry
+## LLM Factory
 
-The `LLMRegistry` class provides a registry for LLM adapters.
+The `LLMFactory` class provides a registry for LLM adapters.
 
-::: autoresearch.llm.registry.LLMRegistry
+::: autoresearch.llm.registry.LLMFactory
 
 ## Token Counting
 
@@ -43,3 +38,5 @@ The token counting functionality provides tools for estimating token usage.
 The LLM capabilities functionality provides tools for discovering and managing LLM capabilities.
 
 ::: autoresearch.llm.capabilities
+
+

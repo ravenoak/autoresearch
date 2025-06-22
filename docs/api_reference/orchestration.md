@@ -34,12 +34,13 @@ The `ChainOfThoughtStrategy` class implements a reasoning strategy that records 
 
 ## Orchestration Phases
 
-The `Phase` enum defines the different phases of the orchestration process.
+The `DialoguePhase` enum defines the different phases of the orchestration process.
 
-::: autoresearch.orchestration.phases.Phase
+::: autoresearch.orchestration.phases.DialoguePhase
 
 ## Metrics
 
 The `OrchestrationMetrics` class collects and reports metrics about the orchestration process.
 
 ::: autoresearch.orchestration.metrics.OrchestrationMetrics
+

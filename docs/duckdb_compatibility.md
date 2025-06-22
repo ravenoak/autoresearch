@@ -104,3 +104,4 @@ If you encounter issues with the VSS extension:
 4. For offline environments, use the `.env.offline` configuration
 
 If the extension fails to load, the system will log an error but continue to function without vector search capabilities.
+

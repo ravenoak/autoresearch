@@ -219,3 +219,4 @@ The following tutorial walks through a typical ontology workflow.
    ```
 
 The command writes `graph.png` containing a simple diagram of all triples.
+

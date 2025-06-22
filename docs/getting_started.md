@@ -100,3 +100,4 @@ from autoresearch.mcp_interface import query
 result = query("What is the capital of France?")
 print(result["answer"])
 ```
+

@@ -94,3 +94,4 @@
 
 > **Note:** The CLI is the primary entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).  
 > **Human usability and dialectical transparency are paramount.**
+

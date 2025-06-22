@@ -14,11 +14,6 @@ The `ConfigModel` class defines the structure of the configuration.
 
 ::: autoresearch.config.ConfigModel
 
-## Core Config
-
-The `CoreConfig` class defines the core configuration options.
-
-::: autoresearch.config.CoreConfig
 
 ## Storage Config
 
@@ -44,20 +39,6 @@ The `ContextAwareSearchConfig` class defines the context-aware search configurat
 
 ::: autoresearch.config.ContextAwareSearchConfig
 
-## API Config
 
-The `APIConfig` class defines the API configuration options.
 
-::: autoresearch.config.APIConfig
 
-## Output Config
-
-The `OutputConfig` class defines the output formatting configuration options.
-
-::: autoresearch.config.OutputConfig
-
-## Configuration Profiles
-
-The configuration profiles functionality allows for defining and switching between different configuration profiles.
-
-::: autoresearch.config.ProfilesConfig
