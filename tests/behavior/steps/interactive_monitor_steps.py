@@ -18,10 +18,10 @@ def monitor_exit_successfully(bdd_context):
 
 
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
-def test_interactive_monitor():
-    pass
+def test_interactive_monitor(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0
 
 
 @scenario("../features/interactive_monitor.feature", "Exit immediately")
-def test_monitor_exit_immediately():
-    pass
+def test_monitor_exit_immediately(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0

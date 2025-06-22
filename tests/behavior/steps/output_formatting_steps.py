@@ -75,20 +75,20 @@ def check_markdown_output_with_flag(bdd_context):
 
 
 @scenario("../features/output_formatting.feature", "Default TTY output")
-def test_default_tty_output():
-    pass
+def test_default_tty_output(bdd_context):
+    assert bdd_context["terminal_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Piped output defaults to JSON")
-def test_piped_json_output():
-    pass
+def test_piped_json_output(bdd_context):
+    assert bdd_context["piped_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Explicit JSON flag")
-def test_explicit_json_flag():
-    pass
+def test_explicit_json_flag(bdd_context):
+    assert bdd_context["json_flag_result"].exit_code == 0
 
 
 @scenario("../features/output_formatting.feature", "Explicit Markdown flag")
-def test_explicit_markdown_flag():
-    pass
+def test_explicit_markdown_flag(bdd_context):
+    assert bdd_context["markdown_flag_result"].exit_code == 0

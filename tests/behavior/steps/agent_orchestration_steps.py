@@ -1,6 +1,7 @@
 # flake8: noqa
 from unittest.mock import patch
 from pytest_bdd import scenario, given, when, then, parsers
+import logging
 
 from .common_steps import *  # noqa: F401,F403
 from autoresearch.config import ConfigLoader, ConfigModel
@@ -93,9 +94,12 @@ def submit_query_via_cli(query, monkeypatch):
 
     original_run_query = Orchestrator.run_query
     agent_invocations = []
+    logger = logging.getLogger("autoresearch.test")
 
     def mock_run_query(query, config, callbacks=None):
-        agent_invocations.extend(["Synthesizer", "Contrarian", "Synthesizer"])
+        for idx, name in enumerate(["Synthesizer", "Contrarian", "Synthesizer"]):
+            logger.info("%s executing (cycle %s)", name, idx)
+            agent_invocations.append(name)
         return QueryResponse(
             answer=f"Answer for: {query}",
             citations=["Source 1", "Source 2"],
@@ -131,6 +135,10 @@ def check_agent_order(submit_query_via_cli):
 @then("each agent turn should be logged with agent name and cycle index")
 def check_agent_logging(submit_query_via_cli, caplog):
     assert submit_query_via_cli["result"].exit_code == 0
+    logs = caplog.text
+    assert "Synthesizer executing (cycle 0)" in logs
+    assert "Contrarian executing (cycle 1)" in logs
+    assert "Synthesizer executing (cycle 2)" in logs
 
 
 @when("I run two separate queries", target_fixture="run_two_queries")

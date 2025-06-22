@@ -28,35 +28,35 @@ def streamlit_app_running(monkeypatch, bdd_context, tmp_path):
 
 
 @scenario("../features/ui_accessibility.feature", "CLI Color Alternatives")
-def test_cli_color_alternatives():
+def test_cli_color_alternatives(bdd_context):
     """Test CLI color alternatives."""
-    pass
+    assert bdd_context.get("use_symbols") is True
 
 
 @scenario("../features/ui_accessibility.feature", "CLI Screen Reader Compatibility")
-def test_cli_screen_reader_compatibility():
+def test_cli_screen_reader_compatibility(bdd_context):
     """Test CLI screen reader compatibility."""
-    pass
+    assert bdd_context.get("screen_reader_mode") is True
 
 
 @scenario("../features/ui_accessibility.feature", "Streamlit GUI Keyboard Navigation")
-def test_streamlit_keyboard_navigation():
+def test_streamlit_keyboard_navigation(bdd_context):
     """Test Streamlit GUI keyboard navigation."""
-    pass
+    assert "mock_text_input" in bdd_context and "mock_button" in bdd_context
 
 
 @scenario(
     "../features/ui_accessibility.feature", "Streamlit GUI Screen Reader Compatibility"
 )
-def test_streamlit_screen_reader_compatibility():
+def test_streamlit_screen_reader_compatibility(bdd_context):
     """Test Streamlit GUI screen reader compatibility."""
-    pass
+    assert bdd_context.get("screen_reader_mode") is True
 
 
 @scenario("../features/ui_accessibility.feature", "High Contrast Mode")
-def test_high_contrast_mode():
+def test_high_contrast_mode(bdd_context):
     """Test high contrast mode."""
-    pass
+    assert "mock_markdown" in bdd_context
 
 
 @when("I use the CLI with color output disabled")

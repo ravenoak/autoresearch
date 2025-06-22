@@ -221,6 +221,22 @@ def test_persist_claim_valid_input(mock_graph):
             mock_graph.add_edge.assert_called_once_with("claim1", "claim2")
 ```
 
+## Behavior-Driven Tests
+
+Behavior tests in `tests/behavior/` use **pytest-bdd**. Steps share
+state via the `bdd_context` fixture and scenarios end with assertions
+that validate this context. When writing scenario functions:
+
+* Use `@scenario` to map a Gherkin scenario to the test.
+* Accept `bdd_context` (and other fixtures if needed) and assert that
+  steps populated expected values.
+* Capture CLI or GUI logs with `caplog` to verify accessibility or
+  logging output.
+
+This pattern keeps the feature files expressive while ensuring the
+Python tests make concrete assertions about CLI behaviour, GUI
+accessibility, and log messages.
+
 ## Conclusion
 
 Following these guidelines will ensure that the test suite is consistent, maintainable, and reliable. If you have any questions or suggestions, please open an issue or pull request.

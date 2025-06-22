@@ -158,34 +158,34 @@ def check_diff_code_context(bdd_context):
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for text files")
-def test_search_directory():
-    pass
+def test_search_directory(bdd_context):
+    assert bdd_context["search_results"]
 
 
 @scenario(
     "../features/local_sources.feature",
     "Searching a local Git repository for code snippets or commit messages",
 )
-def test_search_git_repo():
-    pass
+def test_search_git_repo(bdd_context):
+    assert bdd_context["search_results"]
 
 
 @scenario("../features/local_sources.feature", "Searching a directory for PDF and DOCX files")
-def test_search_document_directory():
-    pass
+def test_search_document_directory(bdd_context):
+    assert bdd_context["search_results"]
 
 
 @scenario(
     "../features/local_sources.feature",
     "Searching commit diffs and metadata in a local Git repository",
 )
-def test_search_git_diffs():
-    pass
+def test_search_git_diffs(bdd_context):
+    assert bdd_context["search_results"]
 
 
 @scenario(
     "../features/local_sources.feature",
     "Searching commit diffs with code context",
 )
-def test_search_git_diff_context():
-    pass
+def test_search_git_diff_context(bdd_context):
+    assert bdd_context["search_results"]
