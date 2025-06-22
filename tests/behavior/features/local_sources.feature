@@ -22,3 +22,8 @@ Feature: Search Local Sources
     Given a local Git repository with diffs containing "FIXME"
     When I search the repository for "FIXME"
     Then I should see commit diff results with metadata
+
+  Scenario: Searching commit diffs with code context
+    Given a local Git repository with diffs containing "CONTEXT"
+    When I search the repository for "CONTEXT"
+    Then the diff results should include surrounding code context
