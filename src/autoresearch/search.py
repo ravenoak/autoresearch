@@ -61,7 +61,7 @@ except ImportError:
     BERTOPIC_AVAILABLE = False
 
 from .config import get_config
-from .errors import SearchError
+from .errors import ConfigError, SearchError
 from .logging_utils import get_logger
 from .cache import get_cached_results, cache_results
 from .storage import StorageManager
@@ -644,6 +644,24 @@ class Search:
 
         cfg = get_config()
         search_cfg = cfg.search
+
+        weights_sum = (
+            search_cfg.bm25_weight
+            + search_cfg.semantic_similarity_weight
+            + search_cfg.source_credibility_weight
+        )
+
+        if abs(weights_sum - 1.0) > 0.001:
+            raise ConfigError(
+                "Relevance ranking weights must sum to 1.0",
+                current_sum=weights_sum,
+                weights={
+                    "semantic_similarity_weight": search_cfg.semantic_similarity_weight,
+                    "bm25_weight": search_cfg.bm25_weight,
+                    "source_credibility_weight": search_cfg.source_credibility_weight,
+                },
+                suggestion="Adjust the weights so they sum to 1.0",
+            )
 
         # Calculate scores using different algorithms
         bm25_scores = (
