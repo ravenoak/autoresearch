@@ -205,3 +205,32 @@ def print_command_example(
             console.print(f"[cyan]{command}[/cyan] - {description}")
         else:
             console.print(f"[cyan]{command}[/cyan]")
+
+
+def visualize_rdf_cli(output_path: str) -> None:
+    """Visualize the RDF graph and report the output path."""
+    from .storage import StorageManager
+
+    try:  # pragma: no cover - optional dependency
+        StorageManager.visualize_rdf(output_path)
+        print_success(f"Graph written to {output_path}")
+    except Exception as e:  # pragma: no cover - optional dependency
+        print_error(
+            f"Failed to visualize RDF graph: {e}",
+            suggestion="Ensure matplotlib is installed",
+        )
+
+
+def sparql_query_cli(query: str) -> None:
+    """Run a SPARQL query with reasoning and display the results."""
+    from .storage import StorageManager
+    from tabulate import tabulate
+
+    res = StorageManager.query_with_reasoning(query)
+    if hasattr(res, "askAnswer"):
+        print_info(f"ASK result: {res.askAnswer}")
+        return
+
+    rows = [list(r) for r in res]
+    headers = [str(v) for v in res.vars]
+    console.print(tabulate(rows, headers=headers, tablefmt="github"))

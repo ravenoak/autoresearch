@@ -34,6 +34,7 @@ from .errors import StorageError, NotFoundError
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend
+from .kg_reasoning import run_ontology_reasoner
 
 # Global containers initialised in `setup`
 _graph: Optional[nx.DiGraph[Any]] = None
@@ -678,6 +679,12 @@ class StorageManager:
             obj = rdflib.Literal(v)
             _rdf_store.add((subj, pred, obj))
 
+        # Apply ontology reasoning so updates expose inferred triples
+        run_ontology_reasoner(_rdf_store)
+
+        # Apply ontology reasoning so advanced queries see inferred triples
+        run_ontology_reasoner(_rdf_store)
+
     @staticmethod
     def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
         """Persist a claim to all storage backends with support for incremental updates.
@@ -835,6 +842,8 @@ class StorageManager:
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
             _rdf_store.add((subj, pred, obj))
+        # Apply ontology reasoning so updates expose inferred triples
+        run_ontology_reasoner(_rdf_store)
 
     @staticmethod
     def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
@@ -1229,6 +1238,14 @@ class StorageManager:
     def query_ontology(query: str):
         """Run a SPARQL query against the ontology graph."""
         return StorageManager.query_rdf(query)
+
+    @staticmethod
+    def query_with_reasoning(query: str):
+        """Run a SPARQL query after applying ontology reasoning."""
+        StorageManager._ensure_storage_initialized()
+        store = StorageManager.get_rdf_store()
+        run_ontology_reasoner(store)
+        return store.query(query)
 
     @staticmethod
     def visualize_rdf(output_path: str) -> None:
