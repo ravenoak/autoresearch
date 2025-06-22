@@ -210,44 +210,34 @@ def check_tab_order(bdd_context):
 @when("I use the GUI with a screen reader")
 def use_gui_with_screen_reader(bdd_context):
     """Simulate using the GUI with a screen reader."""
-    # Mock Streamlit components to test screen reader compatibility
-    with patch("streamlit.image") as mock_image:
-        bdd_context["mock_image"] = mock_image
-
-    with patch("streamlit.text_input") as mock_text_input:
-        bdd_context["mock_text_input"] = mock_text_input
+    # Flag screen reader mode so other steps can adjust behaviour
+    bdd_context["screen_reader_mode"] = True
 
 
 @then("all images should have alt text")
 def check_image_alt_text(bdd_context):
     """Check that all images have alt text."""
-    # Verify that images have alt text
-    mock_image = bdd_context["mock_image"]
+    # Patch streamlit.image so no Streamlit runtime is required
+    with patch("streamlit.image") as mock_image:
+        from streamlit import image
 
-    # Call the image function with alt text
-    from streamlit import image
+        image("test.png", caption="Alt text for test image")
 
-    image("test.png", caption="Alt text for test image")
-
-    # Verify that the mock was called with alt text
-    mock_image.assert_called_once()
+        mock_image.assert_called_once()
 
 
 @then("all form controls should have proper labels")
 def check_form_control_labels(bdd_context):
     """Check that all form controls have proper labels."""
-    # Verify that form controls have proper labels
-    mock_text_input = bdd_context["mock_text_input"]
+    # Patch streamlit.text_input so no Streamlit runtime is required
+    with patch("streamlit.text_input") as mock_text_input:
+        from streamlit import text_input
 
-    # Call the text_input function with a label
-    from streamlit import text_input
+        text_input("Query", value="Test query")
 
-    text_input("Query", value="Test query")
-
-    # Verify that the mock was called with a label
-    mock_text_input.assert_called_once()
-    args = mock_text_input.call_args[0]
-    assert args[0] == "Query"
+        mock_text_input.assert_called_once()
+        args = mock_text_input.call_args[0]
+        assert args[0] == "Query"
 
 
 @then("dynamic content updates should be announced to screen readers")
