@@ -161,6 +161,8 @@ class StorageConfig(BaseModel):
     hnsw_ef_search: int = Field(default=10, ge=1)
     hnsw_auto_tune: bool = Field(default=True)
     vector_nprobe: int = Field(default=10, ge=1)  # backward compatibility
+    vector_search_batch_size: Optional[int] = Field(default=None, ge=1)
+    vector_search_timeout_ms: Optional[int] = Field(default=None, ge=1)
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
     ontology_reasoner: str = Field(default="owlrl")
@@ -512,6 +514,8 @@ class ConfigLoader:
             "hnsw_ef_search": duckdb_cfg.get("hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)),
             "hnsw_auto_tune": duckdb_cfg.get("hnsw_auto_tune", True),
             "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
+            "vector_search_batch_size": duckdb_cfg.get("vector_search_batch_size"),
+            "vector_search_timeout_ms": duckdb_cfg.get("vector_search_timeout_ms"),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
         }

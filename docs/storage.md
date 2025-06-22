@@ -203,7 +203,16 @@ The following tutorial walks through a typical ontology workflow.
    poetry run autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
    ```
 
-5. **Visualize the graph** as a PNG image:
+5. **Query with reasoning programmatically** using a custom engine:
+
+   ```python
+   results = StorageManager.query_with_reasoning(
+       "SELECT ?s WHERE { ?s a <http://example.com/B> }",
+       engine="owlrl"
+   )
+   ```
+
+6. **Visualize the graph** as a PNG image:
 
    ```bash
    poetry run autoresearch visualize-rdf graph.png

@@ -77,6 +77,7 @@ vector_extension_path = "./extensions/vss/vss.duckdb_extension"
 ```
 
 Note that the `vector_extension_path` must point to the actual `.duckdb_extension` file, not just the directory.
+When running on Windows, use forward slashes in the path (e.g. `C:/path/to/vss.duckdb_extension`) so DuckDB can load the extension correctly.
 
 ### Refreshing the Vector Index
 

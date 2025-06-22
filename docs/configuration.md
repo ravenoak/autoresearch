@@ -94,6 +94,8 @@ These options are set in the `[storage.duckdb]` and `[storage.rdf]` sections.
 | `hnsw_ef_construction` | integer | `200` | HNSW ef_construction parameter | ≥ 32 |
 | `hnsw_metric` | string | `"l2"` | Distance metric for vector search | `"l2"`, `"ip"`, `"cosine"` |
 | `vector_nprobe` | integer | `10` | Number of probes for vector search | ≥ 1 |
+| `vector_search_batch_size` | integer | `null` | Batch size for vector search queries | ≥ 1 |
+| `vector_search_timeout_ms` | integer | `null` | Query timeout in milliseconds | ≥ 1 |
 
 ### RDF Storage
 

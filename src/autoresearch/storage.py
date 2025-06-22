@@ -1191,20 +1191,11 @@ class StorageManager:
         store.parse(path)
 
     @staticmethod
-    def apply_ontology_reasoning() -> None:
-        """Apply OWL RL reasoning over the RDF store."""
+    def apply_ontology_reasoning(engine: Optional[str] = None) -> None:
+        """Apply ontology reasoning over the RDF store using the chosen engine."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
-        try:  # pragma: no cover - owlrl is optional
-            import owlrl  # type: ignore
-
-            owlrl.DeductiveClosure(owlrl.OWLRL_Semantics).expand(store)
-        except Exception as exc:  # pragma: no cover - optional dependency
-            raise StorageError(
-                "Failed to apply ontology reasoning",
-                cause=exc,
-                suggestion="Ensure the owlrl package is installed",
-            )
+        run_ontology_reasoner(store, engine)
 
     @staticmethod
     def infer_relations() -> None:
@@ -1213,19 +1204,19 @@ class StorageManager:
         reasoner = getattr(
             ConfigLoader().config.storage, "ontology_reasoner", "owlrl"
         )
-        if reasoner == "owlrl":
-            StorageManager.apply_ontology_reasoning()
-        else:  # pragma: no cover - external reasoners are optional
-            try:
+        if ":" in reasoner and reasoner != "owlrl":  # custom engine
+            try:  # pragma: no cover - optional dependency
                 module, func = reasoner.split(":", maxsplit=1)
-                engine = __import__(module, fromlist=[func])
-                getattr(engine, func)(StorageManager.get_rdf_store())
+                engine_mod = __import__(module, fromlist=[func])
+                getattr(engine_mod, func)(StorageManager.get_rdf_store())
             except Exception as exc:  # pragma: no cover - optional dependency
                 raise StorageError(
                     "Failed to run external ontology reasoner",
                     cause=exc,
                     suggestion="Check storage.ontology_reasoner configuration",
                 )
+        else:
+            StorageManager.apply_ontology_reasoning(reasoner)
 
     @staticmethod
     def query_rdf(query: str):
@@ -1240,11 +1231,11 @@ class StorageManager:
         return StorageManager.query_rdf(query)
 
     @staticmethod
-    def query_with_reasoning(query: str):
+    def query_with_reasoning(query: str, engine: Optional[str] = None):
         """Run a SPARQL query after applying ontology reasoning."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
-        run_ontology_reasoner(store)
+        run_ontology_reasoner(store, engine)
         return store.query(query)
 
     @staticmethod
