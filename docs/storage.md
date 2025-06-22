@@ -80,6 +80,7 @@ speed:
 [storage]
 hnsw_m = 16               # Higher improves recall but uses more memory
 hnsw_ef_construction = 200  # Controls index build quality
+hnsw_metric = "l2sq"        # Distance metric ("ip", "cosine", or "l2sq")
 hnsw_ef_search = 32         # Number of neighbors explored during search
 hnsw_auto_tune = true       # Automatically adjust ef_search for large indexes
 ```
@@ -91,7 +92,9 @@ from autoresearch.storage import StorageManager
 StorageManager.create_hnsw_index()
 ```
 
-to rebuild the index with the new parameters.
+to rebuild the index with the new parameters. The index is also automatically
+refreshed whenever a claim with an embedding is persisted or updated, so in
+most workflows no manual step is required.
 
 The `vector_search_performance.feature` BDD scenario demonstrates how these
 settings impact search latency.
