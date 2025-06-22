@@ -215,3 +215,45 @@ def test_git_backend_returns_context(monkeypatch, tmp_path):
     results = Search.external_lookup("context", max_results=5)
 
     assert any("\n" in r["snippet"] for r in results)
+
+
+def test_combined_local_and_web_results(monkeypatch, tmp_path):
+    """Local and web backend results should be ranked together."""
+
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    file_path = docs_dir / "note.txt"
+    file_path.write_text("python from local file")
+
+    def web_backend(query, max_results=5):
+        return [{"title": "python article", "url": "https://example.com"}]
+
+    monkeypatch.setitem(Search.backends, "web", web_backend)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_file", "web"]
+    cfg.search.context_aware.enabled = False
+    cfg.search.local_file.path = str(docs_dir)
+    cfg.search.local_file.file_types = ["txt"]
+    cfg.search.semantic_similarity_weight = 0.6
+    cfg.search.bm25_weight = 0.4
+    cfg.search.source_credibility_weight = 0.0
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        lambda q, docs: [0.9, 0.1],
+    )
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, docs, query_embedding=None: [0.8, 0.2],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda docs: [1.0, 1.0])
+
+    results = Search.external_lookup("python", max_results=2)
+
+    assert results[0]["url"] == str(file_path)
+    urls = {r["url"] for r in results}
+    assert {str(file_path), "https://example.com"} <= urls

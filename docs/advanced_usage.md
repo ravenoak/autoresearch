@@ -109,9 +109,11 @@ history_depth = 50
 
 Local backends build a searchable index of your files and repository history the
 first time they run. You may optionally preprocess documents—for example by
-converting PDFs to text—before indexing them. When local and web backends are
-enabled together, Autoresearch merges the top `results_per_backend` entries from
-each provider into a unified ranking.
+converting PDFs to text—before indexing them. PDF and DOCX files are parsed by
+default and commit diffs are stored alongside file snapshots. When local and web
+backends are enabled together, Autoresearch merges the top
+`results_per_backend` entries from each provider and ranks everything together
+using BM25 and embedding similarity.
 
 ### Context-Aware Search with Entity Recognition
 
@@ -193,7 +195,8 @@ results_per_backend = 5
 
 When multiple backends are enabled, Autoresearch merges the top
 `results_per_backend` entries from each provider into a single ranked list so
-local documents appear alongside web results.
+local documents appear alongside web results. The ranking algorithm combines
+BM25 scores and embedding similarity across backends for consistent relevance.
 
 ## Storage and Knowledge Graph
 

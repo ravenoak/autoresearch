@@ -61,9 +61,10 @@ Enable local search backends in `autoresearch.toml`:
 [search]
 backends = ["serper", "local_file", "local_git"]
 
+
 [search.local_file]
 path = "/path/to/docs"
-file_types = ["md", "pdf", "txt"]
+file_types = ["md", "pdf", "docx", "txt"]
 
 [search.local_git]
 repo_path = "/path/to/repo"
@@ -72,7 +73,9 @@ history_depth = 50
 ```
 
 Local search results are merged with those from web backends so your documents
-and code appear alongside external sources.
+and code appear alongside external sources. PDF and DOCX files are parsed
+automatically and Git commit diffs are indexed so code history shows up in
+results. All sources are ranked together using BM25 and embedding similarity.
 
 Then query your directory or repository just like any other search:
 

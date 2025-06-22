@@ -718,6 +718,28 @@ class Search:
         return ranked_results
 
     @classmethod
+    def cross_backend_rank(
+        cls,
+        query: str,
+        backend_results: Dict[str, List[Dict[str, Any]]],
+        query_embedding: Optional[List[float]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Rank combined results from multiple backends.
+
+        Each backend's results are merged and ranked together using the
+        configured relevance algorithm. A ``backend`` field is added to every
+        result indicating its origin.
+        """
+
+        all_results: List[Dict[str, Any]] = []
+        for name, docs in backend_results.items():
+            for doc in docs:
+                doc.setdefault("backend", name)
+                all_results.append(doc)
+
+        return cls.rank_results(query, all_results, query_embedding)
+
+    @classmethod
     def register_backend(
         cls, name: str
     ) -> Callable[
@@ -872,7 +894,8 @@ class Search:
         else:
             search_query = text_query
 
-        results = []
+        results: List[Dict[str, Any]] = []
+        results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
 
         # Determine query embedding when hybrid search is enabled
         if query_embedding is None and cfg.search.hybrid_query:
@@ -967,11 +990,18 @@ class Search:
 
             cls.add_embeddings(backend_results, query_embedding)
 
+            # Track which backend produced each result
+            for r in backend_results:
+                r.setdefault("backend", name)
+
+            results_by_backend[name] = backend_results
             results.extend(backend_results)
 
         if results:
-            # Rank the results using the enhanced relevance ranking
-            ranked_results = cls.rank_results(text_query, results, query_embedding)
+            # Rank the results from all backends together
+            ranked_results = cls.cross_backend_rank(
+                text_query, results_by_backend, query_embedding
+            )
 
             # Update search context if context-aware search is enabled
             if cfg.search.context_aware.enabled:
