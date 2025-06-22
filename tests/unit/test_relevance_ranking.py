@@ -10,6 +10,7 @@ import numpy as np
 
 from autoresearch.search import Search
 from autoresearch.config import SearchConfig
+from autoresearch.errors import ConfigError
 
 
 @pytest.fixture
@@ -268,3 +269,31 @@ def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_
 
     # Semantic score weight dominates so first result should be index 0
     assert ranked_results[0]["url"] == "https://python.org"
+
+
+@patch("autoresearch.search.get_config")
+def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
+    """Ranking should rely solely on BM25 when other weights are zero."""
+    mock_config.search.bm25_weight = 1.0
+    mock_config.search.semantic_similarity_weight = 0.0
+    mock_config.search.source_credibility_weight = 0.0
+    mock_get_config.return_value = mock_config
+
+    with (
+        patch.object(Search, "calculate_bm25_scores", return_value=[0.2, 0.4, 0.1, 0.9]),
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.5] * 4),
+        patch.object(Search, "assess_source_credibility", return_value=[0.6] * 4),
+    ):
+        ranked_results = Search.rank_results("test query", sample_results)
+
+    assert ranked_results[0]["url"] == "https://example.com/unrelated"
+
+
+def test_search_config_invalid_weights():
+    """Invalid weight combinations should raise ConfigError."""
+    with pytest.raises(ConfigError):
+        SearchConfig(
+            bm25_weight=0.5,
+            semantic_similarity_weight=0.3,
+            source_credibility_weight=0.5,
+        )
