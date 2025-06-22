@@ -1,5 +1,6 @@
 import sys
 import os
+import types
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -8,6 +9,24 @@ src_path = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(src_path))  # noqa: E402
 
 import pytest  # noqa: E402
+
+# Provide a lightweight fallback for sentence_transformers to avoid heavy
+# imports during test startup.
+dummy_st_module = types.SimpleNamespace()
+
+
+class DummySentenceTransformer:
+    def __init__(self, *_, **__):
+        pass
+
+    def encode(self, texts):
+        if isinstance(texts, str):
+            texts = [texts]
+        return [[0.0] * 384 for _ in texts]
+
+
+dummy_st_module.SentenceTransformer = DummySentenceTransformer
+sys.modules.setdefault("sentence_transformers", dummy_st_module)
 
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.config import ConfigLoader  # noqa: E402
@@ -97,8 +116,16 @@ def config_watcher():
 
 
 @pytest.fixture(autouse=True)
-def stop_config_watcher():
-    """Ensure ConfigLoader watcher threads are cleaned up."""
+def stop_config_watcher(monkeypatch):
+    """Ensure ConfigLoader watcher threads are cleaned up quickly."""
+
+    def fast_stop(self):
+        if self._watch_thread and self._watch_thread.is_alive():
+            self._stop_event.set()
+            self._watch_thread.join(timeout=0.1)
+
+    monkeypatch.setattr(ConfigLoader, "stop_watching", fast_stop, raising=False)
+
     ConfigLoader().stop_watching()
     yield
     ConfigLoader().stop_watching()
