@@ -5,6 +5,8 @@ tracing_enabled = false
 
 [search]
 backends = ["serper", "local_file", "local_git"]
+embedding_backends = ["duckdb"]
+hybrid_query = true
 max_results_per_query = 5
 
 # Enhanced relevance ranking settings

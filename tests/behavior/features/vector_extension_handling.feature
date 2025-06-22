@@ -43,3 +43,8 @@ Feature: DuckDB VSS Extension Handling
     Then a warning should be logged about missing VSS extension
     And basic storage functionality should still work
     But vector search should raise an appropriate error
+
+  Scenario: Embedding search wrapper dispatches to backend
+    Given I have persisted claims with embeddings
+    When I perform an embedding lookup with a query embedding
+    Then I should receive embedding search results

@@ -364,6 +364,11 @@ class Search:
     # Registry mapping backend name to callable
     backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
 
+    # Registry mapping embedding backend name to callable
+    embedding_backends: Dict[
+        str, Callable[[List[float], int], List[Dict[str, Any]]]
+    ] = {}
+
     # Singleton instance of the sentence transformer model
     _sentence_transformer = None
 
@@ -559,7 +564,10 @@ class Search:
         try:
             doc_embeddings = model.encode(texts)
             for emb, index in zip(doc_embeddings, indices):
-                documents[index]["embedding"] = emb.tolist()
+                if hasattr(emb, "tolist"):
+                    documents[index]["embedding"] = emb.tolist()
+                else:
+                    documents[index]["embedding"] = list(emb)
                 if query_embedding is not None:
                     q = np.array(query_embedding, dtype=float)
                     sim = float(np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb)))
@@ -740,6 +748,28 @@ class Search:
         return cls.rank_results(query, all_results, query_embedding)
 
     @classmethod
+    def embedding_lookup(
+        cls, query_embedding: List[float], max_results: int = 5
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Perform embedding-based search using registered backends."""
+
+        cfg = get_config()
+        results: Dict[str, List[Dict[str, Any]]] = {}
+
+        for name in cfg.search.embedding_backends:
+            backend = cls.embedding_backends.get(name)
+            if not backend:
+                log.warning(f"Unknown embedding backend '{name}'")
+                continue
+            try:
+                backend_results = backend(query_embedding, max_results)
+                results[name] = backend_results
+            except Exception as exc:  # pragma: no cover - backend failure
+                log.warning(f"{name} embedding search failed: {exc}")
+
+        return results
+
+    @classmethod
     def register_backend(
         cls, name: str
     ) -> Callable[
@@ -771,6 +801,23 @@ class Search:
             func: Callable[[str, int], List[Dict[str, str]]],
         ) -> Callable[[str, int], List[Dict[str, str]]]:
             cls.backends[name] = func
+            return func
+
+        return decorator
+
+    @classmethod
+    def register_embedding_backend(
+        cls, name: str
+    ) -> Callable[
+        [Callable[[List[float], int], List[Dict[str, Any]]]],
+        Callable[[List[float], int], List[Dict[str, Any]]],
+    ]:
+        """Decorator to register an embedding search backend."""
+
+        def decorator(
+            func: Callable[[List[float], int], List[Dict[str, Any]]]
+        ) -> Callable[[List[float], int], List[Dict[str, Any]]]:
+            cls.embedding_backends[name] = func
             return func
 
         return decorator
@@ -902,31 +949,24 @@ class Search:
             try:
                 model = cls.get_sentence_transformer()
                 if model is not None:
-                    query_embedding = model.encode(search_query).tolist()
+                    query_embedding = model.encode(search_query)
+                    if hasattr(query_embedding, "tolist"):
+                        query_embedding = query_embedding.tolist()
             except Exception as exc:  # pragma: no cover - optional failure
                 log.warning(f"Embedding generation failed: {exc}")
 
-        # Perform embedding-based search across stored data
         if query_embedding is not None:
-            try:
-                vec_results = StorageManager.vector_search(query_embedding, k=max_results)
-                for r in vec_results:
-                    results.append(
-                        {
-                            "title": r.get("content", "")[:60],
-                            "url": r.get("node_id", ""),
-                            "snippet": r.get("content", ""),
-                            "embedding": r.get("embedding"),
-                            "similarity": r.get("similarity"),
-                        }
-                    )
-            except Exception as exc:  # pragma: no cover - optional failure
-                log.warning(f"Vector search failed: {exc}")
+            emb_results = cls.embedding_lookup(query_embedding, max_results)
+            for name, docs in emb_results.items():
+                results_by_backend[name] = docs
+                results.extend(docs)
         for name in cfg.search.backends:
             cached = get_cached_results(search_query, name)
             if cached is not None:
                 cls.add_embeddings(cached, query_embedding)
-                results.extend(cached[:max_results])
+                cached_slice = cached[:max_results]
+                results_by_backend[name] = cached_slice
+                results.extend(cached_slice)
                 continue
 
             backend = Search.backends.get(name)
@@ -1411,3 +1451,24 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 break
 
     return results
+
+
+@Search.register_embedding_backend("duckdb")
+def _duckdb_embedding_backend(
+    query_embedding: List[float], max_results: int = 5
+) -> List[Dict[str, Any]]:
+    """Use StorageManager.vector_search for embedding lookups."""
+
+    vec_results = StorageManager.vector_search(query_embedding, k=max_results)
+    formatted: List[Dict[str, Any]] = []
+    for r in vec_results:
+        formatted.append(
+            {
+                "title": r.get("content", "")[:60],
+                "url": r.get("node_id", ""),
+                "snippet": r.get("content", ""),
+                "embedding": r.get("embedding"),
+                "similarity": r.get("similarity"),
+            }
+        )
+    return formatted
