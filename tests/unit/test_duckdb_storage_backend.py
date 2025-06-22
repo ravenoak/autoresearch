@@ -109,7 +109,7 @@ class TestDuckDBStorageBackend:
                 "CREATE TABLE IF NOT EXISTS edges(src VARCHAR, dst VARCHAR, rel VARCHAR, w DOUBLE)"
             ),
             call(
-                "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding DOUBLE[])"
+                "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding FLOAT[384])"
             ),
             call("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"),
         ]
