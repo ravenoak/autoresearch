@@ -6,6 +6,7 @@ particularly the VSS extension used for vector similarity search.
 """
 
 import os
+from pathlib import Path
 
 import duckdb
 
@@ -51,11 +52,13 @@ class VSSExtensionLoader:
         extension_loaded = False
         if cfg.vector_extension_path:
             try:
-                extension_path = cfg.vector_extension_path
-                log.info(f"Loading VSS extension from filesystem: {extension_path}")
+                extension_path = Path(cfg.vector_extension_path).resolve()
+                log.info(
+                    f"Loading VSS extension from filesystem: {extension_path}"
+                )
 
                 # Validate extension path
-                if not extension_path.endswith(".duckdb_extension"):
+                if not str(extension_path).endswith(".duckdb_extension"):
                     log.warning(
                         f"VSS extension path does not end with .duckdb_extension: {extension_path}"
                     )
@@ -64,14 +67,14 @@ class VSSExtensionLoader:
                     )
 
                 # Check if the path exists
-                if not os.path.exists(extension_path):
+                if not extension_path.exists():
                     log.warning(f"VSS extension path does not exist: {extension_path}")
                     raise FileNotFoundError(
                         f"VSS extension path does not exist: {extension_path}"
                     )
 
                 # Load the extension from the filesystem
-                conn.execute(f"LOAD '{extension_path}'")
+                conn.execute(f"LOAD '{extension_path.as_posix()}'")
 
                 # Verify the extension is loaded
                 if VSSExtensionLoader.verify_extension(conn, verbose=False):
