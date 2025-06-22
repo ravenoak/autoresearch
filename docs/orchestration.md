@@ -42,3 +42,4 @@ The diagram below shows the relationships between these classes and their intera
    - Metrics are collected
 4. The final state is synthesized into a QueryResponse
 5. The response is returned to the user
+

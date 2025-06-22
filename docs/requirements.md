@@ -111,3 +111,4 @@ Must     | BDD tests for cross-modal consistency.       |
 * Clarified adaptive CLI output and accessibility as core requirements.
 * Strengthened usability, testability, and dialectical transparency.
 * Added explicit requirement for output adaptation and accessibility.
+

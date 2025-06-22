@@ -67,3 +67,4 @@ every request.
 Requests can be rate limited by setting `AUTORESEARCH_RATE_LIMIT` to the number
 of requests allowed per minute for each client IP. The feature is disabled when
 the variable is unset or set to `0`.
+

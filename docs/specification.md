@@ -135,3 +135,4 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 
 > **Note:** The CLI is the main entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).  
 > **Output must be readable and actionable for humans by default, and dialectically transparent in both human and machine contexts.**
+

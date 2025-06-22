@@ -24,3 +24,4 @@
 | F-20 | Local Git repository search | `search.py` | `tests/unit/test_search.py`, `tests/behavior/features/local_sources.feature` |
 | F-21 | Maintain local indexes | `storage.py`, `search.py` | `tests/unit/test_incremental_updates.py`, `tests/unit/test_storage_validation.py`, `tests/behavior/features/storage_search_integration.feature` |
 | F-22 | Cross-modal interface consistency | `main.py`, `streamlit_app.py` | `tests/behavior/features/cross_modal_integration.feature`, `tests/behavior/features/streamlit_gui.feature` |
+

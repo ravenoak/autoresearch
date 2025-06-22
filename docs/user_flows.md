@@ -276,3 +276,4 @@ This document describes the typical user flows for all interface modalities of t
 These user flows provide a comprehensive guide to using the different interfaces of the Autoresearch system, highlighting the consistent behavior and seamless integration between them.
 The automated scenarios in `tests/behavior/features/cross_modal_integration.feature`
 exercise these flows to ensure each interface remains in sync.
+

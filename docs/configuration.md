@@ -225,3 +225,4 @@ OPENROUTER_API_KEY=...
 ```
 
 These keys are automatically loaded and used by the respective adapters.
+

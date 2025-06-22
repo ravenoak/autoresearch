@@ -26,3 +26,4 @@ poetry run pytest tests/behavior
 Maintain at least 90% test coverage and remove temporary files before submitting your changes.
 
 Please keep commits focused and descriptive.
+

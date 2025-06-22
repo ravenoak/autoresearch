@@ -38,13 +38,13 @@ The `AgentFactory` class provides a factory for creating and retrieving agent in
 
 The `Synthesizer` agent creates the initial thesis or synthesizes information from previous cycles.
 
-::: autoresearch.agents.dialectical.synthesizer.Synthesizer
+::: autoresearch.agents.dialectical.synthesizer.SynthesizerAgent
 
 ### Contrarian
 
 The `Contrarian` agent challenges the thesis by identifying weaknesses or alternative viewpoints.
 
-::: autoresearch.agents.dialectical.contrarian.Contrarian
+::: autoresearch.agents.dialectical.contrarian.ContrarianAgent
 
 ### FactChecker
 
@@ -58,25 +58,25 @@ The `FactChecker` agent verifies claims and provides evidence-backed corrections
 
 The `Researcher` agent focuses on deep information gathering from multiple sources.
 
-::: autoresearch.agents.specialized.researcher.Researcher
+::: autoresearch.agents.specialized.researcher.ResearcherAgent
 
 ### Critic
 
 The `Critic` agent evaluates the quality of research and provides constructive feedback.
 
-::: autoresearch.agents.specialized.critic.Critic
+::: autoresearch.agents.specialized.critic.CriticAgent
 
 ### Summarizer
 
 The `Summarizer` agent generates concise summaries of complex information.
 
-::: autoresearch.agents.specialized.summarizer.Summarizer
+::: autoresearch.agents.specialized.summarizer.SummarizerAgent
 
 ### Planner
 
 The `Planner` agent structures complex research tasks into manageable steps.
 
-::: autoresearch.agents.specialized.planner.Planner
+::: autoresearch.agents.specialized.planner.PlannerAgent
 
 ## Agent Mixins
 
@@ -92,3 +92,5 @@ The agent mixins provide common functionality that can be shared across differen
 The prompt templates module provides templates for generating prompts for different agent types.
 
 ::: autoresearch.agents.prompts
+
+

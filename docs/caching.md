@@ -23,3 +23,4 @@ poetry run python scripts/smoke_test.py
 This script calls `StorageManager.create_hnsw_index()` to rebuild the
 vector index.  Running it after updating your repositories or document
 directories ensures the stored embeddings remain in sync.
+
