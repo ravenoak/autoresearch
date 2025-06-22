@@ -33,7 +33,8 @@ existing ID is persisted with `partial_update=True`, only the provided fields ar
 merged into the stored record. Vector embeddings are inserted into DuckDB and
 the HNSW index is refreshed using `StorageManager.refresh_vector_index()`. RDF
 triples are updated with `StorageManager.update_rdf_claim()` so that semantic
-queries remain consistent.
+queries remain consistent. The update operation now also triggers ontology
+reasoning so inferred relationships are immediately available for queries.
 
 ### Updating Existing Claims
 
@@ -196,7 +197,13 @@ The following tutorial walks through a typical ontology workflow.
    )
    ```
 
-4. **Visualize the graph** as a PNG image:
+4. **Run SPARQL queries with reasoning** directly from the CLI:
+
+   ```bash
+   poetry run autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
+   ```
+
+5. **Visualize the graph** as a PNG image:
 
    ```bash
    poetry run autoresearch visualize-rdf graph.png

@@ -38,6 +38,8 @@ from .cli_utils import (
     set_verbosity,
     get_verbosity,
     Verbosity,
+    visualize_rdf_cli as _cli_visualize,
+    sparql_query_cli as _cli_sparql,
 )
 from .error_utils import get_error_info, format_error_for_cli
 
@@ -1400,16 +1402,18 @@ def visualize_rdf_cli(
     ),
 ) -> None:
     """Generate a PNG visualization of the RDF knowledge graph."""
-    from .streamlit_app import visualize_rdf as _visualize
-
     try:
-        _visualize(output)
-        print_success(f"Graph written to {output}")
-    except Exception as e:  # pragma: no cover - optional dependency
-        print_error(
-            f"Failed to visualize RDF graph: {e}",
-            suggestion="Ensure matplotlib is installed",
-        )
+        _cli_visualize(output)
+    except Exception:
+        raise typer.Exit(1)
+
+
+@app.command("sparql")
+def sparql_query(query: str = typer.Argument(..., help="SPARQL query to run")) -> None:
+    """Execute a SPARQL query with ontology reasoning."""
+    try:
+        _cli_sparql(query)
+    except Exception:
         raise typer.Exit(1)
 
 

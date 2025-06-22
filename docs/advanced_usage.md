@@ -382,6 +382,16 @@ This research was conducted using dialectical reasoning with {{loops}} cycles.
 """
 ```
 
+## Knowledge Graph Queries
+
+Persisted claims trigger ontology reasoning so that inferred triples are stored automatically. Use the `sparql` command to inspect the graph:
+
+```bash
+poetry run autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
+```
+
+The command applies the configured reasoner before executing the query, returning any inferred relationships.
+
 Use the custom template:
 
 ```bash
