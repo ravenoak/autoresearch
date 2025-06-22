@@ -17,19 +17,18 @@ def modify_config_enable_agent(file, tmp_path):
     def _observer(cfg: ConfigModel) -> None:
         reloaded.append(cfg)
 
-    loader.watch_changes(_observer)
-
     cfg = {
         "core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512},
         "agent": {"NewAgent": {"enabled": True}},
     }
     import tomli_w
 
-    with open(file, "w") as f:
-        f.write(tomli_w.dumps(cfg))
+    with loader.watching(_observer):
+        with open(file, "w") as f:
+            f.write(tomli_w.dumps(cfg))
 
-    new_cfg = loader.load_config()
-    loader.stop_watching()
+        new_cfg = loader.load_config()
+
     return new_cfg
 
 
