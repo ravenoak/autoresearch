@@ -29,7 +29,7 @@ def test_monitor_cli_increments_counter(monkeypatch):
     setup_patches(monkeypatch)
     runner = CliRunner()
     start = metrics.QUERY_COUNTER._value.get()
-    result = runner.invoke(cli_app, ["monitor"])
+    result = runner.invoke(cli_app, ["monitor", "run"])
     assert result.exit_code == 0
     assert metrics.QUERY_COUNTER._value.get() == start + 1
     client = TestClient(api_app)

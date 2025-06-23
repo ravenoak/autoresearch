@@ -14,6 +14,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from .mcp_interface import create_server
+from .monitor import monitor_app
 from datetime import datetime
 import time
 
@@ -475,57 +476,8 @@ def config_validate() -> None:
         return
 
 
-@app.command()
-def monitor() -> None:
-    """Start interactive resource and metrics monitor (TUI).
-
-    This command starts an interactive terminal user interface (TUI) that allows
-    you to monitor resource usage and metrics while running queries. It provides
-    a prompt for entering queries and displays metrics after each query cycle.
-
-    Examples:
-        # Start the monitor
-        autoresearch monitor
-    """
-    console = Console()
-    config = _config_loader.load_config()
-
-    abort_flag = {"stop": False}
-
-    def on_cycle_end(loop: int, state: QueryState) -> None:
-        metrics = state.metadata.get("execution_metrics", {})
-        table = Table(title=f"Cycle {loop + 1} Metrics")
-        table.add_column("Metric")
-        table.add_column("Value")
-        for k, v in metrics.items():
-            table.add_row(str(k), str(v))
-        console.print(table)
-        feedback = Prompt.ask("Feedback (q to stop)", default="")
-        if feedback.lower() == "q":
-            state.error_count = getattr(config, "max_errors", 3)
-            abort_flag["stop"] = True
-        elif feedback:
-            state.claims.append({"type": "feedback", "text": feedback})
-
-    while True:
-        query = Prompt.ask("Enter query (q to quit)")
-        if not query or query.lower() == "q":
-            break
-
-        try:
-            result = Orchestrator.run_query(
-                query, config, {"on_cycle_end": on_cycle_end}
-            )
-            fmt = config.output_format or (
-                "json" if not sys.stdout.isatty() else "markdown"
-            )
-            OutputFormatter.format(result, fmt)
-        except Exception as e:
-            console.print(f"[bold red]Error:[/bold red] {str(e)}")
-            # Continue with the next query instead of exiting with error
-
-        if abort_flag["stop"]:
-            break
+# Add monitoring subcommands
+app.add_typer(monitor_app, name="monitor")
 
 
 @app.command()
