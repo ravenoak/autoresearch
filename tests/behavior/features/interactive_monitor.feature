@@ -7,9 +7,13 @@ Feature: Interactive Monitoring
     Given the application is running
 
   Scenario: Interactive monitoring
-    When I start `autoresearch monitor` and enter "test"
+    When I start `autoresearch monitor run` and enter "test"
     Then the monitor should exit successfully
 
   Scenario: Exit immediately
-    When I start `autoresearch monitor` and enter "q"
+    When I start `autoresearch monitor run` and enter "q"
+    Then the monitor should exit successfully
+
+  Scenario: Display metrics
+    When I run `autoresearch monitor metrics`
     Then the monitor should exit successfully
