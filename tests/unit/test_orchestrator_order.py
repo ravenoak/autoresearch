@@ -1,6 +1,5 @@
 from unittest.mock import patch
 import asyncio
-import pytest
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config import ConfigModel

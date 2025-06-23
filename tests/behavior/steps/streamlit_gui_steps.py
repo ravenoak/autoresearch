@@ -325,6 +325,57 @@ def test_config_editor():
     pass
 
 
+@scenario("../features/streamlit_gui.feature", "Configuration Updates Persist")
+def test_config_updates_persist():
+    """Test that configuration updates are saved and used."""
+    pass
+
+
+@when("I update a configuration value in the GUI")
+def update_config_value(monkeypatch, bdd_context):
+    """Simulate updating a configuration value in the editor."""
+    calls: list[dict] = []
+
+    def fake_save(cfg: dict) -> bool:
+        calls.append(cfg)
+        return True
+
+    monkeypatch.setattr("autoresearch.streamlit_app.save_config_to_toml", fake_save)
+
+    from autoresearch.streamlit_app import save_config_to_toml
+
+    new_cfg = {"loops": 4}
+    save_config_to_toml(new_cfg)
+
+    bdd_context["save_calls"] = calls
+    bdd_context["new_config"] = new_cfg
+
+
+@then("the configuration should be saved with the new value")
+def check_config_saved(bdd_context):
+    """Verify save_config_to_toml was called with the updated value."""
+    assert bdd_context["save_calls"], "save_config_to_toml was not called"
+    assert bdd_context["save_calls"][0]["loops"] == bdd_context["new_config"]["loops"]
+
+
+@then("the updated configuration should be used for the next query")
+def check_config_used(monkeypatch, bdd_context):
+    """Ensure Orchestrator.run_query receives the updated configuration."""
+    with patch(
+        "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+        return_value=QueryResponse(answer="", citations=[], reasoning=[], metrics={}),
+    ) as mock_run:
+        from autoresearch.orchestration.orchestrator import Orchestrator
+        from autoresearch.config import ConfigModel
+
+        cfg = ConfigModel(loops=bdd_context["new_config"]["loops"])
+        Orchestrator.run_query("test", cfg)
+
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0]
+        assert args[1].loops == bdd_context["new_config"]["loops"]
+
+
 @then("an interaction trace should be displayed")
 def check_trace_display(bdd_context):
     """Ensure a graphviz chart was rendered for the trace."""

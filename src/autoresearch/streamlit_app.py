@@ -73,6 +73,34 @@ st.markdown(
 )
 
 
+def apply_accessibility_settings() -> None:
+    """Apply accessibility-related CSS such as focus outlines and high contrast."""
+    # Always provide visible focus indicators for keyboard navigation
+    st.markdown(
+        """
+        <style>
+        *:focus {
+            outline: 2px solid #ffbf00 !important;
+            outline-offset: 2px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.session_state.get("high_contrast"):
+        # Inject a high contrast theme when enabled
+        st.markdown(
+            """
+            <style>
+            body, .stApp {background-color:#000 !important; color:#fff !important;}
+            .stButton>button {background-color:#fff !important; color:#000 !important;}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def save_config_to_toml(config_dict):
     """Save the configuration to the TOML file.
 
@@ -1041,6 +1069,38 @@ def initialize_session_state():
         st.session_state.current_result = None
 
 
+def display_query_input() -> None:
+    """Render the query input controls."""
+    st.markdown("<h2 class='subheader'>Query Input</h2>", unsafe_allow_html=True)
+    st.session_state.current_query = st.text_area(
+        "Enter your query:",
+        height=100,
+        placeholder="What would you like to research?",
+        key="query_input",
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.session_state.reasoning_mode = st.selectbox(
+            "Reasoning Mode:",
+            options=[mode.value for mode in ReasoningMode],
+            index=[mode.value for mode in ReasoningMode].index(
+                st.session_state.config.reasoning_mode.value
+            ),
+            key="reasoning_mode",
+        )
+    with col2:
+        st.session_state.loops = st.slider(
+            "Loops:",
+            min_value=1,
+            max_value=5,
+            value=st.session_state.config.loops,
+            key="loops_slider",
+        )
+
+    st.session_state.run_button = st.button("Run Query", type="primary")
+
+
 def main():
     """Main function for the Streamlit app."""
     # Initialize session state
@@ -1070,6 +1130,12 @@ def main():
     with st.sidebar:
         st.markdown("<h2 class='subheader'>Configuration</h2>", unsafe_allow_html=True)
 
+        st.session_state.high_contrast = st.checkbox(
+            "High Contrast Mode",
+            value=st.session_state.get("high_contrast", False),
+            help="Improve readability with a high contrast color scheme",
+        )
+
         # Display current configuration
         st.markdown("### Current Settings")
         st.markdown(f"**LLM Backend:** {st.session_state.config.llm_backend}")
@@ -1097,39 +1163,17 @@ def main():
         with st.expander("Edit Configuration"):
             display_config_editor()
 
+    # Apply accessibility styles based on sidebar settings
+    apply_accessibility_settings()
+
     # Create tabs for main content, metrics dashboard, logs, and history
     main_tab, metrics_tab, logs_tab, history_tab = st.tabs(
         ["Main", "Metrics Dashboard", "Logs", "History"]
     )
 
     with main_tab:
-        # Main content area
-        st.session_state.current_query = st.text_area(
-            "Enter your query:",
-            height=100,
-            placeholder="What would you like to research?",
-        )
-
-        # Query options
-        col1, col2 = st.columns(2)
-        with col1:
-            st.session_state.reasoning_mode = st.selectbox(
-                "Reasoning Mode:",
-                options=[mode.value for mode in ReasoningMode],
-                index=[mode.value for mode in ReasoningMode].index(
-                    st.session_state.config.reasoning_mode.value
-                ),
-            )
-        with col2:
-            st.session_state.loops = st.slider(
-                "Loops:",
-                min_value=1,
-                max_value=5,
-                value=st.session_state.config.loops,
-            )
-
-        # Run button
-        st.session_state.run_button = st.button("Run Query", type="primary")
+        # Query input section
+        display_query_input()
 
     with metrics_tab:
         # Display metrics dashboard

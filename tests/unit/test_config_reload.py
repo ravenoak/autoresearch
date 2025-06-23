@@ -1,4 +1,3 @@
-import time
 import tomli_w
 from autoresearch.config import ConfigLoader
 
