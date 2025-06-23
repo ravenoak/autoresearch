@@ -78,6 +78,7 @@ def _common_patches(monkeypatch):
         lambda q, max_results=5: [{"title": "t", "url": "u"}],
     )
     _patch_run_query(monkeypatch)
+    return cfg
 
 
 def test_cli_flow(monkeypatch):
@@ -193,8 +194,8 @@ def test_cli_storage_error(monkeypatch):
 
 def test_http_api_key(monkeypatch):
     """API should require the correct key when enabled."""
-    _common_patches(monkeypatch)
-    monkeypatch.setenv("AUTORESEARCH_API_KEY", "secret")
+    cfg = _common_patches(monkeypatch)
+    cfg.api.api_key = "secret"
     client = TestClient(api_app)
 
     DummyStorage.persisted.append(
@@ -220,13 +221,12 @@ def test_http_api_key(monkeypatch):
 
         set_delegate(None)
         DummyStorage.persisted = []
-        monkeypatch.delenv("AUTORESEARCH_API_KEY", raising=False)
 
 
 def test_http_throttling(monkeypatch):
     """Exceeding the rate limit should return 429."""
-    _common_patches(monkeypatch)
-    monkeypatch.setenv("AUTORESEARCH_RATE_LIMIT", "1")
+    cfg = _common_patches(monkeypatch)
+    cfg.api.rate_limit = 1
     client = TestClient(api_app)
 
     DummyStorage.persisted.append(
@@ -246,7 +246,6 @@ def test_http_throttling(monkeypatch):
         set_delegate(None)
         DummyStorage.persisted = []
         api_mod.REQUEST_LOG.clear()
-        monkeypatch.delenv("AUTORESEARCH_RATE_LIMIT", raising=False)
 
 
 def test_stream_endpoint(monkeypatch):

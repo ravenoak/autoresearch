@@ -14,7 +14,6 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-import os
 import time
 from collections import defaultdict
 
@@ -60,7 +59,7 @@ def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None
 
 async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
     """Validate API key if authentication is enabled."""
-    expected = os.getenv("AUTORESEARCH_API_KEY", "")
+    expected = get_config().api.api_key
     if expected and x_api_key != expected:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -68,7 +67,7 @@ async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
 @app.middleware("http")
 async def throttle_middleware(request: Request, call_next):
     """Apply simple request throttling based on client IP."""
-    limit = int(os.getenv("AUTORESEARCH_RATE_LIMIT", "0"))
+    limit = getattr(get_config().api, "rate_limit", 0)
     if limit > 0:
         ip = request.client.host if request.client else "unknown"
         now = time.monotonic()
