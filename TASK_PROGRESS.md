@@ -55,7 +55,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [ ] Complete test coverage for all modules
   - [ ] Ensure at least 90% code coverage
   - [ ] Add tests for edge cases and error conditions
-  - [ ] Implement property-based testing for complex components
+  - [x] Implement property-based testing for complex components
 - [ ] Enhance test fixtures
   - [ ] Create more realistic test data
   - [ ] Implement comprehensive mock LLM adapters
@@ -68,8 +68,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Verify storage integration with search functionality
   - [ ] Test configuration hot-reload with all components
 - [ ] Add performance tests
-  - [ ] Implement benchmarks for query processing time
-  - [ ] Test memory usage under various conditions
+  - [x] Implement benchmarks for query processing time
+  - [x] Test memory usage under various conditions
   - [ ] Verify token usage optimization
 
 ### 2.3 Behavior Tests
