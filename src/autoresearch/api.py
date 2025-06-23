@@ -19,7 +19,7 @@ import time
 from collections import defaultdict
 
 from fastapi import FastAPI, Header, HTTPException, Request, Depends
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from prometheus_client import (
@@ -27,6 +27,8 @@ from prometheus_client import (
     generate_latest,
 )
 from .config import ConfigLoader, get_config
+import asyncio
+import httpx
 from .orchestration.orchestrator import Orchestrator
 from .tracing import get_tracer, setup_tracing
 from .models import QueryRequest, QueryResponse
@@ -46,6 +48,14 @@ _watch_ctx = None
 
 # In-memory request log for simple rate limiting
 REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
+
+
+def _notify_webhook(url: str, result: QueryResponse) -> None:
+    """Send the final result to a webhook URL if configured."""
+    try:
+        httpx.post(url, json=result.model_dump())
+    except Exception:
+        pass  # pragma: no cover - ignore webhook errors
 
 
 async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
@@ -234,12 +244,15 @@ def query_endpoint(
                 reasoning.append("Please check the logs for details.")
 
             # Create a valid QueryResponse object with error information
-            return QueryResponse(
+            error_resp = QueryResponse(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
                 metrics={"error": error_info.message, "error_details": error_data},
             )
+            if request.webhook_url:
+                _notify_webhook(request.webhook_url, error_resp)
+            return error_resp
     try:
         validated = (
             result
@@ -260,7 +273,7 @@ def query_endpoint(
             reasoning.append("Please check the logs for details.")
 
         # Create a valid QueryResponse object with error information
-        return QueryResponse(
+        error_resp = QueryResponse(
             answer="Error: Invalid response format",
             citations=[],
             reasoning=reasoning,
@@ -270,7 +283,68 @@ def query_endpoint(
                 "error_details": error_data,
             },
         )
+        if request.webhook_url:
+            _notify_webhook(request.webhook_url, error_resp)
+        return error_resp
+    if request.webhook_url:
+        _notify_webhook(request.webhook_url, validated)
     return validated
+
+
+@app.post("/query/stream")
+async def query_stream_endpoint(
+    request: QueryRequest, _: None = Depends(require_api_key)
+) -> StreamingResponse:
+    """Stream incremental query results as JSON lines."""
+    config = get_config()
+
+    if request.reasoning_mode is not None:
+        config.reasoning_mode = request.reasoning_mode
+    if request.loops is not None:
+        config.loops = request.loops
+    if request.llm_backend is not None:
+        config.llm_backend = request.llm_backend
+
+    queue: asyncio.Queue[str | None] = asyncio.Queue()
+
+    def on_cycle_end(loop_idx: int, state) -> None:
+        queue.put_nowait(state.synthesize().model_dump_json())
+
+    def run() -> None:
+        try:
+            result = Orchestrator.run_query(
+                request.query, config, callbacks={"on_cycle_end": on_cycle_end}
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            error_info = get_error_info(exc)
+            error_data = format_error_for_api(error_info)
+            reasoning = ["An error occurred during processing."]
+            if error_info.suggestions:
+                for suggestion in error_info.suggestions:
+                    reasoning.append(f"Suggestion: {suggestion}")
+            else:
+                reasoning.append("Please check the logs for details.")
+            result = QueryResponse(
+                answer=f"Error: {error_info.message}",
+                citations=[],
+                reasoning=reasoning,
+                metrics={"error": error_info.message, "error_details": error_data},
+            )
+        queue.put_nowait(result.model_dump_json())
+        if request.webhook_url:
+            _notify_webhook(request.webhook_url, result)
+        queue.put_nowait(None)
+
+    asyncio.get_running_loop().run_in_executor(None, run)
+
+    async def generator():
+        while True:
+            item = await queue.get()
+            if item is None:
+                break
+            yield item + "\n"
+
+    return StreamingResponse(generator(), media_type="application/json")
 
 
 @app.get("/metrics")

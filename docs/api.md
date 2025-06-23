@@ -37,6 +37,28 @@ curl -X POST http://localhost:8000/query \
 }
 ```
 
+### `POST /query/stream`
+
+Stream incremental responses as each reasoning cycle completes. The endpoint
+returns newline-delimited JSON objects.
+
+```bash
+curl -X POST http://localhost:8000/query/stream \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Explain AI"}'
+```
+
+### Webhook notifications
+
+Include a `webhook_url` in the request body to have the final result sent via
+`POST` to that URL:
+
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "hi", "webhook_url": "http://localhost:9000/hook"}'
+```
+
 ### `GET /metrics`
 
 Return Prometheus metrics collected during query processing.
@@ -62,9 +84,21 @@ Set the `AUTORESEARCH_API_KEY` environment variable to enable API key
 authentication. Clients must include this key in the `X-API-Key` header for
 every request.
 
+```bash
+export AUTORESEARCH_API_KEY=mysecret
+curl -H "X-API-Key: $AUTORESEARCH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "test"}' http://localhost:8000/query
+```
+
 ## Throttling
 
 Requests can be rate limited by setting `AUTORESEARCH_RATE_LIMIT` to the number
 of requests allowed per minute for each client IP. The feature is disabled when
 the variable is unset or set to `0`.
+
+```bash
+export AUTORESEARCH_RATE_LIMIT=2
+curl -d '{"query": "test"}' http://localhost:8000/query
+```
 

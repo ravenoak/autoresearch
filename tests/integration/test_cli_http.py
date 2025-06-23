@@ -10,6 +10,9 @@ from autoresearch.orchestration.orchestrator import (
 )
 from autoresearch.llm import DummyAdapter
 from autoresearch.errors import StorageError
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.state import QueryState
+import responses
 
 
 class DummyStorage:
@@ -244,3 +247,40 @@ def test_http_throttling(monkeypatch):
         DummyStorage.persisted = []
         api_mod.REQUEST_LOG.clear()
         monkeypatch.delenv("AUTORESEARCH_RATE_LIMIT", raising=False)
+
+
+def test_stream_endpoint(monkeypatch):
+    """Streaming endpoint should yield multiple updates."""
+    def dummy_run_query(query, config, callbacks=None, **kwargs):
+        state = QueryState(query=query)
+        for i in range(2):
+            if callbacks and "on_cycle_end" in callbacks:
+                callbacks["on_cycle_end"](i, state)
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel(loops=2))
+    monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
+    client = TestClient(api_app)
+
+    with client.stream("POST", "/query/stream", json={"query": "q"}) as resp:
+        assert resp.status_code == 200
+        chunks = [line for line in resp.iter_lines()]
+
+    assert len(chunks) == 3
+
+
+def test_webhook_notification(monkeypatch):
+    """Final response should be POSTed to provided webhook URL."""
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel(loops=1))
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+    )
+    client = TestClient(api_app)
+
+    with responses.RequestsMock() as rsps:
+        rsps.post("http://hook", status=200)
+        resp = client.post("/query", json={"query": "hi", "webhook_url": "http://hook"})
+        assert resp.status_code == 200
+        assert len(rsps.calls) == 1
