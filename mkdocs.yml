@@ -7,6 +7,7 @@ nav:
   - Orchestration: docs/orchestration.md
   - API Usage: docs/api.md
   - Advanced Usage: docs/advanced_usage.md
+  - Deployment: docs/deployment.md
   - Agent System: docs/agent_system.md
   - Component Interactions: docs/component_interactions.md
   - API Reference:
