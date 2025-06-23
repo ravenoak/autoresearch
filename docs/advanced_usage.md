@@ -16,6 +16,22 @@ autoresearch query "What are the environmental impacts of lithium mining for EV 
 
 This runs three complete dialectical cycles (Synthesizer → Contrarian → FactChecker), allowing for deeper exploration and refinement of the research question.
 
+### Interactive Query Refinement
+
+When running multiple loops you can refine the query after each cycle:
+
+```bash
+autoresearch search "initial question" --loops 2 --interactive
+```
+
+After the first cycle you'll be prompted:
+
+```
+Refine query or press Enter to continue (q to abort):
+```
+
+Enter an updated query string to guide the next cycle or `q` to abort.
+
 ### Chain of Thought for Step-by-Step Analysis
 
 For problems that benefit from incremental reasoning:

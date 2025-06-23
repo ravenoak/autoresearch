@@ -222,7 +222,7 @@ def search(
         False,
         "--interactive",
         "-i",
-        help="Prompt for feedback after each agent cycle",
+        help="Refine the query interactively between agent cycles",
     ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
@@ -258,12 +258,15 @@ def search(
 
         def on_cycle_end(loop: int, state: QueryState) -> None:
             progress.update(task, advance=1)
-            if interactive:
-                feedback = Prompt.ask("Feedback (q to abort)", default="")
-                if feedback.lower() == "q":
+            if interactive and loop < loops - 1:
+                refinement = Prompt.ask(
+                    "Refine query or press Enter to continue (q to abort)",
+                    default="",
+                )
+                if refinement.lower() == "q":
                     state.error_count = getattr(config, "max_errors", 3)
-                elif feedback:
-                    state.claims.append({"type": "feedback", "text": feedback})
+                elif refinement:
+                    state.query = refinement
 
         with Progress() as progress:
             task = progress.add_task("[green]Processing query...", total=loops)

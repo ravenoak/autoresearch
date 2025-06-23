@@ -55,6 +55,26 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context):
     bdd_context["mcp_result"] = result
 
 
+@when(
+    parsers.parse(
+        'I run `autoresearch search "{query}" -i` and refine to "{refined}" then exit'
+    )
+)
+def run_interactive_query(query, refined, monkeypatch, bdd_context):
+    from autoresearch.config import ConfigModel, ConfigLoader
+
+    monkeypatch.setattr(
+        ConfigLoader,
+        "load_config",
+        lambda self: ConfigModel(loops=2),
+    )
+    responses = iter([refined, "q"])
+    monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+    result = runner.invoke(cli_app, ["search", query, "--interactive"])
+    bdd_context["cli_result"] = result
+
+
 @then(
     "I should receive a JSON output matching the defined schema for `answer`, `citations`, `reasoning`, and `metrics`",
 )
@@ -86,4 +106,9 @@ def test_http_query():
 
 @scenario("../features/query_interface.feature", "Submit query via MCP tool")
 def test_mcp_query():
+    pass
+
+
+@scenario("../features/query_interface.feature", "Refine query interactively via CLI")
+def test_interactive_query():
     pass
