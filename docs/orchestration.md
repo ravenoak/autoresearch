@@ -43,3 +43,17 @@ The diagram below shows the relationships between these classes and their intera
 4. The final state is synthesized into a QueryResponse
 5. The response is returned to the user
 
+## Deployment Considerations
+
+The orchestrator can run agents either sequentially or concurrently.  When
+integrated into an asynchronous application you can use
+`Orchestrator.run_query_async` which executes agents using `asyncio`.  Passing
+`concurrent=True` will dispatch each agent within a cycle to background
+threads, allowing I/O bound agents to overlap.
+
+For large scale deployments, set `distributed=True` in the configuration to
+indicate that agent execution may occur in separate processes or on remote
+workers.  The current implementation keeps this flag for deployment tooling and
+does not change behaviour by itself, but future versions may use it to route
+calls over RPC frameworks or multiprocessing pools.
+

@@ -27,6 +27,7 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+import asyncio
 
 from ..agents.registry import AgentFactory
 from ..config import ConfigModel
@@ -788,6 +789,86 @@ class Orchestrator:
             return primus_index
 
     @staticmethod
+    async def _execute_cycle_async(
+        loop: int,
+        loops: int,
+        agents: List[str],
+        primus_index: int,
+        max_errors: int,
+        state: QueryState,
+        config: ConfigModel,
+        metrics: OrchestrationMetrics,
+        callbacks: Dict[str, Callable[..., None]],
+        agent_factory: type[AgentFactory],
+        storage_manager: type[StorageManager],
+        tracer: Any,
+        *,
+        concurrent: bool = False,
+    ) -> int:
+        """Asynchronous version of ``_execute_cycle``."""
+        with tracer.start_as_current_span(
+            "cycle",
+            attributes={"cycle": loop},
+        ):
+            log.info(f"Starting loop {loop + 1}/{loops}")
+            metrics.start_cycle()
+
+            if callbacks.get("on_cycle_start"):
+                callbacks["on_cycle_start"](loop, state)
+
+            order = Orchestrator._rotate_list(agents, primus_index)
+
+            async def run_agent(name: str) -> None:
+                if state.error_count >= max_errors:
+                    return
+                await asyncio.to_thread(
+                    Orchestrator._execute_agent,
+                    name,
+                    state,
+                    config,
+                    metrics,
+                    callbacks,
+                    agent_factory,
+                    storage_manager,
+                    loop,
+                )
+
+            if concurrent:
+                await asyncio.gather(*(run_agent(a) for a in order))
+            else:
+                for agent_name in order:
+                    if state.error_count >= max_errors:
+                        log.warning(
+                            "Skipping remaining agents due to error threshold "
+                            f"({max_errors}) reached"
+                        )
+                        break
+                    await run_agent(agent_name)
+
+            metrics.end_cycle()
+            state.metadata["execution_metrics"] = metrics.get_summary()
+
+            if callbacks.get("on_cycle_end"):
+                callbacks["on_cycle_end"](loop, state)
+
+            if state.error_count >= max_errors:
+                log.error(
+                    "Aborting dialectical process due to error "
+                    f"threshold reached ({state.error_count}/{max_errors})"
+                )
+                state.results["error"] = (
+                    f"Process aborted after {state.error_count} errors"
+                )
+                return primus_index
+
+            state.cycle += 1
+
+            primus_index = (primus_index + 1) % len(agents)
+            state.primus_index = primus_index
+
+            return primus_index
+
+    @staticmethod
     def run_query(
         query: str,
         config: ConfigModel,
@@ -912,6 +993,119 @@ class Orchestrator:
             )
 
         # Synthesize final response
+        return state.synthesize()
+
+    @staticmethod
+    async def run_query_async(
+        query: str,
+        config: ConfigModel,
+        callbacks: Dict[str, Callable[..., None]] | None = None,
+        *,
+        agent_factory: type[AgentFactory] = AgentFactory,
+        storage_manager: type[StorageManager] = StorageManager,
+        concurrent: bool = False,
+    ) -> QueryResponse:
+        """Asynchronous wrapper around :meth:`run_query`.
+
+        When ``concurrent`` is ``True`` agents within a cycle are executed
+        concurrently using ``asyncio`` threads.
+        """
+
+        setup_tracing(getattr(config, "tracing_enabled", False))
+        tracer = get_tracer(__name__)
+        record_query()
+        metrics = OrchestrationMetrics()
+        callbacks = callbacks or {}
+
+        config_params = Orchestrator._parse_config(config)
+        agents = config_params["agents"]
+        primus_index = config_params["primus_index"]
+        loops = config_params["loops"]
+        mode = config_params["mode"]
+        max_errors = config_params["max_errors"]
+
+        if mode == ReasoningMode.CHAIN_OF_THOUGHT:
+            strategy = ChainOfThoughtStrategy()
+            return await asyncio.to_thread(
+                strategy.run_query,
+                query,
+                config,
+                agent_factory=agent_factory,
+            )
+
+        state = QueryState(query=query, primus_index=primus_index)
+
+        log.info(
+            f"Starting dialectical process with {len(agents)} agents and {loops} loops",
+            extra={
+                "agents": agents,
+                "loops": loops,
+                "primus_index": primus_index,
+                "max_errors": max_errors,
+                "reasoning_mode": str(mode),
+            },
+        )
+
+        for loop in range(loops):
+            log.debug(
+                f"Starting loop {loop + 1}/{loops} with primus_index {primus_index}",
+                extra={
+                    "loop": loop + 1,
+                    "total_loops": loops,
+                    "primus_index": primus_index,
+                },
+            )
+
+            primus_index = await Orchestrator._execute_cycle_async(
+                loop,
+                loops,
+                agents,
+                primus_index,
+                max_errors,
+                state,
+                config,
+                metrics,
+                callbacks,
+                agent_factory,
+                storage_manager,
+                tracer,
+                concurrent=concurrent,
+            )
+
+            if "error" in state.results:
+                log.error(
+                    f"Aborting dialectical process due to error: {state.results['error']}",
+                    extra={
+                        "error": state.results["error"],
+                        "error_count": state.error_count,
+                    },
+                )
+                break
+
+            log.debug(
+                f"Completed loop {loop + 1}/{loops}, new primus_index: {primus_index}",
+                extra={
+                    "loop": loop + 1,
+                    "total_loops": loops,
+                    "primus_index": primus_index,
+                    "cycle": state.cycle,
+                    "error_count": state.error_count,
+                },
+            )
+
+        state.metadata["execution_metrics"] = metrics.get_summary()
+
+        if "error" in state.results or state.error_count > 0:
+            error_message = state.results.get(
+                "error", f"Process completed with {state.error_count} errors"
+            )
+            raise OrchestrationError(
+                error_message,
+                cause=None,
+                errors=state.metadata.get("errors", []),
+                suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured",
+            )
+
         return state.synthesize()
 
     @staticmethod

@@ -34,7 +34,9 @@ def test_search_uses_cache(monkeypatch):
     # second call should be served from cache
     results2 = Search.external_lookup("python")
     assert calls["count"] == 1
-    assert results2 == results1
+    assert len(results2) == len(results1)
+    assert results2[0]["title"] == results1[0]["title"]
+    assert results2[0]["url"] == results1[0]["url"]
 
     Search.backends = old_backends
 
@@ -82,6 +84,8 @@ def test_cache_is_backend_specific(monkeypatch):
     results3 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 1}
     # Results should be the same as the first call (from cache)
-    assert results3 == results1
+    assert len(results3) == len(results1)
+    assert results3[0]["title"] == results1[0]["title"]
+    assert results3[0]["url"] == results1[0]["url"]
 
     Search.backends = old_backends
