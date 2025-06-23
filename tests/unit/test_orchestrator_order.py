@@ -1,4 +1,6 @@
 from unittest.mock import patch
+import asyncio
+import pytest
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config import ConfigModel
@@ -31,3 +33,19 @@ def test_custom_agents_order():
         Orchestrator.run_query("q", cfg)
 
     assert record == ["A1", "A2", "A3"]
+
+
+def test_async_custom_agents_concurrent():
+    record = []
+
+    def get_agent(name):
+        return DummyAgent(name, record)
+
+    cfg = ConfigModel(agents=["A1", "A2", "A3"], loops=1)
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        side_effect=get_agent,
+    ):
+        asyncio.run(Orchestrator.run_query_async("q", cfg, concurrent=True))
+
+    assert sorted(record) == ["A1", "A2", "A3"]

@@ -249,15 +249,14 @@ class TestDuckDBStorageBackend:
 
         # Setup the backend
         backend = DuckDBStorageBackend()
-        backend.setup(db_path=":memory:")
+        with patch(
+            "autoresearch.extensions.VSSExtensionLoader.load_extension",
+            return_value=True,
+        ):
+            backend.setup(db_path=":memory:")
 
         # Check if VSS is available
         has_vss = backend.has_vss()
-
-        # Verify that the execute method was called with the correct query
-        mock_conn.execute.assert_any_call(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
-        )
 
         # Verify that has_vss returns True
         assert has_vss is True

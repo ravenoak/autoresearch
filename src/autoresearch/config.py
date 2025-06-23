@@ -233,6 +233,12 @@ class ConfigModel(BaseSettings):
     # Profile settings
     active_profile: Optional[str] = None
 
+    # Distributed execution settings
+    distributed: bool = Field(
+        default=False,
+        description="Run agents in distributed mode (multiprocessing or remote)",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
