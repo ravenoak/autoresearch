@@ -30,7 +30,12 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Setting Up
 
-1. Install the dependencies using Poetry (recommended):
+1. Configure Poetry to use Python 3.12 or newer:
+   ```bash
+   poetry env use $(which python3)
+   ```
+
+2. Install the dependencies using Poetry:
    ```bash
    poetry install --with dev
    ```
@@ -47,6 +52,12 @@ By participating in this project, you agree to maintain a respectful and inclusi
    If OpenMP support causes build errors, disable it by setting
    `HDBSCAN_NO_OPENMP=1` in your environment when installing.
 
+   Optional packages enable extra features such as diagram rendering and
+   video previews. Install them with:
+   ```bash
+   sudo apt-get install graphviz ffmpeg
+   ```
+
    Alternatively, you can use the helper script:
    ```bash
    ./scripts/setup.sh
@@ -57,7 +68,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
    pip install -e .
    ```
 
-2. Configure your editor to use the project's linting and formatting settings
+3. Configure your editor to use the project's linting and formatting settings
    - For VSCode, the recommended settings are included in `.vscode/settings.json`
    - For PyCharm, import the code style settings from `.idea/codeStyles`
 
@@ -143,7 +154,7 @@ def function_name(param1: str, param2: int) -> bool:
 
 ## Testing Requirements
 
-Autoresearch follows a BDD/TDD approach to development. All new features and bug fixes should include appropriate tests.
+Autoresearch follows a BDD/TDD approach to development. All new features and bug fixes should include appropriate tests. Additional recommendations are provided in [docs/testing_guidelines.md](docs/testing_guidelines.md).
 
 ### Test Organization
 
