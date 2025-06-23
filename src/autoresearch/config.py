@@ -243,6 +243,9 @@ class ConfigModel(BaseSettings):
     # API settings
     api: APIConfig = Field(default_factory=APIConfig)
 
+    # User preference settings
+    user_preferences: Dict[str, Any] = Field(default_factory=dict)
+
     # Dynamic knowledge graph settings
     graph_eviction_policy: str = Field(default="LRU")
 
@@ -547,6 +550,7 @@ class ConfigLoader:
         }
 
         api_cfg = raw.get("api", {})
+        user_pref_cfg = raw.get("user_preferences", {})
 
         # Extract agent configuration
         agent_cfg = raw.get("agent", {})
@@ -568,6 +572,7 @@ class ConfigLoader:
 
         # Add API config
         core_settings["api"] = APIConfig(**api_cfg)
+        core_settings["user_preferences"] = user_pref_cfg
 
         # Add agent configs
         core_settings["agent_config"] = agent_config_dict

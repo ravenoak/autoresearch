@@ -6,7 +6,7 @@ to send test requests to these interfaces and verify the responses.
 
 import json
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import time
 
 from .logging_utils import get_logger
@@ -78,7 +78,7 @@ class MCPTestClient:
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    def run_test_suite(self, queries: List[str] = None) -> Dict[str, Any]:
+    def run_test_suite(self, queries: Optional[List[str]] = None) -> Dict[str, Any]:
         """Run a test suite on the MCP server.
 
         Args:
@@ -202,7 +202,7 @@ class A2ATestClient:
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    def run_test_suite(self, queries: List[str] = None) -> Dict[str, Any]:
+    def run_test_suite(self, queries: Optional[List[str]] = None) -> Dict[str, Any]:
         """Run a test suite on the A2A server.
 
         Args:

@@ -40,3 +40,9 @@ Feature: Streamlit GUI Features
     When I run a query in the Streamlit interface
     Then an interaction trace should be displayed
     And progress metrics should be visualized
+
+  Scenario: User Preferences Configuration
+    When I open the configuration editor
+    And I change a user preference value
+    Then the preference should be saved
+    And the sidebar should reflect the updated preference

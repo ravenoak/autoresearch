@@ -155,6 +155,13 @@ def save_config_to_toml(config_dict):
             for key, value in config_dict["search"].items():
                 existing_config["search"][key] = value
 
+        # Update user preferences
+        if "user_preferences" in config_dict:
+            if "user_preferences" not in existing_config:
+                existing_config["user_preferences"] = {}
+            for key, value in config_dict["user_preferences"].items():
+                existing_config["user_preferences"][key] = value
+
         # Write the updated configuration to the file
         with open(config_path, "wb") as f:
             tomli_w.dump(existing_config, f)
@@ -184,6 +191,14 @@ def get_config_presets():
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
             },
+            "user_preferences": {
+                "detail_level": "balanced",
+                "perspective": "neutral",
+                "format_preference": "structured",
+                "expertise_level": "intermediate",
+                "focus_areas": [],
+                "excluded_areas": [],
+            },
         },
         "Fast Mode": {
             "llm_backend": "lmstudio",
@@ -196,6 +211,14 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 3,
                 "use_semantic_similarity": False,
+            },
+            "user_preferences": {
+                "detail_level": "concise",
+                "perspective": "neutral",
+                "format_preference": "bullet_points",
+                "expertise_level": "intermediate",
+                "focus_areas": [],
+                "excluded_areas": [],
             },
         },
         "Thorough Mode": {
@@ -210,6 +233,14 @@ def get_config_presets():
                 "max_results_per_query": 8,
                 "use_semantic_similarity": True,
             },
+            "user_preferences": {
+                "detail_level": "detailed",
+                "perspective": "critical",
+                "format_preference": "structured",
+                "expertise_level": "expert",
+                "focus_areas": [],
+                "excluded_areas": [],
+            },
         },
         "Chain of Thought": {
             "llm_backend": "lmstudio",
@@ -223,6 +254,14 @@ def get_config_presets():
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
             },
+            "user_preferences": {
+                "detail_level": "detailed",
+                "perspective": "optimistic",
+                "format_preference": "narrative",
+                "expertise_level": "intermediate",
+                "focus_areas": [],
+                "excluded_areas": [],
+            },
         },
         "OpenAI Mode": {
             "llm_backend": "openai",
@@ -235,6 +274,14 @@ def get_config_presets():
             "search": {
                 "max_results_per_query": 5,
                 "use_semantic_similarity": True,
+            },
+            "user_preferences": {
+                "detail_level": "balanced",
+                "perspective": "neutral",
+                "format_preference": "structured",
+                "expertise_level": "intermediate",
+                "focus_areas": [],
+                "excluded_areas": [],
             },
         },
     }
@@ -368,6 +415,55 @@ def display_config_editor():
             help="Use semantic similarity for search result ranking",
         )
 
+        # User preference settings
+        st.markdown("#### User Preferences")
+
+        pref_config = (
+            preset_config.get("user_preferences") if preset_config else config.user_preferences
+        )
+
+        detail_level = st.selectbox(
+            "Detail Level",
+            options=["concise", "balanced", "detailed"],
+            index=["concise", "balanced", "detailed"].index(
+                pref_config.get("detail_level", "balanced")
+            ),
+        )
+
+        perspective = st.selectbox(
+            "Perspective",
+            options=["neutral", "critical", "optimistic"],
+            index=["neutral", "critical", "optimistic"].index(
+                pref_config.get("perspective", "neutral")
+            ),
+        )
+
+        format_pref = st.selectbox(
+            "Format Preference",
+            options=["structured", "narrative", "bullet_points"],
+            index=["structured", "narrative", "bullet_points"].index(
+                pref_config.get("format_preference", "structured")
+            ),
+        )
+
+        expertise_level = st.selectbox(
+            "Expertise Level",
+            options=["beginner", "intermediate", "expert"],
+            index=["beginner", "intermediate", "expert"].index(
+                pref_config.get("expertise_level", "intermediate")
+            ),
+        )
+
+        focus_areas = st.text_input(
+            "Focus Areas (comma-separated)",
+            value=", ".join(pref_config.get("focus_areas", [])),
+        )
+
+        excluded_areas = st.text_input(
+            "Excluded Areas (comma-separated)",
+            value=", ".join(pref_config.get("excluded_areas", [])),
+        )
+
         # Hot-reload option
         enable_hot_reload = st.checkbox(
             "Enable Hot-Reload",
@@ -392,6 +488,26 @@ def display_config_editor():
                     "search": {
                         "max_results_per_query": max_results,
                         "use_semantic_similarity": use_semantic_similarity,
+                    },
+                    "user_preferences": {
+                        "detail_level": detail_level,
+                        "perspective": perspective,
+                        "format_preference": format_pref,
+                        "expertise_level": expertise_level,
+                        "focus_areas": [
+                            a.strip() for a in focus_areas.split(";") if a.strip()
+                        ]
+                        if ";" in focus_areas
+                        else [
+                            a.strip() for a in focus_areas.split(",") if a.strip()
+                        ],
+                        "excluded_areas": [
+                            a.strip() for a in excluded_areas.split(";") if a.strip()
+                        ]
+                        if ";" in excluded_areas
+                        else [
+                            a.strip() for a in excluded_areas.split(",") if a.strip()
+                        ],
                     },
                     "active_profile": selected_profile if selected_profile != "None" else None,
                 }
@@ -1146,6 +1262,11 @@ def main():
         st.markdown(
             f"**Active Profile:** {st.session_state.config.active_profile or 'None'}"
         )
+        if hasattr(st.session_state.config, "user_preferences"):
+            prefs = st.session_state.config.user_preferences
+            st.markdown("### Preferences")
+            st.markdown(f"**Detail:** {prefs.get('detail_level', 'balanced')}")
+            st.markdown(f"**Perspective:** {prefs.get('perspective', 'neutral')}")
 
         # Add a button to reload configuration
         if st.button("Reload Configuration"):
