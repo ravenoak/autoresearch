@@ -50,10 +50,10 @@ _watch_ctx = None
 REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
 
 
-def _notify_webhook(url: str, result: QueryResponse) -> None:
+def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None:
     """Send the final result to a webhook URL if configured."""
     try:
-        httpx.post(url, json=result.model_dump())
+        httpx.post(url, json=result.model_dump(), timeout=timeout)
     except Exception:
         pass  # pragma: no cover - ignore webhook errors
 
@@ -184,10 +184,12 @@ def _stop_config_watcher() -> None:
         _watch_ctx = None
 
 
-@app.post("/query", response_model=QueryResponse)
-def query_endpoint(
-    request: QueryRequest, _: None = Depends(require_api_key)
-) -> QueryResponse:
+@app.post("/query", response_model=None)
+async def query_endpoint(
+    request: QueryRequest,
+    stream: bool = False,
+    _: None = Depends(require_api_key),
+) -> StreamingResponse | QueryResponse:
     """Process a query and return a structured response.
 
     This endpoint accepts a JSON payload containing a query string and optional
@@ -197,6 +199,8 @@ def query_endpoint(
     The endpoint also supports dynamic configuration by allowing clients to override
     configuration values in the payload. Any key in the payload that matches a
     configuration attribute will be used to update the configuration for this query.
+    Pass ``stream=true`` as a query parameter to receive newline-delimited JSON
+    updates instead of a single response.
 
     Args:
         request (QueryRequest): A request object containing:
@@ -216,6 +220,9 @@ def query_endpoint(
         HTTPException: If the query field is missing or empty
     """
     config = get_config()
+
+    if stream:
+        return await query_stream_endpoint(request)
 
     # Update config with parameters from the request
     if request.reasoning_mode is not None:
@@ -250,8 +257,11 @@ def query_endpoint(
                 reasoning=reasoning,
                 metrics={"error": error_info.message, "error_details": error_data},
             )
+            timeout = getattr(config.api, "webhook_timeout", 5)
             if request.webhook_url:
-                _notify_webhook(request.webhook_url, error_resp)
+                _notify_webhook(request.webhook_url, error_resp, timeout)
+            for url in getattr(config.api, "webhooks", []):
+                _notify_webhook(url, error_resp, timeout)
             return error_resp
     try:
         validated = (
@@ -283,11 +293,17 @@ def query_endpoint(
                 "error_details": error_data,
             },
         )
+        timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
-            _notify_webhook(request.webhook_url, error_resp)
+            _notify_webhook(request.webhook_url, error_resp, timeout)
+        for url in getattr(config.api, "webhooks", []):
+            _notify_webhook(url, error_resp, timeout)
         return error_resp
+    timeout = getattr(config.api, "webhook_timeout", 5)
     if request.webhook_url:
-        _notify_webhook(request.webhook_url, validated)
+        _notify_webhook(request.webhook_url, validated, timeout)
+    for url in getattr(config.api, "webhooks", []):
+        _notify_webhook(url, validated, timeout)
     return validated
 
 
@@ -331,8 +347,11 @@ async def query_stream_endpoint(
                 metrics={"error": error_info.message, "error_details": error_data},
             )
         queue.put_nowait(result.model_dump_json())
+        timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
-            _notify_webhook(request.webhook_url, result)
+            _notify_webhook(request.webhook_url, result, timeout)
+        for url in getattr(config.api, "webhooks", []):
+            _notify_webhook(url, result, timeout)
         queue.put_nowait(None)
 
     asyncio.get_running_loop().run_in_executor(None, run)

@@ -200,6 +200,13 @@ class AgentConfig(BaseModel):
     model: Optional[str] = None
 
 
+class APIConfig(BaseModel):
+    """Configuration for HTTP API behaviour."""
+
+    webhooks: List[str] = Field(default_factory=list)
+    webhook_timeout: int = Field(default=5, ge=1)
+
+
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
 
@@ -223,6 +230,9 @@ class ConfigModel(BaseSettings):
 
     # Search settings
     search: SearchConfig = Field(default_factory=SearchConfig)
+
+    # API settings
+    api: APIConfig = Field(default_factory=APIConfig)
 
     # Dynamic knowledge graph settings
     graph_eviction_policy: str = Field(default="LRU")
@@ -527,6 +537,8 @@ class ConfigLoader:
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
         }
 
+        api_cfg = raw.get("api", {})
+
         # Extract agent configuration
         agent_cfg = raw.get("agent", {})
         enabled_agents = [
@@ -544,6 +556,9 @@ class ConfigLoader:
 
         # Add storage config
         core_settings["storage"] = StorageConfig(**storage_settings)
+
+        # Add API config
+        core_settings["api"] = APIConfig(**api_cfg)
 
         # Add agent configs
         core_settings["agent_config"] = agent_config_dict
