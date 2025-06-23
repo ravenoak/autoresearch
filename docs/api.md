@@ -23,6 +23,15 @@ curl -X POST http://localhost:8000/query \
   -d '{"query": "Explain machine learning"}'
 ```
 
+Pass `stream=true` as a query parameter to receive incremental updates instead
+of a single response:
+
+```bash
+curl -X POST 'http://localhost:8000/query?stream=true' \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Explain machine learning"}'
+```
+
 **Response**
 
 ```json
@@ -58,6 +67,9 @@ curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
   -d '{"query": "hi", "webhook_url": "http://localhost:9000/hook"}'
 ```
+
+Additionally, any URLs listed under `[api].webhooks` in `autoresearch.toml`
+receive the same payload after each query completes.
 
 ### `GET /metrics`
 
