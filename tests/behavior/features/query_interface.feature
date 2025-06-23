@@ -17,3 +17,7 @@ Feature: Query Interface
   Scenario: Submit query via MCP tool
     When I run `autoresearch.search("What is Promise Theory?")` via the MCP CLI
     Then I should receive a JSON output matching the defined schema for `answer`, `citations`, `reasoning`, and `metrics`
+
+  Scenario: Refine query interactively via CLI
+    When I run `autoresearch search "What is Promise Theory?" -i` and refine to "Define Promise Theory" then exit
+    Then I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections
