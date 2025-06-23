@@ -46,4 +46,3 @@ def test_config_webhooks(monkeypatch):
         resp = client.post("/query", json={"query": "hi"})
         assert resp.status_code == 200
         assert len(rsps.calls) == 1
-

@@ -31,6 +31,11 @@ Feature: Streamlit GUI Features
     And I should be able to save changes to the configuration
     And I should see feedback when the configuration is saved
 
+  Scenario: Configuration Updates Persist
+    When I update a configuration value in the GUI
+    Then the configuration should be saved with the new value
+    And the updated configuration should be used for the next query
+
   Scenario: Agent Interaction Trace Visualization
     When I run a query in the Streamlit interface
     Then an interaction trace should be displayed
