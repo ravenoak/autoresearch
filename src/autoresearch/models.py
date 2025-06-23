@@ -50,6 +50,10 @@ class QueryRequest(BaseModel):
     llm_backend: Optional[str] = Field(
         None, description="The LLM backend to use (e.g., 'openai', 'lmstudio')"
     )
+    webhook_url: Optional[str] = Field(
+        None,
+        description="Optional HTTP URL that will receive the final QueryResponse",
+    )
 
 
 class QueryResponse(BaseModel):
