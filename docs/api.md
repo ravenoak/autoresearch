@@ -90,27 +90,35 @@ autoresearch_queries_total 1.0
 ...
 ```
 
-## Authentication
+### `GET /capabilities`
 
-Set the `AUTORESEARCH_API_KEY` environment variable to enable API key
-authentication. Clients must include this key in the `X-API-Key` header for
-every request.
+Return information about available agents, LLM backends and current settings.
 
 ```bash
-export AUTORESEARCH_API_KEY=mysecret
-curl -H "X-API-Key: $AUTORESEARCH_API_KEY" \
+curl http://localhost:8000/capabilities
+```
+
+## Authentication
+
+Enable API key authentication by setting `[api].api_key` in `autoresearch.toml`
+or the environment variable `AUTORESEARCH_API__API_KEY`. Clients must include
+this key in the `X-API-Key` header for every request.
+
+```bash
+export AUTORESEARCH_API__API_KEY=mysecret
+curl -H "X-API-Key: $AUTORESEARCH_API__API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query": "test"}' http://localhost:8000/query
 ```
 
 ## Throttling
 
-Requests can be rate limited by setting `AUTORESEARCH_RATE_LIMIT` to the number
-of requests allowed per minute for each client IP. The feature is disabled when
-the variable is unset or set to `0`.
+Rate limiting is configured via `[api].rate_limit` or the environment variable
+`AUTORESEARCH_API__RATE_LIMIT`. This value specifies the number of requests per
+minute allowed for each client IP. Set to `0` to disable throttling.
 
 ```bash
-export AUTORESEARCH_RATE_LIMIT=2
+export AUTORESEARCH_API__RATE_LIMIT=2
 curl -d '{"query": "test"}' http://localhost:8000/query
 ```
 

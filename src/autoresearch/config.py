@@ -205,6 +205,15 @@ class APIConfig(BaseModel):
 
     webhooks: List[str] = Field(default_factory=list)
     webhook_timeout: int = Field(default=5, ge=1)
+    api_key: str | None = Field(
+        default=None,
+        description="Shared secret required in the X-API-Key header when set",
+    )
+    rate_limit: int = Field(
+        default=0,
+        ge=0,
+        description="Requests per minute allowed per client IP",
+    )
 
 
 class ConfigModel(BaseSettings):
