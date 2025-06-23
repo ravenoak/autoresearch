@@ -33,7 +33,6 @@ from .cli_utils import (
     print_info,
     print_command_example,
     format_success,
-    format_info,
     print_verbose,
     set_verbosity,
     get_verbosity,
@@ -219,6 +218,12 @@ def search(
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Prompt for feedback after each agent cycle",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -249,11 +254,22 @@ def search(
         return
 
     try:
-        # Show a spinner while processing the query
-        with console.status(
-            format_info("Processing query...", symbol=False), spinner="dots"
-        ):
-            result = Orchestrator.run_query(query, config)
+        loops = getattr(config, "loops", 1)
+
+        def on_cycle_end(loop: int, state: QueryState) -> None:
+            progress.update(task, advance=1)
+            if interactive:
+                feedback = Prompt.ask("Feedback (q to abort)", default="")
+                if feedback.lower() == "q":
+                    state.error_count = getattr(config, "max_errors", 3)
+                elif feedback:
+                    state.claims.append({"type": "feedback", "text": feedback})
+
+        with Progress() as progress:
+            task = progress.add_task("[green]Processing query...", total=loops)
+            result = Orchestrator.run_query(
+                query, config, callbacks={"on_cycle_end": on_cycle_end}
+            )
 
         fmt = output or (
             "markdown"

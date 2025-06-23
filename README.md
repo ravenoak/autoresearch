@@ -27,6 +27,14 @@ Run a search from the command line:
 autoresearch search "What is quantum computing?"
 ```
 
+During processing a progress bar shows the dialectical cycles. Use
+`--interactive` to provide feedback after each cycle:
+
+```bash
+autoresearch search "Explain AI ethics" --interactive
+```
+Press `q` at the feedback prompt to abort early.
+
 Start the HTTP API with Uvicorn:
 ```bash
 uvicorn autoresearch.api:app --reload
