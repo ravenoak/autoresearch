@@ -1006,8 +1006,14 @@ class StorageManager:
             )
 
         # Use the DuckDBStorageBackend to perform the vector search
+        db_backend = _db_backend
+        if db_backend is None:  # Safety check for type checkers
+            raise StorageError(
+                "DuckDB backend not initialized",
+                suggestion="Call StorageManager.setup() before vector_search",
+            )
         try:
-            return _db_backend.vector_search(query_embedding, k)
+            return db_backend.vector_search(query_embedding, k)
         except Exception as e:
             raise StorageError(
                 "Vector search failed",
@@ -1244,7 +1250,7 @@ class StorageManager:
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
 
-        g = nx.DiGraph()
+        g: nx.DiGraph[Any] = nx.DiGraph()
         for s, p, o in store:
             g.add_edge(str(s), str(o), label=str(p))
 
