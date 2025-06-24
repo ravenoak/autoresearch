@@ -13,6 +13,8 @@ from rich.console import Console
 
 # Verbosity levels
 class Verbosity(str, Enum):
+    """Verbosity levels supported by the CLI output helpers."""
+
     QUIET = "quiet"
     NORMAL = "normal"
     VERBOSE = "verbose"

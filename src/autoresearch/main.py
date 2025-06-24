@@ -140,7 +140,6 @@ def start_watcher(
     ),
 ) -> None:
     """Start configuration watcher before executing commands."""
-
     # Set verbosity level based on command line options
     if verbose and quiet:
         print_warning("Both --verbose and --quiet specified. Using --verbose.")
@@ -342,7 +341,7 @@ app.add_typer(config_app, name="config")
 
 @config_app.callback(invoke_without_command=True)
 def config_callback(ctx: typer.Context) -> None:
-    """Configuration management commands."""
+    """Manage configuration commands."""
     if ctx.invoked_subcommand is None:
         # Display current configuration if no subcommand is provided
         config = _config_loader.load_config()

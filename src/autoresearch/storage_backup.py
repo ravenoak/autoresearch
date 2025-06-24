@@ -538,7 +538,6 @@ class BackupManager:
         Raises:
             BackupError: If the backup operation fails
         """
-
         # Get paths from configuration if not provided
         cfg = ConfigLoader().config.storage
 

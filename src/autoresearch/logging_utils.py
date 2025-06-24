@@ -65,6 +65,7 @@ class InterceptHandler(logging.Handler):
     """
 
     def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover
+        """Forward standard logging records to loguru."""
         if getattr(sys.stderr, "closed", False):
             return
         handlers = logger._core.handlers.values()  # type: ignore[attr-defined]
@@ -111,7 +112,6 @@ def configure_logging(level: int = logging.INFO) -> None:
         configure_logging(level=logging.DEBUG)
         ```
     """
-
     logging.basicConfig(handlers=[InterceptHandler()], level=level, force=True)
 
     logger.remove()
@@ -163,5 +163,4 @@ def get_logger(name: Optional[str] = None) -> structlog.BoundLogger:
             logger.exception("Processing failed", data_id=42, error=str(e))
         ```
     """
-
     return cast(structlog.BoundLogger, structlog.get_logger(name))

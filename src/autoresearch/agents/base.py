@@ -1,6 +1,4 @@
-"""
-Base Agent class and role definitions for the dialectical system.
-"""
+"""Base Agent class and role definitions for the dialectical system."""
 
 from typing import Dict, Any, Optional
 from enum import Enum
@@ -64,6 +62,8 @@ class Agent(
     llm_adapter: Optional[LLMAdapter] = None
 
     class Config:
+        """Pydantic configuration for the agent model."""
+
         arbitrary_types_allowed = True
 
     def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:

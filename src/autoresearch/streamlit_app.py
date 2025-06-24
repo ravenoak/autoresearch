@@ -533,7 +533,7 @@ def display_config_editor():
 
 
 def on_config_change(config):
-    """Callback function for configuration changes.
+    """Handle configuration changes.
 
     This function is called when the configuration changes, either through
     the configuration editor or by external changes to the configuration file.
@@ -1218,7 +1218,7 @@ def display_query_input() -> None:
 
 
 def main():
-    """Main function for the Streamlit app."""
+    """Run the Streamlit app."""
     # Initialize session state
     initialize_session_state()
 

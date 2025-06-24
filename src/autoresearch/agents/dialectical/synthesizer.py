@@ -1,6 +1,4 @@
-"""
-SynthesizerAgent responsible for thesis creation and final synthesis.
-"""
+"""SynthesizerAgent creates the thesis and final synthesis."""
 
 from typing import Dict, Any
 

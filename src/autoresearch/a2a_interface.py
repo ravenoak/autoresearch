@@ -34,6 +34,7 @@ try:
         """Stub class for A2AServer."""
 
         def __init__(self, host=None, port=None):
+            """Initialize the stub server with host and port."""
             self.host = host
             self.port = port
 
@@ -53,6 +54,7 @@ try:
         """Stub class for A2AMessage."""
 
         def __init__(self, type=None, content=None):
+            """Initialize a stub message."""
             self.type = type
             self.content = content or {}
 
@@ -443,13 +445,13 @@ def get_a2a_client() -> A2AClientWrapper:
 
 
 def requires_a2a(func: Callable) -> Callable:
-    """Decorator to check if A2A is available before calling a function.
+    """Check that A2A is available before calling a function.
 
     Args:
         func: The function to decorate
 
     Returns:
-        The decorated function
+        The decorated function.
     """
 
     @wraps(func)
