@@ -214,6 +214,37 @@ When multiple backends are enabled, Autoresearch merges the top
 local documents appear alongside web results. The ranking algorithm combines
 BM25 scores and embedding similarity across backends for consistent relevance.
 
+### Tuning Search Ranking Weights
+
+You can evaluate how different relevance weights perform by running the
+`evaluate_ranking.py` script against a labelled dataset. The repository provides
+`examples/search_evaluation.csv` containing sample query results with ground
+truth relevance labels.
+
+```bash
+poetry run python scripts/evaluate_ranking.py examples/search_evaluation.csv
+```
+
+To search for the best combination of weights, use `optimize_search_weights.py`
+which performs a simple grid search and updates `examples/autoresearch.toml`:
+
+```bash
+poetry run python scripts/optimize_search_weights.py \
+  examples/search_evaluation.csv examples/autoresearch.toml
+```
+
+After running the optimization the file's `bm25_weight`,
+`semantic_similarity_weight`, and `source_credibility_weight` values reflect the
+best-performing configuration. Our sample dataset favors semantic similarity and
+source credibility, resulting in the following tuned weights:
+
+```toml
+[search]
+semantic_similarity_weight = 0.85
+bm25_weight = 0.05
+source_credibility_weight = 0.1
+```
+
 ## Storage and Knowledge Graph
 
 ### Configuring Storage for Large Research Projects
