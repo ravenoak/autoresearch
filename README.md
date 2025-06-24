@@ -224,6 +224,12 @@ Autoresearch supports three reasoning modes:
    autoresearch search --reasoning-mode chain-of-thought "Explain the theory of relativity step by step"
    ```
 
+You can also control which agent starts a dialectical cycle using `--primus-start`:
+
+```bash
+autoresearch search --reasoning-mode dialectical --primus-start 1 "How does solar energy work?"
+```
+
 ### Using Different LLM Backends
 
 ```bash
