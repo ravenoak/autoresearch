@@ -83,6 +83,7 @@ These options are set in the `[core]` section of the configuration file.
 | `llm_backend` | string | `"lmstudio"` | The LLM adapter to use | `"lmstudio"`, `"openai"`, `"openrouter"`, `"dummy"` |
 | `loops` | integer | `2` | Number of reasoning cycles to run | ≥ 1 |
 | `ram_budget_mb` | integer | `1024` | Memory budget in megabytes | ≥ 0 |
+| `token_budget` | integer | `null` | Maximum tokens allowed per run | ≥ 1 or `null` |
 | `agents` | list of strings | `["Synthesizer", "Contrarian", "FactChecker"]` | Agents to use in the reasoning process | Any valid agent names |
 | `primus_start` | integer | `0` | Index of the starting agent in the agents list | ≥ 0 |
 | `reasoning_mode` | string | `"dialectical"` | The reasoning mode to use | `"dialectical"`, `"direct"`, `"chain-of-thought"` |
