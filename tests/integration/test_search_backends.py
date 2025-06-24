@@ -257,3 +257,48 @@ def test_combined_local_and_web_results(monkeypatch, tmp_path):
     assert results[0]["url"] == str(file_path)
     urls = {r["url"] for r in results}
     assert {str(file_path), "https://example.com"} <= urls
+
+
+def test_weight_optimization_improves_ranking(monkeypatch):
+    """Tuned weights should improve ranking order."""
+
+    def b1(query, max_results=5):
+        return [{"title": "relevant", "url": "u1"}]
+
+    def b2(query, max_results=5):
+        return [{"title": "irrelevant", "url": "u2"}]
+
+    monkeypatch.setitem(Search.backends, "b1", b1)
+    monkeypatch.setitem(Search.backends, "b2", b2)
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["b1", "b2"]
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, docs: [0.2, 0.9])
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, docs, query_embedding=None: [0.7, 0.6],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda docs: [0.4, 0.9])
+
+    cfg.search.semantic_similarity_weight = 0.5
+    cfg.search.bm25_weight = 0.3
+    cfg.search.source_credibility_weight = 0.2
+    results_default = Search.external_lookup("q", max_results=2)
+    order_default = [r["url"] for r in results_default]
+
+    import tomllib
+    from pathlib import Path
+
+    tuned = tomllib.loads(Path("examples/autoresearch.toml").read_text())["search"]
+    cfg.search.semantic_similarity_weight = tuned["semantic_similarity_weight"]
+    cfg.search.bm25_weight = tuned["bm25_weight"]
+    cfg.search.source_credibility_weight = tuned["source_credibility_weight"]
+    results_tuned = Search.external_lookup("q", max_results=2)
+    order_tuned = [r["url"] for r in results_tuned]
+
+    assert order_default[0] == "u2"
+    assert order_tuned[0] == "u1"

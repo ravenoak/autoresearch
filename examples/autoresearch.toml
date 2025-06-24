@@ -4,68 +4,58 @@ loops = 3
 tracing_enabled = false
 
 [search]
-backends = ["serper", "local_file", "local_git"]
-embedding_backends = ["duckdb"]
+backends = [
+    "serper",
+    "local_file",
+    "local_git",
+]
+embedding_backends = [
+    "duckdb",
+]
 hybrid_query = true
 max_results_per_query = 5
-
-# Enhanced relevance ranking settings
 use_semantic_similarity = true
 use_bm25 = true
 use_source_credibility = true
-
-# Weights for different ranking factors (must sum to 1.0)
-semantic_similarity_weight = 0.5
-bm25_weight = 0.3
-source_credibility_weight = 0.2
-
-# Source credibility settings
+semantic_similarity_weight = 0.9
+bm25_weight = 0.0
+source_credibility_weight = 0.1
 domain_authority_factor = 0.6
 citation_count_factor = 0.4
-
-# User feedback settings (experimental)
 use_feedback = false
 feedback_weight = 0.3
 
-# Context-aware search settings
 [search.context_aware]
 enabled = true
-
-# Query expansion settings
 use_query_expansion = true
-expansion_factor = 0.3  # Controls how many expansion terms to use (0.0-1.0)
-
-# Entity recognition settings
+expansion_factor = 0.3
 use_entity_recognition = true
 entity_weight = 0.5
-
-# Topic modeling settings
 use_topic_modeling = true
-num_topics = 5  # Number of topics to model
+num_topics = 5
 topic_weight = 0.3
-
-# Search history settings
 use_search_history = true
 history_weight = 0.2
-max_history_items = 10  # Maximum number of queries to keep in history
+max_history_items = 10
 
-# Local file search settings
 [search.local_file]
 path = "/path/to/research_docs"
-file_types = ["md", "pdf", "txt"]
+file_types = [
+    "md",
+    "pdf",
+    "txt",
+]
 
-# Local Git repository search settings
 [search.local_git]
 repo_path = "/path/to/repo"
-branches = ["main"]
+branches = [
+    "main",
+]
 history_depth = 50
 
 [storage.duckdb]
 path = "data/research.duckdb"
 vector_extension = true
-# Path to the VSS extension file for offline use
-# Use the download_duckdb_extensions.py script to download the extension
-# vector_extension_path = "./extensions/vss/vss.duckdb_extension"
 
 [agent.Synthesizer]
 model = "gpt-3.5-turbo"
