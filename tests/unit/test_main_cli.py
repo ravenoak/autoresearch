@@ -6,9 +6,9 @@ sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("umap", MagicMock())
 sys.modules.setdefault("pynndescent", MagicMock())
 
-from autoresearch.main import app
-from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.main import app  # noqa: E402
+from autoresearch.models import QueryResponse  # noqa: E402
+from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 
 
 def _mock_run_query(query, config, callbacks=None):
