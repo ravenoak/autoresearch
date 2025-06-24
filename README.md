@@ -70,6 +70,8 @@ llm_backend = "lmstudio"
 
 # Number of reasoning loops to perform
 loops = 3
+# Maximum token budget per run
+token_budget = 4000
 
 # Enable distributed tracing
 tracing_enabled = false

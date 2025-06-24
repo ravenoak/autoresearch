@@ -224,6 +224,11 @@ class ConfigModel(BaseSettings):
     llm_backend: str = Field(default="lmstudio")
     loops: int = Field(default=2, ge=1)
     ram_budget_mb: int = Field(default=1024, ge=0)
+    token_budget: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description="Maximum tokens available for a single run",
+    )
     agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
     primus_start: int = Field(default=0)
     reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)
@@ -300,6 +305,17 @@ class ConfigModel(BaseSettings):
                 suggestion=f"Try using one of the valid modes: {', '.join(valid_modes)}",
                 cause=exc,
             ) from exc
+
+    @field_validator("token_budget")
+    def validate_token_budget(cls, v: int | None) -> int | None:
+        """Ensure the token budget is positive when provided."""
+        if v is not None and v <= 0:
+            raise ConfigError(
+                "token_budget must be positive",
+                provided=v,
+                suggestion="Set token_budget to a positive integer or omit it",
+            )
+        return v
 
     @field_validator("graph_eviction_policy")
     def validate_eviction_policy(cls, v: str) -> str:
