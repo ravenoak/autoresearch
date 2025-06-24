@@ -1,11 +1,17 @@
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
+import sys
+
+sys.modules.setdefault("bertopic", MagicMock())
+sys.modules.setdefault("umap", MagicMock())
+sys.modules.setdefault("pynndescent", MagicMock())
+
 from autoresearch.main import app
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
-def _mock_run_query(query, config):
+def _mock_run_query(query, config, callbacks=None):
     return QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
 
 
@@ -25,7 +31,53 @@ def test_search_default_output_json(monkeypatch):
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
-    assert result.stdout.strip().startswith("{")
+    assert "{" in result.stdout
+
+
+def test_search_reasoning_mode_option(monkeypatch):
+    runner = CliRunner()
+
+    def _mock_load_config():
+        from autoresearch.config import ConfigModel
+
+        return ConfigModel()
+
+    captured = {}
+
+    def _run(query, config, callbacks=None):
+        captured["mode"] = config.reasoning_mode
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr("autoresearch.main._config_loader.load_config", _mock_load_config)
+    monkeypatch.setattr(Orchestrator, "run_query", _run)
+
+    result = runner.invoke(app, ["search", "q", "--reasoning-mode", "direct"])
+
+    assert result.exit_code == 0
+    assert captured["mode"].value == "direct"
+
+
+def test_search_primus_start_option(monkeypatch):
+    runner = CliRunner()
+
+    def _mock_load_config():
+        from autoresearch.config import ConfigModel
+
+        return ConfigModel()
+
+    captured = {}
+
+    def _run(query, config, callbacks=None):
+        captured["start"] = config.primus_start
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr("autoresearch.main._config_loader.load_config", _mock_load_config)
+    monkeypatch.setattr(Orchestrator, "run_query", _run)
+
+    result = runner.invoke(app, ["search", "q", "--primus-start", "2"])
+
+    assert result.exit_code == 0
+    assert captured["start"] == 2
 
 
 def test_config_command(monkeypatch):

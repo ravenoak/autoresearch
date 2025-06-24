@@ -18,7 +18,7 @@ from .monitor import monitor_app
 from datetime import datetime
 import time
 
-from .config import ConfigLoader
+from .config import ConfigLoader, ConfigModel
 from .orchestration.orchestrator import Orchestrator
 from .orchestration.state import QueryState
 from .output_format import OutputFormatter
@@ -224,6 +224,16 @@ def search(
         "-i",
         help="Refine the query interactively between agent cycles",
     ),
+    reasoning_mode: Optional[str] = typer.Option(
+        None,
+        "--reasoning-mode",
+        help="Override reasoning mode for this run",
+    ),
+    primus_start: Optional[int] = typer.Option(
+        None,
+        "--primus-start",
+        help="Starting agent index for dialectical reasoning",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -241,6 +251,14 @@ def search(
         autoresearch search "Who was Albert Einstein?" -o plain
     """
     config = _config_loader.load_config()
+
+    updates: dict[str, Any] = {}
+    if reasoning_mode is not None:
+        updates["reasoning_mode"] = reasoning_mode
+    if primus_start is not None:
+        updates["primus_start"] = primus_start
+    if updates:
+        config = ConfigModel.model_validate({**config.model_dump(), **updates})
 
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
     if not query or query.strip() == "":

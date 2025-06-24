@@ -61,6 +61,19 @@ STORAGE__DUCKDB__PATH=my_database.duckdb
 
 Environment variables take precedence over values in the configuration file.
 
+## CLI Overrides
+
+Several core options can be overridden for a single run using command-line flags:
+
+```bash
+autoresearch search --reasoning-mode direct --primus-start 2 "Your question"
+```
+
+Available flags:
+
+- `--reasoning-mode` – set the reasoning mode (`direct`, `dialectical`, `chain-of-thought`)
+- `--primus-start` – index of the agent to begin the dialectical cycle
+
 ## Core Configuration Options
 
 These options are set in the `[core]` section of the configuration file.
