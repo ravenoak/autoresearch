@@ -1,6 +1,7 @@
 import sys
 import os
 import types
+from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -12,7 +13,7 @@ import pytest  # noqa: E402
 
 # Provide a lightweight fallback for sentence_transformers to avoid heavy
 # imports during test startup.
-dummy_st_module = types.SimpleNamespace()
+dummy_st_module = types.ModuleType("sentence_transformers")
 
 
 class DummySentenceTransformer:
@@ -283,3 +284,43 @@ def assert_error():
             assert excinfo.value.__cause__ is None
 
     return _assert_error
+
+
+@pytest.fixture
+def claim_factory():
+    """Factory for creating simple claim dictionaries."""
+
+    class ClaimFactory:
+        def create_claim(self, claim_id=None, embedding=None):
+            if claim_id is None:
+                claim_id = f"claim-{uuid4()}"
+            if embedding is None:
+                embedding = [0.1] * 384
+            return {
+                "id": claim_id,
+                "type": "fact",
+                "content": "test claim",
+                "confidence": 0.9,
+                "attributes": {"verified": True},
+                "relations": [
+                    {
+                        "src": claim_id,
+                        "dst": "source-1",
+                        "rel": "cites",
+                        "weight": 1.0,
+                    }
+                ],
+                "embedding": embedding,
+            }
+
+    return ClaimFactory()
+
+
+@pytest.fixture
+def dummy_llm_adapter(monkeypatch):
+    """Register and provide a dummy LLM adapter for tests."""
+    from autoresearch.llm.adapters import DummyAdapter
+
+    LLMFactory.register("dummy", DummyAdapter)
+    yield DummyAdapter()
+    LLMFactory._registry.pop("dummy", None)

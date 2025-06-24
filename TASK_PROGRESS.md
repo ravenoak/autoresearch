@@ -196,3 +196,16 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Create deployment scripts
   - [ ] Implement configuration validation
   - [ ] Add health check mechanisms
+
+### Coverage Report
+
+Modules with coverage below 90% based on the latest run:
+
+- `autoresearch.orchestration.metrics` – 37%
+- `autoresearch.orchestration.orchestrator` – 0%
+- `autoresearch.search` – 15%
+- `autoresearch.storage` – 22%
+- `autoresearch.storage_backends` – 9%
+- `autoresearch.output_format` – 0%
+- `autoresearch.streamlit_app` – 0%
+
