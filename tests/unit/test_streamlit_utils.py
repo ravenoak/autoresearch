@@ -17,7 +17,10 @@ sys.modules.setdefault("matplotlib", fake_matplotlib)
 sys.modules.setdefault("matplotlib.pyplot", ModuleType("pyplot"))
 sys.modules.setdefault("psutil", ModuleType("psutil"))
 
-from autoresearch.streamlit_app import save_config_to_toml, apply_preset
+from autoresearch.streamlit_app import (  # noqa: E402
+    save_config_to_toml,
+    apply_preset,
+)
 
 
 def test_save_config_to_toml(tmp_path, monkeypatch):
