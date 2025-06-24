@@ -317,6 +317,20 @@ def claim_factory():
 
 
 @pytest.fixture
+def realistic_claims(claim_factory):
+    """Provide a batch of sample claims with varied content."""
+
+    claims = [
+        claim_factory.create_claim(claim_id="claim-1", embedding=[0.1] * 384),
+        claim_factory.create_claim(claim_id="claim-2", embedding=[0.2] * 384),
+        claim_factory.create_claim(claim_id="claim-3", embedding=[0.3] * 384),
+    ]
+    for idx, claim in enumerate(claims, start=1):
+        claim["content"] = f"Realistic claim number {idx}"
+    return claims
+
+
+@pytest.fixture
 def dummy_llm_adapter(monkeypatch):
     """Register and provide a dummy LLM adapter for tests."""
     from autoresearch.llm.adapters import DummyAdapter
@@ -324,3 +338,25 @@ def dummy_llm_adapter(monkeypatch):
     LLMFactory.register("dummy", DummyAdapter)
     yield DummyAdapter()
     LLMFactory._registry.pop("dummy", None)
+
+
+@pytest.fixture
+def mock_llm_adapter(monkeypatch):
+    """Provide a configurable mock LLM adapter for tests."""
+
+    from autoresearch.llm.adapters import DummyAdapter
+
+    class MockAdapter(DummyAdapter):
+        def __init__(self, responses=None):
+            self.responses = responses or {}
+
+        def generate(self, prompt: str, model: str | None = None, **kwargs):
+            if prompt in self.responses:
+                return self.responses[prompt]
+            return f"Mocked response for {prompt}"
+
+    LLMFactory.register("mock", MockAdapter)
+    adapter = MockAdapter()
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
+    yield adapter
+    LLMFactory._registry.pop("mock", None)

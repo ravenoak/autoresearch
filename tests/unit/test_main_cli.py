@@ -1,6 +1,7 @@
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
 import sys
+import pytest
 
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("umap", MagicMock())
@@ -34,7 +35,8 @@ def test_search_default_output_json(monkeypatch):
     assert "{" in result.stdout
 
 
-def test_search_reasoning_mode_option(monkeypatch):
+@pytest.mark.parametrize("mode", ["direct", "dialectical"])
+def test_search_reasoning_mode_option(monkeypatch, mode):
     runner = CliRunner()
 
     def _mock_load_config():
@@ -51,10 +53,10 @@ def test_search_reasoning_mode_option(monkeypatch):
     monkeypatch.setattr("autoresearch.main._config_loader.load_config", _mock_load_config)
     monkeypatch.setattr(Orchestrator, "run_query", _run)
 
-    result = runner.invoke(app, ["search", "q", "--reasoning-mode", "direct"])
+    result = runner.invoke(app, ["search", "q", "--reasoning-mode", mode])
 
     assert result.exit_code == 0
-    assert captured["mode"].value == "direct"
+    assert captured["mode"].value == mode
 
 
 def test_search_primus_start_option(monkeypatch):

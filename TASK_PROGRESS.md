@@ -59,9 +59,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Add tests for edge cases and error conditions
   - [x] Implement property-based testing for complex components
 - [ ] Enhance test fixtures
-  - [ ] Create more realistic test data
-  - [ ] Implement comprehensive mock LLM adapters
-  - [ ] Add parameterized tests for configuration variations
+  - [x] Create more realistic test data
+  - [x] Implement comprehensive mock LLM adapters
+  - [x] Add parameterized tests for configuration variations
 
 ### 2.2 Integration Tests
 
@@ -82,8 +82,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Test all reasoning modes with realistic queries
   - [x] Verify error handling and recovery
 - [ ] Enhance test step definitions
-  - [ ] Add more detailed assertions
-  - [ ] Implement better test isolation
+  - [x] Add more detailed assertions
+  - [x] Implement better test isolation
   - [ ] Create more comprehensive test contexts
   - _Next:_ reuse fixtures to speed up scenario setup
 
