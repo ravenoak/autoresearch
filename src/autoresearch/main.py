@@ -100,9 +100,9 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
 app = typer.Typer(
     help=(
         "Autoresearch CLI entry point.\n\n"
-        "Set the reasoning mode in autoresearch.toml under "
-        "[core.reasoning_mode]. Valid values: direct, dialectical, "
-        "chain-of-thought."
+        "Reasoning settings can be configured in autoresearch.toml or "
+        "overridden via --reasoning-mode and --loops flags. Valid modes: "
+        "direct, dialectical, chain-of-thought."
     ),
     name="autoresearch",
     no_args_is_help=True,  # Show help when no arguments are provided
@@ -224,6 +224,26 @@ def search(
         "-i",
         help="Refine the query interactively between agent cycles",
     ),
+    reasoning_mode: Optional[str] = typer.Option(
+        None,
+        "--reasoning-mode",
+        "-m",
+        help=(
+            "Reasoning mode to use: direct|dialectical|chain-of-thought. "
+            "Overrides configuration when provided."
+        ),
+    ),
+    loops: Optional[int] = typer.Option(
+        None,
+        "--loops",
+        "-l",
+        help="Number of reasoning loops to run (overrides config)",
+    ),
+    llm_backend: Optional[str] = typer.Option(
+        None,
+        "--llm-backend",
+        help="LLM backend to use for this query (overrides config)",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -242,6 +262,26 @@ def search(
     """
     config = _config_loader.load_config()
 
+    # Apply CLI overrides for reasoning settings
+    if reasoning_mode is not None:
+        from .orchestration import ReasoningMode
+
+        try:
+            config.reasoning_mode = ReasoningMode(reasoning_mode)
+        except Exception:
+            valid = ", ".join([m.value for m in ReasoningMode])
+            print_error(
+                f"Invalid reasoning mode: {reasoning_mode}",
+                suggestion=f"Use one of: {valid}",
+            )
+            raise typer.Exit(code=1)
+
+    if loops is not None:
+        config.loops = loops
+
+    if llm_backend is not None:
+        config.llm_backend = llm_backend
+
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
     if not query or query.strip() == "":
         print_warning("You need to provide a query to search for.")
@@ -254,11 +294,11 @@ def search(
         return
 
     try:
-        loops = getattr(config, "loops", 1)
+        loops_cfg = getattr(config, "loops", 1)
 
         def on_cycle_end(loop: int, state: QueryState) -> None:
             progress.update(task, advance=1)
-            if interactive and loop < loops - 1:
+            if interactive and loop < loops_cfg - 1:
                 refinement = Prompt.ask(
                     "Refine query or press Enter to continue (q to abort)",
                     default="",
@@ -269,7 +309,9 @@ def search(
                     state.query = refinement
 
         with Progress() as progress:
-            task = progress.add_task("[green]Processing query...", total=loops)
+            task = progress.add_task(
+                "[green]Processing query...", total=loops_cfg
+            )
             result = Orchestrator.run_query(
                 query, config, callbacks={"on_cycle_end": on_cycle_end}
             )

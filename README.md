@@ -234,6 +234,14 @@ autoresearch search --llm-backend lmstudio "What is machine learning?"
 autoresearch search --llm-backend openai "What is machine learning?"
 ```
 
+### Adjusting Reasoning Loops
+
+Set the number of reasoning cycles directly from the CLI:
+
+```bash
+autoresearch search --loops 3 "What is the future of AI?"
+```
+
 ### API Usage with Custom Parameters
 
 ```bash

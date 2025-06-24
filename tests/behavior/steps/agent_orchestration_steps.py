@@ -7,6 +7,7 @@ from .common_steps import *  # noqa: F401,F403
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration import ReasoningMode
+from typing import Any
 
 
 @given("the agents Synthesizer, Contrarian, and Fact-Checker are enabled")
@@ -122,6 +123,50 @@ def submit_query_via_cli(query, monkeypatch):
     return {"result": result, "agent_invocations": agent_invocations}
 
 
+@when(
+    parsers.re(
+        r'I run `autoresearch search "(?P<query>.+)" --reasoning-mode (?P<mode>[^ ]+) --loops (?P<loops>\d+)`'
+    ),
+    target_fixture="cli_override",
+)
+def run_cli_with_flags(query, mode, loops, monkeypatch):
+    from autoresearch.models import QueryResponse
+
+    captured: dict[str, Any] = {}
+
+    def mock_run_query(q, cfg, callbacks=None):
+        captured["mode"] = cfg.reasoning_mode.value
+        captured["loops"] = cfg.loops
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    cfg = ConfigModel(reasoning_mode=ReasoningMode.DIALECTICAL, loops=2)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    from autoresearch import main as main_mod
+
+    main_mod._config_loader = ConfigLoader()
+    main_mod._config_loader._config = cfg
+
+    result = runner.invoke(
+        cli_app,
+        ["search", query, "--reasoning-mode", mode, "--loops", str(loops)],
+    )
+
+    return {"result": result, "captured": captured}
+
+
+@then(
+    parsers.parse(
+        'the orchestrator should receive reasoning mode "{mode}" and loops {loops:d}'
+    )
+)
+def check_cli_overrides(cli_override, mode, loops):
+    captured = cli_override["captured"]
+    assert captured["mode"] == mode
+    assert captured["loops"] == loops
+
+
 @then(
     "the system should invoke agents in the order: Synthesizer, Contrarian, Synthesizer"
 )
@@ -207,4 +252,12 @@ def test_reasoning_direct():
     "Chain-of-thought mode loops Synthesizer",
 )
 def test_reasoning_chain():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
+    "CLI flags override configuration",
+)
+def test_reasoning_cli_flags():
     pass

@@ -33,7 +33,15 @@ Available reasoning modes:
 - `dialectical` (default): Rotates through agents in a thesis→antithesis→synthesis cycle
 - `chain-of-thought`: Loops the Synthesizer agent
 
-3. **Export results to a file:**
+3. **Control the number of reasoning loops:**
+
+```bash
+autoresearch query "What is the capital of France?" --loops 2
+```
+
+This overrides the `loops` value from the configuration file for a single run.
+
+4. **Export results to a file:**
 
 ```bash
 # Export as JSON
