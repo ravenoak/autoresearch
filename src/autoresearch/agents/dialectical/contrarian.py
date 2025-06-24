@@ -1,6 +1,4 @@
-"""
-ContrarianAgent for challenging existing thesis with alternative viewpoints.
-"""
+"""ContrarianAgent challenges the thesis with alternative viewpoints."""
 
 from typing import Dict, Any
 

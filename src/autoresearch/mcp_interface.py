@@ -49,7 +49,6 @@ def query(
     transport: FastMCP | None = None,
 ) -> Dict[str, Any]:
     """Send a query to an MCP server and return the result."""
-
     target = transport or f"http://{host}:{port}"
 
     async def _call() -> Dict[str, Any]:

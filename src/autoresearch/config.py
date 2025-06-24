@@ -849,7 +849,7 @@ class ConfigLoader:
         return list(self._profiles.keys())
 
     def on_config_change(self, config: ConfigModel) -> None:
-        """Default handler for configuration change events.
+        """Handle configuration change events.
 
         This method is a simple default observer that logs when the configuration
         changes. It can be used as a callback for watch_changes() or as a base

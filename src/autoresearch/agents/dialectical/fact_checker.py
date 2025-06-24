@@ -1,6 +1,4 @@
-"""
-FactChecker agent for verifying claims against external sources.
-"""
+"""FactChecker agent verifies claims against external sources."""
 
 from typing import Dict, Any
 

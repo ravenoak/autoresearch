@@ -542,7 +542,6 @@ class Search:
         query_embedding: Optional[List[float]] = None,
     ) -> None:
         """Add embeddings and similarity scores to documents in-place."""
-
         model = cls.get_sentence_transformer()
         if model is None:
             return
@@ -733,7 +732,6 @@ class Search:
         query_embedding: Optional[List[float]] = None,
     ) -> List[Dict[str, Any]]:
         """Rank combined results from multiple backends.
-
         Each backend's results are merged and ranked together using the
         configured relevance algorithm. A ``backend`` field is added to every
         result indicating its origin.
@@ -752,7 +750,6 @@ class Search:
         cls, query_embedding: List[float], max_results: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Perform embedding-based search using registered backends."""
-
         cfg = get_config()
         results: Dict[str, List[Dict[str, Any]]] = {}
 
@@ -776,7 +773,7 @@ class Search:
         [Callable[[str, int], List[Dict[str, str]]]],
         Callable[[str, int], List[Dict[str, str]]],
     ]:
-        """Decorator to register a search backend function.
+        """Register a search backend function.
 
         This decorator registers a function as a search backend with the given name.
         Registered backends can be used by configuring them in the search_backends
@@ -812,7 +809,7 @@ class Search:
         [Callable[[List[float], int], List[Dict[str, Any]]]],
         Callable[[List[float], int], List[Dict[str, Any]]],
     ]:
-        """Decorator to register an embedding search backend."""
+        """Register an embedding search backend."""
 
         def decorator(
             func: Callable[[List[float], int], List[Dict[str, Any]]]
