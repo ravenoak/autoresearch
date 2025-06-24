@@ -237,6 +237,21 @@ This pattern keeps the feature files expressive while ensuring the
 Python tests make concrete assertions about CLI behaviour, GUI
 accessibility, and log messages.
 
+## Updating Baselines
+
+Some integration tests compare runtime metrics against JSON files in
+`tests/integration/baselines`. When legitimate changes modify these
+metrics (for example token counts), run the failing test to capture the
+new values and update the corresponding baseline file.
+
+1. Run the test with `poetry run pytest tests/integration/test_token_usage.py`.
+2. Inspect the assertion failure to see the updated token counts.
+3. Edit the JSON baseline file to match the new values and commit the
+   change alongside your code.
+
+Keeping baselines in sync ensures that performance regressions are
+intentional and reviewed.
+
 ## Conclusion
 
 Following these guidelines will ensure that the test suite is consistent, maintainable, and reliable. If you have any questions or suggestions, please open an issue or pull request.
