@@ -72,8 +72,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [ ] Add performance tests
   - [x] Implement benchmarks for query processing time
   - [x] Test memory usage under various conditions
-  - [ ] Verify token usage optimization
-  - _Next:_ add regression benchmarks for token usage
+  - [x] Verify token usage optimization
+  - _Next:_ monitor token usage regressions automatically
 
 ### 2.3 Behavior Tests
 
@@ -166,9 +166,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 ### 5.1 Performance Optimization
 
 - [ ] Complete token usage optimization
-  - [ ] Implement prompt compression techniques
+  - [x] Implement prompt compression techniques
   - [ ] Add context pruning for long conversations
-  - [ ] Create adaptive token budget management
+  - [x] Create adaptive token budget management
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
