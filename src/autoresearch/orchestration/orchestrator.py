@@ -21,7 +21,7 @@ The system is designed to be extensible, allowing for custom agents, reasoning m
 and execution strategies.
 """
 
-from typing import List, Dict, Any, Callable, Iterator
+from typing import List, Dict, Any, Callable, Iterator, TypedDict
 import os
 import time
 import traceback
@@ -42,6 +42,15 @@ from ..errors import OrchestrationError, AgentError, NotFoundError, TimeoutError
 
 
 log = get_logger(__name__)
+
+
+class CircuitBreakerState(TypedDict):
+    """State information for an agent's circuit breaker."""
+
+    failure_count: float
+    last_failure_time: float
+    state: str
+    recovery_attempts: int
 
 
 class Orchestrator:
@@ -543,7 +552,7 @@ class Orchestrator:
         }
 
     # Circuit breaker state (class variable)
-    _circuit_breakers = {}
+    _circuit_breakers: dict[str, CircuitBreakerState] = {}
 
     @staticmethod
     def _update_circuit_breaker(agent_name: str, error_category: str) -> None:
@@ -560,10 +569,10 @@ class Orchestrator:
         # Initialize circuit breaker for this agent if it doesn't exist
         if agent_name not in Orchestrator._circuit_breakers:
             Orchestrator._circuit_breakers[agent_name] = {
-                "failure_count": 0,
-                "last_failure_time": 0,
+                "failure_count": 0.0,
+                "last_failure_time": 0.0,
                 "state": "closed",  # closed = normal operation, open = failing, half-open = testing recovery
-                "recovery_attempts": 0
+                "recovery_attempts": 0,
             }
 
         breaker = Orchestrator._circuit_breakers[agent_name]
@@ -603,7 +612,7 @@ class Orchestrator:
         # This would be called from a success handler, not implemented here
 
     @staticmethod
-    def get_circuit_breaker_state(agent_name: str) -> dict:
+    def get_circuit_breaker_state(agent_name: str) -> CircuitBreakerState:
         """Get the current circuit breaker state for an agent.
 
         Args:
@@ -615,9 +624,9 @@ class Orchestrator:
         if agent_name not in Orchestrator._circuit_breakers:
             return {
                 "state": "closed",
-                "failure_count": 0,
-                "last_failure_time": 0,
-                "recovery_attempts": 0
+                "failure_count": 0.0,
+                "last_failure_time": 0.0,
+                "recovery_attempts": 0,
             }
 
         return Orchestrator._circuit_breakers[agent_name].copy()
