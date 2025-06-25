@@ -84,8 +84,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [ ] Enhance test step definitions
   - [x] Add more detailed assertions
   - [x] Implement better test isolation
-  - [ ] Create more comprehensive test contexts
-  - _Next:_ reuse fixtures to speed up scenario setup
+  - [x] Create more comprehensive test contexts
+  - _Next:_ introduce reusable fixtures for CLI and API clients
 
 ### 4.1 Code Documentation
 

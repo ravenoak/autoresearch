@@ -17,3 +17,4 @@ Feature: Interactive Monitoring
   Scenario: Display metrics
     When I run `autoresearch monitor metrics`
     Then the monitor should exit successfully
+    And the monitor output should display system metrics

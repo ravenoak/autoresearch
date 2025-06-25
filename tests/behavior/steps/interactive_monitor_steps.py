@@ -5,27 +5,35 @@ from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I start `autoresearch monitor run` and enter "{text}"'))
-def start_monitor(text, monkeypatch, bdd_context):
+def start_monitor(text, monkeypatch, bdd_context, cli_runner):
     responses = iter([text, "", "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr("autoresearch.monitor.Prompt.ask", lambda *a, **k: next(responses))
-    result = runner.invoke(cli_app, ["monitor", "run"])
+    result = cli_runner.invoke(cli_app, ["monitor", "run"])
     bdd_context["monitor_result"] = result
 
 
 @when('I run `autoresearch monitor metrics`')
-def run_metrics(monkeypatch, bdd_context):
+def run_metrics(monkeypatch, bdd_context, cli_runner):
     monkeypatch.setattr(
         "autoresearch.monitor._collect_system_metrics",
         lambda: {"cpu_percent": 10.0, "memory_percent": 5.0},
     )
-    result = runner.invoke(cli_app, ["monitor", "metrics"])
+    result = cli_runner.invoke(cli_app, ["monitor", "metrics"])
     bdd_context["monitor_result"] = result
 
 
 @then("the monitor should exit successfully")
 def monitor_exit_successfully(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
+
+
+@then("the monitor output should display system metrics")
+def monitor_output_contains_metrics(bdd_context):
+    output = bdd_context["monitor_result"].stdout
+    assert "System Metrics" in output
+    assert "cpu_percent" in output
+    assert "memory_percent" in output
 
 
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
