@@ -1,5 +1,7 @@
 # Contribution Guidelines
 
+> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` as the setup setup. If it fails, a CODEX_ENVIRONMENT_SETUP_FAILED file will be created.
+
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
 ## Environment setup
