@@ -7,5 +7,7 @@ apt-get install -y \
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-poetry sync --all-groups --all-extras
+poetry env use $(which python3)
+poetry install --with dev
+poetry run pip install -e .
 poetry run python -m spacy download en_core_web_sm
