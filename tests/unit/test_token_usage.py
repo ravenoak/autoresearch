@@ -45,3 +45,24 @@ def test_capture_token_usage_counts_correctly(monkeypatch):
     counts = metrics.token_counts["agent"]
     assert counts["in"] == 2  # "hello world" has 2 tokens
     assert counts["out"] > 0  # The output should have at least 1 token
+
+
+def test_token_budget_truncates_prompt(monkeypatch):
+    """Ensure prompts are truncated to the configured token budget."""
+
+    metrics = OrchestrationMetrics()
+    mock_config = MagicMock(spec=ConfigModel)
+    mock_config.llm_backend = "dummy"
+    mock_config.token_budget = 3
+
+    dummy_adapter = DummyAdapter()
+    monkeypatch.setattr(llm, "get_llm_adapter", lambda name: dummy_adapter)
+
+    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+        token_counter,
+        wrapped_adapter,
+    ):
+        wrapped_adapter.generate("one two three four five")
+
+    counts = metrics.token_counts["agent"]
+    assert counts["in"] <= mock_config.token_budget
