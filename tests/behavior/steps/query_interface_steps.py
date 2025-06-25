@@ -6,9 +6,9 @@ from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
-def run_cli_query(query, monkeypatch, bdd_context):
+def run_cli_query(query, monkeypatch, bdd_context, invoke_cli):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = runner.invoke(cli_app, ["search", query])
+    result = invoke_cli("search", query)
     bdd_context["cli_result"] = result
 
 
@@ -31,8 +31,8 @@ def check_cli_output(bdd_context):
         'I send a POST request to `/query` with JSON `{ "query": "{query}" }`'
     )
 )
-def send_http_query(query, bdd_context):
-    response = client.post("/query", json={"query": query})
+def send_http_query(query, bdd_context, api_client):
+    response = api_client.post("/query", json={"query": query})
     bdd_context["http_response"] = response
 
 
@@ -48,10 +48,10 @@ def check_http_response(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
-def run_mcp_cli_query(query, monkeypatch, bdd_context):
+def run_mcp_cli_query(query, monkeypatch, bdd_context, invoke_cli):
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    result = runner.invoke(cli_app, ["search", query])
+    result = invoke_cli("search", query)
     bdd_context["mcp_result"] = result
 
 
@@ -60,7 +60,7 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context):
         'I run `autoresearch search "{query}" -i` and refine to "{refined}" then exit'
     )
 )
-def run_interactive_query(query, refined, monkeypatch, bdd_context):
+def run_interactive_query(query, refined, monkeypatch, bdd_context, invoke_cli):
     from autoresearch.config import ConfigModel, ConfigLoader
 
     monkeypatch.setattr(
@@ -71,7 +71,7 @@ def run_interactive_query(query, refined, monkeypatch, bdd_context):
     responses = iter([refined, "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = runner.invoke(cli_app, ["search", query, "--interactive"])
+    result = invoke_cli("search", query, "--interactive")
     bdd_context["cli_result"] = result
 
 

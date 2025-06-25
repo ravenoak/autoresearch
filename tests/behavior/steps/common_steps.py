@@ -1,15 +1,8 @@
 # flake8: noqa
-import os
-import json
-from typer.testing import CliRunner
-from fastapi.testclient import TestClient
 from pytest_bdd import given
 
 from autoresearch.main import app as cli_app
 from autoresearch.api import app as api_app
-
-runner = CliRunner()
-client = TestClient(api_app)
 
 
 @given("the Autoresearch application is running")

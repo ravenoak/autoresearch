@@ -1,4 +1,9 @@
 import pytest
+from typer.testing import CliRunner
+from fastapi.testclient import TestClient
+
+from autoresearch.main import app as cli_app
+from autoresearch.api import app as api_app
 
 
 @pytest.fixture(autouse=True)
@@ -13,6 +18,28 @@ def enable_real_vss(monkeypatch):
 def bdd_storage_manager(storage_manager):
     """Use the global temporary storage fixture for behavior tests."""
     yield storage_manager
+
+
+@pytest.fixture
+def cli_runner():
+    """Provide a Typer CliRunner instance for invoking the CLI."""
+    return CliRunner()
+
+
+@pytest.fixture
+def invoke_cli(cli_runner):
+    """Helper to invoke the CLI with the given arguments."""
+
+    def _invoke(*args: str):
+        return cli_runner.invoke(cli_app, list(args))
+
+    return _invoke
+
+
+@pytest.fixture
+def api_client():
+    """Provide a FastAPI TestClient for the API app."""
+    return TestClient(api_app)
 
 
 @pytest.fixture

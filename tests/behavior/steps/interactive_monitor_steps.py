@@ -5,21 +5,21 @@ from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I start `autoresearch monitor run` and enter "{text}"'))
-def start_monitor(text, monkeypatch, bdd_context):
+def start_monitor(text, monkeypatch, bdd_context, invoke_cli):
     responses = iter([text, "", "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr("autoresearch.monitor.Prompt.ask", lambda *a, **k: next(responses))
-    result = runner.invoke(cli_app, ["monitor", "run"])
+    result = invoke_cli("monitor", "run")
     bdd_context["monitor_result"] = result
 
 
 @when('I run `autoresearch monitor metrics`')
-def run_metrics(monkeypatch, bdd_context):
+def run_metrics(monkeypatch, bdd_context, invoke_cli):
     monkeypatch.setattr(
         "autoresearch.monitor._collect_system_metrics",
         lambda: {"cpu_percent": 10.0, "memory_percent": 5.0},
     )
-    result = runner.invoke(cli_app, ["monitor", "metrics"])
+    result = invoke_cli("monitor", "metrics")
     bdd_context["monitor_result"] = result
 
 
