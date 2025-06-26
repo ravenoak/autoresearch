@@ -19,9 +19,12 @@ The Autoresearch system is composed of several interconnected components that wo
 
 ### User Interaction Flow
 
-1. **User → Client Interfaces**: Users interact with the system through one of three interfaces:
+1. **User → Client Interfaces**: Users interact with the system through several interfaces:
    - Command Line Interface (CLI)
    - HTTP API (FastAPI)
+   - A2A API
+   - MCP Interface
+   - Streamlit GUI
    - Interactive Monitor
 
 2. **Client Interfaces → Orchestrator**: All client interfaces forward user queries to the Orchestrator, which is the central coordination component.

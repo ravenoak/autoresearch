@@ -2,7 +2,7 @@
 title Storage & Search Component
 
 package "Storage & Search" {
-  class StorageManager {
+    class StorageManager {
     + {static} setup(db_path): void
     + {static} teardown(remove_db): void
     + {static} persist_claim(claim): void
@@ -25,7 +25,25 @@ package "Storage & Search" {
     - {static} _persist_to_rdf(claim): void
     - {static} _validate_vector_search_params(query_embedding, k): void
     - {static} _format_vector_literal(query_embedding): str
-  }
+    }
+
+    class DuckDBStorageBackend {
+      + setup(path): void
+      + execute(query): Any
+    }
+
+    class VSSExtensionLoader {
+      + load_extension(conn): bool
+    }
+
+    class StorageBackup {
+      + create_backup(path): str
+      + restore_backup(path): None
+    }
+
+    class KGReasoning {
+      + run_ontology_reasoner(store, engine): None
+    }
 
   class FileLoader {
     + load_files(path): List[str]
@@ -116,6 +134,10 @@ StorageManager --> NetworkX : uses for graph storage
 StorageManager --> DuckDB : uses for vector storage
 StorageManager --> RDFLib : uses for semantic storage
 StorageManager --> EvictionCounter : increments on eviction
+StorageManager --> DuckDBStorageBackend : manages
+StorageManager --> VSSExtensionLoader : loads VSS
+StorageManager --> StorageBackup : backup/restore
+StorageManager --> KGReasoning : runs ontology reasoning
 
 Search --> FileLoader : load_files
 Search --> GitRepoIndexer : index_repo

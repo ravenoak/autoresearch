@@ -69,6 +69,10 @@ package "Storage" {
   class StorageManager {
     + persist_claim(claim): void
   }
+
+  class KGReasoning {
+    + run_ontology_reasoner(store, engine): None
+  }
 }
 
 package "Models" {
@@ -77,6 +81,10 @@ package "Models" {
     + citations: List
     + reasoning: List
     + metrics: Dict
+  }
+
+  class Visualization {
+    + save_knowledge_graph(result, path): None
   }
 }
 
@@ -101,8 +109,11 @@ Orchestrator --> ChainOfThoughtStrategy: delegates to
 Orchestrator --> Agent: executes
 Orchestrator --> AgentFactory: gets agents from
 Orchestrator --> StorageManager: persists claims
+StorageManager --> KGReasoning: run_ontology_reasoner
+Orchestrator --> KGReasoning: run_reasoner
 Orchestrator --> QueryResponse: returns
 Orchestrator --> TokenCountingAdapter: uses for token counting
+Orchestrator --> Visualization: visualize_results
 Orchestrator --> OrchestrationError: throws
 Orchestrator --> AgentError: throws
 Orchestrator --> NotFoundError: throws
