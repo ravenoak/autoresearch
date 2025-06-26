@@ -69,7 +69,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Test orchestrator with all agent combinations
   - [x] Verify storage integration with search functionality
   - [x] Test configuration hot-reload with all components
-- [ ] Add performance tests
+  - [x] Add performance tests
   - [x] Implement benchmarks for query processing time
   - [x] Test memory usage under various conditions
   - [x] Verify token usage optimization
@@ -222,4 +222,12 @@ Modules with coverage below 90% based on the latest run:
 - [x] `autoresearch.storage_backends` – 9%
 - [x] `autoresearch.output_format` – 0%
 - [x] `autoresearch.streamlit_app` – 0%
+
+### Performance Baselines
+
+Current benchmark metrics for a single dummy query:
+
+- Duration: ~0.003s
+- Memory delta: ~0 MB
+- Tokens: {"Dummy": {"in": 2, "out": 7}}
 
