@@ -17,10 +17,11 @@ Endpoints:
 import time
 from collections import defaultdict
 
-from fastapi import FastAPI, Header, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+from starlette.middleware.base import BaseHTTPMiddleware
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
@@ -30,23 +31,52 @@ import asyncio
 import httpx
 from .orchestration.orchestrator import Orchestrator
 from .tracing import get_tracer, setup_tracing
-from .models import QueryRequest, QueryResponse
+from .models import QueryRequest, QueryResponse, BatchQueryRequest
 from .storage import StorageManager
 from pydantic import ValidationError
 from .error_utils import get_error_info, format_error_for_api
 
 config_loader = ConfigLoader()
+
+# In-memory request log for rate limiting
+REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    """API key authentication middleware."""
+
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in {"/docs", "/openapi.json"}:
+            return await call_next(request)
+        expected = get_config().api.api_key
+        if expected and request.headers.get("X-API-Key") != expected:
+            return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+        return await call_next(request)
+
+
+async def rate_limiter(request: Request) -> None:
+    """Limit requests per IP."""
+    limit = getattr(get_config().api, "rate_limit", 0)
+    if limit > 0:
+        ip = request.client.host if request.client else "unknown"
+        now = time.monotonic()
+        timestamps = [t for t in REQUEST_LOG[ip] if now - t < 60]
+        if len(timestamps) >= limit:
+            raise HTTPException(status_code=429, detail="Too many requests")
+        timestamps.append(now)
+        REQUEST_LOG[ip] = timestamps
+
+
 app = FastAPI(
     title="Autoresearch API",
     description="API for interacting with the Autoresearch system",
     version="1.0.0",
     docs_url=None,  # Disable default docs
     redoc_url=None,  # Disable default redoc
+    dependencies=[Depends(rate_limiter)],
 )
+app.add_middleware(AuthMiddleware)
 _watch_ctx = None
-
-# In-memory request log for simple rate limiting
-REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
 
 
 def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None:
@@ -55,28 +85,6 @@ def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None
         httpx.post(url, json=result.model_dump(), timeout=timeout)
     except Exception:
         pass  # pragma: no cover - ignore webhook errors
-
-
-async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
-    """Validate API key if authentication is enabled."""
-    expected = get_config().api.api_key
-    if expected and x_api_key != expected:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-
-@app.middleware("http")
-async def throttle_middleware(request: Request, call_next):
-    """Apply simple request throttling based on client IP."""
-    limit = getattr(get_config().api, "rate_limit", 0)
-    if limit > 0:
-        ip = request.client.host if request.client else "unknown"
-        now = time.monotonic()
-        timestamps = [t for t in REQUEST_LOG[ip] if now - t < 60]
-        if len(timestamps) >= limit:
-            return JSONResponse({"detail": "Too many requests"}, status_code=429)
-        timestamps.append(now)
-        REQUEST_LOG[ip] = timestamps
-    return await call_next(request)
 
 
 @app.get("/docs", include_in_schema=False)
@@ -187,7 +195,6 @@ def _stop_config_watcher() -> None:
 async def query_endpoint(
     request: QueryRequest,
     stream: bool = False,
-    _: None = Depends(require_api_key),
 ) -> StreamingResponse | QueryResponse:
     """Process a query and return a structured response.
 
@@ -308,7 +315,7 @@ async def query_endpoint(
 
 @app.post("/query/stream")
 async def query_stream_endpoint(
-    request: QueryRequest, _: None = Depends(require_api_key)
+    request: QueryRequest
 ) -> StreamingResponse:
     """Stream incremental query results as JSON lines."""
     config = get_config()
@@ -365,8 +372,20 @@ async def query_stream_endpoint(
     return StreamingResponse(generator(), media_type="application/json")
 
 
+@app.post("/query/batch")
+async def batch_query_endpoint(batch: BatchQueryRequest, page: int = 1, size: int = 10) -> dict:
+    """Execute multiple queries with pagination."""
+    if page < 1 or size < 1:
+        raise HTTPException(status_code=400, detail="Invalid pagination parameters")
+
+    start = (page - 1) * size
+    selected = batch.queries[start:start + size]
+    results = [await query_endpoint(q) for q in selected]
+    return {"page": page, "size": size, "results": results}
+
+
 @app.get("/metrics")
-def metrics_endpoint(_: None = Depends(require_api_key)) -> PlainTextResponse:
+def metrics_endpoint() -> PlainTextResponse:
     """Expose Prometheus metrics for monitoring the application.
 
     This endpoint generates and returns the latest Prometheus metrics in the
@@ -389,7 +408,7 @@ def metrics_endpoint(_: None = Depends(require_api_key)) -> PlainTextResponse:
 
 
 @app.get("/capabilities")
-def capabilities_endpoint(_: None = Depends(require_api_key)) -> dict:
+def capabilities_endpoint() -> dict:
     """Discover the capabilities of the Autoresearch system.
 
     This endpoint returns information about the capabilities of the Autoresearch system,

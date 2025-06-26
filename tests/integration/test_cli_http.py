@@ -283,3 +283,22 @@ def test_webhook_notification(monkeypatch):
         resp = client.post("/query", json={"query": "hi", "webhook_url": "http://hook"})
         assert resp.status_code == 200
         assert len(rsps.calls) == 1
+
+
+def test_batch_query(monkeypatch):
+    """/query/batch should paginate queries."""
+    _common_patches(monkeypatch)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
+    )
+    client = TestClient(api_app)
+
+    payload = {"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}]}
+    resp = client.post("/query/batch?page=1&size=2", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["page"] == 1
+    assert len(data["results"]) == 2
+    assert data["results"][0]["answer"] == "q1"

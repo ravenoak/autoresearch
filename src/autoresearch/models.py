@@ -74,3 +74,11 @@ class QueryResponse(BaseModel):
     citations: List[Any]
     reasoning: List[Any]
     metrics: Dict[str, Any]
+
+
+class BatchQueryRequest(BaseModel):
+    """Request model for executing multiple queries."""
+
+    queries: List[QueryRequest] = Field(
+        ..., description="List of queries to execute sequentially"
+    )
