@@ -46,6 +46,8 @@ dependencies = [
     "pdfminer-six (>=20250506,<20250507)",
     "python-docx (>=1.2.0,<2.0.0)",
     "pynndescent (>=0.5.13,<0.6.0)",
+    "scipy (>=1.16.0,<2.0.0)",
+    "transformers (>=4.53.0,<5.0.0)",
 ]
 
 [tool.poetry.group.dev.dependencies]
