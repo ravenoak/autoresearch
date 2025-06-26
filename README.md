@@ -272,10 +272,11 @@ For a detailed breakdown of the requirements and architecture, see
 
 ## Development setup
 
-Install the development dependencies:
+Install the development dependencies and link the package in editable mode:
 
 ```bash
 poetry install --with dev
+poetry run pip install -e .
 ```
 
 Alternatively you can run the helper script:
