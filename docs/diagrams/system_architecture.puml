@@ -4,7 +4,9 @@
 node "Client Interfaces" {
   component "CLI" as CLI
   component "FastAPI API" as FastAPI
+  component "A2A API" as A2A
   component "FastMCP" as FastMCP
+  component "Streamlit GUI" as Streamlit
   component "Monitor" as Monitor
 }
 
@@ -14,6 +16,8 @@ node "Core Components" {
   component "Error Hierarchy" as Errors
   component "Metrics Collector" as Metrics
   component "Tracing" as Tracing
+  component "KG Reasoning" as KGReasoning
+  component "Visualization" as Visualization
 }
 
 package "Agents" {
@@ -36,12 +40,15 @@ package "LLM Integration" {
 
 package "Storage & Search" {
   component "Storage Manager" as StorageManager
+  component "DuckDB Backend" as DuckDBBackend
   component "Search" as Search
   component "Vector Search" as VectorSearch
   component "File Loader" as FileLoader
   component "Git Repo Indexer" as GitRepoIndexer
   component "Local File Backend" as LocalFileBackend
   component "Git Backend" as GitBackend
+  component "VSS Extension Loader" as VSSExtensionLoader
+  component "Storage Backup" as StorageBackup
 
   database "NetworkX Graph" as NX
   database "DuckDB Store" as DuckDB
@@ -59,6 +66,12 @@ CLI -> Orchestrator : run_query(query)
 
 user -> FastAPI : POST /query
 FastAPI -> Orchestrator : run_query(query)
+
+user -> A2A : POST /query
+A2A -> Orchestrator : run_query(query)
+
+user -> Streamlit : interactive query
+Streamlit -> Orchestrator : run_query(query)
 
 user -> FastMCP : MCP message
 FastMCP -> Orchestrator : run_query(query)
@@ -98,6 +111,10 @@ StorageManager -> NX : add_node/add_edge
 StorageManager -> DuckDB : insert
 StorageManager -> RDF : add
 StorageManager -> TinyDB : insert
+StorageManager -> DuckDBBackend : use_backend()
+StorageManager -> VSSExtensionLoader : load_extension()
+StorageManager -> StorageBackup : backup()
+StorageManager -> KGReasoning : run_reasoner()
 
 Orchestrator -> Search : search()
 Search -> VectorSearch : vector_search()
@@ -109,4 +126,5 @@ VectorSearch -> DuckDB : query
 
 Orchestrator -> OutputFormatter : format_result()
 OutputFormatter -> Synthesis : build_answer()/build_rationale()
+Orchestrator -> Visualization : visualize_results()
 @enduml
