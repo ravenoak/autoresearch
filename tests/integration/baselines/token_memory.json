@@ -1,0 +1,10 @@
+{
+  "duration_seconds": 0.003289357000085147,
+  "memory_delta_mb": 0.0,
+  "tokens": {
+    "Dummy": {
+      "in": 2,
+      "out": 7
+    }
+  }
+}
