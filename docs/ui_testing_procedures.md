@@ -31,7 +31,7 @@ cd autoresearch
 poetry install --with dev
 
 # Alternatively, use pip
-pip install -e ".[dev]"
+poetry run pip install -e ".[dev]"
 ```
 
 ## Unit Testing UI Components
@@ -378,45 +378,45 @@ def test_consistent_error_handling():
 
 ```bash
 # Run all tests
-pytest
+poetry run pytest
 
 # Run with verbose output
-pytest -v
+poetry run pytest -v
 
 # Run with coverage report
-pytest --cov=autoresearch
+poetry run pytest --cov=autoresearch
 ```
 
 ### Running Specific Test Categories
 
 ```bash
 # Run unit tests
-pytest tests/unit/
+poetry run pytest tests/unit/
 
 # Run integration tests
-pytest tests/integration/
+poetry run pytest tests/integration/
 
 # Run behavior tests
-pytest tests/behavior/
+poetry run pytest tests/behavior/
 
 # Run tests for a specific file
-pytest tests/unit/test_output_format.py
+poetry run pytest tests/unit/test_output_format.py
 
 # Run a specific test
-pytest tests/unit/test_output_format.py::test_format_error
+poetry run pytest tests/unit/test_output_format.py::test_format_error
 ```
 
 ### Running BDD Tests
 
 ```bash
 # Run all BDD tests
-pytest tests/behavior/
+poetry run pytest tests/behavior/
 
 # Run tests for a specific feature
-pytest tests/behavior/steps/streamlit_gui_steps.py
+poetry run pytest tests/behavior/steps/streamlit_gui_steps.py
 
 # Run a specific scenario
-pytest tests/behavior/steps/streamlit_gui_steps.py::test_formatted_answer_display
+poetry run pytest tests/behavior/steps/streamlit_gui_steps.py::test_formatted_answer_display
 ```
 
 ## Continuous Integration
