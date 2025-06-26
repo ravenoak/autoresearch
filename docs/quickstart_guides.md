@@ -43,6 +43,12 @@ autoresearch query "What is the capital of France?" --output json > result.json
 autoresearch query "What is the capital of France?" --output markdown > result.md
 ```
 
+4. **Visualize query results:**
+
+```bash
+autoresearch visualize "What is the capital of France?" graph.png
+```
+
 ### Configuration
 
 1. **View current configuration:**

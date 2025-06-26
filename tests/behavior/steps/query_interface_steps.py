@@ -75,6 +75,20 @@ def run_interactive_query(query, refined, monkeypatch, bdd_context):
     bdd_context["cli_result"] = result
 
 
+@when(parsers.re(r'I run `autoresearch visualize "(?P<query>.+)" (?P<file>.+)`'))
+def run_visualize_cli(query, file, tmp_path, bdd_context):
+    out = tmp_path / file
+    result = runner.invoke(cli_app, ["visualize", query, str(out)])
+    bdd_context["viz_result"] = result
+    bdd_context["viz_path"] = out
+
+
+@then(parsers.parse('the visualization file "{file}" should exist'))
+def check_viz_file(file, bdd_context):
+    path = bdd_context["viz_path"]
+    assert path.exists() and path.stat().st_size > 0
+
+
 @then(
     "I should receive a JSON output matching the defined schema for `answer`, `citations`, `reasoning`, and `metrics`",
 )
@@ -111,4 +125,9 @@ def test_mcp_query():
 
 @scenario("../features/query_interface.feature", "Refine query interactively via CLI")
 def test_interactive_query():
+    pass
+
+
+@scenario("../features/query_interface.feature", "Visualize query results via CLI")
+def test_visualize_query():
     pass

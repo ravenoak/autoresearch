@@ -21,3 +21,7 @@ Feature: Query Interface
   Scenario: Refine query interactively via CLI
     When I run `autoresearch search "What is Promise Theory?" -i` and refine to "Define Promise Theory" then exit
     Then I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections
+
+  Scenario: Visualize query results via CLI
+    When I run `autoresearch visualize "What is Promise Theory?" graph.png`
+    Then the visualization file "graph.png" should exist

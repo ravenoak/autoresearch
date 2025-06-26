@@ -39,6 +39,7 @@ from .cli_utils import (
     get_verbosity,
     Verbosity,
     visualize_rdf_cli as _cli_visualize,
+    visualize_query_cli as _cli_visualize_query,
     sparql_query_cli as _cli_sparql,
 )
 from .error_utils import get_error_info, format_error_for_cli
@@ -1380,6 +1381,20 @@ def test_a2a(
     # Format and display the results
     formatted_results = format_test_results(results, fmt)
     print(formatted_results)
+
+
+@app.command("visualize")
+def visualize(
+    query: str = typer.Argument(..., help="Query to visualize"),
+    output: str = typer.Argument(
+        "query_graph.png", help="Output PNG path for the visualization"
+    ),
+) -> None:
+    """Run a query and render a knowledge graph."""
+    try:
+        _cli_visualize_query(query, output)
+    except Exception:
+        raise typer.Exit(1)
 
 
 @app.command("visualize-rdf")
