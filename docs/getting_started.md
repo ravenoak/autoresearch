@@ -41,7 +41,7 @@ export HDBSCAN_NO_OPENMP=1
 Alternatively install via pip:
 
 ```bash
-pip install -e .
+poetry run pip install -e .
 ```
 
 ## First search

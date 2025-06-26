@@ -17,7 +17,7 @@ poetry install
 
 ### Using pip
 ```bash
-pip install -e .
+poetry run pip install -e .
 ```
 
 ## Quick start
@@ -299,6 +299,9 @@ poetry run pytest -q
 poetry run pytest tests/behavior
 ```
 
+All testing commands should be run through `poetry run` to ensure the correct
+virtual environment is used.
+
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request.
 
 ### Troubleshooting
@@ -311,7 +314,7 @@ Maintain at least 90% test coverage and remove temporary files before submitting
 Install MkDocs and generate the static site:
 
 ```bash
-pip install mkdocs
+poetry run pip install mkdocs
 mkdocs build
 ```
 

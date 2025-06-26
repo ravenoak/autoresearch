@@ -18,7 +18,7 @@ This guide describes how to set up a development environment and the expected wo
 ## Code Style
 
 - Run code format and style checks before committing:
-  ```bash
+ ```bash
   poetry run flake8 src tests
   poetry run mypy src
   ```
@@ -33,6 +33,8 @@ This guide describes how to set up a development environment and the expected wo
    poetry run pytest -q
    poetry run pytest tests/behavior
    ```
+   All testing commands should be executed with `poetry run` to use the
+   project's virtual environment.
 3. Update or add documentation when needed.
 4. Open a pull request explaining the rationale for the change.
 

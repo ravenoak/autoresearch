@@ -65,7 +65,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
    If you prefer pip:
    ```bash
-   pip install -e .
+   poetry run pip install -e .
    ```
 
 3. Configure your editor to use the project's linting and formatting settings
