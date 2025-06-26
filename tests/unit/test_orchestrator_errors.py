@@ -5,11 +5,13 @@ including agent execution errors, invalid agent names, and callback errors.
 """
 
 import pytest
+import time
 from unittest.mock import MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.errors import OrchestrationError
 from autoresearch.config import ConfigModel
+from autoresearch.models import QueryResponse
 
 
 # Fixtures for common test setup
@@ -145,3 +147,74 @@ def test_agent_error_is_wrapped(monkeypatch, test_config, error_type, error_mess
     error_strings = [str(error) for error in errors]
     assert any("agent" in error.lower() for error in error_strings)
     assert any(error_message in error for error in error_strings)
+
+
+def test_parallel_query_error_claims(monkeypatch):
+    """Errors from parallel groups are added to the response claims."""
+
+    cfg = ConfigModel(agents=[], loops=1)
+
+    def mock_run_query(query, config):
+        if config.agents == ["A"]:
+            return QueryResponse(
+                answer="a",
+                citations=[],
+                reasoning=["claim A"],
+                metrics={},
+            )
+        raise ValueError("boom")
+
+    synthesizer = MagicMock()
+    synthesizer.execute.return_value = {"answer": "final"}
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: synthesizer,
+    )
+
+    resp = Orchestrator.run_parallel_query("q", cfg, [["A"], ["B"]])
+
+    assert isinstance(resp.reasoning, list)
+    assert any("Error in agent group ['B']" in c for c in resp.reasoning)
+
+
+def test_parallel_query_timeout_claims(monkeypatch):
+    """Timeouts from parallel groups are added to the response claims."""
+
+    cfg = ConfigModel(agents=[], loops=1)
+
+    def mock_run_query(query, config):
+        if config.agents == ["slow"]:
+            time.sleep(0.2)
+            return QueryResponse(
+                answer="slow",
+                citations=[],
+                reasoning=["slow claim"],
+                metrics={},
+            )
+        return QueryResponse(
+            answer="fast",
+            citations=[],
+            reasoning=["fast claim"],
+            metrics={},
+        )
+
+    synthesizer = MagicMock()
+    synthesizer.execute.return_value = {"answer": "final"}
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: synthesizer,
+    )
+
+    resp = Orchestrator.run_parallel_query(
+        "q",
+        cfg,
+        [["fast"], ["slow"]],
+        timeout=0.05,
+    )
+
+    assert isinstance(resp.reasoning, list)
+    assert any("Agent group ['slow'] timed out" in c for c in resp.reasoning)

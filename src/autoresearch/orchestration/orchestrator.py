@@ -1264,17 +1264,22 @@ class Orchestrator:
         # Add error and timeout information to final state
         if errors or timeouts:
             error_info = {
+                "claims": [],
                 "metadata": {
                     "errors": [f"{group}: {error}" for group, error in errors],
-                    "timeouts": [f"{group}" for group in timeouts]
-                }
+                    "timeouts": [f"{group}" for group in timeouts],
+                },
             }
 
             if errors:
-                error_info["claims"] = [f"Error in agent group {group}: {error}" for group, error in errors]
+                error_info["claims"].extend(
+                    [f"Error in agent group {group}: {error}" for group, error in errors]
+                )
 
             if timeouts:
-                error_info["claims"] = error_info.get("claims", []) + [f"Agent group {group} timed out" for group in timeouts]
+                error_info["claims"].extend(
+                    [f"Agent group {group} timed out" for group in timeouts]
+                )
 
             final_state.update(error_info)
 
