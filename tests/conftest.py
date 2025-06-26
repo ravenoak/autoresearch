@@ -4,10 +4,12 @@ import types
 from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+import importlib.util
 
 # Ensure package can be imported without installation
-src_path = Path(__file__).resolve().parents[1] / "src"
-sys.path.insert(0, str(src_path))  # noqa: E402
+if importlib.util.find_spec("autoresearch") is None:
+    src_path = Path(__file__).resolve().parents[1] / "src"
+    sys.path.insert(0, str(src_path))  # noqa: E402
 
 import pytest  # noqa: E402
 
