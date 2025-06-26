@@ -6,8 +6,9 @@ with both color and text-based alternatives, as well as symbolic indicators.
 """
 
 import os
+import sys
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 from rich.console import Console
 
 
@@ -236,3 +237,41 @@ def sparql_query_cli(query: str) -> None:
     rows = [list(r) for r in res]
     headers = [str(v) for v in res.vars]
     console.print(tabulate(rows, headers=headers, tablefmt="github"))
+
+
+def visualize_query_cli(query: str, output_path: str) -> None:
+    """Run a query and save a knowledge graph visualization."""
+    from rich.progress import Progress
+
+    from .config import ConfigLoader
+    from .orchestration.orchestrator import Orchestrator
+    from .monitor import _collect_system_metrics, _render_metrics
+    from .output_format import OutputFormatter
+    from .visualization import save_knowledge_graph
+
+    loader = ConfigLoader()
+    config = loader.load_config()
+    loops = getattr(config, "loops", 1)
+
+    with Progress() as progress:
+        task = progress.add_task("[green]Processing query...", total=loops)
+
+        def on_cycle_end(loop: int, _state: Any) -> None:
+            progress.update(task, advance=1)
+
+        result = Orchestrator.run_query(query, config, {"on_cycle_end": on_cycle_end})
+
+    fmt = "json" if not sys.stdout.isatty() else "markdown"
+    OutputFormatter.format(result, fmt)
+
+    try:
+        save_knowledge_graph(result, output_path)
+        print_success(f"Graph written to {output_path}")
+    except Exception as e:  # pragma: no cover - optional dependency
+        print_error(
+            f"Failed to create visualization: {e}",
+            suggestion="Ensure matplotlib is installed",
+        )
+
+    metrics = {**result.metrics, **_collect_system_metrics()}
+    console.print(_render_metrics(metrics))
