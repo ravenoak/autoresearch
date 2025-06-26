@@ -100,7 +100,10 @@ Autoresearch follows strict code style guidelines to maintain consistency across
 Before submitting a pull request, ensure your code passes all linting and type checking:
 
 ```bash
-# Format and automatically fix issues using ruff
+# Format code
+poetry run black .
+poetry run isort .
+# Automatically fix issues using ruff
 poetry run ruff format src tests
 poetry run ruff check --fix src tests
 ```
