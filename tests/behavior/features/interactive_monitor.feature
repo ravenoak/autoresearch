@@ -18,3 +18,8 @@ Feature: Interactive Monitoring
     When I run `autoresearch monitor metrics`
     Then the monitor should exit successfully
     And the monitor output should display system metrics
+
+  Scenario: Display graph
+    When I run `autoresearch monitor graph`
+    Then the monitor should exit successfully
+    And the monitor output should display graph data
