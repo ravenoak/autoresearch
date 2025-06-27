@@ -31,6 +31,10 @@ class DummySentenceTransformer:
 dummy_st_module.SentenceTransformer = DummySentenceTransformer
 sys.modules.setdefault("sentence_transformers", dummy_st_module)
 
+# Mock heavy optional dependencies to avoid model downloads during tests.
+sys.modules.setdefault("bertopic", MagicMock())
+sys.modules.setdefault("transformers", MagicMock())
+
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.config import ConfigLoader  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402

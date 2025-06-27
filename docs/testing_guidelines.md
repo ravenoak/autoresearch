@@ -110,20 +110,36 @@ Use mocking to isolate the code being tested:
 
 Example:
 
+
 ```python
 def test_function_with_mocking():
     """Test function behavior with mocking."""
     # Setup
     with patch('module.function') as mock_function:
         mock_function.return_value = 'mocked value'
-        
+
         # Execute
         result = function_under_test()
-        
+
         # Verify
         assert result == 'expected value'
         mock_function.assert_called_once_with('expected argument')
 ```
+
+## Heavy Dependency Mocking
+
+Some optional libraries, such as `bertopic` and Hugging Face `transformers`,
+can trigger large downloads when imported. Tests mock these modules in
+`tests/conftest.py` to keep execution lightweight:
+
+```python
+sys.modules.setdefault("bertopic", MagicMock())
+sys.modules.setdefault("transformers", MagicMock())
+```
+
+If a test requires functionality from these packages, provide more specific
+mocks within the test itself. This approach ensures the unit suite runs without
+attempting to download heavy models.
 
 ## Parameterization
 
