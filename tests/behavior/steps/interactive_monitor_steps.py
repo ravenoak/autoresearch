@@ -23,6 +23,16 @@ def run_metrics(monkeypatch, bdd_context, cli_runner):
     bdd_context["monitor_result"] = result
 
 
+@when('I run `autoresearch monitor graph`')
+def run_graph(monkeypatch, bdd_context, cli_runner):
+    monkeypatch.setattr(
+        "autoresearch.monitor._collect_graph_data",
+        lambda: {"A": ["B", "C"]},
+    )
+    result = cli_runner.invoke(cli_app, ["monitor", "graph"])
+    bdd_context["monitor_result"] = result
+
+
 @then("the monitor should exit successfully")
 def monitor_exit_successfully(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
@@ -34,6 +44,13 @@ def monitor_output_contains_metrics(bdd_context):
     assert "System Metrics" in output
     assert "cpu_percent" in output
     assert "memory_percent" in output
+
+
+@then("the monitor output should display graph data")
+def monitor_output_contains_graph(bdd_context):
+    output = bdd_context["monitor_result"].stdout
+    assert "Knowledge Graph" in output
+    assert "A" in output
 
 
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
@@ -48,4 +65,9 @@ def test_monitor_exit_immediately(bdd_context):
 
 @scenario("../features/interactive_monitor.feature", "Display metrics")
 def test_monitor_metrics(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0
+
+
+@scenario("../features/interactive_monitor.feature", "Display graph")
+def test_monitor_graph(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0

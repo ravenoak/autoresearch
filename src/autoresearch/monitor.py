@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import typer
 from rich.console import Console
@@ -46,6 +46,31 @@ def _render_metrics(data: Dict[str, Any]) -> Table:
     return table
 
 
+def _collect_graph_data() -> Dict[str, List[str]]:
+    """Collect a snapshot of the in-memory knowledge graph."""
+    try:
+        from .storage import StorageManager
+
+        G = StorageManager.get_graph()
+        data: Dict[str, List[str]] = {}
+        for u, v in G.edges():
+            data.setdefault(str(u), []).append(str(v))
+        return data
+    except Exception:
+        return {}
+
+
+def _render_graph(data: Dict[str, List[str]]) -> Table:
+    table = Table(title="Knowledge Graph")
+    table.add_column("Node")
+    table.add_column("Edges")
+    for node, edges in data.items():
+        table.add_row(node, ", ".join(edges))
+    if not data:
+        table.add_row("(empty)", "")
+    return table
+
+
 @monitor_app.command("metrics")
 def metrics(watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously")) -> None:
     """Display system metrics in real time."""
@@ -64,6 +89,14 @@ def metrics(watch: bool = typer.Option(False, "--watch", "-w", help="Refresh con
                 pass
     else:
         console.print(refresh())
+
+
+@monitor_app.command("graph")
+def graph() -> None:
+    """Display a simple textual view of the knowledge graph."""
+    console = Console()
+    data = _collect_graph_data()
+    console.print(_render_graph(data))
 
 
 @monitor_app.command("run")
