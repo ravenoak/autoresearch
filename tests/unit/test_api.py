@@ -1,4 +1,3 @@
-import importlib
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app, dynamic_limit
@@ -39,7 +38,7 @@ def test_api_key_roles(monkeypatch):
 
 
 def test_batch_query_invalid_page(monkeypatch):
-    cfg = _setup(monkeypatch)
+    _setup(monkeypatch)
     client = TestClient(app)
     payload = {"queries": [{"query": "q1"}]}
     resp = client.post("/query/batch?page=0&page_size=1", json=payload)
