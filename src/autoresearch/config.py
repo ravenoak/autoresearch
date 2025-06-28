@@ -220,6 +220,14 @@ class APIConfig(BaseModel):
     )
 
 
+class DistributedConfig(BaseModel):
+    """Configuration for distributed agent execution using Ray."""
+
+    enabled: bool = Field(default=False)
+    address: str | None = Field(default=None, description="Ray cluster address")
+    num_cpus: int = Field(default=1, ge=1)
+
+
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
 
@@ -269,6 +277,7 @@ class ConfigModel(BaseSettings):
         default=False,
         description="Run agents in distributed mode (multiprocessing or remote)",
     )
+    distributed_config: DistributedConfig = Field(default_factory=DistributedConfig)
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -570,7 +579,11 @@ class ConfigLoader:
         }
 
         api_cfg = raw.get("api", {})
+        distributed_cfg = raw.get("distributed", {})
         user_pref_cfg = raw.get("user_preferences", {})
+
+        if "enabled" in distributed_cfg and "distributed" not in core_settings:
+            core_settings["distributed"] = bool(distributed_cfg.get("enabled", False))
 
         # Extract agent configuration
         agent_cfg = raw.get("agent", {})
@@ -592,6 +605,7 @@ class ConfigLoader:
 
         # Add API config
         core_settings["api"] = APIConfig(**api_cfg)
+        core_settings["distributed_config"] = DistributedConfig(**distributed_cfg)
         core_settings["user_preferences"] = user_pref_cfg
 
         # Add agent configs

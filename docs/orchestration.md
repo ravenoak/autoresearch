@@ -51,9 +51,9 @@ integrated into an asynchronous application you can use
 `concurrent=True` will dispatch each agent within a cycle to background
 threads, allowing I/O bound agents to overlap.
 
-For large scale deployments, set `distributed=True` in the configuration to
-indicate that agent execution may occur in separate processes or on remote
-workers.  The current implementation keeps this flag for deployment tooling and
-does not change behaviour by itself, but future versions may use it to route
-calls over RPC frameworks or multiprocessing pools.
+For large scale deployments, set `distributed=true` and configure the
+`[distributed]` section to enable multi-process orchestration via Ray. When
+enabled, agents within a cycle are dispatched to Ray workers and combined back
+into a single `QueryState`. See `autoresearch.distributed.RayExecutor` for the
+implementation details.
 
