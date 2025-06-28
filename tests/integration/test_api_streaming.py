@@ -46,3 +46,25 @@ def test_config_webhooks(monkeypatch):
         resp = client.post("/query", json={"query": "hi"})
         assert resp.status_code == 200
         assert len(rsps.calls) == 1
+
+
+def test_batch_query_pagination(monkeypatch):
+    """/query/batch should honor page and page_size parameters."""
+
+    cfg = ConfigModel(api=APIConfig())
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer=q.query, citations=[], reasoning=[], metrics={}),
+    )
+    client = TestClient(api_app)
+
+    payload = {"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}, {"query": "q4"}]}
+    resp = client.post("/query/batch?page=2&page_size=2", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["page"] == 2
+    assert data["page_size"] == 2
+    assert len(data["results"]) == 2
+    assert data["results"][0]["answer"] == "q3"
