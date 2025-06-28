@@ -475,6 +475,10 @@ autoresearch query "What are the implications of AI on labor markets?"
 
 The monitor shows real-time information about agent execution, token usage, and system state.
 
+## Guided Tour and Help Overlay
+
+When you first launch the Streamlit interface a short guided tour explains the main controls. Use the **Got it** button to dismiss the overlay. You can reopen the tour at any time from the sidebar via **Show Help**. The overlay highlights the query input, configuration sidebar and run button so you know where to start.
+
 ## Conclusion
 
 These advanced usage examples demonstrate the flexibility and power of the Autoresearch system for complex research tasks. By combining different agents, reasoning modes, and configuration options, you can create customized research workflows tailored to your specific needs.
