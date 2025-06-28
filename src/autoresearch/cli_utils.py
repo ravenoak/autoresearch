@@ -275,3 +275,11 @@ def visualize_query_cli(query: str, output_path: str) -> None:
 
     metrics = {**result.metrics, **_collect_system_metrics()}
     console.print(_render_metrics(metrics))
+
+
+def visualize_graph_cli() -> None:
+    """Display an inline view of the knowledge graph."""
+    from .monitor import _collect_graph_data, _render_graph
+
+    data = _collect_graph_data()
+    console.print(_render_graph(data))

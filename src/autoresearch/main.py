@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from .mcp_interface import create_server
-from .monitor import monitor_app, _collect_graph_data, _render_graph
+from .monitor import monitor_app
 from datetime import datetime
 import time
 
@@ -40,6 +40,7 @@ from .cli_utils import (
     Verbosity,
     visualize_rdf_cli as _cli_visualize,
     visualize_query_cli as _cli_visualize_query,
+    visualize_graph_cli,
     sparql_query_cli as _cli_sparql,
 )
 from .error_utils import get_error_info, format_error_for_cli
@@ -312,8 +313,7 @@ def search(
 
         OutputFormatter.format(result, fmt)
         if visualize:
-            graph_data = _collect_graph_data()
-            console.print(_render_graph(graph_data))
+            visualize_graph_cli()
     except Exception as e:
         # Create a valid QueryResponse object with error information
         from .models import QueryResponse
