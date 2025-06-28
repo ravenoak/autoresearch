@@ -36,4 +36,3 @@ def test_ray_executor_multi_process(monkeypatch):
     # Expect at least two distinct worker processes
     assert len(set(pids)) > 1
     ray.shutdown()
-

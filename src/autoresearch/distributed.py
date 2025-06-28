@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Callable, Any, List
+from typing import Dict, Callable, Any
 import os
 
 import ray

@@ -392,3 +392,36 @@ def check_progress_metrics(bdd_context):
 def test_agent_trace():
     """Test the Agent Interaction Trace Visualization scenario."""
     pass
+
+
+@when("I toggle dark mode")
+def toggle_dark_mode(bdd_context):
+    """Simulate toggling dark mode."""
+    with patch("streamlit.markdown") as mock_markdown:
+        import streamlit as st
+
+        st.session_state["dark_mode"] = True
+        from autoresearch.streamlit_app import apply_theme_settings
+
+        apply_theme_settings()
+        bdd_context["theme_calls"] = mock_markdown.call_args_list
+
+
+@then("the page background should change according to the selected mode")
+def check_background_change(bdd_context):
+    """Verify background style was updated for dark mode."""
+    css = "".join(call.args[0] for call in bdd_context["theme_calls"])
+    assert "background-color" in css
+
+
+@then("text color should adjust for readability")
+def check_text_color(bdd_context):
+    """Verify text color was set for dark mode."""
+    css = "".join(call.args[0] for call in bdd_context["theme_calls"])
+    assert "color:#eee" in css
+
+
+@scenario("../features/streamlit_gui.feature", "Theme Toggle Switch")
+def test_theme_toggle_switch():
+    """Test the Theme Toggle Switch scenario."""
+    pass
