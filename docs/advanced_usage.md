@@ -279,6 +279,14 @@ autoresearch kg query "MATCH (c:Claim) WHERE c.topic CONTAINS 'climate change' R
 autoresearch kg query "MATCH p=shortestPath((a:Concept)-[*]-(b:Concept)) WHERE a.name = 'renewable energy' AND b.name = 'carbon emissions' RETURN p"
 ```
 
+### Inline Graph Visualization
+
+Display a condensed view of the knowledge graph built during a search:
+
+```bash
+autoresearch search "Explain AI ethics" --visualize
+```
+
 ## API Integration
 
 ### Running as a Service

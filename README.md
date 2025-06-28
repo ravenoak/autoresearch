@@ -35,7 +35,8 @@ autoresearch search "Explain AI ethics" --interactive
 ```
 Press `q` at the feedback prompt to abort early.
 
-To visualize the resulting knowledge graph directly in the terminal, use:
+To visualize the resulting knowledge graph directly in the terminal as a small
+table, use:
 
 ```bash
 autoresearch search "Explain AI ethics" --visualize
