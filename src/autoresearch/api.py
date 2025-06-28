@@ -383,7 +383,7 @@ async def batch_query_endpoint(
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
 
     start = (page - 1) * page_size
-    selected = batch.queries[start : start + page_size]
+    selected = batch.queries[start:start + page_size]
     results = [await query_endpoint(q) for q in selected]
     return {"page": page, "page_size": page_size, "results": results}
 

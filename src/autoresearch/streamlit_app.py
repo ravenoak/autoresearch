@@ -66,6 +66,31 @@ st.markdown(
         background-color: #f0f2f6;
         border-radius: 0.5rem;
         padding: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    @media (max-width: 800px) {
+        .metrics-container {
+            flex-direction: column;
+        }
+    }
+    .skip-link {
+        position: absolute;
+        left: -1000px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+    }
+    .skip-link:focus {
+        left: 1rem;
+        top: 1rem;
+        width: auto;
+        height: auto;
+        background: #fff;
+        padding: 0.5rem;
+        z-index: 1000;
     }
 </style>
 """,
@@ -99,6 +124,21 @@ def apply_accessibility_settings() -> None:
             """,
             unsafe_allow_html=True,
         )
+
+
+def display_guided_tour() -> None:
+    """Show a short help overlay explaining the interface."""
+    if "show_tour" not in st.session_state:
+        st.session_state.show_tour = True
+    if st.session_state.show_tour:
+        with st.modal("Welcome to Autoresearch", key="guided_tour"):
+            st.markdown(
+                "1. **Enter a query** in the text area on the main tab.\n"
+                "2. **Adjust settings** like reasoning mode and loops.\n"
+                "3. Click **Run Query** to start the agents."
+            )
+            if st.button("Got it", key="tour_done"):
+                st.session_state.show_tour = False
 
 
 def save_config_to_toml(config_dict):
@@ -1239,8 +1279,15 @@ def main():
     # Header
     st.markdown("<h1 class='main-header'>Autoresearch</h1>", unsafe_allow_html=True)
     st.markdown(
+        "<a class='skip-link' href='#main-content'>Skip to main content</a>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
         "A local-first research assistant that coordinates multiple agents to produce evidence-backed answers."
     )
+
+    # Show guided tour for new users
+    display_guided_tour()
 
     # Sidebar for configuration
     with st.sidebar:
@@ -1293,6 +1340,7 @@ def main():
     )
 
     with main_tab:
+        st.markdown("<div id='main-content'></div>", unsafe_allow_html=True)
         # Query input section
         display_query_input()
 
@@ -1877,7 +1925,7 @@ def display_results(result: QueryResponse):
         if result.reasoning and result.citations:
             # Create and display the knowledge graph
             graph_image = create_knowledge_graph(result)
-            st.image(graph_image, use_column_width=True)
+            st.image(graph_image, use_column_width=True, caption="Knowledge graph")
         else:
             st.info("Not enough information to create a knowledge graph")
 
