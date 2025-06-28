@@ -375,15 +375,17 @@ async def query_stream_endpoint(
 
 
 @app.post("/query/batch")
-async def batch_query_endpoint(batch: BatchQueryRequest, page: int = 1, size: int = 10) -> dict:
+async def batch_query_endpoint(
+    batch: BatchQueryRequest, page: int = 1, page_size: int = 10
+) -> dict:
     """Execute multiple queries with pagination."""
-    if page < 1 or size < 1:
+    if page < 1 or page_size < 1:
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
 
-    start = (page - 1) * size
-    selected = batch.queries[start:start + size]
+    start = (page - 1) * page_size
+    selected = batch.queries[start : start + page_size]
     results = [await query_endpoint(q) for q in selected]
-    return {"page": page, "size": size, "results": results}
+    return {"page": page, "page_size": page_size, "results": results}
 
 
 @app.get("/metrics")

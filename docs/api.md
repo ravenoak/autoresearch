@@ -57,6 +57,19 @@ curl -X POST http://localhost:8000/query/stream \
   -d '{"query": "Explain AI"}'
 ```
 
+### `POST /query/batch`
+
+Execute multiple queries in one request with pagination support.
+
+```bash
+curl -X POST 'http://localhost:8000/query/batch?page=2&page_size=2' \
+  -H "Content-Type: application/json" \
+  -d '{"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}, {"query": "q4"}]}'
+```
+
+Use the `page` and `page_size` query parameters to control which subset of
+queries are processed. Both parameters start counting at 1.
+
 ### Webhook notifications
 
 Include a `webhook_url` in the request body to have the final result sent via
