@@ -915,6 +915,27 @@ class Orchestrator:
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
 
+        # Heuristically adjust token budget when running within parallel agent
+        # groups. ``run_parallel_query`` passes ``group_size`` and
+        # ``total_groups`` to ``run_query`` using ``model_copy`` so we can
+        # derive a fair token split.
+        token_budget = getattr(config, "token_budget", None)
+        if (
+            token_budget is not None
+            and hasattr(config, "group_size")
+            and hasattr(config, "total_groups")
+        ):
+            total_agents = getattr(
+                config,
+                "total_agents",
+                config.group_size * config.total_groups,
+            )
+            if total_agents:
+                group_tokens = max(
+                    1, token_budget * config.group_size // total_agents
+                )
+                config.token_budget = group_tokens
+
         # Handle chain-of-thought reasoning mode
         if mode == ReasoningMode.CHAIN_OF_THOUGHT:
             strategy = ChainOfThoughtStrategy()
@@ -1148,13 +1169,24 @@ class Orchestrator:
         memory_usage_start = Orchestrator._get_memory_usage()
 
         # Function to run a single agent group
-        def run_group(group: List[str]) -> QueryResponse:
-            # Create a config copy for this group
-            group_config = config.model_copy()
-            group_config.agents = group
+        total_agents = sum(len(g) for g in agent_groups)
 
-            # Set resource limits for this group
-            group_config.token_budget = getattr(config, "token_budget", 4000) // max(1, len(agent_groups))
+        def run_group(group: List[str]) -> QueryResponse:
+            # Create a config copy for this group and annotate it with
+            # parallel execution information so ``run_query`` can apply
+            # heuristics.
+            group_config = config.model_copy(
+                update={
+                    "agents": group,
+                    "group_size": len(group),
+                    "total_groups": len(agent_groups),
+                    "total_agents": total_agents,
+                }
+            )
+
+            # Each group initially inherits the full token budget; ``run_query``
+            # will scale it based on the provided metadata.
+            group_config.token_budget = getattr(config, "token_budget", 4000)
 
             try:
                 # Run the group
