@@ -66,3 +66,8 @@ enabled = true
 
 [agent.FactChecker]
 enabled = true
+
+[distributed]
+enabled = false
+address = "auto"
+num_cpus = 2

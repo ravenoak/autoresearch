@@ -227,6 +227,19 @@ tracing_enabled = true
 
 The same option can be set via the environment variable `CORE__TRACING_ENABLED=true`.
 
+## Distributed Execution
+
+To run agents across multiple processes or machines, configure the `[distributed]` section:
+
+```toml
+[distributed]
+enabled = true
+address = "auto"
+num_cpus = 2
+```
+
+When enabled, `RayExecutor` dispatches agents to Ray workers for each cycle.
+
 ## API Keys
 
 API keys for external services (OpenAI, Serper, Brave Search, etc.) should be set in the `.env` file:
