@@ -315,4 +315,30 @@ if __name__ == "__main__":
 
 7. **Document Your Extensions**: Provide clear documentation for your custom UI, including installation and usage instructions.
 
+## Streamlit UI Enhancements
+
+The reference Streamlit interface includes optional extensions you can reuse in custom
+UIs:
+
+### Theme Switching
+
+Users can toggle between light and dark themes via a checkbox in the sidebar. The
+`apply_theme_settings()` helper injects the appropriate CSS so your interface adapts
+instantly. You can reuse this pattern by calling the function after rendering the
+sidebar controls.
+
+### Onboarding Tour
+
+`display_guided_tour()` shows a brief modal explaining the main workflow. The modal
+uses accessible ARIA attributes and can be reopened with the **Show Tour** button in
+the sidebar. This provides a lightweight way to orient first‑time users without
+cluttering the layout.
+
+### Responsive Layouts
+
+Components such as the query input form use Streamlit columns with flexible sizing so
+the layout adapts to smaller screens. Additional CSS classes like `.responsive-container`
+and `.responsive-item` can be applied to custom elements to achieve similar
+responsiveness.
+
 By following these guidelines and utilizing the provided extension points, you can create custom UIs that integrate seamlessly with the Autoresearch system while providing unique value to your users.

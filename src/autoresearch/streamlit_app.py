@@ -75,6 +75,14 @@ st.markdown(
             flex-direction: column;
         }
     }
+    .responsive-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .responsive-item {
+        flex: 1 1 300px;
+    }
     .skip-link {
         position: absolute;
         left: -1000px;
@@ -156,9 +164,14 @@ def display_guided_tour() -> None:
     if st.session_state.show_tour:
         with st.modal("Welcome to Autoresearch", key="guided_tour"):
             st.markdown(
-                "1. **Enter a query** in the text area on the main tab.\n"
-                "2. **Adjust settings** like reasoning mode and loops.\n"
-                "3. Click **Run Query** to start the agents."
+                """
+                <div role="dialog" aria-label="Onboarding Tour">
+                1. **Enter a query** in the text area on the main tab.<br/>
+                2. **Adjust settings** like reasoning mode and loops.<br/>
+                3. Click **Run Query** to start the agents.
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
             if st.button("Got it", key="tour_done"):
                 st.session_state.show_tour = False
@@ -1251,33 +1264,32 @@ def initialize_session_state():
 def display_query_input() -> None:
     """Render the query input controls."""
     st.markdown("<h2 class='subheader'>Query Input</h2>", unsafe_allow_html=True)
-    st.session_state.current_query = st.text_area(
-        "Enter your query:",
-        height=100,
-        placeholder="What would you like to research?",
-        key="query_input",
-    )
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.session_state.reasoning_mode = st.selectbox(
-            "Reasoning Mode:",
-            options=[mode.value for mode in ReasoningMode],
-            index=[mode.value for mode in ReasoningMode].index(
-                st.session_state.config.reasoning_mode.value
-            ),
-            key="reasoning_mode",
-        )
-    with col2:
-        st.session_state.loops = st.slider(
-            "Loops:",
-            min_value=1,
-            max_value=5,
-            value=st.session_state.config.loops,
-            key="loops_slider",
-        )
-
-    st.session_state.run_button = st.button("Run Query", type="primary")
+    with st.container():
+        col_query, col_actions = st.columns([3, 1])
+        with col_query:
+            st.session_state.current_query = st.text_area(
+                "Enter your query:",
+                height=100,
+                placeholder="What would you like to research?",
+                key="query_input",
+            )
+        with col_actions:
+            st.session_state.reasoning_mode = st.selectbox(
+                "Reasoning Mode:",
+                options=[mode.value for mode in ReasoningMode],
+                index=[mode.value for mode in ReasoningMode].index(
+                    st.session_state.config.reasoning_mode.value
+                ),
+                key="reasoning_mode",
+            )
+            st.session_state.loops = st.slider(
+                "Loops:",
+                min_value=1,
+                max_value=5,
+                value=st.session_state.config.loops,
+                key="loops_slider",
+            )
+            st.session_state.run_button = st.button("Run Query", type="primary")
 
 
 def main():
@@ -1302,7 +1314,7 @@ def main():
     # Header
     st.markdown("<h1 class='main-header'>Autoresearch</h1>", unsafe_allow_html=True)
     st.markdown(
-        "<a class='skip-link' href='#main-content'>Skip to main content</a>",
+        "<a class='skip-link' href='#main-content' aria-label='Skip to main content'>Skip to main content</a>",
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -1327,6 +1339,9 @@ def main():
             value=st.session_state.get("dark_mode", False),
             help="Toggle between light and dark themes",
         )
+
+        if st.button("Show Tour", key="show_tour_btn", help="View interface walkthrough"):
+            st.session_state.show_tour = True
 
         # Display current configuration
         st.markdown("### Current Settings")
@@ -1370,7 +1385,10 @@ def main():
     )
 
     with main_tab:
-        st.markdown("<div id='main-content'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div id='main-content' aria-live='polite'></div>",
+            unsafe_allow_html=True,
+        )
         # Query input section
         display_query_input()
 
