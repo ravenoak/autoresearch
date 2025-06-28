@@ -1,5 +1,4 @@
 import types
-import pytest
 from autoresearch.orchestration import metrics
 
 
