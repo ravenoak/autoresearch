@@ -167,13 +167,13 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 - [ ] Complete token usage optimization
   - [x] Implement prompt compression techniques
-  - [ ] Add context pruning for long conversations
+  - [x] Add context pruning for long conversations
   - [x] Create adaptive token budget management
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
   - [ ] Create resource monitoring tools
-  - _Next:_ finalize token budget heuristics
+  - _Next:_ create resource monitoring tools
 
 ### 5.2 Scalability Enhancements
 

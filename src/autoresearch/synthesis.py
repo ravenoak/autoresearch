@@ -61,3 +61,62 @@ def build_rationale(claims: List[Dict[str, str]]) -> str:
 
     bullet_points = "\n".join(f"- {c.get('content', '')}" for c in claims)
     return f"The reasoning is based on:\n{bullet_points}"
+
+
+def compress_prompt(prompt: str, token_budget: int) -> str:
+    """Compress a prompt so it does not exceed the token budget.
+
+    The algorithm keeps the beginning and end of the prompt while
+    truncating the middle when necessary. Tokens are approximated by
+    whitespace splitting to avoid heavy dependencies.
+
+    Args:
+        prompt: The original prompt text.
+        token_budget: Maximum allowed tokens.
+
+    Returns:
+        The compressed prompt string.
+    """
+
+    tokens = prompt.split()
+    if len(tokens) <= token_budget:
+        return prompt
+
+    half = max(1, token_budget // 2)
+    return " ".join(tokens[:half] + ["..."] + tokens[-half:])
+
+
+def compress_claims(claims: List[Dict[str, str]], token_budget: int) -> List[Dict[str, str]]:
+    """Trim claim list so total tokens stay within ``token_budget``.
+
+    Claims are kept in order and truncated when the remaining budget is
+    insufficient. The final claim may be shortened with an ellipsis if
+    required.
+
+    Args:
+        claims: Claims with ``content`` fields.
+        token_budget: Maximum total tokens to retain.
+
+    Returns:
+        A list of claims respecting the budget.
+    """
+
+    compressed: List[Dict[str, str]] = []
+    tokens_used = 0
+    for claim in claims:
+        text = claim.get("content", "")
+        tokens = text.split()
+        if tokens_used + len(tokens) <= token_budget:
+            compressed.append(claim)
+            tokens_used += len(tokens)
+            continue
+
+        remaining = token_budget - tokens_used
+        if remaining <= 0:
+            break
+        truncated = " ".join(tokens[:remaining]) + "..."
+        new_claim = {**claim, "content": truncated}
+        compressed.append(new_claim)
+        break
+
+    return compressed

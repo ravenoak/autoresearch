@@ -773,6 +773,9 @@ class Orchestrator:
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
 
+            # Prune context to keep state size manageable
+            state.prune_context()
+
             # Call on_cycle_end callback
             if callbacks.get("on_cycle_end"):
                 callbacks["on_cycle_end"](loop, state)
@@ -857,6 +860,9 @@ class Orchestrator:
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
 
+            # Prune context to keep state size manageable
+            state.prune_context()
+
             if callbacks.get("on_cycle_end"):
                 callbacks["on_cycle_end"](loop, state)
 
@@ -914,6 +920,9 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
+
+        # Adapt token budget based on query complexity
+        Orchestrator._apply_adaptive_token_budget(config, query)
 
         # Heuristically adjust token budget when running within parallel agent
         # groups. ``run_parallel_query`` passes ``group_size`` and
@@ -1415,6 +1424,22 @@ class Orchestrator:
             return []
         start_idx = start_idx % len(items)  # Handle index out of bounds
         return items[start_idx:] + items[:start_idx]
+
+    @staticmethod
+    def _apply_adaptive_token_budget(config: ConfigModel, query: str) -> None:
+        """Adjust ``config.token_budget`` based on query complexity."""
+
+        budget = getattr(config, "token_budget", None)
+        if budget is None:
+            return
+
+        query_tokens = len(query.split())
+        # Upper bound prevents excessive budgets on simple queries
+        max_budget = query_tokens * 20
+        if budget > max_budget:
+            config.token_budget = max_budget
+        elif budget < query_tokens:
+            config.token_budget = query_tokens + 10
 
     @staticmethod
     def _get_memory_usage() -> float:
