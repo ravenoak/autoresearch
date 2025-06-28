@@ -1,0 +1,40 @@
+from fastapi.testclient import TestClient
+
+from autoresearch.api import app as api_app
+from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.models import QueryResponse
+
+
+def _setup(monkeypatch):
+    cfg = ConfigModel(api=APIConfig())
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+    )
+    return cfg
+
+
+def test_http_bearer_token(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.bearer_token = "token"
+    client = TestClient(api_app)
+
+    resp = client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer token"})
+    assert resp.status_code == 200
+
+    resp = client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"})
+    assert resp.status_code == 401
+
+
+def test_rate_limit(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.rate_limit = 1
+    client = TestClient(api_app)
+
+    resp1 = client.post("/query", json={"query": "q"})
+    assert resp1.status_code == 200
+    resp2 = client.post("/query", json={"query": "q"})
+    assert resp2.status_code == 429

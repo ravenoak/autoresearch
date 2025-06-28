@@ -209,6 +209,10 @@ class APIConfig(BaseModel):
         default=None,
         description="Shared secret required in the X-API-Key header when set",
     )
+    bearer_token: str | None = Field(
+        default=None,
+        description="Token required in the Authorization header when set",
+    )
     rate_limit: int = Field(
         default=0,
         ge=0,
