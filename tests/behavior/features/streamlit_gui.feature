@@ -46,3 +46,8 @@ Feature: Streamlit GUI Features
     And I change a user preference value
     Then the preference should be saved
     And the sidebar should reflect the updated preference
+
+  Scenario: Theme Toggle Switch
+    When I toggle dark mode
+    Then the page background should change according to the selected mode
+    And text color should adjust for readability

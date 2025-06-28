@@ -126,6 +126,29 @@ def apply_accessibility_settings() -> None:
         )
 
 
+def apply_theme_settings() -> None:
+    """Apply light or dark theme based on session state."""
+    if st.session_state.get("dark_mode"):
+        st.markdown(
+            """
+            <style>
+            body, .stApp {background-color:#222 !important; color:#eee !important;}
+            .stButton>button {background-color:#444 !important; color:#fff !important;}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            """
+            <style>
+            body, .stApp {background-color:#fff !important; color:#000 !important;}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def display_guided_tour() -> None:
     """Show a short help overlay explaining the interface."""
     if "show_tour" not in st.session_state:
@@ -1299,6 +1322,12 @@ def main():
             help="Improve readability with a high contrast color scheme",
         )
 
+        st.session_state.dark_mode = st.checkbox(
+            "Dark Mode",
+            value=st.session_state.get("dark_mode", False),
+            help="Toggle between light and dark themes",
+        )
+
         # Display current configuration
         st.markdown("### Current Settings")
         st.markdown(f"**LLM Backend:** {st.session_state.config.llm_backend}")
@@ -1331,7 +1360,8 @@ def main():
         with st.expander("Edit Configuration"):
             display_config_editor()
 
-    # Apply accessibility styles based on sidebar settings
+    # Apply theme and accessibility styles based on sidebar settings
+    apply_theme_settings()
     apply_accessibility_settings()
 
     # Create tabs for main content, metrics dashboard, logs, and history
