@@ -111,11 +111,24 @@ curl -H "X-API-Key: $AUTORESEARCH_API__API_KEY" \
   -d '{"query": "test"}' http://localhost:8000/query
 ```
 
+Alternatively, set `[api].bearer_token` or `AUTORESEARCH_API__BEARER_TOKEN` to
+enable bearer token authentication. Pass this token in the `Authorization` header:
+
+```bash
+export AUTORESEARCH_API__BEARER_TOKEN=mytoken
+curl -H "Authorization: Bearer $AUTORESEARCH_API__BEARER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "test"}' http://localhost:8000/query
+```
+
 ## Throttling
 
 Rate limiting is configured via `[api].rate_limit` or the environment variable
 `AUTORESEARCH_API__RATE_LIMIT`. This value specifies the number of requests per
 minute allowed for each client IP. Set to `0` to disable throttling.
+
+The implementation uses [SlowAPI](https://pypi.org/project/slowapi/), so limits
+are enforced per client IP address.
 
 ```bash
 export AUTORESEARCH_API__RATE_LIMIT=2

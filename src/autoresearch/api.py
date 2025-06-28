@@ -14,14 +14,16 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-import time
-from collections import defaultdict
-
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
@@ -38,34 +40,32 @@ from .error_utils import get_error_info, format_error_for_api
 
 config_loader = ConfigLoader()
 
-# In-memory request log for rate limiting
-REQUEST_LOG: dict[str, list[float]] = defaultdict(list)
+security = HTTPBearer(auto_error=False)
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    """API key authentication middleware."""
+    """API key and token authentication middleware."""
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path in {"/docs", "/openapi.json"}:
             return await call_next(request)
-        expected = get_config().api.api_key
-        if expected and request.headers.get("X-API-Key") != expected:
+        cfg = get_config().api
+        if cfg.api_key and request.headers.get("X-API-Key") != cfg.api_key:
             return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+        if cfg.bearer_token:
+            credentials: HTTPAuthorizationCredentials | None = await security(request)
+            token = credentials.credentials if credentials else None
+            if token != cfg.bearer_token:
+                return JSONResponse({"detail": "Invalid token"}, status_code=401)
         return await call_next(request)
 
 
-async def rate_limiter(request: Request) -> None:
-    """Limit requests per IP."""
+def dynamic_limit() -> str:
     limit = getattr(get_config().api, "rate_limit", 0)
-    if limit > 0:
-        ip = request.client.host if request.client else "unknown"
-        now = time.monotonic()
-        timestamps = [t for t in REQUEST_LOG[ip] if now - t < 60]
-        if len(timestamps) >= limit:
-            raise HTTPException(status_code=429, detail="Too many requests")
-        timestamps.append(now)
-        REQUEST_LOG[ip] = timestamps
+    return f"{limit}/minute" if limit > 0 else "1000000/minute"
 
+
+limiter = Limiter(key_func=get_remote_address, application_limits=[dynamic_limit])
 
 app = FastAPI(
     title="Autoresearch API",
@@ -73,9 +73,11 @@ app = FastAPI(
     version="1.0.0",
     docs_url=None,  # Disable default docs
     redoc_url=None,  # Disable default redoc
-    dependencies=[Depends(rate_limiter)],
 )
 app.add_middleware(AuthMiddleware)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 _watch_ctx = None
 
 
