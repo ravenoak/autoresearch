@@ -483,6 +483,10 @@ autoresearch query "What are the implications of AI on labor markets?"
 
 The monitor shows real-time information about agent execution, token usage, and system state.
 
+## Prompt Compression
+
+When prompts grow too long they may exceed the available token budget. The `autoresearch.synthesis` module provides utilities that shorten prompts by truncating the middle section and inserting an ellipsis. This keeps essential context while staying under the limit.
+
 ## Guided Tour and Help Overlay
 
 When you first launch the Streamlit interface a short guided tour explains the main controls. Use the **Got it** button to dismiss the overlay. You can reopen the tour at any time from the sidebar via **Show Help**. The overlay highlights the query input, configuration sidebar and run button so you know where to start.

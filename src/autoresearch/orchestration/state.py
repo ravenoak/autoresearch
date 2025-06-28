@@ -74,3 +74,30 @@ class QueryState(BaseModel):
                 structure["synthesis"] = claim
 
         return structure
+
+    def prune_context(self, max_claims: int = 50, max_sources: int = 20) -> None:
+        """Prune stored context to keep the state manageable.
+
+        This method removes the oldest claims and sources when their count
+        exceeds the provided limits. A summary of the number of items pruned
+        is stored under ``metadata['pruned']``.
+
+        Args:
+            max_claims: Maximum number of claims to keep.
+            max_sources: Maximum number of sources to keep.
+        """
+
+        pruned = {"claims": 0, "sources": 0}
+
+        if len(self.claims) > max_claims:
+            excess = len(self.claims) - max_claims
+            del self.claims[0:excess]
+            pruned["claims"] = excess
+
+        if len(self.sources) > max_sources:
+            excess = len(self.sources) - max_sources
+            del self.sources[0:excess]
+            pruned["sources"] = excess
+
+        if pruned["claims"] or pruned["sources"]:
+            self.metadata.setdefault("pruned", []).append(pruned)
