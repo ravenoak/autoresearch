@@ -23,3 +23,8 @@ Feature: Interactive Monitoring
     When I run `autoresearch monitor graph`
     Then the monitor should exit successfully
     And the monitor output should display graph data
+
+  Scenario: Visualize search results
+    When I run `autoresearch search "Test graph" --visualize`
+    Then the search command should exit successfully
+    And the search output should display graph data

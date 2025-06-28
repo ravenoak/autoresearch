@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from .mcp_interface import create_server
-from .monitor import monitor_app
+from .monitor import monitor_app, _collect_graph_data, _render_graph
 from datetime import datetime
 import time
 
@@ -235,6 +235,11 @@ def search(
         "--primus-start",
         help="Starting agent index for dialectical reasoning",
     ),
+    visualize: bool = typer.Option(
+        False,
+        "--visualize",
+        help="Render an inline knowledge graph after the query completes",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -250,6 +255,9 @@ def search(
 
         # Query with plain text output format
         autoresearch search "Who was Albert Einstein?" -o plain
+
+        # Display a simple knowledge graph in the terminal
+        autoresearch search "What is quantum computing?" --visualize
     """
     config = _config_loader.load_config()
 
@@ -303,6 +311,9 @@ def search(
         print_success("Query processed successfully")
 
         OutputFormatter.format(result, fmt)
+        if visualize:
+            graph_data = _collect_graph_data()
+            console.print(_render_graph(graph_data))
     except Exception as e:
         # Create a valid QueryResponse object with error information
         from .models import QueryResponse

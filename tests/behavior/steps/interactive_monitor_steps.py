@@ -33,6 +33,25 @@ def run_graph(monkeypatch, bdd_context, cli_runner):
     bdd_context["monitor_result"] = result
 
 
+@when(parsers.parse('I run `autoresearch search "{query}" --visualize`'))
+def run_search_visualize(query, monkeypatch, bdd_context, cli_runner):
+    from autoresearch.orchestration.orchestrator import Orchestrator
+    from autoresearch.models import QueryResponse
+
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+    monkeypatch.setattr(
+        "autoresearch.monitor._collect_graph_data",
+        lambda: {"A": ["B"]},
+    )
+
+    def dummy_run_query(*args, **kwargs):
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
+    result = cli_runner.invoke(cli_app, ["search", query, "--visualize"])
+    bdd_context["visual_result"] = result
+
+
 @then("the monitor should exit successfully")
 def monitor_exit_successfully(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
@@ -49,6 +68,18 @@ def monitor_output_contains_metrics(bdd_context):
 @then("the monitor output should display graph data")
 def monitor_output_contains_graph(bdd_context):
     output = bdd_context["monitor_result"].stdout
+    assert "Knowledge Graph" in output
+    assert "A" in output
+
+
+@then("the search command should exit successfully")
+def search_exit_successfully(bdd_context):
+    assert bdd_context["visual_result"].exit_code == 0
+
+
+@then("the search output should display graph data")
+def search_output_contains_graph(bdd_context):
+    output = bdd_context["visual_result"].stdout
     assert "Knowledge Graph" in output
     assert "A" in output
 
@@ -71,3 +102,8 @@ def test_monitor_metrics(bdd_context):
 @scenario("../features/interactive_monitor.feature", "Display graph")
 def test_monitor_graph(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
+
+
+@scenario("../features/interactive_monitor.feature", "Visualize search results")
+def test_search_visualization(bdd_context):
+    assert bdd_context["visual_result"].exit_code == 0
