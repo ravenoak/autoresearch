@@ -50,8 +50,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.url.path in {"/docs", "/openapi.json"}:
             return await call_next(request)
         cfg = get_config().api
-        if cfg.api_key and request.headers.get("X-API-Key") != cfg.api_key:
-            return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+        key = request.headers.get("X-API-Key")
+        if cfg.api_keys:
+            role = cfg.api_keys.get(key)
+            if not role:
+                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+            request.state.role = role
+        elif cfg.api_key:
+            if key != cfg.api_key:
+                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+            request.state.role = "default"
         if cfg.bearer_token:
             credentials: HTTPAuthorizationCredentials | None = await security(request)
             token = credentials.credentials if credentials else None

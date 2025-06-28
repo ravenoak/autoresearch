@@ -68,3 +68,22 @@ def test_batch_query_pagination(monkeypatch):
     assert data["page_size"] == 2
     assert len(data["results"]) == 2
     assert data["results"][0]["answer"] == "q3"
+
+
+def test_api_key_roles_integration(monkeypatch):
+    """Requests should succeed only with valid API keys."""
+
+    cfg = ConfigModel(api=APIConfig(api_keys={"secret": "admin"}))
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+    )
+    client = TestClient(api_app)
+
+    resp = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
+    assert resp.status_code == 200
+
+    bad = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
+    assert bad.status_code == 401

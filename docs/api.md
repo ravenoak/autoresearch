@@ -134,6 +134,17 @@ curl -H "Authorization: Bearer $AUTORESEARCH_API__BEARER_TOKEN" \
   -d '{"query": "test"}' http://localhost:8000/query
 ```
 
+When multiple API keys with different roles are needed, define `[api].api_keys`
+as a mapping from key to role:
+
+```toml
+[api]
+api_keys = {admin = "secret1", user = "secret2"}
+```
+
+Include the desired key in the `X-API-Key` header. The associated role will be
+available as `request.state.role` inside the application.
+
 ## Throttling
 
 Rate limiting is configured via `[api].rate_limit` or the environment variable

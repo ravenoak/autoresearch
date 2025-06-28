@@ -209,6 +209,10 @@ class APIConfig(BaseModel):
         default=None,
         description="Shared secret required in the X-API-Key header when set",
     )
+    api_keys: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Optional mapping of API keys to roles",
+    )
     bearer_token: str | None = Field(
         default=None,
         description="Token required in the Authorization header when set",
