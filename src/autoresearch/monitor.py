@@ -115,6 +115,16 @@ def run() -> None:
         for k, v in metrics.items():
             table.add_row(str(k), str(v))
         console.print(table)
+
+        # Show token budget usage over time if available
+        budget = getattr(config, "token_budget", None)
+        usage = metrics.get("total_tokens", {}).get("total", 0)
+        if budget is not None:
+            usage_table = Table(title="Token Budget")
+            usage_table.add_column("Budget")
+            usage_table.add_column("Used")
+            usage_table.add_row(str(budget), str(usage))
+            console.print(usage_table)
         feedback = Prompt.ask("Feedback (q to stop)", default="")
         if feedback.lower() == "q":
             state.error_count = getattr(config, "max_errors", 3)
