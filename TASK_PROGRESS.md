@@ -98,6 +98,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Document design decisions
   - [x] Add references to relevant research
   - _Next:_ review modules for consistency with sphinx docs
+  - _Next:_ verify docs/api_reference pages match source docstrings
 
 ### 4.2 User Documentation
 

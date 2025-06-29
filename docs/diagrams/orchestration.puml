@@ -52,6 +52,9 @@ package "Orchestration" {
   class ChainOfThoughtStrategy {
     + run_query(query, config, agent_factory): QueryResponse
   }
+  class RayExecutor {
+    + run_query(query, callbacks): QueryResponse
+  }
 }
 
 package "Agents" {
@@ -118,6 +121,9 @@ Orchestrator --> OrchestrationError: throws
 Orchestrator --> AgentError: throws
 Orchestrator --> NotFoundError: throws
 Orchestrator --> TimeoutError: throws
+RayExecutor --> QueryState: maintains state
+RayExecutor --> AgentFactory: gets agents from
+RayExecutor --> Agent: executes
 
 QueryState --> QueryResponse: synthesizes
 
