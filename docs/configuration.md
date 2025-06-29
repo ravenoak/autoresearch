@@ -147,6 +147,18 @@ while increasing `bm25_weight` prioritizes traditional keyword matching.
 When `hybrid_query` is enabled the system automatically mixes keyword
 and vector search for each query.
 
+You can automatically discover effective values for these weights using the
+`scripts/optimize_search_weights.py` helper. Provide a labelled evaluation CSV
+and the configuration file to update:
+
+```bash
+poetry run python scripts/optimize_search_weights.py \
+  examples/search_evaluation.csv autoresearch.toml
+```
+
+The script runs a simple grid search and writes the best-performing weights back
+to the `[search]` section of the given TOML file.
+
 ### Search Backends
 
 | Backend | Description | Required Keys |
