@@ -921,6 +921,27 @@ class Orchestrator:
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
 
+        # Adapt token budget based on query complexity and loops
+        Orchestrator._apply_adaptive_token_budget(config, query)
+
+        # Scale token budget for parallel agent groups if metadata is present
+        token_budget = getattr(config, "token_budget", None)
+        if (
+            token_budget is not None
+            and hasattr(config, "group_size")
+            and hasattr(config, "total_groups")
+        ):
+            total_agents = getattr(
+                config,
+                "total_agents",
+                config.group_size * config.total_groups,
+            )
+            if total_agents:
+                group_tokens = max(
+                    1, token_budget * config.group_size // total_agents
+                )
+                config.token_budget = group_tokens
+
         # Adapt token budget based on query complexity
         Orchestrator._apply_adaptive_token_budget(config, query)
 
@@ -1062,6 +1083,27 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
+
+        # Adapt token budget based on query complexity and loops
+        Orchestrator._apply_adaptive_token_budget(config, query)
+
+        # Scale token budget for parallel agent groups if metadata is present
+        token_budget = getattr(config, "token_budget", None)
+        if (
+            token_budget is not None
+            and hasattr(config, "group_size")
+            and hasattr(config, "total_groups")
+        ):
+            total_agents = getattr(
+                config,
+                "total_agents",
+                config.group_size * config.total_groups,
+            )
+            if total_agents:
+                group_tokens = max(
+                    1, token_budget * config.group_size // total_agents
+                )
+                config.token_budget = group_tokens
 
         if mode == ReasoningMode.CHAIN_OF_THOUGHT:
             strategy = ChainOfThoughtStrategy()
