@@ -22,11 +22,13 @@ import threading
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from collections import defaultdict
 import requests
 from git import Repo
 import numpy as np
+import csv
+import math
 from pdfminer.high_level import extract_text as extract_pdf_text
 from docx import Document
 
@@ -765,6 +767,67 @@ class Search:
                 log.warning(f"{name} embedding search failed: {exc}")
 
         return results
+
+    @staticmethod
+    def load_evaluation_data(path: Path) -> Dict[str, List[Dict[str, float]]]:
+        """Load ranking evaluation data from a CSV file."""
+
+        data: Dict[str, List[Dict[str, float]]] = {}
+        with path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                data.setdefault(row["query"], []).append(
+                    {
+                        "bm25": float(row["bm25"]),
+                        "semantic": float(row["semantic"]),
+                        "credibility": float(row["credibility"]),
+                        "relevance": float(row["relevance"]),
+                    }
+                )
+        return data
+
+    @staticmethod
+    def _ndcg(relevances: List[float]) -> float:
+        """Compute normalized discounted cumulative gain."""
+
+        dcg = sum((2 ** r - 1) / math.log2(i + 2) for i, r in enumerate(relevances))
+        ideal = sorted(relevances, reverse=True)
+        idcg = sum((2 ** r - 1) / math.log2(i + 2) for i, r in enumerate(ideal))
+        return dcg / idcg if idcg else 0.0
+
+    @classmethod
+    def evaluate_weights(
+        cls, weights: Tuple[float, float, float], data: Dict[str, List[Dict[str, float]]]
+    ) -> float:
+        """Evaluate ranking quality for the given weights using NDCG."""
+
+        w_sem, w_bm, w_cred = weights
+        total = 0.0
+        for docs in data.values():
+            scores = [w_sem * d["semantic"] + w_bm * d["bm25"] + w_cred * d["credibility"] for d in docs]
+            ranked = [docs[i]["relevance"] for i in sorted(range(len(docs)), key=lambda i: scores[i], reverse=True)]
+            total += cls._ndcg(ranked)
+        return total / len(data)
+
+    @classmethod
+    def tune_weights(
+        cls, data: Dict[str, List[Dict[str, float]]], step: float = 0.1
+    ) -> Tuple[float, float, float]:
+        """Search for relevance weights that maximize NDCG."""
+
+        best = (0.5, 0.3, 0.2)
+        best_score = cls.evaluate_weights(best, data)
+        steps = [i * step for i in range(int(1 / step) + 1)]
+        for w_sem in steps:
+            for w_bm in steps:
+                w_cred = 1.0 - w_sem - w_bm
+                if w_cred < 0 or w_cred > 1:
+                    continue
+                score = cls.evaluate_weights((w_sem, w_bm, w_cred), data)
+                if score > best_score:
+                    best_score = score
+                    best = (w_sem, w_bm, w_cred)
+        return best
 
     @classmethod
     def register_backend(
