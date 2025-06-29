@@ -14,6 +14,7 @@ import io
 import time
 import tomllib
 import psutil
+from .orchestration import metrics as orch_metrics
 import threading
 import os
 import logging
@@ -701,11 +702,21 @@ def collect_system_metrics() -> Dict[str, Any]:
     process = psutil.Process(os.getpid())
     process_memory = process.memory_info().rss / (1024 * 1024)  # Convert to MB
 
-    # Get token usage (this would need to be tracked elsewhere)
-    # For now, we'll use a placeholder
     token_usage = st.session_state.get(
-        "token_usage", {"total": 0, "prompt": 0, "completion": 0, "last_query": 0}
+        "token_usage",
+        {"total": 0, "prompt": 0, "completion": 0, "last_query": 0},
     )
+
+    # Aggregate total tokens using Prometheus counters
+    total_in = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
+    total_out = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
+
+    # Determine overall health status
+    health = "OK"
+    if cpu_percent > 90 or memory_percent > 90:
+        health = "CRITICAL"
+    elif cpu_percent > 80 or memory_percent > 80:
+        health = "WARNING"
 
     # Get agent performance metrics
     agent_performance = st.session_state.get("agent_performance", {})
@@ -717,7 +728,10 @@ def collect_system_metrics() -> Dict[str, Any]:
         "memory_total": memory_total,
         "process_memory": process_memory,
         "token_usage": token_usage,
+        "tokens_in_total": total_in,
+        "tokens_out_total": total_out,
         "agent_performance": agent_performance,
+        "health": health,
     }
 
 
@@ -1029,6 +1043,11 @@ def display_metrics_dashboard():
             st.markdown("### Process Memory")
             st.markdown(f"{metrics['process_memory']:.1f} MB")
 
+        # Display system health
+        status = metrics.get("health", "OK")
+        color = "green" if status == "OK" else "orange" if status == "WARNING" else "red"
+        st.markdown(f"### Health: <span style='color:{color}'>{status}</span>", unsafe_allow_html=True)
+
         # Display token usage
         st.markdown("### Token Usage")
         token_usage = metrics["token_usage"]
@@ -1047,6 +1066,12 @@ def display_metrics_dashboard():
 
         with col4:
             st.metric("Last Query Tokens", token_usage["last_query"])
+
+        extra1, extra2 = st.columns(2)
+        with extra1:
+            st.metric("Total Input Tokens", metrics["tokens_in_total"])
+        with extra2:
+            st.metric("Total Output Tokens", metrics["tokens_out_total"])
 
         # Display metrics history chart
         if (

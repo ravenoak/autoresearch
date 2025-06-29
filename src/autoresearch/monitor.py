@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from rich.live import Live
+from .orchestration import metrics as orch_metrics
 
 from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
@@ -19,7 +20,16 @@ from .orchestration.state import QueryState
 from .output_format import OutputFormatter
 
 monitor_app = typer.Typer(help="Monitoring utilities")
+
 _loader = ConfigLoader()
+
+
+def _calculate_health(cpu: float, mem: float) -> str:
+    if cpu > 90 or mem > 90:
+        return "CRITICAL"
+    if cpu > 80 or mem > 80:
+        return "WARNING"
+    return "OK"
 
 
 def _collect_system_metrics() -> Dict[str, Any]:
@@ -34,6 +44,12 @@ def _collect_system_metrics() -> Dict[str, Any]:
         metrics["memory_used_mb"] = mem.used / (1024 * 1024)
     except Exception:
         pass
+
+    metrics["tokens_in_total"] = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
+    metrics["tokens_out_total"] = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
+    metrics["health"] = _calculate_health(
+        metrics.get("cpu_percent", 0), metrics.get("memory_percent", 0)
+    )
     return metrics
 
 
@@ -42,7 +58,15 @@ def _render_metrics(data: Dict[str, Any]) -> Table:
     table.add_column("Metric")
     table.add_column("Value")
     for k, v in data.items():
-        table.add_row(str(k), f"{v:.2f}" if isinstance(v, float) else str(v))
+        if k == "health":
+            color = {
+                "OK": "green",
+                "WARNING": "yellow",
+                "CRITICAL": "red",
+            }.get(str(v), "green")
+            table.add_row(k, f"[{color}]{v}[/{color}]")
+        else:
+            table.add_row(str(k), f"{v:.2f}" if isinstance(v, float) else str(v))
     return table
 
 
@@ -115,6 +139,8 @@ def run() -> None:
         for k, v in metrics.items():
             table.add_row(str(k), str(v))
         console.print(table)
+
+        console.print(_render_metrics(_collect_system_metrics()))
 
         # Show token budget usage over time if available
         budget = getattr(config, "token_budget", None)
