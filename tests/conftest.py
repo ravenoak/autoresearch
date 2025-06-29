@@ -5,6 +5,9 @@ from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import importlib.util
+from typer.testing import CliRunner
+from fastapi.testclient import TestClient
+from autoresearch.api import app as api_app
 
 # Ensure package can be imported without installation
 if importlib.util.find_spec("autoresearch") is None:
@@ -366,3 +369,15 @@ def mock_llm_adapter(monkeypatch):
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
     yield adapter
     LLMFactory._registry.pop("mock", None)
+
+
+@pytest.fixture
+def cli_runner():
+    """Return a Typer CLI runner."""
+    return CliRunner()
+
+
+@pytest.fixture
+def api_client():
+    """Return a FastAPI test client."""
+    return TestClient(api_app)
