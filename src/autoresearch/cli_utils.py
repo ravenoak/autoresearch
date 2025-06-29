@@ -224,12 +224,15 @@ def visualize_rdf_cli(output_path: str) -> None:
         )
 
 
-def sparql_query_cli(query: str) -> None:
-    """Run a SPARQL query with reasoning and display the results."""
+def sparql_query_cli(query: str, engine: str | None = None, apply_reasoning: bool = True) -> None:
+    """Run a SPARQL query and display the results with optional reasoning."""
     from .storage import StorageManager
     from tabulate import tabulate
 
-    res = StorageManager.query_with_reasoning(query)
+    if apply_reasoning:
+        res = StorageManager.query_with_reasoning(query, engine)
+    else:
+        res = StorageManager.query_rdf(query)
     if hasattr(res, "askAnswer"):
         print_info(f"ASK result: {res.askAnswer}")
         return

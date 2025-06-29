@@ -42,6 +42,14 @@ table, use:
 autoresearch search "Explain AI ethics" --visualize
 ```
 
+Load an ontology and infer relations during a query:
+
+```bash
+autoresearch search "Explain AI ethics" --ontology ontology.ttl --infer-relations
+```
+
+Use `--ontology-reasoner` to choose a specific reasoning engine.
+
 Start the HTTP API with Uvicorn:
 ```bash
 uvicorn autoresearch.api:app --reload
@@ -123,6 +131,8 @@ backend = "sqlite"
 
 # Path to RDF store
 path = "rdf_store"
+# Ontology reasoning engine (owlrl or module:function)
+ontology_reasoner = "owlrl"
 ```
 
 ### Agent Configuration

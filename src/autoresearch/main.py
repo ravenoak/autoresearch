@@ -233,6 +233,22 @@ def search(
         "--mode",
         help="Override reasoning mode for this run (direct, dialectical, chain-of-thought)",
     ),
+    ontology: Optional[str] = typer.Option(
+        None,
+        "--ontology",
+        help="Load an ontology file before executing the query",
+    ),
+    ontology_reasoner: Optional[str] = typer.Option(
+        None,
+        "--ontology-reasoner",
+        "--reasoner",
+        help="Ontology reasoner engine to apply",
+    ),
+    infer_relations: bool = typer.Option(
+        False,
+        "--infer-relations",
+        help="Apply ontology reasoning before returning results",
+    ),
     primus_start: Optional[int] = typer.Option(
         None,
         "--primus-start",
@@ -269,8 +285,18 @@ def search(
         updates["reasoning_mode"] = reasoning_mode
     if primus_start is not None:
         updates["primus_start"] = primus_start
+    storage_updates: dict[str, Any] = {}
+    if ontology_reasoner is not None:
+        storage_updates["ontology_reasoner"] = ontology_reasoner
+    if storage_updates:
+        updates["storage"] = {**config.storage.model_dump(), **storage_updates}
     if updates:
         config = ConfigModel.model_validate({**config.model_dump(), **updates})
+
+    if ontology:
+        StorageManager.load_ontology(ontology)
+    if infer_relations:
+        Orchestrator.infer_relations()
 
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
     if not query or query.strip() == "":
@@ -1425,10 +1451,23 @@ def visualize_rdf_cli(
 
 
 @app.command("sparql")
-def sparql_query(query: str = typer.Argument(..., help="SPARQL query to run")) -> None:
-    """Execute a SPARQL query with ontology reasoning."""
+def sparql_query(
+    query: str = typer.Argument(..., help="SPARQL query to run"),
+    ontology_reasoner: Optional[str] = typer.Option(
+        None,
+        "--ontology-reasoner",
+        "--reasoner",
+        help="Ontology reasoner engine to apply",
+    ),
+    no_reasoning: bool = typer.Option(
+        False,
+        "--no-reasoning",
+        help="Run the query without ontology reasoning",
+    ),
+) -> None:
+    """Execute a SPARQL query with optional ontology reasoning."""
     try:
-        _cli_sparql(query)
+        _cli_sparql(query, engine=ontology_reasoner, apply_reasoning=not no_reasoning)
     except Exception:
         raise typer.Exit(1)
 
