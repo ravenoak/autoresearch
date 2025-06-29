@@ -19,9 +19,19 @@ from .orchestration.orchestrator import Orchestrator
 from .orchestration.state import QueryState
 from .output_format import OutputFormatter
 
-monitor_app = typer.Typer(help="Monitoring utilities")
+monitor_app = typer.Typer(help="Monitoring utilities", invoke_without_command=True)
 
 _loader = ConfigLoader()
+
+
+@monitor_app.callback(invoke_without_command=True)
+def default_callback(
+    ctx: typer.Context,
+    watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously"),
+) -> None:
+    """Display system metrics when no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        metrics(watch=watch)
 
 
 def _calculate_health(cpu: float, mem: float) -> str:
@@ -42,6 +52,8 @@ def _collect_system_metrics() -> Dict[str, Any]:
         mem = psutil.virtual_memory()
         metrics["memory_percent"] = mem.percent
         metrics["memory_used_mb"] = mem.used / (1024 * 1024)
+        proc = psutil.Process()
+        metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
     except Exception:
         pass
 

@@ -471,13 +471,16 @@ tracing_level = "DEBUG"
 
 ### Using the Monitor
 
-Use the interactive monitor to observe the system in real-time:
+Use the monitor commands to observe the system in real-time:
 
 ```bash
-# Start the monitor
+# Show metrics once
 autoresearch monitor
 
-# In another terminal, run a query
+# Continuously refresh metrics
+autoresearch monitor -w
+
+# In another terminal, run a query while watching
 autoresearch query "What are the implications of AI on labor markets?"
 ```
 

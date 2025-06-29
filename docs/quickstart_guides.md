@@ -71,13 +71,19 @@ autoresearch config get core.loops
 
 ### Monitoring
 
-1. **Start the monitoring interface:**
+1. **Show system metrics:**
 
 ```bash
 autoresearch monitor
 ```
 
-2. **Exit the monitor:**
+Use `-w`/`--watch` to refresh continuously.
+
+2. **Start the interactive monitor:**
+
+```bash
+autoresearch monitor run
+```
 
 Press `Ctrl+C` to exit.
 
