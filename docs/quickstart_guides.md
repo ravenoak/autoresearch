@@ -25,7 +25,7 @@ autoresearch query "What is the capital of France?"
 2. **Specify reasoning mode:**
 
 ```bash
-autoresearch query "What is the capital of France?" --reasoning-mode dialectical
+autoresearch query "What is the capital of France?" --mode dialectical
 ```
 
 Available reasoning modes:
@@ -33,7 +33,13 @@ Available reasoning modes:
 - `dialectical` (default): Rotates through agents in a thesis→antithesis→synthesis cycle
 - `chain-of-thought`: Loops the Synthesizer agent
 
-3. **Export results to a file:**
+3. **Specify Primus start index (dialectical mode):**
+
+```bash
+autoresearch query "What is the capital of France?" --mode dialectical --primus-start 1
+```
+
+4. **Export results to a file:**
 
 ```bash
 # Export as JSON
@@ -43,7 +49,7 @@ autoresearch query "What is the capital of France?" --output json > result.json
 autoresearch query "What is the capital of France?" --output markdown > result.md
 ```
 
-4. **Visualize query results:**
+5. **Visualize query results:**
 
 ```bash
 autoresearch visualize "What is the capital of France?" graph.png

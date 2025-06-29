@@ -15,3 +15,10 @@ Feature: Reasoning Mode Selection
     Given reasoning mode is "chain-of-thought"
     When I run the orchestrator on query "mode test"
     Then the agents executed should be "Synthesizer, Synthesizer"
+
+  Scenario: Dialectical mode with custom Primus start
+    Given loops is set to 1 in configuration
+    And reasoning mode is "dialectical"
+    And primus start is 1
+    When I run the orchestrator on query "mode test"
+    Then the agents executed should be "Contrarian, FactChecker, Synthesizer"

@@ -38,6 +38,12 @@ def set_reasoning_mode(mode, set_loops):
     return set_loops
 
 
+@given(parsers.parse('primus start is {index:d}'))
+def set_primus_start(index: int, set_loops):
+    set_loops.primus_start = index
+    return set_loops
+
+
 @when(
     parsers.parse('I run the orchestrator on query "{query}"'),
     target_fixture="run_orchestrator_on_query",

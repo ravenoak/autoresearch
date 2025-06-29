@@ -102,9 +102,10 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
 app = typer.Typer(
     help=(
         "Autoresearch CLI entry point.\n\n"
-        "Set the reasoning mode in autoresearch.toml under "
+        "Set the reasoning mode using --mode or in autoresearch.toml under "
         "[core.reasoning_mode]. Valid values: direct, dialectical, "
-        "chain-of-thought."
+        "chain-of-thought. Use --primus-start to choose the starting agent "
+        "for dialectical reasoning."
     ),
     name="autoresearch",
     no_args_is_help=True,  # Show help when no arguments are provided
@@ -229,7 +230,8 @@ def search(
     reasoning_mode: Optional[str] = typer.Option(
         None,
         "--reasoning-mode",
-        help="Override reasoning mode for this run",
+        "--mode",
+        help="Override reasoning mode for this run (direct, dialectical, chain-of-thought)",
     ),
     primus_start: Optional[int] = typer.Option(
         None,
