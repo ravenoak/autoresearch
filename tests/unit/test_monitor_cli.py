@@ -33,5 +33,15 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
         lambda *a, **k: next(responses),
     )
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
+    result = runner.invoke(app, ["monitor", "run"])
+    assert result.exit_code == 0
+
+
+def test_monitor_metrics(monkeypatch):
+    runner = CliRunner()
+    monkeypatch.setattr(
+        "autoresearch.monitor._collect_system_metrics", lambda: {"cpu_percent": 1.0, "memory_percent": 2.0}
+    )
     result = runner.invoke(app, ["monitor"])
     assert result.exit_code == 0
+    assert "cpu_percent" in result.stdout

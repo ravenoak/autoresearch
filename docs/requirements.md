@@ -80,7 +80,8 @@ Must     | BDD tests for cross-modal consistency.       |
 * **loguru + structlog** → JSON logs include `msg_id`, `agent`, `lat_ms`, `tokens_in/out`.
 * **prometheus_client** metrics: counters for queries and token usage.
 * **OpenTelemetry** tracer spans.
-* CLI `autoresearch monitor` opens a live TUI (Rich) summarizing CPU/RAM, token spend.
+* CLI `autoresearch monitor` shows CPU/RAM stats using psutil.
+* CLI `autoresearch monitor run` opens an interactive TUI summarizing token spend.
 
 ---
 

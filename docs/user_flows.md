@@ -43,13 +43,16 @@ This document describes the typical user flows for all interface modalities of t
 
 ### Monitoring Flow
 
-1. **Start the Monitor**
+1. **Display System Metrics**
    ```bash
    autoresearch monitor
    ```
+   Use `-w` to watch continuously.
 
-2. **View System Metrics**
-   - The monitor displays real-time metrics about CPU, memory, and token usage
+2. **Interactive Monitoring**
+   ```bash
+   autoresearch monitor run
+   ```
 
 3. **View Agent Activity**
    - The monitor shows which agents are active and their current status
