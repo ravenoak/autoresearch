@@ -18,6 +18,7 @@ node "Core Components" {
   component "Tracing" as Tracing
   component "KG Reasoning" as KGReasoning
   component "Visualization" as Visualization
+  component "Ray Executor" as RayExecutor
 }
 
 package "Agents" {
@@ -127,4 +128,5 @@ VectorSearch -> DuckDB : query
 Orchestrator -> OutputFormatter : format_result()
 OutputFormatter -> Synthesis : build_answer()/build_rationale()
 Orchestrator -> Visualization : visualize_results()
+Orchestrator --> RayExecutor : delegate distributed cycles
 @enduml
