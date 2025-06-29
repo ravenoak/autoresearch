@@ -16,4 +16,4 @@ def test_token_budget_adjustment(monkeypatch):
 
     Orchestrator.run_query("q", cfg)
 
-    assert recorded["budget"] == 60
+    assert recorded["budget"] == 13

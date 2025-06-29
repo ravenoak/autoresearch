@@ -1,5 +1,7 @@
 import os
-from streamlit.testing.v1 import AppTest
+import pytest
+
+AppTest = pytest.importorskip("streamlit.testing.v1", reason="streamlit testing module not available").AppTest
 
 APP_FILE = os.path.join("src", "autoresearch", "streamlit_app.py")
 
