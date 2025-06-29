@@ -39,7 +39,15 @@ Available reasoning modes:
 autoresearch query "What is the capital of France?" --mode dialectical --primus-start 1
 ```
 
-4. **Export results to a file:**
+4. **Enable ontology reasoning:**
+
+```bash
+autoresearch query "What is the capital of France?" --ontology schema.ttl --infer-relations
+```
+
+Use `--ontology-reasoner` to specify a custom reasoning engine.
+
+5. **Export results to a file:**
 
 ```bash
 # Export as JSON
@@ -49,7 +57,7 @@ autoresearch query "What is the capital of France?" --output json > result.json
 autoresearch query "What is the capital of France?" --output markdown > result.md
 ```
 
-5. **Visualize query results:**
+6. **Visualize query results:**
 
 ```bash
 autoresearch visualize "What is the capital of France?" graph.png
