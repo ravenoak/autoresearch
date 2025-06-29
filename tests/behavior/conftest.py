@@ -1,20 +1,4 @@
 import pytest
-from typer.testing import CliRunner
-from fastapi.testclient import TestClient
-
-from autoresearch.api import app as api_app
-
-
-@pytest.fixture
-def cli_runner():
-    """Provide a Typer CLI runner for behavior tests."""
-    return CliRunner()
-
-
-@pytest.fixture
-def api_client():
-    """Provide a FastAPI test client for behavior tests."""
-    return TestClient(api_app)
 
 
 @pytest.fixture

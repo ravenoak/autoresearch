@@ -9,9 +9,6 @@ import pytest
 import concurrent.futures
 from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
-
-from autoresearch.api import app
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from autoresearch.errors import OrchestrationError
@@ -29,12 +26,6 @@ def test_context():
         "errors": [],
         "concurrent_responses": [],
     }
-
-
-@pytest.fixture
-def api_client():
-    """Create a test client for the API."""
-    return TestClient(app)
 
 
 @pytest.fixture
