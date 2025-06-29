@@ -1427,19 +1427,24 @@ class Orchestrator:
 
     @staticmethod
     def _apply_adaptive_token_budget(config: ConfigModel, query: str) -> None:
-        """Adjust ``config.token_budget`` based on query complexity."""
+        """Adjust ``config.token_budget`` based on query complexity and loops."""
 
         budget = getattr(config, "token_budget", None)
         if budget is None:
             return
 
+        loops = getattr(config, "loops", 1)
+        if loops > 1:
+            budget = max(1, budget // loops)
+
         query_tokens = len(query.split())
-        # Upper bound prevents excessive budgets on simple queries
         max_budget = query_tokens * 20
         if budget > max_budget:
             config.token_budget = max_budget
         elif budget < query_tokens:
             config.token_budget = query_tokens + 10
+        else:
+            config.token_budget = budget
 
     @staticmethod
     def _get_memory_usage() -> float:

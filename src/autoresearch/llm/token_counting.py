@@ -27,23 +27,52 @@ from ..orchestration.metrics import OrchestrationMetrics
 
 
 def compress_prompt(prompt: str, token_budget: int) -> str:
-    """Truncate a prompt so it does not exceed the token budget.
+    """Compress ``prompt`` so it stays within ``token_budget`` tokens.
 
-    Tokens are approximated by whitespace splitting. If the prompt
-    contains more tokens than allowed, it is truncated to the budget.
+    The implementation keeps the beginning and end of the prompt and
+    truncates the middle when necessary. Tokens are approximated using
+    simple whitespace splitting to avoid external dependencies.
 
     Args:
         prompt: The original prompt text.
         token_budget: Maximum number of tokens to keep.
 
     Returns:
-        The possibly truncated prompt.
+        The compressed prompt text. If the prompt fits within the
+        budget it is returned unchanged. When truncated an ellipsis is
+        inserted to indicate removed content.
     """
 
     tokens = prompt.split()
     if len(tokens) <= token_budget:
         return prompt
-    return " ".join(tokens[:token_budget])
+
+    half = max(1, (token_budget - 1) // 2)
+    return " ".join(tokens[:half] + ["..."] + tokens[-half:])
+
+
+def prune_context(context: list[str], token_budget: int) -> list[str]:
+    """Prune a list of context strings to fit within ``token_budget`` tokens.
+
+    Older items are removed first until the remaining context totals at
+    most ``token_budget`` tokens.
+
+    Args:
+        context: Ordered list of context strings (oldest first).
+        token_budget: Maximum total tokens allowed.
+
+    Returns:
+        The pruned context list.
+    """
+
+    pruned = list(context)
+    token_count = sum(len(c.split()) for c in pruned)
+
+    while pruned and token_count > token_budget:
+        removed = pruned.pop(0)
+        token_count -= len(removed.split())
+
+    return pruned
 
 
 class LLMAdapter(Protocol):
