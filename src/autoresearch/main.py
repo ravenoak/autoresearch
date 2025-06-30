@@ -41,6 +41,7 @@ from .cli_utils import (
     visualize_rdf_cli as _cli_visualize,
     visualize_query_cli as _cli_visualize_query,
     visualize_graph_cli,
+    visualize_metrics_cli,
     sparql_query_cli as _cli_sparql,
 )
 from .error_utils import get_error_info, format_error_for_cli
@@ -342,6 +343,7 @@ def search(
         OutputFormatter.format(result, fmt)
         if visualize:
             visualize_graph_cli()
+            visualize_metrics_cli(result.metrics)
     except Exception as e:
         # Create a valid QueryResponse object with error information
         from .models import QueryResponse

@@ -8,8 +8,9 @@ with both color and text-based alternatives, as well as symbolic indicators.
 import os
 import sys
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Mapping
 from rich.console import Console
+from rich.table import Table
 
 
 # Verbosity levels
@@ -286,3 +287,37 @@ def visualize_graph_cli() -> None:
 
     data = _collect_graph_data()
     console.print(_render_graph(data))
+
+
+def ascii_bar_graph(data: Mapping[str, float], width: int = 30) -> str:
+    """Render a simple ASCII bar chart for numeric data."""
+    if not data:
+        return "(no data)"
+
+    max_val = max(abs(v) for v in data.values()) or 1
+    lines: list[str] = []
+    for k, v in data.items():
+        bar_len = int(abs(v) / max_val * width)
+        bar = "#" * bar_len
+        lines.append(f"{k:>10} | {bar} {v}")
+    return "\n".join(lines)
+
+
+def summary_table(data: Mapping[str, Any]) -> Table:
+    """Create a table summarizing key/value pairs."""
+    table = Table(title="Metrics Summary")
+    table.add_column("Metric")
+    table.add_column("Value")
+    for k, v in data.items():
+        table.add_row(str(k), str(v))
+    if not data:
+        table.add_row("(empty)", "")
+    return table
+
+
+def visualize_metrics_cli(metrics: Mapping[str, Any]) -> None:
+    """Display metrics using a table and ASCII chart."""
+    console.print(summary_table(metrics))
+    numeric = {k: float(v) for k, v in metrics.items() if isinstance(v, (int, float))}
+    if numeric:
+        console.print(ascii_bar_graph(numeric))

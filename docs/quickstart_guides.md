@@ -63,6 +63,12 @@ autoresearch query "What is the capital of France?" --output markdown > result.m
 autoresearch visualize "What is the capital of France?" graph.png
 ```
 
+7. **Show an inline graph after searching:**
+
+```bash
+autoresearch search "Explain AI ethics" --visualize
+```
+
 ### Configuration
 
 1. **View current configuration:**
