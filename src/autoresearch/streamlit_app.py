@@ -71,7 +71,7 @@ st.markdown(
         flex-wrap: wrap;
         gap: 0.5rem;
     }
-    @media (max-width: 800px) {
+    @media (max-width: 1024px) {
         .metrics-container {
             flex-direction: column;
         }
@@ -112,7 +112,7 @@ st.markdown(
         padding: 0.5rem;
         z-index: 1000;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
         .responsive-container, .metrics-container {
             flex-direction: column;
         }
@@ -121,6 +121,11 @@ st.markdown(
         }
         .subheader {
             font-size: 1.2rem;
+        }
+    }
+    @media (max-width: 480px) {
+        .responsive-item {
+            flex-basis: 100%;
         }
     }
 </style>
@@ -185,18 +190,22 @@ def display_guided_tour() -> None:
     if "show_tour" not in st.session_state:
         st.session_state.show_tour = True
     if st.session_state.show_tour:
-        with st.modal("Welcome to Autoresearch", key="guided_tour"):
+        with st.modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):
             st.markdown(
                 """
-                <div role="dialog" aria-label="Onboarding Tour">
-                1. **Enter a query** in the text area on the main tab.<br/>
-                2. **Adjust settings** like reasoning mode and loops.<br/>
-                3. Click **Run Query** to start the agents.
+                <div role="dialog" aria-label="Onboarding Tour" aria-modal="true">
+                <ol>
+                    <li><strong>Enter a query</strong> in the text area on the main tab.</li>
+                    <li><strong>Adjust settings</strong> like reasoning mode and loops.</li>
+                    <li>Click <strong>Run Query</strong> to start the agents.</li>
+                    <li>Review results using the tabs below the answer.</li>
+                    <li>Use the sidebar to configure themes and preferences.</li>
+                </ol>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            if st.button("Got it", key="tour_done"):
+            if st.button("Got it", key="tour_done", help="Close the guided tour"):
                 st.session_state.show_tour = False
 
 
@@ -1957,6 +1966,10 @@ def display_results(result: QueryResponse):
     st.session_state.current_result = result
 
     # Display answer
+    st.markdown(
+        "<div role='region' aria-label='Query results' aria-live='polite'>",
+        unsafe_allow_html=True,
+    )
     st.markdown("<h2 class='subheader'>Answer</h2>", unsafe_allow_html=True)
 
     # Enhanced Markdown rendering with support for LaTeX
@@ -2000,7 +2013,7 @@ def display_results(result: QueryResponse):
             for i, citation in enumerate(result.citations):
                 with st.container():
                     st.markdown(
-                        f"<div class='citation'>{citation}</div>",
+                        f"<div class='citation' role='listitem'>{citation}</div>",
                         unsafe_allow_html=True,
                     )
         else:
@@ -2012,7 +2025,7 @@ def display_results(result: QueryResponse):
         if result.reasoning:
             for i, step in enumerate(result.reasoning):
                 st.markdown(
-                    f"<div class='reasoning-step'>{i + 1}. {step}</div>",
+                    f"<div class='reasoning-step' role='listitem'>{i + 1}. {step}</div>",
                     unsafe_allow_html=True,
                 )
         else:
@@ -2023,7 +2036,10 @@ def display_results(result: QueryResponse):
         st.markdown("<h3>Metrics</h3>", unsafe_allow_html=True)
         if result.metrics:
             with st.container():
-                st.markdown("<div class='metrics-container'>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div class='metrics-container' role='region' aria-label='Metrics'>",
+                    unsafe_allow_html=True,
+                )
                 for key, value in result.metrics.items():
                     st.markdown(f"**{key}:** {value}")
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -2036,7 +2052,14 @@ def display_results(result: QueryResponse):
         if result.reasoning and result.citations:
             # Create and display the knowledge graph
             graph_image = create_knowledge_graph(result)
-            st.image(graph_image, use_column_width=True, caption="Knowledge graph")
+            import base64
+            buffered = io.BytesIO()
+            graph_image.save(buffered, format="PNG")
+            encoded = base64.b64encode(buffered.getvalue()).decode()
+            st.markdown(
+                f"<img src='data:image/png;base64,{encoded}' alt='Knowledge graph visualization' style='width:100%;' />",
+                unsafe_allow_html=True,
+            )
         else:
             st.info("Not enough information to create a knowledge graph")
 
@@ -2051,6 +2074,8 @@ def display_results(result: QueryResponse):
             st.markdown("### Progress Metrics")
             progress_graph = create_progress_graph(metrics)
             st.graphviz_chart(progress_graph)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

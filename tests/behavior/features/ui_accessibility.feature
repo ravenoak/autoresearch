@@ -39,3 +39,15 @@ Feature: UI Accessibility
     Then text should have sufficient contrast against backgrounds
     And interactive elements should be clearly distinguishable
     And information should not be conveyed by color alone
+
+  Scenario: Responsive Layout on Mobile
+    Given the Streamlit application is running on a small screen
+    When I view the page
+    Then columns should stack vertically
+    And controls should remain usable without horizontal scrolling
+
+  Scenario: Guided Tour Availability
+    Given the Streamlit application is running
+    When I open the page for the first time
+    Then a guided tour modal should describe the main features
+    And I should be able to dismiss the tour

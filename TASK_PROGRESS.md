@@ -156,10 +156,10 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement all planned UI components
   - [x] Add visualization of agent interactions
   - [x] Create user preference management
-- [ ] Enhance user experience
-  - [ ] Add responsive design for mobile devices
-  - [ ] Implement accessibility features
-  - [ ] Create guided tours for new users
+- [x] Enhance user experience
+  - [x] Add responsive design for mobile devices
+  - [x] Implement accessibility features
+  - [x] Create guided tours for new users
   - _Next:_ polish theming and dark mode support
 
 ## Phase 4: Performance and Deployment (Weeks 7-8)
