@@ -38,3 +38,26 @@ def test_rate_limit(monkeypatch):
     assert resp1.status_code == 200
     resp2 = client.post("/query", json={"query": "q"})
     assert resp2.status_code == 429
+
+
+def test_rate_limit_configurable(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.rate_limit = 2
+    client = TestClient(api_app)
+
+    assert client.post("/query", json={"query": "q"}).status_code == 200
+    assert client.post("/query", json={"query": "q"}).status_code == 200
+    assert client.post("/query", json={"query": "q"}).status_code == 429
+
+
+def test_role_permissions(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"adm": "admin", "usr": "user"}
+    cfg.api.role_permissions = {"admin": ["query"], "user": []}
+    client = TestClient(api_app)
+
+    ok = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "adm"})
+    assert ok.status_code == 200
+
+    denied = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "usr"})
+    assert denied.status_code == 403
