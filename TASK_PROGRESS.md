@@ -130,8 +130,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 - [x] Enhance the command-line interface
   - [x] Add more detailed progress reporting
-  - [x] Implement interactive query refinement
-  - [ ] Create visualization options for results
+- [x] Implement interactive query refinement
+  - [x] Create visualization options for results
+  - [x] Document `--visualize` option and `visualize` subcommands in README
 - [x] Complete the monitoring interface
   - [x] Add real-time metrics display
   - [x] Implement query debugging tools
