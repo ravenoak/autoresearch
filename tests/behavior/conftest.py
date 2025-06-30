@@ -1,4 +1,6 @@
 import pytest
+from fastapi.testclient import TestClient
+from autoresearch.api import app as api_app
 
 
 @pytest.fixture
@@ -241,3 +243,16 @@ def claim_factory():
             return len(results) > 0
 
     return ClaimFactory()
+
+
+@pytest.fixture
+def api_client_factory():
+    """Return a factory for TestClient with preset headers."""
+
+    def _make(headers: dict[str, str] | None = None) -> TestClient:
+        client = TestClient(api_app)
+        if headers:
+            client.headers.update(headers)
+        return client
+
+    return _make
