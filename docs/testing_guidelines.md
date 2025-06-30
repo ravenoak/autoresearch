@@ -249,6 +249,11 @@ that validate this context. When writing scenario functions:
 * Capture CLI or GUI logs with `caplog` to verify accessibility or
   logging output.
 
+Behavior step files can access preconfigured clients using two fixtures:
+`cli_client` provides a `CliRunner` for invoking the Typer CLI and
+`api_client` yields a `TestClient` connected to the FastAPI app. Use
+these fixtures instead of instantiating new clients within step functions.
+
 This pattern keeps the feature files expressive while ensuring the
 Python tests make concrete assertions about CLI behaviour, GUI
 accessibility, and log messages.
