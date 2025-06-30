@@ -81,7 +81,7 @@ def search_exit_successfully(bdd_context):
 def search_output_contains_graph(bdd_context):
     output = bdd_context["visual_result"].stdout
     assert "Knowledge Graph" in output
-    assert "A" in output
+    assert "Answer" in output
 
 
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
