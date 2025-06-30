@@ -95,7 +95,7 @@ def check_agents_executed(run_orchestrator_on_query, order):
     parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'),
     target_fixture="submit_query_via_cli",
 )
-def submit_query_via_cli(query, monkeypatch, cli_client):
+def submit_query_via_cli(query, monkeypatch, cli_runner):
     from autoresearch.models import QueryResponse
 
     original_run_query = Orchestrator.run_query
@@ -121,7 +121,7 @@ def submit_query_via_cli(query, monkeypatch, cli_client):
     main_mod._config_loader = ConfigLoader()
     main_mod._config_loader._config = cfg
 
-    result = cli_client.invoke(cli_app, ["search", query])
+    result = cli_runner.invoke(cli_app, ["search", query])
 
     monkeypatch.setattr(Orchestrator, "run_query", original_run_query)
 

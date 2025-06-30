@@ -6,9 +6,9 @@ from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in TTY mode'))
-def run_in_terminal(query, monkeypatch, bdd_context, cli_client):
+def run_in_terminal(query, monkeypatch, bdd_context, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = cli_client.invoke(cli_app, ["search", query])
+    result = cli_runner.invoke(cli_app, ["search", query])
     bdd_context["terminal_result"] = result
 
 
@@ -24,10 +24,10 @@ def check_markdown_output(bdd_context):
 
 
 @when(parsers.parse('I run `autoresearch search "{query}" | cat`'))
-def run_piped(query, monkeypatch, bdd_context, cli_client):
+def run_piped(query, monkeypatch, bdd_context, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    result = cli_client.invoke(cli_app, ["search", query])
+    result = cli_runner.invoke(cli_app, ["search", query])
     bdd_context["piped_result"] = result
 
 
@@ -44,8 +44,8 @@ def check_json_output(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output json`'))
-def run_with_json_flag(query, monkeypatch, bdd_context, cli_client):
-    result = cli_client.invoke(cli_app, ["search", query, "--output", "json"])
+def run_with_json_flag(query, monkeypatch, bdd_context, cli_runner):
+    result = cli_runner.invoke(cli_app, ["search", query, "--output", "json"])
     bdd_context["json_flag_result"] = result
 
 
@@ -60,8 +60,8 @@ def check_json_output_with_flag(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output markdown`'))
-def run_with_markdown_flag(query, monkeypatch, bdd_context, cli_client):
-    result = cli_client.invoke(cli_app, ["search", query, "--output", "markdown"])
+def run_with_markdown_flag(query, monkeypatch, bdd_context, cli_runner):
+    result = cli_runner.invoke(cli_app, ["search", query, "--output", "markdown"])
     bdd_context["markdown_flag_result"] = result
 
 
