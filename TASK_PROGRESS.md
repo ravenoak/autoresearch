@@ -141,13 +141,13 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 ### 3.2 HTTP API
 
 - [ ] Complete the REST API
-  - [ ] Add authentication and authorization
-  - [ ] Implement rate limiting
+  - [x] Add authentication and authorization
+  - [x] Implement rate limiting
   - [x] Create detailed API documentation
 - [x] Enhance API capabilities
   - [x] Add streaming response support
   - [x] Implement webhook notifications
-  - [ ] Create batch query processing
+  - [x] Create batch query processing
   - _Next:_ expose pagination parameters for batch queries
 
 ### 3.3 Streamlit GUI
