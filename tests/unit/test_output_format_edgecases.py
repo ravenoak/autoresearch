@@ -1,4 +1,3 @@
-import pytest
 from autoresearch.output_format import OutputFormatter, TemplateRegistry
 from autoresearch.models import QueryResponse
 
