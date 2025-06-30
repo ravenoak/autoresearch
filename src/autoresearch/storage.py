@@ -24,7 +24,8 @@ import os
 import time
 from collections import OrderedDict
 from threading import Lock
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, Iterator
+from contextlib import contextmanager
 
 import duckdb
 import networkx as nx
@@ -1100,6 +1101,23 @@ class StorageManager:
             if _db_backend is None:
                 raise NotFoundError("DuckDB connection not initialized")
             return _db_backend.get_connection()
+
+    @staticmethod
+    @contextmanager
+    def connection() -> Iterator[duckdb.DuckDBPyConnection]:
+        """Borrow a DuckDB connection from the pool."""
+        if _delegate and _delegate is not StorageManager:
+            with _delegate.connection() as conn:
+                yield conn
+            return
+        with _lock:
+            if _db_backend is None:
+                setup()
+            backend = _db_backend
+        if backend is None:
+            raise NotFoundError("DuckDB connection not initialized")
+        with backend.connection() as conn:
+            yield conn
 
     @staticmethod
     def get_rdf_store() -> rdflib.Graph:

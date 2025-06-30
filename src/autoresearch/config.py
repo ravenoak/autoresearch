@@ -112,6 +112,9 @@ class SearchConfig(BaseModel):
     local_file: LocalFileConfig = Field(default_factory=LocalFileConfig)
     local_git: LocalGitConfig = Field(default_factory=LocalGitConfig)
 
+    # Thread pool settings for concurrent search backends
+    max_workers: int = Field(default=4, ge=1)
+
     @field_validator(
         "semantic_similarity_weight", "bm25_weight", "source_credibility_weight"
     )
@@ -167,6 +170,7 @@ class StorageConfig(BaseModel):
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
     ontology_reasoner: str = Field(default="owlrl")
+    max_connections: int = Field(default=1, ge=1)
 
     @field_validator("rdf_backend")
     def validate_rdf_backend(cls, v: str) -> str:
