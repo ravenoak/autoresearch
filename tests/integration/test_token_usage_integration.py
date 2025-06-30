@@ -31,6 +31,7 @@ def test_token_usage_matches_baseline(monkeypatch, benchmark):
     # Setup a minimal configuration and agent
     monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name))
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy")
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 

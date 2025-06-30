@@ -7,6 +7,7 @@ def _configure(tmp_path, monkeypatch):
     cfg = ConfigModel(
         storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf"))
     )
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 

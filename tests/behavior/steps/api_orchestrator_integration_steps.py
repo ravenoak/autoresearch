@@ -77,6 +77,15 @@ def test_api_handles_concurrent_requests():
     pass
 
 
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API paginates batch queries",
+)
+def test_api_batch_pagination():
+    """Test that the API paginates batch query results."""
+    pass
+
+
 # Background steps
 @given("the API server is running")
 def api_server_running(test_context, api_client):
@@ -315,3 +324,34 @@ def responses_match_queries(test_context):
         assert "answer" in response.json()
         assert "citations" in response.json()
         assert "reasoning" in response.json()
+
+
+# Scenario: API paginates batch queries
+
+
+@when(parsers.parse("I send a batch query with page {page:d} and page size {size:d} to the API"))
+def send_batch_query(test_context, page: int, size: int):
+    """Send a batch query to the API with pagination."""
+    payload = {"queries": [{"query": f"q{i}"} for i in range(1, 5)]}
+    client = test_context["client"]
+    response = client.post(f"/query/batch?page={page}&page_size={size}", json=payload)
+    test_context["response"] = response
+    test_context["page"] = page
+    test_context["size"] = size
+    test_context["queries"] = [f"q{i}" for i in range(1, 5)]
+
+
+@then("the API should return the second page of results")
+def check_batch_pagination(test_context):
+    """Verify that the API returned the expected page of results."""
+    response = test_context["response"]
+    assert response.status_code == 200
+    data = response.json()
+    page = test_context["page"]
+    size = test_context["size"]
+    start = (page - 1) * size
+    expected = test_context["queries"][start:start + size]
+    assert data["page"] == page
+    assert data["page_size"] == size
+    results = [r["answer"] for r in data["results"]]
+    assert results == expected

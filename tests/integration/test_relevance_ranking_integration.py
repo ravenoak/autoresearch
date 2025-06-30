@@ -33,6 +33,7 @@ def test_example_weights_and_ranking(monkeypatch):
             source_credibility_weight=0.1,
         )
     )
+    cfg.api.role_permissions["anonymous"] = ["query"]
     # Ensure weights sum to 1.0
     assert abs(
         cfg.search.semantic_similarity_weight

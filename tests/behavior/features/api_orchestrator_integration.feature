@@ -31,3 +31,7 @@ Feature: API and Orchestrator Integration
     When I send multiple concurrent queries to the API
     Then all queries should be processed
     And each response should be correct for its query
+
+  Scenario: API paginates batch queries
+    When I send a batch query with page 2 and page size 2 to the API
+    Then the API should return the second page of results
