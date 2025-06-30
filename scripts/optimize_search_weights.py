@@ -22,8 +22,21 @@ def update_config(cfg_path: Path, weights: tuple[float, float, float]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Tune search ranking weights")
-    parser.add_argument("dataset", type=Path, help="Path to evaluation CSV")
-    parser.add_argument("config", type=Path, help="Path to config TOML to update")
+    examples_dir = Path(__file__).resolve().parents[1] / "examples"
+    parser.add_argument(
+        "dataset",
+        type=Path,
+        nargs="?",
+        default=examples_dir / "search_evaluation.csv",
+        help="Path to evaluation CSV",
+    )
+    parser.add_argument(
+        "config",
+        type=Path,
+        nargs="?",
+        default=examples_dir / "autoresearch.toml",
+        help="Path to config TOML to update",
+    )
     parser.add_argument(
         "--step",
         type=float,

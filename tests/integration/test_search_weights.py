@@ -7,7 +7,7 @@ from autoresearch.search import Search
 
 
 def test_optimize_script_updates_weights(tmp_path):
-    dataset = Path(__file__).resolve().parents[1] / "data" / "eval" / "sample_eval.csv"
+    dataset = Path(__file__).resolve().parents[2] / "examples" / "search_evaluation.csv"
     cfg = tmp_path / "cfg.toml"
     cfg.write_text(
         """[search]\nsemantic_similarity_weight = 0.5\nbm25_weight = 0.3\nsource_credibility_weight = 0.2\n"""

@@ -45,3 +45,17 @@ The diagram below shows the relationships between these classes and their intera
 2. Register the adapter via `LLMFactory.register("mybackend", MyAdapter)` (for example in `src/autoresearch/llm/__init__.py`).
 3. Select it by setting `llm_backend = "mybackend"` in your configuration.
 
+## Tuning search ranking weights
+
+Autoresearch ships with a small evaluation dataset at
+`examples/search_evaluation.csv`.  You can tune the relative weights of the
+semantic similarity, BM25 and credibility signals by running the helper script:
+
+```bash
+python scripts/optimize_search_weights.py
+```
+
+The script performs a grid search to maximize NDCG and writes the optimized
+values back to a configuration file (defaults to `examples/autoresearch.toml`).
+Provide custom file paths if you want to use your own data or configuration.
+
