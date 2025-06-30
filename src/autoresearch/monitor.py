@@ -127,6 +127,31 @@ def metrics(watch: bool = typer.Option(False, "--watch", "-w", help="Refresh con
         console.print(refresh())
 
 
+@monitor_app.command("resources")
+def resources(
+    duration: int = typer.Option(5, "--duration", "-d", help="Seconds to monitor")
+) -> None:
+    """Record CPU and memory usage over time."""
+    console = Console()
+    tracker = orch_metrics.OrchestrationMetrics()
+    end_time = time.time() + duration
+    with Progress() as progress:
+        task = progress.add_task("[green]Collecting...", total=duration)
+        while time.time() < end_time:
+            tracker.record_system_resources()
+            time.sleep(1)
+            progress.update(task, advance=1)
+
+    table = Table(title="Resource Usage")
+    table.add_column("Time")
+    table.add_column("CPU %")
+    table.add_column("Memory MB")
+    for rec in tracker.get_summary()["resource_usage"]:
+        t = time.strftime("%H:%M:%S", time.localtime(rec["timestamp"]))
+        table.add_row(t, f"{rec['cpu_percent']:.2f}", f"{rec['memory_mb']:.2f}")
+    console.print(table)
+
+
 @monitor_app.command("graph")
 def graph() -> None:
     """Display a simple textual view of the knowledge graph."""

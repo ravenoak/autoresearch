@@ -2,7 +2,7 @@
 Metrics collection for orchestration system.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 import time
 
 from prometheus_client import Counter
@@ -25,6 +25,18 @@ EVICTION_COUNTER = Counter(
 )
 
 
+def _get_system_usage() -> Tuple[float, float]:
+    """Return current CPU percent and memory usage in MB."""
+    try:
+        import psutil  # type: ignore
+
+        cpu = psutil.cpu_percent(interval=None)
+        mem_mb = psutil.Process().memory_info().rss / (1024 * 1024)
+        return cpu, mem_mb
+    except Exception:
+        return 0.0, 0.0
+
+
 def record_query() -> None:
     """Increment the global query counter."""
     QUERY_COUNTER.inc()
@@ -39,6 +51,7 @@ class OrchestrationMetrics:
         self.cycle_durations: List[float] = []
         self.error_counts: Dict[str, int] = {}
         self.last_cycle_start: float | None = None
+        self.resource_usage: List[Tuple[float, float, float]] = []
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -56,6 +69,11 @@ class OrchestrationMetrics:
         if agent_name not in self.agent_timings:
             self.agent_timings[agent_name] = []
         self.agent_timings[agent_name].append(duration)
+
+    def record_system_resources(self) -> None:
+        """Record current CPU and memory usage."""
+        cpu, mem = _get_system_usage()
+        self.resource_usage.append((time.time(), cpu, mem))
 
     def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int) -> None:
         """Record token usage for an agent."""
@@ -93,4 +111,12 @@ class OrchestrationMetrics:
             "agent_timings": self.agent_timings,
             "agent_tokens": self.token_counts,
             "errors": {"total": total_errors, "by_agent": self.error_counts},
+            "resource_usage": [
+                {
+                    "timestamp": ts,
+                    "cpu_percent": cpu,
+                    "memory_mb": mem,
+                }
+                for ts, cpu, mem in self.resource_usage
+            ],
         }
