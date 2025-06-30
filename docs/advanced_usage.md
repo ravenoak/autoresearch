@@ -286,6 +286,8 @@ Display a condensed view of the knowledge graph built during a search:
 ```bash
 autoresearch search "Explain AI ethics" --visualize
 ```
+The `--visualize` option now prints an ASCII summary of query metrics along with
+the knowledge graph table.
 
 ## API Integration
 

@@ -41,6 +41,8 @@ table, use:
 ```bash
 autoresearch search "Explain AI ethics" --visualize
 ```
+This command prints a small table of the knowledge graph and an ASCII chart of
+metrics collected during the search.
 
 Load an ontology and infer relations during a query:
 
