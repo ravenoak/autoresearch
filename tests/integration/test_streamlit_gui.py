@@ -37,3 +37,12 @@ def test_dark_mode_injects_styles():
     at.run()
     styles = [m.proto.body for m in at.markdown if "<style>" in m.proto.body]
     assert any("background-color:#222" in css for css in styles)
+
+
+def test_high_contrast_injects_styles():
+    at = AppTest.from_file(APP_FILE)
+    at.session_state["show_tour"] = False
+    at.session_state["high_contrast"] = True
+    at.run()
+    styles = [m.proto.body for m in at.markdown if "<style>" in m.proto.body]
+    assert any("background-color:#000" in css for css in styles)
