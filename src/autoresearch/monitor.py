@@ -13,6 +13,7 @@ from rich.prompt import Prompt
 from rich.progress import Progress
 from rich.live import Live
 from .orchestration import metrics as orch_metrics
+from .resource_monitor import ResourceMonitor
 
 from .config import ConfigLoader
 from .orchestration.orchestrator import Orchestrator
@@ -220,3 +221,22 @@ def run() -> None:
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
         if abort_flag["stop"]:
             break
+
+
+@monitor_app.command("start")
+def start(
+    interval: float = typer.Option(1.0, "--interval", "-i", help="Sampling interval"),
+    prometheus: bool = typer.Option(False, "--prometheus", help="Expose Prometheus metrics"),
+    port: int = typer.Option(8001, "--port", help="Prometheus server port"),
+) -> None:
+    """Launch continuous resource monitoring."""
+    monitor = ResourceMonitor(interval=interval)
+    monitor.start(prometheus_port=port if prometheus else None)
+    typer.echo("Monitoring started. Press Ctrl+C to stop.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        typer.echo("Stopping...")
+    finally:
+        monitor.stop()
