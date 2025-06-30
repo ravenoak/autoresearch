@@ -1,5 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
+from typer.testing import CliRunner
+
 from autoresearch.api import app as api_app
 
 
@@ -256,3 +258,15 @@ def api_client_factory():
         return client
 
     return _make
+
+
+@pytest.fixture
+def cli_client() -> CliRunner:
+    """Return a Typer CLI runner for behavior tests."""
+    return CliRunner()
+
+
+@pytest.fixture
+def api_client() -> TestClient:
+    """Return a FastAPI test client for behavior tests."""
+    return TestClient(api_app)
