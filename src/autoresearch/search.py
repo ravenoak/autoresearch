@@ -19,6 +19,7 @@ import re
 import sys
 import time
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 import shutil
 from pathlib import Path
@@ -1020,37 +1021,30 @@ class Search:
             for name, docs in emb_results.items():
                 results_by_backend[name] = docs
                 results.extend(docs)
-        for name in cfg.search.backends:
+
+        def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
             cached = get_cached_results(search_query, name)
             if cached is not None:
                 cls.add_embeddings(cached, query_embedding)
-                cached_slice = cached[:max_results]
-                results_by_backend[name] = cached_slice
-                results.extend(cached_slice)
-                continue
+                return name, cached[:max_results]
 
             backend = Search.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
-                available_backends = list(Search.backends.keys())
-                if not available_backends:
-                    available_backends = ["No backends registered"]
-                # In test environments, continue to the next backend instead of raising an error
+                available_backends = list(Search.backends.keys()) or ["No backends registered"]
                 if "pytest" in sys.modules:
-                    continue
-                else:
-                    raise SearchError(
-                        f"Unknown search backend '{name}'",
-                        available_backends=available_backends,
-                        provided=name,
-                        suggestion="Configure a valid search backend in your configuration file",
-                    )
+                    return name, []
+                raise SearchError(
+                    f"Unknown search backend '{name}'",
+                    available_backends=available_backends,
+                    provided=name,
+                    suggestion="Configure a valid search backend in your configuration file",
+                )
             try:
                 backend_results = backend(search_query, max_results)
             except requests.exceptions.Timeout as exc:
                 log.warning(f"{name} search timed out: {exc}")
                 from .errors import TimeoutError
-
                 raise TimeoutError(
                     f"{name} search timed out",
                     cause=exc,
@@ -1087,15 +1081,19 @@ class Search:
 
             if backend_results:
                 cache_results(text_query, name, backend_results)
+                cls.add_embeddings(backend_results, query_embedding)
+                for r in backend_results:
+                    r.setdefault("backend", name)
+            return name, backend_results
 
-            cls.add_embeddings(backend_results, query_embedding)
-
-            # Track which backend produced each result
-            for r in backend_results:
-                r.setdefault("backend", name)
-
-            results_by_backend[name] = backend_results
-            results.extend(backend_results)
+        max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(run_backend, name): name for name in cfg.search.backends}
+            for future in as_completed(futures):
+                name, backend_results = future.result()
+                if backend_results:
+                    results_by_backend[name] = backend_results
+                    results.extend(backend_results)
 
         if results:
             # Rank the results from all backends together
@@ -1432,83 +1430,84 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
             if len(results) >= max_results:
                 return results
 
-    conn = None
     indexed: set[str] = set()
-    try:
-        conn = StorageManager.get_duckdb_conn()
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS git_index("
-            "commit_hash VARCHAR PRIMARY KEY, author VARCHAR, date TIMESTAMP, message VARCHAR, diff VARCHAR)"
-        )
-        rows = conn.execute("SELECT commit_hash FROM git_index").fetchall()
-        indexed = {r[0] for r in rows}
-    except Exception as exc:  # pragma: no cover - db errors
-        log.warning(f"Failed to prepare git_index table: {exc}")
-
-    for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
-        commit_hash = commit.hexsha
-        diff_text = ""
+    with StorageManager.connection() as conn:
         try:
-            parent = commit.parents[0] if commit.parents else None
-            diffs = commit.diff(parent, create_patch=True)
-            for d in diffs:
-                part = d.diff.decode("utf-8", "ignore")
-                diff_text += part
-                if query.lower() in part.lower():
-                    snippet_match = re.search(
-                        rf".{{0,80}}{re.escape(query)}.{{0,80}}",
-                        part,
-                        re.IGNORECASE,
-                    )
-                    snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
-                    results.append(
-                        {
-                            "title": d.b_path or d.a_path or "diff",
-                            "url": commit_hash,
-                            "snippet": snippet,
-                            "commit": commit_hash,
-                            "author": commit.author.name,
-                            "date": commit.committed_datetime.isoformat(),
-                            "diff": part[:2000],
-                        }
-                    )
-                    if len(results) >= max_results:
-                        break
-            if len(results) >= max_results:
-                break
-        except Exception as exc:  # pragma: no cover - git issues
-            log.warning(f"Failed to get diff for {commit_hash}: {exc}")
-        if conn and commit_hash not in indexed:
-            try:
-                conn.execute(
-                    "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
-                    [
-                        commit_hash,
-                        commit.author.name,
-                        commit.committed_datetime.isoformat(),
-                        commit.message,
-                        diff_text,
-                    ],
-                )
-                indexed.add(commit_hash)
-            except Exception as exc:  # pragma: no cover - db insert issues
-                log.warning(f"Failed to index commit {commit_hash}: {exc}")
-
-        if query.lower() in commit.message.lower() and len(results) < max_results:
-            snippet = commit.message.strip()[:200]
-            results.append(
-                {
-                    "title": "commit message",
-                    "url": commit_hash,
-                    "snippet": snippet,
-                    "commit": commit_hash,
-                    "author": commit.author.name,
-                    "date": commit.committed_datetime.isoformat(),
-                    "diff": diff_text[:2000],
-                }
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS git_index("
+                "commit_hash VARCHAR PRIMARY KEY, author VARCHAR, date TIMESTAMP, message VARCHAR, diff VARCHAR)"
             )
-            if len(results) >= max_results:
-                break
+            rows = conn.execute("SELECT commit_hash FROM git_index").fetchall()
+            indexed = {r[0] for r in rows}
+        except Exception as exc:  # pragma: no cover - db errors
+            log.warning(f"Failed to prepare git_index table: {exc}")
+
+        for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
+            commit_hash = commit.hexsha
+            diff_text = ""
+            try:
+                parent = commit.parents[0] if commit.parents else None
+                diffs = commit.diff(parent, create_patch=True)
+                for d in diffs:
+                    part = d.diff.decode("utf-8", "ignore")
+                    diff_text += part
+                    if query.lower() in part.lower():
+                        snippet_match = re.search(
+                            rf".{{0,80}}{re.escape(query)}.{{0,80}}",
+                            part,
+                            re.IGNORECASE,
+                        )
+                        snippet = (
+                            snippet_match.group(0).strip() if snippet_match else part[:200]
+                        )
+                        results.append(
+                            {
+                                "title": d.b_path or d.a_path or "diff",
+                                "url": commit_hash,
+                                "snippet": snippet,
+                                "commit": commit_hash,
+                                "author": commit.author.name,
+                                "date": commit.committed_datetime.isoformat(),
+                                "diff": part[:2000],
+                            }
+                        )
+                        if len(results) >= max_results:
+                            break
+                if len(results) >= max_results:
+                    break
+            except Exception as exc:  # pragma: no cover - git issues
+                log.warning(f"Failed to get diff for {commit_hash}: {exc}")
+            if commit_hash not in indexed:
+                try:
+                    conn.execute(
+                        "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
+                        [
+                            commit_hash,
+                            commit.author.name,
+                            commit.committed_datetime.isoformat(),
+                            commit.message,
+                            diff_text,
+                        ],
+                    )
+                    indexed.add(commit_hash)
+                except Exception as exc:  # pragma: no cover - db insert issues
+                    log.warning(f"Failed to index commit {commit_hash}: {exc}")
+
+            if query.lower() in commit.message.lower() and len(results) < max_results:
+                snippet = commit.message.strip()[:200]
+                results.append(
+                    {
+                        "title": "commit message",
+                        "url": commit_hash,
+                        "snippet": snippet,
+                        "commit": commit_hash,
+                        "author": commit.author.name,
+                        "date": commit.committed_datetime.isoformat(),
+                        "diff": diff_text[:2000],
+                    }
+                )
+                if len(results) >= max_results:
+                    break
 
     return results
 

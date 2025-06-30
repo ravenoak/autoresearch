@@ -1,5 +1,5 @@
 {
-  "duration_seconds": 0.003289357000085147,
+  "duration_seconds": 0.0017906299999594921,
   "memory_delta_mb": 0.0,
   "tokens": {
     "Dummy": {
@@ -8,3 +8,4 @@
     }
   }
 }
+

@@ -8,7 +8,9 @@ focuses on DuckDB as the primary backend for relational storage and vector searc
 
 import os
 from threading import Lock
-from typing import Any, Optional, List, Dict
+from queue import Queue
+from contextlib import contextmanager
+from typing import Any, Optional, List, Dict, Iterator
 
 import duckdb
 
@@ -38,6 +40,8 @@ class DuckDBStorageBackend:
         self._path: Optional[str] = None
         self._lock = Lock()
         self._has_vss: bool = False
+        self._pool: Optional[Queue[duckdb.DuckDBPyConnection]] = None
+        self._max_connections: int = 1
 
     def setup(
         self, db_path: Optional[str] = None, skip_migrations: bool = False
@@ -83,6 +87,13 @@ class DuckDBStorageBackend:
                 log.error(f"Failed to connect to DuckDB database: {e}")
                 self._conn = None
                 raise StorageError("Failed to connect to DuckDB database", cause=e)
+
+            # Create connection pool
+            self._max_connections = getattr(cfg, "max_connections", 1)
+            self._pool = Queue(maxsize=self._max_connections)
+            self._pool.put(self._conn)
+            for _ in range(self._max_connections - 1):
+                self._pool.put(duckdb.connect(path))
 
             # Load VSS extension if enabled
             if cfg.vector_extension:
@@ -759,6 +770,20 @@ class DuckDBStorageBackend:
             raise NotFoundError("DuckDB connection not initialized")
         return self._conn
 
+    @contextmanager
+    def connection(self) -> Iterator[duckdb.DuckDBPyConnection]:
+        """Context manager that yields a connection from the pool."""
+        if self._pool is None:
+            if self._conn is None:
+                raise NotFoundError("DuckDB connection not initialized")
+            yield self._conn
+            return
+        conn = self._pool.get()
+        try:
+            yield conn
+        finally:
+            self._pool.put(conn)
+
     def has_vss(self) -> bool:
         """
         Check if the VSS extension is available.
@@ -777,14 +802,16 @@ class DuckDBStorageBackend:
         even if errors occur during closing.
         """
         with self._lock:
-            if self._conn is not None:
-                try:
-                    self._conn.close()
-                    self._conn = None
-                    self._path = None
-                except Exception as e:
-                    log.warning(f"Failed to close DuckDB connection: {e}")
-                    # We don't raise here as this is cleanup code
+            if self._pool is not None:
+                while not self._pool.empty():
+                    conn = self._pool.get()
+                    try:
+                        conn.close()
+                    except Exception as e:  # pragma: no cover - cleanup errors
+                        log.warning(f"Failed to close DuckDB connection: {e}")
+                self._pool = None
+                self._conn = None
+                self._path = None
 
     def clear(self) -> None:
         """
