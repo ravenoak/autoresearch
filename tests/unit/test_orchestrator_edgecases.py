@@ -1,17 +1,19 @@
-import types
 import pytest
 from autoresearch.orchestration.orchestrator import Orchestrator, ReasoningMode
 from autoresearch.config import ConfigModel
 from autoresearch.errors import NotFoundError
+
 
 class DummyFactory:
     @staticmethod
     def get(name):
         raise RuntimeError("missing")
 
+
 def test_get_agent_not_found():
     with pytest.raises(NotFoundError):
         Orchestrator._get_agent("X", DummyFactory)
+
 
 def test_parse_config_direct_mode():
     cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)

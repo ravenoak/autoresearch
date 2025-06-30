@@ -1,9 +1,16 @@
 """Step definitions for API authentication and rate limiting."""
 
 from pytest_bdd import scenario, given, when, then, parsers
+from . import api_orchestrator_integration_steps  # noqa: F401
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+
+
+@given("the API server is running")
+def api_server_running():
+    """Placeholder step to signify the API is available."""
+    pass
 
 
 @given(parsers.parse('the API requires an API key "{key}"'))

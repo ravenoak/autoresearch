@@ -1,8 +1,4 @@
 import pytest
-from fastapi.testclient import TestClient
-from typer.testing import CliRunner
-
-from autoresearch.api import app as api_app
 
 
 @pytest.fixture
@@ -245,28 +241,3 @@ def claim_factory():
             return len(results) > 0
 
     return ClaimFactory()
-
-
-@pytest.fixture
-def api_client_factory():
-    """Return a factory for TestClient with preset headers."""
-
-    def _make(headers: dict[str, str] | None = None) -> TestClient:
-        client = TestClient(api_app)
-        if headers:
-            client.headers.update(headers)
-        return client
-
-    return _make
-
-
-@pytest.fixture
-def cli_client() -> CliRunner:
-    """Return a Typer CLI runner for behavior tests."""
-    return CliRunner()
-
-
-@pytest.fixture
-def api_client() -> TestClient:
-    """Return a FastAPI test client for behavior tests."""
-    return TestClient(api_app)

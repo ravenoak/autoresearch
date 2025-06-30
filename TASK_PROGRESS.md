@@ -58,7 +58,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Ensure at least 90% code coverage
   - [ ] Add tests for edge cases and error conditions
   - [x] Implement property-based testing for complex components
-- [ ] Enhance test fixtures
+- [x] Enhance test fixtures
   - [x] Create more realistic test data
   - [x] Implement comprehensive mock LLM adapters
   - [x] Add parameterized tests for configuration variations
@@ -81,11 +81,10 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add scenarios for all user-facing features
   - [x] Test all reasoning modes with realistic queries
   - [x] Verify error handling and recovery
-- [ ] Enhance test step definitions
+- [x] Enhance test step definitions
   - [x] Add more detailed assertions
   - [x] Implement better test isolation
   - [x] Create more comprehensive test contexts
-  - _Next:_ introduce reusable fixtures for CLI and API clients
 
 ### 4.1 Code Documentation
 

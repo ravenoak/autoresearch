@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 import importlib.util
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
+from typing import Callable
 from autoresearch.api import app as api_app
 
 # Ensure package can be imported without installation
@@ -378,6 +379,25 @@ def cli_runner():
 
 
 @pytest.fixture
+def cli_client(cli_runner: CliRunner) -> CliRunner:
+    """Alias fixture for a Typer CLI runner used in behavior tests."""
+    return cli_runner
+
+
+@pytest.fixture
 def api_client():
     """Return a FastAPI test client."""
     return TestClient(api_app)
+
+
+@pytest.fixture
+def api_client_factory() -> Callable[[dict[str, str] | None], TestClient]:
+    """Return a factory for creating TestClient instances with optional headers."""
+
+    def _make(headers: dict[str, str] | None = None) -> TestClient:
+        client = TestClient(api_app)
+        if headers:
+            client.headers.update(headers)
+        return client
+
+    return _make
