@@ -46,20 +46,25 @@ security = HTTPBearer(auto_error=False)
 class AuthMiddleware(BaseHTTPMiddleware):
     """API key and token authentication middleware."""
 
+    def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
+        if cfg.api_keys:
+            role = cfg.api_keys.get(key)
+            if not role:
+                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
+            return role, None
+        if cfg.api_key:
+            if key != cfg.api_key:
+                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
+            return "default", None
+        return "anonymous", None
+
     async def dispatch(self, request: Request, call_next):
         if request.url.path in {"/docs", "/openapi.json"}:
             return await call_next(request)
         cfg = get_config().api
-        key = request.headers.get("X-API-Key")
-        role = "anonymous"
-        if cfg.api_keys:
-            role = cfg.api_keys.get(key)
-            if not role:
-                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
-        elif cfg.api_key:
-            if key != cfg.api_key:
-                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            role = "default"
+        role, error = self._resolve_role(request.headers.get("X-API-Key"), cfg)
+        if error:
+            return error
         request.state.role = role
         request.state.permissions = set(cfg.role_permissions.get(role, []))
         if cfg.bearer_token:

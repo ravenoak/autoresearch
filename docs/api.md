@@ -145,6 +145,15 @@ api_keys = {admin = "secret1", user = "secret2"}
 Include the desired key in the `X-API-Key` header. The associated role will be
 available as `request.state.role` inside the application.
 
+### Headers
+
+Use these HTTP headers when authentication is enabled:
+
+- `X-API-Key`: API key from `[api].api_key` or the `[api].api_keys` mapping.
+- `Authorization: Bearer <token>`: bearer token from `[api].bearer_token`.
+
+Requests missing required credentials receive a **401 Unauthorized** response.
+
 ### Role permissions
 
 Use `[api].role_permissions` to restrict which endpoints each role can call.
@@ -167,6 +176,9 @@ minute allowed for each client IP. Set to `0` to disable throttling.
 
 The implementation uses [SlowAPI](https://pypi.org/project/slowapi/), so limits
 are enforced per client IP address.
+
+When the limit is exceeded the API returns **429 Too Many Requests** and
+includes a `Retry-After` header specifying when you may try again.
 
 ```bash
 export AUTORESEARCH_API__RATE_LIMIT=2

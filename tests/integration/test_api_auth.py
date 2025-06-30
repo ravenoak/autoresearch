@@ -61,3 +61,24 @@ def test_role_permissions(monkeypatch):
 
     denied = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "usr"})
     assert denied.status_code == 403
+
+
+def test_single_api_key(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+    client = TestClient(api_app)
+
+    ok = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
+    assert ok.status_code == 200
+
+    missing = client.post("/query", json={"query": "q"})
+    assert missing.status_code == 401
+
+
+def test_invalid_api_key(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"good": "user"}
+    client = TestClient(api_app)
+
+    bad = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
+    assert bad.status_code == 401
