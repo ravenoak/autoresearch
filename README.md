@@ -35,14 +35,13 @@ autoresearch search "Explain AI ethics" --interactive
 ```
 Press `q` at the feedback prompt to abort early.
 
-To visualize the resulting knowledge graph directly in the terminal as a small
-table, use:
+To visualize the resulting knowledge graph directly in the terminal, use:
 
 ```bash
 autoresearch search "Explain AI ethics" --visualize
 ```
-This command prints a small table of the knowledge graph and an ASCII chart of
-metrics collected during the search.
+This command prints a Rich tree showing the knowledge graph followed by an
+ASCII chart of metrics collected during the search.
 
 To save the knowledge graph as an image after running a search, use the
 `visualize` subcommand:

@@ -317,6 +317,27 @@ class OutputFormatter:
 
         if fmt == "json":
             sys.stdout.write(response.model_dump_json(indent=2) + "\n")
+        elif fmt == "graph":
+            from rich.tree import Tree
+            from rich.console import Console
+
+            tree = Tree("Knowledge Graph")
+            ans_node = tree.add("Answer")
+            ans_node.add(response.answer)
+
+            citations_node = ans_node.add("Citations")
+            for c in response.citations:
+                citations_node.add(str(c))
+
+            reasoning_node = tree.add("Reasoning")
+            for r in response.reasoning:
+                reasoning_node.add(str(r))
+
+            metrics_node = tree.add("Metrics")
+            for k, v in response.metrics.items():
+                metrics_node.add(f"{k}: {v}")
+
+            Console(file=sys.stdout, force_terminal=False, color_system=None).print(tree)
         elif fmt.startswith("template:"):
             # Custom template format
             template_name = fmt.split(":", 1)[1]

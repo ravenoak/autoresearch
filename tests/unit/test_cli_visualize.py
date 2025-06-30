@@ -37,3 +37,4 @@ def test_search_visualize_option(monkeypatch):
     assert result.exit_code == 0
     assert 'Knowledge Graph' in result.stdout
     assert 'm' in result.stdout
+    assert 'Answer' in result.stdout

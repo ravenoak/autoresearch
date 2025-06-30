@@ -40,7 +40,6 @@ from .cli_utils import (
     Verbosity,
     visualize_rdf_cli as _cli_visualize,
     visualize_query_cli as _cli_visualize_query,
-    visualize_graph_cli,
     visualize_metrics_cli,
     sparql_query_cli as _cli_sparql,
 )
@@ -349,7 +348,7 @@ def search(
 
         OutputFormatter.format(result, fmt)
         if visualize:
-            visualize_graph_cli()
+            OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)
     except Exception as e:
         # Create a valid QueryResponse object with error information
