@@ -14,7 +14,7 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -51,15 +51,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         cfg = get_config().api
         key = request.headers.get("X-API-Key")
+        role = "anonymous"
         if cfg.api_keys:
             role = cfg.api_keys.get(key)
             if not role:
                 return JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            request.state.role = role
         elif cfg.api_key:
             if key != cfg.api_key:
                 return JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            request.state.role = "default"
+            role = "default"
+        request.state.role = role
+        request.state.permissions = set(cfg.role_permissions.get(role, []))
         if cfg.bearer_token:
             credentials: HTTPAuthorizationCredentials | None = await security(request)
             token = credentials.credentials if credentials else None
@@ -71,6 +73,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
 def dynamic_limit() -> str:
     limit = getattr(get_config().api, "rate_limit", 0)
     return f"{limit}/minute" if limit > 0 else "1000000/minute"
+
+
+def require_permission(permission: str):
+    async def checker(request: Request) -> None:
+        permissions = getattr(request.state, "permissions", set())
+        if permission not in permissions:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    return Depends(checker)
 
 
 limiter = Limiter(key_func=get_remote_address, application_limits=[dynamic_limit])
@@ -205,6 +216,7 @@ def _stop_config_watcher() -> None:
 async def query_endpoint(
     request: QueryRequest,
     stream: bool = False,
+    _: None = require_permission("query"),
 ) -> StreamingResponse | QueryResponse:
     """Process a query and return a structured response.
 
@@ -325,7 +337,8 @@ async def query_endpoint(
 
 @app.post("/query/stream")
 async def query_stream_endpoint(
-    request: QueryRequest
+    request: QueryRequest,
+    _: None = require_permission("query"),
 ) -> StreamingResponse:
     """Stream incremental query results as JSON lines."""
     config = get_config()
@@ -384,7 +397,10 @@ async def query_stream_endpoint(
 
 @app.post("/query/batch")
 async def batch_query_endpoint(
-    batch: BatchQueryRequest, page: int = 1, page_size: int = 10
+    batch: BatchQueryRequest,
+    page: int = 1,
+    page_size: int = 10,
+    _: None = require_permission("query"),
 ) -> dict:
     """Execute multiple queries with pagination."""
     if page < 1 or page_size < 1:
@@ -397,7 +413,7 @@ async def batch_query_endpoint(
 
 
 @app.get("/metrics")
-def metrics_endpoint() -> PlainTextResponse:
+def metrics_endpoint(_: None = require_permission("metrics")) -> PlainTextResponse:
     """Expose Prometheus metrics for monitoring the application.
 
     This endpoint generates and returns the latest Prometheus metrics in the
@@ -420,7 +436,7 @@ def metrics_endpoint() -> PlainTextResponse:
 
 
 @app.get("/capabilities")
-def capabilities_endpoint() -> dict:
+def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     """Discover the capabilities of the Autoresearch system.
 
     This endpoint returns information about the capabilities of the Autoresearch system,

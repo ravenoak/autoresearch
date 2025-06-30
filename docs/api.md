@@ -145,6 +145,20 @@ api_keys = {admin = "secret1", user = "secret2"}
 Include the desired key in the `X-API-Key` header. The associated role will be
 available as `request.state.role` inside the application.
 
+### Role permissions
+
+Use `[api].role_permissions` to restrict which endpoints each role can call.
+Permissions are `query`, `metrics` and `capabilities`.
+
+```toml
+[api.role_permissions]
+admin = ["query", "metrics", "capabilities"]
+user = ["query"]
+```
+
+By default `user` can only submit queries while `admin` has access to all
+endpoints.
+
 ## Throttling
 
 Rate limiting is configured via `[api].rate_limit` or the environment variable

@@ -213,6 +213,13 @@ class APIConfig(BaseModel):
         default_factory=dict,
         description="Optional mapping of API keys to roles",
     )
+    role_permissions: Dict[str, List[str]] = Field(
+        default_factory=lambda: {
+            "user": ["query"],
+            "admin": ["query", "metrics", "capabilities"],
+        },
+        description="Mapping of roles to allowed actions",
+    )
     bearer_token: str | None = Field(
         default=None,
         description="Token required in the Authorization header when set",
