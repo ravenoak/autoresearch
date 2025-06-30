@@ -488,6 +488,16 @@ autoresearch query "What are the implications of AI on labor markets?"
 
 The monitor shows real-time information about agent execution, token usage, and system state.
 
+### Background Resource Monitor
+
+Start a lightweight background thread to continuously track CPU, memory, and token usage:
+
+```bash
+autoresearch monitor start --prometheus
+```
+
+This exposes Prometheus gauges that can be scraped by monitoring tools.
+
 ## Prompt Compression
 
 When prompts grow too long they may exceed the available token budget. The `autoresearch.synthesis` module provides utilities that shorten prompts by truncating the middle section and inserting an ellipsis. This keeps essential context while staying under the limit.

@@ -173,8 +173,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
-  - [ ] Create resource monitoring tools
-  - _Next:_ create resource monitoring tools
+  - [x] Create resource monitoring tools
 
 ### 5.2 Scalability Enhancements
 
