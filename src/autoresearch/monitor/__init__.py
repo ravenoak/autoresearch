@@ -12,17 +12,19 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from rich.live import Live
-from .orchestration import metrics as orch_metrics
-from .resource_monitor import ResourceMonitor
+from ..orchestration import metrics as orch_metrics
+from ..resource_monitor import ResourceMonitor
+from .system_monitor import SystemMonitor
 
-from .config import ConfigLoader
-from .orchestration.orchestrator import Orchestrator
-from .orchestration.state import QueryState
-from .output_format import OutputFormatter
+from ..config import ConfigLoader
+from ..orchestration.orchestrator import Orchestrator
+from ..orchestration.state import QueryState
+from ..output_format import OutputFormatter
 
 monitor_app = typer.Typer(help="Monitoring utilities", invoke_without_command=True)
 
 _loader = ConfigLoader()
+_system_monitor: SystemMonitor | None = None
 
 
 @monitor_app.callback(invoke_without_command=True)
@@ -36,9 +38,14 @@ def default_callback(
 
 
 def _calculate_health(cpu: float, mem: float) -> str:
-    if cpu > 90 or mem > 90:
+    config = _loader.load_config()
+    cpu_crit = getattr(config, "cpu_critical_threshold", 90)
+    mem_crit = getattr(config, "memory_critical_threshold", 90)
+    cpu_warn = getattr(config, "cpu_warning_threshold", 80)
+    mem_warn = getattr(config, "memory_warning_threshold", 80)
+    if cpu > cpu_crit or mem > mem_crit:
         return "CRITICAL"
-    if cpu > 80 or mem > 80:
+    if cpu > cpu_warn or mem > mem_warn:
         return "WARNING"
     return "OK"
 
@@ -47,13 +54,18 @@ def _collect_system_metrics() -> Dict[str, Any]:
     """Collect basic CPU and memory metrics."""
     metrics: Dict[str, Any] = {}
     try:
-        import psutil  # type: ignore
+        from .system_monitor import SystemMonitor
 
-        metrics["cpu_percent"] = psutil.cpu_percent(interval=None)
+        if _system_monitor:
+            metrics.update(_system_monitor.metrics)
+        else:
+            metrics.update(SystemMonitor.collect())
+
+        import psutil  # type: ignore
         mem = psutil.virtual_memory()
-        metrics["memory_percent"] = mem.percent
-        metrics["memory_used_mb"] = mem.used / (1024 * 1024)
         proc = psutil.Process()
+        metrics.setdefault("memory_percent", mem.percent)
+        metrics["memory_used_mb"] = mem.used / (1024 * 1024)
         metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
     except Exception:
         pass
@@ -86,7 +98,7 @@ def _render_metrics(data: Dict[str, Any]) -> Table:
 def _collect_graph_data() -> Dict[str, List[str]]:
     """Collect a snapshot of the in-memory knowledge graph."""
     try:
-        from .storage import StorageManager
+        from ..storage import StorageManager
 
         G = StorageManager.get_graph()
         data: Dict[str, List[str]] = {}
@@ -225,13 +237,18 @@ def run() -> None:
 
 @monitor_app.command("start")
 def start(
-    interval: float = typer.Option(1.0, "--interval", "-i", help="Sampling interval"),
+    interval: float = typer.Option(None, "--interval", "-i", help="Sampling interval"),
     prometheus: bool = typer.Option(False, "--prometheus", help="Expose Prometheus metrics"),
     port: int = typer.Option(8001, "--port", help="Prometheus server port"),
 ) -> None:
     """Launch continuous resource monitoring."""
+    global _system_monitor
+    if interval is None:
+        interval = _loader.load_config().monitor_interval
     monitor = ResourceMonitor(interval=interval)
+    _system_monitor = SystemMonitor(interval=interval)
     monitor.start(prometheus_port=port if prometheus else None)
+    _system_monitor.start()
     typer.echo("Monitoring started. Press Ctrl+C to stop.")
     try:
         while True:
@@ -240,3 +257,6 @@ def start(
         typer.echo("Stopping...")
     finally:
         monitor.stop()
+        if _system_monitor:
+            _system_monitor.stop()
+            _system_monitor = None

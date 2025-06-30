@@ -10,6 +10,8 @@ from autoresearch.orchestration import metrics
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from autoresearch.resource_monitor import ResourceMonitor
+from autoresearch.monitor.system_monitor import SystemMonitor
+import psutil
 
 
 def dummy_run_query(query, config, callbacks=None, **kwargs):
@@ -51,6 +53,27 @@ def test_resource_monitor_collects_metrics():
     assert "autoresearch_memory_mb" in data
 
 
+def test_system_monitor_metrics_exposed(monkeypatch):
+    setup_patches(monkeypatch)
+    cfg = ConfigModel(loops=1, output_format="json")
+    cfg.api.role_permissions["anonymous"] = ["metrics"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: 5.0)
+    mem = type("m", (), {"percent": 10.0})()
+    monkeypatch.setattr(psutil, "virtual_memory", lambda: mem)
+
+    monitor = SystemMonitor(interval=0.01)
+    monitor.start()
+    time.sleep(0.05)
+    monitor.stop()
+
+    client = TestClient(api_app)
+    resp = client.get("/metrics")
+    assert resp.status_code == 200
+    assert "autoresearch_system_cpu_percent" in resp.text
+    assert "autoresearch_system_memory_percent" in resp.text
+
+
 def test_monitor_start_cli(monkeypatch):
     calls = {}
 
@@ -62,6 +85,8 @@ def test_monitor_start_cli(monkeypatch):
 
     monkeypatch.setattr(ResourceMonitor, "start", fake_start)
     monkeypatch.setattr(ResourceMonitor, "stop", fake_stop)
+    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.start", lambda self: calls.setdefault("sys_start", True))
+    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.stop", lambda self: calls.setdefault("sys_stop", True))
     monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda x: (_ for _ in ()).throw(KeyboardInterrupt()))
 
     runner = CliRunner()
@@ -69,3 +94,5 @@ def test_monitor_start_cli(monkeypatch):
     assert result.exit_code == 0
     assert calls["port"] == 9999
     assert calls["stop"]
+    assert calls["sys_start"]
+    assert calls["sys_stop"]
