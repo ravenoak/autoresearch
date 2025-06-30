@@ -1,11 +1,15 @@
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
+from prometheus_client import CollectorRegistry, generate_latest
+import time
+
 from autoresearch.main import app as cli_app
 from autoresearch.api import app as api_app
 from autoresearch.config import ConfigLoader, ConfigModel
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from autoresearch.resource_monitor import ResourceMonitor
 
 
 def dummy_run_query(query, config, callbacks=None, **kwargs):
@@ -34,3 +38,34 @@ def test_monitor_cli_increments_counter(monkeypatch):
     resp = client.get("/metrics")
     assert resp.status_code == 200
     assert "autoresearch_queries_total" in resp.text
+
+
+def test_resource_monitor_collects_metrics():
+    registry = CollectorRegistry()
+    monitor = ResourceMonitor(interval=0.01, registry=registry)
+    monitor.start()
+    time.sleep(0.05)
+    monitor.stop()
+    data = generate_latest(registry).decode()
+    assert "autoresearch_cpu_percent" in data
+    assert "autoresearch_memory_mb" in data
+
+
+def test_monitor_start_cli(monkeypatch):
+    calls = {}
+
+    def fake_start(self, prometheus_port=None):
+        calls["port"] = prometheus_port
+
+    def fake_stop(self):
+        calls["stop"] = True
+
+    monkeypatch.setattr(ResourceMonitor, "start", fake_start)
+    monkeypatch.setattr(ResourceMonitor, "stop", fake_stop)
+    monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda x: (_ for _ in ()).throw(KeyboardInterrupt()))
+
+    runner = CliRunner()
+    result = runner.invoke(cli_app, ["monitor", "start", "--prometheus", "--port", "9999", "--interval", "0.1"])
+    assert result.exit_code == 0
+    assert calls["port"] == 9999
+    assert calls["stop"]
