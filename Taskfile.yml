@@ -31,3 +31,22 @@ tasks:
       - find . -type d -name '.mypy_cache' -exec rm -rf {} +
     desc: "Remove Python cache directories"
 
+  wheels:
+    deps: [wheel-linux, wheel-windows, wheel-macos]
+    desc: "Build wheels for all platforms"
+
+  wheel-linux:
+    cmds:
+      - poetry run pip wheel . --wheel-dir dist/linux --no-deps --platform manylinux2014_x86_64 --abi cp312 --python-version 3.12
+    desc: "Build Linux wheel"
+
+  wheel-windows:
+    cmds:
+      - poetry run pip wheel . --wheel-dir dist/windows --no-deps --platform win_amd64 --abi cp312 --python-version 3.12
+    desc: "Build Windows wheel"
+
+  wheel-macos:
+    cmds:
+      - poetry run pip wheel . --wheel-dir dist/macos --no-deps --platform macosx_11_0_x86_64 --abi cp312 --python-version 3.12
+    desc: "Build macOS wheel"
+
