@@ -18,6 +18,20 @@ poetry install
 ### Using pip
 ```bash
 poetry run pip install -e .
+
+### Docker
+You can run Autoresearch inside Docker using the provided `Dockerfile` and `docker-compose.yml`:
+
+```bash
+docker build -t autoresearch .
+docker run -p 8000:8000 autoresearch
+```
+
+### Building wheels
+Use Go Task to create platform-specific wheels:
+
+```bash
+task wheels
 ```
 
 ## Quick start
