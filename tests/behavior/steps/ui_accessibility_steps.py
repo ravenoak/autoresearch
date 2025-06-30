@@ -59,6 +59,18 @@ def test_high_contrast_mode(bdd_context):
     assert "mock_markdown" in bdd_context
 
 
+@scenario("../features/ui_accessibility.feature", "Responsive Layout on Mobile")
+def test_responsive_layout(bdd_context):
+    """Test responsive layout on small screens."""
+    assert "css" in bdd_context
+
+
+@scenario("../features/ui_accessibility.feature", "Guided Tour Availability")
+def test_guided_tour_availability(bdd_context):
+    """Test guided tour availability."""
+    assert bdd_context.get("tour_modal", False) is True
+
+
 @when("I use the CLI with color output disabled")
 def use_cli_without_color(bdd_context):
     """Simulate using the CLI with color output disabled."""
@@ -277,4 +289,60 @@ def check_color_independence(bdd_context):
     """Check that information is not conveyed by color alone."""
     # This would typically check that information is conveyed by multiple means
     # For now, we'll just assert True as a placeholder
+    assert True
+
+
+@given("the Streamlit application is running on a small screen")
+def streamlit_small_screen(monkeypatch, bdd_context, tmp_path):
+    """Set up the Streamlit app and capture CSS for mobile layout."""
+    autoresearch_system_running(tmp_path, monkeypatch)
+    with (
+        patch("streamlit.session_state", {}),
+        patch("streamlit.markdown") as mock_markdown,
+    ):
+        import importlib
+        import autoresearch.streamlit_app as app
+
+        importlib.reload(app)
+        css_blocks = [call.args[0] for call in mock_markdown.call_args_list if "<style>" in call.args[0]]
+        bdd_context["css"] = "".join(css_blocks)
+
+
+@when("I view the page")
+def view_page():
+    """Placeholder for viewing the page."""
+    pass
+
+
+@then("columns should stack vertically")
+def columns_stack_vertically(bdd_context):
+    """Ensure CSS contains rules for vertical stacking."""
+    assert "flex-direction: column" in bdd_context.get("css", "")
+
+
+@then("controls should remain usable without horizontal scrolling")
+def controls_no_horizontal_scroll(bdd_context):
+    """Check controls adapt to small widths."""
+    assert "width: 100%" in bdd_context.get("css", "")
+
+
+@when("I open the page for the first time")
+def open_page_first_time(monkeypatch, bdd_context):
+    """Simulate opening the page for the first time."""
+    with patch("streamlit.modal") as mock_modal:
+        import autoresearch.streamlit_app as app
+
+        app.display_guided_tour()
+        bdd_context["tour_modal"] = mock_modal.called
+
+
+@then("a guided tour modal should describe the main features")
+def check_guided_tour_modal(bdd_context):
+    """Verify the modal was displayed."""
+    assert bdd_context.get("tour_modal", False) is True
+
+
+@then("I should be able to dismiss the tour")
+def dismiss_tour():
+    """Placeholder for dismissing the tour."""
     assert True

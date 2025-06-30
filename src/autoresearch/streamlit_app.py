@@ -116,6 +116,9 @@ st.markdown(
         .responsive-container, .metrics-container {
             flex-direction: column;
         }
+        .stForm button[type="submit"] {
+            width: 100%;
+        }
         .main-header {
             font-size: 2rem;
         }
@@ -207,6 +210,28 @@ def display_guided_tour() -> None:
             )
             if st.button("Got it", key="tour_done", help="Close the guided tour"):
                 st.session_state.show_tour = False
+
+
+def display_help_sidebar() -> None:
+    """Show a persistent help/tutorial sidebar."""
+    if "first_visit" not in st.session_state:
+        st.session_state.first_visit = True
+
+    expanded = st.session_state.first_visit
+    with st.sidebar.expander("Tutorial", expanded=expanded):
+        st.markdown(
+            """
+            **Getting Started**
+
+            1. Enter a question in the main panel.
+            2. Choose the reasoning mode and loops.
+            3. Press **Run Query** to launch the agents.
+            """
+        )
+
+        if expanded:
+            if st.button("Dismiss tutorial", key="dismiss_tutorial"):
+                st.session_state.first_visit = False
 
 
 def save_config_to_toml(config_dict):
@@ -1328,8 +1353,11 @@ def display_query_input() -> None:
         ),
         unsafe_allow_html=True,
     )
-    with st.container():
-        st.markdown("<div role='region' aria-label='Query input area'>", unsafe_allow_html=True)
+    with st.form("query_form"):
+        st.markdown(
+            "<div role='region' aria-label='Query input area' tabindex='0'>",
+            unsafe_allow_html=True,
+        )
         col_query, col_actions = st.columns([3, 1])
         with col_query:
             st.session_state.current_query = st.text_area(
@@ -1355,12 +1383,13 @@ def display_query_input() -> None:
                 value=st.session_state.config.loops,
                 key="loops_slider",
             )
-            st.session_state.run_button = st.button(
+            submitted = st.form_submit_button(
                 "Run Query",
                 type="primary",
                 help="Activate to run your query",
-                key="run_query_button",
+                use_container_width=True,
             )
+            st.session_state.run_button = submitted
         st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -1446,6 +1475,9 @@ def main():
         # Add an expander for the configuration editor
         with st.expander("Edit Configuration"):
             display_config_editor()
+
+        # Tutorial/help sidebar
+        display_help_sidebar()
 
     # Apply theme and accessibility styles based on sidebar settings
     apply_theme_settings()
