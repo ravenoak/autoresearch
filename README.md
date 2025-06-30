@@ -44,6 +44,19 @@ autoresearch search "Explain AI ethics" --visualize
 This command prints a small table of the knowledge graph and an ASCII chart of
 metrics collected during the search.
 
+To save the knowledge graph as an image after running a search, use the
+`visualize` subcommand:
+
+```bash
+autoresearch visualize "Explain AI ethics" graph.png
+```
+
+You can also generate a PNG of the entire RDF store:
+
+```bash
+autoresearch visualize-rdf rdf_graph.png
+```
+
 Load an ontology and infer relations during a query:
 
 ```bash
