@@ -55,6 +55,18 @@ autoresearch query "What is the average lifespan of a blue whale?" \
 
 This uses only the Synthesizer agent to provide a direct answer without the dialectical process.
 
+### Starting with a Specific Agent
+
+You can control which agent begins the dialectical cycle using `--primus-start`:
+
+```bash
+autoresearch search "Compare JPEG and PNG compression" \
+  --reasoning-mode dialectical \
+  --primus-start 1
+```
+
+This example starts with the Contrarian agent (index `1`) before rotating through the others.
+
 ## Agent Configuration
 
 ### Using Different Models for Different Agents
