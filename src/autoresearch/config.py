@@ -265,6 +265,13 @@ class ConfigModel(BaseSettings):
     # Defaults to None (auto-detect in CLI)
     tracing_enabled: bool = Field(default=False)
 
+    # Monitoring settings
+    monitor_interval: float = Field(default=1.0, ge=0.1)
+    cpu_warning_threshold: float = Field(default=80.0, ge=0.0, le=100.0)
+    memory_warning_threshold: float = Field(default=80.0, ge=0.0, le=100.0)
+    cpu_critical_threshold: float = Field(default=90.0, ge=0.0, le=100.0)
+    memory_critical_threshold: float = Field(default=90.0, ge=0.0, le=100.0)
+
     # Storage settings
     storage: StorageConfig = Field(default_factory=StorageConfig)
 
