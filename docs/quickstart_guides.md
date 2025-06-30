@@ -171,53 +171,39 @@ This will start the Streamlit server and open the GUI in your default web browse
 
 ## A2A (Agent-to-Agent) Interface Quickstart Guide
 
-### Starting the API Server
+### Starting the A2A Server
 
 ```bash
-uvicorn autoresearch.api:app --host 0.0.0.0 --port 8000
-```
-
-### Starting the FastMCP Server
-
-```bash
-autoresearch serve
+autoresearch serve_a2a --host 0.0.0.0 --port 8765
 ```
 
 ### Basic Usage with Python
 
 ```python
-import requests
-import json
+import asyncio
+import httpx
+from a2a.client import A2AClient
+from a2a.utils.message import new_agent_text_message
+from a2a.types import MessageSendParams, SendMessageRequest
 
-# Define the API endpoint
-url = "http://localhost:8000/query"
 
-# Prepare the request
-headers = {"Content-Type": "application/json"}
-data = {
-    "query": "What is the capital of France?",
-    "reasoning_mode": "dialectical"
-}
+async def main() -> None:
+    async with httpx.AsyncClient() as http_client:
+        client = A2AClient(http_client, url="http://localhost:8765/")
+        params = MessageSendParams(message=new_agent_text_message("What is the capital of France?"))
+        request = SendMessageRequest(id="1", params=params)
+        response = await client.send_message(request)
+        print(response.result)
 
-# Send the request
-response = requests.post(url, headers=headers, data=json.dumps(data))
-
-# Process the response
-if response.status_code == 200:
-    result = response.json()
-    print(f"Answer: {result['answer']}")
-    print(f"Reasoning: {result['reasoning']}")
-    print(f"Citations: {', '.join(result['citations'])}")
-else:
-    print(f"Error: {response.status_code} - {response.text}")
+asyncio.run(main())
 ```
 
 ### Basic Usage with cURL
 
 ```bash
-curl -X POST http://localhost:8000/query \
+curl -X POST http://localhost:8765/ \
   -H "Content-Type: application/json" \
-  -d '{"query": "What is the capital of France?", "reasoning_mode": "dialectical"}'
+  -d '{"type": "query", "message": {"messageId": "1", "role": "agent", "parts": [{"kind": "text", "text": "What is the capital of France?"}]}}'
 ```
 
 ### Discovering Capabilities

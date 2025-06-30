@@ -12,54 +12,25 @@ import asyncio
 from functools import wraps
 from typing import Any, Callable, Dict
 from uuid import uuid4
+from threading import Thread
 
 import httpx
+import uvicorn
 
 try:
     from a2a.client import A2AClient as SDKA2AClient
 
-    from a2a.utils.message import new_agent_text_message
+    from a2a.utils.message import new_agent_text_message, get_message_text
     from a2a.types import (
         Message,
         MessageSendParams,
         SendMessageRequest,
         SendMessageResponse,
     )
-    # The A2AServer, A2AMessage, and A2AMessageType classes are not directly available
-    # in the a2a package. We'll need to adapt our code to use the available classes.
     A2A_AVAILABLE = True
 
-    # Define stub classes for testing purposes
-    class A2AServer:
-        """Stub class for A2AServer."""
-
-        def __init__(self, host=None, port=None):
-            """Initialize the stub server with host and port."""
-            self.host = host
-            self.port = port
-
-        def register_handler(self, message_type, handler):
-            """Register a handler for a message type."""
-            pass
-
-        def start(self):
-            """Start the server."""
-            pass
-
-        def stop(self):
-            """Stop the server."""
-            pass
-
-    class A2AMessage:
-        """Stub class for A2AMessage."""
-
-        def __init__(self, type=None, content=None):
-            """Initialize a stub message."""
-            self.type = type
-            self.content = content or {}
-
-    class A2AMessageType:
-        """Stub class for A2AMessageType."""
+    class A2AMessageType(str):
+        """Supported message types."""
 
         QUERY = "query"
         COMMAND = "command"
@@ -67,7 +38,53 @@ try:
         RESULT = "result"
         ERROR = "error"
         ACK = "ack"
-except ImportError:
+
+    class A2AServer:
+        """Minimal A2A server based on FastAPI and uvicorn."""
+
+        def __init__(self, host: str, port: int) -> None:
+            self.host = host
+            self.port = port
+            self._handlers: Dict[str, Callable[[Message], Dict[str, Any]]] = {}
+            self._server: uvicorn.Server | None = None
+            self._thread: Thread | None = None
+
+        def register_handler(self, message_type: str, handler: Callable[[Message], Dict[str, Any]]) -> None:
+            """Register a handler for a given message type."""
+
+            self._handlers[message_type] = handler
+
+        def start(self) -> None:
+            """Start the HTTP server in a background thread."""
+
+            from fastapi import FastAPI, Request
+
+            app = FastAPI()
+
+            @app.post("/")
+            async def handle(request: Request) -> Dict[str, Any]:  # pragma: no cover - network
+                payload = await request.json()
+                msg_type = payload.get("type")
+                message_data = payload.get("message", {})
+                message = Message.model_validate(message_data)
+                handler = self._handlers.get(msg_type)
+                if handler is None:
+                    return {"status": "error", "error": "Unknown message type"}
+                return handler(message)
+
+            config = uvicorn.Config(app, host=self.host, port=self.port, log_level="info")
+            self._server = uvicorn.Server(config)
+            self._thread = Thread(target=self._server.run, daemon=True)
+            self._thread.start()
+
+        def stop(self) -> None:
+            """Stop the HTTP server."""
+
+            if self._server:
+                self._server.should_exit = True
+            if self._thread:
+                self._thread.join()
+except ImportError:  # pragma: no cover - dependency missing
     A2A_AVAILABLE = False
 
 from .logging_utils import get_logger
@@ -121,7 +138,7 @@ class A2AInterface:
         logger.info("Stopping A2A server")
         self.server.stop()
 
-    def _handle_query(self, message: A2AMessage) -> Dict[str, Any]:
+    def _handle_query(self, message: Message) -> Dict[str, Any]:
         """Handle a query message from another agent.
 
         Args:
@@ -130,7 +147,11 @@ class A2AInterface:
         Returns:
             The response A2A message
         """
-        query = message.content.get("query", "")
+        query = ""
+        if message.metadata:
+            query = message.metadata.get("query", "")
+        if not query:
+            query = get_message_text(message)
         if not query:
             return {"status": "error", "error": "No query provided"}
 
@@ -155,7 +176,7 @@ class A2AInterface:
             # Return error response
             return error_data
 
-    def _handle_command(self, message: A2AMessage) -> Dict[str, Any]:
+    def _handle_command(self, message: Message) -> Dict[str, Any]:
         """Handle a command message from another agent.
 
         Args:
@@ -164,8 +185,13 @@ class A2AInterface:
         Returns:
             The response A2A message
         """
-        command = message.content.get("command", "")
-        args = message.content.get("args", {})
+        command = ""
+        args: Dict[str, Any] = {}
+        if message.metadata:
+            command = message.metadata.get("command", "")
+            args = message.metadata.get("args", {})
+        if not command:
+            command = get_message_text(message)
 
         if not command:
             return {"status": "error", "error": "No command provided"}

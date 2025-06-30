@@ -248,7 +248,8 @@ def check_cli_config_updated(bdd_context):
 @when("I execute a query via the A2A interface")
 def execute_query_via_a2a(bdd_context):
     """Execute a query via the A2A interface."""
-    from autoresearch.a2a_interface import A2AInterface, A2AMessage, A2AMessageType
+    from autoresearch.a2a_interface import A2AInterface
+    from a2a.utils.message import new_agent_text_message
 
     mock_response = {
         "answer": "Paris is the capital of France.",
@@ -262,9 +263,9 @@ def execute_query_via_a2a(bdd_context):
         return_value=mock_response,
     ) as mock_handle:
         interface = A2AInterface()
-        result = interface._handle_query(
-            A2AMessage(type=A2AMessageType.QUERY, content={"query": "What is the capital of France?"})
-        )
+        msg = new_agent_text_message("")
+        msg.metadata = {"query": "What is the capital of France?"}
+        result = interface._handle_query(msg)
 
         bdd_context["a2a_result"] = result
 
@@ -327,11 +328,14 @@ def check_error_handling(bdd_context):
         mock_query.side_effect = ValueError("Invalid query: Query cannot be empty")
 
         if "a2a_result" in bdd_context:
-            from autoresearch.a2a_interface import A2AInterface, A2AMessage, A2AMessageType
+            from autoresearch.a2a_interface import A2AInterface
+            from a2a.utils.message import new_agent_text_message
 
             interface = A2AInterface()
             try:
-                interface._handle_query(A2AMessage(type=A2AMessageType.QUERY, content={"query": ""}))
+                msg = new_agent_text_message("")
+                msg.metadata = {"query": ""}
+                interface._handle_query(msg)
             except ValueError as e:
                 bdd_context[error_key] = str(e)
         else:

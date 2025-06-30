@@ -10,6 +10,7 @@ from autoresearch.a2a_interface import (
     requires_a2a,
     A2A_AVAILABLE,
 )
+from a2a.utils.message import new_agent_text_message
 
 
 # Skip all tests if A2A SDK is not available
@@ -33,12 +34,15 @@ def mock_send_request():
 
 
 @pytest.fixture
-def mock_a2a_message():
-    """Create a mock A2A message."""
-    with patch("autoresearch.a2a_interface.A2AMessage") as mock_message_class:
-        mock_message = MagicMock()
-        mock_message_class.return_value = mock_message
-        yield mock_message
+def make_a2a_message():
+    """Create a real A2A message for tests."""
+
+    def _make(**metadata):
+        msg = new_agent_text_message("")
+        msg.metadata = metadata
+        return msg
+
+    return _make
 
 
 @pytest.fixture
@@ -96,61 +100,61 @@ class TestA2AInterface:
 
         mock_a2a_server.stop.assert_called_once()
 
-    def test_handle_query(self, mock_a2a_server, mock_a2a_message, mock_orchestrator):
+    def test_handle_query(self, mock_a2a_server, make_a2a_message, mock_orchestrator):
         """Test handling a query message."""
         # Setup
         interface = A2AInterface()
-        mock_a2a_message.content = {"query": "test query"}
+        msg = make_a2a_message(query="test query")
         mock_orchestrator.run_query.return_value.answer = "test answer"
 
         # Execute
-        result = interface._handle_query(mock_a2a_message)
+        result = interface._handle_query(msg)
 
         # Verify
         assert result["status"] == "success"
         assert result["message"]["role"] == "agent"
         mock_orchestrator.run_query.assert_called_once()
 
-    def test_handle_command_get_capabilities(self, mock_a2a_server, mock_a2a_message):
+    def test_handle_command_get_capabilities(self, mock_a2a_server, make_a2a_message):
         """Test handling a get_capabilities command."""
         interface = A2AInterface()
-        mock_a2a_message.content = {"command": "get_capabilities"}
+        msg = make_a2a_message(command="get_capabilities")
 
         with patch("autoresearch.a2a_interface.capabilities_endpoint") as cap:
             cap.return_value = {"version": "1"}
-            result = interface._handle_command(mock_a2a_message)
+            result = interface._handle_command(msg)
 
         assert result == {"status": "success", "result": {"version": "1"}}
         cap.assert_called_once()
 
-    def test_handle_command_get_config(self, mock_a2a_server, mock_a2a_message, mock_config):
+    def test_handle_command_get_config(self, mock_a2a_server, make_a2a_message, mock_config):
         """Test handling a get_config command."""
         interface = A2AInterface()
-        mock_a2a_message.content = {"command": "get_config"}
+        msg = make_a2a_message(command="get_config")
 
-        result = interface._handle_command(mock_a2a_message)
+        result = interface._handle_command(msg)
 
         assert result["status"] == "success"
         assert "llm_backend" in result["result"]
 
-    def test_handle_command_set_config(self, mock_a2a_server, mock_a2a_message, mock_config):
+    def test_handle_command_set_config(self, mock_a2a_server, make_a2a_message, mock_config):
         """Test handling a set_config command."""
         interface = A2AInterface()
-        mock_a2a_message.content = {"command": "set_config", "args": {"loops": 3}}
+        msg = make_a2a_message(command="set_config", args={"loops": 3})
 
-        result = interface._handle_command(mock_a2a_message)
+        result = interface._handle_command(msg)
 
         assert result["status"] == "success"
         assert result["result"]["loops"] == 3
 
-    def test_handle_command_unknown(self, mock_a2a_server, mock_a2a_message):
+    def test_handle_command_unknown(self, mock_a2a_server, make_a2a_message):
         """Test handling an unknown command."""
         # Setup
         interface = A2AInterface()
-        mock_a2a_message.content = {"command": "unknown_command"}
+        msg = make_a2a_message(command="unknown_command")
 
         # Execute
-        result = interface._handle_command(mock_a2a_message)
+        result = interface._handle_command(msg)
 
         # Verify
         assert result == {
@@ -158,14 +162,14 @@ class TestA2AInterface:
             "error": "Unknown command: unknown_command",
         }
 
-    def test_handle_info(self, mock_a2a_server, mock_a2a_message):
+    def test_handle_info(self, mock_a2a_server, make_a2a_message):
         """Test handling an info message."""
         # Setup
         interface = A2AInterface()
-        mock_a2a_message.content = {"info_type": "test_info"}
+        msg = make_a2a_message(info_type="test_info")
 
         # Execute
-        result = interface._handle_info(mock_a2a_message)
+        result = interface._handle_info(msg)
 
         # Verify
         assert "status" in result
