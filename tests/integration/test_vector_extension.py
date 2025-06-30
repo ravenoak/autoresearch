@@ -25,6 +25,7 @@ def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
             duckdb_path=str(tmp_path / "kg.duckdb"),
         )
     )
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 

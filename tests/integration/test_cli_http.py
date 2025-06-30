@@ -71,6 +71,7 @@ def _patch_run_query(monkeypatch):
 
 def _common_patches(monkeypatch):
     cfg = ConfigModel(loops=1)
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
     monkeypatch.setattr(

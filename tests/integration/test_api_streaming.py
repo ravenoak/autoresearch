@@ -19,6 +19,7 @@ def test_query_stream_param(monkeypatch):
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     cfg = ConfigModel(loops=2, api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
     client = TestClient(api_app)
@@ -33,6 +34,7 @@ def test_config_webhooks(monkeypatch):
     """Configured webhooks should receive final results."""
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(
         Orchestrator,
@@ -52,6 +54,7 @@ def test_batch_query_pagination(monkeypatch):
     """/query/batch should honor page and page_size parameters."""
 
     cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(
         Orchestrator,
@@ -74,6 +77,7 @@ def test_api_key_roles_integration(monkeypatch):
     """Requests should succeed only with valid API keys."""
 
     cfg = ConfigModel(api=APIConfig(api_keys={"secret": "admin"}))
+    cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(
         Orchestrator,

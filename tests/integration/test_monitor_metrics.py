@@ -14,11 +14,9 @@ def dummy_run_query(query, config, callbacks=None, **kwargs):
 
 
 def setup_patches(monkeypatch):
-    monkeypatch.setattr(
-        ConfigLoader,
-        "load_config",
-        lambda self: ConfigModel(loops=1, output_format="json"),
-    )
+    cfg = ConfigModel(loops=1, output_format="json")
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     responses = iter(["test", ""])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
