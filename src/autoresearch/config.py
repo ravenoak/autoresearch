@@ -215,6 +215,7 @@ class APIConfig(BaseModel):
     )
     role_permissions: Dict[str, List[str]] = Field(
         default_factory=lambda: {
+            "anonymous": ["query"],
             "user": ["query"],
             "admin": ["query", "metrics", "capabilities"],
         },
@@ -237,6 +238,7 @@ class DistributedConfig(BaseModel):
     enabled: bool = Field(default=False)
     address: str | None = Field(default=None, description="Ray cluster address")
     num_cpus: int = Field(default=1, ge=1)
+    message_broker: str = Field(default="memory")
 
 
 class ConfigModel(BaseSettings):
