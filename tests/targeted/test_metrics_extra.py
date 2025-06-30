@@ -17,3 +17,16 @@ def test_cycle_and_agent_metrics(monkeypatch):
     assert summary["agent_tokens"]["agent"]["in"] == 2
     assert summary["agent_tokens"]["agent"]["out"] == 3
     assert summary["errors"]["total"] == 1
+
+
+def test_resource_tracking(monkeypatch):
+    monkeypatch.setattr(
+        metrics,
+        "_get_system_usage",
+        lambda: (50.0, 100.0),
+    )
+    m = metrics.OrchestrationMetrics()
+    m.record_system_resources()
+    rec = m.get_summary()["resource_usage"][0]
+    assert rec["cpu_percent"] == 50.0
+    assert rec["memory_mb"] == 100.0
