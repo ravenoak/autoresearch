@@ -400,7 +400,11 @@ async def query_stream_endpoint(
     return StreamingResponse(generator(), media_type="application/json")
 
 
-@app.post("/query/batch")
+@app.post(
+    "/query/batch",
+    summary="Batch Query Endpoint",
+    description="Execute multiple queries with pagination support",
+)
 async def batch_query_endpoint(
     batch: BatchQueryRequest,
     page: int = 1,

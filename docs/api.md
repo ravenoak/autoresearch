@@ -68,7 +68,8 @@ curl -X POST 'http://localhost:8000/query/batch?page=2&page_size=2' \
 ```
 
 Use the `page` and `page_size` query parameters to control which subset of
-queries are processed. Both parameters start counting at 1.
+queries are processed. Both parameters start counting at 1. If omitted,
+`page` defaults to `1` and `page_size` defaults to `10`.
 
 ### Webhook notifications
 

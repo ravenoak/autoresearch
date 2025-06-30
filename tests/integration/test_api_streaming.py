@@ -59,7 +59,7 @@ def test_batch_query_pagination(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer=q.query, citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
     )
     client = TestClient(api_app)
 
@@ -71,6 +71,28 @@ def test_batch_query_pagination(monkeypatch):
     assert data["page_size"] == 2
     assert len(data["results"]) == 2
     assert data["results"][0]["answer"] == "q3"
+
+
+def test_batch_query_defaults(monkeypatch):
+    """/query/batch should use default pagination when params are omitted."""
+
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
+    )
+    client = TestClient(api_app)
+
+    payload = {"queries": [{"query": "a"}, {"query": "b"}, {"query": "c"}]}
+    resp = client.post("/query/batch", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["page"] == 1
+    assert data["page_size"] == 10
+    assert [r["answer"] for r in data["results"]] == ["a", "b", "c"]
 
 
 def test_api_key_roles_integration(monkeypatch):
