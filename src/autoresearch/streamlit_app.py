@@ -84,6 +84,17 @@ st.markdown(
     .responsive-item {
         flex: 1 1 300px;
     }
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
     .skip-link {
         position: absolute;
         left: -1000px;
@@ -100,6 +111,17 @@ st.markdown(
         background: #fff;
         padding: 0.5rem;
         z-index: 1000;
+    }
+    @media (max-width: 600px) {
+        .responsive-container, .metrics-container {
+            flex-direction: column;
+        }
+        .main-header {
+            font-size: 2rem;
+        }
+        .subheader {
+            font-size: 1.2rem;
+        }
     }
 </style>
 """,
@@ -1289,7 +1311,16 @@ def initialize_session_state():
 def display_query_input() -> None:
     """Render the query input controls."""
     st.markdown("<h2 class='subheader'>Query Input</h2>", unsafe_allow_html=True)
+    st.markdown(
+        (
+            "<p id='keyboard-nav' class='sr-only'>"
+            "Use Tab to navigate fields and press Enter on 'Run Query' to submit."
+            "</p>"
+        ),
+        unsafe_allow_html=True,
+    )
     with st.container():
+        st.markdown("<div role='region' aria-label='Query input area'>", unsafe_allow_html=True)
         col_query, col_actions = st.columns([3, 1])
         with col_query:
             st.session_state.current_query = st.text_area(
@@ -1297,6 +1328,7 @@ def display_query_input() -> None:
                 height=100,
                 placeholder="What would you like to research?",
                 key="query_input",
+                help="After typing, press Tab to reach the Run button",
             )
         with col_actions:
             st.session_state.reasoning_mode = st.selectbox(
@@ -1314,7 +1346,13 @@ def display_query_input() -> None:
                 value=st.session_state.config.loops,
                 key="loops_slider",
             )
-            st.session_state.run_button = st.button("Run Query", type="primary")
+            st.session_state.run_button = st.button(
+                "Run Query",
+                type="primary",
+                help="Activate to run your query",
+                key="run_query_button",
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def main():
