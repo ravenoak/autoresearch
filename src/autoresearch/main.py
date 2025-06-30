@@ -234,6 +234,11 @@ def search(
         "--mode",
         help="Override reasoning mode for this run (direct, dialectical, chain-of-thought)",
     ),
+    loops: Optional[int] = typer.Option(
+        None,
+        "--loops",
+        help="Number of reasoning cycles to run",
+    ),
     ontology: Optional[str] = typer.Option(
         None,
         "--ontology",
@@ -253,7 +258,7 @@ def search(
     primus_start: Optional[int] = typer.Option(
         None,
         "--primus-start",
-        help="Starting agent index for dialectical reasoning",
+        help="Index of the agent to begin the dialectical cycle",
     ),
     visualize: bool = typer.Option(
         False,
@@ -284,6 +289,8 @@ def search(
     updates: dict[str, Any] = {}
     if reasoning_mode is not None:
         updates["reasoning_mode"] = reasoning_mode
+    if loops is not None:
+        updates["loops"] = loops
     if primus_start is not None:
         updates["primus_start"] = primus_start
     storage_updates: dict[str, Any] = {}
