@@ -6,9 +6,9 @@ from .common_steps import *  # noqa: F401,F403
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
-def run_cli_query(query, monkeypatch, bdd_context, cli_client):
+def run_cli_query(query, monkeypatch, bdd_context, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = cli_client.invoke(cli_app, ["search", query])
+    result = cli_runner.invoke(cli_app, ["search", query])
     bdd_context["cli_result"] = result
 
 
@@ -48,10 +48,10 @@ def check_http_response(bdd_context):
 
 
 @when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
-def run_mcp_cli_query(query, monkeypatch, bdd_context, cli_client):
+def run_mcp_cli_query(query, monkeypatch, bdd_context, cli_runner):
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    result = cli_client.invoke(cli_app, ["search", query])
+    result = cli_runner.invoke(cli_app, ["search", query])
     bdd_context["mcp_result"] = result
 
 
@@ -60,7 +60,7 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context, cli_client):
         'I run `autoresearch search "{query}" -i` and refine to "{refined}" then exit'
     )
 )
-def run_interactive_query(query, refined, monkeypatch, bdd_context, cli_client):
+def run_interactive_query(query, refined, monkeypatch, bdd_context, cli_runner):
     from autoresearch.config import ConfigModel, ConfigLoader
 
     monkeypatch.setattr(
@@ -71,14 +71,14 @@ def run_interactive_query(query, refined, monkeypatch, bdd_context, cli_client):
     responses = iter([refined, "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    result = cli_client.invoke(cli_app, ["search", query, "--interactive"])
+    result = cli_runner.invoke(cli_app, ["search", query, "--interactive"])
     bdd_context["cli_result"] = result
 
 
 @when(parsers.re(r'I run `autoresearch visualize "(?P<query>.+)" (?P<file>.+)`'))
-def run_visualize_cli(query, file, tmp_path, bdd_context, cli_client):
+def run_visualize_cli(query, file, tmp_path, bdd_context, cli_runner):
     out = tmp_path / file
-    result = cli_client.invoke(cli_app, ["visualize", query, str(out)])
+    result = cli_runner.invoke(cli_app, ["visualize", query, str(out)])
     bdd_context["viz_result"] = result
     bdd_context["viz_path"] = out
 

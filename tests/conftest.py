@@ -373,15 +373,9 @@ def mock_llm_adapter(monkeypatch):
 
 
 @pytest.fixture
-def cli_runner():
-    """Return a Typer CLI runner."""
+def cli_runner() -> CliRunner:
+    """Return a Typer CLI runner configured for the tests."""
     return CliRunner()
-
-
-@pytest.fixture
-def cli_client(cli_runner: CliRunner) -> CliRunner:
-    """Alias fixture for a Typer CLI runner used in behavior tests."""
-    return cli_runner
 
 
 @pytest.fixture
