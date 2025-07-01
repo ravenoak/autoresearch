@@ -831,6 +831,16 @@ class Search:
         return best
 
     @classmethod
+    def optimize_weights(
+        cls, data: Dict[str, List[Dict[str, float]]], step: float = 0.1
+    ) -> Tuple[Tuple[float, float, float], float]:
+        """Return the best weights and corresponding NDCG score."""
+
+        best = cls.tune_weights(data, step=step)
+        score = cls.evaluate_weights(best, data)
+        return best, score
+
+    @classmethod
     def register_backend(
         cls, name: str
     ) -> Callable[
