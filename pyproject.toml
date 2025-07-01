@@ -91,6 +91,7 @@ markers = [
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
 
 [tool.flake8]
 max-line-length = 100
