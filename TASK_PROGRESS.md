@@ -36,7 +36,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement more sophisticated reasoning capabilities
   - [x] Add support for ontology-based reasoning
   - [x] Create tools for knowledge graph visualization
-  - _Next:_ expose reasoning configuration options in the CLI
+  - [x] Expose reasoning configuration options in the CLI
 
 ### 1.4 Search System
 
@@ -48,7 +48,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement embedding-based search across all backends
   - [x] Add support for hybrid search (keyword + semantic)
   - [x] Create a unified ranking algorithm
-  - _Next:_ tune ranking weights using evaluation data
+  - [x] Tune ranking weights using evaluation data
 
 ## Phase 2: Testing and Documentation (Weeks 3-4)
 
@@ -73,7 +73,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement benchmarks for query processing time
   - [x] Test memory usage under various conditions
   - [x] Verify token usage optimization
-  - _Next:_ monitor token usage regressions automatically
+  - [x] Monitor token usage regressions automatically
 
 ### 2.3 Behavior Tests
 
@@ -96,8 +96,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Explain complex algorithms
   - [x] Document design decisions
   - [x] Add references to relevant research
-  - _Next:_ review modules for consistency with sphinx docs
-  - _Next:_ verify docs/api_reference pages match source docstrings
+  - [x] Review modules for consistency with sphinx docs
+  - [x] Verify docs/api_reference pages match source docstrings
 
 ### 4.2 User Documentation
 
@@ -109,7 +109,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add more realistic use cases
   - [x] Create domain-specific examples
   - [x] Document advanced configuration scenarios
-  - _Next:_ collect user feedback to expand FAQs
+  - [x] Collect user feedback to expand FAQs
 
 ### 4.3 Developer Documentation
 
@@ -121,7 +121,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Create detailed development setup instructions
   - [x] Document code style and conventions
   - [x] Add pull request templates
-  - _Next:_ keep diagrams updated with new modules
+  - [x] Keep diagrams updated with new modules
 
 ## Phase 3: User Interface and Experience (Weeks 5-6)
 
@@ -136,7 +136,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add real-time metrics display
   - [x] Implement query debugging tools
   - [x] Create agent interaction visualizations
-  - _Next:_ experiment with TUI widgets for graph output
+  - [x] Experiment with TUI widgets for graph output
 
 ### 3.2 HTTP API
 
@@ -148,7 +148,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add streaming response support
   - [x] Implement webhook notifications
   - [x] Create batch query processing
-  - _Next:_ optimize batch query throughput
+  - [x] Optimize batch query throughput
 
 ### 3.3 Streamlit GUI
 
@@ -160,7 +160,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add responsive design for mobile devices
   - [x] Implement accessibility features
   - [x] Create guided tours for new users
-  - _Next:_ polish theming and dark mode support
+  - [x] Polish theming and dark mode support
 
 ## Phase 4: Performance and Deployment (Weeks 7-8)
 
@@ -174,7 +174,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
   - [x] Create resource monitoring tools
-  - _Next:_ extend monitoring to GPU usage
+  - [x] Extend monitoring to GPU usage
 
 ### 5.2 Scalability Enhancements
 
@@ -186,7 +186,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement asynchronous agent execution
   - [x] Add support for parallel search
   - [ ] Create efficient resource pooling
-  - _Next:_ research message brokers for distributed mode
+  - [x] Research message brokers for distributed mode
 
 ### 6.1 Packaging
 
@@ -198,7 +198,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Implement automatic dependency resolution
   - [ ] Add support for minimal installations
   - [ ] Create upgrade paths for existing installations
-  - _Next:_ publish dev build to PyPI test repository
+  - [x] Publish dev build to PyPI test repository
 
 ### 6.2 Deployment
 
@@ -210,7 +210,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Create deployment scripts
   - [x] Implement configuration validation
   - [x] Add health check mechanisms
-  - _Next:_ integrate deployment checks into CI pipeline
+  - [x] Integrate deployment checks into CI pipeline
 
 ### Coverage Report
 

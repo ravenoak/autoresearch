@@ -8,8 +8,10 @@ nav:
   - API Usage: docs/api.md
   - Advanced Usage: docs/advanced_usage.md
   - Deployment: docs/deployment.md
+  - FAQ: docs/faq.md
   - Agent System: docs/agent_system.md
   - Component Interactions: docs/component_interactions.md
+  - Message Brokers: docs/message_brokers.md
   - API Reference:
     - Overview: docs/api_reference/index.md
     - Agents: docs/api_reference/agents.md

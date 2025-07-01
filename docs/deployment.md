@@ -80,3 +80,9 @@ After starting the service, run the deployment script to validate configuration 
 ```bash
 poetry run python scripts/deploy.py
 ```
+
+To publish a development build to the TestPyPI repository run:
+
+```bash
+./scripts/publish_dev.py
+```

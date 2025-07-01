@@ -541,6 +541,56 @@ def config_validate() -> None:
         return
 
 
+@config_app.command("reasoning")
+def config_reasoning(
+    loops: Optional[int] = typer.Option(None, help="Number of reasoning loops"),
+    primus_start: Optional[int] = typer.Option(
+        None, help="Index of starting agent for dialectical mode"
+    ),
+    mode: Optional[str] = typer.Option(None, help="Reasoning mode to use"),
+    token_budget: Optional[int] = typer.Option(
+        None, help="Token budget for a single run"
+    ),
+    max_errors: Optional[int] = typer.Option(
+        None, help="Abort after this many errors"
+    ),
+    show: bool = typer.Option(
+        False, "--show", help="Display current reasoning configuration"
+    ),
+) -> None:
+    """Get or update reasoning configuration options."""
+    cfg = _config_loader.load_config()
+    data = cfg.model_dump()
+
+    if show or not any(
+        opt is not None for opt in (loops, primus_start, mode, token_budget, max_errors)
+    ):
+        typer.echo("Current reasoning settings:")
+        typer.echo(f"  loops={data.get('loops')}")
+        typer.echo(f"  primus_start={data.get('primus_start')}")
+        typer.echo(f"  reasoning_mode={data.get('reasoning_mode')}")
+        typer.echo(f"  token_budget={data.get('token_budget')}")
+        typer.echo(f"  max_errors={data.get('max_errors', 3)}")
+        return
+
+    updates = {}
+    if loops is not None:
+        updates["loops"] = loops
+    if primus_start is not None:
+        updates["primus_start"] = primus_start
+    if mode is not None:
+        updates["reasoning_mode"] = mode
+    if token_budget is not None:
+        updates["token_budget"] = token_budget
+    if max_errors is not None:
+        updates["max_errors"] = max_errors
+
+    new_cfg = ConfigModel.model_validate({**data, **updates})
+    path = _config_loader._search_paths[0]
+    path.write_text(new_cfg.model_dump_json(indent=2))
+    typer.echo(f"Updated {path}")
+
+
 # Add monitoring subcommands
 app.add_typer(monitor_app, name="monitor")
 

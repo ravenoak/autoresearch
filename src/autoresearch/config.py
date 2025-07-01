@@ -258,6 +258,11 @@ class ConfigModel(BaseSettings):
         ge=1,
         description="Maximum tokens available for a single run",
     )
+    max_errors: int = Field(
+        default=3,
+        ge=1,
+        description="Abort reasoning after this many errors",
+    )
     agents: List[str] = Field(default=["Synthesizer", "Contrarian", "FactChecker"])
     primus_start: int = Field(default=0)
     reasoning_mode: ReasoningMode = Field(default=ReasoningMode.DIALECTICAL)

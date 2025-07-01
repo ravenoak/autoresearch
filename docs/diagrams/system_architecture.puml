@@ -8,6 +8,7 @@ node "Client Interfaces" {
   component "FastMCP" as FastMCP
   component "Streamlit GUI" as Streamlit
   component "Monitor" as Monitor
+  component "TUI Widgets" as TUI
 }
 
 node "Core Components" {
@@ -81,6 +82,7 @@ FastMCP -> Orchestrator : run_query(query)
 user -> Monitor : interactive session
 Monitor -> Orchestrator : run_query(query)
 Monitor -> ResourceMonitor : collect metrics
+Monitor -> TUI : show graphs
 
 Orchestrator -> ConfigLoader : load_config()
 ConfigLoader --> Orchestrator : config
