@@ -13,7 +13,7 @@
 
 - **config.py**: Loads, validates, and hot-reloads configuration from `.env`, environment, and TOML.
 - **main.py**: CLI entry point, parses args, loads config, runs agent, outputs context-adaptive results.
-- **api.py**: FastAPI server exposing query and metrics endpoints.
+- **api.py**: FastAPI server exposing `/query`, `/query/batch`, streaming, and metrics endpoints.
 - **logging_utils.py**: Logging setup and helpers.
 - **output_format.py**: Adapts output for human (Markdown/plaintext) or machine (JSON) context.
 - **storage.py**: Persistence for search results and knowledge graph.
@@ -23,6 +23,7 @@
 - **orchestration/state.py**: Tracks query state between agents.
 - **orchestration/reasoning.py**: Reasoning mode definitions and strategies.
 - **orchestration/metrics.py**: Prometheus metrics collection utilities.
+- **resource_monitor.py**: Tracks CPU and memory usage for Prometheus and the CLI monitor.
 - **orchestration/phases.py**: Agent execution phases.
 - **agents/**: Implementations of Synthesizer, Contrarian, FactChecker, etc.
 - **llm/**: Backend adapters for language models.
@@ -41,7 +42,7 @@
 ## 4. CLI
 
 - Command: `autoresearch [MODE] [OPTIONS]`
-  - Modes: `search`, `monitor`, `config`, etc.
+  - Modes: `search`, `monitor`, `config`, etc. The `monitor` mode reports CPU and memory usage and can run interactively.
   - `search`: `autoresearch search [OPTIONS] QUESTION`
 - Options for backend, reasoning mode, API keys, model, loops, logging, agent roster, output format, etc.
 - **Adaptive output**:

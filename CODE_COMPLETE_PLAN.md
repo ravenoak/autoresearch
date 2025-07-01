@@ -97,7 +97,7 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 - **Enhance API capabilities**
   - Add streaming response support
   - Implement webhook notifications
-  - Create batch query processing
+  - ~~Create batch query processing~~ (implemented via `POST /query/batch`)
 
 ### 3.3 Streamlit GUI
 - **Complete the web interface**
@@ -151,7 +151,7 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 - **Enhance memory management**
   - Implement efficient caching strategies
   - Add support for memory-constrained environments
-  - Create resource monitoring tools
+  - ~~Create resource monitoring tools~~ (implemented via `ResourceMonitor` and `monitor` CLI)
 
 ### 5.2 Scalability Enhancements
 - **Complete distributed execution support**

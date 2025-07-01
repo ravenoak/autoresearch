@@ -26,7 +26,7 @@ Autoresearch is a **local-first, Python 3.12+** research assistant that performs
 | **F-04** | Persist new claims into **Hybrid DKG**:  ⬩ NetworkX (RAM)  ⬩ DuckDB tables (`nodes`, `edges`, vectors)  ⬩ RDFLib quad-store (SQLite/BerkeleyDB). | Must     | SQL row count increment; RDF quad present. |
 | **F-05** | Configurable **iterations** (`loops`) and **agent roster** via TOML; hot-reload on change.                                                       | High     | Watchfiles trigger → new agent visible.    |
 | **F-06** | Return **schema-validated JSON** containing `answer`, `citations`, `reasoning`, `metrics` **when requested or piped**; otherwise, output must be readable, well-formatted Markdown or plaintext for humans, with clear dialectical structure. | Must     | Pydantic validation; BDD; manual review.   |
-| **F-07** | Expose **Prometheus** metrics (token, latency, error, graph-hit).                                          | High     | Prometheus scrape & Grafana dashboard.     |
+| **F-07** | Expose **Prometheus** metrics and resource monitoring (CPU, memory, token, latency, error, graph-hit).                                          | High     | Prometheus scrape & Grafana dashboard.     |
 | **F-08** | Provide **interactive mode** allowing user or peer-agent input each loop.                                                                        | Should   | Manual QA script; BDD.                     |
 | **F-09** | Allow **RAM/Disc tuning**: user sets `ram_budget_mb`; system evicts least-recent graph nodes to DuckDB when exceeded.                            | Should   | Memory profiler; eviction log.             |
 | **F-10** | Enable **vector search** on DuckDB (`CREATE INDEX … USING hnsw`) for embeddings; k-NN latency < 150 ms for 10 k vectors.                         | Should   | Benchmark test.                            |
@@ -44,8 +44,8 @@ Must     | Unit tests for logging utilities.          |
 | **F-19** | Search local directories for text and code. Users choose a path to index and results must cite the file path and snippet for provenance. | Should   | Unit tests for local file indexing; BDD scenario. |
 | **F-20** | Search local Git repositories by path. The system scans the working tree and commit history, indexing commit messages and diffs. Results return commit hash, file path, and snippet for provenance. | Should   | Unit tests for git repository search; BDD scenario. |
 | **F-21** | Maintain local indexes for directories and Git repositories. Indexing occurs at startup or on user command, capturing file contents and commit history for offline queries. | Should   | Unit tests verifying incremental updates; BDD scenario. |
-| **F-22** | Interfaces behave consistently across CLI and GUI. |
-Must     | BDD tests for cross-modal consistency.       |
+| **F-22** | Interfaces behave consistently across CLI and GUI. | Must | BDD tests for cross-modal consistency. |
+| **F-23** | Batch query endpoint processes multiple queries with pagination. | Should | Unit/integration tests for `/query/batch`. |
 
 ---
 

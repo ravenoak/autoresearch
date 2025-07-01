@@ -15,6 +15,7 @@ node "Core Components" {
   component "ConfigLoader" as ConfigLoader
   component "Error Hierarchy" as Errors
   component "Metrics Collector" as Metrics
+  component "Resource Monitor" as ResourceMonitor
   component "Tracing" as Tracing
   component "KG Reasoning" as KGReasoning
   component "Visualization" as Visualization
@@ -79,6 +80,7 @@ FastMCP -> Orchestrator : run_query(query)
 
 user -> Monitor : interactive session
 Monitor -> Orchestrator : run_query(query)
+Monitor -> ResourceMonitor : collect metrics
 
 Orchestrator -> ConfigLoader : load_config()
 ConfigLoader --> Orchestrator : config
