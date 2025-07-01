@@ -243,8 +243,18 @@ def sparql_query_cli(query: str, engine: str | None = None, apply_reasoning: boo
     console.print(tabulate(rows, headers=headers, tablefmt="github"))
 
 
-def visualize_query_cli(query: str, output_path: str) -> None:
-    """Run a query and save a knowledge graph visualization."""
+def visualize_query_cli(query: str, output_path: str, *, layout: str = "spring") -> None:
+    """Run a query and save a knowledge graph visualization.
+
+    Parameters
+    ----------
+    query:
+        Natural language query to run.
+    output_path:
+        Where to save the rendered PNG image.
+    layout:
+        Layout algorithm for the graph visualization.
+    """
     from rich.progress import Progress
 
     from .config import ConfigLoader
@@ -269,7 +279,7 @@ def visualize_query_cli(query: str, output_path: str) -> None:
     OutputFormatter.format(result, fmt)
 
     try:
-        save_knowledge_graph(result, output_path)
+        save_knowledge_graph(result, output_path, layout=layout)
         print_success(f"Graph written to {output_path}")
     except Exception as e:  # pragma: no cover - optional dependency
         print_error(

@@ -1436,10 +1436,15 @@ def visualize(
     output: str = typer.Argument(
         "query_graph.png", help="Output PNG path for the visualization"
     ),
+    layout: str = typer.Option(
+        "spring",
+        "--layout",
+        help="Graph layout algorithm (spring or circular)",
+    ),
 ) -> None:
     """Run a query and render a knowledge graph."""
     try:
-        _cli_visualize_query(query, output)
+        _cli_visualize_query(query, output, layout=layout)
     except Exception:
         raise typer.Exit(1)
 
