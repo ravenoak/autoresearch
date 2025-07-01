@@ -1,4 +1,4 @@
-"""Utilities for distributed agent execution using Ray."""
+"""Utilities for distributed agent execution using Ray or multiprocessing."""
 
 from __future__ import annotations
 
@@ -120,6 +120,16 @@ def _execute_agent_remote(
     return msg
 
 
+def _execute_agent_process(agent_name: str, state: QueryState, config: ConfigModel, queue: Queue | None = None) -> Dict[str, Any]:
+    """Execute a single agent in a spawned process."""
+    agent = AgentFactory.get(agent_name)
+    result = agent.execute(state, config)
+    msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
+    if queue is not None:
+        queue.put(msg)
+    return msg
+
+
 class RayExecutor:
     """Simple distributed orchestrator that dispatches agents via Ray."""
 
@@ -182,3 +192,49 @@ class RayExecutor:
             self.result_aggregator.join()
             self.result_broker.shutdown()
         ray.shutdown()
+
+
+class ProcessExecutor:
+    """Distributed orchestrator using Python multiprocessing."""
+
+    def __init__(self, config: ConfigModel) -> None:
+        self.config = config
+        self.storage_coordinator: Optional[StorageCoordinator] = None
+        self.broker: Optional[InMemoryBroker] = None
+        self.result_aggregator: Optional[ResultAggregator] = None
+        self.result_broker: Optional[InMemoryBroker] = None
+        if getattr(config, "distributed", False):
+            self.storage_coordinator, self.broker = start_storage_coordinator(config)
+            self.result_aggregator, self.result_broker = start_result_aggregator(config)
+
+    def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
+        callbacks = callbacks or {}
+        state = QueryState(query=query, primus_index=getattr(self.config, "primus_start", 0))
+        ctx = multiprocessing.get_context("spawn")
+        for loop in range(self.config.loops):
+            if self.result_aggregator:
+                self.result_aggregator.results[:] = []
+            with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
+                results = pool.starmap(_execute_agent_process, [
+                    (name, state, self.config, self.result_broker.queue if self.result_broker else None)
+                    for name in self.config.agents
+                ])
+            aggregated = list(self.result_aggregator.results) if self.result_aggregator else results
+            if self.result_aggregator:
+                self.result_aggregator.results[:] = []
+            for res in aggregated:
+                state.update(res["result"])
+            if callbacks.get("on_cycle_end"):
+                callbacks["on_cycle_end"](loop, state)
+            state.cycle += 1
+        return state.synthesize()
+
+    def shutdown(self) -> None:
+        if self.broker and self.storage_coordinator:
+            self.broker.publish({"action": "stop"})
+            self.storage_coordinator.join()
+            self.broker.shutdown()
+        if self.result_broker and self.result_aggregator:
+            self.result_broker.publish({"action": "stop"})
+            self.result_aggregator.join()
+            self.result_broker.shutdown()
