@@ -57,6 +57,9 @@ jobs:
     - name: Run BDD tests
       run: |
         poetry run pytest tests/behavior/
+    - name: Deployment checks
+      run: |
+        poetry run python scripts/deploy.py
     - name: Upload coverage report
       if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       uses: codecov/codecov-action@v3

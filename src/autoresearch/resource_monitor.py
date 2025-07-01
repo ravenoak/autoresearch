@@ -13,6 +13,20 @@ from prometheus_client import Gauge, start_http_server, CollectorRegistry, REGIS
 _DEF_REGISTRY = REGISTRY
 
 
+def _get_gpu_usage() -> float:
+    """Return GPU usage percent if available."""
+    try:
+        import pynvml  # type: ignore
+
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+        pynvml.nvmlShutdown()
+        return float(util.gpu)
+    except Exception:  # pragma: no cover - optional dependency
+        return 0.0
+
+
 def _get_usage() -> tuple[float, float]:
     """Return CPU percent and memory usage in MB."""
     try:
@@ -51,6 +65,11 @@ class ResourceMonitor:
             "Process memory usage in MB",
             registry=self.registry,
         )
+        self.gpu_gauge = Gauge(
+            "autoresearch_gpu_percent",
+            "GPU utilization percent",
+            registry=self.registry,
+        )
 
     def start(self, prometheus_port: int | None = None) -> None:
         """Start monitoring in a background thread."""
@@ -64,9 +83,13 @@ class ResourceMonitor:
     def _run(self) -> None:
         while not self._stop.is_set():
             cpu, mem = _get_usage()
+            gpu = _get_gpu_usage()
             self.cpu_gauge.set(cpu)
             self.mem_gauge.set(mem)
-            self.logger.info("resource_usage", cpu_percent=cpu, memory_mb=mem)
+            self.gpu_gauge.set(gpu)
+            self.logger.info(
+                "resource_usage", cpu_percent=cpu, memory_mb=mem, gpu_percent=gpu
+            )
             time.sleep(self.interval)
 
     def stop(self) -> None:

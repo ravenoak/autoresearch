@@ -109,7 +109,17 @@ def _collect_graph_data() -> Dict[str, List[str]]:
         return {}
 
 
-def _render_graph(data: Dict[str, List[str]]) -> Table:
+def _render_graph(data: Dict[str, List[str]], *, tree: bool = False) -> Table:
+    if tree:
+        from rich.tree import Tree
+
+        root = Tree("Knowledge Graph")
+        for node, edges in data.items():
+            branch = root.add(node)
+            for edge in edges:
+                branch.add(edge)
+        return root
+
     table = Table(title="Knowledge Graph")
     table.add_column("Node")
     table.add_column("Edges")
@@ -166,11 +176,13 @@ def resources(
 
 
 @monitor_app.command("graph")
-def graph() -> None:
+def graph(
+    tree: bool = typer.Option(False, "--tree", help="Show graph as a tree"),
+) -> None:
     """Display a simple textual view of the knowledge graph."""
     console = Console()
     data = _collect_graph_data()
-    console.print(_render_graph(data))
+    console.print(_render_graph(data, tree=tree))
 
 
 @monitor_app.command("run")

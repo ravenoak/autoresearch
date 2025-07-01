@@ -171,8 +171,9 @@ def apply_theme_settings() -> None:
         st.markdown(
             """
             <style>
-            body, .stApp {background-color:#222 !important; color:#eee !important;}
+            body, .stApp {background-color:#1e1e1e !important; color:#e0e0e0 !important;}
             .stButton>button {background-color:#444 !important; color:#fff !important;}
+            .stSidebar {background-color:#2c2c2c !important;}
             </style>
             """,
             unsafe_allow_html=True,

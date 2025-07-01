@@ -417,7 +417,11 @@ async def batch_query_endpoint(
 
     start = (page - 1) * page_size
     selected = batch.queries[start:start + page_size]
-    results = [await query_endpoint(q) for q in selected]
+
+    async def run_one(q: QueryRequest) -> QueryResponse:
+        return await query_endpoint(q)
+
+    results = await asyncio.gather(*(run_one(q) for q in selected))
     return {"page": page, "page_size": page_size, "results": results}
 
 

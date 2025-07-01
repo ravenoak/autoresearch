@@ -8,6 +8,13 @@ The search module provides functions for searching external sources for informat
 `Search.external_lookup` now also performs an embedding-based lookup using the
 local storage index so that results from all backends benefit from semantic search.
 
+### Weight Tuning
+
+The `tune_weights` utility finds optimal relevance weights based on evaluation
+data.
+
+::: autoresearch.search.Search.tune_weights
+
 ::: autoresearch.search.Search.external_lookup
 
 ## Search Context
