@@ -5,6 +5,7 @@ interfaces and a modular architecture.
 """
 
 from .distributed import (
+    ProcessExecutor,
     RayExecutor,
     StorageCoordinator,
     ResultAggregator,
@@ -16,6 +17,7 @@ from .distributed import (
 
 __all__ = [
     "RayExecutor",
+    "ProcessExecutor",
     "StorageCoordinator",
     "ResultAggregator",
     "InMemoryBroker",

@@ -57,3 +57,4 @@ enabled, agents within a cycle are dispatched to Ray workers and combined back
 into a single `QueryState`. See `autoresearch.distributed.RayExecutor` for the
 implementation details.
 
+Two executors are available for distributed mode: `RayExecutor` uses Ray while `ProcessExecutor` relies on Python's multiprocessing. Both can coordinate storage and results via a message broker.

@@ -248,9 +248,10 @@ To run agents across multiple processes or machines, configure the `[distributed
 enabled = true
 address = "auto"
 num_cpus = 2
+message_broker = "memory"
 ```
 
-When enabled, `RayExecutor` dispatches agents to Ray workers for each cycle.
+When enabled, agents are dispatched to worker processes using Ray or the fallback `ProcessExecutor`. The optional `message_broker` setting selects a coordination backend for storage and result aggregation. The default `memory` broker uses an in-process queue.
 
 ## API Keys
 
