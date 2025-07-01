@@ -13,7 +13,12 @@ from .models import QueryResponse
 matplotlib.use("Agg")
 
 
-def save_knowledge_graph(result: QueryResponse, output_path: str) -> None:
+def save_knowledge_graph(
+    result: QueryResponse,
+    output_path: str,
+    *,
+    layout: str = "spring",
+) -> None:
     """Save a simple knowledge graph visualization to ``output_path``.
 
     Parameters
@@ -22,6 +27,14 @@ def save_knowledge_graph(result: QueryResponse, output_path: str) -> None:
         The query response to visualize.
     output_path:
         Path to the PNG file to create.
+    Parameters
+    ----------
+    result:
+        The query response to visualize.
+    output_path:
+        Path to the PNG file to create.
+    layout:
+        Layout algorithm to use ("spring" or "circular").
     """
     G: nx.DiGraph[Any] = nx.DiGraph()
     main_query = "Query"
@@ -46,7 +59,10 @@ def save_knowledge_graph(result: QueryResponse, output_path: str) -> None:
             G.add_edge(rid, answer)
 
     plt.figure(figsize=(10, 8))
-    pos = nx.spring_layout(G, seed=42)
+    if layout == "circular":
+        pos = nx.circular_layout(G)
+    else:
+        pos = nx.spring_layout(G, seed=42)
     nx.draw(G, pos, with_labels=True, node_color="lightblue", font_size=8)
     plt.tight_layout()
     plt.savefig(output_path)
