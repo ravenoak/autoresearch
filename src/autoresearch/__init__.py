@@ -7,15 +7,19 @@ interfaces and a modular architecture.
 from .distributed import (
     RayExecutor,
     StorageCoordinator,
+    ResultAggregator,
     InMemoryBroker,
     start_storage_coordinator,
+    start_result_aggregator,
     publish_claim,
 )
 
 __all__ = [
     "RayExecutor",
     "StorageCoordinator",
+    "ResultAggregator",
     "InMemoryBroker",
     "start_storage_coordinator",
+    "start_result_aggregator",
     "publish_claim",
 ]
