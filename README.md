@@ -33,6 +33,20 @@ Use Go Task to create platform-specific wheels:
 ```bash
 task wheels
 ```
+### Upgrading
+To upgrade Autoresearch run:
+```bash
+poetry update
+```
+If installed via pip:
+```bash
+pip install -U autoresearch
+```
+Run the installer to resolve optional dependencies automatically:
+```bash
+python scripts/installer.py --minimal
+```
+
 
 ## Quick start
 
