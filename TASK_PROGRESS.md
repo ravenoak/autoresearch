@@ -148,7 +148,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Add streaming response support
   - [x] Implement webhook notifications
   - [x] Create batch query processing
-  - _Next:_ expose pagination parameters for batch queries
+  - _Next:_ optimize batch query throughput
 
 ### 3.3 Streamlit GUI
 
@@ -173,8 +173,8 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
-  - [ ] Create resource monitoring tools
-  - _Next:_ create resource monitoring tools
+  - [x] Create resource monitoring tools
+  - _Next:_ extend monitoring to GPU usage
 
 ### 5.2 Scalability Enhancements
 
