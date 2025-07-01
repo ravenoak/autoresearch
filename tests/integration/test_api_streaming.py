@@ -3,7 +3,11 @@ from fastapi.testclient import TestClient
 
 from autoresearch.api import app as api_app
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
-from autoresearch.models import QueryResponse
+import asyncio
+import time
+
+from autoresearch.models import QueryResponse, QueryRequest
+import autoresearch.api as api
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
 
@@ -113,3 +117,26 @@ def test_api_key_roles_integration(monkeypatch):
 
     bad = client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
+
+
+def test_batch_query_async_order(monkeypatch):
+    """/query/batch should process queries concurrently while preserving order."""
+
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    async def fake_query_endpoint(q: QueryRequest) -> QueryResponse:
+        await asyncio.sleep(0.01)
+        return QueryResponse(answer=q.query, citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(api, "query_endpoint", fake_query_endpoint)
+    client = TestClient(api_app)
+
+    payload = {"queries": [{"query": "a"}, {"query": "b"}, {"query": "c"}]}
+    start = time.perf_counter()
+    resp = client.post("/query/batch?page=1&page_size=3", json=payload)
+    duration = time.perf_counter() - start
+    assert resp.status_code == 200
+    assert [r["answer"] for r in resp.json()["results"]] == ["a", "b", "c"]
+    assert duration < 0.03
