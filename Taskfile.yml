@@ -31,6 +31,11 @@ tasks:
       - find . -type d -name '.mypy_cache' -exec rm -rf {} +
     desc: "Remove Python cache directories"
 
+  check-baselines:
+    cmds:
+      - poetry run python scripts/check_token_regression.py --threshold 5
+    desc: "Validate token usage against baselines"
+
   wheels:
     deps: [wheel-linux, wheel-windows, wheel-macos]
     desc: "Build wheels for all platforms"

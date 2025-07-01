@@ -3,6 +3,9 @@ Metrics collection for orchestration system.
 """
 
 from typing import Dict, Any, List, Tuple
+import os
+import json
+from pathlib import Path
 import time
 
 from prometheus_client import Counter
@@ -52,6 +55,8 @@ class OrchestrationMetrics:
         self.error_counts: Dict[str, int] = {}
         self.last_cycle_start: float | None = None
         self.resource_usage: List[Tuple[float, float, float]] = []
+        self.release = os.getenv("AUTORESEARCH_RELEASE", "development")
+        self._release_logged = False
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -91,12 +96,34 @@ class OrchestrationMetrics:
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
 
+    def _log_release_tokens(self) -> None:
+        """Persist token counts for this release."""
+        if self._release_logged:
+            return
+        path = Path(
+            os.getenv(
+                "AUTORESEARCH_RELEASE_METRICS",
+                "tests/integration/baselines/release_tokens.json",
+            )
+        )
+        data: Dict[str, Any] = {}
+        if path.exists():
+            try:
+                data = json.loads(path.read_text())
+            except Exception:
+                data = {}
+        data[self.release] = self.token_counts
+        path.write_text(json.dumps(data, indent=2))
+        self._release_logged = True
+
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of all metrics."""
         total_duration = sum(self.cycle_durations)
         total_tokens_in = sum(tc["in"] for tc in self.token_counts.values())
         total_tokens_out = sum(tc["out"] for tc in self.token_counts.values())
         total_errors = sum(self.error_counts.values())
+
+        self._log_release_tokens()
 
         return {
             "total_duration_seconds": total_duration,
