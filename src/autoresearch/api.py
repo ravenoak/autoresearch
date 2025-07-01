@@ -418,10 +418,14 @@ async def batch_query_endpoint(
     start = (page - 1) * page_size
     selected = batch.queries[start:start + page_size]
 
-    async def run_one(q: QueryRequest) -> QueryResponse:
-        return await query_endpoint(q)
+    async def run_one(idx: int, q: QueryRequest, results: list[QueryResponse]) -> None:
+        results[idx] = await query_endpoint(q)
 
-    results = await asyncio.gather(*(run_one(q) for q in selected))
+    results: list[QueryResponse] = [None for _ in selected]  # type: ignore[list-item]
+    async with asyncio.TaskGroup() as tg:
+        for idx, query in enumerate(selected):
+            tg.create_task(run_one(idx, query, results))
+
     return {"page": page, "page_size": page_size, "results": results}
 
 
