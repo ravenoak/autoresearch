@@ -86,3 +86,14 @@ To publish a development build to the TestPyPI repository run:
 ```bash
 ./scripts/publish_dev.py
 ```
+## Upgrading
+Run `poetry update` to refresh an existing installation.
+For pip based installs use:
+```bash
+pip install -U autoresearch
+```
+You can also run the installer script which detects the platform and installs optional extras:
+```bash
+python scripts/installer.py
+```
+
