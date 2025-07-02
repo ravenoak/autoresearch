@@ -51,6 +51,8 @@ def test_resource_monitor_collects_metrics():
     data = generate_latest(registry).decode()
     assert "autoresearch_cpu_percent" in data
     assert "autoresearch_memory_mb" in data
+    assert "autoresearch_gpu_percent" in data
+    assert "autoresearch_gpu_memory_mb" in data
 
 
 def test_system_monitor_metrics_exposed(monkeypatch):
@@ -96,3 +98,17 @@ def test_monitor_start_cli(monkeypatch):
     assert calls["stop"]
     assert calls["sys_start"]
     assert calls["sys_stop"]
+
+
+def test_monitor_resources_cli(monkeypatch):
+    monkeypatch.setattr(
+        metrics,
+        "_get_system_usage",
+        lambda: (10.0, 20.0, 30.0, 40.0),
+    )
+    runner = CliRunner()
+    result = runner.invoke(cli_app, ["monitor", "resources", "--duration", "1"])
+    assert result.exit_code == 0
+    out = result.stdout
+    assert "GPU %" in out
+    assert "GPU MB" in out

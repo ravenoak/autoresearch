@@ -13,18 +13,27 @@ from prometheus_client import Gauge, start_http_server, CollectorRegistry, REGIS
 _DEF_REGISTRY = REGISTRY
 
 
-def _get_gpu_usage() -> float:
-    """Return GPU usage percent if available."""
-    try:
+def _get_gpu_stats() -> tuple[float, float]:
+    """Return average GPU utilization and memory usage in MB."""
+    try:  # pragma: no cover - optional dependency
         import pynvml  # type: ignore
 
         pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-        util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+        count = pynvml.nvmlDeviceGetCount()
+        util_total = 0.0
+        mem_total = 0.0
+        for i in range(count):
+            handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+            util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+            mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+            util_total += float(util.gpu)
+            mem_total += mem.used / (1024 * 1024)
         pynvml.nvmlShutdown()
-        return float(util.gpu)
-    except Exception:  # pragma: no cover - optional dependency
-        return 0.0
+        if count:
+            util_total /= count
+        return util_total, mem_total
+    except Exception:
+        return 0.0, 0.0
 
 
 def _get_usage() -> tuple[float, float]:
@@ -70,6 +79,11 @@ class ResourceMonitor:
             "GPU utilization percent",
             registry=self.registry,
         )
+        self.gpu_mem_gauge = Gauge(
+            "autoresearch_gpu_memory_mb",
+            "GPU memory usage in MB",
+            registry=self.registry,
+        )
 
     def start(self, prometheus_port: int | None = None) -> None:
         """Start monitoring in a background thread."""
@@ -83,12 +97,17 @@ class ResourceMonitor:
     def _run(self) -> None:
         while not self._stop.is_set():
             cpu, mem = _get_usage()
-            gpu = _get_gpu_usage()
+            gpu, gpu_mem = _get_gpu_stats()
             self.cpu_gauge.set(cpu)
             self.mem_gauge.set(mem)
             self.gpu_gauge.set(gpu)
+            self.gpu_mem_gauge.set(gpu_mem)
             self.logger.info(
-                "resource_usage", cpu_percent=cpu, memory_mb=mem, gpu_percent=gpu
+                "resource_usage",
+                cpu_percent=cpu,
+                memory_mb=mem,
+                gpu_percent=gpu,
+                gpu_memory_mb=gpu_mem,
             )
             time.sleep(self.interval)
 

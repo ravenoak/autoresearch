@@ -89,7 +89,11 @@ class DuckDBStorageBackend:
                 raise StorageError("Failed to connect to DuckDB database", cause=e)
 
             # Create connection pool
-            self._max_connections = getattr(cfg, "max_connections", 1)
+            max_conn = getattr(cfg, "max_connections", 1)
+            try:
+                self._max_connections = int(max_conn)
+            except Exception:
+                self._max_connections = 1
             self._pool = Queue(maxsize=self._max_connections)
             self._pool.put(self._conn)
             for _ in range(self._max_connections - 1):

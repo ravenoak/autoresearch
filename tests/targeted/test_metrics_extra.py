@@ -23,10 +23,12 @@ def test_resource_tracking(monkeypatch):
     monkeypatch.setattr(
         metrics,
         "_get_system_usage",
-        lambda: (50.0, 100.0),
+        lambda: (50.0, 100.0, 25.0, 512.0),
     )
     m = metrics.OrchestrationMetrics()
     m.record_system_resources()
     rec = m.get_summary()["resource_usage"][0]
     assert rec["cpu_percent"] == 50.0
     assert rec["memory_mb"] == 100.0
+    assert rec["gpu_percent"] == 25.0
+    assert rec["gpu_memory_mb"] == 512.0

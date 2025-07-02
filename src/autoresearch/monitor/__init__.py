@@ -154,7 +154,7 @@ def metrics(watch: bool = typer.Option(False, "--watch", "-w", help="Refresh con
 def resources(
     duration: int = typer.Option(5, "--duration", "-d", help="Seconds to monitor")
 ) -> None:
-    """Record CPU and memory usage over time."""
+    """Record CPU, memory and GPU usage over time."""
     console = Console()
     tracker = orch_metrics.OrchestrationMetrics()
     end_time = time.time() + duration
@@ -169,9 +169,17 @@ def resources(
     table.add_column("Time")
     table.add_column("CPU %")
     table.add_column("Memory MB")
+    table.add_column("GPU %")
+    table.add_column("GPU MB")
     for rec in tracker.get_summary()["resource_usage"]:
         t = time.strftime("%H:%M:%S", time.localtime(rec["timestamp"]))
-        table.add_row(t, f"{rec['cpu_percent']:.2f}", f"{rec['memory_mb']:.2f}")
+        table.add_row(
+            t,
+            f"{rec['cpu_percent']:.2f}",
+            f"{rec['memory_mb']:.2f}",
+            f"{rec.get('gpu_percent', 0.0):.2f}",
+            f"{rec.get('gpu_memory_mb', 0.0):.2f}",
+        )
     console.print(table)
 
 
