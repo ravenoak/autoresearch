@@ -28,16 +28,36 @@ EVICTION_COUNTER = Counter(
 )
 
 
-def _get_system_usage() -> Tuple[float, float]:
-    """Return current CPU percent and memory usage in MB."""
+def _get_system_usage() -> Tuple[float, float, float, float]:
+    """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
         import psutil  # type: ignore
 
         cpu = psutil.cpu_percent(interval=None)
         mem_mb = psutil.Process().memory_info().rss / (1024 * 1024)
-        return cpu, mem_mb
+
+        gpu_util = 0.0
+        gpu_mem = 0.0
+        try:
+            import pynvml  # type: ignore
+
+            pynvml.nvmlInit()
+            count = pynvml.nvmlDeviceGetCount()
+            for i in range(count):
+                handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                gpu_util += float(util.gpu)
+                gpu_mem += mem.used / (1024 * 1024)
+            pynvml.nvmlShutdown()
+            if count:
+                gpu_util /= count
+        except Exception:  # pragma: no cover - optional dependency
+            pass
+
+        return cpu, mem_mb, gpu_util, gpu_mem
     except Exception:
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0, 0.0
 
 
 def record_query() -> None:
@@ -54,7 +74,7 @@ class OrchestrationMetrics:
         self.cycle_durations: List[float] = []
         self.error_counts: Dict[str, int] = {}
         self.last_cycle_start: float | None = None
-        self.resource_usage: List[Tuple[float, float, float]] = []
+        self.resource_usage: List[Tuple[float, float, float, float, float]] = []
         self.release = os.getenv("AUTORESEARCH_RELEASE", "development")
         self._release_logged = False
 
@@ -76,9 +96,9 @@ class OrchestrationMetrics:
         self.agent_timings[agent_name].append(duration)
 
     def record_system_resources(self) -> None:
-        """Record current CPU and memory usage."""
-        cpu, mem = _get_system_usage()
-        self.resource_usage.append((time.time(), cpu, mem))
+        """Record current CPU, memory, and GPU usage."""
+        cpu, mem, gpu, gpu_mem = _get_system_usage()
+        self.resource_usage.append((time.time(), cpu, mem, gpu, gpu_mem))
 
     def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int) -> None:
         """Record token usage for an agent."""
@@ -143,7 +163,9 @@ class OrchestrationMetrics:
                     "timestamp": ts,
                     "cpu_percent": cpu,
                     "memory_mb": mem,
+                    "gpu_percent": gpu,
+                    "gpu_memory_mb": gpu_mem,
                 }
-                for ts, cpu, mem in self.resource_usage
+                for ts, cpu, mem, gpu, gpu_mem in self.resource_usage
             ],
         }
