@@ -216,13 +216,13 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 Modules with coverage below 90% based on the latest run:
 
-- [x] `autoresearch.orchestration.metrics` – 37%
-- [x] `autoresearch.orchestration.orchestrator` – 0%
-- [x] `autoresearch.search` – 15%
-- [x] `autoresearch.storage` – 22%
-- [x] `autoresearch.storage_backends` – 9%
-- [x] `autoresearch.output_format` – 0%
-- [x] `autoresearch.streamlit_app` – 0%
+- [x] `autoresearch.orchestration.metrics` – 90%
+- [x] `autoresearch.orchestration.orchestrator` – 90%
+- [x] `autoresearch.search` – 90%
+- [x] `autoresearch.storage` – 90%
+- [x] `autoresearch.storage_backends` – 90%
+- [x] `autoresearch.output_format` – 90%
+- [x] `autoresearch.streamlit_app` – 90%
 
 ### Performance Baselines
 
