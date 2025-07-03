@@ -9,6 +9,7 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 ## Installation
 
 You can install the project dependencies with either **Poetry** or **pip**.
+See [docs/installation.md](docs/installation.md) for details on optional features and upgrade instructions.
 
 ### Using Poetry
 ```bash
@@ -16,8 +17,10 @@ poetry install
 ```
 
 ### Using pip
+Install the latest release from PyPI:
 ```bash
-poetry run pip install -e .
+pip install autoresearch[core]
+```
 
 ### Docker
 You can run Autoresearch inside Docker using the provided `Dockerfile` and `docker-compose.yml`:
