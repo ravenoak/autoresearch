@@ -114,3 +114,19 @@ You can also run the installer script which detects the platform and installs op
 python scripts/installer.py
 ```
 
+## Release workflow
+
+1. Bump the version in `pyproject.toml`.
+2. Run the unit and behavior test suites.
+3. Publish a development build to TestPyPI:
+
+```bash
+./scripts/publish_dev.py
+```
+
+4. If everything looks good, publish to the main PyPI repository:
+
+```bash
+poetry publish --build
+```
+
