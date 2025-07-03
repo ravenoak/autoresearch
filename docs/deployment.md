@@ -73,6 +73,23 @@ task wheels  # builds wheels for Linux, Windows and macOS
 
 The wheels will be placed under the `dist/` directory.
 
+## Distributed Deployment
+
+For large-scale workloads you can run Autoresearch on a Ray cluster.  Set
+`distributed=true` in your configuration and provide the Ray address in the
+`[distributed]` section:
+
+```toml
+[distributed]
+enabled = true
+address = "ray://head-node:10001"
+num_cpus = 4
+message_broker = "memory"
+```
+
+When started with this configuration, agents are dispatched to remote workers and all
+claim persistence is coordinated through a background `StorageCoordinator`.
+
 ## Deployment Checks
 
 After starting the service, run the deployment script to validate configuration and perform a health check:

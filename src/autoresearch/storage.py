@@ -47,6 +47,14 @@ log = get_logger(__name__)
 
 # Optional injection point for tests
 _delegate: type["StorageManager"] | None = None
+# Optional queue for distributed persistence
+_message_queue: Any | None = None
+
+
+def set_message_queue(queue: Any | None) -> None:
+    """Configure a message queue for distributed persistence."""
+    global _message_queue
+    _message_queue = queue
 
 
 def set_delegate(delegate: type["StorageManager"] | None) -> None:
@@ -714,6 +722,12 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.persist_claim(claim, partial_update)
+
+        if _message_queue is not None:
+            _message_queue.put(
+                {"action": "persist_claim", "claim": claim, "partial_update": partial_update}
+            )
+            return
 
         # Validate claim
         StorageManager._validate_claim(claim)
