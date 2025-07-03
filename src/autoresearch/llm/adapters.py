@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 import os
 import requests
+from .pool import get_session
 
 
 class LLMAdapter(ABC):
@@ -135,7 +136,8 @@ class LMStudioAdapter(LLMAdapter):
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
             }
-            resp = requests.post(self.endpoint, json=payload, timeout=30)
+            session = get_session()
+            resp = session.post(self.endpoint, json=payload, timeout=30)
             resp.raise_for_status()
             data: Dict[str, Any] = resp.json()
             return str(
@@ -199,7 +201,8 @@ class OpenAIAdapter(LLMAdapter):
                 "messages": [{"role": "user", "content": prompt}],
             }
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            resp = requests.post(
+            session = get_session()
+            resp = session.post(
                 self.endpoint, json=payload, headers=headers, timeout=30
             )
             resp.raise_for_status()
@@ -280,7 +283,8 @@ class OpenRouterAdapter(LLMAdapter):
                 "HTTP-Referer": "https://github.com/ravenoak/autoresearch",
                 "X-Title": "Autoresearch",
             }
-            resp = requests.post(
+            session = get_session()
+            resp = session.post(
                 self.endpoint, json=payload, headers=headers, timeout=60
             )
             resp.raise_for_status()
