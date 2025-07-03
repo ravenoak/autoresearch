@@ -12,6 +12,7 @@ from .adapters import (
     OpenAIAdapter,
     OpenRouterAdapter,
 )
+from .pool import get_session, close_session
 
 # Register default backends
 LLMFactory.register("dummy", DummyAdapter)
@@ -28,4 +29,6 @@ __all__ = [
     "LMStudioAdapter",
     "OpenAIAdapter",
     "OpenRouterAdapter",
+    "get_session",
+    "close_session",
 ]

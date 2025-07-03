@@ -114,6 +114,7 @@ class SearchConfig(BaseModel):
 
     # Thread pool settings for concurrent search backends
     max_workers: int = Field(default=4, ge=1)
+    http_pool_size: int = Field(default=10, ge=1)
 
     @field_validator(
         "semantic_similarity_weight", "bm25_weight", "source_credibility_weight"
@@ -251,6 +252,7 @@ class ConfigModel(BaseSettings):
     # Core settings
     backend: str = Field(default="lmstudio")  # backward compatibility
     llm_backend: str = Field(default="lmstudio")
+    llm_pool_size: int = Field(default=2, ge=1)
     loops: int = Field(default=2, ge=1)
     ram_budget_mb: int = Field(default=1024, ge=0)
     token_budget: Optional[int] = Field(
