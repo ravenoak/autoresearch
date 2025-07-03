@@ -28,8 +28,9 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
-from .config import ConfigLoader, get_config
+from .config import ConfigLoader, get_config, ConfigModel
 import asyncio
+from uuid import uuid4
 import httpx
 from .orchestration.orchestrator import Orchestrator
 from .tracing import get_tracer, setup_tracing
@@ -103,6 +104,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 _watch_ctx = None
+app.state.async_tasks = {}
 
 
 def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None:
@@ -165,7 +167,14 @@ async def get_openapi_schema():
         ## Endpoints
 
         - **POST /query**: Submit a query to the Autoresearch system
+        - **POST /query/stream**: Stream updates for a query
+        - **POST /query/batch**: Execute multiple queries
+        - **POST /query/async**: Run a query in the background
+        - **GET /query/{id}**: Check the status of an async query
+        - **GET /config**: Retrieve current configuration
+        - **PUT /config**: Update configuration at runtime
         - **GET /metrics**: Retrieve Prometheus metrics for monitoring
+        - **GET /capabilities**: Discover system capabilities
         """,
         routes=app.routes,
     )
@@ -429,6 +438,56 @@ async def batch_query_endpoint(
     return {"page": page, "page_size": page_size, "results": results}
 
 
+@app.post("/query/async")
+async def async_query_endpoint(
+    request: QueryRequest,
+    _: None = require_permission("query"),
+) -> dict:
+    """Run a query in the background and return its ID."""
+    config = get_config()
+    if request.reasoning_mode is not None:
+        config.reasoning_mode = request.reasoning_mode
+    if request.loops is not None:
+        config.loops = request.loops
+    if request.llm_backend is not None:
+        config.llm_backend = request.llm_backend
+
+    query_id = str(uuid4())
+
+    async def run() -> QueryResponse:
+        return await Orchestrator.run_query_async(request.query, config)
+
+    task = asyncio.create_task(run())
+    app.state.async_tasks[query_id] = task
+
+    def notify(_task: asyncio.Task) -> None:
+        if _task.cancelled() or _task.exception():
+            return
+        result: QueryResponse = _task.result()
+        timeout = getattr(config.api, "webhook_timeout", 5)
+        if request.webhook_url:
+            _notify_webhook(request.webhook_url, result, timeout)
+        for url in getattr(config.api, "webhooks", []):
+            _notify_webhook(url, result, timeout)
+
+    task.add_done_callback(notify)
+    return {"query_id": query_id}
+
+
+@app.get("/query/{query_id}")
+async def query_status_endpoint(
+    query_id: str,
+    _: None = require_permission("query"),
+) -> QueryResponse | dict:
+    """Return the status or result of an asynchronous query."""
+    task: asyncio.Task | None = app.state.async_tasks.get(query_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Unknown query ID")
+    if not task.done():
+        return {"status": "running"}
+    return task.result()
+
+
 @app.get("/metrics")
 def metrics_endpoint(_: None = require_permission("metrics")) -> PlainTextResponse:
     """Expose Prometheus metrics for monitoring the application.
@@ -516,3 +575,27 @@ def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
             "llm_backend": config.llm_backend,
         },
     }
+
+
+@app.get("/config")
+def get_config_endpoint(_: None = require_permission("capabilities")) -> dict:
+    """Return the current configuration."""
+    return get_config().model_dump(mode="json")
+
+
+@app.put("/config")
+def update_config_endpoint(
+    updates: dict,
+    _: None = require_permission("capabilities"),
+) -> dict:
+    """Update configuration at runtime."""
+    loader = ConfigLoader()
+    current = loader.config.model_dump(mode="python")
+    current.update(updates)
+    try:
+        new_cfg = ConfigModel(**current)
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    loader._config = new_cfg
+    loader.notify_observers(new_cfg)
+    return new_cfg.model_dump(mode="json")
