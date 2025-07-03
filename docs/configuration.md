@@ -251,9 +251,10 @@ enabled = true
 address = "auto"
 num_cpus = 2
 message_broker = "memory"
+broker_url = "redis://localhost:6379/0"  # optional
 ```
 
-When enabled, agents are dispatched to worker processes using Ray or the fallback `ProcessExecutor`. The optional `message_broker` setting selects a coordination backend for storage and result aggregation. The default `memory` broker uses an in-process queue.
+When enabled, agents are dispatched to worker processes using Ray or the fallback `ProcessExecutor`. The optional `message_broker` setting selects a coordination backend for storage and result aggregation. Use `broker_url` to provide connection details. The default `memory` broker uses an in-process queue.
 
 ## API Keys
 

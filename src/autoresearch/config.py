@@ -244,6 +244,7 @@ class DistributedConfig(BaseModel):
     address: str | None = Field(default=None, description="Ray cluster address")
     num_cpus: int = Field(default=1, ge=1)
     message_broker: str = Field(default="memory")
+    broker_url: str | None = Field(default=None, description="URL for the message broker")
 
 
 class ConfigModel(BaseSettings):
