@@ -33,6 +33,16 @@ def run_graph(monkeypatch, bdd_context, cli_runner):
     bdd_context["monitor_result"] = result
 
 
+@when('I run `autoresearch monitor graph --tui`')
+def run_graph_tui(monkeypatch, bdd_context, cli_runner):
+    monkeypatch.setattr(
+        "autoresearch.monitor._collect_graph_data",
+        lambda: {"A": ["B", "C"]},
+    )
+    result = cli_runner.invoke(cli_app, ["monitor", "graph", "--tui"])
+    bdd_context["monitor_result"] = result
+
+
 @when(parsers.parse('I run `autoresearch search "{query}" --visualize`'))
 def run_search_visualize(query, monkeypatch, bdd_context, cli_runner):
     from autoresearch.orchestration.orchestrator import Orchestrator
@@ -101,6 +111,11 @@ def test_monitor_metrics(bdd_context):
 
 @scenario("../features/interactive_monitor.feature", "Display graph")
 def test_monitor_graph(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0
+
+
+@scenario("../features/interactive_monitor.feature", "Display TUI graph")
+def test_monitor_graph_tui(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
 
 

@@ -158,7 +158,13 @@ def apply_accessibility_settings() -> None:
             """
             <style>
             body, .stApp {background-color:#000 !important; color:#fff !important;}
-            .stButton>button {background-color:#fff !important; color:#000 !important;}
+            a {color:#0ff !important; text-decoration: underline !important;}
+            .stButton>button {
+                background-color:#fff !important;
+                color:#000 !important;
+                border:2px solid #fff !important;
+            }
+            .stSidebar {background-color:#000 !important;}
             </style>
             """,
             unsafe_allow_html=True,
@@ -171,7 +177,8 @@ def apply_theme_settings() -> None:
         st.markdown(
             """
             <style>
-            body, .stApp {background-color:#1e1e1e !important; color:#e0e0e0 !important;}
+            body, .stApp {background-color:#1c1c1c !important; color:#e0e0e0 !important;}
+            a {color:#93c5fd !important;}
             .stButton>button {background-color:#444 !important; color:#fff !important;}
             .stSidebar {background-color:#2c2c2c !important;}
             </style>

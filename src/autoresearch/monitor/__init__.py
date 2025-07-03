@@ -186,11 +186,17 @@ def resources(
 @monitor_app.command("graph")
 def graph(
     tree: bool = typer.Option(False, "--tree", help="Show graph as a tree"),
+    tui: bool = typer.Option(False, "--tui", help="Display graph in TUI panel"),
 ) -> None:
     """Display a simple textual view of the knowledge graph."""
     console = Console()
     data = _collect_graph_data()
-    console.print(_render_graph(data, tree=tree))
+    if tui:
+        from rich.panel import Panel
+
+        console.print(Panel(_render_graph(data, tree=True), title="Graph View"))
+    else:
+        console.print(_render_graph(data, tree=tree))
 
 
 @monitor_app.command("run")
