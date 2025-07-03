@@ -53,6 +53,9 @@ def test_resource_monitor_collects_metrics():
     assert "autoresearch_memory_mb" in data
     assert "autoresearch_gpu_percent" in data
     assert "autoresearch_gpu_memory_mb" in data
+    assert "autoresearch_tokens_in_snapshot_total" in data
+    assert "autoresearch_tokens_out_snapshot_total" in data
+    assert monitor.token_snapshots
 
 
 def test_system_monitor_metrics_exposed(monkeypatch):
