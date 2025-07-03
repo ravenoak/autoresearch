@@ -87,7 +87,7 @@ autoresearch visualize-rdf rdf_graph.png
 Load an ontology and infer relations during a query:
 
 ```bash
-autoresearch search "Explain AI ethics" --ontology ontology.ttl --infer-relations
+autoresearch search "Explain AI ethics" --ontology ontology.ttl --ontology-reasoning
 ```
 
 Use `--ontology-reasoner` to choose a specific reasoning engine.
@@ -291,6 +291,12 @@ You can also control which agent starts a dialectical cycle using `--primus-star
 autoresearch search --reasoning-mode dialectical --primus-start 1 "How does solar energy work?"
 ```
 
+Set a custom token budget and number of reasoning loops:
+
+```bash
+autoresearch search --loops 3 --token-budget 2000 "Explain AI ethics"
+```
+
 ### Using Different LLM Backends
 
 ```bash
@@ -313,6 +319,12 @@ curl -X POST http://localhost:8000/query \
     "loops": 2,
     "agents": ["Synthesizer", "Contrarian"]
   }'
+```
+
+Choose specific agents directly from the CLI:
+
+```bash
+autoresearch search --agents Synthesizer,Contrarian "What is quantum computing?"
 ```
 
 ### Parallel Query Execution
