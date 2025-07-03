@@ -169,3 +169,51 @@ class OrchestrationMetrics:
                 for ts, cpu, mem, gpu, gpu_mem in self.resource_usage
             ],
         }
+
+    # ------------------------------------------------------------------
+    # Query token monitoring helpers
+    # ------------------------------------------------------------------
+
+    def _total_tokens(self) -> int:
+        """Return the total tokens used in the current run."""
+        return sum(v.get("in", 0) + v.get("out", 0) for v in self.token_counts.values())
+
+    def record_query_tokens(self, query: str, path: Path | None = None) -> None:
+        """Persist total token usage for ``query``.
+
+        The metrics are appended to ``path`` which defaults to the
+        ``AUTORESEARCH_QUERY_TOKENS`` environment variable or
+        ``tests/integration/baselines/query_tokens.json``.
+        """
+        if path is None:
+            path = Path(
+                os.getenv(
+                    "AUTORESEARCH_QUERY_TOKENS",
+                    "tests/integration/baselines/query_tokens.json",
+                )
+            )
+
+        data: Dict[str, int] = {}
+        if path.exists():
+            try:
+                data = json.loads(path.read_text())
+            except Exception:
+                data = {}
+
+        data[query] = self._total_tokens()
+        path.write_text(json.dumps(data, indent=2))
+
+    def check_query_regression(
+        self, query: str, baseline_path: Path, threshold: int = 0
+    ) -> bool:
+        """Return ``True`` if token usage exceeds the baseline."""
+        if not baseline_path.exists():
+            return False
+        try:
+            baseline = json.loads(baseline_path.read_text())
+        except Exception:
+            return False
+        baseline_total = baseline.get(query)
+        if baseline_total is None:
+            return False
+        return self._total_tokens() > baseline_total + threshold

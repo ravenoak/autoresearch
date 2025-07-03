@@ -772,6 +772,7 @@ class Orchestrator:
             # End cycle and update metrics
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
+            metrics.record_query_tokens(state.query)
 
             # Prune context to keep state size manageable
             state.prune_context()
@@ -1039,6 +1040,7 @@ class Orchestrator:
 
         # Add final metrics to state
         state.metadata["execution_metrics"] = metrics.get_summary()
+        metrics.record_query_tokens(query)
 
         # Raise error if process aborted or if there were any errors
         if "error" in state.results or state.error_count > 0:
