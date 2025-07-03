@@ -347,7 +347,10 @@ class DuckDBStorageBackend:
                 metric = "l2sq"
 
             # Check if the embeddings table is empty
-            count = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+            result = self._conn.execute(
+                "SELECT COUNT(*) FROM embeddings"
+            ).fetchone()
+            count = result[0] if result else 0
 
             if count == 0:
                 # If the table is empty, insert a dummy embedding to ensure the HNSW index can be created

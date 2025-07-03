@@ -6,7 +6,7 @@ from typing import Dict, Callable, Any, Optional
 import os
 import multiprocessing
 
-from multiprocessing.queues import Queue
+from queue import Queue
 
 from . import storage
 
@@ -23,7 +23,7 @@ class InMemoryBroker:
 
     def __init__(self) -> None:
         self._manager = multiprocessing.Manager()
-        self.queue: Queue = self._manager.Queue()
+        self.queue: Queue[Any] = self._manager.Queue()
 
     def publish(self, message: dict[str, Any]) -> None:
         self.queue.put(message)
@@ -68,7 +68,7 @@ class ResultAggregator(multiprocessing.Process):
         super().__init__(daemon=True)
         self._queue = queue
         self._manager = multiprocessing.Manager()
-        self.results: list[dict[str, Any]] = self._manager.list()
+        self.results: multiprocessing.managers.ListProxy[dict[str, Any]] = self._manager.list()  # type: ignore[attr-defined]
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         while True:
