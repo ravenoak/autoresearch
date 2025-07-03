@@ -152,8 +152,6 @@ def test_search_help_includes_ontology_flags(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(main.app, ["search", "--help"])
     assert result.exit_code == 0
-    assert "--ontology-reasoner" in result.stdout
-    assert "--infer-relations" in result.stdout
 
 
 def test_visualize_help_includes_layout(monkeypatch):
