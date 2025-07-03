@@ -1,0 +1,38 @@
+import pytest
+import requests
+
+from autoresearch.search import Search
+from autoresearch.config import ConfigModel
+from autoresearch.errors import SearchError, TimeoutError
+
+
+def test_external_lookup_request_exception(monkeypatch):
+    """Search.external_lookup raises SearchError on network failure."""
+    def failing_backend(query, max_results=5):
+        raise requests.exceptions.RequestException("boom")
+
+    monkeypatch.setitem(Search.backends, "fail", failing_backend)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["fail"]
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    with pytest.raises(SearchError) as excinfo:
+        Search.external_lookup("q")
+
+    assert "fail search failed" in str(excinfo.value)
+
+
+def test_external_lookup_timeout(monkeypatch):
+    """Timeout errors propagate as TimeoutError."""
+    def timeout_backend(query, max_results=5):
+        raise requests.exceptions.Timeout("slow")
+
+    monkeypatch.setitem(Search.backends, "timeout", timeout_backend)
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["timeout"]
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    with pytest.raises(TimeoutError):
+        Search.external_lookup("q")
