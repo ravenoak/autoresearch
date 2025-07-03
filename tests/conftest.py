@@ -1,6 +1,73 @@
 import sys
 import os
 import types
+# Provide a lightweight stub for the optional ``ray`` dependency so that
+# ``autoresearch`` can be imported without the actual package installed.
+if "ray" not in sys.modules:
+    def _remote(func):
+        return types.SimpleNamespace(remote=lambda *a, **k: func(*a, **k))
+
+    ray_stub = types.SimpleNamespace(
+        init=lambda *a, **k: None,
+        shutdown=lambda *a, **k: None,
+        remote=_remote,
+        get=lambda x: x,
+    )
+    sys.modules["ray"] = ray_stub
+
+# Provide a minimal stub for GitPython used by the Search module
+if "git" not in sys.modules:
+    git_stub = types.SimpleNamespace(Repo=object)
+    sys.modules["git"] = git_stub
+
+# Stub heavy optional dependencies used by the search module
+if "pdfminer.high_level" not in sys.modules:
+    pm_stub = types.ModuleType("pdfminer.high_level")
+    pm_stub.extract_text = lambda *a, **k: ""
+    sys.modules["pdfminer.high_level"] = pm_stub
+if "docx" not in sys.modules:
+    docx_stub = types.ModuleType("docx")
+    docx_stub.Document = object
+    sys.modules["docx"] = docx_stub
+
+if "streamlit" not in sys.modules:
+    st_stub = types.ModuleType("streamlit")
+    st_stub.markdown = lambda *a, **k: None
+    class SessionState(dict):
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+
+    st_stub.session_state = SessionState()
+    st_stub.set_page_config = lambda *a, **k: None
+    st_stub.text_area = lambda *a, **k: ""
+    st_stub.selectbox = lambda *a, **k: None
+    st_stub.slider = lambda *a, **k: 0
+    st_stub.button = lambda *a, **k: False
+    st_stub.columns = lambda *a, **k: (types.SimpleNamespace(), types.SimpleNamespace())
+    st_stub.container = lambda: types.SimpleNamespace(__enter__=lambda s: None, __exit__=lambda s,e,t,b: None)
+    st_stub.modal = lambda *a, **k: types.SimpleNamespace(__enter__=lambda s: None, __exit__=lambda s,e,t,b: None)
+    sys.modules["streamlit"] = st_stub
+
+if "matplotlib" not in sys.modules:
+    mpl = types.ModuleType("matplotlib")
+    mpl.use = lambda *a, **k: None
+    sys.modules["matplotlib"] = mpl
+if "matplotlib.pyplot" not in sys.modules:
+    mpl_py = types.ModuleType("matplotlib.pyplot")
+    mpl_py.plot = lambda *a, **k: None
+    mpl_py.figure = lambda *a, **k: None
+    mpl_py.gca = lambda *a, **k: types.SimpleNamespace()
+    mpl_py.savefig = lambda *a, **k: None
+    sys.modules["matplotlib.pyplot"] = mpl_py
+
+if "PIL" not in sys.modules:
+    pil_mod = types.ModuleType("PIL")
+    image_mod = types.ModuleType("PIL.Image")
+    image_mod.Image = object
+    pil_mod.Image = image_mod
+    sys.modules["PIL"] = pil_mod
+    sys.modules["PIL.Image"] = image_mod
+
 from uuid import uuid4
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -9,6 +76,16 @@ from typer.testing import CliRunner
 from fastapi.testclient import TestClient
 from typing import Callable
 from autoresearch.api import app as api_app
+
+# Older Typer versions used in tests may not support the ``multiple`` parameter.
+import typer
+_orig_option = typer.Option
+
+def _compat_option(*args, **kwargs):
+    kwargs.pop("multiple", None)
+    return _orig_option(*args, **kwargs)
+
+typer.Option = _compat_option
 
 # Ensure package can be imported without installation
 if importlib.util.find_spec("autoresearch") is None:

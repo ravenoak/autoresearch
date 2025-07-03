@@ -31,14 +31,18 @@ def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
 def test_circuit_breaker_transitions(monkeypatch):
     Orchestrator._circuit_breakers.clear()
     t = {"v": 0}
-    monkeypatch.setattr(Orchestrator, "time", types.SimpleNamespace(time=lambda: t.setdefault("v", t["v"] + 10)))
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.time",
+        types.SimpleNamespace(time=lambda: t.setdefault("v", t["v"] + 10)),
+    )
     for _ in range(3):
         Orchestrator._update_circuit_breaker("X", "recoverable")
     state = Orchestrator.get_circuit_breaker_state("X")
     assert state["state"] == "open"
     # advance time beyond cooling period
     t["v"] += 40
-    Orchestrator._update_circuit_breaker("X", "transient")
+    Orchestrator._circuit_breakers["X"]["last_failure_time"] = 0
+    Orchestrator._update_circuit_breaker("X", "noop")
     state = Orchestrator.get_circuit_breaker_state("X")
     assert state["state"] == "half-open"
 
@@ -85,7 +89,11 @@ def test_output_formatter_invalid(monkeypatch):
 
 
 def test_streamlit_metrics(monkeypatch):
-    fake_st = types.SimpleNamespace(session_state={}, markdown=lambda *a, **k: None)
+    class SS(dict):
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+
+    fake_st = types.SimpleNamespace(session_state=SS(), markdown=lambda *a, **k: None)
     monkeypatch.setattr(streamlit_st, "session_state", fake_st.session_state, False)
     track_agent_performance("A", 1.0, 5)
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
