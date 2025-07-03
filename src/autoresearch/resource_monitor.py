@@ -8,6 +8,7 @@ from typing import Optional
 
 import structlog
 from prometheus_client import Gauge, start_http_server, CollectorRegistry, REGISTRY
+from .orchestration import metrics as orch_metrics
 
 
 _DEF_REGISTRY = REGISTRY
@@ -33,7 +34,40 @@ def _get_gpu_stats() -> tuple[float, float]:
             util_total /= count
         return util_total, mem_total
     except Exception:
-        return 0.0, 0.0
+        pass
+
+    try:  # pragma: no cover - may not be present
+        import psutil  # type: ignore
+        import subprocess
+
+        proc = psutil.Popen(
+            [
+                "nvidia-smi",
+                "--query-gpu=utilization.gpu,memory.used",
+                "--format=csv,noheader,nounits",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        out, _ = proc.communicate(timeout=1)
+        utils = []
+        mems = []
+        for line in out.strip().splitlines():
+            try:
+                util_str, mem_str = line.split(",")
+                utils.append(float(util_str.strip()))
+                mems.append(float(mem_str.strip()))
+            except Exception:
+                continue
+        if utils:
+            avg_util = sum(utils) / len(utils)
+            total_mem = sum(mems)
+            return avg_util, total_mem
+    except Exception:
+        pass
+
+    return 0.0, 0.0
 
 
 def _get_usage() -> tuple[float, float]:
@@ -84,6 +118,18 @@ class ResourceMonitor:
             "GPU memory usage in MB",
             registry=self.registry,
         )
+        self.tokens_in_gauge = Gauge(
+            "autoresearch_tokens_in_snapshot_total",
+            "Total input tokens at last snapshot",
+            registry=self.registry,
+        )
+        self.tokens_out_gauge = Gauge(
+            "autoresearch_tokens_out_snapshot_total",
+            "Total output tokens at last snapshot",
+            registry=self.registry,
+        )
+
+        self.token_snapshots: list[tuple[float, int, int]] = []
 
     def start(self, prometheus_port: int | None = None) -> None:
         """Start monitoring in a background thread."""
@@ -98,16 +144,23 @@ class ResourceMonitor:
         while not self._stop.is_set():
             cpu, mem = _get_usage()
             gpu, gpu_mem = _get_gpu_stats()
+            tokens_in = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
+            tokens_out = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
+            self.token_snapshots.append((time.time(), tokens_in, tokens_out))
             self.cpu_gauge.set(cpu)
             self.mem_gauge.set(mem)
             self.gpu_gauge.set(gpu)
             self.gpu_mem_gauge.set(gpu_mem)
+            self.tokens_in_gauge.set(tokens_in)
+            self.tokens_out_gauge.set(tokens_out)
             self.logger.info(
                 "resource_usage",
                 cpu_percent=cpu,
                 memory_mb=mem,
                 gpu_percent=gpu,
                 gpu_memory_mb=gpu_mem,
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
             )
             time.sleep(self.interval)
 
