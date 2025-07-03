@@ -98,6 +98,7 @@ def close_http_session() -> None:
             _http_session.close()
             _http_session = None
 
+
 log = get_logger(__name__)
 
 

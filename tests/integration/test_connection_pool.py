@@ -32,11 +32,15 @@ def test_llm_session_reuse_and_cleanup(monkeypatch):
 
     def mock_post(self, url, json=None, timeout=30, headers=None):
         session_ids.append(id(self))
+
         class R:
+
             def raise_for_status(self):
                 pass
+
             def json(self):
                 return {"choices": [{"message": {"content": "ok"}}]}
+
         return R()
 
     session = llm_pool.get_session()
@@ -51,4 +55,3 @@ def test_llm_session_reuse_and_cleanup(monkeypatch):
     llm_pool.close_session()
     session2 = llm_pool.get_session()
     assert id(session2) != first
-
