@@ -112,6 +112,40 @@ Return information about available agents, LLM backends and current settings.
 curl http://localhost:8000/capabilities
 ```
 
+### `GET /config`
+
+Return the current configuration as JSON.
+
+```bash
+curl http://localhost:8000/config
+```
+
+### `PUT /config`
+
+Update configuration values at runtime. Only fields present in the JSON body are
+modified.
+
+```bash
+curl -X PUT http://localhost:8000/config -H "Content-Type: application/json" \
+     -d '{"loops": 3}'
+```
+
+### `POST /query/async`
+
+Run a query in the background and return an identifier.
+
+```bash
+curl -X POST http://localhost:8000/query/async \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Explain AI"}'
+```
+
+Check the result with `GET /query/<id>`:
+
+```bash
+curl http://localhost:8000/query/<id>
+```
+
 ## Authentication
 
 Enable API key authentication by setting `[api].api_key` in `autoresearch.toml`
