@@ -21,7 +21,7 @@ The system is designed to be extensible, allowing for custom agents, reasoning m
 and execution strategies.
 """
 
-from typing import List, Dict, Any, Callable, Iterator, TypedDict
+from typing import List, Dict, Any, Callable, Iterator, TypedDict, cast
 import os
 import time
 import traceback
@@ -1348,7 +1348,7 @@ class Orchestrator:
 
         # Add error and timeout information to final state
         if errors or timeouts:
-            error_info = {
+            error_info: Dict[str, Any] = {
                 "claims": [],
                 "metadata": {
                     "errors": [f"{group}: {error}" for group, error in errors],
@@ -1357,14 +1357,14 @@ class Orchestrator:
             }
 
             if errors:
-                error_info["claims"].extend(
-                    [f"Error in agent group {group}: {error}" for group, error in errors]
-                )
+                error_claims = [
+                    f"Error in agent group {group}: {error}" for group, error in errors
+                ]
+                cast(List[str], error_info["claims"]).extend(error_claims)
 
             if timeouts:
-                error_info["claims"].extend(
-                    [f"Agent group {group} timed out" for group in timeouts]
-                )
+                timeout_claims = [f"Agent group {group} timed out" for group in timeouts]
+                cast(List[str], error_info["claims"]).extend(timeout_claims)
 
             final_state.update(error_info)
 

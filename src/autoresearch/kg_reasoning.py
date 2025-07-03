@@ -13,7 +13,10 @@ from .errors import StorageError
 
 def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> None:
     """Apply ontology reasoning over ``store`` using the configured engine."""
-    reasoner = engine or getattr(ConfigLoader().config.storage, "ontology_reasoner", "owlrl")
+    reasoner_setting = engine or getattr(
+        ConfigLoader().config.storage, "ontology_reasoner", "owlrl"
+    )
+    reasoner = str(reasoner_setting)
     if reasoner == "owlrl":
         try:  # pragma: no cover - optional dependency
             import owlrl  # type: ignore

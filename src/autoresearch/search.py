@@ -1501,7 +1501,11 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 parent = commit.parents[0] if commit.parents else None
                 diffs = commit.diff(parent, create_patch=True)
                 for d in diffs:
-                    part = d.diff.decode("utf-8", "ignore")
+                    raw_diff = d.diff
+                    if isinstance(raw_diff, bytes):
+                        part = raw_diff.decode("utf-8", "ignore")
+                    else:
+                        part = str(raw_diff)
                     diff_text += part
                     if query.lower() in part.lower():
                         snippet_match = re.search(

@@ -24,7 +24,7 @@ import os
 import time
 from collections import OrderedDict
 from threading import Lock
-from typing import Any, Optional, cast, Iterator
+from typing import Any, Optional, cast, Iterator, ClassVar
 from contextlib import contextmanager
 
 import duckdb
@@ -181,6 +181,9 @@ class StorageManager:
     Most methods are class methods that operate on global storage instances,
     which are initialized by the `setup` function.
     """
+
+    _access_frequency: ClassVar[dict[str, int]] = {}
+    _last_adaptive_policy: ClassVar[str] = "lru"
 
     @staticmethod
     def setup(db_path: Optional[str] = None) -> None:
@@ -430,14 +433,14 @@ class StorageManager:
                 # Use the selected policy
                 if policy_to_use == "score":
                     for _ in range(batch_size):
-                        node_id = StorageManager._pop_low_score()
-                        if node_id and _graph.has_node(node_id):
-                            nodes_to_evict.append(node_id)
+                        popped = StorageManager._pop_low_score()
+                        if popped and _graph.has_node(popped):
+                            nodes_to_evict.append(popped)
                 else:
                     for _ in range(batch_size):
-                        node_id = StorageManager._pop_lru()
-                        if node_id and _graph.has_node(node_id):
-                            nodes_to_evict.append(node_id)
+                        popped = StorageManager._pop_lru()
+                        if popped and _graph.has_node(popped):
+                            nodes_to_evict.append(popped)
 
             elif policy == "priority":
                 # Priority policy: evict based on configurable priority tiers
@@ -478,15 +481,15 @@ class StorageManager:
             elif policy == "score":
                 # Score-based policy: evict nodes with lowest confidence
                 for _ in range(batch_size):
-                    node_id = StorageManager._pop_low_score()
-                    if node_id and _graph.has_node(node_id):
-                        nodes_to_evict.append(node_id)
+                    popped = StorageManager._pop_low_score()
+                    if popped and _graph.has_node(popped):
+                        nodes_to_evict.append(popped)
             else:
                 # Default to LRU policy
                 for _ in range(batch_size):
-                    node_id = StorageManager._pop_lru()
-                    if node_id and _graph.has_node(node_id):
-                        nodes_to_evict.append(node_id)
+                    popped = StorageManager._pop_lru()
+                    if popped and _graph.has_node(popped):
+                        nodes_to_evict.append(popped)
 
             # If we couldn't find any nodes to evict, break
             if not nodes_to_evict:
@@ -625,9 +628,11 @@ class StorageManager:
         attrs = dict(claim.get("attributes", {}))
         if "confidence" in claim:
             attrs["confidence"] = claim["confidence"]
+        assert _graph is not None
         _graph.add_node(claim["id"], **attrs)
         _lru[claim["id"]] = time.time()
         for rel in claim.get("relations", []):
+            assert _graph is not None
             _graph.add_edge(
                 rel["src"],
                 rel["dst"],
@@ -658,6 +663,7 @@ class StorageManager:
             handles these prerequisites.
         """
         # Use the DuckDBStorageBackend to persist the claim
+        assert _db_backend is not None
         _db_backend.persist_claim(claim)
 
     @staticmethod
@@ -682,6 +688,7 @@ class StorageManager:
             has been validated. It should be called by persist_claim, which
             handles these prerequisites.
         """
+        assert _rdf_store is not None
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")

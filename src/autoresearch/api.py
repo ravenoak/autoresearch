@@ -17,6 +17,7 @@ Endpoints:
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional, List, cast
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -33,6 +34,7 @@ import asyncio
 from uuid import uuid4
 import httpx
 from .orchestration.orchestrator import Orchestrator
+from .orchestration import ReasoningMode
 from .tracing import get_tracer, setup_tracing
 from .models import QueryRequest, QueryResponse, BatchQueryRequest
 from .storage import StorageManager
@@ -83,7 +85,7 @@ def dynamic_limit() -> str:
 
 def require_permission(permission: str):
     async def checker(request: Request) -> None:
-        permissions = getattr(request.state, "permissions", set())
+        permissions: set[str] = getattr(request.state, "permissions", set())
         if permission not in permissions:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -268,7 +270,7 @@ async def query_endpoint(
 
     # Update config with parameters from the request
     if request.reasoning_mode is not None:
-        config.reasoning_mode = request.reasoning_mode
+        config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
     if request.loops is not None:
         config.loops = request.loops
     if request.llm_backend is not None:
@@ -358,7 +360,7 @@ async def query_stream_endpoint(
     config = get_config()
 
     if request.reasoning_mode is not None:
-        config.reasoning_mode = request.reasoning_mode
+        config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
     if request.loops is not None:
         config.loops = request.loops
     if request.llm_backend is not None:
@@ -427,15 +429,15 @@ async def batch_query_endpoint(
     start = (page - 1) * page_size
     selected = batch.queries[start:start + page_size]
 
-    async def run_one(idx: int, q: QueryRequest, results: list[QueryResponse]) -> None:
-        results[idx] = await query_endpoint(q)
+    async def run_one(idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]) -> None:
+        results[idx] = cast(QueryResponse, await query_endpoint(q))
 
-    results: list[QueryResponse] = [None for _ in selected]  # type: ignore[list-item]
+    results: list[Optional[QueryResponse]] = [None for _ in selected]
     async with asyncio.TaskGroup() as tg:
         for idx, query in enumerate(selected):
             tg.create_task(run_one(idx, query, results))
 
-    return {"page": page, "page_size": page_size, "results": results}
+    return {"page": page, "page_size": page_size, "results": cast(List[QueryResponse], results)}
 
 
 @app.post("/query/async")
@@ -530,7 +532,7 @@ def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     reasoning_modes = [mode.value for mode in ReasoningMode]
 
     # Get available LLM backends
-    from .llm.adapters import get_available_adapters
+    from .llm import get_available_adapters
 
     llm_backends = list(get_available_adapters().keys())
 
