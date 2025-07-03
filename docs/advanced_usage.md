@@ -500,6 +500,15 @@ autoresearch query "What are the implications of AI on labor markets?"
 
 The monitor shows real-time information about agent execution, token usage, and system state.
 
+## Adaptive Token Budgeting
+
+Autoresearch automatically scales the available token budget based on the
+complexity of each query. The orchestrator considers query length and the number
+of loops, capping excessive budgets while ensuring enough tokens are available.
+When agents run in parallel groups each group receives a fair share of the
+budget. Usage per query is stored in `tests/integration/baselines/query_tokens.json`
+so the `check_token_regression.py` script can detect regressions.
+
 ## Prompt Compression
 
 When prompts grow too long they may exceed the available token budget. The `autoresearch.synthesis` module provides utilities that shorten prompts by truncating the middle section and inserting an ellipsis. This keeps essential context while staying under the limit.
