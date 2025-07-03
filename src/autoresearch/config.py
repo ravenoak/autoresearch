@@ -258,6 +258,16 @@ class ConfigModel(BaseSettings):
         ge=1,
         description="Maximum tokens available for a single run",
     )
+    adaptive_max_factor: int = Field(
+        default=20,
+        ge=1,
+        description="Maximum multiple of query tokens for adaptive budgeting",
+    )
+    adaptive_min_buffer: int = Field(
+        default=10,
+        ge=0,
+        description="Minimum token buffer added when using adaptive budgeting",
+    )
     max_errors: int = Field(
         default=3,
         ge=1,

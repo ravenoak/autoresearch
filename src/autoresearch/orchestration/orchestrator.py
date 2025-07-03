@@ -1480,11 +1480,13 @@ class Orchestrator:
             budget = max(1, budget // loops)
 
         query_tokens = len(query.split())
-        max_budget = query_tokens * 20
+        factor = getattr(config, "adaptive_max_factor", 20)
+        buffer = getattr(config, "adaptive_min_buffer", 10)
+        max_budget = query_tokens * factor
         if budget > max_budget:
             config.token_budget = max_budget
         elif budget < query_tokens:
-            config.token_budget = query_tokens + 10
+            config.token_budget = query_tokens + buffer
         else:
             config.token_budget = budget
 

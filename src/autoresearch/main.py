@@ -249,10 +249,42 @@ def search(
         "--reasoner",
         help="Ontology reasoner engine to apply",
     ),
-    infer_relations: bool = typer.Option(
+    ontology_reasoning: bool = typer.Option(
         False,
+        "--ontology-reasoning/--no-ontology-reasoning",
         "--infer-relations",
         help="Apply ontology reasoning before returning results",
+    ),
+    token_budget: Optional[int] = typer.Option(
+        None,
+        "--token-budget",
+        help="Maximum tokens available for this query",
+    ),
+    adaptive_max_factor: Optional[int] = typer.Option(
+        None,
+        "--adaptive-max-factor",
+        help="Adaptive budgeting max multiplier for query tokens",
+    ),
+    adaptive_min_buffer: Optional[int] = typer.Option(
+        None,
+        "--adaptive-min-buffer",
+        help="Adaptive budgeting minimum extra tokens",
+    ),
+    agents: Optional[str] = typer.Option(
+        None,
+        "--agents",
+        help="Comma-separated list of agents to run",
+    ),
+    parallel: bool = typer.Option(
+        False,
+        "--parallel",
+        help="Run agent groups in parallel",
+    ),
+    agent_groups: Optional[List[str]] = typer.Option(
+        None,
+        "--agent-groups",
+        help="Agent groups to run in parallel (comma-separated per group)",
+        multiple=True,
     ),
     primus_start: Optional[int] = typer.Option(
         None,
@@ -282,6 +314,15 @@ def search(
 
         # Display a simple knowledge graph in the terminal
         autoresearch search "What is quantum computing?" --visualize
+
+        # Limit tokens and run multiple loops
+        autoresearch search --loops 3 --token-budget 2000 "Explain AI ethics"
+
+        # Choose specific agents
+        autoresearch search --agents Synthesizer,Contrarian "What is quantum computing?"
+
+        # Run agent groups in parallel
+        autoresearch search --parallel --agent-groups "Synthesizer,Contrarian" "FactChecker" "Impacts of AI"
     """
     config = _config_loader.load_config()
 
@@ -290,8 +331,16 @@ def search(
         updates["reasoning_mode"] = reasoning_mode
     if loops is not None:
         updates["loops"] = loops
+    if token_budget is not None:
+        updates["token_budget"] = token_budget
+    if adaptive_max_factor is not None:
+        updates["adaptive_max_factor"] = adaptive_max_factor
+    if adaptive_min_buffer is not None:
+        updates["adaptive_min_buffer"] = adaptive_min_buffer
     if primus_start is not None:
         updates["primus_start"] = primus_start
+    if agents is not None:
+        updates["agents"] = [a.strip() for a in agents.split(",") if a.strip()]
     storage_updates: dict[str, Any] = {}
     if ontology_reasoner is not None:
         storage_updates["ontology_reasoner"] = ontology_reasoner
@@ -302,7 +351,7 @@ def search(
 
     if ontology:
         StorageManager.load_ontology(ontology)
-    if infer_relations:
+    if ontology_reasoning:
         Orchestrator.infer_relations()
 
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
@@ -332,10 +381,24 @@ def search(
                     state.query = refinement
 
         with Progress() as progress:
-            task = progress.add_task("[green]Processing query...", total=loops)
-            result = Orchestrator.run_query(
-                query, config, callbacks={"on_cycle_end": on_cycle_end}
-            )
+            if parallel and agent_groups:
+                groups = [
+                    [a.strip() for a in grp.split(",") if a.strip()]
+                    for grp in agent_groups
+                ]
+                task = progress.add_task(
+                    "[green]Processing query...",
+                    total=len(groups),
+                )
+                result = Orchestrator.run_parallel_query(query, config, groups)
+            else:
+                task = progress.add_task(
+                    "[green]Processing query...",
+                    total=loops,
+                )
+                result = Orchestrator.run_query(
+                    query, config, callbacks={"on_cycle_end": on_cycle_end}
+                )
 
         fmt = output or (
             "markdown"
