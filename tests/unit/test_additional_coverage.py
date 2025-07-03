@@ -1,9 +1,7 @@
 import types
 import json
-import time
 from collections import OrderedDict
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -44,8 +42,11 @@ def test_circuit_breaker_transitions(monkeypatch):
 
 
 def test_http_session_reuse_and_close(monkeypatch):
-    class Cfg: pass
-    cfg = Cfg(); cfg.search = types.SimpleNamespace(http_pool_size=1)
+    class Cfg:
+        pass
+
+    cfg = Cfg()
+    cfg.search = types.SimpleNamespace(http_pool_size=1)
     monkeypatch.setattr(search, "get_config", lambda: cfg)
     search.close_http_session()
     s1 = search.get_http_session()
@@ -58,6 +59,7 @@ def test_http_session_reuse_and_close(monkeypatch):
 def test_set_get_delegate():
     class Dummy(StorageManager):
         called = False
+
         @classmethod
         def setup(cls, db_path=None):
             cls.called = True
@@ -103,4 +105,3 @@ def test_streamlit_metrics(monkeypatch):
     assert metrics_data["cpu_percent"] == 10.0
     assert metrics_data["tokens_in_total"] == 1
     assert metrics_data["tokens_out_total"] == 2
-
