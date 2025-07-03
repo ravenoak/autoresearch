@@ -149,6 +149,7 @@ class RayExecutor:
         self.result_broker: Optional[InMemoryBroker] = None
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
+            storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
     def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
@@ -187,6 +188,7 @@ class RayExecutor:
             self.broker.publish({"action": "stop"})
             self.storage_coordinator.join()
             self.broker.shutdown()
+            storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             self.result_broker.publish({"action": "stop"})
             self.result_aggregator.join()
@@ -205,6 +207,7 @@ class ProcessExecutor:
         self.result_broker: Optional[InMemoryBroker] = None
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
+            storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
     def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
@@ -234,6 +237,7 @@ class ProcessExecutor:
             self.broker.publish({"action": "stop"})
             self.storage_coordinator.join()
             self.broker.shutdown()
+            storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             self.result_broker.publish({"action": "stop"})
             self.result_aggregator.join()
