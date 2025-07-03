@@ -85,6 +85,7 @@ enabled = true
 address = "ray://head-node:10001"
 num_cpus = 4
 message_broker = "memory"
+broker_url = "redis://head-node:6379/0" # optional
 ```
 
 When started with this configuration, agents are dispatched to remote workers and all
