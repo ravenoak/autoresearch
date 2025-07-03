@@ -24,6 +24,11 @@ Feature: Interactive Monitoring
     Then the monitor should exit successfully
     And the monitor output should display graph data
 
+  Scenario: Display TUI graph
+    When I run `autoresearch monitor graph --tui`
+    Then the monitor should exit successfully
+    And the monitor output should display graph data
+
   Scenario: Visualize search results
     When I run `autoresearch search "Test graph" --visualize`
     Then the search command should exit successfully
