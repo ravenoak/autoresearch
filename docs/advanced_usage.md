@@ -237,8 +237,10 @@ truth relevance labels.
 poetry run python scripts/evaluate_ranking.py examples/search_evaluation.csv
 ```
 
-To search for the best combination of weights, use `optimize_search_weights.py`
-which performs a simple grid search and updates `examples/autoresearch.toml`:
+To automatically search for the best combination of weights, use
+`optimize_search_weights.py`. The script reads a labelled evaluation CSV,
+performs a simple grid search and writes the tuned values back to the provided
+configuration file (defaults to `examples/autoresearch.toml`):
 
 ```bash
 poetry run python scripts/optimize_search_weights.py \
