@@ -6,8 +6,8 @@ from typing import Dict, Callable, Any, Optional, TYPE_CHECKING
 import os
 import json
 import multiprocessing
-
 from queue import Queue
+from .resource_pools import get_process_pool, close_process_pool
 
 from . import storage
 
@@ -83,7 +83,7 @@ def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
 class StorageCoordinator(multiprocessing.Process):
     """Background process that persists claims from a queue."""
 
-    def __init__(self, queue: Queue, db_path: str) -> None:
+    def __init__(self, queue: Any, db_path: str) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._db_path = db_path
@@ -104,7 +104,7 @@ class StorageCoordinator(multiprocessing.Process):
 class ResultAggregator(multiprocessing.Process):
     """Collect results from agents running in other processes."""
 
-    def __init__(self, queue: Queue) -> None:
+    def __init__(self, queue: Any) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._manager = multiprocessing.Manager()
@@ -247,23 +247,27 @@ class ProcessExecutor:
         self.broker: Optional[BrokerType] = None
         self.result_aggregator: Optional[ResultAggregator] = None
         self.result_broker: Optional[BrokerType] = None
+        self.pool: multiprocessing.pool.Pool | None = None
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
+            self.pool = get_process_pool(config.distributed_config.num_cpus)
 
     def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
         callbacks = callbacks or {}
         state = QueryState(query=query, primus_index=getattr(self.config, "primus_start", 0))
-        ctx = multiprocessing.get_context("spawn")
         for loop in range(self.config.loops):
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
-            with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
-                results = pool.starmap(_execute_agent_process, [
+            pool = self.pool or get_process_pool(self.config.distributed_config.num_cpus)
+            results = pool.starmap(
+                _execute_agent_process,
+                [
                     (name, state, self.config, self.result_broker.queue if self.result_broker else None)
                     for name in self.config.agents
-                ])
+                ],
+            )
             aggregated = list(self.result_aggregator.results) if self.result_aggregator else results
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
@@ -284,3 +288,6 @@ class ProcessExecutor:
             self.result_broker.publish({"action": "stop"})
             self.result_aggregator.join()
             self.result_broker.shutdown()
+        if self.pool:
+            close_process_pool()
+            self.pool = None

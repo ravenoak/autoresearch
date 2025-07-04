@@ -68,6 +68,7 @@ from .errors import ConfigError, SearchError
 from .logging_utils import get_logger
 from .cache import get_cached_results, cache_results
 from .storage import StorageManager
+from .resource_pools import get_http_session as _get_http_session, close_http_session as _close_http_session
 
 _http_session: Optional[requests.Session] = None
 _http_lock = threading.Lock()
@@ -80,13 +81,7 @@ def get_http_session() -> requests.Session:
         if _http_session is None:
             cfg = get_config()
             size = getattr(cfg.search, "http_pool_size", 10)
-            session = requests.Session()
-            adapter = requests.adapters.HTTPAdapter(
-                pool_connections=size, pool_maxsize=size
-            )
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
-            _http_session = session
+            _http_session = _get_http_session(size)
         return _http_session
 
 
@@ -94,9 +89,8 @@ def close_http_session() -> None:
     """Close the pooled HTTP session."""
     global _http_session
     with _http_lock:
-        if _http_session is not None:
-            _http_session.close()
-            _http_session = None
+        _close_http_session()
+        _http_session = None
 
 
 log = get_logger(__name__)
@@ -408,7 +402,9 @@ class Search:
     @staticmethod
     def get_http_session() -> requests.Session:
         """Expose pooled HTTP session."""
-        return get_http_session()
+        cfg = get_config()
+        size = getattr(cfg.search, "http_pool_size", 10)
+        return get_http_session(size)
 
     @staticmethod
     def close_http_session() -> None:
@@ -1207,7 +1203,7 @@ def _duckduckgo_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
         "no_redirect": "1",
         "no_html": "1",
     }
-    session = get_http_session()
+    session = Search.get_http_session()
     response = session.get(url, params=params, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
@@ -1255,7 +1251,7 @@ def _serper_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     api_key = os.getenv("SERPER_API_KEY", "")
     url = "https://google.serper.dev/search"
     headers = {"X-API-KEY": api_key}
-    session = get_http_session()
+    session = Search.get_http_session()
     response = session.post(url, json={"q": query}, headers=headers, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
@@ -1304,7 +1300,7 @@ def _brave_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     headers = {"Accept": "application/json", "X-Subscription-Token": api_key}
     params: Dict[str, str | int] = {"q": query, "count": max_results}
 
-    session = get_http_session()
+    session = Search.get_http_session()
     response = session.get(url, params=params, headers=headers, timeout=5)
     # Raise an exception for HTTP errors (4xx and 5xx)
     response.raise_for_status()
