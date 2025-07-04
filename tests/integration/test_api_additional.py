@@ -69,3 +69,14 @@ def test_openapi_lists_new_routes(monkeypatch):
     assert "/config" in schema["paths"]
     assert "/query/async" in schema["paths"]
     assert "/query/{query_id}" in schema["paths"]
+
+
+def test_health_endpoint(monkeypatch):
+    """/health should return service status."""
+
+    _setup(monkeypatch)
+    client = TestClient(api_app)
+
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"

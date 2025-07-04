@@ -513,6 +513,17 @@ def metrics_endpoint(_: None = require_permission("metrics")) -> PlainTextRespon
     return PlainTextResponse(data, media_type=CONTENT_TYPE_LATEST)
 
 
+@app.get("/health")
+def health_endpoint() -> dict:
+    """Simple health check endpoint.
+
+    Returns a JSON object indicating the server is running. This endpoint can be
+    used by deployment tooling or load balancers to verify the service status.
+    """
+
+    return {"status": "ok"}
+
+
 @app.get("/capabilities")
 def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     """Discover the capabilities of the Autoresearch system.
