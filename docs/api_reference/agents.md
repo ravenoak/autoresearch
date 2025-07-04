@@ -78,6 +78,25 @@ The `Planner` agent structures complex research tasks into manageable steps.
 
 ::: autoresearch.agents.specialized.planner.PlannerAgent
 
+### Moderator
+
+The `Moderator` agent oversees complex dialogues and ensures smooth agent
+interactions.
+
+::: autoresearch.agents.specialized.moderator.ModeratorAgent
+
+### Domain Specialist
+
+The `DomainSpecialist` agent focuses on specialized subject matter expertise.
+
+::: autoresearch.agents.specialized.domain_specialist.DomainSpecialistAgent
+
+### User Agent
+
+The `UserAgent` represents user preferences and acts on the user's behalf.
+
+::: autoresearch.agents.specialized.user_agent.UserAgent
+
 ## Agent Mixins
 
 The agent mixins provide common functionality that can be shared across different agent types.
