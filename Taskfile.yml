@@ -42,16 +42,16 @@ tasks:
 
   wheel-linux:
     cmds:
-      - poetry run pip wheel . --wheel-dir dist/linux --no-deps --platform manylinux2014_x86_64 --abi cp312 --python-version 3.12
+      - poetry run cibuildwheel --platform linux --output-dir dist/linux
     desc: "Build Linux wheel"
 
   wheel-windows:
     cmds:
-      - poetry run pip wheel . --wheel-dir dist/windows --no-deps --platform win_amd64 --abi cp312 --python-version 3.12
+      - poetry run cibuildwheel --platform windows --output-dir dist/windows
     desc: "Build Windows wheel"
 
   wheel-macos:
     cmds:
-      - poetry run pip wheel . --wheel-dir dist/macos --no-deps --platform macosx_11_0_x86_64 --abi cp312 --python-version 3.12
+      - poetry run cibuildwheel --platform macos --output-dir dist/macos
     desc: "Build macOS wheel"
 

@@ -110,10 +110,11 @@ For pip based installs use:
 ```bash
 pip install -U autoresearch
 ```
-You can also run the installer script which detects the platform and installs optional extras:
+You can also run the installer script which resolves optional dependencies automatically:
 ```bash
-python scripts/installer.py
+python scripts/installer.py --minimal
 ```
+Omit `--minimal` to install all extras.
 
 ## Release workflow
 

@@ -44,12 +44,17 @@ if "streamlit" not in sys.modules:
     st_stub.selectbox = lambda *a, **k: None
     st_stub.slider = lambda *a, **k: 0
     st_stub.button = lambda *a, **k: False
-    st_stub.columns = lambda *a, **k: (types.SimpleNamespace(), types.SimpleNamespace())
+    st_stub.columns = lambda *a, **k: (
+        types.SimpleNamespace(),
+        types.SimpleNamespace(),
+    )
     st_stub.container = lambda: types.SimpleNamespace(
-        __enter__=lambda s: None, __exit__=lambda s, e, t, b: None
+        __enter__=lambda s: None,
+        __exit__=lambda s, e, t, b: None,
     )
     st_stub.modal = lambda *a, **k: types.SimpleNamespace(
-        __enter__=lambda s: None, __exit__=lambda s, e, t, b: None
+        __enter__=lambda s: None,
+        __exit__=lambda s, e, t, b: None,
     )
     sys.modules["streamlit"] = st_stub
 

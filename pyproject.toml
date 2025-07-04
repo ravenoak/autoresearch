@@ -43,6 +43,9 @@ dependencies = [
     "tabulate (>=0.9.0,<0.10.0)"
 ]
 [project.optional-dependencies]
+minimal = [
+    "sentence-transformers (>=2.7.0,<3.0.0)"
+]
 core = [
     "sentence-transformers (>=2.7.0,<3.0.0)"
 ]
@@ -134,3 +137,6 @@ target-version = ["py312"]
 profile = "black"
 line_length = 100
 known_first_party = ["autoresearch", "tests"]
+
+[tool.cibuildwheel]
+build = "cp312-*"
