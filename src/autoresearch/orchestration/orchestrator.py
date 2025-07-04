@@ -76,6 +76,8 @@ class Orchestrator:
         loops = config.loops if hasattr(config, "loops") else 2
         mode = getattr(config, "reasoning_mode", ReasoningMode.DIALECTICAL)
         max_errors = config.max_errors if hasattr(config, "max_errors") else 3
+        cb_threshold = getattr(config, "circuit_breaker_threshold", 3)
+        cb_cooldown = getattr(config, "circuit_breaker_cooldown", 30)
 
         # Adjust parameters based on reasoning mode
         if mode == ReasoningMode.DIRECT:
@@ -88,6 +90,8 @@ class Orchestrator:
             "loops": loops,
             "mode": mode,
             "max_errors": max_errors,
+            "circuit_breaker_threshold": cb_threshold,
+            "circuit_breaker_cooldown": cb_cooldown,
         }
 
     @staticmethod
@@ -551,8 +555,10 @@ class Orchestrator:
             "suggestion": suggestion
         }
 
-    # Circuit breaker state (class variable)
+    # Circuit breaker configuration and state
     _circuit_breakers: dict[str, CircuitBreakerState] = {}
+    _circuit_breaker_threshold: int = 3
+    _circuit_breaker_cooldown: int = 30
 
     @staticmethod
     def _update_circuit_breaker(agent_name: str, error_category: str) -> None:
@@ -584,7 +590,10 @@ class Orchestrator:
             breaker["last_failure_time"] = current_time
 
             # If we've had too many failures, open the circuit
-            if breaker["failure_count"] >= 3 and breaker["state"] == "closed":
+            if (
+                breaker["failure_count"] >= Orchestrator._circuit_breaker_threshold
+                and breaker["state"] == "closed"
+            ):
                 breaker["state"] = "open"
                 log.warning(
                     f"Circuit breaker for agent {agent_name} is now OPEN due to repeated failures",
@@ -598,8 +607,8 @@ class Orchestrator:
 
         # Check if we should attempt recovery for an open circuit
         if breaker["state"] == "open":
-            # After a cooling period (30 seconds), try half-open state
-            cooling_period = 30  # seconds
+            # After a cooling period, try half-open state
+            cooling_period = Orchestrator._circuit_breaker_cooldown
             if current_time - breaker["last_failure_time"] > cooling_period:
                 breaker["state"] = "half-open"
                 breaker["recovery_attempts"] += 1
@@ -927,6 +936,8 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
+        Orchestrator._circuit_breaker_threshold = config_params["circuit_breaker_threshold"]
+        Orchestrator._circuit_breaker_cooldown = config_params["circuit_breaker_cooldown"]
 
         # Adapt token budget based on query complexity and loops
         Orchestrator._apply_adaptive_token_budget(config, query)

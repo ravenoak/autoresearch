@@ -270,6 +270,16 @@ def search(
         "--adaptive-min-buffer",
         help="Adaptive budgeting minimum extra tokens",
     ),
+    circuit_breaker_threshold: Optional[int] = typer.Option(
+        None,
+        "--circuit-breaker-threshold",
+        help="Failures before an agent circuit opens",
+    ),
+    circuit_breaker_cooldown: Optional[int] = typer.Option(
+        None,
+        "--circuit-breaker-cooldown",
+        help="Circuit breaker cooldown period in seconds",
+    ),
     agents: Optional[str] = typer.Option(
         None,
         "--agents",
@@ -318,6 +328,12 @@ def search(
         # Limit tokens and run multiple loops
         autoresearch search --loops 3 --token-budget 2000 "Explain AI ethics"
 
+        # Adjust circuit breaker thresholds
+        autoresearch search "Test" --circuit-breaker-threshold 5 --circuit-breaker-cooldown 60
+
+        # Tune adaptive token budgeting
+        autoresearch search "Long query" --adaptive-max-factor 25 --adaptive-min-buffer 20
+
         # Choose specific agents
         autoresearch search --agents Synthesizer,Contrarian "What is quantum computing?"
 
@@ -337,6 +353,10 @@ def search(
         updates["adaptive_max_factor"] = adaptive_max_factor
     if adaptive_min_buffer is not None:
         updates["adaptive_min_buffer"] = adaptive_min_buffer
+    if circuit_breaker_threshold is not None:
+        updates["circuit_breaker_threshold"] = circuit_breaker_threshold
+    if circuit_breaker_cooldown is not None:
+        updates["circuit_breaker_cooldown"] = circuit_breaker_cooldown
     if primus_start is not None:
         updates["primus_start"] = primus_start
     if agents is not None:

@@ -271,6 +271,16 @@ class ConfigModel(BaseSettings):
         ge=0,
         description="Minimum token buffer added when using adaptive budgeting",
     )
+    circuit_breaker_threshold: int = Field(
+        default=3,
+        ge=1,
+        description="Failure count before a circuit opens",
+    )
+    circuit_breaker_cooldown: int = Field(
+        default=30,
+        ge=1,
+        description="Cooldown in seconds before attempting recovery",
+    )
     max_errors: int = Field(
         default=3,
         ge=1,

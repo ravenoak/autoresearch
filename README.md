@@ -133,6 +133,14 @@ loops = 3
 # Maximum token budget per run
 token_budget = 4000
 
+# Adaptive token budgeting parameters
+adaptive_max_factor = 20
+adaptive_min_buffer = 10
+
+# Circuit breaker configuration
+circuit_breaker_threshold = 3
+circuit_breaker_cooldown = 30
+
 # Enable distributed tracing
 tracing_enabled = false
 
@@ -298,6 +306,13 @@ Set a custom token budget and number of reasoning loops:
 
 ```bash
 autoresearch search --loops 3 --token-budget 2000 "Explain AI ethics"
+```
+
+Customize circuit breaker settings and adaptive budgeting:
+
+```bash
+autoresearch search "Resilient run" --circuit-breaker-threshold 5 --circuit-breaker-cooldown 60 \
+  --adaptive-max-factor 25 --adaptive-min-buffer 20
 ```
 
 ### Using Different LLM Backends
