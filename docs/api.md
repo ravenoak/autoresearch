@@ -112,6 +112,14 @@ Return information about available agents, LLM backends and current settings.
 curl http://localhost:8000/capabilities
 ```
 
+### `GET /health`
+
+Check whether the API server is running.
+
+```bash
+curl http://localhost:8000/health
+```
+
 ### `GET /config`
 
 Return the current configuration as JSON.
