@@ -14,6 +14,16 @@ This collects metrics for ten seconds and displays them in a table. The duration
 
 You can also run `autoresearch monitor` to view a live stream of basic metrics.
 
+## GPU Monitoring
+
+If your system has NVIDIA GPUs, Autoresearch will attempt to collect GPU
+utilization and memory usage. Metrics are gathered using `pynvml` when
+available or by invoking `nvidia-smi`. When neither is present the GPU values
+remain zero.
+
+Running `autoresearch monitor resources` will therefore include ``GPU %`` and
+``GPU MB`` columns when supported.
+
 ## Token Usage Heuristics
 
 The orchestration metrics module provides helpers to automatically compress
