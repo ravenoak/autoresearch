@@ -9,10 +9,10 @@ This guide explains how to install Autoresearch and manage optional features.
 
 ## Minimal installation
 
-The project can be installed with only the core dependencies:
+The project can be installed with only the minimal optional dependencies:
 
 ```bash
-pip install autoresearch[core]
+pip install autoresearch[minimal]
 ```
 
 This provides the CLI, API and knowledge graph without heavy NLP or UI packages. Optional features will be disabled when their dependencies are missing.
@@ -31,7 +31,7 @@ Additional functionality is grouped into Poetry extras:
 Install multiple extras separated by commas:
 
 ```bash
-pip install "autoresearch[core,nlp,parsers]"
+pip install "autoresearch[minimal,nlp,parsers]"
 ```
 
 ## Upgrading
