@@ -773,6 +773,9 @@ class Orchestrator:
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
             metrics.record_query_tokens(state.query)
+            token_budget = getattr(config, "token_budget", None)
+            if token_budget is not None:
+                config.token_budget = metrics.suggest_token_budget(token_budget)
 
             # Prune context to keep state size manageable
             state.prune_context()
@@ -860,6 +863,9 @@ class Orchestrator:
 
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
+            token_budget = getattr(config, "token_budget", None)
+            if token_budget is not None:
+                config.token_budget = metrics.suggest_token_budget(token_budget)
 
             # Prune context to keep state size manageable
             state.prune_context()
