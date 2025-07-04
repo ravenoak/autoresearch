@@ -231,4 +231,5 @@ Current benchmark metrics for a single dummy query:
 - Duration: ~0.003s
 - Memory delta: ~0 MB
 - Tokens: {"Dummy": {"in": 2, "out": 7}}
+- Regenerated API docs and verified architecture diagrams against current code.
 

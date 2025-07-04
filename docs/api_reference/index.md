@@ -54,4 +54,5 @@ For detailed documentation of each module, see the corresponding pages in this s
 - [LLM](llm.md): LLM adapters, registry, and token counting
 - [Search](search.md): Search functionality and backends
 - [Config](config.md): Configuration loading and management
+- [Distributed](distributed.md): Executors and helper utilities for distributed execution
 
