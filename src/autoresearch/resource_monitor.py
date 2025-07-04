@@ -37,20 +37,34 @@ def _get_gpu_stats() -> tuple[float, float]:
         pass
 
     try:  # pragma: no cover - may not be present
-        import psutil  # type: ignore
         import subprocess
+        try:
+            import psutil  # type: ignore
 
-        proc = psutil.Popen(
-            [
-                "nvidia-smi",
-                "--query-gpu=utilization.gpu,memory.used",
-                "--format=csv,noheader,nounits",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        )
-        out, _ = proc.communicate(timeout=1)
+            proc = psutil.Popen(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=utilization.gpu,memory.used",
+                    "--format=csv,noheader,nounits",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+            out, _ = proc.communicate(timeout=1)
+        except Exception:
+            proc = subprocess.run(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=utilization.gpu,memory.used",
+                    "--format=csv,noheader,nounits",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1,
+            )
+            out = proc.stdout
         utils = []
         mems = []
         for line in out.strip().splitlines():
