@@ -217,3 +217,46 @@ class OrchestrationMetrics:
         if baseline_total is None:
             return False
         return self._total_tokens() > baseline_total + threshold
+
+    # ------------------------------------------------------------------
+    # Heuristics for prompt compression and budget adjustment
+    # ------------------------------------------------------------------
+
+    def compress_prompt_if_needed(
+        self, prompt: str, token_budget: int, *, threshold: float = 1.0
+    ) -> str:
+        """Return a compressed prompt when usage exceeds ``token_budget``.
+
+        Parameters
+        ----------
+        prompt:
+            The original prompt text.
+        token_budget:
+            Maximum allowed tokens for the prompt.
+        threshold:
+            Fraction of the budget that triggers compression. A value of
+            ``1.0`` means the prompt is compressed only when it exceeds the
+            budget, while ``0.9`` would compress once 90% of the budget is
+            reached.
+        """
+
+        tokens = len(prompt.split())
+        if tokens <= int(token_budget * threshold):
+            return prompt
+        from ..llm.token_counting import compress_prompt
+        return compress_prompt(prompt, token_budget)
+
+    def suggest_token_budget(self, current_budget: int, *, margin: float = 0.1) -> int:
+        """Return an adjusted token budget based on recorded usage.
+
+        The heuristic expands the budget slightly when usage exceeds the
+        current budget plus ``margin`` and reduces it when significantly below
+        the budget. The returned value is at least one.
+        """
+
+        used = self._total_tokens()
+        if used > current_budget * (1 + margin):
+            return max(int(used * (1 + margin)), 1)
+        if used < current_budget * (1 - margin):
+            return max(int(current_budget * (1 - margin)), 1)
+        return max(current_budget, 1)
