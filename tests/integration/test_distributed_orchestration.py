@@ -31,6 +31,7 @@ def test_ray_executor_multi_process(monkeypatch):
         distributed_config=DistributedConfig(enabled=True, num_cpus=2),
     )
     executor = RayExecutor(cfg)
+    assert executor.resource_pool.size == cfg.distributed_config.num_cpus
     resp = executor.run_query("q")
     assert isinstance(resp, QueryResponse)
     # Expect at least two distinct worker processes

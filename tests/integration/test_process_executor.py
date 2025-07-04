@@ -30,6 +30,7 @@ def test_process_executor_multi_process(monkeypatch):
         distributed_config=DistributedConfig(enabled=True, num_cpus=2),
     )
     executor = ProcessExecutor(cfg)
+    assert executor.resource_pool.size == cfg.distributed_config.num_cpus
     resp = executor.run_query("q")
     assert isinstance(resp, QueryResponse)
     assert len(set(pids)) > 1
@@ -46,6 +47,7 @@ def test_process_result_aggregation(monkeypatch):
         distributed_config=DistributedConfig(enabled=True, num_cpus=2),
     )
     executor = ProcessExecutor(cfg)
+    assert executor.resource_pool.size == cfg.distributed_config.num_cpus
     resp = executor.run_query("q")
     assert isinstance(resp, QueryResponse)
     assert len(set(pids)) > 1

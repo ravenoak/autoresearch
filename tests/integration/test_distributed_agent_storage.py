@@ -33,6 +33,7 @@ def test_distributed_storage_with_executor(tmp_path, monkeypatch):
         storage=StorageConfig(duckdb_path=str(tmp_path / "kg.duckdb")),
     )
     executor = RayExecutor(cfg)
+    assert executor.resource_pool.size == cfg.distributed_config.num_cpus
     executor.run_query("q")
     assert len(set(pids)) > 1
     executor.shutdown()

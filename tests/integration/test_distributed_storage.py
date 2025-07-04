@@ -1,7 +1,7 @@
 import os
 import ray
 from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
-from autoresearch.distributed import start_storage_coordinator
+from autoresearch.distributed import start_storage_coordinator, create_resource_pool
 from autoresearch.storage import StorageManager
 
 
@@ -11,6 +11,8 @@ def test_distributed_storage(tmp_path):
         distributed_config=DistributedConfig(enabled=True, num_cpus=2, message_broker="memory"),
         storage=StorageConfig(duckdb_path=str(tmp_path / "kg.duckdb")),
     )
+    pool = create_resource_pool(cfg)
+    assert pool.size == cfg.distributed_config.num_cpus
 
     coordinator, broker = start_storage_coordinator(cfg)
     ray.init(num_cpus=2, ignore_reinit_error=True, configure_logging=False)

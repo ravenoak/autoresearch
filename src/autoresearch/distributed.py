@@ -70,6 +70,34 @@ class RedisBroker:
 BrokerType = InMemoryBroker | RedisBroker
 
 
+class ResourcePool:
+    """Simple semaphore-based pool to coordinate worker resources."""
+
+    def __init__(self, size: int) -> None:
+        self._sem = multiprocessing.BoundedSemaphore(size)
+        self.size = size
+
+    def acquire(self) -> None:
+        self._sem.acquire()
+
+    def release(self) -> None:
+        self._sem.release()
+
+    def __enter__(self) -> "ResourcePool":
+        self.acquire()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.release()
+
+
+def create_resource_pool(config: ConfigModel) -> ResourcePool:
+    """Instantiate a :class:`ResourcePool` from the distributed config."""
+
+    size = getattr(config.distributed_config, "num_cpus", 1)
+    return ResourcePool(size)
+
+
 def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
     """Return a message broker instance by name."""
 
@@ -189,6 +217,7 @@ class RayExecutor:
         self.broker: Optional[BrokerType] = None
         self.result_aggregator: Optional[ResultAggregator] = None
         self.result_broker: Optional[BrokerType] = None
+        self.resource_pool = create_resource_pool(config)
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
@@ -247,6 +276,7 @@ class ProcessExecutor:
         self.broker: Optional[BrokerType] = None
         self.result_aggregator: Optional[ResultAggregator] = None
         self.result_broker: Optional[BrokerType] = None
+        self.resource_pool = create_resource_pool(config)
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
