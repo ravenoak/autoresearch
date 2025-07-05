@@ -39,14 +39,12 @@ pip install "autoresearch[minimal,nlp,parsers]"
 To upgrade an existing installation run:
 
 ```bash
-pip install -U autoresearch
+python scripts/upgrade.py
 ```
 
-For Poetry based setups use:
-
-```bash
-poetry update autoresearch
-```
+The helper script detects whether Poetry or pip is used. It runs
+`poetry update autoresearch` when a `pyproject.toml` is present,
+otherwise it falls back to `pip install -U autoresearch`.
 
 The project follows semantic versioning. Minor releases within the same major version are backwards compatible. Check the [duckdb_compatibility.md](duckdb_compatibility.md) document for extension version notes.
 
