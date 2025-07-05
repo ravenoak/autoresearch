@@ -487,7 +487,13 @@ async def query_status_endpoint(
         raise HTTPException(status_code=404, detail="Unknown query ID")
     if not task.done():
         return {"status": "running"}
-    return task.result()
+    try:
+        result = task.result()
+    except Exception as exc:
+        del app.state.async_tasks[query_id]
+        raise HTTPException(status_code=500, detail=str(exc))
+    del app.state.async_tasks[query_id]
+    return result
 
 
 @app.get("/metrics")
@@ -609,6 +615,35 @@ def update_config_endpoint(
         new_cfg = ConfigModel(**current)
     except ValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    loader._config = new_cfg
+    loader.notify_observers(new_cfg)
+    return new_cfg.model_dump(mode="json")
+
+
+@app.post("/config")
+def replace_config_endpoint(
+    new_config: dict,
+    _: None = require_permission("capabilities"),
+) -> dict:
+    """Replace the entire configuration at runtime."""
+    loader = ConfigLoader()
+    try:
+        new_cfg = ConfigModel(**new_config)
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    loader._config = new_cfg
+    loader.notify_observers(new_cfg)
+    return new_cfg.model_dump(mode="json")
+
+
+@app.delete("/config")
+def reload_config_endpoint(_: None = require_permission("capabilities")) -> dict:
+    """Reload configuration from disk and discard runtime changes."""
+    loader = ConfigLoader()
+    try:
+        new_cfg = loader.load_config()
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(status_code=500, detail=str(exc))
     loader._config = new_cfg
     loader.notify_observers(new_cfg)
     return new_cfg.model_dump(mode="json")
