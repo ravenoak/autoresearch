@@ -278,3 +278,29 @@ def test_requires_a2a_decorator_not_available():
             test_func()
 
         assert "A2A SDK is not available" in str(excinfo.value)
+
+
+def test_handle_query_exception(mock_a2a_server, make_a2a_message, mock_orchestrator):
+    interface = A2AInterface()
+    msg = make_a2a_message(query="bad")
+    mock_orchestrator.run_query.side_effect = RuntimeError("oops")
+    result = interface._handle_query(msg)
+    assert result["status"] == "error"
+
+    assert "oops" in result["error"]
+
+
+def test_handle_set_config_invalid(monkeypatch, mock_a2a_server, make_a2a_message, mock_config):
+    interface = A2AInterface()
+    msg = make_a2a_message(command="set_config", args={"loops": "bad"})
+    result = interface._handle_command(msg)
+    assert result["result"]["status"] == "error"
+
+
+class TestA2AClientExtended(TestA2AClient):
+    def test_query_agent_error(self, mock_send_request):
+        client = A2AClient()
+        mock_send_request.return_value = {"error": "bad"}
+        result = client.query_agent("http://test-agent", "q")
+        assert result == {"error": "bad"}
+        mock_send_request.assert_called_once()
