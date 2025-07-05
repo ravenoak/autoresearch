@@ -39,6 +39,7 @@ from .metrics import OrchestrationMetrics, record_query
 from ..logging_utils import get_logger
 from ..tracing import setup_tracing, get_tracer
 from ..errors import OrchestrationError, AgentError, NotFoundError, TimeoutError
+import rdflib
 
 
 log = get_logger(__name__)
@@ -1601,7 +1602,7 @@ class Orchestrator:
         # Get the adapter for the agent using the configured backend
         backend = config.llm_backend
         adapter = llm.get_pooled_adapter(backend)
-        token_budget = getattr(config, "token_budget", None)
+        token_budget: int | None = getattr(config, "token_budget", None)
 
         # Use the count_tokens context manager to count tokens
         # It returns both the token counter and the wrapped adapter
@@ -1639,6 +1640,6 @@ class Orchestrator:
         StorageManager.infer_relations()
 
     @staticmethod
-    def query_ontology(query: str):
+    def query_ontology(query: str) -> rdflib.query.Result:
         """Query the ontology graph via the storage manager."""
         return StorageManager.query_ontology(query)

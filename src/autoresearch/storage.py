@@ -1267,19 +1267,19 @@ class StorageManager:
             StorageManager.apply_ontology_reasoning(reasoner)
 
     @staticmethod
-    def query_rdf(query: str):
+    def query_rdf(query: str) -> rdflib.query.Result:
         """Run a SPARQL query against the RDF store."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
         return store.query(query)
 
     @staticmethod
-    def query_ontology(query: str):
+    def query_ontology(query: str) -> rdflib.query.Result:
         """Run a SPARQL query against the ontology graph."""
         return StorageManager.query_rdf(query)
 
     @staticmethod
-    def query_with_reasoning(query: str, engine: Optional[str] = None):
+    def query_with_reasoning(query: str, engine: Optional[str] = None) -> rdflib.query.Result:
         """Run a SPARQL query after applying ontology reasoning."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
