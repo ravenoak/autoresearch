@@ -27,6 +27,13 @@ def test_config_endpoints(monkeypatch):
     assert resp.status_code == 200
     assert resp.json()["loops"] == 3
 
+    resp = client.post("/config", json={"loops": 5})
+    assert resp.status_code == 200
+    assert resp.json()["loops"] == 5
+
+    resp = client.delete("/config")
+    assert resp.status_code == 200
+
 
 def test_async_query_status(monkeypatch):
     _setup(monkeypatch)
@@ -50,6 +57,12 @@ def test_async_query_status(monkeypatch):
     done = client.get(f"/query/{qid}")
     assert done.status_code == 200
     assert done.json()["answer"] == "ok"
+
+    gone = client.get(f"/query/{qid}")
+    assert gone.status_code == 404
+
+    missing = client.get("/query/bad-id")
+    assert missing.status_code == 404
 
 
 def test_metrics_and_capabilities(monkeypatch):

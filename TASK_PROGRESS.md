@@ -140,7 +140,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### 3.2 HTTP API
 
-- [ ] Complete the REST API
+- [x] Complete the REST API
   - [x] Add authentication and authorization
   - [x] Implement rate limiting
   - [x] Create detailed API documentation

@@ -35,3 +35,13 @@ Feature: API and Orchestrator Integration
   Scenario: API paginates batch queries
     When I send a batch query with page 2 and page size 2 to the API
     Then the API should return the second page of results
+
+  Scenario: API returns 404 for unknown async query ID
+    When I request the status of an unknown async query
+    Then the API should respond with status 404
+
+  Scenario: API configuration CRUD
+    When I replace the configuration via the API
+    Then the API should report the updated value
+    When I reset the configuration via the API
+    Then the API should return the default configuration

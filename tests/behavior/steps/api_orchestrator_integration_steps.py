@@ -86,6 +86,24 @@ def test_api_batch_pagination():
     pass
 
 
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API returns 404 for unknown async query ID",
+)
+def test_async_query_not_found():
+    """Unknown async query IDs should return 404."""
+    pass
+
+
+@scenario(
+    "../features/api_orchestrator_integration.feature",
+    "API configuration CRUD",
+)
+def test_api_config_crud():
+    """Test configuration CRUD operations."""
+    pass
+
+
 # Background steps
 @given("the API server is running")
 def api_server_running(test_context, api_client):
@@ -355,3 +373,48 @@ def check_batch_pagination(test_context):
     assert data["page_size"] == size
     results = [r["answer"] for r in data["results"]]
     assert results == expected
+
+
+# Scenario: API returns 404 for unknown async query ID
+
+
+@when("I request the status of an unknown async query")
+def request_unknown_query(test_context):
+    """Request a non-existent async query."""
+    client = test_context["client"]
+    test_context["response"] = client.get("/query/unknown")
+
+
+@then("the API should respond with status 404")
+def check_404_status(test_context):
+    """Verify that the response status code is 404."""
+    assert test_context["response"].status_code == 404
+
+
+# Scenario: API configuration CRUD
+
+
+@when("I replace the configuration via the API")
+def replace_config_api(test_context):
+    """Replace the running configuration."""
+    client = test_context["client"]
+    test_context["response"] = client.post("/config", json={"loops": 2})
+
+
+@then("the API should report the updated value")
+def check_config_updated(test_context):
+    resp = test_context["response"]
+    assert resp.status_code == 200
+    assert resp.json()["loops"] == 2
+
+
+@when("I reset the configuration via the API")
+def reset_config_api(test_context):
+    client = test_context["client"]
+    test_context["reset_resp"] = client.delete("/config")
+
+
+@then("the API should return the default configuration")
+def check_config_reset(test_context):
+    resp = test_context["reset_resp"]
+    assert resp.status_code == 200

@@ -128,6 +128,25 @@ Return the current configuration as JSON.
 curl http://localhost:8000/config
 ```
 
+### `POST /config`
+
+Replace the entire configuration with the JSON body.
+
+```bash
+curl -X POST http://localhost:8000/config -H "Content-Type: application/json" \
+     -d '{"loops": 2, "llm_backend": "mock"}'
+```
+
+**Response**
+
+```json
+{
+  "loops": 2,
+  "llm_backend": "mock",
+  ...
+}
+```
+
 ### `PUT /config`
 
 Update configuration values at runtime. Only fields present in the JSON body are
@@ -136,6 +155,14 @@ modified.
 ```bash
 curl -X PUT http://localhost:8000/config -H "Content-Type: application/json" \
      -d '{"loops": 3}'
+```
+
+### `DELETE /config`
+
+Reload configuration from disk and discard runtime changes.
+
+```bash
+curl -X DELETE http://localhost:8000/config
 ```
 
 ### `POST /query/async`
@@ -148,10 +175,33 @@ curl -X POST http://localhost:8000/query/async \
   -d '{"query": "Explain AI"}'
 ```
 
+**Response**
+
+```json
+{"query_id": "123e4567-e89b-12d3-a456-426614174000"}
+```
+
 Check the result with `GET /query/<id>`:
 
 ```bash
 curl http://localhost:8000/query/<id>
+```
+
+Example response while running:
+
+```json
+{"status": "running"}
+```
+
+When complete:
+
+```json
+{
+  "answer": "AI explanation",
+  "citations": [],
+  "reasoning": [],
+  "metrics": {}
+}
 ```
 
 ## Authentication
