@@ -27,6 +27,7 @@ from .orchestration.orchestrator import Orchestrator
 from .models import QueryResponse
 from .orchestration import ReasoningMode
 from .error_utils import get_error_info, format_error_for_gui
+from .cli_utils import print_success
 
 # Configure matplotlib to use a non-interactive backend
 matplotlib.use("Agg")
@@ -1993,7 +1994,7 @@ def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
 
     StorageManager.setup()
     StorageManager.visualize_rdf(output_path)
-    print(f"Graph written to {output_path}")
+    print_success(f"Graph written to {output_path}")
 
 
 def display_results(result: QueryResponse):
