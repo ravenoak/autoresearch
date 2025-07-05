@@ -3,6 +3,7 @@
 from pytest_bdd import scenario, given, when, then, parsers
 from . import api_orchestrator_integration_steps  # noqa: F401
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.api import config_loader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 
@@ -17,6 +18,8 @@ def api_server_running():
 def require_api_key(monkeypatch, key):
     cfg = ConfigModel(api=APIConfig(api_key=key))
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setenv("AUTORESEARCH_API_KEY", key)
+    config_loader._config = None
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -30,6 +33,8 @@ def require_api_key(monkeypatch, key):
 def require_bearer_token(monkeypatch, token):
     cfg = ConfigModel(api=APIConfig(bearer_token=token))
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setenv("AUTORESEARCH_BEARER_TOKEN", token)
+    config_loader._config = None
     monkeypatch.setattr(
         Orchestrator,
         "run_query",

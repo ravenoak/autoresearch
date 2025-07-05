@@ -48,10 +48,19 @@ def set_primus_start(index: int, set_loops):
     parsers.parse('I run the orchestrator on query "{query}"'),
     target_fixture="run_orchestrator_on_query",
 )
-def run_orchestrator_on_query(query):
+def run_orchestrator_on_query(query, monkeypatch, tmp_path):
     loader = ConfigLoader()
     loader._config = None
     cfg = loader.load_config()
+
+    monkeypatch.setenv(
+        "AUTORESEARCH_RELEASE_METRICS",
+        str(tmp_path / "release_tokens.json"),
+    )
+    monkeypatch.setenv(
+        "AUTORESEARCH_QUERY_TOKENS",
+        str(tmp_path / "query_tokens.json"),
+    )
 
     from autoresearch.orchestration.reasoning import ReasoningMode
 
