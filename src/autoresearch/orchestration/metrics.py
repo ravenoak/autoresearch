@@ -77,6 +77,9 @@ class OrchestrationMetrics:
         self.resource_usage: List[Tuple[float, float, float, float, float]] = []
         self.release = os.getenv("AUTORESEARCH_RELEASE", "development")
         self._release_logged = False
+        self.prompt_lengths: List[int] = []
+        self.token_usage_history: List[int] = []
+        self._last_total_tokens = 0
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -241,22 +244,40 @@ class OrchestrationMetrics:
         """
 
         tokens = len(prompt.split())
-        if tokens <= int(token_budget * threshold):
+        self.prompt_lengths.append(tokens)
+        avg_tokens = sum(self.prompt_lengths) / len(self.prompt_lengths)
+
+        adjusted_threshold = threshold
+        if avg_tokens > token_budget:
+            adjusted_threshold = min(threshold, token_budget / avg_tokens)
+
+        if tokens <= int(token_budget * adjusted_threshold):
             return prompt
+
         from ..llm.token_counting import compress_prompt
         return compress_prompt(prompt, token_budget)
 
     def suggest_token_budget(self, current_budget: int, *, margin: float = 0.1) -> int:
         """Return an adjusted token budget based on recorded usage.
 
-        The heuristic expands the budget slightly when usage exceeds the
-        current budget plus ``margin`` and reduces it when significantly below
-        the budget. The returned value is at least one.
+        ``margin`` controls how aggressively the budget adapts. The
+        calculation considers the current cycle usage as well as the
+        historical average of all recorded cycles.
         """
 
-        used = self._total_tokens()
-        if used > current_budget * (1 + margin):
-            return max(int(used * (1 + margin)), 1)
-        if used < current_budget * (1 - margin):
-            return max(int(current_budget * (1 - margin)), 1)
+        total = self._total_tokens()
+        delta = total - self._last_total_tokens
+        self._last_total_tokens = total
+        self.token_usage_history.append(delta)
+        avg_used = sum(self.token_usage_history) / len(self.token_usage_history)
+
+        expand_threshold = current_budget * (1 + margin)
+        shrink_threshold = current_budget * (1 - margin)
+
+        if delta > expand_threshold or avg_used > current_budget:
+            return max(int(max(delta, avg_used) * (1 + margin)), 1)
+
+        if delta < shrink_threshold and avg_used < shrink_threshold:
+            return max(int(avg_used * (1 + margin)), 1)
+
         return max(current_budget, 1)

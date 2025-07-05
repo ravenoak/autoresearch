@@ -2,6 +2,7 @@ from hypothesis import given, strategies as st
 
 from autoresearch.config import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
 @given(
@@ -46,3 +47,35 @@ def test_budget_scaling_exact(initial_budget, loops, q_tokens):
         expected = budget
 
     assert cfg.token_budget == expected
+
+
+def test_budget_adaptive_history():
+    m = OrchestrationMetrics()
+    budget = 10
+
+    m.record_tokens("A", 3, 2)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 5
+
+    m.record_tokens("A", 10, 5)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 16
+
+    m.record_tokens("A", 9, 0)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 10
+
+
+def test_compress_prompt_history():
+    m = OrchestrationMetrics()
+    budget = 5
+    prompt = "one two three four five"
+    assert m.compress_prompt_if_needed(prompt, budget) == prompt
+
+    long_prompt = "one two three four five six seven eight"
+    compressed = m.compress_prompt_if_needed(long_prompt, budget)
+    assert len(compressed.split()) <= budget
+
+    compressed_again = m.compress_prompt_if_needed(prompt, budget)
+    assert len(compressed_again.split()) <= budget
+    assert compressed_again != prompt
