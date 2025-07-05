@@ -204,6 +204,18 @@ When complete:
 }
 ```
 
+### `DELETE /query/<id>`
+
+Cancel a running asynchronous query and remove it from the server.
+
+```bash
+curl -X DELETE http://localhost:8000/query/<id>
+```
+
+Returns `{"status": "cancelled"}` when the task is terminated or `{"status": "finished"}` if it already completed. Unknown IDs return **404**.
+
+ 
+
 ## Authentication
 
 Enable API key authentication by setting `[api].api_key` in `autoresearch.toml`

@@ -12,6 +12,8 @@ The Autoresearch API is organized into several modules:
 - **LLM**: Language model integration and adapters
 - **Search**: Search functionality and backends
 - **Config**: Configuration management
+The HTTP API also exposes REST endpoints. Use `DELETE /query/{query_id}` to cancel an asynchronous query.
+
 
 ## Using the API
 
