@@ -63,6 +63,7 @@ try:
 except ImportError:
     BERTOPIC_AVAILABLE = False
 
+import atexit
 from .config import get_config
 from .errors import ConfigError, SearchError
 from .logging_utils import get_logger
@@ -71,18 +72,22 @@ from .storage import StorageManager
 
 _http_session: Optional[requests.Session] = None
 _http_lock = threading.Lock()
+_atexit_registered = False
 
 
 def set_http_session(session: requests.Session) -> None:
     """Inject an existing HTTP session (for distributed workers)."""
-    global _http_session
+    global _http_session, _atexit_registered
     with _http_lock:
         _http_session = session
+        if not _atexit_registered:
+            atexit.register(close_http_session)
+            _atexit_registered = True
 
 
 def get_http_session() -> requests.Session:
     """Return a pooled HTTP session."""
-    global _http_session
+    global _http_session, _atexit_registered
     with _http_lock:
         if _http_session is None:
             cfg = get_config()
@@ -94,16 +99,20 @@ def get_http_session() -> requests.Session:
             session.mount("http://", adapter)
             session.mount("https://", adapter)
             _http_session = session
+            if not _atexit_registered:
+                atexit.register(close_http_session)
+                _atexit_registered = True
         return _http_session
 
 
 def close_http_session() -> None:
     """Close the pooled HTTP session."""
-    global _http_session
+    global _http_session, _atexit_registered
     with _http_lock:
         if _http_session is not None:
             _http_session.close()
             _http_session = None
+            _atexit_registered = False
 
 
 log = get_logger(__name__)

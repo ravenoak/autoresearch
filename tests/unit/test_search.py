@@ -7,6 +7,7 @@ import subprocess
 from autoresearch.config import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 
+import autoresearch.search as search
 from autoresearch.search import Search
 
 
@@ -273,3 +274,20 @@ def test_external_lookup_vector_search(monkeypatch):
     results = Search.external_lookup("query", max_results=1)
 
     assert any(r.get("snippet") == "vector snippet" for r in results)
+
+
+def test_http_session_atexit_hook(monkeypatch):
+    cfg = ConfigModel(loops=1)
+    cfg.search.http_pool_size = 1
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    search.close_http_session()
+    calls: list = []
+    monkeypatch.setattr(search.atexit, "register", lambda f: calls.append(f))
+    session = search.get_http_session()
+    assert search.close_http_session in calls
+
+    search.close_http_session()
+    calls.clear()
+    monkeypatch.setattr(search.atexit, "register", lambda f: calls.append(f))
+    search.set_http_session(session)
+    assert search.close_http_session in calls
