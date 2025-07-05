@@ -8,9 +8,10 @@ with both color and text-based alternatives, as well as symbolic indicators.
 import os
 import sys
 from enum import Enum
-from typing import Any, Optional, Mapping
+from typing import Any, Optional, Mapping, Iterable, cast
 from rich.console import Console
 from rich.table import Table
+import rdflib
 
 
 # Verbosity levels
@@ -238,8 +239,8 @@ def sparql_query_cli(query: str, engine: str | None = None, apply_reasoning: boo
         print_info(f"ASK result: {res.askAnswer}")
         return
 
-    rows = [list(r) for r in res]
-    headers = [str(v) for v in res.vars]
+    rows = [list(cast(Iterable[rdflib.term.Node], r)) for r in res]
+    headers = [str(v) for v in (res.vars or [])]
     console.print(tabulate(rows, headers=headers, tablefmt="github"))
 
 
