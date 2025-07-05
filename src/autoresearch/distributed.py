@@ -230,6 +230,9 @@ class RayExecutor:
                 self.result_aggregator.results[:] = []
             for res in results:
                 state.update(res["result"])
+                if self.broker:
+                    for claim in res["result"].get("claims", []):
+                        publish_claim(self.broker, claim)
             if callbacks.get("on_cycle_end"):
                 callbacks["on_cycle_end"](loop, state)
             state.cycle += 1
@@ -290,6 +293,9 @@ class ProcessExecutor:
                 self.result_aggregator.results[:] = []
             for res in aggregated:
                 state.update(res["result"])
+                if self.broker:
+                    for claim in res["result"].get("claims", []):
+                        publish_claim(self.broker, claim)
             if callbacks.get("on_cycle_end"):
                 callbacks["on_cycle_end"](loop, state)
             state.cycle += 1
