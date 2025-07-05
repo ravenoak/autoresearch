@@ -97,6 +97,13 @@ make sure the Redis service is reachable by all nodes. Result aggregation is
 handled by a `ResultAggregator` process which collects agent outputs across
 workers.
 
+When `distributed_config.enabled` is set to `true`, the executor waits for the
+`StorageCoordinator` to signal readiness before dispatching agents. This
+guarantees that claim persistence is available from the first worker cycle. Use
+the executor's `shutdown()` method or a graceful termination signal to stop the
+coordinator. Queues are drained and closed automatically so no messages are
+lost during shutdown.
+
 ## Deployment Checks
 
 After starting the service, run the deployment script to validate configuration and perform a health check:

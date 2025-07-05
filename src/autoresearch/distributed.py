@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Dict, Callable, Any, Optional, TYPE_CHECKING
+from multiprocessing.synchronize import Event
 import os
 import json
 import multiprocessing
@@ -84,15 +85,26 @@ def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
 class StorageCoordinator(multiprocessing.Process):
     """Background process that persists claims from a queue."""
 
-    def __init__(self, queue: Any, db_path: str) -> None:
+    def __init__(
+        self,
+        queue: Any,
+        db_path: str,
+        ready_event: Event | None = None,
+    ) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._db_path = db_path
+        self._ready_event = ready_event
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         storage.setup(self._db_path)
+        if self._ready_event is not None:
+            self._ready_event.set()
         while True:
-            msg = self._queue.get()
+            try:
+                msg = self._queue.get()
+            except (EOFError, OSError):
+                break
             if msg.get("action") == "stop":
                 break
             if msg.get("action") == "persist_claim":
@@ -113,7 +125,10 @@ class ResultAggregator(multiprocessing.Process):
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         while True:
-            msg = self._queue.get()
+            try:
+                msg = self._queue.get()
+            except (EOFError, OSError):
+                break
             if msg.get("action") == "stop":
                 break
             if msg.get("action") == "agent_result":
@@ -124,10 +139,15 @@ def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, 
     """Start a storage coordinator according to the distributed config."""
 
     dist_cfg = config.distributed_config
-    broker = get_message_broker(getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None))
+    broker = get_message_broker(
+        getattr(dist_cfg, "message_broker", None),
+        getattr(dist_cfg, "broker_url", None),
+    )
     db_path = config.storage.duckdb_path
-    coordinator = StorageCoordinator(broker.queue, db_path)
+    ready = multiprocessing.Event()
+    coordinator = StorageCoordinator(broker.queue, db_path, ready)
     coordinator.start()
+    ready.wait()
     return coordinator, broker
 
 
@@ -225,7 +245,8 @@ class RayExecutor:
         self.llm_session = llm_pool.get_session()
         self.http_handle = ray.put(self.http_session)
         self.llm_handle = ray.put(self.llm_session)
-        if getattr(config, "distributed", False):
+        should_start = getattr(config, "distributed", False) or config.distributed_config.enabled
+        if should_start:
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
@@ -269,14 +290,26 @@ class RayExecutor:
         """Shut down Ray and any storage coordinator."""
 
         if self.broker and self.storage_coordinator:
-            self.broker.publish({"action": "stop"})
+            try:
+                self.broker.publish({"action": "stop"})
+            except Exception:
+                pass
             self.storage_coordinator.join()
-            self.broker.shutdown()
+            try:
+                self.broker.shutdown()
+            except Exception:
+                pass
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
-            self.result_broker.publish({"action": "stop"})
+            try:
+                self.result_broker.publish({"action": "stop"})
+            except Exception:
+                pass
             self.result_aggregator.join()
-            self.result_broker.shutdown()
+            try:
+                self.result_broker.shutdown()
+            except Exception:
+                pass
         ray.shutdown()
 
 
@@ -289,7 +322,8 @@ class ProcessExecutor:
         self.broker: Optional[BrokerType] = None
         self.result_aggregator: Optional[ResultAggregator] = None
         self.result_broker: Optional[BrokerType] = None
-        if getattr(config, "distributed", False):
+        should_start = getattr(config, "distributed", False) or config.distributed_config.enabled
+        if should_start:
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
@@ -330,11 +364,23 @@ class ProcessExecutor:
 
     def shutdown(self) -> None:
         if self.broker and self.storage_coordinator:
-            self.broker.publish({"action": "stop"})
+            try:
+                self.broker.publish({"action": "stop"})
+            except Exception:
+                pass
             self.storage_coordinator.join()
-            self.broker.shutdown()
+            try:
+                self.broker.shutdown()
+            except Exception:
+                pass
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
-            self.result_broker.publish({"action": "stop"})
+            try:
+                self.result_broker.publish({"action": "stop"})
+            except Exception:
+                pass
             self.result_aggregator.join()
-            self.result_broker.shutdown()
+            try:
+                self.result_broker.shutdown()
+            except Exception:
+                pass
