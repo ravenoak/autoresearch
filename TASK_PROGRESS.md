@@ -164,12 +164,13 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ## Phase 4: Performance and Deployment (Weeks 7-8)
 
-### 5.1 Performance Optimization
+-### 5.1 Performance Optimization
 
-- [ ] Complete token usage optimization
+- [x] Complete token usage optimization
   - [x] Implement prompt compression techniques
   - [x] Add context pruning for long conversations
   - [x] Create adaptive token budget management
+  - [x] Use historical averages for budget adjustment
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
