@@ -65,6 +65,30 @@ def test_async_query_status(monkeypatch):
     assert missing.status_code == 404
 
 
+def test_async_query_cancel(monkeypatch):
+    _setup(monkeypatch)
+
+    async def long_async(query, config, callbacks=None, **k):
+        await asyncio.sleep(0.1)
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query_async", long_async)
+    client = TestClient(api_app)
+
+    resp = client.post("/query/async", json={"query": "hi"})
+    assert resp.status_code == 200
+    qid = resp.json()["query_id"]
+
+    cancel = client.delete(f"/query/{qid}")
+    assert cancel.status_code == 200
+
+    gone = client.get(f"/query/{qid}")
+    assert gone.status_code == 404
+
+    missing = client.delete("/query/bad-id")
+    assert missing.status_code == 404
+
+
 def test_metrics_and_capabilities(monkeypatch):
     _setup(monkeypatch)
     client = TestClient(api_app)

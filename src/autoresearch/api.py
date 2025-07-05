@@ -173,6 +173,7 @@ async def get_openapi_schema():
         - **POST /query/batch**: Execute multiple queries
         - **POST /query/async**: Run a query in the background
         - **GET /query/{id}**: Check the status of an async query
+        - **DELETE /query/{id}**: Cancel a running async query
         - **GET /config**: Retrieve current configuration
         - **PUT /config**: Update configuration at runtime
         - **GET /metrics**: Retrieve Prometheus metrics for monitoring
@@ -494,6 +495,21 @@ async def query_status_endpoint(
         raise HTTPException(status_code=500, detail=str(exc))
     del app.state.async_tasks[query_id]
     return result
+
+
+@app.delete("/query/{query_id}")
+async def cancel_query_endpoint(
+    query_id: str,
+    _: None = require_permission("query"),
+) -> dict:
+    """Cancel a running asynchronous query and remove it."""
+    task: asyncio.Task | None = app.state.async_tasks.pop(query_id, None)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Unknown query ID")
+    if not task.done():
+        task.cancel()
+        return {"status": "cancelled"}
+    return {"status": "finished"}
 
 
 @app.get("/metrics")
