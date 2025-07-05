@@ -35,3 +35,8 @@ prompt lengths and lowers its compression threshold when the average length
 exceeds the available budget. This adaptive behaviour helps prevent runaway
 token consumption.
 
+When a token budget is set, the orchestrator applies this compression step
+inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
+Any remaining excess is trimmed by the adapter so prompts never exceed the
+configured budget.
+
