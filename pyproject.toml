@@ -85,6 +85,11 @@ full = [
     "redis (>=6.2,<7.0)"
 ]
 
+[tool.poetry.extras]
+minimal = [
+    "sentence-transformers"
+]
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"

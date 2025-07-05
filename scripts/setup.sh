@@ -3,7 +3,8 @@ set -euo pipefail
 
 python -m pip install --upgrade pip
 pip install poetry
-poetry install --with dev
+poetry env use $(which python3)
+python scripts/installer.py
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions
