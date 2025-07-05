@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Platform aware installer for Autoresearch.
 
-This script checks basic platform requirements and installs optional
-dependencies using Poetry. Pass ``--minimal`` to install only the
-minimal optional dependencies. Without flags, optional extras are
-resolved automatically and missing groups are installed. Use
-``--upgrade`` to run ``poetry update`` on the environment after
-installation.
+The script installs missing optional dependencies using Poetry. It can
+detect required extras from the current configuration file or from
+explicit CLI flags. Pass ``--minimal`` to install only the ``minimal``
+extras group. Without flags it reads ``autoresearch.toml`` and inspects
+the current environment to resolve missing extras automatically. Use
+``--upgrade`` to run ``poetry update`` after installation.
 """
 
 from __future__ import annotations
@@ -50,6 +50,41 @@ def get_installed_packages() -> Set[str]:
     return {dist.metadata["Name"] for dist in metadata.distributions()}
 
 
+def extras_from_config(cfg_path: Path) -> Set[str]:
+    """Infer required extras from an ``autoresearch.toml`` file."""
+    if not cfg_path.exists():
+        return set()
+
+    config = tomllib.loads(cfg_path.read_text())
+    extras: Set[str] = set()
+
+    search = config.get("search", {})
+    context = search.get("context_aware", {})
+    if any(
+        context.get(k, False)
+        for k in (
+            "use_query_expansion",
+            "use_entity_recognition",
+            "use_topic_modeling",
+        )
+    ):
+        extras.add("nlp")
+
+    local_file = search.get("local_file", {}).get("path")
+    local_git = search.get("local_git", {}).get("repo_path")
+    if local_file or local_git:
+        extras.add("parsers")
+
+    if config.get("distributed", {}).get("enabled"):
+        extras.add("distributed")
+
+    duckdb = config.get("storage", {}).get("duckdb", {})
+    if duckdb.get("vector_extension"):
+        extras.add("vss")
+
+    return extras
+
+
 def extract_name(requirement: str) -> str:
     """Extract the package name from a Poetry requirement string."""
     name = requirement.split()[0]
@@ -64,6 +99,16 @@ def main() -> None:
         help="Install only minimal optional dependencies",
     )
     parser.add_argument(
+        "--extras",
+        default="",
+        help="Comma separated extras to install in addition to auto-detected ones",
+    )
+    parser.add_argument(
+        "--config",
+        default="autoresearch.toml",
+        help="Configuration file used for extras detection",
+    )
+    parser.add_argument(
         "--upgrade",
         action="store_true",
         help="Run 'poetry update' after installation",
@@ -75,24 +120,32 @@ def main() -> None:
     optional = get_optional_dependencies()
     installed = get_installed_packages()
 
-    extras: List[str]
+    detected: Set[str] = set()
+    extras: Set[str] = set()
+
     if args.minimal:
-        extras = ["minimal"]
+        extras.add("minimal")
     else:
-        extras = []
+        detected.update(extras_from_config(Path(args.config)))
         for name, pkgs in optional.items():
             if name == "minimal":
                 continue
             pkg_names = [extract_name(p) for p in pkgs]
             if any(p not in installed for p in pkg_names):
-                extras.append(name)
+                detected.add(name)
+
+    if args.extras:
+        extras.update({e.strip() for e in args.extras.split(",") if e.strip()})
+
+    extras.update(detected)
+    extras = {e for e in extras if e in optional}
 
     # Ensure Poetry uses the current interpreter
     run(["poetry", "env", "use", sys.executable])
 
     cmd = ["poetry", "install", "--with", "dev"]
     if extras:
-        cmd += ["--extras"] + extras
+        cmd += ["--extras"] + sorted(extras)
     run(cmd)
 
     if args.upgrade:
