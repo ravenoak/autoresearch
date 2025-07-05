@@ -221,6 +221,7 @@ Modules with coverage below 90% based on the latest run:
 
 - [x] `autoresearch.orchestration.metrics` – 90%
 - [x] `autoresearch.orchestration.orchestrator` – 90%
+- [x] `autoresearch.distributed` – 90%
 - [x] `autoresearch.search` – 90%
 - [x] `autoresearch.storage` – 90%
 - [x] `autoresearch.storage_backends` – 90%
