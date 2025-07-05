@@ -69,3 +69,14 @@ backwards compatible. Check the
 [duckdb_compatibility.md](duckdb_compatibility.md) document for extension
 version notes.
 
+### Migrating from older releases
+
+If you installed Autoresearch before ``0.1.0`` you may not have the
+installer script available. Upgrade the base package and then run the
+installer to pull in any new optional dependencies:
+
+```bash
+pip install -U autoresearch
+python scripts/installer.py --upgrade
+```
+

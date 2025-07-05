@@ -9,7 +9,10 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 ## Installation
 
 You can install the project dependencies with either **Poetry** or **pip**.
-See [docs/installation.md](docs/installation.md) for details on optional features and upgrade instructions.
+See [docs/installation.md](docs/installation.md) for details on optional features,
+upgrade instructions and the new installer.
+The `scripts/setup.sh` helper now calls the installer so optional dependencies
+are resolved automatically during development setup.
 
 ### Using Poetry
 ```bash
@@ -24,6 +27,10 @@ python scripts/installer.py --minimal
 Running the installer without ``--minimal`` reads ``autoresearch.toml`` and
 installs any extras required by your configuration. Extras can also be specified
 manually with ``--extras nlp,ui``.
+You can also install the minimal group from PyPI:
+```bash
+pip install autoresearch[minimal]
+```
 
 ### Using pip
 Install the latest release from PyPI:
@@ -54,7 +61,8 @@ The script runs `poetry update autoresearch` when a `pyproject.toml` is
 present, otherwise it falls back to `pip install -U autoresearch`.
 Run the installer to resolve optional dependencies automatically. Omit
 `--minimal` to upgrade with all extras and pass `--upgrade` to update
-existing packages:
+existing packages. The installer detects which extras are missing and
+installs them for you:
 ```bash
 python scripts/installer.py --minimal
 ```
@@ -388,8 +396,10 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-This installs tools such as `flake8`, `mypy`, `pytest` and `tomli_w` which is
-used to write TOML files during testing.
+The script now invokes `installer.py` so any optional dependencies required by
+your configuration are installed automatically. It also installs tools such as
+`flake8`, `mypy`, `pytest` and `tomli_w` which are used to write TOML files
+during testing.
 
 ## Running tests
 
