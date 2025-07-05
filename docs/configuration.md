@@ -81,7 +81,7 @@ These options are set in the `[core]` section of the configuration file.
 | Option | Type | Default | Description | Valid Values |
 |--------|------|---------|-------------|-------------|
 | `llm_backend` | string | `"lmstudio"` | The LLM adapter to use | `"lmstudio"`, `"openai"`, `"openrouter"`, `"dummy"` |
-| `llm_pool_size` | integer | `2` | Size of the HTTP connection pool for LLM adapters | ≥ 1 |
+| `llm_pool_size` | integer | `2` | Size of the HTTP connection pool for LLM adapters. When using distributed execution the pooled session is shared across workers. | ≥ 1 |
 | `loops` | integer | `2` | Number of reasoning cycles to run | ≥ 1 |
 | `ram_budget_mb` | integer | `1024` | Memory budget in megabytes | ≥ 0 |
 | `token_budget` | integer | `null` | Maximum tokens allowed per run. When set, the orchestrator adapts this value based on query length, loop count, and parallel group size to avoid wasting tokens. | ≥ 1 or `null` |
@@ -138,7 +138,7 @@ These options are set in the `[search]` section.
 | `citation_count_factor` | float | `0.4` | Weight for citation count | 0.0 to 1.0 |
 | `use_feedback` | boolean | `false` | Use user feedback for ranking | `true`, `false` |
 | `feedback_weight` | float | `0.3` | Weight for user feedback | 0.0 to 1.0 |
-| `http_pool_size` | integer | `10` | Size of HTTP connection pool for web backends | ≥ 1 |
+| `http_pool_size` | integer | `10` | Size of HTTP connection pool for web backends. The same session is reused by distributed workers. | ≥ 1 |
 
 **Note**: `semantic_similarity_weight`, `bm25_weight`, and `source_credibility_weight` must sum to 1.0.
 

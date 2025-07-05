@@ -9,6 +9,14 @@ from ..config import get_config
 _session: Optional[requests.Session] = None
 _lock = Lock()
 
+
+def set_session(session: requests.Session) -> None:
+    """Inject a pre-created HTTP session."""
+    global _session
+    with _lock:
+        _session = session
+
+
 # Pool of instantiated LLM adapters keyed by backend name
 if TYPE_CHECKING:  # pragma: no cover - import for type checking only
     from .adapters import LLMAdapter

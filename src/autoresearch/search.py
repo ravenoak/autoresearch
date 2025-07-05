@@ -73,6 +73,13 @@ _http_session: Optional[requests.Session] = None
 _http_lock = threading.Lock()
 
 
+def set_http_session(session: requests.Session) -> None:
+    """Inject an existing HTTP session (for distributed workers)."""
+    global _http_session
+    with _http_lock:
+        _http_session = session
+
+
 def get_http_session() -> requests.Session:
     """Return a pooled HTTP session."""
     global _http_session
