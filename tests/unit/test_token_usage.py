@@ -6,6 +6,7 @@ recorded when using LLM adapters.
 """
 
 from unittest.mock import MagicMock
+from typing import Any
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.metrics import OrchestrationMetrics
@@ -31,7 +32,7 @@ def test_capture_token_usage_counts_correctly(monkeypatch):
 
     # Set up the mock adapter
     dummy_adapter = DummyAdapter()
-    monkeypatch.setattr(llm, "get_llm_adapter", lambda name: dummy_adapter)
+    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: dummy_adapter)
 
     # Execute
     with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
@@ -66,3 +67,30 @@ def test_token_budget_truncates_prompt(monkeypatch):
 
     counts = metrics.token_counts["agent"]
     assert counts["in"] <= mock_config.token_budget
+
+
+def test_prompt_passed_to_adapter_is_compressed(monkeypatch):
+    """Prompts exceeding the budget are compressed before LLM generation."""
+
+    metrics = OrchestrationMetrics()
+    mock_config = MagicMock(spec=ConfigModel)
+    mock_config.llm_backend = "dummy"
+    mock_config.token_budget = 3
+
+    dummy_adapter = DummyAdapter()
+    captured: dict[str, str] = {}
+
+    def spy_generate(prompt: str, model: str | None = None, **kwargs: Any) -> str:
+        captured["prompt"] = prompt
+        return "ok"
+
+    dummy_adapter.generate = spy_generate
+    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: dummy_adapter)
+
+    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+        _,
+        wrapped_adapter,
+    ):
+        wrapped_adapter.generate("one two three four five")
+
+    assert len(captured["prompt"].split()) <= mock_config.token_budget

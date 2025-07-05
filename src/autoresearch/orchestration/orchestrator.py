@@ -1604,11 +1604,28 @@ class Orchestrator:
         token_budget = getattr(config, "token_budget", None)
 
         # Use the count_tokens context manager to count tokens
-        # It now returns both the token counter and the wrapped adapter
+        # It returns both the token counter and the wrapped adapter
         with count_tokens(agent_name, adapter, metrics, token_budget) as (
             token_counter,
             wrapped_adapter,
         ):
+            if token_budget is not None:
+                class PromptCompressAdapter:
+                    def __init__(self, inner: Any) -> None:
+                        self.inner = inner
+
+                    def generate(
+                        self, prompt: str, model: str | None = None, **kwargs: Any
+                    ) -> str:
+                        prompt = metrics.compress_prompt_if_needed(
+                            prompt, token_budget
+                        )
+                        return self.inner.generate(prompt, model=model, **kwargs)
+
+                    def __getattr__(self, name: str) -> Any:  # pragma: no cover
+                        return getattr(self.inner, name)
+
+                wrapped_adapter = PromptCompressAdapter(wrapped_adapter)
             yield token_counter, wrapped_adapter
 
     # --------------------------------------------------------------
