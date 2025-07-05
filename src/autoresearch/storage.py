@@ -410,7 +410,7 @@ class StorageManager:
                     StorageManager._last_adaptive_policy = "lru"  # Default to LRU
 
                 # Determine which policy to use based on access patterns
-                access_variance = 0
+                access_variance = 0.0
                 if StorageManager._access_frequency:
                     # Calculate variance in access frequency
                     frequencies = list(StorageManager._access_frequency.values())
@@ -753,6 +753,7 @@ class StorageManager:
             start_time = time.time()
 
             # Check if the claim already exists in the graph
+            assert _graph is not None
             if _graph.has_node(claim_id):
                 is_update = True
                 if partial_update:
@@ -811,6 +812,7 @@ class StorageManager:
             StorageManager._persist_to_networkx(claim_to_persist)
 
             # For database backends, use different methods for updates vs. new claims
+            assert _db_backend is not None
             if is_update:
                 # Update existing records
                 _db_backend.update_claim(claim_to_persist, partial_update)
@@ -852,6 +854,7 @@ class StorageManager:
             claim: The claim to update
             partial_update: If True, merge with existing data rather than replacing
         """
+        assert _rdf_store is not None
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
 
         if not partial_update:

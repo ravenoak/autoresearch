@@ -22,7 +22,7 @@ import re
 from datetime import datetime
 from PIL import Image
 
-from .config import ConfigLoader
+from .config import ConfigLoader, ConfigModel
 from .orchestration.orchestrator import Orchestrator
 from .models import QueryResponse
 from .orchestration import ReasoningMode
@@ -1517,7 +1517,7 @@ def main():
         display_query_history()
 
 
-def store_query_history(query: str, result: QueryResponse, config: Dict[str, Any]):
+def store_query_history(query: str, result: QueryResponse, config: ConfigModel) -> None:
     """Store query history in the session state.
 
     Args:
@@ -1799,7 +1799,7 @@ def create_knowledge_graph(result: QueryResponse) -> Image.Image:
         A PIL Image containing the knowledge graph visualization
     """
     # Create a directed graph
-    G = nx.DiGraph()
+    G: nx.DiGraph[Any] = nx.DiGraph()
 
     # Add the main query node
     main_query = "Query"

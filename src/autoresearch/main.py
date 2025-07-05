@@ -290,11 +290,13 @@ def search(
         "--parallel",
         help="Run agent groups in parallel",
     ),
-    agent_groups: Optional[List[str]] = typer.Option(
+    agent_groups: Optional[str] = typer.Option(
         None,
         "--agent-groups",
-        help="Agent groups to run in parallel (comma-separated per group)",
-        multiple=True,
+        help=(
+            "Agent groups to run in parallel. Provide a space-separated list "
+            "of comma-separated groups"
+        ),
     ),
     primus_start: Optional[int] = typer.Option(
         None,
@@ -402,9 +404,10 @@ def search(
 
         with Progress() as progress:
             if parallel and agent_groups:
+                group_tokens = agent_groups.split()
                 groups = [
                     [a.strip() for a in grp.split(",") if a.strip()]
-                    for grp in agent_groups
+                    for grp in group_tokens
                 ]
                 task = progress.add_task(
                     "[green]Processing query...",
@@ -656,7 +659,7 @@ def config_reasoning(
         typer.echo(f"  max_errors={data.get('max_errors', 3)}")
         return
 
-    updates = {}
+    updates: dict[str, Any] = {}
     if loops is not None:
         updates["loops"] = loops
     if primus_start is not None:
