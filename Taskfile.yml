@@ -16,6 +16,11 @@ tasks:
       - pytest -q tests/behavior
     desc: "Run BDD (behavior) tests"
 
+  installer-tests:
+    cmds:
+      - pytest -q tests/integration/test_installer.py tests/behavior/steps/installer_steps.py
+    desc: "Run installer integration and behavior tests"
+
   test:
     deps: [unit, integration, behavior]
     desc: "Run all tests"
