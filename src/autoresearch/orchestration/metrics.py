@@ -80,6 +80,8 @@ class OrchestrationMetrics:
         self.prompt_lengths: List[int] = []
         self.token_usage_history: List[int] = []
         self._last_total_tokens = 0
+        self.agent_usage_history: Dict[str, List[int]] = {}
+        self._last_agent_totals: Dict[str, int] = {}
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -261,8 +263,8 @@ class OrchestrationMetrics:
         """Return an adjusted token budget based on recorded usage.
 
         ``margin`` controls how aggressively the budget adapts. The
-        calculation considers the current cycle usage as well as the
-        historical average of all recorded cycles.
+        calculation considers the current cycle usage, per-agent
+        historical averages, and the overall average across cycles.
         """
 
         total = self._total_tokens()
@@ -270,6 +272,24 @@ class OrchestrationMetrics:
         self._last_total_tokens = total
         self.token_usage_history.append(delta)
         avg_used = sum(self.token_usage_history) / len(self.token_usage_history)
+
+        max_agent_delta = 0
+        max_agent_avg = 0.0
+        for name, counts in self.token_counts.items():
+            total_agent = counts.get("in", 0) + counts.get("out", 0)
+            last = self._last_agent_totals.get(name, 0)
+            agent_delta = total_agent - last
+            self._last_agent_totals[name] = total_agent
+            history = self.agent_usage_history.setdefault(name, [])
+            history.append(agent_delta)
+            agent_avg = sum(history) / len(history)
+            if agent_delta > max_agent_delta:
+                max_agent_delta = agent_delta
+            if agent_avg > max_agent_avg:
+                max_agent_avg = agent_avg
+
+        delta = max(delta, max_agent_delta)
+        avg_used = max(avg_used, max_agent_avg)
 
         expand_threshold = current_budget * (1 + margin)
         shrink_threshold = current_budget * (1 - margin)

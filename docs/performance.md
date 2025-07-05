@@ -29,11 +29,13 @@ Running `autoresearch monitor resources` will therefore include ``GPU %`` and
 The orchestration metrics module provides helpers to automatically compress
 prompts and adjust token budgets. After each cycle the orchestrator uses
 `suggest_token_budget` to expand or shrink the configured budget. The heuristic
-keeps a rolling average of token usage across cycles so the budget gradually
-converges toward typical usage. `compress_prompt_if_needed` likewise tracks
-prompt lengths and lowers its compression threshold when the average length
-exceeds the available budget. This adaptive behaviour helps prevent runaway
-token consumption.
+tracks both the overall token usage and per-agent historical averages so the
+budget gradually converges toward typical usage without starving any agent.
+`compress_prompt_if_needed` likewise tracks prompt lengths and lowers its
+compression threshold when the average length exceeds the available budget. If
+a prompt still exceeds the budget after compression, a summarization step can be
+supplied to ``compress_prompt`` to further reduce the text. This adaptive
+behaviour helps prevent runaway token consumption.
 
 When a token budget is set, the orchestrator applies this compression step
 inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
