@@ -43,14 +43,12 @@ Use Go Task to create platform-specific wheels:
 task wheels
 ```
 ### Upgrading
-To upgrade Autoresearch run:
+Use the provided helper to update Autoresearch:
 ```bash
-poetry update
+python scripts/upgrade.py
 ```
-If installed via pip:
-```bash
-pip install -U autoresearch
-```
+The script runs `poetry update autoresearch` when a `pyproject.toml` is
+present, otherwise it falls back to `pip install -U autoresearch`.
 Run the installer to resolve optional dependencies automatically. Omit
 `--minimal` to upgrade with all extras:
 ```bash
@@ -63,6 +61,11 @@ python scripts/installer.py --minimal
 Run a search from the command line:
 ```bash
 autoresearch search "What is quantum computing?"
+```
+
+To ensure you are using the latest version you can run:
+```bash
+python scripts/upgrade.py
 ```
 
 During processing a progress bar shows the dialectical cycles. Use
