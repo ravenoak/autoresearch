@@ -179,9 +179,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 ### 5.2 Scalability Enhancements
 
 - [ ] Complete distributed execution support
-  - [ ] Implement agent distribution across processes
-  - [ ] Add support for distributed storage
-  - [ ] Create coordination mechanisms for distributed agents
+  - [x] Implement agent distribution across processes
+  - [x] Add support for distributed storage
+  - [x] Create coordination mechanisms for distributed agents
 - [x] Enhance concurrency
   - [x] Implement asynchronous agent execution
   - [x] Add support for parallel search

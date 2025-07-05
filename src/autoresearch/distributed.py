@@ -83,7 +83,7 @@ def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
 class StorageCoordinator(multiprocessing.Process):
     """Background process that persists claims from a queue."""
 
-    def __init__(self, queue: Queue, db_path: str) -> None:
+    def __init__(self, queue: Any, db_path: str) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._db_path = db_path
@@ -104,7 +104,7 @@ class StorageCoordinator(multiprocessing.Process):
 class ResultAggregator(multiprocessing.Process):
     """Collect results from agents running in other processes."""
 
-    def __init__(self, queue: Queue) -> None:
+    def __init__(self, queue: Any) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._manager = multiprocessing.Manager()
@@ -151,24 +151,35 @@ def _execute_agent_remote(
     agent_name: str,
     state: QueryState,
     config: ConfigModel,
-    queue: Queue | None = None,
+    result_queue: Queue | None = None,
+    storage_queue: Queue | None = None,
 ) -> Dict[str, Any]:
     """Execute a single agent in a Ray worker."""
+    if storage_queue is not None:
+        storage.set_message_queue(storage_queue)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(state, config)
     msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
-    if queue is not None:
-        queue.put(msg)
+    if result_queue is not None:
+        result_queue.put(msg)
     return msg
 
 
-def _execute_agent_process(agent_name: str, state: QueryState, config: ConfigModel, queue: Queue | None = None) -> Dict[str, Any]:
+def _execute_agent_process(
+    agent_name: str,
+    state: QueryState,
+    config: ConfigModel,
+    result_queue: Queue | None = None,
+    storage_queue: Queue | None = None,
+) -> Dict[str, Any]:
     """Execute a single agent in a spawned process."""
+    if storage_queue is not None:
+        storage.set_message_queue(storage_queue)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(state, config)
     msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
-    if queue is not None:
-        queue.put(msg)
+    if result_queue is not None:
+        result_queue.put(msg)
     return msg
 
 
@@ -207,6 +218,7 @@ class RayExecutor:
                     state,
                     self.config,
                     self.result_broker.queue if self.result_broker else None,
+                    self.broker.queue if self.broker else None,
                 )
                 for name in self.config.agents
             ]
@@ -260,10 +272,19 @@ class ProcessExecutor:
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
-                results = pool.starmap(_execute_agent_process, [
-                    (name, state, self.config, self.result_broker.queue if self.result_broker else None)
-                    for name in self.config.agents
-                ])
+                results = pool.starmap(
+                    _execute_agent_process,
+                    [
+                        (
+                            name,
+                            state,
+                            self.config,
+                            self.result_broker.queue if self.result_broker else None,
+                            self.broker.queue if self.broker else None,
+                        )
+                        for name in self.config.agents
+                    ],
+                )
             aggregated = list(self.result_aggregator.results) if self.result_aggregator else results
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
