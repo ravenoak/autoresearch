@@ -12,6 +12,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.llm import DummyAdapter
 from autoresearch.config import ConfigModel
+from autoresearch.llm.token_counting import compress_prompt
 import autoresearch.llm as llm
 
 
@@ -94,3 +95,36 @@ def test_prompt_passed_to_adapter_is_compressed(monkeypatch):
         wrapped_adapter.generate("one two three four five")
 
     assert len(captured["prompt"].split()) <= mock_config.token_budget
+
+
+def test_compress_prompt_with_summarizer():
+    """Summarizer is used when prompt exceeds the budget."""
+
+    called = {}
+
+    def summarizer(prompt: str, budget: int) -> str:
+        called["p"] = prompt
+        return "short summary"
+
+    result = compress_prompt("one two three four five", 3, summarizer)
+    assert result == "short summary"
+    assert "p" in called
+
+
+def test_budget_considers_agent_history():
+    """Token budget suggestion accounts for per-agent history."""
+
+    m = OrchestrationMetrics()
+    budget = 10
+
+    m.record_tokens("A", 5, 0)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 5
+
+    m.record_tokens("B", 30, 0)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 33
+
+    m.record_tokens("A", 5, 0)
+    budget = m.suggest_token_budget(budget)
+    assert budget == 16

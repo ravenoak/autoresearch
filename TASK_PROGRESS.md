@@ -170,7 +170,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement prompt compression techniques
   - [x] Add context pruning for long conversations
   - [x] Create adaptive token budget management
-  - [x] Use historical averages for budget adjustment
+  - [x] Use per-agent historical averages for budget adjustment
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments

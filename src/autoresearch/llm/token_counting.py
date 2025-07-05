@@ -26,7 +26,11 @@ import functools
 from ..orchestration.metrics import OrchestrationMetrics
 
 
-def compress_prompt(prompt: str, token_budget: int) -> str:
+def compress_prompt(
+    prompt: str,
+    token_budget: int,
+    summarizer: Optional[Callable[[str, int], str]] = None,
+) -> str:
     """Compress ``prompt`` so it stays within ``token_budget`` tokens.
 
     The implementation keeps the beginning and end of the prompt and
@@ -46,6 +50,11 @@ def compress_prompt(prompt: str, token_budget: int) -> str:
     tokens = prompt.split()
     if len(tokens) <= token_budget:
         return prompt
+
+    if summarizer is not None:
+        summary = summarizer(prompt, token_budget)
+        if len(summary.split()) <= token_budget:
+            return summary
 
     half = max(1, (token_budget - 1) // 2)
     return " ".join(tokens[:half] + ["..."] + tokens[-half:])
@@ -92,6 +101,7 @@ class TokenCountingAdapter:
         agent_name: str,
         metrics: OrchestrationMetrics,
         token_budget: Optional[int] = None,
+        summarizer: Optional[Callable[[str, int], str]] = None,
     ):
         """Initialize the token counting adapter.
 
@@ -99,12 +109,15 @@ class TokenCountingAdapter:
             adapter: The LLM adapter to wrap
             agent_name: The name of the agent using this adapter
             metrics: The metrics collector to record token usage
+            summarizer: Optional function used to summarize prompts when they
+                exceed ``token_budget``
         """
         self.adapter = adapter
         self.agent_name = agent_name
         self.metrics = metrics
         self.token_counter = {"in": 0, "out": 0}
         self.token_budget = token_budget
+        self.summarizer = summarizer
 
     def generate(self, prompt: str, model: Optional[str] = None, **kwargs: Any) -> str:
         """Generate text from a prompt and count tokens.
@@ -118,7 +131,9 @@ class TokenCountingAdapter:
             The generated text
         """
         if self.token_budget is not None:
-            prompt = compress_prompt(prompt, self.token_budget)
+            prompt = compress_prompt(
+                prompt, self.token_budget, summarizer=self.summarizer
+            )
         result = self.adapter.generate(prompt, model=model, **kwargs)
         self.token_counter["in"] += len(prompt.split())
         self.token_counter["out"] += len(str(result).split())
@@ -139,6 +154,7 @@ def count_tokens(
     adapter: LLMAdapter,
     metrics: OrchestrationMetrics,
     token_budget: Optional[int] = None,
+    summarizer: Optional[Callable[[str, int], str]] = None,
 ) -> Iterator[Tuple[Dict[str, int], "TokenCountingAdapter"]]:
     """Context manager for counting tokens.
 
@@ -147,6 +163,8 @@ def count_tokens(
         adapter: The LLM adapter to count tokens for
         metrics: The metrics collector to record token usage
         token_budget: Optional token budget to apply to prompts
+        summarizer: Optional function used to summarize prompts when they
+            exceed ``token_budget``
 
     Yields:
         A dictionary with token counts and the wrapped adapter
@@ -156,6 +174,7 @@ def count_tokens(
         agent_name,
         metrics,
         token_budget,
+        summarizer,
     )
     try:
         yield token_counter.token_counter, token_counter
@@ -170,6 +189,7 @@ def with_token_counting(
     agent_name: str,
     metrics: OrchestrationMetrics,
     token_budget: Optional[int] = None,
+    summarizer: Optional[Callable[[str, int], str]] = None,
 ) -> Callable[[Callable[[LLMAdapter, Any], T]], Callable[[LLMAdapter, Any], T]]:
     """Decorator for functions that use LLM adapters to count tokens.
 
@@ -177,6 +197,8 @@ def with_token_counting(
         agent_name: The name of the agent
         metrics: The metrics collector to record token usage
         token_budget: Optional token budget to apply to prompts
+        summarizer: Optional function used to summarize prompts when they
+            exceed ``token_budget``
 
     Returns:
         A decorator function
@@ -187,7 +209,9 @@ def with_token_counting(
     ) -> Callable[[LLMAdapter, Any], T]:
         @functools.wraps(func)
         def wrapper(adapter: LLMAdapter, *args: Any, **kwargs: Any) -> T:
-            with count_tokens(agent_name, adapter, metrics, token_budget) as (
+            with count_tokens(
+                agent_name, adapter, metrics, token_budget, summarizer
+            ) as (
                 token_counter,
                 counting_adapter,
             ):
