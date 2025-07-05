@@ -128,13 +128,16 @@ You can also run the installer script which resolves optional dependencies autom
 python scripts/installer.py --minimal
 ```
 Omit `--minimal` to install all extras. Add `--upgrade` to update existing
-packages.
+packages. The installer reads `autoresearch.toml` to determine which extras
+are required and installs any missing groups. Use `--extras` to specify
+additional groups explicitly.
 
 ### Minimal installation
 For lightweight deployments run the installer with the `--minimal` flag. This
 installs only the dependencies from the `minimal` extras group. Running the
-installer again without flags will install any missing extras. Use the
-`--upgrade` flag to update already installed packages.
+installer again without flags will install any extras required by your
+configuration. Use the `--upgrade` flag to update already installed
+packages.
 
 ## Release workflow
 

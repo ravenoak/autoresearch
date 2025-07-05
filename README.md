@@ -21,6 +21,9 @@ Install only the minimal optional dependencies using the installer:
 ```bash
 python scripts/installer.py --minimal
 ```
+Running the installer without ``--minimal`` reads ``autoresearch.toml`` and
+installs any extras required by your configuration. Extras can also be specified
+manually with ``--extras nlp,ui``.
 
 ### Using pip
 Install the latest release from PyPI:
@@ -50,7 +53,8 @@ python scripts/upgrade.py
 The script runs `poetry update autoresearch` when a `pyproject.toml` is
 present, otherwise it falls back to `pip install -U autoresearch`.
 Run the installer to resolve optional dependencies automatically. Omit
-`--minimal` to upgrade with all extras:
+`--minimal` to upgrade with all extras and pass `--upgrade` to update
+existing packages:
 ```bash
 python scripts/installer.py --minimal
 ```

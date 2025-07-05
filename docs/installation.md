@@ -21,7 +21,11 @@ If you cloned the repository, run the installer script instead:
 python scripts/installer.py --minimal
 ```
 
-This provides the CLI, API and knowledge graph without heavy NLP or UI packages. Optional features will be disabled when their dependencies are missing.
+This provides the CLI, API and knowledge graph without heavy NLP or UI packages.
+Optional features will be disabled when their dependencies are missing.
+Running ``scripts/installer.py`` without flags reads ``autoresearch.toml`` and
+installs any extras required by the configuration. You can also specify extras
+explicitly with the ``--extras`` flag, e.g. ``--extras nlp,ui``.
 
 ## Optional extras
 
@@ -58,5 +62,10 @@ When using the installer script you can upgrade all packages with:
 python scripts/installer.py --upgrade
 ```
 
-The project follows semantic versioning. Minor releases within the same major version are backwards compatible. Check the [duckdb_compatibility.md](duckdb_compatibility.md) document for extension version notes.
+The ``--upgrade`` flag installs any missing extras detected from your
+configuration and then runs ``poetry update``. The project follows
+semantic versioning. Minor releases within the same major version are
+backwards compatible. Check the
+[duckdb_compatibility.md](duckdb_compatibility.md) document for extension
+version notes.
 
