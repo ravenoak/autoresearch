@@ -82,9 +82,9 @@ class Agent(
         if self.llm_adapter:
             return self.llm_adapter
 
-        from ..llm import get_llm_adapter
+        from ..llm import get_pooled_adapter
 
-        return get_llm_adapter(config.llm_backend)
+        return get_pooled_adapter(config.llm_backend)
 
     def get_model(self, config: ConfigModel) -> str:
         """Get the model to use for this agent.

@@ -12,7 +12,12 @@ from .adapters import (
     OpenAIAdapter,
     OpenRouterAdapter,
 )
-from .pool import get_session, close_session
+from .pool import (
+    get_session,
+    close_session,
+    get_adapter as get_pooled_adapter,
+    close_adapters,
+)
 
 # Register default backends
 LLMFactory.register("dummy", DummyAdapter)
@@ -31,4 +36,6 @@ __all__ = [
     "OpenRouterAdapter",
     "get_session",
     "close_session",
+    "get_pooled_adapter",
+    "close_adapters",
 ]
