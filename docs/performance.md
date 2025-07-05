@@ -40,3 +40,11 @@ inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
 Any remaining excess is trimmed by the adapter so prompts never exceed the
 configured budget.
 
+## Connection Pooling
+
+HTTP requests to LLM and search backends reuse shared `requests.Session`
+instances. The pool size for LLMs is controlled by `llm_pool_size` while search
+backends use `http_pool_size`. When a session is created an `atexit` hook is
+registered to close it automatically on program exit. Reusing sessions reduces
+connection overhead during heavy query loads.
+
