@@ -150,6 +150,8 @@ package "Orchestration" {
 package "Search" {
   class Search {
     + {static} external_lookup(query, max_results): List[Dict]
+    + {static} tune_weights(data, step): Tuple[float,float,float]
+    + {static} optimize_weights(data, step): Tuple[Tuple[float,float,float], float]
   }
 }
 

@@ -8,12 +8,14 @@ The search module provides functions for searching external sources for informat
 `Search.external_lookup` now also performs an embedding-based lookup using the
 local storage index so that results from all backends benefit from semantic search.
 
-### Weight Tuning
+### Weight Tuning and Optimization
 
-The `tune_weights` utility finds optimal relevance weights based on evaluation
-data.
+The `tune_weights` utility performs a grid search to find relevance weights that
+maximize NDCG on labelled data. `optimize_weights` returns the best weights
+together with the achieved score.
 
 ::: autoresearch.search.Search.tune_weights
+::: autoresearch.search.Search.optimize_weights
 
 ::: autoresearch.search.Search.external_lookup
 

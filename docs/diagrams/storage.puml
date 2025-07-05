@@ -55,6 +55,8 @@ package "Storage & Search" {
 
   class Search {
     + external_lookup(query, max_results): List[Dict]
+    + tune_weights(data, step): Tuple[float,float,float]
+    + optimize_weights(data, step): Tuple[Tuple[float,float,float], float]
   }
 
   class "Global Storage State" as GlobalState {
