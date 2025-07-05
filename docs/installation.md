@@ -15,6 +15,12 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
+If you cloned the repository, run the installer script instead:
+
+```bash
+python scripts/installer.py --minimal
+```
+
 This provides the CLI, API and knowledge graph without heavy NLP or UI packages. Optional features will be disabled when their dependencies are missing.
 
 ## Optional extras
@@ -46,6 +52,12 @@ For Poetry based setups use:
 
 ```bash
 poetry update autoresearch
+```
+
+When using the installer script you can upgrade all packages with:
+
+```bash
+python scripts/installer.py --upgrade
 ```
 
 The project follows semantic versioning. Minor releases within the same major version are backwards compatible. Check the [duckdb_compatibility.md](duckdb_compatibility.md) document for extension version notes.
