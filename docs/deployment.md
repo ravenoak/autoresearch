@@ -122,6 +122,12 @@ python scripts/installer.py --minimal
 ```
 Omit `--minimal` to install all extras.
 
+### Minimal installation
+For lightweight deployments run the installer with the `--minimal` flag. This
+installs only the dependencies from the `minimal` extras group. Running the
+installer again without flags will upgrade the environment with all optional
+packages.
+
 ## Release workflow
 
 1. Bump the version in `pyproject.toml`.

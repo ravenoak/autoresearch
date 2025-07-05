@@ -14,7 +14,9 @@ import os
 import platform
 import subprocess
 import sys
+from pathlib import Path
 from typing import List
+import tomllib
 
 MIN_VERSION = (3, 12)
 
@@ -45,8 +47,13 @@ def main() -> None:
 
     check_python()
 
+    def get_all_extras() -> List[str]:
+        data = tomllib.loads(Path("pyproject.toml").read_text())
+        deps = data.get("project", {}).get("optional-dependencies", {})
+        return list(deps.keys())
+
     # Select extras set
-    extras = ["minimal"] if args.minimal else ["full"]
+    extras = ["minimal"] if args.minimal else [e for e in get_all_extras() if e != "minimal"]
 
     # Ensure Poetry uses the current interpreter
     run(["poetry", "env", "use", sys.executable])
