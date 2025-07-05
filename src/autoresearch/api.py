@@ -15,7 +15,7 @@ Endpoints:
 """
 
 from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, List, cast
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -23,6 +23,7 @@ from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.types import ExceptionHandler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from prometheus_client import (
@@ -103,7 +104,15 @@ app = FastAPI(
 )
 app.add_middleware(AuthMiddleware)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
+    return _rate_limit_exceeded_handler(request, exc)
+
+
+app.add_exception_handler(
+    RateLimitExceeded, cast(ExceptionHandler, _handle_rate_limit)
+)
 app.add_middleware(SlowAPIMiddleware)
 _watch_ctx = None
 app.state.async_tasks = {}
@@ -449,7 +458,7 @@ async def async_query_endpoint(
     """Run a query in the background and return its ID."""
     config = get_config()
     if request.reasoning_mode is not None:
-        config.reasoning_mode = request.reasoning_mode
+        config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
     if request.loops is not None:
         config.loops = request.loops
     if request.llm_backend is not None:

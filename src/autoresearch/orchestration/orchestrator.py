@@ -1607,9 +1607,12 @@ class Orchestrator:
         # It returns both the token counter and the wrapped adapter
         with count_tokens(agent_name, adapter, metrics, token_budget) as (
             token_counter,
-            wrapped_adapter,
+            base_adapter,
         ):
+            wrapped: Any = base_adapter
             if token_budget is not None:
+                tb: int = token_budget
+
                 class PromptCompressAdapter:
                     def __init__(self, inner: Any) -> None:
                         self.inner = inner
@@ -1617,16 +1620,14 @@ class Orchestrator:
                     def generate(
                         self, prompt: str, model: str | None = None, **kwargs: Any
                     ) -> str:
-                        prompt = metrics.compress_prompt_if_needed(
-                            prompt, token_budget
-                        )
+                        prompt = metrics.compress_prompt_if_needed(prompt, tb)
                         return self.inner.generate(prompt, model=model, **kwargs)
 
                     def __getattr__(self, name: str) -> Any:  # pragma: no cover
                         return getattr(self.inner, name)
 
-                wrapped_adapter = PromptCompressAdapter(wrapped_adapter)
-            yield token_counter, wrapped_adapter
+                wrapped = PromptCompressAdapter(wrapped)
+            yield token_counter, wrapped
 
     # --------------------------------------------------------------
     # Storage helper shortcuts

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import typer
 from rich.console import Console
@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.progress import Progress
 from rich.live import Live
+from rich.tree import Tree
 from ..orchestration import metrics as orch_metrics
 from ..resource_monitor import ResourceMonitor
 from .system_monitor import SystemMonitor
@@ -109,10 +110,8 @@ def _collect_graph_data() -> Dict[str, List[str]]:
         return {}
 
 
-def _render_graph(data: Dict[str, List[str]], *, tree: bool = False) -> Table:
+def _render_graph(data: Dict[str, List[str]], *, tree: bool = False) -> Union[Table, Tree]:
     if tree:
-        from rich.tree import Tree
-
         root = Tree("Knowledge Graph")
         for node, edges in data.items():
             branch = root.add(node)
