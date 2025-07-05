@@ -91,6 +91,12 @@ broker_url = "redis://head-node:6379/0" # optional
 When started with this configuration, agents are dispatched to remote workers and all
 claim persistence is coordinated through a background `StorageCoordinator`.
 
+The coordinator should be started before launching the API or CLI so that every
+worker writes to a single DuckDB database. If you specify `message_broker = "redis"`
+make sure the Redis service is reachable by all nodes. Result aggregation is
+handled by a `ResultAggregator` process which collects agent outputs across
+workers.
+
 ## Deployment Checks
 
 After starting the service, run the deployment script to validate configuration and perform a health check:
