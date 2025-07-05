@@ -34,6 +34,15 @@ Install multiple extras separated by commas:
 pip install "autoresearch[minimal,nlp,parsers]"
 ```
 
+### Using the installer
+
+For a repository clone you can also run the helper installer to resolve
+optional dependencies automatically:
+
+```bash
+python scripts/installer.py --minimal --extras nlp
+```
+
 ## Upgrading
 
 To upgrade an existing installation run:

@@ -36,6 +36,12 @@ Use Go Task to create platform-specific wheels:
 ```bash
 task wheels
 ```
+The CI release workflow also runs this command before publishing the
+generated wheels to PyPI with:
+
+```bash
+poetry publish --build
+```
 ### Upgrading
 To upgrade Autoresearch run:
 ```bash
@@ -45,7 +51,8 @@ If installed via pip:
 ```bash
 pip install -U autoresearch
 ```
-Run the installer to resolve optional dependencies automatically:
+Run the installer to resolve optional dependencies automatically
+(pass ``--extras nlp,parsers`` to specify additional extras):
 ```bash
 python scripts/installer.py --minimal
 ```

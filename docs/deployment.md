@@ -116,23 +116,28 @@ For pip based installs use:
 ```bash
 pip install -U autoresearch
 ```
-You can also run the installer script which resolves optional dependencies automatically:
+You can also run the installer script to resolve optional dependencies automatically:
 ```bash
 python scripts/installer.py --minimal
 ```
-Omit `--minimal` to install all extras.
+Omit `--minimal` or pass additional extras with `--extras nlp,parsers` to install more features.
 
 ## Release workflow
 
 1. Bump the version in `pyproject.toml`.
 2. Run the unit and behavior test suites.
-3. Publish a development build to TestPyPI:
+3. Build wheels for all platforms:
+
+```bash
+task wheels
+```
+4. Publish a development build to TestPyPI:
 
 ```bash
 ./scripts/publish_dev.py
 ```
 
-4. If everything looks good, publish to the main PyPI repository:
+5. If everything looks good, publish to the main PyPI repository:
 
 ```bash
 poetry publish --build

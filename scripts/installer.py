@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Platform aware installer for Autoresearch.
 
-This script checks basic platform requirements and installs optional
-dependencies using Poetry. Pass ``--minimal`` to install only the
-minimal optional dependencies. Without flags, all optional extras will
-be installed.
+This utility simplifies installation by resolving optional dependencies
+based on the arguments provided.  By default all extras are installed.
+Use ``--minimal`` to only install the minimal extra or ``--extras`` to
+specify a comma separated list as documented in ``docs/installation.md``.
+The script ensures Poetry uses the running interpreter before invoking
+``poetry install``.
 """
 
 from __future__ import annotations
 
 import argparse
-import os
 import platform
 import subprocess
 import sys
@@ -39,14 +40,25 @@ def main() -> None:
     parser.add_argument(
         "--minimal",
         action="store_true",
-        help="Install only minimal optional dependencies",
+        help="Install only the minimal extra",
+    )
+    parser.add_argument(
+        "--extras",
+        help="Comma separated extras to install (e.g. nlp,parsers)",
+        default="",
     )
     args = parser.parse_args()
 
     check_python()
 
-    # Select extras set
-    extras = ["minimal"] if args.minimal else ["full"]
+    # Determine extras set
+    extras: List[str] = []
+    if args.minimal:
+        extras.append("minimal")
+    if args.extras:
+        extras.extend([e.strip() for e in args.extras.split(",") if e.strip()])
+    if not extras:
+        extras = ["full"]
 
     # Ensure Poetry uses the current interpreter
     run(["poetry", "env", "use", sys.executable])
