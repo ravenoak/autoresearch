@@ -186,7 +186,7 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 - [x] Enhance concurrency
   - [x] Implement asynchronous agent execution
   - [x] Add support for parallel search
-  - [ ] Create efficient resource pooling
+  - [x] Create efficient resource pooling
   - [x] Research message brokers for distributed mode
 
 ### 6.1 Packaging

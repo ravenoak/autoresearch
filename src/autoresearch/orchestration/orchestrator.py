@@ -1600,7 +1600,7 @@ class Orchestrator:
 
         # Get the adapter for the agent using the configured backend
         backend = config.llm_backend
-        adapter = llm.get_llm_adapter(backend)
+        adapter = llm.get_pooled_adapter(backend)
         token_budget = getattr(config, "token_budget", None)
 
         # Use the count_tokens context manager to count tokens

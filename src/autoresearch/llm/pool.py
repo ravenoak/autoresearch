@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Dict, TYPE_CHECKING
 from threading import Lock
 import requests
 
@@ -8,6 +8,13 @@ from ..config import get_config
 
 _session: Optional[requests.Session] = None
 _lock = Lock()
+
+# Pool of instantiated LLM adapters keyed by backend name
+if TYPE_CHECKING:  # pragma: no cover - import for type checking only
+    from .adapters import LLMAdapter
+
+_adapters: Dict[str, "LLMAdapter"] = {}
+_adapter_lock = Lock()
 
 
 def get_session() -> requests.Session:
@@ -35,3 +42,22 @@ def close_session() -> None:
         if _session is not None:
             _session.close()
             _session = None
+
+
+def get_adapter(name: str) -> "LLMAdapter":
+    """Return a pooled LLM adapter instance."""
+    from .registry import LLMFactory
+
+    with _adapter_lock:
+        adapter = _adapters.get(name)
+        if adapter is None:
+            adapter = LLMFactory.get(name)
+            _adapters[name] = adapter
+        return adapter
+
+
+def close_adapters() -> None:
+    """Clear cached LLM adapters and close their HTTP session."""
+    with _adapter_lock:
+        _adapters.clear()
+    close_session()
