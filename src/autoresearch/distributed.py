@@ -9,7 +9,8 @@ import multiprocessing
 
 from queue import Queue
 
-from . import storage
+from . import storage, search
+from .llm import pool as llm_pool
 
 import ray
 
@@ -153,10 +154,30 @@ def _execute_agent_remote(
     config: ConfigModel,
     result_queue: Queue | None = None,
     storage_queue: Queue | None = None,
+    http_session: Any | None = None,
+    llm_session: Any | None = None,
 ) -> Dict[str, Any]:
     """Execute a single agent in a Ray worker."""
     if storage_queue is not None:
         storage.set_message_queue(storage_queue)
+    if http_session is not None:
+        try:
+            import ray
+            if isinstance(http_session, ray.ObjectRef):
+                http_session = ray.get(http_session)
+        except Exception:
+            pass
+        from . import search
+        search.set_http_session(http_session)
+    if llm_session is not None:
+        try:
+            import ray
+            if isinstance(llm_session, ray.ObjectRef):
+                llm_session = ray.get(llm_session)
+        except Exception:
+            pass
+        from .llm import pool as llm_pool
+        llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(state, config)
     msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
@@ -200,6 +221,10 @@ class RayExecutor:
         self.broker: Optional[BrokerType] = None
         self.result_aggregator: Optional[ResultAggregator] = None
         self.result_broker: Optional[BrokerType] = None
+        self.http_session = search.get_http_session()
+        self.llm_session = llm_pool.get_session()
+        self.http_handle = ray.put(self.http_session)
+        self.llm_handle = ray.put(self.llm_session)
         if getattr(config, "distributed", False):
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
             storage.set_message_queue(self.broker.queue)
@@ -219,6 +244,8 @@ class RayExecutor:
                     self.config,
                     self.result_broker.queue if self.result_broker else None,
                     self.broker.queue if self.broker else None,
+                    self.http_handle,
+                    self.llm_handle,
                 )
                 for name in self.config.agents
             ]
