@@ -10,7 +10,7 @@ from typing import Any
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.metrics import OrchestrationMetrics
-from autoresearch.llm import DummyAdapter
+from autoresearch.llm import DummyAdapter, token_counting
 from autoresearch.config import ConfigModel
 import autoresearch.llm as llm
 
@@ -94,3 +94,40 @@ def test_prompt_passed_to_adapter_is_compressed(monkeypatch):
         wrapped_adapter.generate("one two three four five")
 
     assert len(captured["prompt"].split()) <= mock_config.token_budget
+
+
+def test_summarization_step_invoked():
+    metrics = OrchestrationMetrics()
+    dummy = DummyAdapter()
+    captured: dict[str, Any] = {}
+
+    def spy_generate(prompt: str, model: str | None = None, **kwargs: Any) -> str:
+        captured["prompt"] = prompt
+        return "ok"
+
+    dummy.generate = spy_generate
+
+    def summarizer(text: str, budget: int) -> str:
+        captured["summarized"] = True
+        return " ".join(text.split()[:budget])
+
+    adapter = token_counting.TokenCountingAdapter(
+        dummy, "agent", metrics, token_budget=3, summarize_excess=summarizer
+    )
+    adapter.generate("one two three four five")
+
+    assert captured.get("summarized") is True
+    assert len(captured["prompt"].split()) <= 3
+
+
+def test_budget_accounts_for_agent_history():
+    m = OrchestrationMetrics()
+    budget = 5
+
+    m.record_tokens("A", 8, 0)
+    budget = m.suggest_token_budget(budget)
+    assert budget >= 8
+
+    m.record_tokens("B", 3, 0)
+    budget_after = m.suggest_token_budget(budget)
+    assert budget_after == 6

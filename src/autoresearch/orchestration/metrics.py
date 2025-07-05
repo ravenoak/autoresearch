@@ -80,6 +80,8 @@ class OrchestrationMetrics:
         self.prompt_lengths: List[int] = []
         self.token_usage_history: List[int] = []
         self._last_total_tokens = 0
+        self.agent_usage_history: Dict[str, List[int]] = {}
+        self._agent_last_totals: Dict[str, int] = {}
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -260,9 +262,9 @@ class OrchestrationMetrics:
     def suggest_token_budget(self, current_budget: int, *, margin: float = 0.1) -> int:
         """Return an adjusted token budget based on recorded usage.
 
-        ``margin`` controls how aggressively the budget adapts. The
-        calculation considers the current cycle usage as well as the
-        historical average of all recorded cycles.
+        ``margin`` controls how aggressively the budget adapts. The calculation
+        now accounts for both overall and per-agent historical averages so that
+        agents with consistently higher usage influence the suggested budget.
         """
 
         total = self._total_tokens()
@@ -271,13 +273,34 @@ class OrchestrationMetrics:
         self.token_usage_history.append(delta)
         avg_used = sum(self.token_usage_history) / len(self.token_usage_history)
 
+        max_agent_delta = 0
+        max_agent_avg = 0.0
+        for agent, counts in self.token_counts.items():
+            total_agent = counts.get("in", 0) + counts.get("out", 0)
+            last = self._agent_last_totals.get(agent, 0)
+            agent_delta = total_agent - last
+            self._agent_last_totals[agent] = total_agent
+            history = self.agent_usage_history.setdefault(agent, [])
+            history.append(agent_delta)
+            avg_agent = sum(history) / len(history)
+            max_agent_delta = max(max_agent_delta, agent_delta)
+            max_agent_avg = max(max_agent_avg, avg_agent)
+
         expand_threshold = current_budget * (1 + margin)
         shrink_threshold = current_budget * (1 - margin)
 
-        if delta > expand_threshold or avg_used > current_budget:
-            return max(int(max(delta, avg_used) * (1 + margin)), 1)
+        if (
+            max(delta, max_agent_delta) > expand_threshold
+            or max(avg_used, max_agent_avg) > current_budget
+        ):
+            new_budget = max(delta, avg_used, max_agent_delta, max_agent_avg)
+            return max(int(new_budget * (1 + margin)), 1)
 
-        if delta < shrink_threshold and avg_used < shrink_threshold:
-            return max(int(avg_used * (1 + margin)), 1)
+        if (
+            max(delta, max_agent_delta) < shrink_threshold
+            and max(avg_used, max_agent_avg) < shrink_threshold
+        ):
+            new_budget = max(avg_used, max_agent_avg)
+            return max(int(new_budget * (1 + margin)), 1)
 
         return max(current_budget, 1)

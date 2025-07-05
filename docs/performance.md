@@ -40,3 +40,11 @@ inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
 Any remaining excess is trimmed by the adapter so prompts never exceed the
 configured budget.
 
+Recent updates extend these heuristics in two ways. ``suggest_token_budget``
+now considers the historical average token usage of each individual agent. This
+prevents a single talkative agent from consistently exceeding the shared
+budget. Additionally, the ``TokenCountingAdapter`` can perform an optional
+summarization step when a prompt is too long. When provided with a summarizer
+callback the adapter first summarizes the original text and then compresses the
+result to fit within the budget.
+

@@ -92,6 +92,7 @@ class TokenCountingAdapter:
         agent_name: str,
         metrics: OrchestrationMetrics,
         token_budget: Optional[int] = None,
+        summarize_excess: Optional[Callable[[str, int], str]] = None,
     ):
         """Initialize the token counting adapter.
 
@@ -105,6 +106,7 @@ class TokenCountingAdapter:
         self.metrics = metrics
         self.token_counter = {"in": 0, "out": 0}
         self.token_budget = token_budget
+        self.summarize_excess = summarize_excess
 
     def generate(self, prompt: str, model: Optional[str] = None, **kwargs: Any) -> str:
         """Generate text from a prompt and count tokens.
@@ -118,6 +120,8 @@ class TokenCountingAdapter:
             The generated text
         """
         if self.token_budget is not None:
+            if len(prompt.split()) > self.token_budget and self.summarize_excess:
+                prompt = self.summarize_excess(prompt, self.token_budget)
             prompt = compress_prompt(prompt, self.token_budget)
         result = self.adapter.generate(prompt, model=model, **kwargs)
         self.token_counter["in"] += len(prompt.split())
@@ -139,6 +143,7 @@ def count_tokens(
     adapter: LLMAdapter,
     metrics: OrchestrationMetrics,
     token_budget: Optional[int] = None,
+    summarize_excess: Optional[Callable[[str, int], str]] = None,
 ) -> Iterator[Tuple[Dict[str, int], "TokenCountingAdapter"]]:
     """Context manager for counting tokens.
 
@@ -156,6 +161,7 @@ def count_tokens(
         agent_name,
         metrics,
         token_budget,
+        summarize_excess,
     )
     try:
         yield token_counter.token_counter, token_counter
@@ -170,6 +176,7 @@ def with_token_counting(
     agent_name: str,
     metrics: OrchestrationMetrics,
     token_budget: Optional[int] = None,
+    summarize_excess: Optional[Callable[[str, int], str]] = None,
 ) -> Callable[[Callable[[LLMAdapter, Any], T]], Callable[[LLMAdapter, Any], T]]:
     """Decorator for functions that use LLM adapters to count tokens.
 
@@ -177,6 +184,8 @@ def with_token_counting(
         agent_name: The name of the agent
         metrics: The metrics collector to record token usage
         token_budget: Optional token budget to apply to prompts
+        summarize_excess: Optional callable used to summarize the prompt when
+            it exceeds ``token_budget``
 
     Returns:
         A decorator function
@@ -187,7 +196,13 @@ def with_token_counting(
     ) -> Callable[[LLMAdapter, Any], T]:
         @functools.wraps(func)
         def wrapper(adapter: LLMAdapter, *args: Any, **kwargs: Any) -> T:
-            with count_tokens(agent_name, adapter, metrics, token_budget) as (
+            with count_tokens(
+                agent_name,
+                adapter,
+                metrics,
+                token_budget,
+                summarize_excess,
+            ) as (
                 token_counter,
                 counting_adapter,
             ):
