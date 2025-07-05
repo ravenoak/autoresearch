@@ -16,6 +16,12 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 poetry install
 ```
 
+### Minimal installation
+Install only the minimal optional dependencies using the installer:
+```bash
+python scripts/installer.py --minimal
+```
+
 ### Using pip
 Install the latest release from PyPI:
 ```bash
@@ -45,7 +51,8 @@ If installed via pip:
 ```bash
 pip install -U autoresearch
 ```
-Run the installer to resolve optional dependencies automatically:
+Run the installer to resolve optional dependencies automatically. Omit
+`--minimal` to upgrade with all extras:
 ```bash
 python scripts/installer.py --minimal
 ```
