@@ -16,7 +16,7 @@ Autoresearch uses a multi-layered testing approach for UI components:
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.12+
 - Poetry (for dependency management)
 - pytest and pytest-bdd
 
@@ -444,7 +444,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.12
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
