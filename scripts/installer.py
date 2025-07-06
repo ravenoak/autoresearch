@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Platform aware installer for Autoresearch.
 
-The script installs missing optional dependencies using Poetry. It can
-detect required extras from the current configuration file or from
-explicit CLI flags. Pass ``--minimal`` to install only the ``minimal``
-extras group. Without flags it reads ``autoresearch.toml`` and inspects
-the current environment to resolve missing extras automatically. Use
-``--upgrade`` to run ``poetry update`` after installation.
+The script installs missing optional dependencies using Poetry or pip.
+It detects required extras from ``autoresearch.toml`` or from explicit
+CLI flags. Pass ``--minimal`` to install only the ``minimal`` extras
+group. Without flags it reads ``autoresearch.toml`` and inspects the
+current environment to resolve missing extras automatically. Use
+``--upgrade`` to update the base package with Poetry or pip depending on
+the installation method.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Set
+import shutil
 from importlib import metadata
 import tomllib
 
@@ -70,10 +72,18 @@ def extras_from_config(cfg_path: Path) -> Set[str]:
     ):
         extras.add("nlp")
 
+    if search.get("use_semantic_similarity") or search.get("hybrid_query"):
+        extras.add("nlp")
+
     local_file = search.get("local_file", {}).get("path")
     local_git = search.get("local_git", {}).get("repo_path")
-    if local_file or local_git:
+    backends = search.get("backends", [])
+    if local_file or local_git or any(b in {"local_file", "local_git"} for b in backends):
         extras.add("parsers")
+
+    embed_backends = search.get("embedding_backends", [])
+    if "duckdb" in embed_backends:
+        extras.add("vss")
 
     if config.get("distributed", {}).get("enabled"):
         extras.add("distributed")
@@ -81,6 +91,16 @@ def extras_from_config(cfg_path: Path) -> Set[str]:
     duckdb = config.get("storage", {}).get("duckdb", {})
     if duckdb.get("vector_extension"):
         extras.add("vss")
+
+    ui_cfg = config.get("ui") or config.get("gui") or {}
+    core_cfg = config.get("core", {})
+    interfaces = core_cfg.get("interfaces", [])
+    if (
+        isinstance(ui_cfg, dict) and ui_cfg.get("enabled")
+    ) or core_cfg.get("enable_gui") or core_cfg.get("use_gui") or any(
+        i in {"gui", "ui", "streamlit"} for i in (interfaces or [])
+    ):
+        extras.add("ui")
 
     return extras
 
@@ -140,16 +160,29 @@ def main() -> None:
     extras.update(detected)
     extras = {e for e in extras if e in optional}
 
-    # Ensure Poetry uses the current interpreter
-    run(["poetry", "env", "use", sys.executable])
+    poetry = shutil.which("poetry")
+    use_poetry = poetry and Path("pyproject.toml").exists()
 
-    cmd = ["poetry", "install", "--with", "dev"]
-    if extras:
-        cmd += ["--extras"] + sorted(extras)
-    run(cmd)
+    if use_poetry:
+        # Ensure Poetry uses the current interpreter
+        run([poetry, "env", "use", sys.executable])
 
-    if args.upgrade:
-        run(["poetry", "update"])
+        cmd = [poetry, "install", "--with", "dev"]
+        if extras:
+            cmd += ["--extras"] + sorted(extras)
+        run(cmd)
+
+        if args.upgrade:
+            run([poetry, "update"])
+    else:
+        package = "autoresearch"
+        if extras:
+            package += "[" + ",".join(sorted(extras)) + "]"
+        cmd = [sys.executable, "-m", "pip", "install"]
+        if args.upgrade:
+            cmd.append("-U")
+        cmd.append(package)
+        run(cmd)
 
     print("Installation complete on", platform.platform())
 
