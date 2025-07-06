@@ -27,6 +27,14 @@ Running ``scripts/installer.py`` without flags reads ``autoresearch.toml`` and
 installs any extras required by the configuration. You can also specify extras
 explicitly with the ``--extras`` flag, e.g. ``--extras nlp,ui``.
 
+To install extras automatically according to your configuration, simply run:
+
+```bash
+python scripts/installer.py
+```
+
+Add ``--upgrade`` to update the base package and any detected extras.
+
 ## Optional extras
 
 Additional functionality is grouped into Poetry extras:

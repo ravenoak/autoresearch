@@ -27,6 +27,12 @@ python scripts/installer.py --minimal
 Running the installer without ``--minimal`` reads ``autoresearch.toml`` and
 installs any extras required by your configuration. Extras can also be specified
 manually with ``--extras nlp,ui``.
+To install according to your configuration simply run the script without
+flags:
+```bash
+python scripts/installer.py
+```
+Add ``--upgrade`` to update an existing environment.
 You can also install the minimal group from PyPI:
 ```bash
 pip install autoresearch[minimal]
