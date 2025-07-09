@@ -13,7 +13,7 @@ The Autoresearch system is composed of several interconnected components that wo
 5. Storage & Search
 6. Output Formatting
 
-![System Architecture](diagrams/system_architecture.png)
+The overall system architecture is defined in `docs/diagrams/system_architecture.puml`.
 
 ## Key Component Interactions
 
