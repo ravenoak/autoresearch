@@ -8784,4 +8784,4 @@ vss = ["duckdb-extension-vss"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "f16a9288c89b3377f14c8ad9a5854a25ec8e3843cce8fd3243ec06f4f7103f1a"
+content-hash = "e3717896721f6bde04fca3e525cb20e36141dd06823e0ba49b3a0df202eede75"
