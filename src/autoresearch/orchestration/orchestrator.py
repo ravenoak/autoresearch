@@ -961,9 +961,6 @@ class Orchestrator:
                 )
                 config.token_budget = group_tokens
 
-        # Adapt token budget based on query complexity
-        Orchestrator._apply_adaptive_token_budget(config, query)
-
         # Heuristically adjust token budget when running within parallel agent
         # groups. ``run_parallel_query`` passes ``group_size`` and
         # ``total_groups`` to ``run_query`` using ``model_copy`` so we can
