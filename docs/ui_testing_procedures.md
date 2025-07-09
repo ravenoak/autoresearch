@@ -425,10 +425,10 @@ Autoresearch uses GitHub Actions for continuous integration. The CI pipeline run
 
 ### CI Configuration
 
-The CI configuration is defined in `.github/workflows/test.yml`:
+The CI configuration is defined in `.github/workflows/ci.yml`:
 
 ```yaml
-name: Test
+name: CI
 
 on:
   push:
@@ -440,9 +440,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.12
     - name: Install dependencies
@@ -454,7 +454,7 @@ jobs:
       run: |
         poetry run pytest --cov=autoresearch
     - name: Upload coverage report
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
 ```
 
 ## Best Practices for UI Testing
