@@ -4,9 +4,7 @@ This guide walks you through installing the project dependencies and running you
 
 ## System Architecture
 
-Autoresearch uses a modular architecture with several key components:
-
-![System Architecture](diagrams/system_architecture.png)
+Autoresearch uses a modular architecture with several key components. The PlantUML diagram for the overall system architecture is available at `docs/diagrams/system_architecture.puml`.
 
 - The system consists of:
 - **Client Interfaces**: CLI, API, Monitor, and FastMCP

@@ -27,9 +27,7 @@ The Orchestrator class provides methods for:
 - Managing token usage and metrics
 - Handling errors and timeouts
 
-The diagram below shows the relationships between these classes and their interactions with other components:
-
-![Orchestration Component](diagrams/orchestration.png)
+The orchestration workflow is illustrated by the PlantUML description in `docs/diagrams/orchestration.puml`.
 
 ## Execution Flow
 

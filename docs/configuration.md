@@ -214,7 +214,7 @@ enabled = true
 
 ## Complete Example
 
-A complete example configuration is provided in [`examples/autoresearch.toml`](../examples/autoresearch.toml). You can use this as a starting point for your own configuration.
+A complete example configuration is provided in [`examples/autoresearch.toml`](examples/autoresearch.toml). You can use this as a starting point for your own configuration.
 
 ```toml
 [search]

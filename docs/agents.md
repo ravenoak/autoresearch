@@ -29,9 +29,7 @@ The agents component consists of several key classes:
 - **AgentRegistry** - Registry of available agent types
 - **AgentFactory** - Factory for creating and retrieving agent instances
 
-The diagram below shows the relationships between these classes and their interactions with other components:
-
-![Agents Component](diagrams/agents.png)
+The relationships between these classes are documented in `docs/diagrams/agents.puml`.
 
 ## Adding custom agents
 

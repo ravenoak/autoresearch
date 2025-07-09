@@ -15,9 +15,7 @@ The storage component consists of several key classes:
 - **StorageConfig** - Configuration for the storage system
 - **StorageError** - Error hierarchy for storage-related errors
 
-The diagram below shows the relationships between these classes and their interactions with external libraries:
-
-![Storage Component](diagrams/storage.png)
+The relationships between these classes and their external dependencies are documented in `docs/diagrams/storage.puml`.
 
 ## Storage Flow
 

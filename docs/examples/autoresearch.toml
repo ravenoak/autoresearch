@@ -1,0 +1,73 @@
+[core]
+llm_backend = "lmstudio"
+loops = 3
+token_budget = 4000
+tracing_enabled = false
+
+[search]
+backends = [
+    "serper",
+    "local_file",
+    "local_git",
+]
+embedding_backends = [
+    "duckdb",
+]
+hybrid_query = true
+max_results_per_query = 5
+use_semantic_similarity = true
+use_bm25 = true
+use_source_credibility = true
+semantic_similarity_weight = 1.0
+bm25_weight = 0.0
+source_credibility_weight = 0.0
+domain_authority_factor = 0.6
+citation_count_factor = 0.4
+use_feedback = false
+feedback_weight = 0.3
+
+[search.context_aware]
+enabled = true
+use_query_expansion = true
+expansion_factor = 0.3
+use_entity_recognition = true
+entity_weight = 0.5
+use_topic_modeling = true
+num_topics = 5
+topic_weight = 0.3
+use_search_history = true
+history_weight = 0.2
+max_history_items = 10
+
+[search.local_file]
+path = "/path/to/research_docs"
+file_types = [
+    "md",
+    "pdf",
+    "txt",
+]
+
+[search.local_git]
+repo_path = "/path/to/repo"
+branches = [
+    "main",
+]
+history_depth = 50
+
+[storage.duckdb]
+path = "data/research.duckdb"
+vector_extension = true
+
+[agent.Synthesizer]
+model = "gpt-3.5-turbo"
+
+[agent.Contrarian]
+enabled = true
+
+[agent.FactChecker]
+enabled = true
+
+[distributed]
+enabled = false
+address = "auto"
+num_cpus = 2

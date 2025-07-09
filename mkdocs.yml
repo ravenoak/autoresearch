@@ -1,32 +1,32 @@
 site_name: Autoresearch
 nav:
-  - Getting Started: docs/getting_started.md
-  - Configuration: docs/configuration.md
-  - Agents: docs/agents.md
-  - Storage: docs/storage.md
-  - Orchestration: docs/orchestration.md
-  - API Usage: docs/api.md
-  - Advanced Usage: docs/advanced_usage.md
-  - Deployment: docs/deployment.md
-  - FAQ: docs/faq.md
-  - Agent System: docs/agent_system.md
-  - Component Interactions: docs/component_interactions.md
-  - Message Brokers: docs/message_brokers.md
+  - Getting Started: getting_started.md
+  - Configuration: configuration.md
+  - Agents: agents.md
+  - Storage: storage.md
+  - Orchestration: orchestration.md
+  - API Usage: api.md
+  - Advanced Usage: advanced_usage.md
+  - Deployment: deployment.md
+  - FAQ: faq.md
+  - Agent System: agent_system.md
+  - Component Interactions: component_interactions.md
+  - Message Brokers: message_brokers.md
   - API Reference:
-    - Overview: docs/api_reference/index.md
-    - Agents: docs/api_reference/agents.md
-    - Orchestration: docs/api_reference/orchestration.md
-    - Storage: docs/api_reference/storage.md
-    - LLM: docs/api_reference/llm.md
-    - Search: docs/api_reference/search.md
-    - Config: docs/api_reference/config.md
-  - Contributing: docs/contributing.md
-  - Requirements: docs/requirements.md
-  - Specification: docs/specification.md
-  - Plan: docs/plan.md
-  - Pseudocode: docs/pseudocode.md
-  - Requirements Tracability Matrix: docs/requirements_tracability_matrix.md
-  - Testing Guidelines: docs/testing_guidelines.md
+    - Overview: api_reference/index.md
+    - Agents: api_reference/agents.md
+    - Orchestration: api_reference/orchestration.md
+    - Storage: api_reference/storage.md
+    - LLM: api_reference/llm.md
+    - Search: api_reference/search.md
+    - Config: api_reference/config.md
+  - Contributing: contributing.md
+  - Requirements: requirements.md
+  - Specification: specification.md
+  - Plan: plan.md
+  - Pseudocode: pseudocode.md
+  - Requirements Tracability Matrix: requirements_tracability_matrix.md
+  - Testing Guidelines: testing_guidelines.md
 markdown_extensions:
   - toc
   - admonition
