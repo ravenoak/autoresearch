@@ -196,6 +196,27 @@ result = client.query("What is the capital of France?")
 print(f"Answer: {result['answer']}")
 ```
 
+### A2A Query/Response Flow Example
+
+This example shows how to start the built-in A2A server and send a query using
+the :class:`A2AClient` helper.
+
+```python
+from autoresearch.a2a_interface import A2AInterface, A2AClient
+
+# Start the server
+interface = A2AInterface(host="127.0.0.1", port=8765)
+interface.start()
+
+# Query the agent
+client = A2AClient()
+response = client.query_agent("http://127.0.0.1:8765", "What is the capital of France?")
+print(response["answer"])
+
+# Shut down when done
+interface.stop()
+```
+
 ## MCP Integration
 
 The Multi-Agent Communication Protocol (MCP) is designed for more complex integration scenarios where agents need to communicate with each other in a structured way.
