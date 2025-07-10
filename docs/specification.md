@@ -5,7 +5,7 @@
 - Modular Python package under `src/autoresearch/`.
 - Entry point: `main.py` (CLI, primary interface for all user and automation workflows).
 - Configuration: `config.py` (loads from `.env`, environment, or config file).
-- Core logic: Modularized from `agentic_serper_search_v2.py`.
+- Core logic: Provided by `orchestration/orchestrator.py` coordinating the `agents` modules.
 - Output formatting: `output_format.py` for adaptive, context-aware output.
 - Logging: Centralized, structured, and secure (no secrets).
 
