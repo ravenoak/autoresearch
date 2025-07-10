@@ -11,6 +11,8 @@ import os
 import asyncio
 from functools import wraps
 from typing import Any, Callable, Dict
+from enum import Enum
+from pydantic import BaseModel
 from uuid import uuid4
 from threading import Thread
 
@@ -29,7 +31,7 @@ try:
     )
     A2A_AVAILABLE = True
 
-    class A2AMessageType(str):
+    class A2AMessageType(str, Enum):
         """Supported message types."""
 
         QUERY = "query"
@@ -38,6 +40,12 @@ try:
         RESULT = "result"
         ERROR = "error"
         ACK = "ack"
+
+    class A2AMessage(BaseModel):
+        """Message wrapper used by the A2A interface."""
+
+        type: A2AMessageType
+        message: Message
 
     class A2AServer:
         """Minimal A2A server based on FastAPI and uvicorn."""
@@ -262,10 +270,7 @@ class A2AInterface:
         """Handle a get_capabilities command.
 
         Returns:
-            The response A2A message with capabilities information
-
-        Raises:
-            NotImplementedError: A2AMessage and A2AMessageType are not implemented
+            The capabilities information as a dictionary.
         """
         capabilities = capabilities_endpoint()
         return capabilities
@@ -274,10 +279,7 @@ class A2AInterface:
         """Handle a get_config command.
 
         Returns:
-            The response A2A message with configuration information
-
-        Raises:
-            NotImplementedError: A2AMessage and A2AMessageType are not implemented
+            The current configuration as a dictionary.
         """
         config = get_config()
         return config.model_dump(mode="json")
@@ -289,10 +291,7 @@ class A2AInterface:
             args: The command arguments containing configuration updates
 
         Returns:
-            The response A2A message
-
-        Raises:
-            NotImplementedError: A2AMessage and A2AMessageType are not implemented
+            The updated configuration as a dictionary or an error object.
         """
         loader = ConfigLoader()
         current = loader.config.model_dump(mode="python")
@@ -323,9 +322,7 @@ class A2AClientWrapper:
                 "Install it with: pip install a2a-sdk"
             )
 
-        logger.warning(
-            "A2AMessage and A2AMessageType are not implemented. Client functionality is limited."
-        )
+        logger.info("A2A client initialized")
 
     def _send_request(self, agent_url: str, params: MessageSendParams) -> Dict[str, Any]:
         """Send a message request and return the raw response as a dict."""
@@ -464,7 +461,6 @@ def get_a2a_client() -> A2AClientWrapper:
 
     Raises:
         ImportError: If the a2a-sdk package is not installed
-        NotImplementedError: A2AMessage and A2AMessageType are not implemented
     """
     # Use the A2AClient class directly to ensure mocking works in tests
     return A2AClient()

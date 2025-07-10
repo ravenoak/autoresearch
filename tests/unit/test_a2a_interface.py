@@ -78,11 +78,13 @@ class TestA2AInterface:
 
         # Check that handlers were registered
         assert mock_a2a_server.register_handler.call_count == 3
+        from autoresearch.a2a_interface import A2AMessageType
+
         mock_a2a_server.register_handler.assert_has_calls(
             [
-                call("query", interface._handle_query),
-                call("command", interface._handle_command),
-                call("info", interface._handle_info),
+                call(A2AMessageType.QUERY, interface._handle_query),
+                call(A2AMessageType.COMMAND, interface._handle_command),
+                call(A2AMessageType.INFO, interface._handle_info),
             ]
         )
 
