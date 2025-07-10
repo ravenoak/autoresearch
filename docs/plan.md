@@ -4,7 +4,8 @@
 
 - `src/autoresearch/`
   - `__init__.py`
-  - `agentic_serper_search_v2.py` (core logic, to be modularized)
+  - `orchestration/orchestrator.py` (core agent coordination)
+  - `agents/` (individual agent implementations)
   - `config.py` (configuration system)
   - `main.py` (new entry point)
   - `output_format.py` (adaptive output formatting for CLI)
@@ -23,7 +24,7 @@
 
 ## 2. Modularization
 
-- Refactor `agentic_serper_search_v2.py`:
+- Refactor the monolithic `agentic_serper_search_v2.py` into the modular `orchestration` and `agents` packages:
   - Move configuration, logging, output formatting, and utility functions to separate modules.
   - Isolate agent logic, search logic, and synthesis logic.
 - Create `main.py` as the new CLI entry point.
