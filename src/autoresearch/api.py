@@ -59,7 +59,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if cfg.api_key:
             if key != cfg.api_key:
                 return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            return "default", None
+            return "user", None
         return "anonymous", None
 
     async def dispatch(self, request: Request, call_next):
