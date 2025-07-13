@@ -369,21 +369,23 @@ class ProcessExecutor:
         if self.broker and self.storage_coordinator:
             try:
                 self.broker.publish({"action": "stop"})
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to publish stop message", exc_info=e)
             self.storage_coordinator.join()
             try:
                 self.broker.shutdown()
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to shutdown broker", exc_info=e)
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             try:
                 self.result_broker.publish({"action": "stop"})
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning(
+                    "Failed to publish stop to result broker", exc_info=e
+                )
             self.result_aggregator.join()
             try:
                 self.result_broker.shutdown()
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to shutdown result broker", exc_info=e)
