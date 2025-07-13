@@ -12,6 +12,7 @@ from queue import Queue
 
 from . import storage, search
 from .llm import pool as llm_pool
+from .logging_utils import get_logger
 
 import ray
 
@@ -22,6 +23,8 @@ if TYPE_CHECKING:  # pragma: no cover - used for type hints only
 from .orchestration.state import QueryState
 from .orchestration.orchestrator import AgentFactory
 from .models import QueryResponse
+
+log = get_logger(__name__)
 
 
 class InMemoryBroker:
@@ -185,8 +188,8 @@ def _execute_agent_remote(
             import ray
             if isinstance(http_session, ray.ObjectRef):
                 http_session = ray.get(http_session)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("Failed to retrieve HTTP session", exc_info=e)
         from . import search
         search.set_http_session(http_session)
     if llm_session is not None:
@@ -194,8 +197,8 @@ def _execute_agent_remote(
             import ray
             if isinstance(llm_session, ray.ObjectRef):
                 llm_session = ray.get(llm_session)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("Failed to retrieve LLM session", exc_info=e)
         from .llm import pool as llm_pool
         llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
@@ -292,24 +295,24 @@ class RayExecutor:
         if self.broker and self.storage_coordinator:
             try:
                 self.broker.publish({"action": "stop"})
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to publish stop message", exc_info=e)
             self.storage_coordinator.join()
             try:
                 self.broker.shutdown()
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to shutdown broker", exc_info=e)
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             try:
                 self.result_broker.publish({"action": "stop"})
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to publish stop to result broker", exc_info=e)
             self.result_aggregator.join()
             try:
                 self.result_broker.shutdown()
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to shutdown result broker", exc_info=e)
         ray.shutdown()
 
 
