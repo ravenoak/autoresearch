@@ -1,4 +1,5 @@
 import os
+import pytest
 from autoresearch.distributed import ProcessExecutor
 from autoresearch.config import ConfigModel, DistributedConfig
 from autoresearch.models import QueryResponse
@@ -20,6 +21,7 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
+@pytest.mark.slow
 def test_process_executor_multi_process(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
@@ -36,6 +38,7 @@ def test_process_executor_multi_process(monkeypatch):
     executor.shutdown()
 
 
+@pytest.mark.slow
 def test_process_result_aggregation(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))

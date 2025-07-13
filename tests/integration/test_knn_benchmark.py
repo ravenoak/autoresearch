@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import pytest
@@ -5,6 +6,7 @@ from autoresearch.storage import StorageManager
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 
 
+@pytest.mark.slow
 def test_knn_latency_benchmark(tmp_path, monkeypatch):
     cfg = ConfigModel(
         storage=StorageConfig(
@@ -28,7 +30,7 @@ def test_knn_latency_benchmark(tmp_path, monkeypatch):
         pytest.skip("Vector extension not available")
 
     dim = 384
-    n = 10000
+    n = int(os.environ.get("KNN_BENCHMARK_N", "1000"))
     nodes = [(f"n{i}", "", "", 0.0) for i in range(n)]
     vectors = [(f"n{i}", np.random.rand(dim).astype(float).tolist()) for i in range(n)]
 

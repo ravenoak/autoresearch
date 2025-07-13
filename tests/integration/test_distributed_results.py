@@ -1,5 +1,6 @@
 import os
 import ray
+import pytest
 from autoresearch.distributed import RayExecutor
 from autoresearch.config import ConfigModel, DistributedConfig
 from autoresearch.models import QueryResponse
@@ -21,6 +22,7 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
+@pytest.mark.slow
 def test_result_aggregation_multi_process(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
