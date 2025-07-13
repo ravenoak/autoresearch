@@ -1,5 +1,6 @@
 import os
 import ray
+import pytest
 from autoresearch.distributed import RayExecutor
 from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.storage import StorageManager
@@ -22,6 +23,7 @@ class ClaimAgent:
         return {"results": {self.name: "ok"}}
 
 
+@pytest.mark.slow
 def test_distributed_storage_with_executor(tmp_path, monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))

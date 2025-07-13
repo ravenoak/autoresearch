@@ -1,4 +1,5 @@
 import os
+import pytest
 from autoresearch.distributed import ProcessExecutor
 from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.models import QueryResponse
@@ -22,6 +23,7 @@ class ClaimAgent:
         return {"results": {self.name: "ok"}, "claims": [claim]}
 
 
+@pytest.mark.slow
 def test_distributed_orchestration_persistence(tmp_path, monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))

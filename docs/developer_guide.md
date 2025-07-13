@@ -31,10 +31,20 @@ This guide describes how to set up a development environment and the expected wo
 2. Run the full test suite:
    ```bash
    poetry run pytest -q
-   poetry run pytest tests/behavior
-   ```
-   All testing commands should be executed with `poetry run` to use the
-   project's virtual environment.
+    poetry run pytest tests/behavior
+    ```
+    All testing commands should be executed with `poetry run` to use the
+    project's virtual environment.
+
+### Running only fast tests
+
+For quick feedback, you can skip heavy integration tests marked with
+`@pytest.mark.slow`:
+
+```bash
+poetry run pytest -m "not slow" -q
+poetry run pytest -m "not slow" tests/behavior
+```
 3. Update or add documentation when needed.
 4. Open a pull request explaining the rationale for the change.
 
