@@ -58,7 +58,7 @@ class CriticAgent(Agent):
 
         # Create and return the result
         claim = self.create_claim(critique, "critique")
-        return self.create_result(
+        result = self.create_result(
             claims=[claim],
             metadata={
                 "phase": DialoguePhase.CRITIQUE,
@@ -66,6 +66,26 @@ class CriticAgent(Agent):
             },
             results={"critique": critique},
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"Critique ready in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "Critique ready")
+
+        if getattr(config, "enable_feedback", False):
+            targets = {c.get("agent") for c in claims_to_evaluate if c.get("agent")}
+            for tgt in targets:
+                if tgt:
+                    self.send_feedback(state, tgt, critique)
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute when there are claims to evaluate."""

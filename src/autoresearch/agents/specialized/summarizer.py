@@ -58,7 +58,7 @@ class SummarizerAgent(Agent):
 
         # Create and return the result
         claim = self.create_claim(summary, "summary")
-        return self.create_result(
+        result = self.create_result(
             claims=[claim],
             metadata={
                 "phase": DialoguePhase.SUMMARY,
@@ -66,6 +66,20 @@ class SummarizerAgent(Agent):
             },
             results={"summary": summary},
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"Summary ready in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "Summary ready")
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute when there is content to summarize."""

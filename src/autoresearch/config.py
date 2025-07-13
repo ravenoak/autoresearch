@@ -315,6 +315,20 @@ class ConfigModel(BaseSettings):
     # User preference settings
     user_preferences: Dict[str, Any] = Field(default_factory=dict)
 
+    # Agent communication settings
+    enable_agent_messages: bool = Field(
+        default=False,
+        description="Allow agents to exchange messages during cycles",
+    )
+    enable_feedback: bool = Field(
+        default=False,
+        description="Enable cross-agent feedback messages",
+    )
+    coalitions: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Named coalitions of agents for message broadcasting",
+    )
+
     # Dynamic knowledge graph settings
     graph_eviction_policy: str = Field(default="LRU")
 

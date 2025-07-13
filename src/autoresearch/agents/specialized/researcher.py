@@ -56,7 +56,7 @@ class ResearcherAgent(Agent):
 
         # Create and return the result
         claim = self.create_claim(research_findings, "research_findings")
-        return self.create_result(
+        result = self.create_result(
             claims=[claim],
             metadata={
                 "phase": DialoguePhase.RESEARCH,
@@ -65,6 +65,20 @@ class ResearcherAgent(Agent):
             results={"research_findings": research_findings},
             sources=sources,
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"Research complete in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "Research complete")
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Determine if this agent should execute in the current state."""

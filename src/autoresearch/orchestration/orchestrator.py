@@ -79,6 +79,9 @@ class Orchestrator:
         max_errors = config.max_errors if hasattr(config, "max_errors") else 3
         cb_threshold = getattr(config, "circuit_breaker_threshold", 3)
         cb_cooldown = getattr(config, "circuit_breaker_cooldown", 30)
+        enable_messages = getattr(config, "enable_agent_messages", False)
+        coalitions = getattr(config, "coalitions", {})
+        enable_feedback = getattr(config, "enable_feedback", False)
 
         # Adjust parameters based on reasoning mode
         if mode == ReasoningMode.DIRECT:
@@ -93,6 +96,9 @@ class Orchestrator:
             "max_errors": max_errors,
             "circuit_breaker_threshold": cb_threshold,
             "circuit_breaker_cooldown": cb_cooldown,
+            "enable_agent_messages": enable_messages,
+            "enable_feedback": enable_feedback,
+            "coalitions": coalitions,
         }
 
     @staticmethod
@@ -992,7 +998,11 @@ class Orchestrator:
             )
 
         # Initialize query state
-        state = QueryState(query=query, primus_index=primus_index)
+        state = QueryState(
+            query=query,
+            primus_index=primus_index,
+            coalitions=config_params.get("coalitions", {}),
+        )
 
         # Execute dialectical cycles with detailed logging
         log.info(
@@ -1131,7 +1141,11 @@ class Orchestrator:
                 agent_factory=agent_factory,
             )
 
-        state = QueryState(query=query, primus_index=primus_index)
+        state = QueryState(
+            query=query,
+            primus_index=primus_index,
+            coalitions=config_params.get("coalitions", {}),
+        )
 
         log.info(
             f"Starting dialectical process with {len(agents)} agents and {loops} loops",
@@ -1226,7 +1240,10 @@ class Orchestrator:
         log = get_logger(__name__)
 
         # Create a state for the final synthesis
-        final_state = QueryState(query=query)
+        final_state = QueryState(
+            query=query,
+            coalitions=getattr(config, "coalitions", {}),
+        )
 
         # Calculate optimal number of workers based on system resources and group count
         cpu_count = os.cpu_count() or 4
