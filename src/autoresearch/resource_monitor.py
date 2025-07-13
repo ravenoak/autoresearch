@@ -10,6 +10,8 @@ import structlog
 from prometheus_client import Gauge, start_http_server, CollectorRegistry, REGISTRY
 from .orchestration import metrics as orch_metrics
 
+log = structlog.get_logger(__name__)
+
 
 _DEF_REGISTRY = REGISTRY
 
@@ -33,8 +35,8 @@ def _get_gpu_stats() -> tuple[float, float]:
         if count:
             util_total /= count
         return util_total, mem_total
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("Failed to get GPU stats via pynvml", exc_info=e)
 
     try:  # pragma: no cover - may not be present
         import subprocess
@@ -78,8 +80,8 @@ def _get_gpu_stats() -> tuple[float, float]:
             avg_util = sum(utils) / len(utils)
             total_mem = sum(mems)
             return avg_util, total_mem
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("Failed to get GPU stats via nvidia-smi", exc_info=e)
 
     return 0.0, 0.0
 

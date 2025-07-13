@@ -21,11 +21,13 @@ from ..config import ConfigLoader
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter
+from ..logging_utils import get_logger
 
 monitor_app = typer.Typer(help="Monitoring utilities", invoke_without_command=True)
 
 _loader = ConfigLoader()
 _system_monitor: SystemMonitor | None = None
+log = get_logger(__name__)
 
 
 @monitor_app.callback(invoke_without_command=True)
@@ -68,8 +70,8 @@ def _collect_system_metrics() -> Dict[str, Any]:
         metrics.setdefault("memory_percent", mem.percent)
         metrics["memory_used_mb"] = mem.used / (1024 * 1024)
         metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("Failed to collect system metrics", exc_info=e)
 
     metrics["tokens_in_total"] = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
     metrics["tokens_out_total"] = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
