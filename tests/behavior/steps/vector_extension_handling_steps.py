@@ -7,8 +7,9 @@ from pytest_bdd import scenario, given, when, then
 from autoresearch.storage import StorageManager, teardown
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 from autoresearch.errors import StorageError
+from autoresearch.logging_utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Scenarios
@@ -148,13 +149,13 @@ def local_extension(tmp_path, monkeypatch):
     def mock_execute(self, query, *args, **kwargs):
         if query.startswith("LOAD '") and str(extension_dir) in query:
             # Mock successful loading from filesystem
-            print(f"DEBUG: Mocked loading extension from {extension_dir}")
+            logger.debug("Mocked loading extension from %s", extension_dir)
             mock_info(f"Loading vss extension from filesystem: {extension_dir}")
             mock_info("VSS extension loaded successfully from filesystem")
             return original_execute(self, "SELECT 1", *args, **kwargs)
         elif query == "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'":
             # Mock successful extension check after loading
-            print("DEBUG: Mocked duckdb_extensions check for vss")
+            logger.debug("Mocked duckdb_extensions check for vss")
             return original_execute(self, "SELECT 'vss', 'loaded'", *args, **kwargs)
         else:
             return original_execute(self, query, *args, **kwargs)
@@ -202,7 +203,9 @@ def invalid_extension(tmp_path, monkeypatch):
     def mock_execute(self, query, *args, **kwargs):
         if query.startswith("LOAD '") and str(extension_dir) in query:
             # Mock failure when loading from filesystem
-            print(f"DEBUG: Mocked failure loading extension from {extension_dir}")
+            logger.debug(
+                "Mocked failure loading extension from %s", extension_dir
+            )
             raise Exception(
                 f"Failed to load extension from {extension_dir}: invalid extension file"
             )
@@ -256,11 +259,11 @@ def offline_environment(monkeypatch):
 
     def mock_execute_fail(self, query, *args, **kwargs):
         if "INSTALL" in query:
-            print(f"DEBUG: Mocked network failure for query: {query}")
+            logger.debug("Mocked network failure for query: %s", query)
             raise Exception("Network error: Could not download extension")
         elif "LOAD vss" in query and not query.startswith("LOAD '"):
             # This is the case where it tries to load the extension after installing it
-            print(f"DEBUG: Mocked failure loading extension after install: {query}")
+            logger.debug("Mocked failure loading extension after install: %s", query)
             raise Exception("Failed to load extension: Extension not found")
         else:
             # For all other queries, use the original execute method
@@ -274,12 +277,14 @@ def offline_environment(monkeypatch):
         import urllib.request
 
         def mock_urlopen_fail(*args, **kwargs):
-            print("DEBUG: Mocked network failure for URL request")
+            logger.debug("Mocked network failure for URL request")
             raise urllib.error.URLError("Network is unreachable")
 
         monkeypatch.setattr(urllib.request, "urlopen", mock_urlopen_fail)
     except ImportError:
-        print("WARNING: urllib.request not available, not mocking URL requests")
+        logger.warning(
+            "urllib.request not available, not mocking URL requests"
+        )
 
 
 @when("I initialize the storage system")
@@ -291,20 +296,23 @@ def initialize_storage(reset_storage, monkeypatch, bdd_context):
     class LogHandler(logging.Handler):
         def emit(self, record):
             log_messages.append(record.getMessage())
-            # Also print to console for debugging
-            print(f"{record.levelname}: {record.getMessage()}")
+            # Also log debug information
+            logger.debug("%s: %s", record.levelname, record.getMessage())
 
     handler = LogHandler()
     logger = logging.getLogger("autoresearch.storage")
     logger.addHandler(handler)
 
     # Print debug information
-    print("DEBUG: bdd_context keys:", list(bdd_context.keys()))
+    logger.debug("bdd_context keys: %s", list(bdd_context.keys()))
     if "config" in bdd_context:
-        print("DEBUG: config.storage attributes:", dir(bdd_context["config"].storage))
+        logger.debug(
+            "config.storage attributes: %s",
+            dir(bdd_context["config"].storage),
+        )
         if hasattr(bdd_context["config"].storage, "vector_extension_path"):
-            print(
-                "DEBUG: vector_extension_path:",
+            logger.debug(
+                "vector_extension_path: %s",
                 bdd_context["config"].storage.vector_extension_path,
             )
 
