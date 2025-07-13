@@ -269,3 +269,21 @@ OPENROUTER_API_KEY=...
 
 These keys are automatically loaded and used by the respective adapters.
 
+
+## Runtime Environment Variables
+
+Certain features can be configured entirely through environment variables. These
+settings override values from `autoresearch.toml` and are useful for temporary
+changes or scripting.
+
+| Variable | Purpose |
+|----------|---------|
+| `AUTORESEARCH_API_KEY` | Require clients to include this key in the `X-API-Key` header. Equivalent to `[api].api_key`. |
+| `AUTORESEARCH_BEARER_TOKEN` | Require an `Authorization: Bearer` token matching this value. Maps to `[api].bearer_token`. |
+| `AUTORESEARCH_RATE_LIMIT` | Requests per minute allowed per client IP. Maps to `[api].rate_limit`. Set to `0` to disable. |
+| `AUTORESEARCH_VERBOSITY` | Controls CLI output level: `quiet`, `normal`, or `verbose`. Set automatically by CLI flags. |
+| `AUTORESEARCH_VERSION` | Version string advertised by the A2A server. |
+| `VECTOR_EXTENSION` | When set to `false`, disables the DuckDB VSS extension. Used by the `--no-vss` CLI flag. |
+| `VECTOR_EXTENSION_PATH` | Path to a custom DuckDB VSS extension, set via `--vss-path`. |
+
+
