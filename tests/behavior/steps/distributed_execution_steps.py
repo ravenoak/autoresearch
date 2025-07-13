@@ -1,6 +1,7 @@
 """Step definitions for distributed execution feature."""
 
 import os
+import importlib.util
 
 import pytest
 from pytest_bdd import scenario, given, when, then
@@ -55,6 +56,10 @@ def mock_agents(monkeypatch, pids):
 
 @given("a distributed configuration using Ray")
 def config_ray(tmp_path, bdd_context, monkeypatch):
+    if importlib.util.find_spec("ray") is None:
+        pytest.skip("Ray not installed")
+    if not os.getenv("ENABLE_DISTRIBUTED_TESTS"):
+        pytest.skip("Distributed tests are disabled")
     cfg = ConfigModel(
         agents=["A", "B"],
         loops=1,
@@ -66,12 +71,13 @@ def config_ray(tmp_path, bdd_context, monkeypatch):
     import ray as ray_module
     if not hasattr(ray_module, "put"):
         pytest.skip("Ray not available in test environment")
-    pytest.skip("Distributed execution not supported in Codex environment")
     bdd_context.update({"cfg": cfg, "executor_cls": RayExecutor, "db_path": cfg.storage.duckdb_path})
 
 
 @given("a distributed configuration using multiprocessing")
 def config_process(tmp_path, bdd_context):
+    if not os.getenv("ENABLE_DISTRIBUTED_TESTS"):
+        pytest.skip("Distributed tests are disabled")
     cfg = ConfigModel(
         agents=["A", "B"],
         loops=1,
@@ -79,7 +85,6 @@ def config_process(tmp_path, bdd_context):
         distributed_config=DistributedConfig(enabled=True, num_cpus=2, message_broker="memory"),
         storage=StorageConfig(duckdb_path=str(tmp_path / "kg.duckdb")),
     )
-    pytest.skip("Distributed execution not supported in Codex environment")
     bdd_context.update({"cfg": cfg, "executor_cls": ProcessExecutor, "db_path": cfg.storage.duckdb_path})
 
 
