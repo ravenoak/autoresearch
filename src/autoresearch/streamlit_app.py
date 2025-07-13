@@ -8,7 +8,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
-from typing import Dict, Any
+from typing import Dict, Any, List
 import random
 import io
 import time
@@ -899,7 +899,11 @@ def display_agent_performance():
         st.markdown("### Agent Performance Comparison")
 
         # Create a DataFrame for the comparison
-        comparison_data = {"Agent": [], "Metric": [], "Value": []}
+        comparison_data: Dict[str, List[Any]] = {
+            "Agent": [],
+            "Metric": [],
+            "Value": [],
+        }
 
         for agent_name, metrics in agent_performance.items():
             avg_duration = (
