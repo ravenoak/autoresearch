@@ -18,6 +18,13 @@ Additional specialized agents extend these roles:
 
 Agents communicate via a shared state object and can be customized in `autoresearch.toml`.
 
+When `enable_agent_messages` is set to `true` in the configuration, agents may
+exchange short messages using the `Agent.send_message()` API. Messages are stored
+on the `QueryState` and retrieved with `Agent.get_messages()`. Coalitions can be
+defined in the `[coalitions]` section of the config to broadcast messages among
+groups of agents. Enabling `enable_feedback` allows agents such as the Critic or
+User agent to send feedback messages to their peers during a cycle.
+
 ## Architecture
 
 The agents component consists of several key classes:

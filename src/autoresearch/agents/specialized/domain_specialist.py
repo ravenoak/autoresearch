@@ -71,7 +71,7 @@ class DomainSpecialistAgent(Agent):
         analysis_claim = self.create_claim(analysis, "domain_analysis")
         recommendations_claim = self.create_claim(recommendations, "domain_recommendations")
 
-        return self.create_result(
+        result = self.create_result(
             claims=[analysis_claim, recommendations_claim],
             metadata={
                 "phase": DialoguePhase.ANALYSIS,
@@ -84,6 +84,20 @@ class DomainSpecialistAgent(Agent):
                 "domain": self.domain
             },
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"Domain analysis ready in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "Domain analysis ready")
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Determine if this specialist should execute based on the query domain."""

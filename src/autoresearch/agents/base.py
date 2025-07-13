@@ -96,3 +96,55 @@ class Agent(
             The model name to use.
         """
         return self.get_model_config(config, self.role.value)
+
+    # ------------------------------------------------------------------
+    # Message passing API
+    # ------------------------------------------------------------------
+
+    def send_message(
+        self,
+        state: QueryState,
+        content: str,
+        *,
+        to: Optional[str] = None,
+        coalition: Optional[str] = None,
+        msg_type: str = "message",
+    ) -> None:
+        """Send a message to another agent or coalition."""
+
+        message = {
+            "from": self.name,
+            "to": to,
+            "coalition": coalition,
+            "type": msg_type,
+            "content": content,
+            "cycle": state.cycle,
+        }
+        state.add_message(message)
+
+    def broadcast(self, state: QueryState, content: str, coalition: str) -> None:
+        """Broadcast a message to all members of a coalition."""
+
+        if coalition not in state.coalitions:
+            return
+        for member in state.coalitions[coalition]:
+            self.send_message(state, content, to=member, coalition=coalition)
+
+    def get_messages(
+        self,
+        state: QueryState,
+        *,
+        from_agent: Optional[str] = None,
+        coalition: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
+        """Retrieve messages addressed to this agent."""
+
+        messages = state.get_messages(recipient=self.name, coalition=coalition)
+        if from_agent:
+            messages = [m for m in messages if m.get("from") == from_agent]
+        return messages
+
+    def send_feedback(self, state: QueryState, target: str, feedback: str) -> None:
+        """Send a feedback message to another agent."""
+
+        self.send_message(state, feedback, to=target, msg_type="feedback")

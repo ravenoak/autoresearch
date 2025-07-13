@@ -65,7 +65,7 @@ class ModeratorAgent(Agent):
         moderation_claim = self.create_claim(moderation, "moderation")
         guidance_claim = self.create_claim(guidance, "guidance")
 
-        return self.create_result(
+        result = self.create_result(
             claims=[moderation_claim, guidance_claim],
             metadata={
                 "phase": DialoguePhase.MODERATION,
@@ -78,6 +78,20 @@ class ModeratorAgent(Agent):
                 "conflicts": conflicts
             },
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"Moderation guidance ready in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "Moderation guidance ready")
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute when there are multiple claims from different agents."""

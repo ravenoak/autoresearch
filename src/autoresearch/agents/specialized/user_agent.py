@@ -78,7 +78,7 @@ class UserAgent(Agent):
         feedback_claim = self.create_claim(feedback, "user_feedback")
         requirements_claim = self.create_claim(requirements, "user_requirements")
 
-        return self.create_result(
+        result = self.create_result(
             claims=[feedback_claim, requirements_claim],
             metadata={
                 "phase": DialoguePhase.FEEDBACK,
@@ -91,6 +91,26 @@ class UserAgent(Agent):
                 "user_preferences": self.preferences
             },
         )
+
+        if getattr(config, "enable_agent_messages", False):
+            if state.coalitions:
+                for c, m in state.coalitions.items():
+                    if self.name in m:
+                        self.broadcast(
+                            state,
+                            f"User feedback available in cycle {state.cycle}",
+                            coalition=c,
+                        )
+            else:
+                self.send_message(state, "User feedback available")
+
+        if getattr(config, "enable_feedback", False):
+            targets = {c.get("agent") for c in recent_claims if c.get("agent")}
+            for tgt in targets:
+                if tgt:
+                    self.send_feedback(state, tgt, feedback)
+
+        return result
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Only execute when there are claims to evaluate and after initial research."""

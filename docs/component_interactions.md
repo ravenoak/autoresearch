@@ -102,6 +102,16 @@ Key interactions:
 - Agents execute queries using LLM adapters
 - Agents return structured results to the Orchestrator
 
+#### Agent Communication and Coalitions
+
+When `enable_agent_messages` is enabled the Orchestrator records messages sent
+between agents on the shared ``QueryState``.  Agents call ``send_message`` and
+``get_messages`` from the base class to coordinate their work.  Coalitions
+declared in the configuration allow groups of agents to broadcast messages to
+each other.  With ``enable_feedback`` active, agents such as the Critic and User
+agents publish feedback about their peers' outputs which subsequent agents can
+consume in the same cycle.
+
 ### Storage System
 
 The storage system persists research findings and enables knowledge retrieval:

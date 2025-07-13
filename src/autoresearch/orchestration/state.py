@@ -2,7 +2,7 @@
 State management for the dialectical reasoning process.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import time
 from pydantic import BaseModel, Field
 
@@ -16,6 +16,8 @@ class QueryState(BaseModel):
     claims: List[Dict[str, Any]] = Field(default_factory=list)
     sources: List[Dict[str, Any]] = Field(default_factory=list)
     results: Dict[str, Any] = Field(default_factory=dict)
+    messages: List[Dict[str, Any]] = Field(default_factory=list)
+    coalitions: Dict[str, List[str]] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     cycle: int = 0
     primus_index: int = 0
@@ -41,6 +43,25 @@ class QueryState(BaseModel):
         if "errors" not in self.metadata:
             self.metadata["errors"] = []
         self.metadata["errors"].append(error_info)
+
+    def add_message(self, message: Dict[str, Any]) -> None:
+        """Store a message exchanged between agents."""
+        self.messages.append(message)
+
+    def get_messages(
+        self,
+        *,
+        recipient: Optional[str] = None,
+        coalition: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve messages for a specific recipient or coalition."""
+        messages = self.messages
+        if recipient is not None:
+            messages = [m for m in messages if m.get("to") in (None, recipient)]
+        if coalition is not None:
+            members = self.coalitions.get(coalition, [])
+            messages = [m for m in messages if m.get("from") in members]
+        return messages
 
     def synthesize(self) -> QueryResponse:
         """Create final response from state."""
@@ -75,7 +96,12 @@ class QueryState(BaseModel):
 
         return structure
 
-    def prune_context(self, max_claims: int = 50, max_sources: int = 20) -> None:
+    def prune_context(
+        self,
+        max_claims: int = 50,
+        max_sources: int = 20,
+        max_messages: int = 50,
+    ) -> None:
         """Prune stored context to keep the state manageable.
 
         This method removes the oldest claims and sources when their count
@@ -87,7 +113,7 @@ class QueryState(BaseModel):
             max_sources: Maximum number of sources to keep.
         """
 
-        pruned = {"claims": 0, "sources": 0}
+        pruned = {"claims": 0, "sources": 0, "messages": 0}
 
         if len(self.claims) > max_claims:
             excess = len(self.claims) - max_claims
@@ -99,5 +125,10 @@ class QueryState(BaseModel):
             del self.sources[0:excess]
             pruned["sources"] = excess
 
-        if pruned["claims"] or pruned["sources"]:
+        if len(self.messages) > max_messages:
+            excess = len(self.messages) - max_messages
+            del self.messages[0:excess]
+            pruned["messages"] = excess
+
+        if any(pruned.values()):
             self.metadata.setdefault("pruned", []).append(pruned)
