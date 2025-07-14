@@ -256,7 +256,7 @@ Enable cross-agent messaging and feedback with the following options:
 |--------|------|---------|-------------|
 | `enable_agent_messages` | boolean | `false` | Allow agents to exchange messages during a cycle |
 | `enable_feedback` | boolean | `false` | Enable dedicated feedback messages between agents |
-| `coalitions` | table | `{}` | Named groups of agents for message broadcasting |
+| `coalitions` | table | `{}` | Named groups of agents for message broadcasting or joint execution |
 
 Example:
 
@@ -267,6 +267,8 @@ research_team = ["Synthesizer", "Contrarian", "FactChecker"]
 enable_agent_messages = true
 enable_feedback = true
 ```
+Including `research_team` in the `agents` list will execute those members
+back-to-back in each reasoning cycle.
 
 ## Distributed Execution
 

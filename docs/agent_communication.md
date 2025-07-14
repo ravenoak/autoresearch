@@ -10,6 +10,8 @@ share information with its peers. These messages are stored on the shared
 Agents can be grouped into named coalitions for message broadcasting. Define
 them in a `[coalitions]` section. Messages sent by one member are delivered to
 all other agents in the same coalition.
+Coalition names may also be listed in the `agents` array of your configuration
+to execute all members as a unit during each cycle.
 
 ```toml
 [coalitions]

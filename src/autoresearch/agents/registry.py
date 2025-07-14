@@ -6,12 +6,21 @@ It includes a registry for agent types and a factory for creating agent instance
 """
 
 from typing import Any, Dict, Type, List
+from dataclasses import dataclass
 from threading import Lock
 import logging
 
 from .base import Agent
 
 log = logging.getLogger(__name__)
+
+
+@dataclass
+class Coalition:
+    """Grouping of multiple agents treated as a single unit."""
+
+    name: str
+    members: List[str]
 
 
 class AgentRegistry:
@@ -23,7 +32,7 @@ class AgentRegistry:
     """
 
     _registry: Dict[str, Type[Agent]] = {}
-    _coalitions: Dict[str, List[str]] = {}
+    _coalitions: Dict[str, Coalition] = {}
 
     @classmethod
     def register(cls, name: str, agent_class: Type[Agent]) -> None:
@@ -72,12 +81,18 @@ class AgentRegistry:
         for member in members:
             if member not in cls._registry:
                 raise ValueError(f"Unknown agent type: {member}")
-        cls._coalitions[name] = members
+        cls._coalitions[name] = Coalition(name=name, members=members)
 
     @classmethod
     def get_coalition(cls, name: str) -> List[str]:
         """Return members of a registered coalition."""
-        return cls._coalitions.get(name, [])
+        coalition = cls._coalitions.get(name)
+        return coalition.members if coalition else []
+
+    @classmethod
+    def get_coalition_obj(cls, name: str) -> Coalition | None:
+        """Return the Coalition object if registered."""
+        return cls._coalitions.get(name)
 
     @classmethod
     def list_coalitions(cls) -> List[str]:

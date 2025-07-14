@@ -85,6 +85,14 @@ class Orchestrator:
             AgentRegistry.create_coalition(cname, members)
         enable_feedback = getattr(config, "enable_feedback", False)
 
+        agent_groups: List[List[str]] = []
+        for a in agents:
+            coalition = AgentRegistry.get_coalition_obj(a)
+            if coalition:
+                agent_groups.append(coalition.members)
+            else:
+                agent_groups.append([a])
+
         # Adjust parameters based on reasoning mode
         if mode == ReasoningMode.DIRECT:
             agents = ["Synthesizer"]
@@ -92,6 +100,7 @@ class Orchestrator:
 
         return {
             "agents": agents,
+            "agent_groups": agent_groups,
             "primus_index": primus_index,
             "loops": loops,
             "mode": mode,
@@ -742,7 +751,7 @@ class Orchestrator:
     def _execute_cycle(
         loop: int,
         loops: int,
-        agents: List[str],
+        agents: List[List[str]],
         primus_index: int,
         max_errors: int,
         state: QueryState,
@@ -758,7 +767,7 @@ class Orchestrator:
         Args:
             loop: Current loop number
             loops: Total number of loops
-            agents: List of agent names
+            agents: Groups of agent names
             primus_index: Index of the primus agent
             max_errors: Maximum number of errors before aborting
             state: Current query state
@@ -786,26 +795,28 @@ class Orchestrator:
             # Rotate agent order based on primus_index
             order = Orchestrator._rotate_list(agents, primus_index)
 
-            # Execute each agent in order
-            for agent_name in order:
-                # Skip execution if too many errors
-                if state.error_count >= max_errors:
-                    log.warning(
-                        "Skipping remaining agents due to error threshold "
-                        f"({max_errors}) reached"
-                    )
-                    break
+            # Execute each agent group in order
+            for group in order:
+                for agent_name in group:
+                    if state.error_count >= max_errors:
+                        log.warning(
+                            "Skipping remaining agents due to error threshold "
+                            f"({max_errors}) reached"
+                        )
+                        break
 
-                Orchestrator._execute_agent(
-                    agent_name,
-                    state,
-                    config,
-                    metrics,
-                    callbacks,
-                    agent_factory,
-                    storage_manager,
-                    loop,
-                )
+                    Orchestrator._execute_agent(
+                        agent_name,
+                        state,
+                        config,
+                        metrics,
+                        callbacks,
+                        agent_factory,
+                        storage_manager,
+                        loop,
+                    )
+                if state.error_count >= max_errors:
+                    break
 
             # End cycle and update metrics
             metrics.end_cycle()
@@ -846,7 +857,7 @@ class Orchestrator:
     async def _execute_cycle_async(
         loop: int,
         loops: int,
-        agents: List[str],
+        agents: List[List[str]],
         primus_index: int,
         max_errors: int,
         state: QueryState,
@@ -888,16 +899,22 @@ class Orchestrator:
                 )
 
             if concurrent:
-                await asyncio.gather(*(run_agent(a) for a in order))
-            else:
-                for agent_name in order:
+                for group in order:
+                    await asyncio.gather(*(run_agent(a) for a in group))
                     if state.error_count >= max_errors:
-                        log.warning(
-                            "Skipping remaining agents due to error threshold "
-                            f"({max_errors}) reached"
-                        )
                         break
-                    await run_agent(agent_name)
+            else:
+                for group in order:
+                    for agent_name in group:
+                        if state.error_count >= max_errors:
+                            log.warning(
+                                "Skipping remaining agents due to error threshold "
+                                f"({max_errors}) reached"
+                            )
+                            break
+                        await run_agent(agent_name)
+                    if state.error_count >= max_errors:
+                        break
 
             metrics.end_cycle()
             state.metadata["execution_metrics"] = metrics.get_summary()
@@ -960,7 +977,7 @@ class Orchestrator:
 
         # Parse configuration
         config_params = Orchestrator._parse_config(config)
-        agents = config_params["agents"]
+        agents = config_params["agent_groups"]
         primus_index = config_params["primus_index"]
         loops = config_params["loops"]
         mode = config_params["mode"]
@@ -1027,8 +1044,9 @@ class Orchestrator:
         )
 
         # Execute dialectical cycles with detailed logging
+        total_agents = sum(len(g) for g in agents)
         log.info(
-            f"Starting dialectical process with {len(agents)} agents and {loops} loops",
+            f"Starting dialectical process with {total_agents} agents in {len(agents)} groups and {loops} loops",
             extra={
                 "agents": agents,
                 "loops": loops,
@@ -1127,7 +1145,7 @@ class Orchestrator:
         callbacks = callbacks or {}
 
         config_params = Orchestrator._parse_config(config)
-        agents = config_params["agents"]
+        agents = config_params["agent_groups"]
         primus_index = config_params["primus_index"]
         loops = config_params["loops"]
         mode = config_params["mode"]
@@ -1169,8 +1187,9 @@ class Orchestrator:
             coalitions=config_params.get("coalitions", {}),
         )
 
+        total_agents = sum(len(g) for g in agents)
         log.info(
-            f"Starting dialectical process with {len(agents)} agents and {loops} loops",
+            f"Starting dialectical process with {total_agents} agents in {len(agents)} groups and {loops} loops",
             extra={
                 "agents": agents,
                 "loops": loops,
