@@ -241,6 +241,26 @@ tracing_enabled = true
 
 The same option can be set via the environment variable `CORE__TRACING_ENABLED=true`.
 
+## Agent Communication Settings
+
+Enable cross-agent messaging and feedback with the following options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enable_agent_messages` | boolean | `false` | Allow agents to exchange messages during a cycle |
+| `enable_feedback` | boolean | `false` | Enable dedicated feedback messages between agents |
+| `coalitions` | table | `{}` | Named groups of agents for message broadcasting |
+
+Example:
+
+```toml
+[coalitions]
+research_team = ["Synthesizer", "Contrarian", "FactChecker"]
+
+enable_agent_messages = true
+enable_feedback = true
+```
+
 ## Distributed Execution
 
 To run agents across multiple processes or machines, configure the `[distributed]` section:
