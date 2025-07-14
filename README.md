@@ -314,6 +314,8 @@ research_team = ["Synthesizer", "Contrarian", "FactChecker"]
 enable_agent_messages = true
 enable_feedback = true
 ```
+Add `research_team` to the `agents` array if you want these members to run
+consecutively in each cycle.
 
 Agents can then share short notes with `send_message()` and read them using
 `get_messages()` in the next cycle.
