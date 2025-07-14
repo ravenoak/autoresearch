@@ -119,14 +119,15 @@ autoresearch = "autoresearch.main:app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--maxfail=1 --disable-warnings -q --cov=src --cov=tests --cov-report=xml --cov-report=term-missing --cov-fail-under=90"
+addopts = "--maxfail=1 --disable-warnings -q --cov=src --cov=tests --cov-report=xml --cov-report=term-missing --cov-fail-under=90 -m 'not slow'"
 testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
 python_files = ["test_*.py", "*_steps.py"]
 markers = [
     "behavior: mark behavior (BDD) tests",
     "integration: mark integration tests",
     "unit: mark unit tests",
-    "real_vss: enable actual VSS extension logic"
+    "real_vss: enable actual VSS extension logic",
+    "slow: tests that take a long time to run"
 ]
 
 [tool.mypy]
