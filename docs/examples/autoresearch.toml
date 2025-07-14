@@ -1,3 +1,9 @@
+[coalitions]
+research_team = ["Synthesizer", "Contrarian", "FactChecker"]
+
+enable_agent_messages = true
+enable_feedback = true
+
 [core]
 llm_backend = "lmstudio"
 loops = 3

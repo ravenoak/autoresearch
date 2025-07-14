@@ -25,6 +25,8 @@ defined in the `[coalitions]` section of the config to broadcast messages among
 groups of agents. Enabling `enable_feedback` allows agents such as the Critic or
 User agent to send feedback messages to their peers during a cycle.
 
+See [Agent Communication](agent_communication.md) for configuration examples.
+
 ## Architecture
 
 The agents component consists of several key classes:

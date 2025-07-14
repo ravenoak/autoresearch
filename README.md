@@ -303,6 +303,21 @@ and `.env` for changes. Updates to these files are picked up automatically and
 the configuration is reloaded on the fly. The watcher shuts down gracefully when
 the process exits.
 
+### Agent Communication Features
+
+Enable message passing and feedback by adding these options to `autoresearch.toml`:
+
+```toml
+[coalitions]
+research_team = ["Synthesizer", "Contrarian", "FactChecker"]
+
+enable_agent_messages = true
+enable_feedback = true
+```
+
+Agents can then share short notes with `send_message()` and read them using
+`get_messages()` in the next cycle.
+
 ## Usage Examples
 
 ### Different Reasoning Modes
