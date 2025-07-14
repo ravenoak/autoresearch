@@ -170,6 +170,23 @@ class Orchestrator:
         )
 
     @staticmethod
+    def _deliver_messages(agent_name: str, state: QueryState, config: ConfigModel) -> None:
+        """Record messages destined for the given agent."""
+
+        if not getattr(config, "enable_agent_messages", False):
+            return
+
+        msgs = state.get_messages(recipient=agent_name)
+        if not msgs:
+            return
+        delivered = state.metadata.setdefault("delivered_messages", {}).setdefault(agent_name, [])
+        delivered.extend(msgs)
+        log.debug(
+            f"Delivered {len(msgs)} messages to {agent_name}",
+            extra={"agent": agent_name, "message_count": len(msgs)},
+        )
+
+    @staticmethod
     def _call_agent_start_callback(
         agent_name: str, state: QueryState, callbacks: Dict[str, Callable[..., None]]
     ) -> None:
@@ -686,6 +703,9 @@ class Orchestrator:
                 agent, agent_name, state, config
             ):
                 return
+
+            # Deliver pending messages to this agent for the current cycle
+            Orchestrator._deliver_messages(agent_name, state, config)
 
             # Log agent execution
             Orchestrator._log_agent_execution(agent_name, state, loop)

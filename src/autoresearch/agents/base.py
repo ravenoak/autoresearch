@@ -1,6 +1,6 @@
 """Base Agent class and role definitions for the dialectical system."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from enum import Enum
 from pydantic import BaseModel, Field, validator
 
@@ -15,6 +15,7 @@ from .mixins import (
     ClaimGeneratorMixin,
     ResultGeneratorMixin,
 )
+from .messages import AgentMessage
 
 log = get_logger(__name__)
 
@@ -113,15 +114,15 @@ class Agent(
     ) -> None:
         """Send a message to another agent or coalition."""
 
-        message = {
-            "from": self.name,
-            "to": to,
-            "coalition": coalition,
-            "type": msg_type,
-            "content": content,
-            "cycle": state.cycle,
-        }
-        state.add_message(message)
+        msg = AgentMessage(
+            **{"from": self.name},
+            recipient=to,
+            coalition=coalition,
+            type=msg_type,
+            content=content,
+            cycle=state.cycle,
+        )
+        state.add_message(msg.to_dict())
 
     def broadcast(self, state: QueryState, content: str, coalition: str) -> None:
         """Broadcast a message to all members of a coalition."""
@@ -137,13 +138,13 @@ class Agent(
         *,
         from_agent: Optional[str] = None,
         coalition: Optional[str] = None,
-    ) -> list[dict[str, Any]]:
+    ) -> List[AgentMessage]:
         """Retrieve messages addressed to this agent."""
 
-        messages = state.get_messages(recipient=self.name, coalition=coalition)
+        raw = state.get_messages(recipient=self.name, coalition=coalition)
         if from_agent:
-            messages = [m for m in messages if m.get("from") == from_agent]
-        return messages
+            raw = [m for m in raw if m.get("from") == from_agent]
+        return [AgentMessage(**m) for m in raw]
 
     def send_feedback(self, state: QueryState, target: str, feedback: str) -> None:
         """Send a feedback message to another agent."""

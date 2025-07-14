@@ -18,12 +18,12 @@ def test_message_exchange_and_feedback():
     alice.send_message(state, "hello", to="Bob")
     bob_messages = bob.get_messages(state, from_agent="Alice")
     assert len(bob_messages) == 1
-    assert bob_messages[0]["content"] == "hello"
+    assert bob_messages[0].content == "hello"
 
     bob.send_feedback(state, "Alice", "good job")
     feedback = alice.get_messages(state, from_agent="Bob")
-    assert feedback[0]["type"] == "feedback"
-    assert feedback[0]["content"] == "good job"
+    assert feedback[0].type == "feedback"
+    assert feedback[0].content == "good job"
     assert len(state.feedback_events) == 1
     assert state.feedback_events[0].content == "good job"
 
