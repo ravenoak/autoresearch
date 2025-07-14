@@ -52,6 +52,11 @@ class ResearcherAgent(Agent):
         prompt = self.generate_prompt(
             "researcher.findings", query=state.query, sources=sources_text
         )
+
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                prompt += f"\n\nPeer feedback:\n{fb}\n"
         research_findings = adapter.generate(prompt, model=model)
 
         # Create and return the result

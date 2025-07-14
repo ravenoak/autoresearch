@@ -54,6 +54,11 @@ class SummarizerAgent(Agent):
         prompt = self.generate_prompt(
             "summarizer.concise", query=state.query, content=content_text
         )
+
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                prompt += f"\n\nPeer feedback:\n{fb}\n"
         summary = adapter.generate(prompt, model=model)
 
         # Create and return the result

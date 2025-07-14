@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, validator
 
 from ..config import ConfigModel
 from ..orchestration.state import QueryState
+from .feedback import FeedbackEvent
 from ..llm.adapters import LLMAdapter
 from ..logging_utils import get_logger
 from .mixins import (
@@ -146,5 +147,21 @@ class Agent(
 
     def send_feedback(self, state: QueryState, target: str, feedback: str) -> None:
         """Send a feedback message to another agent."""
-
         self.send_message(state, feedback, to=target, msg_type="feedback")
+        state.add_feedback_event(
+            FeedbackEvent(
+                source=self.name,
+                target=target,
+                content=feedback,
+                cycle=state.cycle,
+            )
+        )
+
+    def get_feedback(self, state: QueryState) -> list[FeedbackEvent]:
+        """Retrieve feedback events addressed to this agent."""
+        return state.get_feedback_events(recipient=self.name)
+
+    def format_feedback(self, state: QueryState) -> str:
+        """Return feedback events as formatted text."""
+        events = self.get_feedback(state)
+        return "\n".join(f"{e.source}: {e.content}" for e in events)

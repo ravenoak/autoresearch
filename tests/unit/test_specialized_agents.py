@@ -16,6 +16,7 @@ from autoresearch.agents.specialized.critic import CriticAgent
 from autoresearch.agents.specialized.summarizer import SummarizerAgent
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
+from autoresearch.agents.feedback import FeedbackEvent
 from autoresearch.config import ConfigModel
 
 
@@ -269,3 +270,19 @@ def test_planner_agent_can_execute(mock_state, mock_config):
     # Test with disabled agent
     agent.enabled = False
     assert agent.can_execute(mock_state, mock_config) is False
+
+
+def test_researcher_agent_processes_feedback(mock_llm_adapter, mock_state, mock_config):
+    """Verify feedback influences ResearcherAgent prompts."""
+    agent = ResearcherAgent(name="Researcher", llm_adapter=mock_llm_adapter)
+    mock_config.enable_feedback = True
+    mock_state.add_feedback_event(
+        FeedbackEvent(source="Critic", target="Researcher", content="More stats", cycle=0)
+    )
+
+    with patch("autoresearch.search.Search.external_lookup") as mock_search:
+        mock_search.return_value = []
+        agent.execute(mock_state, mock_config)
+
+        args, _ = mock_llm_adapter.generate.call_args
+        assert "More stats" in args[0]

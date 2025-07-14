@@ -48,6 +48,11 @@ class ModeratorAgent(Agent):
             cycle=state.cycle
         )
 
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                prompt += f"\n\nPeer feedback:\n{fb}\n"
+
         moderation = adapter.generate(prompt, model=model)
 
         # Create guidance for next steps in the dialogue
@@ -58,6 +63,11 @@ class ModeratorAgent(Agent):
             moderation=moderation,
             cycle=state.cycle
         )
+
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                guidance_prompt += f"\n\nPeer feedback:\n{fb}\n"
 
         guidance = adapter.generate(guidance_prompt, model=model)
 
