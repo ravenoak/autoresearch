@@ -29,7 +29,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import asyncio
 
-from ..agents.registry import AgentFactory
+from ..agents.registry import AgentFactory, AgentRegistry
 from ..config import ConfigModel
 from .reasoning import ReasoningMode, ChainOfThoughtStrategy
 from ..models import QueryResponse
@@ -81,6 +81,8 @@ class Orchestrator:
         cb_cooldown = getattr(config, "circuit_breaker_cooldown", 30)
         enable_messages = getattr(config, "enable_agent_messages", False)
         coalitions = getattr(config, "coalitions", {})
+        for cname, members in coalitions.items():
+            AgentRegistry.create_coalition(cname, members)
         enable_feedback = getattr(config, "enable_feedback", False)
 
         # Adjust parameters based on reasoning mode

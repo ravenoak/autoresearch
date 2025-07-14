@@ -48,6 +48,27 @@ class QueryState(BaseModel):
         """Store a message exchanged between agents."""
         self.messages.append(message)
 
+    # ------------------------------------------------------------------
+    # Coalition management utilities
+    # ------------------------------------------------------------------
+
+    def add_coalition(self, name: str, members: List[str]) -> None:
+        """Register a coalition of agents.
+
+        Args:
+            name: Name of the coalition
+            members: Agent names that belong to the coalition
+        """
+        self.coalitions[name] = members
+
+    def remove_coalition(self, name: str) -> None:
+        """Remove a coalition if it exists."""
+        self.coalitions.pop(name, None)
+
+    def get_coalition_members(self, name: str) -> List[str]:
+        """Return members of a coalition."""
+        return self.coalitions.get(name, [])
+
     def get_messages(
         self,
         *,
