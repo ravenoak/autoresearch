@@ -15,8 +15,9 @@ The `scripts/setup.sh` helper now calls the installer so optional dependencies
 are resolved automatically during development setup.
 
 ### Using Poetry
+Install the development dependencies:
 ```bash
-poetry install
+poetry install --with dev
 ```
 
 ### Minimal installation

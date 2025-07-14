@@ -425,7 +425,7 @@ Autoresearch uses GitHub Actions for continuous integration. The CI pipeline run
 
 ### CI Configuration
 
-The CI configuration is defined in `.github/workflows/ci.yml`:
+The CI configuration is defined in `.github/workflows.disabled/ci.yml`:
 
 ```yaml
 name: CI
