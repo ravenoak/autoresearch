@@ -16,10 +16,10 @@ Autoresearch uses a modular architecture with several key components. The PlantU
 
 ## Installation
 
-Use `poetry install` to set up a development environment:
+Use `poetry install --with dev` to set up a development environment:
 
 ```bash
-poetry install
+poetry install --with dev
 ```
 
 `hdbscan` is built from source and needs compilation tools. Install `gcc`, `g++`,

@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` as the setup setup. If it fails, a CODEX_ENVIRONMENT_SETUP_FAILED file will be created.
+> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` for setup. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created.
 
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
@@ -10,6 +10,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Install dependencies with `poetry install --with dev`.
   - Activate the environment using `poetry shell` or prefix commands with `poetry run`.
   - Avoid system-level Python or `pip`. Run `pip install -e .` only inside the Poetry virtual environment using `poetry shell` or `poetry run pip`.
+  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` to ensure optional extras and tooling are installed.
 
 ## Verification steps
 - Check code style with `poetry run flake8 src tests`.

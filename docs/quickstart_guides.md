@@ -8,7 +8,7 @@ This document provides quickstart guides for each interface type of the Autorese
 
 ```bash
 # Install with Poetry (recommended)
-poetry install
+poetry install --with dev
 
 # Alternatively, use pip
 pip install autoresearch
