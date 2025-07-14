@@ -3,6 +3,14 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 import time
 from typing import Optional
+from enum import Enum
+
+
+class MessageProtocol(str, Enum):
+    """Communication protocol for agent messages."""
+
+    DIRECT = "direct"
+    BROADCAST = "broadcast"
 
 
 class AgentMessage(BaseModel):
@@ -12,6 +20,7 @@ class AgentMessage(BaseModel):
     recipient: Optional[str] = Field(None, alias="to")
     coalition: Optional[str] = None
     type: str = "message"
+    protocol: MessageProtocol = MessageProtocol.DIRECT
     content: str
     cycle: int
     timestamp: float = Field(default_factory=lambda: time.time())
