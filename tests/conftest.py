@@ -20,6 +20,52 @@ if "git" not in sys.modules:
     git_stub = types.SimpleNamespace(Repo=object)
     sys.modules["git"] = git_stub
 
+# Provide a minimal stub for SlowAPI so the API can be imported without the
+# dependency installed.
+if "slowapi" not in sys.modules:
+    slowapi_stub = types.ModuleType("slowapi")
+
+    class RateLimitExceeded(Exception):
+        pass
+
+    class Limiter:
+        def __init__(self, *_, **__):
+            pass
+
+        def limit(self, *_args, **_kwargs):  # pragma: no cover - simple stub
+            def decorator(func):
+                return func
+
+            return decorator
+
+    def _rate_limit_exceeded_handler(*_a, **_k):
+        return "rate limit exceeded"
+
+    class SlowAPIMiddleware:  # pragma: no cover - simple stub
+        def __init__(self, app, *_, **__):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            await self.app(scope, receive, send)
+
+    def get_remote_address(*_a, **_k):
+        return "127.0.0.1"
+
+    slowapi_stub.Limiter = Limiter
+    slowapi_stub._rate_limit_exceeded_handler = _rate_limit_exceeded_handler
+
+    errors_mod = types.ModuleType("slowapi.errors")
+    errors_mod.RateLimitExceeded = RateLimitExceeded
+    middleware_mod = types.ModuleType("slowapi.middleware")
+    middleware_mod.SlowAPIMiddleware = SlowAPIMiddleware
+    util_mod = types.ModuleType("slowapi.util")
+    util_mod.get_remote_address = get_remote_address
+
+    sys.modules["slowapi"] = slowapi_stub
+    sys.modules["slowapi.errors"] = errors_mod
+    sys.modules["slowapi.middleware"] = middleware_mod
+    sys.modules["slowapi.util"] = util_mod
+
 # Stub heavy optional dependencies used by the search module
 if "pdfminer.high_level" not in sys.modules:
     pm_stub = types.ModuleType("pdfminer.high_level")
@@ -98,6 +144,29 @@ def _compat_option(*args, **kwargs):
 
 
 typer.Option = _compat_option
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        default=False,
+        help="run tests marked as slow",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-slow"):
+        return
+    skip_slow = pytest.mark.skip(reason="need --run-slow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
+
 
 # Ensure package can be imported without installation
 if importlib.util.find_spec("autoresearch") is None:
