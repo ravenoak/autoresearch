@@ -5,6 +5,7 @@ State management for the dialectical reasoning process.
 from typing import List, Dict, Any, Optional
 
 from ..agents.feedback import FeedbackEvent
+from ..agents.messages import MessageProtocol
 import time
 from pydantic import BaseModel, Field
 
@@ -88,6 +89,7 @@ class QueryState(BaseModel):
         *,
         recipient: Optional[str] = None,
         coalition: Optional[str] = None,
+        protocol: MessageProtocol | None = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve messages for a specific recipient or coalition."""
         messages = self.messages
@@ -96,6 +98,8 @@ class QueryState(BaseModel):
         if coalition is not None:
             members = self.coalitions.get(coalition, [])
             messages = [m for m in messages if m.get("from") in members]
+        if protocol is not None:
+            messages = [m for m in messages if m.get("protocol") == protocol.value]
         return messages
 
     def synthesize(self) -> QueryResponse:

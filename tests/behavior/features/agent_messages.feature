@@ -3,3 +3,8 @@ Feature: Agent message exchange
     Given two communicating agents
     When I execute a query
     Then the receiver should process the message
+
+  Scenario: Coalition broadcast communication
+    Given a coalition with a sender and two receivers
+    When the sender broadcasts to the coalition
+    Then both receivers should process the broadcast

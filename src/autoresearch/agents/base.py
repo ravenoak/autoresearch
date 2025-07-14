@@ -16,6 +16,7 @@ from .mixins import (
     ResultGeneratorMixin,
 )
 from .messages import AgentMessage
+from .messages import MessageProtocol
 
 log = get_logger(__name__)
 
@@ -111,6 +112,7 @@ class Agent(
         to: Optional[str] = None,
         coalition: Optional[str] = None,
         msg_type: str = "message",
+        protocol: MessageProtocol = MessageProtocol.DIRECT,
     ) -> None:
         """Send a message to another agent or coalition."""
 
@@ -119,6 +121,7 @@ class Agent(
             recipient=to,
             coalition=coalition,
             type=msg_type,
+            protocol=protocol,
             content=content,
             cycle=state.cycle,
         )
@@ -130,7 +133,13 @@ class Agent(
         if coalition not in state.coalitions:
             return
         for member in state.coalitions[coalition]:
-            self.send_message(state, content, to=member, coalition=coalition)
+            self.send_message(
+                state,
+                content,
+                to=member,
+                coalition=coalition,
+                protocol=MessageProtocol.BROADCAST,
+            )
 
     def get_messages(
         self,
@@ -138,10 +147,13 @@ class Agent(
         *,
         from_agent: Optional[str] = None,
         coalition: Optional[str] = None,
+        protocol: MessageProtocol | None = None,
     ) -> List[AgentMessage]:
         """Retrieve messages addressed to this agent."""
 
-        raw = state.get_messages(recipient=self.name, coalition=coalition)
+        raw = state.get_messages(
+            recipient=self.name, coalition=coalition, protocol=protocol
+        )
         if from_agent:
             raw = [m for m in raw if m.get("from") == from_agent]
         return [AgentMessage(**m) for m in raw]

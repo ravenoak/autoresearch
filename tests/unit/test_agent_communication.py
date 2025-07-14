@@ -1,6 +1,8 @@
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.orchestration.state import QueryState
+from autoresearch.agents.messages import MessageProtocol
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class SimpleAgent(Agent):
@@ -41,3 +43,43 @@ def test_agent_registry_coalitions():
     AgentRegistry.create_coalition("squad", ["Simple"])
     assert "squad" in AgentRegistry.list_coalitions()
     assert AgentRegistry.get_coalition("squad") == ["Simple"]
+
+
+def test_orchestrator_handles_coalitions(monkeypatch):
+    AgentFactory.register("A1", SimpleAgent)
+    AgentFactory.register("A2", SimpleAgent)
+    cfg = ConfigModel(agents=["team"], loops=1, coalitions={"team": ["A1", "A2"]})
+    executed: list[str] = []
+
+    def fake_get(name):
+        agent = SimpleAgent(name=name)
+        return agent
+
+    def fake_execute(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop):
+        executed.append(agent_name)
+
+    monkeypatch.setattr(AgentFactory, "get", staticmethod(fake_get))
+    monkeypatch.setattr(Orchestrator, "_execute_agent", fake_execute)
+
+    Orchestrator.run_query("q", cfg)
+
+    assert executed == ["A1", "A2"]
+
+
+def test_message_protocols():
+    state = QueryState(query="q", coalitions={"team": ["Alice", "Bob", "Charlie"]})
+    alice = SimpleAgent(name="Alice")
+    bob = SimpleAgent(name="Bob")
+    charlie = SimpleAgent(name="Charlie")
+
+    alice.send_message(state, "hello", to="Bob")
+    assert state.messages[0]["protocol"] == MessageProtocol.DIRECT.value
+
+    alice.broadcast(state, "hey team", "team")
+
+    msgs_bob = bob.get_messages(state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST)
+    msgs_charlie = charlie.get_messages(state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST)
+
+    assert len(msgs_bob) == 1 and len(msgs_charlie) == 1
+    assert msgs_bob[0].content == "hey team"
+    assert msgs_bob[0].protocol == MessageProtocol.BROADCAST
