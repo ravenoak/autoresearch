@@ -6,9 +6,20 @@ import requests
 import subprocess
 from autoresearch.config import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
+from unittest.mock import patch
 
 import autoresearch.search as search
 from autoresearch.search import Search
+
+
+@pytest.fixture
+def sample_search_results():
+    """Simple search results for ranking tests."""
+    return [
+        {"title": "Result 1", "url": "https://site1.com", "snippet": "A"},
+        {"title": "Result 2", "url": "https://site2.com", "snippet": "B"},
+        {"title": "Result 3", "url": "https://site3.com", "snippet": "C"},
+    ]
 
 
 @responses.activate
@@ -291,3 +302,93 @@ def test_http_session_atexit_hook(monkeypatch):
     monkeypatch.setattr(search.atexit, "register", lambda f: calls.append(f))
     search.set_http_session(session)
     assert search.close_http_session in calls
+
+
+@patch("autoresearch.search.get_config")
+def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_results):
+    cfg = ConfigModel(loops=1)
+    cfg.search.semantic_similarity_weight = 1.0
+    cfg.search.bm25_weight = 0.0
+    cfg.search.source_credibility_weight = 0.0
+    mock_get_config.return_value = cfg
+
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, r, query_embedding=None: [0.1, 0.9, 0.2],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda r: [0.5, 0.6, 0.7])
+
+    ranked = Search.rank_results("q", sample_search_results)
+    assert ranked[0]["url"] == "https://site2.com"
+
+
+@patch("autoresearch.search.get_config")
+def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_results):
+    cfg = ConfigModel(loops=1)
+    cfg.search.semantic_similarity_weight = 0.0
+    cfg.search.bm25_weight = 1.0
+    cfg.search.source_credibility_weight = 0.0
+    mock_get_config.return_value = cfg
+
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, r, query_embedding=None: [0.1, 0.9, 0.2],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda r: [0.5, 0.6, 0.7])
+
+    ranked = Search.rank_results("q", sample_search_results)
+    assert ranked[0]["url"] == "https://site1.com"
+
+
+@patch("autoresearch.search.get_config")
+def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_search_results):
+    cfg = ConfigModel(loops=1)
+    cfg.search.semantic_similarity_weight = 0.0
+    cfg.search.bm25_weight = 0.0
+    cfg.search.source_credibility_weight = 1.0
+    mock_get_config.return_value = cfg
+
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda q, r, query_embedding=None: [0.1, 0.9, 0.2],
+    )
+    monkeypatch.setattr(Search, "assess_source_credibility", lambda r: [0.5, 0.6, 0.7])
+
+    ranked = Search.rank_results("q", sample_search_results)
+    assert ranked[0]["url"] == "https://site3.com"
+
+
+def test_external_lookup_hybrid_query(monkeypatch):
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["kw"]
+    cfg.search.embedding_backends = ["emb"]
+    cfg.search.hybrid_query = True
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+
+    class DummyModel:
+        def encode(self, text):
+            return [0.1]
+
+    monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
+
+    Search.backends["kw"] = lambda q, max_results: [
+        {"title": "KW", "url": "kw"}
+    ]
+    Search.embedding_backends["emb"] = lambda e, max_results: [
+        {"title": "VEC", "url": "vec"}
+    ]
+
+    monkeypatch.setattr(Search, "cross_backend_rank", lambda q, b, query_embedding=None: [
+        *b.get("kw", []), *b.get("emb", [])
+    ])
+
+    results = Search.external_lookup("hello", max_results=1)
+    urls = {r["url"] for r in results}
+    assert "kw" in urls and "vec" in urls

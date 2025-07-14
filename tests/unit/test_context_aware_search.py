@@ -9,7 +9,11 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from autoresearch.search import Search, SearchContext
-from autoresearch.config import SearchConfig, ContextAwareSearchConfig
+from autoresearch.config import (
+    SearchConfig,
+    ContextAwareSearchConfig,
+    ConfigModel,
+)
 
 
 @pytest.fixture
@@ -295,3 +299,36 @@ def test_context_aware_search_disabled(
 
             # Verify that the context was not used
             mock_context.expand_query.assert_not_called()
+
+
+@patch("autoresearch.search.SPACY_AVAILABLE", False)
+@patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
+@patch("autoresearch.search.get_config")
+def test_expand_query_respects_settings(
+    mock_get_config, reset_search_context
+):
+    cfg = ConfigModel(loops=1)
+    cfg.search.context_aware.use_query_expansion = False
+    mock_get_config.return_value = cfg
+
+    ctx = SearchContext.get_instance()
+    ctx.search_history.append({"query": "python programming", "results": []})
+    result = ctx.expand_query("django")
+    assert result == "django"
+
+
+@patch("autoresearch.search.SPACY_AVAILABLE", False)
+@patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
+@patch("autoresearch.search.get_config")
+def test_expand_query_expansion_factor(
+    mock_get_config, reset_search_context
+):
+    cfg = ConfigModel(loops=1)
+    cfg.search.context_aware.expansion_factor = 1.0
+    cfg.search.context_aware.use_search_history = True
+    mock_get_config.return_value = cfg
+
+    ctx = SearchContext.get_instance()
+    ctx.search_history.append({"query": "python programming", "results": []})
+    result = ctx.expand_query("django")
+    assert "python" in result and "programming" in result
