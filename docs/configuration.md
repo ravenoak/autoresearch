@@ -119,6 +119,13 @@ These options are set in the `[storage.duckdb]` and `[storage.rdf]` sections.
 | `backend` | string | `"sqlite"` | RDF storage backend | `"sqlite"`, `"berkeleydb"` |
 | `path` | string | `"rdf_store"` | Path to the RDF store | Any valid file path |
 
+### Kuzu Storage
+
+| Option | Type | Default | Description | Valid Values |
+|--------|------|---------|-------------|-------------|
+| `use_kuzu` | boolean | `false` | Enable the Kuzu backend | `true`, `false` |
+| `kuzu_path` | string | `"kuzu.db"` | Path to the Kuzu database | Any valid file path |
+
 ## Search Configuration
 
 These options are set in the `[search]` section.

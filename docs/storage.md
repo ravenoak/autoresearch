@@ -218,3 +218,15 @@ The following tutorial walks through a typical ontology workflow.
 
 The command writes `graph.png` containing a simple diagram of all triples.
 
+## Kuzu Graph Storage
+
+Autoresearch can optionally persist claims to a [Kuzu](https://kuzudb.com/) database. Enable this backend with:
+
+```toml
+[storage]
+use_kuzu = true
+kuzu_path = "knowledge.kuzu"
+```
+
+When enabled each claim is inserted into a `Claim` node table. Basic metrics track query counts and execution time via Prometheus. The Kuzu database is created automatically at the configured path.
+

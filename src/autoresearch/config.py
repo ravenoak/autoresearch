@@ -172,6 +172,8 @@ class StorageConfig(BaseModel):
     rdf_path: str = Field(default="rdf_store")
     ontology_reasoner: str = Field(default="owlrl")
     max_connections: int = Field(default=1, ge=1)
+    use_kuzu: bool = Field(default=False)
+    kuzu_path: str = Field(default="kuzu.db")
 
     @field_validator("rdf_backend")
     def validate_rdf_backend(cls, v: str) -> str:
@@ -247,6 +249,12 @@ class DistributedConfig(BaseModel):
     broker_url: str | None = Field(default=None, description="URL for the message broker")
 
 
+class AnalysisConfig(BaseModel):
+    """Configuration for data analysis features."""
+
+    polars_enabled: bool = Field(default=False)
+
+
 class ConfigModel(BaseSettings):
     """Main configuration model with validation."""
 
@@ -311,6 +319,9 @@ class ConfigModel(BaseSettings):
 
     # API settings
     api: APIConfig = Field(default_factory=APIConfig)
+
+    # Analysis settings
+    analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
 
     # User preference settings
     user_preferences: Dict[str, Any] = Field(default_factory=dict)
@@ -642,11 +653,14 @@ class ConfigLoader:
             "vector_search_timeout_ms": duckdb_cfg.get("vector_search_timeout_ms"),
             "rdf_backend": rdf_cfg.get("backend", "sqlite"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
+            "use_kuzu": storage_cfg.get("use_kuzu", False),
+            "kuzu_path": storage_cfg.get("kuzu_path", "kuzu.db"),
         }
 
         api_cfg = raw.get("api", {})
         distributed_cfg = raw.get("distributed", {})
         user_pref_cfg = raw.get("user_preferences", {})
+        analysis_cfg = raw.get("analysis", {})
 
         if "enabled" in distributed_cfg and "distributed" not in core_settings:
             core_settings["distributed"] = bool(distributed_cfg.get("enabled", False))
@@ -673,6 +687,7 @@ class ConfigLoader:
         core_settings["api"] = APIConfig(**api_cfg)
         core_settings["distributed_config"] = DistributedConfig(**distributed_cfg)
         core_settings["user_preferences"] = user_pref_cfg
+        core_settings["analysis"] = AnalysisConfig(**analysis_cfg)
 
         # Add agent configs
         core_settings["agent_config"] = agent_config_dict

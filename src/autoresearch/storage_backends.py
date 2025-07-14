@@ -11,6 +11,7 @@ from threading import Lock
 from queue import Queue
 from contextlib import contextmanager
 from typing import Any, Optional, List, Dict, Iterator
+import time
 
 import duckdb
 
@@ -18,6 +19,8 @@ from .config import ConfigLoader
 from .errors import StorageError, NotFoundError
 from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
+from .orchestration.metrics import KUZU_QUERY_COUNTER, KUZU_QUERY_TIME
+import kuzu
 
 log = get_logger(__name__)
 
@@ -839,3 +842,63 @@ class DuckDBStorageBackend:
                 self._conn.execute("DELETE FROM embeddings")
             except Exception as e:
                 raise StorageError("Failed to clear DuckDB data", cause=e)
+
+
+class KuzuStorageBackend:
+    """Simple graph storage using Kuzu."""
+
+    def __init__(self) -> None:
+        self._db: kuzu.Database | None = None
+        self._conn: kuzu.Connection | None = None
+        self._path: str | None = None
+        self._lock = Lock()
+
+    def setup(self, db_path: str | None = None) -> None:
+        cfg = ConfigLoader().config.storage
+        path = db_path or cfg.kuzu_path
+        with self._lock:
+            if self._conn is not None:
+                return
+            try:
+                self._db = kuzu.Database(path)
+                self._conn = kuzu.Connection(self._db)
+                self._path = path
+                self._conn.execute(
+                    "CREATE NODE TABLE IF NOT EXISTS Claim(id STRING PRIMARY KEY, content STRING, conf DOUBLE)"
+                )
+            except Exception as e:
+                raise StorageError("Failed to initialize Kuzu", cause=e)
+
+    def close(self) -> None:
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
+
+    def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
+        if self._conn is None:
+            raise StorageError("Kuzu connection not initialized")
+        start = time.time()
+        result = self._conn.execute(query, params or {})
+        KUZU_QUERY_COUNTER.inc()
+        KUZU_QUERY_TIME.observe(time.time() - start)
+        return result
+
+    def persist_claim(self, claim: dict[str, Any]) -> None:
+        if self._conn is None:
+            raise StorageError("Kuzu connection not initialized")
+        self.execute(
+            "MERGE (c:Claim {id: $id}) SET c.content=$content, c.conf=$conf",
+            {"id": claim["id"], "content": claim.get("content", ""), "conf": claim.get("confidence", 0.0)},
+        )
+
+    def get_claim(self, claim_id: str) -> dict[str, Any]:
+        if self._conn is None:
+            raise StorageError("Kuzu connection not initialized")
+        res = self.execute(
+            "MATCH (c:Claim {id: $id}) RETURN c.content, c.conf",
+            {"id": claim_id},
+        )
+        if res.has_next():
+            row = res.get_next()
+            return {"id": claim_id, "content": row[0], "confidence": row[1]}
+        raise NotFoundError("Claim not found")

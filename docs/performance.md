@@ -50,3 +50,17 @@ backends use `http_pool_size`. When a session is created an `atexit` hook is
 registered to close it automatically on program exit. Reusing sessions reduces
 connection overhead during heavy query loads.
 
+### Polars Metrics Analysis
+
+When the `analysis` extra is installed you can transform collected metrics into
+a Polars DataFrame:
+
+```python
+from autoresearch.data_analysis import metrics_dataframe
+df = metrics_dataframe(metrics, polars_enabled=True)
+print(df)
+```
+
+This provides convenient aggregation and export capabilities for further
+analysis.
+
