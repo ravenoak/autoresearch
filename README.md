@@ -15,10 +15,13 @@ The `scripts/setup.sh` helper now calls the installer so optional dependencies
 are resolved automatically during development setup.
 
 ### Using Poetry
-Install the development dependencies:
+Select the interpreter and install the development dependencies:
 ```bash
+poetry env use $(which python3)
 poetry install --with dev
 ```
+
+Once installed, verify the environment by running the checks listed under [Running tests](#running-tests).
 
 ### Minimal installation
 Install only the minimal optional dependencies using the installer:
