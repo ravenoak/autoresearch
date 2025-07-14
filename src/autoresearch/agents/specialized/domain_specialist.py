@@ -54,6 +54,11 @@ class DomainSpecialistAgent(Agent):
             cycle=state.cycle
         )
 
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                prompt += f"\n\nPeer feedback:\n{fb}\n"
+
         analysis = adapter.generate(prompt, model=model)
 
         # Generate domain-specific recommendations
@@ -64,6 +69,11 @@ class DomainSpecialistAgent(Agent):
             analysis=analysis,
             cycle=state.cycle
         )
+
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                recommendations_prompt += f"\n\nPeer feedback:\n{fb}\n"
 
         recommendations = adapter.generate(recommendations_prompt, model=model)
 

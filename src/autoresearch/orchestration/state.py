@@ -3,6 +3,8 @@ State management for the dialectical reasoning process.
 """
 
 from typing import List, Dict, Any, Optional
+
+from ..agents.feedback import FeedbackEvent
 import time
 from pydantic import BaseModel, Field
 
@@ -17,6 +19,7 @@ class QueryState(BaseModel):
     sources: List[Dict[str, Any]] = Field(default_factory=list)
     results: Dict[str, Any] = Field(default_factory=dict)
     messages: List[Dict[str, Any]] = Field(default_factory=list)
+    feedback_events: List[FeedbackEvent] = Field(default_factory=list)
     coalitions: Dict[str, List[str]] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     cycle: int = 0
@@ -47,6 +50,17 @@ class QueryState(BaseModel):
     def add_message(self, message: Dict[str, Any]) -> None:
         """Store a message exchanged between agents."""
         self.messages.append(message)
+
+    def add_feedback_event(self, event: FeedbackEvent) -> None:
+        """Store a feedback event exchanged between agents."""
+        self.feedback_events.append(event)
+
+    def get_feedback_events(self, *, recipient: Optional[str] = None) -> List[FeedbackEvent]:
+        """Retrieve feedback events for a specific recipient."""
+        events = self.feedback_events
+        if recipient is not None:
+            events = [e for e in events if e.target == recipient]
+        return events
 
     # ------------------------------------------------------------------
     # Coalition management utilities
@@ -122,6 +136,7 @@ class QueryState(BaseModel):
         max_claims: int = 50,
         max_sources: int = 20,
         max_messages: int = 50,
+        max_feedback: int = 50,
     ) -> None:
         """Prune stored context to keep the state manageable.
 
@@ -134,7 +149,7 @@ class QueryState(BaseModel):
             max_sources: Maximum number of sources to keep.
         """
 
-        pruned = {"claims": 0, "sources": 0, "messages": 0}
+        pruned = {"claims": 0, "sources": 0, "messages": 0, "feedback": 0}
 
         if len(self.claims) > max_claims:
             excess = len(self.claims) - max_claims
@@ -150,6 +165,11 @@ class QueryState(BaseModel):
             excess = len(self.messages) - max_messages
             del self.messages[0:excess]
             pruned["messages"] = excess
+
+        if len(self.feedback_events) > max_feedback:
+            excess = len(self.feedback_events) - max_feedback
+            del self.feedback_events[0:excess]
+            pruned["feedback"] = excess
 
         if any(pruned.values()):
             self.metadata.setdefault("pruned", []).append(pruned)

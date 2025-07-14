@@ -32,6 +32,10 @@ class PlannerAgent(Agent):
 
         # Generate a research plan using the prompt template
         prompt = self.generate_prompt("planner.research_plan", query=state.query)
+        if getattr(config, "enable_feedback", False):
+            fb = self.format_feedback(state)
+            if fb:
+                prompt += f"\n\nPeer feedback:\n{fb}\n"
         research_plan = adapter.generate(prompt, model=model)
 
         # Create and return the result

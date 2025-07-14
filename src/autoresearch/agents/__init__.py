@@ -4,6 +4,7 @@ from .base import Agent, AgentRole
 from .registry import AgentRegistry, AgentFactory
 from .dialectical import SynthesizerAgent, ContrarianAgent, FactChecker
 from .specialized import ResearcherAgent, CriticAgent, SummarizerAgent, PlannerAgent
+from .feedback import FeedbackEvent
 
 # Register default dialectical agents on import
 AgentFactory.register("Synthesizer", SynthesizerAgent)
@@ -28,4 +29,5 @@ __all__ = [
     "CriticAgent",
     "SummarizerAgent",
     "PlannerAgent",
+    "FeedbackEvent",
 ]

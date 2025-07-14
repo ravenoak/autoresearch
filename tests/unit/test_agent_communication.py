@@ -24,6 +24,8 @@ def test_message_exchange_and_feedback():
     feedback = alice.get_messages(state, from_agent="Bob")
     assert feedback[0]["type"] == "feedback"
     assert feedback[0]["content"] == "good job"
+    assert len(state.feedback_events) == 1
+    assert state.feedback_events[0].content == "good job"
 
 
 def test_coalition_management_in_state():
