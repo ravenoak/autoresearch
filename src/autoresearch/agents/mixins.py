@@ -10,6 +10,7 @@ from uuid import uuid4
 from ..config import ConfigModel
 from ..logging_utils import get_logger
 from .prompts import render_prompt
+from ..orchestration.state import QueryState
 
 log = get_logger(__name__)
 
@@ -104,3 +105,14 @@ class ResultGeneratorMixin:
         if sources:
             result["sources"] = sources
         return result
+
+class MessageHandlerMixin:
+    """Mixin for agents that handle incoming messages."""
+
+    def receive_messages(self, messages: List[Dict[str, Any]], state: QueryState) -> None:
+        """Handle incoming messages before execution.
+
+        Subclasses can override this method to process messages directed at them.
+        The default implementation does nothing.
+        """
+        return

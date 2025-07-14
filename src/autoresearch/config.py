@@ -335,6 +335,11 @@ class ConfigModel(BaseSettings):
         default=False,
         description="Enable cross-agent feedback messages",
     )
+    message_retention: int = Field(
+        default=50,
+        ge=1,
+        description="Maximum number of messages retained in state",
+    )
     coalitions: Dict[str, List[str]] = Field(
         default_factory=dict,
         description="Named coalitions of agents for message broadcasting",

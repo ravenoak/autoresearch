@@ -1,6 +1,8 @@
 """Dialectical agent infrastructure."""
 
 from .base import Agent, AgentRole
+from .messaging import AgentMessage, MessageBus
+from .mixins import MessageHandlerMixin
 from .registry import AgentRegistry, AgentFactory
 from .dialectical import SynthesizerAgent, ContrarianAgent, FactChecker
 from .specialized import ResearcherAgent, CriticAgent, SummarizerAgent, PlannerAgent
@@ -28,4 +30,7 @@ __all__ = [
     "CriticAgent",
     "SummarizerAgent",
     "PlannerAgent",
+    "AgentMessage",
+    "MessageBus",
+    "MessageHandlerMixin",
 ]

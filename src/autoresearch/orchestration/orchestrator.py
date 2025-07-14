@@ -687,6 +687,20 @@ class Orchestrator:
             ):
                 return
 
+            # Deliver pending messages
+            if getattr(config, "enable_agent_messages", False):
+                from ..agents.messaging import MessageBus
+
+                inbox = MessageBus.inbox(state, agent_name)
+                if inbox and hasattr(agent, "receive_messages"):
+                    try:
+                        agent.receive_messages(inbox, state)
+                    except Exception as exc:
+                        log.warning(
+                            f"Agent {agent_name} failed to process messages: {exc}",
+                            extra={"agent": agent_name, "error": str(exc)},
+                        )
+
             # Log agent execution
             Orchestrator._log_agent_execution(agent_name, state, loop)
 
@@ -796,7 +810,8 @@ class Orchestrator:
                 config.token_budget = metrics.suggest_token_budget(token_budget)
 
             # Prune context to keep state size manageable
-            state.prune_context()
+            max_msg = getattr(config, "message_retention", 50)
+            state.prune_context(max_messages=max_msg)
 
             # Call on_cycle_end callback
             if callbacks.get("on_cycle_end"):
@@ -886,7 +901,8 @@ class Orchestrator:
                 config.token_budget = metrics.suggest_token_budget(token_budget)
 
             # Prune context to keep state size manageable
-            state.prune_context()
+            max_msg = getattr(config, "message_retention", 50)
+            state.prune_context(max_messages=max_msg)
 
             if callbacks.get("on_cycle_end"):
                 callbacks["on_cycle_end"](loop, state)
