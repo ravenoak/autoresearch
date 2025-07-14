@@ -7,6 +7,24 @@ This guide explains how to install Autoresearch and manage optional features.
 - Python 3.12 or newer (but below 4.0)
 - `git` and build tools if compiling optional packages
 
+## Development setup
+
+Use Poetry to manage the environment when working from a clone:
+
+```bash
+poetry env use $(which python3)
+poetry install --with dev
+```
+
+Verify the environment by running:
+
+```bash
+poetry run flake8 src tests
+poetry run mypy src
+poetry run pytest -q
+poetry run pytest tests/behavior
+```
+
 ## Minimal installation
 
 The project can be installed with only the minimal optional dependencies:
