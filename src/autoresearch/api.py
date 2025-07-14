@@ -65,7 +65,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path in {"/docs", "/openapi.json"}:
             return await call_next(request)
-        cfg = get_config().api
+        loader = ConfigLoader()
+        loader._config = loader.load_config()
+        cfg = loader._config.api
         role, error = self._resolve_role(request.headers.get("X-API-Key"), cfg)
         if error:
             return error
