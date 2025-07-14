@@ -23,6 +23,7 @@ class AgentRegistry:
     """
 
     _registry: Dict[str, Type[Agent]] = {}
+    _coalitions: Dict[str, List[str]] = {}
 
     @classmethod
     def register(cls, name: str, agent_class: Type[Agent]) -> None:
@@ -60,6 +61,28 @@ class AgentRegistry:
             A list of names of all registered agent types
         """
         return list(cls._registry.keys())
+
+    # ------------------------------------------------------------------
+    # Coalition management
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def create_coalition(cls, name: str, members: List[str]) -> None:
+        """Register a named coalition of agents."""
+        for member in members:
+            if member not in cls._registry:
+                raise ValueError(f"Unknown agent type: {member}")
+        cls._coalitions[name] = members
+
+    @classmethod
+    def get_coalition(cls, name: str) -> List[str]:
+        """Return members of a registered coalition."""
+        return cls._coalitions.get(name, [])
+
+    @classmethod
+    def list_coalitions(cls) -> List[str]:
+        """List all registered coalitions."""
+        return list(cls._coalitions.keys())
 
 
 class AgentFactory:
