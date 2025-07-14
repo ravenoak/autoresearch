@@ -10,7 +10,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Install dependencies with `poetry install --with dev`.
   - Activate the environment using `poetry shell` or prefix commands with `poetry run`.
   - Avoid system-level Python or `pip`. Run `pip install -e .` only inside the Poetry virtual environment using `poetry shell` or `poetry run pip`.
-  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` to ensure optional extras and tooling are installed.
+  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies so tools like `flake8`, `mypy`, and `pytest` are available.
 
 ## Verification steps
 - Check code style with `poetry run flake8 src tests`.
