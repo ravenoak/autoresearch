@@ -34,12 +34,13 @@ from .config import ConfigLoader
 from .errors import StorageError, NotFoundError
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
-from .storage_backends import DuckDBStorageBackend
+from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
 from .kg_reasoning import run_ontology_reasoner
 
 # Global containers initialised in `setup`
 _graph: Optional[nx.DiGraph[Any]] = None
 _db_backend: Optional[DuckDBStorageBackend] = None
+_kuzu_backend: Optional[KuzuStorageBackend] = None
 _rdf_store: Optional[rdflib.Graph] = None
 _lock = Lock()
 _lru: "OrderedDict[str, float]" = OrderedDict()
@@ -70,7 +71,7 @@ def get_delegate() -> type["StorageManager"] | None:
 
 def setup(db_path: Optional[str] = None) -> None:
     """Initialise storage components if not already initialised."""
-    global _graph, _db_backend, _rdf_store
+    global _graph, _db_backend, _kuzu_backend, _rdf_store
     with _lock:
         if _db_backend is not None and _db_backend.get_connection() is not None:
             return
@@ -81,6 +82,11 @@ def setup(db_path: Optional[str] = None) -> None:
         # Initialize DuckDB backend
         _db_backend = DuckDBStorageBackend()
         _db_backend.setup(db_path)
+
+        # Initialize Kuzu backend when enabled
+        if cfg.use_kuzu:
+            _kuzu_backend = KuzuStorageBackend()
+            _kuzu_backend.setup(cfg.kuzu_path)
 
         # Initialize RDF store
         if cfg.rdf_backend == "memory":
@@ -120,7 +126,7 @@ def teardown(remove_db: bool = False) -> None:
         remove_db: If True, also removes the database files from disk.
                   Default is False.
     """
-    global _graph, _db_backend, _rdf_store
+    global _graph, _db_backend, _kuzu_backend, _rdf_store
     with _lock:
         # Close DuckDB connection
         if _db_backend is not None:
@@ -160,9 +166,18 @@ def teardown(remove_db: bool = False) -> None:
             else:
                 os.remove(cfg.rdf_path)
 
+        if _kuzu_backend is not None:
+            try:
+                _kuzu_backend.close()
+                if remove_db and _kuzu_backend._path and os.path.exists(_kuzu_backend._path):
+                    os.remove(_kuzu_backend._path)
+            except Exception as e:
+                log.warning(f"Failed to close Kuzu connection: {e}")
+
         # Reset global variables
         _graph = None
         _db_backend = None
+        _kuzu_backend = None
         _rdf_store = None
 
 
@@ -667,6 +682,13 @@ class StorageManager:
         _db_backend.persist_claim(claim)
 
     @staticmethod
+    def _persist_to_kuzu(claim: dict[str, Any]) -> None:
+        """Persist a claim to the Kuzu graph database."""
+        if _kuzu_backend is None:
+            return
+        _kuzu_backend.persist_claim(claim)
+
+    @staticmethod
     def _persist_to_rdf(claim: dict[str, Any]) -> None:
         """Persist a claim to the RDFLib semantic graph store.
 
@@ -817,10 +839,12 @@ class StorageManager:
                 # Update existing records
                 _db_backend.update_claim(claim_to_persist, partial_update)
                 StorageManager._update_rdf_claim(claim_to_persist, partial_update)
+                StorageManager._persist_to_kuzu(claim_to_persist)
             else:
                 # Insert new records
                 _db_backend.persist_claim(claim_to_persist)
                 StorageManager._persist_to_rdf(claim_to_persist)
+                StorageManager._persist_to_kuzu(claim_to_persist)
 
             # Refresh vector index if embeddings were provided
             if claim.get("embedding") is not None and StorageManager.has_vss():

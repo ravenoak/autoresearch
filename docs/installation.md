@@ -44,6 +44,7 @@ Additional functionality is grouped into Poetry extras:
 - `ui` – the reference Streamlit interface
 - `vss` – DuckDB VSS extension for vector search
 - `distributed` – distributed processing with Ray
+- `analysis` – Polars-based data analysis utilities
 - `full` – installs all optional extras
 
 Install multiple extras separated by commas:

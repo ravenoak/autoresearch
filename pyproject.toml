@@ -70,6 +70,9 @@ distributed = [
     "ray (>=2.10.0,<3.0.0)",
     "redis (>=6.2,<7.0)"
 ]
+analysis = [
+    "polars (>=1.31.0,<2.0.0)"
+]
 full = [
     "sentence-transformers (>=2.7.0,<3.0.0)",
     "spacy (>=3.7.2,<4.0.0)",
@@ -93,6 +96,8 @@ full = [
 minimal = [
     "sentence-transformers"
 ]
+analysis = ["polars"]
+kuzu = ["kuzu"]
 
 
 [tool.poetry.group.dev.dependencies]

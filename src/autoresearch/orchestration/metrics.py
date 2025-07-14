@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import time
 
-from prometheus_client import Counter
+from prometheus_client import Counter, Histogram
 
 QUERY_COUNTER = Counter(
     "autoresearch_queries_total", "Total number of queries processed"
@@ -25,6 +25,14 @@ TOKENS_OUT_COUNTER = Counter(
 EVICTION_COUNTER = Counter(
     "autoresearch_duckdb_evictions_total",
     "Total nodes evicted from RAM to DuckDB",
+)
+KUZU_QUERY_COUNTER = Counter(
+    "autoresearch_kuzu_queries_total",
+    "Total number of Kuzu queries executed",
+)
+KUZU_QUERY_TIME = Histogram(
+    "autoresearch_kuzu_query_seconds",
+    "Time spent executing Kuzu queries",
 )
 
 
