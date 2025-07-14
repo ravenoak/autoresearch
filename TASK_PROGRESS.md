@@ -21,10 +21,10 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [x] Implement the Moderator agent for managing complex dialogues
   - [x] Develop the Specialist agent for domain-specific knowledge
   - [x] Create a User agent to represent user preferences
-- [ ] TODO: Enhance agent interaction patterns
-  - [ ] TODO: Implement agent-to-agent communication protocols
-  - [ ] TODO: Add support for agent coalitions in complex queries
-  - [ ] TODO: Create a feedback mechanism between agents
+- [x] Enhance agent interaction patterns
+  - [x] Implement agent-to-agent communication protocols
+  - [x] Add support for agent coalitions in complex queries
+  - [x] Create a feedback mechanism between agents
 
 ### 1.3 Storage System
 
