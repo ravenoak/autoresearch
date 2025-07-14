@@ -8,5 +8,6 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 ./scripts/setup.sh
+poetry install --with dev
 poetry run pip install -e .
 poetry run python -m spacy download en_core_web_sm
