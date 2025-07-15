@@ -258,6 +258,28 @@ This pattern keeps the feature files expressive while ensuring the
 Python tests make concrete assertions about CLI behaviour, GUI
 accessibility, and log messages.
 
+## Optional extras for tests
+
+The default development install (`poetry install --with dev`) does not
+include all optional extras. The full test suite uses several features
+that rely on these extras:
+
+- `ui` – required for Streamlit GUI tests in
+  `tests/integration/test_streamlit_gui.py`.
+- `analysis` – enables Polars-based utilities tested in
+  `tests/unit/test_kuzu_polars.py`.
+- `vss` – loads the DuckDB vector extension used by
+  `tests/integration/test_vector_extension_extended.py` and
+  `tests/integration/test_knn_benchmark.py`.
+- `distributed` – installs Ray so that the distributed integration tests
+  exercise real processes instead of the lightweight stub in
+  `tests/conftest.py`.
+
+If these extras are missing the corresponding tests are skipped (or run
+with a stub in the case of the `distributed` extra). Install them with
+`poetry install --with dev --extras "ui,analysis,vss,distributed"` to run
+every test.
+
 ## Updating Baselines
 
 Some integration tests compare runtime metrics against JSON files in
