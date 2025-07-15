@@ -11,8 +11,9 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 You can install the project dependencies with either **Poetry** or **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features,
 upgrade instructions and the new installer.
-The `scripts/setup.sh` helper now calls the installer so optional dependencies
-are resolved automatically during development setup.
+The `scripts/setup.sh` helper now calls the installer and runs
+`poetry install --with dev` so all development and runtime dependencies are
+available for testing.
 
 ### Using Poetry
 Select the interpreter and install the development dependencies:
@@ -423,10 +424,10 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The script now invokes `installer.py` so any optional dependencies required by
-your configuration are installed automatically. It also installs tools such as
-`flake8`, `mypy`, `pytest` and `tomli_w` which are used to write TOML files
-during testing.
+The script invokes `installer.py`, installs all dependencies with
+`poetry install --with dev` and links the package in editable mode. Tools such
+as `flake8`, `mypy`, `pytest` and `tomli_w` are therefore available for
+development and testing.
 
 ## Running tests
 
