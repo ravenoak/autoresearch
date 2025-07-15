@@ -1,5 +1,4 @@
 from typer.testing import CliRunner
-
 from autoresearch.main import app as cli_app
 from autoresearch.config import ConfigModel, ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
