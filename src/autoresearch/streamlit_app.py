@@ -8,11 +8,10 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
-from typing import Dict, Any, List
+from typing import Dict, Any, List, cast
 import random
 import io
 import time
-import tomllib
 import psutil
 from .orchestration import metrics as orch_metrics
 import threading
@@ -28,6 +27,17 @@ from .models import QueryResponse
 from .orchestration import ReasoningMode
 from .error_utils import get_error_info, format_error_for_gui
 from .cli_utils import print_success
+from .config_utils import (
+    save_config_to_toml,
+    get_config_presets,
+    apply_preset,
+)
+from .streamlit_ui import (
+    apply_accessibility_settings,
+    apply_theme_settings,
+    display_guided_tour,
+    display_help_sidebar,
+)
 
 # Configure matplotlib to use a non-interactive backend
 matplotlib.use("Agg")
@@ -136,312 +146,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
-
-def apply_accessibility_settings() -> None:
-    """Apply accessibility-related CSS such as focus outlines and high contrast."""
-    # Always provide visible focus indicators for keyboard navigation
-    st.markdown(
-        """
-        <style>
-        *:focus {
-            outline: 2px solid #ffbf00 !important;
-            outline-offset: 2px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if st.session_state.get("high_contrast"):
-        # Inject a high contrast theme when enabled
-        st.markdown(
-            """
-            <style>
-            body, .stApp {background-color:#000 !important; color:#fff !important;}
-            a {color:#0ff !important; text-decoration: underline !important;}
-            .stButton>button {
-                background-color:#fff !important;
-                color:#000 !important;
-                border:2px solid #fff !important;
-            }
-            .stSidebar {background-color:#000 !important;}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def apply_theme_settings() -> None:
-    """Apply light or dark theme based on session state."""
-    if st.session_state.get("dark_mode"):
-        st.markdown(
-            """
-            <style>
-            body, .stApp {background-color:#1c1c1c !important; color:#e0e0e0 !important;}
-            a {color:#93c5fd !important;}
-            .stButton>button {background-color:#444 !important; color:#fff !important;}
-            .stSidebar {background-color:#2c2c2c !important;}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            """
-            <style>
-            body, .stApp {background-color:#fff !important; color:#000 !important;}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def display_guided_tour() -> None:
-    """Show a short help overlay explaining the interface."""
-    if "show_tour" not in st.session_state:
-        st.session_state.show_tour = True
-    if st.session_state.show_tour:
-        with st.modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):
-            st.markdown(
-                """
-                <div role="dialog" aria-label="Onboarding Tour" aria-modal="true">
-                <ol>
-                    <li><strong>Enter a query</strong> in the text area on the main tab.</li>
-                    <li><strong>Adjust settings</strong> like reasoning mode and loops.</li>
-                    <li>Click <strong>Run Query</strong> to start the agents.</li>
-                    <li>Review results using the tabs below the answer.</li>
-                    <li>Use the sidebar to configure themes and preferences.</li>
-                </ol>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Got it", key="tour_done", help="Close the guided tour"):
-                st.session_state.show_tour = False
-
-
-def display_help_sidebar() -> None:
-    """Show a persistent help/tutorial sidebar."""
-    if "first_visit" not in st.session_state:
-        st.session_state.first_visit = True
-
-    expanded = st.session_state.first_visit
-    with st.sidebar.expander("Tutorial", expanded=expanded):
-        st.markdown(
-            """
-            **Getting Started**
-
-            1. Enter a question in the main panel.
-            2. Choose the reasoning mode and loops.
-            3. Press **Run Query** to launch the agents.
-            """
-        )
-
-        if expanded:
-            if st.button("Dismiss tutorial", key="dismiss_tutorial"):
-                st.session_state.first_visit = False
-
-
-def save_config_to_toml(config_dict):
-    """Save the configuration to the TOML file.
-
-    Args:
-        config_dict: A dictionary containing the configuration to save
-
-    Returns:
-        bool: True if the configuration was saved successfully, False otherwise
-    """
-    import tomli_w
-    from pathlib import Path
-
-    # Get the path to the configuration file
-    config_path = Path.cwd() / "autoresearch.toml"
-
-    try:
-        # Read the existing configuration file if it exists
-        if config_path.exists():
-            with open(config_path, "rb") as f:
-                existing_config = tomllib.load(f)
-        else:
-            existing_config = {}
-
-        # Update the core section with the new configuration
-        if "core" not in existing_config:
-            existing_config["core"] = {}
-
-        # Update core settings
-        for key, value in config_dict.items():
-            if key not in ["storage", "search"]:
-                existing_config["core"][key] = value
-
-        # Handle active profile separately so preferences persist
-        if "active_profile" in config_dict:
-            existing_config["core"]["active_profile"] = config_dict["active_profile"]
-
-        # Update storage settings
-        if "storage" in config_dict:
-            if "storage" not in existing_config:
-                existing_config["storage"] = {}
-            if "duckdb" not in existing_config["storage"]:
-                existing_config["storage"]["duckdb"] = {}
-
-            for key, value in config_dict["storage"].items():
-                existing_config["storage"]["duckdb"][key] = value
-
-        # Update search settings
-        if "search" in config_dict:
-            if "search" not in existing_config:
-                existing_config["search"] = {}
-
-            for key, value in config_dict["search"].items():
-                existing_config["search"][key] = value
-
-        # Update user preferences
-        if "user_preferences" in config_dict:
-            if "user_preferences" not in existing_config:
-                existing_config["user_preferences"] = {}
-            for key, value in config_dict["user_preferences"].items():
-                existing_config["user_preferences"][key] = value
-
-        # Write the updated configuration to the file
-        with open(config_path, "wb") as f:
-            tomli_w.dump(existing_config, f)
-
-        return True
-    except Exception as e:
-        st.error(f"Error saving configuration: {str(e)}")
-        return False
-
-
-def get_config_presets():
-    """Get a dictionary of configuration presets for common use cases.
-
-    Returns:
-        Dict[str, Dict[str, Any]]: A dictionary of preset configurations
-    """
-    return {
-        "Default": {
-            "llm_backend": "lmstudio",
-            "reasoning_mode": ReasoningMode.DIALECTICAL.value,
-            "loops": 2,
-            "storage": {
-                "duckdb_path": "autoresearch.duckdb",
-                "vector_extension": True,
-            },
-            "search": {
-                "max_results_per_query": 5,
-                "use_semantic_similarity": True,
-            },
-            "user_preferences": {
-                "detail_level": "balanced",
-                "perspective": "neutral",
-                "format_preference": "structured",
-                "expertise_level": "intermediate",
-                "focus_areas": [],
-                "excluded_areas": [],
-            },
-        },
-        "Fast Mode": {
-            "llm_backend": "lmstudio",
-            "reasoning_mode": ReasoningMode.DIRECT.value,
-            "loops": 1,
-            "storage": {
-                "duckdb_path": "autoresearch.duckdb",
-                "vector_extension": True,
-            },
-            "search": {
-                "max_results_per_query": 3,
-                "use_semantic_similarity": False,
-            },
-            "user_preferences": {
-                "detail_level": "concise",
-                "perspective": "neutral",
-                "format_preference": "bullet_points",
-                "expertise_level": "intermediate",
-                "focus_areas": [],
-                "excluded_areas": [],
-            },
-        },
-        "Thorough Mode": {
-            "llm_backend": "lmstudio",
-            "reasoning_mode": ReasoningMode.DIALECTICAL.value,
-            "loops": 3,
-            "storage": {
-                "duckdb_path": "autoresearch.duckdb",
-                "vector_extension": True,
-            },
-            "search": {
-                "max_results_per_query": 8,
-                "use_semantic_similarity": True,
-            },
-            "user_preferences": {
-                "detail_level": "detailed",
-                "perspective": "critical",
-                "format_preference": "structured",
-                "expertise_level": "expert",
-                "focus_areas": [],
-                "excluded_areas": [],
-            },
-        },
-        "Chain of Thought": {
-            "llm_backend": "lmstudio",
-            "reasoning_mode": ReasoningMode.CHAIN_OF_THOUGHT.value,
-            "loops": 3,
-            "storage": {
-                "duckdb_path": "autoresearch.duckdb",
-                "vector_extension": True,
-            },
-            "search": {
-                "max_results_per_query": 5,
-                "use_semantic_similarity": True,
-            },
-            "user_preferences": {
-                "detail_level": "detailed",
-                "perspective": "optimistic",
-                "format_preference": "narrative",
-                "expertise_level": "intermediate",
-                "focus_areas": [],
-                "excluded_areas": [],
-            },
-        },
-        "OpenAI Mode": {
-            "llm_backend": "openai",
-            "reasoning_mode": ReasoningMode.DIALECTICAL.value,
-            "loops": 2,
-            "storage": {
-                "duckdb_path": "autoresearch.duckdb",
-                "vector_extension": True,
-            },
-            "search": {
-                "max_results_per_query": 5,
-                "use_semantic_similarity": True,
-            },
-            "user_preferences": {
-                "detail_level": "balanced",
-                "perspective": "neutral",
-                "format_preference": "structured",
-                "expertise_level": "intermediate",
-                "focus_areas": [],
-                "excluded_areas": [],
-            },
-        },
-    }
-
-
-def apply_preset(preset_name):
-    """Apply a configuration preset.
-
-    Args:
-        preset_name: The name of the preset to apply
-
-    Returns:
-        Dict[str, Any]: The preset configuration
-    """
-    presets = get_config_presets()
-    if preset_name in presets:
-        return presets[preset_name]
-    return None
 
 
 def display_config_editor():
@@ -560,8 +264,9 @@ def display_config_editor():
         # User preference settings
         st.markdown("#### User Preferences")
 
-        pref_config = (
-            preset_config.get("user_preferences") if preset_config else config.user_preferences
+        pref_config = cast(
+            Dict[str, Any],
+            preset_config.get("user_preferences") if preset_config else config.user_preferences,
         )
 
         detail_level = st.selectbox(

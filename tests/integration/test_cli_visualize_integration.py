@@ -21,7 +21,6 @@ def _setup(monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
 
-
 def test_search_visualize_option_integration(monkeypatch):
     _setup(monkeypatch)
     runner = CliRunner()
