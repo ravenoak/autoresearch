@@ -5,6 +5,8 @@ python -m pip install --upgrade pip
 pip install poetry
 poetry env use $(which python3)
 python scripts/installer.py
+poetry install --with dev
+poetry run pip install -e .
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions
