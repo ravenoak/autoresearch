@@ -8,7 +8,7 @@ tasks:
 
   integration:
     cmds:
-      - pytest -q integration
+      - pytest -q tests/integration
     desc: "Run integration tests"
 
   behavior:
