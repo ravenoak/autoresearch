@@ -177,9 +177,17 @@ def check_visual_element_descriptions(bdd_context):
 @then("command help text should be properly structured for screen readers")
 def check_help_text_structure(bdd_context):
     """Check that command help text is properly structured for screen readers."""
-    # This would typically check the structure of help text from the CLI
-    # For now, we'll just assert True as a placeholder
-    assert True
+    from autoresearch.main import app as cli_app
+    from typer.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(cli_app, ["--help"])
+
+    output = result.stdout
+    assert "Usage:" in output
+    assert "Commands:" in output
+    # Ensure there are no colour control sequences which can confuse screen readers
+    assert "\x1b[" not in output
 
 
 @when("I navigate the interface using only keyboard")
@@ -206,17 +214,26 @@ def check_keyboard_accessibility(bdd_context):
 @then("focus indicators should be clearly visible")
 def check_focus_indicators(bdd_context):
     """Check that focus indicators are clearly visible."""
-    # This would typically check CSS properties for focus indicators
-    # For now, we'll just assert True as a placeholder
-    assert True
+    from autoresearch.streamlit_ui import apply_accessibility_settings
+
+    with patch("streamlit.markdown") as mock_markdown:
+        apply_accessibility_settings()
+
+    css = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert "*:focus" in css
+    assert "outline" in css
 
 
 @then("tab order should be logical and follow page structure")
 def check_tab_order(bdd_context):
     """Check that tab order is logical and follows page structure."""
-    # This would typically check the tab order of elements
-    # For now, we'll just assert True as a placeholder
-    assert True
+    from autoresearch.streamlit_app import display_query_input
+
+    with patch("streamlit.markdown") as mock_markdown:
+        display_query_input()
+
+    html = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert "tabindex" in html
 
 
 @when("I use the GUI with a screen reader")
@@ -255,41 +272,58 @@ def check_form_control_labels(bdd_context):
 @then("dynamic content updates should be announced to screen readers")
 def check_dynamic_content_announcements(bdd_context):
     """Check that dynamic content updates are announced to screen readers."""
-    # This would typically check ARIA live regions or similar
-    # For now, we'll just assert True as a placeholder
-    assert True
+    from autoresearch.models import QueryResponse
+    from autoresearch.streamlit_app import display_results
+
+    dummy = QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+    with patch("streamlit.markdown") as mock_markdown:
+        display_results(dummy)
+
+    html = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert "aria-live='polite'" in html or 'aria-live="polite"' in html
 
 
 @when("I enable high contrast mode")
 def enable_high_contrast_mode(bdd_context):
     """Simulate enabling high contrast mode."""
-    # Mock Streamlit components to test high contrast mode
+    from autoresearch.streamlit_ui import apply_accessibility_settings
+
     with patch("streamlit.markdown") as mock_markdown:
+        with patch("streamlit.session_state", {"high_contrast": True}):
+            apply_accessibility_settings()
         bdd_context["mock_markdown"] = mock_markdown
 
 
 @then("text should have sufficient contrast against backgrounds")
 def check_text_contrast(bdd_context):
     """Check that text has sufficient contrast against backgrounds."""
-    # This would typically check CSS properties for contrast
-    # For now, we'll just assert True as a placeholder
-    assert True
+    mock_markdown = bdd_context.get("mock_markdown")
+    assert mock_markdown is not None
+
+    css = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert "background-color:#000" in css
+    assert "color:#fff" in css
 
 
 @then("interactive elements should be clearly distinguishable")
 def check_interactive_elements(bdd_context):
     """Check that interactive elements are clearly distinguishable."""
-    # This would typically check CSS properties for interactive elements
-    # For now, we'll just assert True as a placeholder
-    assert True
+    mock_markdown = bdd_context.get("mock_markdown")
+    assert mock_markdown is not None
+
+    css = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert ".stButton" in css
+    assert "border" in css
 
 
 @then("information should not be conveyed by color alone")
 def check_color_independence(bdd_context):
     """Check that information is not conveyed by color alone."""
-    # This would typically check that information is conveyed by multiple means
-    # For now, we'll just assert True as a placeholder
-    assert True
+    mock_markdown = bdd_context.get("mock_markdown")
+    assert mock_markdown is not None
+
+    css = "".join(call.args[0] for call in mock_markdown.call_args_list)
+    assert "text-decoration: underline" in css or "border" in css
 
 
 @given("the Streamlit application is running on a small screen")
@@ -309,9 +343,9 @@ def streamlit_small_screen(monkeypatch, bdd_context, tmp_path):
 
 
 @when("I view the page")
-def view_page():
-    """Placeholder for viewing the page."""
-    pass
+def view_page(bdd_context):
+    """Verify CSS was captured for the responsive layout."""
+    assert "css" in bdd_context
 
 
 @then("columns should stack vertically")
@@ -344,5 +378,15 @@ def check_guided_tour_modal(bdd_context):
 
 @then("I should be able to dismiss the tour")
 def dismiss_tour():
-    """Placeholder for dismissing the tour."""
-    assert True
+    """Ensure the tour can be dismissed via the button."""
+    with (
+        patch("streamlit.session_state", {"show_tour": True}),
+        patch("streamlit.button", return_value=True),
+        patch("streamlit.modal"),
+    ):
+        from autoresearch.streamlit_ui import display_guided_tour
+
+        display_guided_tour()
+        import streamlit as st
+
+        assert st.session_state.show_tour is False
