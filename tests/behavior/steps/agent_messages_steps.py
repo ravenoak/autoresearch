@@ -124,4 +124,3 @@ def receivers_got_broadcast(bdd_context):
     assert msgs_r1["content"] == "hello team"
     assert msgs_r2["protocol"] == "broadcast"
     assert msgs_r2["content"] == "hello team"
-

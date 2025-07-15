@@ -12,7 +12,7 @@ def mock_backup_manager():
     return mock_manager
 
 
-@patch("autoresearch.main.BackupManager")
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_create_command(mock_backup_manager_class, mock_backup_manager):
     """Test the backup create command."""
     # Setup
@@ -32,7 +32,7 @@ def test_backup_create_command(mock_backup_manager_class, mock_backup_manager):
     assert "Backup created successfully" in result.stdout
 
 
-@patch("autoresearch.main.BackupManager")
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_list_command(mock_backup_manager_class, mock_backup_manager):
     """Test the backup list command."""
     # Setup
@@ -67,7 +67,7 @@ def test_backup_list_command(mock_backup_manager_class, mock_backup_manager):
     assert "backup2.zip" in result.stdout
 
 
-@patch("autoresearch.main.BackupManager")
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_restore_command(mock_backup_manager_class, mock_backup_manager):
     """Test the backup restore command."""
     # Setup
@@ -87,7 +87,7 @@ def test_backup_restore_command(mock_backup_manager_class, mock_backup_manager):
     assert "Backup restored successfully" in result.stdout
 
 
-@patch("autoresearch.main.BackupManager")
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_schedule_command(mock_backup_manager_class, mock_backup_manager):
     """Test the backup schedule command."""
     # Setup
@@ -114,11 +114,11 @@ def test_backup_schedule_command(mock_backup_manager_class, mock_backup_manager)
     # Verify
     assert result.exit_code == 0
     mock_backup_manager_class.assert_called_once()
-    mock_backup_manager.schedule_backups.assert_called_once()
+    mock_backup_manager.schedule_backup.assert_called_once()
     assert "Scheduled automatic backups" in result.stdout
 
 
-@patch("autoresearch.main.BackupManager")
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_recover_command(mock_backup_manager_class, mock_backup_manager):
     """Test the backup recover command."""
     # Setup
