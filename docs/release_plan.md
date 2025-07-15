@@ -2,14 +2,16 @@
 
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
+The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`). This schedule was last updated on **July 15, 2025**.
+
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.1** | 2024-07-31 | Bug fixes and documentation updates |
-| **0.2.0** | 2024-08-30 | API stabilization, configuration hot-reload, improved search backends |
-| **0.3.0** | 2024-09-30 | Distributed execution support, monitoring utilities |
-| **1.0.0** | 2024-10-31 | Full feature set, performance tuning and stable interfaces |
+| **0.1.1** | 2025-07-31 | Bug fixes and documentation updates |
+| **0.2.0** | 2025-09-15 | API stabilization, configuration hot-reload, improved search backends |
+| **0.3.0** | 2025-11-15 | Distributed execution support, monitoring utilities |
+| **1.0.0** | 2026-01-31 | Full feature set, performance tuning and stable interfaces |
 
 ## Release Phases
 
