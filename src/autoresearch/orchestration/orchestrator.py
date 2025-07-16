@@ -1006,27 +1006,6 @@ class Orchestrator:
                 )
                 config.token_budget = group_tokens
 
-        # Heuristically adjust token budget when running within parallel agent
-        # groups. ``run_parallel_query`` passes ``group_size`` and
-        # ``total_groups`` to ``run_query`` using ``model_copy`` so we can
-        # derive a fair token split.
-        token_budget = getattr(config, "token_budget", None)
-        if (
-            token_budget is not None
-            and hasattr(config, "group_size")
-            and hasattr(config, "total_groups")
-        ):
-            total_agents = getattr(
-                config,
-                "total_agents",
-                config.group_size * config.total_groups,
-            )
-            if total_agents:
-                group_tokens = max(
-                    1, token_budget * config.group_size // total_agents
-                )
-                config.token_budget = group_tokens
-
         # Handle chain-of-thought reasoning mode
         if mode == ReasoningMode.CHAIN_OF_THOUGHT:
             strategy = ChainOfThoughtStrategy()
