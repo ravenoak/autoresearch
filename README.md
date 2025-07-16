@@ -6,6 +6,13 @@ data in local databases so that searches and knowledge graphs remain on your mac
 The project is built around a modular Python package located under `src/autoresearch/`.
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
+## Roadmap
+
+Autoresearch is currently in the **Development** phase preparing for the
+upcoming **0.1.0** release. This will be the first official version and the
+project has not yet been published outside of this repository. See
+[docs/release_plan.md](docs/release_plan.md) for the full milestone schedule.
+
 ## Installation
 
 You can install the project dependencies with either **Poetry** or **pip**.
