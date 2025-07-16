@@ -15,14 +15,17 @@ project has not yet been published outside of this repository. See
 
 ## Installation
 
-You can install the project dependencies with either **Poetry** or **pip**.
-See [docs/installation.md](docs/installation.md) for details on optional features
-and upgrade instructions.
+Autoresearch requires **Python 3.12 or newer**. You can install the project
+dependencies with either **Poetry** or **pip**. See
+[docs/installation.md](docs/installation.md) for details on optional features and
+upgrade instructions.
 The `scripts/setup.sh` helper runs `poetry install --with dev` so all
 development and runtime dependencies are available for testing.
 
 ### Using Poetry
-Select the interpreter and install the development dependencies:
+Python 3.12 or newer is required. If multiple Python interpreters exist,
+explicitly select version 3.12 with `poetry env use $(which python3.12)`.
+Install the development dependencies:
 ```bash
 poetry env use $(which python3)
 poetry install --with dev
