@@ -717,9 +717,6 @@ class StorageManager:
             obj = rdflib.Literal(v)
             _rdf_store.add((subj, pred, obj))
 
-        # Apply ontology reasoning so updates expose inferred triples
-        run_ontology_reasoner(_rdf_store)
-
         # Apply ontology reasoning so advanced queries see inferred triples
         run_ontology_reasoner(_rdf_store)
 
