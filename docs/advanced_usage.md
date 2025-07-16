@@ -9,7 +9,7 @@ This document provides advanced usage examples for the Autoresearch system, demo
 For complex research questions that benefit from extensive dialectical analysis:
 
 ```bash
-autoresearch query "What are the environmental impacts of lithium mining for EV batteries?" \
+autoresearch search "What are the environmental impacts of lithium mining for EV batteries?" \
   --reasoning-mode dialectical \
   --loops 3
 ```
@@ -37,7 +37,7 @@ Enter an updated query string to guide the next cycle or `q` to abort.
 For problems that benefit from incremental reasoning:
 
 ```bash
-autoresearch query "Explain the implications of quantum computing for cryptography" \
+autoresearch search "Explain the implications of quantum computing for cryptography" \
   --reasoning-mode chain-of-thought \
   --loops 5
 ```
@@ -49,7 +49,7 @@ This runs the Synthesizer agent five times, with each iteration building on the 
 For straightforward questions that don't require dialectical analysis:
 
 ```bash
-autoresearch query "What is the average lifespan of a blue whale?" \
+autoresearch search "What is the average lifespan of a blue whale?" \
   --reasoning-mode direct
 ```
 
@@ -469,7 +469,7 @@ The command applies the configured reasoner before executing the query, returnin
 Use the custom template:
 
 ```bash
-autoresearch query "What are the neurological effects of meditation?" --output-template academic
+autoresearch search "What are the neurological effects of meditation?" --output-template academic
 ```
 
 ## Monitoring and Debugging
@@ -497,7 +497,7 @@ autoresearch monitor
 autoresearch monitor -w
 
 # In another terminal, run a query while watching
-autoresearch query "What are the implications of AI on labor markets?"
+autoresearch search "What are the implications of AI on labor markets?"
 ```
 
 The monitor shows real-time information about agent execution, token usage, and system state.

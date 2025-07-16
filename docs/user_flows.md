@@ -8,7 +8,7 @@ This document describes the typical user flows for all interface modalities of t
 
 1. **Start the CLI**
    ```bash
-   autoresearch query "What is the capital of France?"
+   autoresearch search "What is the capital of France?"
    ```
 
 2. **View Progress**
@@ -21,7 +21,7 @@ This document describes the typical user flows for all interface modalities of t
 
 4. **Export Results (Optional)**
    ```bash
-   autoresearch query "What is the capital of France?" --output json > results.json
+   autoresearch search "What is the capital of France?" --output json > results.json
    ```
 
 ### Configuration Flow
@@ -33,12 +33,12 @@ This document describes the typical user flows for all interface modalities of t
 
 2. **Update Configuration**
    ```bash
-   autoresearch config set core.loops 3
+   autoresearch config reasoning --loops 3
    ```
 
 3. **Verify Configuration**
    ```bash
-   autoresearch config get core.loops
+   autoresearch config reasoning --show
    ```
 
 ### Monitoring Flow
@@ -77,12 +77,7 @@ This document describes the typical user flows for all interface modalities of t
    branches = ["main"]
    history_depth = 50
    ```
-   Or set the same values via CLI commands:
-   ```bash
-   autoresearch config set search.backends "['serper','local_file','local_git']"
-   autoresearch config set search.local_file.path /path/to/docs
-   autoresearch config set search.local_git.repo_path /path/to/repo
-   ```
+   Then run `autoresearch config reasoning --show` to verify the settings were loaded.
 
 2. **Run a Query**
    - Execute a search that includes your local files and repository history:
@@ -234,7 +229,7 @@ This document describes the typical user flows for all interface modalities of t
 
 1. **Start with CLI Query**
    ```bash
-   autoresearch query "What is the capital of France?"
+   autoresearch search "What is the capital of France?"
    ```
 
 2. **Switch to GUI**
@@ -254,7 +249,7 @@ This document describes the typical user flows for all interface modalities of t
 
 1. **Update Configuration via CLI**
    ```bash
-   autoresearch config set core.loops 3
+   autoresearch config reasoning --loops 3
    ```
 
 2. **Open GUI**
@@ -272,7 +267,7 @@ This document describes the typical user flows for all interface modalities of t
 
 5. **Verify in CLI**
    ```bash
-   autoresearch config get core.loops
+   autoresearch config reasoning --show
    ```
    - The CLI shows the value updated from the GUI
 
