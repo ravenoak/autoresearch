@@ -19,13 +19,13 @@ pip install autoresearch
 1. **Run a simple query:**
 
 ```bash
-autoresearch query "What is the capital of France?"
+autoresearch search "What is the capital of France?"
 ```
 
 2. **Specify reasoning mode:**
 
 ```bash
-autoresearch query "What is the capital of France?" --mode dialectical
+autoresearch search "What is the capital of France?" --mode dialectical
 ```
 
 Available reasoning modes:
@@ -36,13 +36,13 @@ Available reasoning modes:
 3. **Specify Primus start index (dialectical mode):**
 
 ```bash
-autoresearch query "What is the capital of France?" --mode dialectical --primus-start 1
+autoresearch search "What is the capital of France?" --mode dialectical --primus-start 1
 ```
 
 4. **Enable ontology reasoning:**
 
 ```bash
-autoresearch query "What is the capital of France?" --ontology schema.ttl --infer-relations
+autoresearch search "What is the capital of France?" --ontology schema.ttl --infer-relations
 ```
 
 Use `--ontology-reasoner` to specify a custom reasoning engine.
@@ -51,10 +51,10 @@ Use `--ontology-reasoner` to specify a custom reasoning engine.
 
 ```bash
 # Export as JSON
-autoresearch query "What is the capital of France?" --output json > result.json
+autoresearch search "What is the capital of France?" --output json > result.json
 
 # Export as Markdown
-autoresearch query "What is the capital of France?" --output markdown > result.md
+autoresearch search "What is the capital of France?" --output markdown > result.md
 ```
 
 6. **Visualize query results:**
@@ -77,16 +77,16 @@ autoresearch search "Explain AI ethics" --visualize
 autoresearch config
 ```
 
-2. **Set a configuration value:**
+2. **Update reasoning configuration:**
 
 ```bash
-autoresearch config set core.loops 3
+autoresearch config reasoning --loops 3
 ```
 
-3. **Get a specific configuration value:**
+3. **Show current reasoning settings:**
 
 ```bash
-autoresearch config get core.loops
+autoresearch config reasoning --show
 ```
 
 ### Monitoring
