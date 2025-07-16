@@ -33,25 +33,16 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
-If you cloned the repository, run the installer script instead:
+If you cloned the repository, run the setup helper instead:
 
 ```bash
-python scripts/installer.py --minimal
+./scripts/setup.sh
 ```
 
 This provides the CLI, API and knowledge graph without heavy NLP or UI packages.
 Optional features will be disabled when their dependencies are missing.
-Running ``scripts/installer.py`` without flags reads ``autoresearch.toml`` and
-installs any extras required by the configuration. You can also specify extras
-explicitly with the ``--extras`` flag, e.g. ``--extras nlp,ui``.
-
-To install extras automatically according to your configuration, simply run:
-
-```bash
-python scripts/installer.py
-```
-
-Add ``--upgrade`` to update the base package and any detected extras.
+Specify extras explicitly with pip to enable additional features, e.g.
+``pip install "autoresearch[minimal,nlp]"``.
 
 ## Optional extras
 
@@ -83,27 +74,21 @@ The helper script detects whether Poetry or pip is used. It runs
 `poetry update autoresearch` when a `pyproject.toml` is present,
 otherwise it falls back to `pip install -U autoresearch`.
 
-When using the installer script you can upgrade all packages with:
-
+Use pip extras when upgrading to ensure optional dependencies remain
+installed. For example:
 ```bash
-python scripts/installer.py --upgrade
+pip install -U "autoresearch[nlp,ui]"
 ```
-
-The ``--upgrade`` flag installs any missing extras detected from your
-configuration and then runs ``poetry update``. The project follows
-semantic versioning. Minor releases within the same major version are
-backwards compatible. Check the
+The project follows semantic versioning. Minor releases within the same
+major version are backwards compatible. Check the
 [duckdb_compatibility.md](duckdb_compatibility.md) document for extension
 version notes.
 
 ### Migrating from older releases
 
-If you installed Autoresearch before ``0.1.0`` you may not have the
-installer script available. Upgrade the base package and then run the
-installer to pull in any new optional dependencies:
-
+If you installed Autoresearch before ``0.1.0`` simply upgrade the base
+package and reinstall any extras you require:
 ```bash
-pip install -U autoresearch
-python scripts/installer.py --upgrade
+pip install -U "autoresearch[full]"
 ```
 

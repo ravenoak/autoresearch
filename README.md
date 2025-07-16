@@ -9,11 +9,10 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 ## Installation
 
 You can install the project dependencies with either **Poetry** or **pip**.
-See [docs/installation.md](docs/installation.md) for details on optional features,
-upgrade instructions and the new installer.
-The `scripts/setup.sh` helper now calls the installer and runs
-`poetry install --with dev` so all development and runtime dependencies are
-available for testing.
+See [docs/installation.md](docs/installation.md) for details on optional features
+and upgrade instructions.
+The `scripts/setup.sh` helper runs `poetry install --with dev` so all
+development and runtime dependencies are available for testing.
 
 ### Using Poetry
 Select the interpreter and install the development dependencies:
@@ -25,23 +24,14 @@ poetry install --with dev
 Once installed, verify the environment by running the checks listed under [Running tests](#running-tests).
 
 ### Minimal installation
-Install only the minimal optional dependencies using the installer:
-```bash
-python scripts/installer.py --minimal
-```
-Running the installer without ``--minimal`` reads ``autoresearch.toml`` and
-installs any extras required by your configuration. Extras can also be specified
-manually with ``--extras nlp,ui``.
-To install according to your configuration simply run the script without
-flags:
-```bash
-python scripts/installer.py
-```
-Add ``--upgrade`` to update an existing environment.
-You can also install the minimal group from PyPI:
+Install only the minimal optional dependencies using pip:
 ```bash
 pip install autoresearch[minimal]
 ```
+When working from a clone, run `scripts/setup.sh` which installs all
+development dependencies via Poetry.
+Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
+To upgrade a cloned environment run `python scripts/upgrade.py`.
 
 ### Using pip
 Install the latest release from PyPI:
@@ -68,14 +58,11 @@ Use the provided helper to update Autoresearch:
 ```bash
 python scripts/upgrade.py
 ```
-The script runs `poetry update autoresearch` when a `pyproject.toml` is
-present, otherwise it falls back to `pip install -U autoresearch`.
-Run the installer to resolve optional dependencies automatically. Omit
-`--minimal` to upgrade with all extras and pass `--upgrade` to update
-existing packages. The installer detects which extras are missing and
-installs them for you:
+The script runs `poetry update autoresearch` when a `pyproject.toml` is present,
+otherwise it falls back to `pip install -U autoresearch`.
+Use extras with pip to manage optional dependencies, for example:
 ```bash
-python scripts/installer.py --minimal
+pip install "autoresearch[nlp,ui]"
 ```
 
 
@@ -424,10 +411,9 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The script invokes `installer.py`, installs all dependencies with
-`poetry install --with dev` and links the package in editable mode. Tools such
-as `flake8`, `mypy`, `pytest` and `tomli_w` are therefore available for
-development and testing.
+The helper installs all dependencies with `poetry install --with dev` and links
+the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and
+`tomli_w` are therefore available for development and testing.
 
 ## Running tests
 
