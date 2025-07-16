@@ -123,21 +123,19 @@ For pip based installs use:
 ```bash
 pip install -U autoresearch
 ```
-You can also run the installer script which resolves optional dependencies automatically:
+Use pip extras to install optional dependencies as needed, for example:
 ```bash
-python scripts/installer.py --minimal
+pip install "autoresearch[full]"
 ```
-Omit `--minimal` to install all extras. Add `--upgrade` to update existing
-packages. The installer reads `autoresearch.toml` to determine which extras
-are required and installs any missing groups. Use `--extras` to specify
-additional groups explicitly.
+Add extras selectively to enable specific features.
 
 ### Minimal installation
-For lightweight deployments run the installer with the `--minimal` flag. This
-installs only the dependencies from the `minimal` extras group. Running the
-installer again without flags will install any extras required by your
-configuration. Use the `--upgrade` flag to update already installed
-packages.
+For lightweight deployments install only the `minimal` extras group:
+```bash
+pip install "autoresearch[minimal]"
+```
+Install additional groups later by running `pip install` again with the desired
+extras.
 
 ## Release workflow
 
