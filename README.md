@@ -9,8 +9,10 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 ## Roadmap
 
 Autoresearch is currently in the **Development** phase preparing for the
-upcoming **0.1.0** release. This will be the first official version and the
-project has not yet been published outside of this repository. See
+upcoming **0.1.0** release. The codebase already reports version
+`0.1.0` in `pyproject.toml`, but that version has **not** been published yet.
+The first official release is targeted for **July 20, 2025** once the
+documentation and packaging checks complete. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone schedule.
 
 ## Installation
