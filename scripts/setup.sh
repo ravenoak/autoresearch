@@ -4,6 +4,10 @@ set -euo pipefail
 python -m pip install --upgrade pip
 pip install poetry
 poetry env use $(which python3)
+if ! poetry lock --check >/dev/null 2>&1; then
+  echo "Lock file outdated, regenerating..."
+  poetry lock
+fi
 poetry install --with dev --all-extras
 poetry run pip install -e .
 
