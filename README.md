@@ -21,8 +21,9 @@ Autoresearch requires **Python 3.12 or newer**. You can install the project
 dependencies with either **Poetry** or **pip**. See
 [docs/installation.md](docs/installation.md) for details on optional features and
 upgrade instructions.
-The `scripts/setup.sh` helper runs `poetry install --with dev` so all
-development and runtime dependencies are available for testing.
+The `scripts/setup.sh` helper ensures the lock file is current and installs
+all optional extras so development and runtime dependencies are available
+for testing.
 
 ### Using Poetry
 Python 3.12 or newer is required. If multiple Python interpreters exist,
@@ -41,7 +42,7 @@ Install only the minimal optional dependencies using pip:
 pip install autoresearch[minimal]
 ```
 When working from a clone, run `scripts/setup.sh` which installs all
-development dependencies via Poetry.
+development dependencies and optional extras via Poetry.
 Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
 

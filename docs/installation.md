@@ -13,7 +13,8 @@ Use Poetry to manage the environment when working from a clone:
 
 ```bash
 poetry env use $(which python3)
-poetry install --with dev
+poetry lock --check || poetry lock
+poetry install --with dev --all-extras
 ```
 
 Verify the environment by running:
@@ -39,10 +40,10 @@ If you cloned the repository, run the setup helper instead:
 ./scripts/setup.sh
 ```
 
-This provides the CLI, API and knowledge graph without heavy NLP or UI packages.
-Optional features will be disabled when their dependencies are missing.
-Specify extras explicitly with pip to enable additional features, e.g.
-``pip install "autoresearch[minimal,nlp]"``.
+The helper ensures the lock file is refreshed and installs every optional
+extra needed for the test suite. Optional features are disabled when their
+dependencies are missing. Specify extras explicitly with pip to enable
+additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
 ## Optional extras
 

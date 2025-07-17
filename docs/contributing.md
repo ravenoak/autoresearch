@@ -6,8 +6,9 @@ We welcome contributions via pull requests. Install the development dependencies
 poetry install --with dev
 ```
 
-You can alternatively run the helper script, which installs all dependencies
-with `poetry install --with dev` and links the package in editable mode:
+You can alternatively run the helper script. It refreshes the lock file when
+needed, installs all extras with `poetry install --with dev --all-extras` and
+links the package in editable mode:
 
 ```bash
 ./scripts/setup.sh
