@@ -135,8 +135,8 @@ def teardown(remove_db: bool = False) -> None:
                 db_path = None
                 try:
                     db_path = _db_backend._path
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"Could not determine DuckDB path for cleanup: {e}")
 
                 # Close the connection
                 _db_backend.close()
