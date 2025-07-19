@@ -216,19 +216,28 @@ from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def stub_vss_extension_download(monkeypatch, request):
+def stub_vss_extension_download(monkeypatch, request, tmp_path):
     """Prevent network calls when loading the DuckDB VSS extension."""
     if os.getenv("REAL_VSS_TEST") or request.node.get_closest_marker("real_vss"):
         yield
         return
 
-    monkeypatch.setattr(VSSExtensionLoader, "load_extension", lambda _c: False)
+    if "VECTOR_EXTENSION_PATH" not in os.environ:
+        stub_path = tmp_path / "vss.duckdb_extension"
+        stub_path.write_text("stub")
+        monkeypatch.setenv("VECTOR_EXTENSION_PATH", str(stub_path))
+    else:
+        stub_path = None
+
+    monkeypatch.setattr(VSSExtensionLoader, "load_extension", lambda _c: True)
     monkeypatch.setattr(
         VSSExtensionLoader,
         "verify_extension",
-        lambda _c, verbose=True: False,
+        lambda _c, verbose=True: True,
     )
     yield
+    if stub_path:
+        monkeypatch.delenv("VECTOR_EXTENSION_PATH", raising=False)
 
 
 @pytest.fixture(autouse=True)
