@@ -1,6 +1,7 @@
 import sys
 import os
 import types
+import importlib
 # Provide a lightweight stub for the optional ``ray`` dependency so that
 # ``autoresearch`` can be imported without the actual package installed.
 if "ray" not in sys.modules:
@@ -107,6 +108,7 @@ if "streamlit" not in sys.modules:
 if "matplotlib" not in sys.modules:
     mpl = types.ModuleType("matplotlib")
     mpl.use = lambda *a, **k: None
+    mpl.__spec__ = importlib.machinery.ModuleSpec("matplotlib", loader=None)
     sys.modules["matplotlib"] = mpl
 if "matplotlib.pyplot" not in sys.modules:
     mpl_py = types.ModuleType("matplotlib.pyplot")
@@ -114,6 +116,7 @@ if "matplotlib.pyplot" not in sys.modules:
     mpl_py.figure = lambda *a, **k: None
     mpl_py.gca = lambda *a, **k: types.SimpleNamespace()
     mpl_py.savefig = lambda *a, **k: None
+    mpl_py.__spec__ = importlib.machinery.ModuleSpec("matplotlib.pyplot", loader=None)
     sys.modules["matplotlib.pyplot"] = mpl_py
 
 if "PIL" not in sys.modules:
@@ -131,10 +134,34 @@ import importlib.util
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
 from typing import Callable
-from autoresearch.api import app as api_app
+
+# Provide a lightweight fallback for sentence_transformers to avoid heavy
+# imports during test startup. This must come before importing the project so
+# that the dummy module is used instead of the real package.
+dummy_st_module = types.ModuleType("sentence_transformers")
+
+
+class DummySentenceTransformer:
+    def __init__(self, *_, **__):
+        pass
+
+    def encode(self, texts):
+        if isinstance(texts, str):
+            texts = [texts]
+        return [[0.0] * 384 for _ in texts]
+
+
+dummy_st_module.SentenceTransformer = DummySentenceTransformer
+sys.modules.setdefault("sentence_transformers", dummy_st_module)
+
+# Mock heavy optional dependencies to avoid model downloads during tests.
+sys.modules.setdefault("bertopic", MagicMock())
+sys.modules.setdefault("transformers", MagicMock())
+
+from autoresearch.api import app as api_app  # noqa: E402
 
 # Older Typer versions used in tests may not support the ``multiple`` parameter.
-import typer
+import typer  # noqa: E402
 _orig_option = typer.Option
 
 
@@ -174,28 +201,6 @@ if importlib.util.find_spec("autoresearch") is None:
     sys.path.insert(0, str(src_path))  # noqa: E402
 
 import pytest  # noqa: E402
-
-# Provide a lightweight fallback for sentence_transformers to avoid heavy
-# imports during test startup.
-dummy_st_module = types.ModuleType("sentence_transformers")
-
-
-class DummySentenceTransformer:
-    def __init__(self, *_, **__):
-        pass
-
-    def encode(self, texts):
-        if isinstance(texts, str):
-            texts = [texts]
-        return [[0.0] * 384 for _ in texts]
-
-
-dummy_st_module.SentenceTransformer = DummySentenceTransformer
-sys.modules.setdefault("sentence_transformers", dummy_st_module)
-
-# Mock heavy optional dependencies to avoid model downloads during tests.
-sys.modules.setdefault("bertopic", MagicMock())
-sys.modules.setdefault("transformers", MagicMock())
 
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.config import ConfigLoader  # noqa: E402
