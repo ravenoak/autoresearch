@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Callable, Any, Optional, TYPE_CHECKING
+from typing import Dict, Callable, Any, Optional, TYPE_CHECKING, Tuple, cast
 from multiprocessing.synchronize import Event
 import os
 import json
@@ -52,7 +52,8 @@ class RedisQueue:
         self.client.rpush(self.name, json.dumps(message))
 
     def get(self) -> dict[str, Any]:
-        _, data = self.client.blpop(self.name)
+        key_data = self.client.blpop([self.name])  # type: ignore[arg-type]
+        key, data = cast(Tuple[str, bytes], key_data)  # type: ignore[misc]
         return json.loads(data)
 
 

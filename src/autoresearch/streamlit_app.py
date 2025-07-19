@@ -553,7 +553,7 @@ def display_agent_performance():
                     )
 
             st.success("Sample data added")
-            st.experimental_rerun()
+            st.experimental_rerun()  # type: ignore[attr-defined]
 
         return
 
@@ -1337,7 +1337,7 @@ def display_query_history():
             st.session_state.rerun_triggered = True
 
             # Rerun the app to process the query
-            st.experimental_rerun()
+            st.experimental_rerun()  # type: ignore[attr-defined]
 
     # Process query when button is clicked
     if st.session_state.run_button and st.session_state.current_query:
