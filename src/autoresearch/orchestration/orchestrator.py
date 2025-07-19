@@ -85,6 +85,11 @@ class Orchestrator:
             AgentRegistry.create_coalition(cname, members)
         enable_feedback = getattr(config, "enable_feedback", False)
 
+        # Adjust parameters based on reasoning mode
+        if mode == ReasoningMode.DIRECT:
+            agents = ["Synthesizer"]
+            loops = 1
+
         agent_groups: List[List[str]] = []
         for a in agents:
             coalition = AgentRegistry.get_coalition_obj(a)
@@ -92,11 +97,6 @@ class Orchestrator:
                 agent_groups.append(coalition.members)
             else:
                 agent_groups.append([a])
-
-        # Adjust parameters based on reasoning mode
-        if mode == ReasoningMode.DIRECT:
-            agents = ["Synthesizer"]
-            loops = 1
 
         return {
             "agents": agents,
