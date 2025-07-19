@@ -70,6 +70,7 @@ def run_orchestrator_on_query(query, monkeypatch, tmp_path):
         except ValueError:
             cfg.reasoning_mode = ReasoningMode.DIALECTICAL
     record = []
+    config_params = {}
 
     class DummyAgent:
         def __init__(self, name):
@@ -85,19 +86,43 @@ def run_orchestrator_on_query(query, monkeypatch, tmp_path):
     def get_agent(name):
         return DummyAgent(name)
 
+    original_parse = Orchestrator._parse_config
+
+    def spy_parse(conf):
+        params = original_parse(conf)
+        config_params.update(params)
+        return params
+
     with patch(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
+    ), patch(
+        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+        side_effect=spy_parse,
     ):
         Orchestrator.run_query(query, cfg)
 
-    return record
+    return {"record": record, "config_params": config_params}
 
 
 @then(parsers.parse('the agents executed should be "{order}"'))
 def check_agents_executed(run_orchestrator_on_query, order):
     expected = [a.strip() for a in order.split(",")]
-    assert run_orchestrator_on_query == expected
+    assert run_orchestrator_on_query["record"] == expected
+
+
+@then(parsers.parse("the loops used should be {count:d}"))
+def check_loops_used(run_orchestrator_on_query, count):
+    assert run_orchestrator_on_query["config_params"].get("loops") == count
+
+
+@then(parsers.parse('the agent groups should be "{groups}"'))
+def check_agent_groups(run_orchestrator_on_query, groups):
+    expected = [
+        [a.strip() for a in grp.split(",") if a.strip()]
+        for grp in groups.split(";")
+    ]
+    assert run_orchestrator_on_query["config_params"].get("agent_groups") == expected
 
 
 @when(
@@ -222,4 +247,12 @@ def test_reasoning_direct():
     "Chain-of-thought mode loops Synthesizer",
 )
 def test_reasoning_chain():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
+    "Dialectical mode with custom Primus start",
+)
+def test_reasoning_dialectical():
     pass
