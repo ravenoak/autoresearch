@@ -114,6 +114,10 @@ poetry run flake8 src tests
 
 # Run mypy for type checking
 poetry run mypy src
+# Expect roughly 20 seconds runtime on a standard setup.
+# Use '--cache-dir=.mypy_cache' to enable incremental caching or
+# run mypy on subpackages (e.g. 'poetry run mypy src/autoresearch')
+# if you need quicker iterations.
 ```
 
 For additional dialectical reasoning tips, consult `AGENTS.md` in the repository root.

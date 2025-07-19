@@ -415,7 +415,7 @@ class Search:
 
     # Registry mapping embedding backend name to callable
     embedding_backends: Dict[
-        str, Callable[[List[float], int], List[Dict[str, Any]]]
+        str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
     ] = {}
 
     # Singleton instance of the sentence transformer model
@@ -533,7 +533,7 @@ class Search:
         cls,
         query: str,
         documents: List[Dict[str, Any]],
-        query_embedding: Optional[List[float]] = None,
+        query_embedding: Optional[np.ndarray] = None,
     ) -> List[float]:
         """Calculate semantic similarity scores for a query and documents.
 
@@ -552,7 +552,7 @@ class Search:
             if query_embedding is None:
                 # Encode the query
                 assert model is not None
-                query_embedding = model.encode(query)
+                query_embedding = np.array(model.encode(query), dtype=float)
 
             # Encode the documents
             similarities: List[Optional[float]] = []
@@ -598,7 +598,7 @@ class Search:
     def add_embeddings(
         cls,
         documents: List[Dict[str, Any]],
-        query_embedding: Optional[List[float]] = None,
+        query_embedding: Optional[np.ndarray] = None,
     ) -> None:
         """Add embeddings and similarity scores to documents in-place."""
         model = cls.get_sentence_transformer()
@@ -694,7 +694,7 @@ class Search:
         cls,
         query: str,
         results: List[Dict[str, Any]],
-        query_embedding: Optional[List[float]] = None,
+        query_embedding: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
         """Rank search results using configurable relevance algorithms.
 
@@ -788,7 +788,7 @@ class Search:
         cls,
         query: str,
         backend_results: Dict[str, List[Dict[str, Any]]],
-        query_embedding: Optional[List[float]] = None,
+        query_embedding: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
         """Rank combined results from multiple backends.
         Each backend's results are merged and ranked together using the
@@ -806,7 +806,7 @@ class Search:
 
     @classmethod
     def embedding_lookup(
-        cls, query_embedding: List[float], max_results: int = 5
+        cls, query_embedding: np.ndarray, max_results: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Perform embedding-based search using registered backends."""
         cfg = get_config()
@@ -936,14 +936,14 @@ class Search:
     def register_embedding_backend(
         cls, name: str
     ) -> Callable[
-        [Callable[[List[float], int], List[Dict[str, Any]]]],
-        Callable[[List[float], int], List[Dict[str, Any]]],
+        [Callable[[np.ndarray, int], List[Dict[str, Any]]]],
+        Callable[[np.ndarray, int], List[Dict[str, Any]]],
     ]:
         """Register an embedding search backend."""
 
         def decorator(
-            func: Callable[[List[float], int], List[Dict[str, Any]]]
-        ) -> Callable[[List[float], int], List[Dict[str, Any]]]:
+            func: Callable[[np.ndarray, int], List[Dict[str, Any]]]
+        ) -> Callable[[np.ndarray, int], List[Dict[str, Any]]]:
             cls.embedding_backends[name] = func
             return func
 
@@ -1539,7 +1539,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                                 "url": commit_hash,
                                 "snippet": snippet,
                                 "commit": commit_hash,
-                                "author": commit.author.name,
+                                "author": commit.author.name or "",
                                 "date": commit.committed_datetime.isoformat(),
                                 "diff": part[:2000],
                             }
@@ -1556,7 +1556,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                         "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
                         [
                             commit_hash,
-                            commit.author.name,
+                            commit.author.name or "",
                             commit.committed_datetime.isoformat(),
                             commit.message,
                             diff_text,
@@ -1567,14 +1567,17 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     log.warning(f"Failed to index commit {commit_hash}: {exc}")
 
             if query.lower() in commit.message.lower() and len(results) < max_results:
-                snippet = commit.message.strip()[:200]
+                msg = commit.message
+                if isinstance(msg, bytes):
+                    msg = msg.decode("utf-8", "ignore")
+                snippet = msg.strip()[:200]
                 results.append(
                     {
                         "title": "commit message",
                         "url": commit_hash,
                         "snippet": snippet,
                         "commit": commit_hash,
-                        "author": commit.author.name,
+                        "author": commit.author.name or "",
                         "date": commit.committed_datetime.isoformat(),
                         "diff": diff_text[:2000],
                     }
@@ -1587,11 +1590,11 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
 
 @Search.register_embedding_backend("duckdb")
 def _duckdb_embedding_backend(
-    query_embedding: List[float], max_results: int = 5
+    query_embedding: np.ndarray, max_results: int = 5
 ) -> List[Dict[str, Any]]:
     """Use StorageManager.vector_search for embedding lookups."""
 
-    vec_results = StorageManager.vector_search(query_embedding, k=max_results)
+    vec_results = StorageManager.vector_search(query_embedding.tolist(), k=max_results)
     formatted: List[Dict[str, Any]] = []
     for r in vec_results:
         formatted.append(

@@ -58,7 +58,7 @@ def display_guided_tour() -> None:
     if "show_tour" not in st.session_state:
         st.session_state.show_tour = True
     if st.session_state.show_tour:
-        with st.modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):
+        with st.modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):  # type: ignore[attr-defined]
             st.markdown(
                 """
                 <div role="dialog" aria-label="Onboarding Tour" aria-modal="true">
