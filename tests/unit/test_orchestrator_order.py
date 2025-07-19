@@ -2,6 +2,7 @@ from unittest.mock import patch
 import asyncio
 
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration import ReasoningMode
 from autoresearch.config import ConfigModel
 
 
@@ -48,3 +49,10 @@ def test_async_custom_agents_concurrent():
         asyncio.run(Orchestrator.run_query_async("q", cfg, concurrent=True))
 
     assert sorted(record) == ["A1", "A2", "A3"]
+
+
+def test_parse_config_direct_mode_groups():
+    cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)
+    params = Orchestrator._parse_config(cfg)
+    assert params["agent_groups"] == [["Synthesizer"]]
+    assert params["loops"] == 1
