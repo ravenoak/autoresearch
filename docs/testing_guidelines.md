@@ -141,6 +141,16 @@ If a test requires functionality from these packages, provide more specific
 mocks within the test itself. This approach ensures the unit suite runs without
 attempting to download heavy models.
 
+## DuckDB VSS extension during tests
+
+The storage backend uses DuckDB's VSS extension for vector search. To keep the
+test suite self-contained the `tests/conftest.py` fixtures provide a stubbed
+`VECTOR_EXTENSION_PATH` when this environment variable is not already set. The
+fixtures also mock the `VSSExtensionLoader` so no network downloads occur and
+the extension appears to be loaded. When a test needs the real extension, mark
+it with `@pytest.mark.real_vss` or set the `REAL_VSS_TEST` environment
+variable.
+
 ## Parameterization
 
 Use parameterization to test the same functionality with different inputs:
