@@ -21,3 +21,10 @@ def test_parse_config_direct_mode():
     assert params["agents"] == ["Synthesizer"]
     assert params["loops"] == 1
     assert params["max_errors"] == 3
+
+
+def test_parse_config_direct_mode_agent_groups():
+    """Ensure direct mode uses only the Synthesizer group."""
+    cfg = ConfigModel(reasoning_mode=ReasoningMode.DIRECT, loops=5)
+    params = Orchestrator._parse_config(cfg)
+    assert params["agent_groups"] == [["Synthesizer"]]
