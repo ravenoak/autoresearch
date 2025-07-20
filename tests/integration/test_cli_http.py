@@ -246,7 +246,7 @@ def test_http_throttling(monkeypatch):
 
         set_delegate(None)
         DummyStorage.persisted = []
-        api_mod.REQUEST_LOG.clear()
+        api_mod.reset_request_log()
 
 
 def test_stream_endpoint(monkeypatch):
