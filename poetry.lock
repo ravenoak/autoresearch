@@ -1896,7 +1896,7 @@ description = "Git Object Database"
 optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "extra == \"ui\" or extra == \"full\""
+markers = "extra == \"ui\" or extra == \"full\" or extra == \"git\""
 files = [
     {file = "gitdb-4.0.12-py3-none-any.whl", hash = "sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf"},
     {file = "gitdb-4.0.12.tar.gz", hash = "sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571"},
@@ -1912,7 +1912,7 @@ description = "GitPython is a Python library used to interact with Git repositor
 optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "extra == \"ui\" or extra == \"full\""
+markers = "extra == \"ui\" or extra == \"full\" or extra == \"git\""
 files = [
     {file = "GitPython-3.1.44-py3-none-any.whl", hash = "sha256:9e0e10cda9bed1ee64bc9a6de50e7e38a9c9943241cd7f585f6df3ed28011110"},
     {file = "gitpython-3.1.44.tar.gz", hash = "sha256:c87e30b26253bf5418b01b0660f818967f3c503193838337fe5e573331249269"},
@@ -6904,7 +6904,7 @@ description = "A pure Python implementation of a sliding window memory map manag
 optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "extra == \"ui\" or extra == \"full\""
+markers = "extra == \"ui\" or extra == \"full\" or extra == \"git\""
 files = [
     {file = "smmap-5.0.2-py3-none-any.whl", hash = "sha256:b30115f0def7d7531d22a0fb6502488d879e75b260a9db4d0819cfb25403af5e"},
     {file = "smmap-5.0.2.tar.gz", hash = "sha256:26ea65a03958fa0c8a1c7e8c7a58fdc77221b8910f6be2131affade476898ad5"},
@@ -9168,7 +9168,8 @@ cffi = ["cffi (>=1.11)"]
 [extras]
 analysis = ["polars"]
 distributed = ["ray", "redis"]
-full = ["bertopic", "duckdb-extension-vss", "lmstudio", "pdfminer-six", "polars", "pynndescent", "python-docx", "ray", "redis", "scipy", "sentence-transformers", "slowapi", "spacy", "streamlit", "transformers"]
+full = ["bertopic", "duckdb-extension-vss", "gitpython", "lmstudio", "pdfminer-six", "polars", "pynndescent", "python-docx", "ray", "redis", "scipy", "sentence-transformers", "slowapi", "spacy", "streamlit", "transformers"]
+git = ["gitpython"]
 minimal = ["sentence-transformers"]
 nlp = ["bertopic", "pynndescent", "scipy", "spacy", "transformers"]
 parsers = ["pdfminer-six", "python-docx"]
@@ -9178,4 +9179,4 @@ vss = ["duckdb-extension-vss"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "ee6b773a53d1531fdc5ad343979ab0ad2c4d0f28a7ee565a909edace6a024009"
+content-hash = "6430edf4b9e83c6d59e31a6b1b1692313144684a756eaad5ebe17391f1d740a5"
