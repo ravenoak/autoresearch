@@ -26,7 +26,15 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from collections import defaultdict
 import requests
-from git import Repo
+try:
+    from git import Repo
+    GITPYTHON_AVAILABLE = True
+except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency
+    GITPYTHON_AVAILABLE = False
+    raise ImportError(
+        "Local Git search requires the 'gitpython' package. "
+        "Install with `pip install \"autoresearch[git]\"`."
+    ) from exc
 import numpy as np
 import csv
 import math

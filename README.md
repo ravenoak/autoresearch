@@ -44,6 +44,7 @@ pip install autoresearch[minimal]
 When working from a clone, run `scripts/setup.sh` which installs all
 development dependencies and optional extras via Poetry.
 Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
+Local Git search requires the `git` extra.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
 
 ### Using pip
@@ -277,6 +278,12 @@ file_types = ["md", "pdf", "txt"]
 repo_path = "/path/to/repo"
 branches = ["main"]
 history_depth = 50
+```
+
+Install the `git` extra to enable local Git search:
+
+```bash
+pip install "autoresearch[git]"
 ```
 
 Example queries:

@@ -55,12 +55,13 @@ Additional functionality is grouped into Poetry extras:
 - `vss` – DuckDB VSS extension for vector search
 - `distributed` – distributed processing with Ray
 - `analysis` – Polars-based data analysis utilities
+- `git` – local Git repository search support
 - `full` – installs all optional extras
 
 Install multiple extras separated by commas:
 
 ```bash
-pip install "autoresearch[minimal,nlp,parsers]"
+pip install "autoresearch[minimal,nlp,parsers,git]"
 ```
 
 ## Upgrading
