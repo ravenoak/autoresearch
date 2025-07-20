@@ -47,7 +47,14 @@ from .error_utils import get_error_info, format_error_for_api
 
 _slowapi_module = importlib.import_module("slowapi")
 SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
-REQUEST_LOG = getattr(_slowapi_module, "REQUEST_LOG", {})
+# Global per-client request log used for fallback rate limiting and tests
+REQUEST_LOG: dict[str, int] = {}
+
+
+def reset_request_log() -> None:
+    """Clear the request log."""
+    REQUEST_LOG.clear()
+
 
 config_loader = ConfigLoader()
 
@@ -119,11 +126,11 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
     """Simplified rate limiting when SlowAPI is unavailable."""
 
     async def dispatch(self, request: Request, call_next):
-        if SLOWAPI_STUB:
+        cfg_limit = getattr(get_config().api, "rate_limit", 0)
+        if cfg_limit:
             ip = get_remote_address(request)
             REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
-            limit = getattr(get_config().api, "rate_limit", 0)
-            if limit and REQUEST_LOG[ip] > limit:
+            if SLOWAPI_STUB and REQUEST_LOG[ip] > cfg_limit:
                 raise RateLimitExceeded(cast("Limit", None))
         return await call_next(request)
 
