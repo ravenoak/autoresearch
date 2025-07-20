@@ -17,12 +17,14 @@ Endpoints:
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional, List, cast
+from typing import Optional, List, cast, TYPE_CHECKING
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+if TYPE_CHECKING:
+    from slowapi.wrappers import Limit
 from starlette.types import ExceptionHandler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
@@ -122,7 +124,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
             REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
             limit = getattr(get_config().api, "rate_limit", 0)
             if limit and REQUEST_LOG[ip] > limit:
-                raise RateLimitExceeded()
+                raise RateLimitExceeded(cast("Limit", None))
         return await call_next(request)
 
 
