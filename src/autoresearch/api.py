@@ -26,6 +26,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.types import ExceptionHandler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+import importlib
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
@@ -41,6 +42,10 @@ from .models import QueryRequest, QueryResponse, BatchQueryRequest
 from .storage import StorageManager
 from pydantic import ValidationError
 from .error_utils import get_error_info, format_error_for_api
+
+_slowapi_module = importlib.import_module("slowapi")
+SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
+REQUEST_LOG = getattr(_slowapi_module, "REQUEST_LOG", {})
 
 config_loader = ConfigLoader()
 
@@ -106,6 +111,22 @@ app = FastAPI(
 )
 app.add_middleware(AuthMiddleware)
 app.state.limiter = limiter
+
+
+class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
+    """Simplified rate limiting when SlowAPI is unavailable."""
+
+    async def dispatch(self, request: Request, call_next):
+        if SLOWAPI_STUB:
+            ip = get_remote_address(request)
+            REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+            limit = getattr(get_config().api, "rate_limit", 0)
+            if limit and REQUEST_LOG[ip] > limit:
+                raise RateLimitExceeded()
+        return await call_next(request)
+
+
+app.add_middleware(FallbackRateLimitMiddleware)
 
 
 def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
