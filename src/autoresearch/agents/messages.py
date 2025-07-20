@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import time
 from typing import Optional
 from enum import Enum
@@ -25,9 +25,10 @@ class AgentMessage(BaseModel):
     cycle: int
     timestamp: float = Field(default_factory=lambda: time.time())
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
 
     def to_dict(self) -> dict:
         """Return message as plain dictionary."""

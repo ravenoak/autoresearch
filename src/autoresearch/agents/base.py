@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, Optional, List
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from ..config import ConfigModel
 from ..orchestration.state import QueryState
@@ -39,8 +39,9 @@ class AgentConfig(BaseModel):
     enabled: bool = True
     prompt_templates: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
 
-    @validator("prompt_templates")
-    def validate_prompt_templates(cls, v):
+    @field_validator("prompt_templates")
+    @classmethod
+    def validate_prompt_templates(cls, v: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
         """Validate prompt templates."""
         for name, template in v.items():
             if "template" not in template:
@@ -64,10 +65,9 @@ class Agent(
     enabled: bool = True
     llm_adapter: Optional[LLMAdapter] = None
 
-    class Config:
-        """Pydantic configuration for the agent model."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def execute(self, state: QueryState, config: ConfigModel) -> Dict[str, Any]:
         """Execute agent's task on the given state."""
