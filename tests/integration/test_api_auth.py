@@ -8,6 +8,7 @@ from autoresearch.models import QueryResponse
 
 def _setup(monkeypatch):
     cfg = ConfigModel(api=APIConfig())
+    ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(
         Orchestrator,
