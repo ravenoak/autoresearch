@@ -48,6 +48,7 @@ def require_bearer_token(monkeypatch, token):
 def set_rate_limit(monkeypatch, limit):
     cfg = ConfigModel(api=APIConfig(rate_limit=limit))
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    config_loader._config = None
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
