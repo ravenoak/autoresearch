@@ -69,6 +69,10 @@ parsers = [
     "pdfminer-six >=20250506",
     "python-docx >=1.2.0"
 ]
+# Local Git repository search
+git = [
+    "gitpython >=3.1"
+]
 # Distributed computing support
 distributed = [
     "ray >=2.10.0",
@@ -94,7 +98,8 @@ full = [
     "redis >=6.2",
     "slowapi ==0.1.9",
     "lmstudio >=1.4.1",
-    "polars >=1.31.0"
+    "polars >=1.31.0",
+    "gitpython >=3.1"
 ]
 
 [tool.poetry.extras]
