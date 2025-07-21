@@ -7,9 +7,21 @@ backends and the main search functionality.
 import subprocess
 
 import pytest
+import importlib.util
+
+try:
+    _spec = importlib.util.find_spec("git")
+    GITPYTHON_INSTALLED = bool(_spec and _spec.origin)
+except Exception:
+    GITPYTHON_INSTALLED = False
+
 from autoresearch.search import Search
 from autoresearch import cache
 from autoresearch.config import ConfigModel
+
+pytestmark = pytest.mark.skipif(
+    not GITPYTHON_INSTALLED, reason="GitPython not installed"
+)
 
 
 @pytest.fixture(autouse=True)

@@ -3,9 +3,18 @@ import time
 import numpy as np
 import pytest
 from autoresearch.storage import StorageManager
+import duckdb
+from autoresearch.extensions import VSSExtensionLoader
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 
-pytestmark = pytest.mark.slow
+try:
+    _tmp_conn = duckdb.connect(database=":memory:")
+    VSS_AVAILABLE = VSSExtensionLoader.verify_extension(_tmp_conn, verbose=False)
+    _tmp_conn.close()
+except Exception:
+    VSS_AVAILABLE = False
+
+pytestmark = [pytest.mark.slow, pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available")]
 
 
 def test_knn_latency_benchmark(tmp_path, monkeypatch):
@@ -20,15 +29,6 @@ def test_knn_latency_benchmark(tmp_path, monkeypatch):
 
     StorageManager.clear_all()
     conn = StorageManager.get_duckdb_conn()
-
-    try:
-        result = conn.execute(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name='vss'"
-        ).fetchall()
-        if not result:
-            pytest.skip("Vector extension not available")
-    except Exception:
-        pytest.skip("Vector extension not available")
 
     dim = 384
     n = int(os.environ.get("KNN_BENCHMARK_N", "1000"))
