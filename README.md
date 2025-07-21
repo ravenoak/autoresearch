@@ -456,6 +456,7 @@ task test:unit         # unit tests
 task test:integration  # integration tests excluding slow tests
 task test:behavior     # behavior-driven tests
 task test:all          # run all suites including slow tests
+task test:slow         # run only tests marked as slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
@@ -465,7 +466,7 @@ extension. These extras are installed when running
 All testing commands are wrapped by `task`, which uses `poetry run` internally
 to ensure the correct virtual environment is active.
 
-Maintain at least 90% test coverage and remove temporary files before submitting a pull request.
+Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If you run suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
 
 ### Troubleshooting
 
