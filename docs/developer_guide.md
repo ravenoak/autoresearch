@@ -6,6 +6,7 @@ This guide describes how to set up a development environment and the expected wo
 
 1. Install [Poetry](https://python-poetry.org/docs/#installation).
 2. Select the Python interpreter:
+   Confirm with `python --version` that it is 3.12 or newer.
    ```bash
    poetry env use $(which python3)
    ```

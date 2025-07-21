@@ -17,7 +17,7 @@ documentation and packaging checks complete. See
 
 ## Installation
 
-Autoresearch requires **Python 3.12 or newer**. You can install the project
+Autoresearch requires **Python 3.12 or newer**. Before installing, ask yourself: "Is my `python` interpreter at least version 3.12?" You can install the project
 dependencies with either **Poetry** or **pip**. See
 [docs/installation.md](docs/installation.md) for details on optional features and
 upgrade instructions.
