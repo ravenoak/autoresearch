@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use $(which python)
-          poetry install --with dev
+          poetry install --with dev --all-extras
       - name: Lint
         run: poetry run flake8 src tests
       - name: Type check

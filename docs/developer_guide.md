@@ -9,11 +9,15 @@ This guide describes how to set up a development environment and the expected wo
    ```bash
    poetry env use $(which python3)
    ```
-3. Install dependencies including development tools:
+3. Install dependencies including development tools and all optional extras:
    ```bash
-   poetry install --with dev
+   poetry install --with dev --all-extras
    ```
 4. Activate the environment with `poetry shell` or prefix commands with `poetry run`.
+
+Several unit and integration tests require `gitpython` and the DuckDB VSS
+extension. Both are installed when you set up the environment with
+`poetry install --with dev --all-extras`.
 
 ## Code Style
 
