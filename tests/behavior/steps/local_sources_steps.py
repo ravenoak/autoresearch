@@ -7,6 +7,17 @@ from autoresearch.config import ConfigModel
 from autoresearch.search import Search
 from pdfminer.high_level import extract_text
 from docx import Document
+import pytest
+import importlib.util
+
+try:
+    _spec = importlib.util.find_spec("git")
+    _git_available = bool(_spec and _spec.origin)
+except Exception:
+    _git_available = False
+
+if not _git_available:
+    pytest.skip("GitPython not installed", allow_module_level=True)
 
 
 @given("a directory with text files")

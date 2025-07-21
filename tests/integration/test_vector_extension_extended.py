@@ -9,14 +9,26 @@ and error handling in vector search.
 import pytest
 import logging
 from unittest.mock import patch
-
-from autoresearch.storage import StorageManager
+import duckdb  # noqa: E402
+from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
+from autoresearch.storage import StorageManager  # noqa: E402
 from autoresearch.config import (
     ConfigModel,
     StorageConfig,
     ConfigLoader,
+)  # noqa: E402
+from autoresearch.errors import StorageError  # noqa: E402
+
+try:
+    _tmp_conn = duckdb.connect(database=":memory:")
+    VSS_AVAILABLE = VSSExtensionLoader.verify_extension(_tmp_conn, verbose=False)
+    _tmp_conn.close()
+except Exception:
+    VSS_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(
+    not VSS_AVAILABLE, reason="VSS extension not available"
 )
-from autoresearch.errors import StorageError
 
 logger = logging.getLogger(__name__)
 
@@ -44,22 +56,6 @@ def test_vector_search_with_different_dimensions(
     # Clear storage and prepare test data
     StorageManager.clear_all()
     conn = StorageManager.get_duckdb_conn()
-
-    # Check if vector extension is available
-    try:
-        result = conn.execute(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
-        ).fetchall()
-        vector_extension_available = result and len(result) > 0
-        if vector_extension_available:
-            logger.info("Vector extension is available")
-        else:
-            logger.info("Vector extension is not available")
-            pytest.skip("Vector extension is not available")
-    except Exception as e:
-        vector_extension_available = False
-        logger.info(f"Vector extension is not available: {e}")
-        pytest.skip("Vector extension is not available")
 
     # Persist test claims with embeddings of different dimensions
     dimensions = [2, 3, 4, 10]
@@ -130,23 +126,6 @@ def test_vector_search_edge_cases(storage_manager, tmp_path, monkeypatch):
 
     # Clear storage and prepare test data
     StorageManager.clear_all()
-    conn = StorageManager.get_duckdb_conn()
-
-    # Check if vector extension is available
-    try:
-        result = conn.execute(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
-        ).fetchall()
-        vector_extension_available = result and len(result) > 0
-        if vector_extension_available:
-            logger.info("Vector extension is available")
-        else:
-            logger.info("Vector extension is not available")
-            pytest.skip("Vector extension is not available")
-    except Exception as e:
-        vector_extension_available = False
-        logger.info(f"Vector extension is not available: {e}")
-        pytest.skip("Vector extension is not available")
 
     # Persist test claims with different vectors
     test_vectors = {
@@ -215,23 +194,6 @@ def test_vector_search_error_handling(storage_manager, tmp_path, monkeypatch):
 
     # Clear storage and prepare test data
     StorageManager.clear_all()
-    conn = StorageManager.get_duckdb_conn()
-
-    # Check if vector extension is available
-    try:
-        result = conn.execute(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
-        ).fetchall()
-        vector_extension_available = result and len(result) > 0
-        if vector_extension_available:
-            logger.info("Vector extension is available")
-        else:
-            logger.info("Vector extension is not available")
-            pytest.skip("Vector extension is not available")
-    except Exception as e:
-        vector_extension_available = False
-        logger.info(f"Vector extension is not available: {e}")
-        pytest.skip("Vector extension is not available")
 
     # Persist a test claim with a vector
     StorageManager.persist_claim(
@@ -287,24 +249,8 @@ def test_vector_search_with_no_embeddings(storage_manager, tmp_path, monkeypatch
 
     # Clear storage
     StorageManager.clear_all()
-    conn = StorageManager.get_duckdb_conn()
 
     # Check if vector extension is available
-    try:
-        result = conn.execute(
-            "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
-        ).fetchall()
-        vector_extension_available = result and len(result) > 0
-        if vector_extension_available:
-            logger.info("Vector extension is available")
-        else:
-            logger.info("Vector extension is not available")
-            pytest.skip("Vector extension is not available")
-    except Exception as e:
-        vector_extension_available = False
-        logger.info(f"Vector extension is not available: {e}")
-        pytest.skip("Vector extension is not available")
-
     # Persist a claim without an embedding
     StorageManager.persist_claim(
         {

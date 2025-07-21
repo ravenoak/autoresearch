@@ -231,6 +231,36 @@ from autoresearch.storage import (  # noqa: E402
     set_delegate as set_storage_delegate,
 )
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
+import duckdb  # noqa: E402
+
+
+def _module_available(name: str) -> bool:
+    """Return True if a module can be imported from the real environment."""
+    try:
+        spec = importlib.util.find_spec(name)
+    except Exception:
+        return False
+    return bool(spec and spec.origin)
+
+
+GITPYTHON_INSTALLED = _module_available("git")
+POLARS_INSTALLED = _module_available("polars")
+
+
+def _check_vss() -> bool:
+    try:
+        conn = duckdb.connect(database=":memory:")
+        return VSSExtensionLoader.verify_extension(conn, verbose=False)
+    except Exception:
+        return False
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+VSS_AVAILABLE = _check_vss()
 
 
 @pytest.fixture(autouse=True)

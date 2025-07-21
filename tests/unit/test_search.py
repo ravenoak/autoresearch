@@ -4,12 +4,22 @@ from responses import matchers
 import pytest
 import requests
 import subprocess
+import importlib.util
+
+try:
+    _spec = importlib.util.find_spec("git")
+    GITPYTHON_INSTALLED = bool(_spec and _spec.origin)
+except Exception:
+    GITPYTHON_INSTALLED = False
 from autoresearch.config import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 from unittest.mock import patch
-
 import autoresearch.search as search
 from autoresearch.search import Search
+
+pytestmark = pytest.mark.skipif(
+    not GITPYTHON_INSTALLED, reason="GitPython not installed"
+)
 
 
 @pytest.fixture
