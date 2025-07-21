@@ -18,10 +18,12 @@ Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the Poetry 
 task test:unit         # unit tests
 task test:integration  # integration tests excluding slow tests
 task test:behavior     # behavior-driven tests
+task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
+task test:all          # entire suite including slow tests
 ```
 
-`task test:all` executes every suite. Maintain at least **90% coverage**. When running suites separately, prefix each command with `coverage run -p` and merge the results using `coverage combine` before generating a report with `coverage html` or `coverage xml`.
+`task test:fast` usually finishes in about **3 minutes**. The slow tests add roughly **7 minutes**, so `task test:all` takes around **10 minutes** total and is used by CI. Maintain at least **90% coverage**. When running suites separately, prefix each command with `coverage run -p` and merge the results using `coverage combine` before generating a report with `coverage html` or `coverage xml`.
 
 ## Naming Conventions
 
