@@ -130,7 +130,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
         if cfg_limit:
             ip = get_remote_address(request)
             REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
-            if SLOWAPI_STUB and REQUEST_LOG[ip] > cfg_limit:
+            if REQUEST_LOG[ip] > cfg_limit:
                 raise RateLimitExceeded(cast("Limit", None))
         return await call_next(request)
 
