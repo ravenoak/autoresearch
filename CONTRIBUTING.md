@@ -81,6 +81,12 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
   # Run all checks (lint, type check, test)
   task check
+
+  # Run unit and integration tests (excludes tests marked "slow")
+  task test:fast
+
+  # Run the entire suite including slow tests
+  task test:all
   ```
 
 ## Code Style Guidelines
@@ -186,11 +192,17 @@ poetry run pytest tests/behavior
 poetry run pytest --cov=src
 ```
 
+The BDD tests live under `tests/behavior` and can be executed separately if you
+only want to run the behavior scenarios.
+
 ### Test Coverage Requirements
 
 - All new code should have at least 90% test coverage
 - Critical components should have 100% test coverage
 - Tests should cover both normal operation and error cases
+
+Continuous integration invokes `task coverage`, which runs the entire suite with
+coverage reporting. This command must succeed to satisfy the 90% coverage gate.
 
 ### Writing Tests
 
