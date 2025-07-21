@@ -17,7 +17,7 @@
 - `tests/`
   - Unit, integration, and BDD-style tests
 - `docs/`
-  - requirements.md, specification.md, requirements_tracability_matrix.md, plan.md
+  - requirements.md, specification.md, requirements_traceability_matrix.md, plan.md
 - `.env` (environment variables)
 - `autoresearch.toml` (primary config file, hot-reloadable)
 - `pyproject.toml`, `README.md`, etc.
