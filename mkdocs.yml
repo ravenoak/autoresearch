@@ -26,7 +26,7 @@ nav:
   - Specification: specification.md
   - Plan: plan.md
   - Pseudocode: pseudocode.md
-  - Requirements Tracability Matrix: requirements_tracability_matrix.md
+  - Requirements Traceability Matrix: requirements_traceability_matrix.md
   - Testing Guidelines: testing_guidelines.md
 markdown_extensions:
   - toc
