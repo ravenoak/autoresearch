@@ -5,6 +5,7 @@ from unittest.mock import patch
 from autoresearch.main import app
 from autoresearch.storage_backup import BackupInfo
 
+
 @patch("autoresearch.cli_backup.BackupManager")
 def test_backup_create_command(mock_manager):
     """Test the backup create command."""

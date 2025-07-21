@@ -12,9 +12,15 @@ This guide explains how to install Autoresearch and manage optional features.
 Use Poetry to manage the environment when working from a clone:
 
 ```bash
-poetry env use $(which python3)
+poetry env use $(which python3.12)
+# or: poetry env use $(which python3.13)
 poetry lock --check || poetry lock
 poetry install --with dev --all-extras
+```
+Selecting Python 3.11 results in an error similar to:
+```
+Because autoresearch requires Python >=3.12,<4.0 and the current Python is
+3.11.*, no compatible version could be found.
 ```
 
 Verify the environment by running:
