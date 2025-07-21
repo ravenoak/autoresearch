@@ -437,17 +437,24 @@ the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and
 
 ## Running tests
 
-Execute all tests once the development environment is ready:
+Execute linting and type checks once the development environment is ready:
 
 ```bash
 poetry run flake8 src tests
 poetry run mypy src
-poetry run pytest -q
-poetry run pytest tests/behavior
 ```
 
-All testing commands should be run through `poetry run` to ensure the correct
-virtual environment is used.
+Run the test suites using Go Task:
+
+```bash
+task test:unit         # unit tests
+task test:integration  # integration tests excluding slow tests
+task test:behavior     # behavior-driven tests
+task test:all          # run all suites including slow tests
+```
+
+All testing commands are wrapped by `task`, which uses `poetry run` internally
+to ensure the correct virtual environment is active.
 
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request.
 

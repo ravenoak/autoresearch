@@ -3,23 +3,42 @@ version: '3'
 tasks:
   unit:
     cmds:
-      - pytest -q tests/unit
+      - poetry run pytest tests/unit -q
     desc: "Run unit tests"
 
   integration:
     cmds:
-      - pytest -q tests/integration
+      - poetry run pytest tests/integration -m "not slow" -q
     desc: "Run integration tests"
 
   behavior:
     cmds:
-      - pytest -q tests/behavior
+      - poetry run pytest tests/behavior -q
     desc: "Run BDD (behavior) tests"
 
-
   test:
-    deps: [unit, integration, behavior]
+    deps: [test:unit, test:integration, test:behavior]
     desc: "Run all tests"
+
+  test:unit:
+    cmds:
+      - poetry run pytest tests/unit -q
+    desc: "Run unit tests"
+
+  test:integration:
+    cmds:
+      - poetry run pytest tests/integration -m "not slow" -q
+    desc: "Run integration tests"
+
+  test:behavior:
+    cmds:
+      - poetry run pytest tests/behavior -q
+    desc: "Run BDD (behavior) tests"
+
+  test:all:
+    cmds:
+      - poetry run pytest -q
+    desc: "Run the entire test suite including slow tests"
 
   coverage:
     cmds:
