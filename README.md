@@ -26,12 +26,17 @@ all optional extras so development and runtime dependencies are available
 for testing.
 
 ### Using Poetry
-Python 3.12 or newer is required. If multiple Python interpreters exist,
-explicitly select version 3.12 with `poetry env use $(which python3.12)`.
-Install the development dependencies:
+Python 3.12 or newer is required. When several Python versions are installed,
+select version 3.12 (or 3.13 when available) **before** running `poetry install`:
 ```bash
-poetry env use $(which python3)
+poetry env use $(which python3.12)
+# or: poetry env use $(which python3.13)
 poetry install --with dev --all-extras
+```
+If Python 3.11 is selected, Poetry will fail with a message similar to:
+```
+Because autoresearch requires Python >=3.12,<4.0 and the current Python is
+3.11.*, no compatible version could be found.
 ```
 
 Once installed, verify the environment by running the checks listed under [Running tests](#running-tests).
