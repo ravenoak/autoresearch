@@ -11,6 +11,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify Python version
+        run: |
+          python - <<'EOF'
+          import sys
+          major, minor = sys.version_info[:2]
+          assert (major == 3 and minor >= 12), f"Python 3.12 or newer required, got {major}.{minor}"
+          EOF
       - name: Install Poetry
         run: python -m pip install poetry
       - name: Install dependencies
