@@ -20,6 +20,11 @@ def print_status(message, success=True):
     else:
         print(f"\033[91m✗ {message}\033[0m")  # Red
 
+
+def print_warning(message) -> None:
+    """Print a warning message in yellow."""
+    print(f"\033[93m⚠ {message}\033[0m")
+
 def check_dependencies():
     """Check that required Python packages are installed."""
     required_packages = ["duckdb", "networkx", "rdflib", "typer"]
@@ -58,6 +63,12 @@ def check_duckdb_vss():
                 print_status(f"VSS extension loaded from {vss_path}")
                 return True
             except Exception as e:
+                msg = str(e).lower()
+                if "network" in msg or "download" in msg:
+                    print_warning(
+                        f"Network error loading VSS extension: {e}; continuing without it"
+                    )
+                    return True
                 print_status(
                     f"Failed to load VSS extension from {vss_path}: {e}", False
                 )
@@ -74,26 +85,41 @@ def check_storage():
     """Check that the storage system can be initialized and key features work."""
     try:
         from autoresearch.storage import StorageManager
-        StorageManager.setup()
+        try:
+            StorageManager.setup()
+        except Exception as e:
+            msg = str(e).lower()
+            if "network" in msg or "download" in msg:
+                print_warning(
+                    f"Network error while loading VSS extension: {e}; continuing without it"
+                )
+            else:
+                raise
         print_status("Storage system initialized")
 
         # Check if VSS extension is available
         vss_available = StorageManager.has_vss()
-        print_status("VSS extension available", vss_available)
+        if vss_available:
+            print_status("VSS extension available")
+        else:
+            print_warning("VSS extension not available")
 
         # Check if HNSW index can be created
-        try:
-            StorageManager.create_hnsw_index()
-            print_status("HNSW index created successfully")
-        except Exception as e:
-            # For smoke test purposes, we'll consider certain errors acceptable
-            # The "HNSW index keys must be of type FLOAT[N]" error is common in test environments
-            # where there are no actual embeddings in the database
-            error_str = str(e)
-            if "HNSW index keys must be of type FLOAT[N]" in error_str or "HNSW index 'metric'" in error_str:
-                print_status(f"HNSW index creation failed with acceptable error (test environment): {e}")
-            else:
-                print_status(f"Failed to create HNSW index: {e}", False)
+        if vss_available:
+            try:
+                StorageManager.create_hnsw_index()
+                print_status("HNSW index created successfully")
+            except Exception as e:
+                # For smoke test purposes, we'll consider certain errors acceptable
+                # The "HNSW index keys must be of type FLOAT[N]" error is common in test environments
+                # where there are no actual embeddings in the database
+                error_str = str(e)
+                if "HNSW index keys must be of type FLOAT[N]" in error_str or "HNSW index 'metric'" in error_str:
+                    print_status(f"HNSW index creation failed with acceptable error (test environment): {e}")
+                else:
+                    print_status(f"Failed to create HNSW index: {e}", False)
+        else:
+            print_warning("Skipping HNSW index creation - VSS extension not loaded")
 
         # Check RDF store
         try:

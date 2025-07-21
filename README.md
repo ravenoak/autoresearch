@@ -467,6 +467,22 @@ Maintain at least 90% test coverage and remove temporary files before submitting
 - If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed inside the Poetry environment using `poetry install --with dev --all-extras` or `poetry run pip install -e .`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
+### Smoke test
+
+Run the environment smoke test to verify your installation:
+
+```bash
+poetry run python scripts/smoke_test.py
+```
+
+If running without network access, copy `.env.offline` to `.env` so the script
+uses the pre-downloaded VSS extension:
+
+```bash
+cp .env.offline .env
+poetry run python scripts/smoke_test.py
+```
+
 ## Building the documentation
 
 Install MkDocs and generate the static site:
