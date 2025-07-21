@@ -31,7 +31,7 @@ explicitly select version 3.12 with `poetry env use $(which python3.12)`.
 Install the development dependencies:
 ```bash
 poetry env use $(which python3)
-poetry install --with dev
+poetry install --with dev --all-extras
 ```
 
 Once installed, verify the environment by running the checks listed under [Running tests](#running-tests).
@@ -421,7 +421,7 @@ For a detailed breakdown of the requirements and architecture, see
 Install the development dependencies and link the package in editable mode:
 
 ```bash
-poetry install --with dev
+poetry install --with dev --all-extras
 poetry run pip install -e .
 ```
 
@@ -431,7 +431,7 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The helper installs all dependencies with `poetry install --with dev` and links
+The helper installs all dependencies with `poetry install --with dev --all-extras` and links
 the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and
 `tomli_w` are therefore available for development and testing.
 
@@ -453,6 +453,10 @@ task test:behavior     # behavior-driven tests
 task test:all          # run all suites including slow tests
 ```
 
+Several unit and integration tests rely on `gitpython` and the DuckDB VSS
+extension. These extras are installed when running
+`poetry install --with dev --all-extras`.
+
 All testing commands are wrapped by `task`, which uses `poetry run` internally
 to ensure the correct virtual environment is active.
 
@@ -460,7 +464,7 @@ Maintain at least 90% test coverage and remove temporary files before submitting
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed inside the Poetry environment using `poetry install --with dev` or `poetry run pip install -e .`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed inside the Poetry environment using `poetry install --with dev --all-extras` or `poetry run pip install -e .`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ## Building the documentation
