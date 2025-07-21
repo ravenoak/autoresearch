@@ -6,6 +6,8 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
 
+pytestmark = pytest.mark.slow
+
 
 class DummyAgent:
     def __init__(self, name: str, pids: list[int]):
@@ -21,7 +23,6 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
-@pytest.mark.slow
 def test_process_executor_multi_process(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
@@ -38,7 +39,6 @@ def test_process_executor_multi_process(monkeypatch):
     executor.shutdown()
 
 
-@pytest.mark.slow
 def test_process_result_aggregation(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))

@@ -5,8 +5,9 @@ from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.distributed import start_storage_coordinator
 from autoresearch.storage import StorageManager
 
+pytestmark = pytest.mark.slow
 
-@pytest.mark.slow
+
 def test_distributed_storage(tmp_path):
     cfg = ConfigModel(
         distributed=True,

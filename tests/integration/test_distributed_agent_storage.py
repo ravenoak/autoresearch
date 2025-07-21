@@ -7,6 +7,8 @@ from autoresearch.storage import StorageManager
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
 
+pytestmark = pytest.mark.slow
+
 
 class ClaimAgent:
     def __init__(self, name: str, pids: list[int]):
@@ -23,7 +25,6 @@ class ClaimAgent:
         return {"results": {self.name: "ok"}}
 
 
-@pytest.mark.slow
 def test_distributed_storage_with_executor(tmp_path, monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: ClaimAgent(name, pids))
