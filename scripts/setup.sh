@@ -4,8 +4,7 @@ set -euo pipefail
 #python -m pip install --upgrade pip
 #pip install poetry
 poetry env use $(which python3)
-poetry install --no-root --no-interaction
-poetry install --with dev --all-extras
+poetry install --no-root --no-interaction --with dev --all-extras
 poetry run pip install -e .
 
 # Create extensions directory if it doesn't exist
