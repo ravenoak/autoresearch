@@ -11,9 +11,20 @@ poetry run pip install -e .
 # Create extensions directory if it doesn't exist
 mkdir -p extensions
 
-# Download VSS extension for offline use
-echo "Downloading VSS extension for offline use..."
-poetry run scripts/download_duckdb_extensions.py --output-dir ./extensions
+# Check for pre-packaged VSS extension before downloading
+echo "Checking for pre-packaged VSS extension..."
+VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+
+if [ -z "$VSS_EXTENSION" ]; then
+    echo "No packaged extension found. Attempting download..."
+    if poetry run scripts/download_duckdb_extensions.py --output-dir ./extensions; then
+        VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+    else
+        echo "Download failed or skipped."
+    fi
+else
+    echo "Found packaged extension: $VSS_EXTENSION"
+fi
 
 # Get the platform-specific path using the same logic as the download script
 PLATFORM=$(python -c "
@@ -38,14 +49,11 @@ else:
     print('linux_amd64')
 ")
 
-# Find the VSS extension file
-VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
-
-# If extension not found, use a default path with the correct filename
+# Use default path if nothing was found
 if [ -z "$VSS_EXTENSION" ]; then
     VSS_EXTENSION="./extensions/vss/vss.duckdb_extension"
     echo "Warning: VSS extension file not found. Using default path: $VSS_EXTENSION"
-    echo "You may need to run 'python scripts/download_duckdb_extensions.py' to download the extension."
+    echo "You may need to place the extension manually in this location."
 fi
 
 # Set up .env file with vector_extension_path if it doesn't exist

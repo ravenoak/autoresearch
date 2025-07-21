@@ -64,6 +64,11 @@ python scripts/download_duckdb_extensions.py --output-dir ./extensions --platfor
 python scripts/download_duckdb_extensions.py --output-dir ./extensions --extensions vss,json
 ```
 
+If you already have the `.duckdb_extension` file available, copy it under
+`extensions/vss/` before running `scripts/setup.sh`. The setup script will
+detect the file and skip the download step, making offline installation
+easier.
+
 This will download the appropriate VSS extension for the specified platform and store it in the specified directory. The script will output the exact path to use in your configuration file.
 
 ### Configuration for Offline Use
