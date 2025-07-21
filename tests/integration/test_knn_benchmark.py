@@ -5,8 +5,9 @@ import pytest
 from autoresearch.storage import StorageManager
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 
+pytestmark = pytest.mark.slow
 
-@pytest.mark.slow
+
 def test_knn_latency_benchmark(tmp_path, monkeypatch):
     cfg = ConfigModel(
         storage=StorageConfig(

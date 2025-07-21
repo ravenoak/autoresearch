@@ -7,6 +7,8 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
 
+pytestmark = pytest.mark.slow
+
 
 class DummyAgent:
     def __init__(self, name: str, pid_list: list[int]):
@@ -22,7 +24,6 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
-@pytest.mark.slow
 def test_result_aggregation_multi_process(monkeypatch):
     pids: list[int] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
