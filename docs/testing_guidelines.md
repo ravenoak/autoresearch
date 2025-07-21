@@ -10,6 +10,19 @@ Tests are organized into three categories:
 2. **Integration Tests** (`tests/integration/`): Test interactions between components
 3. **Behavior Tests** (`tests/behavior/`): BDD-style tests using Gherkin syntax
 
+## Running tests
+
+Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the Poetry environment:
+
+```bash
+task test:unit         # unit tests
+task test:integration  # integration tests excluding slow tests
+task test:behavior     # behavior-driven tests
+task test:slow         # only tests marked as slow
+```
+
+`task test:all` executes every suite. Maintain at least **90% coverage**. When running suites separately, prefix each command with `coverage run -p` and merge the results using `coverage combine` before generating a report with `coverage html` or `coverage xml`.
+
 ## Naming Conventions
 
 ### Test Files
