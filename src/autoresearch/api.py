@@ -123,7 +123,7 @@ app.state.limiter = limiter
 
 
 class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
-    """Simplified rate limiting when SlowAPI is unavailable."""
+    """Simplified rate limiting used when SlowAPI is unavailable."""
 
     async def dispatch(self, request: Request, call_next):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
@@ -135,7 +135,8 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-app.add_middleware(FallbackRateLimitMiddleware)
+if SLOWAPI_STUB:
+    app.add_middleware(FallbackRateLimitMiddleware)
 
 
 def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
@@ -148,7 +149,8 @@ def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
 app.add_exception_handler(
     RateLimitExceeded, cast(ExceptionHandler, _handle_rate_limit)
 )
-app.add_middleware(SlowAPIMiddleware)
+if not SLOWAPI_STUB:
+    app.add_middleware(SlowAPIMiddleware)
 _watch_ctx = None
 app.state.async_tasks = {}
 

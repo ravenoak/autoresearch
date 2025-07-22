@@ -44,3 +44,40 @@ def test_batch_query_invalid_page(monkeypatch):
     payload = {"queries": [{"query": "q1"}]}
     resp = client.post("/query/batch?page=0&page_size=1", json=payload)
     assert resp.status_code == 400
+
+
+def test_fallback_no_limit(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.rate_limit = 0
+
+    from autoresearch import api as api_mod
+
+    api_mod.reset_request_log()
+    monkeypatch.setattr(api_mod, "get_remote_address", lambda req: req.headers.get("x-ip", "1"))
+    client = TestClient(app)
+
+    assert client.post("/query", json={"query": "q"}).status_code == 200
+    assert client.post("/query", json={"query": "q"}).status_code == 200
+    assert api_mod.REQUEST_LOG == {}
+
+
+def test_fallback_multiple_ips(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.rate_limit = 1
+
+    from autoresearch import api as api_mod
+
+    api_mod.reset_request_log()
+
+    def addr(req):
+        return req.headers.get("x-ip", "1")
+
+    monkeypatch.setattr(api_mod, "get_remote_address", addr)
+    client = TestClient(app)
+
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 200
+    assert api_mod.REQUEST_LOG.get("1") == 1
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code == 200
+    assert api_mod.REQUEST_LOG.get("2") == 1
+    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 429
+    assert api_mod.REQUEST_LOG.get("1") == 2
