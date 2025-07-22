@@ -110,6 +110,43 @@ def test_backup_schedule_command(mock_manager):
 
 
 @patch("autoresearch.cli_backup.BackupManager")
+def test_backup_schedule_command_keyboard_interrupt(mock_manager, monkeypatch):
+    """Test stopping the backup schedule with Ctrl+C."""
+    runner = CliRunner()
+
+    call = {"count": 0}
+
+    def fake_sleep(_):
+        if call["count"] >= 1:
+            raise KeyboardInterrupt()
+        call["count"] += 1
+
+    monkeypatch.setattr("autoresearch.cli_backup.time.sleep", fake_sleep)
+
+    result = runner.invoke(
+        app,
+        [
+            "backup",
+            "schedule",
+            "--interval",
+            "12",
+            "--dir",
+            "test_backups",
+            "--max-backups",
+            "3",
+            "--retention-days",
+            "7",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_manager.schedule_backup.assert_called_once()
+    mock_manager.stop_scheduled_backups.assert_called_once()
+    assert "Stopping scheduled backups" in result.stdout
+    assert "Scheduled backups stopped" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
 def test_backup_recover_command(mock_manager):
     """Test the backup recover command."""
     # Setup
