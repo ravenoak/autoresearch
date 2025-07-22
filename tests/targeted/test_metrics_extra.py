@@ -2,9 +2,11 @@ import types
 from autoresearch.orchestration import metrics
 
 
-def test_cycle_and_agent_metrics(monkeypatch):
+def test_cycle_and_agent_metrics(monkeypatch, tmp_path):
     fake_time = types.SimpleNamespace(time=lambda: 1.0)
     monkeypatch.setattr(metrics, "time", fake_time)
+    path = tmp_path / "dir" / "release.json"
+    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(path))
     m = metrics.OrchestrationMetrics()
     m.start_cycle()
     m.record_agent_timing("agent", 0.5)
@@ -17,6 +19,8 @@ def test_cycle_and_agent_metrics(monkeypatch):
     assert summary["agent_tokens"]["agent"]["in"] == 2
     assert summary["agent_tokens"]["agent"]["out"] == 3
     assert summary["errors"]["total"] == 1
+    if path.exists():
+        path.unlink()
 
 
 def test_resource_tracking(monkeypatch):

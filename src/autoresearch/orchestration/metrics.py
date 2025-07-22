@@ -146,6 +146,7 @@ class OrchestrationMetrics:
             except Exception:
                 data = {}
         data[self.release] = self.token_counts
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2))
         self._release_logged = True
 
