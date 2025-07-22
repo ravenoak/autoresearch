@@ -277,7 +277,7 @@ sys.modules.setdefault("sentence_transformers", dummy_st_module)
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("transformers", MagicMock())
 
-from autoresearch.api import app as api_app  # noqa: E402
+from autoresearch.api import app as api_app, SLOWAPI_STUB  # noqa: E402
 
 # Older Typer versions used in tests may not support the ``multiple`` parameter.
 import typer  # noqa: E402
@@ -294,6 +294,17 @@ typer.Option = _compat_option
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow")
+
+
+def reset_limiter_state() -> None:
+    """Reset SlowAPI limiter state when using the real implementation."""
+    if not SLOWAPI_STUB:
+        limiter = getattr(api_app.state, "limiter", None)
+        if limiter is not None:
+            try:
+                limiter.reset()
+            except Exception:
+                pass
 
 
 # Ensure package can be imported without installation
