@@ -47,9 +47,13 @@ If you cloned the repository, run the setup helper instead:
 ```
 
 The helper ensures the lock file is refreshed and installs every optional
-extra needed for the test suite. Optional features are disabled when their
-dependencies are missing. Specify extras explicitly with pip to enable
-additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
+extra needed for the test suite. Tests normally rely on stubbed versions of
+these extras, so running the suite without them is recommended. Extras such as
+`slowapi` may enable real behaviour (like rate limiting) that changes how
+assertions are evaluated. If you wish to revert to stub-only testing after
+running the helper, reinstall using `poetry install --with dev`. Optional
+features are disabled when their dependencies are missing. Specify extras
+explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
 ## Optional extras
 

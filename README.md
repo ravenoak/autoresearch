@@ -23,7 +23,11 @@ dependencies with either **Poetry** or **pip**. See
 upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available
-for testing.
+for testing. The unit suite relies on stub implementations of several optional
+packages (for example `slowapi`), so running tests without extras installed is
+recommended. Extras may enable real functionality such as rate limiting which
+can alter test behaviour. Reinstall with `poetry install --with dev` if you
+need to disable extras after running the setup script.
 
 ### Using Poetry
 Python 3.12 or newer is required. When several Python versions are installed,
