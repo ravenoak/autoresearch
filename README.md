@@ -27,10 +27,10 @@ for testing.
 
 ### Using Poetry
 Python 3.12 or newer is required. When several Python versions are installed,
-select version 3.12 (or 3.13 when available) **before** running `poetry install`:
+select the interpreter **before** running `poetry install`:
 ```bash
-poetry env use $(which python3.12)
-# or: poetry env use $(which python3.13)
+# Use the `python3` executable from your PATH
+poetry env use $(which python3)
 poetry install --with dev --all-extras
 ```
 If Python 3.11 is selected, Poetry will fail with a message similar to:
