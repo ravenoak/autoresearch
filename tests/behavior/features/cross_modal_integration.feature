@@ -6,6 +6,7 @@ Feature: Cross-Modal Integration
   Background:
     Given the Autoresearch system is running
 
+  @requires_ui
   Scenario: Shared Query History
     When I execute a query "What is the capital of France?" via CLI
     And I open the Streamlit GUI
@@ -13,12 +14,14 @@ Feature: Cross-Modal Integration
     And I should be able to rerun the query from the GUI
     And the results should be consistent with the CLI results
 
+  @requires_ui
   Scenario: Consistent Error Handling
     When I execute an invalid query via CLI
     Then I should receive a specific error message
     When I execute the same invalid query via GUI
     Then I should receive the same error message in the GUI
 
+  @requires_ui
   Scenario: Configuration Synchronization
     When I update the configuration via CLI
     And I open the Streamlit GUI
@@ -27,12 +30,14 @@ Feature: Cross-Modal Integration
     And I check the configuration via CLI
     Then the CLI should show the updated configuration
 
+  @requires_ui
   Scenario: A2A Interface Consistency
     When I execute a query via the A2A interface
     Then the response format should match the CLI response format
     And the response should contain the same fields as the GUI response
     And the error handling should be consistent with other interfaces
 
+  @requires_ui
   Scenario: MCP Interface Consistency
     When I execute a query via the MCP interface
     Then the response format should match the CLI response format

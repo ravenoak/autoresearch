@@ -23,13 +23,21 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use $(which python)
-          poetry install --with dev --all-extras
+          poetry install --with dev
       - name: Lint
         run: poetry run flake8 src tests
       - name: Type check
         run: poetry run mypy src
       - name: Test
-        run: poetry run pytest -q
+        run: poetry run pytest -q -m "not requires_ui and not requires_vss"
+      - name: Install UI extras
+        run: poetry install --with dev --extras ui
+      - name: UI tests
+        run: poetry run pytest tests/behavior -m requires_ui
+      - name: Install VSS extras
+        run: poetry install --with dev --extras vss
+      - name: VSS tests
+        run: poetry run pytest tests/behavior -m requires_vss
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
