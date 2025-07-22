@@ -104,86 +104,87 @@ if "kuzu" not in sys.modules:
     sys.modules["kuzu"] = kuzu_stub
 
 # Provide a minimal stub for SlowAPI so the API can be imported without the
-# dependency installed.
-if "slowapi" not in sys.modules:
-    slowapi_stub = types.ModuleType("slowapi")
+# dependency installed or to override the real package when present.
+slowapi_stub = types.ModuleType("slowapi")
 
-    REQUEST_LOG: dict[str, int] = {}
+slowapi_stub.IS_STUB = True
 
-    class RateLimitExceeded(Exception):
-        pass
+REQUEST_LOG: dict[str, int] = {}
 
-    class Limiter:
-        """Very small rate limiter used in tests."""
+class RateLimitExceeded(Exception):
+    pass
 
-        IS_STUB = True
+class Limiter:
+    """Very small rate limiter used in tests."""
 
-        def __init__(self, key_func=None, application_limits=None):
-            self.key_func = key_func or (lambda r: "127.0.0.1")
-            self.application_limits = application_limits or []
+    IS_STUB = True
 
-        def _parse_limit(self, spec):
-            if callable(spec):
-                spec = spec()
-            try:
-                return int(str(spec).split("/")[0])
-            except Exception:
-                return 0
+    def __init__(self, key_func=None, application_limits=None):
+        self.key_func = key_func or (lambda r: "127.0.0.1")
+        self.application_limits = application_limits or []
 
-        def check(self, request):  # pragma: no cover - simple stub
-            ip = self.key_func(request)
-            REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
-            limit = 0
-            if self.application_limits:
-                limit = self._parse_limit(self.application_limits[0])
-            if limit and REQUEST_LOG[ip] > limit:
-                raise RateLimitExceeded()
+    def _parse_limit(self, spec):
+        if callable(spec):
+            spec = spec()
+        try:
+            return int(str(spec).split("/")[0])
+        except Exception:
+            return 0
 
-        def limit(self, *_args, **_kwargs):  # pragma: no cover - simple stub
-            def decorator(func):
-                def wrapper(request, *a, **k):
-                    self.check(request)
-                    return func(request, *a, **k)
+    def check(self, request):  # pragma: no cover - simple stub
+        ip = self.key_func(request)
+        REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+        limit = 0
+        if self.application_limits:
+            limit = self._parse_limit(self.application_limits[0])
+        if limit and REQUEST_LOG[ip] > limit:
+            raise RateLimitExceeded()
 
-                return wrapper
+    def limit(self, *_args, **_kwargs):  # pragma: no cover - simple stub
+        def decorator(func):
+            def wrapper(request, *a, **k):
+                self.check(request)
+                return func(request, *a, **k)
 
-            return decorator
+            return wrapper
 
-    def _rate_limit_exceeded_handler(*_a, **_k):
-        return "rate limit exceeded"
+        return decorator
 
-    class SlowAPIMiddleware:  # pragma: no cover - simple stub
-        def __init__(self, app, limiter=None, *_, **__):
-            from starlette.requests import Request
+def _rate_limit_exceeded_handler(*_a, **_k):
+    return "rate limit exceeded"
 
-            self.app = app
-            self.limiter = limiter
-            self.Request = Request
+class SlowAPIMiddleware:  # pragma: no cover - simple stub
+    def __init__(self, app, limiter=None, *_, **__):
+        from starlette.requests import Request
 
-        async def __call__(self, scope, receive, send):
-            if scope.get("type") == "http" and self.limiter:
-                req = self.Request(scope, receive=receive)
-                self.limiter.check(req)
-            await self.app(scope, receive, send)
+        self.app = app
+        self.limiter = limiter
+        self.Request = Request
 
-    def get_remote_address(*_a, **_k):
-        return "127.0.0.1"
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and self.limiter:
+            req = self.Request(scope, receive=receive)
+            self.limiter.check(req)
+        await self.app(scope, receive, send)
 
-    slowapi_stub.Limiter = Limiter
-    slowapi_stub.REQUEST_LOG = REQUEST_LOG
-    slowapi_stub._rate_limit_exceeded_handler = _rate_limit_exceeded_handler
+def get_remote_address(*_a, **_k):
+    return "127.0.0.1"
 
-    errors_mod = types.ModuleType("slowapi.errors")
-    errors_mod.RateLimitExceeded = RateLimitExceeded
-    middleware_mod = types.ModuleType("slowapi.middleware")
-    middleware_mod.SlowAPIMiddleware = SlowAPIMiddleware
-    util_mod = types.ModuleType("slowapi.util")
-    util_mod.get_remote_address = get_remote_address
+slowapi_stub.Limiter = Limiter
+slowapi_stub.REQUEST_LOG = REQUEST_LOG
+slowapi_stub._rate_limit_exceeded_handler = _rate_limit_exceeded_handler
 
-    sys.modules["slowapi"] = slowapi_stub
-    sys.modules["slowapi.errors"] = errors_mod
-    sys.modules["slowapi.middleware"] = middleware_mod
-    sys.modules["slowapi.util"] = util_mod
+errors_mod = types.ModuleType("slowapi.errors")
+errors_mod.RateLimitExceeded = RateLimitExceeded
+middleware_mod = types.ModuleType("slowapi.middleware")
+middleware_mod.SlowAPIMiddleware = SlowAPIMiddleware
+util_mod = types.ModuleType("slowapi.util")
+util_mod.get_remote_address = get_remote_address
+
+sys.modules["slowapi"] = slowapi_stub
+sys.modules["slowapi.errors"] = errors_mod
+sys.modules["slowapi.middleware"] = middleware_mod
+sys.modules["slowapi.util"] = util_mod
 
 # Stub heavy optional dependencies used by the search module
 if "pdfminer.high_level" not in sys.modules:
