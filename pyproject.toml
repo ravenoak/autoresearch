@@ -101,15 +101,6 @@ full = [
     "polars >=1.31.0",
     "gitpython >=3.1"
 ]
-
-[tool.poetry.extras]
-minimal = [
-    "sentence-transformers"
-]
-analysis = ["polars"]
-kuzu = ["kuzu"]
-
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 pytest-bdd = "^8.1.0"
