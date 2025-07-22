@@ -28,13 +28,18 @@ from collections import defaultdict
 import requests
 try:
     from git import Repo
+
     GITPYTHON_AVAILABLE = True
-except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    Repo = None  # type: ignore[assignment]
     GITPYTHON_AVAILABLE = False
-    raise ImportError(
-        "Local Git search requires the 'gitpython' package. "
-        "Install with `pip install \"autoresearch[git]\"`."
-    ) from exc
+    import warnings
+
+    warnings.warn(
+        "Local Git search backend disabled: 'gitpython' is not installed. "
+        "Install with `pip install \"autoresearch[git]\"` to enable it.",
+        stacklevel=2,
+    )
 import numpy as np
 import csv
 import math

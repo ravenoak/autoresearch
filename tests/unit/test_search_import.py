@@ -5,7 +5,7 @@ import sys
 import pytest
 
 
-def test_search_import_error_without_gitpython(monkeypatch):
+def test_search_import_without_gitpython(monkeypatch):
     orig_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
@@ -15,9 +15,9 @@ def test_search_import_error_without_gitpython(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     monkeypatch.delitem(sys.modules, "autoresearch.search", raising=False)
-    with pytest.raises(ImportError) as excinfo:
-        importlib.import_module("autoresearch.search")
-    assert "gitpython" in str(excinfo.value).lower()
+    with pytest.warns(UserWarning):
+        module = importlib.import_module("autoresearch.search")
+    assert not module.GITPYTHON_AVAILABLE
 
 
 def test_search_import_with_gitpython():
