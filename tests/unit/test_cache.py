@@ -1,3 +1,5 @@
+from threading import Thread
+
 from autoresearch import cache
 from autoresearch.search import Search
 from autoresearch.config import ConfigModel
@@ -39,6 +41,56 @@ def test_search_uses_cache(monkeypatch):
     assert results2[0]["url"] == results1[0]["url"]
 
     Search.backends = old_backends
+
+
+def test_cache_lifecycle(tmp_path):
+    """Exercise basic cache operations using a temporary database."""
+    orig_path = cache._db_path
+    cache.teardown(remove_file=False)
+
+    db_path = tmp_path / "cache.json"
+    db1 = cache.setup(str(db_path))
+    assert db_path.exists()
+
+    # setup called again should return the same instance
+    db2 = cache.setup(str(db_path))
+    assert db1 is db2
+
+    sample = [{"title": "t", "url": "u"}]
+    cache.cache_results("q", "b", sample)
+    assert cache.get_cached_results("q", "b") == sample
+
+    cache.clear()
+    assert cache.get_cached_results("q", "b") is None
+
+    cache.teardown(remove_file=True)
+    assert not db_path.exists()
+
+    cache._db_path = orig_path
+
+
+def test_setup_thread_safe(tmp_path):
+    """Ensure multiple setup calls from threads share the same database."""
+    orig_path = cache._db_path
+    cache.teardown(remove_file=False)
+
+    db_path = tmp_path / "cache.json"
+    results = []
+
+    def worker() -> None:
+        results.append(cache.setup(str(db_path)))
+
+    threads = [Thread(target=worker) for _ in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    first = results[0]
+    assert all(db is first for db in results)
+
+    cache.teardown(remove_file=True)
+    cache._db_path = orig_path
 
 
 def test_cache_is_backend_specific(monkeypatch):
