@@ -54,6 +54,8 @@ To run the heavier tests separately:
 ```bash
 poetry run pytest -m slow
 ```
+Distributed execution scenarios and other long-running integrations are
+decorated with `@pytest.mark.slow`.
 3. Update or add documentation when needed.
 4. Open a pull request explaining the rationale for the change.
 
