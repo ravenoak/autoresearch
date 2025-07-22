@@ -15,12 +15,14 @@ from autoresearch.models import QueryResponse
 
 
 # Scenarios
+@pytest.mark.slow
 @scenario("../features/distributed_execution.feature", "Run distributed query with Ray executor")
 def test_ray_executor(bdd_context):
     """Run distributed query with Ray executor."""
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/distributed_execution.feature", "Run distributed query with multiprocessing")
 def test_process_executor(bdd_context):
     """Run distributed query with multiprocessing."""

@@ -54,6 +54,7 @@ def mock_agent_factory():
 
 
 # Scenarios
+@pytest.mark.slow
 @scenario(
     "../features/parallel_query_execution.feature",
     "Running multiple agent groups in parallel",
@@ -63,6 +64,7 @@ def test_running_multiple_agent_groups():
     pass
 
 
+@pytest.mark.slow
 @scenario(
     "../features/parallel_query_execution.feature",
     "Handling errors in parallel execution",
@@ -72,6 +74,7 @@ def test_handling_errors_in_parallel_execution():
     pass
 
 
+@pytest.mark.slow
 @scenario(
     "../features/parallel_query_execution.feature",
     "Synthesizing results from multiple agent groups",
