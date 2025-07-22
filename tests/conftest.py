@@ -21,6 +21,88 @@ if "git" not in sys.modules:
     git_stub = types.SimpleNamespace(Repo=object)
     sys.modules["git"] = git_stub
 
+# Provide lightweight stubs for FastMCP so MCP tests run without the real
+# package installed.
+if "fastmcp" not in sys.modules:
+    fastmcp_stub = types.ModuleType("fastmcp")
+
+    class _FastMCP:
+        def __init__(self, *_, **__):
+            self.tools: dict[str, callable] = {}
+
+        def tool(self, func):
+            self.tools[func.__name__] = func
+            return func
+
+        async def call_tool(self, name, params):
+            return await self.tools[name](**params)
+
+    class _Client:
+        def __init__(self, target):
+            self.target = target
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
+        async def call_tool(self, name, params):
+            if hasattr(self.target, "call_tool"):
+                return await self.target.call_tool(name, params)
+            return {}
+
+    fastmcp_stub.FastMCP = _FastMCP
+    fastmcp_stub.Client = _Client
+    sys.modules["fastmcp"] = fastmcp_stub
+
+# Provide a stub for the optional Kuzu dependency used in some storage tests.
+if "kuzu" not in sys.modules:
+    kuzu_stub = types.ModuleType("kuzu")
+
+    class _Result:
+        def __init__(self, rows=None):
+            self._rows = rows or []
+            self._idx = 0
+
+        def has_next(self):
+            return self._idx < len(self._rows)
+
+        def get_next(self):
+            row = self._rows[self._idx]
+            self._idx += 1
+            return row
+
+    class Database:
+        def __init__(self, path):
+            self.path = path
+
+    class Connection:
+        def __init__(self, db):
+            self.db = db
+            self.data = {}
+
+        def execute(self, query, params=None):
+            params = params or {}
+            if "MERGE (c:Claim" in query:
+                self.data[params["id"]] = (
+                    params.get("content", ""),
+                    params.get("conf", 0.0),
+                )
+                return _Result([])
+            if "MATCH (c:Claim" in query:
+                if params["id"] in self.data:
+                    return _Result([self.data[params["id"]]])
+                return _Result([])
+            return _Result([])
+
+        def close(self):
+            pass
+
+    kuzu_stub.Database = Database
+    kuzu_stub.Connection = Connection
+    sys.modules["kuzu"] = kuzu_stub
+
 # Provide a minimal stub for SlowAPI so the API can be imported without the
 # dependency installed.
 if "slowapi" not in sys.modules:
