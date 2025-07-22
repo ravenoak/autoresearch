@@ -1,5 +1,7 @@
 import pytest
 
+from autoresearch.api import reset_request_log
+
 
 @pytest.fixture
 def test_context():
@@ -13,6 +15,12 @@ def enable_real_vss(monkeypatch):
     monkeypatch.setenv("REAL_VSS_TEST", "1")
     yield
     monkeypatch.delenv("REAL_VSS_TEST", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def reset_api_request_log():
+    """Clear API request log before each scenario."""
+    reset_request_log()
 
 
 @pytest.fixture(autouse=True)
