@@ -31,7 +31,7 @@ try:
 
     GITPYTHON_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    Repo = None  # type: ignore[assignment]
+    Repo = None  # type: ignore
     GITPYTHON_AVAILABLE = False
     import warnings
 

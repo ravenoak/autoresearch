@@ -39,6 +39,7 @@ def test_rate_limit(monkeypatch):
     assert resp1.status_code == 200
     resp2 = client.post("/query", json={"query": "q"})
     assert resp2.status_code == 429
+    assert resp2.text == "rate limit exceeded"
 
 
 def test_rate_limit_configurable(monkeypatch):
