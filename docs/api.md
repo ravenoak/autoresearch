@@ -112,6 +112,21 @@ Return information about available agents, LLM backends and current settings.
 curl http://localhost:8000/capabilities
 ```
 
+**Response**
+
+```json
+{
+  "version": "1.0.0",
+  "llm_backends": ["mock"],
+  "reasoning_modes": ["simple"],
+  "current_config": {
+    "reasoning_mode": "simple",
+    "loops": 1,
+    "llm_backend": "mock"
+  }
+}
+```
+
 ### `GET /health`
 
 Check whether the API server is running.
