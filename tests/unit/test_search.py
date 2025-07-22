@@ -244,6 +244,7 @@ def test_local_file_backend(monkeypatch, tmp_path):
     assert any("hello" in r["snippet"].lower() for r in results)
 
 
+@pytest.mark.slow
 def test_local_git_backend(monkeypatch, tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()

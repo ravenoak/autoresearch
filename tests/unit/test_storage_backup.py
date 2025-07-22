@@ -8,7 +8,6 @@ import os
 import shutil
 import tempfile
 from unittest.mock import patch
-
 import pytest
 import duckdb
 import rdflib
@@ -22,6 +21,8 @@ from autoresearch.storage_backup import (
     BackupConfig,
 )
 from autoresearch.errors import BackupError
+
+pytestmark = pytest.mark.slow
 
 
 @pytest.fixture

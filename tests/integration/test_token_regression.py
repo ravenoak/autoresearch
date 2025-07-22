@@ -1,7 +1,11 @@
 import subprocess
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "check_token_regression.py"
+
+pytestmark = pytest.mark.slow
 
 
 def test_token_regression_script():

@@ -49,6 +49,11 @@ For quick feedback, you can skip heavy integration tests marked with
 poetry run pytest -m "not slow" -q
 poetry run pytest -m "not slow" tests/behavior
 ```
+To run the heavier tests separately:
+
+```bash
+poetry run pytest -m slow
+```
 3. Update or add documentation when needed.
 4. Open a pull request explaining the rationale for the change.
 

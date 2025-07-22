@@ -4,6 +4,9 @@ from pathlib import Path
 from autoresearch.storage import StorageManager
 from autoresearch.search import Search
 import importlib.util
+import pytest
+
+pytestmark = pytest.mark.slow
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
 spec = importlib.util.spec_from_file_location("benchmark_token_memory", SCRIPT_PATH)
