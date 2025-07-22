@@ -131,7 +131,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
             ip = get_remote_address(request)
             REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
             if REQUEST_LOG[ip] > cfg_limit:
-                raise RateLimitExceeded(cast("Limit", None))
+                return _handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
         return await call_next(request)
 
 
@@ -139,7 +139,10 @@ app.add_middleware(FallbackRateLimitMiddleware)
 
 
 def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
-    return _rate_limit_exceeded_handler(request, exc)
+    result = _rate_limit_exceeded_handler(request, exc)
+    if isinstance(result, Response):
+        return result
+    return PlainTextResponse(str(result), status_code=429)
 
 
 app.add_exception_handler(

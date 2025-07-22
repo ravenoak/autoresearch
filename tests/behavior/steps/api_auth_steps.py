@@ -85,7 +85,9 @@ def check_first_status(test_context, status):
 
 @then(parsers.parse('the second response status should be {status:d}'))
 def check_second_status(test_context, status):
-    assert test_context["resp2"].status_code == status
+    resp = test_context["resp2"]
+    assert resp.status_code == status
+    assert resp.text == "rate limit exceeded"
 
 
 @scenario("../features/api_auth.feature", "Invalid API key")
