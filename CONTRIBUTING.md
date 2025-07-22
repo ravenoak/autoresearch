@@ -30,8 +30,9 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Setting Up
 
-1. Configure Poetry to use Python 3.12 or newer:
+1. Verify your interpreter is at least Python 3.12 and configure Poetry:
    ```bash
+   python --version
    poetry env use $(which python3)
    ```
 

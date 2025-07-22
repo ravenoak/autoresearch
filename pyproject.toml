@@ -1,11 +1,12 @@
 [project]
 name = "autoresearch"
 version = "0.1.0"
-description = ""
+description = "Local-first research assistant that coordinates multiple agents using dialectical reasoning"
 authors = [
     {name = "Caitlyn O'Hanna",email = "caitlyn.ohanna@gmail.com"}
 ]
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12,<4.0"
 packages = [{include = "autoresearch", from = "src"}]
 dependencies = [
