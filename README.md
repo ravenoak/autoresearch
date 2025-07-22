@@ -459,6 +459,12 @@ task test:all          # run all suites including slow tests
 task test:slow         # run only tests marked as slow
 ```
 
+To execute the long-running tests directly without Go Task, run:
+
+```bash
+poetry run pytest -m slow
+```
+
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
 extension. These extras are installed when running
 `poetry install --with dev --all-extras`.

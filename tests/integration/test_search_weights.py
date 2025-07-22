@@ -4,6 +4,9 @@ from pathlib import Path
 
 import tomllib
 from autoresearch.search import Search
+import pytest
+
+pytestmark = pytest.mark.slow
 
 
 def test_optimize_script_updates_weights(tmp_path):
