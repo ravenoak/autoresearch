@@ -22,7 +22,7 @@ def create_server(host: str = "127.0.0.1", port: int = 8080) -> FastMCP:
     server: FastMCP = FastMCP("Autoresearch", host=host, port=port)
 
     @server.tool
-    async def research(query: str) -> Dict[str, Any]:
+    async def research(query: str) -> dict[str, Any]:
         try:
             result = Orchestrator.run_query(query, config)
             return {
