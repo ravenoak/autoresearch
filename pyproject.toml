@@ -142,7 +142,9 @@ markers = [
     "integration: mark integration tests",
     "unit: mark unit tests",
     "real_vss: enable actual VSS extension logic",
-    "slow: tests that take a long time to run"
+    "slow: tests that take a long time to run",
+    "requires_ui: tests that depend on the ui extra",
+    "requires_vss: tests that depend on the vss extra"
 ]
 
 [tool.mypy]

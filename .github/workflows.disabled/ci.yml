@@ -38,7 +38,8 @@ jobs:
         EOF
     - name: Install dependencies
       run: |
-        ./scripts/setup.sh
+        poetry env use $(which python)
+        poetry install --with dev
     - name: Lint with flake8
       if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       run: |
@@ -60,10 +61,15 @@ jobs:
         echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
     - name: Test with pytest
       run: |
-        poetry run pytest tests/
-    - name: Run BDD tests
-      run: |
-        poetry run pytest tests/behavior/
+        poetry run pytest tests/ -m "not requires_ui and not requires_vss"
+    - name: Install UI extras
+      run: poetry install --with dev --extras ui
+    - name: UI tests
+      run: poetry run pytest tests/behavior -m requires_ui
+    - name: Install VSS extras
+      run: poetry install --with dev --extras vss
+    - name: VSS tests
+      run: poetry run pytest tests/behavior -m requires_vss
     - name: Deployment checks
       run: |
         poetry run python scripts/deploy.py
