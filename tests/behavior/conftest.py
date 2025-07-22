@@ -1,6 +1,7 @@
 import pytest
 
 from autoresearch.api import reset_request_log
+from tests.conftest import reset_limiter_state
 
 
 @pytest.fixture
@@ -21,6 +22,7 @@ def enable_real_vss(monkeypatch):
 def reset_api_request_log():
     """Clear API request log before each scenario."""
     reset_request_log()
+    reset_limiter_state()
 
 
 @pytest.fixture(autouse=True)
