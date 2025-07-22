@@ -3,7 +3,7 @@
 from pytest_bdd import scenario, given, when, then, parsers
 from . import api_orchestrator_integration_steps  # noqa: F401
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
-from autoresearch.api import config_loader
+from autoresearch.api import config_loader, reset_request_log
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 
@@ -56,6 +56,7 @@ def set_rate_limit(monkeypatch, limit):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
+    reset_request_log()
 
 
 @when(parsers.parse('I send a query "{query}" with header "{header}" set to "{value}"'))
