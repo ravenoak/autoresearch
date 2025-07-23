@@ -17,17 +17,15 @@ Endpoints:
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional, List, cast, TYPE_CHECKING
+from typing import Optional, List, cast
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-if TYPE_CHECKING:
-    from slowapi.wrappers import Limit
 from starlette.types import ExceptionHandler
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from limits.util import parse
 import importlib
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
@@ -47,6 +45,9 @@ from .error_utils import get_error_info, format_error_for_api
 
 _slowapi_module = importlib.import_module("slowapi")
 SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
+# Import Limit wrapper only when SlowAPI is available
+if not SLOWAPI_STUB:
+    from slowapi.wrappers import Limit
 # Global per-client request log used for fallback rate limiting and tests
 REQUEST_LOG: dict[str, int] = {}
 
@@ -109,7 +110,7 @@ def require_permission(permission: str):
     return Depends(checker)
 
 
-limiter = Limiter(key_func=get_remote_address, application_limits=[dynamic_limit])
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="Autoresearch API",
@@ -130,13 +131,60 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
         if cfg_limit:
             ip = get_remote_address(request)
             REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+            limit_obj = parse(dynamic_limit())
+            request.state.view_rate_limit = (limit_obj, [ip])
             if REQUEST_LOG[ip] > cfg_limit:
-                return _handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
+                if SLOWAPI_STUB:
+                    return _handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
+                limit_wrapper = Limit(
+                    limit_obj,
+                    get_remote_address,
+                    None,
+                    False,
+                    None,
+                    None,
+                    None,
+                    1,
+                    False,
+                )
+                return _handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
+        response = await call_next(request)
+        if cfg_limit and not SLOWAPI_STUB:
+            response = limiter._inject_headers(response, request.state.view_rate_limit)
+        return response
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Rate limiting using SlowAPI's limiter with dynamic configuration."""
+
+    async def dispatch(self, request: Request, call_next):
+        cfg_limit = getattr(get_config().api, "rate_limit", 0)
+        if cfg_limit:
+            ip = get_remote_address(request)
+            limit_obj = parse(dynamic_limit())
+            request.state.view_rate_limit = (limit_obj, [ip])
+            if not limiter.limiter.hit(limit_obj, ip):
+                limit_wrapper = Limit(
+                    limit_obj,
+                    get_remote_address,
+                    None,
+                    False,
+                    None,
+                    None,
+                    None,
+                    1,
+                    False,
+                )
+                return _handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
+            response = await call_next(request)
+            return limiter._inject_headers(response, request.state.view_rate_limit)
         return await call_next(request)
 
 
 if SLOWAPI_STUB:
     app.add_middleware(FallbackRateLimitMiddleware)
+else:
+    app.add_middleware(RateLimitMiddleware)
 
 
 def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
@@ -149,8 +197,6 @@ def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
 app.add_exception_handler(
     RateLimitExceeded, cast(ExceptionHandler, _handle_rate_limit)
 )
-if not SLOWAPI_STUB:
-    app.add_middleware(SlowAPIMiddleware)
 _watch_ctx = None
 app.state.async_tasks = {}
 
