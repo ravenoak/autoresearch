@@ -161,6 +161,29 @@ curl http://localhost:8000/metrics
 To search your own documents or repositories, enable the `local_file` or
 `local_git` backends in `autoresearch.toml`.
 
+## Storage backups
+
+Use the `backup` command group to manage snapshots of the DuckDB database and RDF store:
+
+```bash
+# Create a compressed backup in the default directory
+autoresearch backup create --compress
+
+# List available backups
+autoresearch backup list --dir backups
+
+# Restore a backup to a new directory
+autoresearch backup restore backups/latest.zip --force
+
+# Schedule periodic backups every 12 hours
+autoresearch backup schedule --interval 12 --dir backups --max-backups 5 --retention-days 30
+
+# Recover the storage to a specific point in time
+autoresearch backup recover "2023-01-01 12:00:00" --dir backups --force
+```
+
+For more instructions see [docs/api_reference/storage.md](docs/api_reference/storage.md).
+
 ## Configuration
 
 Autoresearch uses a TOML configuration file (`autoresearch.toml`) and environment variables (`.env`). A starter configuration is available under [`examples/autoresearch.toml`](examples/autoresearch.toml).
