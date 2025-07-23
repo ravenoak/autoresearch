@@ -111,8 +111,10 @@ slowapi_stub.IS_STUB = True
 
 REQUEST_LOG: dict[str, int] = {}
 
+
 class RateLimitExceeded(Exception):
     pass
+
 
 class Limiter:
     """Very small rate limiter used in tests."""
@@ -150,8 +152,10 @@ class Limiter:
 
         return decorator
 
+
 def _rate_limit_exceeded_handler(*_a, **_k):
     return "rate limit exceeded"
+
 
 class SlowAPIMiddleware:  # pragma: no cover - simple stub
     def __init__(self, app, limiter=None, *_, **__):
@@ -167,8 +171,10 @@ class SlowAPIMiddleware:  # pragma: no cover - simple stub
             self.limiter.check(req)
         await self.app(scope, receive, send)
 
+
 def get_remote_address(*_a, **_k):
     return "127.0.0.1"
+
 
 slowapi_stub.Limiter = Limiter
 slowapi_stub.REQUEST_LOG = REQUEST_LOG
@@ -246,13 +252,13 @@ if "PIL" not in sys.modules:
     sys.modules["PIL"] = pil_mod
     sys.modules["PIL.Image"] = image_mod
 
-from uuid import uuid4
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-import importlib.util
-from typer.testing import CliRunner
-from fastapi.testclient import TestClient
-from typing import Callable
+from uuid import uuid4  # noqa: E402
+from pathlib import Path  # noqa: E402
+from unittest.mock import patch, MagicMock  # noqa: E402
+import importlib.util  # noqa: E402
+from typer.testing import CliRunner  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from typing import Callable  # noqa: E402
 
 # Provide a lightweight fallback for sentence_transformers to avoid heavy
 # imports during test startup. This must come before importing the project so
