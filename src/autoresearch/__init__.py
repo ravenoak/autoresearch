@@ -4,6 +4,8 @@ This package provides a local-first research assistant with multiple
 interfaces and a modular architecture.
 """
 
+__version__ = "0.1.0"
+
 try:  # pragma: no cover - optional distributed extras
     from .distributed import (
         ProcessExecutor,
@@ -31,6 +33,7 @@ except Exception as exc:  # pragma: no cover - missing optional deps
     warnings.warn(f"Distributed features unavailable: {exc}")
 
 __all__ = [
+    "__version__",
     "RayExecutor",
     "ProcessExecutor",
     "StorageCoordinator",

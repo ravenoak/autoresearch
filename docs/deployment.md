@@ -139,7 +139,7 @@ extras.
 
 ## Release workflow
 
-1. Bump the version in `pyproject.toml`.
+1. Bump the version in `pyproject.toml` and in `autoresearch.__version__`.
 2. Run the unit and behavior test suites.
 3. Publish a development build to TestPyPI:
 

@@ -4,7 +4,8 @@ This document outlines the upcoming release milestones for **Autoresearch**. Dat
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
 This schedule was last updated on **July 21, 2025** and reflects the fact that
-the codebase currently sits at an **unreleased 0.1.0** version.
+the codebase currently sits at the **unreleased 0.1.0** version defined in
+`autoresearch.__version__`.
 
 ## Milestones
 
