@@ -508,6 +508,11 @@ extension. These extras are installed when running
 All testing commands are wrapped by `task`, which uses `poetry run` internally
 to ensure the correct virtual environment is active.
 
+Integration tests can leverage the helper classes in `autoresearch.test_tools`.
+`MCPTestClient` and `A2ATestClient` provide simple interfaces for exercising
+the CLI and API endpoints while capturing formatted results. They are fully
+tested and ship with the package for external use.
+
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If you run suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
 
 ### Troubleshooting

@@ -20,6 +20,8 @@ Before publishing 0.1.0 the release plan lists several checks:
 - Ensure packaging metadata and publish scripts work correctly.
 
 Any remaining issues from these tasks will be addressed in 0.1.1.
+- CLI backup commands, testing utilities and all specialized agents now have
+  full implementations and comprehensive unit tests.
 
 ## 0.2.0 – API stabilization and improved search
 
