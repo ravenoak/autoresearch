@@ -1,7 +1,16 @@
-import pytest
+import sys
+from pathlib import Path
 
-from autoresearch.api import reset_request_log
-from tests.conftest import reset_limiter_state
+# Ensure the repository root is on the import path so ``tests.conftest`` can be
+# imported reliably when running behavior tests directly.
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))  # noqa: E402
+
+import pytest  # noqa: E402
+
+from autoresearch.api import reset_request_log  # noqa: E402
+from tests.conftest import reset_limiter_state  # noqa: E402
 
 
 @pytest.fixture
