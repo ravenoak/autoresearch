@@ -2203,14 +2203,14 @@ typing = ["types-PyYAML", "types-requests", "types-simplejson", "types-toml", "t
 
 [[package]]
 name = "hypothesis"
-version = "6.136.2"
+version = "6.136.3"
 description = "A library for property-based testing"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "hypothesis-6.136.2-py3-none-any.whl", hash = "sha256:4b6113ca65cb1d200ed1299e610bee1da49ec127f63b13b4c6ac0c36c1d8ded7"},
-    {file = "hypothesis-6.136.2.tar.gz", hash = "sha256:57a04f750e79d6587ccf4cd2ff01d494bade0440bb1e245975ced8590c1c49bf"},
+    {file = "hypothesis-6.136.3-py3-none-any.whl", hash = "sha256:88163307c625688317bc5f3c7bd88f18b4d5c7cd773c784e3c4182eed2ae1b3d"},
+    {file = "hypothesis-6.136.3.tar.gz", hash = "sha256:89baa2bfc5af38f939e83b62f9f0e7e6407e81cade29cfcb3eafbc661177c2bd"},
 ]
 
 [package.dependencies]
@@ -2599,8 +2599,8 @@ langchain = ">=0.3.26,<1.0.0"
 langchain-core = ">=0.3.66,<1.0.0"
 langsmith = ">=0.1.125"
 numpy = [
-    {version = ">=1.26.2", markers = "python_version < \"3.13\""},
     {version = ">=2.1.0", markers = "python_version >= \"3.13\""},
+    {version = ">=1.26.2", markers = "python_version < \"3.13\""},
 ]
 pydantic-settings = ">=2.4.0,<3.0.0"
 PyYAML = ">=5.3"
@@ -2953,8 +2953,8 @@ anyio = ">=4.8.0"
 httpx = ">=0.27.2"
 httpx-ws = ">=0.7.0"
 msgspec = [
-    {version = ">=0.18.6"},
     {version = ">=0.19.0", markers = "python_version >= \"3.13\""},
+    {version = ">=0.18.6", markers = "python_version < \"3.13\""},
 ]
 typing-extensions = ">=4.12.2"
 
@@ -5934,7 +5934,7 @@ SQLAlchemy = ">=1.1.4,<2.0.0"
 name = "redis"
 version = "6.2.0"
 description = "Python client for Redis database and key-value store"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 markers = "extra == \"distributed\" or extra == \"full\" or python_version >= \"3.13\""
@@ -6505,6 +6505,7 @@ description = "Embeddings, Retrieval, and Reranking"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
+markers = "extra == \"minimal\" or extra == \"full\" or extra == \"nlp\""
 files = [
     {file = "sentence_transformers-5.0.0-py3-none-any.whl", hash = "sha256:346240f9cc6b01af387393f03e103998190dfb0826a399d0c38a81a05c7a5d76"},
     {file = "sentence_transformers-5.0.0.tar.gz", hash = "sha256:e5a411845910275fd166bacb01d28b7f79537d3550628ae42309dbdd3d5670d1"},
@@ -8899,4 +8900,4 @@ vss = ["duckdb-extension-vss"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "a9a293267a12ff5d3b03296290a825f13fcd11091d75ed7c6c92d8fd009439c3"
+content-hash = "98b27115abebd1431159b3a7cf36d3e3ae1eee6b03f430a335db30688d4d65be"
