@@ -7,7 +7,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Environment setup
 - Use **Poetry** for all project interactions.
   - Select the Python interpreter with `poetry env use $(which python3)` (Python 3.12 or newer).
-  - Install dependencies with `poetry install --with dev`.
+  - Install dependencies with `poetry install --with dev --all-extras` to ensure optional
+    packages used by the tests are available.
   - Activate the environment using `poetry shell` or prefix commands with `poetry run`.
   - Avoid system-level Python or `pip`. Run `pip install -e .` only inside the Poetry virtual environment using `poetry shell` or `poetry run pip`.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies so tools like `flake8`, `mypy`, and `pytest` are available.

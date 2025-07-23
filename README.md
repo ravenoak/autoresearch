@@ -464,11 +464,19 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The helper installs all dependencies with `poetry install --with dev --all-extras` and links
-the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and
-`tomli_w` are therefore available for development and testing.
+The helper installs all dependencies with `poetry install --with dev --all-extras` and
+links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
+are therefore available for development and testing. Running the full test suite requires
+these extras; a minimal installation may raise `ModuleNotFoundError` errors.
 
 ## Running tests
+
+The full suite, including behavior-driven tests, relies on optional extras such as
+`pdfminer` and `gitpython`. Ensure they are installed with:
+
+```bash
+poetry install --with dev --all-extras
+```
 
 Execute linting and type checks once the development environment is ready:
 

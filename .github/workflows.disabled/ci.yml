@@ -36,10 +36,10 @@ jobs:
         major, minor = sys.version_info[:2]
         assert (major == 3 and minor >= 12), f"Python 3.12 or newer required, got {major}.{minor}"
         EOF
-    - name: Install dependencies
-      run: |
-        poetry env use $(which python)
-        poetry install --with dev
+      - name: Install dependencies
+        run: |
+          poetry env use $(which python)
+          poetry install --with dev --all-extras
     - name: Lint with flake8
       if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
       run: |
@@ -59,17 +59,9 @@ jobs:
       run: |
         echo "Using online environment for tests"
         echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
-    - name: Test with pytest
-      run: |
-        poetry run pytest tests/ -m "not requires_ui and not requires_vss"
-    - name: Install UI extras
-      run: poetry install --with dev --extras ui
-    - name: UI tests
-      run: poetry run pytest tests/behavior -m requires_ui
-    - name: Install VSS extras
-      run: poetry install --with dev --extras vss
-    - name: VSS tests
-      run: poetry run pytest tests/behavior -m requires_vss
+      - name: Test with pytest
+        run: |
+          poetry run pytest tests/
     - name: Deployment checks
       run: |
         poetry run python scripts/deploy.py
