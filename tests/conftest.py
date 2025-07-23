@@ -283,7 +283,7 @@ sys.modules.setdefault("sentence_transformers", dummy_st_module)
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("transformers", MagicMock())
 
-from autoresearch.api import app as api_app, SLOWAPI_STUB  # noqa: E402
+from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
 
 # Older Typer versions used in tests may not support the ``multiple`` parameter.
 import typer  # noqa: E402
@@ -460,6 +460,14 @@ def stop_config_watcher(monkeypatch):
     ConfigLoader().stop_watching()
     yield
     ConfigLoader().stop_watching()
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiting():
+    """Clear API rate limiter state and request log before each test."""
+    reset_limiter_state()
+    reset_request_log()
+    yield
 
 
 @pytest.fixture
