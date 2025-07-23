@@ -1,15 +1,26 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
+Last updated **July 23, 2025**.
 
 ## Milestones
 
 | Version | Key Goals |
 | ------- | --------- |
+| 0.1.0 | Finalize packaging, docs and CI checks |
 | 0.1.1 | Bug fixes and documentation updates |
 | 0.2.0 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | Distributed execution support, monitoring utilities |
 | 1.0.0 | Full feature set, performance tuning and stable interfaces |
+
+## 0.1.0 – First public preview
+
+The initial release focuses on making the project installable and providing
+complete documentation. Key activities include:
+
+- Running all unit, integration and behavior tests.
+- Finalizing API reference and user guides.
+- Verifying packaging metadata and TestPyPI uploads.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
