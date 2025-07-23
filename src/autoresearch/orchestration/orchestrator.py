@@ -654,7 +654,25 @@ class Orchestrator:
                 )
 
         # If we're in half-open state and this was a success (not called for an error)
-        # This would be called from a success handler, not implemented here
+        # This is handled separately in ``_handle_agent_success``
+
+    @staticmethod
+    def _handle_agent_success(agent_name: str) -> None:
+        """Reset or downgrade the circuit breaker state on success."""
+        breaker = Orchestrator._circuit_breakers.get(agent_name)
+        if not breaker:
+            return
+
+        if breaker["state"] == "half-open":
+            breaker["state"] = "closed"
+            breaker["failure_count"] = 0.0
+            breaker["last_failure_time"] = 0.0
+            get_logger(__name__).info(
+                f"Circuit breaker for agent {agent_name} CLOSED after successful recovery",
+                extra={"agent": agent_name, "circuit_state": "closed"},
+            )
+        elif breaker["failure_count"] > 0:
+            breaker["failure_count"] = max(0.0, breaker["failure_count"] - 1)
 
     @staticmethod
     def get_circuit_breaker_state(agent_name: str) -> CircuitBreakerState:
@@ -743,6 +761,9 @@ class Orchestrator:
 
             # Persist claims
             Orchestrator._persist_claims(agent_name, result, storage_manager)
+
+            # Successful execution resets circuit breaker state
+            Orchestrator._handle_agent_success(agent_name)
 
         except Exception as e:
             # Handle agent errors

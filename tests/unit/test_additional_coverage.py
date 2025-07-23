@@ -45,6 +45,34 @@ def test_circuit_breaker_transitions(monkeypatch):
     assert state["state"] == "half-open"
 
 
+def test_circuit_breaker_recovery(monkeypatch):
+    Orchestrator._circuit_breakers.clear()
+    t = {"v": 0}
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.time",
+        types.SimpleNamespace(time=lambda: t.setdefault("v", t["v"] + 10)),
+    )
+    for _ in range(3):
+        Orchestrator._update_circuit_breaker("X", "recoverable")
+    # Advance time so breaker moves to half-open
+    t["v"] += 40
+    Orchestrator._circuit_breakers["X"]["last_failure_time"] = 0
+    Orchestrator._update_circuit_breaker("X", "noop")
+    Orchestrator._handle_agent_success("X")
+    state = Orchestrator.get_circuit_breaker_state("X")
+    assert state["state"] == "closed"
+    assert state["failure_count"] == 0
+
+
+def test_circuit_breaker_success_decrements(monkeypatch):
+    Orchestrator._circuit_breakers.clear()
+    for _ in range(2):
+        Orchestrator._update_circuit_breaker("Y", "recoverable")
+    Orchestrator._handle_agent_success("Y")
+    state = Orchestrator.get_circuit_breaker_state("Y")
+    assert state["failure_count"] == 1
+
+
 def test_http_session_reuse_and_close(monkeypatch):
     class Cfg:
         pass
