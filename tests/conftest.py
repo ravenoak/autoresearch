@@ -2,6 +2,15 @@ import sys
 import os
 import types
 import importlib
+import importlib.util
+from pathlib import Path
+from typing import Callable
+from uuid import uuid4
+from unittest.mock import patch, MagicMock
+
+import pytest
+from fastapi.testclient import TestClient
+from typer.testing import CliRunner
 # Provide a lightweight stub for the optional ``ray`` dependency so that
 # ``autoresearch`` can be imported without the actual package installed.
 if "ray" not in sys.modules:
@@ -252,13 +261,6 @@ if "PIL" not in sys.modules:
     sys.modules["PIL"] = pil_mod
     sys.modules["PIL.Image"] = image_mod
 
-from uuid import uuid4  # noqa: E402
-from pathlib import Path  # noqa: E402
-from unittest.mock import patch, MagicMock  # noqa: E402
-import importlib.util  # noqa: E402
-from typer.testing import CliRunner  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from typing import Callable  # noqa: E402
 
 # Provide a lightweight fallback for sentence_transformers to avoid heavy
 # imports during test startup. This must come before importing the project so
@@ -317,8 +319,6 @@ def reset_limiter_state() -> None:
 if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))  # noqa: E402
-
-import pytest  # noqa: E402
 
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.config import ConfigLoader  # noqa: E402
