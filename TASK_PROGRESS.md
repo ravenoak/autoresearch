@@ -228,6 +228,13 @@ Modules with coverage below 90% based on the latest run:
 - [x] `autoresearch.output_format` – 90%
 - [x] `autoresearch.streamlit_app` – 90%
 
+### Latest Test Results
+
+- `flake8` and `mypy` run successfully after fixing the test stubs.
+- `pytest` and BDD tests could not complete due to missing optional
+  dependencies in the execution environment. Coverage information is
+  therefore unavailable.
+
 ### Performance Baselines
 
 Current benchmark metrics for a single dummy query:
