@@ -4,6 +4,7 @@ set -euo pipefail
 #python -m pip install --upgrade pip
 #pip install poetry
 poetry env use $(which python3)
+# Install dev dependencies and all optional extras to ensure all tests can run
 poetry install --no-root --no-interaction --with dev --all-extras
 poetry run pip install -e .
 
