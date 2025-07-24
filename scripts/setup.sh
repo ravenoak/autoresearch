@@ -79,6 +79,6 @@ chmod +x scripts/smoke_test.py
 
 # Run smoke test to verify environment
 echo "Running smoke test to verify environment..."
-python scripts/smoke_test.py
+poetry run python scripts/smoke_test.py
 
 echo "Setup complete! VSS extension downloaded and configured."
