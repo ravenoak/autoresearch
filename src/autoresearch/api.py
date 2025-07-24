@@ -21,12 +21,10 @@ from typing import Optional, List, cast
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from starlette.types import ExceptionHandler
-from slowapi.util import get_remote_address
 from limits.util import parse
 import importlib
+import types
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
@@ -41,13 +39,39 @@ from .tracing import get_tracer, setup_tracing
 from .models import QueryRequest, QueryResponse, BatchQueryRequest
 from .storage import StorageManager
 from pydantic import ValidationError
+# Lazily import SlowAPI and fall back to a minimal stub when unavailable
 from .error_utils import get_error_info, format_error_for_api
 
-_slowapi_module = importlib.import_module("slowapi")
-SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
-# Import Limit wrapper only when SlowAPI is available
-if not SLOWAPI_STUB:
-    from slowapi.wrappers import Limit
+try:  # pragma: no cover - optional dependency
+    _slowapi_module = importlib.import_module("slowapi")
+    SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.util import get_remote_address
+    if not SLOWAPI_STUB:
+        from slowapi.wrappers import Limit
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    SLOWAPI_STUB = True
+
+    class RateLimitExceeded(Exception):
+        """Fallback exception raised when the rate limit is exceeded."""
+
+    def get_remote_address(request: Request) -> str:
+        return request.client.host if request.client else "unknown"
+
+    class Limiter:  # pragma: no cover - simple stub
+        def __init__(self, *_, **__):
+            self.limiter = types.SimpleNamespace(hit=lambda *_a, **_k: True)
+
+        def _inject_headers(self, response: Response, *_a, **_k):
+            return response
+
+    def _rate_limit_exceeded_handler(*_a, **_k) -> Response:
+        return PlainTextResponse("rate limit exceeded", status_code=429)
+
+    class Limit:  # pragma: no cover - simple stub
+        def __init__(self, *_, **__):
+            pass
 # Global per-client request log used for fallback rate limiting and tests
 REQUEST_LOG: dict[str, int] = {}
 
