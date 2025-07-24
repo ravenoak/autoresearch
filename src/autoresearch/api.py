@@ -22,6 +22,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ExceptionHandler
+from fastapi.background import BackgroundTasks
 from limits.util import parse
 import importlib
 import types
@@ -33,6 +34,7 @@ from .config import ConfigLoader, get_config, ConfigModel
 import asyncio
 from uuid import uuid4
 import httpx
+import threading
 from .orchestration.orchestrator import Orchestrator
 from .orchestration import ReasoningMode
 from .tracing import get_tracer, setup_tracing
@@ -560,6 +562,7 @@ async def batch_query_endpoint(
 @app.post("/query/async")
 async def async_query_endpoint(
     request: QueryRequest,
+    background_tasks: BackgroundTasks,
     _: None = require_permission("query"),
 ) -> dict:
     """Run a query in the background and return its ID."""
@@ -572,24 +575,27 @@ async def async_query_endpoint(
         config.llm_backend = request.llm_backend
 
     query_id = str(uuid4())
+    loop = asyncio.get_running_loop()
+    future: asyncio.Future[QueryResponse] = loop.create_future()
+    app.state.async_tasks[query_id] = future
 
-    async def run() -> QueryResponse:
-        return await Orchestrator.run_query_async(request.query, config)
-
-    task = asyncio.create_task(run())
-    app.state.async_tasks[query_id] = task
-
-    def notify(_task: asyncio.Task) -> None:
-        if _task.cancelled() or _task.exception():
+    async def run_and_notify() -> None:
+        try:
+            result = await Orchestrator.run_query_async(request.query, config)
+            future.set_result(result)
+        except Exception as exc:  # pragma: no cover - defensive
+            future.set_exception(exc)
             return
-        result: QueryResponse = _task.result()
         timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
             _notify_webhook(request.webhook_url, result, timeout)
         for url in getattr(config.api, "webhooks", []):
             _notify_webhook(url, result, timeout)
 
-    task.add_done_callback(notify)
+    def start_task() -> None:
+        threading.Thread(target=lambda: asyncio.run(run_and_notify()), daemon=True).start()
+
+    background_tasks.add_task(start_task)
     return {"query_id": query_id}
 
 
