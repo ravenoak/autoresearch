@@ -81,4 +81,15 @@ chmod +x scripts/smoke_test.py
 echo "Running smoke test to verify environment..."
 poetry run python scripts/smoke_test.py
 
+# Verify that types-requests is installed so mypy can find request stubs
+echo "Verifying types-requests installation..."
+if ! poetry run pip show types-requests >/dev/null 2>&1; then
+    echo "types-requests not found, installing now..."
+    poetry run pip install types-requests
+fi
+
+# Run mypy to ensure type hints are valid and request stubs are picked up
+echo "Running mypy..."
+poetry run mypy src
+
 echo "Setup complete! VSS extension downloaded and configured."
