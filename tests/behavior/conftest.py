@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 import pytest  # noqa: E402
 
 from autoresearch.api import reset_request_log  # noqa: E402
-from tests.conftest import reset_limiter_state  # noqa: E402
+from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 
 
 @pytest.fixture
@@ -21,10 +21,19 @@ def test_context():
 
 @pytest.fixture(autouse=True)
 def enable_real_vss(monkeypatch):
-    """Allow real VSS extension loading in behavior tests."""
-    monkeypatch.setenv("REAL_VSS_TEST", "1")
-    yield
-    monkeypatch.delenv("REAL_VSS_TEST", raising=False)
+    """Enable real VSS extension only when available."""
+    if VSS_AVAILABLE:
+        monkeypatch.setenv("REAL_VSS_TEST", "1")
+        yield
+        monkeypatch.delenv("REAL_VSS_TEST", raising=False)
+    else:
+        yield
+
+
+def pytest_runtest_setup(item):
+    """Skip VSS-dependent scenarios when the extension is unavailable."""
+    if not VSS_AVAILABLE and item.get_closest_marker("requires_vss"):
+        pytest.skip("VSS extension not available")
 
 
 @pytest.fixture(autouse=True)
