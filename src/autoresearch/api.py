@@ -43,37 +43,60 @@ from .storage import StorageManager
 from pydantic import ValidationError
 # Lazily import SlowAPI and fall back to a minimal stub when unavailable
 from .error_utils import get_error_info, format_error_for_api
+from typing import TYPE_CHECKING, Callable, Any
+
+# Predeclare optional SlowAPI types for static analysis
+Limiter: Any
+RateLimitExceeded: type[Exception]
+_rate_limit_exceeded_handler: Callable[..., Response]
+Limit: Any
+get_remote_address: Callable[[Request], str]
 
 try:  # pragma: no cover - optional dependency
     _slowapi_module = importlib.import_module("slowapi")
     SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
-    from slowapi import Limiter, _rate_limit_exceeded_handler
-    from slowapi.errors import RateLimitExceeded
-    from slowapi.util import get_remote_address
+    from slowapi import Limiter as SlowLimiter, _rate_limit_exceeded_handler as SlowHandler
+    from slowapi.errors import RateLimitExceeded as SlowRateLimitExceeded
+    from slowapi.util import get_remote_address as SlowGetRemoteAddress
     if not SLOWAPI_STUB:
-        from slowapi.wrappers import Limit
+        from slowapi.wrappers import Limit as SlowLimit
+
+    Limiter = SlowLimiter
+    RateLimitExceeded = SlowRateLimitExceeded
+    _rate_limit_exceeded_handler = SlowHandler
+    get_remote_address = SlowGetRemoteAddress
+    if not SLOWAPI_STUB:
+        Limit = SlowLimit
+    else:
+        Limit = type("Limit", (), {})
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     SLOWAPI_STUB = True
 
-    class RateLimitExceeded(Exception):
+    class _FallbackRateLimitExceeded(Exception):
         """Fallback exception raised when the rate limit is exceeded."""
 
-    def get_remote_address(request: Request) -> str:
+    def _fallback_get_remote_address(request: Request) -> str:
         return request.client.host if request.client else "unknown"
 
-    class Limiter:  # pragma: no cover - simple stub
+    class _FallbackLimiter:  # pragma: no cover - simple stub
         def __init__(self, *_, **__):
             self.limiter = types.SimpleNamespace(hit=lambda *_a, **_k: True)
 
         def _inject_headers(self, response: Response, *_a, **_k):
             return response
 
-    def _rate_limit_exceeded_handler(*_a, **_k) -> Response:
+    def _fallback_rate_limit_exceeded_handler(*_a: Any, **_k: Any) -> Response:
         return PlainTextResponse("rate limit exceeded", status_code=429)
 
-    class Limit:  # pragma: no cover - simple stub
+    class _FallbackLimit:  # pragma: no cover - simple stub
         def __init__(self, *_, **__):
             pass
+
+    RateLimitExceeded = _FallbackRateLimitExceeded
+    get_remote_address = _fallback_get_remote_address
+    Limiter = _FallbackLimiter
+    _rate_limit_exceeded_handler = _fallback_rate_limit_exceeded_handler
+    Limit = _FallbackLimit
 # Global per-client request log used for fallback rate limiting and tests
 REQUEST_LOG: dict[str, int] = {}
 
@@ -213,7 +236,7 @@ else:
     app.add_middleware(RateLimitMiddleware)
 
 
-def _handle_rate_limit(request: Request, exc: RateLimitExceeded) -> Response:
+def _handle_rate_limit(request: Request, exc: Exception) -> Response:
     result = _rate_limit_exceeded_handler(request, exc)
     if isinstance(result, Response):
         return result
