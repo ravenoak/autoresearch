@@ -2599,8 +2599,8 @@ langchain = ">=0.3.26,<1.0.0"
 langchain-core = ">=0.3.66,<1.0.0"
 langsmith = ">=0.1.125"
 numpy = [
-    {version = ">=2.1.0", markers = "python_version >= \"3.13\""},
     {version = ">=1.26.2", markers = "python_version < \"3.13\""},
+    {version = ">=2.1.0", markers = "python_version >= \"3.13\""},
 ]
 pydantic-settings = ">=2.4.0,<3.0.0"
 PyYAML = ">=5.3"
@@ -2953,8 +2953,8 @@ anyio = ">=4.8.0"
 httpx = ">=0.27.2"
 httpx-ws = ">=0.7.0"
 msgspec = [
+    {version = ">=0.18.6"},
     {version = ">=0.19.0", markers = "python_version >= \"3.13\""},
-    {version = ">=0.18.6", markers = "python_version < \"3.13\""},
 ]
 typing-extensions = ">=4.12.2"
 
@@ -5934,7 +5934,7 @@ SQLAlchemy = ">=1.1.4,<2.0.0"
 name = "redis"
 version = "6.2.0"
 description = "Python client for Redis database and key-value store"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
 markers = "extra == \"distributed\" or extra == \"full\" or python_version >= \"3.13\""
