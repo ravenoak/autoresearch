@@ -7,11 +7,10 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Environment setup
 - Use **Poetry** for all project interactions.
   - Select the Python interpreter with `poetry env use $(which python3)` (Python 3.12 or newer).
-  - Install dependencies with `poetry install --with dev --all-extras` to ensure optional
-    packages used by the tests are available.
+  - Install dependencies with `poetry install --with dev --all-extras` to enable optional packages. Tests run without these extras using bundled stubs, but installing them activates real components such as SlowAPI's rate limiting.
   - Activate the environment using `poetry shell` or prefix commands with `poetry run`.
   - Avoid system-level Python or `pip`. Run `pip install -e .` only inside the Poetry virtual environment using `poetry shell` or `poetry run pip`.
-  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies so tools like `flake8`, `mypy`, and `pytest` are available.
+  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced.
 
 ## Verification steps
 - Check code style with `poetry run flake8 src tests`.
