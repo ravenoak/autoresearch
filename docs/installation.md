@@ -104,3 +104,18 @@ package and reinstall any extras you require:
 pip install -U "autoresearch[full]"
 ```
 
+## Troubleshooting optional package builds
+
+Some optional extras such as `hdbscan` may compile from source when no
+pre-built wheel is available for your platform. These builds can take a
+long time or fail on low-memory machines.
+
+- Install `gcc`, `g++` and the Python development headers beforehand.
+- If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
+  disable OpenMP optimizations.
+- Consider installing a pre-built wheel with `pip install hdbscan` prior
+  to running `poetry install`.
+- You can also omit heavy extras by removing `--all-extras` from the
+  install command when rapid setup is more important than optional
+  features.
+
