@@ -24,12 +24,18 @@ dependencies with either **Poetry** or **pip**. See
 [docs/installation.md](docs/installation.md) for details on optional features and
 upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
-all optional extras so development and runtime dependencies are available
-for testing. The unit suite relies on stub implementations of several optional
-packages (for example `slowapi`), so running tests without extras installed is
-recommended. Extras may enable real functionality such as rate limiting which
-can alter test behaviour. Reinstall with `poetry install --with dev` if you
-need to disable extras after running the setup script.
+all optional extras so development and runtime dependencies are available for
+testing. The test suite works both with and without extras:
+
+- **Without extras** – stub implementations of optional packages like
+  `slowapi` are used. Rate limiting middleware is disabled and tests run
+  quickly with predictable behaviour.
+- **With extras** – real packages are installed, activating features such as
+  SlowAPI's rate‑limiting middleware. This may change how certain tests
+  behave and can make them slower.
+
+Reinstall with `poetry install --with dev` if you need to disable extras after
+running the setup script.
 
 ### Using Poetry
 Python 3.12 or newer is required. When several Python versions are installed,
@@ -467,13 +473,17 @@ Alternatively you can run the helper script:
 
 The helper installs all dependencies with `poetry install --with dev --all-extras` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
-are therefore available for development and testing. Running the full test suite requires
-these extras; a minimal installation may raise `ModuleNotFoundError` errors.
+are therefore available for development and testing. Tests will run even without
+extras because stub versions of optional packages are bundled, but coverage is
+limited. Installing extras enables the real implementations—for example
+SlowAPI’s middleware, which enforces rate limits during integration tests.
 
 ## Running tests
 
 The full suite, including behavior-driven tests, relies on optional extras such as
-`pdfminer` and `gitpython`. Ensure they are installed with:
+`pdfminer` and `gitpython`. Tests can run without them using bundled stubs, but
+real behaviour – including SlowAPI rate limiting – is only exercised when the
+extras are installed. Install them with:
 
 ```bash
 poetry install --with dev --all-extras
