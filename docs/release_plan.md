@@ -18,11 +18,15 @@ the codebase currently sits at the **unreleased 0.1.0** version defined in
 | **1.0.0** | 2026-03-01 | Full feature set, performance tuning and stable interfaces |
 
 The **0.1.0** release was originally aimed for **July 20, 2025**. Ongoing work has
-shifted the timeline. The milestone is now planned for **August 15, 2025**.
+shifted the timeline. Several unit and behavior tests currently fail and
+coverage sits below the **90%** target, so the milestone has been pushed
+back to **after August 15, 2025**.
 
 The following tasks remain before publishing **0.1.0**:
 
-- Ensure optional dependencies are installed so the full unit, integration and behavior test suites run successfully in CI.
+- Fix failing unit and behavior tests so CI passes.
+- Install optional dependencies so the full unit, integration and behavior test suites run successfully.
+- Achieve at least **90%** coverage across all suites.
 - Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
 - Assemble final release notes and confirm README instructions.
 
@@ -34,3 +38,13 @@ The following tasks remain before publishing **0.1.0**:
 4. **Publish** – follow the workflow in `deployment.md`: bump the version, run tests, publish to TestPyPI using `./scripts/publish_dev.py`, then release to PyPI with `twine upload dist/*`.
 
 Each milestone may include additional patch releases for critical fixes.
+
+## CI Checklist
+
+Before tagging **0.1.0**, ensure the following checks pass:
+
+- [ ] `uv run flake8 src tests`
+- [ ] `uv run mypy src`
+- [ ] `uv run pytest -q`
+- [ ] `uv run pytest tests/behavior`
+- [ ] `task coverage` reports at least **90%** total coverage

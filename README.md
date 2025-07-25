@@ -11,11 +11,13 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 Autoresearch is currently in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
-**not** been published yet.
-The first official release was previously targeted for **July 20, 2025**.
-Development has slipped past that date, so the release is now expected
-to arrive sometime after **July 20, 2025**. See
-[docs/release_plan.md](docs/release_plan.md) for the full milestone schedule.
+**not** been published yet. The first official release was originally
+planned for **July 20, 2025**. Work has slipped past that date and
+several unit and behavior tests are still failing. The release has been
+re-targeted for sometime after **August 15, 2025** once CI passes with at
+least **90%** coverage. See
+[docs/release_plan.md](docs/release_plan.md) for the full milestone
+schedule and outstanding tasks.
 
 ## Installation
 
