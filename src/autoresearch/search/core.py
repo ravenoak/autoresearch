@@ -1,5 +1,8 @@
 """Search functionality for external information retrieval.
 
+This subsystem is still experimental and only lightly tested. APIs and
+behaviour may change in future revisions.
+
 This module provides utilities for generating search queries and performing
 external lookups using configurable search backends. It supports multiple
 search backends, query generation, and result caching.

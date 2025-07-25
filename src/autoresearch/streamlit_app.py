@@ -1,5 +1,7 @@
 """Streamlit GUI for Autoresearch.
 
+This user interface is experimental and largely untested. Expect rough edges.
+
 This module provides a web-based GUI for Autoresearch using Streamlit.
 It allows users to run queries, view results, and configure settings.
 """
