@@ -24,8 +24,8 @@ jobs:
           major, minor = sys.version_info[:2]
           assert (major == 3 and minor >= 12), f"Python 3.12 or newer required, got {major}.{minor}"
           EOF
-      - name: Install Poetry
-        run: python -m pip install poetry
+      - name: Install uv
+        run: python -m pip install uv
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
       - uses: actions/upload-artifact@v4
