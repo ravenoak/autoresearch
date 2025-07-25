@@ -33,3 +33,13 @@ Feature: Interactive Monitoring
     When I run `autoresearch search "Test graph" --visualize`
     Then the search command should exit successfully
     And the search output should display graph data
+
+  Scenario: Record resource usage
+    When I run `autoresearch monitor resources --duration 1`
+    Then the monitor should exit successfully
+    And the monitor output should display resource usage
+
+  Scenario: Start monitoring service
+    When I run `autoresearch monitor start --interval 0.1`
+    Then the monitor should exit successfully
+    And the monitor output should indicate it started
