@@ -62,6 +62,52 @@ def run_search_visualize(query, monkeypatch, bdd_context, cli_runner):
     bdd_context["visual_result"] = result
 
 
+@when('I run `autoresearch monitor resources --duration 1`')
+def run_monitor_resources(monkeypatch, bdd_context, cli_runner):
+    class DummyMetrics:
+        def record_system_resources(self):
+            pass
+
+        def get_summary(self):
+            return {
+                "resource_usage": [
+                    {
+                        "timestamp": 0,
+                        "cpu_percent": 10.0,
+                        "memory_mb": 5.0,
+                        "gpu_percent": 0.0,
+                        "gpu_memory_mb": 0.0,
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(
+        "autoresearch.monitor.orch_metrics.OrchestrationMetrics", lambda: DummyMetrics()
+    )
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    result = cli_runner.invoke(
+        cli_app, ["monitor", "resources", "--duration", "1"]
+    )
+    bdd_context["monitor_result"] = result
+
+
+@when('I run `autoresearch monitor start --interval 0.1`')
+def run_monitor_start(monkeypatch, bdd_context, cli_runner):
+    monkeypatch.setattr(
+        "autoresearch.monitor.ResourceMonitor.start", lambda self, prometheus_port=None: None
+    )
+    monkeypatch.setattr("autoresearch.monitor.ResourceMonitor.stop", lambda self: None)
+    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.start", lambda self: None)
+    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.stop", lambda self: None)
+
+    def _raise(_):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr("time.sleep", _raise)
+    result = cli_runner.invoke(cli_app, ["monitor", "start", "--interval", "0.1"])
+    bdd_context["monitor_result"] = result
+
+
 @then("the monitor should exit successfully")
 def monitor_exit_successfully(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
@@ -94,6 +140,19 @@ def search_output_contains_graph(bdd_context):
     assert "Answer" in output
 
 
+@then("the monitor output should display resource usage")
+def monitor_output_contains_resources(bdd_context):
+    output = bdd_context["monitor_result"].stdout
+    assert "Resource Usage" in output
+    assert "CPU %" in output
+
+
+@then("the monitor output should indicate it started")
+def monitor_output_started(bdd_context):
+    output = bdd_context["monitor_result"].stdout
+    assert "Monitoring started" in output
+
+
 @scenario("../features/interactive_monitor.feature", "Interactive monitoring")
 def test_interactive_monitor(bdd_context):
     assert bdd_context["monitor_result"].exit_code == 0
@@ -122,3 +181,13 @@ def test_monitor_graph_tui(bdd_context):
 @scenario("../features/interactive_monitor.feature", "Visualize search results")
 def test_search_visualization(bdd_context):
     assert bdd_context["visual_result"].exit_code == 0
+
+
+@scenario("../features/interactive_monitor.feature", "Record resource usage")
+def test_monitor_resources(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0
+
+
+@scenario("../features/interactive_monitor.feature", "Start monitoring service")
+def test_monitor_start_service(bdd_context):
+    assert bdd_context["monitor_result"].exit_code == 0

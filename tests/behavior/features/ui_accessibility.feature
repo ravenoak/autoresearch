@@ -56,3 +56,9 @@ Feature: UI Accessibility
     When I open the page for the first time
     Then a guided tour modal should describe the main features
     And I should be able to dismiss the tour
+
+  @requires_ui
+  Scenario: Skip to content link
+    Given the Streamlit application is running
+    When I load the Streamlit page
+    Then a skip to main content link should be present

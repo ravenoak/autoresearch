@@ -25,3 +25,7 @@ Feature: Query Interface
   Scenario: Visualize query results via CLI
     When I run `autoresearch visualize "What is Promise Theory?" graph.png`
     Then the visualization file "graph.png" should exist
+
+  Scenario: Visualize RDF graph via CLI
+    When I run `autoresearch visualize-rdf rdf_graph.png`
+    Then the visualization file "rdf_graph.png" should exist

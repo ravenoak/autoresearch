@@ -83,6 +83,14 @@ def run_visualize_cli(query, file, tmp_path, bdd_context, cli_runner):
     bdd_context["viz_path"] = out
 
 
+@when(parsers.re(r'I run `autoresearch visualize-rdf (?P<file>.+)`'))
+def run_visualize_rdf_cli(file, tmp_path, bdd_context, cli_runner):
+    out = tmp_path / file
+    result = cli_runner.invoke(cli_app, ["visualize-rdf", str(out)])
+    bdd_context["viz_result"] = result
+    bdd_context["viz_path"] = out
+
+
 @then(parsers.parse('the visualization file "{file}" should exist'))
 def check_viz_file(file, bdd_context):
     path = bdd_context["viz_path"]
@@ -130,4 +138,9 @@ def test_interactive_query():
 
 @scenario("../features/query_interface.feature", "Visualize query results via CLI")
 def test_visualize_query():
+    pass
+
+
+@scenario("../features/query_interface.feature", "Visualize RDF graph via CLI")
+def test_visualize_rdf_cli():
     pass

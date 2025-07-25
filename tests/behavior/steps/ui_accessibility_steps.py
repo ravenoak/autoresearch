@@ -79,6 +79,13 @@ def test_guided_tour_availability(bdd_context):
     assert bdd_context.get("tour_modal", False) is True
 
 
+@pytest.mark.slow
+@scenario("../features/ui_accessibility.feature", "Skip to content link")
+def test_skip_link(bdd_context):
+    """Skip link should be present on the page."""
+    assert any("skip-link" in call for call in bdd_context.get("markdown_calls", []))
+
+
 @when("I use the CLI with color output disabled")
 def use_cli_without_color(bdd_context):
     """Simulate using the CLI with color output disabled."""
@@ -398,3 +405,22 @@ def dismiss_tour():
         import streamlit as st
 
         assert st.session_state.show_tour is False
+
+
+@when("I load the Streamlit page")
+def load_streamlit_page(bdd_context):
+    with (
+        patch("streamlit.markdown") as mock_markdown,
+        patch("streamlit.session_state", {}),
+    ):
+        import importlib
+        import autoresearch.streamlit_app as app
+
+        importlib.reload(app)
+
+        bdd_context["markdown_calls"] = [c.args[0] for c in mock_markdown.call_args_list]
+
+
+@then("a skip to main content link should be present")
+def check_skip_link(bdd_context):
+    assert any("skip-link" in call for call in bdd_context.get("markdown_calls", []))
