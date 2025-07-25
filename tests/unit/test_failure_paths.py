@@ -42,7 +42,7 @@ def test_external_lookup_unknown_backend(monkeypatch):
     cfg = ConfigModel()
     cfg.search.backends = ["missing"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     with pytest.raises(SearchError):
         Search.external_lookup("q")
 

@@ -65,7 +65,7 @@ def test_multiple_backends_called_and_merged(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["b1", "b2"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     # Execute
     results = Search.external_lookup("q", max_results=1)
@@ -130,7 +130,7 @@ def test_local_file_and_git_backends_called(monkeypatch, tmp_path):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["local_file", "local_git"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results = Search.external_lookup("hello", max_results=5)
 
@@ -158,7 +158,7 @@ def test_ranking_across_backends(monkeypatch):
     cfg.search.semantic_similarity_weight = 0.6
     cfg.search.bm25_weight = 0.4
     cfg.search.source_credibility_weight = 0.0
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     monkeypatch.setattr(
         Search,
@@ -194,7 +194,7 @@ def test_embeddings_added_to_results(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["b1"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
 
     results = Search.external_lookup("q", max_results=1)
@@ -222,7 +222,7 @@ def test_git_backend_returns_context(monkeypatch, tmp_path):
     cfg.search.local_git.repo_path = str(repo_path)
     cfg.search.local_git.branches = ["main"]
     cfg.search.local_git.history_depth = 10
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results = Search.external_lookup("context", max_results=5)
 
@@ -250,7 +250,7 @@ def test_combined_local_and_web_results(monkeypatch, tmp_path):
     cfg.search.semantic_similarity_weight = 0.6
     cfg.search.bm25_weight = 0.4
     cfg.search.source_credibility_weight = 0.0
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     monkeypatch.setattr(
         Search,
@@ -286,7 +286,7 @@ def test_weight_optimization_improves_ranking(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["b1", "b2"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, docs: [0.2, 0.9])
     monkeypatch.setattr(

@@ -37,7 +37,7 @@ def test_external_lookup(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
     params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
@@ -59,7 +59,7 @@ def test_external_lookup_special_chars(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "C++ tutorial & basics"
     url = "https://api.duckduckgo.com/"
     params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
@@ -93,7 +93,7 @@ def test_external_lookup_backend_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
 
@@ -122,7 +122,7 @@ def test_duckduckgo_timeout_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
 
@@ -148,7 +148,7 @@ def test_duckduckgo_json_decode_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
 
@@ -174,7 +174,7 @@ def test_serper_backend_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["serper"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setenv("SERPER_API_KEY", "test_key")
     query = "python"
     url = "https://google.serper.dev/search"
@@ -204,7 +204,7 @@ def test_serper_timeout_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["serper"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setenv("SERPER_API_KEY", "test_key")
     query = "python"
     url = "https://google.serper.dev/search"
@@ -236,7 +236,7 @@ def test_local_file_backend(monkeypatch, tmp_path):
     cfg.search.context_aware.enabled = False
     cfg.search.local_file.path = str(docs_dir)
     cfg.search.local_file.file_types = ["txt"]
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results = Search.external_lookup("hello", max_results=5)
 
@@ -262,7 +262,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
     cfg.search.local_git.repo_path = str(repo)
     cfg.search.local_git.branches = ["master"]
     cfg.search.local_git.history_depth = 10
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     results = Search.external_lookup("TODO", max_results=5)
 
@@ -276,7 +276,7 @@ def test_external_lookup_vector_search(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = []
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     class DummyModel:
         def encode(self, text):
@@ -301,7 +301,7 @@ def test_external_lookup_vector_search(monkeypatch):
 def test_http_session_atexit_hook(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.http_pool_size = 1
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     search.close_http_session()
     calls: list = []
     monkeypatch.setattr(search.atexit, "register", lambda f: calls.append(f))
@@ -315,7 +315,7 @@ def test_http_session_atexit_hook(monkeypatch):
     assert search.close_http_session in calls
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_results):
     cfg = ConfigModel(loops=1)
     cfg.search.semantic_similarity_weight = 1.0
@@ -335,7 +335,7 @@ def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_
     assert ranked[0]["url"] == "https://site2.com"
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_results):
     cfg = ConfigModel(loops=1)
     cfg.search.semantic_similarity_weight = 0.0
@@ -355,7 +355,7 @@ def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_resu
     assert ranked[0]["url"] == "https://site1.com"
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_search_results):
     cfg = ConfigModel(loops=1)
     cfg.search.semantic_similarity_weight = 0.0
@@ -381,7 +381,7 @@ def test_external_lookup_hybrid_query(monkeypatch):
     cfg.search.embedding_backends = ["emb"]
     cfg.search.hybrid_query = True
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     class DummyModel:
         def encode(self, text):

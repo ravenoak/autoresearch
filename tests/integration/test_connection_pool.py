@@ -5,6 +5,7 @@ from unittest.mock import patch
 from autoresearch.config import ConfigModel
 from autoresearch.llm import pool as llm_pool
 from autoresearch.storage import StorageManager
+import autoresearch.storage as storage
 from autoresearch.config import ConfigLoader
 
 
@@ -19,7 +20,7 @@ def test_search_session_reuse_and_cleanup(monkeypatch):
         return []
 
     monkeypatch.setitem(search.Search.backends, "dummy", dummy_backend)
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     search.Search.external_lookup("a")
     search.Search.external_lookup("b")
@@ -34,8 +35,8 @@ def test_search_session_reuse_and_cleanup(monkeypatch):
 def test_llm_session_reuse_and_cleanup(monkeypatch):
     session_ids = []
 
-    def mock_post(self, url, json=None, timeout=30, headers=None):
-        session_ids.append(id(self))
+    def mock_post(url, json=None, timeout=30, headers=None):
+        session_ids.append(id(session))
 
         class R:
 
@@ -65,7 +66,7 @@ def test_llm_adapter_pool_concurrency(monkeypatch):
     """Adapters should be reused across threads."""
     session = llm_pool.get_session()
 
-    def mock_post(self, url, json=None, timeout=30, headers=None):
+    def mock_post(url, json=None, timeout=30, headers=None):
         class R:
             def raise_for_status(self):
                 pass
@@ -89,9 +90,9 @@ def test_llm_adapter_pool_concurrency(monkeypatch):
             ex.submit(call)
 
     assert len(set(ids)) == 1
-    first = ids[0]
+    first_adapter = llm_pool.get_adapter("lmstudio")
     llm_pool.close_adapters()
-    assert id(llm_pool.get_adapter("lmstudio")) != first
+    assert llm_pool.get_adapter("lmstudio") is not first_adapter
 
 
 def test_duckdb_connection_pool_concurrency(tmp_path):
@@ -101,7 +102,7 @@ def test_duckdb_connection_pool_concurrency(tmp_path):
     )
     llm_pool.close_adapters()
     search.close_http_session()
-    StorageManager.teardown(remove_db=True)
+    storage.teardown(remove_db=True)
     with patch("autoresearch.config.ConfigLoader.load_config", lambda self: cfg):
         ConfigLoader.reset_instance()
         StorageManager.setup(cfg.storage.duckdb_path)
@@ -116,7 +117,7 @@ def test_duckdb_connection_pool_concurrency(tmp_path):
         for _ in range(10):
             ex.submit(use_conn)
 
-    backend = StorageManager._db_backend
+    backend = storage._db_backend
     assert backend is not None
     assert len(set(ids)) <= backend._max_connections
-    StorageManager.teardown(remove_db=True)
+    storage.teardown(remove_db=True)

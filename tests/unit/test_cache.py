@@ -23,7 +23,7 @@ def test_search_uses_cache(monkeypatch):
     print(f"Config search backends: {cfg.search.backends}")
     # Disable context-aware search to avoid issues with SearchContext
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     # first call uses backend
     results1 = Search.external_lookup("python")
@@ -116,7 +116,7 @@ def test_cache_is_backend_specific(monkeypatch):
     cfg2.search.backends = ["b2"]
     cfg2.search.context_aware.enabled = False
 
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
     results1 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 0}
     # Check that the results contain the expected title and URL
@@ -124,7 +124,7 @@ def test_cache_is_backend_specific(monkeypatch):
     assert results1[0]["title"] == "B1"
     assert results1[0]["url"] == "u1"
 
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg2)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
     results2 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 1}
     # Check that the results contain the expected title and URL
@@ -132,7 +132,7 @@ def test_cache_is_backend_specific(monkeypatch):
     assert results2[0]["title"] == "B2"
     assert results2[0]["url"] == "u2"
 
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg1)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
     results3 = Search.external_lookup("python")
     assert calls == {"b1": 1, "b2": 1}
     # Results should be the same as the first call (from cache)

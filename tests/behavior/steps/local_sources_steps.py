@@ -40,7 +40,7 @@ def search_directory(query, monkeypatch, bdd_context):
     docs_dir = bdd_context["docs_dir"]
     cfg.search.local_file.path = str(docs_dir)
     cfg.search.local_file.file_types = ["txt"]
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     bdd_context["search_results"] = Search.external_lookup(query, max_results=5)
 
 
@@ -82,7 +82,7 @@ def search_directory_documents(query, monkeypatch, bdd_context):
     docs_dir = bdd_context["docs_dir"]
     cfg.search.local_file.path = str(docs_dir)
     cfg.search.local_file.file_types = ["pdf", "docx"]
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     bdd_context["search_results"] = Search.external_lookup(query, max_results=5)
 
 
@@ -136,7 +136,7 @@ def search_repository(query, monkeypatch, bdd_context):
     cfg.search.local_git.repo_path = str(repo_path)
     cfg.search.local_git.branches = ["main"]
     cfg.search.local_git.history_depth = 50
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     bdd_context["search_results"] = Search.external_lookup(query, max_results=5)
 
 

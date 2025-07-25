@@ -15,7 +15,7 @@ def test_external_lookup_request_exception(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["fail"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     with pytest.raises(SearchError) as excinfo:
         Search.external_lookup("q")
@@ -32,7 +32,7 @@ def test_external_lookup_timeout(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["timeout"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     with pytest.raises(TimeoutError):
         Search.external_lookup("q")

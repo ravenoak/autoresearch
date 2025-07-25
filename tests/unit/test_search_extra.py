@@ -19,7 +19,7 @@ def test_unknown_backend_raises(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["missing"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     was = sys.modules.pop('pytest')
     try:
         with pytest.raises(SearchError):
@@ -36,7 +36,7 @@ def test_backend_json_error(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.backends = ["bad"]
     cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     was = sys.modules.pop('pytest')
     try:
         with pytest.raises(SearchError):

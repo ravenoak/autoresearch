@@ -167,7 +167,7 @@ def test_assess_source_credibility(sample_results):
     assert scores[unknown_index] == 0.5
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results(mock_get_config, mock_config, sample_results):
     """Test the overall ranking functionality."""
     mock_get_config.return_value = mock_config
@@ -202,7 +202,7 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
     assert "credibility_score" in ranked_results[0]
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_with_disabled_features(
     mock_get_config, mock_config, sample_results
 ):
@@ -232,7 +232,7 @@ def test_rank_results_with_disabled_features(
     assert ranked_results[0]["credibility_score"] == 1.0
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 @patch("autoresearch.search.BM25_AVAILABLE", False)
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", False)
 def test_rank_results_with_unavailable_libraries(
@@ -252,7 +252,7 @@ def test_rank_results_with_unavailable_libraries(
     assert all(result["semantic_score"] == 1.0 for result in ranked_results)
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_results):
     """Ranking should respect configured weights for keyword and semantic scores."""
     mock_config.search.semantic_similarity_weight = 0.8
@@ -271,7 +271,7 @@ def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_
     assert ranked_results[0]["url"] == "https://python.org"
 
 
-@patch("autoresearch.search.get_config")
+@patch("autoresearch.search.core.get_config")
 def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
     """Ranking should rely solely on BM25 when other weights are zero."""
     mock_config.search.bm25_weight = 1.0
