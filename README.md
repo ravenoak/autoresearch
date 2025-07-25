@@ -547,6 +547,15 @@ development cycles with:
 uv run pytest -m "not requires_ui and not requires_vss and not slow"
 ```
 
+When resources permit you can run the complete suite, including the slow tests
+and those that rely on optional extras. Install the extras and run pytest
+without filtering the markers:
+
+```bash
+uv sync --all-extras
+uv run pytest -m "slow or requires_ui or requires_vss"
+```
+
 ### Migrating from Poetry
 
 Previous versions used Poetry for environment management. `uv` now handles dependency installation and virtual environment creation for faster setup. If you have an existing Poetry environment, remove the `.venv` directory and recreate it with:
