@@ -10,7 +10,7 @@ import typer
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.progress import Progress
-from .mcp_interface import create_server
+from ..mcp_interface import create_server
 from .monitor import monitor_app
 import time
 

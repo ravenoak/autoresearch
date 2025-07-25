@@ -77,12 +77,12 @@ except ImportError:
     BERTOPIC_AVAILABLE = False
 
 import atexit
-from .errors import ConfigError, SearchError
-from .logging_utils import get_logger
-from .cache import get_cached_results, cache_results
-from .config import get_config
+from ..errors import ConfigError, SearchError
+from ..logging_utils import get_logger
+from ..cache import get_cached_results, cache_results
+from ..config import get_config
 log = get_logger(__name__)
-from .storage import StorageManager
+from ..storage import StorageManager
 
 from .http import get_http_session, close_http_session, set_http_session
 from .context import SearchContext
@@ -807,7 +807,7 @@ class Search:
                 backend_results = backend(search_query, max_results)
             except requests.exceptions.Timeout as exc:
                 log.warning(f"{name} search timed out: {exc}")
-                from .errors import TimeoutError
+                from ..errors import TimeoutError
                 raise TimeoutError(
                     f"{name} search timed out",
                     cause=exc,
