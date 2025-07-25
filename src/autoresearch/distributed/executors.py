@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from typing import Dict, Callable, Any, Optional, TYPE_CHECKING, Tuple, cast
-from multiprocessing.synchronize import Event
 import os
-import json
 import multiprocessing
 
 from queue import Queue
@@ -13,9 +11,18 @@ from queue import Queue
 from . import storage, search
 from .llm import pool as llm_pool
 from .logging_utils import get_logger
+from .coordinator import (
+    StorageCoordinator,
+    ResultAggregator,
+    start_storage_coordinator,
+    start_result_aggregator,
+    publish_claim,
+)
+from .broker import BrokerType
 
 import ray
 
+log = get_logger(__name__)
 from .config import ConfigModel
 
 if TYPE_CHECKING:  # pragma: no cover - used for type hints only
@@ -23,153 +30,6 @@ if TYPE_CHECKING:  # pragma: no cover - used for type hints only
 from .orchestration.state import QueryState
 from .orchestration.orchestrator import AgentFactory
 from .models import QueryResponse
-
-log = get_logger(__name__)
-
-
-class InMemoryBroker:
-    """Simple in-memory message broker using multiprocessing.Queue."""
-
-    def __init__(self) -> None:
-        self._manager = multiprocessing.Manager()
-        self.queue: Queue[Any] = self._manager.Queue()
-
-    def publish(self, message: dict[str, Any]) -> None:
-        self.queue.put(message)
-
-    def shutdown(self) -> None:
-        self._manager.shutdown()
-
-
-class RedisQueue:
-    """Minimal queue wrapper backed by Redis lists."""
-
-    def __init__(self, client: "redis.Redis", name: str) -> None:
-        self.client = client
-        self.name = name
-
-    def put(self, message: dict[str, Any]) -> None:
-        self.client.rpush(self.name, json.dumps(message))
-
-    def get(self) -> dict[str, Any]:
-        key_data = self.client.blpop([self.name])  # type: ignore[arg-type]
-        key, data = cast(Tuple[str, bytes], key_data)  # type: ignore[misc]
-        return json.loads(data)
-
-
-class RedisBroker:
-    """Message broker backed by Redis."""
-
-    def __init__(self, url: str | None = None, queue_name: str = "autoresearch") -> None:
-        import redis
-
-        self.client = redis.Redis.from_url(url or "redis://localhost:6379/0")
-        self.queue = RedisQueue(self.client, queue_name)
-
-    def publish(self, message: dict[str, Any]) -> None:
-        self.queue.put(message)
-
-    def shutdown(self) -> None:
-        self.client.close()
-
-
-BrokerType = InMemoryBroker | RedisBroker
-
-
-def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
-    """Return a message broker instance by name."""
-
-    if name in (None, "memory"):
-        return InMemoryBroker()
-    if name == "redis":
-        return RedisBroker(url)
-    raise ValueError(f"Unsupported message broker: {name}")
-
-
-class StorageCoordinator(multiprocessing.Process):
-    """Background process that persists claims from a queue."""
-
-    def __init__(
-        self,
-        queue: Any,
-        db_path: str,
-        ready_event: Event | None = None,
-    ) -> None:
-        super().__init__(daemon=True)
-        self._queue = queue
-        self._db_path = db_path
-        self._ready_event = ready_event
-
-    def run(self) -> None:  # pragma: no cover - runs in separate process
-        storage.setup(self._db_path)
-        if self._ready_event is not None:
-            self._ready_event.set()
-        while True:
-            try:
-                msg = self._queue.get()
-            except (EOFError, OSError):
-                break
-            if msg.get("action") == "stop":
-                break
-            if msg.get("action") == "persist_claim":
-                storage.StorageManager.persist_claim(
-                    msg["claim"], msg.get("partial_update", False)
-                )
-        storage.teardown()
-
-
-class ResultAggregator(multiprocessing.Process):
-    """Collect results from agents running in other processes."""
-
-    def __init__(self, queue: Any) -> None:
-        super().__init__(daemon=True)
-        self._queue = queue
-        self._manager = multiprocessing.Manager()
-        self.results: multiprocessing.managers.ListProxy[dict[str, Any]] = self._manager.list()  # type: ignore[attr-defined]
-
-    def run(self) -> None:  # pragma: no cover - runs in separate process
-        while True:
-            try:
-                msg = self._queue.get()
-            except (EOFError, OSError):
-                break
-            if msg.get("action") == "stop":
-                break
-            if msg.get("action") == "agent_result":
-                self.results.append(msg)
-
-
-def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, BrokerType]:
-    """Start a storage coordinator according to the distributed config."""
-
-    dist_cfg = config.distributed_config
-    broker = get_message_broker(
-        getattr(dist_cfg, "message_broker", None),
-        getattr(dist_cfg, "broker_url", None),
-    )
-    db_path = config.storage.duckdb_path
-    ready = multiprocessing.Event()
-    coordinator = StorageCoordinator(broker.queue, db_path, ready)
-    coordinator.start()
-    ready.wait()
-    return coordinator, broker
-
-
-def publish_claim(broker: BrokerType, claim: dict[str, Any], partial_update: bool = False) -> None:
-    """Publish a claim persistence request to the broker."""
-
-    broker.publish({"action": "persist_claim", "claim": claim, "partial_update": partial_update})
-
-
-def start_result_aggregator(config: ConfigModel) -> tuple[ResultAggregator, BrokerType]:
-    """Start a background aggregator process for agent results."""
-
-    dist_cfg = config.distributed_config
-    broker = get_message_broker(getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None))
-    aggregator = ResultAggregator(broker.queue)
-    aggregator.start()
-    return aggregator, broker
-
 
 @ray.remote
 def _execute_agent_remote(
