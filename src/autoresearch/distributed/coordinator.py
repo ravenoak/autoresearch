@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import multiprocessing
-import os
 from multiprocessing.synchronize import Event
-from queue import Queue
-from typing import Any, Tuple, cast
+from typing import Any
 
 from ..config import ConfigModel
 from .. import storage

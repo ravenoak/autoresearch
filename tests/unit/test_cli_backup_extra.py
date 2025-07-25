@@ -1,7 +1,5 @@
-import builtins
 from datetime import datetime
 from typer.testing import CliRunner
-import pytest
 from autoresearch.cli_backup import backup_app, _format_size
 from autoresearch.errors import BackupError
 

@@ -16,19 +16,22 @@ The module includes:
 
 from __future__ import annotations
 
+import csv
 import json
+import math
 import os
 import re
-import sys
-import time
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 import shutil
+import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from collections import defaultdict
+
 import requests
+import numpy as np
+from docx import Document
+from pdfminer.high_level import extract_text as extract_pdf_text
 try:
     from git import Repo
 
@@ -43,11 +46,6 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         "Install with `pip install \"autoresearch[git]\"` to enable it.",
         stacklevel=2,
     )
-import numpy as np
-import csv
-import math
-from pdfminer.high_level import extract_text as extract_pdf_text
-from docx import Document
 
 try:
     from rank_bm25 import BM25Okapi
@@ -72,24 +70,16 @@ except ImportError:  # pragma: no cover - optional dependency
     spacy = None  # type: ignore[assignment]
     SPACY_AVAILABLE = False
 
-try:
-    from bertopic import BERTopic
-
-    BERTOPIC_AVAILABLE = True
-except ImportError:
-    BERTOPIC_AVAILABLE = False
-
-import atexit
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..cache import get_cached_results, cache_results
 from ..config import get_config
-log = get_logger(__name__)
 from ..storage import StorageManager
 
-from .http import get_http_session, close_http_session, set_http_session
+from .http import close_http_session, get_http_session
 from .context import SearchContext
 
+log = get_logger(__name__)
 
 
 class Search:

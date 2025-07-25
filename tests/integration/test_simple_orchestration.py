@@ -5,11 +5,14 @@ from autoresearch.storage import StorageManager
 
 
 def make_agent(name, calls):
+
     class DummyAgent:
         def __init__(self, name, llm_adapter=None):
             self.name = name
+
         def can_execute(self, state, config):
             return True
+
         def execute(self, state, config, **kwargs):
             calls.append(self.name)
             state.update({
@@ -18,7 +21,10 @@ def make_agent(name, calls):
             })
             if self.name == "Synthesizer":
                 state.results["final_answer"] = f"Answer from {self.name}"
-            return {"results": {self.name: "ok"}, "claims": [{"type": "fact", "content": self.name, "id": self.name}]}
+            return {
+                "results": {self.name: "ok"},
+                "claims": [{"type": "fact", "content": self.name, "id": self.name}],
+            }
     return DummyAgent(name)
 
 

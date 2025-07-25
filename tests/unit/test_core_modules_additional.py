@@ -3,7 +3,6 @@ import types
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.config import ConfigModel, ConfigLoader
-from autoresearch.storage import StorageManager
 from autoresearch.search import Search
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
@@ -54,25 +53,34 @@ def test_planner_execute(monkeypatch):
     result = agent.execute(state, cfg)
     assert result["results"]["research_plan"] == "PLAN"
 
+
 def test_storage_setup_teardown(monkeypatch):
     calls = {}
+
     class FakeDuck:
         def __init__(self):
             self.conn = object()
+
         def setup(self, path):
             calls['duck'] = path
+
         def get_connection(self):
             return self.conn
+
     class FakeKuzu:
         def __init__(self):
             self.conn = object()
+
         def setup(self, path):
             calls['kuzu'] = path
+
         def get_connection(self):
             return self.conn
+
     class FakeGraph:
         def __init__(self, *a, **k):
             pass
+
         def open(self, *a, **k):
             pass
     cfg = ConfigModel()
