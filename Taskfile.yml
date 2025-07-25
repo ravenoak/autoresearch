@@ -3,18 +3,18 @@ version: '3'
 tasks:
   unit:
     cmds:
-      - poetry run pytest tests/unit -q
-    desc: "Run unit tests"
+      - uv run pytest tests/unit -q
+    desc: "Run unit tests with uv"
 
   integration:
     cmds:
-      - poetry run pytest tests/integration -m "not slow" -q
-    desc: "Run integration tests"
+      - uv run pytest tests/integration -m "not slow" -q
+    desc: "Run integration tests with uv"
 
   behavior:
     cmds:
-      - poetry run pytest tests/behavior -q
-    desc: "Run BDD (behavior) tests"
+      - uv run pytest tests/behavior -q
+    desc: "Run BDD (behavior) tests with uv"
 
   test:
     deps: [test:unit, test:integration, test:behavior]
@@ -22,33 +22,33 @@ tasks:
 
   test:unit:
     cmds:
-      - poetry run pytest tests/unit -q
-    desc: "Run unit tests"
+      - uv run pytest tests/unit -q
+    desc: "Run unit tests with uv"
 
   test:integration:
     cmds:
-      - poetry run pytest tests/integration -m "not slow" -q
-    desc: "Run integration tests"
+      - uv run pytest tests/integration -m "not slow" -q
+    desc: "Run integration tests with uv"
 
   test:behavior:
     cmds:
-      - poetry run pytest tests/behavior -q
-    desc: "Run BDD (behavior) tests"
+      - uv run pytest tests/behavior -q
+    desc: "Run BDD (behavior) tests with uv"
 
   test:all:
     cmds:
-      - poetry run pytest -q
-    desc: "Run the entire test suite including slow tests"
+      - uv run pytest -q
+    desc: "Run the entire test suite including slow tests with uv"
 
   test:fast:
     cmds:
-      - poetry run pytest -m 'not slow'
-    desc: "Run tests excluding those marked slow"
+      - uv run pytest -m 'not slow'
+    desc: "Run tests excluding those marked slow with uv"
 
   test:slow:
     cmds:
-      - poetry run pytest -m slow
-    desc: "Run only tests marked as slow"
+      - uv run pytest -m slow
+    desc: "Run only tests marked as slow with uv"
 
   coverage:
     cmds:
@@ -63,8 +63,8 @@ tasks:
 
   check-baselines:
     cmds:
-      - poetry run python scripts/check_token_regression.py --threshold 5
-    desc: "Validate token usage against baselines"
+      - uv run python scripts/check_token_regression.py --threshold 5
+    desc: "Validate token usage against baselines with uv"
 
   wheels:
     deps: [wheel-linux, wheel-windows, wheel-macos]
@@ -72,16 +72,16 @@ tasks:
 
   wheel-linux:
     cmds:
-      - poetry run cibuildwheel --platform linux --output-dir dist/linux
-    desc: "Build Linux wheel"
+      - uv run cibuildwheel --platform linux --output-dir dist/linux
+    desc: "Build Linux wheel with uv"
 
   wheel-windows:
     cmds:
-      - poetry run cibuildwheel --platform windows --output-dir dist/windows
-    desc: "Build Windows wheel"
+      - uv run cibuildwheel --platform windows --output-dir dist/windows
+    desc: "Build Windows wheel with uv"
 
   wheel-macos:
     cmds:
-      - poetry run cibuildwheel --platform macos --output-dir dist/macos
-    desc: "Build macOS wheel"
+      - uv run cibuildwheel --platform macos --output-dir dist/macos
+    desc: "Build macOS wheel with uv"
 
