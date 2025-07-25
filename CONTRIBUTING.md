@@ -30,15 +30,17 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ### Setting Up
 
-1. Configure Poetry to use Python 3.12 or newer:
+1. Create a virtual environment with `uv`:
    ```bash
-   poetry env use $(which python3)
+   uv venv
    ```
 
-2. Install the dependencies using Poetry:
+2. Install the dependencies and extras:
    ```bash
-   poetry install --with dev
+   uv sync --all-extras
+   uv pip install -e .
    ```
+   Run `uv lock` whenever `pyproject.toml` changes.
 
    Some packages such as `hdbscan` require compilation. Make sure GCC, G++, and
    the Python development headers are available before running the command
@@ -65,7 +67,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
    If you prefer pip:
    ```bash
-   poetry run pip install -e .
+   uv pip install -e .
    ```
 
 3. Configure your editor to use the project's linting and formatting settings
@@ -107,22 +109,22 @@ Before submitting a pull request, ensure your code passes all linting and type c
 
 ```bash
 # Format code
-poetry run black .
-poetry run isort .
+uv run black .
+uv run isort .
 # Automatically fix issues using ruff
-poetry run ruff format src tests
-poetry run ruff check --fix src tests
+uv run ruff format src tests
+uv run ruff check --fix src tests
 ```
 
 ```bash
 # Run flake8 for linting
-poetry run flake8 src tests
+uv run flake8 src tests
 
 # Run mypy for type checking
-poetry run mypy src
+uv run mypy src
 # Expect roughly 20 seconds runtime on a standard setup.
 # Use '--cache-dir=.mypy_cache' to enable incremental caching or
-# run mypy on subpackages (e.g. 'poetry run mypy src/autoresearch')
+# run mypy on subpackages (e.g. 'uv run mypy src/autoresearch')
 # if you need quicker iterations.
 ```
 
@@ -181,15 +183,15 @@ Tests are organized into three categories:
 
 ```bash
 # Run all tests
-poetry run pytest
+uv run pytest
 
 # Run specific test categories
-poetry run pytest tests/unit
-poetry run pytest tests/integration
-poetry run pytest tests/behavior
+uv run pytest tests/unit
+uv run pytest tests/integration
+uv run pytest tests/behavior
 
 # Run with coverage report
-poetry run pytest --cov=src
+uv run pytest --cov=src
 ```
 
 The BDD tests live under `tests/behavior` and can be executed separately if you

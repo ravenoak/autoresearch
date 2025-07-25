@@ -18,9 +18,10 @@ Use `uv` to manage the environment when working from a clone:
 ```bash
 # Create the virtual environment
 uv venv
-uv pip install --all-extras
+uv sync --all-extras
 uv pip install -e .
 ```
+Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock` before syncing.
 Selecting Python 3.11 results in an error similar to:
 ```
 Because autoresearch requires Python >=3.12,<4.0 and the current Python is
@@ -30,10 +31,10 @@ Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 Verify the environment by running:
 
 ```bash
-flake8 src tests
-mypy src
-pytest -q
-pytest tests/behavior
+uv run flake8 src tests
+uv run mypy src
+uv run pytest -q
+uv run pytest tests/behavior
 ```
 
 ## Minimal installation

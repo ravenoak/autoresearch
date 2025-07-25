@@ -5,9 +5,10 @@ Install the development dependencies first:
 
 ```bash
 uv venv
-uv pip install --all-extras
+uv sync --all-extras
 uv pip install -e .
 ```
+Run `uv lock` after modifying dependencies to update `uv.lock` before syncing.
 
 You can alternatively run the helper script. It refreshes the lock file when
 needed, installs all extras with `uv pip install --all-extras` and links the
@@ -22,10 +23,10 @@ package in editable mode:
 Execute the commands below before opening a pull request:
 
 ```bash
-flake8 src tests
-mypy src
-pytest -q
-pytest tests/behavior
+uv run flake8 src tests
+uv run mypy src
+uv run pytest -q
+uv run pytest tests/behavior
 ```
 
 Maintain at least 90% test coverage and remove temporary files before submitting your changes.

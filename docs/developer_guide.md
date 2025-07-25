@@ -13,9 +13,10 @@ commands below rely on `uv`.
    ```
 2. Install dependencies including development tools and all optional extras:
    ```bash
-   uv pip install --all-extras
+   uv sync --all-extras
    uv pip install -e .
    ```
+   Run `uv lock` whenever `pyproject.toml` changes so the lock file stays current.
 3. Activate the environment with `source .venv/bin/activate` before running commands.
 
 Several unit and integration tests require `gitpython` and the DuckDB VSS
@@ -26,8 +27,8 @@ extension. Both are installed when you set up the environment with
 
 - Run code format and style checks before committing:
  ```bash
-  flake8 src tests
-  mypy src
+  uv run flake8 src tests
+  uv run mypy src
   ```
 - Public modules and functions should include concise docstrings.
 - Keep commits focused and avoid temporary files.
@@ -37,8 +38,8 @@ extension. Both are installed when you set up the environment with
 1. Create a feature branch and commit your changes.
 2. Run the full test suite:
    ```bash
-   pytest -q
-   pytest tests/behavior
+   uv run pytest -q
+   uv run pytest tests/behavior
    ```
    Ensure the `.venv` is active before running these commands.
 
@@ -48,13 +49,13 @@ For quick feedback, you can skip heavy integration tests marked with
 `@pytest.mark.slow`:
 
 ```bash
-pytest -m "not slow" -q
-pytest -m "not slow" tests/behavior
+uv run pytest -m "not slow" -q
+uv run pytest -m "not slow" tests/behavior
 ```
 To run the heavier tests separately:
 
 ```bash
-pytest -m slow
+uv run pytest -m slow
 ```
 Distributed execution scenarios and other long-running integrations are
 decorated with `@pytest.mark.slow`.
