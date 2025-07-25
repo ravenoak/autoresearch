@@ -40,7 +40,6 @@ from ..cli_utils import (
 )
 from ..error_utils import get_error_info, format_error_for_cli
 from ..cli_helpers import handle_command_not_found
-from .config_cli import config_app, config_init
 
 
 app = typer.Typer(
@@ -58,6 +57,9 @@ app = typer.Typer(
 )
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
+
+from .config_cli import config_app, config_init  # noqa: E402
+
 app.add_typer(config_app, name="config")
 
 
