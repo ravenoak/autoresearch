@@ -348,8 +348,16 @@ def _module_available(name: str) -> bool:
     return bool(spec and spec.origin)
 
 
+def pytest_runtest_setup(item):
+    if item.get_closest_marker("requires_ui") and not UI_AVAILABLE:
+        pytest.skip("ui extra not installed")
+    if item.get_closest_marker("requires_vss") and not VSS_AVAILABLE:
+        pytest.skip("vss extra not installed")
+
+
 GITPYTHON_INSTALLED = _module_available("git")
 POLARS_INSTALLED = _module_available("polars")
+UI_AVAILABLE = _module_available("streamlit")
 
 
 def _check_vss() -> bool:

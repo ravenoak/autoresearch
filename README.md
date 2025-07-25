@@ -538,7 +538,10 @@ coverage run -p -m pytest tests/behavior -q
 coverage combine
 ```
 
-Heavy tests are marked with `requires_ui`, `requires_vss` or `slow`. Skip them during quick development cycles with:
+Heavy tests are marked with `requires_ui`, `requires_vss` or `slow`.
+`requires_ui` tests need the `ui` extra (Streamlit) while `requires_vss` tests
+depend on the `vss` extra (DuckDB VSS extension). Skip them during quick
+development cycles with:
 
 ```bash
 uv run pytest -m "not requires_ui and not requires_vss and not slow"

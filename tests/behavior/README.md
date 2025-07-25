@@ -16,7 +16,8 @@ poetry install --with dev --all-extras
 ## Running extra tests
 
 Use pytest markers to execute these scenarios separately if you do not want to
-run the entire suite:
+run the entire suite. `requires_ui` scenarios need the `ui` extra while
+`requires_vss` scenarios depend on the `vss` extra:
 
 ```bash
 # Scenarios that need the UI extra
