@@ -79,7 +79,7 @@ def test_http_session_reuse_and_close(monkeypatch):
 
     cfg = Cfg()
     cfg.search = types.SimpleNamespace(http_pool_size=1)
-    monkeypatch.setattr(search, "get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     search.close_http_session()
     s1 = search.get_http_session()
     s2 = search.get_http_session()
