@@ -26,7 +26,8 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available for
-testing. The test suite works both with and without extras:
+testing. Run `uv lock` after editing `pyproject.toml` and use `uv sync --all-extras`
+to install the updated dependencies. The test suite works both with and without extras:
 
 - **Without extras** – stub implementations of optional packages like
   `slowapi` are used. Rate limiting middleware is disabled and tests run
@@ -493,8 +494,8 @@ uv pip install --all-extras
 Execute linting and type checks once the development environment is ready:
 
 ```bash
-flake8 src tests
-mypy src
+uv run flake8 src tests
+uv run mypy src
 ```
 
 Run the test suites using Go Task:
@@ -510,7 +511,7 @@ task test:slow         # run only tests marked as slow
 To execute the long-running tests directly without Go Task, run:
 
 ```bash
-pytest -m slow
+uv run pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS

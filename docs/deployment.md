@@ -145,17 +145,22 @@ extras.
 ## Release workflow
 
 1. Bump the version in `pyproject.toml` and in `autoresearch.__version__`.
-2. Run the unit and behavior test suites.
-3. Publish a development build to TestPyPI:
+2. Regenerate the lock file and sync dependencies:
+   ```bash
+   uv lock
+   uv sync --all-extras
+   ```
+3. Run the unit and behavior test suites.
+4. Publish a development build to TestPyPI:
 
 ```bash
 ./scripts/publish_dev.py
 ```
 
-4. If everything looks good, publish to the main PyPI repository:
+5. If everything looks good, publish to the main PyPI repository:
 
 ```bash
-python -m build
-twine upload dist/*
+uv run python -m build
+uv run twine upload dist/*
 ```
 

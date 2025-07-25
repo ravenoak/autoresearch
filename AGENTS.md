@@ -7,23 +7,22 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Environment setup
 - Use **uv** for dependency management and project interactions.
   - Create a virtual environment with `uv venv`.
-  - Install dependencies with `uv pip install --all-extras`.
+  - Install dependencies with `uv sync --all-extras`.
   - Activate the environment using `source .venv/bin/activate` or prefix commands with `uv pip`.
+  - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before syncing.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced.
 
 ## Verification steps
-- Check code style with `poetry run flake8 src tests`.
-- Verify type hints with `poetry run mypy src`.
-- Run the unit suite: `poetry run pytest -q`.
-- Execute BDD tests in `tests/behavior`: `poetry run pytest tests/behavior`.
+- Check code style with `uv run flake8 src tests`.
+- Verify type hints with `uv run mypy src`.
+- Run the unit suite: `uv run pytest -q`.
+- Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
 
 ## Commit etiquette
 - Keep commits focused and write clear messages detailing your reasoning.
 - Remove temporary files and keep the repository tidy.
 
 ## Legacy workflow
-- The project previously used **Poetry** for virtual environment management.
-  - Select the Python interpreter with `poetry env use $(which python3)` (Python 3.12 or newer).
-  - Install dependencies with `poetry install --with dev --all-extras`.
-  - Activate the environment using `poetry shell` or prefix commands with `poetry run`.
-  - Avoid system-level Python or `pip`. Run `pip install -e .` only inside the Poetry virtual environment using `poetry shell` or `poetry run pip`.
+Autoresearch previously relied on **Poetry**. Use `uv venv` to create the
+environment, `uv sync --all-extras` to install dependencies, and `uv run <cmd>`
+to invoke tools. Run `uv run pip install -e .` if you need an editable install.
