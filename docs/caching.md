@@ -17,7 +17,7 @@ Initial indexing happens automatically the first time these backends run.
 You can refresh the index at any time by executing:
 
 ```bash
-poetry run python scripts/smoke_test.py
+python scripts/smoke_test.py
 ```
 
 This script calls `StorageManager.create_hnsw_index()` to rebuild the

@@ -12,7 +12,7 @@ Tests are organized into three categories:
 
 ## Running tests
 
-Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the Poetry environment:
+Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
 
 ```bash
 task test:unit         # unit tests
@@ -25,7 +25,7 @@ task test:all          # entire suite including slow tests
 You can also invoke the slow suite directly with:
 
 ```bash
-poetry run pytest -m slow
+pytest -m slow
 ```
 
 `task test:fast` usually finishes in about **3 minutes**. The slow tests add roughly **7 minutes**, so `task test:all` takes around **10 minutes** total and is used by CI. Maintain at least **90% coverage**. When running suites separately, prefix each command with `coverage run -p` and merge the results using `coverage combine` before generating a report with `coverage html` or `coverage xml`.
@@ -290,7 +290,7 @@ accessibility, and log messages.
 
 ## Optional extras for tests
 
-The default development install (`poetry install --with dev`) does not
+The default development install (`uv pip install --all-extras`) does not
 include all optional extras. The full test suite uses several features
 that rely on these extras:
 
@@ -307,7 +307,7 @@ that rely on these extras:
 
 If these extras are missing the corresponding tests are skipped (or run
 with a stub in the case of the `distributed` extra). Install them with
-`poetry install --with dev --extras "ui,analysis,vss,distributed"` to run
+`uv pip install --extras "ui,analysis,vss,distributed"` to run
 every test.
 
 ## Updating Baselines
@@ -317,7 +317,7 @@ Some integration tests compare runtime metrics against JSON files in
 metrics (for example token counts), run the failing test to capture the
 new values and update the corresponding baseline file.
 
-1. Run the test with `poetry run pytest tests/integration/test_token_usage.py`.
+1. Run the test with `pytest tests/integration/test_token_usage.py`.
 2. Inspect the assertion failure to see the updated token counts.
 3. Edit the JSON baseline file to match the new values and commit the
    change alongside your code.

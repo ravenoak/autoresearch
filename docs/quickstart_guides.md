@@ -7,8 +7,10 @@ This document provides quickstart guides for each interface type of the Autorese
 ### Installation
 
 ```bash
-# Install with Poetry (recommended)
-poetry install --with dev
+# Install with uv (recommended)
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 
 # Alternatively, use pip
 pip install autoresearch

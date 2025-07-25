@@ -144,9 +144,9 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
    pip install rdflib-sqlalchemy
    ```
 
-2. If using Poetry, make sure it's in your dependencies:
+2. Ensure it appears in your `pyproject.toml` dependencies:
    ```toml
-   [tool.poetry.dependencies]
+   [project.dependencies]
    rdflib-sqlalchemy = "^0.5.0"
    ```
 
@@ -198,7 +198,7 @@ The following tutorial walks through a typical ontology workflow.
 4. **Run SPARQL queries with reasoning** directly from the CLI:
 
    ```bash
-   poetry run autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
+   autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
    ```
 
 5. **Query with reasoning programmatically** using a custom engine:
@@ -213,7 +213,7 @@ The following tutorial walks through a typical ontology workflow.
 6. **Visualize the graph** as a PNG image:
 
    ```bash
-   poetry run autoresearch visualize-rdf graph.png
+   autoresearch visualize-rdf graph.png
    ```
 
 The command writes `graph.png` containing a simple diagram of all triples.

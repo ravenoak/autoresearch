@@ -24,7 +24,7 @@ The following tasks remain before publishing **0.1.0**:
 
 - Run the full unit, integration and behavior test suites across all supported storage and message backends.
 - Complete API reference and user guides, questioning assumptions and addressing counterarguments.
-- Ensure packaging metadata is accurate and verify `poetry build` and `scripts/publish_dev.py` operate correctly.
+- Ensure packaging metadata is accurate and verify `python -m build` and `scripts/publish_dev.py` operate correctly.
 - Assemble release notes and finalize README instructions.
 
 ## Release Phases
@@ -32,6 +32,6 @@ The following tasks remain before publishing **0.1.0**:
 1. **Planning** – finalize scope and update the roadmap.
 2. **Development** – implement features and expand test coverage.
 3. **Stabilization** – fix bugs, write documentation and run the full test suite.
-4. **Publish** – follow the workflow in `deployment.md`: bump the version, run tests, publish to TestPyPI using `./scripts/publish_dev.py`, then release to PyPI with `poetry publish --build`.
+4. **Publish** – follow the workflow in `deployment.md`: bump the version, run tests, publish to TestPyPI using `./scripts/publish_dev.py`, then release to PyPI with `twine upload dist/*`.
 
 Each milestone may include additional patch releases for critical fixes.

@@ -7,14 +7,16 @@ Autoresearch can be deployed in several ways depending on your needs. This guide
 For personal use, run Autoresearch directly on your machine. Install the dependencies and invoke the CLI or API:
 
 ```bash
-poetry install --with dev
-poetry run autoresearch search "example query"
+uv venv
+uv pip install --all-extras
+uv pip install -e .
+autoresearch search "example query"
 ```
 
 Start the API service with Uvicorn for HTTP access:
 
 ```bash
-poetry run uvicorn autoresearch.api:app --reload
+uvicorn autoresearch.api:app --reload
 ```
 
 ## Running as a Service
@@ -29,10 +31,11 @@ Autoresearch can also be containerized. A production `Dockerfile` is included:
 FROM python:3.12-slim
 WORKDIR /app
 COPY . /app
-RUN pip install --no-cache-dir poetry \
-    && poetry install --with dev --no-interaction
+RUN pip install uv \
+    && uv pip install --all-extras \
+    && uv pip install -e .
 EXPOSE 8000
-CMD ["poetry", "run", "uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 Build and run the image:
@@ -109,7 +112,7 @@ lost during shutdown.
 After starting the service, run the deployment script to validate configuration and perform a health check:
 
 ```bash
-poetry run python scripts/deploy.py
+python scripts/deploy.py
 ```
 
 To publish a development build to the TestPyPI repository run:
@@ -118,7 +121,7 @@ To publish a development build to the TestPyPI repository run:
 ./scripts/publish_dev.py
 ```
 ## Upgrading
-Run `poetry update` to refresh an existing installation.
+Run `uv pip install -U autoresearch` to refresh an existing installation.
 For pip based installs use:
 ```bash
 pip install -U autoresearch
@@ -150,6 +153,7 @@ extras.
 4. If everything looks good, publish to the main PyPI repository:
 
 ```bash
-poetry publish --build
+python -m build
+twine upload dist/*
 ```
 

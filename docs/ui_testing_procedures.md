@@ -17,7 +17,7 @@ Autoresearch uses a multi-layered testing approach for UI components:
 ### Prerequisites
 
 - Python 3.12+
-- Poetry (for dependency management)
+- uv (for dependency management)
 - pytest and pytest-bdd
 
 ### Installation
@@ -27,11 +27,13 @@ Autoresearch uses a multi-layered testing approach for UI components:
 git clone https://github.com/yourusername/autoresearch.git
 cd autoresearch
 
-# Install dependencies with Poetry
-poetry install --with dev
+# Install dependencies with uv
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 
 # Alternatively, use pip
-poetry run pip install -e ".[dev]"
+pip install -e ".[dev]"
 ```
 
 ## Unit Testing UI Components
@@ -378,45 +380,45 @@ def test_consistent_error_handling():
 
 ```bash
 # Run all tests
-poetry run pytest
+pytest
 
 # Run with verbose output
-poetry run pytest -v
+pytest -v
 
 # Run with coverage report
-poetry run pytest --cov=autoresearch
+pytest --cov=autoresearch
 ```
 
 ### Running Specific Test Categories
 
 ```bash
 # Run unit tests
-poetry run pytest tests/unit/
+pytest tests/unit/
 
 # Run integration tests
-poetry run pytest tests/integration/
+pytest tests/integration/
 
 # Run behavior tests
-poetry run pytest tests/behavior/
+pytest tests/behavior/
 
 # Run tests for a specific file
-poetry run pytest tests/unit/test_output_format.py
+pytest tests/unit/test_output_format.py
 
 # Run a specific test
-poetry run pytest tests/unit/test_output_format.py::test_format_error
+pytest tests/unit/test_output_format.py::test_format_error
 ```
 
 ### Running BDD Tests
 
 ```bash
 # Run all BDD tests
-poetry run pytest tests/behavior/
+pytest tests/behavior/
 
 # Run tests for a specific feature
-poetry run pytest tests/behavior/steps/streamlit_gui_steps.py
+pytest tests/behavior/steps/streamlit_gui_steps.py
 
 # Run a specific scenario
-poetry run pytest tests/behavior/steps/streamlit_gui_steps.py::test_formatted_answer_display
+pytest tests/behavior/steps/streamlit_gui_steps.py::test_formatted_answer_display
 ```
 
 ## Continuous Integration
@@ -448,11 +450,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install poetry
-        poetry install --with dev
+        pip install uv
+        uv pip install --all-extras
+        uv pip install -e .
     - name: Run tests
       run: |
-        poetry run pytest --cov=autoresearch
+        pytest --cov=autoresearch
     - name: Upload coverage report
       uses: codecov/codecov-action@v3
 ```

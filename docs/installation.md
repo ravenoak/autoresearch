@@ -9,13 +9,13 @@ This guide explains how to install Autoresearch and manage optional features.
 
 ## Development setup
 
-Use Poetry to manage the environment when working from a clone:
+Use `uv` to manage the environment when working from a clone:
 
 ```bash
-# Select Python 3.12 or newer
-poetry env use $(which python3)
-poetry lock --check || poetry lock
-poetry install --with dev --all-extras
+# Create the virtual environment
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 ```
 Selecting Python 3.11 results in an error similar to:
 ```
@@ -26,10 +26,10 @@ Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 Verify the environment by running:
 
 ```bash
-poetry run flake8 src tests
-poetry run mypy src
-poetry run pytest -q
-poetry run pytest tests/behavior
+flake8 src tests
+mypy src
+pytest -q
+pytest tests/behavior
 ```
 
 ## Minimal installation
@@ -51,13 +51,13 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `poetry install --with dev`. Optional
+running the helper, reinstall using `uv pip install --all-extras`. Optional
 features are disabled when their dependencies are missing. Specify extras
 explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
 ## Optional extras
 
-Additional functionality is grouped into Poetry extras:
+Additional functionality is grouped into optional extras:
 
 - `nlp` – language processing via spaCy, BERTopic and Transformers
 - `parsers` – PDF and DOCX document ingestion
@@ -82,9 +82,7 @@ To upgrade an existing installation run:
 python scripts/upgrade.py
 ```
 
-The helper script detects whether Poetry or pip is used. It runs
-`poetry update autoresearch` when a `pyproject.toml` is present,
-otherwise it falls back to `pip install -U autoresearch`.
+The helper script installs or upgrades using `uv pip`. When a `pyproject.toml` is present it runs `uv pip install -U autoresearch`; otherwise it falls back to `pip install -U autoresearch`.
 
 Use pip extras when upgrading to ensure optional dependencies remain
 installed. For example:
@@ -114,7 +112,7 @@ long time or fail on low-memory machines.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
 - Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `poetry install`.
+  to running `uv pip install --all-extras`.
 - You can also omit heavy extras by removing `--all-extras` from the
   install command when rapid setup is more important than optional
   features.
