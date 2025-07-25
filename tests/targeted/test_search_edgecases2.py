@@ -28,6 +28,6 @@ def test_rank_results_weight_error(monkeypatch):
         use_source_credibility = True
 
     cfg = types.SimpleNamespace(search=SCfg())
-    monkeypatch.setattr(search, "get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     with pytest.raises(ConfigError):
         search.Search.rank_results("q", [{"title": "t", "url": "u"}])
