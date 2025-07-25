@@ -13,15 +13,23 @@ sys.modules.setdefault(
 )
 sys.modules.setdefault("autoresearch.models", types.SimpleNamespace())
 
-from autoresearch.distributed import get_message_broker, RedisQueue, InMemoryBroker
+from autoresearch.distributed import (  # noqa: E402
+    get_message_broker,
+    RedisQueue,
+    InMemoryBroker,
+)
+
 
 class FakeRedis:
     def __init__(self):
         self.list = []
+
     def rpush(self, name, value):
         self.list.append(value)
+
     def blpop(self, names):
         return names[0], self.list.pop(0).encode()
+
     def close(self):
         pass
 

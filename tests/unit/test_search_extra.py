@@ -7,11 +7,18 @@ import pytest
 sys.modules.setdefault("kuzu", types.SimpleNamespace())
 sys.modules.setdefault("spacy", types.SimpleNamespace(load=lambda *_: None, cli=types.SimpleNamespace(download=lambda *_: None)))
 sys.modules.setdefault("bertopic", types.SimpleNamespace())
-sys.modules.setdefault("sentence_transformers", types.SimpleNamespace(SentenceTransformer=lambda *_: None))
+sys.modules.setdefault(
+    "sentence_transformers",
+    types.SimpleNamespace(SentenceTransformer=lambda *_: None),
+)
 
-from autoresearch.search import Search, get_http_session, close_http_session
-from autoresearch.config import ConfigModel
-from autoresearch.errors import SearchError
+from autoresearch.search import (  # noqa: E402
+    Search,
+    get_http_session,
+    close_http_session,
+)
+from autoresearch.config import ConfigModel  # noqa: E402
+from autoresearch.errors import SearchError  # noqa: E402
 
 
 def test_unknown_backend_raises(monkeypatch):
