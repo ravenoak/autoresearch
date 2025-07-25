@@ -3,7 +3,7 @@
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
-This schedule was last updated on **July 23, 2025** and reflects the fact that
+This schedule was last updated on **July 25, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0** version defined in
 `autoresearch.__version__`.
 
@@ -22,10 +22,9 @@ shifted the timeline. The milestone is now planned for **August 15, 2025**.
 
 The following tasks remain before publishing **0.1.0**:
 
-- Run the full unit, integration and behavior test suites across all supported storage and message backends.
-- Complete API reference and user guides, questioning assumptions and addressing counterarguments.
-- Ensure packaging metadata is accurate and verify `python -m build` and `scripts/publish_dev.py` operate correctly.
-- Assemble release notes and finalize README instructions.
+- Ensure optional dependencies are installed so the full unit, integration and behavior test suites run successfully in CI.
+- Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
+- Assemble final release notes and confirm README instructions.
 
 ## Release Phases
 
