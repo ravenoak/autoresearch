@@ -36,14 +36,14 @@ to install the updated dependencies. The test suite works both with and without 
   SlowAPI's rate‑limiting middleware. This may change how certain tests
   behave and can make them slower.
 
-Reinstall with `uv pip install --all-extras && uv pip install -e .` if you need
+Reinstall with `uv sync --all-extras && uv pip install -e .` if you need
 to disable extras after running the setup script.
 
 ### Using uv
 Python 3.12 or newer is required. Set up the development environment with:
 ```bash
 uv venv
-uv pip install --all-extras
+uv sync --all-extras
 uv pip install -e .
 ```
 If Python 3.11 is selected, `uv` will fail with a message similar to:
@@ -459,11 +459,11 @@ For a detailed breakdown of the requirements and architecture, see
 
 ## Development setup
 
-Create a virtual environment and install all extras:
+Create a virtual environment, run `uv lock` if `pyproject.toml` changed, and install all extras:
 
 ```bash
 uv venv
-uv pip install --all-extras
+uv sync --all-extras
 uv pip install -e .
 ```
 
@@ -473,7 +473,7 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The helper installs all dependencies with `uv pip install --all-extras` and
+The helper installs all dependencies with `uv sync --all-extras` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
 are therefore available for development and testing. Tests will run even without
 extras because stub versions of optional packages are bundled, but coverage is
@@ -488,7 +488,7 @@ real behaviour – including SlowAPI rate limiting – is only exercised when th
 extras are installed. Install them with:
 
 ```bash
-uv pip install --all-extras
+uv sync --all-extras
 ```
 
 Execute linting and type checks once the development environment is ready:
@@ -515,7 +515,7 @@ uv run pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
-extension. These extras are installed when running `uv pip install --all-extras`.
+extension. These extras are installed when running `uv sync --all-extras`.
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
@@ -533,7 +533,7 @@ Previous versions used Poetry for environment management. `uv` now handles depen
 
 ```bash
 uv venv
-uv pip install --all-extras
+uv sync --all-extras
 uv pip install -e .
 ```
 
@@ -541,7 +541,7 @@ Activate the environment with `source .venv/bin/activate` before running command
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv pip install --all-extras` and `uv pip install -e .`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv sync --all-extras` and `uv pip install -e .`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ### Smoke test
