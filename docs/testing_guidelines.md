@@ -290,7 +290,7 @@ accessibility, and log messages.
 
 ## Optional extras for tests
 
-The default development install (`uv pip install --all-extras`) does not
+The default development install (`uv pip install -e '.[full,dev]'`) does not
 include all optional extras. The full test suite uses several features
 that rely on these extras:
 

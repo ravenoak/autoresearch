@@ -10,8 +10,7 @@ For personal use, run Autoresearch directly on your machine. Install the depende
 
 ```bash
 uv venv
-uv pip install --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 autoresearch search "example query"
 ```
 
@@ -34,8 +33,7 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY . /app
 RUN pip install uv \
-    && uv pip install --all-extras \
-    && uv pip install -e .
+    && uv pip install -e '.[full,dev]'
 EXPOSE 8000
 CMD ["uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
@@ -145,10 +143,10 @@ extras.
 ## Release workflow
 
 1. Bump the version in `pyproject.toml` and in `autoresearch.__version__`.
-2. Regenerate the lock file and sync dependencies:
+2. Regenerate the lock file and reinstall dependencies:
    ```bash
    uv lock
-   uv sync --all-extras
+   uv pip install -e '.[full,dev]'
    ```
 3. Run the unit and behavior test suites.
 4. Publish a development build to TestPyPI:

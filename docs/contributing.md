@@ -5,13 +5,12 @@ Install the development dependencies first:
 
 ```bash
 uv venv
-uv sync --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 Run `uv lock` after modifying dependencies to update `uv.lock` before syncing.
 
 You can alternatively run the helper script. It refreshes the lock file when
-needed, installs all extras with `uv pip install --all-extras` and links the
+needed, installs all extras with `uv pip install -e '.[full,dev]'` and links the
 package in editable mode:
 
 ```bash

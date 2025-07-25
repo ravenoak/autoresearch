@@ -28,7 +28,7 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available for
-testing. Run `uv lock` after editing `pyproject.toml` and use `uv sync --all-extras`
+testing. Run `uv lock` after editing `pyproject.toml` and use `uv pip install -e '.[full,dev]'`
 to install the updated dependencies. The test suite works both with and without extras:
 
 - **Without extras** – stub implementations of optional packages like
@@ -38,15 +38,14 @@ to install the updated dependencies. The test suite works both with and without 
   SlowAPI's rate‑limiting middleware. This may change how certain tests
   behave and can make them slower.
 
-Reinstall with `uv sync --all-extras && uv pip install -e .` if you need
+Reinstall with `uv pip install -e '.[full,dev]'` if you need
 to disable extras after running the setup script.
 
 ### Using uv
 Python 3.12 or newer is required. Set up the development environment with:
 ```bash
 uv venv
-uv sync --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 If Python 3.11 is selected, `uv` will fail with a message similar to:
 ```
@@ -465,8 +464,7 @@ Create a virtual environment, run `uv lock` if `pyproject.toml` changed, and ins
 
 ```bash
 uv venv
-uv sync --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 
 Alternatively you can run the helper script:
@@ -475,7 +473,7 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The helper installs all dependencies with `uv sync --all-extras` and
+The helper installs all dependencies with `uv pip install -e '.[full,dev]'` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
 are therefore available for development and testing. Tests will run even without
 extras because stub versions of optional packages are bundled, but coverage is
@@ -490,7 +488,7 @@ real behaviour – including SlowAPI rate limiting – is only exercised when th
 extras are installed. Install them with:
 
 ```bash
-uv sync --all-extras
+uv pip install -e '.[full,dev]'
 ```
 
 Execute linting and type checks once the development environment is ready:
@@ -517,7 +515,7 @@ uv run pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
-extension. These extras are installed when running `uv sync --all-extras`.
+extension. These extras are installed when running `uv pip install -e '.[full,dev]'`.
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
@@ -554,7 +552,7 @@ and those that rely on optional extras. Install the extras and run pytest
 without filtering the markers:
 
 ```bash
-uv sync --all-extras
+uv pip install -e '.[full,dev]'
 uv run pytest -m "slow or requires_ui or requires_vss"
 ```
 
@@ -564,15 +562,14 @@ Previous versions used Poetry for environment management. `uv` now handles depen
 
 ```bash
 uv venv
-uv sync --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 
 Activate the environment with `source .venv/bin/activate` before running commands.
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv sync --all-extras` and `uv pip install -e .`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv pip install -e '.[full,dev]'`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ### Smoke test

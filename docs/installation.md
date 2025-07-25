@@ -18,8 +18,7 @@ Use `uv` to manage the environment when working from a clone:
 ```bash
 # Create the virtual environment
 uv venv
-uv sync --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock` before syncing.
 Selecting Python 3.11 results in an error similar to:
@@ -56,7 +55,7 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `uv pip install --all-extras`. Optional
+running the helper, reinstall using `uv pip install -e '.[full,dev]'`. Optional
 features are disabled when their dependencies are missing. Specify extras
 explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
@@ -117,8 +116,8 @@ long time or fail on low-memory machines.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
 - Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `uv pip install --all-extras`.
-- You can also omit heavy extras by removing `--all-extras` from the
-  install command when rapid setup is more important than optional
-  features.
+  to running `uv pip install -e '.[full,dev]'`.
+- You can omit heavy extras by specifying only the groups you need,
+  e.g. `uv pip install -e '.[minimal]'` when rapid setup is more important
+  than optional features.
 
