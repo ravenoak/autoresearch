@@ -24,7 +24,7 @@ def test_external_lookup_network_failure(monkeypatch):
 
     Search.backends['fail'] = failing_backend
     cfg = _make_cfg(['fail'])
-    monkeypatch.setattr('autoresearch.search.get_config', lambda: cfg)
+    monkeypatch.setattr('autoresearch.search.core.get_config', lambda: cfg)
     with pytest.raises(SearchError) as exc:
         Search.external_lookup('q', max_results=1)
     assert isinstance(exc.value.__cause__, requests.exceptions.RequestException)
@@ -33,7 +33,7 @@ def test_external_lookup_network_failure(monkeypatch):
 
 def test_external_lookup_unknown_backend(monkeypatch):
     cfg = _make_cfg(['missing'])
-    monkeypatch.setattr('autoresearch.search.get_config', lambda: cfg)
+    monkeypatch.setattr('autoresearch.search.core.get_config', lambda: cfg)
     Search.backends.pop('missing', None)
     orig = sys.modules.pop('pytest', None)
     try:
@@ -46,7 +46,7 @@ def test_external_lookup_unknown_backend(monkeypatch):
 
 def test_external_lookup_fallback(monkeypatch):
     cfg = _make_cfg([])
-    monkeypatch.setattr('autoresearch.search.get_config', lambda: cfg)
+    monkeypatch.setattr('autoresearch.search.core.get_config', lambda: cfg)
     results = Search.external_lookup('q', max_results=2)
     assert len(results) == 2
     assert results[0]['title'] == 'Result 1 for q'

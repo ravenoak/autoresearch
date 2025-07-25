@@ -20,7 +20,7 @@ def perform_hybrid_search(query, monkeypatch, bdd_context):
     docs_dir = bdd_context["docs_dir"]
     cfg.search.local_file.path = str(docs_dir)
     cfg.search.local_file.file_types = ["txt"]
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     bdd_context["search_results"] = Search.external_lookup(query, max_results=5)
 
 

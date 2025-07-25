@@ -54,7 +54,7 @@ def test_http_session_cycle(monkeypatch):
         pass
     cfg = Cfg()
     cfg.search = type("S", (), {"http_pool_size": 1})
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     close_http_session()
     s1 = get_http_session()
     s2 = get_http_session()

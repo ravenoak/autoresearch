@@ -6,7 +6,7 @@ from autoresearch.llm import pool as llm_pool
 def test_search_pool_reuse_and_cleanup(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.http_pool_size = 1
-    monkeypatch.setattr("autoresearch.search.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     search.close_http_session()
     s1 = search.get_http_session()
     s2 = search.get_http_session()
