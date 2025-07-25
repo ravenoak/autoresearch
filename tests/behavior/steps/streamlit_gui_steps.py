@@ -235,6 +235,7 @@ def check_node_coloring(bdd_context):
     # to verify this, which is beyond the scope of this test
 
 
+@pytest.mark.slow
 @scenario(
     "../features/streamlit_gui.feature",
     "Formatted Answer Display with Markdown Rendering",
@@ -244,12 +245,14 @@ def test_formatted_answer_display():
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Tabbed Interface for Results")
 def test_tabbed_interface():
     """Test the Tabbed Interface for Results scenario."""
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Knowledge Graph Visualization")
 def test_knowledge_graph_visualization():
     """Test the Knowledge Graph Visualization scenario."""
@@ -319,12 +322,14 @@ def check_save_feedback(bdd_context):
     )
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Configuration Editor Interface")
 def test_config_editor():
     """Test the Configuration Editor Interface scenario."""
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Configuration Updates Persist")
 def test_config_updates_persist():
     """Test that configuration updates are saved and used."""
@@ -388,6 +393,7 @@ def check_progress_metrics(bdd_context):
     assert bdd_context["st_mocks"]["graphviz"].call_count >= 2
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Agent Interaction Trace Visualization")
 def test_agent_trace():
     """Test the Agent Interaction Trace Visualization scenario."""
@@ -421,6 +427,7 @@ def check_text_color(bdd_context):
     assert "color:#eee" in css
 
 
+@pytest.mark.slow
 @scenario("../features/streamlit_gui.feature", "Theme Toggle Switch")
 def test_theme_toggle_switch():
     """Test the Theme Toggle Switch scenario."""

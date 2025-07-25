@@ -58,6 +58,7 @@ def extended_test_context():
 
 
 # Scenarios
+@pytest.mark.slow
 @scenario(
     "../features/orchestrator_agents_integration_extended.feature",
     "Orchestrator executes multiple loops correctly",
@@ -67,6 +68,7 @@ def test_orchestrator_executes_multiple_loops():
     pass
 
 
+@pytest.mark.slow
 @scenario(
     "../features/orchestrator_agents_integration_extended.feature",
     "Orchestrator supports different reasoning modes",
@@ -76,6 +78,7 @@ def test_orchestrator_supports_different_reasoning_modes():
     pass
 
 
+@pytest.mark.slow
 @scenario(
     "../features/orchestrator_agents_integration_extended.feature",
     "Orchestrator preserves agent state between loops",

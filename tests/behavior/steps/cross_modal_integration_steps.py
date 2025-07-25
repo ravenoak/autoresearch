@@ -1,5 +1,6 @@
 from pytest_bdd import scenario, when, then, parsers, given
 from unittest.mock import patch
+import pytest
 
 from .common_steps import application_running
 from autoresearch.models import QueryResponse
@@ -11,18 +12,21 @@ def autoresearch_system_running(tmp_path, monkeypatch):
     return application_running(tmp_path, monkeypatch)
 
 
+@pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "Shared Query History")
 def test_shared_query_history():
     """Test shared query history across interfaces."""
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "Consistent Error Handling")
 def test_consistent_error_handling():
     """Test consistent error handling across interfaces."""
     pass
 
 
+@pytest.mark.slow
 @scenario(
     "../features/cross_modal_integration.feature", "Configuration Synchronization"
 )
@@ -31,12 +35,14 @@ def test_configuration_synchronization():
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "A2A Interface Consistency")
 def test_a2a_interface_consistency():
     """Test A2A interface consistency."""
     pass
 
 
+@pytest.mark.slow
 @scenario("../features/cross_modal_integration.feature", "MCP Interface Consistency")
 def test_mcp_interface_consistency():
     """Test MCP interface consistency."""
