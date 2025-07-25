@@ -22,9 +22,11 @@ complete documentation. Key activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-All of these tasks are complete in the codebase. The remaining blocker for
-**0.1.0** is ensuring optional dependencies are installed so the full test suite
-runs successfully in CI.
+Work on these tasks is underway but the automated test suites currently
+fail and code coverage is below the **90%** target. Optional dependencies
+must be installed so the full unit, integration and behavior tests can run
+in CI. Fixing these issues is the primary blocker for releasing
+**0.1.0**.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
