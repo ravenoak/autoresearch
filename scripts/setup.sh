@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Create a Python 3.12+ virtual environment and install dependencies with uv
+# Create a Python 3.12+ virtual environment and install all extras in editable mode
 uv venv
-uv pip install --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions

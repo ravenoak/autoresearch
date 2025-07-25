@@ -16,12 +16,11 @@ Autoresearch uses a modular architecture with several key components. The PlantU
 
 ## Installation
 
-Use `uv venv` and `uv pip install --all-extras` to set up a development environment:
+Use `uv venv` and `uv pip install -e '.[full,dev]'` to set up a development environment:
 
 ```bash
 uv venv
-uv pip install --all-extras
-uv pip install -e .
+uv pip install -e '.[full,dev]'
 ```
 
 `hdbscan` is built from source and needs compilation tools. Install `gcc`, `g++`,
