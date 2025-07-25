@@ -71,7 +71,9 @@ coverage run -p -m pytest tests/behavior -q
 coverage combine
 ```
 
-Use the markers `requires_ui`, `requires_vss` and `slow` to skip heavy tests during development:
+Use the markers `requires_ui`, `requires_vss` and `slow` to skip heavy tests during development.
+`requires_ui` indicates tests that rely on the `ui` extra while `requires_vss`
+marks tests that depend on the `vss` extra. Skip them with:
 
 ```bash
 uv run pytest -m "not requires_ui and not requires_vss and not slow"
