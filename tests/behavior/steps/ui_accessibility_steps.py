@@ -1,5 +1,6 @@
 from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import patch
+import pytest
 
 from .common_steps import application_running
 from autoresearch.cli_utils import format_error, format_success, format_info
@@ -27,24 +28,28 @@ def streamlit_app_running(monkeypatch, bdd_context, tmp_path):
         bdd_context["mock_markdown"] = mock_markdown
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "CLI Color Alternatives")
 def test_cli_color_alternatives(bdd_context):
     """Test CLI color alternatives."""
     assert bdd_context.get("use_symbols") is True
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "CLI Screen Reader Compatibility")
 def test_cli_screen_reader_compatibility(bdd_context):
     """Test CLI screen reader compatibility."""
     assert bdd_context.get("screen_reader_mode") is True
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Streamlit GUI Keyboard Navigation")
 def test_streamlit_keyboard_navigation(bdd_context):
     """Test Streamlit GUI keyboard navigation."""
     assert "mock_text_input" in bdd_context and "mock_button" in bdd_context
 
 
+@pytest.mark.slow
 @scenario(
     "../features/ui_accessibility.feature", "Streamlit GUI Screen Reader Compatibility"
 )
@@ -53,18 +58,21 @@ def test_streamlit_screen_reader_compatibility(bdd_context):
     assert bdd_context.get("screen_reader_mode") is True
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "High Contrast Mode")
 def test_high_contrast_mode(bdd_context):
     """Test high contrast mode."""
     assert "mock_markdown" in bdd_context
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Responsive Layout on Mobile")
 def test_responsive_layout(bdd_context):
     """Test responsive layout on small screens."""
     assert "css" in bdd_context
 
 
+@pytest.mark.slow
 @scenario("../features/ui_accessibility.feature", "Guided Tour Availability")
 def test_guided_tour_availability(bdd_context):
     """Test guided tour availability."""
