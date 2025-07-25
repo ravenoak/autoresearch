@@ -1,6 +1,12 @@
 """Distributed execution utilities."""
 
-from .broker import InMemoryBroker, RedisBroker, BrokerType, get_message_broker
+from .broker import (
+    InMemoryBroker,
+    RedisBroker,
+    RedisQueue,
+    BrokerType,
+    get_message_broker,
+)
 from .coordinator import (
     StorageCoordinator,
     ResultAggregator,
@@ -13,6 +19,7 @@ from .executors import RayExecutor, ProcessExecutor
 __all__ = [
     "InMemoryBroker",
     "RedisBroker",
+    "RedisQueue",
     "BrokerType",
     "get_message_broker",
     "StorageCoordinator",

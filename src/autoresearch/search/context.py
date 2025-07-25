@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TYPE_CHECKING
 
 from ..config import get_config
 from ..logging_utils import get_logger
@@ -26,11 +26,15 @@ except ImportError:
     BERTOPIC_AVAILABLE = False
 
 try:
-    from sentence_transformers import SentenceTransformer
+    from sentence_transformers import SentenceTransformer  # noqa: F401
 
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+if TYPE_CHECKING:  # pragma: no cover - for type checking only
+    from spacy.language import Language
+    from bertopic import BERTopic as BERTopicType
 
 log = get_logger(__name__)
 
@@ -52,9 +56,9 @@ class SearchContext:
     def __init__(self) -> None:
         self.search_history: List[Dict[str, Any]] = []
         self.entities: defaultdict[str, int] = defaultdict(int)
-        self.topic_model = None
-        self.dictionary = None
-        self.nlp = None
+        self.topic_model: BERTopicType | None = None
+        self.dictionary: dict[str, int] | None = None
+        self.nlp: Language | None = None
         self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
@@ -149,7 +153,7 @@ class SearchContext:
             return query
         if self.topic_model is None or self.dictionary is None:
             self.build_topic_model()
-        expanded_terms = sorted(self.entities, key=self.entities.get, reverse=True)
+        expanded_terms = sorted(self.entities, key=lambda e: self.entities[e], reverse=True)
         if expanded_terms:
             expansion_factor = context_cfg.expansion_factor
             num_terms = max(1, int(len(expanded_terms) * expansion_factor))

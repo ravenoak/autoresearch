@@ -2,7 +2,8 @@
 
 from .core import Search
 from .context import SearchContext
-from .http import get_http_session, set_http_session, close_http_session
+from .http import get_http_session, set_http_session, close_http_session, _http_session
+from ..config import get_config
 
 __all__ = [
     "Search",
@@ -10,4 +11,6 @@ __all__ = [
     "get_http_session",
     "set_http_session",
     "close_http_session",
+    "_http_session",
+    "get_config",
 ]
