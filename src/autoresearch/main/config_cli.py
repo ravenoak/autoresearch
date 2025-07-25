@@ -6,7 +6,7 @@ import typer
 
 from ..config import ConfigLoader, ConfigModel, ConfigError
 from .app import _config_loader
-from .cli_backup import backup_app
+from ..cli_backup import backup_app
 
 config_app = typer.Typer(help="Configuration management commands")
 

@@ -11,17 +11,17 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.progress import Progress
 from ..mcp_interface import create_server
-from .monitor import monitor_app
+from ..monitor import monitor_app
 import time
 
-from .config import ConfigLoader, ConfigModel
-from .orchestration.orchestrator import Orchestrator
-from .orchestration.state import QueryState
-from .output_format import OutputFormatter
-from .logging_utils import configure_logging
-from .storage import StorageManager
-from .errors import StorageError
-from .cli_utils import (
+from ..config import ConfigLoader, ConfigModel
+from ..orchestration.orchestrator import Orchestrator
+from ..orchestration.state import QueryState
+from ..output_format import OutputFormatter
+from ..logging_utils import configure_logging
+from ..storage import StorageManager
+from ..errors import StorageError
+from ..cli_utils import (
     console,
     print_success,
     print_error,
@@ -38,9 +38,9 @@ from .cli_utils import (
     visualize_metrics_cli,
     sparql_query_cli as _cli_sparql,
 )
-from .error_utils import get_error_info, format_error_for_cli
-from .cli_helpers import handle_command_not_found
-from .cli_backup import backup_app
+from ..error_utils import get_error_info, format_error_for_cli
+from ..cli_helpers import handle_command_not_found
+from .config_cli import config_app, config_init
 
 
 app = typer.Typer(
@@ -58,8 +58,6 @@ app = typer.Typer(
 )
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
-
-from .config_cli import config_app
 app.add_typer(config_app, name="config")
 
 

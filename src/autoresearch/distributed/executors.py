@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Dict, Callable, Any, Optional, TYPE_CHECKING, Tuple, cast
+from typing import Dict, Callable, Any, Optional, TYPE_CHECKING
 import os
 import multiprocessing
 
 from queue import Queue
 
-from . import storage, search
-from .llm import pool as llm_pool
-from .logging_utils import get_logger
+from .. import storage, search
+from ..llm import pool as llm_pool
+from ..logging_utils import get_logger
 from .coordinator import (
     StorageCoordinator,
     ResultAggregator,
@@ -22,14 +22,16 @@ from .broker import BrokerType
 
 import ray
 
+from ..config import ConfigModel
+from ..orchestration.state import QueryState
+from ..orchestration.orchestrator import AgentFactory
+from ..models import QueryResponse
+
 log = get_logger(__name__)
-from .config import ConfigModel
 
 if TYPE_CHECKING:  # pragma: no cover - used for type hints only
-    import redis
-from .orchestration.state import QueryState
-from .orchestration.orchestrator import AgentFactory
-from .models import QueryResponse
+    import redis  # noqa: F401
+
 
 @ray.remote
 def _execute_agent_remote(
@@ -51,7 +53,7 @@ def _execute_agent_remote(
                 http_session = ray.get(http_session)
         except Exception as e:
             log.warning("Failed to retrieve HTTP session", exc_info=e)
-        from . import search
+        from .. import search
         search.set_http_session(http_session)
     if llm_session is not None:
         try:
@@ -60,7 +62,7 @@ def _execute_agent_remote(
                 llm_session = ray.get(llm_session)
         except Exception as e:
             log.warning("Failed to retrieve LLM session", exc_info=e)
-        from .llm import pool as llm_pool
+        from ..llm import pool as llm_pool
         llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(state, config)

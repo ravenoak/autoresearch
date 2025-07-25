@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 from queue import Queue
-from typing import Any, Optional, Tuple, cast
+from typing import Any, Tuple, cast, TYPE_CHECKING
 
 from ..logging_utils import get_logger
 
@@ -22,6 +22,10 @@ class InMemoryBroker:
 
     def shutdown(self) -> None:
         self._manager.shutdown()
+
+
+if TYPE_CHECKING:  # pragma: no cover - used for type hints only
+    import redis
 
 
 class RedisQueue:
