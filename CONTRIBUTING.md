@@ -89,6 +89,9 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
   # Run the entire suite including slow tests
   task test:all
+
+  # Lint, type check and run all tests with coverage
+  task verify
   ```
 
 ## Code Style Guidelines
@@ -192,6 +195,12 @@ uv run pytest tests/behavior
 
 # Run with coverage report
 uv run pytest --cov=src
+```
+
+For convenience you can run linting, type checks, and the full test suite with coverage using:
+
+```bash
+task verify
 ```
 
 The BDD tests live under `tests/behavior` and can be executed separately if you
