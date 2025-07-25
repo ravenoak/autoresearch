@@ -54,37 +54,37 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### 2.1 Unit Tests
 
-- [x] Complete test coverage for all modules
-  - [x] Ensure at least 90% code coverage
-  - [x] Add tests for edge cases and error conditions
-  - [x] Implement property-based testing for complex components
-- [x] Enhance test fixtures
-  - [x] Create more realistic test data
-  - [x] Implement comprehensive mock LLM adapters
-  - [x] Add parameterized tests for configuration variations
+- [ ] Complete test coverage for all modules
+  - [ ] Ensure at least 90% code coverage
+  - [ ] Add tests for edge cases and error conditions
+  - [ ] Implement property-based testing for complex components
+- [ ] Enhance test fixtures
+  - [ ] Create more realistic test data
+  - [ ] Implement comprehensive mock LLM adapters
+  - [ ] Add parameterized tests for configuration variations
 
 ### 2.2 Integration Tests
 
-- [x] Complete cross-component integration tests
-  - [x] Test orchestrator with all agent combinations
-  - [x] Verify storage integration with search functionality
-  - [x] Test configuration hot-reload with all components
-  - [x] Add performance tests
-  - [x] Implement benchmarks for query processing time
-  - [x] Test memory usage under various conditions
-  - [x] Verify token usage optimization
-  - [x] Monitor token usage regressions automatically
+- [ ] Complete cross-component integration tests
+  - [ ] Test orchestrator with all agent combinations
+  - [ ] Verify storage integration with search functionality
+  - [ ] Test configuration hot-reload with all components
+  - [ ] Add performance tests
+  - [ ] Implement benchmarks for query processing time
+  - [ ] Test memory usage under various conditions
+  - [ ] Verify token usage optimization
+  - [ ] Monitor token usage regressions automatically
 
 ### 2.3 Behavior Tests
 
-- [x] Complete BDD test scenarios
-  - [x] Add scenarios for all user-facing features
-  - [x] Test all reasoning modes with realistic queries
-  - [x] Verify error handling and recovery
-- [x] Enhance test step definitions
-  - [x] Add more detailed assertions
-  - [x] Implement better test isolation
-  - [x] Create more comprehensive test contexts
+- [ ] Complete BDD test scenarios
+  - [ ] Add scenarios for all user-facing features
+  - [ ] Test all reasoning modes with realistic queries
+  - [ ] Verify error handling and recovery
+- [ ] Enhance test step definitions
+  - [ ] Add more detailed assertions
+  - [ ] Implement better test isolation
+  - [ ] Create more comprehensive test contexts
 
 ### 4.1 Code Documentation
 
@@ -219,21 +219,17 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 Modules with coverage below 90% based on the latest run:
 
-- [x] `autoresearch.orchestration.metrics` – 90%
-- [x] `autoresearch.orchestration.orchestrator` – 90%
-- [x] `autoresearch.distributed` – 90%
-- [x] `autoresearch.search` – 90%
-- [x] `autoresearch.storage` – 90%
-- [x] `autoresearch.storage_backends` – 90%
-- [x] `autoresearch.output_format` – 90%
-- [x] `autoresearch.streamlit_app` – 90%
+- `autoresearch.orchestration.orchestrator` – ~7%
+- `autoresearch.search.core` – ~5%
+- `autoresearch.streamlit_app` – ~3%
+  (many other modules remain untested)
 
 ### Latest Test Results
 
-- `flake8` and `mypy` run successfully after fixing the test stubs.
-- `pytest` and BDD tests could not complete due to missing optional
-  dependencies in the execution environment. Coverage information is
-  therefore unavailable.
+- `flake8` reports style errors in several modules.
+- `mypy` fails due to missing type stubs for optional dependencies.
+- `pytest` and BDD tests could not run because required packages like
+  ``fastapi`` were missing in the test environment.
 
 ### Performance Baselines
 
