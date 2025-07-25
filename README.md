@@ -527,6 +527,23 @@ tested and ship with the package for external use.
 
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If you run suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
 
+### Running all suites together
+
+Unit, integration and behavior tests should be executed in the same session so they share the environment. Run them sequentially with coverage enabled and combine the results:
+
+```bash
+coverage run -p -m pytest -q
+coverage run -p -m pytest tests/integration -q
+coverage run -p -m pytest tests/behavior -q
+coverage combine
+```
+
+Heavy tests are marked with `requires_ui`, `requires_vss` or `slow`. Skip them during quick development cycles with:
+
+```bash
+uv run pytest -m "not requires_ui and not requires_vss and not slow"
+```
+
 ### Migrating from Poetry
 
 Previous versions used Poetry for environment management. `uv` now handles dependency installation and virtual environment creation for faster setup. If you have an existing Poetry environment, remove the `.venv` directory and recreate it with:

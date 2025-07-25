@@ -59,6 +59,23 @@ uv run pytest -m slow
 ```
 Distributed execution scenarios and other long-running integrations are
 decorated with `@pytest.mark.slow`.
+
+### Combined test execution and coverage
+
+Run unit, integration and behavior tests in the same session to ensure a consistent environment. Collect coverage from each suite and combine the results:
+
+```bash
+coverage run -p -m pytest -q
+coverage run -p -m pytest tests/integration -q
+coverage run -p -m pytest tests/behavior -q
+coverage combine
+```
+
+Use the markers `requires_ui`, `requires_vss` and `slow` to skip heavy tests during development:
+
+```bash
+uv run pytest -m "not requires_ui and not requires_vss and not slow"
+```
 3. Update or add documentation when needed.
 4. Open a pull request explaining the rationale for the change.
 
