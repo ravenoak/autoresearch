@@ -161,7 +161,7 @@ You can automatically discover effective values for these weights using the
 and the configuration file to update:
 
 ```bash
-poetry run python scripts/optimize_search_weights.py \
+python scripts/optimize_search_weights.py \
   examples/search_evaluation.csv autoresearch.toml
 ```
 

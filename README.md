@@ -458,11 +458,12 @@ For a detailed breakdown of the requirements and architecture, see
 
 ## Development setup
 
-Install the development dependencies and link the package in editable mode:
+Create a virtual environment and install all extras:
 
 ```bash
-poetry install --with dev --all-extras
-poetry run pip install -e .
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 ```
 
 Alternatively you can run the helper script:
@@ -471,7 +472,7 @@ Alternatively you can run the helper script:
 ./scripts/setup.sh
 ```
 
-The helper installs all dependencies with `poetry install --with dev --all-extras` and
+The helper installs all dependencies with `uv pip install --all-extras` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
 are therefore available for development and testing. Tests will run even without
 extras because stub versions of optional packages are bundled, but coverage is
@@ -486,14 +487,14 @@ real behaviour – including SlowAPI rate limiting – is only exercised when th
 extras are installed. Install them with:
 
 ```bash
-poetry install --with dev --all-extras
+uv pip install --all-extras
 ```
 
 Execute linting and type checks once the development environment is ready:
 
 ```bash
-poetry run flake8 src tests
-poetry run mypy src
+flake8 src tests
+mypy src
 ```
 
 Run the test suites using Go Task:
@@ -509,15 +510,14 @@ task test:slow         # run only tests marked as slow
 To execute the long-running tests directly without Go Task, run:
 
 ```bash
-poetry run pytest -m slow
+pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
-extension. These extras are installed when running
-`poetry install --with dev --all-extras`.
+extension. These extras are installed when running `uv pip install --all-extras`.
 
-All testing commands are wrapped by `task`, which uses `poetry run` internally
-to ensure the correct virtual environment is active.
+All testing commands are wrapped by `task`, which activates the `.venv`
+environment before running each tool.
 
 Integration tests can leverage the helper classes in `autoresearch.test_tools`.
 `MCPTestClient` and `A2ATestClient` provide simple interfaces for exercising
@@ -526,9 +526,21 @@ tested and ship with the package for external use.
 
 Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If you run suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
 
+### Migrating from Poetry
+
+Previous versions used Poetry for environment management. `uv` now handles dependency installation and virtual environment creation for faster setup. If you have an existing Poetry environment, remove the `.venv` directory and recreate it with:
+
+```bash
+uv venv
+uv pip install --all-extras
+uv pip install -e .
+```
+
+Activate the environment with `source .venv/bin/activate` before running commands.
+
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed inside the Poetry environment using `poetry install --with dev --all-extras` or `poetry run pip install -e .`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv pip install --all-extras` and `uv pip install -e .`.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ### Smoke test
@@ -536,7 +548,7 @@ Maintain at least 90% test coverage and remove temporary files before submitting
 Run the environment smoke test to verify your installation:
 
 ```bash
-poetry run python scripts/smoke_test.py
+python scripts/smoke_test.py
 ```
 
 If running without network access, copy `.env.offline` to `.env` so the script
@@ -544,7 +556,7 @@ uses the pre-downloaded VSS extension:
 
 ```bash
 cp .env.offline .env
-poetry run python scripts/smoke_test.py
+python scripts/smoke_test.py
 ```
 
 ## Building the documentation
@@ -552,7 +564,7 @@ poetry run python scripts/smoke_test.py
 Install MkDocs and generate the static site:
 
 ```bash
-poetry run pip install mkdocs
+uv pip install mkdocs
 mkdocs build
 ```
 

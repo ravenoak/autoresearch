@@ -16,10 +16,12 @@ Autoresearch uses a modular architecture with several key components. The PlantU
 
 ## Installation
 
-Use `poetry install --with dev` to set up a development environment:
+Use `uv venv` and `uv pip install --all-extras` to set up a development environment:
 
 ```bash
-poetry install --with dev
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 ```
 
 `hdbscan` is built from source and needs compilation tools. Install `gcc`, `g++`,
@@ -39,7 +41,7 @@ export HDBSCAN_NO_OPENMP=1
 Alternatively install via pip:
 
 ```bash
-poetry run pip install -e .
+pip install -e .
 ```
 
 ## First search

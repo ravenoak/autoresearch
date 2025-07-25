@@ -234,7 +234,7 @@ You can evaluate how different relevance weights perform by running the
 truth relevance labels.
 
 ```bash
-poetry run python scripts/evaluate_ranking.py examples/search_evaluation.csv
+python scripts/evaluate_ranking.py examples/search_evaluation.csv
 ```
 
 To automatically search for the best combination of weights, use
@@ -243,7 +243,7 @@ performs a simple grid search and writes the tuned values back to the provided
 configuration file (defaults to `examples/autoresearch.toml`):
 
 ```bash
-poetry run python scripts/optimize_search_weights.py \
+python scripts/optimize_search_weights.py \
   examples/search_evaluation.csv examples/autoresearch.toml
 ```
 
@@ -461,7 +461,7 @@ This research was conducted using dialectical reasoning with {{loops}} cycles.
 Persisted claims trigger ontology reasoning so that inferred triples are stored automatically. Use the `sparql` command to inspect the graph:
 
 ```bash
-poetry run autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
+autoresearch sparql "SELECT ?s WHERE { ?s a <http://example.com/B> }"
 ```
 
 The command applies the configured reasoner before executing the query, returning any inferred relationships.
