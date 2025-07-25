@@ -9,4 +9,4 @@ rm -rf /var/lib/apt/lists/*
 
 # Run the main setup script which installs dev dependencies and all extras
 ./scripts/setup.sh
-# All Python/Poetry setup is handled by setup.sh using --all-extras
+# All Python/uv setup is handled by setup.sh using uv pip
