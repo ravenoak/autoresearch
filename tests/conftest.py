@@ -16,22 +16,11 @@ if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))
 
-from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log
-import typer
-from autoresearch import cache, storage
-from autoresearch.config import ConfigLoader
-from autoresearch.agents.registry import (
-    AgentFactory,
-    AgentRegistry,
-)
-from autoresearch.llm.registry import LLMFactory
-from autoresearch.storage import (
-    set_delegate as set_storage_delegate,
-)
-from autoresearch.extensions import VSSExtensionLoader
-import duckdb
 
-_orig_option = typer.Option
+# ----------------------------------------------------
+# Optional dependency stubs (inserted before project imports)
+# ----------------------------------------------------
+
 # Provide a lightweight stub for the optional ``ray`` dependency so that
 # ``autoresearch`` can be imported without the actual package installed.
 if "ray" not in sys.modules:
@@ -305,6 +294,23 @@ sys.modules.setdefault("sentence_transformers", dummy_st_module)
 # Mock heavy optional dependencies to avoid model downloads during tests.
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("transformers", MagicMock())
+
+
+from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
+import typer  # noqa: E402
+from autoresearch import cache, storage  # noqa: E402
+from autoresearch.config import ConfigLoader  # noqa: E402
+from autoresearch.agents.registry import (  # noqa: E402
+    AgentFactory,
+    AgentRegistry,
+)  # noqa: E402
+from autoresearch.llm.registry import LLMFactory  # noqa: E402
+from autoresearch.storage import (  # noqa: E402
+    set_delegate as set_storage_delegate,
+)  # noqa: E402
+from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
+import duckdb  # noqa: E402
+_orig_option = typer.Option
 
 
 def _compat_option(*args, **kwargs):

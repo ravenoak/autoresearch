@@ -43,7 +43,7 @@ from .storage import StorageManager
 from pydantic import ValidationError
 # Lazily import SlowAPI and fall back to a minimal stub when unavailable
 from .error_utils import get_error_info, format_error_for_api
-from typing import TYPE_CHECKING, Callable, Any
+from typing import Callable, Any
 
 # Predeclare optional SlowAPI types for static analysis
 Limiter: Any
