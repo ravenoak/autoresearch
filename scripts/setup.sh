@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#python -m pip install --upgrade pip
-#pip install poetry
-poetry env use $(which python3)
-# Install dev dependencies and all optional extras to ensure all tests can run
-poetry install --no-root --no-interaction --with dev --all-extras
-poetry run pip install -e .
+# Create uv virtual environment and install dependencies
+uv venv .venv
+uv pip install --python .venv/bin/python uv
+if ! .venv/bin/uv pip sync uv.lock; then
+    .venv/bin/uv pip sync pyproject.toml
+fi
+uv pip install --python .venv/bin/python uv
+.venv/bin/uv pip install -e '.[dev,parsers]'
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions
@@ -17,7 +19,7 @@ VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
 
 if [ -z "$VSS_EXTENSION" ]; then
     echo "No packaged extension found. Attempting download..."
-    if poetry run scripts/download_duckdb_extensions.py --output-dir ./extensions; then
+    if .venv/bin/python scripts/download_duckdb_extensions.py --output-dir ./extensions; then
         VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
     else
         echo "Download failed or skipped."
@@ -79,17 +81,14 @@ chmod +x scripts/smoke_test.py
 
 # Run smoke test to verify environment
 echo "Running smoke test to verify environment..."
-poetry run python scripts/smoke_test.py
+.venv/bin/python scripts/smoke_test.py
 
-# Verify that types-requests is installed so mypy can find request stubs
-echo "Verifying types-requests installation..."
-if ! poetry run pip show types-requests >/dev/null 2>&1; then
-    echo "types-requests not found, installing now..."
-    poetry run pip install types-requests
-fi
+# Install types-requests so mypy can find request stubs
+.venv/bin/uv pip install types-requests
 
 # Run mypy to ensure type hints are valid and request stubs are picked up
 echo "Running mypy..."
-poetry run mypy src
+.venv/bin/mypy src
 
 echo "Setup complete! VSS extension downloaded and configured."
+

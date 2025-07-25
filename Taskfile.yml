@@ -3,17 +3,17 @@ version: '3'
 tasks:
   unit:
     cmds:
-      - poetry run pytest tests/unit -q
+      - .venv/bin/pytest tests/unit -q
     desc: "Run unit tests"
 
   integration:
     cmds:
-      - poetry run pytest tests/integration -m "not slow" -q
+      - .venv/bin/pytest tests/integration -m "not slow" -q
     desc: "Run integration tests"
 
   behavior:
     cmds:
-      - poetry run pytest tests/behavior -q
+      - .venv/bin/pytest tests/behavior -q
     desc: "Run BDD (behavior) tests"
 
   test:
@@ -22,37 +22,37 @@ tasks:
 
   test:unit:
     cmds:
-      - poetry run pytest tests/unit -q
+      - .venv/bin/pytest tests/unit -q
     desc: "Run unit tests"
 
   test:integration:
     cmds:
-      - poetry run pytest tests/integration -m "not slow" -q
+      - .venv/bin/pytest tests/integration -m "not slow" -q
     desc: "Run integration tests"
 
   test:behavior:
     cmds:
-      - poetry run pytest tests/behavior -q
+      - .venv/bin/pytest tests/behavior -q
     desc: "Run BDD (behavior) tests"
 
   test:all:
     cmds:
-      - poetry run pytest -q
+      - .venv/bin/pytest -q
     desc: "Run the entire test suite including slow tests"
 
   test:fast:
     cmds:
-      - poetry run pytest -m 'not slow'
+      - .venv/bin/pytest -m 'not slow'
     desc: "Run tests excluding those marked slow"
 
   test:slow:
     cmds:
-      - poetry run pytest -m slow
+      - .venv/bin/pytest -m slow
     desc: "Run only tests marked as slow"
 
   coverage:
     cmds:
-      - pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml --cov-report=term-missing tests
+      - .venv/bin/pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml --cov-report=term-missing tests
     desc: "Run full test suite with coverage reporting"
 
   clean:
@@ -63,7 +63,7 @@ tasks:
 
   check-baselines:
     cmds:
-      - poetry run python scripts/check_token_regression.py --threshold 5
+      - .venv/bin/python scripts/check_token_regression.py --threshold 5
     desc: "Validate token usage against baselines"
 
   wheels:
@@ -72,16 +72,16 @@ tasks:
 
   wheel-linux:
     cmds:
-      - poetry run cibuildwheel --platform linux --output-dir dist/linux
+      - .venv/bin/cibuildwheel --platform linux --output-dir dist/linux
     desc: "Build Linux wheel"
 
   wheel-windows:
     cmds:
-      - poetry run cibuildwheel --platform windows --output-dir dist/windows
+      - .venv/bin/cibuildwheel --platform windows --output-dir dist/windows
     desc: "Build Windows wheel"
 
   wheel-macos:
     cmds:
-      - poetry run cibuildwheel --platform macos --output-dir dist/macos
+      - .venv/bin/cibuildwheel --platform macos --output-dir dist/macos
     desc: "Build macOS wheel"
 
