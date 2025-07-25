@@ -210,9 +210,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
+            REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
-            if not limiter.limiter.hit(limit_obj, ip):
+            if not limiter.limiter.hit(limit_obj, ip) or REQUEST_LOG[ip] > cfg_limit:
                 limit_wrapper = Limit(
                     limit_obj,
                     get_remote_address,

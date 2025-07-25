@@ -47,6 +47,7 @@ def require_bearer_token(monkeypatch, token):
 @given(parsers.parse('the API rate limit is {limit:d} request per minute'))
 def set_rate_limit(monkeypatch, limit):
     cfg = ConfigModel(api=APIConfig(rate_limit=limit))
+    ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     config_loader._config = None
     monkeypatch.setattr(
