@@ -20,6 +20,8 @@ Autoresearch uses a multi-layered testing approach for UI components:
 - uv (for dependency management)
 - pytest and pytest-bdd
 
+Autoresearch previously used Poetry. `uv` is now the recommended tool and the commands below reflect this change.
+
 ### Installation
 
 ```bash

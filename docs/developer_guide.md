@@ -2,6 +2,9 @@
 
 This guide describes how to set up a development environment and the expected workflow for contributing changes.
 
+The project now uses **uv** for dependency management instead of Poetry. All
+commands below rely on `uv`.
+
 ## Environment Setup
 
 1. Create a virtual environment:

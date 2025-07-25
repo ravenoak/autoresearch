@@ -2,6 +2,8 @@
 
 Autoresearch can be deployed in several ways depending on your needs. This guide outlines common approaches.
 
+The project switched from Poetry to **uv** for dependency management. Example commands now use `uv`.
+
 ## Local Installation
 
 For personal use, run Autoresearch directly on your machine. Install the dependencies and invoke the CLI or API:

@@ -1,6 +1,7 @@
 # Contributing
 
-We welcome contributions via pull requests. Install the development dependencies first:
+We welcome contributions via pull requests. Autoresearch now uses **uv** rather than Poetry for environment management.
+Install the development dependencies first:
 
 ```bash
 uv venv

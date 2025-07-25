@@ -2,6 +2,10 @@
 
 This guide explains how to install Autoresearch and manage optional features.
 
+Autoresearch recently migrated from **Poetry** to **uv** for dependency
+management. The examples below use `uv`; legacy Poetry instructions are kept in
+[AGENTS.md](../AGENTS.md) for reference.
+
 ## Requirements
 
 - Python 3.12 or newer (but below 4.0)
