@@ -19,10 +19,11 @@ to arrive sometime after **July 20, 2025**. See
 
 ## Installation
 
-Autoresearch requires **Python 3.12 or newer**. You can install the project
-dependencies with either **Poetry** or **pip**. See
-[docs/installation.md](docs/installation.md) for details on optional features and
-upgrade instructions.
+Autoresearch requires **Python 3.12 or newer**. The project recently transitioned
+from **Poetry** to [**uv**](https://github.com/astral-sh/uv) for dependency
+management. You can install the project using `uv` or plain **pip**.
+See [docs/installation.md](docs/installation.md) for details on optional features
+and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available for
 testing. The test suite works both with and without extras:
@@ -34,18 +35,17 @@ testing. The test suite works both with and without extras:
   SlowAPI's rate‑limiting middleware. This may change how certain tests
   behave and can make them slower.
 
-Reinstall with `poetry install --with dev` if you need to disable extras after
-running the setup script.
+Reinstall with `uv pip install --all-extras && uv pip install -e .` if you need
+to disable extras after running the setup script.
 
-### Using Poetry
-Python 3.12 or newer is required. When several Python versions are installed,
-select the interpreter **before** running `poetry install`:
+### Using uv
+Python 3.12 or newer is required. Set up the development environment with:
 ```bash
-# Use the `python3` executable from your PATH
-poetry env use $(which python3)
-poetry install --with dev --all-extras
+uv venv
+uv pip install --all-extras
+uv pip install -e .
 ```
-If Python 3.11 is selected, Poetry will fail with a message similar to:
+If Python 3.11 is selected, `uv` will fail with a message similar to:
 ```
 Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 3.11.*, no compatible version could be found.
@@ -59,7 +59,7 @@ Install only the minimal optional dependencies using pip:
 pip install autoresearch[minimal]
 ```
 When working from a clone, run `scripts/setup.sh` which installs all
-development dependencies and optional extras via Poetry.
+development dependencies and optional extras via **uv**.
 Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
 Local Git search requires the `git` extra.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
@@ -89,7 +89,7 @@ Use the provided helper to update Autoresearch:
 ```bash
 python scripts/upgrade.py
 ```
-The script runs `poetry update autoresearch` when a `pyproject.toml` is present,
+The script runs `uv pip install -U autoresearch` when a `pyproject.toml` is present,
 otherwise it falls back to `pip install -U autoresearch`.
 Use extras with pip to manage optional dependencies, for example:
 ```bash
