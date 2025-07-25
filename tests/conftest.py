@@ -396,6 +396,10 @@ def stub_vss_extension_download(monkeypatch, request, tmp_path):
         "verify_extension",
         lambda _c, verbose=True: True,
     )
+    monkeypatch.setattr(
+        "autoresearch.storage_backends.DuckDBStorageBackend.create_hnsw_index",
+        lambda self: None,
+    )
     yield
     if stub_path:
         monkeypatch.delenv("VECTOR_EXTENSION_PATH", raising=False)
