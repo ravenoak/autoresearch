@@ -2,6 +2,7 @@
 from pytest_bdd import scenario, when, then, parsers
 from unittest.mock import patch
 import responses
+import requests
 
 from .common_steps import *  # noqa: F401,F403
 from fastapi.testclient import TestClient
@@ -49,6 +50,10 @@ def send_query_with_webhook(url, monkeypatch, api_client, bdd_context):
     )
     with responses.RequestsMock() as rsps:
         rsps.post(url, status=200)
+        monkeypatch.setattr(
+            "autoresearch.api._notify_webhook",
+            lambda u, r, timeout=5: requests.post(u, json=r.model_dump(), timeout=timeout),
+        )
         resp = api_client.post("/query", json={"query": "hi", "webhook_url": url})
         bdd_context["api_status"] = resp.status_code
         bdd_context["webhook_calls"] = len(rsps.calls)
