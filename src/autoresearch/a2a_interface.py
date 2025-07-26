@@ -19,6 +19,13 @@ from threading import Thread
 import httpx
 import uvicorn
 
+# Import ``pydantic.root_model`` early to avoid compatibility issues when the
+# A2A SDK uses generics with Pydantic 2.
+try:  # pragma: no cover - runtime import patch
+    import pydantic.root_model  # noqa: F401
+except Exception:  # pragma: no cover - best effort
+    pass
+
 try:
     from a2a.client import A2AClient as SDKA2AClient
 
