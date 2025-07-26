@@ -385,7 +385,7 @@ def search(
             visualize_metrics_cli(result.metrics)
     except Exception as e:
         # Create a valid QueryResponse object with error information
-        from .models import QueryResponse
+        from ..models import QueryResponse
 
         # Get error information with suggestions and code examples
         error_info = get_error_info(e)
