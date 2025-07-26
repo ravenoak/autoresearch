@@ -1,6 +1,4 @@
 from fastapi.testclient import TestClient
-import httpx
-from unittest.mock import MagicMock
 
 from autoresearch.api import app as api_app
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
@@ -35,7 +33,7 @@ def test_query_stream_param(monkeypatch):
     assert len(chunks) == 3
 
 
-def test_config_webhooks(monkeypatch):
+def test_config_webhooks(monkeypatch, httpx_mock):
     """Configured webhooks should receive final results."""
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
@@ -48,11 +46,10 @@ def test_config_webhooks(monkeypatch):
     )
     client = TestClient(api_app)
 
-    mock_post = MagicMock(return_value=None)
-    monkeypatch.setattr(httpx, "post", mock_post)
+    httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
     resp = client.post("/query", json={"query": "hi"})
     assert resp.status_code == 200
-    mock_post.assert_called_once()
+    assert len(httpx_mock.get_requests()) == 1
 
 
 def test_batch_query_pagination(monkeypatch):
