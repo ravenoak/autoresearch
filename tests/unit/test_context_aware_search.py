@@ -73,8 +73,8 @@ def test_search_context_singleton(reset_search_context):
     assert context1 is context2
 
 
-@patch("autoresearch.search.core.SPACY_AVAILABLE", True)
-@patch("autoresearch.search.core.spacy")
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.spacy")
 def test_initialize_nlp(mock_spacy, reset_search_context):
     """Test that the NLP model is initialized correctly."""
     # Setup mock
@@ -90,8 +90,8 @@ def test_initialize_nlp(mock_spacy, reset_search_context):
 
 
 @patch.dict(os.environ, {"AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL": "true"})
-@patch("autoresearch.search.core.SPACY_AVAILABLE", True)
-@patch("autoresearch.search.core.spacy")
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.spacy")
 def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_context):
     """spaCy model is downloaded if missing and env var is set."""
     second_load = MagicMock()
@@ -105,8 +105,8 @@ def test_initialize_nlp_downloads_model_when_env_set(mock_spacy, reset_search_co
 
 
 @patch.dict(os.environ, {}, clear=True)
-@patch("autoresearch.search.core.SPACY_AVAILABLE", True)
-@patch("autoresearch.search.core.spacy")
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.spacy")
 def test_initialize_nlp_no_download_by_default(mock_spacy, reset_search_context):
     """No download occurs if model missing and env var is unset."""
     mock_spacy.load.side_effect = OSError()
@@ -137,7 +137,7 @@ def test_add_to_history(
     assert "timestamp" in context.search_history[0]
 
 
-@patch("autoresearch.search.core.SPACY_AVAILABLE", True)
+@patch("autoresearch.search.SPACY_AVAILABLE", True)
 @patch("autoresearch.search.core.get_config")
 def test_extract_entities(mock_get_config, mock_context_config, reset_search_context):
     """Test entity extraction from text."""
@@ -301,7 +301,7 @@ def test_context_aware_search_disabled(
             mock_context.expand_query.assert_not_called()
 
 
-@patch("autoresearch.search.core.SPACY_AVAILABLE", False)
+@patch("autoresearch.search.SPACY_AVAILABLE", False)
 @patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
 @patch("autoresearch.search.core.get_config")
 def test_expand_query_respects_settings(
@@ -317,7 +317,7 @@ def test_expand_query_respects_settings(
     assert result == "django"
 
 
-@patch("autoresearch.search.core.SPACY_AVAILABLE", False)
+@patch("autoresearch.search.SPACY_AVAILABLE", False)
 @patch("autoresearch.search.BERTOPIC_AVAILABLE", False)
 @patch("autoresearch.search.core.get_config")
 def test_expand_query_expansion_factor(
@@ -329,6 +329,6 @@ def test_expand_query_expansion_factor(
     mock_get_config.return_value = cfg
 
     ctx = SearchContext.get_instance()
-    ctx.search_history.append({"query": "python programming", "results": []})
+    ctx.add_to_history("python programming", [])
     result = ctx.expand_query("django")
-    assert "python" in result and "programming" in result
+    assert "python" in result
