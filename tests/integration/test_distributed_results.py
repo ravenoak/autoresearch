@@ -38,5 +38,6 @@ def test_result_aggregation_multi_process(monkeypatch):
     assert isinstance(resp, QueryResponse)
     assert len(set(pids)) > 1
     assert len(executor.result_aggregator.results) == len(cfg.agents)
+    os.environ["RAY_IGNORE_UNHANDLED_ERRORS"] = "1"
     executor.shutdown()
     ray.shutdown()
