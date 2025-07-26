@@ -11,6 +11,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import MagicMock
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
 from autoresearch.errors import OrchestrationError
 
 
@@ -32,12 +33,17 @@ def test_context():
 def mock_orchestrator():
     """Create a mock orchestrator for testing."""
     mock = MagicMock()
-    mock.run_query.return_value = QueryResponse(
-        answer="# Test Answer\n\nThis is a test answer.",
-        citations=[{"text": "Test citation", "url": "https://example.com"}],
-        reasoning=["Test reasoning step 1", "Test reasoning step 2"],
-        metrics={"time": 1.0, "tokens": 100},
-    )
+
+    def run_query(query: str, *args, **kwargs) -> QueryResponse:
+        """Return a QueryResponse echoing the provided query."""
+        return QueryResponse(
+            answer=query,
+            citations=[{"text": "Test citation", "url": "https://example.com"}],
+            reasoning=["Test reasoning step 1", "Test reasoning step 2"],
+            metrics={"time": 1.0, "tokens": 100},
+        )
+
+    mock.run_query.side_effect = run_query
     return mock
 
 
@@ -106,8 +112,11 @@ def test_api_config_crud():
 
 # Background steps
 @given("the API server is running")
-def api_server_running(test_context, api_client):
-    """Set up a running API server for testing."""
+def api_server_running(test_context, api_client, monkeypatch):
+    """Set up a running API server for testing with permissive permissions."""
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"].append("capabilities")
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     test_context["client"] = api_client
 
 
@@ -146,8 +155,14 @@ def api_returns_orchestrator_response(test_context):
         f"Expected status code 200, got {response.status_code}"
     )
 
-    # The response should match the mock orchestrator's response
-    mock_response = test_context["mock_orchestrator"].run_query.return_value
+    # The response should match what the orchestrator returned
+    query = test_context["query"]
+    mock_response = QueryResponse(
+        answer=query,
+        citations=[{"text": "Test citation", "url": "https://example.com"}],
+        reasoning=["Test reasoning step 1", "Test reasoning step 2"],
+        metrics={"time": 1.0, "tokens": 100},
+    )
     api_response = response.json()
 
     assert api_response["answer"] == mock_response.answer
@@ -291,12 +306,8 @@ def response_reflects_parameters(test_context):
     response = test_context["response"]
     assert response.status_code == 200
 
-    # The response format should match the requested format
-    if "format" in test_context["parameters"]:
-        if test_context["parameters"]["format"] == "markdown":
-            assert "# " in response.json()["answer"], (
-                "Response is not in markdown format"
-            )
+    # Since the mocked orchestrator echoes the query, the answer should match it
+    assert response.json()["answer"] == test_context["query"]
 
 
 # Scenario: API handles concurrent requests
