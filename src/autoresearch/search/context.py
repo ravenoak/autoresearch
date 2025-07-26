@@ -62,7 +62,7 @@ class SearchContext:
         self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
-        from . import spacy as pkg_spacy, SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
+        from .context import spacy as pkg_spacy, SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
 
         if not pkg_SPACY_AVAILABLE:
             return
@@ -100,7 +100,7 @@ class SearchContext:
             self._extract_entities(result.get("snippet", ""))
 
     def _extract_entities(self, text: str) -> None:
-        from . import SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
+        from .context import SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
 
         if not pkg_SPACY_AVAILABLE or self.nlp is None:
             for token in text.split():
