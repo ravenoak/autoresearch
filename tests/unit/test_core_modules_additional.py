@@ -95,6 +95,8 @@ def test_storage_setup_teardown(monkeypatch):
     monkeypatch.setattr('autoresearch.storage.KuzuStorageBackend', lambda: FakeKuzu())
     monkeypatch.setattr('autoresearch.storage.rdflib', types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph()))
     from autoresearch import storage
+    storage._db_backend = None
+    storage._kuzu_backend = None
     storage.setup('db')
     assert calls['duck'] == 'db'
     assert calls['kuzu'] == 'kuzu'
