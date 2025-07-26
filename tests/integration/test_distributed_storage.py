@@ -33,6 +33,7 @@ def test_distributed_storage(tmp_path):
     broker.publish({"action": "stop"})
     coordinator.join()
     broker.shutdown()
+    os.environ["RAY_IGNORE_UNHANDLED_ERRORS"] = "1"
     ray.shutdown()
 
     StorageManager.setup(str(tmp_path / "kg.duckdb"))

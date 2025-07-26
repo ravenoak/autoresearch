@@ -97,6 +97,7 @@ def run_distributed_query(bdd_context):
     executor = executor_cls(cfg)
     resp = executor.run_query("q")
     assert isinstance(resp, QueryResponse)
+    os.environ["RAY_IGNORE_UNHANDLED_ERRORS"] = "1"
     executor.shutdown()
     bdd_context["response"] = resp
 

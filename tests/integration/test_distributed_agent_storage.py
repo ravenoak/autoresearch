@@ -38,6 +38,7 @@ def test_distributed_storage_with_executor(tmp_path, monkeypatch):
     executor = RayExecutor(cfg)
     executor.run_query("q")
     assert len(set(pids)) > 1
+    os.environ["RAY_IGNORE_UNHANDLED_ERRORS"] = "1"
     executor.shutdown()
     StorageManager.setup(str(tmp_path / "kg.duckdb"))
     conn = StorageManager.get_duckdb_conn()

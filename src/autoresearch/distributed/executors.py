@@ -176,7 +176,8 @@ class RayExecutor:
                 self.result_broker.shutdown()
             except Exception as e:
                 log.warning("Failed to shutdown result broker", exc_info=e)
-        ray.shutdown()
+        if ray and hasattr(ray, "shutdown"):
+            ray.shutdown()
 
 
 class ProcessExecutor:
