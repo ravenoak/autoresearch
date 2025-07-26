@@ -40,6 +40,30 @@ if "git" not in sys.modules:
     git_stub = types.SimpleNamespace(Repo=object)
     sys.modules["git"] = git_stub
 
+# Minimal stub for duckdb to avoid heavy import
+if "duckdb" not in sys.modules:
+    duckdb_stub = types.ModuleType("duckdb")
+
+    class _Conn:
+        def execute(self, *a, **k):
+            return self
+
+        def fetchall(self):
+            return []
+
+        def close(self):
+            pass
+
+    duckdb_stub.DuckDBPyConnection = _Conn
+    duckdb_stub.connect = lambda *a, **k: _Conn()
+    sys.modules["duckdb"] = duckdb_stub
+
+# Stub heavy NLP libraries to avoid large imports during tests
+if "spacy" not in sys.modules:
+    sys.modules["spacy"] = MagicMock()
+if "torch" not in sys.modules:
+    sys.modules["torch"] = MagicMock()
+
 # Provide lightweight stubs for FastMCP so MCP tests run without the real
 # package installed.
 if "fastmcp" not in sys.modules:
