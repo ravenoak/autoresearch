@@ -1,4 +1,7 @@
-set -exo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Setting up Codex environment..."
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
@@ -7,6 +10,7 @@ apt-get install -y \
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-# Run the main setup script which installs dev dependencies and all extras
+# Run the main setup script to install dev dependencies and extras with uv
 ./scripts/setup.sh
-# All Python/uv setup is handled by setup.sh using uv pip
+# All Python setup is handled by setup.sh using uv pip
+
