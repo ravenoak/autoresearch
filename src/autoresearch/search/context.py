@@ -62,10 +62,12 @@ class SearchContext:
         self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
-        if not SPACY_AVAILABLE:
+        from . import spacy as pkg_spacy, SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
+
+        if not pkg_SPACY_AVAILABLE:
             return
         try:
-            self.nlp = spacy.load("en_core_web_sm")
+            self.nlp = pkg_spacy.load("en_core_web_sm")
             log.info("Initialized spaCy NLP model")
         except OSError:
             if (
@@ -73,8 +75,8 @@ class SearchContext:
                 == "true"
             ):
                 try:
-                    spacy.cli.download("en_core_web_sm")
-                    self.nlp = spacy.load("en_core_web_sm")
+                    pkg_spacy.cli.download("en_core_web_sm")
+                    self.nlp = pkg_spacy.load("en_core_web_sm")
                     log.info("Downloaded spaCy model")
                 except Exception as e:  # pragma: no cover - unexpected
                     log.warning(f"Failed to download spaCy model: {e}")
@@ -98,7 +100,11 @@ class SearchContext:
             self._extract_entities(result.get("snippet", ""))
 
     def _extract_entities(self, text: str) -> None:
-        if not SPACY_AVAILABLE or self.nlp is None:
+        from . import SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
+
+        if not pkg_SPACY_AVAILABLE or self.nlp is None:
+            for token in text.split():
+                self.entities[token.lower()] += 1
             return
         try:
             doc = self.nlp(text)
@@ -118,10 +124,15 @@ class SearchContext:
             log.warning(f"Entity extraction failed: {e}")
 
     def build_topic_model(self) -> None:
+        from . import (
+            BERTOPIC_AVAILABLE as pkg_BERTOPIC_AVAILABLE,
+            SENTENCE_TRANSFORMERS_AVAILABLE as pkg_SENTENCE_TRANSFORMERS_AVAILABLE,
+        )
+
         if (
-            not BERTOPIC_AVAILABLE
+            not pkg_BERTOPIC_AVAILABLE
             or not self.search_history
-            or not SENTENCE_TRANSFORMERS_AVAILABLE
+            or not pkg_SENTENCE_TRANSFORMERS_AVAILABLE
         ):
             return
         try:
