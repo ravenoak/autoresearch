@@ -1,5 +1,5 @@
 from pytest_bdd import scenario, given, when, then
-from autoresearch.config import ConfigModel, APIConfig, ConfigLoader
+from autoresearch.config import ConfigModel, ConfigLoader
 
 
 @given("the API server is running")
@@ -20,7 +20,7 @@ def send_invalid_json(test_context):
 
 @when("I request the metrics endpoint")
 def request_metrics(test_context, monkeypatch):
-    cfg = ConfigModel(api=APIConfig())
+    cfg = ConfigModel()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     client = test_context["client"]
     resp = client.get("/metrics")

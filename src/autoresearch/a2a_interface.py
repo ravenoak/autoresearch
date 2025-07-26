@@ -22,7 +22,9 @@ import uvicorn
 # Import ``pydantic.root_model`` early to avoid compatibility issues when the
 # A2A SDK uses generics with Pydantic 2.
 try:  # pragma: no cover - runtime import patch
-    import pydantic.root_model  # noqa: F401
+    import pydantic.root_model as _rm  # noqa: F401
+    import sys
+    sys.modules.setdefault("pydantic.root_model", _rm)
 except Exception:  # pragma: no cover - best effort
     pass
 

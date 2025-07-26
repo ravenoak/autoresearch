@@ -1,5 +1,5 @@
 from autoresearch.api import app as api_app
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config import ConfigModel, ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from fastapi.testclient import TestClient
@@ -8,7 +8,7 @@ import time
 
 
 def _setup(monkeypatch):
-    cfg = ConfigModel(api=APIConfig())
+    cfg = ConfigModel()
     # allow all permissions for anonymous for simplicity
     cfg.api.role_permissions["anonymous"] = ["query", "metrics", "capabilities"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)

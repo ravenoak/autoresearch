@@ -64,6 +64,30 @@ if "spacy" not in sys.modules:
 if "torch" not in sys.modules:
     sys.modules["torch"] = MagicMock()
 
+# Provide a stub for the optional A2A dependency so tests can run without it.
+if "a2a" not in sys.modules:
+    a2a_stub = types.ModuleType("a2a")
+    sys.modules["a2a"] = a2a_stub
+
+    client_stub = types.ModuleType("a2a.client")
+
+    def _missing(*_a, **_k):
+        raise ImportError("A2A SDK not installed")
+
+    client_stub.__getattr__ = lambda _n: _missing()
+    sys.modules["a2a.client"] = client_stub
+
+    utils_stub = types.ModuleType("a2a.utils")
+    message_stub = types.ModuleType("a2a.utils.message")
+
+    def new_agent_text_message(content=""):
+        msg = types.SimpleNamespace(content=content, metadata={})
+        return msg
+    message_stub.new_agent_text_message = new_agent_text_message
+    sys.modules["a2a.utils"] = utils_stub
+    sys.modules["a2a.utils.message"] = message_stub
+    sys.modules["a2a.types"] = types.ModuleType("a2a.types")
+
 # Provide lightweight stubs for FastMCP so MCP tests run without the real
 # package installed.
 if "fastmcp" not in sys.modules:
@@ -319,11 +343,22 @@ sys.modules.setdefault("sentence_transformers", dummy_st_module)
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("transformers", MagicMock())
 
+from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402
+
+_ORIG_LOAD_CONFIG = ConfigLoader.load_config
+
+
+def _default_load_config(self) -> ConfigModel:
+    """Return a minimal config instance for tests without validation."""
+    return ConfigModel.model_construct()
+
+
+ConfigLoader.load_config = _default_load_config
+
 
 from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
 import typer  # noqa: E402
 from autoresearch import cache, storage  # noqa: E402
-from autoresearch.config import ConfigLoader  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402
     AgentFactory,
     AgentRegistry,
