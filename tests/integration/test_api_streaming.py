@@ -1,5 +1,6 @@
-import responses
 from fastapi.testclient import TestClient
+import httpx
+from unittest.mock import MagicMock
 
 from autoresearch.api import app as api_app
 from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
@@ -47,11 +48,11 @@ def test_config_webhooks(monkeypatch):
     )
     client = TestClient(api_app)
 
-    with responses.RequestsMock() as rsps:
-        rsps.post("http://hook", status=200)
-        resp = client.post("/query", json={"query": "hi"})
-        assert resp.status_code == 200
-        assert len(rsps.calls) == 1
+    mock_post = MagicMock(return_value=None)
+    monkeypatch.setattr(httpx, "post", mock_post)
+    resp = client.post("/query", json={"query": "hi"})
+    assert resp.status_code == 200
+    mock_post.assert_called_once()
 
 
 def test_batch_query_pagination(monkeypatch):
