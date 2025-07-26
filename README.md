@@ -27,9 +27,7 @@ management. You can install the project using `uv` or plain **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
-all optional extras so development and runtime dependencies are available for
-testing. Run `uv lock` after editing `pyproject.toml` and use `uv pip install -e '.[full,dev]'`
-to install the updated dependencies. The test suite works both with and without extras:
+all optional extras so development and runtime dependencies are available for testing. Run `uv lock` after editing `pyproject.toml` and use `uv pip install -e '.[full,dev]'` to install the updated dependencies. Several dependencies are pinned for compatibility—`slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both with and without extras:
 
 - **Without extras** – stub implementations of optional packages like
   `slowapi` are used. Rate limiting middleware is disabled and tests run
@@ -519,6 +517,9 @@ extension. These extras are installed when running `uv pip install -e '.[full,de
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
+
+Run `task coverage` after installing the extras to execute the full suite with
+coverage enabled.
 
 Integration tests can leverage the helper classes in `autoresearch.test_tools`.
 `MCPTestClient` and `A2ATestClient` provide simple interfaces for exercising

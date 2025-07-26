@@ -25,7 +25,8 @@ back to **after August 15, 2025**.
 The following tasks remain before publishing **0.1.0**:
 
 - Fix failing unit and behavior tests so CI passes.
-- Install optional dependencies so the full unit, integration and behavior test suites run successfully.
+- Install optional dependencies with `uv pip install -e '.[full,dev]'` so the full unit, integration and behavior suites run successfully.
+- Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - Achieve at least **90%** coverage across all suites.
 - Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
 - Assemble final release notes and confirm README instructions.
@@ -41,7 +42,7 @@ Each milestone may include additional patch releases for critical fixes.
 
 ## CI Checklist
 
-Before tagging **0.1.0**, ensure the following checks pass:
+Before tagging **0.1.0**, ensure the following checks pass (after installing optional extras):
 
 - [ ] `uv run flake8 src tests`
 - [ ] `uv run mypy src`
