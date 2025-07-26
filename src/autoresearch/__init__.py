@@ -4,6 +4,19 @@ This package provides a local-first research assistant with multiple
 interfaces and a modular architecture.
 """
 
+# Ensure compatibility with libraries that expect ``pydantic.root_model`` to be
+# loaded (e.g. ``a2a-sdk`` with Pydantic 2). Explicitly import the module and
+# register it in ``sys.modules`` to avoid `KeyError` issues during model
+# creation.
+import importlib
+import sys
+
+try:  # pragma: no cover - best effort patch
+    module = importlib.import_module("pydantic.root_model")
+    sys.modules.setdefault("pydantic.root_model", module)
+except Exception:  # pragma: no cover
+    pass
+
 __version__ = "0.1.0"
 
 try:  # pragma: no cover - optional distributed extras

@@ -293,7 +293,7 @@ vss = [
 
 [package.metadata]
 requires-dist = [
-    { name = "a2a-sdk", specifier = ">=0.2.8" },
+    { name = "a2a-sdk", specifier = ">=0.2.16" },
     { name = "bertopic", marker = "extra == 'full'", specifier = ">=0.17.3" },
     { name = "bertopic", marker = "extra == 'nlp'", specifier = ">=0.17.3" },
     { name = "cibuildwheel", marker = "extra == 'dev'", specifier = ">=3.0.1" },
