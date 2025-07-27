@@ -7,10 +7,10 @@ setup.
 ## Installing extras
 
 Behavior tests rely on optional features such as the Streamlit UI and the DuckDB
-VSS extension. Install all extras to ensure every scenario can run:
+VSS extension. Install all extras with **uv** before running the scenarios:
 
 ```bash
-poetry install --with dev --all-extras
+uv pip install -e '.[full,dev]'
 ```
 
 ## Running extra tests
@@ -21,13 +21,13 @@ run the entire suite. `requires_ui` scenarios need the `ui` extra while
 
 ```bash
 # Scenarios that need the UI extra
-poetry run pytest tests/behavior -m requires_ui
+uv run pytest tests/behavior -m requires_ui
 
 # Scenarios that need the VSS extra
-poetry run pytest tests/behavior -m requires_vss
+uv run pytest tests/behavior -m requires_vss
 ```
 
 Scenarios with these markers are skipped when the corresponding extras are not
-installed. After installing all extras you may simply run `pytest tests/behavior`
+installed. After installing all extras you may simply run `uv run pytest tests/behavior`
 to execute every scenario.
 
