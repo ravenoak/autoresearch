@@ -1,5 +1,5 @@
 from pytest_bdd import scenario, given, when, then
-from autoresearch.config import ConfigModel
+from autoresearch.config import ConfigModel, StorageConfig
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.agents.messages import MessageProtocol
@@ -61,8 +61,15 @@ def test_coalition_broadcast():
 
 
 @given("two communicating agents")
-def setup_agents(monkeypatch, bdd_context):
-    cfg = ConfigModel(agents=["Sender", "Receiver"], loops=1, enable_agent_messages=True)
+def setup_agents(monkeypatch, bdd_context, tmp_path):
+    db_path = tmp_path / "kg.duckdb"
+    cfg = ConfigModel.model_construct(
+        agents=["Sender", "Receiver"],
+        loops=1,
+        enable_agent_messages=True,
+        storage=StorageConfig(duckdb_path=str(db_path)),
+    )
+    monkeypatch.setenv("DUCKDB_PATH", str(db_path))
 
     def get_agent(name):
         return Sender() if name == "Sender" else Receiver()
@@ -86,13 +93,16 @@ def receiver_got_message(bdd_context):
 
 
 @given("a coalition with a sender and two receivers")
-def setup_coalition(monkeypatch, bdd_context):
-    cfg = ConfigModel(
+def setup_coalition(monkeypatch, bdd_context, tmp_path):
+    db_path = tmp_path / "kg.duckdb"
+    cfg = ConfigModel.model_construct(
         agents=["team"],
         loops=1,
         enable_agent_messages=True,
         coalitions={"team": ["Sender", "R1", "R2"]},
+        storage=StorageConfig(duckdb_path=str(db_path)),
     )
+    monkeypatch.setenv("DUCKDB_PATH", str(db_path))
 
     AgentFactory.register("Sender", Broadcaster)
     AgentFactory.register("R1", TeamReceiver)
