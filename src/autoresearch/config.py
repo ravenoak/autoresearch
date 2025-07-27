@@ -356,11 +356,17 @@ class ConfigModel(BaseSettings):
     )
     distributed_config: DistributedConfig = Field(default_factory=DistributedConfig)
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ConfigModel":
+        """Create a configuration instance from a dictionary without env parsing."""
+        return cls.__pydantic_validator__.validate_python(data)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="ignore",
+        cli_parse_args=False,
     )
 
     @field_validator("reasoning_mode", mode="before")
