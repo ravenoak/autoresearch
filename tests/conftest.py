@@ -32,8 +32,16 @@ if "ray" not in sys.modules:
         shutdown=lambda *a, **k: None,
         remote=_remote,
         get=lambda x: x,
+        put=lambda x: x,
+        ObjectRef=object,
     )
     sys.modules["ray"] = ray_stub
+    dag_mod = types.ModuleType("ray.dag")
+    compiled = types.ModuleType("ray.dag.compiled_dag_node")
+    compiled._shutdown_all_compiled_dags = lambda: None
+    sys.modules.setdefault("ray.dag", dag_mod)
+    sys.modules.setdefault("ray.dag.compiled_dag_node", compiled)
+    ray_stub.dag = dag_mod
 
 # Provide a minimal stub for GitPython used by the Search module
 if "git" not in sys.modules:
