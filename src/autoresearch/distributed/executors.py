@@ -20,7 +20,22 @@ from .coordinator import (
 )
 from .broker import BrokerType
 
-import ray
+try:  # pragma: no cover - optional dependency
+    import ray  # type: ignore
+except Exception:  # pragma: no cover - missing or faulty install
+    import types
+
+    def _remote(func):
+        return types.SimpleNamespace(remote=lambda *a, **k: func(*a, **k))
+
+    ray = types.SimpleNamespace(
+        init=lambda *a, **k: None,
+        shutdown=lambda *a, **k: None,
+        remote=_remote,
+        get=lambda x: x,
+        put=lambda x: x,
+        ObjectRef=object,
+    )  # type: ignore[assignment]
 
 from ..config import ConfigModel
 from ..orchestration.state import QueryState
@@ -48,8 +63,7 @@ def _execute_agent_remote(
         storage.set_message_queue(storage_queue)
     if http_session is not None:
         try:
-            import ray
-            if isinstance(http_session, ray.ObjectRef):
+            if ray and isinstance(http_session, ray.ObjectRef):
                 http_session = ray.get(http_session)
         except Exception as e:
             log.warning("Failed to retrieve HTTP session", exc_info=e)
@@ -57,8 +71,7 @@ def _execute_agent_remote(
         search.set_http_session(http_session)
     if llm_session is not None:
         try:
-            import ray
-            if isinstance(llm_session, ray.ObjectRef):
+            if ray and isinstance(llm_session, ray.ObjectRef):
                 llm_session = ray.get(llm_session)
         except Exception as e:
             log.warning("Failed to retrieve LLM session", exc_info=e)
