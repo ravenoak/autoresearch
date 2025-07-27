@@ -54,7 +54,7 @@ def test_orchestrator_handles_coalitions(monkeypatch, tmp_path):
         loops=1,
         coalitions={"team": ["A1", "A2"]},
         _env_file=None,
-        _cli_parse_args=[],
+        _cli_parse_args=False,
     )
     executed: list[str] = []
 
