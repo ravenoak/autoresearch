@@ -366,8 +366,18 @@ class ConfigModel(BaseSettings):
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="ignore",
-        cli_parse_args=False,
+        cli_parse_args=None,
     )
+
+    def _settings_build_values(  # type: ignore[override]
+        self,
+        init_kwargs: Dict[str, Any],
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Skip CLI parsing when tests disable it."""
+        if kwargs.get("_cli_parse_args") is False:
+            kwargs["_cli_parse_args"] = None
+        return super()._settings_build_values(init_kwargs, **kwargs)
 
     @field_validator("reasoning_mode", mode="before")
     def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
