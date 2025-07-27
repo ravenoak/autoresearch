@@ -176,3 +176,8 @@ cython_debug/
 # Autoresearch cache
 cache.json
 
+
+# Codex setup artifacts
+CODEX_ENVIRONMENT_SETUP_FAILED
+kg.duckdb
+rdf_store
