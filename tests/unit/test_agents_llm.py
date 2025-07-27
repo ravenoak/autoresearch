@@ -32,7 +32,7 @@ class MockAdapter(LLMAdapter):
 def test_synthesizer_with_injected_adapter():
     """Test SynthesizerAgent with an injected adapter."""
     state = QueryState(query="q")
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     mock_adapter = MockAdapter()
     agent = SynthesizerAgent(name="Synthesizer", llm_adapter=mock_adapter)
     result = agent.execute(state, cfg)
@@ -45,7 +45,7 @@ def test_contrarian_with_injected_adapter():
         query="q",
         claims=[{"id": "1", "type": "thesis", "content": "a"}],
     )
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     mock_adapter = MockAdapter()
     agent = ContrarianAgent(name="Contrarian", llm_adapter=mock_adapter)
     result = agent.execute(state, cfg)
@@ -61,7 +61,7 @@ def test_fact_checker_with_injected_adapter(mock_search):
         query="q",
         claims=[{"id": "1", "type": "thesis", "content": "a"}],
     )
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     mock_adapter = MockAdapter()
     agent = FactChecker(name="FactChecker", llm_adapter=mock_adapter)
     result = agent.execute(state, cfg)
@@ -94,7 +94,7 @@ def test_agent_factory_with_injected_adapter():
     state = QueryState(
         query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}]
     )
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
 
     # Test synthesizer
     result = synthesizer.execute(state, cfg)
@@ -111,7 +111,7 @@ def test_agent_factory_with_injected_adapter():
 def test_synthesizer_dynamic(mock_get_adapter):
     mock_get_adapter.return_value = MockAdapter()
     state = QueryState(query="q")
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     agent = SynthesizerAgent(name="Synthesizer")
     result = agent.execute(state, cfg)
     assert result["claims"][0]["content"].startswith("mocked:")
@@ -124,7 +124,7 @@ def test_contrarian_dynamic(mock_get_adapter):
         query="q",
         claims=[{"id": "1", "type": "thesis", "content": "a"}],
     )
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     agent = ContrarianAgent(name="Contrarian")
     result = agent.execute(state, cfg)
     assert result["claims"][0]["type"] == "antithesis"
@@ -140,7 +140,7 @@ def test_fact_checker_sources(mock_search, mock_get_adapter):
         query="q",
         claims=[{"id": "1", "type": "thesis", "content": "a"}],
     )
-    cfg = ConfigModel()
+    cfg = ConfigModel.model_construct()
     agent = FactChecker(name="FactChecker")
     result = agent.execute(state, cfg)
     assert result["sources"][0]["checked_claims"] == ["1"]

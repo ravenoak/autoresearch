@@ -18,7 +18,7 @@ def test_search_uses_cache(monkeypatch):
     print(f"Original backends: {old_backends}")
     Search.backends = {"dummy": backend}
     print(f"New backends: {Search.backends}")
-    cfg = ConfigModel(loops=1)
+    cfg = ConfigModel.model_construct(loops=1)
     cfg.search.backends = ["dummy"]
     print(f"Config search backends: {cfg.search.backends}")
     # Disable context-aware search to avoid issues with SearchContext
@@ -109,10 +109,10 @@ def test_cache_is_backend_specific(monkeypatch):
     old_backends = Search.backends.copy()
     Search.backends = {"b1": backend1, "b2": backend2}
 
-    cfg1 = ConfigModel(loops=1)
+    cfg1 = ConfigModel.model_construct(loops=1)
     cfg1.search.backends = ["b1"]
     cfg1.search.context_aware.enabled = False
-    cfg2 = ConfigModel(loops=1)
+    cfg2 = ConfigModel.model_construct(loops=1)
     cfg2.search.backends = ["b2"]
     cfg2.search.context_aware.enabled = False
 
