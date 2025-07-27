@@ -30,6 +30,7 @@ Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 Verify the environment by running:
 
 ```bash
+uv pip list | grep flake8
 uv run flake8 src tests
 uv run mypy src
 uv run pytest -q

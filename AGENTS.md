@@ -11,6 +11,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Activate the environment using `source .venv/bin/activate` or prefix commands with `uv pip`.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced.
+  - Confirm dev tools are installed with `uv pip list | grep flake8`.
 
 ## Verification steps
 - Check code style with `uv run flake8 src tests`.
