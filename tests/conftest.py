@@ -45,11 +45,17 @@ if "duckdb" not in sys.modules:
     duckdb_stub = types.ModuleType("duckdb")
 
     class _Conn:
+        def __init__(self):
+            self._rows: list = []
+
         def execute(self, *a, **k):
             return self
 
         def fetchall(self):
-            return []
+            return self._rows
+
+        def fetchone(self):
+            return self._rows[0] if self._rows else None
 
         def close(self):
             pass
