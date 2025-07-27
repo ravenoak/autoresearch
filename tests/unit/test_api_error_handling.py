@@ -6,7 +6,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def _setup(monkeypatch):
-    cfg = ConfigModel(api=APIConfig())
+    cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr("autoresearch.api.get_config", lambda: cfg)
     monkeypatch.setattr("autoresearch.api._notify_webhook", lambda u, r, timeout=5: None)

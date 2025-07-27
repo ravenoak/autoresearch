@@ -49,12 +49,10 @@ def test_agent_registry_coalitions():
 def test_orchestrator_handles_coalitions(monkeypatch, tmp_path):
     AgentFactory.register("A1", SimpleAgent)
     AgentFactory.register("A2", SimpleAgent)
-    cfg = ConfigModel(
+    cfg = ConfigModel.model_construct(
         agents=["team"],
         loops=1,
         coalitions={"team": ["A1", "A2"]},
-        _env_file=None,
-        _cli_parse_args=False,
     )
     executed: list[str] = []
 
