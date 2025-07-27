@@ -519,14 +519,15 @@ All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
 
 Run `task coverage` after installing the extras to execute the full suite with
-coverage enabled.
+coverage enabled. If `task` is not installed you can run `uv run pytest --cov=src`
+to produce a coverage report.
 
 Integration tests can leverage the helper classes in `autoresearch.test_tools`.
 `MCPTestClient` and `A2ATestClient` provide simple interfaces for exercising
 the CLI and API endpoints while capturing formatted results. They are fully
 tested and ship with the package for external use.
 
-Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If you run suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
+Maintain at least 90% test coverage and remove temporary files before submitting a pull request. Use `task coverage` to run the entire suite with coverage enabled. If `task` is not available, run `uv run pytest --cov=src`. When running suites separately, prefix each invocation with `coverage run -p` to create partial results, then merge them with `coverage combine` before generating the final report with `coverage html` or `coverage xml`.
 
 ### Running all suites together
 
