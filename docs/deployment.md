@@ -2,7 +2,7 @@
 
 Autoresearch can be deployed in several ways depending on your needs. This guide outlines common approaches.
 
-The project switched from Poetry to **uv** for dependency management. Example commands now use `uv`.
+The project uses **uv** for dependency management. Example commands use `uv`.
 
 ## Local Installation
 

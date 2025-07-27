@@ -1,6 +1,6 @@
 # Contributing
 
-We welcome contributions via pull requests. Autoresearch now uses **uv** rather than Poetry for environment management.
+We welcome contributions via pull requests. Autoresearch uses **uv** for environment management.
 Install the development dependencies first:
 
 ```bash
