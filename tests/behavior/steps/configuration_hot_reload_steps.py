@@ -11,6 +11,7 @@ from autoresearch.config import ConfigLoader, ConfigModel
     target_fixture="modify_config_enable_agent",
 )
 def modify_config_enable_agent(file, tmp_path):
+    ConfigLoader.reset_instance()
     loader = ConfigLoader()
     reloaded: list[ConfigModel] = []
 
@@ -49,6 +50,7 @@ def check_agent_visible(check_hot_reload: ConfigModel):
 
 @when("I start the application", target_fixture="start_application")
 def start_application():
+    ConfigLoader.reset_instance()
     loader = ConfigLoader()
     cfg = loader.load_config()
     return cfg

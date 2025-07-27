@@ -95,6 +95,7 @@ def run_visualize_rdf_cli(file, tmp_path, bdd_context, cli_runner):
 def check_viz_file(file, bdd_context):
     path = bdd_context["viz_path"]
     assert path.exists() and path.stat().st_size > 0
+    path.unlink()
 
 
 @then(

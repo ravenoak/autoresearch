@@ -489,6 +489,7 @@ def visualize_graph(tmp_path, file):
 def check_visualization(tmp_path, file, viz_path):
     path = viz_path
     assert path.exists() and path.stat().st_size > 0
+    path.unlink()
 
 
 @scenario("../features/dkg_persistence.feature", "Ontology reasoning infers subclass relationships")
