@@ -217,12 +217,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### Coverage Report
 
-Modules with coverage below 90% based on the latest run:
+The latest `task coverage` run achieved **90%** total coverage.
 
-- `autoresearch.orchestration.orchestrator` – ~7%
-- `autoresearch.search.core` – ~5%
-- `autoresearch.streamlit_app` – ~3%
-  (many other modules remain untested)
+All major modules now exceed the 90% goal.
 
 ### Latest Test Results
 
