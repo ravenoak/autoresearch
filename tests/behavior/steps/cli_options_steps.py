@@ -28,6 +28,7 @@ def test_parallel_groups(bdd_context):
 
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --loops (?P<loops>\d+) --token-budget (?P<budget>\d+) --no-ontology-reasoning'))
 def run_with_budget(query, loops, budget, monkeypatch, cli_runner, bdd_context):
+    ConfigLoader.reset_instance()
     def mock_run_query(q, cfg, callbacks=None):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
@@ -51,6 +52,7 @@ def check_budget_config(bdd_context, loops, budget):
 
 @when(parsers.parse('I run `autoresearch search "{query}" --agents {agents}`'))
 def run_with_agents(query, agents, monkeypatch, cli_runner, bdd_context):
+    ConfigLoader.reset_instance()
     def mock_run_query(q, cfg, callbacks=None):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
@@ -71,6 +73,7 @@ def check_agents_config(bdd_context, agents):
 
 @when(parsers.parse('I run `autoresearch search --parallel --agent-groups "{g1}" "{g2}" "{query}"'))
 def run_parallel_cli(g1, g2, query, monkeypatch, cli_runner, bdd_context):
+    ConfigLoader.reset_instance()
     groups = [[a.strip() for a in g1.split(",")], [a.strip() for a in g2.split(",")]]
 
     def mock_parallel(q, cfg, agent_groups):
