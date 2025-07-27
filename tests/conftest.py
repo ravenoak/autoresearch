@@ -443,8 +443,16 @@ def stub_vss_extension_download(monkeypatch, request, tmp_path):
         return
 
     if "VECTOR_EXTENSION_PATH" not in os.environ:
-        stub_path = tmp_path / "vss.duckdb_extension"
-        stub_path.write_text("stub")
+        env_offline = Path(".env.offline")
+        stub_path = None
+        if env_offline.exists():
+            for line in env_offline.read_text().splitlines():
+                if line.startswith("VECTOR_EXTENSION_PATH="):
+                    stub_path = Path(line.split("=", 1)[1]).resolve()
+                    break
+        if stub_path is None:
+            stub_path = tmp_path / "vss.duckdb_extension"
+            stub_path.write_text("stub")
         monkeypatch.setenv("VECTOR_EXTENSION_PATH", str(stub_path))
     else:
         stub_path = None
