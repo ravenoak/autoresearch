@@ -217,9 +217,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### Coverage Report
 
-The latest `task coverage` run achieved **90%** total coverage.
-
-All major modules now exceed the 90% goal.
+The latest `task coverage` run did not complete successfully due to a
+`ValidationError` in `ConfigModel.from_dict`. Coverage metrics could not be
+generated.
 
 ### Latest Test Results
 
