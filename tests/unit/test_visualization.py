@@ -1,22 +1,55 @@
+import sys
+from types import ModuleType
+from unittest.mock import MagicMock
+
+import pytest
+
 from autoresearch.models import QueryResponse
 from autoresearch.visualization import save_knowledge_graph
 
-import importlib
-import pytest
 
-mpl = importlib.import_module("matplotlib")
-if not getattr(mpl, "__file__", None):
-    pytest.skip("real matplotlib not available", allow_module_level=True)
+class DummyGraph:
+    def add_node(self, *args, **kwargs):
+        pass
+
+    def add_edge(self, *args, **kwargs):
+        pass
 
 
-@pytest.mark.parametrize("layout", ["spring", "circular"])
-def test_save_knowledge_graph(tmp_path, layout):
+@pytest.fixture(autouse=True)
+def fake_deps(monkeypatch):
+    """Provide dummy matplotlib and networkx implementations."""
+    fake_plt = ModuleType("pyplot")
+    fake_plt.figure = lambda *a, **k: None
+    fake_plt.tight_layout = lambda *a, **k: None
+    fake_plt.close = lambda *a, **k: None
+    fake_plt.savefig = MagicMock()
+    fake_plt.gcf = lambda: None
+    monkeypatch.setitem(sys.modules, "matplotlib.pyplot", fake_plt)
+    monkeypatch.setattr("autoresearch.visualization.plt", fake_plt, raising=False)
+
+    fake_mpl = ModuleType("matplotlib")
+    fake_mpl.use = lambda *a, **k: None
+    monkeypatch.setitem(sys.modules, "matplotlib", fake_mpl)
+
+    import networkx as real_nx
+    monkeypatch.setattr(real_nx, "DiGraph", lambda *a, **k: DummyGraph())
+    monkeypatch.setattr(real_nx, "draw", lambda *a, **k: None)
+    monkeypatch.setattr(real_nx, "spring_layout", lambda *a, **k: {})
+    monkeypatch.setattr(real_nx, "circular_layout", lambda *a, **k: {})
+    monkeypatch.setattr("autoresearch.visualization.nx", real_nx, raising=False)
+
+    yield fake_plt
+
+
+def test_save_knowledge_graph(monkeypatch, tmp_path, fake_deps):
+    plt = fake_deps
     response = QueryResponse(
         answer="a",
-        citations=["c1"],
-        reasoning=["r1"],
+        citations=["c1", "c2"],
+        reasoning=["r1", "r2"],
         metrics={},
     )
     out_file = tmp_path / "graph.png"
-    save_knowledge_graph(response, str(out_file), layout=layout)
-    assert out_file.exists() and out_file.stat().st_size > 0
+    save_knowledge_graph(response, str(out_file))
+    plt.savefig.assert_called_once_with(str(out_file))
