@@ -375,8 +375,13 @@ class ConfigModel(BaseSettings):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Skip CLI parsing when tests disable it."""
-        if kwargs.get("_cli_parse_args") is False:
+        if kwargs.get("_cli_parse_args") in (False, []):
             kwargs["_cli_parse_args"] = None
+        else:
+            # Ensure BaseModel cache is initialized to avoid mismatches during CLI parsing
+            from pydantic._internal._utils import import_cached_base_model
+
+            import_cached_base_model()
         return super()._settings_build_values(init_kwargs, **kwargs)
 
     @field_validator("reasoning_mode", mode="before")
