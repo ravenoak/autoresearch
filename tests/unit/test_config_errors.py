@@ -7,6 +7,7 @@ from autoresearch.errors import ConfigError
 
 def test_load_config_file_error(tmp_path, monkeypatch):
     """Test that ConfigError is raised when the config file can't be loaded."""
+    ConfigLoader.reset_instance()
     monkeypatch.chdir(tmp_path)
 
     # Create an invalid TOML file
@@ -23,6 +24,7 @@ def test_load_config_file_error(tmp_path, monkeypatch):
 
 def test_notify_observers_error():
     """Test that ConfigError is raised when an observer callback fails."""
+    ConfigLoader.reset_instance()
     loader = ConfigLoader()
 
     # Create a mock observer that raises an exception
@@ -37,6 +39,7 @@ def test_notify_observers_error():
 
 def test_watch_config_files_error(tmp_path, monkeypatch):
     """Test that ConfigError is raised when watching config files fails."""
+    ConfigLoader.reset_instance()
     monkeypatch.chdir(tmp_path)
 
     # Create a config file that exists
@@ -55,6 +58,7 @@ def test_watch_config_files_error(tmp_path, monkeypatch):
 
 def test_watch_config_reload_error(tmp_path, monkeypatch):
     """Test that ConfigError is raised when reloading config fails."""
+    ConfigLoader.reset_instance()
     monkeypatch.chdir(tmp_path)
 
     # Create a config file that exists
@@ -80,6 +84,7 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
 
 def test_reset_instance_error():
     """Test that ConfigError is raised when resetting the instance fails."""
+    ConfigLoader.reset_instance()
     # Create a mock instance with a stop_watching method that raises an exception
     with patch.object(ConfigLoader, "_instance", MagicMock()):
         with patch.object(
