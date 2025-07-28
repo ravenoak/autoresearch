@@ -12,10 +12,9 @@ Autoresearch is currently in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
-planned for **July 20, 2025**. Work has slipped past that date and
-several unit and behavior tests are still failing. The release has been
-re-targeted for sometime after **August 15, 2025** once CI passes with at
-least **90%** coverage. See
+planned for **July 20, 2025**, but the schedule slipped. All unit and
+behavior tests now pass with over **90%** coverage. The release is
+re-targeted for **September 2025**. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 
@@ -27,7 +26,13 @@ management. You can install the project using `uv` or plain **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
-all optional extras so development and runtime dependencies are available for testing. Run `uv lock` after editing `pyproject.toml` and use `uv pip install -e '.[full,dev]'` to install the updated dependencies. Several dependencies are pinned for compatibility—`slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both with and without extras:
+all optional extras so development and runtime dependencies are available for testing.
+Codex environments run `scripts/codex_setup.sh`, which wraps this helper to
+install everything automatically. Run `uv lock` after editing `pyproject.toml`
+and use `uv pip install -e '.[full,dev]'` to install the updated dependencies.
+Several dependencies are pinned for compatibility—`slowapi` is locked to
+**0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
+with and without extras:
 
 - **Without extras** – stub implementations of optional packages like
   `slowapi` are used. Rate limiting middleware is disabled and tests run
@@ -60,7 +65,8 @@ Install only the minimal optional dependencies using pip:
 pip install autoresearch[minimal]
 ```
 When working from a clone, run `scripts/setup.sh` which installs all
-development dependencies and optional extras via **uv**.
+development dependencies and optional extras via **uv**. Codex users
+should run `scripts/codex_setup.sh` to perform the same steps.
 Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
 Local Git search requires the `git` extra.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
@@ -472,6 +478,8 @@ Alternatively you can run the helper script:
 ```bash
 ./scripts/setup.sh
 ```
+Codex environments call `scripts/codex_setup.sh`, which installs the same
+dependencies non-interactively.
 
 The helper installs all dependencies with `uv pip install -e '.[full,dev]'` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
