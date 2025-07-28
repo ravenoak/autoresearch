@@ -81,14 +81,22 @@ chmod +x scripts/smoke_test.py
 echo "Running smoke test to verify environment..."
 uv run python scripts/smoke_test.py
 
-# Verify that types-requests is installed so mypy can find request stubs
-echo "Verifying types-requests installation..."
-if ! uv pip show types-requests >/dev/null 2>&1; then
-    echo "types-requests not found, installing now..."
-    uv pip install types-requests
-fi
 
-# Run mypy to ensure type hints are valid and request stubs are picked up
+# Ensure development tools and stubs are present
+ensure_installed() {
+    local pkg="$1"
+    echo "Ensuring $pkg is installed..."
+    if ! uv pip show "$pkg" >/dev/null 2>&1; then
+        uv pip install "$pkg"
+    fi
+}
+
+for pkg in flake8 mypy pytest pytest-bdd types-requests types-tabulate \
+    types-networkx types-protobuf; do
+    ensure_installed "$pkg"
+done
+
+# Run mypy to ensure type hints are valid and stubs are picked up
 echo "Running mypy..."
 uv run mypy src
 

@@ -490,10 +490,15 @@ SlowAPI’s middleware, which enforces rate limits during integration tests.
 
 ## Running tests
 
-The full suite, including behavior-driven tests, relies on optional extras such as
-`pdfminer` and `gitpython`. Tests can run without them using bundled stubs, but
-real behaviour – including SlowAPI rate limiting – is only exercised when the
-extras are installed. Install them with:
+All test commands require the project to be installed with the `full` and `dev`
+extras so linters, `mypy`, `pytest`, and stub packages are available. The
+`scripts/setup.sh` helper (or `scripts/codex_setup.sh` in Codex environments)
+installs these automatically.
+
+The full suite, including behavior-driven tests, relies on additional optional
+extras such as `pdfminer` and `gitpython`. Tests can run without them using
+bundled stubs, but real behaviour – including SlowAPI rate limiting – is only
+exercised when the extras are installed. Install them with:
 
 ```bash
 uv pip install -e '.[full,dev]'

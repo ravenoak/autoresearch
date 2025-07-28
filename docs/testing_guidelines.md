@@ -12,6 +12,10 @@ Tests are organized into three categories:
 
 ## Running tests
 
+Before running any tests ensure the project is installed with the `full` and
+`dev` extras. The `scripts/setup.sh` helper installs them automatically along
+with tools such as `flake8`, `mypy` and `pytest`.
+
 Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
 
 ```bash
