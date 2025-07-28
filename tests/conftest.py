@@ -767,6 +767,16 @@ def realistic_claims(claim_factory):
 
 
 @pytest.fixture
+def sample_eval_data():
+    """Load the sample evaluation CSV for search weight tests."""
+
+    from autoresearch.search import Search
+
+    path = Path(__file__).resolve().parent / "data" / "eval" / "sample_eval.csv"
+    return Search.load_evaluation_data(path)
+
+
+@pytest.fixture
 def dummy_llm_adapter(monkeypatch):
     """Register and provide a dummy LLM adapter for tests."""
     from autoresearch.llm.adapters import DummyAdapter
@@ -796,6 +806,31 @@ def mock_llm_adapter(monkeypatch):
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
     yield adapter
     LLMFactory._registry.pop("mock", None)
+
+
+@pytest.fixture
+def flexible_llm_adapter(monkeypatch):
+    """Provide an LLM adapter with customizable responses per prompt."""
+
+    from autoresearch.llm.adapters import DummyAdapter
+
+    class FlexibleAdapter(DummyAdapter):
+        def __init__(self) -> None:
+            self.responses: dict[str, str] = {}
+
+        def set_responses(self, mapping: dict[str, str]) -> None:
+            self.responses.update(mapping)
+
+        def generate(self, prompt: str, model: str | None = None, **kwargs):
+            if prompt in self.responses:
+                return self.responses[prompt]
+            return super().generate(prompt, model=model, **kwargs)
+
+    LLMFactory.register("flexible", FlexibleAdapter)
+    adapter = FlexibleAdapter()
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
+    yield adapter
+    LLMFactory._registry.pop("flexible", None)
 
 
 @pytest.fixture
