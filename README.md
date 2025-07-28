@@ -44,6 +44,7 @@ Python 3.12 or newer is required. Set up the development environment with:
 ```bash
 uv venv
 uv pip install -e '.[full,dev]'
+source .venv/bin/activate
 ```
 If Python 3.11 is selected, `uv` will fail with a message similar to:
 ```
@@ -463,6 +464,7 @@ Create a virtual environment, run `uv lock` if `pyproject.toml` changed, and ins
 ```bash
 uv venv
 uv pip install -e '.[full,dev]'
+source .venv/bin/activate
 ```
 
 Alternatively you can run the helper script:

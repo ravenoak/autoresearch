@@ -94,6 +94,14 @@ By participating in this project, you agree to maintain a respectful and inclusi
   task verify
   ```
 
+### Troubleshooting
+
+- **Missing tools**: If commands like `flake8` or `pytest` are not found, make sure the
+  virtual environment is activated with `source .venv/bin/activate`. Reinstall
+  dependencies using `uv pip install -e '.[full,dev]'` if necessary.
+- **Missing `task` command**: Run `which task` to verify Go Task is installed.
+  Re-run `scripts/setup.sh` if the command is unavailable.
+
 ## Code Style Guidelines
 
 Autoresearch follows strict code style guidelines to maintain consistency across the codebase:

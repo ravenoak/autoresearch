@@ -3,6 +3,9 @@ set -euo pipefail
 
 # Create a Python 3.12+ virtual environment and install all extras in editable mode
 uv venv
+# Install locked dependencies along with all optional extras
+uv sync --all-extras
+# Link the project in editable mode so tools are available
 uv pip install -e '.[full,dev]'
 
 # Create extensions directory if it doesn't exist
