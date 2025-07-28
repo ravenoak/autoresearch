@@ -1,8 +1,27 @@
+# Ensure we are running with Python 3.12 or newer
 #!/usr/bin/env bash
 set -euo pipefail
 
+PYTHON_VERSION=$(python -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+if python - <<'EOF'
+import sys
+sys.exit(0 if sys.version_info >= (3, 12) else 1)
+EOF
+then
+    echo "Using Python $PYTHON_VERSION"
+else
+    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION" >&2
+    exit 1
+fi
+
 # Create a Python 3.12+ virtual environment and install all extras in editable mode
 uv venv
+VENV_PYTHON="./.venv/bin/python"
+"$VENV_PYTHON" - <<'EOF'
+import sys
+if sys.version_info < (3, 12):
+    raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
+EOF
 # Install locked dependencies along with all optional extras
 uv sync --all-extras
 # Link the project in editable mode so tools are available
