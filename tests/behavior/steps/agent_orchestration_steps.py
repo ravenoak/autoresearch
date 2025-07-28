@@ -11,7 +11,7 @@ from autoresearch.orchestration import ReasoningMode
 
 @given("the agents Synthesizer, Contrarian, and Fact-Checker are enabled")
 def enable_agents(monkeypatch):
-    config = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2)
+    config = ConfigModel.model_construct(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2)
     monkeypatch.setattr(
         "autoresearch.config.ConfigLoader.load_config", lambda self: config
     )
@@ -23,7 +23,7 @@ def enable_agents(monkeypatch):
     target_fixture="set_loops",
 )
 def set_loops(loops: int, monkeypatch):
-    config = ConfigModel(
+    config = ConfigModel.model_construct(
         agents=["Synthesizer", "Contrarian", "FactChecker"], loops=loops
     )
     monkeypatch.setattr(
@@ -148,7 +148,9 @@ def submit_query_via_cli(query, monkeypatch, cli_runner):
         )
 
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
-    cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "Synthesizer"], loops=1)
+    cfg = ConfigModel.model_construct(
+        agents=["Synthesizer", "Contrarian", "Synthesizer"], loops=1
+    )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     from autoresearch import main as main_mod
 
@@ -200,7 +202,7 @@ def run_two_queries(monkeypatch):
 
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
 
-    config = ConfigModel(
+    config = ConfigModel.model_construct(
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         loops=3,
         primus_start=0,

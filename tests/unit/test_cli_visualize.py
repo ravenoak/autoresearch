@@ -30,8 +30,32 @@ def test_search_visualize_option(monkeypatch):
         return QueryResponse(answer='a', citations=[], reasoning=[], metrics={'m': 1})
 
     monkeypatch.setattr(Orchestrator, 'run_query', _mock_run)
+
+    import sys
+    import types
+
+    dummy_storage = types.ModuleType("autoresearch.storage")
+
+    class StorageManager:
+        @staticmethod
+        def persist_claim(claim):
+            pass
+
+        @staticmethod
+        def setup(*a, **k):
+            pass
+
+    dummy_storage.StorageManager = StorageManager
+    dummy_storage.setup = lambda *a, **k: None
+    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+
     from autoresearch.config import ConfigLoader, ConfigModel
-    monkeypatch.setattr(ConfigLoader, 'load_config', lambda self: ConfigModel(loops=1))
+
+    def _load(self):
+        return ConfigModel.model_construct(loops=1)
+
+    monkeypatch.setattr(ConfigLoader, 'load_config', _load)
+
     main = importlib.import_module('autoresearch.main')
     result = runner.invoke(main.app, ['search', 'q', '--visualize'])
     assert result.exit_code == 0
