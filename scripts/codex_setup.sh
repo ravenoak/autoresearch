@@ -15,6 +15,13 @@ if ! command -v task >/dev/null 2>&1; then
     curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 fi
 
+# Verify Go Task was installed
+if [ ! -x /usr/local/bin/task ]; then
+    echo "Go Task not found at /usr/local/bin/task." >&2
+    echo "Re-run: curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin" >&2
+    exit 1
+fi
+
 # Run the main setup script to install dev dependencies and extras with uv
 ./scripts/setup.sh
 # All Python setup is handled by setup.sh using uv pip
