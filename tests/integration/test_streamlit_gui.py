@@ -1,9 +1,11 @@
 import os
 import pytest
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.requires_ui]
 
-AppTest = pytest.importorskip("streamlit.testing.v1", reason="streamlit testing module not available").AppTest
+AppTest = pytest.importorskip(
+    "streamlit.testing.v1", reason="streamlit testing module not available"
+).AppTest
 
 APP_FILE = os.path.join("src", "autoresearch", "streamlit_app.py")
 

@@ -8,11 +8,11 @@ import pytest
 from unittest.mock import patch, mock_open
 
 pytestmark = pytest.mark.xfail(reason="Config profiles not supported in tests")
-import time
-import stat
+import time  # noqa: E402
+import stat  # noqa: E402
 
-from autoresearch.config import ConfigLoader
-from autoresearch.errors import ConfigError
+from autoresearch.config import ConfigLoader  # noqa: E402
+from autoresearch.errors import ConfigError  # noqa: E402
 
 
 # Mock for Path.stat() that returns an object with st_mtime and st_mode

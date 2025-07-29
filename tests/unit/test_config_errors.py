@@ -3,8 +3,8 @@ from unittest.mock import patch, MagicMock
 
 pytestmark = pytest.mark.xfail(reason="ConfigError handling not implemented")
 
-from autoresearch.config import ConfigLoader, ConfigModel
-from autoresearch.errors import ConfigError
+from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402
+from autoresearch.errors import ConfigError  # noqa: E402
 
 
 def test_load_config_file_error(tmp_path, monkeypatch):

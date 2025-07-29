@@ -19,9 +19,11 @@ from autoresearch.search import Search
 from autoresearch import cache
 from autoresearch.config import ConfigModel
 
-pytestmark = pytest.mark.skipif(
-    not GITPYTHON_INSTALLED, reason="GitPython not installed"
-)
+pytestmark = [
+    pytest.mark.slow,
+    pytest.mark.requires_git,
+    pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
+]
 
 
 @pytest.fixture(autouse=True)

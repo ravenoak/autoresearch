@@ -1,7 +1,9 @@
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app
-from autoresearch.config import ConfigModel, APIConfig
+from autoresearch.config import ConfigModel, APIConfig, ConfigLoader
+import types
+import contextlib
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
@@ -9,6 +11,10 @@ def _setup(monkeypatch):
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr("autoresearch.api.get_config", lambda: cfg)
+    dummy_loader = types.SimpleNamespace(config=cfg, watching=lambda *a, **k: contextlib.nullcontext())
+    monkeypatch.setattr("autoresearch.api.config_loader", dummy_loader)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader.reset_instance()
     monkeypatch.setattr("autoresearch.api._notify_webhook", lambda u, r, timeout=5: None)
     return cfg
 

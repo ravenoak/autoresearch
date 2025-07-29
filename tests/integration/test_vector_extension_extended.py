@@ -26,9 +26,11 @@ try:
 except Exception:
     VSS_AVAILABLE = False
 
-pytestmark = pytest.mark.skipif(
-    not VSS_AVAILABLE, reason="VSS extension not available"
-)
+pytestmark = [
+    pytest.mark.slow,
+    pytest.mark.requires_vss,
+    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
+]
 
 logger = logging.getLogger(__name__)
 

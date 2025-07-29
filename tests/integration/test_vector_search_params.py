@@ -1,6 +1,9 @@
 import duckdb
+import pytest
 from autoresearch.storage import StorageManager
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+
+pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 
 def test_vector_search_uses_params(tmp_path, monkeypatch):

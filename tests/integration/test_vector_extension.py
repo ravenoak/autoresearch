@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 from autoresearch.storage import StorageManager
 from autoresearch.config import (
@@ -8,6 +9,8 @@ from autoresearch.config import (
 )
 
 logger = logging.getLogger(__name__)
+
+pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 
 def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
