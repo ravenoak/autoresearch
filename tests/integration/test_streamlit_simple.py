@@ -4,6 +4,8 @@ import pytest
 
 AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 
+pytestmark = [pytest.mark.slow, pytest.mark.requires_ui]
+
 APP_FILE = os.path.join("src", "autoresearch", "streamlit_app.py")
 
 

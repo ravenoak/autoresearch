@@ -357,7 +357,7 @@ sys.modules.setdefault("sentence_transformers", dummy_st_module)
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("transformers", MagicMock())
 
-from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402
+from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402,F401
 
 
 from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402

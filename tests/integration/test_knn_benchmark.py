@@ -14,7 +14,11 @@ try:
 except Exception:
     VSS_AVAILABLE = False
 
-pytestmark = [pytest.mark.slow, pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available")]
+pytestmark = [
+    pytest.mark.slow,
+    pytest.mark.requires_vss,
+    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
+]
 
 
 def test_knn_latency_benchmark(tmp_path, monkeypatch):

@@ -1,7 +1,10 @@
 import duckdb
+import pytest
 from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.extensions import VSSExtensionLoader
+
+pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 
 def test_extension_path_normalized(tmp_path, monkeypatch):
