@@ -359,16 +359,6 @@ sys.modules.setdefault("transformers", MagicMock())
 
 from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402
 
-_ORIG_LOAD_CONFIG = ConfigLoader.load_config
-
-
-def _default_load_config(self) -> ConfigModel:
-    """Return a minimal config instance for tests without validation."""
-    return ConfigModel.model_construct()
-
-
-ConfigLoader.load_config = _default_load_config
-
 
 from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
 import typer  # noqa: E402
@@ -767,6 +757,28 @@ def realistic_claims(claim_factory):
 
 
 @pytest.fixture
+def realistic_claim_batch(claim_factory):
+    """Yield a diverse batch of realistic claim dictionaries."""
+
+    claims = [
+        claim_factory.create_claim(claim_id="claim-a", embedding=[0.1] * 384),
+        claim_factory.create_claim(claim_id="claim-b", embedding=[0.2] * 384),
+        claim_factory.create_claim(claim_id="claim-c", embedding=[0.3] * 384),
+    ]
+    claims[0]["relations"] = [
+        {"src": "claim-a", "dst": "source-1", "rel": "cites", "weight": 1.0}
+    ]
+    claims[1]["relations"] = [
+        {"src": "claim-b", "dst": "claim-a", "rel": "supports", "weight": 0.8}
+    ]
+    claims[2]["relations"] = [
+        {"src": "claim-c", "dst": "claim-a", "rel": "contradicts", "weight": 0.5},
+        {"src": "claim-c", "dst": "source-2", "rel": "cites", "weight": 1.0},
+    ]
+    yield claims
+
+
+@pytest.fixture
 def sample_eval_data():
     """Load the sample evaluation CSV for search weight tests."""
 
@@ -809,14 +821,14 @@ def mock_llm_adapter(monkeypatch):
 
 
 @pytest.fixture
-def flexible_llm_adapter(monkeypatch):
-    """Provide an LLM adapter with customizable responses per prompt."""
+def flexible_llm_adapter(monkeypatch, request):
+    """Register a configurable LLM adapter returning custom prompt responses."""
 
     from autoresearch.llm.adapters import DummyAdapter
 
     class FlexibleAdapter(DummyAdapter):
-        def __init__(self) -> None:
-            self.responses: dict[str, str] = {}
+        def __init__(self, responses: dict[str, str] | None = None) -> None:
+            self.responses: dict[str, str] = responses or {}
 
         def set_responses(self, mapping: dict[str, str]) -> None:
             self.responses.update(mapping)
@@ -826,9 +838,13 @@ def flexible_llm_adapter(monkeypatch):
                 return self.responses[prompt]
             return super().generate(prompt, model=model, **kwargs)
 
+    responses = getattr(request, "param", None)
     LLMFactory.register("flexible", FlexibleAdapter)
-    adapter = FlexibleAdapter()
+    adapter = FlexibleAdapter(responses)
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
+    monkeypatch.setattr(
+        "autoresearch.llm.get_pooled_adapter", lambda name: adapter
+    )
     yield adapter
     LLMFactory._registry.pop("flexible", None)
 
