@@ -27,8 +27,8 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path):
     AgentFactory.register("A", DummyAgent)
     AgentFactory.register("B", DummyAgent)
 
-    cfg = ConfigModel.model_construct(
-        loops=1, agents=["team"], coalitions={"team": ["A", "B"]}
+    cfg = ConfigModel.from_dict(
+        {"loops": 1, "agents": ["team"], "coalitions": {"team": ["A", "B"]}}
     )
 
     monkeypatch.setattr(
