@@ -70,6 +70,12 @@ def test_search_error_with_invalid_backend():
     pass
 
 
+@scenario("../features/error_handling.feature", "Abort when max error threshold is exceeded")
+def test_max_error_threshold():
+    """Test abort when error threshold is reached."""
+    pass
+
+
 # Common step definitions
 @given(parsers.parse('a configuration with an invalid reasoning mode "{mode}"'))
 def invalid_reasoning_mode_config(mode):
@@ -131,6 +137,11 @@ def failing_agent(monkeypatch):
     # Set max_errors=1 to ensure the error is re-raised
     pytest.config = ConfigModel(agents=["FailingAgent"], max_errors=1)
     pytest.expected_error = None
+
+
+@given(parsers.parse('max errors is set to {limit:d} in configuration'))
+def set_max_errors(limit):
+    pytest.config.max_errors = limit
 
 
 @when("I run a query that uses this agent")
@@ -404,3 +415,9 @@ def error_message_suggests_backend_configuration():
     assert "Configure a valid search backend" in error_message, (
         "Error message does not suggest how to configure a valid backend"
     )
+
+
+@then("the error message should indicate the error threshold was reached")
+def error_threshold_reached():
+    error_message = str(pytest.expected_error)
+    assert "threshold reached" in error_message or "aborted" in error_message
