@@ -28,3 +28,11 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 1
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Contrarian, FactChecker, Synthesizer"
+
+  Scenario: Dialectical reasoning with a realistic query
+    Given loops is set to 1 in configuration
+    And reasoning mode is "dialectical"
+    When I run the orchestrator on query "Why is the sky blue?"
+    Then the loops used should be 1
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    Then the agents executed should be "Synthesizer, Contrarian, FactChecker"

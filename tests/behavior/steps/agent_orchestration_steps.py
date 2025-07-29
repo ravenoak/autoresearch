@@ -258,3 +258,11 @@ def test_reasoning_chain():
 )
 def test_reasoning_dialectical():
     pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
+    "Dialectical reasoning with a realistic query",
+)
+def test_reasoning_realistic():
+    pass
