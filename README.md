@@ -20,9 +20,15 @@ schedule and outstanding tasks.
 
 ## Installation
 
-Autoresearch requires **Python 3.12 or newer**. The project recently transitioned
-from **Poetry** to [**uv**](https://github.com/astral-sh/uv) for dependency
-management. You can install the project using `uv` or plain **pip**.
+Autoresearch requires **Python 3.12 or newer**. The `scripts/setup.sh` helper
+invokes `python3.12` directly when checking the interpreter version, so make
+sure it is available on your `PATH`. On Debian/Ubuntu systems install it with
+`sudo apt-get install python3.12 python3.12-venv`. If you manage multiple
+interpreters via pyenv or another tool, specify the path when creating the
+environment, e.g. `uv venv -p python3.12`.
+The project recently transitioned from **Poetry** to
+[**uv**](https://github.com/astral-sh/uv) for dependency management. You can
+install the project using `uv` or plain **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs

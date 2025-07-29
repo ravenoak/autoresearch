@@ -2,8 +2,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PYTHON_VERSION=$(python -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-if python - <<'EOF'
+PYTHON_VERSION=$(python3.12 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+if python3.12 - <<'EOF'
 import sys
 sys.exit(0 if sys.version_info >= (3, 12) else 1)
 EOF
