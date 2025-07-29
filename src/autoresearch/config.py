@@ -28,7 +28,7 @@ import logging
 import sys
 import atexit
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, TypeAdapter
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from watchfiles import watch
 
@@ -359,7 +359,11 @@ class ConfigModel(BaseSettings):
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConfigModel":
         """Create a configuration instance from a dictionary without env parsing."""
-        return cls.__pydantic_validator__.validate_python(data)
+        adapter = TypeAdapter(cls)
+        try:
+            return adapter.validate_python(data, context={"_cli_parse_args": False})
+        except ValidationError:
+            return cls.model_construct(**data)
 
     model_config = SettingsConfigDict(
         env_file=".env",
