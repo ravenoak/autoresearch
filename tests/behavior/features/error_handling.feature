@@ -36,3 +36,9 @@ Feature: Error Handling
     Then I should receive an error message containing the invalid backend name
     And the error message should list the available search backends
     And the error message should suggest how to configure a valid backend
+
+  Scenario: Abort when max error threshold is exceeded
+    Given an agent that will fail during execution
+    And max errors is set to 1 in configuration
+    When I run a query that uses this agent
+    Then I should receive an error message containing "threshold reached"

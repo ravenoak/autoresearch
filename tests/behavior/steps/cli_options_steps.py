@@ -26,6 +26,16 @@ def test_parallel_groups(bdd_context):
     pass
 
 
+@scenario("../features/cli_options.feature", "Override reasoning mode via CLI")
+def test_cli_reasoning_mode(bdd_context):
+    pass
+
+
+@scenario("../features/cli_options.feature", "Override primus start via CLI")
+def test_cli_primus_start(bdd_context):
+    pass
+
+
 @when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --loops (?P<loops>\d+) --token-budget (?P<budget>\d+) --no-ontology-reasoning'))
 def run_with_budget(query, loops, budget, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
@@ -87,6 +97,48 @@ def run_parallel_cli(g1, g2, query, monkeypatch, cli_runner, bdd_context):
         ["search", "--parallel", "--agent-groups", g1, "--agent-groups", g2, query],
     )
     bdd_context["result"] = result
+
+
+@when(parsers.parse('I run `autoresearch search "{query}" --reasoning-mode {mode}`'))
+def run_with_reasoning(query, mode, monkeypatch, cli_runner, bdd_context):
+    ConfigLoader.reset_instance()
+
+    def mock_run_query(q, cfg, callbacks=None):
+        bdd_context["cfg"] = cfg
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel())
+    result = cli_runner.invoke(cli_app, ["search", query, "--reasoning-mode", mode])
+    bdd_context["result"] = result
+
+
+@then(parsers.parse('the search config should use reasoning mode "{mode}"'))
+def check_reasoning_mode(bdd_context, mode):
+    cfg = bdd_context.get("cfg")
+    assert str(cfg.reasoning_mode) == mode
+    assert bdd_context["result"].exit_code == 0
+
+
+@when(parsers.parse('I run `autoresearch search "{query}" --primus-start {index:d}`'))
+def run_with_primus(query, index, monkeypatch, cli_runner, bdd_context):
+    ConfigLoader.reset_instance()
+
+    def mock_run_query(q, cfg, callbacks=None):
+        bdd_context["cfg"] = cfg
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel())
+    result = cli_runner.invoke(cli_app, ["search", query, "--primus-start", str(index)])
+    bdd_context["result"] = result
+
+
+@then(parsers.parse('the search config should have primus start {index:d}'))
+def check_primus_start(bdd_context, index):
+    cfg = bdd_context.get("cfg")
+    assert cfg.primus_start == index
+    assert bdd_context["result"].exit_code == 0
 
 
 @then(parsers.parse('the parallel query should use groups "{g1}" and "{g2}"'))
