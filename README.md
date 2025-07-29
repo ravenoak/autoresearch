@@ -494,9 +494,10 @@ SlowAPI’s middleware, which enforces rate limits during integration tests.
 
 ## Running tests
 
-All test commands require the project to be installed with the `full` and `dev`
-extras so linters, `mypy`, `pytest`, and stub packages are available. The
-`scripts/setup.sh` helper installs these automatically.
+All test commands require the project to be installed with the `ci` extra so
+linters, `mypy`, `pytest`, and stub packages are available. The
+`scripts/setup.sh` helper installs the heavier `full` and `dev` extras
+automatically for local development.
 
 The full suite, including behavior-driven tests, relies on additional optional
 extras such as `pdfminer` and `gitpython`. Tests can run without them using
@@ -504,7 +505,7 @@ bundled stubs, but real behaviour – including SlowAPI rate limiting – is onl
 exercised when the extras are installed. Install them with:
 
 ```bash
-uv pip install -e '.[full,dev]'
+uv pip install -e '.[ci]'
 ```
 
 Execute linting and type checks once the development environment is ready:
@@ -531,7 +532,8 @@ uv run pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
-extension. These extras are installed when running `uv pip install -e '.[full,dev]'`.
+extension. These extras are included in the `ci` group so `uv pip install -e '.[ci]'`
+is sufficient for the default suites.
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
@@ -572,7 +574,7 @@ and those that rely on optional extras. Install the extras and run pytest
 without filtering the markers:
 
 ```bash
-uv pip install -e '.[full,dev]'
+uv pip install -e '.[ci]'
 uv run pytest -m "slow or requires_ui or requires_vss"
 ```
 

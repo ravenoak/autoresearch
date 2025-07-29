@@ -146,7 +146,7 @@ extras.
 2. Regenerate the lock file and reinstall dependencies:
    ```bash
    uv lock
-   uv pip install -e '.[full,dev]'
+   uv pip install -e '.[ci]'
    ```
 3. Run the unit and behavior test suites.
 4. Publish a development build to TestPyPI:

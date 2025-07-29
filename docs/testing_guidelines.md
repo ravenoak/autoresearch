@@ -12,9 +12,10 @@ Tests are organized into three categories:
 
 ## Running tests
 
-Before running any tests ensure the project is installed with the `full` and
-`dev` extras. The `scripts/setup.sh` helper installs them automatically along
-with tools such as `flake8`, `mypy` and `pytest`.
+Before running any tests ensure the project is installed with the `ci` extra.
+The `scripts/setup.sh` helper installs the heavier `full` and `dev` groups for
+development, but CI only requires the lightweight `ci` dependencies along with
+any optional extras you wish to exercise.
 
 Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
 
@@ -294,7 +295,7 @@ accessibility, and log messages.
 
 ## Optional extras for tests
 
-The default development install (`uv pip install -e '.[full,dev]'`) does not
+The minimal CI install (`uv pip install -e '.[ci]'`) does not
 include all optional extras. The full test suite uses several features
 that rely on these extras:
 
