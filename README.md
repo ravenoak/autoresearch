@@ -27,9 +27,9 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available for testing.
-Codex environments run `scripts/codex_setup.sh`, which wraps this helper to
-install everything automatically. Run `uv lock` after editing `pyproject.toml`
-and use `uv pip install -e '.[full,dev]'` to install the updated dependencies.
+Run `scripts/setup.sh` to install everything automatically. After editing
+`pyproject.toml`, run `uv lock` and `uv pip install -e '.[full,dev]'` to
+install the updated dependencies.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:
@@ -65,8 +65,7 @@ Install only the minimal optional dependencies using pip:
 pip install autoresearch[minimal]
 ```
 When working from a clone, run `scripts/setup.sh` which installs all
-development dependencies and optional extras via **uv**. Codex users
-should run `scripts/codex_setup.sh` to perform the same steps.
+development dependencies and optional extras via **uv**.
 Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
 Local Git search requires the `git` extra.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
@@ -478,8 +477,7 @@ Alternatively you can run the helper script:
 ```bash
 ./scripts/setup.sh
 ```
-Codex environments call `scripts/codex_setup.sh`, which installs the same
-dependencies non-interactively.
+This installs the same dependencies non-interactively.
 
 The helper installs all dependencies with `uv pip install -e '.[full,dev]'` and
 links the package in editable mode. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
@@ -492,8 +490,7 @@ SlowAPI’s middleware, which enforces rate limits during integration tests.
 
 All test commands require the project to be installed with the `full` and `dev`
 extras so linters, `mypy`, `pytest`, and stub packages are available. The
-`scripts/setup.sh` helper (or `scripts/codex_setup.sh` in Codex environments)
-installs these automatically.
+`scripts/setup.sh` helper installs these automatically.
 
 The full suite, including behavior-driven tests, relies on additional optional
 extras such as `pdfminer` and `gitpython`. Tests can run without them using
