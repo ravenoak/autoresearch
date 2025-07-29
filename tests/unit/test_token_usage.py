@@ -10,13 +10,12 @@ from typing import Any
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.metrics import OrchestrationMetrics
-from autoresearch.llm import DummyAdapter
 from autoresearch.config import ConfigModel
 from autoresearch.llm.token_counting import compress_prompt
 import autoresearch.llm as llm
 
 
-def test_capture_token_usage_counts_correctly(monkeypatch):
+def test_capture_token_usage_counts_correctly(monkeypatch, flexible_llm_adapter):
     """Test that the token counting context manager correctly counts tokens.
 
     This test verifies that:
@@ -29,11 +28,8 @@ def test_capture_token_usage_counts_correctly(monkeypatch):
 
     # Create a mock config with llm_backend
     mock_config = MagicMock(spec=ConfigModel)
-    mock_config.llm_backend = "dummy"
-
-    # Set up the mock adapter
-    dummy_adapter = DummyAdapter()
-    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: dummy_adapter)
+    mock_config.llm_backend = "flexible"
+    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: flexible_llm_adapter)
 
     # Execute
     with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
@@ -49,16 +45,15 @@ def test_capture_token_usage_counts_correctly(monkeypatch):
     assert counts["out"] > 0  # The output should have at least 1 token
 
 
-def test_token_budget_truncates_prompt(monkeypatch):
+def test_token_budget_truncates_prompt(monkeypatch, flexible_llm_adapter):
     """Ensure prompts are truncated to the configured token budget."""
 
     metrics = OrchestrationMetrics()
     mock_config = MagicMock(spec=ConfigModel)
-    mock_config.llm_backend = "dummy"
+    mock_config.llm_backend = "flexible"
     mock_config.token_budget = 3
 
-    dummy_adapter = DummyAdapter()
-    monkeypatch.setattr(llm, "get_llm_adapter", lambda name: dummy_adapter)
+    monkeypatch.setattr(llm, "get_llm_adapter", lambda name: flexible_llm_adapter)
 
     with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
         token_counter,
@@ -70,23 +65,22 @@ def test_token_budget_truncates_prompt(monkeypatch):
     assert counts["in"] <= mock_config.token_budget
 
 
-def test_prompt_passed_to_adapter_is_compressed(monkeypatch):
+def test_prompt_passed_to_adapter_is_compressed(monkeypatch, flexible_llm_adapter):
     """Prompts exceeding the budget are compressed before LLM generation."""
 
     metrics = OrchestrationMetrics()
     mock_config = MagicMock(spec=ConfigModel)
-    mock_config.llm_backend = "dummy"
+    mock_config.llm_backend = "flexible"
     mock_config.token_budget = 3
 
-    dummy_adapter = DummyAdapter()
     captured: dict[str, str] = {}
 
     def spy_generate(prompt: str, model: str | None = None, **kwargs: Any) -> str:
         captured["prompt"] = prompt
         return "ok"
 
-    dummy_adapter.generate = spy_generate
-    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: dummy_adapter)
+    flexible_llm_adapter.generate = spy_generate
+    monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: flexible_llm_adapter)
 
     with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
         _,

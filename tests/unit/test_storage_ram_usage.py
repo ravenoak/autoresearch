@@ -24,6 +24,7 @@ def test_current_ram_mb_empty_graph():
 
     with (
         patch("autoresearch.storage._graph", mock_graph),
+        patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource}),
         patch("resource.getrusage", return_value=mock_rusage),
         patch("resource.RUSAGE_SELF", 0),
@@ -35,46 +36,32 @@ def test_current_ram_mb_empty_graph():
         assert result == 0
 
 
-def test_current_ram_mb_with_nodes():
-    """Test that _current_ram_mb calculates RAM usage correctly for a graph with nodes."""
-    # Setup
+def test_current_ram_mb_with_nodes(realistic_claim_batch):
+    """_current_ram_mb accounts for multiple nodes with varied content."""
     mock_graph = nx.DiGraph()
 
-    # Add nodes with different sizes
-    mock_graph.add_node("node1", content="small content")
-    mock_graph.add_node("node2", content="larger content with more text")
-    mock_graph.add_node(
-        "node3", content="even larger content with even more text and data"
-    )
+    for claim in realistic_claim_batch:
+        data = claim.copy()
+        claim_id = data.pop("id")
+        mock_graph.add_node(claim_id, **data)
 
     with patch("autoresearch.storage._graph", mock_graph):
-        # Execute
         result = StorageManager._current_ram_mb()
-
-        # Verify
-        # The exact value will depend on the implementation, but it should be > 0
         assert result > 0
 
 
-def test_current_ram_mb_with_attributes():
-    """Test that _current_ram_mb includes node attributes in RAM calculation."""
-    # Setup
+def test_current_ram_mb_with_attributes(realistic_claim_batch):
+    """Attributes, embeddings and relations contribute to RAM size."""
     mock_graph = nx.DiGraph()
 
-    # Add a node with various attributes
-    mock_graph.add_node(
-        "node1",
-        content="content",
-        embedding=[0.1, 0.2, 0.3, 0.4, 0.5],
-        attributes={"key1": "value1", "key2": "value2"},
-        relations=[{"src": "node1", "dst": "source1", "rel": "cites"}],
-    )
+    claim = realistic_claim_batch[0]
+    data = claim.copy()
+    claim_id = data.pop("id")
+    data.setdefault("attributes", {"key": "val"})
+    mock_graph.add_node(claim_id, **data)
 
     with patch("autoresearch.storage._graph", mock_graph):
-        # Execute
         result = StorageManager._current_ram_mb()
-
-        # Verify
         assert result > 0
 
 
@@ -89,6 +76,7 @@ def test_current_ram_mb_none_graph():
 
     with (
         patch("autoresearch.storage._graph", None),
+        patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource}),
         patch("resource.getrusage", return_value=mock_rusage),
         patch("resource.RUSAGE_SELF", 0),
@@ -118,6 +106,7 @@ def test_current_ram_mb_large_graph():
 
     with (
         patch("autoresearch.storage._graph", mock_graph),
+        patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource_large}),
         patch("resource.getrusage", return_value=mock_rusage_large),
         patch("resource.RUSAGE_SELF", 0),
@@ -142,6 +131,7 @@ def test_current_ram_mb_large_graph():
 
         with (
             patch("autoresearch.storage._graph", small_graph),
+            patch.dict("sys.modules", {"psutil": None}),
             patch.dict("sys.modules", {"resource": mock_resource_small}),
             patch("resource.getrusage", return_value=mock_rusage_small),
             patch("resource.RUSAGE_SELF", 0),
