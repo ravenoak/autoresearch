@@ -1,0 +1,51 @@
+import time
+
+import tomli_w
+
+from autoresearch.config import ConfigLoader
+from autoresearch.search import Search
+from autoresearch.storage import StorageManager
+
+
+def test_search_storage_hot_reload(tmp_path, monkeypatch):
+    """Search and storage should respect configuration reloads."""
+
+    # Setup
+    monkeypatch.chdir(tmp_path)
+    cfg_file = tmp_path / "autoresearch.toml"
+    cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
+    ConfigLoader.reset_instance()
+    loader = ConfigLoader()
+    calls: list[str] = []
+    stored: list[str] = []
+
+    def backend1(query: str, max_results: int = 5):
+        calls.append("b1")
+        return [{"title": "t1", "url": "u1"}]
+
+    def backend2(query: str, max_results: int = 5):
+        calls.append("b2")
+        return [{"title": "t2", "url": "u2"}]
+
+    monkeypatch.setitem(Search.backends, "b1", backend1)
+    monkeypatch.setitem(Search.backends, "b2", backend2)
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+
+    events: list[list[str]] = []
+
+    def on_change(cfg):
+        events.append(cfg.search.backends)
+
+    # Execute
+    with loader.watching(on_change):
+        loader.load_config()
+        Search.external_lookup("q", max_results=1)
+        StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "v"})
+        cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b2"]}}))
+        time.sleep(0.1)
+        Search.external_lookup("q", max_results=1)
+
+    # Verify
+    assert stored == ["c1"]
+    assert calls == ["b1", "b2"]
+    assert events and events[-1] == ["b2"]
