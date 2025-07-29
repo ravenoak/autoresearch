@@ -40,3 +40,11 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path):
     Orchestrator.run_query("q", cfg)
 
     assert set(record[:2]) == {"A", "B"}
+
+
+def test_configmodel_from_dict_allows_coalitions():
+    cfg = ConfigModel.from_dict(
+        {"loops": 1, "agents": ["team"], "coalitions": {"team": ["A", "B"]}}
+    )
+    assert cfg.agents == ["team"]
+    assert cfg.coalitions == {"team": ["A", "B"]}
