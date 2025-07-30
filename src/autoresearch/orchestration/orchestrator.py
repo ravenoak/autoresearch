@@ -29,8 +29,6 @@ from typing import (
     Dict,
     Any,
     Callable,
-    Iterator,
-    TypedDict,
     cast,
     ContextManager,
 )
@@ -56,17 +54,17 @@ from ..tracing import setup_tracing, get_tracer
 from ..errors import OrchestrationError, AgentError, NotFoundError, TimeoutError
 import rdflib
 
+from . import circuit_breaker
+from .circuit_breaker import (
+    CircuitBreakerState,
+    update_circuit_breaker,
+    handle_agent_success,
+    get_circuit_breaker_state,
+    _circuit_breakers,
+)
+
 
 log = get_logger(__name__)
-
-
-class CircuitBreakerState(TypedDict):
-    """State information for an agent's circuit breaker."""
-
-    failure_count: float
-    last_failure_time: float
-    state: str
-    recovery_attempts: int
 
 
 class Orchestrator:
@@ -606,108 +604,23 @@ class Orchestrator:
             "suggestion": suggestion
         }
 
-    # Circuit breaker configuration and state
-    _circuit_breakers: dict[str, CircuitBreakerState] = {}
-    _circuit_breaker_threshold: int = 3
-    _circuit_breaker_cooldown: int = 30
+    # Circuit breaker configuration and state (delegated to circuit_breaker module)
+    _circuit_breakers: dict[str, CircuitBreakerState] = _circuit_breakers
 
     @staticmethod
     def _update_circuit_breaker(agent_name: str, error_category: str) -> None:
-        """Update the circuit breaker state for an agent.
-
-        Implements the circuit breaker pattern to prevent repeated failures.
-
-        Args:
-            agent_name: Name of the agent
-            error_category: Category of the error
-        """
-        log = get_logger(__name__)
-
-        # Initialize circuit breaker for this agent if it doesn't exist
-        if agent_name not in Orchestrator._circuit_breakers:
-            Orchestrator._circuit_breakers[agent_name] = {
-                "failure_count": 0.0,
-                "last_failure_time": 0.0,
-                "state": "closed",  # closed = normal operation, open = failing, half-open = testing recovery
-                "recovery_attempts": 0,
-            }
-
-        breaker = Orchestrator._circuit_breakers[agent_name]
-        current_time = time.time()
-
-        # Update the circuit breaker based on error category
-        if error_category in ["critical", "recoverable"]:
-            breaker["failure_count"] += 1
-            breaker["last_failure_time"] = current_time
-
-            # If we've had too many failures, open the circuit
-            if (
-                breaker["failure_count"] >= Orchestrator._circuit_breaker_threshold
-                and breaker["state"] == "closed"
-            ):
-                breaker["state"] = "open"
-                log.warning(
-                    f"Circuit breaker for agent {agent_name} is now OPEN due to repeated failures",
-                    extra={"agent": agent_name, "circuit_state": "open", "failure_count": breaker["failure_count"]}
-                )
-
-        elif error_category == "transient":
-            # For transient errors, we're more lenient
-            breaker["failure_count"] += 0.5  # Count transient errors as half failures
-            breaker["last_failure_time"] = current_time
-
-        # Check if we should attempt recovery for an open circuit
-        if breaker["state"] == "open":
-            # After a cooling period, try half-open state
-            cooling_period = Orchestrator._circuit_breaker_cooldown
-            if current_time - breaker["last_failure_time"] > cooling_period:
-                breaker["state"] = "half-open"
-                breaker["recovery_attempts"] += 1
-                log.info(
-                    f"Circuit breaker for agent {agent_name} is now HALF-OPEN, attempting recovery",
-                    extra={"agent": agent_name, "circuit_state": "half-open", "recovery_attempts": breaker["recovery_attempts"]}
-                )
-
-        # If we're in half-open state and this was a success (not called for an error)
-        # This is handled separately in ``_handle_agent_success``
+        """Delegate circuit breaker updates to :mod:`circuit_breaker`."""
+        update_circuit_breaker(agent_name, error_category)
 
     @staticmethod
     def _handle_agent_success(agent_name: str) -> None:
-        """Reset or downgrade the circuit breaker state on success."""
-        breaker = Orchestrator._circuit_breakers.get(agent_name)
-        if not breaker:
-            return
-
-        if breaker["state"] == "half-open":
-            breaker["state"] = "closed"
-            breaker["failure_count"] = 0.0
-            breaker["last_failure_time"] = 0.0
-            get_logger(__name__).info(
-                f"Circuit breaker for agent {agent_name} CLOSED after successful recovery",
-                extra={"agent": agent_name, "circuit_state": "closed"},
-            )
-        elif breaker["failure_count"] > 0:
-            breaker["failure_count"] = max(0.0, breaker["failure_count"] - 1)
+        """Delegate circuit breaker success handling to :mod:`circuit_breaker`."""
+        handle_agent_success(agent_name)
 
     @staticmethod
     def get_circuit_breaker_state(agent_name: str) -> CircuitBreakerState:
-        """Get the current circuit breaker state for an agent.
-
-        Args:
-            agent_name: Name of the agent
-
-        Returns:
-            Dictionary with circuit breaker state information
-        """
-        if agent_name not in Orchestrator._circuit_breakers:
-            return {
-                "state": "closed",
-                "failure_count": 0.0,
-                "last_failure_time": 0.0,
-                "recovery_attempts": 0,
-            }
-
-        return Orchestrator._circuit_breakers[agent_name].copy()
+        """Delegate retrieval of circuit breaker state."""
+        return get_circuit_breaker_state(agent_name)
 
     @staticmethod
     def _execute_agent(
@@ -1019,8 +932,8 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
-        Orchestrator._circuit_breaker_threshold = config_params["circuit_breaker_threshold"]
-        Orchestrator._circuit_breaker_cooldown = config_params["circuit_breaker_cooldown"]
+        circuit_breaker._circuit_breaker_threshold = config_params["circuit_breaker_threshold"]
+        circuit_breaker._circuit_breaker_cooldown = config_params["circuit_breaker_cooldown"]
 
         # Adapt token budget based on query complexity and loops
         Orchestrator._apply_adaptive_token_budget(config, query)
