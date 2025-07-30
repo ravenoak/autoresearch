@@ -5,6 +5,16 @@ This page documents the Configuration API, which provides configuration manageme
 ## Config Loader
 
 The `ConfigLoader` class is responsible for loading and watching configuration changes.
+Use the :py:meth:`~autoresearch.config.ConfigLoader.temporary_instance` context
+manager when you need a separate configuration loader for a short period.
+
+```python
+from autoresearch.config import ConfigLoader
+
+with ConfigLoader.temporary_instance() as loader:
+    loader.load("custom.yaml")
+    # operate with the temporary configuration here
+```
 
 ::: autoresearch.config.ConfigLoader
 
