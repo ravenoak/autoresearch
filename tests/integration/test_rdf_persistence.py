@@ -40,7 +40,7 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
+    ConfigLoader.new_for_tests()
 
     claim = {
         "id": "n1",
@@ -68,7 +68,7 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
+    ConfigLoader.new_for_tests()
 
     StorageManager.teardown(remove_db=True)
     StorageManager.setup()
@@ -87,7 +87,7 @@ def test_memory_backend_initializes(tmp_path, monkeypatch):
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
+    ConfigLoader.new_for_tests()
 
     StorageManager.teardown(remove_db=True)
     StorageManager.setup()

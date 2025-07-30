@@ -22,7 +22,7 @@ def _configure(tmp_path, monkeypatch):
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
+    ConfigLoader.new_for_tests()
 
 
 def test_reasoning_infers_subclass(tmp_path, monkeypatch):
