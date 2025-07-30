@@ -110,8 +110,8 @@ ensure_installed() {
     fi
 }
 
-for pkg in flake8 mypy pytest pytest-bdd types-requests types-tabulate \
-    types-networkx types-protobuf; do
+for pkg in flake8 mypy pytest pytest-bdd pytest-cov tomli_w hypothesis \
+    types-requests types-tabulate types-networkx types-protobuf; do
     ensure_installed "$pkg"
 done
 

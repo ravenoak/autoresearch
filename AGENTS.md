@@ -14,6 +14,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
+  - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, and `hypothesis` are present using `uv pip list`.
 
 ## Verification steps
 - Check code style with `uv run flake8 src tests`.
