@@ -25,6 +25,15 @@ The `SearchContext` class manages search context using a singleton pattern. The
 singleton instance can be cleared with `reset_instance()` or temporarily
 replaced using `temporary_instance()` when an isolated context is required.
 
+```python
+from autoresearch.search import SearchContext
+
+SearchContext.reset_instance()  # ensure a clean state
+with SearchContext.temporary_instance() as ctx:
+    ctx.add_to_history("example", [])
+    # queries inside this block do not affect the global context
+```
+
 ::: autoresearch.search.SearchContext
 
 ## Context-Aware Search
