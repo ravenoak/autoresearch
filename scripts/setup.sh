@@ -20,7 +20,10 @@ else
     exit 1
 fi
 
-# Create a Python 3.12+ virtual environment and install all extras in editable mode
+# Determine which extras to install (default is full + dev)
+EXTRAS="${1:-full,dev}"
+
+# Create a Python 3.12+ virtual environment and install the requested extras
 uv venv
 VENV_PYTHON="./.venv/bin/python"
 "$VENV_PYTHON" - <<'EOF'
@@ -28,10 +31,16 @@ import sys
 if sys.version_info < (3, 12):
     raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
 EOF
-# Install locked dependencies along with all optional extras
-uv sync --all-extras
+# Install locked dependencies for the chosen extras
+SYNC_ARGS=""
+IFS=',' read -ra EX_ARR <<< "$EXTRAS"
+for e in "${EX_ARR[@]}"; do
+    SYNC_ARGS+="--extra $e "
+done
+echo "Installing extras: $EXTRAS"
+uv sync $SYNC_ARGS
 # Link the project in editable mode so tools are available
-uv pip install -e '.[full,dev]'
+uv pip install -e ".[$EXTRAS]"
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions

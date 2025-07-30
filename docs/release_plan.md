@@ -27,7 +27,7 @@ documentation work continue, so the milestone is now tentatively scheduled for
 The following tasks remain before publishing **0.1.0**:
 
 - [x] Fix failing unit and behavior tests so CI passes.
-- [x] Install optional dependencies with `uv pip install -e '.[full,dev]'` so the full unit, integration and behavior suites run successfully.
+- [x] Install optional dependencies with `uv pip install -e '.[full,llm,dev]'` so the full unit, integration and behavior suites run successfully.
 - [x] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [x] Achieve at least **90%** coverage across all suites.
 - Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.

@@ -16,7 +16,10 @@ Use `uv` to manage the environment when working from a clone:
 ```bash
 # Create the virtual environment
 uv venv
-uv pip install -e '.[full,dev]'
+# Full feature set including development tools
+uv pip install -e '.[full,llm,dev]'
+# Lightweight install for CI or quick tests
+# uv pip install -e '.[dev-minimal]'
 ```
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock` before syncing.
 Selecting Python 3.11 results in an error similar to:
@@ -43,10 +46,12 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
-If you cloned the repository, run the setup helper instead:
+If you cloned the repository, run the setup helper. Pass `dev-minimal` for a
+lightweight install or omit the argument for the full feature set:
 
 ```bash
-./scripts/setup.sh
+./scripts/setup.sh dev-minimal
+# ./scripts/setup.sh
 ```
 
 The helper ensures the lock file is refreshed and installs every optional
@@ -54,7 +59,7 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `uv pip install -e '.[full,dev]'`. Optional
+running the helper, reinstall using `uv pip install -e '.[full,llm,dev]'`. Optional
 features are disabled when their dependencies are missing. Specify extras
 explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
@@ -62,14 +67,15 @@ explicitly with pip to enable additional features, e.g. ``pip install "autoresea
 
 Additional functionality is grouped into optional extras:
 
-- `nlp` – language processing via spaCy, BERTopic and Transformers
+- `nlp` – language processing via spaCy and BERTopic
+- `llm` – heavy dependencies like `sentence-transformers` and `transformers`
 - `parsers` – PDF and DOCX document ingestion
 - `ui` – the reference Streamlit interface
 - `vss` – DuckDB VSS extension for vector search
 - `distributed` – distributed processing with Ray
 - `analysis` – Polars-based data analysis utilities
 - `git` – local Git repository search support
-- `full` – installs all optional extras
+- `full` – installs all optional extras except `llm`
 
 Install multiple extras separated by commas:
 
@@ -102,7 +108,7 @@ version notes.
 If you installed Autoresearch before ``0.1.0`` simply upgrade the base
 package and reinstall any extras you require:
 ```bash
-pip install -U "autoresearch[full]"
+pip install -U "autoresearch[full,llm]"
 ```
 
 ## Troubleshooting optional package builds
@@ -115,7 +121,7 @@ long time or fail on low-memory machines.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
 - Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `uv pip install -e '.[full,dev]'`.
+  to running `uv pip install -e '.[full,llm,dev]'`.
 - You can omit heavy extras by specifying only the groups you need,
   e.g. `uv pip install -e '.[minimal]'` when rapid setup is more important
   than optional features.

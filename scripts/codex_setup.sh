@@ -29,6 +29,7 @@ if [ ! -x /usr/local/bin/task ]; then
 fi
 
 # Run the main setup script to install dev dependencies and extras with uv
-./scripts/setup.sh
+# Use the lightweight dev-minimal extras for faster CI setup
+./scripts/setup.sh dev-minimal
 # All Python setup is handled by setup.sh using uv pip
 
