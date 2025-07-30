@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import Any, Dict, List, TYPE_CHECKING, Iterator
 from contextlib import contextmanager
 
 from ..config import get_config
@@ -59,16 +59,20 @@ class SearchContext:
             cls._instance = None
 
     @classmethod
+    def new_for_tests(cls) -> "SearchContext":
+        """Return a fresh instance for isolated tests."""
+        cls.reset_instance()
+        return cls.get_instance()
+
+    @classmethod
     @contextmanager
-    def temporary_instance(cls):
-        """Yield a new temporary instance while preserving the original."""
-        old = cls._instance
-        cls._instance = None
+    def temporary_instance(cls) -> Iterator["SearchContext"]:
+        """Provide a temporary instance for tests."""
+        instance = cls.new_for_tests()
         try:
-            instance = cls.get_instance()
             yield instance
         finally:
-            cls._instance = old
+            cls.reset_instance()
 
     @classmethod
     def get_instance(cls) -> "SearchContext":
