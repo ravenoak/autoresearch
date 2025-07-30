@@ -87,13 +87,9 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
 def test_reset_instance_error():
     """Test that ConfigError is raised when resetting the instance fails."""
     ConfigLoader.reset_instance()
-    # Create a mock instance with a stop_watching method that raises an exception
-    with patch.object(ConfigLoader, "_instance", MagicMock()):
-        with patch.object(
-            ConfigLoader._instance,
-            "stop_watching",
-            side_effect=ValueError("Stop error"),
-        ):
+    # Create a temporary instance and simulate failure stopping its watcher
+    with ConfigLoader.temporary_instance() as loader:
+        with patch.object(loader, "stop_watching", side_effect=ValueError("Stop error")):
             # The current implementation suppresses the exception
             # This test will fail until we implement the change
             with pytest.raises(ConfigError, match="Error stopping config watcher"):

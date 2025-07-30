@@ -11,8 +11,7 @@ from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
 def cleanup():
     yield
     teardown(remove_db=True)
-    if hasattr(ConfigLoader, "_instance"):
-        ConfigLoader._instance = None
+    ConfigLoader.reset_instance()
 
 
 def _configure(tmp_path, monkeypatch):

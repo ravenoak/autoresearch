@@ -489,6 +489,18 @@ class ConfigLoader:
                 cls._instance._config = None
                 cls._instance = None
 
+    @classmethod
+    @contextmanager
+    def temporary_instance(cls) -> Iterator["ConfigLoader"]:
+        """Yield a new temporary instance while preserving the original."""
+        old = cls._instance
+        cls._instance = None
+        try:
+            instance = cls()
+            yield instance
+        finally:
+            cls._instance = old
+
     def __new__(cls) -> "ConfigLoader":
         """Create or return the singleton instance of ConfigLoader.
 
