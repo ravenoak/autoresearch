@@ -3,25 +3,26 @@
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
-This schedule was last updated on **July 28, 2025** and reflects the fact that
+This schedule was last updated on **October 1, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0** version defined in
 `autoresearch.__version__`.
+We are currently in **Phase 2 (testing/documentation)** of the release process.
 
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0** | 2025-08-15 | Finalize packaging, docs and CI checks |
-| **0.1.1** | 2025-08-31 | Bug fixes and documentation updates |
-| **0.2.0** | 2025-10-15 | API stabilization, configuration hot-reload, improved search backends |
-| **0.3.0** | 2025-12-15 | Distributed execution support, monitoring utilities |
-| **1.0.0** | 2026-03-01 | Full feature set, performance tuning and stable interfaces |
+| **0.1.0** | 2025-11-15 | Finalize packaging, docs and CI checks |
+| **0.1.1** | 2025-12-01 | Bug fixes and documentation updates |
+| **0.2.0** | 2026-02-15 | API stabilization, configuration hot-reload, improved search backends |
+| **0.3.0** | 2026-05-15 | Distributed execution support, monitoring utilities |
+| **1.0.0** | 2026-09-01 | Full feature set, performance tuning and stable interfaces |
 
-The **0.1.0** release was originally aimed for **July 20, 2025**. After resolving
-test failures, recent runs show the full suite passing with coverage just over
-**90%**. Packaging checks and documentation polish remain, so the milestone is
-tentatively scheduled for **August 15, 2025**; if those final tasks slip, the
-date will be updated to **TBD**.
+The **0.1.0** release was originally aimed for **July 20, 2025**. Many tests
+still fail and overall coverage is below the **90%** target. Packaging checks and
+documentation work continue, so the milestone is now tentatively scheduled for
+**November 15, 2025**; if these tasks slip further, the date will be updated to
+**TBD**.
 
 The following tasks remain before publishing **0.1.0**:
 

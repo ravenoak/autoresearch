@@ -1,7 +1,8 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **July 28, 2025**.
+Last updated **October 1, 2025**.
+Phase 2 (testing/documentation) is currently ongoing.
 
 ## Milestones
 
@@ -22,11 +23,10 @@ complete documentation. Key activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-Recent CI runs show all unit and behavior tests passing once the optional
-dependencies are installed. Code coverage now meets the **90%** target.
-Remaining blockers are final package validation and completing the user
-guides. These tasks are expected to wrap up by **August 15, 2025**, when
-**0.1.0** is planned for release.
+Tests are still failing and overall coverage is below the **90%** target.
+Final package validation and documentation work are ongoing. These tasks
+are now expected to wrap up by **November 15, 2025**, when **0.1.0** is
+tentatively planned for release.
 
 ## 0.1.1 – Bug fixes and documentation updates
 

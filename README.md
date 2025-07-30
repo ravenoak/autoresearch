@@ -12,16 +12,17 @@ Autoresearch is currently in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
-planned for **July 20, 2025**, but the schedule slipped. All unit and
-behavior tests now pass with over **90%** coverage. The release is
-re-targeted for **September 2025**. See
+ planned for **July 20, 2025**, but the schedule slipped. Tests
+ currently fail and coverage goals are still being worked on. The release is
+ re-targeted for **November 2025**. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 
 ## Installation
 
 Autoresearch requires **Python 3.12 or newer**. The `scripts/setup.sh` helper
-invokes `python3.12` directly when checking the interpreter version, so make
+installs all optional extras and invokes `python3.12` directly when checking
+the interpreter version, so make
 sure it is available on your `PATH`. On Debian/Ubuntu systems install it with
 `sudo apt-get install python3.12 python3.12-venv`. If you manage multiple
 interpreters via pyenv or another tool, specify the path when creating the
