@@ -17,12 +17,10 @@ from autoresearch.config import (
 
 @pytest.fixture
 def reset_search_context():
-    """Reset the SearchContext singleton before and after each test."""
-    # Reset before test
-    SearchContext._instance = None
+    """Reset the ``SearchContext`` singleton before and after each test."""
+    SearchContext.reset_instance()
     yield
-    # Reset after test
-    SearchContext._instance = None
+    SearchContext.reset_instance()
 
 
 @pytest.fixture

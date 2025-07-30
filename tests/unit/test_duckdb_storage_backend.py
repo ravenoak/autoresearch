@@ -3,6 +3,19 @@ from unittest.mock import patch, MagicMock, call
 
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
+from autoresearch.config import ConfigLoader
+
+
+@pytest.fixture(autouse=True)
+def reset_config_loader():
+    """Reset ``ConfigLoader`` before and after each test."""
+    ConfigLoader.reset_instance()
+    with patch("autoresearch.storage_backends.ConfigLoader") as mock_loader:
+        mock_cfg = MagicMock()
+        mock_cfg.storage.duckdb.path = "kg.duckdb"
+        mock_loader.return_value.config = mock_cfg
+        yield
+    ConfigLoader.reset_instance()
 
 
 class TestDuckDBStorageBackend:
@@ -56,11 +69,18 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the _create_tables method
-        with patch.object(DuckDBStorageBackend, "_create_tables") as mock_create_tables:
-            # Setup the backend with a custom path
-            backend = DuckDBStorageBackend()
-            backend.setup(db_path="/path/to/db.duckdb")
+        # Mock the ConfigLoader similar to the default path test
+        with patch("autoresearch.storage_backends.ConfigLoader") as mock_loader:
+            mock_config = MagicMock()
+            mock_config.config.storage.duckdb = MagicMock()
+            mock_config.config.storage.duckdb.path = ":memory:"
+            mock_loader.return_value = mock_config
+
+            # Mock the _create_tables method
+            with patch.object(DuckDBStorageBackend, "_create_tables") as mock_create_tables:
+                # Setup the backend with a custom path
+                backend = DuckDBStorageBackend()
+                backend.setup(db_path="/path/to/db.duckdb")
 
             # Verify that the connection was created with the correct path
             mock_connect.assert_called_once_with("/path/to/db.duckdb")

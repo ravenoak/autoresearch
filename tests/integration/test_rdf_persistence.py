@@ -23,8 +23,7 @@ def cleanup_rdf_store():
     # Teardown
     if hasattr(StorageManager, "_rdf_store"):
         StorageManager._rdf_store = None
-    if hasattr(ConfigLoader, "_instance"):
-        ConfigLoader._instance = None
+    ConfigLoader.reset_instance()
 
 
 def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
