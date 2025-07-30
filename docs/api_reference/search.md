@@ -21,7 +21,9 @@ together with the achieved score.
 
 ## Search Context
 
-The `SearchContext` class manages search context using a singleton pattern.
+The `SearchContext` class manages search context using a singleton pattern. The
+singleton instance can be cleared with `reset_instance()` or temporarily
+replaced using `temporary_instance()` when an isolated context is required.
 
 ::: autoresearch.search.SearchContext
 

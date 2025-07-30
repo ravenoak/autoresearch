@@ -2,14 +2,18 @@ import types
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config import ConfigLoader
+from unittest.mock import MagicMock
 from autoresearch.search import Search
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
 
 
 def test_orchestrator_parse_config_basic():
-    cfg = ConfigModel(agents=["A", "B"], loops=2, reasoning_mode=ReasoningMode.DIALECTICAL)
+    cfg = MagicMock()
+    cfg.agents = ["A", "B"]
+    cfg.loops = 2
+    cfg.reasoning_mode = ReasoningMode.DIALECTICAL
     params = Orchestrator._parse_config(cfg)
     assert params["agents"] == ["A", "B"]
     assert params["loops"] == 2
@@ -24,9 +28,10 @@ def test_search_stub_backend(monkeypatch):
     def _stub(query: str, max_results: int = 5):
         return results
 
-    cfg = ConfigModel()
+    cfg = MagicMock()
     cfg.search.backends = ["stub"]
     cfg.search.context_aware.enabled = False
+    cfg.search.max_workers = 1
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     monkeypatch.setattr(Search, "embedding_lookup", lambda emb, max_results=5: {})
     monkeypatch.setattr(Search, "add_embeddings", lambda res, emb: None)
@@ -40,7 +45,7 @@ def test_search_stub_backend(monkeypatch):
 def test_planner_execute(monkeypatch):
     agent = PlannerAgent()
     state = QueryState(query="test")
-    cfg = ConfigModel()
+    cfg = MagicMock()
 
     class DummyAdapter:
         def generate(self, prompt: str, model: str | None = None) -> str:  # noqa: D401
@@ -83,7 +88,7 @@ def test_storage_setup_teardown(monkeypatch):
 
         def open(self, *a, **k):
             pass
-    cfg = ConfigModel()
+    cfg = MagicMock()
     cfg.storage.use_kuzu = True
     cfg.storage.kuzu_path = 'kuzu'
     cfg.storage.rdf_backend = 'memory'
