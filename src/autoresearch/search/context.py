@@ -5,6 +5,7 @@ import threading
 import time
 from collections import defaultdict
 from typing import Any, Dict, List, TYPE_CHECKING
+from contextlib import contextmanager
 
 from ..config import get_config
 from ..logging_utils import get_logger
@@ -40,10 +41,34 @@ log = get_logger(__name__)
 
 
 class SearchContext:
-    """Manages context for context-aware search."""
+    """Manages context for context-aware search.
+
+    This class is implemented as a singleton. Use :meth:`get_instance` to
+    retrieve the shared instance. The singleton can be cleared with
+    :meth:`reset_instance` or temporarily replaced using
+    :meth:`temporary_instance`.
+    """
 
     _instance = None
     _lock = threading.Lock()
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the singleton instance."""
+        with cls._lock:
+            cls._instance = None
+
+    @classmethod
+    @contextmanager
+    def temporary_instance(cls):
+        """Yield a new temporary instance while preserving the original."""
+        old = cls._instance
+        cls._instance = None
+        try:
+            instance = cls.get_instance()
+            yield instance
+        finally:
+            cls._instance = old
 
     @classmethod
     def get_instance(cls) -> "SearchContext":
