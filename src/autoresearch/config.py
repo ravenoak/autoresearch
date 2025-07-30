@@ -490,16 +490,20 @@ class ConfigLoader:
                 cls._instance = None
 
     @classmethod
+    def new_for_tests(cls) -> "ConfigLoader":
+        """Return a fresh loader instance for isolated tests."""
+        cls.reset_instance()
+        return cls()
+
+    @classmethod
     @contextmanager
     def temporary_instance(cls) -> Iterator["ConfigLoader"]:
-        """Yield a new temporary instance while preserving the original."""
-        old = cls._instance
-        cls._instance = None
+        """Provide a temporary loader instance for tests."""
+        instance = cls.new_for_tests()
         try:
-            instance = cls()
             yield instance
         finally:
-            cls._instance = old
+            cls.reset_instance()
 
     def __new__(cls) -> "ConfigLoader":
         """Create or return the singleton instance of ConfigLoader.
