@@ -295,7 +295,7 @@ accessibility, and log messages.
 
 ## Optional extras for tests
 
-The minimal CI install (`uv pip install -e '.[ci]'`) does not
+The minimal CI install (`uv pip install -e '.[dev-minimal]'`) does not
 include all optional extras. The full test suite uses several features
 that rely on these extras:
 

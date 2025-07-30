@@ -10,7 +10,7 @@ For personal use, run Autoresearch directly on your machine. Install the depende
 
 ```bash
 uv venv
-uv pip install -e '.[full,dev]'
+uv pip install -e '.[full,llm,dev]'
 autoresearch search "example query"
 ```
 
@@ -33,7 +33,7 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY . /app
 RUN pip install uv \
-    && uv pip install -e '.[full,dev]'
+    && uv pip install -e '.[full,llm,dev]'
 EXPOSE 8000
 CMD ["uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
@@ -128,7 +128,7 @@ pip install -U autoresearch
 ```
 Use pip extras to install optional dependencies as needed, for example:
 ```bash
-pip install "autoresearch[full]"
+pip install "autoresearch[full,llm]"
 ```
 Add extras selectively to enable specific features.
 
@@ -146,7 +146,7 @@ extras.
 2. Regenerate the lock file and reinstall dependencies:
    ```bash
    uv lock
-   uv pip install -e '.[ci]'
+   uv pip install -e '.[dev-minimal]'
    ```
 3. Run the unit and behavior test suites.
 4. Publish a development build to TestPyPI:
