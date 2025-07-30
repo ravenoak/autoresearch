@@ -27,7 +27,14 @@ def test_get_gpu_stats_cli_psutil(monkeypatch):
 
     fake_psutil = types.SimpleNamespace(Popen=lambda *a, **k: FakeProc())
     monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
-    monkeypatch.setattr(builtins, "__import__", lambda name, *a, **k: (_ for _ in ()).throw(ImportError()) if name == "pynvml" else builtins.__import__(name, *a, **k))
+    orig_import = builtins.__import__
+    monkeypatch.setattr(
+        builtins,
+        "__import__",
+        lambda name, *a, **k: (_ for _ in ()).throw(ImportError())
+        if name == "pynvml"
+        else orig_import(name, *a, **k),
+    )
     util, mem = resource_monitor._get_gpu_stats()
     assert util == 25.0
     assert mem == 512.0
@@ -39,10 +46,13 @@ def test_get_gpu_stats_cli_subprocess(monkeypatch):
             stdout = "30, 1024"
         return FakeRes()
 
+    orig_import = builtins.__import__
     monkeypatch.setattr(
         builtins,
         "__import__",
-        lambda name, *a, **k: (_ for _ in ()).throw(ImportError()) if name in {"pynvml", "psutil"} else builtins.__import__(name, *a, **k),
+        lambda name, *a, **k: (_ for _ in ()).throw(ImportError())
+        if name in {"pynvml", "psutil"}
+        else orig_import(name, *a, **k),
     )
     monkeypatch.setitem(sys.modules, "subprocess", types.SimpleNamespace(run=fake_run, PIPE=None, DEVNULL=None))
     util, mem = resource_monitor._get_gpu_stats()
