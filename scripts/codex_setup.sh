@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure Python 3.12 is available before proceeding
+if ! command -v python3.12 >/dev/null 2>&1; then
+    echo "python3.12 is required but was not found in PATH" >&2
+    exit 1
+fi
+
 echo "Setting up Codex environment..."
 
 export DEBIAN_FRONTEND=noninteractive

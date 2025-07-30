@@ -2,6 +2,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Abort if python3.12 is not available
+if ! command -v python3.12 >/dev/null 2>&1; then
+    echo "python3.12 is required but was not found in PATH" >&2
+    exit 1
+fi
+
 PYTHON_VERSION=$(python3.12 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
 if python3.12 - <<'EOF'
 import sys

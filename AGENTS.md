@@ -9,6 +9,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Python **3.12 or newer** is required. Confirm with `python --version`.
   - Create a virtual environment with `uv venv`.
     - `scripts/setup.sh` verifies the interpreter and fails if it is too old.
+    - Both setup scripts abort if `python3.12` is not found on your `PATH`.
   - Install dependencies with `uv pip install -e '.[full,dev]'`.
   - Activate the environment using `source .venv/bin/activate` or prefix commands with `uv pip`.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.

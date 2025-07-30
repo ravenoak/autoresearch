@@ -26,6 +26,7 @@ sure it is available on your `PATH`. On Debian/Ubuntu systems install it with
 `sudo apt-get install python3.12 python3.12-venv`. If you manage multiple
 interpreters via pyenv or another tool, specify the path when creating the
 environment, e.g. `uv venv -p python3.12`.
+Both setup scripts abort if `python3.12` cannot be located.
 The project recently transitioned from **Poetry** to
 [**uv**](https://github.com/astral-sh/uv) for dependency management. You can
 install the project using `uv` or plain **pip**.
