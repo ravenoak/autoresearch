@@ -29,8 +29,14 @@ import logging
 import sys
 import atexit
 
-from pydantic import BaseModel, Field, ValidationError, field_validator, TypeAdapter
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+    TypeAdapter,
+)
 from watchfiles import watch
 
 from .orchestration import ReasoningMode
@@ -117,39 +123,60 @@ class SearchConfig(BaseModel):
     max_workers: int = Field(default=4, ge=1)
     http_pool_size: int = Field(default=10, ge=1)
 
-    @field_validator(
-        "semantic_similarity_weight", "bm25_weight", "source_credibility_weight"
-    )
-    def validate_weights_sum_to_one(cls, v: float, info) -> float:
-        """Validate that the weights sum to 1.0."""
-        # Get the current values of all weights
-        values = info.data
+    @model_validator(mode="after")
+    def _normalize_ranking_weights(self) -> "SearchConfig":
+        """Ensure relevance weights sum to ``1.0``.
 
-        # Calculate the sum of all weights
-        weights_sum = (
-            values.get("semantic_similarity_weight", 0.5)
-            + values.get("bm25_weight", 0.3)
-            + values.get("source_credibility_weight", 0.2)
-        )
+        The validator handles three cases:
 
-        # Allow a small tolerance for floating-point errors
-        if abs(weights_sum - 1.0) > 0.001:
+        * All weights provided – they must already sum to ``1.0``.
+        * Some weights provided – remaining weights are scaled proportionally
+          to their defaults so that the final sum is ``1.0``.
+        * No weights provided – defaults are used.
+
+        This approach prevents spurious :class:`ConfigError` exceptions when a
+        configuration only overrides a subset of the weights.
+        """
+
+        default_weights = {
+            "semantic_similarity_weight": 0.5,
+            "bm25_weight": 0.3,
+            "source_credibility_weight": 0.2,
+        }
+
+        weight_fields = set(default_weights.keys())
+        provided = self.model_fields_set & weight_fields
+        weights = {
+            name: getattr(self, name)
+            for name in weight_fields
+        }
+
+        if provided != weight_fields:
+            remaining = 1.0 - sum(weights[n] for n in provided)
+            if remaining < -0.001:
+                raise ConfigError(
+                    "Relevance ranking weights must sum to 1.0",
+                    current_sum=sum(weights[n] for n in provided),
+                    weights={n: weights[n] for n in provided},
+                    suggestion="Decrease the provided weights so they do not exceed 1.0",
+                )
+
+            missing = weight_fields - provided
+            defaults_total = sum(default_weights[n] for n in missing)
+            for name in missing:
+                setattr(self, name, remaining * default_weights[name] / defaults_total if defaults_total else 0.0)
+            weights = {n: getattr(self, n) for n in weight_fields}
+
+        total = sum(weights.values())
+        if abs(total - 1.0) > 0.001:
             raise ConfigError(
                 "Relevance ranking weights must sum to 1.0",
-                current_sum=weights_sum,
-                weights={
-                    "semantic_similarity_weight": values.get(
-                        "semantic_similarity_weight", 0.5
-                    ),
-                    "bm25_weight": values.get("bm25_weight", 0.3),
-                    "source_credibility_weight": values.get(
-                        "source_credibility_weight", 0.2
-                    ),
-                },
+                current_sum=total,
+                weights=weights,
                 suggestion="Adjust the weights so they sum to 1.0",
             )
 
-        return v
+        return self
 
 
 logger = logging.getLogger(__name__)
@@ -256,7 +283,7 @@ class AnalysisConfig(BaseModel):
     polars_enabled: bool = Field(default=False)
 
 
-class ConfigModel(BaseSettings):
+class ConfigModel(BaseModel):
     """Main configuration model with validation."""
 
     # Core settings
@@ -366,28 +393,12 @@ class ConfigModel(BaseSettings):
         except ValidationError:
             return cls.model_construct(**data)
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_nested_delimiter="__",
-        extra="ignore",
-        cli_parse_args=None,
-    )
-
-    def _settings_build_values(  # type: ignore[override]
-        self,
-        init_kwargs: Dict[str, Any],
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Skip CLI parsing when tests disable it."""
-        if kwargs.get("_cli_parse_args") in (False, []):
-            kwargs["_cli_parse_args"] = None
-        else:
-            # Ensure BaseModel cache is initialized to avoid mismatches during CLI parsing
-            from pydantic._internal._utils import import_cached_base_model
-
-            import_cached_base_model()
-        return super()._settings_build_values(init_kwargs, **kwargs)
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "env_nested_delimiter": "__",
+        "extra": "ignore",
+    }
 
     @field_validator("reasoning_mode", mode="before")
     def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
@@ -755,7 +766,9 @@ class ConfigLoader:
             core_settings["active_profile"] = self._active_profile
 
         try:
-            return ConfigModel(**core_settings)
+            # ``from_dict`` avoids any environment parsing quirks during
+            # standard instantiation and provides a consistent path for tests.
+            return ConfigModel.from_dict(core_settings)
         except ValidationError as e:
             logger.error(f"Configuration validation error: {e}")
             # Raise with more helpful message
