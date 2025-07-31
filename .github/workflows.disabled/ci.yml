@@ -59,9 +59,13 @@ jobs:
       run: |
         echo "Using online environment for tests"
         echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
-      - name: Test with pytest
-        run: |
-          uv run pytest tests/
+    - name: Test with pytest
+      run: |
+        uv run pytest tests/
+    - name: Token usage regression
+      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
+      run: |
+        uv run python scripts/check_token_regression.py --threshold 5
     - name: Deployment checks
       run: |
         uv run python scripts/deploy.py
