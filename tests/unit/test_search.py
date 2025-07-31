@@ -11,7 +11,7 @@ try:
     GITPYTHON_INSTALLED = bool(_spec and _spec.origin)
 except Exception:
     GITPYTHON_INSTALLED = False
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 from unittest.mock import patch
 import autoresearch.search as search

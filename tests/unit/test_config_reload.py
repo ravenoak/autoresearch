@@ -1,5 +1,5 @@
 import tomli_w
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 import pytest
 

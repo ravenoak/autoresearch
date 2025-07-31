@@ -49,7 +49,8 @@ def test_search_visualize_option(monkeypatch):
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
 
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)

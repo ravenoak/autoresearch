@@ -1,5 +1,5 @@
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 def test_register_backend_and_lookup(monkeypatch):

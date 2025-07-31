@@ -14,7 +14,8 @@ from ..mcp_interface import create_server
 from ..monitor import monitor_app
 import time
 
-from ..config import ConfigLoader, ConfigModel
+from ..config.models import ConfigModel
+from ..config.loader import ConfigLoader
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter

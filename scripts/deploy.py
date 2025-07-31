@@ -14,7 +14,8 @@ from typing import Sequence
 import httpx
 from dotenv import load_dotenv
 
-from autoresearch.config import get_config, ConfigError
+from autoresearch.config.loader import get_config
+from autoresearch.errors import ConfigError
 
 
 def validate_config() -> None:

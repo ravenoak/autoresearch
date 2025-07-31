@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from ..orchestration.state import QueryState
 from .feedback import FeedbackEvent
 from ..llm.adapters import LLMAdapter

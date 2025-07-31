@@ -3,7 +3,7 @@ from datetime import datetime
 from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.main import app as cli_app
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.storage_backup import BackupManager, BackupInfo
 
 

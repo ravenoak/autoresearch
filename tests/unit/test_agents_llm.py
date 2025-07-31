@@ -5,7 +5,7 @@ from autoresearch.agents.dialectical.contrarian import ContrarianAgent
 from autoresearch.agents.dialectical.fact_checker import FactChecker
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.orchestration.state import QueryState
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.llm.adapters import LLMAdapter
 
 

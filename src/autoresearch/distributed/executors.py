@@ -37,7 +37,7 @@ except Exception:  # pragma: no cover - missing or faulty install
         ObjectRef=object,
     )  # type: ignore[assignment]
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from ..orchestration.state import QueryState
 from ..orchestration.orchestrator import AgentFactory
 from ..models import QueryResponse

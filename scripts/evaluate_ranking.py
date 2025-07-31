@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from unittest.mock import patch
 
-from autoresearch.config import ConfigModel, SearchConfig, get_config
+from autoresearch.config.models import ConfigModel, SearchConfig
+from autoresearch.config.loader import get_config
 from autoresearch.search import Search
 
 

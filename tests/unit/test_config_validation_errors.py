@@ -1,6 +1,6 @@
 import pytest
 
-from autoresearch.config import ConfigModel, StorageConfig, SearchConfig
+from autoresearch.config.models import ConfigModel, StorageConfig, SearchConfig
 from autoresearch.errors import ConfigError
 
 

@@ -7,7 +7,8 @@ verifying that claims are properly stored in the RDF store and can be retrieved.
 import pytest
 import rdflib
 from autoresearch.storage import StorageManager
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 @pytest.fixture(autouse=True)

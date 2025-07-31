@@ -1,5 +1,6 @@
 from autoresearch.storage import StorageManager
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import metrics
 import time
 

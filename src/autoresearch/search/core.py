@@ -74,7 +74,7 @@ except ImportError:  # pragma: no cover - optional dependency
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..cache import get_cached_results, cache_results
-from ..config import get_config
+from ..config.loader import get_config
 from ..storage import StorageManager
 
 from .http import close_http_session, get_http_session

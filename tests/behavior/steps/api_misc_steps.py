@@ -1,5 +1,6 @@
 from pytest_bdd import scenario, when, then
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 @when("I request the health endpoint")

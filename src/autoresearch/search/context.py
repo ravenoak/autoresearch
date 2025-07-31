@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Any, Dict, List, TYPE_CHECKING, Iterator
 from contextlib import contextmanager
 
-from ..config import get_config
+from ..config.loader import get_config
 from ..logging_utils import get_logger
 
 try:

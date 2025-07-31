@@ -115,7 +115,7 @@ The configuration system allows for extending the configuration options for your
 ### Adding Custom Configuration Sections
 
 ```python
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 # Get the config loader
 config_loader = ConfigLoader()
@@ -140,7 +140,7 @@ theme = my_ui_config.get("theme", "light")
 The configuration system supports hot-reloading, which allows your UI to react to configuration changes:
 
 ```python
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 def config_changed_callback(new_config):
     # Update your UI based on the new configuration

@@ -3,7 +3,8 @@ import rdflib
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import StorageManager, teardown
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 @scenario("../features/ontology_reasoning.feature", "Infer subclass relations through orchestrator")

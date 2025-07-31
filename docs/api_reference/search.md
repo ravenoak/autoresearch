@@ -40,13 +40,13 @@ with SearchContext.temporary_instance() as ctx:
 
 The context-aware search functionality enhances search precision through entity recognition, topic modeling, and search history awareness.
 
-::: autoresearch.config.ContextAwareSearchConfig
+::: autoresearch.config.models.ContextAwareSearchConfig
 
 ## Relevance Ranking
 
 The relevance ranking functionality enhances search results by combining multiple relevance signals.
 
-::: autoresearch.config.SearchConfig
+::: autoresearch.config.models.SearchConfig
 
 
 

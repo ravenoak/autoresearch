@@ -1,6 +1,7 @@
 from pytest_bdd import scenario, when, then, parsers
 from autoresearch.main import app as cli_app
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 

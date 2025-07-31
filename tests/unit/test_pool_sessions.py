@@ -1,4 +1,4 @@
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 import autoresearch.search as search
 from autoresearch.llm import pool as llm_pool
 

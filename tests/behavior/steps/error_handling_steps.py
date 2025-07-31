@@ -9,7 +9,7 @@ from autoresearch.errors import (
     LLMError,
     SearchError,
 )
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.llm.adapters import LLMAdapter
 

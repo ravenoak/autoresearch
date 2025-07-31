@@ -1,5 +1,5 @@
 from pytest_bdd import scenario, given, when, then
-from autoresearch.config import ConfigModel, StorageConfig
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.agents.messages import MessageProtocol

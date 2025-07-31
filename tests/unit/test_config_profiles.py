@@ -11,7 +11,7 @@ pytestmark = pytest.mark.xfail(reason="Config profiles not supported in tests")
 import time  # noqa: E402
 import stat  # noqa: E402
 
-from autoresearch.config import ConfigLoader  # noqa: E402
+from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.errors import ConfigError  # noqa: E402
 
 

@@ -4,7 +4,8 @@ import rdflib
 import pytest
 
 from autoresearch.storage import StorageManager, teardown
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 @pytest.fixture(autouse=True)

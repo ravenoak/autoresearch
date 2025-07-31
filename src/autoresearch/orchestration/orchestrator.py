@@ -36,7 +36,7 @@ import traceback
 import asyncio
 
 from ..agents.registry import AgentFactory, AgentRegistry
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from .reasoning import ReasoningMode, ChainOfThoughtStrategy
 from ..models import QueryResponse
 from ..storage import StorageManager

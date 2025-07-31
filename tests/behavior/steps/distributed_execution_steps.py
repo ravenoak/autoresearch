@@ -7,7 +7,7 @@ import pytest
 from pytest_bdd import scenario, given, when, then
 
 from autoresearch.distributed import RayExecutor, ProcessExecutor
-from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
+from autoresearch.config.models import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.storage import StorageManager
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState

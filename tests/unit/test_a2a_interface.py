@@ -57,7 +57,8 @@ def mock_orchestrator():
 @pytest.fixture
 def mock_config():
     """Create a mock config and inject it for the duration of the test."""
-    from autoresearch.config import ConfigModel, ConfigLoader, temporary_config
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader, temporary_config
 
     cfg = ConfigModel()
 

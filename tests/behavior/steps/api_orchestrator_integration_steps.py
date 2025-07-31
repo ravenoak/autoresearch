@@ -11,7 +11,8 @@ from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import MagicMock
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import OrchestrationError
 
 

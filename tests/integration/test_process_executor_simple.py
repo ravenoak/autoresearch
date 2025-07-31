@@ -3,7 +3,7 @@ import os
 import pytest
 
 from autoresearch.distributed import ProcessExecutor
-from autoresearch.config import ConfigModel, DistributedConfig
+from autoresearch.config.models import ConfigModel, DistributedConfig
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState
 from autoresearch.models import QueryResponse

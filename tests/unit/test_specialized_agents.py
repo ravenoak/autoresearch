@@ -17,7 +17,7 @@ from autoresearch.agents.specialized.summarizer import SummarizerAgent
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
 from autoresearch.agents.feedback import FeedbackEvent
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 @pytest.fixture

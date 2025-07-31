@@ -2,7 +2,9 @@ from hypothesis import given, strategies as st
 import pytest
 
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel, SearchConfig, ConfigLoader, ConfigError
+from autoresearch.config.models import ConfigModel, SearchConfig
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.errors import ConfigError
 
 
 @given(

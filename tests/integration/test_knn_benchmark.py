@@ -5,7 +5,8 @@ import pytest
 from autoresearch.storage import StorageManager
 import duckdb
 from autoresearch.extensions import VSSExtensionLoader
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 try:
     _tmp_conn = duckdb.connect(database=":memory:")

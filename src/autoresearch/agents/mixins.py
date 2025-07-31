@@ -7,7 +7,7 @@ This module provides mixins that can be used to add common functionality to agen
 from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from ..logging_utils import get_logger
 from .prompts import render_prompt
 

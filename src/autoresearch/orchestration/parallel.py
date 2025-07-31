@@ -7,7 +7,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from ..models import QueryResponse
 from .state import QueryState
 from ..agents.registry import AgentFactory

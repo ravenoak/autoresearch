@@ -2,7 +2,7 @@ import types
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 from unittest.mock import MagicMock
 from autoresearch.search import Search
 from autoresearch.agents.specialized.planner import PlannerAgent

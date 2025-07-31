@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 
 BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage.json"
 

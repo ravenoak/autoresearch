@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Dict, Iterator
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from .metrics import OrchestrationMetrics
 from .state import QueryState  # for type hints in execute_with_adapter
 

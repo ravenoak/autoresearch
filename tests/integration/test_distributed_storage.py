@@ -1,7 +1,7 @@
 import os
 import ray
 import pytest
-from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
+from autoresearch.config.models import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.distributed import start_storage_coordinator
 from autoresearch.storage import StorageManager
 

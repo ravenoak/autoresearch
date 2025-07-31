@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from autoresearch.agents.prompts import PromptTemplate, PromptTemplateRegistry
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.config import ConfigModel, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager

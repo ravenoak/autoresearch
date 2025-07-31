@@ -2,11 +2,8 @@ import logging
 import pytest
 
 from autoresearch.storage import StorageManager
-from autoresearch.config import (
-    ConfigModel,
-    StorageConfig,
-    ConfigLoader,
-)
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 logger = logging.getLogger(__name__)
 
@@ -84,16 +81,14 @@ def test_vector_search_with_real_duckdb(storage_manager, tmp_path, monkeypatch):
                 "SELECT node_id, embedding FROM embeddings"
             ).fetchall()
             assert len(embeddings) == 3, (
-                "Embeddings should be stored even without vector indexes"
-            )
+                "Embeddings should be stored even without vector indexes")
     else:
         # Even without vector extension, embeddings should be stored
         embeddings = conn.execute(
             "SELECT node_id, embedding FROM embeddings"
         ).fetchall()
         assert len(embeddings) == 3, (
-            "Embeddings should be stored even without vector extension"
-        )
+            "Embeddings should be stored even without vector extension")
 
         # Test that we can still retrieve claims by ID directly from the database
         for idx in range(3):

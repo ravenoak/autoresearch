@@ -1,6 +1,7 @@
 from typer.testing import CliRunner
 from autoresearch.main import app
-from autoresearch.config import ConfigLoader, ConfigModel
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 

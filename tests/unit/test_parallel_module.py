@@ -4,7 +4,7 @@ import types
 from unittest.mock import MagicMock
 
 
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import parallel
 from autoresearch.orchestration.orchestrator import Orchestrator

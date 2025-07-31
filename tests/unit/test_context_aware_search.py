@@ -1,18 +1,10 @@
-"""Unit tests for the context-aware search functionality in the search module.
-
-This module tests the SearchContext class and its integration with the Search class
-for context-aware search functionality.
-"""
-
+"""Unit tests for context-aware search functionality."""
 import os
 import pytest
 from unittest.mock import patch, MagicMock
 
 from autoresearch.search import Search, SearchContext
-from autoresearch.config import (
-    SearchConfig,
-    ContextAwareSearchConfig,
-)
+from autoresearch.config.models import SearchConfig, ContextAwareSearchConfig
 
 
 @pytest.fixture

@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app
-from autoresearch.config import ConfigModel, APIConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 import types
 import contextlib
 from autoresearch.orchestration.orchestrator import Orchestrator

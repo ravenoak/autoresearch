@@ -61,7 +61,8 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context, cli_runner):
     )
 )
 def run_interactive_query(query, refined, monkeypatch, bdd_context, cli_runner):
-    from autoresearch.config import ConfigModel, ConfigLoader
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     monkeypatch.setattr(
         ConfigLoader,

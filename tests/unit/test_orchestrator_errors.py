@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.errors import OrchestrationError
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 
 

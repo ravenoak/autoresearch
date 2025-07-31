@@ -2,7 +2,7 @@ import tomli_w
 import tomllib
 from types import SimpleNamespace
 
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 def test_config_hot_reload(tmp_path, monkeypatch):

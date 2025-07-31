@@ -17,7 +17,7 @@ from autoresearch.search import (  # noqa: E402
     get_http_session,
     close_http_session,
 )
-from autoresearch.config import ConfigModel  # noqa: E402
+from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.errors import SearchError  # noqa: E402
 
 

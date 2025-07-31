@@ -4,7 +4,8 @@ from types import ModuleType
 import pytest
 import rdflib
 
-from autoresearch.config import ConfigLoader, ConfigModel, StorageConfig
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError
 from autoresearch.kg_reasoning import run_ontology_reasoner, query_with_reasoning
 

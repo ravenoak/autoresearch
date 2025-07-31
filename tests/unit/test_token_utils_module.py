@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 from typing import Any
 
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration import token_utils

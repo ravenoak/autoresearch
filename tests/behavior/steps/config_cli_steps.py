@@ -1,7 +1,7 @@
 from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.main import app as cli_app
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 def pytest_configure(config):  # pragma: no cover - silence unused warning

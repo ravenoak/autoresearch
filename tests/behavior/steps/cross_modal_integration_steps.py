@@ -121,7 +121,7 @@ def check_rerun_query(bdd_context):
             return_value=expected_result,
         ) as mock_run_query:
             from autoresearch.orchestration.orchestrator import Orchestrator
-            from autoresearch.config import ConfigModel
+            from autoresearch.config.models import ConfigModel
 
             config = ConfigModel()
             result = Orchestrator.run_query(first_query, config)
@@ -178,7 +178,7 @@ def execute_invalid_query_gui(bdd_context):
         side_effect=ValueError("Invalid query: Query cannot be empty"),
     ):
         from autoresearch.orchestration.orchestrator import Orchestrator
-        from autoresearch.config import ConfigModel
+        from autoresearch.config.models import ConfigModel
 
         try:
             Orchestrator.run_query("", ConfigModel())
@@ -196,11 +196,12 @@ def check_gui_error_message(bdd_context):
 @when("I update the configuration via CLI")
 def update_config_via_cli(bdd_context):
     """Update the configuration via CLI."""
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     new_config = ConfigModel(loops=3)
     with patch(
-        "autoresearch.config.ConfigLoader.load_config", return_value=new_config
+        "autoresearch.config.loader.ConfigLoader.load_config", return_value=new_config
     ):
         loader = ConfigLoader()
         loader._config = loader.load_config()
@@ -225,11 +226,12 @@ def check_gui_config(bdd_context):
 @when("I update the configuration via GUI")
 def update_config_via_gui(bdd_context):
     """Update the configuration via GUI."""
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     new_cfg = ConfigModel(loops=5)
     with patch(
-        "autoresearch.config.ConfigLoader.load_config", return_value=new_cfg
+        "autoresearch.config.loader.ConfigLoader.load_config", return_value=new_cfg
     ):
         loader = ConfigLoader()
         loader._config = loader.load_config()

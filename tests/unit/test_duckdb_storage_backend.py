@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock, call
 
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 @pytest.fixture(autouse=True)

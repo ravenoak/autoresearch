@@ -364,7 +364,7 @@ Create a custom agent for specialized domains:
 # medical_researcher.py
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.orchestration.state import QueryState
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 class MedicalResearcher(Agent):
     """Agent specialized in medical research."""

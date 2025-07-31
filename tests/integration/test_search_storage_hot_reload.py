@@ -4,7 +4,7 @@ import tomllib
 
 from types import SimpleNamespace
 
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 

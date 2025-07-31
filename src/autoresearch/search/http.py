@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from ..config import get_config
+from ..config.loader import get_config
 from ..logging_utils import get_logger
 
 log = get_logger(__name__)

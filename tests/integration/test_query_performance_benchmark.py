@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
