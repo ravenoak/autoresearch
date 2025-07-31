@@ -23,6 +23,7 @@ import tomllib
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Iterator, Any
 from contextlib import contextmanager
+import contextvars
 import threading
 import logging
 import sys
@@ -1019,6 +1020,34 @@ class ConfigLoader:
 
 
 # Convenience function to get the global config
+_current_config: contextvars.ContextVar[ConfigModel | None] = contextvars.ContextVar(
+    "current_config", default=None
+)
+
+
+@contextmanager
+def temporary_config(config: ConfigModel) -> Iterator[ConfigModel]:
+    """Temporarily override the active configuration.
+
+    This context manager allows tests or callers to supply a configuration
+    object that will be returned by :func:`get_config` within the managed
+    block. It provides a simple way to inject configuration without touching
+    the global :class:`ConfigLoader` state.
+
+    Args:
+        config: The temporary configuration to use.
+
+    Yields:
+        The provided configuration for convenience.
+    """
+
+    token = _current_config.set(config)
+    try:
+        yield config
+    finally:
+        _current_config.reset(token)
+
+
 def get_config() -> ConfigModel:
     """Get the current configuration from the global ConfigLoader instance.
 
@@ -1037,4 +1066,7 @@ def get_config() -> ConfigModel:
         print(f"Using LLM backend: {config.llm_backend}")
         ```
     """
+    cfg = _current_config.get()
+    if cfg is not None:
+        return cfg
     return ConfigLoader().config

@@ -56,13 +56,18 @@ def mock_orchestrator():
 
 @pytest.fixture
 def mock_config():
-    """Create a mock config."""
-    with patch("autoresearch.a2a_interface.get_config") as mock_get_config:
-        from autoresearch.config import ConfigModel
+    """Create a mock config and inject it for the duration of the test."""
+    from autoresearch.config import ConfigModel, ConfigLoader, temporary_config
 
-        cfg = ConfigModel()
-        mock_get_config.return_value = cfg
-        yield cfg
+    cfg = ConfigModel()
+
+    with temporary_config(cfg):
+        with patch.object(ConfigLoader, "load_config", lambda self: cfg):
+            ConfigLoader.reset_instance()
+            try:
+                yield cfg
+            finally:
+                ConfigLoader.reset_instance()
 
 
 class TestA2AInterface:
