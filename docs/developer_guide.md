@@ -13,14 +13,14 @@ The project uses **uv** for dependency management. All commands below rely on
    ```
 2. Install dependencies including development tools and all optional extras:
    ```bash
-   uv pip install -e '.[full,llm,dev]'
+   uv pip install -e '.[full,parsers,git,llm,dev]'
    ```
    Run `uv lock` whenever `pyproject.toml` changes so the lock file stays current.
 3. Activate the environment with `source .venv/bin/activate` before running commands.
 
 Several unit and integration tests require `gitpython` and the DuckDB VSS
-extension. Both are installed when you set up the environment with
-`uv pip install -e '.[full,llm,dev]'`.
+extension. Include the `git` extra when setting up the environment, for example:
+`uv pip install -e '.[full,parsers,git,llm,dev]'`.
 
 ## Code Style
 

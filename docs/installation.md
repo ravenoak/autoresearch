@@ -17,7 +17,7 @@ Use `uv` to manage the environment when working from a clone:
 # Create the virtual environment
 uv venv
 # Full feature set including development tools
-uv pip install -e '.[full,llm,dev]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 # Lightweight install for CI or quick tests
 # uv pip install -e '.[dev-minimal]'
 ```
@@ -59,7 +59,7 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `uv pip install -e '.[full,llm,dev]'`. Optional
+running the helper, reinstall using `uv pip install -e '.[full,parsers,git,llm,dev]'`. Optional
 features are disabled when their dependencies are missing. Specify extras
 explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 
@@ -75,7 +75,8 @@ Additional functionality is grouped into optional extras:
 - `distributed` – distributed processing with Ray
 - `analysis` – Polars-based data analysis utilities
 - `git` – local Git repository search support
-- `full` – installs all optional extras except `llm`
+- `full` – installs most extras (nlp, ui, vss, distributed, analysis)
+  but omits `parsers` and `git`
 
 Install multiple extras separated by commas:
 
@@ -121,7 +122,7 @@ long time or fail on low-memory machines.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
 - Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `uv pip install -e '.[full,llm,dev]'`.
+  to running `uv pip install -e '.[full,parsers,git,llm,dev]'`.
 - You can omit heavy extras by specifying only the groups you need,
   e.g. `uv pip install -e '.[minimal]'` when rapid setup is more important
   than optional features.
