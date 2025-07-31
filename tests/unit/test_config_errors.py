@@ -3,7 +3,8 @@ from unittest.mock import patch, MagicMock
 
 pytestmark = pytest.mark.xfail(reason="ConfigError handling not implemented")
 
-from autoresearch.config import ConfigLoader, ConfigModel  # noqa: E402
+from autoresearch.config.loader import ConfigLoader  # noqa: E402
+from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.errors import ConfigError  # noqa: E402
 
 
@@ -51,7 +52,7 @@ def test_watch_config_files_error(tmp_path, monkeypatch):
     loader = ConfigLoader()
 
     # Mock the watch function to raise an exception
-    with patch("autoresearch.config.watch", side_effect=ValueError("Watch error")):
+    with patch("autoresearch.config.loader.watch", side_effect=ValueError("Watch error")):
         # The current implementation logs the error but doesn't raise an exception
         # This test will fail until we implement the change
         with pytest.raises(ConfigError, match="Error in config watcher"):
@@ -74,7 +75,7 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
     mock_watch.return_value = iter([{(1, str(config_path))}])
 
     # Mock load_config to raise an exception
-    with patch("autoresearch.config.watch", mock_watch):
+    with patch("autoresearch.config.loader.watch", mock_watch):
         with patch.object(
             loader, "load_config", side_effect=ValueError("Reload error")
         ):

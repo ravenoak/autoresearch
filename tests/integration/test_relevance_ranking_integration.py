@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel, SearchConfig
+from autoresearch.config.models import ConfigModel, SearchConfig
 
 
 def load_data():

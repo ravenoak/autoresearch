@@ -1,7 +1,7 @@
 import logging
 import time
 from autoresearch.logging_utils import configure_logging
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 def test_stop_watching_after_logging_shutdown(tmp_path):

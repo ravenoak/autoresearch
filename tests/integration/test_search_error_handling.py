@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.errors import TimeoutError
 
 

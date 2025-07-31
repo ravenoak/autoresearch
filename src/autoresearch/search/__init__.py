@@ -9,7 +9,7 @@ from .context import (
     spacy,
 )
 from .http import get_http_session, set_http_session, close_http_session, _http_session
-from ..config import get_config
+from ..config.loader import get_config
 
 __all__ = [
     "Search",

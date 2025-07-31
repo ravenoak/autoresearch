@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 import sys
 import pytest
 
+
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("umap", MagicMock())
 sys.modules.setdefault("pynndescent", MagicMock())
@@ -40,7 +41,7 @@ def test_search_reasoning_mode_option(monkeypatch, mode):
     runner = CliRunner()
 
     def _mock_load_config():
-        from autoresearch.config import ConfigModel
+        from autoresearch.config.models import ConfigModel
 
         return ConfigModel()
 
@@ -63,7 +64,7 @@ def test_search_primus_start_option(monkeypatch):
     runner = CliRunner()
 
     def _mock_load_config():
-        from autoresearch.config import ConfigModel
+        from autoresearch.config.models import ConfigModel
 
         return ConfigModel()
 

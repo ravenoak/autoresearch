@@ -1,6 +1,6 @@
 import threading
 from hypothesis import given, strategies as st, settings, HealthCheck
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

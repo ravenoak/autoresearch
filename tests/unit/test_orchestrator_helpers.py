@@ -1,7 +1,7 @@
 import pytest
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 class DummyAgent:

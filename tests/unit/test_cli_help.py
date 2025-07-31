@@ -1,5 +1,5 @@
-import importlib
 import sys
+import importlib
 import types
 from typer.testing import CliRunner
 
@@ -19,7 +19,8 @@ def test_cli_help_no_ansi(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
@@ -48,7 +49,8 @@ def test_search_help_includes_interactive(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
@@ -77,7 +79,8 @@ def test_search_help_includes_visualize(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
@@ -107,7 +110,8 @@ def test_search_loops_option(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
     from autoresearch.models import QueryResponse
     from autoresearch.orchestration.orchestrator import Orchestrator
 
@@ -144,7 +148,8 @@ def test_search_help_includes_ontology_flags(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
@@ -171,7 +176,8 @@ def test_visualize_help_includes_layout(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config import ConfigLoader, ConfigModel
+    from autoresearch.config.models import ConfigModel
+    from autoresearch.config.loader import ConfigLoader
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)

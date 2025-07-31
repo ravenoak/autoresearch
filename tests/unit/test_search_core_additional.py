@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 
 

@@ -4,7 +4,8 @@ import pytest
 from pytest_bdd import scenario, when, then, parsers
 
 from .common_steps import *  # noqa: F401,F403
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 

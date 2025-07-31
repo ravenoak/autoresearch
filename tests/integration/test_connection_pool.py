@@ -2,11 +2,11 @@ import autoresearch.search as search
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.llm import pool as llm_pool
 from autoresearch.storage import StorageManager
 import autoresearch.storage as storage
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 def test_search_session_reuse_and_cleanup(monkeypatch):
@@ -103,7 +103,7 @@ def test_duckdb_connection_pool_concurrency(tmp_path):
     llm_pool.close_adapters()
     search.close_http_session()
     storage.teardown(remove_db=True)
-    with patch("autoresearch.config.ConfigLoader.load_config", lambda self: cfg):
+    with patch("autoresearch.config.loader.ConfigLoader.load_config", lambda self: cfg):
         ConfigLoader.reset_instance()
         StorageManager.setup(cfg.storage.duckdb_path)
     ids = []

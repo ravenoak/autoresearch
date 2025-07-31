@@ -17,7 +17,7 @@ except Exception:
 
 from autoresearch.search import Search
 from autoresearch import cache
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 pytestmark = [
     pytest.mark.slow,

@@ -7,7 +7,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.models import QueryResponse
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 @pytest.mark.parametrize("pair", list(itertools.combinations(AgentRegistry.list_available(), 2)))

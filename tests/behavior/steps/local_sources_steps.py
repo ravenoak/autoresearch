@@ -3,7 +3,7 @@ import subprocess
 from pytest_bdd import scenario, given, when, then, parsers
 
 from .common_steps import *  # noqa: F401,F403
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from pdfminer.high_level import extract_text
 from docx import Document

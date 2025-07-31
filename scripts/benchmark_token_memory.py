@@ -13,7 +13,7 @@ import json
 import time
 from pathlib import Path
 
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.storage import StorageManager
 

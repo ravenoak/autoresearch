@@ -1,7 +1,8 @@
 import duckdb
 import pytest
 from autoresearch.storage import StorageManager
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 
 pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 

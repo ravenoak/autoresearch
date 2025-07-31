@@ -4,7 +4,7 @@ from typing import Optional, Dict, TYPE_CHECKING
 from threading import Lock
 import requests
 
-from ..config import get_config
+from ..config.loader import get_config
 
 _session: Optional[requests.Session] = None
 _lock = Lock()

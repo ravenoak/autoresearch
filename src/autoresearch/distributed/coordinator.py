@@ -4,7 +4,7 @@ import multiprocessing
 from multiprocessing.synchronize import Event
 from typing import Any
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from .. import storage
 from ..logging_utils import get_logger
 

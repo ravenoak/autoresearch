@@ -10,7 +10,8 @@ from autoresearch.api import app as api_app
 from autoresearch.orchestration.state import QueryState
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 @when(parsers.parse('I send a streaming query "{query}" to the API'))

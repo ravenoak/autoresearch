@@ -5,49 +5,49 @@ This page documents the Configuration API, which provides configuration manageme
 ## Config Loader
 
 The `ConfigLoader` class is responsible for loading and watching configuration changes.
-Use the :py:meth:`~autoresearch.config.ConfigLoader.temporary_instance` context
+Use the :py:meth:`~autoresearch.config.loader.ConfigLoader.temporary_instance` context
 manager when you need a separate configuration loader for a short period.
 
 ```python
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 with ConfigLoader.temporary_instance() as loader:
     loader.load("custom.yaml")
     # operate with the temporary configuration here
 ```
 
-::: autoresearch.config.ConfigLoader
+::: autoresearch.config.loader.ConfigLoader
 
 ## Config Model
 
 The `ConfigModel` class defines the structure of the configuration.
 
-::: autoresearch.config.ConfigModel
+::: autoresearch.config.models.ConfigModel
 
 
 ## Storage Config
 
 The `StorageConfig` class defines the storage configuration options.
 
-::: autoresearch.config.StorageConfig
+::: autoresearch.config.models.StorageConfig
 
 ## Agent Config
 
 The `AgentConfig` class defines the agent configuration options.
 
-::: autoresearch.config.AgentConfig
+::: autoresearch.config.models.AgentConfig
 
 ## Search Config
 
 The `SearchConfig` class defines the search configuration options.
 
-::: autoresearch.config.SearchConfig
+::: autoresearch.config.models.SearchConfig
 
 ## Context-Aware Search Config
 
 The `ContextAwareSearchConfig` class defines the context-aware search configuration options.
 
-::: autoresearch.config.ContextAwareSearchConfig
+::: autoresearch.config.models.ContextAwareSearchConfig
 
 
 

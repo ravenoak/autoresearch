@@ -1,7 +1,7 @@
 import os
 import pytest
 from autoresearch.distributed import ProcessExecutor
-from autoresearch.config import ConfigModel, DistributedConfig, StorageConfig
+from autoresearch.config.models import ConfigModel, DistributedConfig, StorageConfig
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import AgentFactory
 from autoresearch.orchestration.state import QueryState

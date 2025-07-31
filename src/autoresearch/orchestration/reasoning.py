@@ -8,7 +8,7 @@ from typing import Protocol, TYPE_CHECKING
 from ..models import QueryResponse
 
 if TYPE_CHECKING:
-    from ..config import ConfigModel
+    from ..config.models import ConfigModel
     from ..agents.registry import AgentFactory
 
 

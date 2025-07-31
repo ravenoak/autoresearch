@@ -371,7 +371,7 @@ def check_config_used(monkeypatch, bdd_context):
         return_value=QueryResponse(answer="", citations=[], reasoning=[], metrics={}),
     ) as mock_run:
         from autoresearch.orchestration.orchestrator import Orchestrator
-        from autoresearch.config import ConfigModel
+        from autoresearch.config.models import ConfigModel
 
         cfg = ConfigModel(loops=bdd_context["new_config"]["loops"])
         Orchestrator.run_query("test", cfg)

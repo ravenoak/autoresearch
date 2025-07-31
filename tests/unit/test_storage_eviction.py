@@ -87,7 +87,7 @@ def test_enforce_ram_budget_lru_policy():
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 side_effect=[100, 100, 50],
             ):
-                with patch("autoresearch.config.ConfigLoader.config") as mock_config:
+                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
                     mock_config.graph_eviction_policy = "lru"
 
                     # Execute
@@ -133,7 +133,7 @@ def test_enforce_ram_budget_score_policy():
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 side_effect=[100, 100, 50],
             ):
-                with patch("autoresearch.config.ConfigLoader.config") as mock_config:
+                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
                     mock_config.graph_eviction_policy = "score"
 
                     # Execute
@@ -175,7 +175,7 @@ def test_enforce_ram_budget_no_nodes_to_evict():
             with patch(
                 "autoresearch.storage.StorageManager._current_ram_mb", return_value=100
             ):
-                with patch("autoresearch.config.ConfigLoader.config") as mock_config:
+                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
                     mock_config.graph_eviction_policy = "lru"
 
                     # Execute

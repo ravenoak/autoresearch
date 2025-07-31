@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 
 from autoresearch.search import Search
-from autoresearch.config import SearchConfig
+from autoresearch.config.models import SearchConfig
 from autoresearch.errors import ConfigError
 
 

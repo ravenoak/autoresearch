@@ -3,7 +3,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from autoresearch.agents.specialized.user_agent import UserAgent
-from autoresearch.config import ConfigLoader, ConfigModel
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.state import QueryState
 
 

@@ -1,7 +1,7 @@
 from autoresearch import mcp_interface
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 def _mock_run_query(query, config):

@@ -1,6 +1,7 @@
 import duckdb
 import pytest
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.extensions import VSSExtensionLoader
 

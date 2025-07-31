@@ -7,7 +7,7 @@ from autoresearch.agents.specialized.user_agent import UserAgent
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.phases import DialoguePhase
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 from pytest_bdd import scenario, when, then, parsers
 
 from autoresearch.search import Search
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 
 
 @scenario("../features/hybrid_search.feature", "Combine keyword and vector results")

@@ -2,7 +2,7 @@ import pytest
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
 from autoresearch.main import app
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 @pytest.fixture

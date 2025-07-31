@@ -5,7 +5,8 @@ from unittest.mock import patch, MagicMock
 from pytest_bdd import scenario, given, when, then
 
 from autoresearch.storage import StorageManager, teardown
-from autoresearch.config import ConfigModel, StorageConfig, ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError
 from autoresearch.logging_utils import get_logger
 

@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 from pytest_bdd import scenario, given, when, then, parsers
 
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 
 

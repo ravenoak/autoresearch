@@ -11,7 +11,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from unittest.mock import MagicMock
 
 from autoresearch.storage import StorageManager
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 
 # Fixtures

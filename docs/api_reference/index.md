@@ -31,7 +31,7 @@ Here's a simple example of using the Autoresearch API programmatically:
 
 ```python
 from autoresearch.orchestration import Orchestrator
-from autoresearch.config import ConfigLoader
+from autoresearch.config.loader import ConfigLoader
 
 # Load configuration
 config = ConfigLoader.load()

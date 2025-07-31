@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app as api_app
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 
 
 def _setup(monkeypatch):

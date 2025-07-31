@@ -20,7 +20,7 @@ from typing import Dict, Any, Optional
 
 from pydantic import BaseModel, Field
 
-from ..config import ConfigModel
+from ..config.models import ConfigModel
 from ..errors import ConfigError
 
 

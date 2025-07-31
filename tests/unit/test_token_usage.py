@@ -10,7 +10,7 @@ from typing import Any
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.metrics import OrchestrationMetrics
-from autoresearch.config import ConfigModel
+from autoresearch.config.models import ConfigModel
 from autoresearch.llm.token_counting import compress_prompt
 import autoresearch.llm as llm
 

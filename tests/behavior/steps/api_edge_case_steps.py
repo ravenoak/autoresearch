@@ -1,5 +1,6 @@
 from pytest_bdd import scenario, given, when, then
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 
 
 @given("the API server is running")

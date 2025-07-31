@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
 from autoresearch.api import app, dynamic_limit
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 

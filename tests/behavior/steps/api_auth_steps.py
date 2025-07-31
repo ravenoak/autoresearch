@@ -2,7 +2,8 @@
 
 from pytest_bdd import scenario, given, when, then, parsers
 from . import api_orchestrator_integration_steps  # noqa: F401
-from autoresearch.config import ConfigModel, ConfigLoader, APIConfig
+from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.api import config_loader, reset_request_log
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse

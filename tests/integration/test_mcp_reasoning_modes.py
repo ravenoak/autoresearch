@@ -1,7 +1,8 @@
 import pytest
 
 from autoresearch.test_tools import MCPTestClient
-from autoresearch.config import ConfigModel, ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse

@@ -4,7 +4,9 @@ from typing import Optional, Any
 
 import typer
 
-from ..config import ConfigLoader, ConfigModel, ConfigError
+from ..config.models import ConfigModel
+from ..config.loader import ConfigLoader
+from ..errors import ConfigError
 from .app import _config_loader
 from ..cli_backup import backup_app
 

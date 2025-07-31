@@ -4,7 +4,8 @@ from pytest_bdd import scenario, given, when, then, parsers
 import logging
 
 from .common_steps import *  # noqa: F401,F403
-from autoresearch.config import ConfigLoader, ConfigModel
+from autoresearch.config.models import ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration import ReasoningMode
 
@@ -13,7 +14,7 @@ from autoresearch.orchestration import ReasoningMode
 def enable_agents(monkeypatch):
     config = ConfigModel.model_construct(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=2)
     monkeypatch.setattr(
-        "autoresearch.config.ConfigLoader.load_config", lambda self: config
+        "autoresearch.config.loader.ConfigLoader.load_config", lambda self: config
     )
     return config
 
@@ -27,7 +28,7 @@ def set_loops(loops: int, monkeypatch):
         agents=["Synthesizer", "Contrarian", "FactChecker"], loops=loops
     )
     monkeypatch.setattr(
-        "autoresearch.config.ConfigLoader.load_config", lambda self: config
+        "autoresearch.config.loader.ConfigLoader.load_config", lambda self: config
     )
     return config
 

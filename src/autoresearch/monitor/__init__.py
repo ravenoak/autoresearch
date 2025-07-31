@@ -17,7 +17,7 @@ from ..orchestration import metrics as orch_metrics
 from ..resource_monitor import ResourceMonitor
 from .system_monitor import SystemMonitor
 
-from ..config import ConfigLoader
+from ..config.loader import ConfigLoader
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter

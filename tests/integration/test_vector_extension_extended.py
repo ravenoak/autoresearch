@@ -12,11 +12,8 @@ from unittest.mock import patch
 import duckdb  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 from autoresearch.storage import StorageManager  # noqa: E402
-from autoresearch.config import (
-    ConfigModel,
-    StorageConfig,
-    ConfigLoader,
-)  # noqa: E402
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError  # noqa: E402
 
 try:
