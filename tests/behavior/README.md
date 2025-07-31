@@ -31,3 +31,13 @@ Scenarios with these markers are skipped when the corresponding extras are not
 installed. After installing all extras you may simply run `uv run pytest tests/behavior`
 to execute every scenario.
 
+
+## Running CLI and recovery scenarios
+
+Run the CLI and error-recovery features individually when developing:
+
+```bash
+uv run pytest tests/behavior/features/config_cli.feature::Update_reasoning_configuration
+uv run pytest tests/behavior/features/reasoning_mode_cli.feature
+uv run pytest tests/behavior/features/error_recovery.feature
+```
