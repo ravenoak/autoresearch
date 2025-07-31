@@ -25,8 +25,9 @@ import subprocess
 import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
 
 import requests
 import numpy as np
@@ -103,8 +104,16 @@ class Search:
     # Registry mapping backend name to callable
     backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
 
+    # Snapshot of default backends for resetting
+    _default_backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
+
     # Registry mapping embedding backend name to callable
     embedding_backends: Dict[
+        str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
+    ] = {}
+
+    # Snapshot of default embedding backends for resetting
+    _default_embedding_backends: Dict[
         str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
     ] = {}
 
@@ -120,6 +129,29 @@ class Search:
     def close_http_session() -> None:
         """Close the pooled HTTP session."""
         close_http_session()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset global registries and close pooled resources."""
+        cls.backends = dict(cls._default_backends)
+        cls.embedding_backends = dict(cls._default_embedding_backends)
+        cls._sentence_transformer = None
+        cls.close_http_session()
+
+    @classmethod
+    @contextmanager
+    def temporary_state(cls) -> Iterator[type["Search"]]:
+        """Provide a context-managed Search with isolated state."""
+        original_backends = dict(cls.backends)
+        original_embedding_backends = dict(cls.embedding_backends)
+        original_model = cls._sentence_transformer
+        try:
+            yield cls
+        finally:
+            cls.backends = original_backends
+            cls.embedding_backends = original_embedding_backends
+            cls._sentence_transformer = original_model
+            cls.close_http_session()
 
     @classmethod
     def get_sentence_transformer(cls) -> Optional[SentenceTransformer]:
@@ -618,6 +650,7 @@ class Search:
             func: Callable[[str, int], List[Dict[str, str]]],
         ) -> Callable[[str, int], List[Dict[str, str]]]:
             cls.backends[name] = func
+            cls._default_backends.setdefault(name, func)
             return func
 
         return decorator
@@ -635,6 +668,7 @@ class Search:
             func: Callable[[np.ndarray, int], List[Dict[str, Any]]]
         ) -> Callable[[np.ndarray, int], List[Dict[str, Any]]]:
             cls.embedding_backends[name] = func
+            cls._default_embedding_backends.setdefault(name, func)
             return func
 
         return decorator

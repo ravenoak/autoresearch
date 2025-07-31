@@ -30,8 +30,8 @@ from contextlib import contextmanager
 import duckdb
 import networkx as nx
 import rdflib
-from .config import ConfigLoader
-from .errors import StorageError, NotFoundError
+from .config import ConfigLoader, StorageConfig
+from .errors import StorageError, NotFoundError, ConfigError
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
@@ -77,7 +77,10 @@ def setup(db_path: Optional[str] = None) -> None:
             return
 
         _graph = nx.DiGraph()
-        cfg = ConfigLoader().config.storage
+        try:
+            cfg = ConfigLoader().config.storage
+        except ConfigError:
+            cfg = StorageConfig()
 
         # Initialize DuckDB backend
         _db_backend = DuckDBStorageBackend()
@@ -157,7 +160,10 @@ def teardown(remove_db: bool = False) -> None:
                 # We don't raise here as this is cleanup code
 
         # Remove RDF store files if requested
-        cfg = ConfigLoader().config.storage
+        try:
+            cfg = ConfigLoader().config.storage
+        except ConfigError:
+            cfg = StorageConfig()
         if remove_db and os.path.exists(cfg.rdf_path):
             if os.path.isdir(cfg.rdf_path):
                 import shutil
