@@ -28,8 +28,19 @@ if [ ! -x /usr/local/bin/task ]; then
     exit 1
 fi
 
-# Run the main setup script to install dev dependencies and extras with uv
-# Use the lightweight dev-minimal extras for faster CI setup
-./scripts/setup.sh dev-minimal
+# Run the main setup script to install all extras needed for testing
+./scripts/setup.sh full,dev
+
+# Pre-download models so tests can run without network access
+uv run python - <<'PY'
+from sentence_transformers import SentenceTransformer
+SentenceTransformer("all-MiniLM-L6-v2")
+PY
+
+uv run python -m spacy download en_core_web_sm
+
+# Cache DuckDB extensions for offline use (vss by default)
+uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions
+
 # All Python setup is handled by setup.sh using uv pip
 
