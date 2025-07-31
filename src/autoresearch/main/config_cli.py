@@ -80,11 +80,11 @@ def config_init(
 def config_validate() -> None:
     """Validate configuration files."""
     config_loader = ConfigLoader()
-    search_paths = [p for p in config_loader._search_paths if p.exists()]
-    env_path = config_loader._env_path
+    search_paths = [p for p in config_loader.search_paths if p.exists()]
+    env_path = config_loader.env_path
     if not search_paths:
         typer.echo("No configuration files found in search paths:")
-        for path in config_loader._search_paths:
+        for path in config_loader.search_paths:
             typer.echo(f"  - {path}")
         return
     typer.echo("Validating configuration files:")
@@ -142,7 +142,7 @@ def config_reasoning(
     if max_errors is not None:
         updates["max_errors"] = max_errors
     new_cfg = ConfigModel.model_validate({**data, **updates})
-    path = _config_loader._search_paths[0]
+    path = _config_loader.search_paths[0]
     path.write_text(new_cfg.model_dump_json(indent=2))
     typer.echo(f"Updated {path}")
 

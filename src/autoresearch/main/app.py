@@ -59,8 +59,8 @@ app = typer.Typer(
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
-from .config_cli import config_app, config_init  # noqa: E402
-
+from .config_cli import config_app as _config_app, config_init  # noqa: E402
+config_app = _config_app  # type: ignore[has-type]
 app.add_typer(config_app, name="config")
 
 
@@ -110,7 +110,7 @@ def start_watcher(
 
     # Check if this is the first run by looking for config files
     is_first_run = True
-    for path in _config_loader._search_paths:
+    for path in _config_loader.search_paths:
         if path.exists():
             is_first_run = False
             break

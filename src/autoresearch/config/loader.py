@@ -6,7 +6,7 @@ import logging
 import threading
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Sequence
 import sys
 import tomllib
 
@@ -65,8 +65,17 @@ class ConfigLoader:
     def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
         self.close()
 
-    def __init__(self, watch_paths: Optional[List[str]] = None) -> None:
-        self.watch_paths = watch_paths or ["autoresearch.toml", "config/autoresearch.toml"]
+    def __init__(
+        self,
+        search_paths: Optional[Sequence[str | Path]] = None,
+        env_path: str | Path | None = None,
+    ) -> None:
+        self.search_paths: List[Path] = [
+            Path(p) for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
+        ]
+        self.env_path: Path = Path(env_path) if env_path else Path(".env")
+        # Maintain watch_paths for backward compatibility and tests
+        self.watch_paths: List[str] = [str(p) for p in self.search_paths]
         self._config: ConfigModel | None = None
         self._watch_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
@@ -75,6 +84,10 @@ class ConfigLoader:
         self._profiles: Dict[str, Dict[str, Any]] = {}
         self._config_time = 0.0
         self._atexit_registered = False
+
+    def _update_watch_paths(self) -> None:
+        """Update ``watch_paths`` to match current ``search_paths``."""
+        self.watch_paths = [str(p) for p in self.search_paths]
 
     @property
     def config(self) -> ConfigModel:
@@ -85,10 +98,9 @@ class ConfigLoader:
     def load_config(self) -> ConfigModel:
         raw: Dict[str, Any] = {}
         config_path: Path | None = None
-        for path in self.watch_paths:
-            p = Path(path)
-            if p.exists():
-                config_path = p
+        for path in self.search_paths:
+            if path.exists():
+                config_path = path
                 break
 
         if config_path and config_path.exists():
