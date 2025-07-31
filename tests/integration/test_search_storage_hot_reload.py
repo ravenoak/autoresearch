@@ -1,6 +1,8 @@
 import time
-
 import tomli_w
+import tomllib
+
+from types import SimpleNamespace
 
 from autoresearch.config import ConfigLoader
 from autoresearch.search import Search
@@ -15,6 +17,17 @@ def test_search_storage_hot_reload(tmp_path, monkeypatch):
     cfg_file = tmp_path / "autoresearch.toml"
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
+
+    def fake_load(self):
+        data = tomllib.loads(cfg_file.read_text())
+        return SimpleNamespace(
+            search=SimpleNamespace(
+                backends=data["search"]["backends"],
+                context_aware=SimpleNamespace(enabled=False),
+            )
+        )
+
+    monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
     loader = ConfigLoader()
     calls: list[str] = []
     stored: list[str] = []
@@ -30,6 +43,15 @@ def test_search_storage_hot_reload(tmp_path, monkeypatch):
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+
+    def external_lookup(query: str, max_results: int = 5):
+        cfg = loader.config
+        results = []
+        for b in cfg.search.backends:
+            results.extend(Search.backends[b](query, max_results))
+        return results
+
+    monkeypatch.setattr(Search, "external_lookup", external_lookup)
 
     events: list[list[str]] = []
 

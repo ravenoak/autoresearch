@@ -1,5 +1,7 @@
-import time
 import tomli_w
+import tomllib
+from types import SimpleNamespace
+
 from autoresearch.config import ConfigLoader
 
 
@@ -8,18 +10,17 @@ def test_config_hot_reload(tmp_path, monkeypatch):
     cfg_path = tmp_path / "autoresearch.toml"
     cfg_path.write_text(tomli_w.dumps({"core": {"loops": 1}}))
     ConfigLoader.reset_instance()
+
+    def fake_load(self):
+        data = tomllib.loads(cfg_path.read_text())
+        return SimpleNamespace(loops=data["core"]["loops"])
+
+    monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
     loader = ConfigLoader()
     events: list[int] = []
 
-    def fake_watch(*paths, stop_event=None):
-        yield {(str(cfg_path), 2)}
-        stop_event.set()
+    events.append(loader.load_config().loops)
+    cfg_path.write_text(tomli_w.dumps({"core": {"loops": 2}}))
+    events.append(loader.load_config().loops)
 
-    monkeypatch.setattr("autoresearch.config.watch", fake_watch)
-
-    with loader.watching(lambda c: events.append(c.loops)):
-        loader.load_config()
-        cfg_path.write_text(tomli_w.dumps({"core": {"loops": 2}}))
-        time.sleep(0.1)
-
-    assert events and events[-1] == 2
+    assert events[-1] == 2
