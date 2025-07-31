@@ -10,7 +10,7 @@ For personal use, run Autoresearch directly on your machine. Install the depende
 
 ```bash
 uv venv
-uv pip install -e '.[full,llm,dev]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 autoresearch search "example query"
 ```
 
@@ -33,7 +33,7 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY . /app
 RUN pip install uv \
-    && uv pip install -e '.[full,llm,dev]'
+    && uv pip install -e '.[full,parsers,git,llm,dev]'
 EXPOSE 8000
 CMD ["uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```

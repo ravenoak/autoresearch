@@ -9,7 +9,7 @@ This document provides quickstart guides for each interface type of the Autorese
 ```bash
 # Install with uv (recommended)
 uv venv
-uv pip install -e '.[full,llm,dev]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 
 # Alternatively, use pip
 pip install autoresearch
