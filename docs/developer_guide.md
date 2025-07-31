@@ -32,6 +32,16 @@ extension. Include the `git` extra when setting up the environment, for example:
 - Public modules and functions should include concise docstrings.
 - Keep commits focused and avoid temporary files.
 
+## Lifecycle Management
+
+Some components maintain global state such as configuration watchers and HTTP
+sessions. Tests must clean up these resources to avoid interference:
+
+- Use ``with ConfigLoader() as loader`` or call ``ConfigLoader.reset_instance()``
+  to stop watcher threads and clear cached configuration.
+- Call ``Search.reset()`` to restore backend registries, release any loaded
+  sentence transformer model and close pooled HTTP sessions.
+
 ## Pull Request Process
 
 1. Create a feature branch and commit your changes.

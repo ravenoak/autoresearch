@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Iterator, Any
+from typing import Callable, Dict, List, Optional, Set, Iterator, Any, cast
 from contextlib import contextmanager
 import contextvars
 import threading
@@ -506,6 +506,14 @@ class ConfigLoader:
         finally:
             cls.reset_instance()
 
+    def __enter__(self) -> "ConfigLoader":
+        """Enter context manager returning self."""
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:  # noqa: D401
+        """Reset the global instance when leaving the context."""
+        type(self).reset_instance()
+
     def __new__(cls) -> "ConfigLoader":
         """Create or return the singleton instance of ConfigLoader.
 
@@ -615,7 +623,7 @@ class ConfigLoader:
         """
         if self._config is None:
             self._config = self.load_config()
-        return self._config
+        return cast(ConfigModel, self._config)
 
     def load_config(self) -> ConfigModel:
         """Load and validate configuration from TOML and environment variables.
@@ -865,6 +873,13 @@ class ConfigLoader:
             self._watch_thread.join(timeout=1.0)
             if not getattr(sys.stderr, "closed", False):
                 logger.info("Stopped config watcher")
+
+    def close(self) -> None:
+        """Stop watcher thread and clear cached configuration."""
+        try:
+            self.stop_watching()
+        finally:
+            self._config = None
 
     @contextmanager
     def watching(
