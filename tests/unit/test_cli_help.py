@@ -1,6 +1,7 @@
 import sys
 import importlib
 import types
+from pathlib import Path
 from typer.testing import CliRunner
 
 
@@ -25,6 +26,8 @@ def test_cli_help_no_ansi(monkeypatch):
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
     runner = CliRunner()
@@ -55,6 +58,8 @@ def test_search_help_includes_interactive(monkeypatch):
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
     runner = CliRunner()
@@ -85,6 +90,8 @@ def test_search_help_includes_visualize(monkeypatch):
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
     runner = CliRunner()
@@ -124,6 +131,8 @@ def test_search_loops_option(monkeypatch):
         captured["loops"] = config.loops
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     monkeypatch.setattr(Orchestrator, "run_query", _run)
     main = importlib.import_module("autoresearch.main")
@@ -154,6 +163,8 @@ def test_search_help_includes_ontology_flags(monkeypatch):
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
     runner = CliRunner()
@@ -182,6 +193,8 @@ def test_visualize_help_includes_layout(monkeypatch):
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
+    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
     runner = CliRunner()
