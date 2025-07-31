@@ -1,3 +1,4 @@
+@behavior
 Feature: Configuration CLI
   Scenarios covering configuration commands
 
@@ -11,3 +12,11 @@ Feature: Configuration CLI
     And I run `autoresearch config init --force` in a temporary directory
     When I run `autoresearch config validate`
     Then the CLI should exit successfully
+
+  Scenario: Update reasoning configuration
+    Given a temporary work directory
+    And I run `autoresearch config init --force` in a temporary directory
+    When I run `autoresearch config reasoning --mode dialectical --loops 3`
+    Then the CLI should exit successfully
+    And the configuration file should set reasoning mode to "dialectical"
+    And the configuration file should set loops to 3
