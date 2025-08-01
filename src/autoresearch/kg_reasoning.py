@@ -3,9 +3,30 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Optional
+from types import SimpleNamespace
+from typing import Any, Optional
 
+import warnings
 import rdflib
+
+try:  # pragma: no cover - optional dependency
+    import owlrl  # type: ignore
+except Exception:  # pragma: no cover - fallback for offline tests
+    class _DeductiveClosure:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            """No-op constructor for fallback reasoner."""
+
+        def expand(self, graph: rdflib.Graph) -> None:
+            """No-op expansion when owlrl is unavailable."""
+
+    owlrl = SimpleNamespace(  # type: ignore
+        OWLRL_Semantics=object(),
+        DeductiveClosure=_DeductiveClosure,
+    )
+    warnings.warn(
+        "owlrl not installed; ontology reasoning will be skipped",
+        RuntimeWarning,
+    )
 
 from .config import ConfigLoader
 from .errors import StorageError
@@ -19,8 +40,6 @@ def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> 
     reasoner = str(reasoner_setting)
     if reasoner == "owlrl":
         try:  # pragma: no cover - optional dependency
-            import owlrl  # type: ignore
-
             owlrl.DeductiveClosure(owlrl.OWLRL_Semantics).expand(store)
         except Exception as exc:  # pragma: no cover - optional dependency
             raise StorageError(

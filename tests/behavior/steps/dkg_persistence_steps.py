@@ -209,7 +209,6 @@ def check_sparql_query(valid_claim):
     assert len(results) > 0, "No results returned from SPARQL query"
 
 
-@pytest.mark.skip("owlrl not installed")
 @scenario("../features/dkg_persistence.feature", "Persist claim in RAM")
 def test_persist_ram():
     """Test scenario: Persist claim in RAM."""
@@ -444,11 +443,25 @@ def add_subclass_instance():
 
 
 @when("I apply ontology reasoning")
-def apply_reasoning():
-    pytest.importorskip("owlrl")
-    from autoresearch.storage import StorageManager
+def apply_reasoning(monkeypatch):
+    from importlib import reload
 
-    StorageManager.apply_ontology_reasoning()
+    import autoresearch.kg_reasoning as kr
+    import autoresearch.storage as storage
+
+    kr = reload(kr)
+    monkeypatch.setattr(
+        "autoresearch.kg_reasoning.run_ontology_reasoner",
+        kr.run_ontology_reasoner,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "autoresearch.storage.run_ontology_reasoner",
+        kr.run_ontology_reasoner,
+        raising=False,
+    )
+
+    storage.StorageManager.apply_ontology_reasoning()
 
 
 @then("querying for the superclass should include the instance")
