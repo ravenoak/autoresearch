@@ -250,6 +250,13 @@ class ConfigModel(BaseModel):
         try:
             return cls(**data)
         except ValidationError:
-            return cls.model_construct(**data)
+            model = cls()
+            for field, value in data.items():
+                if field in cls.model_fields:
+                    try:
+                        setattr(model, field, value)
+                    except Exception:  # pragma: no cover - ignore bad fields
+                        continue
+            return model
 
     model_config = SettingsConfigDict(extra="ignore")

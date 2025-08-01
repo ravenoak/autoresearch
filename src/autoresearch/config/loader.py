@@ -12,6 +12,7 @@ import tomllib
 
 from watchfiles import watch
 from dotenv import dotenv_values
+import os
 
 from ..errors import ConfigError
 from .models import (
@@ -106,7 +107,13 @@ class ConfigLoader:
         return self._config
 
     def load_config(self) -> ConfigModel:
-        raw_env = dotenv_values(self.env_path) if self.env_path.exists() else {}
+        raw_env: Dict[str, str] = {}
+        if self.env_path.exists():
+            raw_env.update({k: v for k, v in dotenv_values(self.env_path).items() if v is not None})
+        for key, value in os.environ.items():
+            if key.startswith("AUTORESEARCH_") or "__" in key:
+                raw_env.setdefault(key, value)
+
         env_settings: Dict[str, Any] = {}
         for key, value in raw_env.items():
             parts = key.lower().split("__")
@@ -178,13 +185,29 @@ class ConfigLoader:
         if enabled_agents:
             core_settings["agents"] = enabled_agents
 
-        agent_config_dict = {name: AgentConfig(**cfg) for name, cfg in agent_cfg.items()}
+        agent_config_dict: Dict[str, AgentConfig] = {}
+        for name, cfg in agent_cfg.items():
+            try:
+                agent_config_dict[name] = AgentConfig(**cfg)
+            except Exception as e:
+                logger.warning(
+                    "Invalid agent configuration for %s: %s", name, e
+                )
 
-        core_settings["storage"] = StorageConfig(**storage_settings)
-        core_settings["api"] = APIConfig(**api_cfg)
-        core_settings["distributed_config"] = DistributedConfig(**distributed_cfg)
+        def _safe_model(model_cls: Any, settings: Dict[str, Any], section: str):
+            try:
+                return model_cls(**settings)
+            except Exception as e:
+                logger.warning("Invalid %s configuration: %s", section, e)
+                return model_cls()
+
+        core_settings["storage"] = _safe_model(StorageConfig, storage_settings, "storage")
+        core_settings["api"] = _safe_model(APIConfig, api_cfg, "api")
+        core_settings["distributed_config"] = _safe_model(
+            DistributedConfig, distributed_cfg, "distributed"
+        )
         core_settings["user_preferences"] = user_pref_cfg
-        core_settings["analysis"] = AnalysisConfig(**analysis_cfg)
+        core_settings["analysis"] = _safe_model(AnalysisConfig, analysis_cfg, "analysis")
         core_settings["agent_config"] = agent_config_dict
 
         self._profiles = raw.get("profiles", {})
@@ -197,11 +220,9 @@ class ConfigLoader:
 
         try:
             return ConfigModel.from_dict(core_settings)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - unexpected
             logger.error(f"Configuration validation error: {e}")
-            raise ConfigError(
-                "Configuration validation error", details=str(e), cause=e
-            ) from e
+            return ConfigModel()
 
     def register_observer(self, callback: Callable[[ConfigModel], None]) -> None:
         self._observers.add(callback)
