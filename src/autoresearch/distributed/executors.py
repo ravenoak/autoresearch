@@ -7,6 +7,7 @@ import os
 import multiprocessing
 
 from queue import Queue
+from dataclasses import dataclass
 
 from .. import storage, search
 from ..llm import pool as llm_pool
@@ -28,7 +29,16 @@ except Exception:  # pragma: no cover - missing or faulty install
     def _remote(func):
         return types.SimpleNamespace(remote=lambda *a, **k: func(*a, **k))
 
-    ray = types.SimpleNamespace(
+    @dataclass(frozen=True)
+    class RayStub:
+        init: Callable[..., None]
+        shutdown: Callable[..., None]
+        remote: Callable[[Callable[..., Any]], Any]
+        get: Callable[[Any], Any]
+        put: Callable[[Any], Any]
+        ObjectRef: type
+
+    ray = RayStub(
         init=lambda *a, **k: None,
         shutdown=lambda *a, **k: None,
         remote=_remote,

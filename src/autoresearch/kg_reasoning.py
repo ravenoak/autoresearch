@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from types import SimpleNamespace
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import warnings
@@ -19,7 +19,12 @@ except Exception:  # pragma: no cover - fallback for offline tests
         def expand(self, graph: rdflib.Graph) -> None:
             """No-op expansion when owlrl is unavailable."""
 
-    owlrl = SimpleNamespace(  # type: ignore
+    @dataclass(frozen=True)
+    class OwlRLStub:
+        OWLRL_Semantics: object
+        DeductiveClosure: type
+
+    owlrl = OwlRLStub(  # type: ignore
         OWLRL_Semantics=object(),
         DeductiveClosure=_DeductiveClosure,
     )

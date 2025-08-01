@@ -24,6 +24,7 @@ import re
 import subprocess
 import shutil
 import sys
+from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from pathlib import Path
@@ -81,6 +82,30 @@ from .http import close_http_session, get_http_session
 from .context import SearchContext
 
 log = get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class DomainAuthorityScore:
+    """Immutable domain authority score used for credibility ranking."""
+
+    domain: str
+    score: float
+
+
+DOMAIN_AUTHORITY_SCORES: Tuple[DomainAuthorityScore, ...] = (
+    DomainAuthorityScore("wikipedia.org", 0.9),
+    DomainAuthorityScore("github.com", 0.85),
+    DomainAuthorityScore("stackoverflow.com", 0.8),
+    DomainAuthorityScore("medium.com", 0.7),
+    DomainAuthorityScore("arxiv.org", 0.85),
+    DomainAuthorityScore("ieee.org", 0.9),
+    DomainAuthorityScore("acm.org", 0.9),
+    DomainAuthorityScore("nature.com", 0.95),
+    DomainAuthorityScore("science.org", 0.95),
+    DomainAuthorityScore("nih.gov", 0.95),
+    DomainAuthorityScore("edu", 0.8),  # Educational domains
+    DomainAuthorityScore("gov", 0.85),  # Government domains
+)
 
 
 class Search:
@@ -369,20 +394,7 @@ class Search:
         # and citation metrics in a production environment
 
         # Domain authority scores for common domains (simplified example)
-        domain_authority = {
-            "wikipedia.org": 0.9,
-            "github.com": 0.85,
-            "stackoverflow.com": 0.8,
-            "medium.com": 0.7,
-            "arxiv.org": 0.85,
-            "ieee.org": 0.9,
-            "acm.org": 0.9,
-            "nature.com": 0.95,
-            "science.org": 0.95,
-            "nih.gov": 0.95,
-            "edu": 0.8,  # Educational domains
-            "gov": 0.85,  # Government domains
-        }
+        domain_authority = {da.domain: da.score for da in DOMAIN_AUTHORITY_SCORES}
 
         scores = []
         for doc in documents:
@@ -596,7 +608,7 @@ class Search:
 
         best = (0.5, 0.3, 0.2)
         best_score = cls.evaluate_weights(best, data)
-        steps = [i * step for i in range(int(1 / step) + 1)]
+        steps = tuple(i * step for i in range(int(1 / step) + 1))
         for w_sem in steps:
             for w_bm in steps:
                 w_cred = 1.0 - w_sem - w_bm
