@@ -9,6 +9,8 @@ sys.modules.setdefault("umap", MagicMock())
 sys.modules.setdefault("pynndescent", MagicMock())
 
 from autoresearch.main import app  # noqa: E402
+import importlib  # noqa: E402
+main_app = importlib.import_module("autoresearch.main.app")  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402
 from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 
@@ -37,13 +39,8 @@ def test_search_default_output_json(monkeypatch):
 
 
 @pytest.mark.parametrize("mode", ["direct", "dialectical"])
-def test_search_reasoning_mode_option(monkeypatch, mode):
+def test_search_reasoning_mode_option(monkeypatch, mode, config_loader):
     runner = CliRunner()
-
-    def _mock_load_config():
-        from autoresearch.config.models import ConfigModel
-
-        return ConfigModel()
 
     captured = {}
 
@@ -51,7 +48,7 @@ def test_search_reasoning_mode_option(monkeypatch, mode):
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
-    monkeypatch.setattr("autoresearch.main._config_loader.load_config", _mock_load_config)
+    monkeypatch.setattr(main_app, "_config_loader", config_loader)
     monkeypatch.setattr(Orchestrator, "run_query", _run)
 
     result = runner.invoke(app, ["search", "q", "--reasoning-mode", mode])
@@ -60,13 +57,8 @@ def test_search_reasoning_mode_option(monkeypatch, mode):
     assert captured["mode"].value == mode
 
 
-def test_search_primus_start_option(monkeypatch):
+def test_search_primus_start_option(monkeypatch, config_loader):
     runner = CliRunner()
-
-    def _mock_load_config():
-        from autoresearch.config.models import ConfigModel
-
-        return ConfigModel()
 
     captured = {}
 
@@ -74,7 +66,7 @@ def test_search_primus_start_option(monkeypatch):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
-    monkeypatch.setattr("autoresearch.main._config_loader.load_config", _mock_load_config)
+    monkeypatch.setattr(main_app, "_config_loader", config_loader)
     monkeypatch.setattr(Orchestrator, "run_query", _run)
 
     result = runner.invoke(app, ["search", "q", "--primus-start", "2"])
@@ -83,24 +75,19 @@ def test_search_primus_start_option(monkeypatch):
     assert captured["start"] == 2
 
 
-def test_config_command(monkeypatch):
+def test_config_command(monkeypatch, config_loader):
     runner = CliRunner()
+    from autoresearch.config.models import ConfigModel
 
-    class Cfg:
-        def json(self, indent=2):
-            return '{\n  "loops": 1\n}'
-
-    monkeypatch.setattr(
-        "autoresearch.main._config_loader.load_config",
-        lambda: Cfg(),
-    )
+    monkeypatch.setattr(ConfigModel, "json", ConfigModel.model_dump_json)
+    monkeypatch.setattr(main_app, "_config_loader", config_loader)
     result = runner.invoke(app, ["config"])
     assert result.exit_code == 0
     assert '"loops"' in result.stdout
 
 
 @patch("autoresearch.main.create_server")
-def test_serve_command(mock_create_server, monkeypatch):
+def test_serve_command(mock_create_server, monkeypatch, config_loader):
     """Test the serve command that starts an MCP server."""
     runner = CliRunner()
 
@@ -109,14 +96,7 @@ def test_serve_command(mock_create_server, monkeypatch):
     mock_create_server.return_value = mock_server_instance
 
     # Mock the config loader
-    class Cfg:
-        def __init__(self):
-            pass
-
-    monkeypatch.setattr(
-        "autoresearch.main._config_loader.load_config",
-        lambda: Cfg(),
-    )
+    monkeypatch.setattr(main_app, "_config_loader", config_loader)
 
     # Run the command with Ctrl+C simulation
     mock_server_instance.run.side_effect = KeyboardInterrupt()

@@ -12,6 +12,8 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
+pytest_plugins = ["tests.fixtures.config"]
+
 if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))
