@@ -4,7 +4,22 @@ from autoresearch.main import app as cli_app
 
 
 @when("I run `autoresearch capabilities`")
-def run_capabilities(cli_runner, bdd_context):
+def run_capabilities(cli_runner, bdd_context, monkeypatch):
+    import sys
+    import types
+
+    monkeypatch.setitem(sys.modules, "docx", types.SimpleNamespace(Document=object))
+    monkeypatch.setitem(
+        sys.modules,
+        "autoresearch.main.llm",
+        types.SimpleNamespace(get_available_adapters=lambda: {}),
+    )
+    from autoresearch.orchestration import ReasoningMode
+    monkeypatch.setitem(
+        sys.modules,
+        "autoresearch.main.orchestration",
+        types.SimpleNamespace(ReasoningMode=ReasoningMode),
+    )
     result = cli_runner.invoke(cli_app, ["capabilities"])
     bdd_context["result"] = result
 

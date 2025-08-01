@@ -24,6 +24,7 @@ def enable_agents(monkeypatch):
     target_fixture="set_loops",
 )
 def set_loops(loops: int, monkeypatch):
+    loops = int(loops)
     config = ConfigModel.model_construct(
         agents=["Synthesizer", "Contrarian", "FactChecker"], loops=loops
     )
@@ -130,37 +131,49 @@ def check_agent_groups(run_orchestrator_on_query, groups):
     parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'),
     target_fixture="submit_query_via_cli",
 )
-def submit_query_via_cli(query, monkeypatch, cli_runner):
-    from autoresearch.models import QueryResponse
-
-    original_run_query = Orchestrator.run_query
-    agent_invocations = []
+def submit_query_via_cli(query, monkeypatch, cli_runner, tmp_path):
+    agent_invocations: list[str] = []
     logger = logging.getLogger("autoresearch.test")
+    logger.setLevel(logging.INFO)
 
-    def mock_run_query(query, config, callbacks=None):
-        for idx, name in enumerate(["Synthesizer", "Contrarian", "Synthesizer"]):
-            logger.info("%s executing (cycle %s)", name, idx)
-            agent_invocations.append(name)
-        return QueryResponse(
-            answer=f"Answer for: {query}",
-            citations=["Source 1", "Source 2"],
-            reasoning=["Reasoning step 1", "Reasoning step 2"],
-            metrics={"time_ms": 100, "tokens": 50},
-        )
+    class DummyAgent:
+        def __init__(self, name: str):
+            self.name = name
 
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+        def can_execute(self, state, config):
+            return True
+
+        def execute(self, state, config):
+            idx = len(agent_invocations)
+            logger.info("%s executing (cycle %s)", self.name, idx)
+            agent_invocations.append(self.name)
+            return {}
+
+    def get_agent(name: str):
+        return DummyAgent(name)
+
     cfg = ConfigModel.model_construct(
         agents=["Synthesizer", "Contrarian", "Synthesizer"], loops=1
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
     from autoresearch import main as main_mod
 
     main_mod._config_loader = ConfigLoader()
     main_mod._config_loader._config = cfg
 
-    result = cli_runner.invoke(cli_app, ["search", query])
+    monkeypatch.setenv(
+        "AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "release_tokens.json")
+    )
+    monkeypatch.setenv(
+        "AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "query_tokens.json")
+    )
 
-    monkeypatch.setattr(Orchestrator, "run_query", original_run_query)
+    with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        side_effect=get_agent,
+    ):
+        result = cli_runner.invoke(cli_app, ["search", query])
 
     return {"result": result, "agent_invocations": agent_invocations}
 

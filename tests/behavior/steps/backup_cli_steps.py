@@ -23,7 +23,25 @@ def dummy_backup_file(work_dir, path):
 
 
 @when(parsers.parse('I run `autoresearch config backup create --dir {dir}`'))
-def run_backup_create(dir, cli_runner, bdd_context):
+def run_backup_create(dir, cli_runner, bdd_context, monkeypatch):
+    def fake_create_backup(
+        backup_dir,
+        db_filename="kg.duckdb",
+        rdf_filename="store.rdf",
+        compress: bool = True,
+        config=None,
+    ):
+        backup_path = Path(backup_dir) / "dummy.tar"
+        Path(backup_dir).mkdir(parents=True, exist_ok=True)
+        backup_path.write_text("data")
+        return BackupInfo(
+            path=str(backup_path),
+            timestamp=datetime.now(),
+            compressed=compress,
+            size=1,
+        )
+
+    monkeypatch.setattr(BackupManager, "create_backup", fake_create_backup)
     result = cli_runner.invoke(cli_app, ["config", "backup", "create", "--dir", dir])
     bdd_context["result"] = result
     bdd_context["backup_dir"] = Path(dir)
