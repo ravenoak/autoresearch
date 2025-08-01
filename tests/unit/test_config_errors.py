@@ -1,7 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
-
-pytestmark = pytest.mark.xfail(reason="ConfigError handling not implemented")
+from unittest.mock import MagicMock, patch
 
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
@@ -19,8 +17,7 @@ def test_load_config_file_error(tmp_path, monkeypatch):
 
     loader = ConfigLoader()
 
-    # The current implementation logs the error but doesn't raise an exception
-    # This test will fail until we implement the change
+    # ConfigLoader should surface parse errors as ConfigError
     with pytest.raises(ConfigError, match="Error loading config file"):
         loader.load_config()
 
@@ -34,8 +31,7 @@ def test_notify_observers_error():
     mock_observer = MagicMock(side_effect=ValueError("Observer error"))
     loader.register_observer(mock_observer)
 
-    # The current implementation logs the error but doesn't raise an exception
-    # This test will fail until we implement the change
+    # Observer failures should propagate as ConfigError
     with pytest.raises(ConfigError, match="Error in config observer"):
         loader.notify_observers(ConfigModel())
 
@@ -51,10 +47,8 @@ def test_watch_config_files_error(tmp_path, monkeypatch):
 
     loader = ConfigLoader()
 
-    # Mock the watch function to raise an exception
+    # Mock the watch function to raise an exception and ensure it's reported
     with patch("autoresearch.config.loader.watch", side_effect=ValueError("Watch error")):
-        # The current implementation logs the error but doesn't raise an exception
-        # This test will fail until we implement the change
         with pytest.raises(ConfigError, match="Error in config watcher"):
             loader._watch_config_files()
 
@@ -76,11 +70,7 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
 
     # Mock load_config to raise an exception
     with patch("autoresearch.config.loader.watch", mock_watch):
-        with patch.object(
-            loader, "load_config", side_effect=ValueError("Reload error")
-        ):
-            # The current implementation logs the error but doesn't raise an exception
-            # This test will fail until we implement the change
+        with patch.object(loader, "load_config", side_effect=ValueError("Reload error")):
             with pytest.raises(ConfigError, match="Error in config watcher"):
                 loader._watch_config_files()
 
@@ -90,8 +80,7 @@ def test_reset_instance_error():
     ConfigLoader.reset_instance()
     # Create a temporary instance and simulate failure stopping its watcher
     with ConfigLoader.temporary_instance() as loader:
+        ConfigLoader._instance = loader
         with patch.object(loader, "stop_watching", side_effect=ValueError("Stop error")):
-            # The current implementation suppresses the exception
-            # This test will fail until we implement the change
             with pytest.raises(ConfigError, match="Error stopping config watcher"):
                 ConfigLoader.reset_instance()
