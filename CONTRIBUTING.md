@@ -214,6 +214,9 @@ task verify
 The BDD tests live under `tests/behavior` and can be executed separately if you
 only want to run the behavior scenarios.
 
+After tests complete, remove untracked artifacts such as `kg.duckdb`, `rdf_store`,
+and any `__pycache__` directories to keep your working tree clean.
+
 ### Test Coverage Requirements
 
 - All new code should have at least 90% test coverage

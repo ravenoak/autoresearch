@@ -28,7 +28,7 @@ uv run pytest -q
 uv run pytest tests/behavior
 ```
 
-Maintain at least 90% test coverage and remove temporary files before submitting your changes.
+Maintain at least 90% test coverage and remove temporary files before submitting your changes. After running tests, clean up any untracked artifacts such as `kg.duckdb`, `rdf_store`, and `__pycache__` so your working directory stays tidy.
 
 Please keep commits focused and descriptive.
 
