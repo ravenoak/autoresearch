@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Optional, Any
 
 import typer
+import tomllib
+import tomli_w
 
 from ..config.models import ConfigModel
 from ..config.loader import ConfigLoader
@@ -92,12 +94,14 @@ def config_validate() -> None:
         typer.echo(f"  - {path}")
     if env_path.exists():
         typer.echo(f"  - {env_path}")
-    try:
-        config_loader.load_config()
+    valid, errors = config_loader.validate_config()
+    if valid:
         typer.echo("Configuration is valid.")
-    except ConfigError as e:
-        typer.echo(f"Configuration error: {e}")
-        return
+    else:
+        typer.echo("Configuration is invalid:")
+        for err in errors:
+            typer.echo(f"  - {err}")
+        raise typer.Exit(code=1)
 
 
 @config_app.command("reasoning")
@@ -142,8 +146,16 @@ def config_reasoning(
     if max_errors is not None:
         updates["max_errors"] = max_errors
     new_cfg = ConfigModel.model_validate({**data, **updates})
-    path = _config_loader.search_paths[0]
-    path.write_text(new_cfg.model_dump_json(indent=2))
+    path = next((p for p in _config_loader.search_paths if p.exists()), _config_loader.search_paths[0])
+    try:
+        existing = tomllib.loads(path.read_text()) if path.exists() else {}
+    except Exception as e:  # pragma: no cover - unexpected format
+        raise ConfigError("Error reading config", file=str(path), cause=e) from e
+    core_cfg = existing.setdefault("core", {})
+    core_cfg.update({k: v for k, v in updates.items()})
+    with open(path, "wb") as f:
+        tomli_w.dump(existing, f)
+    _config_loader._config = new_cfg
     typer.echo(f"Updated {path}")
 
 

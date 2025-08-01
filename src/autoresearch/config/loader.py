@@ -224,6 +224,16 @@ class ConfigLoader:
             logger.error(f"Configuration validation error: {e}")
             return ConfigModel()
 
+    def validate_config(self) -> tuple[bool, list[str]]:
+        """Validate configuration files and return status and errors."""
+        try:
+            self.load_config()
+            return True, []
+        except ConfigError as e:
+            return False, [str(e)]
+        except Exception as e:  # pragma: no cover - unexpected
+            return False, [str(e)]
+
     def register_observer(self, callback: Callable[[ConfigModel], None]) -> None:
         self._observers.add(callback)
 

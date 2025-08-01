@@ -28,7 +28,6 @@ def test_config_init_command_force(tmp_path):
     assert "Configuration initialized successfully." in result.stdout
 
 
-@pytest.mark.xfail(reason="Config validation not supported")
 @patch("autoresearch.main.config_cli.ConfigLoader")
 def test_config_validate_command_valid(
     mock_config_loader_class, mock_config_loader, tmp_path
@@ -47,7 +46,6 @@ def test_config_validate_command_valid(
     assert "Configuration is valid" in result.stdout
 
 
-@pytest.mark.xfail(reason="Config validation not supported")
 @patch("autoresearch.main.config_cli.ConfigLoader")
 def test_config_validate_command_invalid(
     mock_config_loader_class, mock_config_loader, tmp_path

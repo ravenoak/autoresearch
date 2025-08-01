@@ -1,4 +1,3 @@
-import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.main import app as cli_app
@@ -70,7 +69,6 @@ def test_config_validate():
     pass
 
 
-@pytest.mark.xfail(reason="reasoning command not fully implemented")
 @scenario("../features/config_cli.feature", "Update reasoning configuration")
 def test_config_reasoning():
     pass
