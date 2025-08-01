@@ -61,13 +61,15 @@ def test_search_storage_hot_reload(tmp_path, monkeypatch):
     # Execute
     with loader.watching(on_change):
         loader.load_config()
+        events.append(loader.config.search.backends)
         Search.external_lookup("q", max_results=1)
         StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "v"})
         cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b2"]}}))
         time.sleep(0.1)
         Search.external_lookup("q", max_results=1)
+        StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "v"})
 
     # Verify
-    assert stored == ["c1"]
+    assert stored == ["c1", "c2"]
     assert calls == ["b1", "b2"]
-    assert events and events[-1] == ["b2"]
+    assert events[0] == ["b1"] and events[-1] == ["b2"]

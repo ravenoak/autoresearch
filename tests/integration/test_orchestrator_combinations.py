@@ -39,7 +39,7 @@ def make_agent(name, calls, search_calls, store_calls):
 def test_orchestrator_agent_combinations(monkeypatch, agents):
     calls: list[str] = []
     search_calls: list[str] = []
-    store_calls: list[str] = []
+    store_calls: list[dict] = []
     monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
     monkeypatch.setattr(
         StorageManager, "persist_claim", lambda claim: store_calls.append(claim)
@@ -65,5 +65,8 @@ def test_orchestrator_agent_combinations(monkeypatch, agents):
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)
     assert search_calls == calls
-    assert len(store_calls) == len(agents)
+    expected_claims = [
+        {"id": a, "type": "fact", "content": a} for a in agents
+    ]
+    assert store_calls == expected_claims
     assert response.answer == "Answer from Synthesizer"
