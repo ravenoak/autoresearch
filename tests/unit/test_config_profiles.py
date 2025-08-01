@@ -7,7 +7,6 @@ users to define and switch between different configuration profiles.
 import pytest
 from unittest.mock import patch, mock_open
 
-pytestmark = pytest.mark.xfail(reason="Config profiles not supported in tests")
 import time  # noqa: E402
 import stat  # noqa: E402
 
