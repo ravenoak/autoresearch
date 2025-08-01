@@ -1,3 +1,4 @@
+import importlib
 import sys
 from types import ModuleType
 
@@ -65,3 +66,12 @@ def test_query_with_reasoning(monkeypatch):
     res = list(query_with_reasoning(g, q))
     assert len(res) == 1
     assert res[0][0] == o
+
+
+def test_run_ontology_reasoner_without_owlrl(monkeypatch):
+    monkeypatch.delitem(sys.modules, "owlrl", raising=False)
+    import autoresearch.kg_reasoning as kr
+    kr = importlib.reload(kr)
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "owlrl")
+    kr.run_ontology_reasoner(g)

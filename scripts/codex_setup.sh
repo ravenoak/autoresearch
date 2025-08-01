@@ -29,7 +29,7 @@ if [ ! -x /usr/local/bin/task ]; then
 fi
 
 # Run the main setup script to install all extras needed for testing
-./scripts/setup.sh full,dev
+./scripts/setup.sh full,dev,test
 
 # Pre-download models so tests can run without network access
 uv run python - <<'PY'
@@ -38,6 +38,11 @@ SentenceTransformer("all-MiniLM-L6-v2")
 PY
 
 uv run python -m spacy download en_core_web_sm
+
+# Pre-load ontology reasoner so tests can run offline
+uv run python - <<'PY'
+import owlrl  # noqa: F401
+PY
 
 # Cache DuckDB extensions for offline use (vss by default)
 uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions
