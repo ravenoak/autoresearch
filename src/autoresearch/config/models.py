@@ -8,8 +8,8 @@ from pydantic import (
     ValidationError,
     field_validator,
     model_validator,
-    TypeAdapter,
 )
+from pydantic_settings import SettingsConfigDict
 
 from ..orchestration import ReasoningMode
 from .validators import (
@@ -247,15 +247,9 @@ class ConfigModel(BaseModel):
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConfigModel":
-        adapter = TypeAdapter(cls)
         try:
-            return adapter.validate_python(data, context={"_cli_parse_args": False})
+            return cls(**data)
         except ValidationError:
             return cls.model_construct(**data)
 
-    model_config: Dict[str, Any] = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-        "env_nested_delimiter": "__",
-        "extra": "ignore",
-    }
+    model_config = SettingsConfigDict(extra="ignore")

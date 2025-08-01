@@ -11,6 +11,7 @@ import sys
 import tomllib
 
 from watchfiles import watch
+from dotenv import dotenv_values
 
 from ..errors import ConfigError
 from .models import (
@@ -23,6 +24,15 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _merge_dict(base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            base[key] = _merge_dict(base.get(key, {}), value)
+        else:
+            base[key] = value
+    return base
 
 
 class ConfigLoader:
@@ -96,6 +106,16 @@ class ConfigLoader:
         return self._config
 
     def load_config(self) -> ConfigModel:
+        raw_env = dotenv_values(self.env_path) if self.env_path.exists() else {}
+        env_settings: Dict[str, Any] = {}
+        for key, value in raw_env.items():
+            parts = key.lower().split("__")
+            d = env_settings
+            for part in parts[:-1]:
+                d = d.setdefault(part, {})
+            d[parts[-1]] = value
+        storage_env = env_settings.pop("storage", {})
+
         raw: Dict[str, Any] = {}
         config_path: Path | None = None
         for path in self.search_paths:
@@ -116,6 +136,7 @@ class ConfigLoader:
                 ) from e
 
         core_settings = raw.get("core", {})
+        _merge_dict(core_settings, env_settings)
         if "backend" in core_settings and "llm_backend" not in core_settings:
             core_settings["llm_backend"] = core_settings["backend"]
 
@@ -140,6 +161,7 @@ class ConfigLoader:
             "use_kuzu": storage_cfg.get("use_kuzu", False),
             "kuzu_path": storage_cfg.get("kuzu_path", "kuzu.db"),
         }
+        _merge_dict(storage_settings, storage_env)
 
         api_cfg = raw.get("api", {})
         distributed_cfg = raw.get("distributed", {})
