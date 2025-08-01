@@ -22,6 +22,7 @@ def test_apply_theme_settings(monkeypatch):
 def test_save_config_to_toml_error(tmp_path, monkeypatch):
     st = DummySt()
     monkeypatch.setattr(streamlit_app, 'st', st)
+    monkeypatch.setattr('autoresearch.config_utils.st', st)
     monkeypatch.setattr(Path, 'cwd', lambda: tmp_path)
 
     def boom(*a, **k):
