@@ -1,6 +1,12 @@
-from pytest_bdd import scenario, when, then
-from autoresearch.config.models import ConfigModel, APIConfig
+from pytest_bdd import scenario, given, when, then
+
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, APIConfig
+
+
+@given("the API server is running")
+def api_server_running(test_context, api_client):
+    test_context["client"] = api_client
 
 
 @when("I request the health endpoint")
@@ -13,6 +19,11 @@ def request_health(test_context):
 @then('the response body should contain "status" "ok"')
 def check_health_body(test_context):
     assert test_context["response"].json() == {"status": "ok"}
+
+
+@then("the response status should be 200")
+def assert_status_200(test_context):
+    assert test_context["response"].status_code == 200
 
 
 @when("I request the capabilities endpoint")

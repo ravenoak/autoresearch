@@ -117,7 +117,7 @@ def run_with_reasoning(query, mode, monkeypatch, cli_runner, bdd_context):
 @then(parsers.parse('the search config should use reasoning mode "{mode}"'))
 def check_reasoning_mode(bdd_context, mode):
     cfg = bdd_context.get("cfg")
-    assert str(cfg.reasoning_mode) == mode
+    assert cfg.reasoning_mode.value == mode
     assert bdd_context["result"].exit_code == 0
 
 
