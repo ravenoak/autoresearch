@@ -1,5 +1,4 @@
 from hypothesis import given, strategies as st
-from hypothesis import given, strategies as st
 import pytest
 
 from autoresearch.search import Search

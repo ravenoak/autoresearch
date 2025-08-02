@@ -15,7 +15,7 @@ from autoresearch.errors import StorageError
 def test_vector_search_calls_backend(monkeypatch, query_embedding, k):
     backend = MagicMock()
     backend.vector_search.return_value = [{"node_id": "n", "embedding": [0.1]}]
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     result = StorageManager.vector_search(query_embedding, k)
@@ -37,7 +37,7 @@ def test_vector_search_backend_receives_exact(monkeypatch, query_embedding, k):
     """Backend should receive the exact query embedding and k."""
     backend = MagicMock()
     backend.vector_search.return_value = []
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
 
@@ -77,7 +77,7 @@ def malformed_embeddings(draw):
 def test_vector_search_malformed_embedding(monkeypatch, query_embedding, k):
     backend = MagicMock()
     backend.vector_search.side_effect = RuntimeError("bad embedding")
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
 

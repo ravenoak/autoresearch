@@ -545,7 +545,7 @@ def check_vector_search_works(monkeypatch, bdd_context):
             # Mock the _db_backend.vector_search method to return expected results
             mock_results = [{"node_id": "test1", "embedding": [0.1, 0.2, 0.3]}]
             with patch(
-                "autoresearch.storage._db_backend.vector_search",
+                "autoresearch.storage.StorageManager.context.db_backend.vector_search",
                 return_value=mock_results,
             ):
                 # Try to perform a vector search

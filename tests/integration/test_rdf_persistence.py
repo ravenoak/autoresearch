@@ -22,8 +22,8 @@ def cleanup_rdf_store():
     yield
 
     # Teardown
-    if hasattr(StorageManager, "_rdf_store"):
-        StorageManager._rdf_store = None
+    if StorageManager.context.rdf_store is not None:
+        StorageManager.context.rdf_store = None
     ConfigLoader.reset_instance()
 
 

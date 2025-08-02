@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import time
 from collections import OrderedDict
+from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Optional, cast, Iterator, ClassVar
 from contextlib import contextmanager
@@ -37,11 +38,19 @@ from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
 from .kg_reasoning import run_ontology_reasoner
 
+
+@dataclass
+class StorageContext:
+    """Container for storage backend instances."""
+
+    graph: Optional[nx.DiGraph[Any]] = None
+    db_backend: Optional[DuckDBStorageBackend] = None
+    rdf_store: Optional[rdflib.Graph] = None
+
+
 # Global containers initialised in `setup`
-_graph: Optional[nx.DiGraph[Any]] = None
-_db_backend: Optional[DuckDBStorageBackend] = None
+_context = StorageContext()
 _kuzu_backend: Optional[KuzuStorageBackend] = None
-_rdf_store: Optional[rdflib.Graph] = None
 _lock = Lock()
 _lru: "OrderedDict[str, float]" = OrderedDict()
 log = get_logger(__name__)
@@ -69,22 +78,23 @@ def get_delegate() -> type["StorageManager"] | None:
     return _delegate
 
 
-def setup(db_path: Optional[str] = None) -> None:
+def setup(db_path: Optional[str] = None, context: StorageContext | None = None) -> None:
     """Initialise storage components if not already initialised."""
-    global _graph, _db_backend, _kuzu_backend, _rdf_store
+    global _kuzu_backend
+    ctx = context or _context
     with _lock:
-        if _db_backend is not None and _db_backend.get_connection() is not None:
+        if ctx.db_backend is not None and ctx.db_backend.get_connection() is not None:
             return
 
-        _graph = nx.DiGraph()
+        ctx.graph = nx.DiGraph()
         try:
             cfg = ConfigLoader().config.storage
         except ConfigError:
             cfg = StorageConfig()
 
         # Initialize DuckDB backend
-        _db_backend = DuckDBStorageBackend()
-        _db_backend.setup(db_path)
+        ctx.db_backend = DuckDBStorageBackend()
+        ctx.db_backend.setup(db_path)
 
         # Initialize Kuzu backend when enabled
         if cfg.use_kuzu:
@@ -93,7 +103,7 @@ def setup(db_path: Optional[str] = None) -> None:
 
         # Initialize RDF store
         if cfg.rdf_backend == "memory":
-            _rdf_store = rdflib.Graph()
+            ctx.rdf_store = rdflib.Graph()
         else:
             if cfg.rdf_backend == "berkeleydb":
                 store_name = "Sleepycat"
@@ -102,11 +112,11 @@ def setup(db_path: Optional[str] = None) -> None:
                 store_name = "SQLAlchemy"
                 rdf_path = f"sqlite:///{cfg.rdf_path}"
             try:
-                _rdf_store = rdflib.Graph(store=store_name)
-                _rdf_store.open(rdf_path, create=True)
+                ctx.rdf_store = rdflib.Graph(store=store_name)
+                ctx.rdf_store.open(rdf_path, create=True)
             except Exception as e:  # pragma: no cover - store may fail
                 log.error(f"Failed to open RDF store: {e}")
-                _rdf_store = None
+                ctx.rdf_store = None
                 if "No plugin registered" in str(e):
                     raise StorageError(
                         f"Missing RDF backend plugin: {store_name}",
@@ -118,7 +128,7 @@ def setup(db_path: Optional[str] = None) -> None:
                 raise StorageError("Failed to open RDF store", cause=e)
 
 
-def teardown(remove_db: bool = False) -> None:
+def teardown(remove_db: bool = False, context: StorageContext | None = None) -> None:
     """Close connections and optionally remove the DuckDB file.
 
     This method closes all storage connections (DuckDB, RDF) and optionally
@@ -129,20 +139,21 @@ def teardown(remove_db: bool = False) -> None:
         remove_db: If True, also removes the database files from disk.
                   Default is False.
     """
-    global _graph, _db_backend, _kuzu_backend, _rdf_store
+    global _kuzu_backend
+    ctx = context or _context
     with _lock:
         # Close DuckDB connection
-        if _db_backend is not None:
+        if ctx.db_backend is not None:
             try:
                 # Get the path before closing the connection
                 db_path = None
                 try:
-                    db_path = _db_backend._path
+                    db_path = ctx.db_backend._path
                 except Exception as e:
                     log.debug(f"Could not determine DuckDB path for cleanup: {e}")
 
                 # Close the connection
-                _db_backend.close()
+                ctx.db_backend.close()
 
                 # Remove the database file if requested
                 if remove_db and db_path and os.path.exists(db_path):
@@ -152,9 +163,9 @@ def teardown(remove_db: bool = False) -> None:
                 # We don't raise here as this is cleanup code
 
         # Close RDF store
-        if _rdf_store is not None:
+        if ctx.rdf_store is not None:
             try:
-                _rdf_store.close()
+                ctx.rdf_store.close()
             except Exception as e:  # pragma: no cover - optional close
                 log.warning(f"Failed to close RDF store: {e}")
                 # We don't raise here as this is cleanup code
@@ -181,10 +192,10 @@ def teardown(remove_db: bool = False) -> None:
                 log.warning(f"Failed to close Kuzu connection: {e}")
 
         # Reset global variables
-        _graph = None
-        _db_backend = None
+        ctx.graph = None
+        ctx.db_backend = None
         _kuzu_backend = None
-        _rdf_store = None
+        ctx.rdf_store = None
 
 
 class StorageManager:
@@ -205,9 +216,12 @@ class StorageManager:
 
     _access_frequency: ClassVar[dict[str, int]] = {}
     _last_adaptive_policy: ClassVar[str] = "lru"
+    context: ClassVar[StorageContext] = _context
 
     @staticmethod
-    def setup(db_path: Optional[str] = None) -> None:
+    def setup(
+        db_path: Optional[str] = None, context: StorageContext | None = None
+    ) -> StorageContext:
         """Initialize storage components if not already initialized.
 
         This method initializes the NetworkX graph, DuckDB connection, and RDFLib store.
@@ -219,14 +233,22 @@ class StorageManager:
                      1. config.storage.duckdb.path
                      2. DUCKDB_PATH environment variable
                      3. Default to "kg.duckdb".
+            context: Optional ``StorageContext`` to initialize. If not provided, the
+                global context is used.
 
         Raises:
             StorageError: If the RDF store or VSS extension fails to initialize
                           and the failure is not due to a plugin registration issue.
+
+        Returns:
+            StorageContext: The initialized storage context.
         """
+        ctx = context or StorageManager.context
         if _delegate and _delegate is not StorageManager:
-            return _delegate.setup(db_path)
-        setup(db_path)
+            return _delegate.setup(db_path, ctx)
+        StorageManager.context = ctx
+        setup(db_path, ctx)
+        return ctx
 
     @staticmethod
     def _current_ram_mb() -> float:
@@ -309,13 +331,14 @@ class StorageManager:
             This method only identifies the node for eviction and removes it from the LRU cache if present.
             The caller is responsible for removing the node from the graph if needed.
         """
-        if not _graph or not _graph.nodes:
+        graph = StorageManager.context.graph
+        if not graph or not graph.nodes:
             return None
         node_id = cast(
             str,
             min(
-                _graph.nodes,
-                key=lambda n: _graph.nodes[n].get("confidence", 0.0),
+                graph.nodes,
+                key=lambda n: graph.nodes[n].get("confidence", 0.0),
             ),
         )
         if node_id in _lru:
@@ -373,7 +396,7 @@ class StorageManager:
         # Batch size for eviction to improve performance
         batch_size = min(
             getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
-            len(_graph.nodes) // 10 if _graph and _graph.nodes else 1  # Don't exceed 10% of nodes
+            len(StorageManager.context.graph.nodes) // 10 if StorageManager.context.graph and StorageManager.context.graph.nodes else 1  # Don't exceed 10% of nodes
         )
 
         # Determine if we should use aggressive eviction (when memory usage is critically high)
@@ -386,7 +409,7 @@ class StorageManager:
         )
 
         # Implement different eviction policies
-        while _graph and StorageManager._current_ram_mb() > target_mb:
+        while StorageManager.context.graph and StorageManager._current_ram_mb() > target_mb:
             nodes_to_evict = []
 
             if policy == "hybrid":
@@ -400,13 +423,13 @@ class StorageManager:
                     recency_ranks[node_id] = i / max(1, len(_lru))  # Normalize to 0-1
 
                 # Calculate hybrid scores
-                for node_id in _graph.nodes:
+                for node_id in StorageManager.context.graph.nodes:
                     if node_id in recency_ranks:
                         recency_weight = getattr(cfg, "recency_weight", 0.7)  # Default 70% weight to recency
                         confidence_weight = 1.0 - recency_weight
 
                         recency_score = recency_ranks.get(node_id, 1.0)  # Higher is worse (more recent = 0)
-                        confidence_score = 1.0 - _graph.nodes[node_id].get("confidence", 0.5)  # Higher is worse
+                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get("confidence", 0.5)  # Higher is worse
 
                         hybrid_scores[node_id] = (
                             recency_weight * recency_score +
@@ -455,12 +478,12 @@ class StorageManager:
                 if policy_to_use == "score":
                     for _ in range(batch_size):
                         popped = StorageManager._pop_low_score()
-                        if popped and _graph.has_node(popped):
+                        if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
                 else:
                     for _ in range(batch_size):
                         popped = StorageManager._pop_lru()
-                        if popped and _graph.has_node(popped):
+                        if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
 
             elif policy == "priority":
@@ -480,12 +503,12 @@ class StorageManager:
 
                 # Assign priority to each node
                 node_priorities = {}
-                for node_id in _graph.nodes:
-                    node_type = _graph.nodes[node_id].get("type", "default")
+                for node_id in StorageManager.context.graph.nodes:
+                    node_type = StorageManager.context.graph.nodes[node_id].get("type", "default")
                     # Map node type to priority tier
                     tier = priority_tiers.get(node_type, priority_tiers["default"])
                     # Adjust by confidence
-                    confidence_boost = _graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                    confidence_boost = StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
                     # Final priority score (lower = higher priority)
                     node_priorities[node_id] = tier - confidence_boost
 
@@ -503,13 +526,13 @@ class StorageManager:
                 # Score-based policy: evict nodes with lowest confidence
                 for _ in range(batch_size):
                     popped = StorageManager._pop_low_score()
-                    if popped and _graph.has_node(popped):
+                    if popped and StorageManager.context.graph.has_node(popped):
                         nodes_to_evict.append(popped)
             else:
                 # Default to LRU policy
                 for _ in range(batch_size):
                     popped = StorageManager._pop_lru()
-                    if popped and _graph.has_node(popped):
+                    if popped and StorageManager.context.graph.has_node(popped):
                         nodes_to_evict.append(popped)
 
             # If we couldn't find any nodes to evict, break
@@ -518,8 +541,8 @@ class StorageManager:
 
             # Evict the selected nodes
             for node_id in nodes_to_evict:
-                if _graph.has_node(node_id):
-                    _graph.remove_node(node_id)
+                if StorageManager.context.graph.has_node(node_id):
+                    StorageManager.context.graph.remove_node(node_id)
                     if node_id in _lru:
                         del _lru[node_id]
                     EVICTION_COUNTER.inc()
@@ -534,7 +557,7 @@ class StorageManager:
                 # If we're not making progress fast enough and in aggressive mode,
                 # double the batch size
                 if aggressive_eviction and nodes_evicted > 50:
-                    batch_size = min(batch_size * 2, len(_graph.nodes) // 5 if _graph and _graph.nodes else 1)
+                    batch_size = min(batch_size * 2, len(StorageManager.context.graph.nodes) // 5 if StorageManager.context.graph and StorageManager.context.graph.nodes else 1)
 
         # Log eviction results
         eviction_time = time.time() - eviction_start_time
@@ -603,23 +626,27 @@ class StorageManager:
                          uninitialized after calling setup(). The error message includes
                          a suggestion to call StorageManager.setup() before performing operations.
         """
-        if _db_backend is None or _graph is None or _rdf_store is None:
+        if (
+            StorageManager.context.db_backend is None
+            or StorageManager.context.graph is None
+            or StorageManager.context.rdf_store is None
+        ):
             try:
-                setup()
+                setup(context=StorageManager.context)
             except Exception as e:
                 raise StorageError("Failed to initialize storage components", cause=e)
 
-        if _db_backend is None:
+        if StorageManager.context.db_backend is None:
             raise StorageError(
                 "DuckDB backend not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
-        if _graph is None:
+        if StorageManager.context.graph is None:
             raise StorageError(
                 "Graph not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
-        if _rdf_store is None:
+        if StorageManager.context.rdf_store is None:
             raise StorageError(
                 "RDF store not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
@@ -649,12 +676,12 @@ class StorageManager:
         attrs = dict(claim.get("attributes", {}))
         if "confidence" in claim:
             attrs["confidence"] = claim["confidence"]
-        assert _graph is not None
-        _graph.add_node(claim["id"], **attrs)
+        assert StorageManager.context.graph is not None
+        StorageManager.context.graph.add_node(claim["id"], **attrs)
         _lru[claim["id"]] = time.time()
         for rel in claim.get("relations", []):
-            assert _graph is not None
-            _graph.add_edge(
+            assert StorageManager.context.graph is not None
+            StorageManager.context.graph.add_edge(
                 rel["src"],
                 rel["dst"],
                 **rel.get("attributes", {}),
@@ -684,8 +711,8 @@ class StorageManager:
             handles these prerequisites.
         """
         # Use the DuckDBStorageBackend to persist the claim
-        assert _db_backend is not None
-        _db_backend.persist_claim(claim)
+        assert StorageManager.context.db_backend is not None
+        StorageManager.context.db_backend.persist_claim(claim)
 
     @staticmethod
     def _persist_to_kuzu(claim: dict[str, Any]) -> None:
@@ -716,15 +743,15 @@ class StorageManager:
             has been validated. It should be called by persist_claim, which
             handles these prerequisites.
         """
-        assert _rdf_store is not None
+        assert StorageManager.context.rdf_store is not None
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            _rdf_store.add((subj, pred, obj))
+            StorageManager.context.rdf_store.add((subj, pred, obj))
 
         # Apply ontology reasoning so advanced queries see inferred triples
-        run_ontology_reasoner(_rdf_store)
+        run_ontology_reasoner(StorageManager.context.rdf_store)
 
     @staticmethod
     def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
@@ -778,12 +805,12 @@ class StorageManager:
             start_time = time.time()
 
             # Check if the claim already exists in the graph
-            assert _graph is not None
-            if _graph.has_node(claim_id):
+            assert StorageManager.context.graph is not None
+            if StorageManager.context.graph.has_node(claim_id):
                 is_update = True
                 if partial_update:
                     # Get the existing claim data
-                    existing_claim = _graph.nodes[claim_id].copy()
+                    existing_claim = StorageManager.context.graph.nodes[claim_id].copy()
 
                     # Merge the new claim data with the existing data
                     # Note: We're careful not to modify the input claim
@@ -837,15 +864,15 @@ class StorageManager:
             StorageManager._persist_to_networkx(claim_to_persist)
 
             # For database backends, use different methods for updates vs. new claims
-            assert _db_backend is not None
+            assert StorageManager.context.db_backend is not None
             if is_update:
                 # Update existing records
-                _db_backend.update_claim(claim_to_persist, partial_update)
+                StorageManager.context.db_backend.update_claim(claim_to_persist, partial_update)
                 StorageManager._update_rdf_claim(claim_to_persist, partial_update)
                 StorageManager._persist_to_kuzu(claim_to_persist)
             else:
                 # Insert new records
-                _db_backend.persist_claim(claim_to_persist)
+                StorageManager.context.db_backend.persist_claim(claim_to_persist)
                 StorageManager._persist_to_rdf(claim_to_persist)
                 StorageManager._persist_to_kuzu(claim_to_persist)
 
@@ -881,21 +908,21 @@ class StorageManager:
             claim: The claim to update
             partial_update: If True, merge with existing data rather than replacing
         """
-        assert _rdf_store is not None
+        assert StorageManager.context.rdf_store is not None
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
 
         if not partial_update:
             # Remove all existing triples for this subject
-            for s, p, o in _rdf_store.triples((subj, None, None)):
-                _rdf_store.remove((s, p, o))
+            for s, p, o in StorageManager.context.rdf_store.triples((subj, None, None)):
+                StorageManager.context.rdf_store.remove((s, p, o))
 
         # Add new triples
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
             obj = rdflib.Literal(v)
-            _rdf_store.add((subj, pred, obj))
+            StorageManager.context.rdf_store.add((subj, pred, obj))
         # Apply ontology reasoning so updates expose inferred triples
-        run_ontology_reasoner(_rdf_store)
+        run_ontology_reasoner(StorageManager.context.rdf_store)
 
     @staticmethod
     def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
@@ -924,13 +951,13 @@ class StorageManager:
             return _delegate.create_hnsw_index()
 
         # Ensure storage is initialized
-        if _db_backend is None:
-            setup()
-        assert _db_backend is not None
+        if StorageManager.context.db_backend is None:
+            setup(context=StorageManager.context)
+        assert StorageManager.context.db_backend is not None
 
         # Use the DuckDBStorageBackend to create the HNSW index
         try:
-            _db_backend.create_hnsw_index()
+            StorageManager.context.db_backend.create_hnsw_index()
         except Exception as e:
             raise StorageError("Failed to create HNSW index", cause=e)
 
@@ -941,9 +968,9 @@ class StorageManager:
             return _delegate.refresh_vector_index()
 
         StorageManager._ensure_storage_initialized()
-        assert _db_backend is not None
+        assert StorageManager.context.db_backend is not None
         try:
-            _db_backend.refresh_hnsw_index()
+            StorageManager.context.db_backend.refresh_hnsw_index()
         except Exception as e:
             raise StorageError("Failed to refresh HNSW index", cause=e)
 
@@ -1058,7 +1085,7 @@ class StorageManager:
             )
 
         # Use the DuckDBStorageBackend to perform the vector search
-        db_backend = _db_backend
+        db_backend = StorageManager.context.db_backend
         if db_backend is None:  # Safety check for type checkers
             raise StorageError(
                 "DuckDB backend not initialized",
@@ -1093,14 +1120,14 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_graph()
         with _lock:
-            if _graph is None:
+            if StorageManager.context.graph is None:
                 try:
-                    setup()
+                    setup(context=StorageManager.context)
                 except Exception as e:
                     raise NotFoundError("Graph not initialized", cause=e)
-            if _graph is None:
+            if StorageManager.context.graph is None:
                 raise NotFoundError("Graph not initialized")
-            return _graph
+            return StorageManager.context.graph
 
     @staticmethod
     def touch_node(node_id: str) -> None:
@@ -1144,14 +1171,14 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_duckdb_conn()
         with _lock:
-            if _db_backend is None:
+            if StorageManager.context.db_backend is None:
                 try:
-                    setup()
+                    setup(context=StorageManager.context)
                 except Exception as e:
                     raise NotFoundError("DuckDB connection not initialized", cause=e)
-            if _db_backend is None:
+            if StorageManager.context.db_backend is None:
                 raise NotFoundError("DuckDB connection not initialized")
-            return _db_backend.get_connection()
+            return StorageManager.context.db_backend.get_connection()
 
     @staticmethod
     @contextmanager
@@ -1162,9 +1189,9 @@ class StorageManager:
                 yield conn
             return
         with _lock:
-            if _db_backend is None:
-                setup()
-            backend = _db_backend
+            if StorageManager.context.db_backend is None:
+                setup(context=StorageManager.context)
+            backend = StorageManager.context.db_backend
         if backend is None:
             raise NotFoundError("DuckDB connection not initialized")
         with backend.connection() as conn:
@@ -1190,14 +1217,14 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_rdf_store()
         with _lock:
-            if _rdf_store is None:
+            if StorageManager.context.rdf_store is None:
                 try:
-                    setup()
+                    setup(context=StorageManager.context)
                 except Exception as e:
                     raise NotFoundError("RDF store not initialized", cause=e)
-            if _rdf_store is None:
+            if StorageManager.context.rdf_store is None:
                 raise NotFoundError("RDF store not initialized")
-            return _rdf_store
+            return StorageManager.context.rdf_store
 
     @staticmethod
     def has_vss() -> bool:
@@ -1216,14 +1243,14 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.has_vss()
         with _lock:
-            if _db_backend is None:
+            if StorageManager.context.db_backend is None:
                 try:
-                    setup()
+                    setup(context=StorageManager.context)
                 except Exception:
                     return False
-            if _db_backend is None:
+            if StorageManager.context.db_backend is None:
                 return False
-            return _db_backend.has_vss()
+            return StorageManager.context.db_backend.has_vss()
 
     @staticmethod
     def clear_all() -> None:
@@ -1242,12 +1269,12 @@ class StorageManager:
         if _delegate and _delegate is not StorageManager:
             return _delegate.clear_all()
         with _lock:
-            if _graph is not None:
-                _graph.clear()
-            if _db_backend is not None:
-                _db_backend.clear()
-            if _rdf_store is not None:
-                _rdf_store.remove((None, None, None))
+            if StorageManager.context.graph is not None:
+                StorageManager.context.graph.clear()
+            if StorageManager.context.db_backend is not None:
+                StorageManager.context.db_backend.clear()
+            if StorageManager.context.rdf_store is not None:
+                StorageManager.context.rdf_store.remove((None, None, None))
 
     # ------------------------------------------------------------------
     # Ontology-based reasoning utilities

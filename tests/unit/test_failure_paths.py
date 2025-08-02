@@ -51,7 +51,7 @@ def test_vector_search_vss_unavailable(monkeypatch):
     """StorageManager.vector_search raises StorageError when VSS is missing."""
     monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
-    monkeypatch.setattr("autoresearch.storage._db_backend", object())
+    monkeypatch.setattr(StorageManager.context, "db_backend", object())
     with pytest.raises(StorageError):
         StorageManager.vector_search([0.1, 0.2, 0.3])
 

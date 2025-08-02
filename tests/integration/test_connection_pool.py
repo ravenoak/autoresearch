@@ -117,7 +117,7 @@ def test_duckdb_connection_pool_concurrency(tmp_path):
         for _ in range(10):
             ex.submit(use_conn)
 
-    backend = storage._db_backend
+    backend = storage.StorageManager.context.db_backend
     assert backend is not None
     assert len(set(ids)) <= backend._max_connections
     storage.teardown(remove_db=True)

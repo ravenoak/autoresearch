@@ -326,7 +326,8 @@ def perform_vector_search(persisted_claims):
     # Mock has_vss to return True and _db_backend.vector_search to return mock_results
     with patch("autoresearch.storage.StorageManager.has_vss", return_value=True):
         with patch(
-            "autoresearch.storage._db_backend.vector_search", return_value=mock_results
+            "autoresearch.storage.StorageManager.context.db_backend.vector_search",
+            return_value=mock_results,
         ):
             # Limit to 2 results since we only have 3 claims now
             results = StorageManager.vector_search(query_embedding, k=2)

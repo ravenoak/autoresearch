@@ -18,5 +18,5 @@ def test_current_ram_fallback(monkeypatch):
 
 
 def test_pop_low_score_empty(monkeypatch):
-    monkeypatch.setattr(storage, "_graph", None)
+    monkeypatch.setattr(storage.StorageManager.context, "graph", None)
     assert storage.StorageManager._pop_low_score() is None

@@ -93,7 +93,7 @@ def test_set_get_delegate():
         called = False
 
         @classmethod
-        def setup(cls, db_path=None):
+        def setup(cls, db_path=None, context=None):
             cls.called = True
     set_delegate(Dummy)
     StorageManager.setup(db_path=None)
@@ -106,7 +106,7 @@ def test_pop_low_score_missing_confidence(monkeypatch):
     graph = MagicMock()
     graph.nodes = {"a": {}, "b": {"confidence": 0.1}}
     lru = OrderedDict([("a", 0), ("b", 0)])
-    monkeypatch.setattr("autoresearch.storage._graph", graph)
+    monkeypatch.setattr(StorageManager.context, "graph", graph)
     monkeypatch.setattr("autoresearch.storage._lru", lru)
     node = StorageManager._pop_low_score()
     assert node == "a"

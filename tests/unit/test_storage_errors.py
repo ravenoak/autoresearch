@@ -21,9 +21,9 @@ def test_setup_rdf_store_error(mock_config, assert_error):
     mock_graph_instance.open.side_effect = Exception("RDF store error")
 
     # Execute
-    with patch("autoresearch.storage._graph", None):
-        with patch("autoresearch.storage._db_backend", None):
-            with patch("autoresearch.storage._rdf_store", None):
+    with patch.object(StorageManager.context, "graph", None):
+        with patch.object(StorageManager.context, "db_backend", None):
+            with patch.object(StorageManager.context, "rdf_store", None):
                 with patch(
                     "autoresearch.storage.DuckDBStorageBackend",
                     return_value=mock_db_backend,
@@ -48,9 +48,9 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
     mock_graph_instance = MagicMock()
     mock_graph_instance.open.side_effect = Exception("No plugin registered: SQLite")
 
-    with patch("autoresearch.storage._graph", None):
-        with patch("autoresearch.storage._db_backend", None):
-            with patch("autoresearch.storage._rdf_store", None):
+    with patch.object(StorageManager.context, "graph", None):
+        with patch.object(StorageManager.context, "db_backend", None):
+            with patch.object(StorageManager.context, "rdf_store", None):
                 with patch(
                     "autoresearch.storage.DuckDBStorageBackend",
                     return_value=mock_db_backend,
