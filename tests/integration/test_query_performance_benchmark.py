@@ -20,7 +20,6 @@ spec.loader.exec_module(benchmark_module)  # type: ignore
 run_benchmark = benchmark_module.run_benchmark
 
 BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_memory.json"
-BUDGET_BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage_budget.json"
 
 
 class DummyAgent:
@@ -39,7 +38,7 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
-def test_query_performance_memory_tokens(benchmark):
+def test_query_performance_memory_tokens(benchmark, token_baseline):
     """Benchmark query processing and verify memory and token usage."""
 
     # Setup
@@ -56,12 +55,12 @@ def test_query_performance_memory_tokens(benchmark):
 
     # Verify
     baseline = json.loads(BASELINE_PATH.read_text())
-    assert metrics["tokens"] == baseline["tokens"]
+    token_baseline(metrics["tokens"])
     assert metrics["memory_delta_mb"] <= baseline["memory_delta_mb"] + 5
     assert memory_after - memory_before < 10
 
 
-def test_token_budget_limit(monkeypatch):
+def test_token_budget_limit(monkeypatch, token_baseline):
     """Token usage should respect the configured budget."""
 
     # Setup
@@ -75,6 +74,4 @@ def test_token_budget_limit(monkeypatch):
     response = Orchestrator.run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
 
-    # Verify
-    baseline = json.loads(BUDGET_BASELINE_PATH.read_text())
-    assert tokens == baseline
+    token_baseline(tokens)
