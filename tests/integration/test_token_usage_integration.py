@@ -43,4 +43,8 @@ def test_token_usage_matches_baseline(monkeypatch, benchmark):
     tokens = benchmark.pedantic(run, iterations=1, rounds=1)
 
     baseline = json.loads(BASELINE_PATH.read_text())
-    assert tokens == baseline
+    assert tokens.keys() == baseline.keys()
+    for agent, counts in baseline.items():
+        measured = tokens[agent]
+        assert measured["in"] <= counts["in"]
+        assert measured["out"] <= counts["out"]

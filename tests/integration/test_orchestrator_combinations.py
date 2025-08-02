@@ -179,4 +179,3 @@ def test_orchestrator_failure_modes(monkeypatch, agents, fail_index):
         {"id": a, "type": "fact", "content": a} for a in agents[:fail_index]
     ]
     assert store_calls == expected_claims
-
