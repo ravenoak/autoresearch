@@ -8,6 +8,8 @@ import os
 import shutil
 import tempfile
 from unittest.mock import patch
+
+from autoresearch.storage import StorageManager
 import pytest
 import duckdb
 import rdflib
@@ -58,8 +60,8 @@ def mock_storage(temp_dir):
 
     # Mock the StorageManager to use these test files
     with (
-        patch("autoresearch.storage._db_backend") as mock_db_backend,
-        patch("autoresearch.storage._rdf_store") as mock_rdf_store,
+        patch.object(StorageManager.context, "db_backend") as mock_db_backend,
+        patch.object(StorageManager.context, "rdf_store") as mock_rdf_store,
     ):
         mock_db_backend._path = db_path
         mock_db_backend.get_connection.return_value = conn

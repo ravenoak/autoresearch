@@ -11,7 +11,7 @@ def _basic_config():
 
 def test_refresh_vector_index_calls_backend(monkeypatch):
     backend = MagicMock()
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
 
     StorageManager.refresh_vector_index()
@@ -23,9 +23,9 @@ def test_persist_claim_triggers_index_refresh(monkeypatch):
     backend = MagicMock()
     graph = MagicMock()
     store = MagicMock()
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
-    monkeypatch.setattr("autoresearch.storage._graph", graph, raising=False)
-    monkeypatch.setattr("autoresearch.storage._rdf_store", store, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "graph", graph, raising=False)
+    monkeypatch.setattr(StorageManager.context, "rdf_store", store, raising=False)
     monkeypatch.setattr(StorageManager, "_enforce_ram_budget", lambda budget: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
@@ -46,7 +46,7 @@ def test_persist_claim_triggers_index_refresh(monkeypatch):
 
 def test_update_rdf_claim_wrapper(monkeypatch):
     store = MagicMock()
-    monkeypatch.setattr("autoresearch.storage._rdf_store", store, raising=False)
+    monkeypatch.setattr(StorageManager.context, "rdf_store", store, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
 
     with patch("autoresearch.storage.StorageManager._update_rdf_claim") as upd:

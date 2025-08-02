@@ -7,7 +7,7 @@ for cleaning up storage resources.
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
-from autoresearch.storage import teardown
+from autoresearch.storage import StorageManager, teardown
 
 
 def test_teardown_closes_resources():
@@ -18,23 +18,20 @@ def test_teardown_closes_resources():
     mock_rdf = MagicMock()
     mock_lru = MagicMock()
 
-    with patch("autoresearch.storage._db_backend", mock_backend):
-        with patch("autoresearch.storage._graph", mock_graph):
-            with patch("autoresearch.storage._rdf_store", mock_rdf):
+    with patch.object(StorageManager.context, "db_backend", mock_backend):
+        with patch.object(StorageManager.context, "graph", mock_graph):
+            with patch.object(StorageManager.context, "rdf_store", mock_rdf):
                 with patch("autoresearch.storage._lru", mock_lru):
                     # Execute
-                    teardown()
+                    teardown(context=StorageManager.context)
 
                     # Verify
                     mock_backend.close.assert_called_once()
 
-                    # Check that the global variables are set to None
-                    # We need to import them again to get the current values
-                    from autoresearch.storage import _db_backend, _graph, _rdf_store
-
-                    assert _db_backend is None
-                    assert _graph is None
-                    assert _rdf_store is None
+                    # Check that the context variables are set to None
+                    assert StorageManager.context.db_backend is None
+                    assert StorageManager.context.graph is None
+                    assert StorageManager.context.rdf_store is None
 
 
 def test_teardown_removes_db_file():
@@ -52,9 +49,9 @@ def test_teardown_removes_db_file():
     # Set the _path attribute on the mock backend
     mock_backend._path = str(mock_path)
 
-    with patch("autoresearch.storage._db_backend", mock_backend):
+    with patch.object(StorageManager.context, "db_backend", mock_backend):
         # Execute
-        teardown(remove_db=True)
+        teardown(remove_db=True, context=StorageManager.context)
 
         # Verify
         mock_backend.close.assert_called_once()
@@ -68,12 +65,12 @@ def test_teardown_removes_db_file():
 def test_teardown_handles_none_resources():
     """Test that teardown handles None resources gracefully."""
     # Setup
-    with patch("autoresearch.storage._db_backend", None):
-        with patch("autoresearch.storage._graph", None):
-            with patch("autoresearch.storage._rdf_store", None):
+    with patch.object(StorageManager.context, "db_backend", None):
+        with patch.object(StorageManager.context, "graph", None):
+            with patch.object(StorageManager.context, "rdf_store", None):
                 with patch("autoresearch.storage._lru", None):
                     # Execute
-                    teardown()
+                    teardown(context=StorageManager.context)
 
                     # No assertions needed - the test passes if no exceptions are raised
 
@@ -84,9 +81,9 @@ def test_teardown_handles_close_error():
     mock_backend = MagicMock()
     mock_backend.close.side_effect = Exception("Close error")
 
-    with patch("autoresearch.storage._db_backend", mock_backend):
+    with patch.object(StorageManager.context, "db_backend", mock_backend):
         # Execute
-        teardown()
+        teardown(context=StorageManager.context)
 
         # Verify
         mock_backend.close.assert_called_once()

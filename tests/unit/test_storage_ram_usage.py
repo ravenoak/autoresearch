@@ -23,7 +23,7 @@ def test_current_ram_mb_empty_graph():
     mock_resource.getrusage.return_value = mock_rusage
 
     with (
-        patch("autoresearch.storage._graph", mock_graph),
+        patch.object(StorageManager.context, "graph", mock_graph),
         patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource}),
         patch("resource.getrusage", return_value=mock_rusage),
@@ -45,7 +45,7 @@ def test_current_ram_mb_with_nodes(realistic_claim_batch):
         claim_id = data.pop("id")
         mock_graph.add_node(claim_id, **data)
 
-    with patch("autoresearch.storage._graph", mock_graph):
+    with patch.object(StorageManager.context, "graph", mock_graph):
         result = StorageManager._current_ram_mb()
         assert result > 0
 
@@ -60,7 +60,7 @@ def test_current_ram_mb_with_attributes(realistic_claim_batch):
     data.setdefault("attributes", {"key": "val"})
     mock_graph.add_node(claim_id, **data)
 
-    with patch("autoresearch.storage._graph", mock_graph):
+    with patch.object(StorageManager.context, "graph", mock_graph):
         result = StorageManager._current_ram_mb()
         assert result > 0
 
@@ -75,7 +75,7 @@ def test_current_ram_mb_none_graph():
     mock_resource.getrusage.return_value = mock_rusage
 
     with (
-        patch("autoresearch.storage._graph", None),
+        patch.object(StorageManager.context, "graph", None),
         patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource}),
         patch("resource.getrusage", return_value=mock_rusage),
@@ -105,7 +105,7 @@ def test_current_ram_mb_large_graph():
     mock_resource_large.getrusage.return_value = mock_rusage_large
 
     with (
-        patch("autoresearch.storage._graph", mock_graph),
+        patch.object(StorageManager.context, "graph", mock_graph),
         patch.dict("sys.modules", {"psutil": None}),
         patch.dict("sys.modules", {"resource": mock_resource_large}),
         patch("resource.getrusage", return_value=mock_rusage_large),
@@ -130,7 +130,7 @@ def test_current_ram_mb_large_graph():
         mock_resource_small.getrusage.return_value = mock_rusage_small
 
         with (
-            patch("autoresearch.storage._graph", small_graph),
+            patch.object(StorageManager.context, "graph", small_graph),
             patch.dict("sys.modules", {"psutil": None}),
             patch.dict("sys.modules", {"resource": mock_resource_small}),
             patch("resource.getrusage", return_value=mock_rusage_small),

@@ -65,7 +65,7 @@ def _mock_config():
 def test_create_hnsw_index(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -84,7 +84,7 @@ def test_create_hnsw_index(monkeypatch):
 def test_vector_search_builds_query(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -105,7 +105,7 @@ def test_vector_search_builds_query(monkeypatch):
 def test_vector_search_uses_config_nprobe(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: _mock_config())
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
@@ -128,7 +128,7 @@ class FailingBackend(MockDuckDBBackend):
 def test_vector_search_failure(monkeypatch):
     dummy = FailingConn()
     mock_backend = FailingBackend(dummy)
-    monkeypatch.setattr("autoresearch.storage._db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -151,7 +151,7 @@ def test_vector_search_failure(monkeypatch):
 
 def test_refresh_vector_index(monkeypatch):
     backend = MagicMock()
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
 
     StorageManager.refresh_vector_index()
@@ -163,9 +163,9 @@ def test_embedding_update_triggers_index_refresh(monkeypatch):
     backend = MagicMock()
     graph = nx.DiGraph()
     store = MagicMock()
-    monkeypatch.setattr("autoresearch.storage._db_backend", backend, raising=False)
-    monkeypatch.setattr("autoresearch.storage._graph", graph, raising=False)
-    monkeypatch.setattr("autoresearch.storage._rdf_store", store, raising=False)
+    monkeypatch.setattr(StorageManager.context, "db_backend", backend, raising=False)
+    monkeypatch.setattr(StorageManager.context, "graph", graph, raising=False)
+    monkeypatch.setattr(StorageManager.context, "rdf_store", store, raising=False)
     monkeypatch.setattr(StorageManager, "_enforce_ram_budget", lambda budget: None)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)

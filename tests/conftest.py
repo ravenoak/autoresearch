@@ -33,7 +33,10 @@ from autoresearch.agents.registry import (  # noqa: E402
 )  # noqa: E402
 from autoresearch.llm.registry import LLMFactory  # noqa: E402
 from autoresearch.storage import (  # noqa: E402
+    StorageContext,
     set_delegate as set_storage_delegate,
+    setup as storage_setup,
+    teardown as storage_teardown,
 )  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 import duckdb  # noqa: E402
@@ -230,7 +233,7 @@ def bdd_context():
 
 @pytest.fixture
 def mock_storage_components():
-    """Mock the storage components (_graph, _db_backend, _rdf_store).
+    """Mock the storage components in ``StorageManager.context``.
 
     This fixture provides a function that creates a context manager for patching
     the storage components with mock objects.
@@ -273,14 +276,22 @@ def mock_storage_components():
         def __enter__(self):
             # Add patches for all components that were explicitly passed
             # This allows patching a component to None
+            import autoresearch.storage as storage
+
             if self.has_graph:
-                self.patches.append(patch("autoresearch.storage._graph", self.graph))
+                self.patches.append(
+                    patch.object(storage.StorageManager.context, "graph", self.graph)
+                )
             if self.has_db_backend:
                 self.patches.append(
-                    patch("autoresearch.storage._db_backend", self.db_backend)
+                    patch.object(
+                        storage.StorageManager.context, "db_backend", self.db_backend
+                    )
                 )
             if self.has_rdf:
-                self.patches.append(patch("autoresearch.storage._rdf_store", self.rdf))
+                self.patches.append(
+                    patch.object(storage.StorageManager.context, "rdf_store", self.rdf)
+                )
 
             # Start all patches
             for p in self.patches:
@@ -297,6 +308,26 @@ def mock_storage_components():
         return StorageComponentsMocker(**kwargs)
 
     return create_mocker
+
+
+@pytest.fixture
+def storage_context_factory(tmp_path):
+    """Return a factory for creating isolated ``StorageContext`` instances."""
+
+    from uuid import uuid4
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _make():
+        ctx = StorageContext()
+        db_file = tmp_path / f"{uuid4()}.duckdb"
+        storage_setup(str(db_file), context=ctx)
+        try:
+            yield ctx
+        finally:
+            storage_teardown(remove_db=True, context=ctx)
+
+    return _make
 
 
 @pytest.fixture

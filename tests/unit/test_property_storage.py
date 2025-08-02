@@ -22,7 +22,7 @@ def test_pop_low_score(monkeypatch, node_conf):
     for node, score in node_conf.items():
         graph.add_node(node, confidence=float(score))
     lru = OrderedDict((node, 0.0) for node in node_conf)
-    monkeypatch.setattr(storage, "_graph", graph, raising=False)
+    monkeypatch.setattr(storage.StorageManager.context, "graph", graph, raising=False)
     monkeypatch.setattr(storage, "_lru", lru, raising=False)
 
     expected = min(node_conf, key=node_conf.get)
