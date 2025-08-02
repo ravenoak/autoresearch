@@ -36,6 +36,12 @@ def run_config_reasoning(cli_runner, bdd_context, mode: str, loops: int):
     bdd_context["result"] = result
 
 
+@when(parsers.parse('I run `autoresearch config reasoning --mode {mode}`'))
+def run_config_reasoning_mode_only(cli_runner, bdd_context, mode: str):
+    result = cli_runner.invoke(cli_app, ["config", "reasoning", "--mode", mode])
+    bdd_context["result"] = result
+
+
 @then('the files "autoresearch.toml" and ".env" should be created')
 def check_config_files(work_dir):
     assert (work_dir / "autoresearch.toml").exists()
@@ -45,6 +51,11 @@ def check_config_files(work_dir):
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
     assert bdd_context["result"].exit_code == 0
+
+
+@then("the CLI should exit with an error")
+def cli_error(bdd_context):
+    assert bdd_context["result"].exit_code != 0
 
 
 @then(parsers.parse('the configuration file should set reasoning mode to "{mode}"'))
@@ -59,6 +70,13 @@ def assert_loops(work_dir, loops: int):
     assert f"loops = {loops}" in content
 
 
+@then(parsers.parse('the error message should contain "{text}"'))
+def error_message_contains(bdd_context, text: str):
+    exc = bdd_context["result"].exception
+    assert exc is not None, "Expected an exception but none occurred"
+    assert text in str(exc)
+
+
 @scenario("../features/config_cli.feature", "Initialize configuration files")
 def test_config_init():
     pass
@@ -71,4 +89,9 @@ def test_config_validate():
 
 @scenario("../features/config_cli.feature", "Update reasoning configuration")
 def test_config_reasoning():
+    pass
+
+
+@scenario("../features/config_cli.feature", "Reject invalid reasoning mode")
+def test_config_reasoning_invalid():
     pass

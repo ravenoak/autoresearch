@@ -15,6 +15,11 @@ def test_direct_mode_cli():
     pass
 
 
+@scenario("../features/reasoning_mode_cli.feature", "Dialectical mode via CLI")
+def test_dialectical_mode_cli():
+    pass
+
+
 @given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
 def loops_config(count: int, monkeypatch):
     cfg = ConfigModel.model_construct(agents=["Synthesizer"], loops=count)
