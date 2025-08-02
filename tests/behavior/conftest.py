@@ -11,12 +11,26 @@ import pytest  # noqa: E402
 
 from autoresearch.api import reset_request_log  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
+from autoresearch.orchestration.state import QueryState  # noqa: E402
+from autoresearch.config.models import ConfigModel  # noqa: E402
 
 
 @pytest.fixture
 def test_context():
     """Mutable mapping for sharing state in behavior tests."""
     return {}
+
+
+@pytest.fixture
+def query_state() -> QueryState:
+    """Provide a fresh ``QueryState`` instance for each scenario."""
+    return QueryState(query="")
+
+
+@pytest.fixture
+def config_model() -> ConfigModel:
+    """Provide a fresh ``ConfigModel`` instance for each scenario."""
+    return ConfigModel()
 
 
 @pytest.fixture(autouse=True)

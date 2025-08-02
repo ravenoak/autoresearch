@@ -60,74 +60,72 @@ def test_coalition_broadcast():
     pass
 
 
-@given("two communicating agents")
-def setup_agents(monkeypatch, bdd_context, tmp_path):
+@given("two communicating agents", target_fixture="config")
+def setup_agents(monkeypatch, tmp_path, config_model):
+    """Configure a simple pair of communicating agents."""
     db_path = tmp_path / "kg.duckdb"
-    cfg = ConfigModel.model_construct(
-        agents=["Sender", "Receiver"],
-        loops=1,
-        enable_agent_messages=True,
-        storage=StorageConfig(duckdb_path=str(db_path)),
-    )
+    cfg = config_model.model_copy()
+    cfg.agents = ["Sender", "Receiver"]
+    cfg.loops = 1
+    cfg.enable_agent_messages = True
+    cfg.storage = StorageConfig(duckdb_path=str(db_path))
     monkeypatch.setenv("DUCKDB_PATH", str(db_path))
 
-    def get_agent(name):
+    def get_agent(name: str):
         return Sender() if name == "Sender" else Receiver()
 
     monkeypatch.setattr(AgentFactory, "get", staticmethod(get_agent))
-    bdd_context["config"] = cfg
+    return cfg
 
 
 @when("I execute a query")
-def run_query(bdd_context, monkeypatch):
-    cfg = bdd_context["config"]
+def run_query(config, monkeypatch):
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", "/tmp/release_tokens.json")
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", "/tmp/query_tokens.json")
-    bdd_context["response"] = Orchestrator.run_query("ping", cfg)
+    return Orchestrator.run_query("ping", config)
 
 
 @then("the receiver should process the message")
-def receiver_got_message(bdd_context):
-    metrics = bdd_context["response"].metrics
+def receiver_got_message(response):
+    metrics = response.metrics
     assert metrics["delivered_messages"]["Receiver"][0]["content"] == "hi"
 
 
-@given("a coalition with a sender and two receivers")
-def setup_coalition(monkeypatch, bdd_context, tmp_path):
+@given("a coalition with a sender and two receivers", target_fixture="config")
+def setup_coalition(monkeypatch, tmp_path, config_model):
+    """Set up a coalition for broadcast testing."""
     db_path = tmp_path / "kg.duckdb"
-    cfg = ConfigModel.model_construct(
-        agents=["team"],
-        loops=1,
-        enable_agent_messages=True,
-        coalitions={"team": ["Sender", "R1", "R2"]},
-        storage=StorageConfig(duckdb_path=str(db_path)),
-    )
+    cfg = config_model.model_copy()
+    cfg.agents = ["team"]
+    cfg.loops = 1
+    cfg.enable_agent_messages = True
+    cfg.coalitions = {"team": ["Sender", "R1", "R2"]}
+    cfg.storage = StorageConfig(duckdb_path=str(db_path))
     monkeypatch.setenv("DUCKDB_PATH", str(db_path))
 
     AgentFactory.register("Sender", Broadcaster)
     AgentFactory.register("R1", TeamReceiver)
     AgentFactory.register("R2", TeamReceiver)
 
-    def get_agent(name):
+    def get_agent(name: str):
         if name == "Sender":
             return Broadcaster()
         return TeamReceiver(name=name)
 
     monkeypatch.setattr(AgentFactory, "get", staticmethod(get_agent))
-    bdd_context["config"] = cfg
+    return cfg
 
 
 @when("the sender broadcasts to the coalition")
-def run_broadcast_query(bdd_context, monkeypatch):
-    cfg = bdd_context["config"]
+def run_broadcast_query(config, monkeypatch):
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", "/tmp/release_tokens.json")
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", "/tmp/query_tokens.json")
-    bdd_context["response"] = Orchestrator.run_query("ping", cfg)
+    return Orchestrator.run_query("ping", config)
 
 
 @then("both receivers should process the broadcast")
-def receivers_got_broadcast(bdd_context):
-    metrics = bdd_context["response"].metrics
+def receivers_got_broadcast(response):
+    metrics = response.metrics
     msgs_r1 = metrics["delivered_messages"]["R1"][0]
     msgs_r2 = metrics["delivered_messages"]["R2"][0]
     assert msgs_r1["protocol"] == "broadcast"
