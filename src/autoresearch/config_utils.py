@@ -7,6 +7,8 @@ import tomllib
 import streamlit as st
 
 from .orchestration import ReasoningMode
+from .config.loader import ConfigLoader
+from .errors import ConfigError
 
 
 def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
@@ -70,6 +72,31 @@ def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
     except Exception as e:  # pragma: no cover - Streamlit displays the error
         st.error(f"Error saving configuration: {e}")
         return False
+
+
+def validate_config(
+    config_loader: ConfigLoader | None = None,
+) -> tuple[bool, list[str]]:
+    """Validate configuration files.
+
+    Parameters
+    ----------
+    config_loader:
+        Optional pre-configured :class:`~autoresearch.config.loader.ConfigLoader`.
+
+    Returns
+    -------
+    tuple[bool, list[str]]
+        ``(True, [])`` if configuration is valid, otherwise ``(False, errors)``.
+    """
+    loader = config_loader or ConfigLoader()
+    try:
+        loader.load_config()
+        return True, []
+    except ConfigError as e:
+        return False, [str(e)]
+    except Exception as e:  # pragma: no cover - defensive
+        return False, [str(e)]
 
 
 def get_config_presets() -> Dict[str, Dict[str, Any]]:

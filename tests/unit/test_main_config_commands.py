@@ -28,39 +28,41 @@ def test_config_init_command_force(tmp_path):
     assert "Configuration initialized successfully." in result.stdout
 
 
-@patch("autoresearch.main.config_cli.ConfigLoader")
-def test_config_validate_command_valid(
-    mock_config_loader_class, mock_config_loader, tmp_path
-):
+def test_config_validate_command_valid(mock_config_loader, tmp_path):
     """Test the config validate command with valid configuration."""
     runner = CliRunner()
     cfg_path = tmp_path / "autoresearch.toml"
     cfg_path.write_text("[core]\nloops=1\n")
-    mock_config_loader_class.return_value = mock_config_loader
     mock_config_loader.search_paths = [cfg_path]
     mock_config_loader.env_path = tmp_path / ".env"
-    mock_config_loader.validate_config.return_value = (True, [])
-    result = runner.invoke(app, ["config", "validate"])
+    with patch(
+        "autoresearch.main.config_cli.ConfigLoader", return_value=mock_config_loader
+    ) as mock_loader_class, patch(
+        "autoresearch.main.config_cli.validate_config", return_value=(True, [])
+    ) as mock_validate:
+        result = runner.invoke(app, ["config", "validate"])
     assert result.exit_code == 0
-    mock_config_loader_class.assert_called_once()
+    mock_loader_class.assert_called_once()
+    mock_validate.assert_called_once_with(mock_config_loader)
     assert "Configuration is valid" in result.stdout
 
 
-@patch("autoresearch.main.config_cli.ConfigLoader")
-def test_config_validate_command_invalid(
-    mock_config_loader_class, mock_config_loader, tmp_path
-):
+def test_config_validate_command_invalid(mock_config_loader, tmp_path):
     """Test the config validate command with invalid configuration."""
     runner = CliRunner()
     cfg_path = tmp_path / "autoresearch.toml"
     cfg_path.write_text("[core]\nloops=1\n")
-    mock_config_loader_class.return_value = mock_config_loader
     mock_config_loader.search_paths = [cfg_path]
     mock_config_loader.env_path = tmp_path / ".env"
-    mock_config_loader.validate_config.return_value = (False, ["Error 1", "Error 2"])
-    result = runner.invoke(app, ["config", "validate"])
+    with patch(
+        "autoresearch.main.config_cli.ConfigLoader", return_value=mock_config_loader
+    ) as mock_loader_class, patch(
+        "autoresearch.main.config_cli.validate_config", return_value=(False, ["Error 1", "Error 2"])
+    ) as mock_validate:
+        result = runner.invoke(app, ["config", "validate"])
     assert result.exit_code == 1
-    mock_config_loader_class.assert_called_once()
+    mock_loader_class.assert_called_once()
+    mock_validate.assert_called_once_with(mock_config_loader)
     assert "Configuration is invalid" in result.stdout
     assert "Error 1" in result.stdout
     assert "Error 2" in result.stdout

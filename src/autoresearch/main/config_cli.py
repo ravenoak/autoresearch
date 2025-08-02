@@ -9,6 +9,7 @@ import tomli_w
 from ..config.models import ConfigModel
 from ..config.loader import ConfigLoader
 from ..errors import ConfigError
+from ..config_utils import validate_config
 from .app import _config_loader
 from ..cli_backup import backup_app
 
@@ -94,7 +95,7 @@ def config_validate() -> None:
         typer.echo(f"  - {path}")
     if env_path.exists():
         typer.echo(f"  - {env_path}")
-    valid, errors = config_loader.validate_config()
+    valid, errors = validate_config(config_loader)
     if valid:
         typer.echo("Configuration is valid.")
     else:
