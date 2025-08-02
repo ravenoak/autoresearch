@@ -2,17 +2,17 @@
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
 Last updated **October 21, 2025**.
-Phase 2 (testing/documentation) is currently ongoing.
+Phase 3 (stabilization/testing/documentation) is currently ongoing.
 
 ## Milestones
 
-| Version | Key Goals |
-| ------- | --------- |
-| 0.1.0 | Finalize packaging, docs and CI checks |
-| 0.1.1 | Bug fixes and documentation updates |
-| 0.2.0 | API stabilization, configuration hot-reload, improved search backends |
-| 0.3.0 | Distributed execution support, monitoring utilities |
-| 1.0.0 | Full feature set, performance tuning and stable interfaces |
+| Version | Target Date | Key Goals |
+| ------- | ----------- | --------- |
+| 0.1.0 | 2025-12-20 | Finalize packaging, docs and CI checks |
+| 0.1.1 | 2026-02-01 | Bug fixes and documentation updates |
+| 0.2.0 | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
+| 0.3.0 | 2026-07-15 | Distributed execution support, monitoring utilities |
+| 1.0.0 | 2026-10-01 | Full feature set, performance tuning and stable interfaces |
 
 ## 0.1.0 – First public preview
 
@@ -39,6 +39,7 @@ Before publishing 0.1.0 the release plan lists several checks:
 Any remaining issues from these tasks will be addressed in 0.1.1.
 - CLI backup commands, testing utilities and all specialized agents now have
   full implementations and comprehensive unit tests.
+The 0.1.1 release is planned for **February 1, 2026**.
 
 ## 0.2.0 – API stabilization and improved search
 
