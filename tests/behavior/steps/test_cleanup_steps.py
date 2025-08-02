@@ -11,7 +11,6 @@ from pytest_bdd import scenario, given, when, then
 from unittest.mock import patch, MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.config.models import ConfigModel
 from autoresearch.llm import DummyAdapter
 
 
@@ -39,22 +38,22 @@ def test_orchestrator_agents_cleanup():
 
 
 # Step definitions
-@given("the system is configured with multiple agents")
-def system_configured_with_multiple_agents(cleanup_context):
+@given("the system is configured with multiple agents", target_fixture="config")
+def system_configured_with_multiple_agents(cleanup_context, config_model):
     """Configure the system with multiple agents."""
-    cleanup_context["config"] = ConfigModel(
-        agents=["Synthesizer", "Contrarian", "FactChecker"],
-        reasoning_mode="dialectical",
-        loops=1,
-    )
+    config = config_model.model_copy()
+    config.agents = ["Synthesizer", "Contrarian", "FactChecker"]
+    config.reasoning_mode = "dialectical"
+    config.loops = 1
 
     # Track initial state
     cleanup_context["initial_env_vars"] = os.environ.copy()
     cleanup_context["initial_sys_modules"] = set(sys.modules.keys())
+    return config
 
 
 @when("I run a query with the dialectical reasoning mode")
-def run_query_with_dialectical_reasoning(cleanup_context, monkeypatch):
+def run_query_with_dialectical_reasoning(config, cleanup_context, monkeypatch):
     """Run a query with the dialectical reasoning mode."""
     # Import the original function directly
     from autoresearch.llm import get_llm_adapter as original_get_llm_adapter
@@ -89,9 +88,7 @@ def run_query_with_dialectical_reasoning(cleanup_context, monkeypatch):
         "autoresearch.orchestration.orchestrator.AgentFactory", mock_agent_factory
     ):
         try:
-            cleanup_context["result"] = Orchestrator.run_query(
-                "test query", cleanup_context["config"]
-            )
+            cleanup_context["result"] = Orchestrator.run_query("test query", config)
         except Exception as e:
             # Store the exception in the context instead of letting it propagate
             cleanup_context["error"] = e
