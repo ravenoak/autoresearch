@@ -20,3 +20,10 @@ Feature: Configuration CLI
     Then the CLI should exit successfully
     And the configuration file should set reasoning mode to "dialectical"
     And the configuration file should set loops to 3
+
+  Scenario: Reject invalid reasoning mode
+    Given a temporary work directory
+    And I run `autoresearch config init --force` in a temporary directory
+    When I run `autoresearch config reasoning --mode invalid_mode`
+    Then the CLI should exit with an error
+    And the error message should contain "Invalid reasoning mode"
