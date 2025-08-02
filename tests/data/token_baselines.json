@@ -1,0 +1,32 @@
+{
+  "tests/integration/test_performance.py::test_query_time_and_memory": {
+    "Dummy": {
+      "in": 2,
+      "out": 7
+    }
+  },
+  "tests/integration/test_query_performance_benchmark.py::test_query_performance_memory_tokens": {
+    "Dummy": {
+      "in": 2,
+      "out": 7
+    }
+  },
+  "tests/integration/test_query_performance_benchmark.py::test_token_budget_limit": {
+    "Dummy": {
+      "in": 3,
+      "out": 8
+    }
+  },
+  "tests/integration/test_token_budget_benchmark.py::test_token_usage_budget_regression": {
+    "Dummy": {
+      "in": 3,
+      "out": 8
+    }
+  },
+  "tests/integration/test_token_usage_integration.py::test_token_usage_matches_baseline": {
+    "Dummy": {
+      "in": 2,
+      "out": 7
+    }
+  }
+}

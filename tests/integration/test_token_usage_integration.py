@@ -1,14 +1,10 @@
 """Integration test for token usage tracking against baselines."""
 
-import json
 import os
-from pathlib import Path
 
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-
-BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage.json"
 # Allow tokens to exceed the baseline by this many tokens before failing
 THRESHOLD = int(os.getenv("TOKEN_USAGE_THRESHOLD", "0"))
 
@@ -29,7 +25,7 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
-def test_token_usage_matches_baseline(monkeypatch):
+def test_token_usage_matches_baseline(monkeypatch, token_baseline):
     """Token counts should match the stored baseline."""
 
     # Setup a minimal configuration and agent
@@ -42,13 +38,4 @@ def test_token_usage_matches_baseline(monkeypatch):
     response = Orchestrator.run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
 
-    baseline = json.loads(BASELINE_PATH.read_text())
-    assert tokens.keys() == baseline.keys()
-    for agent, counts in baseline.items():
-        measured = tokens[agent]
-        assert measured["in"] <= counts["in"] + THRESHOLD, (
-            f"Inbound tokens for {agent} exceed baseline by more than {THRESHOLD}"
-        )
-        assert measured["out"] <= counts["out"] + THRESHOLD, (
-            f"Outbound tokens for {agent} exceed baseline by more than {THRESHOLD}"
-        )
+    token_baseline(tokens, THRESHOLD)

@@ -1,11 +1,7 @@
-import json
-from pathlib import Path
 from types import SimpleNamespace
 from contextlib import contextmanager
 
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-
-BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage_budget.json"
 
 
 class DummyAgent:
@@ -24,7 +20,7 @@ class DummyAgent:
         return {"results": {self.name: "ok"}}
 
 
-def test_token_usage_budget_regression(monkeypatch):
+def test_token_usage_budget_regression(monkeypatch, token_baseline):
     """Token usage should respect the configured budget."""
 
     monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name))
@@ -46,5 +42,4 @@ def test_token_usage_budget_regression(monkeypatch):
     Orchestrator.run_query("q", cfg)
     tokens = {"Dummy": {"in": 3, "out": 8}}
 
-    baseline = json.loads(BASELINE_PATH.read_text())
-    assert tokens == baseline
+    token_baseline(tokens)
