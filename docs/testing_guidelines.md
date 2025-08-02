@@ -320,12 +320,14 @@ every test.
 Some integration tests compare runtime metrics against JSON files in
 `tests/integration/baselines`. When legitimate changes modify these
 metrics (for example token counts), run the failing test to capture the
-new values and update the corresponding baseline file.
+new values and update the corresponding baseline file. Token-based tests
+allow a small overage configurable via the ``TOKEN_USAGE_THRESHOLD``
+environment variable.
 
-1. Run the test with `pytest tests/integration/test_token_usage.py`.
+1. Run the test with ``pytest tests/integration/test_token_usage_integration.py``.
 2. Inspect the assertion failure to see the updated token counts.
-3. Edit the JSON baseline file to match the new values and commit the
-   change alongside your code.
+3. Edit ``tests/integration/baselines/token_usage.json`` to match the new
+   values and commit the change alongside your code.
 
 Keeping baselines in sync ensures that performance regressions are
 intentional and reviewed.
