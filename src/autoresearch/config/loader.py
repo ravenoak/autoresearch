@@ -129,7 +129,6 @@ class ConfigLoader:
             if path.exists():
                 config_path = path
                 break
-
         if config_path and config_path.exists():
             try:
                 self._config_time = config_path.stat().st_mtime
@@ -141,6 +140,8 @@ class ConfigLoader:
                 raise ConfigError(
                     "Error loading config file", file=str(config_path), cause=e
                 ) from e
+        else:
+            logger.info("No configuration file found; using defaults")
 
         core_settings = raw.get("core", {})
         _merge_dict(core_settings, env_settings)
@@ -257,6 +258,9 @@ class ConfigLoader:
             self.register_observer(callback)
         if self._watch_thread and self._watch_thread.is_alive():
             logger.info("Config watcher already running")
+            return
+        if not any(Path(p).exists() for p in self.watch_paths):
+            logger.info("No configuration files found to watch; skipping watcher")
             return
 
         self._stop_event.clear()
