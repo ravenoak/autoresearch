@@ -65,6 +65,8 @@ def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
     if isinstance(v, ReasoningMode):
         return v
     try:
+        if isinstance(v, str):
+            v = v.lower()
         return ReasoningMode(v)
     except Exception as exc:
         valid_modes = [m.value for m in ReasoningMode]
@@ -77,9 +79,27 @@ def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
         ) from exc
 
 
-def validate_token_budget(cls, v: int | None) -> int | None:
+def validate_token_budget(cls, v: int | str | None) -> int | None:
     """Ensure the token budget is positive when provided."""
-    if v is not None and v <= 0:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        try:
+            v = int(v)
+        except ValueError as exc:  # pragma: no cover - defensive
+            raise ConfigError(
+                "token_budget must be an integer",
+                provided=v,
+                suggestion="Set token_budget to a positive integer or omit it",
+                cause=exc,
+            ) from exc
+    if not isinstance(v, int):
+        raise ConfigError(
+            "token_budget must be an integer",
+            provided=v,
+            suggestion="Set token_budget to a positive integer or omit it",
+        )
+    if v <= 0:
         raise ConfigError(
             "token_budget must be positive",
             provided=v,
@@ -88,13 +108,17 @@ def validate_token_budget(cls, v: int | None) -> int | None:
     return v
 
 
-def validate_eviction_policy(cls, v: str) -> str:
+def validate_eviction_policy(cls, v: str | object) -> str:
     """Validate the graph eviction policy configuration."""
-    valid_policies = ["LRU", "score"]
-    if v not in valid_policies:
+    valid_policies = {"lru": "LRU", "score": "score"}
+    if not isinstance(v, str):
+        v = getattr(v, "value", v)
+    v = str(v)
+    key = v.lower()
+    if key not in valid_policies:
         raise ConfigError(
             "Invalid graph eviction policy",
-            valid_policies=valid_policies,
+            valid_policies=list(valid_policies.values()),
             provided=v,
         )
-    return v
+    return valid_policies[key]

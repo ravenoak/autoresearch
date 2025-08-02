@@ -240,9 +240,11 @@ class ConfigModel(BaseModel):
     _validate_reasoning_mode = field_validator(
         "reasoning_mode", mode="before"
     )(validate_reasoning_mode)
-    _validate_token_budget = field_validator("token_budget")(validate_token_budget)
+    _validate_token_budget = field_validator(
+        "token_budget", mode="before"
+    )(validate_token_budget)
     _validate_eviction_policy = field_validator(
-        "graph_eviction_policy"
+        "graph_eviction_policy", mode="before"
     )(validate_eviction_policy)
 
     @classmethod

@@ -1,9 +1,8 @@
 import pytest
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.errors import ConfigError
-
-pytestmark = pytest.mark.xfail(reason="Pydantic validation fails in this environment")
 
 
 @pytest.mark.parametrize(
