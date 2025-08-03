@@ -89,6 +89,8 @@ class Orchestrator:
         max_errors = config.max_errors if hasattr(config, "max_errors") else 3
         cb_threshold = getattr(config, "circuit_breaker_threshold", 3)
         cb_cooldown = getattr(config, "circuit_breaker_cooldown", 30)
+        retry_attempts = getattr(config, "retry_attempts", 1)
+        retry_backoff = getattr(config, "retry_backoff", 0.0)
         enable_messages = getattr(config, "enable_agent_messages", False)
         coalitions = getattr(config, "coalitions", {})
         for cname, members in coalitions.items():
@@ -118,6 +120,8 @@ class Orchestrator:
             "max_errors": max_errors,
             "circuit_breaker_threshold": cb_threshold,
             "circuit_breaker_cooldown": cb_cooldown,
+            "retry_attempts": retry_attempts,
+            "retry_backoff": retry_backoff,
             "enable_agent_messages": enable_messages,
             "enable_feedback": enable_feedback,
             "coalitions": coalitions,
@@ -425,8 +429,7 @@ class Orchestrator:
             "timestamp": time.time(),
         }
 
-        # Add to state and metrics
-        state.add_error(error_info)
+        # Record metrics
         metrics.record_error(agent_name)
 
         # Log the error with appropriate level based on category
@@ -454,9 +457,6 @@ class Orchestrator:
 
         # Update error info with recovery details
         error_info.update(recovery_info)
-
-        # Update circuit breaker state for this agent
-        Orchestrator._update_circuit_breaker(agent_name, error_category)
 
         return error_info
 
@@ -647,52 +647,88 @@ class Orchestrator:
             AgentError: If agent execution fails
             TimeoutError: If agent execution times out
         """
-        try:
-            # Get agent instance
-            agent = Orchestrator._get_agent(agent_name, agent_factory)
+        retries = getattr(config, "retry_attempts", 1)
+        backoff = getattr(config, "retry_backoff", 0.0)
 
-            # Check if agent can execute
-            if not Orchestrator._check_agent_can_execute(
-                agent, agent_name, state, config
-            ):
+        breaker_state = Orchestrator.get_circuit_breaker_state(agent_name)
+        if breaker_state.get("state") == "open":
+            error_info = {
+                "agent": agent_name,
+                "error": "Circuit breaker open",
+                "error_type": "CircuitBreakerOpen",
+                "error_category": "critical",
+                "traceback": "",
+                "timestamp": time.time(),
+            }
+            state.add_error(error_info)
+            metrics.record_error(agent_name)
+            metrics.record_circuit_breaker(agent_name)
+            return
+
+        for attempt in range(retries):
+            try:
+                # Get agent instance
+                agent = Orchestrator._get_agent(agent_name, agent_factory)
+
+                # Check if agent can execute
+                if not Orchestrator._check_agent_can_execute(
+                    agent, agent_name, state, config
+                ):
+                    return
+
+                # Deliver pending messages to this agent for the current cycle
+                Orchestrator._deliver_messages(agent_name, state, config)
+
+                # Log agent execution
+                Orchestrator._log_agent_execution(agent_name, state, loop)
+
+                # Call on_agent_start callback
+                Orchestrator._call_agent_start_callback(agent_name, state, callbacks)
+
+                # Execute agent and measure duration
+                start_time = time.time()
+                result = Orchestrator._execute_agent_with_token_counting(
+                    agent, agent_name, state, config, metrics
+                )
+                duration = time.time() - start_time
+
+                # Handle agent completion
+                Orchestrator._handle_agent_completion(
+                    agent_name, result, state, metrics, callbacks, duration, loop
+                )
+
+                # Update state with result
+                state.update(result)
+
+                # Log sources
+                Orchestrator._log_sources(agent_name, result)
+
+                # Persist claims
+                Orchestrator._persist_claims(agent_name, result, storage_manager)
+
+                # Successful execution resets circuit breaker state
+                Orchestrator._handle_agent_success(agent_name)
+                metrics.record_circuit_breaker(agent_name)
                 return
+            except Exception as e:
+                error_info = Orchestrator._handle_agent_error(
+                    agent_name, e, state, metrics
+                )
+                state.add_error(error_info)
+                category = str(error_info.get("error_category", "critical"))
+                Orchestrator._update_circuit_breaker(agent_name, category)
+                metrics.record_circuit_breaker(agent_name)
 
-            # Deliver pending messages to this agent for the current cycle
-            Orchestrator._deliver_messages(agent_name, state, config)
-
-            # Log agent execution
-            Orchestrator._log_agent_execution(agent_name, state, loop)
-
-            # Call on_agent_start callback
-            Orchestrator._call_agent_start_callback(agent_name, state, callbacks)
-
-            # Execute agent and measure duration
-            start_time = time.time()
-            result = Orchestrator._execute_agent_with_token_counting(
-                agent, agent_name, state, config, metrics
-            )
-            duration = time.time() - start_time
-
-            # Handle agent completion
-            Orchestrator._handle_agent_completion(
-                agent_name, result, state, metrics, callbacks, duration, loop
-            )
-
-            # Update state with result
-            state.update(result)
-
-            # Log sources
-            Orchestrator._log_sources(agent_name, result)
-
-            # Persist claims
-            Orchestrator._persist_claims(agent_name, result, storage_manager)
-
-            # Successful execution resets circuit breaker state
-            Orchestrator._handle_agent_success(agent_name)
-
-        except Exception as e:
-            # Handle agent errors
-            Orchestrator._handle_agent_error(agent_name, e, state, metrics)
+                # Retry for transient errors if attempts remain
+                if (
+                    attempt < retries - 1
+                    and error_info.get("error_category") == "transient"
+                ):
+                    sleep_time = backoff * (2 ** attempt)
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+                    continue
+                break
 
     @staticmethod
     def _execute_cycle(

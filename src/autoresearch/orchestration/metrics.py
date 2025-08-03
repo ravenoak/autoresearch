@@ -10,6 +10,8 @@ import time
 
 from prometheus_client import Counter, Histogram
 
+from .circuit_breaker import CircuitBreakerState, get_circuit_breaker_state
+
 QUERY_COUNTER = Counter(
     "autoresearch_queries_total", "Total number of queries processed"
 )
@@ -90,6 +92,7 @@ class OrchestrationMetrics:
         self._last_total_tokens = 0
         self.agent_usage_history: Dict[str, List[int]] = {}
         self._last_agent_totals: Dict[str, int] = {}
+        self.circuit_breakers: Dict[str, CircuitBreakerState] = {}
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -128,6 +131,10 @@ class OrchestrationMetrics:
             self.error_counts[agent_name] = 0
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
+
+    def record_circuit_breaker(self, agent_name: str) -> None:
+        """Record the circuit breaker state for an agent."""
+        self.circuit_breakers[agent_name] = get_circuit_breaker_state(agent_name)
 
     def _log_release_tokens(self) -> None:
         """Persist token counts for this release."""
@@ -172,6 +179,7 @@ class OrchestrationMetrics:
             "agent_timings": self.agent_timings,
             "agent_tokens": self.token_counts,
             "errors": {"total": total_errors, "by_agent": self.error_counts},
+            "circuit_breakers": self.circuit_breakers,
             "resource_usage": [
                 {
                     "timestamp": ts,
