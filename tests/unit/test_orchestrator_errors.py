@@ -12,6 +12,10 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.errors import OrchestrationError
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.agents.registry import AgentFactory
+from autoresearch.orchestration.metrics import OrchestrationMetrics
+from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration import circuit_breaker
 
 
 # Fixtures for common test setup
@@ -28,6 +32,74 @@ def failing_agent():
     agent.can_execute.return_value = True
     agent.execute.side_effect = ValueError("boom")
     return agent
+
+
+def setup_state_and_metrics():
+    state = QueryState(query="q", primus_index=0, coalitions={})
+    metrics = OrchestrationMetrics()
+    return state, metrics
+
+
+def test_execute_agent_records_errors_and_circuit_breaker(monkeypatch, test_config, failing_agent):
+    """_execute_agent captures exceptions and exposes circuit breaker status."""
+
+    circuit_breaker._circuit_breakers.clear()
+    state, metrics = setup_state_and_metrics()
+    storage = MagicMock()
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: failing_agent,
+    )
+
+    Orchestrator._execute_agent(
+        "FailingAgent", state, test_config, metrics, {}, AgentFactory, storage, 0
+    )
+
+    # Error information should be appended to state and QueryResponse
+    state.metadata["execution_metrics"] = metrics.get_summary()
+    resp = state.synthesize()
+    assert resp.metrics["errors"][0]["agent"] == "FailingAgent"
+    assert "circuit_breakers" in resp.metrics["execution_metrics"]
+    assert resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"][
+        "failure_count"
+    ] > 0
+
+
+def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
+    """Transient errors are retried with backoff and circuit breaker resets on success."""
+
+    circuit_breaker._circuit_breakers.clear()
+
+    state, metrics = setup_state_and_metrics()
+    storage = MagicMock()
+
+    agent = MagicMock()
+    agent.can_execute.return_value = True
+    agent.execute.side_effect = [TimeoutError("timeout"), {"claims": [], "results": {}}]
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: agent,
+    )
+
+    object.__setattr__(test_config, "retry_attempts", 2)
+    object.__setattr__(test_config, "retry_backoff", 0)
+
+    Orchestrator._execute_agent(
+        "RetryAgent", state, test_config, metrics, {}, AgentFactory, storage, 0
+    )
+
+    assert agent.execute.call_count == 2
+    state.metadata["execution_metrics"] = metrics.get_summary()
+    resp = state.synthesize()
+    # One error recorded from first attempt
+    assert resp.metrics["errors"][0]["agent"] == "RetryAgent"
+    # Circuit breaker should be closed after successful retry
+    assert (
+        resp.metrics["execution_metrics"]["circuit_breakers"]["RetryAgent"]["state"]
+        == "closed"
+    )
 
 
 def test_orchestrator_raises_after_error(monkeypatch, test_config, failing_agent):
