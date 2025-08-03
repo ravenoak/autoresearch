@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
@@ -9,10 +7,14 @@ from autoresearch.config.loader import ConfigLoader
 
 @pytest.fixture()
 def config_loader() -> ConfigLoader:
-    """Provide a ConfigLoader instance using the test configuration file."""
+    """Provide a ConfigLoader instance for tests.
+
+    The loader uses its built-in defaults and does not rely on an external
+    ``autoresearch.toml`` file. This keeps unit tests self-contained and makes
+    configuration behaviour consistent regardless of the working directory.
+    """
     loader = ConfigLoader.new_for_tests()
-    test_cfg = Path(__file__).resolve().parents[1] / "data" / "autoresearch.toml"
-    loader.search_paths = [test_cfg]
+    # Ensure watch paths reflect the default search paths
     loader._update_watch_paths()
     return loader
 
