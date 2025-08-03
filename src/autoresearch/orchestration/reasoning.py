@@ -25,7 +25,7 @@ class ReasoningStrategy(Protocol):
 
     def run_query(self, query: str, config: ConfigModel) -> QueryResponse:
         """Execute reasoning for a query."""
-        raise NotImplementedError
+        ...
 
 
 class ChainOfThoughtStrategy:
