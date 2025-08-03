@@ -11,7 +11,9 @@ def run_completion(cli_runner, bdd_context):
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert "complete" in result.stdout.lower()
 
 
 @scenario("../features/completion_cli.feature", "Generate shell completion script")
