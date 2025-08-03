@@ -33,6 +33,17 @@ def test_search_config_weight_validation() -> None:
             )
 
 
+def test_default_config_weights_sum_to_one(config_loader) -> None:
+    """Ensure default configuration loads with normalized ranking weights."""
+    cfg = config_loader.load_config()
+    total = (
+        cfg.search.semantic_similarity_weight
+        + cfg.search.bm25_weight
+        + cfg.search.source_credibility_weight
+    )
+    assert pytest.approx(total, abs=0.001) == 1.0
+
+
 def _setup_search(monkeypatch, w1: float, w2: float, w3: float) -> None:
     cfg = ConfigModel(
         search=SearchConfig(

@@ -26,6 +26,18 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
         "bm25_weight": 0.3,
         "source_credibility_weight": 0.2,
     }
+    defaults_total = sum(default_weights.values())
+    if defaults_total <= 0:
+        raise ConfigError(
+            "Default relevance ranking weights must be positive",
+            default_weights=default_weights,
+            suggestion="Check the default weight values",
+        )
+    if abs(defaults_total - 1.0) > 0.001:
+        default_weights = {
+            name: value / defaults_total for name, value in default_weights.items()
+        }
+
     weight_fields = set(default_weights.keys())
     provided = self.model_fields_set & weight_fields
     weights = {name: getattr(self, name) for name in weight_fields}
@@ -40,12 +52,12 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
                 suggestion="Decrease the provided weights so they do not exceed 1.0",
             )
         missing = weight_fields - provided
-        defaults_total = sum(default_weights[n] for n in missing)
+        missing_total = sum(default_weights[n] for n in missing)
         for name in missing:
             setattr(
                 self,
                 name,
-                remaining * default_weights[name] / defaults_total if defaults_total else 0.0,
+                remaining * default_weights[name] / missing_total if missing_total else 0.0,
             )
         weights = {n: getattr(self, n) for n in weight_fields}
 
