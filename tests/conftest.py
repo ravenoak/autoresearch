@@ -84,6 +84,8 @@ def pytest_runtest_setup(item):
         pytest.skip("ui extra not installed")
     if item.get_closest_marker("requires_vss") and not VSS_AVAILABLE:
         pytest.skip("vss extra not installed")
+    if item.get_closest_marker("requires_git") and not GITPYTHON_INSTALLED:
+        pytest.skip("git extra not installed")
 
 
 GITPYTHON_INSTALLED = _module_available("git")
