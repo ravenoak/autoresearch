@@ -17,9 +17,9 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ### 1.2 Agent System
 - **Complete the implementation of specialized agents**
-  - Implement the Moderator agent for managing complex dialogues
-  - Develop the Specialist agent for domain-specific knowledge
-  - Create a User agent to represent user preferences
+  - ~~Implement the Moderator agent for managing complex dialogues~~ (implemented in `src/autoresearch/agents/specialized/moderator.py`)
+  - ~~Develop the Specialist agent for domain-specific knowledge~~ (implemented in `src/autoresearch/agents/specialized/domain_specialist.py`)
+  - ~~Create a User agent to represent user preferences~~ (implemented in `src/autoresearch/agents/specialized/user_agent.py`)
 - **Enhance agent interaction patterns**
   - Implement agent-to-agent communication protocols
   - Add support for agent coalitions in complex queries
