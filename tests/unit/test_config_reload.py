@@ -1,9 +1,6 @@
+import threading
 import tomli_w
 from autoresearch.config.loader import ConfigLoader
-
-import pytest
-
-pytestmark = pytest.mark.xfail(reason="Config reload not supported in tests")
 
 
 def test_config_reload_on_change(tmp_path, monkeypatch):
@@ -19,13 +16,11 @@ def test_config_reload_on_change(tmp_path, monkeypatch):
     # Force update of watch paths to include the new config file
     loader._update_watch_paths()
 
-    # Start watching for changes
-    loader.watch_changes()
+    # Start watching for changes and wait for reload via callback
+    reloaded = threading.Event()
+    loader.watch_changes(lambda cfg: reloaded.set())
     assert loader.config.loops == 1
 
-    # Modify the config file
     cfg_path.write_text(tomli_w.dumps({"core": {"loops": 2}}))
-
-    # Manually reload configuration since file watching may not fire
-    loader._config = loader.load_config()
+    assert reloaded.wait(2)
     assert loader.config.loops == 2

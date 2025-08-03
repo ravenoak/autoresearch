@@ -259,19 +259,31 @@ class ConfigLoader:
         if self._watch_thread and self._watch_thread.is_alive():
             logger.info("Config watcher already running")
             return
-        if not any(Path(p).exists() for p in self.watch_paths):
+
+        watch_targets = [Path(p) for p in self.watch_paths if Path(p).exists()]
+        if self.env_path.exists():
+            watch_targets.append(self.env_path)
+        if not watch_targets:
             logger.info("No configuration files found to watch; skipping watcher")
             return
 
+        watch_dirs = {p.resolve().parent for p in watch_targets}
+        target_files = {p.resolve() for p in watch_targets}
+
         self._stop_event.clear()
         self._watch_thread = threading.Thread(
-            target=self._watch_config_files, daemon=True, name="ConfigWatcher"
+            target=self._watch_config_files,
+            args=(watch_dirs, target_files),
+            daemon=True,
+            name="ConfigWatcher",
         )
         if not self._atexit_registered:
             atexit.register(self.stop_watching)
             self._atexit_registered = True
         self._watch_thread.start()
-        logger.info(f"Started config watcher for paths: {self.watch_paths}")
+        logger.info(
+            f"Started config watcher for paths: {[str(p) for p in target_files]}"
+        )
 
     def stop_watching(self) -> None:
         if self._watch_thread and self._watch_thread.is_alive():
@@ -296,13 +308,24 @@ class ConfigLoader:
         finally:
             self.stop_watching()
 
-    def _watch_config_files(self) -> None:
-        paths = [p for p in self.watch_paths if Path(p).exists()]
+    def _watch_config_files(
+        self,
+        directories: Set[Path] | None = None,
+        target_files: Set[Path] | None = None,
+    ) -> None:
+        if directories is None or target_files is None:
+            watch_targets = [Path(p) for p in self.watch_paths if Path(p).exists()]
+            if self.env_path.exists():
+                watch_targets.append(self.env_path)
+            directories = {p.resolve().parent for p in watch_targets}
+            target_files = {p.resolve() for p in watch_targets}
         try:
-            for changes in watch(*paths, stop_event=self._stop_event):
+            for changes in watch(*(str(d) for d in directories), stop_event=self._stop_event):
                 for change in changes:
-                    file_path = Path(change[1])
-                    if file_path.stat().st_mtime != self._config_time:
+                    file_path = Path(change[1]).resolve()
+                    if file_path in target_files:
+                        if not file_path.exists():
+                            continue
                         try:
                             new_config = self.load_config()
                             self._config = new_config
@@ -313,7 +336,7 @@ class ConfigLoader:
         except Exception as e:
             logger.error(f"Error in config watcher: {e}")
             raise ConfigError(
-                "Error in config watcher", paths=self.watch_paths, cause=e
+                "Error in config watcher", paths=[str(p) for p in directories], cause=e
             ) from e
 
     def set_active_profile(self, profile_name: str) -> None:
