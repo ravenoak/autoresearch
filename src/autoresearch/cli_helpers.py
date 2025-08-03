@@ -22,6 +22,22 @@ def find_similar_commands(
     return list(matches)
 
 
+def parse_agent_groups(groups: Sequence[str]) -> List[List[str]]:
+    """Parse ``--agent-groups`` values into structured lists.
+
+    Each entry in ``groups`` is expected to be a comma-separated string of
+    agent names. Whitespace around agent names is ignored and empty names are
+    discarded. The return value is a list of agent groups where each group is
+    represented as a list of agent names.
+    """
+    parsed: List[List[str]] = []
+    for grp in groups:
+        agents = [a.strip() for a in grp.split(",") if a.strip()]
+        if agents:
+            parsed.append(agents)
+    return parsed
+
+
 def handle_command_not_found(ctx: typer.Context, command: str) -> None:
     """Display a friendly error message when a command is not found."""
     print_error(f"Command '{command}' not found.")
