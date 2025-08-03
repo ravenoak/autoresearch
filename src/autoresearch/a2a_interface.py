@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import asyncio
+import time
 from functools import wraps
 from typing import Any, Callable, Dict
 from enum import Enum
@@ -57,7 +58,7 @@ try:
         message: Message
 
     class A2AServer:
-        """Minimal A2A server based on FastAPI and uvicorn."""
+        """FastAPI/uvicorn server for A2A messages."""
 
         def __init__(self, host: str, port: int) -> None:
             self.host = host
@@ -71,28 +72,41 @@ try:
 
             self._handlers[message_type] = handler
 
+        async def _dispatch(self, msg_type: str, message_data: Dict[str, Any]) -> Dict[str, Any]:
+            """Dispatch a request to the appropriate handler."""
+
+            handler = self._handlers.get(msg_type)
+            if handler is None:
+                return {"status": "error", "error": "Unknown message type"}
+            message = Message.model_validate(message_data)
+            if asyncio.iscoroutinefunction(handler):
+                return await handler(message)
+            return await asyncio.to_thread(handler, message)
+
         def start(self) -> None:
             """Start the HTTP server in a background thread."""
 
-            from fastapi import FastAPI, Request
+            from fastapi import FastAPI
 
             app = FastAPI()
 
             @app.post("/")
-            async def handle(request: Request) -> Dict[str, Any]:  # pragma: no cover - network
-                payload = await request.json()
-                msg_type = payload.get("type")
+            async def handle(payload: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover - network
+                msg_type = str(payload.get("type", ""))
                 message_data = payload.get("message", {})
-                message = Message.model_validate(message_data)
-                handler = self._handlers.get(msg_type)
-                if handler is None:
-                    return {"status": "error", "error": "Unknown message type"}
-                return handler(message)
+                return await self._dispatch(msg_type, message_data)
 
             config = uvicorn.Config(app, host=self.host, port=self.port, log_level="info")
             self._server = uvicorn.Server(config)
-            self._thread = Thread(target=self._server.run, daemon=True)
+            server = self._server
+
+            def run() -> None:
+                asyncio.run(server.serve())
+
+            self._thread = Thread(target=run, daemon=True)
             self._thread.start()
+            while not self._server.started:  # Wait for server to be ready
+                time.sleep(0.01)
 
         def stop(self) -> None:
             """Stop the HTTP server."""
@@ -117,12 +131,14 @@ logger = get_logger(__name__)
 class A2AInterface:
     """Interface for integrating Autoresearch with A2A protocol."""
 
-    def __init__(self, host: str = "127.0.0.1", port: int = 8765) -> None:
+    def __init__(self, host: str | None = None, port: int | None = None) -> None:
         """Initialize the A2A interface.
 
         Args:
-            host: The host to bind the A2A server to
-            port: The port to bind the A2A server to
+            host: Optional host to bind the A2A server to. Falls back to the
+                ``A2A_HOST`` environment variable or ``127.0.0.1``.
+            port: Optional port to bind the A2A server to. Falls back to the
+                ``A2A_PORT`` environment variable or ``8765``.
 
         Raises:
             ImportError: If the a2a-sdk package is not installed
@@ -133,17 +149,17 @@ class A2AInterface:
                 "Install it with: pip install a2a-sdk"
             )
 
-        self.host = host
-        self.port = port
-        # Using the stub A2AServer class for testing purposes
-        self.server = A2AServer(host=host, port=port)
+        env_host = os.environ.get("A2A_HOST", "127.0.0.1")
+        env_port = int(os.environ.get("A2A_PORT", "8765"))
+        self.host = host or env_host
+        self.port = port or env_port
+        self.server = A2AServer(host=self.host, port=self.port)
         self.orchestrator = Orchestrator()
 
         # Register message handlers
         self.server.register_handler(A2AMessageType.QUERY, self._handle_query)
         self.server.register_handler(A2AMessageType.COMMAND, self._handle_command)
         self.server.register_handler(A2AMessageType.INFO, self._handle_info)
-        logger.warning("Using stub A2AServer class. Server functionality is limited.")
 
     def start(self) -> None:
         """Start the A2A server."""
