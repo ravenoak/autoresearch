@@ -6,6 +6,15 @@ import pytest
 from autoresearch.storage import StorageManager, teardown
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.kg_reasoning import register_reasoner
+
+
+def _simple_rdfs(graph: rdflib.Graph) -> None:
+    """Tiny RDFS subclass reasoner used for integration tests."""
+
+    for subj, obj in graph.subject_objects(rdflib.RDF.type):
+        for _s, _p, super_cls in graph.triples((obj, rdflib.RDFS.subClassOf, None)):
+            graph.add((subj, rdflib.RDF.type, super_cls))
 
 
 @pytest.fixture(autouse=True)
@@ -15,15 +24,17 @@ def cleanup():
     ConfigLoader.reset_instance()
 
 
-def _configure(tmp_path, monkeypatch):
+def _configure(tmp_path, monkeypatch, engine: str = "simple_rdfs"):
     cfg = ConfigModel(
         storage=StorageConfig(
             rdf_backend="memory",
             rdf_path=str(tmp_path / "rdf"),
+            ontology_reasoner=engine,
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
+    register_reasoner("simple_rdfs")(_simple_rdfs)
 
 
 def test_reasoning_infers_subclass(tmp_path, monkeypatch):
