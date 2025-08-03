@@ -366,9 +366,12 @@ def _stop_config_watcher() -> None:
         None
     """
     global _watch_ctx
-    if _watch_ctx is not None:
-        _watch_ctx.__exit__(None, None, None)
-        _watch_ctx = None
+    try:
+        if _watch_ctx is not None:
+            _watch_ctx.__exit__(None, None, None)
+            _watch_ctx = None
+    finally:
+        config_loader.stop_watching()
 
 
 @app.post("/query", response_model=None)

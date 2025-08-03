@@ -160,7 +160,14 @@ def start_watcher(
 
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()
-    ctx.call_on_close(lambda: watch_ctx.__exit__(None, None, None))
+
+    def _stop_watcher() -> None:
+        try:
+            watch_ctx.__exit__(None, None, None)
+        finally:
+            _config_loader.stop_watching()
+
+    ctx.call_on_close(_stop_watcher)
 
 
 @app.command()
