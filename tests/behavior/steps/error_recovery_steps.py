@@ -2,15 +2,36 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 
 
-@scenario("../features/error_recovery.feature", "Transient error triggers recovery")
-def test_transient_error_recovery():
+@scenario(
+    "../features/error_recovery.feature",
+    "Error recovery in dialectical reasoning mode",
+)
+def test_error_recovery_dialectical():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
+    "Error recovery in direct reasoning mode",
+)
+def test_error_recovery_direct():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
+    "Error recovery in chain-of-thought reasoning mode",
+)
+def test_error_recovery_cot():
     pass
 
 
@@ -30,14 +51,26 @@ def flaky_agent(monkeypatch):
     return cfg
 
 
+@given(parsers.parse('reasoning mode is "{mode}"'))
+def set_reasoning_mode(config: ConfigModel, mode: str):
+    config.reasoning_mode = ReasoningMode(mode)
+    return config
+
+
+@pytest.fixture
+def recovery_context():
+    info: dict = {}
+    yield info
+    info.clear()
+
+
 @when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
-def run_orchestrator(query: str, config: ConfigModel):
-    recovery_info: dict = {}
+def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
     original_apply = Orchestrator._apply_recovery_strategy
 
     def spy_apply(agent_name: str, error_category: str, e: Exception, state):
         info = original_apply(agent_name, error_category, e, state)
-        recovery_info.update(info)
+        recovery_context.update(info)
         return info
 
     with patch(
@@ -46,14 +79,16 @@ def run_orchestrator(query: str, config: ConfigModel):
     ):
         Orchestrator.run_query(query, config)
 
-    return {"recovery_info": recovery_info}
+    return {"recovery_info": dict(recovery_context)}
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
 def assert_strategy(run_result: dict, strategy: str) -> None:
+    assert run_result["recovery_info"], "Recovery info should not be empty"
     assert run_result["recovery_info"].get("recovery_strategy") == strategy
 
 
 @then("recovery should be applied")
 def assert_recovery_applied(run_result: dict) -> None:
+    assert run_result["recovery_info"], "Recovery info should not be empty"
     assert run_result["recovery_info"].get("recovery_applied") is True
