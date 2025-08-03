@@ -16,6 +16,7 @@ The module includes:
 
 from __future__ import annotations
 
+import ast
 import csv
 import json
 import math
@@ -423,6 +424,20 @@ class Search:
 
         return scores
 
+    @staticmethod
+    def merge_rank_scores(
+        bm25_scores: List[float],
+        semantic_scores: List[float],
+        bm25_weight: float,
+        semantic_weight: float,
+    ) -> List[float]:
+        """Merge BM25 and semantic scores using provided weights."""
+
+        merged: List[float] = []
+        for bm25, semantic in zip(bm25_scores, semantic_scores):
+            merged.append(bm25 * bm25_weight + semantic * semantic_weight)
+        return merged
+
     @classmethod
     def rank_results(
         cls,
@@ -488,30 +503,37 @@ class Search:
             (semantic_scores[i] + duckdb_scores[i]) / 2 for i in range(len(results))
         ]
 
-        # Combine scores using configurable weights
-        combined_scores = []
+        # Merge BM25 and semantic scores using weights
+        merged_scores = cls.merge_rank_scores(
+            bm25_scores,
+            embedding_scores,
+            search_cfg.bm25_weight,
+            search_cfg.semantic_similarity_weight,
+        )
+
+        # Combine merged score with credibility weight
+        final_scores: List[float] = []
         for i in range(len(results)):
-            score = (
-                bm25_scores[i] * search_cfg.bm25_weight
-                + embedding_scores[i] * search_cfg.semantic_similarity_weight
-                + credibility_scores[i] * search_cfg.source_credibility_weight
+            score = merged_scores[i] + (
+                credibility_scores[i] * search_cfg.source_credibility_weight
             )
-            combined_scores.append(score)
+            final_scores.append(score)
 
         # Add scores to results for debugging/transparency
         for i, result in enumerate(results):
-            result["relevance_score"] = combined_scores[i]
+            result["relevance_score"] = final_scores[i]
             result["bm25_score"] = bm25_scores[i]
             result["semantic_score"] = semantic_scores[i]
             result["duckdb_score"] = duckdb_scores[i]
             result["embedding_score"] = embedding_scores[i]
             result["credibility_score"] = credibility_scores[i]
+            result["merged_score"] = merged_scores[i]
 
-        # Sort results by combined score (descending)
+        # Sort results by final score (descending)
         ranked_results = [
             result
             for _, result in sorted(
-                zip(combined_scores, results), key=lambda pair: pair[0], reverse=True
+                zip(final_scores, results), key=lambda pair: pair[0], reverse=True
             )
         ]
 
@@ -1234,6 +1256,36 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     break
             if len(results) >= max_results:
                 return results
+
+    # AST-based search for Python code structure
+    normalized_query = query.lower().replace("_", "")
+    for py_file in repo_root.rglob("*.py"):
+        if len(results) >= max_results:
+            break
+        try:
+            source = py_file.read_text(encoding="utf-8")
+            tree = ast.parse(source)
+        except Exception:  # pragma: no cover - parse errors
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                name_norm = node.name.lower().replace("_", "")
+                if normalized_query in name_norm:
+                    start_line = getattr(node, "lineno", 1) - 1
+                    end_line = getattr(node, "end_lineno", start_line + 1)
+                    lines = source.splitlines()
+                    snippet = "\n".join(lines[start_line:end_line])
+                    results.append(
+                        {
+                            "title": py_file.name,
+                            "url": str(py_file),
+                            "snippet": snippet,
+                            "commit": head_hash,
+                        }
+                    )
+                    break
+    if len(results) >= max_results:
+        return results
 
     indexed: set[str] = set()
     with StorageManager.connection() as conn:
