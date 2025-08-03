@@ -10,8 +10,9 @@ from unittest.mock import patch, MagicMock
 import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
+from pytest_httpx import httpx_mock  # noqa: F401
 
-pytest_plugins = ["tests.fixtures.config"]
+pytest_plugins = ["tests.fixtures.config", "pytest_httpx"]
 
 if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"

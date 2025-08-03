@@ -5,7 +5,7 @@ from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
 import asyncio
 import time
-import pytest
+import json
 
 from autoresearch.models import QueryResponse, QueryRequest
 import autoresearch.api as api
@@ -35,7 +35,6 @@ def test_query_stream_param(monkeypatch):
     assert len(chunks) == 3
 
 
-@pytest.mark.skip(reason="requires httpx_mock fixture")
 def test_config_webhooks(monkeypatch, httpx_mock):
     """Configured webhooks should receive final results."""
 
@@ -52,7 +51,13 @@ def test_config_webhooks(monkeypatch, httpx_mock):
     httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
     resp = client.post("/query", json={"query": "hi"})
     assert resp.status_code == 200
-    assert len(httpx_mock.get_requests()) == 1
+    requests = httpx_mock.get_requests()
+    assert len(requests) == 1
+    req = requests[0]
+    assert req.method == "POST"
+    assert str(req.url) == "http://hook"
+    payload = json.loads(req.content.decode())
+    assert payload["answer"] == "ok"
 
 
 def test_batch_query_pagination(monkeypatch):
