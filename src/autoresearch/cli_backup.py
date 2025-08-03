@@ -16,7 +16,6 @@ from .errors import BackupError
 
 backup_app = typer.Typer(
     help="Backup and restore operations",
-    context_settings={"allow_interspersed_args": True},
 )
 
 
