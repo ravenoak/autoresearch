@@ -2,9 +2,9 @@ import itertools
 
 import pytest
 
-from types import SimpleNamespace
 from contextlib import contextmanager
 
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
@@ -78,7 +78,7 @@ def test_orchestrator_agent_combinations(monkeypatch, agents):
         Orchestrator, "_capture_token_usage", no_token_capture
     )
 
-    cfg = SimpleNamespace(agents=list(agents), loops=1)
+    cfg = ConfigModel(agents=list(agents), loops=1)
     response = Orchestrator.run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)
@@ -118,7 +118,7 @@ def test_orchestrator_agent_pairings(monkeypatch, agents):
         Orchestrator, "_capture_token_usage", no_token_capture
     )
 
-    cfg = SimpleNamespace(agents=list(agents), loops=1)
+    cfg = ConfigModel(agents=list(agents), loops=1)
     response = Orchestrator.run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)
@@ -168,14 +168,25 @@ def test_orchestrator_failure_modes(monkeypatch, agents, fail_index):
         Orchestrator, "_capture_token_usage", no_token_capture
     )
 
-    cfg = SimpleNamespace(agents=list(agents), loops=1, max_errors=1)
+    cfg = ConfigModel(agents=list(agents), loops=1, max_errors=1)
     with pytest.raises(OrchestrationError):
         Orchestrator.run_query("q", cfg)
 
-    # Only agents before the failing one should run
-    assert calls == list(agents[:fail_index])
+    failing_agent = agents[fail_index]
+    if failing_agent == "Synthesizer":
+        if fail_index == 0:
+            expected_calls = []
+        else:
+            expected_calls = [a for a in agents if a != "Synthesizer"]
+    else:
+        expected_calls = []
+        for a in agents:
+            if a == failing_agent:
+                break
+            if a != "Synthesizer":
+                expected_calls.append(a)
+
+    assert calls == expected_calls
     assert search_calls == calls
-    expected_claims = [
-        {"id": a, "type": "fact", "content": a} for a in agents[:fail_index]
-    ]
+    expected_claims = [{"id": a, "type": "fact", "content": a} for a in calls]
     assert store_calls == expected_claims

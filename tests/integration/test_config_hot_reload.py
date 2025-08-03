@@ -1,13 +1,22 @@
 import time
 import tomli_w
 import tomllib
-from types import SimpleNamespace
 from contextlib import contextmanager
 
+import git
+import pytest
+
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
+from tests.conftest import GITPYTHON_INSTALLED
+
+pytestmark = [
+    pytest.mark.requires_git,
+    pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
+]
 
 
 def make_agent(name, calls, stored):
@@ -32,6 +41,7 @@ def make_agent(name, calls, stored):
 
 def test_config_hot_reload(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    repo = git.Repo.init(tmp_path)
     cfg_file = tmp_path / "autoresearch.toml"
     cfg_file.write_text(
         tomli_w.dumps(
@@ -41,17 +51,21 @@ def test_config_hot_reload(tmp_path, monkeypatch):
             }
         )
     )
+    repo.index.add([str(cfg_file)])
+    repo.index.commit("init config")
     ConfigLoader.reset_instance()
 
     def fake_load(self):
         data = tomllib.loads(cfg_file.read_text())
-        return SimpleNamespace(
-            agents=data["agents"],
-            loops=1,
-            search=SimpleNamespace(
-                backends=data["search"]["backends"],
-                context_aware=SimpleNamespace(enabled=False),
-            ),
+        return ConfigModel.from_dict(
+            {
+                "agents": data["agents"],
+                "loops": 1,
+                "search": {
+                    "backends": data["search"]["backends"],
+                    "context_aware": {"enabled": False},
+                },
+            }
         )
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
@@ -115,6 +129,8 @@ def test_config_hot_reload(tmp_path, monkeypatch):
                 }
             )
         )
+        repo.index.add([str(cfg_file)])
+        repo.index.commit("update config")
         time.sleep(0.1)
         Orchestrator.run_query("q", loader.config)
 

@@ -9,6 +9,12 @@ from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from tests.conftest import VSS_AVAILABLE
+
+pytestmark = [
+    pytest.mark.requires_vss,
+    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
+]
 
 
 @pytest.fixture(autouse=True)
@@ -50,8 +56,7 @@ def test_search_returns_persisted_claim(monkeypatch):
         lambda q, b, query_embedding=None: sum(b.values(), []),
     )
 
-    # Avoid vector extension and index refresh
-    monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
+    # Avoid index refresh for simplicity
     monkeypatch.setattr(StorageManager, "refresh_vector_index", lambda: None)
     monkeypatch.setattr(StorageManager, "touch_node", lambda _id: None)
 
