@@ -45,7 +45,7 @@ if [ ! -x /usr/local/bin/task ]; then
 fi
 
 # Run the main setup script to install all extras needed for testing
-./scripts/setup.sh full,dev,test
+./scripts/setup.sh full,parsers,git,llm,dev,test
 
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
 if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
@@ -55,7 +55,7 @@ fi
 # Confirm required extras are installed
 echo "Verifying required extras..."
 missing=0
-for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss a2a-sdk; do
+for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -65,7 +65,7 @@ if [ "$missing" -ne 0 ]; then
     echo "Required packages are missing. Check setup logs." >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss|a2a-sdk'
+uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers'
 
 # Helper for retrying flaky network operations
 retry() {
