@@ -48,6 +48,7 @@ from .token_utils import (
 )
 from ..logging_utils import get_logger
 from ..tracing import setup_tracing, get_tracer
+from .utils import get_memory_usage, calculate_result_confidence
 from ..errors import (
     OrchestrationError,
     AgentError,
@@ -1288,72 +1289,8 @@ class Orchestrator:
         else:
             config.token_budget = budget
 
-    @staticmethod
-    def _get_memory_usage() -> float:
-        """Get current memory usage in MB.
-
-        Returns:
-            Current memory usage in MB
-        """
-        try:
-            import psutil
-            process = psutil.Process()
-            memory_info = process.memory_info()
-            return memory_info.rss / (1024 * 1024)  # Convert to MB
-        except ImportError:
-            # Fallback if psutil is not available
-            import resource
-            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024  # Already in KB, convert to MB
-
-    @staticmethod
-    def _calculate_result_confidence(result: QueryResponse) -> float:
-        """Calculate a confidence score for a query result.
-
-        Args:
-            result: The query result to evaluate
-
-        Returns:
-            Confidence score between 0.0 and 1.0
-        """
-        # Start with a base confidence
-        confidence = 0.5
-
-        # Adjust based on number of citations
-        if hasattr(result, 'citations') and result.citations:
-            citation_count = len(result.citations)
-            # More citations generally indicate better support
-            citation_factor = min(0.3, 0.05 * citation_count)
-            confidence += citation_factor
-
-        # Adjust based on reasoning length and quality
-        if hasattr(result, 'reasoning') and result.reasoning:
-            reasoning_length = len(result.reasoning)
-            # Longer reasoning chains may indicate more thorough analysis
-            # But we cap the bonus to avoid rewarding verbosity
-            reasoning_factor = min(0.2, 0.01 * reasoning_length)
-            confidence += reasoning_factor
-
-        # Adjust based on token usage efficiency
-        if hasattr(result, 'metrics') and 'token_usage' in result.metrics:
-            token_usage = result.metrics['token_usage']
-            if 'total' in token_usage and 'max_tokens' in token_usage:
-                usage_ratio = token_usage['total'] / max(1, token_usage['max_tokens'])
-                # Efficient token usage (not too low, not maxed out)
-                if 0.3 <= usage_ratio <= 0.9:
-                    confidence += 0.1
-                elif usage_ratio > 0.9:
-                    # Maxed out token usage might indicate truncation
-                    confidence -= 0.1
-
-        # Adjust based on execution errors
-        if hasattr(result, 'metrics') and 'errors' in result.metrics:
-            error_count = len(result.metrics['errors'])
-            if error_count > 0:
-                # Errors reduce confidence
-                confidence -= min(0.4, 0.1 * error_count)
-
-        # Ensure confidence is within bounds
-        return max(0.1, min(1.0, confidence))
+    _get_memory_usage = staticmethod(get_memory_usage)
+    _calculate_result_confidence = staticmethod(calculate_result_confidence)
 
     @staticmethod
     def _capture_token_usage(
