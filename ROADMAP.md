@@ -36,9 +36,7 @@ Before publishing 0.1.0 the release plan lists several checks:
 - Ensure packaging metadata and publish scripts work correctly.
 
 Any remaining issues from these tasks will be addressed in 0.1.1.
-- CLI backup commands, testing utilities and all specialized agents are
-  planned to have full implementations and comprehensive unit tests once
-  testing passes.
+- CLI backup commands and testing utilities remain pending, while specialized agents—Moderator, Specialist, and User—are already implemented (`src/autoresearch/agents/specialized/moderator.py`, `src/autoresearch/agents/specialized/domain_specialist.py`, `src/autoresearch/agents/specialized/user_agent.py`) and will receive comprehensive unit tests once testing passes.
 The 0.1.1 release is planned for **February 1, 2026**.
 
 ## 0.2.0 – API stabilization and improved search
