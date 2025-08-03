@@ -2,6 +2,7 @@ import sys
 import importlib
 import types
 from pathlib import Path
+import pytest
 from typer.testing import CliRunner
 
 
@@ -101,7 +102,6 @@ def test_search_help_includes_visualize(monkeypatch):
 
 
 def test_search_loops_option(monkeypatch):
-    import pytest
     pytest.skip("loops option CLI interaction fails under test environment")
     dummy_storage = types.ModuleType("autoresearch.storage")
 
