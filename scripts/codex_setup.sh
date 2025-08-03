@@ -47,10 +47,15 @@ fi
 # Run the main setup script to install all extras needed for testing
 ./scripts/setup.sh full,dev,test
 
+# Ensure duckdb-extension-vss is installed for DuckDB vector search support
+if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
+    uv pip install duckdb-extension-vss
+fi
+
 # Confirm required extras are installed
 echo "Verifying required extras..."
 missing=0
-for pkg in pytest-cov hypothesis tomli_w; do
+for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -60,7 +65,7 @@ if [ "$missing" -ne 0 ]; then
     echo "Required packages are missing. Check setup logs." >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w'
+uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss'
 
 # Helper for retrying flaky network operations
 retry() {

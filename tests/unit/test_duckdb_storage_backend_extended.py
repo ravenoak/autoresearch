@@ -14,7 +14,24 @@ from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError, NotFoundError
 
 
-@pytest.mark.skip("Environment lacks DuckDB VSS support")
+class DummyConn:
+    def __init__(self, fail_on_create: bool = False):
+        self.calls = []
+        self.fail_on_create = fail_on_create
+
+    def execute(self, sql, params=None):
+        self.calls.append(sql)
+        if self.fail_on_create and "CREATE INDEX" in sql:
+            raise Exception("Failed to create index")
+        return self
+
+    def fetchone(self):
+        return [0]
+
+    def fetchall(self):
+        return []
+
+
 class TestDuckDBStorageBackendExtended:
     """Extended tests for the DuckDBStorageBackend class."""
 
@@ -22,7 +39,7 @@ class TestDuckDBStorageBackendExtended:
     def test_create_hnsw_index(self, mock_connect):
         """Test creating an HNSW index."""
         # Mock the connection
-        mock_conn = MagicMock()
+        mock_conn = DummyConn()
         mock_connect.return_value = mock_conn
 
         # Mock the ConfigLoader
@@ -31,39 +48,36 @@ class TestDuckDBStorageBackendExtended:
             mock_config.config.storage.hnsw_m = 16
             mock_config.config.storage.hnsw_ef_construction = 64
             mock_config.config.storage.hnsw_metric = "euclidean"
+            mock_config.config.storage.vector_nprobe = 10
+            mock_config.config.storage.hnsw_auto_tune = False
+            mock_config.config.storage.hnsw_ef_search = 10
+            mock_config.config.storage.vector_extension_path = ""
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
             with patch(
                 "autoresearch.extensions.VSSExtensionLoader.verify_extension",
                 return_value=True,
+            ), patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                return_value=True,
             ):
-                with patch(
-                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                    return_value=True,
-                ):
-                    # Setup the backend
-                    backend = DuckDBStorageBackend()
-                    backend._conn = mock_conn
-                    backend._has_vss = True
+                # Setup the backend
+                backend = DuckDBStorageBackend()
+                backend._conn = mock_conn
+                backend._has_vss = True
 
-                    # Create the HNSW index
-                    backend.create_hnsw_index()
+                # Create the HNSW index
+                backend.create_hnsw_index()
 
-                    # Verify that the execute method attempted to create an index
-                    called = any(
-                        "CREATE INDEX" in args.args[0]
-                        for args in mock_conn.execute.call_args_list
-                    )
-                    if not called:
-                        called = mock_conn.execute.called
-                    assert called
+                # Verify that the execute method attempted to create an index
+                assert any("CREATE INDEX" in sql for sql in mock_conn.calls)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_create_hnsw_index_extension_not_loaded(self, mock_connect):
         """Test creating an HNSW index when the VSS extension is not loaded."""
         # Mock the connection
-        mock_conn = MagicMock()
+        mock_conn = DummyConn()
         mock_connect.return_value = mock_conn
 
         # Mock the ConfigLoader
@@ -72,38 +86,36 @@ class TestDuckDBStorageBackendExtended:
             mock_config.config.storage.hnsw_m = 16
             mock_config.config.storage.hnsw_ef_construction = 64
             mock_config.config.storage.hnsw_metric = "euclidean"
+            mock_config.config.storage.vector_nprobe = 10
+            mock_config.config.storage.hnsw_auto_tune = False
+            mock_config.config.storage.hnsw_ef_search = 10
+            mock_config.config.storage.vector_extension_path = ""
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
             with patch(
                 "autoresearch.extensions.VSSExtensionLoader.verify_extension",
                 return_value=False,
+            ), patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                return_value=False,
             ):
-                with patch(
-                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                    return_value=False,
-                ):
-                    # Setup the backend
-                    backend = DuckDBStorageBackend()
-                    backend._conn = mock_conn
-                    backend._has_vss = False
+                # Setup the backend
+                backend = DuckDBStorageBackend()
+                backend._conn = mock_conn
+                backend._has_vss = False
 
-                    # Create the HNSW index
-                    backend.create_hnsw_index()
+                # Create the HNSW index
+                backend.create_hnsw_index()
 
-                    # Verify that an index creation was attempted
-                    called = False
-                    for call_args in mock_conn.execute.call_args_list:
-                        if "CREATE INDEX" in call_args.args[0]:
-                            called = True
-                            break
-                    assert called
+                # Verify that an index creation was attempted
+                assert any("CREATE INDEX" in sql for sql in mock_conn.calls)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_create_hnsw_index_error(self, mock_connect):
         """Test error handling when creating an HNSW index."""
         # Mock the connection
-        mock_conn = MagicMock()
+        mock_conn = DummyConn(fail_on_create=True)
         mock_connect.return_value = mock_conn
 
         # Mock the ConfigLoader
@@ -112,35 +124,35 @@ class TestDuckDBStorageBackendExtended:
             mock_config.config.storage.hnsw_m = 16
             mock_config.config.storage.hnsw_ef_construction = 64
             mock_config.config.storage.hnsw_metric = "euclidean"
+            mock_config.config.storage.vector_nprobe = 10
+            mock_config.config.storage.hnsw_auto_tune = False
+            mock_config.config.storage.hnsw_ef_search = 10
+            mock_config.config.storage.vector_extension_path = ""
             mock_config_loader.return_value = mock_config
 
             # Mock the VSSExtensionLoader
             with patch(
                 "autoresearch.extensions.VSSExtensionLoader.verify_extension",
                 return_value=True,
+            ), patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                return_value=True,
             ):
-                with patch(
-                    "autoresearch.extensions.VSSExtensionLoader.load_extension",
-                    return_value=True,
+                # Setup the backend
+                backend = DuckDBStorageBackend()
+                backend._conn = mock_conn
+                backend._has_vss = True
+
+                # Set the environment variable to strict mode
+                with patch.dict(
+                    os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "true"}
                 ):
-                    # Setup the backend
-                    backend = DuckDBStorageBackend()
-                    backend._conn = mock_conn
-                    backend._has_vss = True
+                    # Create the HNSW index and expect a StorageError
+                    with pytest.raises(StorageError) as excinfo:
+                        backend.create_hnsw_index()
 
-                    # Mock the execute method to raise an exception
-                    mock_conn.execute.side_effect = Exception("Failed to create index")
-
-                    # Set the environment variable to strict mode
-                    with patch.dict(
-                        os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "true"}
-                    ):
-                        # Create the HNSW index and expect a StorageError
-                        with pytest.raises(StorageError) as excinfo:
-                            backend.create_hnsw_index()
-
-                        # Verify that the error message is correct
-                        assert "Failed to create HNSW index" in str(excinfo.value)
+                    # Verify that the error message is correct
+                    assert "Failed to create HNSW index" in str(excinfo.value)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_persist_claim(self, mock_connect):
