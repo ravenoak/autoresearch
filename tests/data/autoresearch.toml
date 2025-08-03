@@ -1,4 +1,0 @@
-[search]
-semantic_similarity_weight = 0.5
-bm25_weight = 0.3
-source_credibility_weight = 0.2
