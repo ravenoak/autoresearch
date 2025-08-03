@@ -10,7 +10,6 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 
 
-@pytest.mark.skip("Known parsing issue")
 @scenario("../features/cli_options.feature", "Set loops and token budget via CLI")
 def test_token_budget_loops(bdd_context):
     pass
@@ -21,7 +20,6 @@ def test_choose_agents(bdd_context):
     pass
 
 
-@pytest.mark.skip("Known parsing issue")
 @scenario("../features/cli_options.feature", "Run agent groups in parallel via CLI")
 def test_parallel_groups(bdd_context):
     pass

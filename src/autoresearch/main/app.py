@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import os
-from typing import Optional, Any
+from typing import Optional, Any, List, Tuple
 
 import typer
 from rich.console import Console
@@ -40,7 +40,7 @@ from ..cli_utils import (
     sparql_query_cli as _cli_sparql,
 )
 from ..error_utils import get_error_info, format_error_for_cli
-from ..cli_helpers import handle_command_not_found
+from ..cli_helpers import handle_command_not_found, parse_agent_groups
 
 
 app = typer.Typer(
@@ -55,6 +55,7 @@ app = typer.Typer(
     no_args_is_help=True,  # Show help when no arguments are provided
     pretty_exceptions_enable=False,
     # Disable pretty exceptions to handle them ourselves
+    context_settings={"allow_interspersed_args": True},
 )
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
@@ -245,13 +246,14 @@ def search(
         "--parallel",
         help="Run agent groups in parallel",
     ),
-    agent_groups: Optional[str] = typer.Option(
+    agent_groups: Tuple[str, ...] = typer.Option(  # type: ignore[call-overload]
         None,
         "--agent-groups",
         help=(
-            "Agent groups to run in parallel. Provide a space-separated list "
-            "of comma-separated groups"
+            "Agent groups to run in parallel. Use multiple --agent-groups options, each "
+            "containing a comma-separated list of agents"
         ),
+        multiple=True,
     ),
     primus_start: Optional[int] = typer.Option(
         None,
@@ -359,11 +361,7 @@ def search(
 
         with Progress() as progress:
             if parallel and agent_groups:
-                group_tokens = agent_groups.split()
-                groups = [
-                    [a.strip() for a in grp.split(",") if a.strip()]
-                    for grp in group_tokens
-                ]
+                groups = parse_agent_groups(agent_groups)
                 task = progress.add_task(
                     "[green]Processing query...",
                     total=len(groups),
