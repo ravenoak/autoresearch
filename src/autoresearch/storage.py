@@ -37,6 +37,7 @@ from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
 from .kg_reasoning import run_ontology_reasoner
+from .visualization import save_rdf_graph
 
 
 @dataclass
@@ -1345,21 +1346,4 @@ class StorageManager:
         """Generate a simple PNG visualization of the RDF graph."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
-
-        g: nx.DiGraph[Any] = nx.DiGraph()
-        for s, p, o in store:
-            g.add_edge(str(s), str(o), label=str(p))
-
-        import matplotlib
-
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-
-        plt.figure(figsize=(8, 6))
-        pos = nx.spring_layout(g, seed=42)
-        nx.draw(g, pos, with_labels=True, node_color="lightblue", font_size=8)
-        edge_labels = nx.get_edge_attributes(g, "label")
-        nx.draw_networkx_edge_labels(g, pos, edge_labels=edge_labels, font_size=6)
-        plt.tight_layout()
-        plt.savefig(output_path)
-        plt.close()
+        save_rdf_graph(store, output_path)
