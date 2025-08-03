@@ -5,7 +5,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 import pytest
 from unittest.mock import patch, MagicMock
 
-from .common_steps import *  # noqa: F401,F403
+from .common_steps import app_running, app_running_with_default, application_running
 from autoresearch.models import QueryResponse
 
 
