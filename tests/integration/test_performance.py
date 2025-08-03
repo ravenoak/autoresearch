@@ -22,8 +22,10 @@ def test_query_time_and_memory(benchmark, token_baseline):
     """Queries should stay within expected time and memory bounds."""
 
     metrics = benchmark(run_benchmark)
-    token_baseline(metrics["tokens"])
-
     baseline = json.loads(BASELINE_PATH.read_text())
+
+    assert metrics["tokens"] == baseline["tokens"]
     assert metrics["memory_delta_mb"] <= baseline["memory_delta_mb"] + 5
     assert metrics["duration_seconds"] <= baseline["duration_seconds"] * 2
+
+    token_baseline(metrics["tokens"])
