@@ -17,7 +17,9 @@ def run_a2a_help(cli_runner, bdd_context):
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert "usage:" in result.stdout.lower()
 
 
 @scenario("../features/serve_commands.feature", "Display help for serve")

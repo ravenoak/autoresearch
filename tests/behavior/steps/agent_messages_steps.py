@@ -78,10 +78,9 @@ def setup_agents(monkeypatch, tmp_path, config_model):
     return cfg
 
 
-@when("I execute a query")
-def run_query(config, monkeypatch):
-    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", "/tmp/release_tokens.json")
-    monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", "/tmp/query_tokens.json")
+@when("I execute a query", target_fixture="response")
+def run_query(config, metrics_env):
+    """Execute a simple query and capture the response."""
     return Orchestrator.run_query("ping", config)
 
 
@@ -116,10 +115,9 @@ def setup_coalition(monkeypatch, tmp_path, config_model):
     return cfg
 
 
-@when("the sender broadcasts to the coalition")
-def run_broadcast_query(config, monkeypatch):
-    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", "/tmp/release_tokens.json")
-    monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", "/tmp/query_tokens.json")
+@when("the sender broadcasts to the coalition", target_fixture="response")
+def run_broadcast_query(config, metrics_env):
+    """Run a query to trigger broadcast messaging."""
     return Orchestrator.run_query("ping", config)
 
 
