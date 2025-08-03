@@ -1,6 +1,6 @@
 [project]
 name = "autoresearch"
-version = "0.1.0" # keep in sync with autoresearch.__version__
+version = "0.1.0-alpha.1" # keep in sync with autoresearch.__version__
 description = ""
 authors = [
     {name = "Caitlyn O'Hanna",email = "caitlyn.ohanna@gmail.com"}
@@ -42,6 +42,7 @@ dependencies = [
     "typer >=0.16.0",
     "watchfiles >=0.21",
     "setuptools",
+    "owlrl>=7.1.4",
 ]
 [project.optional-dependencies]
 # Minimal install: only core embedding model support
