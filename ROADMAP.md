@@ -1,14 +1,14 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **October 21, 2025**.
-Phase 3 (stabilization/testing/documentation) is currently ongoing.
+Last updated **August 3, 2025**.
+Phase 2 testing tasks are still in progress, so Phase 3 (stabilization/testing/documentation) items remain planned.
 
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0 | 2025-12-20 | Finalize packaging, docs and CI checks |
+| 0.1.0 | TBD | Finalize packaging, docs and CI checks |
 | 0.1.1 | 2026-02-01 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2026-07-15 | Distributed execution support, monitoring utilities |
@@ -24,9 +24,8 @@ complete documentation. Key activities include:
 - Verifying packaging metadata and TestPyPI uploads.
 
 Tests are still failing due to configuration errors and overall coverage is below the **90%** target.
-Final package validation and documentation work are ongoing. These tasks
-are now expected to wrap up by **December 20, 2025**, when **0.1.0** is
-tentatively planned for release.
+Final package validation and documentation work remain in progress. The
+**0.1.0** release date is now **TBD** until these Phase 2 tasks pass.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
@@ -37,8 +36,9 @@ Before publishing 0.1.0 the release plan lists several checks:
 - Ensure packaging metadata and publish scripts work correctly.
 
 Any remaining issues from these tasks will be addressed in 0.1.1.
-- CLI backup commands, testing utilities and all specialized agents now have
-  full implementations and comprehensive unit tests.
+- CLI backup commands, testing utilities and all specialized agents are
+  planned to have full implementations and comprehensive unit tests once
+  testing passes.
 The 0.1.1 release is planned for **February 1, 2026**.
 
 ## 0.2.0 – API stabilization and improved search
