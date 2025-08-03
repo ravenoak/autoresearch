@@ -4,7 +4,7 @@ from unittest.mock import patch
 import responses
 import requests
 
-from .common_steps import *  # noqa: F401,F403
+from .common_steps import app_running, app_running_with_default, application_running
 from fastapi.testclient import TestClient
 from autoresearch.api import app as api_app
 from autoresearch.orchestration.state import QueryState

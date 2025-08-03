@@ -2,7 +2,7 @@
 import os
 from pytest_bdd import scenario, when, then, parsers
 
-from .common_steps import *  # noqa: F401,F403
+from .common_steps import app_running, app_running_with_default, application_running
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 
