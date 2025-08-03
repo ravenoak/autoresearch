@@ -119,3 +119,25 @@ def test_storage_cleared_between_tests(monkeypatch):
 
     results = Search.external_lookup({"text": "", "embedding": np.array([0.2, 0.1])}, max_results=1)
     assert all(r["url"] != "c1" for r in results)
+
+
+def test_external_lookup_persists_results(monkeypatch):
+    cfg = _config_without_network()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    stored: list[str] = []
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+
+    def backend(query: str, max_results: int = 5):
+        return [{"title": "doc", "url": "u1"}]
+
+    monkeypatch.setattr(Search, "backends", {"b": backend})
+    monkeypatch.setattr(
+        Search,
+        "cross_backend_rank",
+        lambda q, b, query_embedding=None: sum(b.values(), []),
+    )
+
+    Search.external_lookup("q", max_results=1)
+    assert stored == ["u1"], "search results should be persisted"
