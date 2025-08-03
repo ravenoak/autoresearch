@@ -1,12 +1,21 @@
 """Integration test for token usage tracking against baselines."""
 
+import json
 import os
+from pathlib import Path
+
+import pytest
 
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+
 # Allow tokens to exceed the baseline by this many tokens before failing
 THRESHOLD = int(os.getenv("TOKEN_USAGE_THRESHOLD", "0"))
+
+pytestmark = pytest.mark.slow
+
+BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage.json"
 
 
 class DummyAgent:
@@ -37,5 +46,12 @@ def test_token_usage_matches_baseline(monkeypatch, token_baseline):
 
     response = Orchestrator.run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
+
+    baseline = json.loads(BASELINE_PATH.read_text())
+    for agent, counts in baseline.items():
+        for direction in ("in", "out"):
+            measured = tokens.get(agent, {}).get(direction, 0)
+            expected = counts.get(direction, 0)
+            assert abs(measured - expected) <= THRESHOLD
 
     token_baseline(tokens, THRESHOLD)
