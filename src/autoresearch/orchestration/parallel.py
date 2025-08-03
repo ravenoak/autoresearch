@@ -11,7 +11,7 @@ from ..config.models import ConfigModel
 from ..models import QueryResponse
 from .state import QueryState
 from ..agents.registry import AgentFactory
-from ..errors import OrchestrationError
+from ..errors import AgentError, OrchestrationError, TimeoutError
 from ..logging_utils import get_logger
 from ..tracing import get_tracer, setup_tracing
 
@@ -99,7 +99,13 @@ def execute_parallel_query(
 
         try:
             return Orchestrator.run_query(query, group_config)
-        except Exception as e:  # pragma: no cover - re-raise path
+        except (
+            AgentError,
+            TimeoutError,
+            OrchestrationError,
+            ValueError,
+            RuntimeError,
+        ) as e:
             log.error(f"Error running agent group {group}: {e}", exc_info=True)
             raise OrchestrationError(
                 f"Error running agent group {group}",
@@ -128,7 +134,7 @@ def execute_parallel_query(
                         results.append((grp, result))
                         log.info(f"Agent group {grp} completed successfully")
                         span.add_event(f"Group {grp} completed")
-                    except Exception as e:
+                    except OrchestrationError as e:
                         errors.append((grp, str(e)))
                         log.error(f"Agent group {grp} failed: {e}", exc_info=True)
                         span.add_event(f"Group {grp} failed", {"error": str(e)})
