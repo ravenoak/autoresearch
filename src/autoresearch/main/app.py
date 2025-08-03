@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import os
-from typing import Optional, Any, List, Tuple
+from typing import Optional, Any, Tuple
 
 import typer
 from rich.console import Console
