@@ -3,11 +3,14 @@ import sys
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import parallel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.errors import AgentError, OrchestrationError
 
 
 def test_get_memory_usage_fallback(monkeypatch):
@@ -66,3 +69,25 @@ def test_execute_parallel_query_basic(monkeypatch):
     assert isinstance(resp, QueryResponse)
     assert resp.answer == "final"
     assert resp.metrics["parallel_execution"]["successful_groups"] == 2
+
+
+def test_execute_parallel_query_agent_error(monkeypatch, caplog):
+    cfg = ConfigModel.model_construct(agents=[], loops=1)
+
+    def mock_run_query(query, config):
+        raise AgentError("boom", agent_name="A")
+
+    synthesizer = MagicMock()
+    synthesizer.execute.return_value = {"answer": "final"}
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: synthesizer,
+    )
+
+    with caplog.at_level("ERROR"):
+        with pytest.raises(OrchestrationError):
+            parallel.execute_parallel_query("q", cfg, [["A"]])
+
+    assert any("Agent group ['A'] failed" in r.message for r in caplog.records)

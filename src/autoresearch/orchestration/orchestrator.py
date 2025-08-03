@@ -48,7 +48,13 @@ from .token_utils import (
 )
 from ..logging_utils import get_logger
 from ..tracing import setup_tracing, get_tracer
-from ..errors import OrchestrationError, AgentError, NotFoundError, TimeoutError
+from ..errors import (
+    OrchestrationError,
+    AgentError,
+    NotFoundError,
+    TimeoutError,
+    StorageError,
+)
 import rdflib
 
 from . import circuit_breaker
@@ -143,7 +149,7 @@ class Orchestrator:
         """
         try:
             return agent_factory.get(agent_name)
-        except Exception as e:
+        except ValueError as e:
             # Wrap agent factory errors in NotFoundError
             raise NotFoundError(
                 f"Agent '{agent_name}' not found",
@@ -266,20 +272,14 @@ class Orchestrator:
             return result
         except TimeoutError:
             log.error(f"Timeout during {agent_name} execution")
-            # Re-raise timeout errors directly
             raise
-        except Exception as e:
+        except AgentError as e:
             log.error(
                 f"Error during {agent_name} execution: {str(e)}",
                 exc_info=True,
                 extra={"agent": agent_name, "error": str(e)},
             )
-            # Wrap agent execution errors in AgentError
-            raise AgentError(
-                f"Error during agent {agent_name} execution",
-                cause=e,
-                agent_name=agent_name,
-            )
+            raise
 
     @staticmethod
     def _handle_agent_completion(
@@ -391,7 +391,7 @@ class Orchestrator:
                                 "has_id": isinstance(claim, dict) and "id" in claim,
                             },
                         )
-        except Exception as e:
+        except (StorageError, rdflib.exceptions.Error, ValueError) as e:
             log.warning(
                 f"Error persisting claims for agent {agent_name}: {str(e)}",
                 exc_info=True,
@@ -710,7 +710,14 @@ class Orchestrator:
                 Orchestrator._handle_agent_success(agent_name)
                 metrics.record_circuit_breaker(agent_name)
                 return
-            except Exception as e:
+            except (
+                AgentError,
+                TimeoutError,
+                NotFoundError,
+                OrchestrationError,
+                ValueError,
+                RuntimeError,
+            ) as e:
                 error_info = Orchestrator._handle_agent_error(
                     agent_name, e, state, metrics
                 )

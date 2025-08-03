@@ -1,7 +1,10 @@
 import pytest
+from unittest.mock import MagicMock
+
+from autoresearch.config.models import ConfigModel
+from autoresearch.errors import NotFoundError, StorageError
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
-from autoresearch.config.models import ConfigModel
 
 
 class DummyAgent:
@@ -26,8 +29,9 @@ def test_get_agent_success():
 
 
 def test_get_agent_not_found():
-    with pytest.raises(Exception):
+    with pytest.raises(NotFoundError) as excinfo:
         Orchestrator._get_agent("Missing", DummyFactory)
+    assert isinstance(excinfo.value.__cause__, ValueError)
 
     state = QueryState(query="q")
     cfg = ConfigModel.model_construct(enable_agent_messages=True)
@@ -43,3 +47,14 @@ def test_call_agent_start_callback():
         "Dummy", state, {"on_agent_start": lambda a, s: calls.append(a)}
     )
     assert calls == ["Dummy"]
+
+
+def test_persist_claims_logs_storage_error(caplog):
+    storage = MagicMock()
+    storage.persist_claim.side_effect = StorageError("fail")
+    result = {"claims": [{"id": "c1"}]}
+
+    with caplog.at_level("WARNING"):
+        Orchestrator._persist_claims("Agent", result, storage)
+
+    assert "Error persisting claims for agent Agent" in caplog.text
