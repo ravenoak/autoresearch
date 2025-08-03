@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -299,6 +299,7 @@ parsers = [
     { name = "python-docx" },
 ]
 test = [
+    { name = "a2a-sdk" },
     { name = "owlrl" },
 ]
 ui = [
@@ -311,6 +312,7 @@ vss = [
 [package.metadata]
 requires-dist = [
     { name = "a2a-sdk", specifier = ">=0.2.16" },
+    { name = "a2a-sdk", marker = "extra == 'test'", specifier = ">=0.2.16" },
     { name = "bertopic", marker = "extra == 'full'", specifier = ">=0.17.3" },
     { name = "bertopic", marker = "extra == 'nlp'", specifier = ">=0.17.3" },
     { name = "cibuildwheel", marker = "extra == 'dev'", specifier = ">=3.0.1" },

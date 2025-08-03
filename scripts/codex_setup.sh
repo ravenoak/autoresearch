@@ -55,7 +55,7 @@ fi
 # Confirm required extras are installed
 echo "Verifying required extras..."
 missing=0
-for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss; do
+for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss a2a-sdk; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -65,7 +65,7 @@ if [ "$missing" -ne 0 ]; then
     echo "Required packages are missing. Check setup logs." >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss'
+uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss|a2a-sdk'
 
 # Helper for retrying flaky network operations
 retry() {
