@@ -1,14 +1,14 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **August 3, 2025**.
+Last updated **August 4, 2025**.
 Phase 2 testing tasks are still in progress, so Phase 3 (stabilization/testing/documentation) items remain planned.
 
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0 | TBD | Finalize packaging, docs and CI checks |
+| 0.1.0 | 2025-09-01 | Finalize packaging, docs and CI checks |
 | 0.1.1 | 2026-02-01 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2026-07-15 | Distributed execution support, monitoring utilities |
@@ -25,7 +25,7 @@ complete documentation. Key activities include:
 
 Tests are still failing due to configuration errors and overall coverage is below the **90%** target.
 Final package validation and documentation work remain in progress. The
-**0.1.0** release date is now **TBD** until these Phase 2 tasks pass.
+**0.1.0** release date is now targeted for **September 1, 2025** pending successful test and coverage runs.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
