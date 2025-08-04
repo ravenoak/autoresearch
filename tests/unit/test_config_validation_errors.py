@@ -1,5 +1,6 @@
 import pytest
 
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig, SearchConfig
 from autoresearch.errors import ConfigError
 
@@ -20,3 +21,13 @@ def test_weights_must_sum_to_one():
                 source_credibility_weight=0.5,
             )
         )
+
+
+def test_default_config_loads_without_error():
+    """Default ConfigModel should load without raising ConfigError."""
+    loader = ConfigLoader.new_for_tests()
+    loader._update_watch_paths()
+    try:
+        loader.load_config()
+    except ConfigError as exc:  # pragma: no cover - should not happen
+        pytest.fail(f"ConfigModel failed to load: {exc}")
