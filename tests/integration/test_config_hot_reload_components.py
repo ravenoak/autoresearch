@@ -138,3 +138,115 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
     assert search_calls == ["b1", "b2"]
     assert stored == ["u1", "AgentA", "u2", "AgentB"]
     assert events[0] == (["AgentA"], ["b1"]) and events[-1] == (["AgentB"], ["b2"])
+
+
+def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
+    """Search weights and storage settings should update without restart."""
+
+    monkeypatch.chdir(tmp_path)
+    repo = git.Repo.init(tmp_path)
+    cfg_file = tmp_path / "autoresearch.toml"
+    cfg_file.write_text(
+        tomli_w.dumps(
+            {
+                "agents": ["AgentA"],
+                "search": {
+                    "backends": ["b1"],
+                    "context_aware": {"enabled": False},
+                    "semantic_similarity_weight": 0.7,
+                    "bm25_weight": 0.2,
+                    "source_credibility_weight": 0.1,
+                },
+                "storage": {"duckdb_path": "db1.duckdb"},
+            }
+        )
+    )
+    repo.index.add([str(cfg_file)])
+    repo.index.commit("init config")
+    ConfigLoader.reset_instance()
+
+    def fake_load(self):
+        data = tomllib.loads(cfg_file.read_text())
+        return ConfigModel.from_dict(
+            {
+                "agents": data["agents"],
+                "loops": 1,
+                "search": {
+                    "backends": data["search"]["backends"],
+                    "context_aware": {"enabled": False},
+                    "semantic_similarity_weight": data["search"][
+                        "semantic_similarity_weight"
+                    ],
+                    "bm25_weight": data["search"]["bm25_weight"],
+                    "source_credibility_weight": data["search"][
+                        "source_credibility_weight"
+                    ],
+                },
+                "storage": {"duckdb_path": data["storage"]["duckdb_path"]},
+            }
+        )
+
+    monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
+    loader = ConfigLoader()
+
+    paths: list[str] = []
+    weights: list[tuple[float, float, float]] = []
+
+    monkeypatch.setattr(
+        StorageManager,
+        "persist_claim",
+        lambda claim: paths.append(loader.config.storage.duckdb_path),
+    )
+
+    def external_lookup(query: str, max_results: int = 5):
+        weights.append(
+            (
+                loader.config.search.semantic_similarity_weight,
+                loader.config.search.bm25_weight,
+                loader.config.search.source_credibility_weight,
+            )
+        )
+        return [{"title": "t1", "url": "u1"}]
+
+    monkeypatch.setattr(Search, "external_lookup", external_lookup)
+    monkeypatch.setattr(
+        AgentFactory, "get", lambda name, llm_adapter=None: make_agent(name, [], [])
+    )
+
+    events: list[tuple[float, str]] = []
+
+    def on_change(cfg):
+        events.append(
+            (cfg.search.semantic_similarity_weight, cfg.storage.duckdb_path)
+        )
+
+    loader.watch_changes(on_change)
+    loader.load_config()
+    events.append(
+        (loader.config.search.semantic_similarity_weight, loader.config.storage.duckdb_path)
+    )
+    Orchestrator.run_query("q", loader.config)
+    cfg_file.write_text(
+        tomli_w.dumps(
+            {
+                "agents": ["AgentA"],
+                "search": {
+                    "backends": ["b1"],
+                    "context_aware": {"enabled": False},
+                    "semantic_similarity_weight": 0.2,
+                    "bm25_weight": 0.7,
+                    "source_credibility_weight": 0.1,
+                },
+                "storage": {"duckdb_path": "db2.duckdb"},
+            }
+        )
+    )
+    repo.index.add([str(cfg_file)])
+    repo.index.commit("update config")
+    time.sleep(0.2)
+    Orchestrator.run_query("q", loader.config)
+    loader.stop_watching()
+
+    assert weights == [(0.7, 0.2, 0.1), (0.2, 0.7, 0.1)]
+    assert paths == ["db1.duckdb", "db2.duckdb"]
+    assert events[0] == (0.7, "db1.duckdb") and events[-1] == (0.2, "db2.duckdb")
