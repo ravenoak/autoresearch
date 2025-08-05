@@ -6,15 +6,10 @@ from autoresearch.config.loader import ConfigLoader
 
 
 @pytest.fixture()
-def config_loader() -> ConfigLoader:
-    """Provide a ConfigLoader instance for tests.
-
-    The loader uses its built-in defaults and does not rely on an external
-    ``autoresearch.toml`` file. This keeps unit tests self-contained and makes
-    configuration behaviour consistent regardless of the working directory.
-    """
+def config_loader(tmp_path) -> ConfigLoader:
+    """Provide a ConfigLoader instance backed by a minimal config file."""
+    (tmp_path / "autoresearch.toml").write_text("[core]\n")
     loader = ConfigLoader.new_for_tests()
-    # Ensure watch paths reflect the default search paths
     loader._update_watch_paths()
     return loader
 
