@@ -1,8 +1,9 @@
 """
-Orchestration system for coordinating multi-agent dialectical cycles.
+Orchestration system coordinating multi-agent dialectical cycles.
 
-This module currently serves as a prototype for future orchestration work and
-has only minimal automated test coverage.  Interfaces may change.
+Provides direct, dialectical, and chain-of-thought reasoning modes with
+state management, metrics, token tracking, and parallel execution. Behavior
+is exercised by unit and integration tests under ``tests/``.
 
 This module provides the core orchestration functionality for the Autoresearch system,
 coordinating the execution of multiple agents in a dialectical reasoning process.
