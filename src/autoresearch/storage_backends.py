@@ -110,7 +110,7 @@ class DuckDBStorageBackend:
                         log.info("VSS extension loaded successfully")
                     else:
                         log.warning("VSS extension not available")
-                except Exception as e:
+                except (duckdb.Error, StorageError) as e:
                     log.error(f"Failed to load VSS extension: {e}")
                     self._has_vss = False
                     # In test environments, we don't want to fail if the VSS extension is not available

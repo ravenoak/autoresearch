@@ -24,4 +24,9 @@ if "duckdb" not in sys.modules:
 
     duckdb_stub.DuckDBPyConnection = _Conn
     duckdb_stub.connect = lambda *a, **k: _Conn()
+
+    class Error(Exception):
+        """Base DuckDB exception stub."""
+
+    duckdb_stub.Error = Error
     sys.modules["duckdb"] = duckdb_stub

@@ -1,9 +1,11 @@
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from autoresearch.extensions import VSSExtensionLoader
+import duckdb
+import pytest
+
 from autoresearch.errors import StorageError
+from autoresearch.extensions import VSSExtensionLoader
 
 
 class TestVSSExtensionLoader:
@@ -27,9 +29,9 @@ class TestVSSExtensionLoader:
     @pytest.mark.real_vss
     def test_verify_extension_failure(self):
         """Test that verify_extension returns False when the extension is not loaded."""
-        # Create a mock connection that raises an exception when executing the verification query
+        # Create a mock connection that raises a DuckDB error when executing the verification query
         conn = MagicMock()
-        conn.execute.side_effect = Exception("Extension not loaded")
+        conn.execute.side_effect = duckdb.Error("Extension not loaded")
 
         # Verify that the extension is reported as not loaded
         assert VSSExtensionLoader.verify_extension(conn) is False
@@ -164,26 +166,32 @@ class TestVSSExtensionLoader:
             conn.execute.assert_any_call("INSTALL vss")
             conn.execute.assert_any_call("LOAD vss")
 
+    @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
-    def test_load_extension_download_failure_non_strict(self, mock_config_loader):
+    def test_load_extension_download_failure_non_strict(
+        self, mock_config_loader, caplog
+    ):
         """Test downloading and installing the extension fails but in non-strict mode."""
         # Configure the mock config loader
         mock_config = MagicMock()
         mock_config.config.storage.vector_extension_path = None
         mock_config_loader.return_value = mock_config
 
-        # Create a mock connection
+        # Create a mock connection that raises a DuckDB error
         conn = MagicMock()
-        conn.execute.side_effect = Exception("Failed to install extension")
+        conn.execute.side_effect = duckdb.Error("Failed to install extension")
 
         # Mock os.getenv to return "false" for AUTORESEARCH_STRICT_EXTENSIONS
-        with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "false"}):
+        with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "false"}), caplog.at_level("ERROR"), patch(
+            "pathlib.Path.exists", return_value=False
+        ):
             # Load the extension
             result = VSSExtensionLoader.load_extension(conn)
 
             # Verify that the extension was not loaded but no exception was raised
             assert result is False
 
+    @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
     def test_load_extension_download_failure_strict(self, mock_config_loader):
         """Test downloading and installing the extension fails in strict mode."""
@@ -194,10 +202,25 @@ class TestVSSExtensionLoader:
 
         # Create a mock connection
         conn = MagicMock()
-        conn.execute.side_effect = Exception("Failed to install extension")
+        conn.execute.side_effect = duckdb.Error("Failed to install extension")
 
         # Mock os.getenv to return "true" for AUTORESEARCH_STRICT_EXTENSIONS
         with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "true"}):
             # Load the extension and expect a StorageError
             with pytest.raises(StorageError):
                 VSSExtensionLoader.load_extension(conn)
+
+    @pytest.mark.real_vss
+    @patch("autoresearch.extensions.ConfigLoader")
+    def test_load_extension_download_unhandled_exception(self, mock_config_loader):
+        """Non-duckdb errors propagate without being suppressed."""
+        mock_config = MagicMock()
+        mock_config.config.storage.vector_extension_path = None
+        mock_config_loader.return_value = mock_config
+
+        # Create a mock connection that raises an unexpected error
+        conn = MagicMock()
+        conn.execute.side_effect = RuntimeError("boom")
+
+        with pytest.raises(RuntimeError):
+            VSSExtensionLoader.load_extension(conn)
