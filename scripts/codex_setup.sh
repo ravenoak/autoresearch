@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -o pipefail
 
 LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -26,10 +27,11 @@ fi
 echo "Setting up Codex environment..."
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update
+apt-get update && echo "apt-get update completed" || { echo "apt-get update failed" >&2; exit 1; }
 apt-get install -y \
-        build-essential python3-dev python3-venv cmake pkg-config git libssl-dev libffi-dev libxml2-dev libargon2-dev libblas-dev liblapack-dev libopenblas-dev liblmdb-dev libz3-dev libcurl4-openssl-dev
-apt-get clean
+        build-essential python3-dev python3-venv cmake pkg-config git libssl-dev libffi-dev libxml2-dev libargon2-dev libblas-dev liblapack-dev libopenblas-dev liblmdb-dev libz3-dev libcurl4-openssl-dev \
+    && echo "apt-get install completed" || { echo "apt-get install failed" >&2; exit 1; }
+apt-get clean && echo "apt-get clean completed" || { echo "apt-get clean failed" >&2; exit 1; }
 rm -rf /var/lib/apt/lists/*
 
 # Install Go Task for running Taskfile commands if not already installed
@@ -49,7 +51,8 @@ fi
 
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
 if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
-    uv pip install duckdb-extension-vss
+    uv pip install duckdb-extension-vss && echo "duckdb-extension-vss installed" \
+        || { echo 'Failed to install duckdb-extension-vss' >&2; exit 1; }
 fi
 
 # Confirm required extras are installed
@@ -86,18 +89,39 @@ retry() {
 }
 
 # Pre-download models so tests can run without network access
+SENTENCE_MODEL_DIR="$HOME/.cache/torch/sentence_transformers/all-MiniLM-L6-v2"
 retry 3 uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" \
+    && echo "SentenceTransformer model downloaded" \
     || { echo 'Failed to download SentenceTransformer model.' >&2; exit 1; }
+if [ ! -d "$SENTENCE_MODEL_DIR" ]; then
+    echo "SentenceTransformer model not found at $SENTENCE_MODEL_DIR" >&2
+    exit 1
+fi
 
 retry 3 uv run python -m spacy download en_core_web_sm \
+    && echo "spaCy en_core_web_sm model downloaded" \
     || { echo 'Failed to download spaCy model.' >&2; exit 1; }
+SPACY_MODEL_DIR=$(uv run python - <<'PY'
+import os, en_core_web_sm
+print(os.path.dirname(en_core_web_sm.__file__))
+PY
+)
+if [ ! -d "$SPACY_MODEL_DIR" ]; then
+    echo "spaCy model en_core_web_sm not found at $SPACY_MODEL_DIR" >&2
+    exit 1
+fi
 
 # Pre-load ontology reasoner so tests can run offline
 uv run python -c "import owlrl" || { echo 'Failed to pre-load ontology reasoner.' >&2; exit 1; }
 
 # Cache DuckDB extensions for offline use (vss by default)
 retry 3 uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions \
+    && echo "DuckDB extensions downloaded" \
     || { echo 'Failed to download DuckDB extensions.' >&2; exit 1; }
+if ! find ./extensions -type f -name '*.duckdb_extension' | grep -q .; then
+    echo 'DuckDB extensions not found in ./extensions' >&2
+    exit 1
+fi
 
 # All Python setup is handled by setup.sh using uv pip
 
