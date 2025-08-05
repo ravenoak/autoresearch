@@ -1,9 +1,13 @@
 import time
 from contextlib import contextmanager
 
+import pytest
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.storage import StorageManager
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 
 class BenchAgent:
@@ -25,15 +29,11 @@ def test_query_latency_memory_tokens(monkeypatch, token_baseline):
 
     @contextmanager
     def capture(agent_name, metrics, config):
-        metrics.setdefault("execution_metrics", {}).setdefault("agent_tokens", {})
-        metrics["execution_metrics"]["agent_tokens"][agent_name] = {"in": 0, "out": 0}
-
         def generate(prompt):
-            metrics["execution_metrics"]["agent_tokens"][agent_name]["in"] += len(prompt.split())
-            metrics["execution_metrics"]["agent_tokens"][agent_name]["out"] += 1
+            metrics.record_tokens(agent_name, len(prompt.split()), 1)
             return "ok"
 
-        yield (generate, None)
+        yield ({}, generate)
 
     monkeypatch.setattr(Orchestrator, "_capture_token_usage", capture)
 

@@ -14,6 +14,8 @@ from autoresearch.storage import StorageManager
 from tests.conftest import GITPYTHON_INSTALLED
 
 pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.slow,
     pytest.mark.requires_git,
     pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
 ]
