@@ -12,13 +12,17 @@ Phase 2 testing tasks are nearly complete after resolving prior failures, so Pha
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0** | 2025-09-15 | Finalize packaging, docs and CI checks; complete Phase 2 (integration & behavior tests passing, ≥90% coverage) |
+| **0.1.0** | 2025-11-15 | Finalize packaging, docs and CI checks; complete Phase 2 (integration & behavior tests passing, ≥90% coverage) |
 | **0.1.1** | 2026-02-01 | Bug fixes and documentation updates |
 | **0.2.0** | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
 | **0.3.0** | 2026-07-15 | Distributed execution support, monitoring utilities |
 | **1.0.0** | 2026-10-01 | Full feature set, performance tuning and stable interfaces |
 
-The **0.1.0** release was originally aimed for **July 20, 2025**. All unit, integration and behavior tests now pass, but overall coverage remains below the **90%** target. Packaging checks and documentation work continue, so the milestone is now targeted for **September 15, 2025** while coverage and packaging issues are resolved.
+The **0.1.0** release was originally aimed for **July 20, 2025**, but the
+schedule slipped. Tests still fail and total coverage remains below the
+**90%** target. Packaging checks and documentation work continue, so the
+milestone is now targeted for **November 15, 2025** while coverage and
+packaging tasks are completed.
 
 The following tasks remain before publishing **0.1.0**:
 

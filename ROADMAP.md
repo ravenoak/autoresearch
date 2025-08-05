@@ -8,7 +8,7 @@ Phase 2 testing tasks are nearly complete after resolving prior failures; Phase 
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0 | 2025-09-15 | Finalize packaging, docs and CI checks |
+| 0.1.0 | 2025-11-15 | Finalize packaging, docs and CI checks |
 | 0.1.1 | 2026-02-01 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2026-07-15 | Distributed execution support, monitoring utilities |
@@ -23,9 +23,11 @@ complete documentation. Key activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-All unit, integration and behavior tests now pass, but overall coverage is below the **90%** target.
-Completion of **Phase 2**—integration & behavior tests passing with at least **90%** total coverage—remains a prerequisite for the
-**0.1.0** milestone, which is now targeted for **September 15, 2025** pending final package validation and documentation work.
+Tests still fail and overall coverage is below the **90%** target.
+Completion of **Phase 2**—integration & behavior tests passing with at least
+**90%** total coverage—remains a prerequisite for the **0.1.0** milestone,
+which is now targeted for **November 15, 2025** while final package
+validation and documentation work continue.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
