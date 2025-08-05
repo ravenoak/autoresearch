@@ -82,9 +82,12 @@ class VSSExtensionLoader:
                     extension_loaded = True
                 else:
                     log.warning("VSS extension may not be fully loaded from filesystem")
-                    raise Exception("Failed to verify VSS extension from filesystem")
+                    # Use duckdb.Error so we can handle it explicitly
+                    raise duckdb.Error(
+                        "Failed to verify VSS extension from filesystem"
+                    )
 
-            except Exception as e:
+            except (duckdb.Error, FileNotFoundError, ValueError) as e:
                 log.warning(f"Failed to load VSS extension from filesystem: {e}")
                 # Continue to try downloading if loading from filesystem fails
 
@@ -106,7 +109,7 @@ class VSSExtensionLoader:
                     extension_loaded = True
                 else:
                     log.warning("VSS extension may not be fully loaded")
-            except Exception as e:
+            except duckdb.Error as e:
                 log.error(f"Failed to load VSS extension: {e}")
                 # In test environments, we don't want to fail if the VSS extension is not available
                 # Only raise in non-test environments or if explicitly configured to fail
@@ -120,7 +123,7 @@ class VSSExtensionLoader:
                 log.info(f"Using bundled stub VSS extension at {stub_path}")
                 try:
                     conn.execute(f"LOAD '{stub_path.as_posix()}'")
-                except Exception:
+                except duckdb.Error:
                     # Ignore errors - this stub is only for offline tests
                     pass
                 extension_loaded = True
@@ -154,7 +157,7 @@ class VSSExtensionLoader:
                 if verbose:
                     log.warning("VSS extension is not loaded")
                 return False
-        except Exception as e:
+        except duckdb.Error as e:
             if verbose:
                 log.warning(f"VSS extension verification failed: {e}")
             return False

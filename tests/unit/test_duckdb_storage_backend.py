@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock, call
 
+import duckdb
+
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
 from autoresearch.config.loader import ConfigLoader
@@ -288,7 +290,7 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Create a side effect function that raises an exception only for VSS-related calls
+        # Create a side effect function that raises a DuckDB error only for VSS-related calls
         def side_effect(query, *args, **kwargs):
             if (
                 "duckdb_extensions()" in query
@@ -296,7 +298,7 @@ class TestDuckDBStorageBackend:
                 or "INSTALL vss" in query
                 or "LOAD vss" in query
             ):
-                raise Exception("VSS not available")
+                raise duckdb.Error("VSS not available")
             mock_result = MagicMock()
             mock_result.fetchone.return_value = ["1"]  # For schema version query
             return mock_result
