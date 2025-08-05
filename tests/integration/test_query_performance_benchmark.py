@@ -10,7 +10,9 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.integration]
+
+pytest.importorskip("pytest_benchmark")
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
 spec = importlib.util.spec_from_file_location("benchmark_token_memory", SCRIPT_PATH)
