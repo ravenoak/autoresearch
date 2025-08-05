@@ -1,3 +1,4 @@
+# flake8: noqa
 from pytest_bdd import scenario, when, then, parsers
 import requests
 import responses
