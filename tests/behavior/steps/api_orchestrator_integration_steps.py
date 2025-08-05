@@ -169,30 +169,31 @@ def api_returns_orchestrator_response(test_context):
     assert api_response["answer"] == mock_response.answer
     assert api_response["citations"] == mock_response.citations
     assert api_response["reasoning"] == mock_response.reasoning
+    assert api_response["metrics"] == mock_response.metrics
 
 
 @then("the response should include an answer")
 def response_includes_answer(test_context):
-    """Verify that the response includes an answer."""
+    """Verify that the response includes the expected answer."""
     response = test_context["response"]
-    assert "answer" in response.json()
-    assert response.json()["answer"]
+    data = response.json()
+    assert data.get("answer") == test_context["query"]
 
 
 @then("the response should include citations")
 def response_includes_citations(test_context):
-    """Verify that the response includes citations."""
+    """Verify that the response includes the expected citations."""
     response = test_context["response"]
-    assert "citations" in response.json()
-    assert isinstance(response.json()["citations"], list)
+    expected = [{"text": "Test citation", "url": "https://example.com"}]
+    assert response.json().get("citations") == expected
 
 
 @then("the response should include reasoning")
 def response_includes_reasoning(test_context):
-    """Verify that the response includes reasoning."""
+    """Verify that the response includes the expected reasoning."""
     response = test_context["response"]
-    assert "reasoning" in response.json()
-    assert isinstance(response.json()["reasoning"], list)
+    expected = ["Test reasoning step 1", "Test reasoning step 2"]
+    assert response.json().get("reasoning") == expected
 
 
 # Scenario: API handles orchestrator errors gracefully
@@ -345,15 +346,18 @@ def all_queries_processed(test_context):
 
 @then("each response should be correct for its query")
 def responses_match_queries(test_context):
-    """Verify that each response is correct for its query."""
-    # Since we're using a mock orchestrator that returns the same response for all queries,
-    # we can't verify that each response matches its query exactly.
-    # Instead, we'll verify that all responses have the expected structure.
+    """Verify that each response matches its originating query."""
     responses = test_context["concurrent_responses"]
-    for response in responses:
-        assert "answer" in response.json()
-        assert "citations" in response.json()
-        assert "reasoning" in response.json()
+    for query, response in zip(test_context["queries"], responses):
+        data = response.json()
+        assert data.get("answer") == query
+        assert data.get("citations") == [
+            {"text": "Test citation", "url": "https://example.com"}
+        ]
+        assert data.get("reasoning") == [
+            "Test reasoning step 1",
+            "Test reasoning step 2",
+        ]
 
 
 # Scenario: API paginates batch queries
