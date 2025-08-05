@@ -2,11 +2,14 @@
 
 import sys
 import types
+import threading
+from collections import Counter
 
 slowapi_stub = types.ModuleType("slowapi")
 slowapi_stub.IS_STUB = True
 
-REQUEST_LOG: dict[str, int] = {}
+REQUEST_LOG: Counter[str] = Counter()
+REQUEST_LOG_LOCK = threading.Lock()
 
 
 class RateLimitExceeded(Exception):
@@ -32,11 +35,13 @@ class Limiter:
 
     def check(self, request):  # pragma: no cover - simple stub
         ip = self.key_func(request)
-        REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+        with REQUEST_LOG_LOCK:
+            REQUEST_LOG[ip] += 1
+            count = REQUEST_LOG[ip]
         limit = 0
         if self.application_limits:
             limit = self._parse_limit(self.application_limits[0])
-        if limit and REQUEST_LOG[ip] > limit:
+        if limit and count > limit:
             raise RateLimitExceeded()
 
     def limit(self, *_args, **_kwargs):  # pragma: no cover - simple stub
@@ -75,6 +80,7 @@ def get_remote_address(*_a, **_k):
 
 slowapi_stub.Limiter = Limiter
 slowapi_stub.REQUEST_LOG = REQUEST_LOG
+slowapi_stub.REQUEST_LOG_LOCK = REQUEST_LOG_LOCK
 slowapi_stub._rate_limit_exceeded_handler = _rate_limit_exceeded_handler
 
 errors_mod = types.ModuleType("slowapi.errors")

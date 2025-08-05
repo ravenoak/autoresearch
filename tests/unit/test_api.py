@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+import threading
+from collections import Counter
 from autoresearch.api import app, dynamic_limit
 from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
@@ -59,7 +61,8 @@ def test_fallback_no_limit(monkeypatch):
 
     assert client.post("/query", json={"query": "q"}).status_code == 200
     assert client.post("/query", json={"query": "q"}).status_code == 200
-    assert api_mod.REQUEST_LOG == {}
+    with api_mod.REQUEST_LOG_LOCK:
+        assert api_mod.REQUEST_LOG == Counter()
 
 
 def test_fallback_multiple_ips(monkeypatch):
@@ -79,18 +82,42 @@ def test_fallback_multiple_ips(monkeypatch):
 
     assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 200
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.REQUEST_LOG.get("1") == 1
+        with api_mod.REQUEST_LOG_LOCK:
+            assert api_mod.REQUEST_LOG.get("1") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
     assert client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code == 200
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.REQUEST_LOG.get("2") == 1
+        with api_mod.REQUEST_LOG_LOCK:
+            assert api_mod.REQUEST_LOG.get("2") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
 
     assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 429
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.REQUEST_LOG.get("1") == 2
+        with api_mod.REQUEST_LOG_LOCK:
+            assert api_mod.REQUEST_LOG.get("1") == 2
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
+
+
+def test_request_log_thread_safety(monkeypatch):
+    cfg = _setup(monkeypatch)
+    cfg.api.rate_limit = 0
+
+    from autoresearch import api as api_mod
+
+    api_mod.reset_request_log()
+
+    def make_request() -> None:
+        api_mod.log_request("1")
+
+    threads = [threading.Thread(target=make_request) for _ in range(20)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    with api_mod.REQUEST_LOG_LOCK:
+        assert api_mod.REQUEST_LOG.get("1") == 20
