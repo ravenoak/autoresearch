@@ -36,3 +36,9 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 1
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Synthesizer, Contrarian, FactChecker"
+
+  Scenario: Unsupported reasoning mode fails gracefully
+    Given loops is set to 1 in configuration
+    When I run the orchestrator on query "mode test" with unsupported reasoning mode "quantum"
+    Then a reasoning mode error should be raised
+    And no agents should execute

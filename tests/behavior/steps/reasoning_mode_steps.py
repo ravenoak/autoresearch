@@ -6,6 +6,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.errors import ConfigError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
 
@@ -30,11 +31,17 @@ def test_dialectical_real_query():
     pass
 
 
+@scenario(
+    "../features/reasoning_mode.feature",
+    "Unsupported reasoning mode fails gracefully",
+)
+def test_unsupported_mode():
+    pass
+
+
 @given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
 def loops_config(count: int, monkeypatch):
-    cfg = ConfigModel.model_construct(
-        agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count
-    )
+    cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     return cfg
 
@@ -89,6 +96,29 @@ def run_orchestrator(query: str, config: ConfigModel):
     return {"record": record, "config_params": params}
 
 
+@when(
+    parsers.parse(
+        'I run the orchestrator on query "{query}" with unsupported reasoning mode "{mode}"'
+    ),
+    target_fixture="error_result",
+)
+def run_orchestrator_invalid(query: str, mode: str, config: ConfigModel):
+    record: list[str] = []
+    try:
+        cfg = ConfigModel(
+            agents=config.agents, loops=config.loops, reasoning_mode=mode
+        )
+        with patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=lambda name: None,
+        ):
+            Orchestrator.run_query(query, cfg)
+    except Exception as exc:
+        return {"error": exc, "record": record}
+
+    return {"error": None, "record": record}
+
+
 @then(parsers.parse('the loops used should be {count:d}'))
 def assert_loops(run_result: dict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
@@ -104,3 +134,15 @@ def assert_groups(run_result: dict, groups: str) -> None:
 def assert_order(run_result: dict, order: str) -> None:
     expected = [a.strip() for a in order.split(",")]
     assert run_result["record"] == expected
+
+
+@then("a reasoning mode error should be raised")
+def assert_invalid_mode(error_result: dict) -> None:
+    err = error_result["error"]
+    assert isinstance(err, ConfigError)
+    assert "reasoning mode" in str(err).lower()
+
+
+@then("no agents should execute")
+def assert_no_agents(error_result: dict) -> None:
+    assert error_result["record"] == []
