@@ -1,7 +1,34 @@
 # flake8: noqa
+import pytest
 from pytest_bdd import given
 
 from autoresearch.main import app as cli_app
+from autoresearch.agents.registry import AgentRegistry
+from autoresearch.storage import (
+    StorageManager,
+    set_delegate as set_storage_delegate,
+    setup as storage_setup,
+    teardown as storage_teardown,
+)
+
+
+@pytest.fixture(autouse=True)
+def reset_global_registries(tmp_path):
+    """Reset global Agent and Storage registries before each scenario."""
+    AgentRegistry._registry.clear()
+    AgentRegistry._coalitions.clear()
+    db_file = tmp_path / "kg.duckdb"
+    storage_teardown(remove_db=True)
+    storage_setup(str(db_file))
+    set_storage_delegate(StorageManager)
+    StorageManager._access_frequency.clear()
+    StorageManager._last_adaptive_policy = "lru"
+    yield
+    AgentRegistry._registry.clear()
+    AgentRegistry._coalitions.clear()
+    StorageManager._access_frequency.clear()
+    StorageManager._last_adaptive_policy = "lru"
+    storage_teardown(remove_db=True)
 
 
 @given("the Autoresearch application is running")
