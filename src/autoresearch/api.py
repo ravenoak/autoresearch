@@ -35,6 +35,7 @@ import asyncio
 from uuid import uuid4
 import httpx
 import threading
+from collections import Counter
 from .orchestration.orchestrator import Orchestrator
 from .orchestration import ReasoningMode
 from .tracing import get_tracer, setup_tracing
@@ -98,12 +99,21 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     _rate_limit_exceeded_handler = _fallback_rate_limit_exceeded_handler
     Limit = _FallbackLimit
 # Global per-client request log used for fallback rate limiting and tests
-REQUEST_LOG: dict[str, int] = {}
+REQUEST_LOG: Counter[str] = Counter()
+REQUEST_LOG_LOCK = threading.Lock()
 
 
 def reset_request_log() -> None:
     """Clear the request log."""
-    REQUEST_LOG.clear()
+    with REQUEST_LOG_LOCK:
+        REQUEST_LOG.clear()
+
+
+def log_request(ip: str) -> int:
+    """Record a request from the given IP and return the new count."""
+    with REQUEST_LOG_LOCK:
+        REQUEST_LOG[ip] += 1
+        return REQUEST_LOG[ip]
 
 
 config_loader = ConfigLoader()
@@ -179,10 +189,10 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
-            REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+            count = log_request(ip)
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
-            if REQUEST_LOG[ip] > cfg_limit:
+            if count > cfg_limit:
                 if SLOWAPI_STUB:
                     return _handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
                 limit_wrapper = Limit(
@@ -210,10 +220,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
-            REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
+            count = log_request(ip)
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
-            if not limiter.limiter.hit(limit_obj, ip) or REQUEST_LOG[ip] > cfg_limit:
+            if not limiter.limiter.hit(limit_obj, ip) or count > cfg_limit:
                 limit_wrapper = Limit(
                     limit_obj,
                     get_remote_address,
