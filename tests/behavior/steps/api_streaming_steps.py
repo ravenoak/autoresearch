@@ -1,8 +1,9 @@
 # flake8: noqa
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import scenario, when, then, parsers, given
 from unittest.mock import patch
 import responses
 import requests
+import json
 
 from .common_steps import app_running, app_running_with_default, application_running
 from fastapi.testclient import TestClient
@@ -14,14 +15,25 @@ from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
 
 
+@given("the Autoresearch application is running")
+def _app_running_alias(tmp_path, monkeypatch):
+    return application_running(tmp_path, monkeypatch)
+
+
 @when(parsers.parse('I send a streaming query "{query}" to the API'))
 def send_streaming_query(query, monkeypatch, api_client, bdd_context):
     def dummy_run_query(q, config, callbacks=None, **kwargs):
-        state = QueryState(query=q)
+        agents = ["Synthesizer", "Contrarian"]
         if callbacks and "on_cycle_end" in callbacks:
-            callbacks["on_cycle_end"](0, state)
-            callbacks["on_cycle_end"](1, state)
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+            for idx, agent in enumerate(agents):
+                state = QueryState(query=q, metadata={"agent": agent})
+                callbacks["on_cycle_end"](idx, state)
+        return QueryResponse(
+            answer="ok",
+            citations=[],
+            reasoning=[],
+            metrics={"agents": agents, "time_ms": 1},
+        )
 
     cfg = ConfigModel(loops=2, api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
@@ -36,7 +48,12 @@ def send_streaming_query(query, monkeypatch, api_client, bdd_context):
 @then("the streaming response should contain multiple JSON lines")
 def check_streaming_lines(bdd_context):
     assert bdd_context["stream_status"] == 200
-    assert len(bdd_context["stream_chunks"]) >= 3
+    chunks = [json.loads(line) for line in bdd_context["stream_chunks"]]
+    assert len(chunks) >= 3
+    assert chunks[0]["metrics"]["agent"] == "Synthesizer"
+    assert chunks[1]["metrics"]["agent"] == "Contrarian"
+    assert chunks[-1]["answer"] == "ok"
+    assert chunks[-1]["metrics"]["agents"] == ["Synthesizer", "Contrarian"]
 
 
 @when(parsers.parse('I send a query with webhook URL "{url}" to the API'))

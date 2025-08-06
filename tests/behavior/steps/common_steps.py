@@ -10,6 +10,8 @@ from autoresearch.storage import (
     setup as storage_setup,
     teardown as storage_teardown,
 )
+from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.models import QueryResponse
 
 
 @pytest.fixture(autouse=True)
@@ -29,6 +31,25 @@ def reset_global_registries(tmp_path):
     StorageManager._access_frequency.clear()
     StorageManager._last_adaptive_policy = "lru"
     storage_teardown(remove_db=True)
+
+
+@pytest.fixture
+def dummy_query_response(monkeypatch):
+    """Provide a deterministic orchestrator result for interface tests."""
+    response = QueryResponse(
+        answer="test answer",
+        citations=["source"],
+        reasoning=["step"],
+        metrics={
+            "time_ms": 1,
+            "tokens": 1,
+            "agent_sequence": ["Synthesizer", "Contrarian"],
+        },
+    )
+    monkeypatch.setattr(
+        Orchestrator, "run_query", lambda *a, **k: response
+    )
+    return response
 
 
 @given("the Autoresearch application is running")
