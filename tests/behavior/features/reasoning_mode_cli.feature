@@ -11,6 +11,9 @@ Feature: Reasoning mode via CLI
     And the loops used should be 1
     And the agent groups should be "Synthesizer"
     And the agents executed should be "Synthesizer"
+    And the reasoning steps should be "Synthesizer-1"
+    And the metrics should record 1 cycles
+    And the metrics should list agents "Synthesizer"
 
   Scenario: Chain-of-thought mode via CLI
     Given loops is set to 2 in configuration
@@ -19,6 +22,9 @@ Feature: Reasoning mode via CLI
     And the loops used should be 2
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
+    And the reasoning steps should be "Synthesizer-1; Synthesizer-2"
+    And the metrics should record 2 cycles
+    And the metrics should list agents "Synthesizer"
 
   Scenario: Dialectical mode via CLI
     Given loops is set to 1 in configuration
@@ -27,3 +33,24 @@ Feature: Reasoning mode via CLI
     And the loops used should be 1
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Contrarian, FactChecker"
+    And the reasoning steps should be "Synthesizer-1; Contrarian-2; FactChecker-3"
+    And the metrics should record 1 cycles
+    And the metrics should list agents "Synthesizer, Contrarian, FactChecker"
+
+  Scenario: Mode switching within a session via CLI
+    Given loops is set to 2 in configuration
+    When I run `autoresearch search "mode test" --mode direct`
+    And I run `autoresearch search "mode test" --mode chain-of-thought`
+    Then the CLI should exit successfully
+    And the loops used should be 2
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Synthesizer"
+    And the reasoning steps should be "Synthesizer-1; Synthesizer-2"
+    And the metrics should record 2 cycles
+    And the metrics should list agents "Synthesizer"
+
+  Scenario: Invalid reasoning mode via CLI
+    Given loops is set to 2 in configuration
+    When I run `autoresearch search "mode test" --mode invalid`
+    Then the CLI should exit with an error
+    And no agents should execute

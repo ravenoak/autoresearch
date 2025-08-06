@@ -24,6 +24,22 @@ def test_dialectical_mode_api():
     pass
 
 
+@scenario(
+    "../features/reasoning_mode_api.feature",
+    "Mode switching within a session via API",
+)
+def test_mode_switch_api():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode_api.feature",
+    "Invalid reasoning mode via API",
+)
+def test_invalid_mode_api():
+    pass
+
+
 @given("the API server is running", target_fixture="test_context")
 def api_server_running(api_client):
     return {"client": api_client}
@@ -52,8 +68,19 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
             return True
 
         def execute(self, *args, **kwargs) -> dict:
+            step = len(record) + 1
             record.append(self.name)
-            return {}
+            content = f"{self.name}-{step}"
+            return {
+                "claims": [
+                    {
+                        "id": str(step),
+                        "type": "thought",
+                        "content": content,
+                    }
+                ],
+                "results": {"final_answer": content},
+            }
 
     def get_agent(name: str) -> DummyAgent:
         return DummyAgent(name)
@@ -75,14 +102,18 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
         response = test_context["client"].post(
             "/query", json={"query": query, "reasoning_mode": mode}
         )
-
+    data = {}
+    try:
+        data = response.json()
+    except Exception:
+        data = {}
     test_context["response"] = response
-    return {"record": record, "config_params": params}
+    return {"record": record, "config_params": params, "data": data}
 
 
-@then("the response status should be 200")
-def assert_status(test_context: dict) -> None:
-    assert test_context["response"].status_code == 200
+@then(parsers.parse("the response status should be {status:d}"))
+def assert_status(test_context: dict, status: int) -> None:
+    assert test_context["response"].status_code == status
 
 
 @then(parsers.parse("the loops used should be {count:d}"))
@@ -100,3 +131,39 @@ def assert_groups(run_result: dict, groups: str) -> None:
 def assert_order(run_result: dict, order: str) -> None:
     expected = [a.strip() for a in order.split(",")]
     assert run_result["record"] == expected
+
+
+@then(parsers.parse('the reasoning steps should be "{steps}"'))
+def assert_reasoning(run_result: dict, steps: str) -> None:
+    expected = [s.strip() for s in steps.split(";") if s.strip()]
+    actual = [c.get("content") for c in run_result["data"].get("reasoning", [])]
+    assert actual == expected
+
+
+@then(parsers.parse("the metrics should record {count:d} cycles"))
+def assert_metrics_cycles(run_result: dict, count: int) -> None:
+    metrics = run_result["data"].get("metrics", {}).get("execution_metrics", {})
+    assert metrics.get("cycles_completed") == count
+
+
+@then(parsers.parse('the metrics should list agents "{agents}"'))
+def assert_metrics_agents(run_result: dict, agents: str) -> None:
+    expected = [a.strip() for a in agents.split(",") if a.strip()]
+    metrics = run_result["data"].get("metrics", {}).get("execution_metrics", {})
+    actual = list(metrics.get("agent_timings", {}).keys())
+    assert actual == expected
+
+
+@then("a reasoning mode error should be returned")
+def assert_reasoning_mode_error(test_context: dict) -> None:
+    data = {}
+    try:
+        data = test_context["response"].json()
+    except Exception:
+        pass
+    assert "reasoning" in str(data).lower() or "mode" in str(data).lower()
+
+
+@then("no agents should execute")
+def assert_no_agents(run_result: dict) -> None:
+    assert run_result["record"] == []
