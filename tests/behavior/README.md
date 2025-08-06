@@ -31,6 +31,18 @@ Scenarios with these markers are skipped when the corresponding extras are not
 installed. After installing all extras you may simply run `uv run pytest tests/behavior`
 to execute every scenario.
 
+## Helper fixtures
+
+The steps reuse fixtures in `steps/common_steps.py` to maintain isolation
+between scenarios. The `reset_global_registries` fixture clears agent and
+storage registries and prepares a temporary DuckDB database for each test.
+
+For interface tests that need deterministic orchestrator output, the
+`dummy_query_response` fixture patches `Orchestrator.run_query` to return a
+predefined `QueryResponse` including metrics and the sequence of agents
+invoked. This enables precise assertions about payload contents and agent
+ordering without sharing state across scenarios.
+
 
 ## Running CLI and recovery scenarios
 
