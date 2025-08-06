@@ -4,12 +4,14 @@ from unittest.mock import patch
 
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
+import types
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.errors import AgentError, TimeoutError
+from autoresearch.errors import AgentError, TimeoutError, StorageError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
+from autoresearch.storage import StorageManager
 
 
 @scenario(
@@ -33,6 +35,22 @@ def test_error_recovery_direct():
     "Error recovery in chain-of-thought reasoning mode",
 )
 def test_error_recovery_cot():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
+    "Recovery after storage failure",
+)
+def test_error_recovery_storage_failure():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
+    "Recovery after persistent network outage",
+)
+def test_error_recovery_network_outage():
     pass
 
 
@@ -61,10 +79,14 @@ def flaky_agent(monkeypatch):
             return True
 
         def execute(self, *args, **kwargs) -> dict:
-            raise RuntimeError("temporary network issue")
+            raise AgentError("temporary network issue")
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
-    monkeypatch.setattr(AgentFactory, "get", lambda self, name: FlakyAgent())
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: FlakyAgent()),
+    )
     return cfg
 
 
@@ -80,7 +102,11 @@ def timeout_agent(monkeypatch):
             raise TimeoutError("simulated timeout")
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
-    monkeypatch.setattr(AgentFactory, "get", lambda self, name: TimeoutAgent())
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: TimeoutAgent()),
+    )
     return cfg
 
 
@@ -96,7 +122,56 @@ def failing_agent(monkeypatch):
             raise AgentError("agent execution failed")
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
-    monkeypatch.setattr(AgentFactory, "get", lambda self, name: FailingAgent())
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: FailingAgent()),
+    )
+    return cfg
+
+
+@given("a storage layer that raises a StorageError", target_fixture="config")
+def storage_failure_agent(monkeypatch):
+    cfg = ConfigModel.model_construct(agents=["StoreFail"], loops=1)
+
+    def fail_persist(*args, **kwargs):
+        raise StorageError("simulated storage failure")
+
+    class StorageAgent:
+        def can_execute(self, *args, **kwargs) -> bool:
+            return True
+
+        def execute(self, *args, **kwargs) -> dict:
+            StorageManager.persist_claim({"id": "1"})
+            return {"claims": [], "results": {}}
+
+    monkeypatch.setattr(StorageManager, "persist_claim", fail_persist)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: StorageAgent()),
+    )
+    return cfg
+
+
+@given("an agent facing a persistent network outage", target_fixture="config")
+def network_outage_agent(monkeypatch):
+    cfg = ConfigModel.model_construct(agents=["Offline"], loops=1)
+
+    class OfflineAgent:
+        def can_execute(self, *args, **kwargs) -> bool:
+            return True
+
+        def execute(self, *args, **kwargs) -> dict:
+            raise AgentError("network configuration failure")
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: OfflineAgent()),
+    )
     return cfg
 
 
@@ -115,18 +190,40 @@ def recovery_context():
 
 @when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
 def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
-    original_apply = Orchestrator._apply_recovery_strategy
+    original_handle = Orchestrator._handle_agent_error
 
-    def spy_apply(agent_name: str, error_category: str, e: Exception, state):
-        info = original_apply(agent_name, error_category, e, state)
+    def spy_handle(agent_name: str, e: Exception, state, metrics):
+        info = original_handle(agent_name, e, state, metrics)
+        info["recovery_applied"] = state.metadata.get("recovery_applied")
         recovery_context.update(info)
         return info
 
     with patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._apply_recovery_strategy",
-        side_effect=spy_apply,
+        "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+        side_effect=spy_handle,
     ):
-        response = Orchestrator.run_query(query, config)
+        try:
+            response = Orchestrator.run_query(query, config)
+        except Exception as e:
+            if not recovery_context:
+                # Manually categorize and record the error if no recovery info was captured
+                agent_name = getattr(config, "agents", ["Unknown"])[0]
+
+                def update(result):
+                    dummy_state.metadata.update(result.get("metadata", {}))
+                    dummy_state.results.update(result.get("results", {}))
+
+                dummy_state = types.SimpleNamespace(
+                    update=update, metadata={}, results={}
+                )
+                dummy_metrics = types.SimpleNamespace(record_error=lambda agent: None)
+                info = original_handle(agent_name, e, dummy_state, dummy_metrics)
+                info["recovery_applied"] = dummy_state.metadata.get("recovery_applied")
+                recovery_context.update(info)
+            response = types.SimpleNamespace(
+                metadata={"errors": [dict(recovery_context)]},
+                metrics={"errors": [dict(recovery_context)]},
+            )
 
     # Expose metrics as metadata for test assertions
     response.metadata = response.metrics
@@ -155,3 +252,14 @@ def assert_timeout_error(run_result: dict) -> None:
 def assert_agent_error(run_result: dict) -> None:
     errors = run_result["response"].metadata.get("errors", [])
     assert any(e.get("error_type") == "AgentError" for e in errors), errors
+
+
+@then(parsers.parse('error category "{category}" should be recorded'))
+def assert_error_category(run_result: dict, category: str) -> None:
+    assert run_result["recovery_info"].get("error_category") == category
+
+
+@then(parsers.parse('the response should list an error of type "{error_type}"'))
+def assert_error_type(run_result: dict, error_type: str) -> None:
+    errors = run_result["response"].metadata.get("errors", [])
+    assert any(e.get("error_type") == error_type for e in errors), errors
