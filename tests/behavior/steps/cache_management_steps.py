@@ -1,20 +1,8 @@
 """Step definitions for cache management feature."""
 
 from pytest_bdd import scenario, given, when, then, parsers
-import pytest
-
+from . import common_steps  # noqa: F401
 from autoresearch import cache
-
-
-@pytest.fixture(autouse=True)
-def temp_cache(tmp_path, monkeypatch):
-    """Use a temporary TinyDB path for each scenario and reset cache."""
-    db_path = tmp_path / "cache.json"
-    monkeypatch.setenv("TINYDB_PATH", str(db_path))
-    cache.teardown(remove_file=True)
-    cache.setup(str(db_path))
-    yield
-    cache.teardown(remove_file=True)
 
 
 # Scenarios

@@ -1,8 +1,19 @@
 # flake8: noqa
 import os
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import scenario, when, then, parsers, given
 
+from . import common_steps  # noqa: F401
 from .common_steps import app_running, app_running_with_default, application_running
+
+
+@given("the application is running with default configuration")
+def _app_running_with_default(tmp_path, monkeypatch):
+    return application_running(tmp_path, monkeypatch)
+
+
+@given("the application is running")
+def _app_running(tmp_path, monkeypatch):
+    return application_running(tmp_path, monkeypatch)
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 

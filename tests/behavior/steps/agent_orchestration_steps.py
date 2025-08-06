@@ -50,7 +50,7 @@ def set_primus_start(index: int, set_loops):
     parsers.parse('I run the orchestrator on query "{query}"'),
     target_fixture="run_orchestrator_on_query",
 )
-def run_orchestrator_on_query(query, metrics_env):
+def run_orchestrator_on_query(query):
     loader = ConfigLoader()
     loader._config = None
     cfg = loader.load_config()
@@ -122,7 +122,7 @@ def check_agent_groups(run_orchestrator_on_query, groups):
     parsers.parse('I submit a query via CLI `autoresearch search "{query}"`'),
     target_fixture="submit_query_via_cli",
 )
-def submit_query_via_cli(query, metrics_env, monkeypatch, cli_runner):
+def submit_query_via_cli(query, monkeypatch, cli_runner):
     agent_invocations: list[str] = []
     logger = logging.getLogger("autoresearch.test")
     logger.setLevel(logging.INFO)

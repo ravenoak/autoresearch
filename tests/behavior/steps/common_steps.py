@@ -12,6 +12,7 @@ from autoresearch.storage import (
 )
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from autoresearch import cache, tracing
 
 
 @pytest.fixture(autouse=True)
@@ -31,6 +32,33 @@ def reset_global_registries(tmp_path):
     StorageManager._access_frequency.clear()
     StorageManager._last_adaptive_policy = "lru"
     storage_teardown(remove_db=True)
+
+
+@pytest.fixture(autouse=True)
+def reset_tinydb_and_metrics(tmp_path, monkeypatch):
+    """Use temporary cache and metrics files for each scenario."""
+    db_path = tmp_path / "cache.json"
+    monkeypatch.setenv("TINYDB_PATH", str(db_path))
+    cache.teardown(remove_file=True)
+    cache.setup(str(db_path))
+    release = tmp_path / "release_tokens.json"
+    query = tmp_path / "query_tokens.json"
+    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(release))
+    monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(query))
+    yield
+    cache.teardown(remove_file=True)
+
+
+@pytest.fixture(autouse=True)
+def reset_tracer_provider():
+    """Ensure tracer provider does not leak between scenarios."""
+    if tracing._tracer_provider:
+        tracing._tracer_provider.shutdown()
+    tracing._tracer_provider = None
+    yield
+    if tracing._tracer_provider:
+        tracing._tracer_provider.shutdown()
+    tracing._tracer_provider = None
 
 
 @pytest.fixture
