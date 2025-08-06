@@ -1,6 +1,6 @@
-import pytest
 from pytest_bdd import given, when, then, scenario
 
+from . import common_steps  # noqa: F401
 from autoresearch import tracing
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
@@ -20,18 +20,6 @@ class MemorySpanExporter(SpanExporter):
 
     def get_finished_spans(self):
         return list(self._spans)
-
-
-@pytest.fixture(autouse=True)
-def reset_tracer_provider():
-    """Reset global tracer provider before and after each scenario."""
-    if tracing._tracer_provider:
-        tracing._tracer_provider.shutdown()
-    tracing._tracer_provider = None
-    yield
-    if tracing._tracer_provider:
-        tracing._tracer_provider.shutdown()
-    tracing._tracer_provider = None
 
 
 @given("tracing is enabled")

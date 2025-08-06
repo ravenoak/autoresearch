@@ -1,4 +1,5 @@
 from pytest_bdd import scenario, given, when, then
+from . import common_steps  # noqa: F401
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.registry import AgentFactory
@@ -79,7 +80,7 @@ def setup_agents(monkeypatch, tmp_path, config_model):
 
 
 @when("I execute a query", target_fixture="response")
-def run_query(config, metrics_env):
+def run_query(config):
     """Execute a simple query and capture the response."""
     return Orchestrator.run_query("ping", config)
 
@@ -116,7 +117,7 @@ def setup_coalition(monkeypatch, tmp_path, config_model):
 
 
 @when("the sender broadcasts to the coalition", target_fixture="response")
-def run_broadcast_query(config, metrics_env):
+def run_broadcast_query(config):
     """Run a query to trigger broadcast messaging."""
     return Orchestrator.run_query("ping", config)
 

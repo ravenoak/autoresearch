@@ -28,7 +28,11 @@ def run_config_validate(cli_runner, bdd_context):
     bdd_context["result"] = result
 
 
-@when(parsers.parse('I run `autoresearch config reasoning --mode {mode} --loops {loops:d}`'))
+@when(
+    parsers.re(
+        r'^I run `autoresearch config reasoning --mode (?P<mode>\w+) --loops (?P<loops>\d+)`$'
+    )
+)
 def run_config_reasoning(cli_runner, bdd_context, mode: str, loops: int):
     result = cli_runner.invoke(
         cli_app, ["config", "reasoning", "--mode", mode, "--loops", str(loops)]

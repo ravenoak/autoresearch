@@ -64,21 +64,6 @@ def bdd_storage_manager(storage_manager):
 
 
 @pytest.fixture
-def metrics_env(monkeypatch, tmp_path):
-    """Provide unique metric file paths for each scenario.
-
-    Many BDD steps rely on ``AUTORESEARCH_RELEASE_METRICS`` and
-    ``AUTORESEARCH_QUERY_TOKENS`` environment variables. Centralising their
-    setup here ensures tests do not leak state between each other.
-    """
-    release = tmp_path / "release_tokens.json"
-    query = tmp_path / "query_tokens.json"
-    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(release))
-    monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(query))
-    yield
-
-
-@pytest.fixture
 def storage_error_handler():
     """Fixture for handling storage errors in BDD tests.
 
