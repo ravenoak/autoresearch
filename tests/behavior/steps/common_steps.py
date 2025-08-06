@@ -1,4 +1,5 @@
 # flake8: noqa
+import os
 import pytest
 from pytest_bdd import given
 
@@ -37,6 +38,13 @@ def reset_global_registries(tmp_path):
 @pytest.fixture(autouse=True)
 def reset_tinydb_and_metrics(tmp_path, monkeypatch):
     """Use temporary cache and metrics files for each scenario."""
+    original_env = {
+        "TINYDB_PATH": os.environ.get("TINYDB_PATH"),
+        "AUTORESEARCH_RELEASE_METRICS": os.environ.get(
+            "AUTORESEARCH_RELEASE_METRICS"
+        ),
+        "AUTORESEARCH_QUERY_TOKENS": os.environ.get("AUTORESEARCH_QUERY_TOKENS"),
+    }
     db_path = tmp_path / "cache.json"
     monkeypatch.setenv("TINYDB_PATH", str(db_path))
     cache.teardown(remove_file=True)
@@ -47,18 +55,27 @@ def reset_tinydb_and_metrics(tmp_path, monkeypatch):
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(query))
     yield
     cache.teardown(remove_file=True)
+    for env_var, value in original_env.items():
+        if value is None:
+            os.environ.pop(env_var, None)
+        else:
+            os.environ[env_var] = value
+    for path in (release, query):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 @pytest.fixture(autouse=True)
 def reset_tracer_provider():
     """Ensure tracer provider does not leak between scenarios."""
-    if tracing._tracer_provider:
-        tracing._tracer_provider.shutdown()
+    original_provider = tracing._tracer_provider
     tracing._tracer_provider = None
     yield
     if tracing._tracer_provider:
         tracing._tracer_provider.shutdown()
-    tracing._tracer_provider = None
+    tracing._tracer_provider = original_provider
 
 
 @pytest.fixture
