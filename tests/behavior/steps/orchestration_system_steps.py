@@ -321,13 +321,22 @@ def check_log_context(context):
 
 @then("log levels should be appropriate for the message content")
 def check_log_levels(context):
-    # Check that different log levels are used appropriately
-    assert context["mock_log"].info.called  # Normal operation
+    mock_log = context["mock_log"]
 
-    # Debug would be called for detailed information
-    # Warning would be called for potential issues
-    # Error would be called for errors
+    # Info logs should reflect normal operation
+    assert mock_log.info.called
+    info_messages = [call[0][0] for call in mock_log.info.call_args_list]
+    assert any("Starting loop" in msg for msg in info_messages)
+    assert any("Executing agent" in msg for msg in info_messages)
 
-    # This is more of a code review check, but we can verify that
-    # at least info level is used for normal operation
-    pass
+    # Debug logs should provide detailed execution information
+    assert mock_log.debug.called
+    debug_messages = [call[0][0] for call in mock_log.debug.call_args_list]
+    assert any("token counting" in msg for msg in debug_messages)
+    assert any("Finished" in msg for msg in debug_messages)
+
+    # No warnings or errors are expected for successful execution
+    warning_messages = [call[0][0] for call in mock_log.warning.call_args_list]
+    error_messages = [call[0][0] for call in mock_log.error.call_args_list]
+    assert warning_messages == []
+    assert error_messages == []
