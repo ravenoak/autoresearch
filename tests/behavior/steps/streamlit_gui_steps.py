@@ -5,12 +5,18 @@ from pytest_bdd import scenario, given, when, then, parsers
 import pytest
 from unittest.mock import patch, MagicMock
 
-from .common_steps import app_running, app_running_with_default, application_running
+from .common_steps import (
+    app_running,
+    app_running_with_default,
+    application_running,
+)
+
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 from autoresearch.models import QueryResponse
 
 
 @given("the Streamlit application is running")
-def streamlit_app_running(monkeypatch, bdd_context):
+def streamlit_app_running(monkeypatch, bdd_context, isolate_network, restore_environment):
     """Mock the Streamlit application for testing."""
     # Create mock objects for Streamlit components
     bdd_context["st_mocks"] = {
@@ -50,7 +56,7 @@ def streamlit_app_running(monkeypatch, bdd_context):
 
 
 @when("I enter a query that returns Markdown-formatted content")
-def enter_markdown_query(bdd_context):
+def enter_markdown_query(bdd_context, isolate_network, restore_environment):
     """Simulate entering a query that returns Markdown-formatted content."""
     # Create a mock query response with Markdown content
     markdown_content = """
@@ -89,11 +95,11 @@ def enter_markdown_query(bdd_context):
 
 @then("the answer should be displayed with proper Markdown rendering")
 def check_markdown_rendering(bdd_context):
-    """Check that the answer is displayed with proper Markdown rendering."""
-    # Check that st.markdown was called with the answer content
-    bdd_context["st_mocks"]["markdown"].assert_any_call(
-        bdd_context["query_response"].answer
-    )
+    """Check that the answer is displayed with the expected Markdown text."""
+    markdown_calls = [
+        call.args[0] for call in bdd_context["st_mocks"]["markdown"].call_args_list
+    ]
+    assert bdd_context["query_response"].answer in markdown_calls
 
 
 @then(
@@ -337,7 +343,7 @@ def test_config_updates_persist():
 
 
 @when("I update a configuration value in the GUI")
-def update_config_value(monkeypatch, bdd_context):
+def update_config_value(monkeypatch, bdd_context, isolate_network, restore_environment):
     """Simulate updating a configuration value in the editor."""
     calls: list[dict] = []
 
@@ -360,7 +366,7 @@ def update_config_value(monkeypatch, bdd_context):
 def check_config_saved(bdd_context):
     """Verify save_config_to_toml was called with the updated value."""
     assert bdd_context["save_calls"], "save_config_to_toml was not called"
-    assert bdd_context["save_calls"][0]["loops"] == bdd_context["new_config"]["loops"]
+    assert bdd_context["save_calls"][0] == bdd_context["new_config"]
 
 
 @then("the updated configuration should be used for the next query")
@@ -401,7 +407,7 @@ def test_agent_trace():
 
 
 @when("I toggle dark mode")
-def toggle_dark_mode(bdd_context):
+def toggle_dark_mode(bdd_context, isolate_network, restore_environment):
     """Simulate toggling dark mode."""
     with patch("streamlit.markdown") as mock_markdown:
         import streamlit as st
