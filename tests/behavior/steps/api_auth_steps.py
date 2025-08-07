@@ -77,19 +77,33 @@ def send_two_queries(api_client_factory, test_context):
 
 @then(parsers.parse('the response status should be {status:d}'))
 def check_status(test_context, status):
-    assert test_context["response"].status_code == status
+    resp = test_context["response"]
+    assert resp.status_code == status
+    data = resp.json()
+    if status == 200:
+        assert "error" not in data
+    else:
+        assert "detail" in data
 
 
 @then(parsers.parse('the first response status should be {status:d}'))
 def check_first_status(test_context, status):
-    assert test_context["resp1"].status_code == status
+    resp = test_context["resp1"]
+    assert resp.status_code == status
+    data = resp.json()
+    assert "answer" in data
+    assert "error" not in data
 
 
 @then(parsers.parse('the second response status should be {status:d}'))
 def check_second_status(test_context, status):
     resp = test_context["resp2"]
     assert resp.status_code == status
-    assert resp.text == "rate limit exceeded"
+    if status == 429:
+        assert resp.text == "rate limit exceeded"
+    else:
+        data = resp.json()
+        assert "error" not in data
 
 
 @scenario("../features/api_auth.feature", "Invalid API key")

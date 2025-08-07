@@ -10,7 +10,6 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
-from .common_steps import dummy_query_response  # noqa: F401
 
 
 @given("the API server is running")
@@ -90,6 +89,7 @@ def check_aggregated_results(test_context: dict[str, Any]) -> None:
     assert data["page"] == 1
     assert data["page_size"] == 3
     assert len(data["results"]) == 3
+    assert all("error" not in r for r in data["results"])
     test_context["data"] = data
 
 
@@ -153,6 +153,7 @@ def check_paginated_results(test_context: dict[str, Any]) -> None:
     assert first["answer"].startswith("Error")
     assert first["metrics"].get("error") == "boom"
     assert second["answer"] == "q4"
+    assert "error" not in second["metrics"]
     test_context["data"] = data
 
 
@@ -197,3 +198,5 @@ def check_error_recovery(test_context: dict[str, Any]) -> None:
     answers = [r["answer"] for r in data["results"]]
     assert answers == ["good1", "Error: fail", "good2"]
     assert data["results"][1]["metrics"].get("error") == "fail"
+    assert "error" not in data["results"][0]["metrics"]
+    assert "error" not in data["results"][2]["metrics"]

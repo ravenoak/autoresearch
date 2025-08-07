@@ -86,12 +86,18 @@ def run_backup_restore(path, dir, cli_runner, bdd_context, monkeypatch):
 def check_backup(bdd_context, work_dir):
     backup_dir = work_dir / bdd_context["backup_dir"]
     assert backup_dir.exists() and any(backup_dir.iterdir())
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @scenario("../features/backup_cli.feature", "Create backup")

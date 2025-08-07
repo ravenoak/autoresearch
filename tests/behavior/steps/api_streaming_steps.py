@@ -54,6 +54,7 @@ def check_streaming_lines(bdd_context):
     assert chunks[1]["metrics"]["agent"] == "Contrarian"
     assert chunks[-1]["answer"] == "ok"
     assert chunks[-1]["metrics"]["agents"] == ["Synthesizer", "Contrarian"]
+    assert all("error" not in c for c in chunks)
 
 
 @when(parsers.parse('I send a query with webhook URL "{url}" to the API'))

@@ -27,6 +27,7 @@ def check_welcome(no_config_result):
     assert no_config_result.exit_code == 2
     assert "Welcome to Autoresearch!" in no_config_result.stdout
     assert "Would you like to initialize the configuration now?" in no_config_result.stdout
+    assert no_config_result.stderr == ""
 
 
 @when("I run the CLI with an existing config file", target_fixture="with_config_result")
@@ -46,6 +47,7 @@ def run_with_config(tmp_path, monkeypatch, cli_runner: CliRunner):
 def check_no_banner(with_config_result):
     assert with_config_result.exit_code == 0
     assert "Welcome to Autoresearch!" not in with_config_result.stdout
+    assert with_config_result.stderr == ""
 
 
 @scenario("../features/first_run.feature", "No config present shows welcome and prompt")

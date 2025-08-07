@@ -20,6 +20,7 @@ def check_cli_output(bdd_context):
     result = bdd_context["cli_result"]
     expected = bdd_context["expected"]
     assert result.exit_code == 0
+    assert result.stderr == ""
     out = result.stdout
     assert "# Answer" in out
     assert "## Citations" in out
@@ -53,6 +54,7 @@ def check_http_response(bdd_context):
     assert response.status_code == 200
     data = response.json()
     assert data == expected.model_dump()
+    assert "error" not in data
 
 
 @when(parsers.re(r'I run `autoresearch\.search\("(?P<query>.+)"\)` via the MCP CLI'))
@@ -104,6 +106,9 @@ def check_viz_file(file, bdd_context):
     path = bdd_context["viz_path"]
     assert path.exists() and path.stat().st_size > 0
     path.unlink()
+    result = bdd_context["viz_result"]
+    assert result.exit_code == 0
+    assert result.stderr == ""
 
 
 @then(
@@ -113,6 +118,7 @@ def check_mcp_cli_output(bdd_context):
     result = bdd_context["mcp_result"]
     expected = bdd_context["expected"]
     assert result.exit_code == 0
+    assert result.stderr == ""
     lines = result.stdout.splitlines()
     start_idx = None
     for idx, line in enumerate(lines):

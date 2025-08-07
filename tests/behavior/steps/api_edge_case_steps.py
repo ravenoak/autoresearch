@@ -30,12 +30,18 @@ def request_metrics(test_context, monkeypatch):
 
 @then("the response status should be 422")
 def assert_status_422(test_context):
-    assert test_context["response"].status_code == 422
+    resp = test_context["response"]
+    assert resp.status_code == 422
+    data = resp.json()
+    assert "detail" in data
 
 
 @then("the response status should be 403")
 def assert_status_403(test_context):
-    assert test_context["response"].status_code == 403
+    resp = test_context["response"]
+    assert resp.status_code == 403
+    data = resp.json()
+    assert "detail" in data
 
 
 @scenario("../features/api_edge_cases.feature", "Invalid JSON returns 422")

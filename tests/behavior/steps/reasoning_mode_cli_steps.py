@@ -125,12 +125,14 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
         "exit_code": result.exit_code,
         "data": data,
         "output": result.stdout,
+        "stderr": result.stderr,
     }
 
 
 @then("the CLI should exit successfully")
 def cli_success(run_result):
     assert run_result["exit_code"] == 0
+    assert run_result.get("stderr", "") == ""
 
 
 @then(parsers.parse("the loops used should be {count:d}"))
@@ -180,6 +182,7 @@ def assert_metrics_agents(run_result: dict, agents: str) -> None:
 def cli_error(run_result: dict) -> None:
     assert run_result["exit_code"] != 0
     assert "mode" in run_result["output"].lower()
+    assert run_result.get("stderr") not in (None, "")
 
 
 @then("no agents should execute")

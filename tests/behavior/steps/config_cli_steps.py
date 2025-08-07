@@ -54,12 +54,17 @@ def check_config_files(work_dir):
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @then("the CLI should exit with an error")
 def cli_error(bdd_context):
-    assert bdd_context["result"].exit_code != 0
+    result = bdd_context["result"]
+    assert result.exit_code != 0
+    assert result.stderr != ""
 
 
 @then(parsers.parse('the configuration file should set reasoning mode to "{mode}"'))
