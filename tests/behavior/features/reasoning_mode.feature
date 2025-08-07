@@ -42,6 +42,44 @@ Feature: Reasoning Mode Selection
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Synthesizer, Contrarian, FactChecker"
 
+  Scenario: Direct mode agent failure triggers fallback
+    Given reasoning mode is "direct"
+    When I run the orchestrator on query "mode test" with a failing agent
+    Then the fallback agent should be "Synthesizer"
+    And a recovery strategy "fallback_agent" should be recorded
+    And recovery should be applied
+    And the logs should include "recovery for Synthesizer"
+    And the system state should be restored
+
+  Scenario: Chain-of-thought mode agent failure triggers fallback
+    Given reasoning mode is "chain-of-thought"
+    When I run the orchestrator on query "mode test" with a failing agent
+    Then the fallback agent should be "Synthesizer"
+    And a recovery strategy "fallback_agent" should be recorded
+    And recovery should be applied
+    And the logs should include "recovery for Synthesizer"
+    And the system state should be restored
+
+  Scenario: Dialectical mode agent failure triggers fallback
+    Given loops is set to 1 in configuration
+    And reasoning mode is "dialectical"
+    When I run the orchestrator on query "mode test" with a failing agent
+    Then the fallback agent should be "Synthesizer"
+    And a recovery strategy "fallback_agent" should be recorded
+    And recovery should be applied
+    And the logs should include "recovery for Synthesizer"
+    And the system state should be restored
+
+  Scenario: Loop overflow triggers recovery
+    Given loops is set to 1 in configuration
+    And reasoning mode is "dialectical"
+    When I run the orchestrator on query "mode test" exceeding loop limit
+    Then the fallback agent should be "Synthesizer"
+    And a recovery strategy "fallback_agent" should be recorded
+    And recovery should be applied
+    And the logs should include "loop overflow"
+    And the system state should be restored
+
   Scenario: Unsupported reasoning mode fails gracefully
     Given loops is set to 1 in configuration
     When I run the orchestrator on query "mode test" with unsupported reasoning mode "quantum"
