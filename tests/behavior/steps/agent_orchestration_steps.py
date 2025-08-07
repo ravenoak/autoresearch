@@ -109,6 +109,11 @@ def check_loops_used(run_orchestrator_on_query, count):
     assert run_orchestrator_on_query["config_params"].get("loops") == count
 
 
+@then(parsers.parse('the reasoning mode selected should be "{mode}"'))
+def check_reasoning_mode(run_orchestrator_on_query, mode):
+    assert run_orchestrator_on_query["config_params"].get("mode") == ReasoningMode(mode)
+
+
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def check_agent_groups(run_orchestrator_on_query, groups):
     expected = [

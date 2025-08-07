@@ -10,6 +10,7 @@ Feature: Reasoning Mode Selection
     Given reasoning mode is "direct"
     When I run the orchestrator on query "mode test"
     Then the loops used should be 1
+    And the reasoning mode selected should be "direct"
     And the agent groups should be "Synthesizer"
     Then the agents executed should be "Synthesizer"
 
@@ -17,6 +18,7 @@ Feature: Reasoning Mode Selection
     Given reasoning mode is "chain-of-thought"
     When I run the orchestrator on query "mode test"
     Then the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Synthesizer, Synthesizer"
 
@@ -26,6 +28,7 @@ Feature: Reasoning Mode Selection
     And primus start is 1
     When I run the orchestrator on query "mode test"
     Then the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Contrarian, FactChecker, Synthesizer"
 
@@ -34,6 +37,7 @@ Feature: Reasoning Mode Selection
     And reasoning mode is "dialectical"
     When I run the orchestrator on query "Why is the sky blue?"
     Then the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     Then the agents executed should be "Synthesizer, Contrarian, FactChecker"
 

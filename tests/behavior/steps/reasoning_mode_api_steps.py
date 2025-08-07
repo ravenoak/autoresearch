@@ -6,6 +6,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
@@ -119,6 +120,11 @@ def assert_status(test_context: dict, status: int) -> None:
 @then(parsers.parse("the loops used should be {count:d}"))
 def assert_loops(run_result: dict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
+
+
+@then(parsers.parse('the reasoning mode selected should be "{mode}"'))
+def assert_mode(run_result: dict, mode: str) -> None:
+    assert run_result["config_params"].get("mode") == ReasoningMode(mode)
 
 
 @then(parsers.parse('the agent groups should be "{groups}"'))

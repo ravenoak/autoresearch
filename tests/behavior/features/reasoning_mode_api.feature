@@ -12,6 +12,7 @@ Feature: Reasoning mode via API
     When I send a query "mode test" with reasoning mode "direct" to the API
     Then the response status should be 200
     And the loops used should be 1
+    And the reasoning mode selected should be "direct"
     And the agent groups should be "Synthesizer"
     And the agents executed should be "Synthesizer"
     And the reasoning steps should be "Synthesizer-1"
@@ -23,6 +24,7 @@ Feature: Reasoning mode via API
     When I send a query "mode test" with reasoning mode "chain-of-thought" to the API
     Then the response status should be 200
     And the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
     And the reasoning steps should be "Synthesizer-1; Synthesizer-2"
@@ -34,6 +36,7 @@ Feature: Reasoning mode via API
     When I send a query "mode test" with reasoning mode "dialectical" to the API
     Then the response status should be 200
     And the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Contrarian, FactChecker"
     And the reasoning steps should be "Synthesizer-1; Contrarian-2; FactChecker-3"
@@ -46,6 +49,7 @@ Feature: Reasoning mode via API
     And I send a query "mode test" with reasoning mode "chain-of-thought" to the API
     Then the response status should be 200
     And the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
     And the reasoning steps should be "Synthesizer-1; Synthesizer-2"

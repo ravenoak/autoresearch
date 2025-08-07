@@ -190,7 +190,22 @@ def recovery_context():
 
 @when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
 def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
+    record: list[str] = []
+    params: dict = {}
     original_handle = Orchestrator._handle_agent_error
+    original_get = AgentFactory.get
+
+    def recording_get(name: str, llm_adapter=None):
+        agent = original_get(name, llm_adapter)
+        if hasattr(agent, "execute"):
+            orig_exec = agent.execute
+
+            def wrapped_execute(*args, **kwargs):
+                record.append(name)
+                return orig_exec(*args, **kwargs)
+
+            agent.execute = wrapped_execute
+        return agent
 
     def spy_handle(agent_name: str, e: Exception, state, metrics):
         info = original_handle(agent_name, e, state, metrics)
@@ -198,9 +213,22 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
         recovery_context.update(info)
         return info
 
+    original_parse = Orchestrator._parse_config
+
+    def spy_parse(cfg: ConfigModel):
+        out = original_parse(cfg)
+        params.update(out)
+        return out
+
     with patch(
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        side_effect=recording_get,
+    ), patch(
         "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
         side_effect=spy_handle,
+    ), patch(
+        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+        side_effect=spy_parse,
     ):
         try:
             response = Orchestrator.run_query(query, config)
@@ -227,7 +255,12 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
 
     # Expose metrics as metadata for test assertions
     response.metadata = response.metrics
-    return {"recovery_info": dict(recovery_context), "response": response}
+    return {
+        "recovery_info": dict(recovery_context),
+        "response": response,
+        "record": record,
+        "config_params": params,
+    }
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
@@ -263,3 +296,25 @@ def assert_error_category(run_result: dict, category: str) -> None:
 def assert_error_type(run_result: dict, error_type: str) -> None:
     errors = run_result["response"].metadata.get("errors", [])
     assert any(e.get("error_type") == error_type for e in errors), errors
+
+
+@then(parsers.parse('the loops used should be {count:d}'))
+def assert_loops(run_result: dict, count: int) -> None:
+    assert run_result["config_params"].get("loops") == count
+
+
+@then(parsers.parse('the reasoning mode selected should be "{mode}"'))
+def assert_mode(run_result: dict, mode: str) -> None:
+    assert run_result["config_params"].get("mode") == ReasoningMode(mode)
+
+
+@then(parsers.parse('the agent groups should be "{groups}"'))
+def assert_groups(run_result: dict, groups: str) -> None:
+    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
+    assert run_result["config_params"].get("agent_groups") == expected
+
+
+@then(parsers.parse('the agents executed should be "{order}"'))
+def assert_order(run_result: dict, order: str) -> None:
+    expected = [a.strip() for a in order.split(",")]
+    assert run_result["record"] == expected
