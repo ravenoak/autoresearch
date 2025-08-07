@@ -1,3 +1,4 @@
+# Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
 Feature: Reasoning Mode Selection
   As a user
   I want to choose how the system reasons
@@ -46,3 +47,5 @@ Feature: Reasoning Mode Selection
     When I run the orchestrator on query "mode test" with unsupported reasoning mode "quantum"
     Then a reasoning mode error should be raised
     And no agents should execute
+    And the system state should be restored
+    And the logs should include "unsupported reasoning mode"

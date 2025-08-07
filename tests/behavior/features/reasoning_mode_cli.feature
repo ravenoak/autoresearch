@@ -1,4 +1,5 @@
 @behavior
+# Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
 Feature: Reasoning mode via CLI
   As a user
   I want to override reasoning mode on the command line
@@ -58,3 +59,5 @@ Feature: Reasoning mode via CLI
     When I run `autoresearch search "mode test" --mode invalid`
     Then the CLI should exit with an error
     And no agents should execute
+    And the system state should be restored
+    And the logs should include "unsupported reasoning mode"

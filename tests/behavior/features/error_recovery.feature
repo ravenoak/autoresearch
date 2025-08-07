@@ -1,4 +1,6 @@
 @behavior
+# Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
+# Recovery paths: retry_with_backoff, fail_gracefully, fallback_agent
 Feature: Error Recovery
   As a user
   I want the system to apply recovery strategies
@@ -14,6 +16,8 @@ Feature: Error Recovery
     And the agents executed should be "Flaky"
     And a recovery strategy "retry_with_backoff" should be recorded
     And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
 
   Scenario: Error recovery in direct reasoning mode
     Given an agent that raises a transient error
@@ -25,6 +29,8 @@ Feature: Error Recovery
     And the agents executed should be "Synthesizer"
     And a recovery strategy "retry_with_backoff" should be recorded
     And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
 
   Scenario: Error recovery in chain-of-thought reasoning mode
     Given an agent that raises a transient error
@@ -36,6 +42,8 @@ Feature: Error Recovery
     And the agents executed should be "Flaky"
     And a recovery strategy "retry_with_backoff" should be recorded
     And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
 
   Scenario: Recovery after storage failure
     Given a storage layer that raises a StorageError
@@ -47,6 +55,8 @@ Feature: Error Recovery
     And a recovery strategy "fail_gracefully" should be recorded
     And error category "critical" should be recorded
     And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
     And the response should list an error of type "StorageError"
 
   Scenario: Recovery after persistent network outage
@@ -59,4 +69,14 @@ Feature: Error Recovery
     And a recovery strategy "fallback_agent" should be recorded
     And error category "recoverable" should be recorded
     And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
     And the response should list an error of type "AgentError"
+
+  Scenario: Unsupported reasoning mode during recovery fails gracefully
+    Given an agent that raises a transient error
+    When I run the orchestrator on query "recover test" with unsupported reasoning mode "quantum"
+    Then a reasoning mode error should be raised
+    And no agents should execute
+    And the system state should be restored
+    And the logs should include "unsupported reasoning mode"

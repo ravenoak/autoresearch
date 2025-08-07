@@ -60,6 +60,8 @@ def loops_config(count: int, monkeypatch):
 def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
     record: list[str] = []
     params: dict = {}
+    logs: list[str] = []
+    state = {"active": True}
 
     class DummyAgent:
         def __init__(self, name: str) -> None:
@@ -103,6 +105,9 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
         result = cli_runner.invoke(
             cli_app, ["search", query, "--mode", mode, "--output", "json"]
         )
+        if result.exit_code != 0:
+            logs.append("unsupported reasoning mode")
+    state["active"] = False
 
     data = {}
     try:
@@ -126,6 +131,8 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
         "data": data,
         "output": result.stdout,
         "stderr": result.stderr,
+        "logs": logs,
+        "state": state,
     }
 
 

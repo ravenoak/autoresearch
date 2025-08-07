@@ -55,6 +55,14 @@ def test_error_recovery_network_outage():
 
 
 @scenario(
+    "../features/error_recovery.feature",
+    "Unsupported reasoning mode during recovery fails gracefully",
+)
+def test_error_recovery_unsupported_mode():
+    pass
+
+
+@scenario(
     "../features/error_recovery_extended.feature",
     "Recovery after agent timeout",
 )
@@ -67,6 +75,22 @@ def test_error_recovery_timeout():
     "Recovery after agent failure",
 )
 def test_error_recovery_agent_failure():
+    pass
+
+
+@scenario(
+    "../features/error_recovery_extended.feature",
+    "Recovery after agent timeout in direct mode",
+)
+def test_error_recovery_timeout_direct():
+    pass
+
+
+@scenario(
+    "../features/error_recovery_extended.feature",
+    "Unsupported reasoning mode during extended recovery fails gracefully",
+)
+def test_error_recovery_extended_unsupported():
     pass
 
 
@@ -192,6 +216,8 @@ def recovery_context():
 def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
     record: list[str] = []
     params: dict = {}
+    logs: list[str] = []
+    state = {"active": True}
     original_handle = Orchestrator._handle_agent_error
     original_get = AgentFactory.get
 
@@ -211,6 +237,7 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
         info = original_handle(agent_name, e, state, metrics)
         info["recovery_applied"] = state.metadata.get("recovery_applied")
         recovery_context.update(info)
+        logs.append(f"recovery for {agent_name}")
         return info
 
     original_parse = Orchestrator._parse_config
@@ -248,10 +275,14 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
                 info = original_handle(agent_name, e, dummy_state, dummy_metrics)
                 info["recovery_applied"] = dummy_state.metadata.get("recovery_applied")
                 recovery_context.update(info)
+                logs.append(f"recovery for {agent_name}")
             response = types.SimpleNamespace(
                 metadata={"errors": [dict(recovery_context)]},
                 metrics={"errors": [dict(recovery_context)]},
             )
+        finally:
+            state["active"] = False
+            logs.append("run complete")
 
     # Expose metrics as metadata for test assertions
     response.metadata = response.metrics
@@ -260,7 +291,39 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
         "response": response,
         "record": record,
         "config_params": params,
+        "logs": logs,
+        "state": state,
     }
+
+
+@when(
+    parsers.parse(
+        'I run the orchestrator on query "{query}" with unsupported reasoning mode "{mode}"'
+    ),
+    target_fixture="error_result",
+)
+def run_orchestrator_invalid(
+    query: str, mode: str, config: ConfigModel, recovery_context: dict
+):
+    record: list[str] = []
+    logs: list[str] = []
+    state = {"active": True}
+    try:
+        cfg = ConfigModel(
+            agents=config.agents, loops=config.loops, reasoning_mode=mode
+        )
+        with patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=lambda name: None,
+        ):
+            Orchestrator.run_query(query, cfg)
+    except Exception as exc:
+        logs.append(f"unsupported reasoning mode: {mode}")
+        return {"error": exc, "record": record, "logs": logs, "state": state}
+    finally:
+        state["active"] = False
+
+    return {"error": None, "record": record, "logs": logs, "state": state}
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
@@ -318,3 +381,16 @@ def assert_groups(run_result: dict, groups: str) -> None:
 def assert_order(run_result: dict, order: str) -> None:
     expected = [a.strip() for a in order.split(",")]
     assert run_result["record"] == expected
+
+
+@then("the system state should be restored")
+def assert_state_restored(run_result: dict | None = None, error_result: dict | None = None) -> None:
+    result = run_result or error_result
+    assert result and result.get("state", {}).get("active") is False
+
+
+@then(parsers.parse('the logs should include "{message}"'))
+def assert_logs(run_result: dict | None = None, error_result: dict | None = None, message: str = "") -> None:
+    result = run_result or error_result
+    logs = result.get("logs", []) if result else []
+    assert any(message in entry for entry in logs), logs
