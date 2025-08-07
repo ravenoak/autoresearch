@@ -1,4 +1,5 @@
 @behavior
+# Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
 Feature: Reasoning mode via API
   As a user
   I want to specify reasoning mode in API requests
@@ -62,3 +63,5 @@ Feature: Reasoning mode via API
     Then the response status should be 422
     And a reasoning mode error should be returned
     And no agents should execute
+    And the system state should be restored
+    And the logs should include "unsupported reasoning mode"

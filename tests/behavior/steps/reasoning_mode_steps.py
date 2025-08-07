@@ -62,6 +62,8 @@ def set_primus_start(config: ConfigModel, index: int):
 def run_orchestrator(query: str, config: ConfigModel):
     record: list[str] = []
     params: dict = {}
+    logs: list[str] = []
+    state = {"active": True}
 
     class DummyAgent:
         def __init__(self, name: str) -> None:
@@ -91,9 +93,13 @@ def run_orchestrator(query: str, config: ConfigModel):
         "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
         side_effect=spy_parse,
     ):
-        Orchestrator.run_query(query, config)
+        try:
+            Orchestrator.run_query(query, config)
+        finally:
+            state["active"] = False
+            logs.append("run complete")
 
-    return {"record": record, "config_params": params}
+    return {"record": record, "config_params": params, "logs": logs, "state": state}
 
 
 @when(
@@ -104,6 +110,8 @@ def run_orchestrator(query: str, config: ConfigModel):
 )
 def run_orchestrator_invalid(query: str, mode: str, config: ConfigModel):
     record: list[str] = []
+    logs: list[str] = []
+    state = {"active": True}
     try:
         cfg = ConfigModel(
             agents=config.agents, loops=config.loops, reasoning_mode=mode
@@ -114,9 +122,12 @@ def run_orchestrator_invalid(query: str, mode: str, config: ConfigModel):
         ):
             Orchestrator.run_query(query, cfg)
     except Exception as exc:
-        return {"error": exc, "record": record}
+        logs.append(f"unsupported reasoning mode: {mode}")
+        return {"error": exc, "record": record, "logs": logs, "state": state}
+    finally:
+        state["active"] = False
 
-    return {"error": None, "record": record}
+    return {"error": None, "record": record, "logs": logs, "state": state}
 
 
 @then(parsers.parse('the loops used should be {count:d}'))

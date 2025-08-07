@@ -60,6 +60,8 @@ def loops_config(count: int, monkeypatch):
 def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
     record: list[str] = []
     params: dict = {}
+    logs: list[str] = []
+    state = {"active": True}
 
     class DummyAgent:
         def __init__(self, name: str) -> None:
@@ -103,13 +105,22 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
         response = test_context["client"].post(
             "/query", json={"query": query, "reasoning_mode": mode}
         )
+        if response.status_code != 200:
+            logs.append("unsupported reasoning mode")
+    state["active"] = False
     data = {}
     try:
         data = response.json()
     except Exception:
         data = {}
     test_context["response"] = response
-    return {"record": record, "config_params": params, "data": data}
+    return {
+        "record": record,
+        "config_params": params,
+        "data": data,
+        "logs": logs,
+        "state": state,
+    }
 
 
 @then(parsers.parse("the response status should be {status:d}"))
