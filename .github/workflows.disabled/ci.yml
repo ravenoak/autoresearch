@@ -1,3 +1,4 @@
+# NOTE: This workflow is disabled. Move to .github/workflows to enable.
 name: CI (Python 3.12)
 
 on:
@@ -24,57 +25,57 @@ jobs:
             platform: macos-arm64
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Verify Python version
-      run: |
-        python - <<'EOF'
-        import sys
-        major, minor = sys.version_info[:2]
-        assert (major == 3 and minor >= 12), f"Python 3.12 or newer required, got {major}.{minor}"
-        EOF
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify Python version
+        run: |
+          python - <<'EOF'
+          import sys
+          major, minor = sys.version_info[:2]
+          assert (major == 3 and minor >= 12), f"Python 3.12 or newer required, got {major}.{minor}"
+          EOF
       - name: Install uv
         run: python -m pip install uv
       - name: Install dependencies
         run: uv pip sync uv.lock
-    - name: Lint with flake8
-      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
-      run: |
-        uv run flake8 src tests
-    - name: Type check with mypy
-      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
-      run: |
-        uv run mypy --strict src
-    - name: Set up offline environment for tests
-      if: matrix.test-mode == 'offline'
-      run: |
-        cp .env.offline .env
-        echo "Using offline environment for tests"
-        cat .env
-    - name: Set up online environment for tests
-      if: matrix.test-mode == 'online'
-      run: |
-        echo "Using online environment for tests"
-        echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
-    - name: Test with pytest
-      run: |
-        uv run pytest tests/
-    - name: Token usage regression
-      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
-      run: |
-        uv run python scripts/check_token_regression.py --threshold 5
-    - name: Deployment checks
-      run: |
-        uv run python scripts/deploy.py
-    - name: Upload coverage report
-      if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      - name: Lint with flake8
+        if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
+        run: |
+          uv run flake8 src tests
+      - name: Type check with mypy
+        if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
+        run: |
+          uv run mypy --strict src
+      - name: Set up offline environment for tests
+        if: matrix.test-mode == 'offline'
+        run: |
+          cp .env.offline .env
+          echo "Using offline environment for tests"
+          cat .env
+      - name: Set up online environment for tests
+        if: matrix.test-mode == 'online'
+        run: |
+          echo "Using online environment for tests"
+          echo "AUTORESEARCH_STRICT_EXTENSIONS=false" > .env
+      - name: Test with pytest
+        run: |
+          uv run pytest tests/
+      - name: Token usage regression
+        if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
+        run: |
+          uv run python scripts/check_token_regression.py --threshold 5
+      - name: Deployment checks
+        run: |
+          uv run python scripts/deploy.py
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.test-mode == 'offline'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
 
   build:
     runs-on: ubuntu-latest
@@ -82,9 +83,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Verify Python version
@@ -100,8 +101,8 @@ jobs:
           pip install uv build
           uv pip sync uv.lock
           python -m build
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist/
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

@@ -1,3 +1,4 @@
+# NOTE: This workflow is disabled. Move to .github/workflows to enable.
 name: Build wheels (Python 3.12)
 
 on:

@@ -24,6 +24,16 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
 - Run the entire suite with coverage using `task coverage`. If `task` is unavailable, run `uv run pytest --cov=src` instead.
 
+## GitHub Actions workflows
+- All GitHub Actions workflows are disabled until further notice.
+- Store workflow files in `.github/workflows.disabled`; `.github/workflows` must remain empty.
+- Each workflow file must start with `# NOTE: This workflow is disabled. Move to .github/workflows to enable.`
+- Standardize on these actions versions:
+  - `actions/checkout@v4`
+  - `actions/setup-python@v5`
+  - `actions/upload-artifact@v4`
+- Verify Python 3.12+ within each workflow as shown in existing examples.
+
 ## Commit etiquette
 - Keep commits focused and write clear messages detailing your reasoning.
 - Remove temporary files and keep the repository tidy.
