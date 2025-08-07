@@ -13,6 +13,7 @@ from autoresearch.storage import (
 )
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from autoresearch.errors import TimeoutError
 from autoresearch import cache, tracing
 
 
@@ -130,6 +131,66 @@ def dummy_query_response(monkeypatch):
         Orchestrator, "run_query", lambda *a, **k: response
     )
     return response
+
+
+@pytest.fixture
+def isolate_network(monkeypatch):
+    """Block outbound network requests for the duration of a test."""
+
+    def _deny(*args, **kwargs):  # pragma: no cover - simple guard
+        raise RuntimeError("Network access disabled during tests")
+
+    try:  # requests might not be installed
+        import requests
+
+        monkeypatch.setattr(requests.sessions.Session, "request", _deny)
+    except Exception:  # pragma: no cover - safety
+        pass
+
+    try:  # httpx is optional
+        import httpx
+
+        monkeypatch.setattr(httpx.Client, "request", _deny, raising=False)
+    except Exception:  # pragma: no cover - safety
+        pass
+
+    yield
+
+
+@pytest.fixture
+def restore_environment():
+    """Snapshot ``os.environ`` and restore it after the test."""
+
+    original = os.environ.copy()
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(original)
+
+
+@pytest.fixture
+def orchestrator_failure(monkeypatch):
+    """Simulate orchestrator-level failures for targeted scenarios."""
+
+    def _simulate(kind: str | None = None):
+        if kind == "timeout":
+            def _timeout(*_a, **_k):
+                raise TimeoutError("simulated orchestrator timeout")
+
+            monkeypatch.setattr(Orchestrator, "run_query", _timeout)
+        elif kind == "metrics":
+            def _metrics(*_a, **_k):
+                return QueryResponse(
+                    answer="",
+                    citations=[],
+                    reasoning=[],
+                    metrics=None,
+                )
+
+            monkeypatch.setattr(Orchestrator, "run_query", _metrics)
+
+    return _simulate
 
 
 @given("the Autoresearch application is running")

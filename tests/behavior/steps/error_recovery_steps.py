@@ -13,6 +13,16 @@ from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.storage import StorageManager
 
+pytest_plugins = ["tests.behavior.steps.common_steps"]
+
+
+def _assert_error_schema(errors: list[dict]) -> None:
+    """Verify error entries contain the expected keys."""
+
+    required = {"error_type", "message"}
+    for err in errors:
+        assert required.issubset(err.keys()), err
+
 
 @scenario(
     "../features/error_recovery.feature",
@@ -95,7 +105,7 @@ def test_error_recovery_extended_unsupported():
 
 
 @given("an agent that raises a transient error", target_fixture="config")
-def flaky_agent(monkeypatch):
+def flaky_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Flaky"], loops=1)
 
     class FlakyAgent:
@@ -115,7 +125,7 @@ def flaky_agent(monkeypatch):
 
 
 @given("an agent that times out during execution", target_fixture="config")
-def timeout_agent(monkeypatch):
+def timeout_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Slowpoke"], loops=1)
 
     class TimeoutAgent:
@@ -135,7 +145,7 @@ def timeout_agent(monkeypatch):
 
 
 @given("an agent that fails during execution", target_fixture="config")
-def failing_agent(monkeypatch):
+def failing_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Faulty"], loops=1)
 
     class FailingAgent:
@@ -155,7 +165,7 @@ def failing_agent(monkeypatch):
 
 
 @given("a storage layer that raises a StorageError", target_fixture="config")
-def storage_failure_agent(monkeypatch):
+def storage_failure_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["StoreFail"], loops=1)
 
     def fail_persist(*args, **kwargs):
@@ -180,7 +190,7 @@ def storage_failure_agent(monkeypatch):
 
 
 @given("an agent facing a persistent network outage", target_fixture="config")
-def network_outage_agent(monkeypatch):
+def network_outage_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Offline"], loops=1)
 
     class OfflineAgent:
@@ -200,7 +210,7 @@ def network_outage_agent(monkeypatch):
 
 
 @given(parsers.parse('reasoning mode is "{mode}"'))
-def set_reasoning_mode(config: ConfigModel, mode: str):
+def set_reasoning_mode(config: ConfigModel, mode: str, isolate_network, restore_environment):
     config.reasoning_mode = ReasoningMode(mode)
     return config
 
@@ -213,7 +223,15 @@ def recovery_context():
 
 
 @when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
-def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
+def run_orchestrator(
+    query: str,
+    config: ConfigModel,
+    recovery_context: dict,
+    isolate_network,
+    restore_environment,
+    orchestrator_failure,
+):
+    orchestrator_failure(None)
     record: list[str] = []
     params: dict = {}
     logs: list[str] = []
@@ -303,8 +321,15 @@ def run_orchestrator(query: str, config: ConfigModel, recovery_context: dict):
     target_fixture="error_result",
 )
 def run_orchestrator_invalid(
-    query: str, mode: str, config: ConfigModel, recovery_context: dict
+    query: str,
+    mode: str,
+    config: ConfigModel,
+    recovery_context: dict,
+    isolate_network,
+    restore_environment,
+    orchestrator_failure,
 ):
+    orchestrator_failure(None)
     record: list[str] = []
     logs: list[str] = []
     state = {"active": True}
@@ -341,12 +366,14 @@ def assert_recovery_applied(run_result: dict) -> None:
 @then("the response should list a timeout error")
 def assert_timeout_error(run_result: dict) -> None:
     errors = run_result["response"].metadata.get("errors", [])
+    _assert_error_schema(errors)
     assert any(e.get("error_type") == "TimeoutError" for e in errors), errors
 
 
 @then("the response should list an agent execution error")
 def assert_agent_error(run_result: dict) -> None:
     errors = run_result["response"].metadata.get("errors", [])
+    _assert_error_schema(errors)
     assert any(e.get("error_type") == "AgentError" for e in errors), errors
 
 
@@ -358,6 +385,7 @@ def assert_error_category(run_result: dict, category: str) -> None:
 @then(parsers.parse('the response should list an error of type "{error_type}"'))
 def assert_error_type(run_result: dict, error_type: str) -> None:
     errors = run_result["response"].metadata.get("errors", [])
+    _assert_error_schema(errors)
     assert any(e.get("error_type") == error_type for e in errors), errors
 
 
