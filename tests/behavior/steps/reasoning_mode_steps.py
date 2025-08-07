@@ -124,6 +124,11 @@ def assert_loops(run_result: dict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
 
 
+@then(parsers.parse('the reasoning mode selected should be "{mode}"'))
+def assert_mode(run_result: dict, mode: str) -> None:
+    assert run_result["config_params"].get("mode") == ReasoningMode(mode)
+
+
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
     expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]

@@ -9,6 +9,7 @@ Feature: Reasoning mode via CLI
     When I run `autoresearch search "mode test" --mode direct`
     Then the CLI should exit successfully
     And the loops used should be 1
+    And the reasoning mode selected should be "direct"
     And the agent groups should be "Synthesizer"
     And the agents executed should be "Synthesizer"
     And the reasoning steps should be "Synthesizer-1"
@@ -20,6 +21,7 @@ Feature: Reasoning mode via CLI
     When I run `autoresearch search "mode test" --mode chain-of-thought`
     Then the CLI should exit successfully
     And the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
     And the reasoning steps should be "Synthesizer-1; Synthesizer-2"
@@ -31,6 +33,7 @@ Feature: Reasoning mode via CLI
     When I run `autoresearch search "mode test" --mode dialectical`
     Then the CLI should exit successfully
     And the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Contrarian, FactChecker"
     And the reasoning steps should be "Synthesizer-1; Contrarian-2; FactChecker-3"
@@ -43,6 +46,7 @@ Feature: Reasoning mode via CLI
     And I run `autoresearch search "mode test" --mode chain-of-thought`
     Then the CLI should exit successfully
     And the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
     And the reasoning steps should be "Synthesizer-1; Synthesizer-2"

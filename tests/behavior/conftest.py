@@ -7,12 +7,15 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))  # noqa: E402
 
+import os  # noqa: E402
 import pytest  # noqa: E402
 
 from autoresearch.api import reset_request_log  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
+from autoresearch.config.loader import ConfigLoader  # noqa: E402
+from autoresearch.storage import StorageManager, StorageContext  # noqa: E402
 
 
 @pytest.fixture
@@ -61,6 +64,18 @@ def reset_api_request_log():
 def bdd_storage_manager(storage_manager):
     """Use the global temporary storage fixture for behavior tests."""
     yield storage_manager
+
+
+@pytest.fixture(autouse=True)
+def reset_global_state():
+    """Reset ConfigLoader, environment variables, and storage after each scenario."""
+    original_env = os.environ.copy()
+    ConfigLoader.reset_instance()
+    yield
+    ConfigLoader.reset_instance()
+    StorageManager.context = StorageContext()
+    os.environ.clear()
+    os.environ.update(original_env)
 
 
 @pytest.fixture
