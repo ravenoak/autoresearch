@@ -46,7 +46,10 @@ def check_breaker_config(bdd_context, threshold, cooldown):
     cfg = bdd_context.get("cfg")
     assert cfg.circuit_breaker_threshold == threshold
     assert cfg.circuit_breaker_cooldown == cooldown
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @when(parsers.parse('I run `autoresearch search "{query}" --adaptive-max-factor {factor:d} --adaptive-min-buffer {buffer:d} --no-ontology-reasoning'))
@@ -79,4 +82,7 @@ def check_adaptive_config(bdd_context, factor, buffer):
     cfg = bdd_context.get("cfg")
     assert cfg.adaptive_max_factor == factor
     assert cfg.adaptive_min_buffer == buffer
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""

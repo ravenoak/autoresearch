@@ -114,7 +114,17 @@ def send_query(test_context: dict, query: str, mode: str, config: ConfigModel):
 
 @then(parsers.parse("the response status should be {status:d}"))
 def assert_status(test_context: dict, status: int) -> None:
-    assert test_context["response"].status_code == status
+    resp = test_context["response"]
+    assert resp.status_code == status
+    data = {}
+    try:
+        data = resp.json()
+    except Exception:
+        pass
+    if status == 200:
+        assert "error" not in data
+    else:
+        assert "error" in data or "detail" in data
 
 
 @then(parsers.parse("the loops used should be {count:d}"))

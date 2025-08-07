@@ -26,7 +26,10 @@ def run_capabilities(cli_runner, bdd_context, monkeypatch):
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert "capabilities" in result.stdout.lower()
+    assert result.stderr == ""
 
 
 @scenario("../features/capabilities_cli.feature", "List available capabilities")

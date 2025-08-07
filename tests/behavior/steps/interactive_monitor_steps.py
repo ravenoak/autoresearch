@@ -110,7 +110,10 @@ def run_monitor_start(monkeypatch, bdd_context, cli_runner):
 
 @then("the monitor should exit successfully")
 def monitor_exit_successfully(bdd_context):
-    assert bdd_context["monitor_result"].exit_code == 0
+    result = bdd_context["monitor_result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @then("the monitor output should display system metrics")
@@ -130,7 +133,10 @@ def monitor_output_contains_graph(bdd_context):
 
 @then("the search command should exit successfully")
 def search_exit_successfully(bdd_context):
-    assert bdd_context["visual_result"].exit_code == 0
+    result = bdd_context["visual_result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @then("the search output should display graph data")

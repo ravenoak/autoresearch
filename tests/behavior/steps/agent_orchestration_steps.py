@@ -179,7 +179,10 @@ def check_agent_order(submit_query_via_cli):
 
 @then("each agent turn should be logged with agent name and cycle index")
 def check_agent_logging(submit_query_via_cli, caplog):
-    assert submit_query_via_cli["result"].exit_code == 0
+    result = submit_query_via_cli["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
     logs = caplog.text
     assert "Synthesizer executing (cycle 0)" in logs
     assert "Contrarian executing (cycle 1)" in logs

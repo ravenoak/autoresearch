@@ -18,12 +18,17 @@ def request_health(test_context):
 
 @then('the response body should contain "status" "ok"')
 def check_health_body(test_context):
-    assert test_context["response"].json() == {"status": "ok"}
+    resp = test_context["response"]
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+    assert "error" not in resp.json()
 
 
 @then("the response status should be 200")
 def assert_status_200(test_context):
-    assert test_context["response"].status_code == 200
+    resp = test_context["response"]
+    assert resp.status_code == 200
+    assert "error" not in resp.json()
 
 
 @when("I request the capabilities endpoint")
@@ -37,10 +42,13 @@ def request_capabilities(test_context, monkeypatch):
 
 @then("the response should include supported reasoning modes")
 def check_capabilities(test_context):
-    data = test_context["response"].json()
+    resp = test_context["response"]
+    assert resp.status_code == 200
+    data = resp.json()
     assert "reasoning_modes" in data
     for mode in ["direct", "dialectical", "chain-of-thought"]:
         assert mode in data["reasoning_modes"]
+    assert "error" not in data
 
 
 @scenario("../features/api_misc.feature", "Health endpoint returns status")

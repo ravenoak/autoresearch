@@ -79,6 +79,41 @@ def reset_tracer_provider():
 
 
 @pytest.fixture
+def mock_llm_adapter(monkeypatch):
+    """Use a DummyAdapter to avoid external LLM calls.
+
+    This fixture isolates LLM interactions so each scenario runs with a
+    predictable, in-memory adapter that performs no network requests.
+    """
+    from autoresearch.llm import DummyAdapter
+
+    monkeypatch.setattr(
+        "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
+    )
+    yield
+
+
+@pytest.fixture
+def temp_config(tmp_path, monkeypatch, mock_llm_adapter):
+    """Create an isolated configuration file for each scenario.
+
+    The working directory is changed to a temporary location and a minimal
+    `autoresearch.toml` is written. Any state is discarded after the test
+    completes, preventing leakage between scenarios.
+    """
+    monkeypatch.chdir(tmp_path)
+    cfg = {
+        "core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512},
+        "search": {"backends": [], "context_aware": {"enabled": False}},
+    }
+    with open("autoresearch.toml", "w") as f:
+        import tomli_w
+
+        f.write(tomli_w.dumps(cfg))
+    return tmp_path / "autoresearch.toml"
+
+
+@pytest.fixture
 def dummy_query_response(monkeypatch):
     """Provide a deterministic orchestrator result for interface tests."""
     response = QueryResponse(
@@ -98,28 +133,16 @@ def dummy_query_response(monkeypatch):
 
 
 @given("the Autoresearch application is running")
-def application_running(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    cfg = {
-        "core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512},
-        "search": {"backends": [], "context_aware": {"enabled": False}},
-    }
-    with open("autoresearch.toml", "w") as f:
-        import tomli_w
-
-        f.write(tomli_w.dumps(cfg))
-
-    from autoresearch.llm import DummyAdapter
-
-    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
+def application_running(temp_config):
+    """Ensure the application runs with isolated config and mocked LLM."""
     return
 
 
 @given("the application is running with default configuration")
-def app_running_with_default(tmp_path, monkeypatch):
-    return application_running(tmp_path, monkeypatch)
+def app_running_with_default(temp_config):
+    return application_running(temp_config)
 
 
 @given("the application is running")
-def app_running(tmp_path, monkeypatch):
-    return application_running(tmp_path, monkeypatch)
+def app_running(temp_config):
+    return application_running(temp_config)

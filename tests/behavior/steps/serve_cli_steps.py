@@ -34,6 +34,7 @@ def cli_success(bdd_context):
     result = bdd_context["result"]
     assert result.exit_code == 0
     assert "usage:" in result.stdout.lower()
+    assert result.stderr == ""
 
 
 @then("the A2A server should start and stop")
@@ -47,6 +48,7 @@ def a2a_started_and_stopped(bdd_context):
     assert mock_ctor.call_count == 1
     assert mock_interface.start.call_count == 1
     assert mock_interface.stop.call_count == 1
+    assert result.stderr == ""
 
 
 @scenario("../features/serve_commands.feature", "Display help for serve")

@@ -386,6 +386,7 @@ def check_batch_pagination(test_context):
     assert data["page"] == page
     assert data["page_size"] == size
     assert len(data["results"]) == size
+    assert all("error" not in r for r in data["results"])
 
 
 # Scenario: API returns 404 for unknown async query ID
@@ -401,7 +402,9 @@ def request_unknown_query(test_context):
 @then("the API should respond with status 404")
 def check_404_status(test_context):
     """Verify that the response status code is 404."""
-    assert test_context["response"].status_code == 404
+    resp = test_context["response"]
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
 
 
 # Scenario: API configuration CRUD
@@ -418,7 +421,9 @@ def replace_config_api(test_context):
 def check_config_updated(test_context):
     resp = test_context["response"]
     assert resp.status_code == 200
-    assert resp.json()["loops"] == 2
+    data = resp.json()
+    assert data["loops"] == 2
+    assert "error" not in data
 
 
 @when("I reset the configuration via the API")
@@ -431,3 +436,5 @@ def reset_config_api(test_context):
 def check_config_reset(test_context):
     resp = test_context["reset_resp"]
     assert resp.status_code == 200
+    data = resp.json()
+    assert "error" not in data

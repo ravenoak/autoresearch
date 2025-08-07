@@ -60,7 +60,10 @@ def check_budget_config(bdd_context, loops, budget):
     cfg = bdd_context.get("cfg")
     assert cfg.loops == loops
     assert cfg.token_budget == budget
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @when(parsers.parse('I run `autoresearch search "{query}" --agents {agents}`'))
@@ -81,7 +84,10 @@ def check_agents_config(bdd_context, agents):
     cfg = bdd_context.get("cfg")
     expected = [a.strip() for a in agents.split(",")]
     assert cfg.agents == expected
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @when(
@@ -124,7 +130,10 @@ def run_with_reasoning(query, mode, monkeypatch, cli_runner, bdd_context):
 def check_reasoning_mode(bdd_context, mode):
     cfg = bdd_context.get("cfg")
     assert cfg.reasoning_mode.value == mode
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @when(parsers.parse('I run `autoresearch search "{query}" --primus-start {index:d}`'))
@@ -145,11 +154,17 @@ def run_with_primus(query, index, monkeypatch, cli_runner, bdd_context):
 def check_primus_start(bdd_context, index):
     cfg = bdd_context.get("cfg")
     assert cfg.primus_start == index
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
 
 
 @then(parsers.parse('the parallel query should use groups "{g1}" and "{g2}"'))
 def check_parallel_groups(bdd_context, g1, g2):
     expected = [[a.strip() for a in g1.split(",")], [a.strip() for a in g2.split(",")]]
     assert bdd_context.get("groups") == expected
-    assert bdd_context["result"].exit_code == 0
+    result = bdd_context["result"]
+    assert result.exit_code == 0
+    assert result.stdout != ""
+    assert result.stderr == ""
