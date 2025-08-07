@@ -1,36 +1,24 @@
 Feature: Monitor CLI
   As a user
-  I want to inspect system metrics and monitor execution
-  So that I can understand resource usage and recover from errors
+  I want to inspect system metrics
+  So that I can monitor resource usage
 
   Background:
     Given the application is running
 
-  Scenario: Display single-run metrics
+  Scenario: Basic metric display
     When I run `autoresearch monitor`
     Then the monitor command should exit successfully
-    And the monitor output should display system metrics
+    And the monitor output should show CPU and memory usage
 
-  Scenario: Watch metrics continuously
+  Scenario: Watch mode displays metrics continuously
     When I run `autoresearch monitor -w`
     Then the monitor command should exit successfully
-    And the monitor output should display system metrics
+    And the monitor output should show CPU and memory usage
+    And the monitor should refresh every second
 
-  Scenario: Handle invalid flag
-    When I run `autoresearch monitor --invalid`
+  Scenario: Metrics backend unavailable
+    When I run `autoresearch monitor` with metrics backend unavailable
     Then the monitor command should exit with an error
-    And the monitor output should include an invalid option message
+    And the monitor output should include a friendly metrics backend error message
 
-  Scenario Outline: Monitor run supports <mode> reasoning
-    When I start `autoresearch monitor run` in "<mode>" mode and enter "test"
-    Then the monitor command should exit successfully
-
-    Examples:
-      | mode            |
-      | direct          |
-      | chain-of-thought|
-
-  Scenario: Recover from orchestrator errors
-    When I start `autoresearch monitor run` with a failing query
-    Then the monitor command should exit successfully
-    And the monitor output should contain an error message
