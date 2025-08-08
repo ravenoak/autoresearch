@@ -171,6 +171,10 @@ The RDF store supports optional ontology-based reasoning using the
 ontology_reasoner = "owlrl"           # or "my_module:run_reasoner"
 ```
 
+Behavior tests use the lightweight `rdfs` reasoner by default to keep test
+execution fast. Production deployments can select the more expressive `owlrl`
+engine (or another custom reasoner) when full OWL‑RL reasoning is required.
+
 The following tutorial walks through a typical ontology workflow.
 
 1. **Load an ontology file** to add schema triples:

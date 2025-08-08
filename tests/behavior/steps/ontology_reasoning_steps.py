@@ -1,13 +1,16 @@
-from pytest_bdd import scenario, given, when, then
 import rdflib
+from pytest_bdd import given, scenario, then, when
 
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import StorageManager, teardown
-from autoresearch.config.models import ConfigModel, StorageConfig
-from autoresearch.config.loader import ConfigLoader
 
 
-@scenario("../features/ontology_reasoning.feature", "Infer subclass relations through orchestrator")
+@scenario(
+    "../features/ontology_reasoning.feature",
+    "Infer subclass relations through orchestrator",
+)
 def test_infer_subclass_relations():
     """Infer subclass relations through orchestrator."""
     pass
@@ -16,7 +19,13 @@ def test_infer_subclass_relations():
 @given("the storage system is configured for in-memory RDF")
 def configure_in_memory_rdf(tmp_path, monkeypatch):
     teardown(remove_db=True)
-    cfg = ConfigModel(storage=StorageConfig(rdf_backend="memory", rdf_path=str(tmp_path / "rdf")))
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            rdf_backend="memory",
+            rdf_path=str(tmp_path / "rdf"),
+            ontology_reasoner="rdfs",
+        )
+    )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
     StorageManager.setup()
@@ -52,7 +61,9 @@ def infer_via_orchestrator():
     Orchestrator.infer_relations()
 
 
-@then("querying the ontology for the superclass via the orchestrator should include the instance")
+@then(
+    "querying the ontology for the superclass via the orchestrator should include the instance"
+)
 def check_query_via_orchestrator():
     res = Orchestrator.query_ontology(
         "ASK { <http://example.com/x> a <http://example.com/B> }"
