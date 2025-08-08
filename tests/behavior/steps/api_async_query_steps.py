@@ -5,14 +5,23 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Any
+from unittest.mock import patch
 
-from pytest_bdd import given, when, then, scenario, parsers
+from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.api import app as api_app
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.errors import AgentError, TimeoutError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+
+from .error_recovery_steps import (  # noqa: F401
+    assert_error_category,
+    assert_logs,
+    assert_state_restored,
+    assert_strategy,
+)
 
 
 @given("the API server is running")
@@ -153,3 +162,96 @@ def test_async_query_result() -> None:
 def test_async_query_cancellation() -> None:
     """Running async query can be cancelled."""
     return
+
+
+@scenario(
+    "../features/api_async_query.feature",
+    "Async query timeout triggers retry with backoff",
+)
+def test_async_query_timeout_recovery() -> None:
+    return
+
+
+@scenario(
+    "../features/api_async_query.feature",
+    "Async query agent crash fails gracefully",
+)
+def test_async_query_agent_failure() -> None:
+    return
+
+
+@scenario(
+    "../features/api_async_query.feature",
+    "Async query uses fallback agent after failure",
+)
+def test_async_query_fallback_agent() -> None:
+    return
+
+
+@when(
+    parsers.parse("a failing async query is submitted that {failure}"),
+    target_fixture="run_result",
+)
+def failing_async_query(failure: str, api_client, monkeypatch):
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    logs: list[str] = []
+    state = {"active": True}
+    recovery_info: dict[str, str] = {}
+
+    async def run_async(q: str, config: ConfigModel):
+        if failure == "times out":
+            raise TimeoutError("simulated timeout")
+        raise AgentError("simulated crash")
+
+    strategy_map = {
+        "times out": "retry_with_backoff",
+        "crashes": "fail_gracefully",
+        "triggers fallback": "fallback_agent",
+    }
+    category_map = {
+        "times out": "transient",
+        "crashes": "critical",
+        "triggers fallback": "recoverable",
+    }
+
+    def handle(agent_name, exc, qstate, metrics):
+        info = {
+            "recovery_strategy": strategy_map[failure],
+            "error_category": category_map[failure],
+        }
+        qstate.metadata["recovery_applied"] = True
+        recovery_info.update(info)
+        logs.append(strategy_map[failure])
+        return info
+
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator.run_query_async",
+            side_effect=run_async,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            side_effect=handle,
+        ),
+    ):
+        resp = api_client.post("/query/async", json={"query": "fail"})
+        query_id = resp.json().get("query_id")
+        future = api_app.state.async_tasks.get(query_id)
+        if future is not None:
+            while not future.done():
+                time.sleep(0.01)
+            try:
+                future.result()
+            except Exception:
+                pass
+        status = api_client.get(f"/query/{query_id}")
+        state["active"] = False
+    return {
+        "response": status,
+        "recovery_info": recovery_info,
+        "logs": logs,
+        "state": state,
+    }

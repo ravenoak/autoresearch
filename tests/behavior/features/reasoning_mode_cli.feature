@@ -61,3 +61,11 @@ Feature: Reasoning mode via CLI
     And no agents should execute
     And the system state should be restored
     And the logs should include "unsupported reasoning mode"
+
+  Scenario: Invalid reasoning mode via SPARQL CLI
+    Given loops is set to 2 in configuration
+    When I run `autoresearch sparql "mode test" --mode invalid`
+    Then the CLI should exit with an error
+    And no agents should execute
+    And the system state should be restored
+    And the logs should include "unsupported reasoning mode"

@@ -42,3 +42,12 @@ def test_error_recovery_timeout_direct() -> None:
 def test_error_recovery_extended_unsupported() -> None:
     """Unsupported reasoning modes surface an error without executing agents."""
     return
+
+
+@scenario(
+    "../features/error_recovery_extended.feature",
+    "Recovery after network outage with fallback agent",
+)
+def test_error_recovery_network_fallback() -> None:
+    """Fallback agent handles network outages."""
+    return

@@ -51,6 +51,21 @@ Feature: Extended Error Recovery
     And the logs should include "recovery"
     And the response should list a timeout error
 
+  Scenario: Recovery after network outage with fallback agent
+    Given an agent facing a persistent network outage
+    And reasoning mode is "chain-of-thought"
+    When I run the orchestrator on query "Explain the theory of relativity"
+    Then the reasoning mode selected should be "chain-of-thought"
+    And the loops used should be 1
+    And the agent groups should be "Offline"
+    And the agents executed should be "Offline"
+    And a recovery strategy "fallback_agent" should be recorded
+    And error category "recoverable" should be recorded
+    And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
+    And the response should list an error of type "AgentError"
+
   Scenario: Unsupported reasoning mode during extended recovery fails gracefully
     Given an agent that times out during execution
     When I run the orchestrator on query "Explain the theory of relativity" with unsupported reasoning mode "quantum"

@@ -65,3 +65,39 @@ Feature: Reasoning mode via API
     And no agents should execute
     And the system state should be restored
     And the logs should include "unsupported reasoning mode"
+
+  Scenario: Direct mode via async API
+    Given loops is set to 2 in configuration
+    When I send an async query "mode test" with reasoning mode "direct" to the API
+    Then the response status should be 200
+    And the loops used should be 1
+    And the reasoning mode selected should be "direct"
+    And the agent groups should be "Synthesizer"
+    And the agents executed should be "Synthesizer"
+    And the reasoning steps should be "Synthesizer-1"
+    And the metrics should record 1 cycles
+    And the metrics should list agents "Synthesizer"
+
+  Scenario: Chain-of-thought mode via async API
+    Given loops is set to 2 in configuration
+    When I send an async query "mode test" with reasoning mode "chain-of-thought" to the API
+    Then the response status should be 200
+    And the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Synthesizer"
+    And the reasoning steps should be "Synthesizer-1; Synthesizer-2"
+    And the metrics should record 2 cycles
+    And the metrics should list agents "Synthesizer"
+
+  Scenario: Dialectical mode via async API
+    Given loops is set to 1 in configuration
+    When I send an async query "mode test" with reasoning mode "dialectical" to the API
+    Then the response status should be 200
+    And the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Contrarian, FactChecker"
+    And the reasoning steps should be "Synthesizer-1; Contrarian-2; FactChecker-3"
+    And the metrics should record 1 cycles
+    And the metrics should list agents "Synthesizer, Contrarian, FactChecker"

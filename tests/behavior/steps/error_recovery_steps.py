@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import types
 from unittest.mock import patch
 
 import pytest
-from pytest_bdd import scenario, given, when, then, parsers
-import types
+from pytest_bdd import given, parsers, scenario, then, when
 
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.errors import AgentError, TimeoutError, StorageError
+from autoresearch.config.models import ConfigModel
+from autoresearch.errors import AgentError, StorageError, TimeoutError
 from autoresearch.orchestration import ReasoningMode
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
+from autoresearch.orchestration.orchestrator import AgentFactory, Orchestrator
 from autoresearch.storage import StorageManager
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
@@ -69,6 +69,14 @@ def test_error_recovery_network_outage():
     "Unsupported reasoning mode during recovery fails gracefully",
 )
 def test_error_recovery_unsupported_mode():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
+    "Recovery after agent failure with fallback",
+)
+def test_error_recovery_agent_fallback():
     pass
 
 
@@ -132,6 +140,42 @@ def failing_agent(monkeypatch, isolate_network, restore_environment):
     return cfg
 
 
+@given(
+    "an agent that fails triggering fallback",
+    target_fixture="config",
+)
+def failing_agent_fallback(monkeypatch, isolate_network, restore_environment):
+    cfg = ConfigModel.model_construct(agents=["Faulty"], loops=1)
+
+    class FailingAgent:
+        def can_execute(self, *args, **kwargs) -> bool:
+            return True
+
+        def execute(self, *args, **kwargs) -> dict:
+            raise AgentError("agent execution failed")
+
+    def handle(agent_name, exc, state, metrics):
+        info = {
+            "recovery_strategy": "fallback_agent",
+            "error_category": "recoverable",
+        }
+        state.metadata["recovery_applied"] = True
+        return info
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: FailingAgent()),
+    )
+    monkeypatch.setattr(
+        Orchestrator,
+        "_handle_agent_error",
+        handle,
+    )
+    return cfg
+
+
 @given("a storage layer that raises a StorageError", target_fixture="config")
 def storage_failure_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["StoreFail"], loops=1)
@@ -178,7 +222,9 @@ def network_outage_agent(monkeypatch, isolate_network, restore_environment):
 
 
 @given(parsers.parse('reasoning mode is "{mode}"'))
-def set_reasoning_mode(config: ConfigModel, mode: str, isolate_network, restore_environment):
+def set_reasoning_mode(
+    config: ConfigModel, mode: str, isolate_network, restore_environment
+):
     config.reasoning_mode = ReasoningMode(mode)
     return config
 
@@ -190,7 +236,10 @@ def recovery_context():
     info.clear()
 
 
-@when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
+@when(
+    parsers.parse('I run the orchestrator on query "{query}"'),
+    target_fixture="run_result",
+)
 def run_orchestrator(
     query: str,
     config: ConfigModel,
@@ -233,15 +282,19 @@ def run_orchestrator(
         params.update(out)
         return out
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory.get",
-        side_effect=recording_get,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
-        side_effect=spy_handle,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
-        side_effect=spy_parse,
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=recording_get,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            side_effect=spy_handle,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+            side_effect=spy_parse,
+        ),
     ):
         try:
             response = Orchestrator.run_query(query, config)
@@ -302,9 +355,7 @@ def run_orchestrator_invalid(
     logs: list[str] = []
     state = {"active": True}
     try:
-        cfg = ConfigModel(
-            agents=config.agents, loops=config.loops, reasoning_mode=mode
-        )
+        cfg = ConfigModel(agents=config.agents, loops=config.loops, reasoning_mode=mode)
         with patch(
             "autoresearch.orchestration.orchestrator.AgentFactory.get",
             side_effect=lambda name: None,
@@ -357,7 +408,7 @@ def assert_error_type(run_result: dict, error_type: str) -> None:
     assert any(e.get("error_type") == error_type for e in errors), errors
 
 
-@then(parsers.parse('the loops used should be {count:d}'))
+@then(parsers.parse("the loops used should be {count:d}"))
 def assert_loops(run_result: dict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
 
@@ -369,7 +420,9 @@ def assert_mode(run_result: dict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
-    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
+    expected = [
+        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
+    ]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
@@ -380,13 +433,17 @@ def assert_order(run_result: dict, order: str) -> None:
 
 
 @then("the system state should be restored")
-def assert_state_restored(run_result: dict | None = None, error_result: dict | None = None) -> None:
+def assert_state_restored(
+    run_result: dict | None = None, error_result: dict | None = None
+) -> None:
     result = run_result or error_result
     assert result and result.get("state", {}).get("active") is False
 
 
 @then(parsers.parse('the logs should include "{message}"'))
-def assert_logs(run_result: dict | None = None, error_result: dict | None = None, message: str = "") -> None:
+def assert_logs(
+    run_result: dict | None = None, error_result: dict | None = None, message: str = ""
+) -> None:
     result = run_result or error_result
     logs = result.get("logs", []) if result else []
     assert any(message in entry for entry in logs), logs
