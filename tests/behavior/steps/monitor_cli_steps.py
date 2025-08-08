@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import time
-from pytest_bdd import scenario, when, then
+
+from pytest_bdd import scenario, then, when
 
 from .common_steps import cli_app
 
 
-@when('I run `autoresearch monitor`')
+@when("I run `autoresearch monitor`")
 def run_monitor(
     monkeypatch,
     bdd_context,
@@ -23,11 +24,12 @@ def run_monitor(
         "autoresearch.monitor._collect_system_metrics",
         lambda: {"cpu_percent": 10.0, "memory_percent": 5.0},
     )
+    monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda *_: None)
     result = cli_runner.invoke(cli_app, ["monitor"])
     bdd_context["monitor_result"] = result
 
 
-@when('I run `autoresearch monitor -w`')
+@when("I run `autoresearch monitor -w`")
 def run_monitor_watch(
     monkeypatch,
     bdd_context,
@@ -47,13 +49,13 @@ def run_monitor_watch(
         sleep_calls.append(interval)
         raise KeyboardInterrupt()
 
-    monkeypatch.setattr(time, "sleep", fake_sleep)
+    monkeypatch.setattr("autoresearch.monitor.time.sleep", fake_sleep)
     result = cli_runner.invoke(cli_app, ["monitor", "-w"])
     bdd_context["monitor_result"] = result
     bdd_context["sleep_calls"] = sleep_calls
 
 
-@when('I run `autoresearch monitor` with metrics backend unavailable')
+@when("I run `autoresearch monitor` with metrics backend unavailable")
 def run_monitor_backend_unavailable(
     monkeypatch,
     bdd_context,
@@ -67,6 +69,7 @@ def run_monitor_backend_unavailable(
         raise RuntimeError("metrics backend unavailable")
 
     monkeypatch.setattr("autoresearch.monitor._collect_system_metrics", fail)
+    monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda *_: None)
     result = cli_runner.invoke(cli_app, ["monitor"])
     bdd_context["monitor_result"] = result
 
@@ -118,4 +121,3 @@ def test_monitor_watch():
 def test_monitor_backend_unavailable():
     """Scenario: Metrics backend unavailable."""
     pass
-
