@@ -18,6 +18,10 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, and `duckdb-extension-vss` are present using `uv pip list`.
 
 ## Verification steps
+- Format code with `uv run black .`.
+- Sort imports with `uv run isort .`.
+- Format with `uv run ruff format src tests`.
+- Lint with `uv run ruff check --fix src tests`.
 - Check code style with `uv run flake8 src tests`.
 - Verify type hints with `uv run mypy src`.
 - Run the unit suite: `uv run pytest -q`.
