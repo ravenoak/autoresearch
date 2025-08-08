@@ -84,7 +84,12 @@ class SearchConfig(BaseModel):
 
 
 class StorageConfig(BaseModel):
-    """Storage configuration for DuckDB, RDF, and more."""
+    """Storage configuration for DuckDB, RDF, and more.
+
+    Attributes:
+        ontology_reasoner_timeout: Timeout for ontology reasoning in seconds.
+            Defaults to ``None`` meaning no timeout.
+    """
 
     duckdb_path: str = Field(default="autoresearch.duckdb")
     vector_extension: bool = Field(default=True)
@@ -100,6 +105,10 @@ class StorageConfig(BaseModel):
     rdf_backend: str = Field(default="sqlite")
     rdf_path: str = Field(default="rdf_store")
     ontology_reasoner: str = Field(default="owlrl")
+    ontology_reasoner_timeout: float | None = Field(
+        default=None,
+        description="Reasoner timeout in seconds. None disables the timeout.",
+    )
     max_connections: int = Field(default=1, ge=1)
     use_kuzu: bool = Field(default=False)
     kuzu_path: str = Field(default="kuzu.db")
