@@ -5,18 +5,28 @@ from types import ModuleType
 import pytest
 import rdflib
 
+import time
+
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError
 from autoresearch.kg_reasoning import run_ontology_reasoner, query_with_reasoning
 
 
-def _mock_config(reasoner: str) -> ConfigModel:
-    return ConfigModel.model_construct(storage=StorageConfig(ontology_reasoner=reasoner))
+def _mock_config(reasoner: str, timeout: float | None = None) -> ConfigModel:
+    return ConfigModel.model_construct(
+        storage=StorageConfig(
+            ontology_reasoner=reasoner, ontology_reasoner_timeout=timeout
+        )
+    )
 
 
-def _patch_config(monkeypatch, reasoner: str) -> None:
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: _mock_config(reasoner))
+def _patch_config(monkeypatch, reasoner: str, timeout: float | None = None) -> None:
+    monkeypatch.setattr(
+        ConfigLoader,
+        "load_config",
+        lambda self: _mock_config(reasoner, timeout),
+    )
     ConfigLoader()._config = None
 
 
@@ -75,3 +85,31 @@ def test_run_ontology_reasoner_without_owlrl(monkeypatch):
     g = rdflib.Graph()
     _patch_config(monkeypatch, "owlrl")
     kr.run_ontology_reasoner(g)
+
+
+def test_run_ontology_reasoner_timeout(monkeypatch):
+    def slow(store):
+        time.sleep(0.2)
+
+    mod = ModuleType("slow_mod")
+    mod.run = slow
+    monkeypatch.setitem(sys.modules, "slow_mod", mod)
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "slow_mod:run", timeout=0.01)
+    with pytest.raises(StorageError) as excinfo:
+        run_ontology_reasoner(g)
+    assert "timed out" in str(excinfo.value).lower()
+
+
+def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch):
+    def boom(store):
+        raise KeyboardInterrupt()
+
+    mod = ModuleType("kb_mod")
+    mod.run = boom
+    monkeypatch.setitem(sys.modules, "kb_mod", mod)
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "kb_mod:run", timeout=1.0)
+    with pytest.raises(StorageError) as excinfo:
+        run_ontology_reasoner(g)
+    assert "interrupted" in str(excinfo.value).lower()

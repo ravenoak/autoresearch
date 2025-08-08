@@ -6,6 +6,7 @@ from importlib import import_module
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
+import threading
 import warnings
 import rdflib
 
@@ -89,38 +90,74 @@ def _rdfs_reasoner(store: rdflib.Graph) -> None:
 def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> None:
     """Apply ontology reasoning over ``store`` using the configured engine."""
 
-    reasoner_setting = engine or getattr(
-        ConfigLoader().config.storage, "ontology_reasoner", "owlrl"
-    )
+    storage_cfg = ConfigLoader().config.storage
+    reasoner_setting = engine or getattr(storage_cfg, "ontology_reasoner", "owlrl")
     reasoner = str(reasoner_setting)
 
-    if reasoner in _REASONER_PLUGINS:
-        try:
+    def _apply_reasoner() -> None:
+        if reasoner in _REASONER_PLUGINS:
             _REASONER_PLUGINS[reasoner](store)
-        except StorageError:
-            raise
-        except Exception as exc:
+        elif ":" in reasoner:  # pragma: no cover - external reasoners optional
+            try:
+                module, func = reasoner.split(":", maxsplit=1)
+                mod = import_module(module)
+                getattr(mod, func)(store)
+            except Exception as exc:  # pragma: no cover - import failures optional
+                raise StorageError(
+                    "Failed to run external ontology reasoner",
+                    cause=exc,
+                    suggestion="Check storage.ontology_reasoner configuration",
+                )
+        else:
             raise StorageError(
-                f"Failed to apply {reasoner} reasoning",
-                cause=exc,
-                suggestion="Ensure the ontology reasoner plugin is correctly installed",
+                f"Unknown ontology reasoner: {reasoner}",
+                suggestion=(
+                    "Register the reasoner via register_reasoner or use 'module:function'"
+                ),
             )
-    elif ":" in reasoner:  # pragma: no cover - external reasoners optional
+
+    error: list[BaseException] = []
+
+    def _worker() -> None:
         try:
-            module, func = reasoner.split(":", maxsplit=1)
-            mod = import_module(module)
-            getattr(mod, func)(store)
-        except Exception as exc:
-            raise StorageError(
-                "Failed to run external ontology reasoner",
-                cause=exc,
-                suggestion="Check storage.ontology_reasoner configuration",
-            )
+            _apply_reasoner()
+        except BaseException as exc:  # capture all exceptions including KeyboardInterrupt
+            error.append(exc)
+
+    timeout = getattr(storage_cfg, "ontology_reasoner_timeout", None)
+
+    if timeout is None:
+        _worker()
     else:
+        thread = threading.Thread(target=_worker, daemon=True)
+        thread.start()
+        thread.join(timeout)
+        if thread.is_alive():
+            raise StorageError(
+                f"Ontology reasoner '{reasoner}' timed out after {timeout} seconds",
+                suggestion=(
+                    "Increase storage.ontology_reasoner_timeout or choose a lighter reasoner"
+                ),
+            )
+        thread.join()
+
+    if error:
+        exc = error[0]
+        if isinstance(exc, StorageError):
+            raise exc
+        if isinstance(exc, KeyboardInterrupt):
+            raise StorageError(
+                "Ontology reasoning interrupted",
+                suggestion=(
+                    "Adjust storage.ontology_reasoner_timeout or choose a lighter reasoner"
+                ),
+            ) from exc
+        cause = exc if isinstance(exc, Exception) else None
         raise StorageError(
-            f"Unknown ontology reasoner: {reasoner}",
-            suggestion="Register the reasoner via register_reasoner or use 'module:function'",
-        )
+            f"Failed to apply {reasoner} reasoning",
+            cause=cause,
+            suggestion="Ensure the ontology reasoner plugin is correctly installed",
+        ) from exc
 
 
 def query_with_reasoning(store: rdflib.Graph, query: str, engine: Optional[str] = None):
