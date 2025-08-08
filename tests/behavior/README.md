@@ -53,3 +53,10 @@ uv run pytest tests/behavior/features/config_cli.feature::Update_reasoning_confi
 uv run pytest tests/behavior/features/reasoning_mode_cli.feature
 uv run pytest tests/behavior/features/error_recovery.feature
 ```
+
+## New features
+
+- `api_config.feature` exercises the configuration endpoints exposed by the
+  HTTP API.
+- `visualize_metrics_cli.feature` documents the planned
+  `visualize-metrics` CLI command until implementation lands.
