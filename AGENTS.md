@@ -10,7 +10,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Create a virtual environment with `uv venv`.
     - `scripts/setup.sh` verifies the interpreter and fails if it is too old.
     - Both setup scripts abort if `python3.12` is not found on your `PATH`.
-  - Install dependencies with `uv pip install -e '.[full,dev]'`.
+    - Install dependencies and extras:
+      - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
+      - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
   - Activate the environment using `source .venv/bin/activate` or prefix commands with `uv pip`.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
