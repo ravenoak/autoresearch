@@ -5,6 +5,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from autoresearch.main import app as cli_app
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.storage_backup import BackupManager, BackupInfo
+from .common_steps import assert_cli_success
 
 
 @given("a temporary work directory", target_fixture="work_dir")
@@ -23,7 +24,14 @@ def dummy_backup_file(work_dir, path):
 
 
 @when(parsers.parse('I run `autoresearch config backup create --dir {dir}`'))
-def run_backup_create(dir, cli_runner, bdd_context, monkeypatch):
+def run_backup_create(
+    dir,
+    cli_runner,
+    bdd_context,
+    monkeypatch,
+    isolate_network,
+    restore_environment,
+):
     def fake_create_backup(
         backup_dir,
         db_filename="kg.duckdb",
@@ -48,7 +56,14 @@ def run_backup_create(dir, cli_runner, bdd_context, monkeypatch):
 
 
 @when(parsers.parse('I run `autoresearch config backup list --dir {dir}`'))
-def run_backup_list(dir, cli_runner, bdd_context, monkeypatch):
+def run_backup_list(
+    dir,
+    cli_runner,
+    bdd_context,
+    monkeypatch,
+    isolate_network,
+    restore_environment,
+):
     monkeypatch.setattr(
         BackupManager,
         "list_backups",
@@ -66,7 +81,15 @@ def run_backup_list(dir, cli_runner, bdd_context, monkeypatch):
 
 
 @when(parsers.parse('I run `autoresearch config backup restore {path} --dir {dir} --force`'))
-def run_backup_restore(path, dir, cli_runner, bdd_context, monkeypatch):
+def run_backup_restore(
+    path,
+    dir,
+    cli_runner,
+    bdd_context,
+    monkeypatch,
+    isolate_network,
+    restore_environment,
+):
     monkeypatch.setattr(
         BackupManager,
         "restore_backup",
@@ -86,18 +109,12 @@ def run_backup_restore(path, dir, cli_runner, bdd_context, monkeypatch):
 def check_backup(bdd_context, work_dir):
     backup_dir = work_dir / bdd_context["backup_dir"]
     assert backup_dir.exists() and any(backup_dir.iterdir())
-    result = bdd_context["result"]
-    assert result.exit_code == 0
-    assert result.stdout != ""
-    assert result.stderr == ""
+    assert_cli_success(bdd_context["result"])
 
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    result = bdd_context["result"]
-    assert result.exit_code == 0
-    assert result.stdout != ""
-    assert result.stderr == ""
+    assert_cli_success(bdd_context["result"])
 
 
 @scenario("../features/backup_cli.feature", "Create backup")

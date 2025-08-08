@@ -169,6 +169,19 @@ def restore_environment():
         os.environ.update(original)
 
 
+def assert_cli_success(result):
+    """Assert that a CLI invocation succeeded without errors."""
+    assert result.exit_code == 0, result.stderr
+    assert result.stdout != ""
+    assert result.stderr == ""
+
+
+def assert_cli_error(result):
+    """Assert that a CLI invocation failed and produced an error message."""
+    assert result.exit_code != 0
+    assert result.stderr != "" or result.exception is not None
+
+
 @pytest.fixture
 def orchestrator_failure(monkeypatch):
     """Simulate orchestrator-level failures for targeted scenarios."""

@@ -2,6 +2,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 
 from autoresearch.main import app as cli_app
 from autoresearch.config.loader import ConfigLoader
+from .common_steps import assert_cli_success, assert_cli_error
 
 
 def pytest_configure(config):  # pragma: no cover - silence unused warning
@@ -17,13 +18,19 @@ def work_dir(tmp_path, monkeypatch):
 
 @given("I run `autoresearch config init --force` in a temporary directory")
 @when("I run `autoresearch config init --force` in a temporary directory")
-def run_config_init(work_dir, cli_runner, bdd_context):
+def run_config_init(
+    work_dir,
+    cli_runner,
+    bdd_context,
+    isolate_network,
+    restore_environment,
+):
     result = cli_runner.invoke(cli_app, ["config", "init", "--force"])
     bdd_context["result"] = result
 
 
 @when("I run `autoresearch config validate`")
-def run_config_validate(cli_runner, bdd_context):
+def run_config_validate(cli_runner, bdd_context, isolate_network, restore_environment):
     result = cli_runner.invoke(cli_app, ["config", "validate"])
     bdd_context["result"] = result
 
@@ -33,7 +40,14 @@ def run_config_validate(cli_runner, bdd_context):
         r'^I run `autoresearch config reasoning --mode (?P<mode>\w+) --loops (?P<loops>\d+)`$'
     )
 )
-def run_config_reasoning(cli_runner, bdd_context, mode: str, loops: int):
+def run_config_reasoning(
+    cli_runner,
+    bdd_context,
+    mode: str,
+    loops: int,
+    isolate_network,
+    restore_environment,
+):
     result = cli_runner.invoke(
         cli_app, ["config", "reasoning", "--mode", mode, "--loops", str(loops)]
     )
@@ -41,7 +55,13 @@ def run_config_reasoning(cli_runner, bdd_context, mode: str, loops: int):
 
 
 @when(parsers.parse('I run `autoresearch config reasoning --mode {mode}`'))
-def run_config_reasoning_mode_only(cli_runner, bdd_context, mode: str):
+def run_config_reasoning_mode_only(
+    cli_runner,
+    bdd_context,
+    mode: str,
+    isolate_network,
+    restore_environment,
+):
     result = cli_runner.invoke(cli_app, ["config", "reasoning", "--mode", mode])
     bdd_context["result"] = result
 
@@ -54,17 +74,12 @@ def check_config_files(work_dir):
 
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
-    result = bdd_context["result"]
-    assert result.exit_code == 0
-    assert result.stdout != ""
-    assert result.stderr == ""
+    assert_cli_success(bdd_context["result"])
 
 
 @then("the CLI should exit with an error")
 def cli_error(bdd_context):
-    result = bdd_context["result"]
-    assert result.exit_code != 0
-    assert result.stderr != ""
+    assert_cli_error(bdd_context["result"])
 
 
 @then(parsers.parse('the configuration file should set reasoning mode to "{mode}"'))

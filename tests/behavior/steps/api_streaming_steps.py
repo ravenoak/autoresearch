@@ -1,23 +1,14 @@
 # flake8: noqa
 from pytest_bdd import scenario, when, then, parsers, given
-from unittest.mock import patch
 import responses
 import requests
 import json
-
-from .common_steps import app_running, app_running_with_default, application_running
-from fastapi.testclient import TestClient
 from autoresearch.api import app as api_app
 from autoresearch.orchestration.state import QueryState
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
-
-
-@given("the Autoresearch application is running")
-def _app_running_alias(tmp_path, monkeypatch):
-    return application_running(tmp_path, monkeypatch)
 
 
 @when(parsers.parse('I send a streaming query "{query}" to the API'))
