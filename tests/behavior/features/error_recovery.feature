@@ -73,6 +73,20 @@ Feature: Error Recovery
     And the logs should include "recovery"
     And the response should list an error of type "AgentError"
 
+  Scenario: Recovery after agent failure with fallback
+    Given an agent that fails triggering fallback
+    When I run the orchestrator on query "recover test"
+    Then the reasoning mode selected should be "dialectical"
+    And the loops used should be 1
+    And the agent groups should be "Faulty"
+    And the agents executed should be "Faulty"
+    And a recovery strategy "fallback_agent" should be recorded
+    And error category "recoverable" should be recorded
+    And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
+    And the response should list an agent execution error
+
   Scenario: Unsupported reasoning mode during recovery fails gracefully
     Given an agent that raises a transient error
     When I run the orchestrator on query "recover test" with unsupported reasoning mode "quantum"

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from unittest.mock import patch
 import json
+from unittest.mock import patch
 
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import given, parsers, scenario, then, when
 
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.main import app as cli_app
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.main import app as cli_app
 
 
 @scenario("../features/reasoning_mode_cli.feature", "Direct mode via CLI")
@@ -43,7 +43,17 @@ def test_invalid_mode_cli():
     pass
 
 
-@given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
+@scenario(
+    "../features/reasoning_mode_cli.feature",
+    "Invalid reasoning mode via SPARQL CLI",
+)
+def test_invalid_mode_sparql_cli():
+    pass
+
+
+@given(
+    parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
+)
 def loops_config(count: int, monkeypatch):
     cfg = ConfigModel.model_construct(
         agents=["Synthesizer", "Contrarian", "FactChecker"],
@@ -95,12 +105,15 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
         params.update(out)
         return out
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory.get",
-        side_effect=get_agent,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
-        side_effect=spy_parse,
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=get_agent,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+            side_effect=spy_parse,
+        ),
     ):
         result = cli_runner.invoke(
             cli_app, ["search", query, "--mode", mode, "--output", "json"]
@@ -136,6 +149,70 @@ def run_search(query: str, mode: str, config: ConfigModel, cli_runner):
     }
 
 
+@when(
+    parsers.parse('I run `autoresearch sparql "{query}" --mode {mode}`'),
+    target_fixture="run_result",
+)
+def run_sparql(query: str, mode: str, config: ConfigModel, cli_runner):
+    record: list[str] = []
+    params: dict = {}
+    logs: list[str] = []
+    state = {"active": True}
+
+    def get_agent(name: str):
+        class DummyAgent:
+            def __init__(self, n: str) -> None:
+                self.name = n
+
+            def can_execute(self, *args, **kwargs) -> bool:
+                return True
+
+            def execute(self, *args, **kwargs) -> dict:
+                record.append(self.name)
+                return {"claims": [], "results": {"final_answer": ""}}
+
+        return DummyAgent(name)
+
+    original_parse = Orchestrator._parse_config
+
+    def spy_parse(cfg: ConfigModel):
+        out = original_parse(cfg)
+        params.update(out)
+        return out
+
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=get_agent,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+            side_effect=spy_parse,
+        ),
+    ):
+        result = cli_runner.invoke(
+            cli_app, ["sparql", query, "--mode", mode, "--output", "json"]
+        )
+        if result.exit_code != 0:
+            logs.append("unsupported reasoning mode")
+    state["active"] = False
+    data = {}
+    try:
+        data = json.loads(result.stdout)
+    except Exception:
+        data = {}
+    return {
+        "record": record,
+        "config_params": params,
+        "exit_code": result.exit_code,
+        "data": data,
+        "output": result.stdout,
+        "stderr": result.stderr,
+        "logs": logs,
+        "state": state,
+    }
+
+
 @then("the CLI should exit successfully")
 def cli_success(run_result):
     assert run_result["exit_code"] == 0
@@ -154,7 +231,9 @@ def assert_mode(run_result: dict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
-    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
+    expected = [
+        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
+    ]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
