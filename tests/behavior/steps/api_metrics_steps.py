@@ -16,7 +16,6 @@ def api_server_running(
     api_client,
     monkeypatch,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Provide a configured API client for metrics tests."""
@@ -31,7 +30,6 @@ def request_metrics_authorized(
     bdd_context: dict[str, Any],
     monkeypatch,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Request the metrics endpoint with proper permissions."""
@@ -51,7 +49,6 @@ def request_metrics_denied(
     bdd_context: dict[str, Any],
     monkeypatch,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Request the metrics endpoint without necessary permissions."""

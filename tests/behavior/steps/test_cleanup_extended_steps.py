@@ -125,7 +125,7 @@ def system_modifies_environment_variables(cleanup_extended_context):
 
 
 @when("I run a test that modifies environment variables")
-def run_test_modifying_environment_variables(cleanup_extended_context):
+def run_test_modifying_environment_variables(cleanup_extended_context, restore_environment):
     """Run a test that modifies environment variables."""
     # Set the test environment variables
     for key, value in cleanup_extended_context["env_vars"].items():
@@ -154,9 +154,8 @@ def environment_variables_properly_restored(cleanup_extended_context):
 # Step definitions for "Tests handle cleanup errors gracefully"
 @given("the system encounters errors during cleanup")
 def system_encounters_cleanup_errors(cleanup_extended_context):
-    """Set up the system to encounter errors during cleanup."""
-    # We'll set up the mock cleanup function in the when step
-    pass
+    """Mark that we expect cleanup errors during the test."""
+    cleanup_extended_context["expect_error"] = True
 
 
 @when("I run a test that encounters cleanup errors")
@@ -170,25 +169,12 @@ def run_test_encountering_cleanup_errors(cleanup_extended_context):
         # Call the mock cleanup function
         mock_cleanup()
     except Exception as e:
-        # Store the exception
         cleanup_extended_context["cleanup_error"] = e
 
 
 @then("the test should handle cleanup errors gracefully")
 def test_handles_cleanup_errors_gracefully(cleanup_extended_context):
-    """Verify that the test handles cleanup errors gracefully."""
-    # Create a mock cleanup function that will raise an exception
-    mock_cleanup = MagicMock(side_effect=Exception("Cleanup error"))
-
-    # Call the mock cleanup function and catch the exception
-    try:
-        mock_cleanup()
-        # If we get here, the mock didn't raise an exception, which is unexpected
-        assert False, "Mock cleanup function should have raised an exception"
-    except Exception as e:
-        # Verify that the exception is what we expect
-        assert str(e) == "Cleanup error"
-        assert isinstance(e, Exception)
-
-    # In a real test, we would want to log the error but not fail the test
-    # Here we're just verifying that the error was caught
+    """Verify that the error raised during cleanup was captured."""
+    err = cleanup_extended_context.get("cleanup_error")
+    assert isinstance(err, Exception)
+    assert str(err) == "Cleanup error"

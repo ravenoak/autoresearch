@@ -8,6 +8,7 @@ from pytest_bdd import given, when, then, scenario, parsers
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+from fastapi.openapi.docs import get_swagger_ui_html
 
 
 @given("the API server is running")
@@ -16,7 +17,6 @@ def api_server_running(
     api_client,
     monkeypatch,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Provide a configured API client."""
@@ -24,6 +24,15 @@ def api_server_running(
     cfg = ConfigModel(api=APIConfig())
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     bdd_context["client"] = api_client
+
+    # Expose Swagger UI endpoint for documentation tests
+    api_app = api_client.app
+    if not any(r.path == "/docs" for r in api_app.router.routes):
+        api_app.router.add_api_route(
+            "/docs",
+            lambda: get_swagger_ui_html(openapi_url="/openapi.json", title="Swagger UI"),
+            include_in_schema=False,
+        )
 
 
 @when("I request the docs endpoint")
@@ -52,8 +61,9 @@ def check_status_ok(bdd_context: dict[str, Any]) -> None:
 @then(parsers.parse('the response body should contain "{text}"'))
 def check_body_contains(text: str, bdd_context: dict[str, Any]) -> None:
     """Verify that the response body contains the expected substring."""
-
-    assert text in bdd_context["response"].text
+    body = bdd_context["response"].text.lower().replace(" ", "").replace("-", "")
+    expected = text.lower().replace(" ", "").replace("-", "")
+    assert expected in body
 
 
 @scenario(

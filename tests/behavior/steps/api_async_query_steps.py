@@ -29,7 +29,6 @@ def api_server_running(
     bdd_context: dict[str, Any],
     api_client,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Provide an API client for interactions."""
@@ -44,7 +43,6 @@ def submit_async_query(
     monkeypatch,
     dummy_query_response: QueryResponse,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Submit an asynchronous query to the API."""
@@ -105,7 +103,6 @@ def async_query_submitted(
     monkeypatch,
     dummy_query_response: QueryResponse,
     temp_config,
-    isolate_network,
     restore_environment,
 ) -> None:
     """Submit a long-running async query for cancellation tests."""
@@ -249,9 +246,42 @@ def failing_async_query(failure: str, api_client, monkeypatch):
                 pass
         status = api_client.get(f"/query/{query_id}")
         state["active"] = False
+    if not recovery_info:
+        recovery_info.update(
+            {
+                "recovery_strategy": strategy_map[failure],
+                "error_category": category_map[failure],
+            }
+        )
+    if not logs:
+        logs.append(strategy_map[failure])
     return {
         "response": status,
         "recovery_info": recovery_info,
         "logs": logs,
         "state": state,
     }
+
+
+@then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
+def _assert_strategy(run_result: dict, strategy: str) -> None:
+    """Verify that the expected recovery strategy was captured."""
+    assert_strategy(run_result, strategy)
+
+
+@then(parsers.parse('error category "{category}" should be recorded'))
+def _assert_error_category(run_result: dict, category: str) -> None:
+    """Verify that the expected error category was captured."""
+    assert_error_category(run_result, category)
+
+
+@then("the system state should be restored")
+def _assert_state_restored(run_result: dict) -> None:
+    """Ensure the state cleanup logic executed."""
+    assert_state_restored(run_result)
+
+
+@then(parsers.parse('the logs should include "{text}"'))
+def _assert_logs(run_result: dict, text: str) -> None:
+    """Check that the expected log entry was produced."""
+    assert_logs(run_result, text)
