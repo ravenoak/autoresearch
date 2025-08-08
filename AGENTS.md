@@ -18,15 +18,17 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, and `duckdb-extension-vss` are present using `uv pip list`.
 
 ## Verification steps
-- Format code with `uv run black .`.
-- Sort imports with `uv run isort .`.
-- Format with `uv run ruff format src tests`.
-- Lint with `uv run ruff check --fix src tests`.
-- Check code style with `uv run flake8 src tests`.
-- Verify type hints with `uv run mypy src`.
-- Run the unit suite: `uv run pytest -q`.
-- Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
-- Run the entire suite with coverage using `task coverage`. If `task` is unavailable, run `uv run pytest --cov=src` instead.
+- Use `task verify` to run linting, type checking, and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
+- If `task` is unavailable, run these commands individually:
+  - Format code with `uv run black .`.
+  - Sort imports with `uv run isort .`.
+  - Format with `uv run ruff format src tests`.
+  - Lint with `uv run ruff check --fix src tests`.
+  - Check code style with `uv run flake8 src tests`.
+  - Verify type hints with `uv run mypy src`.
+  - Run the unit suite: `uv run pytest -q`.
+  - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
+  - Run the entire suite with coverage: `uv run pytest --cov=src`.
 
 ## GitHub Actions workflows
 - All GitHub Actions workflows are disabled until further notice.
