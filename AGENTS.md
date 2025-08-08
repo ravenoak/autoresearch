@@ -32,6 +32,10 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
 
+### Cleanup
+- Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.
+- Manually remove test artifacts such as `kg.duckdb` and `rdf_store` if present.
+
 ## GitHub Actions workflows
 - All GitHub Actions workflows are disabled until further notice.
 - Store workflow files in `.github/workflows.disabled`; `.github/workflows` must remain empty.
