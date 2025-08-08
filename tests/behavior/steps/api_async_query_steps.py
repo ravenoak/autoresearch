@@ -73,14 +73,15 @@ def check_query_id(bdd_context: dict[str, Any]) -> None:
 
 
 @when("I request the status for that query ID")
-def request_status(bdd_context: dict[str, Any]) -> None:
+def request_status(bdd_context: dict[str, Any], monkeypatch) -> None:
     """Retrieve the result for the previously submitted query."""
 
+    monkeypatch.setattr(time, "sleep", lambda *_: None)
     query_id = bdd_context["query_id"]
     future = api_app.state.async_tasks.get(query_id)
     if future is not None:
         while not future.done():
-            time.sleep(0.01)
+            time.sleep(0)
     client = bdd_context["client"]
     resp = client.get(f"/query/{query_id}")
     bdd_context["status_response"] = resp
@@ -94,6 +95,7 @@ def check_answer(bdd_context: dict[str, Any]) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data.get("answer")
+    assert bdd_context["query_id"] not in api_app.state.async_tasks
 
 
 @given("an async query has been submitted")
@@ -112,7 +114,8 @@ def async_query_submitted(
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
     async def run_async(q: str, config: ConfigModel) -> QueryResponse:
-        await asyncio.sleep(0.1)
+        async with asyncio.TaskGroup() as tg:
+            await tg.create_task(asyncio.Event().wait())
         return dummy_query_response.model_copy(deep=True)
 
     monkeypatch.setattr(Orchestrator, "run_query_async", run_async)
@@ -194,6 +197,8 @@ def failing_async_query(failure: str, api_client, monkeypatch):
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
+    monkeypatch.setattr(time, "sleep", lambda *_: None)
+
     logs: list[str] = []
     state = {"active": True}
     recovery_info: dict[str, str] = {}
@@ -239,12 +244,13 @@ def failing_async_query(failure: str, api_client, monkeypatch):
         future = api_app.state.async_tasks.get(query_id)
         if future is not None:
             while not future.done():
-                time.sleep(0.01)
+                time.sleep(0)
             try:
                 future.result()
             except Exception:
                 pass
         status = api_client.get(f"/query/{query_id}")
+        assert query_id not in api_app.state.async_tasks
         state["active"] = False
     if not recovery_info:
         recovery_info.update(

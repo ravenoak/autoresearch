@@ -1,6 +1,7 @@
+import threading
 from unittest.mock import MagicMock
 
-from pytest_bdd import scenario, when, then
+from pytest_bdd import scenario, then, when
 
 from autoresearch.main import app as cli_app
 
@@ -23,10 +24,26 @@ def run_a2a(cli_runner, monkeypatch, bdd_context):
     mock_ctor = MagicMock(return_value=mock_interface)
     monkeypatch.setattr("autoresearch.a2a_interface.A2AInterface", mock_ctor)
     monkeypatch.setattr(
-        "autoresearch.main.app.time.sleep", lambda _x: (_ for _ in ()).throw(KeyboardInterrupt())
+        "autoresearch.main.app.time.sleep",
+        lambda _x: (_ for _ in ()).throw(KeyboardInterrupt()),
     )
-    result = cli_runner.invoke(cli_app, ["serve-a2a"])
-    bdd_context.update({"result": result, "mock_interface": mock_interface, "mock_ctor": mock_ctor})
+
+    result_container: dict = {}
+
+    def invoke() -> None:
+        result_container["result"] = cli_runner.invoke(cli_app, ["serve-a2a"])
+
+    thread = threading.Thread(target=invoke)
+    thread.start()
+    thread.join()
+    bdd_context.update(
+        {
+            "result": result_container["result"],
+            "mock_interface": mock_interface,
+            "mock_ctor": mock_ctor,
+            "server_thread": thread,
+        }
+    )
 
 
 @then("the CLI should exit successfully")
@@ -48,6 +65,7 @@ def a2a_started_and_stopped(bdd_context):
     assert mock_ctor.call_count == 1
     assert mock_interface.start.call_count == 1
     assert mock_interface.stop.call_count == 1
+    assert not bdd_context["server_thread"].is_alive()
     assert result.stderr == ""
 
 
