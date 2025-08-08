@@ -32,7 +32,13 @@ def _patch_config(monkeypatch, reasoner: str, timeout: float | None = None) -> N
 
 def test_run_ontology_reasoner_owlrl(monkeypatch):
     g = rdflib.Graph()
-    g.add((rdflib.URIRef("http://ex/s"), rdflib.URIRef("http://ex/p"), rdflib.URIRef("http://ex/o")))
+    g.add(
+        (
+            rdflib.URIRef("http://ex/s"),
+            rdflib.URIRef("http://ex/p"),
+            rdflib.URIRef("http://ex/o"),
+        )
+    )
     _patch_config(monkeypatch, "owlrl")
     run_ontology_reasoner(g)
 
@@ -81,6 +87,7 @@ def test_query_with_reasoning(monkeypatch):
 def test_run_ontology_reasoner_without_owlrl(monkeypatch):
     monkeypatch.delitem(sys.modules, "owlrl", raising=False)
     import autoresearch.kg_reasoning as kr
+
     kr = importlib.reload(kr)
     g = rdflib.Graph()
     _patch_config(monkeypatch, "owlrl")
@@ -88,14 +95,14 @@ def test_run_ontology_reasoner_without_owlrl(monkeypatch):
 
 
 def test_run_ontology_reasoner_timeout(monkeypatch):
+    import autoresearch.kg_reasoning as kr
+
     def slow(store):
         time.sleep(0.2)
 
-    mod = ModuleType("slow_mod")
-    mod.run = slow
-    monkeypatch.setitem(sys.modules, "slow_mod", mod)
+    monkeypatch.setitem(kr._REASONER_PLUGINS, "slow", slow)
     g = rdflib.Graph()
-    _patch_config(monkeypatch, "slow_mod:run", timeout=0.01)
+    _patch_config(monkeypatch, "slow", timeout=0.1)
     with pytest.raises(StorageError) as excinfo:
         run_ontology_reasoner(g)
     assert "timed out" in str(excinfo.value).lower()
