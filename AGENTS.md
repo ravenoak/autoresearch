@@ -49,6 +49,17 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Commit etiquette
 - Keep commits focused and write clear messages detailing your reasoning.
 - Remove temporary files and keep the repository tidy.
+- Use an imperative, present-tense subject line ≤ 50 characters, followed by a blank line and a body wrapped at 72 characters.
+- Reference related issue numbers.
+
+Example commit message:
+
+```
+Update contribution guidelines
+
+Explain commit message conventions and reference issue numbers
+in the commit body. Closes #123.
+```
 
 ## Legacy workflow
 Autoresearch previously relied on **Poetry**. Use `uv venv` to create the
