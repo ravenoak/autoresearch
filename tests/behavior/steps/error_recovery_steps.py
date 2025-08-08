@@ -72,38 +72,6 @@ def test_error_recovery_unsupported_mode():
     pass
 
 
-@scenario(
-    "../features/error_recovery_extended.feature",
-    "Recovery after agent timeout",
-)
-def test_error_recovery_timeout():
-    pass
-
-
-@scenario(
-    "../features/error_recovery_extended.feature",
-    "Recovery after agent failure",
-)
-def test_error_recovery_agent_failure():
-    pass
-
-
-@scenario(
-    "../features/error_recovery_extended.feature",
-    "Recovery after agent timeout in direct mode",
-)
-def test_error_recovery_timeout_direct():
-    pass
-
-
-@scenario(
-    "../features/error_recovery_extended.feature",
-    "Unsupported reasoning mode during extended recovery fails gracefully",
-)
-def test_error_recovery_extended_unsupported():
-    pass
-
-
 @given("an agent that raises a transient error", target_fixture="config")
 def flaky_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Flaky"], loops=1)
