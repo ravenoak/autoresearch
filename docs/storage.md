@@ -164,17 +164,26 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
 ## Ontology Reasoning and Visualization
 
 The RDF store supports optional ontology-based reasoning using the
-`owlrl` package or a custom engine. Configure the desired reasoner with
+`owlrl` package, the lightweight `rdfs` reasoner, or a custom engine.
+Configure the desired reasoner and timeout with
 
 ```toml
 [storage]
-ontology_reasoner = "owlrl"           # or "my_module:run_reasoner"
+# Use "rdfs" in tests for faster execution
+ontology_reasoner = "rdfs"
+ontology_reasoner_timeout = 5          # seconds
+
+# In production switch to OWL-RL and raise the timeout
+# ontology_reasoner = "owlrl"
+# ontology_reasoner_timeout = 30
+
 ontology_reasoner_max_triples = 100000 # skip reasoning for larger graphs
 ```
 
 Behavior tests use the lightweight `rdfs` reasoner by default to keep test
 execution fast. Production deployments can select the more expressive `owlrl`
-engine (or another custom reasoner) when full OWL‑RL reasoning is required.
+engine (or another custom reasoner) and increase
+`ontology_reasoner_timeout` when full OWL‑RL reasoning is required.
 
 The following tutorial walks through a typical ontology workflow.
 
