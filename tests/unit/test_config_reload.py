@@ -10,7 +10,7 @@ def test_config_reload_on_change(tmp_path, monkeypatch):
 
     # Create a new ConfigLoader instance after changing the working directory
     # This ensures it will look for config files in the temporary directory
-    loader = ConfigLoader()
+    loader = ConfigLoader.new_for_tests()
     loader._config = loader.load_config()
 
     # Force update of watch paths to include the new config file

@@ -31,9 +31,16 @@ def make_agent(name, calls, stored):
 
         def execute(self, state, config, **kwargs):
             Search.external_lookup("q", max_results=1)
-            StorageManager.persist_claim({"id": self.name, "type": "fact", "content": self.name})
+            StorageManager.persist_claim(
+                {"id": self.name, "type": "fact", "content": self.name}
+            )
             calls.append(self.name)
-            state.update({"results": {self.name: "ok"}, "claims": [{"id": self.name, "type": "fact", "content": self.name}]})
+            state.update(
+                {
+                    "results": {self.name: "ok"},
+                    "claims": [{"id": self.name, "type": "fact", "content": self.name}],
+                }
+            )
             if self.name == "Synthesizer":
                 state.results["final_answer"] = f"Answer from {self.name}"
             return {"results": {self.name: "ok"}}
@@ -55,7 +62,7 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
     )
     repo.index.add([str(cfg_file)])
     repo.index.commit("init config")
-    ConfigLoader.reset_instance()
+    loader = ConfigLoader.new_for_tests()
 
     def fake_load(self):
         data = tomllib.loads(cfg_file.read_text())
@@ -71,7 +78,6 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
-    loader = ConfigLoader()
 
     calls: list[str] = []
     search_calls: list[str] = []
@@ -87,7 +93,9 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
 
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
+    )
     monkeypatch.setattr(
         AgentFactory,
         "get",
@@ -100,7 +108,9 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
         for b in cfg.search.backends:
             results.extend(Search.backends[b](query, max_results))
         for r in results:
-            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
+            StorageManager.persist_claim(
+                {"id": r["url"], "type": "source", "content": r["title"]}
+            )
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)
@@ -165,7 +175,7 @@ def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
     )
     repo.index.add([str(cfg_file)])
     repo.index.commit("init config")
-    ConfigLoader.reset_instance()
+    loader = ConfigLoader.new_for_tests()
 
     def fake_load(self):
         data = tomllib.loads(cfg_file.read_text())
@@ -189,7 +199,6 @@ def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
-    loader = ConfigLoader()
 
     paths: list[str] = []
     weights: list[tuple[float, float, float]] = []
@@ -218,14 +227,15 @@ def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
     events: list[tuple[float, str]] = []
 
     def on_change(cfg):
-        events.append(
-            (cfg.search.semantic_similarity_weight, cfg.storage.duckdb_path)
-        )
+        events.append((cfg.search.semantic_similarity_weight, cfg.storage.duckdb_path))
 
     loader.watch_changes(on_change)
     loader.load_config()
     events.append(
-        (loader.config.search.semantic_similarity_weight, loader.config.storage.duckdb_path)
+        (
+            loader.config.search.semantic_similarity_weight,
+            loader.config.storage.duckdb_path,
+        )
     )
     Orchestrator.run_query("q", loader.config)
     cfg_file.write_text(

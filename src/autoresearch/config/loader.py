@@ -6,7 +6,7 @@ import logging
 import threading
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Sequence
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Set
 import sys
 import tomllib
 
@@ -27,6 +27,11 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+_current_loader: contextvars.ContextVar["ConfigLoader | None"] = contextvars.ContextVar(
+    "current_config_loader", default=None
+)
+
+
 def _merge_dict(base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
     for key, value in updates.items():
         if isinstance(value, dict) and isinstance(base.get(key), dict):
@@ -39,32 +44,61 @@ def _merge_dict(base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]
 class ConfigLoader:
     """Loads and watches configuration changes."""
 
-    _instance = None
+    _instance: "ConfigLoader | None" = None
     _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):  # noqa: ANN003, ANN002
+        loader = _current_loader.get()
+        if loader is not None:
+            return loader
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+            return cls._instance
 
     @classmethod
     def reset_instance(cls) -> None:
-        """Reset the singleton instance for testing purposes."""
+        """Reset the loader instance for testing purposes."""
         with cls._lock:
-            if cls._instance is not None:
+            loaders: list[ConfigLoader] = []
+            ctx_loader = _current_loader.get()
+            if ctx_loader is not None:
+                loaders.append(ctx_loader)
+            if cls._instance is not None and cls._instance is not ctx_loader:
+                loaders.append(cls._instance)
+            for loader in loaders:
                 try:
-                    cls._instance.stop_watching()
-                except Exception as e:
+                    loader.stop_watching()
+                except Exception as e:  # pragma: no cover - unexpected
                     raise ConfigError("Error stopping config watcher", cause=e) from e
+            if ctx_loader is not None:
+                _current_loader.set(None)
+            if cls._instance is not None:
                 cls._instance._config = None
                 cls._instance = None
 
     @classmethod
-    def new_for_tests(cls) -> "ConfigLoader":
+    def new_for_tests(
+        cls,
+        search_paths: Sequence[str | Path] | None = None,
+        env_path: str | Path | None = None,
+    ) -> "ConfigLoader":
         """Return a fresh loader instance for isolated tests."""
         cls.reset_instance()
-        return cls()
+        loader = super().__new__(cls)
+        ConfigLoader.__init__(loader, search_paths=search_paths, env_path=env_path)
+        _current_loader.set(loader)
+        return loader
 
     @classmethod
     @contextmanager
-    def temporary_instance(cls) -> Iterator["ConfigLoader"]:
+    def temporary_instance(
+        cls,
+        search_paths: Sequence[str | Path] | None = None,
+        env_path: str | Path | None = None,
+    ) -> Iterator["ConfigLoader"]:
         """Provide a temporary loader instance for tests."""
-        instance = cls.new_for_tests()
+        instance = cls.new_for_tests(search_paths=search_paths, env_path=env_path)
         try:
             yield instance
         finally:
@@ -78,15 +112,16 @@ class ConfigLoader:
 
     def __init__(
         self,
-        search_paths: Optional[Sequence[str | Path]] = None,
+        search_paths: Sequence[str | Path] | None = None,
         env_path: str | Path | None = None,
     ) -> None:
+        if getattr(self, "_initialized", False):  # pragma: no cover - defensive
+            return
         self.search_paths: List[Path] = [
             Path(p)
             for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
         ]
         self.env_path: Path = Path(env_path) if env_path else Path(".env")
-        # Maintain watch_paths for backward compatibility and tests
         self.watch_paths: List[str] = [str(p) for p in self.search_paths]
         self._config: ConfigModel | None = None
         self._watch_thread: threading.Thread | None = None
@@ -96,6 +131,7 @@ class ConfigLoader:
         self._profiles: Dict[str, Dict[str, Any]] = {}
         self._config_time = 0.0
         self._atexit_registered = False
+        self._initialized = True
 
     def _update_watch_paths(self) -> None:
         """Update ``watch_paths`` to match current ``search_paths``."""
@@ -124,7 +160,7 @@ class ConfigLoader:
         for key, value in raw_env.items():
             key_lower = key.lower()
             if key_lower.startswith("autoresearch_"):
-                key_lower = key_lower[len("autoresearch_") :]
+                key_lower = key_lower.removeprefix("autoresearch_")
             parts = key_lower.split("__")
             d = env_settings
             for part in parts[:-1]:
