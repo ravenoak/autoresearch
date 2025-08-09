@@ -13,7 +13,7 @@ configured budgets.
 - Tests compare optimized and unoptimized runs
 
 ## Status
-Not started
+Done – see tests/integration/test_token_usage_integration.py
 
 ## Related
 - #1

@@ -13,7 +13,7 @@ reasoning mode.
 - Performance within acceptable limits
 
 ## Status
-Not started
+Done – see tests/integration/test_mcp_reasoning_modes.py
 
 ## Related
 - #10

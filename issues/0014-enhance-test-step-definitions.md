@@ -13,7 +13,7 @@ parameterization.
 - Style checks pass on step files
 
 ## Status
-Not started
+In progress – see tests/behavior/steps/common_steps.py
 
 ## Related
 - #15

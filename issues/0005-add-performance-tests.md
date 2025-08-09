@@ -13,7 +13,7 @@ typical and peak loads.
 - Performance suite integrated into CI
 
 ## Status
-Not started
+Done – see tests/integration/test_performance.py
 
 ## Related
 - #1

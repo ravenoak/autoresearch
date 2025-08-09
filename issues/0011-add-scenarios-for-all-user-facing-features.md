@@ -13,7 +13,7 @@ outcomes.
 - Feature docs link to scenarios
 
 ## Status
-Not started
+In progress – see tests/behavior/features/gui_cli.feature
 
 ## Related
 - #10

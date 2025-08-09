@@ -13,7 +13,7 @@ orchestrator, agents, storage, and search without restarts.
 - No data loss or interruptions during reload
 
 ## Status
-Not started
+Done – see tests/integration/test_config_hot_reload_components.py
 
 ## Related
 - #1
