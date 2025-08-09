@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytest_bdd import given, when, then, scenario, parsers
+from fastapi.openapi.docs import get_swagger_ui_html
+from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
-from fastapi.openapi.docs import get_swagger_ui_html
+
+pytest_plugins = ["tests.behavior.steps.common_steps"]
 
 
 @given("the API server is running")
@@ -30,7 +32,9 @@ def api_server_running(
     if not any(r.path == "/docs" for r in api_app.router.routes):
         api_app.router.add_api_route(
             "/docs",
-            lambda: get_swagger_ui_html(openapi_url="/openapi.json", title="Swagger UI"),
+            lambda: get_swagger_ui_html(
+                openapi_url="/openapi.json", title="Swagger UI"
+            ),
             include_in_schema=False,
         )
 
