@@ -249,35 +249,31 @@ output_format = null
 ### Storage Configuration
 
 ```toml
-[storage.duckdb]
-# Path to DuckDB database file
-path = "data/research.duckdb"
-
-# Enable vector extension for similarity search
-vector_extension = true
-
-# Path to the VSS extension file (optional, auto-detected if not specified)
-# vector_extension_path = "./extensions/vss/vss.duckdb_extension"
-
+[storage]
+duckdb_path = "data/research.duckdb"  # Path to DuckDB database file
+vector_extension = true               # Enable vector extension for similarity search
 # HNSW index parameters for vector search
 hnsw_m = 16
 hnsw_ef_construction = 200
 hnsw_metric = "l2"
-
 # For detailed information about DuckDB and VSS extension compatibility,
 # see docs/duckdb_compatibility.md
 
-[storage.rdf]
-# RDF backend (sqlite, berkeleydb, or memory)
-backend = "sqlite"
+rdf_backend = "sqlite"                # RDF backend (sqlite, berkeleydb, or memory)
+rdf_path = "rdf_store"                # Path to RDF store
 
-# Path to RDF store
-path = "rdf_store"
-# Ontology reasoning engine (owlrl or module:function)
-ontology_reasoner = "owlrl"
-# Maximum triples allowed for reasoning (None for no limit)
-ontology_reasoner_max_triples = 100000
+# Lightweight RDFS reasoning for tests
+ontology_reasoner = "rdfs"
+ontology_reasoner_timeout = 5         # seconds
+
+# Switch to OWL-RL in production and raise the timeout
+# ontology_reasoner = "owlrl"
+# ontology_reasoner_timeout = 30
+
+ontology_reasoner_max_triples = 100000 # Skip reasoning for larger graphs
 ```
+
+Use `rdfs` with a small `ontology_reasoner_timeout` in test environments, and switch to `owlrl` with a higher timeout for production workloads.
 
 ### Agent Configuration
 
