@@ -58,9 +58,9 @@ Use `uv` to manage the environment when working from a clone:
 ```bash
 # Create the virtual environment
 uv venv
-# Full feature set including development tools
+# Full feature set including development tools (required for CI)
 uv pip install -e '.[full,parsers,git,llm,dev]'
-# Lightweight install for CI or quick tests
+# Lightweight install for quick smoke tests
 # uv pip install -e '.[dev-minimal]'
 ```
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock` before syncing.
@@ -88,12 +88,14 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
-If you cloned the repository, run the setup helper. Pass `dev-minimal` for a
-lightweight install or omit the argument for the full feature set:
+If you cloned the repository, run the setup helper. Omit the argument to
+install all extras required for CI; use `dev-minimal` only for quick smoke
+tests:
 
 ```bash
-./scripts/setup.sh dev-minimal
-# ./scripts/setup.sh
+./scripts/setup.sh
+# For a lightweight local setup:
+# ./scripts/setup.sh dev-minimal
 ```
 
 The helper ensures the lock file is refreshed and installs every optional

@@ -12,10 +12,10 @@ Tests are organized into three categories:
 
 ## Running tests
 
-Before running any tests ensure the project is installed with the `ci` extra.
-The `scripts/setup.sh` helper installs the heavier `full` and `dev` groups for
-development, but CI only requires the lightweight `ci` dependencies along with
-any optional extras you wish to exercise.
+Before running any tests ensure the project is installed with the
+`[full,parsers,git,llm,dev]` extras. The `scripts/setup.sh` helper installs
+these groups so both local and CI environments have every optional dependency
+available.
 
 Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
 
@@ -295,9 +295,9 @@ accessibility, and log messages.
 
 ## Optional extras for tests
 
-The minimal CI install (`uv pip install -e '.[dev-minimal]'`) does not
-include all optional extras. The full test suite uses several features
-that rely on these extras:
+The default install (`uv pip install -e '.[full,parsers,git,llm,dev]'`)
+provides all core dependencies, but the full test suite uses several
+features that rely on additional extras:
 
 - `ui` – required for Streamlit GUI tests in
   `tests/integration/test_streamlit_gui.py`.
@@ -312,8 +312,8 @@ that rely on these extras:
 
 If these extras are missing the corresponding tests are skipped (or run
 with a stub in the case of the `distributed` extra). Install them with
-`uv pip install --extras "ui,analysis,vss,distributed"` to run
-every test.
+`uv pip install -e '.[full,parsers,git,llm,dev,ui,analysis,vss,distributed]'`
+to run every test.
 
 ## Updating Baselines
 
