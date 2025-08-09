@@ -82,7 +82,8 @@ class ConfigLoader:
         env_path: str | Path | None = None,
     ) -> None:
         self.search_paths: List[Path] = [
-            Path(p) for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
+            Path(p)
+            for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
         ]
         self.env_path: Path = Path(env_path) if env_path else Path(".env")
         # Maintain watch_paths for backward compatibility and tests
@@ -109,16 +110,21 @@ class ConfigLoader:
     def load_config(self) -> ConfigModel:
         raw_env: Dict[str, str] = {}
         if self.env_path.exists():
-            raw_env.update({k: v for k, v in dotenv_values(self.env_path).items() if v is not None})
+            raw_env.update(
+                {k: v for k, v in dotenv_values(self.env_path).items() if v is not None}
+            )
+
         for key, value in os.environ.items():
-            if key.startswith("AUTORESEARCH_") or "__" in key:
+            if key.startswith("AUTORESEARCH_"):
+                raw_env.setdefault(key, value)
+            elif "__" in key and not (key.startswith("__") or key.endswith("__")):
                 raw_env.setdefault(key, value)
 
         env_settings: Dict[str, Any] = {}
         for key, value in raw_env.items():
             key_lower = key.lower()
             if key_lower.startswith("autoresearch_"):
-                key_lower = key_lower[len("autoresearch_"):]
+                key_lower = key_lower[len("autoresearch_") :]
             parts = key_lower.split("__")
             d = env_settings
             for part in parts[:-1]:
@@ -162,7 +168,9 @@ class ConfigLoader:
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
             "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
-            "hnsw_ef_search": duckdb_cfg.get("hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)),
+            "hnsw_ef_search": duckdb_cfg.get(
+                "hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)
+            ),
             "hnsw_auto_tune": duckdb_cfg.get("hnsw_auto_tune", True),
             "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
             "vector_search_batch_size": duckdb_cfg.get("vector_search_batch_size"),
@@ -194,24 +202,34 @@ class ConfigLoader:
             try:
                 agent_config_dict[name] = AgentConfig(**cfg)
             except Exception as e:
-                logger.warning(
-                    "Invalid agent configuration for %s: %s", name, e
-                )
+                logger.warning("Invalid agent configuration for %s: %s", name, e)
 
         def _safe_model(model_cls: Any, settings: Dict[str, Any], section: str):
             try:
                 return model_cls(**settings)
             except Exception as e:
                 logger.warning("Invalid %s configuration: %s", section, e)
-                return model_cls()
+                valid_settings = {}
+                for field, value in settings.items():
+                    if field in model_cls.model_fields:
+                        try:
+                            model_cls(**{field: value})
+                        except Exception:
+                            continue
+                        valid_settings[field] = value
+                return model_cls(**valid_settings)
 
-        core_settings["storage"] = _safe_model(StorageConfig, storage_settings, "storage")
+        core_settings["storage"] = _safe_model(
+            StorageConfig, storage_settings, "storage"
+        )
         core_settings["api"] = _safe_model(APIConfig, api_cfg, "api")
         core_settings["distributed_config"] = _safe_model(
             DistributedConfig, distributed_cfg, "distributed"
         )
         core_settings["user_preferences"] = user_pref_cfg
-        core_settings["analysis"] = _safe_model(AnalysisConfig, analysis_cfg, "analysis")
+        core_settings["analysis"] = _safe_model(
+            AnalysisConfig, analysis_cfg, "analysis"
+        )
         core_settings["agent_config"] = agent_config_dict
 
         self._profiles = raw.get("profiles", {})
@@ -323,7 +341,9 @@ class ConfigLoader:
             directories = {p.resolve().parent for p in watch_targets}
             target_files = {p.resolve() for p in watch_targets}
         try:
-            for changes in watch(*(str(d) for d in directories), stop_event=self._stop_event):
+            for changes in watch(
+                *(str(d) for d in directories), stop_event=self._stop_event
+            ):
                 for change in changes:
                     file_path = Path(change[1]).resolve()
                     if file_path in target_files:
