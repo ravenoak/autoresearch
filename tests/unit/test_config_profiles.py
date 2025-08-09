@@ -50,9 +50,7 @@ def test_config_profiles_default():
         with patch("tomllib.load", return_value=mock_config):
             with patch("pathlib.Path.exists", return_value=True):
                 with patch("pathlib.Path.stat", mock_stat):
-                    # Reset the singleton to ensure we get a fresh instance
-                    ConfigLoader.reset_instance()
-                    config = ConfigLoader().load_config()
+                    config = ConfigLoader.new_for_tests().load_config()
 
                 # Should use the default (core) settings
                 assert config.llm_backend == "openai"
@@ -84,9 +82,7 @@ def test_config_profiles_switch():
         with patch("tomllib.load", return_value=mock_config):
             with patch("pathlib.Path.exists", return_value=True):
                 with patch("pathlib.Path.stat", mock_stat):
-                    # Reset the singleton to ensure we get a fresh instance
-                    ConfigLoader.reset_instance()
-                    config_loader = ConfigLoader()
+                    config_loader = ConfigLoader.new_for_tests()
 
                     # Switch to the offline profile
                     config_loader.set_active_profile("offline")
@@ -127,9 +123,7 @@ def test_config_profiles_invalid():
         with patch("tomllib.load", return_value=mock_config):
             with patch("pathlib.Path.exists", return_value=True):
                 with patch("pathlib.Path.stat", mock_stat):
-                    # Reset the singleton to ensure we get a fresh instance
-                    ConfigLoader.reset_instance()
-                    config_loader = ConfigLoader()
+                    config_loader = ConfigLoader.new_for_tests()
 
                     # Try to switch to a non-existent profile
                     with pytest.raises(ConfigError) as excinfo:
@@ -166,9 +160,7 @@ def test_config_profiles_merge():
         with patch("tomllib.load", return_value=mock_config):
             with patch("pathlib.Path.exists", return_value=True):
                 with patch("pathlib.Path.stat", mock_stat):
-                    # Reset the singleton to ensure we get a fresh instance
-                    ConfigLoader.reset_instance()
-                    config_loader = ConfigLoader()
+                    config_loader = ConfigLoader.new_for_tests()
 
                     # Switch to the minimal profile
                     config_loader.set_active_profile("minimal")

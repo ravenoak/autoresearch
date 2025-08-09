@@ -74,7 +74,7 @@ def test_config_hot_reload(tmp_path, monkeypatch):
     )
     repo.index.add([str(cfg_file)])
     repo.index.commit("init config")
-    ConfigLoader.reset_instance()
+    loader = ConfigLoader.new_for_tests()
 
     def fake_load(self):
         data = tomllib.loads(cfg_file.read_text())
@@ -90,7 +90,6 @@ def test_config_hot_reload(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
-    loader = ConfigLoader()
 
     calls: list[str] = []
     search_calls: list[str] = []
