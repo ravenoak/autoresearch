@@ -13,7 +13,7 @@ state.
 - Recovery restores normal operation
 
 ## Status
-Not started
+Done – see tests/integration/test_search_error_handling.py
 
 ## Related
 - #10

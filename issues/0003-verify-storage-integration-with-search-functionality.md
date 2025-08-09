@@ -13,7 +13,7 @@ consistent across storage and search backends.
 - Rollback scenarios maintain consistency
 
 ## Status
-Not started
+Done – see tests/integration/test_storage_search_link.py
 
 ## Related
 - #1

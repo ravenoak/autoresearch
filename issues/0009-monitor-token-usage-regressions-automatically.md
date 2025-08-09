@@ -13,7 +13,7 @@ time.
 - Historical token usage archived
 
 ## Status
-Not started
+Done – see tests/integration/test_token_usage_regression.py
 
 ## Related
 - #1

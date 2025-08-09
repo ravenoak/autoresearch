@@ -13,7 +13,7 @@ representative scenarios.
 - Benchmarks reproducible locally and in CI
 
 ## Status
-Not started
+Done – see tests/integration/test_query_performance_benchmark.py
 
 ## Related
 - #1

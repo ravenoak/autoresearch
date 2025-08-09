@@ -12,7 +12,7 @@ Ensure tests run independently without shared state or side effects.
 - Shared resources isolated
 
 ## Status
-Not started
+In progress – see tests/conftest.py
 
 ## Related
 - #14

@@ -13,7 +13,7 @@ moderator, specialist, and user agents.
 - Supported combinations documented
 
 ## Status
-Not started
+Done – see tests/integration/test_orchestrator_all_agent_combinations.py
 
 ## Related
 - #1

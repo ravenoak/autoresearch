@@ -13,7 +13,7 @@ detect leaks or excessive growth.
 - Memory profiles documented
 
 ## Status
-Not started
+Done – see tests/integration/test_query_latency_memory_tokens.py
 
 ## Related
 - #1

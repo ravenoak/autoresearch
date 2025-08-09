@@ -13,7 +13,7 @@ workflows.
 - BDD suite passes in CI
 
 ## Status
-Not started
+In progress – see tests/behavior/features/agent_orchestration.feature
 
 ## Related
 - #11

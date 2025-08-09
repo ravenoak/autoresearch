@@ -13,7 +13,7 @@ and search components together to validate end-to-end behavior.
 - Integration suite runs in CI
 
 ## Status
-Not started
+In progress – see tests/integration/test_orchestrator_search_storage.py
 
 ## Related
 - #2

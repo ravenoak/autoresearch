@@ -13,7 +13,7 @@ scenarios.
 - Complex scenarios compose contexts easily
 
 ## Status
-Not started
+In progress – see tests/fixtures/config.py
 
 ## Related
 - #14
