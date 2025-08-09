@@ -32,6 +32,7 @@ def run_gui_help(cli_runner, bdd_context, temp_config, isolate_network):
 def cli_success(bdd_context):
     result = bdd_context["result"]
     assert result.exit_code == 0
+    assert result.stdout != ""
     assert result.stderr == ""
     if "run_calls" in bdd_context:
         assert len(bdd_context["run_calls"]) == 1

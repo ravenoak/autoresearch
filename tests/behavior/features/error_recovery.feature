@@ -73,6 +73,20 @@ Feature: Error Recovery
     And the logs should include "recovery"
     And the response should list an error of type "AgentError"
 
+  Scenario: Recovery after agent timeout
+    Given an agent that times out during execution
+    And reasoning mode is "dialectical"
+    When I run the orchestrator on query "recover test"
+    Then the reasoning mode selected should be "dialectical"
+    And the loops used should be 1
+    And the agent groups should be "Slowpoke"
+    And the agents executed should be "Slowpoke"
+    And a recovery strategy "retry_with_backoff" should be recorded
+    And recovery should be applied
+    And the system state should be restored
+    And the logs should include "recovery"
+    And the response should list a timeout error
+
   Scenario: Recovery after agent failure with fallback
     Given an agent that fails triggering fallback
     When I run the orchestrator on query "recover test"

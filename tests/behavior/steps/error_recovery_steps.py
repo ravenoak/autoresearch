@@ -66,6 +66,14 @@ def test_error_recovery_network_outage():
 
 @scenario(
     "../features/error_recovery.feature",
+    "Recovery after agent timeout",
+)
+def test_error_recovery_timeout():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
     "Unsupported reasoning mode during recovery fails gracefully",
 )
 def test_error_recovery_unsupported_mode():
@@ -386,7 +394,11 @@ def assert_recovery_applied(run_result: dict) -> None:
 def assert_timeout_error(run_result: dict) -> None:
     errors = run_result["response"].metadata.get("errors", [])
     _assert_error_schema(errors)
-    assert any(e.get("error_type") == "TimeoutError" for e in errors), errors
+    assert any(
+        e.get("error_type") == "TimeoutError"
+        and "simulated timeout" in e.get("message", "")
+        for e in errors
+    ), errors
 
 
 @then("the response should list an agent execution error")
