@@ -89,6 +89,8 @@ class StorageConfig(BaseModel):
     Attributes:
         ontology_reasoner_timeout: Timeout for ontology reasoning in seconds.
             Defaults to ``None`` meaning no timeout.
+        ontology_reasoner_max_triples: Skip reasoning when triple count exceeds
+            this value. Defaults to ``None`` meaning no limit.
     """
 
     duckdb_path: str = Field(default="autoresearch.duckdb")
@@ -108,6 +110,11 @@ class StorageConfig(BaseModel):
     ontology_reasoner_timeout: float | None = Field(
         default=None,
         description="Reasoner timeout in seconds. None disables the timeout.",
+    )
+    ontology_reasoner_max_triples: int | None = Field(
+        default=None,
+        ge=1,
+        description="Skip reasoning when triple count exceeds this limit.",
     )
     max_connections: int = Field(default=1, ge=1)
     use_kuzu: bool = Field(default=False)

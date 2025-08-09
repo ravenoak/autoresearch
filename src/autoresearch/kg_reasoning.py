@@ -6,7 +6,9 @@ from importlib import import_module
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
+import logging
 import threading
+import time
 import warnings
 import rdflib
 
@@ -94,6 +96,23 @@ def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> 
     reasoner_setting = engine or getattr(storage_cfg, "ontology_reasoner", "owlrl")
     reasoner = str(reasoner_setting)
 
+    logger = logging.getLogger(__name__)
+    triple_count = len(store)
+    logger.info(
+        "Starting ontology reasoning with %d triples using %s", triple_count, reasoner
+    )
+
+    max_triples = getattr(storage_cfg, "ontology_reasoner_max_triples", None)
+    if max_triples is not None and triple_count > max_triples:
+        logger.warning(
+            "Skipping ontology reasoning for %d triples; limit is %d",
+            triple_count,
+            max_triples,
+        )
+        return
+
+    start_time = time.perf_counter()
+
     def _apply_reasoner() -> None:
         if reasoner in _REASONER_PLUGINS:
             _REASONER_PLUGINS[reasoner](store)
@@ -158,6 +177,13 @@ def run_ontology_reasoner(store: rdflib.Graph, engine: Optional[str] = None) -> 
             cause=cause,
             suggestion="Ensure the ontology reasoner plugin is correctly installed",
         ) from exc
+
+    elapsed = time.perf_counter() - start_time
+    logger.info(
+        "Completed ontology reasoning with %d triples in %.2f seconds",
+        len(store),
+        elapsed,
+    )
 
 
 def query_with_reasoning(store: rdflib.Graph, query: str, engine: Optional[str] = None):

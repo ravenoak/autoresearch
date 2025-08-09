@@ -169,6 +169,7 @@ The RDF store supports optional ontology-based reasoning using the
 ```toml
 [storage]
 ontology_reasoner = "owlrl"           # or "my_module:run_reasoner"
+ontology_reasoner_max_triples = 100000 # skip reasoning for larger graphs
 ```
 
 Behavior tests use the lightweight `rdfs` reasoner by default to keep test
