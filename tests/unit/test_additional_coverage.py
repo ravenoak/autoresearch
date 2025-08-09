@@ -1,16 +1,19 @@
-import types
 import json
+import types
 from collections import OrderedDict
 from unittest.mock import MagicMock
 
 import pytest
 
-from autoresearch.orchestration import metrics
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch import search
-from autoresearch.storage import StorageManager, set_delegate, get_delegate
+from autoresearch.orchestration import metrics
+from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.output_format import OutputFormatter
-from autoresearch.streamlit_app import track_agent_performance, collect_system_metrics, psutil as streamlit_psutil, orch_metrics, st as streamlit_st
+from autoresearch.storage import StorageManager, get_delegate, set_delegate
+from autoresearch.streamlit_app import collect_system_metrics, orch_metrics
+from autoresearch.streamlit_app import psutil as streamlit_psutil
+from autoresearch.streamlit_app import st as streamlit_st
+from autoresearch.streamlit_app import track_agent_performance
 
 
 def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
@@ -27,49 +30,49 @@ def test_log_release_tokens_invalid_json(tmp_path, monkeypatch):
 
 
 def test_circuit_breaker_transitions(monkeypatch):
-    Orchestrator._circuit_breakers.clear()
+    manager = CircuitBreakerManager()
     t = {"v": 0}
     monkeypatch.setattr(
-        "autoresearch.orchestration.orchestrator.time",
+        "autoresearch.orchestration.circuit_breaker.time",
         types.SimpleNamespace(time=lambda: t.setdefault("v", t["v"] + 10)),
     )
     for _ in range(3):
-        Orchestrator._update_circuit_breaker("X", "recoverable")
-    state = Orchestrator.get_circuit_breaker_state("X")
+        manager.update_circuit_breaker("X", "recoverable")
+    state = manager.get_circuit_breaker_state("X")
     assert state["state"] == "open"
     # advance time beyond cooling period
     t["v"] += 40
-    Orchestrator._circuit_breakers["X"]["last_failure_time"] = 0
-    Orchestrator._update_circuit_breaker("X", "noop")
-    state = Orchestrator.get_circuit_breaker_state("X")
+    manager.circuit_breakers["X"]["last_failure_time"] = 0
+    manager.update_circuit_breaker("X", "noop")
+    state = manager.get_circuit_breaker_state("X")
     assert state["state"] == "half-open"
 
 
 def test_circuit_breaker_recovery(monkeypatch):
-    Orchestrator._circuit_breakers.clear()
+    manager = CircuitBreakerManager()
     t = {"v": 0}
     monkeypatch.setattr(
-        "autoresearch.orchestration.orchestrator.time",
+        "autoresearch.orchestration.circuit_breaker.time",
         types.SimpleNamespace(time=lambda: t.setdefault("v", t["v"] + 10)),
     )
     for _ in range(3):
-        Orchestrator._update_circuit_breaker("X", "recoverable")
+        manager.update_circuit_breaker("X", "recoverable")
     # Advance time so breaker moves to half-open
     t["v"] += 40
-    Orchestrator._circuit_breakers["X"]["last_failure_time"] = 0
-    Orchestrator._update_circuit_breaker("X", "noop")
-    Orchestrator._handle_agent_success("X")
-    state = Orchestrator.get_circuit_breaker_state("X")
+    manager.circuit_breakers["X"]["last_failure_time"] = 0
+    manager.update_circuit_breaker("X", "noop")
+    manager.handle_agent_success("X")
+    state = manager.get_circuit_breaker_state("X")
     assert state["state"] == "closed"
     assert state["failure_count"] == 0
 
 
 def test_circuit_breaker_success_decrements(monkeypatch):
-    Orchestrator._circuit_breakers.clear()
+    manager = CircuitBreakerManager()
     for _ in range(2):
-        Orchestrator._update_circuit_breaker("Y", "recoverable")
-    Orchestrator._handle_agent_success("Y")
-    state = Orchestrator.get_circuit_breaker_state("Y")
+        manager.update_circuit_breaker("Y", "recoverable")
+    manager.handle_agent_success("Y")
+    state = manager.get_circuit_breaker_state("Y")
     assert state["failure_count"] == 1
 
 
@@ -95,6 +98,7 @@ def test_set_get_delegate():
         @classmethod
         def setup(cls, db_path=None, context=None):
             cls.called = True
+
     set_delegate(Dummy)
     StorageManager.setup(db_path=None)
     assert Dummy.called
@@ -129,14 +133,22 @@ def test_streamlit_metrics(monkeypatch):
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
     fake_psutil = types.SimpleNamespace(
         cpu_percent=lambda interval=None: 10.0,
-        virtual_memory=lambda: types.SimpleNamespace(percent=20.0, used=1024**3, total=2*1024**3),
-        Process=lambda pid=None: types.SimpleNamespace(memory_info=lambda: types.SimpleNamespace(rss=50*1024**2))
+        virtual_memory=lambda: types.SimpleNamespace(
+            percent=20.0, used=1024**3, total=2 * 1024**3
+        ),
+        Process=lambda pid=None: types.SimpleNamespace(
+            memory_info=lambda: types.SimpleNamespace(rss=50 * 1024**2)
+        ),
     )
     monkeypatch.setattr(streamlit_psutil, "cpu_percent", fake_psutil.cpu_percent)
     monkeypatch.setattr(streamlit_psutil, "virtual_memory", fake_psutil.virtual_memory)
     monkeypatch.setattr(streamlit_psutil, "Process", fake_psutil.Process)
-    monkeypatch.setattr(orch_metrics.TOKENS_IN_COUNTER, "_value", types.SimpleNamespace(get=lambda: 1))
-    monkeypatch.setattr(orch_metrics.TOKENS_OUT_COUNTER, "_value", types.SimpleNamespace(get=lambda: 2))
+    monkeypatch.setattr(
+        orch_metrics.TOKENS_IN_COUNTER, "_value", types.SimpleNamespace(get=lambda: 1)
+    )
+    monkeypatch.setattr(
+        orch_metrics.TOKENS_OUT_COUNTER, "_value", types.SimpleNamespace(get=lambda: 2)
+    )
     metrics_data = collect_system_metrics()
     assert metrics_data["cpu_percent"] == 10.0
     assert metrics_data["tokens_in_total"] == 1

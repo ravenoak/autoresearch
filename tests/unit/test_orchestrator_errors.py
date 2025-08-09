@@ -4,18 +4,19 @@ This module contains tests for various error scenarios in the orchestration syst
 including agent execution errors, invalid agent names, and callback errors.
 """
 
-import pytest
 import time
 from unittest.mock import MagicMock
 
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.errors import OrchestrationError
-from autoresearch.config.models import ConfigModel
-from autoresearch.models import QueryResponse
+import pytest
+
 from autoresearch.agents.registry import AgentFactory
+from autoresearch.config.models import ConfigModel
+from autoresearch.errors import OrchestrationError
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
-from autoresearch.orchestration import circuit_breaker
 
 
 # Fixtures for common test setup
@@ -40,10 +41,12 @@ def setup_state_and_metrics():
     return state, metrics
 
 
-def test_execute_agent_records_errors_and_circuit_breaker(monkeypatch, test_config, failing_agent):
+def test_execute_agent_records_errors_and_circuit_breaker(
+    monkeypatch, test_config, failing_agent
+):
     """_execute_agent captures exceptions and exposes circuit breaker status."""
 
-    circuit_breaker._circuit_breakers.clear()
+    cb_manager = CircuitBreakerManager()
     state, metrics = setup_state_and_metrics()
     storage = MagicMock()
 
@@ -53,7 +56,15 @@ def test_execute_agent_records_errors_and_circuit_breaker(monkeypatch, test_conf
     )
 
     Orchestrator._execute_agent(
-        "FailingAgent", state, test_config, metrics, {}, AgentFactory, storage, 0
+        "FailingAgent",
+        state,
+        test_config,
+        metrics,
+        {},
+        AgentFactory,
+        storage,
+        0,
+        cb_manager,
     )
 
     # Error information should be appended to state and QueryResponse
@@ -61,15 +72,18 @@ def test_execute_agent_records_errors_and_circuit_breaker(monkeypatch, test_conf
     resp = state.synthesize()
     assert resp.metrics["errors"][0]["agent"] == "FailingAgent"
     assert "circuit_breakers" in resp.metrics["execution_metrics"]
-    assert resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"][
-        "failure_count"
-    ] > 0
+    assert (
+        resp.metrics["execution_metrics"]["circuit_breakers"]["FailingAgent"][
+            "failure_count"
+        ]
+        > 0
+    )
 
 
 def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     """Transient errors are retried with backoff and circuit breaker resets on success."""
 
-    circuit_breaker._circuit_breakers.clear()
+    cb_manager = CircuitBreakerManager()
 
     state, metrics = setup_state_and_metrics()
     storage = MagicMock()
@@ -87,7 +101,15 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     object.__setattr__(test_config, "retry_backoff", 0)
 
     Orchestrator._execute_agent(
-        "RetryAgent", state, test_config, metrics, {}, AgentFactory, storage, 0
+        "RetryAgent",
+        state,
+        test_config,
+        metrics,
+        {},
+        AgentFactory,
+        storage,
+        0,
+        cb_manager,
     )
 
     assert agent.execute.call_count == 2
