@@ -9,6 +9,48 @@ Autoresearch uses **uv** for dependency management. The examples below use `uv`.
 - Python 3.12 or newer (but below 4.0)
 - `git` and build tools if compiling optional packages
 
+### Core dependencies
+
+The following packages are required at the minimum versions listed. Each has
+been verified to install successfully with `uv pip install`.
+
+| Package | Minimum version |
+| --- | --- |
+| a2a-sdk | 0.2.16 |
+| dspy-ai | 2.6.24 |
+| duckdb | 1.3.0 |
+| fastapi | 0.115.12 |
+| fastmcp | 2.8.1 |
+| httpx | 0.28.1 |
+| kuzu | 0.11.0 |
+| langchain-community | 0.3.24 |
+| langchain-openai | 0.3.23 |
+| langgraph | 0.5.3 |
+| loguru | 0.7.2 |
+| mcp[cli] | 1.12.0 |
+| networkx | 3.4.2 |
+| opentelemetry-api | 1.34.1 |
+| opentelemetry-sdk | 1.34.1 |
+| prometheus_client | 0.22.1 |
+| psutil | 7.0.0 |
+| pydantic | 2.0 |
+| pydantic-settings | 2.9.1 |
+| python-dotenv | 1.1.0 |
+| rank-bm25 | 0.2.2 |
+| rdflib | 7.1.4 |
+| rdflib-sqlalchemy | 0.5.0 |
+| requests | 2.32.3 |
+| responses | 0.25.7 |
+| rich | 14.0.0 |
+| slowapi | 0.1.9 |
+| structlog | 25.3.0 |
+| tabulate | 0.9.0 |
+| tinydb | 4.8.0 |
+| typer | 0.16.0 |
+| watchfiles | 0.21.0 |
+| setuptools | any |
+| owlrl | 7.1.4 |
+
 ## Development setup
 
 Use `uv` to manage the environment when working from a clone:
