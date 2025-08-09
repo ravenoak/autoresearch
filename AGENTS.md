@@ -24,6 +24,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Always run tests with `uv run` or inside the activated `.venv`; all tests
   must run inside this environment.
 - Use `task verify` to run linting, type checking, and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
+- Use `rg` for repository searches instead of `grep -R` or `ls -R`.
+  Example: `rg <pattern>`.
 - If `task` is unavailable, run these commands individually:
   - Format code with `uv run black .`.
   - Sort imports with `uv run isort .`.
