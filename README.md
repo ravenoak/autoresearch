@@ -37,10 +37,11 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures the lock file is current and installs
 all optional extras so development and runtime dependencies are available for testing.
-Run `scripts/setup.sh` (or `scripts/setup.sh dev-minimal` for a lightweight
-environment) to install dependencies automatically. After editing
-`pyproject.toml`, run `uv lock` and `uv pip install -e '.[full,parsers,git,llm,dev]'` to
-install the updated dependencies.
+Run `scripts/setup.sh` to install dependencies automatically. CI environments
+must include all extras, so ensure `uv pip install -e '.[full,parsers,git,llm,dev]'`
+is executed. The `dev-minimal` option is only for local smoke tests. After
+editing `pyproject.toml`, run `uv lock` and reinstall with the full extras to
+apply updates.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:
@@ -484,8 +485,9 @@ source .venv/bin/activate
 Alternatively you can run the helper script:
 
 ```bash
-./scripts/setup.sh dev-minimal
-# ./scripts/setup.sh
+./scripts/setup.sh
+# For a lightweight local setup:
+# ./scripts/setup.sh dev-minimal
 ```
 This installs the same dependencies non-interactively.
 
@@ -498,10 +500,10 @@ SlowAPI’s middleware, which enforces rate limits during integration tests.
 
 ## Running tests
 
-All test commands require the project to be installed with the `ci` extra so
-linters, `mypy`, `pytest`, and stub packages are available. The
-`scripts/setup.sh` helper installs the heavier `full` and `dev` extras
-automatically for local development.
+All test commands require the project to be installed with the full extras so
+linters, `mypy`, `pytest`, and optional dependencies are available. The
+`scripts/setup.sh` helper installs `.[full,parsers,git,llm,dev]` automatically
+for both local development and CI.
 
 The full suite, including behavior-driven tests, relies on additional optional
 extras such as `pdfminer` and `gitpython`. Tests can run without them using
@@ -509,7 +511,7 @@ bundled stubs, but real behaviour – including SlowAPI rate limiting – is onl
 exercised when the extras are installed. Install them with:
 
 ```bash
-uv pip install -e '.[dev-minimal,parsers,git]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 ```
 
 Execute linting and type checks once the development environment is ready:
@@ -537,7 +539,7 @@ uv run pytest -m slow
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
 extension. Install the corresponding extras as needed, for example
-`uv pip install -e '.[dev-minimal,git,vss]'` for the default suites.
+`uv pip install -e '.[full,parsers,git,llm,dev,vss]'` for the default suites.
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
@@ -578,7 +580,7 @@ and those that rely on optional extras. Install the extras and run pytest
 without filtering the markers:
 
 ```bash
-uv pip install -e '.[dev-minimal]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 uv run pytest -m "slow or requires_ui or requires_vss"
 ```
 

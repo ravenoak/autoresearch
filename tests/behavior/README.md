@@ -10,7 +10,7 @@ Behavior tests rely on optional features such as the Streamlit UI and the DuckDB
 VSS extension. Install all extras with **uv** before running the scenarios:
 
 ```bash
-uv pip install -e '.[full,dev]'
+uv pip install -e '.[full,parsers,git,llm,dev]'
 ```
 
 ## Running extra tests
