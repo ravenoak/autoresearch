@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Update release plan to align milestones with the 2025 development timeline.
+
+## [0.1.0-alpha.1] - 2025-08-09
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
-- `flake8` and `mypy` pass, but unit and behavior tests require fixes and coverage task was interrupted.
 
 ## [0.1.0] - Unreleased
 Planned first public release bringing the core research workflow to life.
