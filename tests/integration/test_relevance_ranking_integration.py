@@ -1,15 +1,16 @@
-import csv
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
+import csv
+
 from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel, SearchConfig
 
 
-def load_data():
+def load_data() -> dict[str, list[dict[str, float]]]:
+    """Load search evaluation data from the examples directory."""
     path = Path(__file__).resolve().parents[2] / "examples" / "search_evaluation.csv"
-    data = {}
+    data: dict[str, list[dict[str, float]]] = {}
     with path.open() as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -25,6 +26,7 @@ def load_data():
 
 
 def test_example_weights_and_ranking(monkeypatch):
+    """Ensure weighting configuration influences ranking as expected."""
     data = load_data()
 
     search_cfg = SearchConfig.model_construct(

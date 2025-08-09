@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Update release plan to align milestones with the 2025 development timeline.
+- Fix relevance ranking integration test imports.
+- Add unit test covering RayExecutor shutdown path.
 
 ## [0.1.0-alpha.1] - 2025-08-09
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.

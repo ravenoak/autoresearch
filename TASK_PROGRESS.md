@@ -224,8 +224,10 @@ not be generated.
 ### Latest Test Results
 
 - `flake8` reports no style errors.
-- `mypy` completes without type issues.
-- `pytest` fails due to a configuration validation error (ConfigError).
+- `mypy` run was interrupted during execution.
+- Unit tests: `tests/unit/test_ray_executor_shutdown.py` passes.
+- Integration tests: `tests/integration/test_relevance_ranking_integration.py` passes.
+- Behavior tests: `tests/behavior` fail with `ModuleNotFoundError: autoresearch.api.models`.
 
 ### Performance Baselines
 
