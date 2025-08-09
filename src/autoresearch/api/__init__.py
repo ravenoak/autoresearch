@@ -16,6 +16,7 @@ get_remote_address = routing.get_remote_address
 log_request = routing.log_request
 limiter = routing.limiter
 parse = routing.parse
+query_endpoint = routing.query_endpoint
 
 app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
 
@@ -32,6 +33,7 @@ __all__ = [
     "REQUEST_LOG_LOCK",
     "limiter",
     "parse",
+    "query_endpoint",
 ]
 
 
