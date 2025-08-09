@@ -65,26 +65,26 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### 2.2 Integration Tests
 
-- [ ] Complete cross-component integration tests
-  - [ ] Test orchestrator with all agent combinations
-  - [ ] Verify storage integration with search functionality
-  - [ ] Test configuration hot-reload with all components
-  - [ ] Add performance tests
-  - [ ] Implement benchmarks for query processing time
-  - [ ] Test memory usage under various conditions
-  - [ ] Verify token usage optimization
-  - [ ] Monitor token usage regressions automatically
+- [ ] Complete cross-component integration tests [#1](issues/0001-complete-cross-component-integration-tests.md)
+  - [ ] Test orchestrator with all agent combinations [#2](issues/0002-test-orchestrator-with-all-agent-combinations.md)
+  - [ ] Verify storage integration with search functionality [#3](issues/0003-verify-storage-integration-with-search-functionality.md)
+  - [ ] Test configuration hot-reload with all components [#4](issues/0004-test-configuration-hot-reload-with-all-components.md)
+  - [ ] Add performance tests [#5](issues/0005-add-performance-tests.md)
+  - [ ] Implement benchmarks for query processing time [#6](issues/0006-implement-benchmarks-for-query-processing-time.md)
+  - [ ] Test memory usage under various conditions [#7](issues/0007-test-memory-usage-under-various-conditions.md)
+  - [ ] Verify token usage optimization [#8](issues/0008-verify-token-usage-optimization.md)
+  - [ ] Monitor token usage regressions automatically [#9](issues/0009-monitor-token-usage-regressions-automatically.md)
 
 ### 2.3 Behavior Tests
 
-- [ ] Complete BDD test scenarios
-  - [ ] Add scenarios for all user-facing features
-  - [ ] Test all reasoning modes with realistic queries
-  - [ ] Verify error handling and recovery
-- [ ] Enhance test step definitions
-  - [ ] Add more detailed assertions
-  - [ ] Implement better test isolation
-  - [ ] Create more comprehensive test contexts
+- [ ] Complete BDD test scenarios [#10](issues/0010-complete-bdd-test-scenarios.md)
+  - [ ] Add scenarios for all user-facing features [#11](issues/0011-add-scenarios-for-all-user-facing-features.md)
+  - [ ] Test all reasoning modes with realistic queries [#12](issues/0012-test-all-reasoning-modes-with-realistic-queries.md)
+  - [ ] Verify error handling and recovery [#13](issues/0013-verify-error-handling-and-recovery.md)
+- [ ] Enhance test step definitions [#14](issues/0014-enhance-test-step-definitions.md)
+  - [ ] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
+  - [ ] Implement better test isolation [#16](issues/0016-implement-better-test-isolation.md)
+  - [ ] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
 
 ### 4.1 Code Documentation
 
