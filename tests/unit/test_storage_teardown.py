@@ -4,8 +4,8 @@ This module contains tests for the teardown function, which is responsible
 for cleaning up storage resources.
 """
 
-from unittest.mock import patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from autoresearch.storage import StorageManager, teardown
 
@@ -21,7 +21,7 @@ def test_teardown_closes_resources():
     with patch.object(StorageManager.context, "db_backend", mock_backend):
         with patch.object(StorageManager.context, "graph", mock_graph):
             with patch.object(StorageManager.context, "rdf_store", mock_rdf):
-                with patch("autoresearch.storage._lru", mock_lru):
+                with patch.object(StorageManager.state, "lru", mock_lru):
                     # Execute
                     teardown(context=StorageManager.context)
 
@@ -68,7 +68,7 @@ def test_teardown_handles_none_resources():
     with patch.object(StorageManager.context, "db_backend", None):
         with patch.object(StorageManager.context, "graph", None):
             with patch.object(StorageManager.context, "rdf_store", None):
-                with patch("autoresearch.storage._lru", None):
+                with patch.object(StorageManager.state, "lru", None):
                     # Execute
                     teardown(context=StorageManager.context)
 

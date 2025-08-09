@@ -1,8 +1,9 @@
-from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel
-from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration import metrics
 import time
+
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration import metrics
+from autoresearch.storage import StorageManager
 
 
 def test_ram_eviction(storage_manager, monkeypatch):
@@ -25,12 +26,8 @@ def test_score_eviction(storage_manager, monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
-    StorageManager.persist_claim(
-        {"id": "low", "type": "fact", "content": "a", "confidence": 0.1}
-    )
-    StorageManager.persist_claim(
-        {"id": "high", "type": "fact", "content": "b", "confidence": 0.9}
-    )
+    StorageManager.persist_claim({"id": "low", "type": "fact", "content": "a", "confidence": 0.1})
+    StorageManager.persist_claim({"id": "high", "type": "fact", "content": "b", "confidence": 0.9})
     calls = [0]
 
     def fake_ram():
@@ -48,7 +45,7 @@ def test_lru_eviction_order(storage_manager, monkeypatch):
     StorageManager.clear_all()
     from autoresearch import storage
 
-    storage._lru.clear()
+    storage.StorageManager.state.lru.clear()
     config = ConfigModel(ram_budget_mb=1)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None

@@ -262,8 +262,8 @@ def test_persist_claim_valid_input(mock_graph):
         "relations": [{"src": "claim1", "dst": "claim2"}]
     }
     
-    with patch('autoresearch.storage._graph', mock_graph):
-        with patch('autoresearch.storage._lru', {}):
+    with patch.object(StorageManager.context, 'graph', mock_graph):
+        with patch.object(StorageManager.state, 'lru', {}):
             # Execute
             StorageManager.persist_claim(claim)
             
