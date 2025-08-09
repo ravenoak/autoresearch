@@ -25,49 +25,39 @@ The system is designed to be extensible, allowing for custom agents, reasoning m
 and execution strategies.
 """
 
+import asyncio
+import time
+import traceback
 from typing import (
-    List,
-    Dict,
     Any,
     Callable,
     ContextManager,
+    Dict,
+    List,
 )
-import time
-import traceback
-import asyncio
+
+import rdflib
 
 from ..agents.registry import AgentFactory, AgentRegistry
 from ..config.models import ConfigModel
-from .reasoning import ReasoningMode, ChainOfThoughtStrategy
-from ..models import QueryResponse
-from ..storage import StorageManager
-from .state import QueryState
-from .metrics import OrchestrationMetrics, record_query
-from .token_utils import (
-    _capture_token_usage as capture_token_usage,
-    _execute_with_adapter as execute_with_adapter,
-)
-from ..logging_utils import get_logger
-from ..tracing import setup_tracing, get_tracer
-from .utils import get_memory_usage, calculate_result_confidence
 from ..errors import (
-    OrchestrationError,
     AgentError,
     NotFoundError,
-    TimeoutError,
+    OrchestrationError,
     StorageError,
+    TimeoutError,
 )
-import rdflib
-
-from . import circuit_breaker
-from .circuit_breaker import (
-    CircuitBreakerState,
-    update_circuit_breaker,
-    handle_agent_success,
-    get_circuit_breaker_state,
-    _circuit_breakers,
-)
-
+from ..logging_utils import get_logger
+from ..models import QueryResponse
+from ..storage import StorageManager
+from ..tracing import get_tracer, setup_tracing
+from .circuit_breaker import CircuitBreakerManager, CircuitBreakerState
+from .metrics import OrchestrationMetrics, record_query
+from .reasoning import ChainOfThoughtStrategy, ReasoningMode
+from .state import QueryState
+from .token_utils import _capture_token_usage as capture_token_usage
+from .token_utils import _execute_with_adapter as execute_with_adapter
+from .utils import calculate_result_confidence, get_memory_usage
 
 log = get_logger(__name__)
 
@@ -202,7 +192,9 @@ class Orchestrator:
         )
 
     @staticmethod
-    def _deliver_messages(agent_name: str, state: QueryState, config: ConfigModel) -> None:
+    def _deliver_messages(
+        agent_name: str, state: QueryState, config: ConfigModel
+    ) -> None:
         """Record messages destined for the given agent."""
 
         if not getattr(config, "enable_agent_messages", False):
@@ -211,7 +203,9 @@ class Orchestrator:
         msgs = state.get_messages(recipient=agent_name)
         if not msgs:
             return
-        delivered = state.metadata.setdefault("delivered_messages", {}).setdefault(agent_name, [])
+        delivered = state.metadata.setdefault("delivered_messages", {}).setdefault(
+            agent_name, []
+        )
         delivered.extend(msgs)
         log.debug(
             f"Delivered {len(msgs)} messages to {agent_name}",
@@ -439,23 +433,25 @@ class Orchestrator:
             log.critical(
                 f"Critical error during agent {agent_name} execution: {str(e)}",
                 exc_info=True,
-                extra={"error_info": error_info}
+                extra={"error_info": error_info},
             )
         elif error_category == "recoverable":
             log.error(
                 f"Recoverable error during agent {agent_name} execution: {str(e)}",
                 exc_info=True,
-                extra={"error_info": error_info}
+                extra={"error_info": error_info},
             )
         else:  # "transient"
             log.warning(
                 f"Transient error during agent {agent_name} execution: {str(e)}",
                 exc_info=True,
-                extra={"error_info": error_info}
+                extra={"error_info": error_info},
             )
 
         # Apply recovery strategy based on error category
-        recovery_info = Orchestrator._apply_recovery_strategy(agent_name, error_category, e, state)
+        recovery_info = Orchestrator._apply_recovery_strategy(
+            agent_name, error_category, e, state
+        )
 
         # Update error info with recovery details
         error_info.update(recovery_info)
@@ -484,9 +480,15 @@ class Orchestrator:
         if isinstance(e, AgentError):
             # Check for specific error messages that indicate recoverable errors
             error_str = str(e).lower()
-            if any(term in error_str for term in ["retry", "temporary", "timeout", "rate limit"]):
+            if any(
+                term in error_str
+                for term in ["retry", "temporary", "timeout", "rate limit"]
+            ):
                 return "transient"
-            elif any(term in error_str for term in ["configuration", "invalid input", "format"]):
+            elif any(
+                term in error_str
+                for term in ["configuration", "invalid input", "format"]
+            ):
                 return "recoverable"
             else:
                 return "critical"
@@ -499,7 +501,9 @@ class Orchestrator:
         return "critical"
 
     @staticmethod
-    def _apply_recovery_strategy(agent_name: str, error_category: str, e: Exception, state: QueryState) -> dict:
+    def _apply_recovery_strategy(
+        agent_name: str, error_category: str, e: Exception, state: QueryState
+    ) -> dict:
         """Apply an appropriate recovery strategy based on error category.
 
         Args:
@@ -538,7 +542,7 @@ class Orchestrator:
 
             log.info(
                 f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
-                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy},
             )
 
         elif error_category == "recoverable":
@@ -566,7 +570,7 @@ class Orchestrator:
 
             log.info(
                 f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
-                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy},
             )
 
         else:  # "critical"
@@ -595,31 +599,24 @@ class Orchestrator:
 
             log.warning(
                 f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
-                extra={"agent": agent_name, "recovery_strategy": recovery_strategy}
+                extra={"agent": agent_name, "recovery_strategy": recovery_strategy},
             )
 
-        return {
-            "recovery_strategy": recovery_strategy,
-            "suggestion": suggestion
-        }
+        return {"recovery_strategy": recovery_strategy, "suggestion": suggestion}
 
     # Circuit breaker configuration and state (delegated to circuit_breaker module)
-    _circuit_breakers: dict[str, CircuitBreakerState] = _circuit_breakers
-
-    @staticmethod
-    def _update_circuit_breaker(agent_name: str, error_category: str) -> None:
-        """Delegate circuit breaker updates to :mod:`circuit_breaker`."""
-        update_circuit_breaker(agent_name, error_category)
-
-    @staticmethod
-    def _handle_agent_success(agent_name: str) -> None:
-        """Delegate circuit breaker success handling to :mod:`circuit_breaker`."""
-        handle_agent_success(agent_name)
+    _cb_manager: CircuitBreakerManager | None = None
 
     @staticmethod
     def get_circuit_breaker_state(agent_name: str) -> CircuitBreakerState:
-        """Delegate retrieval of circuit breaker state."""
-        return get_circuit_breaker_state(agent_name)
+        if Orchestrator._cb_manager is None:
+            return {
+                "state": "closed",
+                "failure_count": 0.0,
+                "last_failure_time": 0.0,
+                "recovery_attempts": 0,
+            }
+        return Orchestrator._cb_manager.get_circuit_breaker_state(agent_name)
 
     @staticmethod
     def _execute_agent(
@@ -631,6 +628,7 @@ class Orchestrator:
         agent_factory: type[AgentFactory],
         storage_manager: type[StorageManager],
         loop: int,
+        cb_manager: CircuitBreakerManager,
     ) -> None:
         """Execute a single agent and update state with results.
 
@@ -652,7 +650,7 @@ class Orchestrator:
         retries = getattr(config, "retry_attempts", 1)
         backoff = getattr(config, "retry_backoff", 0.0)
 
-        breaker_state = Orchestrator.get_circuit_breaker_state(agent_name)
+        breaker_state = cb_manager.get_circuit_breaker_state(agent_name)
         if breaker_state.get("state") == "open":
             error_info = {
                 "agent": agent_name,
@@ -664,7 +662,7 @@ class Orchestrator:
             }
             state.add_error(error_info)
             metrics.record_error(agent_name)
-            metrics.record_circuit_breaker(agent_name)
+            metrics.record_circuit_breaker(agent_name, breaker_state)
             return
 
         for attempt in range(retries):
@@ -709,8 +707,10 @@ class Orchestrator:
                 Orchestrator._persist_claims(agent_name, result, storage_manager)
 
                 # Successful execution resets circuit breaker state
-                Orchestrator._handle_agent_success(agent_name)
-                metrics.record_circuit_breaker(agent_name)
+                cb_manager.handle_agent_success(agent_name)
+                metrics.record_circuit_breaker(
+                    agent_name, cb_manager.get_circuit_breaker_state(agent_name)
+                )
                 return
             except (
                 AgentError,
@@ -725,15 +725,17 @@ class Orchestrator:
                 )
                 state.add_error(error_info)
                 category = str(error_info.get("error_category", "critical"))
-                Orchestrator._update_circuit_breaker(agent_name, category)
-                metrics.record_circuit_breaker(agent_name)
+                cb_manager.update_circuit_breaker(agent_name, category)
+                metrics.record_circuit_breaker(
+                    agent_name, cb_manager.get_circuit_breaker_state(agent_name)
+                )
 
                 # Retry for transient errors if attempts remain
                 if (
                     attempt < retries - 1
                     and error_info.get("error_category") == "transient"
                 ):
-                    sleep_time = backoff * (2 ** attempt)
+                    sleep_time = backoff * (2**attempt)
                     if sleep_time > 0:
                         time.sleep(sleep_time)
                     continue
@@ -753,6 +755,7 @@ class Orchestrator:
         agent_factory: type[AgentFactory],
         storage_manager: type[StorageManager],
         tracer: Any,
+        cb_manager: CircuitBreakerManager,
     ) -> int:
         """Execute a single dialectical cycle.
 
@@ -806,6 +809,7 @@ class Orchestrator:
                         agent_factory,
                         storage_manager,
                         loop,
+                        cb_manager,
                     )
                 if state.error_count >= max_errors:
                     break
@@ -861,6 +865,7 @@ class Orchestrator:
         tracer: Any,
         *,
         concurrent: bool = False,
+        cb_manager: CircuitBreakerManager,
     ) -> int:
         """Asynchronous version of ``_execute_cycle``."""
         with tracer.start_as_current_span(
@@ -888,6 +893,7 @@ class Orchestrator:
                     agent_factory,
                     storage_manager,
                     loop,
+                    cb_manager,
                 )
 
             if concurrent:
@@ -974,8 +980,11 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
-        circuit_breaker._circuit_breaker_threshold = config_params["circuit_breaker_threshold"]
-        circuit_breaker._circuit_breaker_cooldown = config_params["circuit_breaker_cooldown"]
+        cb_manager = CircuitBreakerManager(
+            config_params["circuit_breaker_threshold"],
+            config_params["circuit_breaker_cooldown"],
+        )
+        Orchestrator._cb_manager = cb_manager
 
         # Adapt token budget based on query complexity and loops
         Orchestrator._apply_adaptive_token_budget(config, query)
@@ -993,9 +1002,7 @@ class Orchestrator:
                 config.group_size * config.total_groups,
             )
             if total_agents:
-                group_tokens = max(
-                    1, token_budget * config.group_size // total_agents
-                )
+                group_tokens = max(1, token_budget * config.group_size // total_agents)
                 config.token_budget = group_tokens
 
         # Handle chain-of-thought reasoning mode
@@ -1050,6 +1057,7 @@ class Orchestrator:
                 agent_factory,
                 storage_manager,
                 tracer,
+                cb_manager,
             )
 
             # Break if we need to abort due to errors
@@ -1121,6 +1129,11 @@ class Orchestrator:
         loops = config_params["loops"]
         mode = config_params["mode"]
         max_errors = config_params["max_errors"]
+        cb_manager = CircuitBreakerManager(
+            config_params["circuit_breaker_threshold"],
+            config_params["circuit_breaker_cooldown"],
+        )
+        Orchestrator._cb_manager = cb_manager
 
         # Adapt token budget based on query complexity and loops
         Orchestrator._apply_adaptive_token_budget(config, query)
@@ -1138,9 +1151,7 @@ class Orchestrator:
                 config.group_size * config.total_groups,
             )
             if total_agents:
-                group_tokens = max(
-                    1, token_budget * config.group_size // total_agents
-                )
+                group_tokens = max(1, token_budget * config.group_size // total_agents)
                 config.token_budget = group_tokens
 
         if mode == ReasoningMode.CHAIN_OF_THOUGHT:
@@ -1194,6 +1205,7 @@ class Orchestrator:
                 storage_manager,
                 tracer,
                 concurrent=concurrent,
+                cb_manager=cb_manager,
             )
 
             if "error" in state.results:
@@ -1234,7 +1246,10 @@ class Orchestrator:
 
     @staticmethod
     def run_parallel_query(
-        query: str, config: ConfigModel, agent_groups: List[List[str]], timeout: int = 300
+        query: str,
+        config: ConfigModel,
+        agent_groups: List[List[str]],
+        timeout: int = 300,
     ) -> QueryResponse:
         """Run multiple parallel agent groups and synthesize results."""
         from . import parallel

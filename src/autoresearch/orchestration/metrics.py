@@ -2,15 +2,15 @@
 Metrics collection for orchestration system.
 """
 
-from typing import Dict, Any, List, Tuple
-import os
 import json
-from pathlib import Path
+import os
 import time
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 from prometheus_client import Counter, Histogram
 
-from .circuit_breaker import CircuitBreakerState, get_circuit_breaker_state
+from .circuit_breaker import CircuitBreakerState
 
 QUERY_COUNTER = Counter(
     "autoresearch_queries_total", "Total number of queries processed"
@@ -132,9 +132,11 @@ class OrchestrationMetrics:
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
 
-    def record_circuit_breaker(self, agent_name: str) -> None:
-        """Record the circuit breaker state for an agent."""
-        self.circuit_breakers[agent_name] = get_circuit_breaker_state(agent_name)
+    def record_circuit_breaker(
+        self, agent_name: str, state: CircuitBreakerState
+    ) -> None:
+        """Record the circuit breaker ``state`` for ``agent_name``."""
+        self.circuit_breakers[agent_name] = state
 
     def _log_release_tokens(self) -> None:
         """Persist token counts for this release."""
@@ -274,6 +276,7 @@ class OrchestrationMetrics:
             return prompt
 
         from ..llm.token_counting import compress_prompt
+
         return compress_prompt(prompt, token_budget)
 
     def suggest_token_budget(self, current_budget: int, *, margin: float = 0.1) -> int:

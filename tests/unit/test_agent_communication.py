@@ -1,9 +1,9 @@
 from autoresearch.agents.base import Agent, AgentRole
-from autoresearch.agents.registry import AgentFactory, AgentRegistry
-from autoresearch.orchestration.state import QueryState
 from autoresearch.agents.messages import MessageProtocol
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.state import QueryState
 
 
 class SimpleAgent(Agent):
@@ -60,7 +60,17 @@ def test_orchestrator_handles_coalitions(monkeypatch, tmp_path):
         agent = SimpleAgent(name=name)
         return agent
 
-    def fake_execute(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop):
+    def fake_execute(
+        agent_name,
+        state,
+        config,
+        metrics,
+        callbacks,
+        agent_factory,
+        storage_manager,
+        loop,
+        cb_manager,
+    ):
         executed.append(agent_name)
 
     monkeypatch.setattr(AgentFactory, "get", staticmethod(fake_get))
@@ -85,8 +95,12 @@ def test_message_protocols():
 
     alice.broadcast(state, "hey team", "team")
 
-    msgs_bob = bob.get_messages(state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST)
-    msgs_charlie = charlie.get_messages(state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST)
+    msgs_bob = bob.get_messages(
+        state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST
+    )
+    msgs_charlie = charlie.get_messages(
+        state, from_agent="Alice", coalition="team", protocol=MessageProtocol.BROADCAST
+    )
 
     assert len(msgs_bob) >= 1 and len(msgs_charlie) >= 1
     assert msgs_bob[0].content == "hey team"

@@ -1,21 +1,22 @@
 import time
 from typing import Dict, List
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
+from autoresearch.orchestration.orchestrator import AgentFactory, Orchestrator
 from autoresearch.storage import StorageManager
-from autoresearch.orchestration import circuit_breaker
-
 
 # ---------------------------------------------------------------------------
 # Helper factory for creating dummy agents
 # ---------------------------------------------------------------------------
 
-def make_agent(name: str, calls: List[str], seen_coalitions: Dict[str, Dict[str, List[str]]]):
+
+def make_agent(
+    name: str, calls: List[str], seen_coalitions: Dict[str, Dict[str, List[str]]]
+):
     class DummyAgent:
         def __init__(self, name: str, llm_adapter=None):
             self.name = name
@@ -27,10 +28,12 @@ def make_agent(name: str, calls: List[str], seen_coalitions: Dict[str, Dict[str,
 
         def execute(self, state, config, **kwargs):
             calls.append(self.name)
-            state.update({
-                "claims": [f"claim {self.name}"],
-                "results": {self.name: "ok"},
-            })
+            state.update(
+                {
+                    "claims": [f"claim {self.name}"],
+                    "results": {self.name: "ok"},
+                }
+            )
             if self.name == "Synthesizer":
                 # Synthesizer produces final answer based on accumulated claims
                 final = ", ".join(calls)
@@ -82,15 +85,20 @@ def test_run_parallel_query_aggregates_results(monkeypatch):
 
     def mock_run_query(query, config):
         if config.agents == ["A"]:
-            return QueryResponse(answer="a", citations=[], reasoning=["claim A"], metrics={})
-        return QueryResponse(answer="b", citations=[], reasoning=["claim B"], metrics={})
+            return QueryResponse(
+                answer="a", citations=[], reasoning=["claim A"], metrics={}
+            )
+        return QueryResponse(
+            answer="b", citations=[], reasoning=["claim B"], metrics={}
+        )
 
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
 
     monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     monkeypatch.setattr(
-        "autoresearch.orchestration.orchestrator.AgentFactory.get", lambda name: synthesizer
+        "autoresearch.orchestration.orchestrator.AgentFactory.get",
+        lambda name: synthesizer,
     )
 
     resp = Orchestrator.run_parallel_query("q", cfg, [["A"], ["B"]])
@@ -107,8 +115,6 @@ def test_run_parallel_query_aggregates_results(monkeypatch):
 
 
 def test_circuit_breaker_opens(monkeypatch):
-    circuit_breaker._circuit_breakers.clear()
-
     class FailingAgent:
         def can_execute(self, state, config):
             return True
@@ -118,7 +124,9 @@ def test_circuit_breaker_opens(monkeypatch):
 
     monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: None)
     monkeypatch.setattr(
-        AgentFactory, "get", lambda name: FailingAgent() if name == "Bad" else make_agent(name, [], {})
+        AgentFactory,
+        "get",
+        lambda name: FailingAgent() if name == "Bad" else make_agent(name, [], {}),
     )
 
     cfg = ConfigModel(
