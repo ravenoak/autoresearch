@@ -111,7 +111,7 @@ def test_pop_low_score_missing_confidence(monkeypatch):
     graph.nodes = {"a": {}, "b": {"confidence": 0.1}}
     lru = OrderedDict([("a", 0), ("b", 0)])
     monkeypatch.setattr(StorageManager.context, "graph", graph)
-    monkeypatch.setattr("autoresearch.storage._lru", lru)
+    monkeypatch.setattr(StorageManager.state, "lru", lru)
     node = StorageManager._pop_low_score()
     assert node == "a"
     assert "a" not in lru
@@ -133,9 +133,7 @@ def test_streamlit_metrics(monkeypatch):
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
     fake_psutil = types.SimpleNamespace(
         cpu_percent=lambda interval=None: 10.0,
-        virtual_memory=lambda: types.SimpleNamespace(
-            percent=20.0, used=1024**3, total=2 * 1024**3
-        ),
+        virtual_memory=lambda: types.SimpleNamespace(percent=20.0, used=1024**3, total=2 * 1024**3),
         Process=lambda pid=None: types.SimpleNamespace(
             memory_info=lambda: types.SimpleNamespace(rss=50 * 1024**2)
         ),

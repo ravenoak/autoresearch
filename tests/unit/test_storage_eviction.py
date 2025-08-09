@@ -1,15 +1,15 @@
-from unittest.mock import patch, MagicMock
 from collections import OrderedDict
+from unittest.mock import MagicMock, patch
 
-from autoresearch.storage import StorageManager
 from autoresearch.orchestration.metrics import EVICTION_COUNTER
+from autoresearch.storage import StorageManager
 
 
 def test_pop_lru():
     """Test that _pop_lru removes and returns the least recently used node."""
     # Setup
     mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
-    with patch("autoresearch.storage._lru", mock_lru):
+    with patch.object(StorageManager.state, "lru", mock_lru):
         # Execute
         node_id = StorageManager._pop_lru()
 
@@ -23,7 +23,7 @@ def test_pop_lru_empty():
     """Test that _pop_lru returns None when the LRU cache is empty."""
     # Setup
     mock_lru = OrderedDict()
-    with patch("autoresearch.storage._lru", mock_lru):
+    with patch.object(StorageManager.state, "lru", mock_lru):
         # Execute
         node_id = StorageManager._pop_lru()
 
@@ -43,7 +43,7 @@ def test_pop_low_score():
     mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
     with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch("autoresearch.storage._lru", mock_lru):
+        with patch.object(StorageManager.state, "lru", mock_lru):
             # Execute
             node_id = StorageManager._pop_low_score()
 
@@ -82,7 +82,7 @@ def test_enforce_ram_budget_lru_policy():
     mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
     with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch("autoresearch.storage._lru", mock_lru):
+        with patch.object(StorageManager.state, "lru", mock_lru):
             with patch(
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 side_effect=[100, 100, 50],
@@ -128,7 +128,7 @@ def test_enforce_ram_budget_score_policy():
     mock_graph.remove_node.side_effect = mock_remove_node
 
     with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch("autoresearch.storage._lru", mock_lru):
+        with patch.object(StorageManager.state, "lru", mock_lru):
             with patch(
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 side_effect=[100, 100, 50],
@@ -171,10 +171,8 @@ def test_enforce_ram_budget_no_nodes_to_evict():
     mock_lru = OrderedDict()
 
     with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch("autoresearch.storage._lru", mock_lru):
-            with patch(
-                "autoresearch.storage.StorageManager._current_ram_mb", return_value=100
-            ):
+        with patch.object(StorageManager.state, "lru", mock_lru):
+            with patch("autoresearch.storage.StorageManager._current_ram_mb", return_value=100):
                 with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
                     mock_config.graph_eviction_policy = "lru"
 

@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from autoresearch.storage import StorageManager
+import pytest
+
 from autoresearch.errors import StorageError
+from autoresearch.storage import StorageManager
 
 
 def test_ensure_storage_initialized_success():
@@ -45,16 +46,12 @@ def test_ensure_storage_initialized_setup_fails():
     with patch.object(StorageManager.context, "db_backend", None):
         with patch.object(StorageManager.context, "graph", None):
             with patch.object(StorageManager.context, "rdf_store", None):
-                with patch(
-                    "autoresearch.storage.setup", side_effect=Exception("Setup failed")
-                ):
+                with patch("autoresearch.storage.setup", side_effect=Exception("Setup failed")):
                     # Should raise StorageError
                     with pytest.raises(StorageError) as excinfo:
                         StorageManager._ensure_storage_initialized()
 
-                    assert "Failed to initialize storage components" in str(
-                        excinfo.value
-                    )
+                    assert "Failed to initialize storage components" in str(excinfo.value)
                     assert excinfo.value.__cause__ is not None
 
 
@@ -125,18 +122,14 @@ def test_persist_to_networkx():
     }
 
     with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch("autoresearch.storage._lru", mock_lru):
+        with patch.object(StorageManager.state, "lru", mock_lru):
             # Call the method
             StorageManager._persist_to_networkx(claim)
 
             # Verify the graph was updated correctly
-            mock_graph.add_node.assert_called_once_with(
-                "test-id", verified=True, confidence=0.9
-            )
+            mock_graph.add_node.assert_called_once_with("test-id", verified=True, confidence=0.9)
 
-            mock_graph.add_edge.assert_called_once_with(
-                "test-id", "source-1", quality="high"
-            )
+            mock_graph.add_edge.assert_called_once_with("test-id", "source-1", quality="high")
 
             # Verify the LRU cache was updated
             assert "test-id" in mock_lru
@@ -153,9 +146,7 @@ def test_persist_to_duckdb():
         "type": "fact",
         "content": "test content",
         "confidence": 0.9,
-        "relations": [
-            {"src": "test-id", "dst": "source-1", "rel": "cites", "weight": 1.0}
-        ],
+        "relations": [{"src": "test-id", "dst": "source-1", "rel": "cites", "weight": 1.0}],
         "embedding": [0.1, 0.2, 0.3],
     }
 
@@ -189,9 +180,7 @@ def test_persist_to_rdf():
                 assert mock_rdf_store.add.call_count == 2
 
                 # Check attribute triples
-                mock_rdf_store.add.assert_any_call(
-                    ("urn:claim:test-id", "urn:prop:verified", True)
-                )
+                mock_rdf_store.add.assert_any_call(("urn:claim:test-id", "urn:prop:verified", True))
                 mock_rdf_store.add.assert_any_call(
                     ("urn:claim:test-id", "urn:prop:source", "test-source")
                 )

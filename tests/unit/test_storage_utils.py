@@ -1,16 +1,18 @@
 from collections import OrderedDict
+
 import autoresearch.storage as storage
 from autoresearch.storage import StorageManager
 
 
 def test_touch_node_updates_lru(monkeypatch):
     monkeypatch.setattr(
-        "autoresearch.storage._lru",
+        storage.StorageManager.state,
+        "lru",
         OrderedDict([("a", 1), ("b", 2)]),
         raising=False,
     )
     StorageManager.touch_node("a")
-    assert list(storage._lru.keys()) == ["b", "a"]
+    assert list(storage.StorageManager.state.lru.keys()) == ["b", "a"]
 
 
 def test_clear_all(storage_manager):

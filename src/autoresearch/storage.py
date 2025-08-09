@@ -23,20 +23,21 @@ from __future__ import annotations
 import os
 import time
 from collections import OrderedDict
-from dataclasses import dataclass
-from threading import Lock
-from typing import Any, Optional, cast, Iterator, ClassVar
 from contextlib import contextmanager
+from dataclasses import dataclass, field
+from threading import Lock
+from typing import Any, ClassVar, Iterator, Optional, cast
 
 import duckdb
 import networkx as nx
 import rdflib
+
 from .config import ConfigLoader, StorageConfig
-from .errors import StorageError, NotFoundError, ConfigError
+from .errors import ConfigError, NotFoundError, StorageError
+from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
-from .kg_reasoning import run_ontology_reasoner
 from .visualization import save_rdf_graph
 
 
@@ -49,11 +50,18 @@ class StorageContext:
     rdf_store: Optional[rdflib.Graph] = None
 
 
-# Global containers initialised in `setup`
-_context = StorageContext()
+# Container for stateful components
+@dataclass
+class StorageState:
+    """Holds runtime storage state for injection."""
+
+    context: StorageContext = field(default_factory=StorageContext)
+    lru: "OrderedDict[str, float]" = field(default_factory=OrderedDict)
+    lock: Lock = field(default_factory=Lock)
+
+
+_default_state = StorageState()
 _kuzu_backend: Optional[KuzuStorageBackend] = None
-_lock = Lock()
-_lru: "OrderedDict[str, float]" = OrderedDict()
 log = get_logger(__name__)
 
 # Optional injection point for tests
@@ -79,12 +87,18 @@ def get_delegate() -> type["StorageManager"] | None:
     return _delegate
 
 
-def setup(db_path: Optional[str] = None, context: StorageContext | None = None) -> None:
+def setup(
+    db_path: Optional[str] = None,
+    context: StorageContext | None = None,
+    state: StorageState | None = None,
+) -> None:
     """Initialise storage components if not already initialised."""
     global _kuzu_backend
-    ctx = context or _context
-    with _lock:
+    st = state or _default_state
+    ctx = context or st.context
+    with st.lock:
         if ctx.db_backend is not None and ctx.db_backend.get_connection() is not None:
+            st.context = ctx
             return
 
         ctx.graph = nx.DiGraph()
@@ -127,9 +141,14 @@ def setup(db_path: Optional[str] = None, context: StorageContext | None = None) 
                         ),
                     )
                 raise StorageError("Failed to open RDF store", cause=e)
+    st.context = ctx
 
 
-def teardown(remove_db: bool = False, context: StorageContext | None = None) -> None:
+def teardown(
+    remove_db: bool = False,
+    context: StorageContext | None = None,
+    state: StorageState | None = None,
+) -> None:
     """Close connections and optionally remove the DuckDB file.
 
     This method closes all storage connections (DuckDB, RDF) and optionally
@@ -141,8 +160,9 @@ def teardown(remove_db: bool = False, context: StorageContext | None = None) -> 
                   Default is False.
     """
     global _kuzu_backend
-    ctx = context or _context
-    with _lock:
+    st = state or _default_state
+    ctx = context or st.context
+    with st.lock:
         # Close DuckDB connection
         if ctx.db_backend is not None:
             try:
@@ -197,9 +217,24 @@ def teardown(remove_db: bool = False, context: StorageContext | None = None) -> 
         ctx.db_backend = None
         _kuzu_backend = None
         ctx.rdf_store = None
+        if st.lru is not None:
+            st.lru.clear()
+        st.context = ctx
 
 
-class StorageManager:
+class StorageManagerMeta(type):
+    state: StorageState = _default_state
+
+    @property
+    def context(cls) -> StorageContext:
+        return cls.state.context
+
+    @context.setter
+    def context(cls, value: StorageContext) -> None:
+        cls.state.context = value
+
+
+class StorageManager(metaclass=StorageManagerMeta):
     """Manages hybrid storage for distributed knowledge graphs.
 
     This class provides methods for persisting claims to multiple storage backends,
@@ -217,11 +252,12 @@ class StorageManager:
 
     _access_frequency: ClassVar[dict[str, int]] = {}
     _last_adaptive_policy: ClassVar[str] = "lru"
-    context: ClassVar[StorageContext] = _context
 
     @staticmethod
     def setup(
-        db_path: Optional[str] = None, context: StorageContext | None = None
+        db_path: Optional[str] = None,
+        context: StorageContext | None = None,
+        state: StorageState | None = None,
     ) -> StorageContext:
         """Initialize storage components if not already initialized.
 
@@ -244,11 +280,13 @@ class StorageManager:
         Returns:
             StorageContext: The initialized storage context.
         """
-        ctx = context or StorageManager.context
+        st = state or StorageManager.state
+        ctx = context or st.context
         if _delegate and _delegate is not StorageManager:
             return _delegate.setup(db_path, ctx)
+        StorageManager.state = st
         StorageManager.context = ctx
-        setup(db_path, ctx)
+        setup(db_path, ctx, st)
         return ctx
 
     @staticmethod
@@ -272,9 +310,7 @@ class StorageManager:
             mem = psutil.Process(os.getpid()).memory_info().rss
             return float(mem) / (1024**2)
         except Exception as e:  # pragma: no cover - psutil may not be available
-            log.debug(
-                f"Failed to get memory usage with psutil: {e}, falling back to resource"
-            )
+            log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
             try:
                 import resource
 
@@ -307,9 +343,10 @@ class StorageManager:
             This method only removes the node from the LRU cache, not from the graph.
             The caller is responsible for removing the node from the graph if needed.
         """
-        if not _lru:
+        lru = StorageManager.state.lru
+        if not lru:
             return None
-        node_id, _ = _lru.popitem(last=False)
+        node_id, _ = lru.popitem(last=False)
         return node_id
 
     @staticmethod
@@ -342,8 +379,9 @@ class StorageManager:
                 key=lambda n: graph.nodes[n].get("confidence", 0.0),
             ),
         )
-        if node_id in _lru:
-            del _lru[node_id]
+        lru = StorageManager.state.lru
+        if node_id in lru:
+            del lru[node_id]
         return node_id
 
     @staticmethod
@@ -384,6 +422,7 @@ class StorageManager:
         # Get configuration
         cfg = ConfigLoader().config
         policy = cfg.graph_eviction_policy
+        lru = StorageManager.state.lru
 
         # Track eviction metrics
         eviction_start_time = time.time()
@@ -397,7 +436,11 @@ class StorageManager:
         # Batch size for eviction to improve performance
         batch_size = min(
             getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
-            len(StorageManager.context.graph.nodes) // 10 if StorageManager.context.graph and StorageManager.context.graph.nodes else 1  # Don't exceed 10% of nodes
+            (
+                len(StorageManager.context.graph.nodes) // 10
+                if StorageManager.context.graph and StorageManager.context.graph.nodes
+                else 1
+            ),  # Don't exceed 10% of nodes
         )
 
         # Determine if we should use aggressive eviction (when memory usage is critically high)
@@ -420,29 +463,30 @@ class StorageManager:
 
                 # Get recency information
                 recency_ranks = {}
-                for i, (node_id, _) in enumerate(_lru.items()):
-                    recency_ranks[node_id] = i / max(1, len(_lru))  # Normalize to 0-1
+                for i, (node_id, _) in enumerate(lru.items()):
+                    recency_ranks[node_id] = i / max(1, len(lru))  # Normalize to 0-1
 
                 # Calculate hybrid scores
                 for node_id in StorageManager.context.graph.nodes:
                     if node_id in recency_ranks:
-                        recency_weight = getattr(cfg, "recency_weight", 0.7)  # Default 70% weight to recency
+                        recency_weight = getattr(
+                            cfg, "recency_weight", 0.7
+                        )  # Default 70% weight to recency
                         confidence_weight = 1.0 - recency_weight
 
-                        recency_score = recency_ranks.get(node_id, 1.0)  # Higher is worse (more recent = 0)
-                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get("confidence", 0.5)  # Higher is worse
+                        recency_score = recency_ranks.get(
+                            node_id, 1.0
+                        )  # Higher is worse (more recent = 0)
+                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get(
+                            "confidence", 0.5
+                        )  # Higher is worse
 
                         hybrid_scores[node_id] = (
-                            recency_weight * recency_score +
-                            confidence_weight * confidence_score
+                            recency_weight * recency_score + confidence_weight * confidence_score
                         )
 
                 # Sort by hybrid score (highest first = worst candidates)
-                candidates = sorted(
-                    hybrid_scores.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )
+                candidates = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -491,11 +535,11 @@ class StorageManager:
                 # Priority policy: evict based on configurable priority tiers
                 # Define priority tiers (lower tier = higher priority = keep longer)
                 priority_tiers = {
-                    "system": 0,      # System-critical nodes
-                    "user": 1,        # User-created nodes
-                    "synthesis": 2,   # Synthesis results
-                    "research": 3,    # Research findings
-                    "default": 4      # Default tier
+                    "system": 0,  # System-critical nodes
+                    "user": 1,  # User-created nodes
+                    "synthesis": 2,  # Synthesis results
+                    "research": 3,  # Research findings
+                    "default": 4,  # Default tier
                 }
 
                 # Get custom tiers from config if available
@@ -509,16 +553,14 @@ class StorageManager:
                     # Map node type to priority tier
                     tier = priority_tiers.get(node_type, priority_tiers["default"])
                     # Adjust by confidence
-                    confidence_boost = StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                    confidence_boost = (
+                        StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                    )
                     # Final priority score (lower = higher priority)
                     node_priorities[node_id] = tier - confidence_boost
 
                 # Sort by priority (highest first = worst candidates)
-                candidates = sorted(
-                    node_priorities.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )
+                candidates = sorted(node_priorities.items(), key=lambda x: x[1], reverse=True)
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -544,8 +586,8 @@ class StorageManager:
             for node_id in nodes_to_evict:
                 if StorageManager.context.graph.has_node(node_id):
                     StorageManager.context.graph.remove_node(node_id)
-                    if node_id in _lru:
-                        del _lru[node_id]
+                    if node_id in lru:
+                        del lru[node_id]
                     EVICTION_COUNTER.inc()
                     nodes_evicted += 1
 
@@ -558,7 +600,14 @@ class StorageManager:
                 # If we're not making progress fast enough and in aggressive mode,
                 # double the batch size
                 if aggressive_eviction and nodes_evicted > 50:
-                    batch_size = min(batch_size * 2, len(StorageManager.context.graph.nodes) // 5 if StorageManager.context.graph and StorageManager.context.graph.nodes else 1)
+                    batch_size = min(
+                        batch_size * 2,
+                        (
+                            len(StorageManager.context.graph.nodes) // 5
+                            if StorageManager.context.graph and StorageManager.context.graph.nodes
+                            else 1
+                        ),
+                    )
 
         # Log eviction results
         eviction_time = time.time() - eviction_start_time
@@ -598,18 +647,18 @@ class StorageManager:
 
         # Check for required fields
         required_fields = ["id", "type", "content"]
-        for field in required_fields:
-            if field not in claim:
+        for key in required_fields:
+            if key not in claim:
                 raise StorageError(
-                    f"Missing required field: '{field}'",
-                    suggestion=f"Ensure the claim has a '{field}' field",
+                    f"Missing required field: '{key}'",
+                    suggestion=f"Ensure the claim has a '{key}' field",
                 )
 
             # Check that the field is a string
-            if not isinstance(claim[field], str):
+            if not isinstance(claim[key], str):
                 raise StorageError(
-                    f"Invalid '{field}' field: expected string",
-                    suggestion=f"Ensure the '{field}' field is a string",
+                    f"Invalid '{key}' field: expected string",
+                    suggestion=f"Ensure the '{key}' field is a string",
                 )
 
     @staticmethod
@@ -633,7 +682,7 @@ class StorageManager:
             or StorageManager.context.rdf_store is None
         ):
             try:
-                setup(context=StorageManager.context)
+                setup(context=StorageManager.context, state=StorageManager.state)
             except Exception as e:
                 raise StorageError("Failed to initialize storage components", cause=e)
 
@@ -679,7 +728,7 @@ class StorageManager:
             attrs["confidence"] = claim["confidence"]
         assert StorageManager.context.graph is not None
         StorageManager.context.graph.add_node(claim["id"], **attrs)
-        _lru[claim["id"]] = time.time()
+        StorageManager.state.lru[claim["id"]] = time.time()
         for rel in claim.get("relations", []):
             assert StorageManager.context.graph is not None
             StorageManager.context.graph.add_edge(
@@ -785,24 +834,29 @@ class StorageManager:
 
         if _message_queue is not None:
             _message_queue.put(
-                {"action": "persist_claim", "claim": claim, "partial_update": partial_update}
+                {
+                    "action": "persist_claim",
+                    "claim": claim,
+                    "partial_update": partial_update,
+                }
             )
             return
 
         # Validate claim
         StorageManager._validate_claim(claim)
 
-        with _lock:
+        with StorageManager.state.lock:
             # Ensure storage is initialized
             StorageManager._ensure_storage_initialized()
 
             # Check if this is an update to an existing claim
-            claim_id = claim['id']
+            claim_id = claim["id"]
             existing_claim = None
             is_update = False
 
             # Track timing for performance metrics
             import time
+
             start_time = time.time()
 
             # Check if the claim already exists in the graph
@@ -818,15 +872,19 @@ class StorageManager:
                     merged_claim = existing_claim.copy()
 
                     # Update basic fields if provided
-                    if 'type' in claim:
-                        merged_claim['type'] = claim['type']
-                    if 'content' in claim:
-                        merged_claim['content'] = claim['content']
+                    if "type" in claim:
+                        merged_claim["type"] = claim["type"]
+                    if "content" in claim:
+                        merged_claim["content"] = claim["content"]
 
                     # Update nested fields
                     for key, value in claim.items():
-                        if key not in ['id', 'type', 'content']:
-                            if isinstance(value, dict) and key in merged_claim and isinstance(merged_claim[key], dict):
+                        if key not in ["id", "type", "content"]:
+                            if (
+                                isinstance(value, dict)
+                                and key in merged_claim
+                                and isinstance(merged_claim[key], dict)
+                            ):
                                 # Deep merge dictionaries
                                 merged_claim[key].update(value)
                             else:
@@ -850,16 +908,16 @@ class StorageManager:
                 log.debug(f"Persisting new claim {claim_id}")
 
             # Add timestamp for tracking
-            if 'metadata' not in claim_to_persist:
-                claim_to_persist['metadata'] = {}
+            if "metadata" not in claim_to_persist:
+                claim_to_persist["metadata"] = {}
 
             # Add or update timestamps
             current_time = time.time()
             if is_update:
-                claim_to_persist['metadata']['updated_at'] = current_time
+                claim_to_persist["metadata"]["updated_at"] = current_time
             else:
-                claim_to_persist['metadata']['created_at'] = current_time
-                claim_to_persist['metadata']['updated_at'] = current_time
+                claim_to_persist["metadata"]["created_at"] = current_time
+                claim_to_persist["metadata"]["updated_at"] = current_time
 
             # Persist to all backends with appropriate update mode
             StorageManager._persist_to_networkx(claim_to_persist)
@@ -953,7 +1011,7 @@ class StorageManager:
 
         # Ensure storage is initialized
         if StorageManager.context.db_backend is None:
-            setup(context=StorageManager.context)
+            setup(context=StorageManager.context, state=StorageManager.state)
         assert StorageManager.context.db_backend is not None
 
         # Use the DuckDBStorageBackend to create the HNSW index
@@ -1120,10 +1178,10 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_graph()
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.graph is None:
                 try:
-                    setup(context=StorageManager.context)
+                    setup(context=StorageManager.context, state=StorageManager.state)
                 except Exception as e:
                     raise NotFoundError("Graph not initialized", cause=e)
             if StorageManager.context.graph is None:
@@ -1147,10 +1205,11 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.touch_node(node_id)
-        with _lock:
-            if node_id in _lru:
-                _lru[node_id] = time.time()
-                _lru.move_to_end(node_id)
+        lru = StorageManager.state.lru
+        with StorageManager.state.lock:
+            if node_id in lru:
+                lru[node_id] = time.time()
+                lru.move_to_end(node_id)
 
     @staticmethod
     def get_duckdb_conn() -> duckdb.DuckDBPyConnection:
@@ -1171,10 +1230,10 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_duckdb_conn()
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.db_backend is None:
                 try:
-                    setup(context=StorageManager.context)
+                    setup(context=StorageManager.context, state=StorageManager.state)
                 except Exception as e:
                     raise NotFoundError("DuckDB connection not initialized", cause=e)
             if StorageManager.context.db_backend is None:
@@ -1189,9 +1248,9 @@ class StorageManager:
             with _delegate.connection() as conn:
                 yield conn
             return
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.db_backend is None:
-                setup(context=StorageManager.context)
+                setup(context=StorageManager.context, state=StorageManager.state)
             backend = StorageManager.context.db_backend
         if backend is None:
             raise NotFoundError("DuckDB connection not initialized")
@@ -1217,10 +1276,10 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_rdf_store()
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.rdf_store is None:
                 try:
-                    setup(context=StorageManager.context)
+                    setup(context=StorageManager.context, state=StorageManager.state)
                 except Exception as e:
                     raise NotFoundError("RDF store not initialized", cause=e)
             if StorageManager.context.rdf_store is None:
@@ -1243,10 +1302,10 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.has_vss()
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.db_backend is None:
                 try:
-                    setup(context=StorageManager.context)
+                    setup(context=StorageManager.context, state=StorageManager.state)
                 except Exception:
                     return False
             if StorageManager.context.db_backend is None:
@@ -1269,7 +1328,7 @@ class StorageManager:
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.clear_all()
-        with _lock:
+        with StorageManager.state.lock:
             if StorageManager.context.graph is not None:
                 StorageManager.context.graph.clear()
             if StorageManager.context.db_backend is not None:
@@ -1304,9 +1363,7 @@ class StorageManager:
     def infer_relations() -> None:
         """Infer new triples using the configured ontology reasoner."""
         StorageManager._ensure_storage_initialized()
-        reasoner = getattr(
-            ConfigLoader().config.storage, "ontology_reasoner", "owlrl"
-        )
+        reasoner = getattr(ConfigLoader().config.storage, "ontology_reasoner", "owlrl")
         if ":" in reasoner and reasoner != "owlrl":  # custom engine
             try:  # pragma: no cover - optional dependency
                 module, func = reasoner.split(":", maxsplit=1)
