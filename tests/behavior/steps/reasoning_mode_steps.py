@@ -16,17 +16,23 @@ def test_direct_mode():
     pass
 
 
-@scenario("../features/reasoning_mode.feature", "Chain-of-thought mode loops Synthesizer")
+@scenario(
+    "../features/reasoning_mode.feature", "Chain-of-thought mode loops Synthesizer"
+)
 def test_chain_of_thought_mode():
     pass
 
 
-@scenario("../features/reasoning_mode.feature", "Dialectical mode with custom Primus start")
+@scenario(
+    "../features/reasoning_mode.feature", "Dialectical mode with custom Primus start"
+)
 def test_dialectical_custom_primus():
     pass
 
 
-@scenario("../features/reasoning_mode.feature", "Dialectical reasoning with a realistic query")
+@scenario(
+    "../features/reasoning_mode.feature", "Dialectical reasoning with a realistic query"
+)
 def test_dialectical_real_query():
     pass
 
@@ -71,7 +77,9 @@ def test_loop_overflow():
     pass
 
 
-@given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
+@given(
+    parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
+)
 def loops_config(count: int, monkeypatch):
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -90,8 +98,16 @@ def set_primus_start(config: ConfigModel, index: int):
     return config
 
 
-@when(parsers.parse('I run the orchestrator on query "{query}"'), target_fixture="run_result")
-def run_orchestrator(query: str, config: ConfigModel):
+@when(
+    parsers.parse('I run the orchestrator on query "{query}"'),
+    target_fixture="run_result",
+)
+def run_orchestrator(
+    query: str,
+    config: ConfigModel,
+    _isolate_network,
+    _restore_environment,
+):
     record: list[str] = []
     params: dict = {}
     logs: list[str] = []
@@ -118,12 +134,15 @@ def run_orchestrator(query: str, config: ConfigModel):
         params.update(out)
         return out
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory.get",
-        side_effect=get_agent,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
-        side_effect=spy_parse,
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=get_agent,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+            side_effect=spy_parse,
+        ),
     ):
         try:
             Orchestrator.run_query(query, config)
@@ -140,14 +159,18 @@ def run_orchestrator(query: str, config: ConfigModel):
     ),
     target_fixture="error_result",
 )
-def run_orchestrator_invalid(query: str, mode: str, config: ConfigModel):
+def run_orchestrator_invalid(
+    query: str,
+    mode: str,
+    config: ConfigModel,
+    _isolate_network,
+    _restore_environment,
+):
     record: list[str] = []
     logs: list[str] = []
     state = {"active": True}
     try:
-        cfg = ConfigModel(
-            agents=config.agents, loops=config.loops, reasoning_mode=mode
-        )
+        cfg = ConfigModel(agents=config.agents, loops=config.loops, reasoning_mode=mode)
         with patch(
             "autoresearch.orchestration.orchestrator.AgentFactory.get",
             side_effect=lambda name: None,
@@ -162,7 +185,14 @@ def run_orchestrator_invalid(query: str, mode: str, config: ConfigModel):
     return {"error": None, "record": record, "logs": logs, "state": state}
 
 
-def _run_orchestrator_with_failure(query: str, config: ConfigModel, *, overflow: bool = False):
+def _run_orchestrator_with_failure(
+    query: str,
+    config: ConfigModel,
+    _isolate_network,
+    _restore_environment,
+    *,
+    overflow: bool = False,
+):
     record: list[str] = []
     logs: list[str] = []
     state = {"active": True}
@@ -212,12 +242,15 @@ def _run_orchestrator_with_failure(query: str, config: ConfigModel, *, overflow:
                     state_obj.add_error(info)
             return state_obj.synthesize()
 
-        with patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
-            side_effect=spy_handle,
-        ), patch(
-            "autoresearch.orchestration.reasoning.ChainOfThoughtStrategy.run_query",
-            cot_run,
+        with (
+            patch(
+                "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+                side_effect=spy_handle,
+            ),
+            patch(
+                "autoresearch.orchestration.reasoning.ChainOfThoughtStrategy.run_query",
+                cot_run,
+            ),
         ):
             try:
                 Orchestrator.run_query(query, config)
@@ -268,15 +301,19 @@ def _run_orchestrator_with_failure(query: str, config: ConfigModel, *, overflow:
     def get_agent(name: str, llm_adapter=None):
         return FailingAgent(name)
 
-    with patch(
-        "autoresearch.orchestration.orchestrator.AgentFactory.get",
-        side_effect=get_agent,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
-        side_effect=spy_handle,
-    ), patch(
-        "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
-        side_effect=spy_parse,
+    with (
+        patch(
+            "autoresearch.orchestration.orchestrator.AgentFactory.get",
+            side_effect=get_agent,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            side_effect=spy_handle,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
+            side_effect=spy_parse,
+        ),
     ):
         try:
             Orchestrator.run_query(query, config)
@@ -300,19 +337,33 @@ def _run_orchestrator_with_failure(query: str, config: ConfigModel, *, overflow:
     parsers.parse('I run the orchestrator on query "{query}" with a failing agent'),
     target_fixture="run_result",
 )
-def run_orchestrator_failure(query: str, config: ConfigModel):
-    return _run_orchestrator_with_failure(query, config)
+def run_orchestrator_failure(
+    query: str,
+    config: ConfigModel,
+    _isolate_network,
+    _restore_environment,
+):
+    return _run_orchestrator_with_failure(
+        query, config, _isolate_network, _restore_environment
+    )
 
 
 @when(
     parsers.parse('I run the orchestrator on query "{query}" exceeding loop limit'),
     target_fixture="run_result",
 )
-def run_orchestrator_overflow(query: str, config: ConfigModel):
-    return _run_orchestrator_with_failure(query, config, overflow=True)
+def run_orchestrator_overflow(
+    query: str,
+    config: ConfigModel,
+    _isolate_network,
+    _restore_environment,
+):
+    return _run_orchestrator_with_failure(
+        query, config, _isolate_network, _restore_environment, overflow=True
+    )
 
 
-@then(parsers.parse('the loops used should be {count:d}'))
+@then(parsers.parse("the loops used should be {count:d}"))
 def assert_loops(run_result: dict, count: int) -> None:
     assert run_result["config_params"].get("loops") == count
 
@@ -324,7 +375,9 @@ def assert_mode(run_result: dict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
-    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
+    expected = [
+        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
+    ]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
@@ -350,3 +403,30 @@ def assert_no_agents(error_result: dict) -> None:
 def assert_fallback_agent(run_result: dict, agent: str) -> None:
     info = run_result.get("recovery_info", {})
     assert info.get("agent") == agent
+
+
+@then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))
+def assert_strategy(run_result: dict, strategy: str) -> None:
+    assert run_result["recovery_info"].get("recovery_strategy") == strategy
+
+
+@then("recovery should be applied")
+def assert_recovery_applied(run_result: dict) -> None:
+    assert run_result["recovery_info"].get("recovery_applied") is True
+
+
+@then("the system state should be restored")
+def assert_state_restored(
+    run_result: dict | None = None, error_result: dict | None = None
+) -> None:
+    result = run_result or error_result
+    assert result and result.get("state", {}).get("active") is False
+
+
+@then(parsers.parse('the logs should include "{message}"'))
+def assert_logs(
+    run_result: dict | None = None, error_result: dict | None = None, message: str = ""
+) -> None:
+    result = run_result or error_result
+    logs = result.get("logs", []) if result else []
+    assert any(message in entry for entry in logs), logs

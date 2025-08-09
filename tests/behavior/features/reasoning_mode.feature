@@ -13,7 +13,7 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 1
     And the reasoning mode selected should be "direct"
     And the agent groups should be "Synthesizer"
-    Then the agents executed should be "Synthesizer"
+    And the agents executed should be "Synthesizer"
 
   Scenario: Chain-of-thought mode loops Synthesizer
     Given reasoning mode is "chain-of-thought"
@@ -21,7 +21,7 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 2
     And the reasoning mode selected should be "chain-of-thought"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
-    Then the agents executed should be "Synthesizer, Synthesizer"
+    And the agents executed should be "Synthesizer, Synthesizer"
 
   Scenario: Dialectical mode with custom Primus start
     Given loops is set to 1 in configuration
@@ -31,7 +31,7 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 1
     And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
-    Then the agents executed should be "Contrarian, FactChecker, Synthesizer"
+    And the agents executed should be "Contrarian, FactChecker, Synthesizer"
 
   Scenario: Dialectical reasoning with a realistic query
     Given loops is set to 1 in configuration
@@ -40,7 +40,7 @@ Feature: Reasoning Mode Selection
     Then the loops used should be 1
     And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
-    Then the agents executed should be "Synthesizer, Contrarian, FactChecker"
+    And the agents executed should be "Synthesizer, Contrarian, FactChecker"
 
   Scenario: Direct mode agent failure triggers fallback
     Given reasoning mode is "direct"
