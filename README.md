@@ -275,6 +275,8 @@ backend = "sqlite"
 path = "rdf_store"
 # Ontology reasoning engine (owlrl or module:function)
 ontology_reasoner = "owlrl"
+# Maximum triples allowed for reasoning (None for no limit)
+ontology_reasoner_max_triples = 100000
 ```
 
 ### Agent Configuration

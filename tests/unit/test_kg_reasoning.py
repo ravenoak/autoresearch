@@ -10,22 +10,37 @@ import time
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError
-from autoresearch.kg_reasoning import run_ontology_reasoner, query_with_reasoning
+from autoresearch.kg_reasoning import (
+    run_ontology_reasoner,
+    query_with_reasoning,
+    register_reasoner,
+)
 
 
-def _mock_config(reasoner: str, timeout: float | None = None) -> ConfigModel:
+def _mock_config(
+    reasoner: str,
+    timeout: float | None = None,
+    max_triples: int | None = None,
+) -> ConfigModel:
     return ConfigModel.model_construct(
         storage=StorageConfig(
-            ontology_reasoner=reasoner, ontology_reasoner_timeout=timeout
+            ontology_reasoner=reasoner,
+            ontology_reasoner_timeout=timeout,
+            ontology_reasoner_max_triples=max_triples,
         )
     )
 
 
-def _patch_config(monkeypatch, reasoner: str, timeout: float | None = None) -> None:
+def _patch_config(
+    monkeypatch,
+    reasoner: str,
+    timeout: float | None = None,
+    max_triples: int | None = None,
+) -> None:
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
-        lambda self: _mock_config(reasoner, timeout),
+        lambda self: _mock_config(reasoner, timeout, max_triples),
     )
     ConfigLoader()._config = None
 
@@ -120,3 +135,40 @@ def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch):
     with pytest.raises(StorageError) as excinfo:
         run_ontology_reasoner(g)
     assert "interrupted" in str(excinfo.value).lower()
+
+
+def test_run_ontology_reasoner_skips_when_limit_exceeded(monkeypatch, caplog):
+    called = {}
+
+    @register_reasoner("dummy_limit")
+    def _dummy(store):  # pragma: no cover - executed only if limit ignored
+        called["hit"] = True
+
+    g = rdflib.Graph()
+    g.add(
+        (
+            rdflib.URIRef("urn:s"),
+            rdflib.URIRef("urn:p"),
+            rdflib.URIRef("urn:o"),
+        )
+    )
+    g.add(
+        (
+            rdflib.URIRef("urn:s2"),
+            rdflib.URIRef("urn:p"),
+            rdflib.URIRef("urn:o"),
+        )
+    )
+
+    _patch_config(monkeypatch, "dummy_limit", max_triples=1)
+
+    with caplog.at_level("WARNING"):
+        run_ontology_reasoner(g)
+
+    assert "Skipping ontology reasoning" in caplog.text
+    assert "hit" not in called
+
+    # cleanup plugin registry
+    import autoresearch.kg_reasoning as kr
+
+    kr._REASONER_PLUGINS.pop("dummy_limit", None)
