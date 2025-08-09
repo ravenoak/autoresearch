@@ -12,11 +12,13 @@ Autoresearch is currently in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
- planned for **July 20, 2025**, but the schedule slipped. Tests still fail
- and coverage goals are being worked on. Packaging checks and documentation
- continue, so the milestone is now targeted for **November 15, 2025**.
-See [docs/release_plan.md](docs/release_plan.md) for the full milestone
-schedule and outstanding tasks.
+planned for **July 20, 2025**, but the schedule slipped. Integration and
+behavior tests still fail and total coverage remains below the **90%**
+target. Packaging checks and documentation continue, so the milestone is
+now targeted for **November 15, 2025**. Remaining blockers include failing
+tests, incomplete coverage, and packaging scripts that need additional
+configuration. See [docs/release_plan.md](docs/release_plan.md) for the
+full milestone schedule and outstanding tasks.
 
 ## Installation
 

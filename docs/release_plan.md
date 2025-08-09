@@ -6,7 +6,7 @@ The project kicked off in **May 2025** (see the initial commit dated `2025-05-18
 This schedule was last updated on **August 24, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0** version defined in
 `autoresearch.__version__`.
-Phase 2 testing tasks are nearly complete after resolving prior failures, so Phase 3 (stabilization/testing/documentation) and Phase 4 activities remain planned.
+Phase 2 testing tasks remain in progress due to failing tests and coverage below the **90%** goal, so Phase 3 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Milestones
 
