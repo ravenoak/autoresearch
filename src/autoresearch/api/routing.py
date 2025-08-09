@@ -518,7 +518,9 @@ async def batch_query_endpoint(
     async def run_one(
         idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]
     ) -> None:
-        results[idx] = cast(QueryResponse, await query_endpoint(q))
+        from . import query_endpoint as api_query_endpoint
+
+        results[idx] = cast(QueryResponse, await api_query_endpoint(q))
 
     results: list[Optional[QueryResponse]] = [None for _ in selected]
     async with asyncio.TaskGroup() as tg:

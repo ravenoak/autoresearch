@@ -38,7 +38,7 @@ def _make_agent(calls, stored):
 
 def test_orchestrator_search_storage(monkeypatch):
     calls: list[str] = []
-    stored: list[str] = []
+    stored: list[dict[str, str]] = []
     monkeypatch.setattr(
         Search,
         "external_lookup",
@@ -48,7 +48,7 @@ def test_orchestrator_search_storage(monkeypatch):
         ],
     )
     monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
+        StorageManager, "persist_claim", lambda claim: stored.append(claim)
     )
     monkeypatch.setattr(AgentFactory, "get", lambda name: _make_agent(calls, stored))
 
@@ -59,5 +59,8 @@ def test_orchestrator_search_storage(monkeypatch):
     resp = Orchestrator.run_query("q", cfg)
     assert isinstance(resp, QueryResponse)
     assert calls == ["TestAgent"]
-    assert stored == ["u1", "u2"]
+    assert stored == [
+        {"id": "u1", "type": "source", "content": "Doc1"},
+        {"id": "u2", "type": "source", "content": "Doc2"},
+    ]
     assert resp.answer == "done"
