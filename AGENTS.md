@@ -20,6 +20,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, and `duckdb-extension-vss` are present using `uv pip list`.
 
 ## Verification steps
+- Always run tests with `uv run` or inside the activated `.venv`; running
+  them outside may lead to missing package errors.
 - Use `task verify` to run linting, type checking, and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
 - If `task` is unavailable, run these commands individually:
   - Format code with `uv run black .`.
