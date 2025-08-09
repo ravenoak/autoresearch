@@ -14,45 +14,45 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
+import asyncio
+import importlib
+import threading
+import types
+from typing import Any, Callable, List, Optional, cast
+from uuid import uuid4
+
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import (
-    PlainTextResponse,
-    JSONResponse,
-    StreamingResponse,
-    Response,
-)
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional, List, cast
+from fastapi.background import BackgroundTasks
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.background import BackgroundTasks
+from fastapi.responses import (
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from limits.util import parse
-import importlib
-import types
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
-from ..config import ConfigLoader, get_config, ConfigModel
-import asyncio
-from uuid import uuid4
-import threading
-from collections import Counter
-from ..orchestration.orchestrator import Orchestrator
-from ..orchestration import ReasoningMode
-from ..tracing import get_tracer, setup_tracing
-from ..models import QueryRequest, QueryResponse, BatchQueryRequest
-from ..storage import StorageManager
 from pydantic import ValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from ..config import ConfigLoader, ConfigModel, get_config
 
 # Lazily import SlowAPI and fall back to a minimal stub when unavailable
-from ..error_utils import get_error_info, format_error_for_api
-from typing import Callable, Any
+from ..error_utils import format_error_for_api, get_error_info
+from ..models import BatchQueryRequest, QueryRequest, QueryResponse
+from ..orchestration import ReasoningMode
+from ..orchestration.orchestrator import Orchestrator
+from ..storage import StorageManager
+from ..tracing import get_tracer, setup_tracing
+from .deps import require_permission
 from .errors import handle_rate_limit
 from .streaming import query_stream_endpoint
 from .webhooks import notify_webhook
-from .deps import require_permission
 
 # Predeclare optional SlowAPI types for static analysis
 Limiter: Any
@@ -64,10 +64,8 @@ get_remote_address: Callable[[Request], str]
 try:  # pragma: no cover - optional dependency
     _slowapi_module = importlib.import_module("slowapi")
     SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
-    from slowapi import (
-        Limiter as SlowLimiter,
-        _rate_limit_exceeded_handler as SlowHandler,
-    )
+    from slowapi import Limiter as SlowLimiter
+    from slowapi import _rate_limit_exceeded_handler as SlowHandler
     from slowapi.errors import RateLimitExceeded as SlowRateLimitExceeded
     from slowapi.util import get_remote_address as SlowGetRemoteAddress
 
@@ -111,20 +109,21 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     _rate_limit_exceeded_handler = _fallback_rate_limit_exceeded_handler
     Limit = _FallbackLimit
 # Global per-client request log used for fallback rate limiting and tests
-REQUEST_LOG: Counter[str] = Counter()
+REQUEST_LOG: dict[str, int] = {}
 REQUEST_LOG_LOCK = threading.Lock()
 
 
 def reset_request_log() -> None:
     """Clear the request log."""
+    global REQUEST_LOG
     with REQUEST_LOG_LOCK:
-        REQUEST_LOG.clear()
+        REQUEST_LOG = {}
 
 
 def log_request(ip: str) -> int:
     """Record a request from the given IP and return the new count."""
     with REQUEST_LOG_LOCK:
-        REQUEST_LOG[ip] += 1
+        REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
         return REQUEST_LOG[ip]
 
 
@@ -514,7 +513,7 @@ async def batch_query_endpoint(
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
 
     start = (page - 1) * page_size
-    selected = batch.queries[start:start + page_size]
+    selected = batch.queries[start : start + page_size]  # noqa: E203
 
     async def run_one(
         idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]
