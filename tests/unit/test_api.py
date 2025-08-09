@@ -16,7 +16,9 @@ def _setup(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
     return cfg
 
@@ -56,7 +58,10 @@ def test_fallback_no_limit(monkeypatch):
     from autoresearch import api as api_mod
 
     api_mod.reset_request_log()
-    monkeypatch.setattr(api_mod, "get_remote_address", lambda req: req.headers.get("x-ip", "1"))
+    monkeypatch.setattr(
+        "autoresearch.api.routing.get_remote_address",
+        lambda req: req.headers.get("x-ip", "1"),
+    )
     client = TestClient(app)
 
     assert client.post("/query", json={"query": "q"}).status_code == 200
@@ -76,25 +81,34 @@ def test_fallback_multiple_ips(monkeypatch):
     def addr(req):
         return req.headers.get("x-ip", "1")
 
-    monkeypatch.setattr(api_mod, "get_remote_address", addr)
+    monkeypatch.setattr("autoresearch.api.routing.get_remote_address", addr)
     client = TestClient(app)
     limit_obj = api_mod.parse(api_mod.dynamic_limit())
 
-    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 200
+    assert (
+        client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code
+        == 200
+    )
     if api_mod.SLOWAPI_STUB:
         with api_mod.REQUEST_LOG_LOCK:
             assert api_mod.REQUEST_LOG.get("1") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
-    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code == 200
+    assert (
+        client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code
+        == 200
+    )
     if api_mod.SLOWAPI_STUB:
         with api_mod.REQUEST_LOG_LOCK:
             assert api_mod.REQUEST_LOG.get("2") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
 
-    assert client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code == 429
+    assert (
+        client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code
+        == 429
+    )
     if api_mod.SLOWAPI_STUB:
         with api_mod.REQUEST_LOG_LOCK:
             assert api_mod.REQUEST_LOG.get("1") == 2

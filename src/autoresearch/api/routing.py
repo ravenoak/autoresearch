@@ -14,14 +14,18 @@ Endpoints:
     GET /openapi.json: OpenAPI schema documentation
 """
 
-from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.responses import PlainTextResponse, JSONResponse, StreamingResponse, Response
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import (
+    PlainTextResponse,
+    JSONResponse,
+    StreamingResponse,
+    Response,
+)
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, List, cast
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ExceptionHandler
 from fastapi.background import BackgroundTasks
 from limits.util import parse
 import importlib
@@ -30,21 +34,25 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
-from .config import ConfigLoader, get_config, ConfigModel
+from ..config import ConfigLoader, get_config, ConfigModel
 import asyncio
 from uuid import uuid4
-import httpx
 import threading
 from collections import Counter
-from .orchestration.orchestrator import Orchestrator
-from .orchestration import ReasoningMode
-from .tracing import get_tracer, setup_tracing
-from .models import QueryRequest, QueryResponse, BatchQueryRequest
-from .storage import StorageManager
+from ..orchestration.orchestrator import Orchestrator
+from ..orchestration import ReasoningMode
+from ..tracing import get_tracer, setup_tracing
+from ..models import QueryRequest, QueryResponse, BatchQueryRequest
+from ..storage import StorageManager
 from pydantic import ValidationError
+
 # Lazily import SlowAPI and fall back to a minimal stub when unavailable
-from .error_utils import get_error_info, format_error_for_api
+from ..error_utils import get_error_info, format_error_for_api
 from typing import Callable, Any
+from .errors import handle_rate_limit
+from .streaming import query_stream_endpoint
+from .webhooks import notify_webhook
+from .deps import require_permission
 
 # Predeclare optional SlowAPI types for static analysis
 Limiter: Any
@@ -56,9 +64,13 @@ get_remote_address: Callable[[Request], str]
 try:  # pragma: no cover - optional dependency
     _slowapi_module = importlib.import_module("slowapi")
     SLOWAPI_STUB = getattr(_slowapi_module, "IS_STUB", False)
-    from slowapi import Limiter as SlowLimiter, _rate_limit_exceeded_handler as SlowHandler
+    from slowapi import (
+        Limiter as SlowLimiter,
+        _rate_limit_exceeded_handler as SlowHandler,
+    )
     from slowapi.errors import RateLimitExceeded as SlowRateLimitExceeded
     from slowapi.util import get_remote_address as SlowGetRemoteAddress
+
     if not SLOWAPI_STUB:
         from slowapi.wrappers import Limit as SlowLimit
 
@@ -128,11 +140,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if cfg.api_keys:
             role = cfg.api_keys.get(key)
             if not role:
-                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
+                return "anonymous", JSONResponse(
+                    {"detail": "Invalid API key"}, status_code=401
+                )
             return role, None
         if cfg.api_key:
             if key != cfg.api_key:
-                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
+                return "anonymous", JSONResponse(
+                    {"detail": "Invalid API key"}, status_code=401
+                )
             return "user", None
         return "anonymous", None
 
@@ -160,15 +176,6 @@ def dynamic_limit() -> str:
     return f"{limit}/minute" if limit > 0 else "1000000/minute"
 
 
-def require_permission(permission: str):
-    async def checker(request: Request) -> None:
-        permissions: set[str] = getattr(request.state, "permissions", set())
-        if permission not in permissions:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-
-    return Depends(checker)
-
-
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
@@ -194,7 +201,9 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
             request.state.view_rate_limit = (limit_obj, [ip])
             if count > cfg_limit:
                 if SLOWAPI_STUB:
-                    return _handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
+                    return handle_rate_limit(
+                        request, RateLimitExceeded(cast("Limit", None))
+                    )
                 limit_wrapper = Limit(
                     limit_obj,
                     get_remote_address,
@@ -206,7 +215,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
                     1,
                     False,
                 )
-                return _handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
+                return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
         response = await call_next(request)
         if cfg_limit and not SLOWAPI_STUB:
             response = limiter._inject_headers(response, request.state.view_rate_limit)
@@ -235,7 +244,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     1,
                     False,
                 )
-                return _handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
+                return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
             response = await call_next(request)
             return limiter._inject_headers(response, request.state.view_rate_limit)
         return await call_next(request)
@@ -246,27 +255,9 @@ if SLOWAPI_STUB:
 else:
     app.add_middleware(RateLimitMiddleware)
 
-
-def _handle_rate_limit(request: Request, exc: Exception) -> Response:
-    result = _rate_limit_exceeded_handler(request, exc)
-    if isinstance(result, Response):
-        return result
-    return PlainTextResponse(str(result), status_code=429)
-
-
-app.add_exception_handler(
-    RateLimitExceeded, cast(ExceptionHandler, _handle_rate_limit)
-)
+app.post("/query/stream")(query_stream_endpoint)
 _watch_ctx = None
 app.state.async_tasks = {}
-
-
-def _notify_webhook(url: str, result: QueryResponse, timeout: float = 5) -> None:
-    """Send the final result to a webhook URL if configured."""
-    try:
-        httpx.post(url, json=result.model_dump(), timeout=timeout)
-    except Exception:
-        pass  # pragma: no cover - ignore webhook errors
 
 
 @app.get("/docs", include_in_schema=False)
@@ -459,9 +450,9 @@ async def query_endpoint(
             )
             timeout = getattr(config.api, "webhook_timeout", 5)
             if request.webhook_url:
-                _notify_webhook(request.webhook_url, error_resp, timeout)
+                notify_webhook(request.webhook_url, error_resp, timeout)
             for url in getattr(config.api, "webhooks", []):
-                _notify_webhook(url, error_resp, timeout)
+                notify_webhook(url, error_resp, timeout)
             return error_resp
     try:
         validated = (
@@ -495,76 +486,16 @@ async def query_endpoint(
         )
         timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
-            _notify_webhook(request.webhook_url, error_resp, timeout)
+            notify_webhook(request.webhook_url, error_resp, timeout)
         for url in getattr(config.api, "webhooks", []):
-            _notify_webhook(url, error_resp, timeout)
+            notify_webhook(url, error_resp, timeout)
         return error_resp
     timeout = getattr(config.api, "webhook_timeout", 5)
     if request.webhook_url:
-        _notify_webhook(request.webhook_url, validated, timeout)
+        notify_webhook(request.webhook_url, validated, timeout)
     for url in getattr(config.api, "webhooks", []):
-        _notify_webhook(url, validated, timeout)
+        notify_webhook(url, validated, timeout)
     return validated
-
-
-@app.post("/query/stream")
-async def query_stream_endpoint(
-    request: QueryRequest,
-    _: None = require_permission("query"),
-) -> StreamingResponse:
-    """Stream incremental query results as JSON lines."""
-    config = get_config()
-
-    if request.reasoning_mode is not None:
-        config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
-    if request.loops is not None:
-        config.loops = request.loops
-    if request.llm_backend is not None:
-        config.llm_backend = request.llm_backend
-
-    queue: asyncio.Queue[str | None] = asyncio.Queue()
-
-    def on_cycle_end(loop_idx: int, state) -> None:
-        queue.put_nowait(state.synthesize().model_dump_json())
-
-    def run() -> None:
-        try:
-            result = Orchestrator.run_query(
-                request.query, config, callbacks={"on_cycle_end": on_cycle_end}
-            )
-        except Exception as exc:  # pragma: no cover - defensive
-            error_info = get_error_info(exc)
-            error_data = format_error_for_api(error_info)
-            reasoning = ["An error occurred during processing."]
-            if error_info.suggestions:
-                for suggestion in error_info.suggestions:
-                    reasoning.append(f"Suggestion: {suggestion}")
-            else:
-                reasoning.append("Please check the logs for details.")
-            result = QueryResponse(
-                answer=f"Error: {error_info.message}",
-                citations=[],
-                reasoning=reasoning,
-                metrics={"error": error_info.message, "error_details": error_data},
-            )
-        queue.put_nowait(result.model_dump_json())
-        timeout = getattr(config.api, "webhook_timeout", 5)
-        if request.webhook_url:
-            _notify_webhook(request.webhook_url, result, timeout)
-        for url in getattr(config.api, "webhooks", []):
-            _notify_webhook(url, result, timeout)
-        queue.put_nowait(None)
-
-    asyncio.get_running_loop().run_in_executor(None, run)
-
-    async def generator():
-        while True:
-            item = await queue.get()
-            if item is None:
-                break
-            yield item + "\n"
-
-    return StreamingResponse(generator(), media_type="application/json")
 
 
 @app.post(
@@ -585,7 +516,9 @@ async def batch_query_endpoint(
     start = (page - 1) * page_size
     selected = batch.queries[start:start + page_size]
 
-    async def run_one(idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]) -> None:
+    async def run_one(
+        idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]
+    ) -> None:
         results[idx] = cast(QueryResponse, await query_endpoint(q))
 
     results: list[Optional[QueryResponse]] = [None for _ in selected]
@@ -593,7 +526,11 @@ async def batch_query_endpoint(
         for idx, query in enumerate(selected):
             tg.create_task(run_one(idx, query, results))
 
-    return {"page": page, "page_size": page_size, "results": cast(List[QueryResponse], results)}
+    return {
+        "page": page,
+        "page_size": page_size,
+        "results": cast(List[QueryResponse], results),
+    }
 
 
 @app.post("/query/async")
@@ -625,12 +562,14 @@ async def async_query_endpoint(
             return
         timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
-            _notify_webhook(request.webhook_url, result, timeout)
+            notify_webhook(request.webhook_url, result, timeout)
         for url in getattr(config.api, "webhooks", []):
-            _notify_webhook(url, result, timeout)
+            notify_webhook(url, result, timeout)
 
     def start_task() -> None:
-        threading.Thread(target=lambda: asyncio.run(run_and_notify()), daemon=True).start()
+        threading.Thread(
+            target=lambda: asyncio.run(run_and_notify()), daemon=True
+        ).start()
 
     background_tasks.add_task(start_task)
     return {"query_id": query_id}
