@@ -1,27 +1,28 @@
 # Contribution Guidelines
 
-> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` for setup. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created. If this marker is present, inspect `codex_setup.log` for details.
+> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` for setup. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created. If this marker is present, inspect `codex_setup.log` for details. This guide is the only document that may mention `scripts/codex_setup.sh`; do not reference it elsewhere.
 
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
 ## Environment setup
 - Use **uv** for dependency management and project interactions.
+  - **Run all commands inside the `uv` virtual environment.** Activate it with `source .venv/bin/activate` or prefix commands with `uv run` or `uv pip`.
   - Python **3.12 or newer** is required. Confirm with `python --version`.
   - Create a virtual environment with `uv venv`.
+    - Quick start: `uv venv && uv sync --all-extras`.
     - `scripts/setup.sh` verifies the interpreter and fails if it is too old.
     - Both setup scripts abort if `python3.12` is not found on your `PATH`.
     - Install dependencies and extras:
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
-  - Activate the environment using `source .venv/bin/activate` or prefix commands with `uv pip`.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, and `duckdb-extension-vss` are present using `uv pip list`.
 
 ## Verification steps
-- Always run tests with `uv run` or inside the activated `.venv`; running
-  them outside may lead to missing package errors.
+- Always run tests with `uv run` or inside the activated `.venv`; all tests
+  must run inside this environment.
 - Use `task verify` to run linting, type checking, and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
 - If `task` is unavailable, run these commands individually:
   - Format code with `uv run black .`.
