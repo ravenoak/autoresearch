@@ -33,7 +33,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Verify type hints with `uv run mypy src`.
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
-  - Run the entire suite with coverage: `uv run pytest --cov=src`.
+  - Run the entire suite with coverage: `task coverage` or
+    `uv run pytest --cov=src`. Ensure total coverage is at least 90%
+    and resolve any coverage failures before committing.
 
 ### Cleanup
 - Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.

@@ -124,7 +124,7 @@ class ConfigLoader:
         for key, value in raw_env.items():
             key_lower = key.lower()
             if key_lower.startswith("autoresearch_"):
-                key_lower = key_lower[len("autoresearch_") :]
+                key_lower = key_lower[len("autoresearch_"):]
             parts = key_lower.split("__")
             d = env_settings
             for part in parts[:-1]:

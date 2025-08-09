@@ -222,6 +222,9 @@ and any `__pycache__` directories to keep your working tree clean.
 - All new code should have at least 90% test coverage
 - Critical components should have 100% test coverage
 - Tests should cover both normal operation and error cases
+- Run `task coverage` or `uv run pytest --cov=src` locally to verify
+  total coverage is at least 90%, and resolve any coverage failures
+  before committing
 
 Continuous integration invokes `task coverage`, which runs the entire suite with
 coverage reporting. This command must succeed to satisfy the 90% coverage gate.
