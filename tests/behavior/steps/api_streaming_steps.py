@@ -56,13 +56,17 @@ def send_query_with_webhook(url, monkeypatch, api_client, bdd_context):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
     with responses.RequestsMock() as rsps:
         rsps.post(url, status=200)
         monkeypatch.setattr(
-            "autoresearch.api._notify_webhook",
-            lambda u, r, timeout=5: requests.post(u, json=r.model_dump(), timeout=timeout),
+            "autoresearch.api.webhooks.notify_webhook",
+            lambda u, r, timeout=5: requests.post(
+                u, json=r.model_dump(), timeout=timeout
+            ),
         )
         resp = api_client.post("/query", json={"query": "hi", "webhook_url": url})
         bdd_context["api_status"] = resp.status_code
@@ -84,6 +88,9 @@ def test_streaming_query_responses():
     pass
 
 
-@scenario("../features/api_streaming_webhook.feature", "Webhook notifications on query completion")
+@scenario(
+    "../features/api_streaming_webhook.feature",
+    "Webhook notifications on query completion",
+)
 def test_webhook_notifications():
     pass
