@@ -1,17 +1,31 @@
 import time
-import tomli_w
 import tomllib
 from contextlib import contextmanager
 
 import git
 import pytest
+import tomli_w
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.search import Search
-from autoresearch.storage import StorageManager
+from autoresearch.orchestration import orchestrator as orch_mod
 from tests.conftest import GITPYTHON_INSTALLED
+
+Orchestrator = orch_mod.Orchestrator
+AgentFactory = orch_mod.AgentFactory
+StorageManager = orch_mod.StorageManager
+
+
+class Search:
+    backends: dict[str, callable] = {}
+
+    @staticmethod
+    def external_lookup(query: str, max_results: int = 5):  # pragma: no cover - stub
+        results = []
+        for backend in Search.backends.values():
+            results.extend(backend(query, max_results))
+        return results
+
 
 pytestmark = [
     pytest.mark.requires_git,
@@ -29,9 +43,16 @@ def make_agent(name, calls, stored):
 
         def execute(self, state, config, **kwargs):
             Search.external_lookup("q", max_results=1)
-            StorageManager.persist_claim({"id": self.name, "type": "fact", "content": self.name})
+            StorageManager.persist_claim(
+                {"id": self.name, "type": "fact", "content": self.name}
+            )
             calls.append(self.name)
-            state.update({"results": {self.name: "ok"}, "claims": [{"id": self.name, "type": "fact", "content": self.name}]})
+            state.update(
+                {
+                    "results": {self.name: "ok"},
+                    "claims": [{"id": self.name, "type": "fact", "content": self.name}],
+                }
+            )
             if self.name == "Synthesizer":
                 state.results["final_answer"] = f"Answer from {self.name}"
             return {"results": {self.name: "ok"}}
@@ -85,7 +106,9 @@ def test_config_hot_reload(tmp_path, monkeypatch):
 
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
+    )
     monkeypatch.setattr(
         AgentFactory,
         "get",
@@ -105,9 +128,7 @@ def test_config_hot_reload(tmp_path, monkeypatch):
     def no_token_capture(agent_name, metrics, config):
         yield (lambda *a, **k: None, None)
 
-    monkeypatch.setattr(
-        Orchestrator, "_capture_token_usage", no_token_capture
-    )
+    monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
     events: list[tuple[list[str], list[str]]] = []
 

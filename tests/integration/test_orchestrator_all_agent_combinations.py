@@ -4,10 +4,19 @@ from contextlib import contextmanager
 import pytest
 
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.search import Search
-from autoresearch.storage import StorageManager
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration import orchestrator as orch_mod
+
+Orchestrator = orch_mod.Orchestrator
+AgentFactory = orch_mod.AgentFactory
+StorageManager = orch_mod.StorageManager
+
+
+class Search:
+    @staticmethod
+    def rank_results(q, results):  # pragma: no cover - simple stub
+        return results
+
 
 pytestmark = pytest.mark.integration
 
@@ -47,8 +56,6 @@ def test_orchestrator_all_agent_combinations(monkeypatch, agents):
     calls: list[str] = []
     search_calls: list[str] = []
     store_calls: list[str] = []
-
-    monkeypatch.setattr(Search, "rank_results", lambda q, r: r)
     monkeypatch.setattr(
         StorageManager, "persist_claim", lambda claim: store_calls.append(claim["id"])
     )
@@ -72,6 +79,8 @@ def test_orchestrator_all_agent_combinations(monkeypatch, agents):
     assert search_calls == list(agents)
     assert store_calls == list(agents)
     expected = (
-        "Answer from Synthesizer" if "Synthesizer" in agents else "No answer synthesized"
+        "Answer from Synthesizer"
+        if "Synthesizer" in agents
+        else "No answer synthesized"
     )
     assert response.answer == expected
