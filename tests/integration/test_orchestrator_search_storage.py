@@ -1,9 +1,17 @@
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.search import Search
-from autoresearch.storage import StorageManager
+from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration import orchestrator as orch_mod
+
+Orchestrator = orch_mod.Orchestrator
+AgentFactory = orch_mod.AgentFactory
+StorageManager = orch_mod.StorageManager
+
+
+class Search:
+    @staticmethod
+    def external_lookup(query, max_results=2):  # pragma: no cover - simple stub
+        return []
 
 
 def _make_agent(calls, stored):
@@ -17,8 +25,9 @@ def _make_agent(calls, stored):
         def execute(self, state, config, **kwargs):
             results = Search.external_lookup(state.query, max_results=2)
             for r in results:
-                StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
-                stored.append(r["url"])
+                StorageManager.persist_claim(
+                    {"id": r["url"], "type": "source", "content": r["title"]}
+                )
             calls.append(self.name)
             state.results[self.name] = "ok"
             state.results["final_answer"] = "done"
@@ -30,11 +39,17 @@ def _make_agent(calls, stored):
 def test_orchestrator_search_storage(monkeypatch):
     calls: list[str] = []
     stored: list[str] = []
-    monkeypatch.setattr(Search, "external_lookup", lambda q, max_results=2: [
-        {"title": "Doc1", "url": "u1"},
-        {"title": "Doc2", "url": "u2"},
-    ])
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+    monkeypatch.setattr(
+        Search,
+        "external_lookup",
+        lambda q, max_results=2: [
+            {"title": "Doc1", "url": "u1"},
+            {"title": "Doc2", "url": "u2"},
+        ],
+    )
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
+    )
     monkeypatch.setattr(AgentFactory, "get", lambda name: _make_agent(calls, stored))
 
     cfg = ConfigModel(agents=["TestAgent"], loops=1)

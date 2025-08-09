@@ -1,4 +1,4 @@
-"""Regression test for token usage against stored baselines."""
+"""Regression test ensuring token usage stays within baseline."""
 
 import json
 from pathlib import Path
@@ -35,7 +35,9 @@ def test_token_usage_regression(monkeypatch):
     """Token usage should not grow beyond 10% of the baseline."""
 
     # Configure orchestrator with a single dummy agent
-    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name))
+    monkeypatch.setattr(
+        AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name)
+    )
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy")
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -48,7 +50,9 @@ def test_token_usage_regression(monkeypatch):
     baseline_total = 0
     if BASELINE_PATH.exists():
         baseline = json.loads(BASELINE_PATH.read_text())
-        baseline_total = sum(v.get("in", 0) + v.get("out", 0) for v in baseline.values())
+        baseline_total = sum(
+            v.get("in", 0) + v.get("out", 0) for v in baseline.values()
+        )
         allowed = baseline_total * (1 + THRESHOLD)
         assert total_tokens <= allowed, (
             f"Total tokens {total_tokens} exceed baseline {baseline_total} by more than 10%"
