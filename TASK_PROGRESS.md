@@ -75,6 +75,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Verify token usage optimization [#8](issues/0008-verify-token-usage-optimization.md)
   - [ ] Monitor token usage regressions automatically [#9](issues/0009-monitor-token-usage-regressions-automatically.md)
 
+All corresponding issues (#1–#9) are currently marked **Not started**,
+matching the unchecked tasks above.
+
 ### 2.3 Behavior Tests
 
 - [ ] Complete BDD test scenarios [#10](issues/0010-complete-bdd-test-scenarios.md)
@@ -85,6 +88,9 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
   - [ ] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
   - [ ] Implement better test isolation [#16](issues/0016-implement-better-test-isolation.md)
   - [ ] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
+
+Issues #10–#17 in the tracker likewise remain **Not started**,
+aligning with the progress here.
 
 ### 4.1 Code Documentation
 
@@ -217,15 +223,16 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### Coverage Report
 
-The latest `task coverage` run on 2025-07-29 did not complete successfully due
-to a `ConfigError` raised during configuration loading. Coverage metrics could
-not be generated.
+The latest `uv run pytest --cov=src` run on 2025-08-09 failed due to an
+`AssertionError` in `tests/unit/test_api.py::test_request_log_thread_safety`.
+Coverage metrics were not generated and remain below the **90%** goal.
 
 ### Latest Test Results
 
 - `flake8` reports no style errors.
-- `mypy` completes without type issues.
-- `pytest` fails due to a configuration validation error (ConfigError).
+- `mypy` reports no type issues.
+- `pytest` fails in `tests/unit/test_api.py::test_request_log_thread_safety`
+  (`AssertionError: assert None == 20`).
 
 ### Performance Baselines
 
