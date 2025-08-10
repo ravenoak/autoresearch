@@ -4,7 +4,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from . import api_orchestrator_integration_steps  # noqa: F401
 from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.api import config_loader, reset_request_log
+from autoresearch.api import config_loader, get_request_logger
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 
@@ -45,7 +45,7 @@ def require_bearer_token(monkeypatch, token):
     )
 
 
-@given(parsers.parse('the API rate limit is {limit:d} request per minute'))
+@given(parsers.parse("the API rate limit is {limit:d} request per minute"))
 def set_rate_limit(monkeypatch, limit):
     cfg = ConfigModel(api=APIConfig(rate_limit=limit))
     ConfigLoader.reset_instance()
@@ -58,7 +58,7 @@ def set_rate_limit(monkeypatch, limit):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
-    reset_request_log()
+    get_request_logger().reset()
 
 
 @when(parsers.parse('I send a query "{query}" with header "{header}" set to "{value}"'))
@@ -75,7 +75,7 @@ def send_two_queries(api_client_factory, test_context):
     test_context["resp2"] = client.post("/query", json={"query": "q"})
 
 
-@then(parsers.parse('the response status should be {status:d}'))
+@then(parsers.parse("the response status should be {status:d}"))
 def check_status(test_context, status):
     resp = test_context["response"]
     assert resp.status_code == status
@@ -86,7 +86,7 @@ def check_status(test_context, status):
         assert "detail" in data
 
 
-@then(parsers.parse('the first response status should be {status:d}'))
+@then(parsers.parse("the first response status should be {status:d}"))
 def check_first_status(test_context, status):
     resp = test_context["resp1"]
     assert resp.status_code == status
@@ -95,7 +95,7 @@ def check_first_status(test_context, status):
     assert "error" not in data
 
 
-@then(parsers.parse('the second response status should be {status:d}'))
+@then(parsers.parse("the second response status should be {status:d}"))
 def check_second_status(test_context, status):
     resp = test_context["resp2"]
     assert resp.status_code == status

@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 import os  # noqa: E402
 import pytest  # noqa: E402
 
-from autoresearch.api import reset_request_log  # noqa: E402
+from autoresearch.api import get_request_logger  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
@@ -56,7 +56,7 @@ def pytest_runtest_setup(item):
 @pytest.fixture(autouse=True)
 def reset_api_request_log():
     """Clear API request log before each scenario."""
-    reset_request_log()
+    get_request_logger().reset()
     reset_limiter_state()
 
 

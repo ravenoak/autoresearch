@@ -247,11 +247,12 @@ def test_http_throttling(monkeypatch):
 
         set_delegate(None)
         DummyStorage.persisted = []
-        api_mod.reset_request_log()
+        api_mod.get_request_logger().reset()
 
 
 def test_stream_endpoint(monkeypatch):
     """Streaming endpoint should yield multiple updates."""
+
     def dummy_run_query(query, config, callbacks=None, **kwargs):
         state = QueryState(query=query)
         for i in range(2):
@@ -276,7 +277,9 @@ def test_webhook_notification(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
     client = TestClient(api_app)
 
@@ -293,7 +296,9 @@ def test_batch_query(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer=q, citations=[], reasoning=[], metrics={}
+        ),
     )
     client = TestClient(api_app)
 

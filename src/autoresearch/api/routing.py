@@ -108,23 +108,45 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Limiter = _FallbackLimiter
     _rate_limit_exceeded_handler = _fallback_rate_limit_exceeded_handler
     Limit = _FallbackLimit
-# Global per-client request log used for fallback rate limiting and tests
-REQUEST_LOG: dict[str, int] = {}
-REQUEST_LOG_LOCK = threading.Lock()
 
 
-def reset_request_log() -> None:
-    """Clear the request log."""
-    global REQUEST_LOG
-    with REQUEST_LOG_LOCK:
-        REQUEST_LOG = {}
+class RequestLogger:
+    """Thread-safe per-client request logger."""
+
+    def __init__(self) -> None:
+        self._log: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    def log(self, ip: str) -> int:
+        """Record a request from ``ip`` and return the new count."""
+        with self._lock:
+            self._log[ip] = self._log.get(ip, 0) + 1
+            return self._log[ip]
+
+    def reset(self) -> None:
+        """Clear all recorded requests."""
+        with self._lock:
+            self._log.clear()
+
+    def get(self, ip: str) -> int | None:
+        """Return the number of requests from ``ip``."""
+        with self._lock:
+            return self._log.get(ip)
+
+    def snapshot(self) -> dict[str, int]:
+        """Return a copy of the current log state."""
+        with self._lock:
+            return dict(self._log)
 
 
-def log_request(ip: str) -> int:
-    """Record a request from the given IP and return the new count."""
-    with REQUEST_LOG_LOCK:
-        REQUEST_LOG[ip] = REQUEST_LOG.get(ip, 0) + 1
-        return REQUEST_LOG[ip]
+def create_request_logger() -> RequestLogger:
+    """Factory for creating a new :class:`RequestLogger` instance."""
+    return RequestLogger()
+
+
+def get_request_logger() -> RequestLogger:
+    """Retrieve the application's request logger."""
+    return cast(RequestLogger, app.state.request_logger)
 
 
 config_loader = ConfigLoader()
@@ -191,11 +213,15 @@ app.state.limiter = limiter
 class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
     """Simplified rate limiting used when SlowAPI is unavailable."""
 
+    def __init__(self, app, request_logger: RequestLogger):
+        super().__init__(app)
+        self.request_logger = request_logger
+
     async def dispatch(self, request: Request, call_next):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
-            count = log_request(ip)
+            count = self.request_logger.log(ip)
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
             if count > cfg_limit:
@@ -224,11 +250,15 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting using SlowAPI's limiter with dynamic configuration."""
 
+    def __init__(self, app, request_logger: RequestLogger):
+        super().__init__(app)
+        self.request_logger = request_logger
+
     async def dispatch(self, request: Request, call_next):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
-            count = log_request(ip)
+            count = self.request_logger.log(ip)
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
             if not limiter.limiter.hit(limit_obj, ip) or count > cfg_limit:
@@ -249,10 +279,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+request_logger = create_request_logger()
+app.state.request_logger = request_logger
 if SLOWAPI_STUB:
-    app.add_middleware(FallbackRateLimitMiddleware)
+    app.add_middleware(FallbackRateLimitMiddleware, request_logger=request_logger)
 else:
-    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(RateLimitMiddleware, request_logger=request_logger)
 
 app.post("/query/stream")(query_stream_endpoint)
 _watch_ctx = None

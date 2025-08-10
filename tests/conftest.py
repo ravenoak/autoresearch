@@ -25,7 +25,7 @@ from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402, F401
 
 
-from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
+from autoresearch.api import app as api_app, SLOWAPI_STUB, get_request_logger  # noqa: E402
 import typer  # noqa: E402
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402
@@ -41,6 +41,7 @@ from autoresearch.storage import (  # noqa: E402
 )  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 import duckdb  # noqa: E402
+
 _orig_option = typer.Option
 
 
@@ -220,7 +221,7 @@ def stop_config_watcher(monkeypatch):
 def reset_rate_limiting():
     """Clear API rate limiter state and request log before each test."""
     reset_limiter_state()
-    reset_request_log()
+    get_request_logger().reset()
     yield
 
 
@@ -359,7 +360,9 @@ def mock_config():
             self.patcher = None
 
         def __enter__(self):
-            self.patcher = patch("autoresearch.config.loader.ConfigLoader.config", self.config)
+            self.patcher = patch(
+                "autoresearch.config.loader.ConfigLoader.config", self.config
+            )
             self.patcher.start()
             return self.config
 
@@ -536,9 +539,7 @@ def flexible_llm_adapter(monkeypatch, request):
     LLMFactory.register("flexible", FlexibleAdapter)
     adapter = FlexibleAdapter(responses)
     monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: adapter)
-    monkeypatch.setattr(
-        "autoresearch.llm.get_pooled_adapter", lambda name: adapter
-    )
+    monkeypatch.setattr("autoresearch.llm.get_pooled_adapter", lambda name: adapter)
     yield adapter
     LLMFactory._registry.pop("flexible", None)
 
