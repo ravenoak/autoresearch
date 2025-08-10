@@ -13,7 +13,7 @@ outcomes.
 - Feature docs link to scenarios
 
 ## Status
-In progress – see tests/behavior/features/gui_cli.feature
+Completed – added success and failure scenarios for GUI CLI
 
 ## Related
 - #10

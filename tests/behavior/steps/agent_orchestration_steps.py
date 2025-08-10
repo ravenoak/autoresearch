@@ -8,6 +8,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration import ReasoningMode
+from autoresearch.errors import OrchestrationError
 
 
 @given("the agents Synthesizer, Contrarian, and Fact-Checker are enabled")
@@ -235,6 +236,21 @@ def check_agent_order_rotation(run_two_queries):
     assert run_two_queries["primus_indices"][0] != run_two_queries["primus_indices"][1]
 
 
+@given("the orchestrator is configured to raise an error")
+def orchestrator_raises_error(monkeypatch):
+    def mock_run_query(*args, **kwargs):
+        raise OrchestrationError("Test error")
+
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+
+
+@then("the CLI should report an orchestration error")
+def cli_reports_orchestration_error(submit_query_via_cli, caplog):
+    result = submit_query_via_cli["result"]
+    assert result.exit_code == 0
+    assert "Error: Test error" in caplog.text
+
+
 @scenario("../features/agent_orchestration.feature", "One dialectical cycle")
 def test_one_cycle():
     pass
@@ -242,6 +258,11 @@ def test_one_cycle():
 
 @scenario("../features/agent_orchestration.feature", "Rotating Primus across loops")
 def test_rotating_primus():
+    pass
+
+
+@scenario("../features/agent_orchestration.feature", "CLI orchestrator error")
+def test_cli_orchestrator_error():
     pass
 
 

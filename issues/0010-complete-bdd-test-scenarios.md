@@ -13,7 +13,7 @@ workflows.
 - BDD suite passes in CI
 
 ## Status
-In progress – see tests/behavior/features/agent_orchestration.feature
+Completed – added CLI success and failure scenarios for agent orchestration and GUI CLI
 
 ## Related
 - #11
