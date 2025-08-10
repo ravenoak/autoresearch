@@ -1,6 +1,6 @@
 [project]
 name = "autoresearch"
-version = "0.1.0-alpha.1" # keep in sync with autoresearch.__version__
+version = "0.1.0a1" # keep in sync with autoresearch.__version__
 description = "Local-first research assistant coordinating agents for evidence-backed answers."
 authors = [
     {name = "Caitlyn O'Hanna",email = "caitlyn.ohanna@gmail.com"}

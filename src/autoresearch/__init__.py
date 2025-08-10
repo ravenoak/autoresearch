@@ -10,6 +10,7 @@ interfaces and a modular architecture.
 # creation.
 import importlib
 import sys
+from importlib.metadata import version as _version
 
 try:  # pragma: no cover - best effort patch
     module = importlib.import_module("pydantic.root_model")
@@ -17,19 +18,19 @@ try:  # pragma: no cover - best effort patch
 except Exception:  # pragma: no cover
     pass
 
-__version__ = "0.1.0"
+__version__ = _version("autoresearch")
 
 try:  # pragma: no cover - optional distributed extras
     from .distributed import (
+        InMemoryBroker,
         ProcessExecutor,
         RayExecutor,
-        StorageCoordinator,
-        ResultAggregator,
-        InMemoryBroker,
         RedisBroker,
-        start_storage_coordinator,
-        start_result_aggregator,
+        ResultAggregator,
+        StorageCoordinator,
         publish_claim,
+        start_result_aggregator,
+        start_storage_coordinator,
     )
 except Exception as exc:  # pragma: no cover - missing optional deps
     ProcessExecutor = None  # type: ignore
