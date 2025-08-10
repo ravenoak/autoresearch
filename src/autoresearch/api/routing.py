@@ -18,6 +18,7 @@ import asyncio
 import importlib
 import threading
 import types
+from collections import Counter
 from typing import Any, Callable, List, Optional, cast
 from uuid import uuid4
 
@@ -114,16 +115,20 @@ class RequestLogger:
     """Thread-safe per-client request logger."""
 
     def __init__(self) -> None:
-        self._log: dict[str, int] = {}
+        # ``Counter`` returns ``0`` for missing keys without mutating the
+        # underlying mapping. Access is guarded by ``_lock`` to ensure atomic
+        # updates when used by multiple threads.
+        self._log: Counter[str] = Counter()
         self._lock = threading.Lock()
 
     def log(self, ip: str) -> int:
         """Record a request from ``ip`` and return the new count.
 
-        This method is thread-safe.
+        The update and retrieval occur under a lock so that concurrent calls
+        do not lose increments and each call receives the current count.
         """
         with self._lock:
-            self._log[ip] = self._log.get(ip, 0) + 1
+            self._log.update({ip: 1})
             return self._log[ip]
 
     def reset(self) -> None:
@@ -141,7 +146,7 @@ class RequestLogger:
         thread-safe.
         """
         with self._lock:
-            return self._log.get(ip, 0)
+            return self._log[ip]
 
     def snapshot(self) -> dict[str, int]:
         """Return a copy of the current log state."""
