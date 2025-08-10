@@ -88,6 +88,14 @@ def test_error_recovery_agent_fallback():
     pass
 
 
+@scenario(
+    "../features/error_recovery.feature",
+    "Successful run does not trigger recovery",
+)
+def test_error_recovery_none():
+    pass
+
+
 @given("an agent that raises a transient error", target_fixture="config")
 def flaky_agent(monkeypatch, isolate_network, restore_environment):
     cfg = ConfigModel.model_construct(agents=["Flaky"], loops=1)
@@ -180,6 +188,26 @@ def failing_agent_fallback(monkeypatch, isolate_network, restore_environment):
         Orchestrator,
         "_handle_agent_error",
         handle,
+    )
+    return cfg
+
+
+@given("a reliable agent", target_fixture="config")
+def reliable_agent(monkeypatch, isolate_network, restore_environment):
+    cfg = ConfigModel.model_construct(agents=["Reliable"], loops=1)
+
+    class ReliableAgent:
+        def can_execute(self, *args, **kwargs) -> bool:
+            return True
+
+        def execute(self, *args, **kwargs) -> dict:
+            return {}
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self, *a, **k: cfg)
+    monkeypatch.setattr(
+        AgentFactory,
+        "get",
+        classmethod(lambda cls, name, llm_adapter=None: ReliableAgent()),
     )
     return cfg
 
@@ -331,8 +359,11 @@ def run_orchestrator(
             state["active"] = False
             logs.append("run complete")
 
-    # Expose metrics as metadata for test assertions
-    response.metadata = response.metrics
+    # Expose metrics as metadata for test assertions when possible
+    try:
+        response.metadata = response.metrics
+    except Exception:
+        pass
     return {
         "recovery_info": dict(recovery_context),
         "response": response,
@@ -376,6 +407,11 @@ def run_orchestrator_invalid(
         state["active"] = False
 
     return {"error": None, "record": record, "logs": logs, "state": state}
+
+
+@then("no recovery should be recorded")
+def assert_no_recovery(run_result: dict) -> None:
+    assert run_result["recovery_info"] == {}
 
 
 @then(parsers.parse('a recovery strategy "{strategy}" should be recorded'))

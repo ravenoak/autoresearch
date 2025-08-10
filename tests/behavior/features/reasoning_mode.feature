@@ -7,6 +7,14 @@ Feature: Reasoning Mode Selection
   Background:
     Given loops is set to 2 in configuration
 
+  Scenario: Default reasoning mode is dialectical
+    Given loops is set to 1 in configuration
+    When I run the orchestrator on query "mode test"
+    Then the loops used should be 1
+    And the reasoning mode selected should be "dialectical"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Contrarian, FactChecker"
+
   Scenario: Direct mode runs Synthesizer only
     Given reasoning mode is "direct"
     When I run the orchestrator on query "mode test"

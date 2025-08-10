@@ -108,3 +108,8 @@ Feature: Error Recovery
     And no agents should execute
     And the system state should be restored
     And the logs should include "unsupported reasoning mode"
+
+  Scenario: Successful run does not trigger recovery
+    Given a reliable agent
+    When I run the orchestrator on query "recover test"
+    Then no recovery should be recorded

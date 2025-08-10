@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import given, parsers, scenario, then, when
 
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError, NotFoundError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -13,6 +13,11 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 @scenario("../features/reasoning_mode.feature", "Direct mode runs Synthesizer only")
 def test_direct_mode():
+    pass
+
+
+@scenario("../features/reasoning_mode.feature", "Default reasoning mode is dialectical")
+def test_default_mode():
     pass
 
 
@@ -105,8 +110,8 @@ def set_primus_start(config: ConfigModel, index: int):
 def run_orchestrator(
     query: str,
     config: ConfigModel,
-    _isolate_network,
-    _restore_environment,
+    isolate_network,
+    restore_environment,
 ):
     record: list[str] = []
     params: dict = {}
@@ -163,8 +168,8 @@ def run_orchestrator_invalid(
     query: str,
     mode: str,
     config: ConfigModel,
-    _isolate_network,
-    _restore_environment,
+    isolate_network,
+    restore_environment,
 ):
     record: list[str] = []
     logs: list[str] = []
@@ -188,8 +193,8 @@ def run_orchestrator_invalid(
 def _run_orchestrator_with_failure(
     query: str,
     config: ConfigModel,
-    _isolate_network,
-    _restore_environment,
+    isolate_network,
+    restore_environment,
     *,
     overflow: bool = False,
 ):
@@ -209,8 +214,8 @@ def _run_orchestrator_with_failure(
         return info
 
     if config.reasoning_mode == ReasoningMode.CHAIN_OF_THOUGHT:
-        from autoresearch.orchestration.state import QueryState
         from autoresearch.orchestration.metrics import OrchestrationMetrics
+        from autoresearch.orchestration.state import QueryState
 
         call_count = 0
 
@@ -340,11 +345,11 @@ def _run_orchestrator_with_failure(
 def run_orchestrator_failure(
     query: str,
     config: ConfigModel,
-    _isolate_network,
-    _restore_environment,
+    isolate_network,
+    restore_environment,
 ):
     return _run_orchestrator_with_failure(
-        query, config, _isolate_network, _restore_environment
+        query, config, isolate_network, restore_environment
     )
 
 
@@ -355,11 +360,11 @@ def run_orchestrator_failure(
 def run_orchestrator_overflow(
     query: str,
     config: ConfigModel,
-    _isolate_network,
-    _restore_environment,
+    isolate_network,
+    restore_environment,
 ):
     return _run_orchestrator_with_failure(
-        query, config, _isolate_network, _restore_environment, overflow=True
+        query, config, isolate_network, restore_environment, overflow=True
     )
 
 
