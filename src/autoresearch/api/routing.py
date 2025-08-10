@@ -118,20 +118,30 @@ class RequestLogger:
         self._lock = threading.Lock()
 
     def log(self, ip: str) -> int:
-        """Record a request from ``ip`` and return the new count."""
+        """Record a request from ``ip`` and return the new count.
+
+        This method is thread-safe.
+        """
         with self._lock:
             self._log[ip] = self._log.get(ip, 0) + 1
             return self._log[ip]
 
     def reset(self) -> None:
-        """Clear all recorded requests."""
+        """Clear all recorded requests.
+
+        This method is thread-safe.
+        """
         with self._lock:
             self._log.clear()
 
-    def get(self, ip: str) -> int | None:
-        """Return the number of requests from ``ip``."""
+    def get(self, ip: str) -> int:
+        """Return the number of requests from ``ip``.
+
+        Returns ``0`` if the IP has not been logged yet. This method is
+        thread-safe.
+        """
         with self._lock:
-            return self._log.get(ip)
+            return self._log.get(ip, 0)
 
     def snapshot(self) -> dict[str, int]:
         """Return a copy of the current log state."""
