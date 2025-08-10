@@ -57,7 +57,7 @@ def test_fallback_no_limit(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.reset_request_log()
+    api_mod.get_request_logger().reset()
     monkeypatch.setattr(
         "autoresearch.api.routing.get_remote_address",
         lambda req: req.headers.get("x-ip", "1"),
@@ -66,8 +66,7 @@ def test_fallback_no_limit(monkeypatch):
 
     assert client.post("/query", json={"query": "q"}).status_code == 200
     assert client.post("/query", json={"query": "q"}).status_code == 200
-    with api_mod.REQUEST_LOG_LOCK:
-        assert api_mod.REQUEST_LOG == Counter()
+    assert api_mod.get_request_logger().snapshot() == Counter()
 
 
 def test_fallback_multiple_ips(monkeypatch):
@@ -76,7 +75,7 @@ def test_fallback_multiple_ips(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.reset_request_log()
+    api_mod.get_request_logger().reset()
 
     def addr(req):
         return req.headers.get("x-ip", "1")
@@ -90,8 +89,7 @@ def test_fallback_multiple_ips(monkeypatch):
         == 200
     )
     if api_mod.SLOWAPI_STUB:
-        with api_mod.REQUEST_LOG_LOCK:
-            assert api_mod.REQUEST_LOG.get("1") == 1
+        assert api_mod.get_request_logger().get("1") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
@@ -100,8 +98,7 @@ def test_fallback_multiple_ips(monkeypatch):
         == 200
     )
     if api_mod.SLOWAPI_STUB:
-        with api_mod.REQUEST_LOG_LOCK:
-            assert api_mod.REQUEST_LOG.get("2") == 1
+        assert api_mod.get_request_logger().get("2") == 1
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
 
@@ -110,8 +107,7 @@ def test_fallback_multiple_ips(monkeypatch):
         == 429
     )
     if api_mod.SLOWAPI_STUB:
-        with api_mod.REQUEST_LOG_LOCK:
-            assert api_mod.REQUEST_LOG.get("1") == 2
+        assert api_mod.get_request_logger().get("1") == 2
     else:
         assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
@@ -122,10 +118,10 @@ def test_request_log_thread_safety(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.reset_request_log()
+    api_mod.get_request_logger().reset()
 
     def make_request() -> None:
-        api_mod.log_request("1")
+        api_mod.get_request_logger().log("1")
 
     threads = [threading.Thread(target=make_request) for _ in range(20)]
     for t in threads:
@@ -133,5 +129,4 @@ def test_request_log_thread_safety(monkeypatch):
     for t in threads:
         t.join()
 
-    with api_mod.REQUEST_LOG_LOCK:
-        assert api_mod.REQUEST_LOG.get("1") == 20
+    assert api_mod.get_request_logger().get("1") == 20
