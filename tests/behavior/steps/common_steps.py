@@ -1,20 +1,21 @@
 # flake8: noqa
 import os
-import pytest
-from pytest_bdd import given
 
-from autoresearch.main import app as cli_app
+import pytest
+from pytest_bdd import given, parsers
+
+from autoresearch import cache, tracing
 from autoresearch.agents.registry import AgentRegistry
+from autoresearch.errors import TimeoutError
+from autoresearch.main import app as cli_app
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import (
     StorageManager,
-    set_delegate as set_storage_delegate,
-    setup as storage_setup,
-    teardown as storage_teardown,
 )
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
-from autoresearch.errors import TimeoutError
-from autoresearch import cache, tracing
+from autoresearch.storage import set_delegate as set_storage_delegate
+from autoresearch.storage import setup as storage_setup
+from autoresearch.storage import teardown as storage_teardown
 
 
 @pytest.fixture(autouse=True)
@@ -41,9 +42,7 @@ def reset_tinydb_and_metrics(tmp_path, monkeypatch):
     """Use temporary cache and metrics files for each scenario."""
     original_env = {
         "TINYDB_PATH": os.environ.get("TINYDB_PATH"),
-        "AUTORESEARCH_RELEASE_METRICS": os.environ.get(
-            "AUTORESEARCH_RELEASE_METRICS"
-        ),
+        "AUTORESEARCH_RELEASE_METRICS": os.environ.get("AUTORESEARCH_RELEASE_METRICS"),
         "AUTORESEARCH_QUERY_TOKENS": os.environ.get("AUTORESEARCH_QUERY_TOKENS"),
     }
     db_path = tmp_path / "cache.json"
@@ -88,9 +87,7 @@ def mock_llm_adapter(monkeypatch):
     """
     from autoresearch.llm import DummyAdapter
 
-    monkeypatch.setattr(
-        "autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter()
-    )
+    monkeypatch.setattr("autoresearch.llm.get_llm_adapter", lambda name: DummyAdapter())
     yield
 
 
@@ -127,9 +124,7 @@ def dummy_query_response(monkeypatch):
             "agent_sequence": ["Synthesizer", "Contrarian"],
         },
     )
-    monkeypatch.setattr(
-        Orchestrator, "run_query", lambda *a, **k: response
-    )
+    monkeypatch.setattr(Orchestrator, "run_query", lambda *a, **k: response)
     return response
 
 
@@ -188,11 +183,13 @@ def orchestrator_failure(monkeypatch):
 
     def _simulate(kind: str | None = None):
         if kind == "timeout":
+
             def _timeout(*_a, **_k):
                 raise TimeoutError("simulated orchestrator timeout")
 
             monkeypatch.setattr(Orchestrator, "run_query", _timeout)
         elif kind == "metrics":
+
             def _metrics(*_a, **_k):
                 return QueryResponse(
                     answer="",
@@ -206,17 +203,16 @@ def orchestrator_failure(monkeypatch):
     return _simulate
 
 
-@given("the Autoresearch application is running")
+@given(
+    parsers.re(
+        "the (?:Autoresearch )?application is running(?: with default configuration)?"
+    )
+)
 def application_running(temp_config):
     """Ensure the application runs with isolated config and mocked LLM."""
     return
 
 
-@given("the application is running with default configuration")
-def app_running_with_default(temp_config):
-    return application_running(temp_config)
-
-
-@given("the application is running")
-def app_running(temp_config):
-    return application_running(temp_config)
+# Backward-compatible aliases for legacy imports
+app_running = application_running
+app_running_with_default = application_running
