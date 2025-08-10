@@ -5,6 +5,10 @@
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
 ## Environment setup
+- `scripts/codex_setup.sh` sets up your environment pior to being handed off to you; update it as appropriate and according to best-practices.
+- Update this file, your instructions and initial context, as appropriate and according to best-practices.
+- Documents in `docs/inspirational_docs/` are for inspiration only and must not be directly referenced; use these documents for inspiration.
+- Documents in `docs/external_research_papers/` are copies of academic papers and can be referenced using best-practices.
 - Use **uv** for dependency management and project interactions.
   - **Run all commands inside the `uv` virtual environment.** Activate it with `source .venv/bin/activate` or prefix commands with `uv run` or `uv pip`.
   - Python **3.12 or newer** is required. Confirm with `python --version`.
