@@ -8,3 +8,7 @@ Feature: GUI CLI
   Scenario: Display help for GUI command
     When I run `autoresearch gui --help`
     Then the CLI should exit successfully
+
+  Scenario: Launch GUI with invalid port
+    When I run `autoresearch gui --port not-a-number`
+    Then the CLI should exit with an error

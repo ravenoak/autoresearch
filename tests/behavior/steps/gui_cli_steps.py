@@ -28,6 +28,14 @@ def run_gui_help(cli_runner, bdd_context, temp_config, isolate_network):
     bdd_context["result"] = result
 
 
+@when("I run `autoresearch gui --port not-a-number`")
+def run_gui_invalid_port(cli_runner, bdd_context, temp_config, isolate_network):
+    result = cli_runner.invoke(
+        cli_app, ["gui", "--port", "not-a-number"], catch_exceptions=False
+    )
+    bdd_context["result"] = result
+
+
 @then("the CLI should exit successfully")
 def cli_success(bdd_context):
     result = bdd_context["result"]
@@ -45,4 +53,9 @@ def test_gui_no_browser():
 
 @scenario("../features/gui_cli.feature", "Display help for GUI command")
 def test_gui_help():
+    pass
+
+
+@scenario("../features/gui_cli.feature", "Launch GUI with invalid port")
+def test_gui_invalid_port():
     pass

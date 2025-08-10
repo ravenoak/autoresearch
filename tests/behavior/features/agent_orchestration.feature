@@ -17,3 +17,8 @@ Feature: Agent Orchestration Cycle
     When I run two separate queries
     Then the Primus agent should advance by one position between queries
     And the order should reflect the new starting agent each time
+
+  Scenario: CLI orchestrator error
+    Given the orchestrator is configured to raise an error
+    When I submit a query via CLI `autoresearch search "Failing orchestration"`
+    Then the CLI should report an orchestration error
