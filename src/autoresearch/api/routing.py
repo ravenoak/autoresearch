@@ -21,7 +21,7 @@ import types
 from typing import Any, Callable, List, Optional, cast
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.background import BackgroundTasks
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -154,19 +154,20 @@ def create_request_logger() -> RequestLogger:
     return RequestLogger()
 
 
-def get_request_logger() -> RequestLogger:
+def get_request_logger(app: FastAPI | None = None) -> RequestLogger:
     """Retrieve the application's request logger."""
+    if app is None:
+        app = cast(FastAPI, globals().get("app"))
     return cast(RequestLogger, app.state.request_logger)
 
 
-def reset_request_log() -> None:
+def reset_request_log(app: FastAPI | None = None) -> None:
     """Clear the application's request log."""
-    get_request_logger().reset()
+    get_request_logger(app).reset()
 
-
-config_loader = ConfigLoader()
 
 security = HTTPBearer(auto_error=False)
+router = APIRouter()
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -191,7 +192,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path in {"/docs", "/openapi.json"}:
             return await call_next(request)
-        loader = ConfigLoader()
+        loader = cast(ConfigLoader, request.app.state.config_loader)
         loader._config = loader.load_config()
         cfg = loader._config.api
         role, error = self._resolve_role(request.headers.get("X-API-Key"), cfg)
@@ -212,25 +213,13 @@ def dynamic_limit() -> str:
     return f"{limit}/minute" if limit > 0 else "1000000/minute"
 
 
-limiter = Limiter(key_func=get_remote_address)
-
-app = FastAPI(
-    title="Autoresearch API",
-    description="API for interacting with the Autoresearch system",
-    version="1.0.0",
-    docs_url=None,  # Disable default docs
-    redoc_url=None,  # Disable default redoc
-)
-app.add_middleware(AuthMiddleware)
-app.state.limiter = limiter
-
-
 class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
     """Simplified rate limiting used when SlowAPI is unavailable."""
 
-    def __init__(self, app, request_logger: RequestLogger):
+    def __init__(self, app, request_logger: RequestLogger, limiter: Limiter):
         super().__init__(app)
         self.request_logger = request_logger
+        self.limiter = limiter
 
     async def dispatch(self, request: Request, call_next):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
@@ -258,16 +247,19 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
                 return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
         response = await call_next(request)
         if cfg_limit and not SLOWAPI_STUB:
-            response = limiter._inject_headers(response, request.state.view_rate_limit)
+            response = self.limiter._inject_headers(
+                response, request.state.view_rate_limit
+            )
         return response
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting using SlowAPI's limiter with dynamic configuration."""
 
-    def __init__(self, app, request_logger: RequestLogger):
+    def __init__(self, app, request_logger: RequestLogger, limiter: Limiter):
         super().__init__(app)
         self.request_logger = request_logger
+        self.limiter = limiter
 
     async def dispatch(self, request: Request, call_next):
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
@@ -276,7 +268,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             count = self.request_logger.log(ip)
             limit_obj = parse(dynamic_limit())
             request.state.view_rate_limit = (limit_obj, [ip])
-            if not limiter.limiter.hit(limit_obj, ip) or count > cfg_limit:
+            if not self.limiter.limiter.hit(limit_obj, ip) or count > cfg_limit:
                 limit_wrapper = Limit(
                     limit_obj,
                     get_remote_address,
@@ -290,23 +282,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
                 return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
             response = await call_next(request)
-            return limiter._inject_headers(response, request.state.view_rate_limit)
+            return self.limiter._inject_headers(response, request.state.view_rate_limit)
         return await call_next(request)
 
 
-request_logger = create_request_logger()
-app.state.request_logger = request_logger
-if SLOWAPI_STUB:
-    app.add_middleware(FallbackRateLimitMiddleware, request_logger=request_logger)
-else:
-    app.add_middleware(RateLimitMiddleware, request_logger=request_logger)
-
-app.post("/query/stream")(query_stream_endpoint)
-_watch_ctx = None
-app.state.async_tasks = {}
+router.post("/query/stream")(query_stream_endpoint)
 
 
-@app.get("/docs", include_in_schema=False)
+@router.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     """Serve custom Swagger UI documentation.
 
@@ -325,8 +308,8 @@ async def custom_swagger_ui_html():
     )
 
 
-@app.get("/openapi.json", include_in_schema=False)
-async def get_openapi_schema():
+@router.get("/openapi.json", include_in_schema=False)
+async def get_openapi_schema(request: Request):
     """Serve the OpenAPI schema for the API.
 
     This endpoint returns the OpenAPI schema for the API, which describes all
@@ -368,60 +351,12 @@ async def get_openapi_schema():
         - **GET /metrics**: Retrieve Prometheus metrics for monitoring
         - **GET /capabilities**: Discover system capabilities
         """,
-        routes=app.routes,
+        routes=request.app.routes,
     )
     return openapi_schema
 
 
-@app.on_event("startup")
-def _startup() -> None:
-    """Initialize storage and configuration watching on API startup.
-
-    This function is automatically called when the FastAPI application starts.
-    It performs two critical initialization tasks:
-    1. Sets up the StorageManager to ensure storage backends are ready
-    2. Starts watching the configuration files for changes, enabling hot-reloading
-
-    The configuration watcher is stored in a global variable to ensure it can be
-    properly cleaned up during application shutdown.
-
-    Returns:
-        None
-    """
-    StorageManager.setup()
-    global _watch_ctx
-    _watch_ctx = config_loader.watching()
-    _watch_ctx.__enter__()
-
-
-# Start watching the main configuration file during the application's lifetime.
-
-
-@app.on_event("shutdown")
-def _stop_config_watcher() -> None:
-    """Stop the configuration watcher thread when the app shuts down.
-
-    This function is automatically called when the FastAPI application shuts down.
-    It ensures that the configuration watcher context manager is properly exited,
-    which stops the background thread that watches for configuration changes.
-
-    Proper cleanup is important to prevent resource leaks and ensure the application
-    can be restarted cleanly. This function checks if the watcher context exists
-    before attempting to exit it, making it safe to call even if startup failed.
-
-    Returns:
-        None
-    """
-    global _watch_ctx
-    try:
-        if _watch_ctx is not None:
-            _watch_ctx.__exit__(None, None, None)
-            _watch_ctx = None
-    finally:
-        config_loader.stop_watching()
-
-
-@app.post("/query", response_model=None)
+@router.post("/query", response_model=None)
 async def query_endpoint(
     request: QueryRequest,
     stream: bool = False,
@@ -544,7 +479,7 @@ async def query_endpoint(
     return validated
 
 
-@app.post(
+@router.post(
     "/query/batch",
     summary="Batch Query Endpoint",
     description="Execute multiple queries with pagination support",
@@ -581,10 +516,11 @@ async def batch_query_endpoint(
     }
 
 
-@app.post("/query/async")
+@router.post("/query/async")
 async def async_query_endpoint(
     request: QueryRequest,
     background_tasks: BackgroundTasks,
+    http_request: Request,
     _: None = require_permission("query"),
 ) -> dict:
     """Run a query in the background and return its ID."""
@@ -599,7 +535,7 @@ async def async_query_endpoint(
     query_id = str(uuid4())
     loop = asyncio.get_running_loop()
     future: asyncio.Future[QueryResponse] = loop.create_future()
-    app.state.async_tasks[query_id] = future
+    http_request.app.state.async_tasks[query_id] = future
 
     async def run_and_notify() -> None:
         try:
@@ -623,13 +559,14 @@ async def async_query_endpoint(
     return {"query_id": query_id}
 
 
-@app.get("/query/{query_id}")
+@router.get("/query/{query_id}")
 async def query_status_endpoint(
     query_id: str,
+    http_request: Request,
     _: None = require_permission("query"),
 ) -> QueryResponse | dict:
     """Return the status or result of an asynchronous query."""
-    task: asyncio.Task | None = app.state.async_tasks.get(query_id)
+    task: asyncio.Task | None = http_request.app.state.async_tasks.get(query_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Unknown query ID")
     if not task.done():
@@ -637,19 +574,20 @@ async def query_status_endpoint(
     try:
         result = task.result()
     except Exception as exc:
-        del app.state.async_tasks[query_id]
+        del http_request.app.state.async_tasks[query_id]
         raise HTTPException(status_code=500, detail=str(exc))
-    del app.state.async_tasks[query_id]
+    del http_request.app.state.async_tasks[query_id]
     return result
 
 
-@app.delete("/query/{query_id}")
+@router.delete("/query/{query_id}")
 async def cancel_query_endpoint(
     query_id: str,
+    http_request: Request,
     _: None = require_permission("query"),
 ) -> dict:
     """Cancel a running asynchronous query and remove it."""
-    task: asyncio.Task | None = app.state.async_tasks.pop(query_id, None)
+    task: asyncio.Task | None = http_request.app.state.async_tasks.pop(query_id, None)
     if task is None:
         raise HTTPException(status_code=404, detail="Unknown query ID")
     if not task.done():
@@ -658,7 +596,7 @@ async def cancel_query_endpoint(
     return {"status": "finished"}
 
 
-@app.get("/metrics")
+@router.get("/metrics")
 def metrics_endpoint(_: None = require_permission("metrics")) -> PlainTextResponse:
     """Expose Prometheus metrics for monitoring the application.
 
@@ -681,7 +619,7 @@ def metrics_endpoint(_: None = require_permission("metrics")) -> PlainTextRespon
     return PlainTextResponse(data, media_type=CONTENT_TYPE_LATEST)
 
 
-@app.get("/health")
+@router.get("/health")
 def health_endpoint() -> dict:
     """Simple health check endpoint.
 
@@ -692,7 +630,7 @@ def health_endpoint() -> dict:
     return {"status": "ok"}
 
 
-@app.get("/capabilities")
+@router.get("/capabilities")
 def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     """Discover the capabilities of the Autoresearch system.
 
@@ -758,19 +696,20 @@ def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     }
 
 
-@app.get("/config")
+@router.get("/config")
 def get_config_endpoint(_: None = require_permission("capabilities")) -> dict:
     """Return the current configuration."""
     return get_config().model_dump(mode="json")
 
 
-@app.put("/config")
+@router.put("/config")
 def update_config_endpoint(
     updates: dict,
+    request: Request,
     _: None = require_permission("capabilities"),
 ) -> dict:
     """Update configuration at runtime."""
-    loader = ConfigLoader()
+    loader = cast(ConfigLoader, request.app.state.config_loader)
     current = loader.config.model_dump(mode="python")
     current.update(updates)
     try:
@@ -782,13 +721,14 @@ def update_config_endpoint(
     return new_cfg.model_dump(mode="json")
 
 
-@app.post("/config")
+@router.post("/config")
 def replace_config_endpoint(
     new_config: dict,
+    request: Request,
     _: None = require_permission("capabilities"),
 ) -> dict:
     """Replace the entire configuration at runtime."""
-    loader = ConfigLoader()
+    loader = cast(ConfigLoader, request.app.state.config_loader)
     try:
         new_cfg = ConfigModel(**new_config)
     except ValidationError as exc:
@@ -798,10 +738,12 @@ def replace_config_endpoint(
     return new_cfg.model_dump(mode="json")
 
 
-@app.delete("/config")
-def reload_config_endpoint(_: None = require_permission("capabilities")) -> dict:
+@router.delete("/config")
+def reload_config_endpoint(
+    request: Request, _: None = require_permission("capabilities")
+) -> dict:
     """Reload configuration from disk and discard runtime changes."""
-    loader = ConfigLoader()
+    loader = cast(ConfigLoader, request.app.state.config_loader)
     try:
         new_cfg = loader.load_config()
     except Exception as exc:  # pragma: no cover - defensive
@@ -809,3 +751,69 @@ def reload_config_endpoint(_: None = require_permission("capabilities")) -> dict
     loader._config = new_cfg
     loader.notify_observers(new_cfg)
     return new_cfg.model_dump(mode="json")
+
+
+def create_app(
+    config_loader: ConfigLoader | None = None,
+    request_logger: RequestLogger | None = None,
+    limiter: Limiter | None = None,
+) -> FastAPI:
+    """Application factory for creating isolated FastAPI instances."""
+    app = FastAPI(
+        title="Autoresearch API",
+        description="API for interacting with the Autoresearch system",
+        version="1.0.0",
+        docs_url=None,
+        redoc_url=None,
+    )
+    app.add_middleware(AuthMiddleware)
+
+    limiter = limiter or Limiter(key_func=get_remote_address)
+    app.state.limiter = limiter
+
+    request_logger = request_logger or create_request_logger()
+    app.state.request_logger = request_logger
+
+    if SLOWAPI_STUB:
+        app.add_middleware(
+            FallbackRateLimitMiddleware,
+            request_logger=request_logger,
+            limiter=limiter,
+        )
+    else:
+        app.add_middleware(
+            RateLimitMiddleware,
+            request_logger=request_logger,
+            limiter=limiter,
+        )
+
+    loader = config_loader or ConfigLoader()
+    app.state.config_loader = loader
+    app.state.async_tasks = {}
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        StorageManager.setup()
+        watch_ctx = loader.watching()
+        watch_ctx.__enter__()
+        app.state.watch_ctx = watch_ctx
+
+    @app.on_event("shutdown")
+    def _stop_config_watcher() -> None:
+        try:
+            watch_ctx = getattr(app.state, "watch_ctx", None)
+            if watch_ctx is not None:
+                watch_ctx.__exit__(None, None, None)
+                app.state.watch_ctx = None
+        finally:
+            loader.stop_watching()
+
+    app.include_router(router)
+    app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
+    return app
+
+
+# Default application instance used by the package
+app = create_app()
+config_loader = cast(ConfigLoader, app.state.config_loader)
+limiter = app.state.limiter
