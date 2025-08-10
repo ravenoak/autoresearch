@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-> Special note: the environment that ChatGPT Codex operates in executes `scripts/codex_setup.sh` for setup. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created. If this marker is present, inspect `codex_setup.log` for details. This guide is the only document that may mention `scripts/codex_setup.sh`; do not reference it elsewhere.
+> Special note: before work begins, `scripts/codex_setup.sh` is executed to set up the environment. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created. If this marker is present, inspect `codex_setup.log` for details. This guide is the only document that may mention `scripts/codex_setup.sh`; do not reference it elsewhere.
 
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
@@ -25,7 +25,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Verification steps
 - Always run tests with `uv run` or inside the activated `.venv`; all tests
   must run inside this environment.
-- Use `task verify` to run linting, type checking, and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
+- Run `task verify` before committing; it performs linting, type checking,
+  and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
 - Use `rg` for repository searches instead of `grep -R` or `ls -R`.
   Example: `rg <pattern>`.
 - If `task` is unavailable, run these commands individually:
@@ -38,9 +39,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
-- Integration and behavior tests require optional features. Install
-  them with `uv pip install -e '.[full,parsers,git,llm,dev]'` before
-  running.
+- Full test runs, including integration and behavior tests, require optional
+  extras; install them with `uv pip install -e '.[full,parsers,git,llm,dev]'`
+  before running.
 - See [tests/behavior/README.md](tests/behavior/README.md) for markers
   such as `requires_ui` and `requires_vss` to select specific scenarios.
 
