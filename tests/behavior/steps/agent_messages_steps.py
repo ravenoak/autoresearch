@@ -1,11 +1,13 @@
-from pytest_bdd import scenario, given, when, then
-from . import common_steps  # noqa: F401
-from autoresearch.config.models import ConfigModel, StorageConfig
+from pytest_bdd import given, scenario, then, when
+
 from autoresearch.agents.base import Agent, AgentRole
-from autoresearch.agents.registry import AgentFactory
 from autoresearch.agents.messages import MessageProtocol
+from autoresearch.agents.registry import AgentFactory
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
+
+from . import common_steps  # noqa: F401
 
 
 class Sender(Agent):
@@ -51,13 +53,22 @@ class TeamReceiver(Agent):
         return {}
 
 
-@scenario("../features/agent_messages.feature", "Agents share data through the orchestrator")
+@scenario(
+    "../features/agent_messages.feature", "Agents share data through the orchestrator"
+)
 def test_agent_message_exchange():
     pass
 
 
 @scenario("../features/agent_messages.feature", "Coalition broadcast communication")
 def test_coalition_broadcast():
+    pass
+
+
+@scenario(
+    "../features/agent_messages.feature", "Messaging disabled prevents communication"
+)
+def test_messaging_disabled():
     pass
 
 
@@ -79,6 +90,24 @@ def setup_agents(monkeypatch, tmp_path, config_model):
     return cfg
 
 
+@given("two communicating agents without messaging", target_fixture="config")
+def setup_agents_no_messaging(monkeypatch, tmp_path, config_model):
+    """Configure agents with messaging disabled."""
+    db_path = tmp_path / "kg.duckdb"
+    cfg = config_model.model_copy()
+    cfg.agents = ["Sender", "Receiver"]
+    cfg.loops = 1
+    cfg.enable_agent_messages = False
+    cfg.storage = StorageConfig(duckdb_path=str(db_path))
+    monkeypatch.setenv("DUCKDB_PATH", str(db_path))
+
+    def get_agent(name: str):
+        return Sender() if name == "Sender" else Receiver()
+
+    monkeypatch.setattr(AgentFactory, "get", staticmethod(get_agent))
+    return cfg
+
+
 @when("I execute a query", target_fixture="response")
 def run_query(config):
     """Execute a simple query and capture the response."""
@@ -89,6 +118,12 @@ def run_query(config):
 def receiver_got_message(response):
     metrics = response.metrics
     assert metrics["delivered_messages"]["Receiver"][0]["content"] == "hi"
+
+
+@then("the receiver should have no messages")
+def receiver_no_message(response):
+    metrics = response.metrics
+    assert "Receiver" not in metrics.get("delivered_messages", {})
 
 
 @given("a coalition with a sender and two receivers", target_fixture="config")
