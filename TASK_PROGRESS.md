@@ -87,7 +87,7 @@ matching the checkboxes above.
 - [ ] Enhance test step definitions [#14](issues/0014-enhance-test-step-definitions.md)
   - [ ] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
   - [ ] Implement better test isolation [#16](issues/0016-implement-better-test-isolation.md)
-  - [ ] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
+  - [x] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
 
 Issues #10–#17 in the tracker likewise remain **Not started**,
 aligning with the progress here.

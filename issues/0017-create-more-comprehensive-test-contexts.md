@@ -13,7 +13,7 @@ scenarios.
 - Complex scenarios compose contexts easily
 
 ## Status
-In progress – see tests/fixtures/config.py
+Resolved via expanded fixtures in `tests/fixtures/config.py`
 
 ## Related
 - #14
