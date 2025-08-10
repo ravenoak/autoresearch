@@ -179,6 +179,8 @@ def reset_registries():
     AgentRegistry._registry = agent_reg
     AgentFactory._registry = agent_fact
     LLMFactory._registry = llm_reg
+    AgentFactory.set_delegate(None)
+    set_storage_delegate(None)
 
 
 @pytest.fixture
@@ -223,6 +225,16 @@ def reset_rate_limiting():
     reset_limiter_state()
     reset_request_log()
     yield
+    reset_limiter_state()
+    reset_request_log()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_storage():
+    """Remove any persistent storage state between tests."""
+    storage_teardown(remove_db=True)
+    yield
+    storage_teardown(remove_db=True)
 
 
 @pytest.fixture
