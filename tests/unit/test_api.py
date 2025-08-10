@@ -20,6 +20,11 @@ def _setup(monkeypatch):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
+    # Ensure the request log starts from a clean state. Import lazily so tests
+    # can control how the API module is initialised.
+    from autoresearch.api import reset_request_log
+
+    reset_request_log()
     return cfg
 
 
@@ -57,7 +62,7 @@ def test_fallback_no_limit(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.reset_request_log()
     monkeypatch.setattr(
         "autoresearch.api.routing.get_remote_address",
         lambda req: req.headers.get("x-ip", "1"),
@@ -75,7 +80,7 @@ def test_fallback_multiple_ips(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.reset_request_log()
 
     def addr(req):
         return req.headers.get("x-ip", "1")
@@ -118,7 +123,7 @@ def test_request_log_thread_safety(monkeypatch):
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.reset_request_log()
 
     results: list[int] = []
 

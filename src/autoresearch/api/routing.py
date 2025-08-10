@@ -141,7 +141,11 @@ class RequestLogger:
         thread-safe.
         """
         with self._lock:
-            return self._log.get(ip, 0)
+            # ``dict.get`` returns ``int | None`` but we always provide a
+            # default so the value is guaranteed to be an ``int``. Explicitly
+            # casting makes the intent clear and avoids accidental ``None``
+            # propagation in call sites.
+            return int(self._log.get(ip, 0))
 
     def snapshot(self) -> dict[str, int]:
         """Return a copy of the current log state."""
@@ -160,8 +164,17 @@ def get_request_logger() -> RequestLogger:
 
 
 def reset_request_log() -> None:
-    """Clear the application's request log."""
-    get_request_logger().reset()
+    """Clear the application's request log.
+
+    Some tests import the API module lazily which can result in
+    ``app.state.request_logger`` not being set when this function is first
+    called.  To keep the helper resilient we ensure a ``RequestLogger`` is
+    available before attempting to reset it.
+    """
+    if not hasattr(app.state, "request_logger"):
+        app.state.request_logger = create_request_logger()
+    else:
+        get_request_logger().reset()
 
 
 config_loader = ConfigLoader()
