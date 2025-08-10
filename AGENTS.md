@@ -19,6 +19,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, and `duckdb-extension-vss` are present using `uv pip list`.
+  - If `CODEX_ENVIRONMENT_SETUP_FAILED` exists, inspect
+    `codex_setup.log` for setup details.
 
 ## Verification steps
 - Always run tests with `uv run` or inside the activated `.venv`; all tests
@@ -36,6 +38,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
+- Integration and behavior tests require optional features. Install
+  them with `uv pip install -e '.[full,parsers,git,llm,dev]'` before
+  running.
+- See [tests/behavior/README.md](tests/behavior/README.md) for markers
+  such as `requires_ui` and `requires_vss` to select specific scenarios.
 
 ### Cleanup
 - Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.
