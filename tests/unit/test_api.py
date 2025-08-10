@@ -120,8 +120,10 @@ def test_request_log_thread_safety(monkeypatch):
 
     api_mod.get_request_logger().reset()
 
+    results: list[int] = []
+
     def make_request() -> None:
-        api_mod.get_request_logger().log("1")
+        results.append(api_mod.get_request_logger().log("1"))
 
     threads = [threading.Thread(target=make_request) for _ in range(20)]
     for t in threads:
@@ -129,4 +131,12 @@ def test_request_log_thread_safety(monkeypatch):
     for t in threads:
         t.join()
 
-    assert api_mod.get_request_logger().get("1") == 20
+    assert all(isinstance(r, int) for r in results)
+
+    count = api_mod.get_request_logger().get("1")
+    assert isinstance(count, int)
+    assert count == 20
+
+    missing = api_mod.get_request_logger().get("2")
+    assert isinstance(missing, int)
+    assert missing == 0
