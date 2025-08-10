@@ -149,6 +149,11 @@ def get_request_logger() -> RequestLogger:
     return cast(RequestLogger, app.state.request_logger)
 
 
+def reset_request_log() -> None:
+    """Clear the application's request log."""
+    get_request_logger().reset()
+
+
 config_loader = ConfigLoader()
 
 security = HTTPBearer(auto_error=False)

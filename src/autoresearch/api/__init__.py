@@ -18,6 +18,7 @@ query_endpoint = routing.query_endpoint
 create_request_logger = routing.create_request_logger
 get_request_logger = routing.get_request_logger
 RequestLogger = routing.RequestLogger
+reset_request_log = routing.reset_request_log
 
 app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
 
@@ -34,4 +35,5 @@ __all__ = [
     "create_request_logger",
     "get_request_logger",
     "RequestLogger",
+    "reset_request_log",
 ]

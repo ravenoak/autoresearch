@@ -25,7 +25,7 @@ from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402, F401
 
 
-from autoresearch.api import app as api_app, SLOWAPI_STUB, get_request_logger  # noqa: E402
+from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
 import typer  # noqa: E402
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402
@@ -221,7 +221,7 @@ def stop_config_watcher(monkeypatch):
 def reset_rate_limiting():
     """Clear API rate limiter state and request log before each test."""
     reset_limiter_state()
-    get_request_logger().reset()
+    reset_request_log()
     yield
 
 

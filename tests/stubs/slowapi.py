@@ -8,8 +8,25 @@ from collections import Counter
 slowapi_stub = types.ModuleType("slowapi")
 slowapi_stub.IS_STUB = True
 
-REQUEST_LOG: Counter[str] = Counter()
-REQUEST_LOG_LOCK = threading.Lock()
+
+class RequestLog:
+    """Thread-safe request counter used by the stub limiter."""
+
+    def __init__(self) -> None:
+        self._log: Counter[str] = Counter()
+        self._lock = threading.Lock()
+
+    def log(self, ip: str) -> int:
+        with self._lock:
+            self._log[ip] += 1
+            return self._log[ip]
+
+    def reset(self) -> None:
+        with self._lock:
+            self._log.clear()
+
+
+REQUEST_LOG = RequestLog()
 
 
 class RateLimitExceeded(Exception):
@@ -21,9 +38,15 @@ class Limiter:
 
     IS_STUB = True
 
-    def __init__(self, key_func=None, application_limits=None):
+    def __init__(
+        self,
+        key_func=None,
+        application_limits=None,
+        request_log: RequestLog | None = None,
+    ):
         self.key_func = key_func or (lambda r: "127.0.0.1")
         self.application_limits = application_limits or []
+        self.request_log = request_log or REQUEST_LOG
 
     def _parse_limit(self, spec):
         if callable(spec):
@@ -35,9 +58,7 @@ class Limiter:
 
     def check(self, request):  # pragma: no cover - simple stub
         ip = self.key_func(request)
-        with REQUEST_LOG_LOCK:
-            REQUEST_LOG[ip] += 1
-            count = REQUEST_LOG[ip]
+        count = self.request_log.log(ip)
         limit = 0
         if self.application_limits:
             limit = self._parse_limit(self.application_limits[0])
@@ -57,6 +78,11 @@ class Limiter:
 
 def _rate_limit_exceeded_handler(*_a, **_k):
     return "rate limit exceeded"
+
+
+def reset_request_log() -> None:
+    """Clear the stub's request log."""
+    REQUEST_LOG.reset()
 
 
 class SlowAPIMiddleware:  # pragma: no cover - simple stub
@@ -80,7 +106,7 @@ def get_remote_address(*_a, **_k):
 
 slowapi_stub.Limiter = Limiter
 slowapi_stub.REQUEST_LOG = REQUEST_LOG
-slowapi_stub.REQUEST_LOG_LOCK = REQUEST_LOG_LOCK
+slowapi_stub.reset_request_log = reset_request_log
 slowapi_stub._rate_limit_exceeded_handler = _rate_limit_exceeded_handler
 
 errors_mod = types.ModuleType("slowapi.errors")
