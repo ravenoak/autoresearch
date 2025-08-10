@@ -60,7 +60,7 @@ def test_query_endpoint_validation_error(monkeypatch):
     """/query returns 422 when required fields are missing."""
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr("autoresearch.api.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.api.routing.get_config", lambda: cfg)
     client = TestClient(app)
     resp = client.post("/query", json={})
     assert resp.status_code == 422

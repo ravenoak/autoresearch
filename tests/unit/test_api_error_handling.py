@@ -11,7 +11,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 def _setup(monkeypatch):
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr("autoresearch.api.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.api.routing.get_config", lambda: cfg)
     dummy_loader = types.SimpleNamespace(
         config=cfg, watching=lambda *a, **k: contextlib.nullcontext()
     )
