@@ -170,3 +170,72 @@ def test_orchestrator_persists_across_queries(monkeypatch):
         {"id": "q2-u2", "type": "source", "content": "q2-Doc2"},
     ]
     assert resp1.answer == resp2.answer == "done"
+
+
+def test_orchestrator_uses_config_context(config_context, monkeypatch):
+    """Run orchestrator using the shared config fixture and persist claims."""
+
+    calls: list[str] = []
+    stored: list[dict[str, str]] = []
+
+    monkeypatch.setattr(
+        Search,
+        "external_lookup",
+        lambda q, max_results=2: [
+            {"title": "Doc1", "url": "u1"},
+            {"title": "Doc2", "url": "u2"},
+        ],
+    )
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim: stored.append(claim)
+    )
+
+    def make_agent(name: str):
+        class Searcher:
+            def __init__(self, name: str, llm_adapter=None):
+                self.name = name
+
+            def can_execute(self, state, config):  # pragma: no cover - dummy
+                return True
+
+            def execute(self, state, config, **kwargs):
+                results = Search.external_lookup(state.query, max_results=2)
+                state.results["search_results"] = results
+                claims = [
+                    {"id": r["url"], "type": "source", "content": r["title"]}
+                    for r in results
+                ]
+                calls.append(self.name)
+                return {"results": {self.name: "ok"}, "claims": claims}
+
+        class Synthesizer:
+            def __init__(self, name: str, llm_adapter=None):
+                self.name = name
+
+            def can_execute(self, state, config):  # pragma: no cover - dummy
+                return True
+
+            def execute(self, state, config, **kwargs):
+                docs = state.results.get("search_results", [])
+                answer = ", ".join(d["title"] for d in docs)
+                calls.append(self.name)
+                state.results["final_answer"] = f"Synthesized: {answer}"
+                return {"results": {self.name: answer}}
+
+        return Searcher(name) if name == "Searcher" else Synthesizer(name)
+
+    monkeypatch.setattr(AgentFactory, "get", make_agent)
+
+    cfg = config_context.config
+    cfg.agents = ["Searcher", "Synthesizer"]
+    cfg.loops = 1
+
+    resp = Orchestrator.run_query("q", cfg)
+
+    assert isinstance(resp, QueryResponse)
+    assert calls == ["Searcher", "Synthesizer"]
+    assert stored == [
+        {"id": "u1", "type": "source", "content": "Doc1"},
+        {"id": "u2", "type": "source", "content": "Doc2"},
+    ]
+    assert resp.answer == "Synthesized: Doc1, Doc2"
