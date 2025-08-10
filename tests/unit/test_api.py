@@ -1,12 +1,12 @@
+import threading
+
 from fastapi.testclient import TestClient
 
-import threading
-from collections import Counter
 from autoresearch.api import app, dynamic_limit
-from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def _setup(monkeypatch):
@@ -71,7 +71,7 @@ def test_fallback_no_limit(monkeypatch):
 
     assert client.post("/query", json={"query": "q"}).status_code == 200
     assert client.post("/query", json={"query": "q"}).status_code == 200
-    assert api_mod.get_request_logger().snapshot() == Counter()
+    assert api_mod.get_request_logger().snapshot() == {}
 
 
 def test_fallback_multiple_ips(monkeypatch):

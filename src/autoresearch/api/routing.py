@@ -173,8 +173,7 @@ def reset_request_log() -> None:
     """
     if not hasattr(app.state, "request_logger"):
         app.state.request_logger = create_request_logger()
-    else:
-        get_request_logger().reset()
+    get_request_logger().reset()
 
 
 config_loader = ConfigLoader()
