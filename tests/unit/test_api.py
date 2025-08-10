@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 import threading
 from collections import Counter
-from autoresearch.api import app, dynamic_limit
+from autoresearch.api import create_app, dynamic_limit
 from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -20,11 +20,12 @@ def _setup(monkeypatch):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
-    return cfg
+    app = create_app()
+    return cfg, app
 
 
 def test_dynamic_limit(monkeypatch):
-    cfg = _setup(monkeypatch)
+    cfg, _ = _setup(monkeypatch)
     cfg.api.rate_limit = 5
     assert dynamic_limit() == "5/minute"
     cfg.api.rate_limit = 0
@@ -32,7 +33,7 @@ def test_dynamic_limit(monkeypatch):
 
 
 def test_api_key_roles(monkeypatch):
-    cfg = _setup(monkeypatch)
+    cfg, app = _setup(monkeypatch)
     cfg.api.api_keys = {"secret": "user"}
     client = TestClient(app)
 
@@ -44,7 +45,7 @@ def test_api_key_roles(monkeypatch):
 
 
 def test_batch_query_invalid_page(monkeypatch):
-    _setup(monkeypatch)
+    _, app = _setup(monkeypatch)
     client = TestClient(app)
     payload = {"queries": [{"query": "q1"}]}
     resp = client.post("/query/batch?page=0&page_size=1", json=payload)
@@ -52,12 +53,12 @@ def test_batch_query_invalid_page(monkeypatch):
 
 
 def test_fallback_no_limit(monkeypatch):
-    cfg = _setup(monkeypatch)
+    cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.get_request_logger(app).reset()
     monkeypatch.setattr(
         "autoresearch.api.routing.get_remote_address",
         lambda req: req.headers.get("x-ip", "1"),
@@ -66,16 +67,16 @@ def test_fallback_no_limit(monkeypatch):
 
     assert client.post("/query", json={"query": "q"}).status_code == 200
     assert client.post("/query", json={"query": "q"}).status_code == 200
-    assert api_mod.get_request_logger().snapshot() == Counter()
+    assert api_mod.get_request_logger(app).snapshot() == Counter()
 
 
 def test_fallback_multiple_ips(monkeypatch):
-    cfg = _setup(monkeypatch)
+    cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 1
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.get_request_logger(app).reset()
 
     def addr(req):
         return req.headers.get("x-ip", "1")
@@ -89,41 +90,41 @@ def test_fallback_multiple_ips(monkeypatch):
         == 200
     )
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.get_request_logger().get("1") == 1
+        assert api_mod.get_request_logger(app).get("1") == 1
     else:
-        assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
+        assert app.state.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
     assert (
         client.post("/query", json={"query": "q"}, headers={"x-ip": "2"}).status_code
         == 200
     )
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.get_request_logger().get("2") == 1
+        assert api_mod.get_request_logger(app).get("2") == 1
     else:
-        assert api_mod.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
+        assert app.state.limiter.limiter.get_window_stats(limit_obj, "2")[1] == 0
 
     assert (
         client.post("/query", json={"query": "q"}, headers={"x-ip": "1"}).status_code
         == 429
     )
     if api_mod.SLOWAPI_STUB:
-        assert api_mod.get_request_logger().get("1") == 2
+        assert api_mod.get_request_logger(app).get("1") == 2
     else:
-        assert api_mod.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
+        assert app.state.limiter.limiter.get_window_stats(limit_obj, "1")[1] == 0
 
 
 def test_request_log_thread_safety(monkeypatch):
-    cfg = _setup(monkeypatch)
+    cfg, app = _setup(monkeypatch)
     cfg.api.rate_limit = 0
 
     from autoresearch import api as api_mod
 
-    api_mod.get_request_logger().reset()
+    api_mod.get_request_logger(app).reset()
 
     results: list[int] = []
 
     def make_request() -> None:
-        results.append(api_mod.get_request_logger().log("1"))
+        results.append(api_mod.get_request_logger(app).log("1"))
 
     threads = [threading.Thread(target=make_request) for _ in range(20)]
     for t in threads:
@@ -133,10 +134,10 @@ def test_request_log_thread_safety(monkeypatch):
 
     assert all(isinstance(r, int) for r in results)
 
-    count = api_mod.get_request_logger().get("1")
+    count = api_mod.get_request_logger(app).get("1")
     assert isinstance(count, int)
     assert count == 20
 
-    missing = api_mod.get_request_logger().get("2")
+    missing = api_mod.get_request_logger(app).get("2")
     assert isinstance(missing, int)
     assert missing == 0

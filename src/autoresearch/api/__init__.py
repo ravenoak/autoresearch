@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from . import routing
-from .errors import handle_rate_limit
 
+create_app = routing.create_app
 app = routing.app
 SLOWAPI_STUB = routing.SLOWAPI_STUB
 RateLimitExceeded = routing.RateLimitExceeded
@@ -20,10 +20,9 @@ get_request_logger = routing.get_request_logger
 RequestLogger = routing.RequestLogger
 reset_request_log = routing.reset_request_log
 
-app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
-
 __all__ = [
     "app",
+    "create_app",
     "SLOWAPI_STUB",
     "dynamic_limit",
     "config_loader",
