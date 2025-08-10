@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Update release plan to align milestones with the 2025 development timeline.
+- Add rich configuration context fixtures with sample data for tests. [#17](issues/0017-create-more-comprehensive-test-contexts.md)
 
 ## [0.1.0-alpha.1] - 2025-08-09
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
