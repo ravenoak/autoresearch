@@ -66,17 +66,17 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 ### 2.2 Integration Tests
 
 - [ ] Complete cross-component integration tests [#1](issues/0001-complete-cross-component-integration-tests.md)
-  - [ ] Test orchestrator with all agent combinations [#2](issues/0002-test-orchestrator-with-all-agent-combinations.md)
-  - [ ] Verify storage integration with search functionality [#3](issues/0003-verify-storage-integration-with-search-functionality.md)
-  - [ ] Test configuration hot-reload with all components [#4](issues/0004-test-configuration-hot-reload-with-all-components.md)
-  - [ ] Add performance tests [#5](issues/0005-add-performance-tests.md)
-  - [ ] Implement benchmarks for query processing time [#6](issues/0006-implement-benchmarks-for-query-processing-time.md)
-  - [ ] Test memory usage under various conditions [#7](issues/0007-test-memory-usage-under-various-conditions.md)
-  - [ ] Verify token usage optimization [#8](issues/0008-verify-token-usage-optimization.md)
-  - [ ] Monitor token usage regressions automatically [#9](issues/0009-monitor-token-usage-regressions-automatically.md)
+  - [x] Test orchestrator with all agent combinations [#2](issues/0002-test-orchestrator-with-all-agent-combinations.md)
+  - [x] Verify storage integration with search functionality [#3](issues/0003-verify-storage-integration-with-search-functionality.md)
+  - [x] Test configuration hot-reload with all components [#4](issues/0004-test-configuration-hot-reload-with-all-components.md)
+  - [x] Add performance tests [#5](issues/0005-add-performance-tests.md)
+  - [x] Implement benchmarks for query processing time [#6](issues/0006-implement-benchmarks-for-query-processing-time.md)
+  - [x] Test memory usage under various conditions [#7](issues/0007-test-memory-usage-under-various-conditions.md)
+  - [x] Verify token usage optimization [#8](issues/0008-verify-token-usage-optimization.md)
+  - [x] Monitor token usage regressions automatically [#9](issues/0009-monitor-token-usage-regressions-automatically.md)
 
-All corresponding issues (#1–#9) are currently marked **Not started**,
-matching the unchecked tasks above.
+Issue #1 remains **In progress**, while issues #2–#9 are marked **Done**,
+matching the checkboxes above.
 
 ### 2.3 Behavior Tests
 
