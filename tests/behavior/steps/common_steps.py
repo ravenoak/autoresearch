@@ -1,8 +1,9 @@
 # flake8: noqa
 import os
+import shlex
 
 import pytest
-from pytest_bdd import given, parsers
+from pytest_bdd import given, parsers, when, then
 
 from autoresearch import cache, tracing
 from autoresearch.agents.registry import AgentRegistry
@@ -211,6 +212,26 @@ def orchestrator_failure(monkeypatch):
 def application_running(temp_config):
     """Ensure the application runs with isolated config and mocked LLM."""
     return
+
+
+# Shared CLI step implementations
+@when(parsers.parse('I run `{command}`'))
+def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_environment):
+    args = shlex.split(command)
+    if args and args[0] == "autoresearch":
+        args = args[1:]
+    result = cli_runner.invoke(cli_app, args, catch_exceptions=False)
+    bdd_context["result"] = result
+
+
+@then("the CLI should exit successfully")
+def cli_should_exit_successfully(bdd_context):
+    assert_cli_success(bdd_context["result"])
+
+
+@then("the CLI should report an error")
+def cli_should_report_error(bdd_context):
+    assert_cli_error(bdd_context["result"])
 
 
 # Backward-compatible aliases for legacy imports

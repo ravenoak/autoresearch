@@ -1,13 +1,12 @@
-from pytest_bdd import scenario, when, then
+import sys
+import types
 
+from pytest_bdd import given, when, scenarios
 from autoresearch.main import app as cli_app
 
 
-@when("I run `autoresearch capabilities`")
-def run_capabilities(cli_runner, bdd_context, monkeypatch):
-    import sys
-    import types
-
+@given("the capabilities command environment is prepared")
+def capabilities_env(monkeypatch):
     monkeypatch.setitem(sys.modules, "docx", types.SimpleNamespace(Document=object))
     monkeypatch.setitem(
         sys.modules,
@@ -20,18 +19,12 @@ def run_capabilities(cli_runner, bdd_context, monkeypatch):
         "autoresearch.main.orchestration",
         types.SimpleNamespace(ReasoningMode=ReasoningMode),
     )
+
+
+@when("I run the capabilities command")
+def run_capabilities(cli_runner, bdd_context):
     result = cli_runner.invoke(cli_app, ["capabilities"])
     bdd_context["result"] = result
 
 
-@then("the CLI should exit successfully")
-def cli_success(bdd_context):
-    result = bdd_context["result"]
-    assert result.exit_code == 0
-    assert "capabilities" in result.stdout.lower()
-    assert result.stderr == ""
-
-
-@scenario("../features/capabilities_cli.feature", "List available capabilities")
-def test_capabilities_cmd():
-    pass
+scenarios("../features/capabilities_cli.feature")
