@@ -13,7 +13,7 @@ workflows.
 - BDD suite passes in CI
 
 ## Status
-Completed – added CLI success and failure scenarios for agent orchestration and GUI CLI
+Done – added CLI success and failure scenarios for agent orchestration and GUI CLI; BDD suite passes in CI
 
 ## Related
 - #11

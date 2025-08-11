@@ -12,7 +12,9 @@ Ensure tests run independently without shared state or side effects.
 - Shared resources isolated
 
 ## Status
-In progress – fixtures added, but parallel test run shows multiple failures
+In progress – fixtures added are **Done**, but parallel test run shows
+multiple failures. Outstanding: investigate failing unit tests and fix
+isolation issues.
 
 ## Next steps
 - Investigate failing unit tests uncovered by parallel execution

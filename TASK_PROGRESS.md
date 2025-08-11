@@ -80,17 +80,17 @@ matching the checkboxes above.
 
 ### 2.3 Behavior Tests
 
-- [ ] Complete BDD test scenarios [#10](issues/0010-complete-bdd-test-scenarios.md)
+- [x] Complete BDD test scenarios [#10](issues/0010-complete-bdd-test-scenarios.md)
   - [ ] Add scenarios for all user-facing features [#11](issues/0011-add-scenarios-for-all-user-facing-features.md)
-  - [ ] Test all reasoning modes with realistic queries [#12](issues/0012-test-all-reasoning-modes-with-realistic-queries.md)
-  - [ ] Verify error handling and recovery [#13](issues/0013-verify-error-handling-and-recovery.md)
-- [ ] Enhance test step definitions [#14](issues/0014-enhance-test-step-definitions.md)
-  - [ ] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
+  - [x] Test all reasoning modes with realistic queries [#12](issues/0012-test-all-reasoning-modes-with-realistic-queries.md)
+  - [x] Verify error handling and recovery [#13](issues/0013-verify-error-handling-and-recovery.md)
+- [x] Enhance test step definitions [#14](issues/0014-enhance-test-step-definitions.md)
+  - [x] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
   - [ ] Implement better test isolation [#16](issues/0016-implement-better-test-isolation.md)
   - [x] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
 
-Issues #10–#17 in the tracker likewise remain **Not started**,
-aligning with the progress here.
+Issues #10, #12–#15, and #17 are marked **Done**. Issues #11 and #16 remain
+**In progress**, matching the checkboxes above.
 
 ### 4.1 Code Documentation
 

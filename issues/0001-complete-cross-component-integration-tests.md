@@ -13,8 +13,9 @@ and search components together to validate end-to-end behavior.
 - Integration suite runs in CI
 
 ## Status
-In progress – basic coverage via tests/integration/test_orchestrator_search_storage.py;
-additional end-to-end scenarios pending
+In progress – basic coverage via
+tests/integration/test_orchestrator_search_storage.py is **Done**.
+Outstanding: add full end-to-end scenarios and integrate the suite into CI.
 
 ## Related
 - #2
