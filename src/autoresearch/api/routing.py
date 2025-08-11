@@ -128,7 +128,7 @@ class RequestLogger:
         do not lose increments and each call receives the current count.
         """
         with self._lock:
-            self._log.update({ip: 1})
+            self._log[ip] += 1
             return self._log[ip]
 
     def reset(self) -> None:
@@ -776,7 +776,8 @@ def create_app(
     limiter = limiter or Limiter(key_func=get_remote_address)
     app.state.limiter = limiter
 
-    request_logger = request_logger or create_request_logger()
+    if request_logger is None:
+        request_logger = create_request_logger()
     app.state.request_logger = request_logger
 
     if SLOWAPI_STUB:
