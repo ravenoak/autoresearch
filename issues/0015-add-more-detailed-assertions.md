@@ -13,7 +13,7 @@ effects.
 - Failure messages are descriptive
 
 ## Status
-Completed – assertions added in tests/integration/test_relevance_ranking_integration.py
+Done – assertions added in tests/integration/test_relevance_ranking_integration.py
 
 ## Related
 - #14
