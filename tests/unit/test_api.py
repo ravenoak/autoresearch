@@ -124,7 +124,9 @@ def test_request_log_thread_safety(monkeypatch):
     results: list[int] = []
 
     def make_request() -> None:
-        results.append(api_mod.get_request_logger(app).log("1"))
+        value = api_mod.get_request_logger(app).log("1")
+        assert isinstance(value, int)
+        results.append(value)
 
     threads = [threading.Thread(target=make_request) for _ in range(20)]
     for t in threads:
