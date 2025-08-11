@@ -76,17 +76,19 @@ fi
 # Confirm required extras are installed
 echo "Verifying required extras..."
 missing=0
-for pkg in pytest-cov hypothesis tomli_w duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers; do
+missing_pkgs=""
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov hypothesis tomli_w duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
+        missing_pkgs+="$pkg "
     fi
 done
 if [ "$missing" -ne 0 ]; then
-    echo "Required packages are missing. Check setup logs." >&2
+    echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest-cov|hypothesis|tomli_w|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers'
+uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|hypothesis|tomli_w|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers'
 
 # Helper for retrying flaky network operations
 retry() {
