@@ -60,7 +60,7 @@ def test_fallback_no_limit(monkeypatch):
 
     api_mod.get_request_logger(app).reset()
     monkeypatch.setattr(
-        "autoresearch.api.routing.get_remote_address",
+        "autoresearch.api.middleware.get_remote_address",
         lambda req: req.headers.get("x-ip", "1"),
     )
     client = TestClient(app)
@@ -81,7 +81,7 @@ def test_fallback_multiple_ips(monkeypatch):
     def addr(req):
         return req.headers.get("x-ip", "1")
 
-    monkeypatch.setattr("autoresearch.api.routing.get_remote_address", addr)
+    monkeypatch.setattr("autoresearch.api.middleware.get_remote_address", addr)
     client = TestClient(app)
     limit_obj = api_mod.parse(api_mod.dynamic_limit())
 

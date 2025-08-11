@@ -8,7 +8,7 @@ from fastapi.responses import PlainTextResponse, Response
 
 def handle_rate_limit(request: Request, exc: Exception) -> Response:
     """Translate rate limit exceptions into HTTP responses."""
-    from .routing import _rate_limit_exceeded_handler  # type: ignore
+    from .middleware import _rate_limit_exceeded_handler  # type: ignore
 
     result = _rate_limit_exceeded_handler(request, exc)
     if isinstance(result, Response):

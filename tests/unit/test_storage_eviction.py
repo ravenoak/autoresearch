@@ -89,23 +89,23 @@ def test_enforce_ram_budget_lru_policy():
 
     with patch.object(StorageManager.context, "graph", mock_graph):
         with patch.object(StorageManager.state, "lru", mock_lru):
-                with patch(
-                    "autoresearch.storage.StorageManager._current_ram_mb",
-                    side_effect=[100, 100, 100, 50, 50],
-                ):
-                    with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
-                        mock_config.graph_eviction_policy = "lru"
-                        mock_config.eviction_batch_size = 10
+            with patch(
+                "autoresearch.storage.StorageManager._current_ram_mb",
+                side_effect=[100, 100, 100, 50, 50],
+            ):
+                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
+                    mock_config.graph_eviction_policy = "lru"
+                    mock_config.eviction_batch_size = 10
 
-                    # Execute
-                    start = EVICTION_COUNTER._value.get()
-                    StorageManager._enforce_ram_budget(75)
+                # Execute
+                start = EVICTION_COUNTER._value.get()
+                StorageManager._enforce_ram_budget(75)
 
-                    # Verify
-                    assert mock_graph.remove_node.call_count == 2
-                    mock_graph.remove_node.assert_any_call("0")
-                    mock_graph.remove_node.assert_any_call("1")
-                    assert EVICTION_COUNTER._value.get() == start + 2
+                # Verify
+                assert mock_graph.remove_node.call_count == 2
+                mock_graph.remove_node.assert_any_call("0")
+                mock_graph.remove_node.assert_any_call("1")
+                assert EVICTION_COUNTER._value.get() == start + 2
 
 
 def test_enforce_ram_budget_score_policy():
@@ -137,23 +137,23 @@ def test_enforce_ram_budget_score_policy():
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 side_effect=[100, 100, 100, 50, 50],
             ):
-                    with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
-                        mock_config.graph_eviction_policy = "score"
-                        mock_config.eviction_batch_size = 10
-                        mock_config.eviction_safety_margin = 0.1
+                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
+                    mock_config.graph_eviction_policy = "score"
+                    mock_config.eviction_batch_size = 10
+                    mock_config.eviction_safety_margin = 0.1
 
-                    # Execute
-                    start = EVICTION_COUNTER._value.get()
-                    StorageManager._enforce_ram_budget(75)
+                # Execute
+                start = EVICTION_COUNTER._value.get()
+                StorageManager._enforce_ram_budget(75)
 
-                    # Verify
-                    assert mock_graph.remove_node.call_count == 2
-                    mock_graph.remove_node.assert_any_call("0")
-                    mock_graph.remove_node.assert_any_call("1")
-                    assert EVICTION_COUNTER._value.get() == start + 2
+                # Verify
+                assert mock_graph.remove_node.call_count == 2
+                mock_graph.remove_node.assert_any_call("0")
+                mock_graph.remove_node.assert_any_call("1")
+                assert EVICTION_COUNTER._value.get() == start + 2
 
-                    # Verify that remaining nodes exclude evicted ones
-                    assert "0" not in nodes_dict and "1" not in nodes_dict
+                # Verify that remaining nodes exclude evicted ones
+                assert "0" not in nodes_dict and "1" not in nodes_dict
 
 
 def test_enforce_ram_budget_zero_budget():
