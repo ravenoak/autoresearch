@@ -4,8 +4,15 @@
 
 Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
 
+## AGENTS files and scope rules
+- Place `AGENTS.md` in any directory that needs custom instructions.
+- Instructions apply to the file's directory and all of its descendants.
+- Deeper `AGENTS.md` files override conflicting instructions from parent directories.
+- Keep `AGENTS.md` files current and commit updates alongside related code changes.
+- When instructions affect environment setup or tooling, update `scripts/codex_setup.sh` to match.
+
 ## Environment setup
-- `scripts/codex_setup.sh` sets up your environment pior to being handed off to you; update it as appropriate and according to best-practices.
+- `scripts/codex_setup.sh` sets up your environment prior to being handed off to you; update it whenever AGENTS guidelines or environment requirements change so the automated setup stays in sync.
 - Update this file, your instructions and initial context, as appropriate and according to best-practices.
 - Documents in `docs/inspirational_docs/` are for inspiration only and must not be directly referenced; use these documents for inspiration.
 - Documents in `docs/external_research_papers/` are copies of academic papers and can be referenced using best-practices.
@@ -54,6 +61,14 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ### Cleanup
 - Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.
 - Manually remove test artifacts such as `kg.duckdb` and `rdf_store` if present.
+
+## Utility scripts and Taskfile commands
+- Run `uv run scripts/smoke_test.py` to perform a quick environment smoke test.
+- Publish a development build to TestPyPI with `uv run scripts/publish_dev.py`.
+- [`Taskfile.yml`](Taskfile.yml) provides additional helpers:
+  - `task unit`, `task integration`, and `task behavior` run targeted test suites.
+  - `task test:all` executes the entire suite, and `task coverage` produces coverage reports.
+  - Use `task --list` to view all available tasks.
 
 ## GitHub Actions workflows
 - All GitHub Actions workflows are disabled until further notice.
