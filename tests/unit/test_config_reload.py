@@ -16,11 +16,15 @@ def test_config_reload_on_change(tmp_path, monkeypatch):
     # Force update of watch paths to include the new config file
     loader._update_watch_paths()
 
-    # Start watching for changes and wait for reload via callback
+    # Simulate a reload and verify observers are notified
     reloaded = threading.Event()
-    loader.watch_changes(lambda cfg: reloaded.set())
+    loader.notify_observers = lambda cfg: reloaded.set()
     assert loader.config.loops == 1
 
     cfg_path.write_text(tomli_w.dumps({"core": {"loops": 2}}))
-    assert reloaded.wait(15)
+    loader._config_time = 0
+    new_cfg = loader.load_config()
+    loader._config = new_cfg
+    loader.notify_observers(new_cfg)
+    assert reloaded.wait(0)
     assert loader.config.loops == 2

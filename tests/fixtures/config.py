@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
 
 import pytest
 
@@ -19,12 +20,15 @@ class ConfigContext:
 
 
 @pytest.fixture()
-def config_loader(tmp_path: Path) -> ConfigLoader:
+def config_loader(tmp_path: Path) -> Iterator[ConfigLoader]:
     """Provide a ConfigLoader instance backed by a minimal config file."""
     (tmp_path / "autoresearch.toml").write_text("[core]\n")
     loader = ConfigLoader.new_for_tests()
     loader._update_watch_paths()
-    return loader
+    try:
+        yield loader
+    finally:
+        ConfigLoader.reset_instance()
 
 
 @pytest.fixture()
@@ -71,7 +75,9 @@ llm_backend = "openai"
 
 
 @pytest.fixture()
-def config_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ConfigContext:
+def config_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[ConfigContext]:
     """Return a ConfigContext with representative config and data samples.
 
     The context writes a realistic configuration file and creates placeholder
@@ -96,4 +102,7 @@ def config_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ConfigCon
 
     monkeypatch.setenv("SERPER_API_KEY", "test_key")
     config = loader.load_config()
-    return ConfigContext(loader=loader, config=config, data_dir=data_dir)
+    try:
+        yield ConfigContext(loader=loader, config=config, data_dir=data_dir)
+    finally:
+        ConfigLoader.reset_instance()

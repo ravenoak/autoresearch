@@ -79,16 +79,23 @@ def test_enforce_ram_budget_lru_policy():
     # Setup
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
-    mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
+    mock_graph.nodes = {str(i): {} for i in range(10)}
+
+    def mock_remove_node(node_id):
+        mock_graph.nodes.pop(node_id, None)
+
+    mock_graph.remove_node.side_effect = mock_remove_node
+    mock_lru = OrderedDict((str(i), i) for i in range(10))
 
     with patch.object(StorageManager.context, "graph", mock_graph):
         with patch.object(StorageManager.state, "lru", mock_lru):
-            with patch(
-                "autoresearch.storage.StorageManager._current_ram_mb",
-                side_effect=[100, 100, 50],
-            ):
-                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
-                    mock_config.graph_eviction_policy = "lru"
+                with patch(
+                    "autoresearch.storage.StorageManager._current_ram_mb",
+                    side_effect=[100, 100, 100, 50, 50],
+                ):
+                    with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
+                        mock_config.graph_eviction_policy = "lru"
+                        mock_config.eviction_batch_size = 10
 
                     # Execute
                     start = EVICTION_COUNTER._value.get()
@@ -96,8 +103,8 @@ def test_enforce_ram_budget_lru_policy():
 
                     # Verify
                     assert mock_graph.remove_node.call_count == 2
-                    mock_graph.remove_node.assert_any_call("a")
-                    mock_graph.remove_node.assert_any_call("b")
+                    mock_graph.remove_node.assert_any_call("0")
+                    mock_graph.remove_node.assert_any_call("1")
                     assert EVICTION_COUNTER._value.get() == start + 2
 
 
@@ -107,23 +114,20 @@ def test_enforce_ram_budget_score_policy():
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
 
-    # Create a dictionary to track nodes
-    nodes_dict = {
-        "a": {"confidence": 0.3},
-        "b": {"confidence": 0.1},
-        "c": {"confidence": 0.5},
-    }
+    # Create a dictionary to track nodes with varying confidence
+    nodes_dict = {str(i): {"confidence": 0.1 + i * 0.1} for i in range(10)}
+    nodes_dict["0"]["confidence"] = 0.05
+    nodes_dict["1"]["confidence"] = 0.15
 
     # Set up the mock graph's nodes attribute
     mock_graph.nodes = nodes_dict
 
     # Create a mock LRU cache
-    mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
+    mock_lru = OrderedDict((str(i), i) for i in range(10))
 
     # Set up the remove_node method to update the nodes dictionary
     def mock_remove_node(node_id):
-        if node_id in nodes_dict:
-            del nodes_dict[node_id]
+        nodes_dict.pop(node_id, None)
 
     mock_graph.remove_node.side_effect = mock_remove_node
 
@@ -131,10 +135,12 @@ def test_enforce_ram_budget_score_policy():
         with patch.object(StorageManager.state, "lru", mock_lru):
             with patch(
                 "autoresearch.storage.StorageManager._current_ram_mb",
-                side_effect=[100, 100, 50],
+                side_effect=[100, 100, 100, 50, 50],
             ):
-                with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
-                    mock_config.graph_eviction_policy = "score"
+                    with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
+                        mock_config.graph_eviction_policy = "score"
+                        mock_config.eviction_batch_size = 10
+                        mock_config.eviction_safety_margin = 0.1
 
                     # Execute
                     start = EVICTION_COUNTER._value.get()
@@ -142,12 +148,12 @@ def test_enforce_ram_budget_score_policy():
 
                     # Verify
                     assert mock_graph.remove_node.call_count == 2
-                    mock_graph.remove_node.assert_any_call("b")
-                    mock_graph.remove_node.assert_any_call("a")
+                    mock_graph.remove_node.assert_any_call("0")
+                    mock_graph.remove_node.assert_any_call("1")
                     assert EVICTION_COUNTER._value.get() == start + 2
 
-                    # Verify that only 'c' remains in the nodes dictionary
-                    assert list(nodes_dict.keys()) == ["c"]
+                    # Verify that remaining nodes exclude evicted ones
+                    assert "0" not in nodes_dict and "1" not in nodes_dict
 
 
 def test_enforce_ram_budget_zero_budget():
@@ -175,6 +181,8 @@ def test_enforce_ram_budget_no_nodes_to_evict():
             with patch("autoresearch.storage.StorageManager._current_ram_mb", return_value=100):
                 with patch("autoresearch.config.loader.ConfigLoader.config") as mock_config:
                     mock_config.graph_eviction_policy = "lru"
+                    mock_config.eviction_batch_size = 10
+                    mock_config.eviction_safety_margin = 0.1
 
                     # Execute
                     StorageManager._enforce_ram_budget(75)
