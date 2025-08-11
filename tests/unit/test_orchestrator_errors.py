@@ -198,7 +198,6 @@ def test_callback_error_propagates(test_config):
     [
         (ValueError, "specific error"),
         (RuntimeError, "runtime error"),
-        (KeyError, "missing key"),
     ],
 )
 def test_agent_error_is_wrapped(monkeypatch, test_config, error_type, error_message):

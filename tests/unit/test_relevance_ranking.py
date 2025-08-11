@@ -233,8 +233,8 @@ def test_rank_results_with_disabled_features(
 
 
 @patch("autoresearch.search.core.get_config")
-@patch("autoresearch.search.BM25_AVAILABLE", False)
-@patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", False)
+@patch("autoresearch.search.core.BM25_AVAILABLE", False)
+@patch("autoresearch.search.core.SENTENCE_TRANSFORMERS_AVAILABLE", False)
 def test_rank_results_with_unavailable_libraries(
     mock_get_config, mock_config, sample_results
 ):

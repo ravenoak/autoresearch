@@ -21,5 +21,5 @@ def test_search_import_without_gitpython(monkeypatch):
 
 
 def test_search_import_with_gitpython():
-    module = importlib.import_module("autoresearch.search")
+    module = importlib.import_module("autoresearch.search.core")
     assert module.GITPYTHON_AVAILABLE

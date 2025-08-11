@@ -24,7 +24,7 @@ def test_ensure_storage_initialized_calls_setup():
             with patch.object(StorageManager.context, "rdf_store", None):
                 with patch("autoresearch.storage.setup") as mock_setup:
                     # Mock the setup function to set the global variables
-                    def mock_setup_impl():
+                    def mock_setup_impl(*args, **kwargs):
                         import autoresearch.storage as storage
 
                         storage.StorageManager.context.db_backend = MagicMock()
