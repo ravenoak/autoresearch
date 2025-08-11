@@ -13,9 +13,10 @@ outcomes.
 - Feature docs link to scenarios
 
 ## Status
-In progress – success and failure scenarios for GUI CLI, capabilities CLI,
-and completion CLI are **Done**. Outstanding: add scenarios for remaining
-user-facing features and link feature docs to these scenarios.
+Partially complete – scenarios for GUI CLI, capabilities CLI, and
+completion CLI cover both success and failure paths. Scenarios for
+other user-facing features and corresponding documentation links are
+still outstanding.
 
 ## Related
 - #10
