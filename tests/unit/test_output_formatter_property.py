@@ -1,9 +1,10 @@
 import json
-from hypothesis import given, strategies as st
+from hypothesis import given, strategies as st, settings, HealthCheck
 from autoresearch.output_format import OutputFormatter
 from autoresearch.models import QueryResponse
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
 @given(
     answer=st.text(min_size=1, max_size=20),
     citations=st.lists(st.text(min_size=1, max_size=15), max_size=3),

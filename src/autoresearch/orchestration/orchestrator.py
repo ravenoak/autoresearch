@@ -141,8 +141,8 @@ class Orchestrator:
         """
         try:
             return agent_factory.get(agent_name)
-        except ValueError as e:
-            # Wrap agent factory errors in NotFoundError
+        except Exception as e:  # pragma: no cover - defensive
+            # Wrap factory errors in NotFoundError to provide consistent error handling
             raise NotFoundError(
                 f"Agent '{agent_name}' not found",
                 resource_type="agent",

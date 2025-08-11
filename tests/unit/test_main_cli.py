@@ -86,7 +86,7 @@ def test_config_command(monkeypatch, config_loader):
     assert '"loops"' in result.stdout
 
 
-@patch("autoresearch.main.create_server")
+@patch("autoresearch.main.app.create_server")
 def test_serve_command(mock_create_server, monkeypatch, config_loader):
     """Test the serve command that starts an MCP server."""
     runner = CliRunner()

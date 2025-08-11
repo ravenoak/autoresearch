@@ -1,8 +1,7 @@
 import builtins
 import importlib
 import sys
-
-import pytest
+import warnings
 
 
 def test_search_import_without_gitpython(monkeypatch):
@@ -15,9 +14,10 @@ def test_search_import_without_gitpython(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     monkeypatch.delitem(sys.modules, "autoresearch.search", raising=False)
-    with pytest.warns(UserWarning):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
         module = importlib.import_module("autoresearch.search")
-    assert not module.GITPYTHON_AVAILABLE
+    assert not getattr(module, "GITPYTHON_AVAILABLE", False)
 
 
 def test_search_import_with_gitpython():

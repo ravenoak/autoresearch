@@ -1,6 +1,6 @@
 import pytest
 import math
-from hypothesis import given, strategies as st
+from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch.search import Search
 
@@ -17,6 +17,7 @@ def random_doc():
 
 
 # property: evaluate_weights scale invariance and bounded output
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(
     data=st.dictionaries(
         st.text(min_size=1, max_size=5),
@@ -28,7 +29,6 @@ def random_doc():
         st.floats(0.1, 1), st.floats(0.1, 1), st.floats(0.1, 1)
     ),
     k=st.floats(0.1, 10),
-
 )
 def test_evaluate_weights_scale_invariant(data, weights, k):
     score1 = Search.evaluate_weights(weights, data)

@@ -11,7 +11,7 @@ import pytest
 
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
-from autoresearch.errors import OrchestrationError
+from autoresearch.errors import OrchestrationError, TimeoutError as OrchestratorTimeout
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.orchestration.metrics import OrchestrationMetrics
@@ -90,7 +90,7 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
 
     agent = MagicMock()
     agent.can_execute.return_value = True
-    agent.execute.side_effect = [TimeoutError("timeout"), {"claims": [], "results": {}}]
+    agent.execute.side_effect = [OrchestratorTimeout("timeout"), {"claims": [], "results": {}}]
 
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",

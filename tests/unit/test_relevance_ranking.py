@@ -77,8 +77,8 @@ def test_preprocess_text():
     assert "features" in tokens
 
 
-@patch("autoresearch.search.BM25_AVAILABLE", True)
-@patch("autoresearch.search.BM25Okapi")
+@patch("autoresearch.search.core.BM25_AVAILABLE", True)
+@patch("autoresearch.search.core.BM25Okapi")
 def test_calculate_bm25_scores(mock_bm25, sample_results):
     """Test the BM25 scoring functionality."""
     # Setup mock BM25 model

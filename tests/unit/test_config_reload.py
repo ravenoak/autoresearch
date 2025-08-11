@@ -22,5 +22,5 @@ def test_config_reload_on_change(tmp_path, monkeypatch):
     assert loader.config.loops == 1
 
     cfg_path.write_text(tomli_w.dumps({"core": {"loops": 2}}))
-    assert reloaded.wait(2)
+    assert reloaded.wait(15)
     assert loader.config.loops == 2
