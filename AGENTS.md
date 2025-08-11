@@ -29,6 +29,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 ## Verification steps
 - Always run tests with `uv run` or inside the activated `.venv`; all tests
   must run inside this environment.
+- Verify the environment by running `which pytest` and ensure it resolves
+  to `.venv/bin/pytest`.
 - Run `task verify` before committing; it performs linting, type checking,
   and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
 - Use `rg` for repository searches instead of `grep -R` or `ls -R`.
@@ -43,9 +45,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
-- Full test runs, including integration and behavior tests, require optional
-  extras; install them with `uv pip install -e '.[full,parsers,git,llm,dev]'`
-  before running.
+- Before running any tests, install the development extras with
+  `uv pip install -e '.[full,parsers,git,llm,dev]'`. These extras are required
+  for full test runs, including integration and behavior tests.
 - See [tests/behavior/README.md](tests/behavior/README.md) for markers
   such as `requires_ui` and `requires_vss` to select specific scenarios.
 
