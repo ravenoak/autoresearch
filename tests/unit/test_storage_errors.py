@@ -34,7 +34,7 @@ def test_setup_rdf_store_error(mock_config, assert_error):
                                 setup()
 
     # Verify
-    mock_graph_instance.open.assert_called_once_with("/tmp/test.rdf", create=True)
+    mock_graph_instance.open.assert_called_once_with("sqlite:////tmp/test.rdf", create=True)
     assert_error(excinfo, "Failed to open RDF store", has_cause=True)
 
 

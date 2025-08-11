@@ -509,7 +509,7 @@ def serve_a2a(
         autoresearch serve_a2a --host 0.0.0.0 --port 8765
     """
     try:
-        from .a2a_interface import A2AInterface
+        from ..a2a_interface import A2AInterface
     except ImportError:
         console = Console()
         console.print(

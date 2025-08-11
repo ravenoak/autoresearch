@@ -237,6 +237,23 @@ def cleanup_storage():
     storage_teardown(remove_db=True)
 
 
+@pytest.fixture(autouse=True)
+def restore_sys_modules():
+    """Remove non-module entries from ``sys.modules`` between tests."""
+    from types import ModuleType
+
+    orig_modules = {k: v for k, v in sys.modules.items() if isinstance(v, ModuleType)}
+    for name, module in list(sys.modules.items()):
+        if not isinstance(module, ModuleType):
+            sys.modules.pop(name, None)
+    yield
+    for name, module in list(sys.modules.items()):
+        if not isinstance(module, ModuleType) or name not in orig_modules:
+            sys.modules.pop(name, None)
+    for name, module in orig_modules.items():
+        sys.modules.setdefault(name, module)
+
+
 @pytest.fixture
 def bdd_context():
     """Mutable mapping for sharing data between BDD steps."""

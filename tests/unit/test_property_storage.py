@@ -1,13 +1,13 @@
 from collections import OrderedDict
 
 import networkx as nx
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch import storage
 from autoresearch.storage import StorageManager
 
 
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(st.lists(st.text(min_size=1), unique=True, min_size=1, max_size=5))
 def test_pop_lru_order(monkeypatch, ids):
     lru = OrderedDict((i, 0.0) for i in ids)
@@ -17,6 +17,7 @@ def test_pop_lru_order(monkeypatch, ids):
     assert StorageManager._pop_lru() is None
 
 
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     st.dictionaries(
         st.text(min_size=1), st.floats(min_value=0, max_value=1), min_size=1, max_size=5
