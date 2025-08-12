@@ -4,8 +4,7 @@ from types import ModuleType
 
 import pytest
 import rdflib
-
-import time
+import threading
 
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
@@ -113,11 +112,11 @@ def test_run_ontology_reasoner_timeout(monkeypatch):
     import autoresearch.kg_reasoning as kr
 
     def slow(store):
-        time.sleep(0.2)
+        threading.Event().wait()
 
     monkeypatch.setitem(kr._REASONER_PLUGINS, "slow", slow)
     g = rdflib.Graph()
-    _patch_config(monkeypatch, "slow", timeout=0.1)
+    _patch_config(monkeypatch, "slow", timeout=0)
     with pytest.raises(StorageError) as excinfo:
         run_ontology_reasoner(g)
     assert "timed out" in str(excinfo.value).lower()

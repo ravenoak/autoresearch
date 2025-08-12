@@ -12,7 +12,7 @@ def test_system_monitor_collects(monkeypatch):
     registry = CollectorRegistry()
     monitor = SystemMonitor(interval=0.01, registry=registry)
     monitor.start()
-    time.sleep(0.03)
+    time.sleep(0.001)
     monitor.stop()
 
     assert registry.get_sample_value("autoresearch_system_cpu_percent") == 12.0

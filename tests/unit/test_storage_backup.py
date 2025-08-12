@@ -7,12 +7,14 @@ including scheduled backups, rotation policies, compression, and point-in-time r
 import os
 import shutil
 import tempfile
+from datetime import timedelta
 from unittest.mock import patch
 
-from autoresearch.storage import StorageManager
-import pytest
 import duckdb
+import pytest
 import rdflib
+from freezegun import freeze_time
+from autoresearch.storage import StorageManager
 
 from autoresearch.storage_backup import (
     BackupManager,
@@ -189,25 +191,20 @@ def test_list_backups(mock_storage, temp_dir):
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
 
-    # Create multiple backups
-    backup1 = create_backup(
-        backup_dir=backup_dir,
-        db_path=mock_storage["db_path"],
-        rdf_path=mock_storage["rdf_path"],
-        compress=False,
-    )
-
-    # Wait a moment to ensure different timestamps
-    import time
-
-    time.sleep(1)
-
-    backup2 = create_backup(
-        backup_dir=backup_dir,
-        db_path=mock_storage["db_path"],
-        rdf_path=mock_storage["rdf_path"],
-        compress=True,
-    )
+    with freeze_time() as frozen_time:
+        backup1 = create_backup(
+            backup_dir=backup_dir,
+            db_path=mock_storage["db_path"],
+            rdf_path=mock_storage["rdf_path"],
+            compress=False,
+        )
+        frozen_time.tick(delta=timedelta(seconds=1))
+        backup2 = create_backup(
+            backup_dir=backup_dir,
+            db_path=mock_storage["db_path"],
+            rdf_path=mock_storage["rdf_path"],
+            compress=True,
+        )
 
     # List backups
     backups = list_backups(backup_dir)
@@ -231,19 +228,16 @@ def test_backup_rotation_policy(mock_storage, temp_dir):
         backup_dir=backup_dir, compress=True, max_backups=2, retention_days=30
     )
 
-    # Create multiple backups
-    for i in range(3):
-        create_backup(
-            backup_dir=backup_dir,
-            db_path=mock_storage["db_path"],
-            rdf_path=mock_storage["rdf_path"],
-            compress=True,
-            config=config,
-        )
-        # Wait a moment to ensure different timestamps
-        import time
-
-        time.sleep(1)
+    with freeze_time() as frozen_time:
+        for i in range(3):
+            create_backup(
+                backup_dir=backup_dir,
+                db_path=mock_storage["db_path"],
+                rdf_path=mock_storage["rdf_path"],
+                compress=True,
+                config=config,
+            )
+            frozen_time.tick(delta=timedelta(seconds=1))
 
     # List backups
     backups = list_backups(backup_dir)
@@ -283,28 +277,21 @@ def test_point_in_time_recovery(mock_storage, temp_dir):
     backup_dir = os.path.join(temp_dir, "backups")
     os.makedirs(backup_dir, exist_ok=True)
 
-    # Create multiple backups with different timestamps
     backup_times = []
 
-    for i in range(3):
-        # Create a backup
-        backup_info = create_backup(
-            backup_dir=backup_dir,
-            db_path=mock_storage["db_path"],
-            rdf_path=mock_storage["rdf_path"],
-            compress=False,
-        )
-        backup_times.append(backup_info.timestamp)
-
-        # Modify the data for the next backup
-        mock_storage["conn"].execute(
-            f"INSERT INTO test_table VALUES ({i + 3}, 'Test {i + 3}')"
-        )
-
-        # Wait a moment to ensure different timestamps
-        import time
-
-        time.sleep(1)
+    with freeze_time() as frozen_time:
+        for i in range(3):
+            backup_info = create_backup(
+                backup_dir=backup_dir,
+                db_path=mock_storage["db_path"],
+                rdf_path=mock_storage["rdf_path"],
+                compress=False,
+            )
+            backup_times.append(backup_info.timestamp)
+            mock_storage["conn"].execute(
+                f"INSERT INTO test_table VALUES ({i + 3}, 'Test {i + 3}')"
+            )
+            frozen_time.tick(delta=timedelta(seconds=1))
 
     # Restore to a point in time (the second backup)
     target_time = backup_times[1]

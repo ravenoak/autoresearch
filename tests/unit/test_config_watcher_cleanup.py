@@ -1,5 +1,6 @@
 import threading
 import time
+import pytest
 from typer.testing import CliRunner
 from fastapi.testclient import TestClient
 
@@ -15,6 +16,12 @@ def _mock_run_query(query, config, *args, **kwargs):
 
 def _mock_run_query_error(query, config, *args, **kwargs):
     raise RuntimeError("boom")
+
+
+@pytest.fixture(autouse=True)
+def fast_sleep(monkeypatch):
+    original_sleep = time.sleep
+    monkeypatch.setattr(time, "sleep", lambda s: original_sleep(0.001))
 
 
 def test_cli_watcher_cleanup(monkeypatch):
@@ -36,10 +43,12 @@ def test_cli_watcher_cleanup(monkeypatch):
             <= initial
         ):
             break
-        time.sleep(0.1)
+        time.sleep(0)
     assert (
         sum(
-            1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
+            1
+            for t in threading.enumerate()
+            if t.name == "ConfigWatcher" and t.is_alive()
         )
         <= initial
     )
@@ -63,10 +72,12 @@ def test_api_watcher_cleanup(monkeypatch):
             <= initial
         ):
             break
-        time.sleep(0.1)
+        time.sleep(0)
     assert (
         sum(
-            1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
+            1
+            for t in threading.enumerate()
+            if t.name == "ConfigWatcher" and t.is_alive()
         )
         <= initial
     )
@@ -90,10 +101,12 @@ def test_cli_watcher_cleanup_error(monkeypatch):
             <= initial
         ):
             break
-        time.sleep(0.1)
+        time.sleep(0)
     assert (
         sum(
-            1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
+            1
+            for t in threading.enumerate()
+            if t.name == "ConfigWatcher" and t.is_alive()
         )
         <= initial
     )
@@ -116,10 +129,12 @@ def test_api_watcher_cleanup_error(monkeypatch):
             <= initial
         ):
             break
-        time.sleep(0.1)
+        time.sleep(0)
     assert (
         sum(
-            1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
+            1
+            for t in threading.enumerate()
+            if t.name == "ConfigWatcher" and t.is_alive()
         )
         <= initial
     )
