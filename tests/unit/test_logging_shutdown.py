@@ -11,7 +11,7 @@ def test_stop_watching_after_logging_shutdown(tmp_path):
     loader.watch_paths.append(str(tmp_path / "config.toml"))
     loader.watch_changes()
     # ensure thread started
-    time.sleep(0.1)
+    time.sleep(0)
     logging.shutdown()
     # should not raise even though logging is shut down
     loader.stop_watching()

@@ -90,7 +90,10 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
 
     agent = MagicMock()
     agent.can_execute.return_value = True
-    agent.execute.side_effect = [OrchestratorTimeout("timeout"), {"claims": [], "results": {}}]
+    agent.execute.side_effect = [
+        OrchestratorTimeout("timeout"),
+        {"claims": [], "results": {}},
+    ]
 
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
@@ -277,9 +280,12 @@ def test_parallel_query_timeout_claims(monkeypatch):
 
     cfg = ConfigModel(agents=[], loops=1)
 
+    original_sleep = time.sleep
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
     def mock_run_query(query, config):
         if config.agents == ["slow"]:
-            time.sleep(0.2)
+            original_sleep(0.002)
             return QueryResponse(
                 answer="slow",
                 citations=[],
@@ -306,7 +312,7 @@ def test_parallel_query_timeout_claims(monkeypatch):
         "q",
         cfg,
         [["fast"], ["slow"]],
-        timeout=0.05,
+        timeout=0.001,
     )
 
     assert isinstance(resp.reasoning, list)
