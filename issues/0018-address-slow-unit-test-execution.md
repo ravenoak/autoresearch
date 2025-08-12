@@ -12,7 +12,10 @@ performance issues or hanging tests.
 - Document any remaining long-running tests and rationale
 
 ## Status
-Open – unit test suite currently times out after 100 seconds.
+Profiling shows `tests/unit/test_eviction.py` hanging after about 43
+seconds, even when run in isolation. The suite also initially failed
+with a missing `freezegun` dependency. Unit tests still exceed
+acceptable runtime, so the issue remains open.
 
 ## Related
 - #5
