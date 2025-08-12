@@ -60,8 +60,13 @@ configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
 from .config_cli import config_app as _config_app, config_init  # noqa: E402
+from ..cli_backup import backup_app as _backup_app  # noqa: E402
+
 config_app = _config_app  # type: ignore[has-type]
 app.add_typer(config_app, name="config")
+
+backup_app = _backup_app
+app.add_typer(backup_app, name="backup")
 
 
 @app.callback(invoke_without_command=False)

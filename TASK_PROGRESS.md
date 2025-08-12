@@ -223,16 +223,16 @@ Issues #10, #12–#15, and #17 are marked **Done**. Issues #11 and #16 remain
 
 ### Coverage Report
 
-The latest `uv run pytest --cov=src` run on 2025-08-09 failed due to an
-`AssertionError` in `tests/unit/test_api.py::test_request_log_thread_safety`.
-Coverage metrics were not generated and remain below the **90%** goal.
+Coverage metrics are currently unavailable because full test runs have not
+completed.
 
 ### Latest Test Results
 
 - `flake8` reports no style errors.
-- `mypy` reports no type issues.
-- `pytest` fails in `tests/unit/test_api.py::test_request_log_thread_safety`
-  (`AssertionError: assert None == 20`).
+- `uv run mypy src` hangs without output; see issue [#22](issues/0022-investigate-mypy-hang.md).
+- Targeted `pytest` runs for backup and metrics modules pass, but a full
+  `pytest tests/unit` run was interrupted after several minutes without
+  additional failures observed.
 
 ### Performance Baselines
 
