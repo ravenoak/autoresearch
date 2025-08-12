@@ -5,7 +5,12 @@ import pytest
 
 # Provide dummy optional modules before importing Search
 sys.modules.setdefault("kuzu", types.SimpleNamespace())
-sys.modules.setdefault("spacy", types.SimpleNamespace(load=lambda *_: None, cli=types.SimpleNamespace(download=lambda *_: None)))
+sys.modules.setdefault(
+    "spacy",
+    types.SimpleNamespace(
+        load=lambda *_: None, cli=types.SimpleNamespace(download=lambda *_: None)
+    ),
+)
 sys.modules.setdefault("bertopic", types.SimpleNamespace())
 sys.modules.setdefault(
     "sentence_transformers",
@@ -27,12 +32,8 @@ def test_unknown_backend_raises(monkeypatch):
     cfg.search.backends = ["missing"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    was = sys.modules.pop('pytest')
-    try:
-        with pytest.raises(SearchError):
-            Search.external_lookup("q")
-    finally:
-        sys.modules['pytest'] = was
+    with pytest.raises(SearchError):
+        Search.external_lookup("q")
 
 
 def test_backend_json_error(monkeypatch):
@@ -44,12 +45,12 @@ def test_backend_json_error(monkeypatch):
     cfg.search.backends = ["bad"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    was = sys.modules.pop('pytest')
+    was = sys.modules.pop("pytest")
     try:
         with pytest.raises(SearchError):
             Search.external_lookup("q")
     finally:
-        sys.modules['pytest'] = was
+        sys.modules["pytest"] = was
 
 
 def test_http_session_reuse():

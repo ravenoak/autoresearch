@@ -10,7 +10,7 @@ Running `task verify` fails at the flake8 step with `tests/behavior/steps/api_as
 - `task verify` passes flake8 stage
 
 ## Status
-Open – `task verify` currently fails with F401.
+Done – removed unused `asyncio` import and flake8 now passes.
 
 ## Related
 - #18

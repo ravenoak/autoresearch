@@ -3,6 +3,7 @@ import pytest
 from autoresearch.search import Search
 from autoresearch.search.core import _local_git_backend
 from autoresearch.config.models import ConfigModel
+from autoresearch.errors import SearchError
 
 
 def test_register_backend_and_lookup(monkeypatch):
@@ -31,9 +32,8 @@ def test_external_lookup_unknown_backend(monkeypatch):
     cfg.search.backends = ["unknown"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-
-    results = Search.external_lookup("q", max_results=1)
-    assert results and all("title" in r for r in results)
+    with pytest.raises(SearchError):
+        Search.external_lookup("q", max_results=1)
 
 
 def test_local_git_backend_ast_search(tmp_path, monkeypatch):

@@ -11,7 +11,7 @@ Running `uv run pytest tests/unit -q` raised `ModuleNotFoundError: No module nam
 - Setup instructions mention the dependency
 
 ## Status
-Open – tests fail unless `freezegun` is installed manually.
+Done – `freezegun` added to development dependencies and setup instructions updated.
 
 ## Related
 - #18

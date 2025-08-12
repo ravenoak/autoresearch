@@ -25,7 +25,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from threading import Lock
+from threading import RLock
 from typing import Any, ClassVar, Iterator, Optional, cast
 
 import duckdb
@@ -57,7 +57,7 @@ class StorageState:
 
     context: StorageContext = field(default_factory=StorageContext)
     lru: "OrderedDict[str, float]" = field(default_factory=OrderedDict)
-    lock: Lock = field(default_factory=Lock)
+    lock: RLock = field(default_factory=RLock)
 
 
 _default_state = StorageState()
@@ -207,7 +207,11 @@ def teardown(
         if _kuzu_backend is not None:
             try:
                 _kuzu_backend.close()
-                if remove_db and _kuzu_backend._path and os.path.exists(_kuzu_backend._path):
+                if (
+                    remove_db
+                    and _kuzu_backend._path
+                    and os.path.exists(_kuzu_backend._path)
+                ):
                     os.remove(_kuzu_backend._path)
             except Exception as e:
                 log.warning(f"Failed to close Kuzu connection: {e}")
@@ -310,7 +314,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             mem = psutil.Process(os.getpid()).memory_info().rss
             return float(mem) / (1024**2)
         except Exception as e:  # pragma: no cover - psutil may not be available
-            log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
+            log.debug(
+                f"Failed to get memory usage with psutil: {e}, falling back to resource"
+            )
             try:
                 import resource
 
@@ -437,10 +443,10 @@ class StorageManager(metaclass=StorageManagerMeta):
         batch_size = min(
             getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
             (
-                len(StorageManager.context.graph.nodes) // 10
+                max(1, len(StorageManager.context.graph.nodes) // 10)
                 if StorageManager.context.graph and StorageManager.context.graph.nodes
                 else 1
-            ),  # Don't exceed 10% of nodes
+            ),  # Don't exceed 10% of nodes, at least 1
         )
 
         # Determine if we should use aggressive eviction (when memory usage is critically high)
@@ -453,7 +459,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         )
 
         # Implement different eviction policies
-        while StorageManager.context.graph and StorageManager._current_ram_mb() > target_mb:
+        while StorageManager.context.graph and current_mb > target_mb:
             nodes_to_evict = []
 
             if policy == "hybrid":
@@ -477,16 +483,19 @@ class StorageManager(metaclass=StorageManagerMeta):
                         recency_score = recency_ranks.get(
                             node_id, 1.0
                         )  # Higher is worse (more recent = 0)
-                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get(
-                            "confidence", 0.5
-                        )  # Higher is worse
+                        confidence_score = 1.0 - StorageManager.context.graph.nodes[
+                            node_id
+                        ].get("confidence", 0.5)  # Higher is worse
 
                         hybrid_scores[node_id] = (
-                            recency_weight * recency_score + confidence_weight * confidence_score
+                            recency_weight * recency_score
+                            + confidence_weight * confidence_score
                         )
 
                 # Sort by hybrid score (highest first = worst candidates)
-                candidates = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
+                candidates = sorted(
+                    hybrid_scores.items(), key=lambda x: x[1], reverse=True
+                )
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -505,7 +514,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                     frequencies = list(StorageManager._access_frequency.values())
                     if frequencies:
                         mean = sum(frequencies) / len(frequencies)
-                        variance = sum((f - mean) ** 2 for f in frequencies) / len(frequencies)
+                        variance = sum((f - mean) ** 2 for f in frequencies) / len(
+                            frequencies
+                        )
                         access_variance = variance
 
                 # If high variance, use score-based (some nodes much more important)
@@ -543,24 +554,33 @@ class StorageManager(metaclass=StorageManagerMeta):
                 }
 
                 # Get custom tiers from config if available
-                if hasattr(cfg, "priority_tiers") and isinstance(cfg.priority_tiers, dict):
+                if hasattr(cfg, "priority_tiers") and isinstance(
+                    cfg.priority_tiers, dict
+                ):
                     priority_tiers.update(cfg.priority_tiers)
 
                 # Assign priority to each node
                 node_priorities = {}
                 for node_id in StorageManager.context.graph.nodes:
-                    node_type = StorageManager.context.graph.nodes[node_id].get("type", "default")
+                    node_type = StorageManager.context.graph.nodes[node_id].get(
+                        "type", "default"
+                    )
                     # Map node type to priority tier
                     tier = priority_tiers.get(node_type, priority_tiers["default"])
                     # Adjust by confidence
                     confidence_boost = (
-                        StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                        StorageManager.context.graph.nodes[node_id].get(
+                            "confidence", 0.5
+                        )
+                        * 0.5
                     )
                     # Final priority score (lower = higher priority)
                     node_priorities[node_id] = tier - confidence_boost
 
                 # Sort by priority (highest first = worst candidates)
-                candidates = sorted(node_priorities.items(), key=lambda x: x[1], reverse=True)
+                candidates = sorted(
+                    node_priorities.items(), key=lambda x: x[1], reverse=True
+                )
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -591,23 +611,21 @@ class StorageManager(metaclass=StorageManagerMeta):
                     EVICTION_COUNTER.inc()
                     nodes_evicted += 1
 
-            # Check if we've made enough progress
-            if nodes_evicted % (batch_size * 5) == 0:  # Check every 5 batches
-                current_mb = StorageManager._current_ram_mb()
-                if current_mb <= target_mb:
-                    break
+            # Update memory usage after eviction
+            current_mb = StorageManager._current_ram_mb()
 
-                # If we're not making progress fast enough and in aggressive mode,
-                # double the batch size
-                if aggressive_eviction and nodes_evicted > 50:
-                    batch_size = min(
-                        batch_size * 2,
-                        (
-                            len(StorageManager.context.graph.nodes) // 5
-                            if StorageManager.context.graph and StorageManager.context.graph.nodes
-                            else 1
-                        ),
-                    )
+            # If we're not making progress fast enough and in aggressive mode,
+            # double the batch size
+            if aggressive_eviction and nodes_evicted > 50:
+                batch_size = min(
+                    batch_size * 2,
+                    (
+                        len(StorageManager.context.graph.nodes) // 5
+                        if StorageManager.context.graph
+                        and StorageManager.context.graph.nodes
+                        else 1
+                    ),
+                )
 
         # Log eviction results
         eviction_time = time.time() - eviction_start_time
@@ -926,7 +944,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             assert StorageManager.context.db_backend is not None
             if is_update:
                 # Update existing records
-                StorageManager.context.db_backend.update_claim(claim_to_persist, partial_update)
+                StorageManager.context.db_backend.update_claim(
+                    claim_to_persist, partial_update
+                )
                 StorageManager._update_rdf_claim(claim_to_persist, partial_update)
                 StorageManager._persist_to_kuzu(claim_to_persist)
             else:
@@ -1207,9 +1227,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             return _delegate.touch_node(node_id)
         lru = StorageManager.state.lru
         with StorageManager.state.lock:
-            if node_id in lru:
-                lru[node_id] = time.time()
-                lru.move_to_end(node_id)
+            lru[node_id] = time.time()
+            lru.move_to_end(node_id)
 
     @staticmethod
     def get_duckdb_conn() -> duckdb.DuckDBPyConnection:
@@ -1391,7 +1410,9 @@ class StorageManager(metaclass=StorageManagerMeta):
         return StorageManager.query_rdf(query)
 
     @staticmethod
-    def query_with_reasoning(query: str, engine: Optional[str] = None) -> rdflib.query.Result:
+    def query_with_reasoning(
+        query: str, engine: Optional[str] = None
+    ) -> rdflib.query.Result:
         """Run a SPARQL query after applying ontology reasoning."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
