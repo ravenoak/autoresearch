@@ -12,6 +12,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - When instructions affect environment setup or tooling, update `scripts/codex_setup.sh` to match.
 - Changes to tooling must be reflected in both this document and `scripts/codex_setup.sh` so documentation and setup stay in sync.
 
+## Binary artifacts
+- Do not commit binary files such as `.duckdb_extension` modules.
+- Required binaries are downloaded during setup and referenced via `VECTOR_EXTENSION_PATH`.
+- The `extensions` directory is tracked only with a placeholder to keep it empty.
+
 ## Environment setup
 - `scripts/codex_setup.sh` sets up your environment prior to being handed off to you; update it whenever AGENTS guidelines or environment requirements change so the automated setup stays in sync.
 - Update this file, your instructions and initial context, as appropriate and according to best-practices.
