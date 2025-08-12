@@ -4,34 +4,69 @@ import os
 import threading
 import time
 from collections import defaultdict
-from typing import Any, Dict, List, TYPE_CHECKING, Iterator
 from contextlib import contextmanager
+from typing import Any, Dict, Iterator, List, TYPE_CHECKING, cast
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
 
-try:
-    import spacy
-    import spacy.cli
+spacy: Any | None = None
+BERTopic: Any | None = None
+SentenceTransformer: Any | None = None
 
-    SPACY_AVAILABLE = True
-except ImportError:  # pragma: no cover - optional dependency
-    spacy = None  # type: ignore[assignment]
-    SPACY_AVAILABLE = False
+SPACY_AVAILABLE = False
+BERTOPIC_AVAILABLE = False
+SENTENCE_TRANSFORMERS_AVAILABLE = False
 
-try:
-    from bertopic import BERTopic
 
-    BERTOPIC_AVAILABLE = True
-except ImportError:
-    BERTOPIC_AVAILABLE = False
+def _try_import_spacy() -> bool:
+    """Attempt to import spaCy and set availability flag."""
+    global spacy, SPACY_AVAILABLE
+    if spacy is not None or SPACY_AVAILABLE:
+        return SPACY_AVAILABLE
+    try:  # pragma: no cover - optional dependency
+        import spacy as spacy_mod  # type: ignore
+        import spacy.cli  # type: ignore
 
-try:
-    from sentence_transformers import SentenceTransformer  # noqa: F401
+        spacy = spacy_mod
+        SPACY_AVAILABLE = True
+    except Exception:
+        spacy = None
+        SPACY_AVAILABLE = False
+    return SPACY_AVAILABLE
 
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+def _try_import_bertopic() -> bool:
+    """Attempt to import BERTopic and set availability flag."""
+    global BERTopic, BERTOPIC_AVAILABLE
+    if BERTopic is not None or BERTOPIC_AVAILABLE:
+        return BERTOPIC_AVAILABLE
+    try:  # pragma: no cover - optional dependency
+        from bertopic import BERTopic as BERTopic_cls  # type: ignore
+
+        BERTopic = BERTopic_cls
+        BERTOPIC_AVAILABLE = True
+    except Exception:
+        BERTopic = None
+        BERTOPIC_AVAILABLE = False
+    return BERTOPIC_AVAILABLE
+
+
+def _try_import_sentence_transformers() -> bool:
+    """Attempt to import SentenceTransformer and set availability flag."""
+    global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
+    if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
+        return SENTENCE_TRANSFORMERS_AVAILABLE
+    try:  # pragma: no cover - optional dependency
+        from sentence_transformers import SentenceTransformer as ST  # type: ignore
+
+        SentenceTransformer = ST
+        SENTENCE_TRANSFORMERS_AVAILABLE = True
+    except Exception:
+        SentenceTransformer = None
+        SENTENCE_TRANSFORMERS_AVAILABLE = False
+    return SENTENCE_TRANSFORMERS_AVAILABLE
+
 
 if TYPE_CHECKING:  # pragma: no cover - for type checking only
     from spacy.language import Language
@@ -91,12 +126,11 @@ class SearchContext:
         self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
-        from .context import spacy as pkg_spacy, SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
-
-        if not pkg_SPACY_AVAILABLE:
+        if not _try_import_spacy() or spacy is None:
             return
+        spacy_mod = cast(Any, spacy)
         try:
-            self.nlp = pkg_spacy.load("en_core_web_sm")
+            self.nlp = spacy_mod.load("en_core_web_sm")
             log.info("Initialized spaCy NLP model")
         except OSError:
             if (
@@ -104,8 +138,8 @@ class SearchContext:
                 == "true"
             ):
                 try:
-                    pkg_spacy.cli.download("en_core_web_sm")
-                    self.nlp = pkg_spacy.load("en_core_web_sm")
+                    spacy_mod.cli.download("en_core_web_sm")
+                    self.nlp = spacy_mod.load("en_core_web_sm")
                     log.info("Downloaded spaCy model")
                 except Exception as e:  # pragma: no cover - unexpected
                     log.warning(f"Failed to download spaCy model: {e}")
@@ -120,7 +154,9 @@ class SearchContext:
     def add_to_history(self, query: str, results: List[Dict[str, str]]) -> None:
         cfg = get_config()
         max_history = cfg.search.context_aware.max_history_items
-        self.search_history.append({"query": query, "results": results, "timestamp": time.time()})
+        self.search_history.append(
+            {"query": query, "results": results, "timestamp": time.time()}
+        )
         if len(self.search_history) > max_history:
             self.search_history = self.search_history[-max_history:]
         self._extract_entities(query)
@@ -129,9 +165,7 @@ class SearchContext:
             self._extract_entities(result.get("snippet", ""))
 
     def _extract_entities(self, text: str) -> None:
-        from .context import SPACY_AVAILABLE as pkg_SPACY_AVAILABLE
-
-        if not pkg_SPACY_AVAILABLE or self.nlp is None:
+        if not SPACY_AVAILABLE or self.nlp is None:
             for token in text.split():
                 self.entities[token.lower()] += 1
             return
@@ -153,16 +187,13 @@ class SearchContext:
             log.warning(f"Entity extraction failed: {e}")
 
     def build_topic_model(self) -> None:
-        from . import (
-            BERTOPIC_AVAILABLE as pkg_BERTOPIC_AVAILABLE,
-            SENTENCE_TRANSFORMERS_AVAILABLE as pkg_SENTENCE_TRANSFORMERS_AVAILABLE,
-        )
-
         if (
-            not pkg_BERTOPIC_AVAILABLE
+            not _try_import_bertopic()
             or not self.search_history
-            or not pkg_SENTENCE_TRANSFORMERS_AVAILABLE
+            or not _try_import_sentence_transformers()
         ):
+            return
+        if BERTopic is None:  # pragma: no cover - safety check
             return
         try:
             documents: List[str] = []
@@ -193,7 +224,9 @@ class SearchContext:
             return query
         if self.topic_model is None or self.dictionary is None:
             self.build_topic_model()
-        expanded_terms = sorted(self.entities, key=lambda e: self.entities[e], reverse=True)
+        expanded_terms = sorted(
+            self.entities, key=lambda e: self.entities[e], reverse=True
+        )
         if expanded_terms:
             expansion_factor = context_cfg.expansion_factor
             num_terms = max(1, int(len(expanded_terms) * expansion_factor))
