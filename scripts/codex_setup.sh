@@ -149,7 +149,8 @@ fi
 # Pre-load ontology reasoner so tests can run offline
 uv run python -c "import owlrl" || { echo 'Failed to pre-load ontology reasoner.' >&2; exit 1; }
 
-# Cache DuckDB extensions for offline use (vss by default)
+# Cache DuckDB extensions for offline use (vss by default).
+# Binary extension files are downloaded here and kept out of version control.
 if retry 3 uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions; then
     echo "DuckDB extensions downloaded"
 else
@@ -158,6 +159,16 @@ else
 fi
 if ! find ./extensions -type f -name '*.duckdb_extension' | grep -q .; then
     echo 'DuckDB extensions not found in ./extensions' >&2
+    exit 1
+fi
+
+# Export the path to the downloaded VSS extension for downstream tools
+VSS_PATH=$(find ./extensions -type f -name 'vss*.duckdb_extension' | head -n 1)
+if [ -n "$VSS_PATH" ]; then
+    export VECTOR_EXTENSION_PATH="$VSS_PATH"
+    echo "VECTOR_EXTENSION_PATH set to $VECTOR_EXTENSION_PATH"
+else
+    echo 'Unable to locate VSS extension file.' >&2
     exit 1
 fi
 

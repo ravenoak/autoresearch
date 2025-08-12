@@ -29,8 +29,7 @@ class VSSExtensionLoader:
 
     @staticmethod
     def load_extension(conn: duckdb.DuckDBPyConnection) -> bool:
-        """
-        Load the VSS extension into the provided DuckDB connection.
+        """Load the VSS extension into the provided DuckDB connection.
 
         This method attempts to load the VSS extension using the following strategy:
         1. If vector_extension_path is configured, try to load from filesystem
@@ -48,62 +47,38 @@ class VSSExtensionLoader:
         """
         cfg = ConfigLoader().config.storage
 
-        # First try to load from filesystem if path is configured
         extension_loaded = False
         if cfg.vector_extension_path:
-            try:
-                extension_path = Path(cfg.vector_extension_path).resolve()
-                log.info(
-                    f"Loading VSS extension from filesystem: {extension_path}"
+            extension_path = Path(cfg.vector_extension_path).resolve()
+            log.info(f"Attempting to load VSS extension from {extension_path}")
+            if extension_path.suffix != ".duckdb_extension":
+                log.warning(
+                    "VSS extension path does not end with .duckdb_extension: %s",
+                    extension_path,
                 )
-
-                # Validate extension path
-                if not str(extension_path).endswith(".duckdb_extension"):
+            elif not extension_path.exists():
+                log.warning("VSS extension path does not exist: %s", extension_path)
+            else:
+                try:
+                    conn.execute(f"LOAD '{extension_path.as_posix()}'")
+                    if VSSExtensionLoader.verify_extension(conn, verbose=False):
+                        log.info("VSS extension loaded successfully from filesystem")
+                        extension_loaded = True
+                    else:
+                        log.warning(
+                            "VSS extension failed verification after filesystem load"
+                        )
+                except duckdb.Error as e:
                     log.warning(
-                        f"VSS extension path does not end with .duckdb_extension: {extension_path}"
-                    )
-                    raise ValueError(
-                        f"VSS extension path must end with .duckdb_extension: {extension_path}"
+                        "Failed to load VSS extension from filesystem: %s", e
                     )
 
-                # Check if the path exists
-                if not extension_path.exists():
-                    log.warning(f"VSS extension path does not exist: {extension_path}")
-                    raise FileNotFoundError(
-                        f"VSS extension path does not exist: {extension_path}"
-                    )
-
-                # Load the extension from the filesystem
-                conn.execute(f"LOAD '{extension_path.as_posix()}'")
-
-                # Verify the extension is loaded
-                if VSSExtensionLoader.verify_extension(conn, verbose=False):
-                    log.info("VSS extension loaded successfully from filesystem")
-                    extension_loaded = True
-                else:
-                    log.warning("VSS extension may not be fully loaded from filesystem")
-                    # Use duckdb.Error so we can handle it explicitly
-                    raise duckdb.Error(
-                        "Failed to verify VSS extension from filesystem"
-                    )
-
-            except (duckdb.Error, FileNotFoundError, ValueError) as e:
-                log.warning(f"Failed to load VSS extension from filesystem: {e}")
-                # Continue to try downloading if loading from filesystem fails
-
-        # If extension wasn't loaded from filesystem, try to download and install
         if not extension_loaded:
             try:
-                # Try to install the vss extension
-                # If it's already installed, this will be a no-op
                 log.info("Installing vss extension...")
                 conn.execute("INSTALL vss")
-
-                # Load the vss extension
                 log.info("Loading vss extension...")
                 conn.execute("LOAD vss")
-
-                # Verify the extension is loaded
                 if VSSExtensionLoader.verify_extension(conn, verbose=False):
                     log.info("VSS extension loaded successfully")
                     extension_loaded = True
@@ -111,22 +86,8 @@ class VSSExtensionLoader:
                     log.warning("VSS extension may not be fully loaded")
             except duckdb.Error as e:
                 log.error(f"Failed to load VSS extension: {e}")
-                # In test environments, we don't want to fail if the VSS extension is not available
-                # Only raise in non-test environments or if explicitly configured to fail
                 if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
                     raise StorageError("Failed to load VSS extension", cause=e)
-
-        # Fall back to bundled stub when downloads fail
-        if not extension_loaded:
-            stub_path = Path(__file__).resolve().parents[1] / "extensions" / "vss_stub.duckdb_extension"
-            if stub_path.exists():
-                log.info(f"Using bundled stub VSS extension at {stub_path}")
-                try:
-                    conn.execute(f"LOAD '{stub_path.as_posix()}'")
-                except duckdb.Error:
-                    # Ignore errors - this stub is only for offline tests
-                    pass
-                extension_loaded = True
 
         return extension_loaded
 
