@@ -80,7 +80,7 @@ fi
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
-for pkg in pytest pytest-bdd pytest-httpx pytest-cov hypothesis tomli_w freezegun duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers; do
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov hypothesis tomli_w freezegun duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers spacy bertopic; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -91,7 +91,13 @@ if [ "$missing" -ne 0 ]; then
     echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|hypothesis|tomli_w|freezegun|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers'
+uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|hypothesis|tomli_w|freezegun|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic'
+
+# Ensure VECTOR_EXTENSION_PATH is configured
+if ! grep -q "VECTOR_EXTENSION_PATH" .env; then
+    echo "VECTOR_EXTENSION_PATH not set in .env" >&2
+    exit 1
+fi
 
 # Helper for retrying flaky network operations
 retry() {
