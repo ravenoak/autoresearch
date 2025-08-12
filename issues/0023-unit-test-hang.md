@@ -6,6 +6,11 @@ The test suite progresses to about 42% and then stalls indefinitely. Manual inte
 ## Context
 `task verify` is part of the standard development workflow. The hang prevents complete verification and suggests a problematic test or dependency.
 
+Recent runs show the suite pausing during `test_ram_eviction`, which imports
+heavy packages such as `bertopic`, `umap`, and `numba` via `search.context`.
+These imports trigger just-in-time compilation and can take several minutes,
+leading to the perceived hang.
+
 ## Acceptance Criteria
 - Identify the test or dependency causing the hang.
 - Ensure `task verify` completes within a reasonable time (under 5 minutes).
