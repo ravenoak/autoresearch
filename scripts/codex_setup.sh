@@ -5,6 +5,9 @@ LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
+# NOTE: Keep this script in sync with AGENTS.md.
+# When tooling or helper scripts change, update both this file and AGENTS.md.
+
 # Pre-flight: ensure uv is installed
 if ! command -v uv >/dev/null 2>&1; then
     echo "uv not found. Installing..."
