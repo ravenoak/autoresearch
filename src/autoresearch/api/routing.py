@@ -284,7 +284,8 @@ async def cancel_query(task_id: str, request: Request) -> Response:
 
 
 @router.get("/metrics")
-async def metrics_endpoint(_: None = require_permission("metrics")) -> Response:
+async def metrics_endpoint() -> Response:
+    """Expose Prometheus metrics without authentication."""
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
