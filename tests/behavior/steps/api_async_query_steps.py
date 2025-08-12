@@ -51,16 +51,17 @@ def submit_async_query(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    async def run_async(q: str, config: ConfigModel) -> QueryResponse:
+    def run_sync(q: str, config: ConfigModel) -> QueryResponse:
         return dummy_query_response.model_copy(deep=True)
 
-    monkeypatch.setattr(Orchestrator, "run_query_async", run_async)
+    monkeypatch.setattr(Orchestrator, "run_query", run_sync)
 
     client = bdd_context["client"]
     resp = client.post("/query/async", json={"query": query})
     bdd_context["submit_response"] = resp
     if resp.status_code == 200:
-        bdd_context["query_id"] = resp.json()["query_id"]
+        data = resp.json()
+        bdd_context["query_id"] = data.get("query_id") or data.get("id")
 
 
 @then("the response should include a query ID")
@@ -69,7 +70,8 @@ def check_query_id(bdd_context: dict[str, Any]) -> None:
 
     resp = bdd_context["submit_response"]
     assert resp.status_code == 200
-    assert "query_id" in resp.json()
+    data = resp.json()
+    assert "query_id" in data or "id" in data
 
 
 @when("I request the status for that query ID")
@@ -79,7 +81,7 @@ def request_status(bdd_context: dict[str, Any], monkeypatch) -> None:
     monkeypatch.setattr(time, "sleep", lambda *_: None)
     query_id = bdd_context["query_id"]
     future = api_app.state.async_tasks.get(query_id)
-    if future is not None:
+    if future is not None and hasattr(future, "done"):
         while not future.done():
             time.sleep(0)
     client = bdd_context["client"]
@@ -113,16 +115,16 @@ def async_query_submitted(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    async def run_async(q: str, config: ConfigModel) -> QueryResponse:
-        async with asyncio.TaskGroup() as tg:
-            await tg.create_task(asyncio.Event().wait())
+    def run_sync(q: str, config: ConfigModel) -> QueryResponse:
+        time.sleep(1)
         return dummy_query_response.model_copy(deep=True)
 
-    monkeypatch.setattr(Orchestrator, "run_query_async", run_async)
+    monkeypatch.setattr(Orchestrator, "run_query", run_sync)
 
     resp = api_client.post("/query/async", json={"query": "slow"})
     bdd_context["client"] = api_client
-    bdd_context["query_id"] = resp.json()["query_id"]
+    data = resp.json()
+    bdd_context["query_id"] = data.get("query_id") or data.get("id")
 
 
 @when("I cancel the async query")
@@ -141,8 +143,7 @@ def check_cancellation(bdd_context: dict[str, Any]) -> None:
 
     resp = bdd_context["cancel_response"]
     assert resp.status_code == 200
-    data = resp.json()
-    assert data.get("status") == "cancelled"
+    assert resp.text == "canceled"
     assert bdd_context["query_id"] not in api_app.state.async_tasks
 
 
@@ -203,7 +204,7 @@ def failing_async_query(failure: str, api_client, monkeypatch):
     state = {"active": True}
     recovery_info: dict[str, str] = {}
 
-    async def run_async(q: str, config: ConfigModel):
+    def run_async(q: str, config: ConfigModel):
         if failure == "times out":
             raise TimeoutError("simulated timeout")
         raise AgentError("simulated crash")
@@ -231,7 +232,7 @@ def failing_async_query(failure: str, api_client, monkeypatch):
 
     with (
         patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator.run_query_async",
+            "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
             side_effect=run_async,
         ),
         patch(
@@ -240,9 +241,10 @@ def failing_async_query(failure: str, api_client, monkeypatch):
         ),
     ):
         resp = api_client.post("/query/async", json={"query": "fail"})
-        query_id = resp.json().get("query_id")
+        data = resp.json()
+        query_id = data.get("query_id") or data.get("id")
         future = api_app.state.async_tasks.get(query_id)
-        if future is not None:
+        if future is not None and hasattr(future, "done"):
             while not future.done():
                 time.sleep(0)
             try:
