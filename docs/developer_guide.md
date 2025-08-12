@@ -20,7 +20,15 @@ The project uses **uv** for dependency management. All commands below rely on
 
 Several unit and integration tests require `gitpython` and the DuckDB VSS
 extension. Include the `git` extra when setting up the environment, for example:
-`uv pip install -e '.[full,parsers,git,llm,dev]'`.
+ `uv pip install -e '.[full,parsers,git,llm,dev]'`.
+
+### Virtual environment best practices
+
+- Keep the `.venv` isolated by avoiding global package installs.
+- Always activate the environment or prefix commands with `uv run`.
+- Regenerate the lock file with `uv lock` when dependencies change and
+  reinstall using `uv pip install -e '.[full,parsers,git,llm,dev]'`.
+- Use `task verify` to run linting and tests inside the active environment.
 
 ## Code Style
 

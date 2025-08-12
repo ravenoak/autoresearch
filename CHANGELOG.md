@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - Add rich configuration context fixtures with sample data for tests. [#17](issues/0017-create-more-comprehensive-test-contexts.md)
 - Optimize mypy configuration to skip site packages, preventing hangs during
   verification. [#22](issues/0022-investigate-mypy-hang.md).
+- Document virtual environment best practices in the developer guide.
 
 ## [0.1.0-alpha.1] - 2025-08-09
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.

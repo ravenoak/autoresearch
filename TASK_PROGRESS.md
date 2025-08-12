@@ -231,8 +231,8 @@ completed.
 - `flake8` reports no style errors.
 - `uv run mypy src` completes in ~7s after excluding site packages;
   issue [#22](issues/0022-investigate-mypy-hang.md) closed.
-- Unit tests begin executing, but the full suite remains long-running and
-  was interrupted after partial progress (~21%).
+- Unit tests begin executing but stall around 42% and were manually
+  interrupted. See [#23](issues/0023-unit-test-hang.md).
 
 ### Performance Baselines
 
