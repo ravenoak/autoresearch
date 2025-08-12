@@ -6,18 +6,20 @@ setup.
 
 ## Installing extras
 
-Behavior tests rely on optional features such as the Streamlit UI and the DuckDB
-VSS extension. Install all extras with **uv** before running the scenarios:
+Behavior tests rely on optional features such as the Streamlit UI, the DuckDB
+VSS extension, and NLP components. Install all extras with **uv** before running
+the scenarios:
 
 ```bash
-uv pip install -e '.[full,parsers,git,llm,dev]'
+uv pip install -e '.[full,parsers,git,llm,dev,nlp]'
 ```
 
 ## Running extra tests
 
 Use pytest markers to execute these scenarios separately if you do not want to
 run the entire suite. `requires_ui` scenarios need the `ui` extra while
-`requires_vss` scenarios depend on the `vss` extra:
+`requires_vss` scenarios depend on the `vss` extra. NLP-dependent scenarios use
+the `requires_nlp` marker and require the `nlp` extra:
 
 ```bash
 # Scenarios that need the UI extra
@@ -25,6 +27,9 @@ uv run pytest tests/behavior -m requires_ui
 
 # Scenarios that need the VSS extra
 uv run pytest tests/behavior -m requires_vss
+
+# Scenarios that need NLP extras
+uv run pytest tests/behavior -m requires_nlp
 ```
 
 Scenarios with these markers are skipped when the corresponding extras are not

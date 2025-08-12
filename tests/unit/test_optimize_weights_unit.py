@@ -1,4 +1,8 @@
+import pytest
+
 from autoresearch.search import Search
+
+pytestmark = pytest.mark.requires_nlp
 
 
 def test_optimize_weights_improves_score(sample_eval_data):

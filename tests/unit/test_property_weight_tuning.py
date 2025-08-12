@@ -3,6 +3,8 @@ from hypothesis import given, strategies as st, settings, HealthCheck
 
 from autoresearch.search import Search
 
+pytestmark = pytest.mark.requires_nlp
+
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(step=st.floats(min_value=0.05, max_value=0.3))

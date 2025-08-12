@@ -55,6 +55,7 @@ typer.Option = _compat_option
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow")
+    config.addinivalue_line("markers", "requires_nlp: mark test requiring NLP extras")
 
 
 def reset_limiter_state() -> None:
@@ -87,11 +88,14 @@ def pytest_runtest_setup(item):
         pytest.skip("vss extra not installed")
     if item.get_closest_marker("requires_git") and not GITPYTHON_INSTALLED:
         pytest.skip("git extra not installed")
+    if item.get_closest_marker("requires_nlp") and not NLP_AVAILABLE:
+        pytest.skip("nlp extra not installed")
 
 
 GITPYTHON_INSTALLED = _module_available("git")
 POLARS_INSTALLED = _module_available("polars")
 UI_AVAILABLE = _module_available("streamlit")
+NLP_AVAILABLE = _module_available("sentence_transformers")
 
 
 def _check_vss() -> bool:
@@ -507,7 +511,7 @@ def realistic_claim_batch(claim_factory):
 @pytest.fixture
 def sample_eval_data():
     """Load the sample evaluation CSV for search weight tests."""
-
+    pytest.importorskip("sentence_transformers")
     from autoresearch.search import Search
 
     path = Path(__file__).resolve().parent / "data" / "eval" / "sample_eval.csv"
