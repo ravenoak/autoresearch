@@ -13,10 +13,8 @@ outcomes.
 - Feature docs link to scenarios
 
 ## Status
-Partially complete – scenarios for GUI CLI, capabilities CLI, and
-completion CLI cover both success and failure paths. Scenarios for
-other user-facing features and corresponding documentation links are
-still outstanding.
+Done – scenarios and documentation links now cover all user-facing
+features.
 
 ## Related
 - #10
