@@ -102,6 +102,19 @@ Use Go Task to create platform-specific wheels:
 ```bash
 task wheels
 ```
+### Packaging for PyPI
+Install packaging tools and build distribution artifacts:
+
+```bash
+uv pip install -e '.[build]'
+python -m build
+```
+
+Upload a development build to TestPyPI:
+
+```bash
+./scripts/publish_dev.py
+```
 ### Upgrading
 Use the provided helper to update Autoresearch:
 ```bash
