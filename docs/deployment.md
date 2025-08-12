@@ -143,22 +143,22 @@ extras.
 ## Release workflow
 
 1. Bump the version in `pyproject.toml` and in `autoresearch.__version__`.
-2. Regenerate the lock file and reinstall dependencies:
+2. Regenerate the lock file and install the packaging extras:
    ```bash
    uv lock
-   uv pip install -e '.[dev-minimal]'
+   uv pip install -e '.[dev-minimal,build]'
    ```
 3. Run the unit and behavior test suites.
-4. Publish a development build to TestPyPI:
-
-```bash
-./scripts/publish_dev.py
-```
-
-5. If everything looks good, publish to the main PyPI repository:
-
-```bash
-uv run python -m build
-uv run twine upload dist/*
-```
+4. Build the distribution artifacts:
+   ```bash
+   uv run python -m build
+   ```
+5. Publish a development build to TestPyPI:
+   ```bash
+   ./scripts/publish_dev.py
+   ```
+6. If everything looks good, publish to the main PyPI repository:
+   ```bash
+   uv run twine upload dist/*
+   ```
 
