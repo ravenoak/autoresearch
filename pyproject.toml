@@ -107,7 +107,8 @@ full = [
     "slowapi ==0.1.9",
     "lmstudio >=1.4.1",
     "polars >=1.31.0",
-    
+    "matplotlib >=3.10.0",
+
 ]
 dev = [
     "pytest >=8.3.5",
