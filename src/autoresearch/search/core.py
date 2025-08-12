@@ -24,7 +24,6 @@ import os
 import re
 import subprocess
 import shutil
-import sys
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
@@ -35,6 +34,7 @@ import requests
 import numpy as np
 from docx import Document
 from pdfminer.high_level import extract_text as extract_pdf_text
+
 try:
     from git import Repo
 
@@ -46,7 +46,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 
     warnings.warn(
         "Local Git search backend disabled: 'gitpython' is not installed. "
-        "Install with `pip install \"autoresearch[git]\"` to enable it.",
+        'Install with `pip install "autoresearch[git]"` to enable it.',
         stacklevel=2,
     )
 
@@ -314,8 +314,7 @@ class Search:
                 if "embedding" in doc:
                     doc_embedding = np.array(doc["embedding"], dtype=float)
                     sim = np.dot(query_embedding, doc_embedding) / (
-                        np.linalg.norm(query_embedding)
-                        * np.linalg.norm(doc_embedding)
+                        np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
                     )
                     similarities.append(float(sim))
                     continue
@@ -376,7 +375,9 @@ class Search:
                     documents[index]["embedding"] = list(emb)
                 if query_embedding is not None:
                     q = np.array(query_embedding, dtype=float)
-                    sim = float(np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb)))
+                    sim = float(
+                        np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb))
+                    )
                     documents[index]["similarity"] = sim
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
@@ -603,22 +604,30 @@ class Search:
     def _ndcg(relevances: List[float]) -> float:
         """Compute normalized discounted cumulative gain."""
 
-        dcg = sum((2 ** r - 1) / math.log2(i + 2) for i, r in enumerate(relevances))
+        dcg = sum((2**r - 1) / math.log2(i + 2) for i, r in enumerate(relevances))
         ideal = sorted(relevances, reverse=True)
-        idcg = sum((2 ** r - 1) / math.log2(i + 2) for i, r in enumerate(ideal))
+        idcg = sum((2**r - 1) / math.log2(i + 2) for i, r in enumerate(ideal))
         return dcg / idcg if idcg else 0.0
 
     @classmethod
     def evaluate_weights(
-        cls, weights: Tuple[float, float, float], data: Dict[str, List[Dict[str, float]]]
+        cls,
+        weights: Tuple[float, float, float],
+        data: Dict[str, List[Dict[str, float]]],
     ) -> float:
         """Evaluate ranking quality for the given weights using NDCG."""
 
         w_sem, w_bm, w_cred = weights
         total = 0.0
         for docs in data.values():
-            scores = [w_sem * d["semantic"] + w_bm * d["bm25"] + w_cred * d["credibility"] for d in docs]
-            ranked = [docs[i]["relevance"] for i in sorted(range(len(docs)), key=lambda i: scores[i], reverse=True)]
+            scores = [
+                w_sem * d["semantic"] + w_bm * d["bm25"] + w_cred * d["credibility"]
+                for d in docs
+            ]
+            ranked = [
+                docs[i]["relevance"]
+                for i in sorted(range(len(docs)), key=lambda i: scores[i], reverse=True)
+            ]
             total += cls._ndcg(ranked)
         return total / len(data)
 
@@ -699,7 +708,7 @@ class Search:
         """Register an embedding search backend."""
 
         def decorator(
-            func: Callable[[np.ndarray, int], List[Dict[str, Any]]]
+            func: Callable[[np.ndarray, int], List[Dict[str, Any]]],
         ) -> Callable[[np.ndarray, int], List[Dict[str, Any]]]:
             cls.embedding_backends[name] = func
             cls._default_embedding_backends.setdefault(name, func)
@@ -855,9 +864,9 @@ class Search:
             backend = Search.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
-                available_backends = list(Search.backends.keys()) or ["No backends registered"]
-                if "pytest" in sys.modules:
-                    return name, []
+                available_backends = list(Search.backends.keys()) or [
+                    "No backends registered"
+                ]
                 raise SearchError(
                     f"Unknown search backend '{name}'",
                     available_backends=available_backends,
@@ -869,6 +878,7 @@ class Search:
             except requests.exceptions.Timeout as exc:
                 log.warning(f"{name} search timed out: {exc}")
                 from ..errors import TimeoutError
+
                 raise TimeoutError(
                     f"{name} search timed out",
                     cause=exc,
@@ -912,7 +922,9 @@ class Search:
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(run_backend, name): name for name in cfg.search.backends}
+            futures = {
+                executor.submit(run_backend, name): name for name in cfg.search.backends
+            }
             for future in as_completed(futures):
                 name, backend_results = future.result()
                 if backend_results:
@@ -1133,15 +1145,25 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
                 str(root),
             ]
             try:
-                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
+                output = subprocess.check_output(
+                    cmd, text=True, stderr=subprocess.DEVNULL
+                )
+            except (
+                subprocess.CalledProcessError
+            ) as exc:  # pragma: no cover - ripgrep no match
                 output = exc.output or ""
             for line in output.splitlines():
                 parts = line.split(":", 2)
                 if len(parts) < 3:
                     continue
                 file_path, _line_no, snippet = parts
-                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet.strip()})
+                results.append(
+                    {
+                        "title": Path(file_path).name,
+                        "url": file_path,
+                        "snippet": snippet.strip(),
+                    }
+                )
                 if len(results) >= max_results:
                     break
 
@@ -1165,8 +1187,10 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
 
             idx = text.lower().find(query.lower())
             if idx != -1:
-                snippet = text[idx: idx + 200]
-                results.append({"title": file.name, "url": str(file), "snippet": snippet})
+                snippet = text[idx : idx + 200]
+                results.append(
+                    {"title": file.name, "url": str(file), "snippet": snippet}
+                )
                 if len(results) >= max_results:
                     return results
 
@@ -1215,8 +1239,12 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 str(repo_root),
             ]
             try:
-                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
+                output = subprocess.check_output(
+                    cmd, text=True, stderr=subprocess.DEVNULL
+                )
+            except (
+                subprocess.CalledProcessError
+            ) as exc:  # pragma: no cover - ripgrep no match
                 output = exc.output or ""
             for line in output.splitlines():
                 parts = line.split(":", 2)
@@ -1236,7 +1264,14 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 except Exception:
                     context_lines = [_snippet.strip()]
                 snippet = "\n".join(context_lines)
-                results.append({"title": Path(file_path).name, "url": file_path, "snippet": snippet, "commit": head_hash})
+                results.append(
+                    {
+                        "title": Path(file_path).name,
+                        "url": file_path,
+                        "snippet": snippet,
+                        "commit": head_hash,
+                    }
+                )
                 if len(results) >= max_results:
                     break
     else:
@@ -1252,7 +1287,14 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                     start = max(0, idx - 2)
                     end = min(len(lines), idx + 3)
                     snippet = "\n".join(lines[start:end])
-                    results.append({"title": file.name, "url": str(file), "snippet": snippet, "commit": head_hash})
+                    results.append(
+                        {
+                            "title": file.name,
+                            "url": str(file),
+                            "snippet": snippet,
+                            "commit": head_hash,
+                        }
+                    )
                     break
             if len(results) >= max_results:
                 return results
@@ -1319,7 +1361,9 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                             re.IGNORECASE,
                         )
                         snippet = (
-                            snippet_match.group(0).strip() if snippet_match else part[:200]
+                            snippet_match.group(0).strip()
+                            if snippet_match
+                            else part[:200]
                         )
                         results.append(
                             {

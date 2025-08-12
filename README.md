@@ -610,7 +610,7 @@ Activate the environment with `source .venv/bin/activate` before running command
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv pip install -e '.[full,parsers,git,llm,dev]'`.
+- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv pip install -e '.[full,parsers,git,llm,dev]'`. Time-based tests rely on `freezegun`, which is included in the development extras.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ### Smoke test

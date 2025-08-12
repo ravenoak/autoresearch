@@ -12,10 +12,7 @@ performance issues or hanging tests.
 - Document any remaining long-running tests and rationale
 
 ## Status
-Profiling shows `tests/unit/test_eviction.py` hanging after about 43
-seconds, even when run in isolation. The suite also initially failed
-with a missing `freezegun` dependency. Unit tests still exceed
-acceptable runtime, so the issue remains open.
+Done – replaced thread `Lock` with `RLock` to avoid deadlock in `StorageManager.touch_node`; unit tests now complete within CI time limits.
 
 ## Related
 - #5
