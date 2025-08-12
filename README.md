@@ -511,6 +511,18 @@ extras because stub versions of optional packages are bundled, but coverage is
 limited. Installing extras enables the real implementations—for example
 SlowAPI’s middleware, which enforces rate limits during integration tests.
 
+### Virtual environment best practices
+
+- Use `uv venv` to create the environment and rerun `uv sync --all-extras`
+  whenever `pyproject.toml` changes.
+- Activate the environment with `source .venv/bin/activate` or prefix commands
+  with `uv run` so tooling resolves to the virtual environment.
+- Avoid committing the `.venv` directory and recreate it if dependencies
+  become inconsistent.
+- Install development extras with
+  `uv pip install -e '.[full,parsers,git,llm,dev]'` to ensure linters and
+  optional features are available.
+
 ## Running tests
 
 All test commands require the project to be installed with the full extras so
