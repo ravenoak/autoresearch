@@ -10,6 +10,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Deeper `AGENTS.md` files override conflicting instructions from parent directories.
 - Keep `AGENTS.md` files current and commit updates alongside related code changes.
 - When instructions affect environment setup or tooling, update `scripts/codex_setup.sh` to match.
+- Changes to tooling must be reflected in both this document and `scripts/codex_setup.sh` so documentation and setup stay in sync.
 
 ## Environment setup
 - `scripts/codex_setup.sh` sets up your environment prior to being handed off to you; update it whenever AGENTS guidelines or environment requirements change so the automated setup stays in sync.
@@ -63,12 +64,20 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Manually remove test artifacts such as `kg.duckdb` and `rdf_store` if present.
 
 ## Utility scripts and Taskfile commands
+- Run `task --list` to discover helper commands.
 - Run `uv run scripts/smoke_test.py` to perform a quick environment smoke test.
+- After deploying the service, verify configuration and health with `uv run scripts/deploy.py`.
+- Check token usage against baselines with `uv run scripts/check_token_regression.py` or `task check-baselines`.
 - Publish a development build to TestPyPI with `uv run scripts/publish_dev.py`.
+- Additional utilities in `scripts/` include:
+  - `benchmark_token_memory.py` for performance baselines
+  - `evaluate_ranking.py`, `optimize_search_weights.py`, `visualize_rdf.py`, and `upgrade.py`
 - [`Taskfile.yml`](Taskfile.yml) provides additional helpers:
   - `task unit`, `task integration`, and `task behavior` run targeted test suites.
   - `task test:all` executes the entire suite, and `task coverage` produces coverage reports.
-  - Use `task --list` to view all available tasks.
+  - `task check-baselines` enforces token regression thresholds.
+  - `task wheels` builds wheels for all platforms.
+- When new scripts or tasks are added, update both this file and `scripts/codex_setup.sh` accordingly.
 
 ## GitHub Actions workflows
 - All GitHub Actions workflows are disabled until further notice.
