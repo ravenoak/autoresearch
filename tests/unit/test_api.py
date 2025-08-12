@@ -1,12 +1,13 @@
-from fastapi.testclient import TestClient
-
 import threading
 from collections import Counter
+
+from fastapi.testclient import TestClient
+
 from autoresearch.api import create_app, dynamic_limit
-from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def _setup(monkeypatch):
@@ -135,6 +136,7 @@ def test_request_log_thread_safety(monkeypatch):
         t.join()
 
     assert all(isinstance(r, int) for r in results)
+    assert sorted(results) == list(range(1, 21))
 
     count = api_mod.get_request_logger(app).get("1")
     assert isinstance(count, int)
