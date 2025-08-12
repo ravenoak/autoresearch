@@ -229,10 +229,10 @@ completed.
 ### Latest Test Results
 
 - `flake8` reports no style errors.
-- `uv run mypy src` hangs without output; see issue [#22](issues/0022-investigate-mypy-hang.md).
-- Targeted `pytest` runs for backup and metrics modules pass, but a full
-  `pytest tests/unit` run was interrupted after several minutes without
-  additional failures observed.
+- `uv run mypy src` completes in ~7s after excluding site packages;
+  issue [#22](issues/0022-investigate-mypy-hang.md) closed.
+- Unit tests begin executing, but the full suite remains long-running and
+  was interrupted after partial progress (~21%).
 
 ### Performance Baselines
 
