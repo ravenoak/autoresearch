@@ -70,8 +70,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   the `requires_nlp` marker and are typically marked `slow`; run them with
   `task test:slow` or `uv run pytest -m requires_nlp`. Skip them with
   `-m 'not requires_nlp'` if the extras are unavailable.
-- See [tests/behavior/README.md](tests/behavior/README.md) for markers
-  such as `requires_ui` and `requires_vss` to select specific scenarios.
+  - See [tests/behavior/README.md](tests/behavior/README.md) for markers
+    such as `requires_ui`, `requires_vss`, and `requires_nlp` to select specific scenarios.
 
 ### Cleanup
 - Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.
