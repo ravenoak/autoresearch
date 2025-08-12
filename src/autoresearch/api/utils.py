@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections import Counter
 import threading
+from collections import Counter
 from typing import cast
 
 from fastapi import FastAPI
@@ -25,7 +25,7 @@ class RequestLogger:
 
     def get(self, ip: str) -> int:
         with self._lock:
-            return self._log[ip]
+            return int(self._log.get(ip, 0))
 
     def snapshot(self) -> dict[str, int]:
         with self._lock:
@@ -38,12 +38,26 @@ def create_request_logger() -> RequestLogger:
 
 
 def get_request_logger(app: FastAPI | None = None) -> RequestLogger:
-    """Retrieve the application's request logger."""
+    """Retrieve the application's request logger.
+
+    Raises:
+        RuntimeError: If the request logger has not been initialised.
+    """
     if app is None:
-        app = cast(FastAPI | None, globals().get("app"))
+        try:
+            from autoresearch import api as api_mod
+
+            app = cast(FastAPI | None, getattr(api_mod, "app", None))
+        except Exception:  # pragma: no cover - defensive
+            app = None
         if app is None:
-            return create_request_logger()
-    return cast(RequestLogger, app.state.request_logger)
+            raise RuntimeError("Request logger not initialised")
+
+    logger = getattr(app.state, "request_logger", None)
+    if logger is None:
+        raise RuntimeError("Request logger not initialised")
+
+    return cast(RequestLogger, logger)
 
 
 def reset_request_log(app: FastAPI | None = None) -> None:
