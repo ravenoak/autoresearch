@@ -23,6 +23,7 @@ def test_search_uses_cache(monkeypatch):
     print(f"Config search backends: {cfg.search.backends}")
     # Disable context-aware search to avoid issues with SearchContext
     cfg.search.context_aware.enabled = False
+    cfg.search.use_semantic_similarity = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     # first call uses backend
