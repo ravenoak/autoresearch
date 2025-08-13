@@ -65,32 +65,30 @@ This document tracks the progress of tasks for the Autoresearch project, organiz
 
 ### 2.2 Integration Tests
 
-- [ ] Complete cross-component integration tests [#1](issues/0001-complete-cross-component-integration-tests.md)
-  - [x] Test orchestrator with all agent combinations [#2](issues/0002-test-orchestrator-with-all-agent-combinations.md)
-  - [x] Verify storage integration with search functionality [#3](issues/0003-verify-storage-integration-with-search-functionality.md)
-  - [x] Test configuration hot-reload with all components [#4](issues/0004-test-configuration-hot-reload-with-all-components.md)
-  - [x] Add performance tests [#5](issues/0005-add-performance-tests.md)
-  - [x] Implement benchmarks for query processing time [#6](issues/0006-implement-benchmarks-for-query-processing-time.md)
-  - [x] Test memory usage under various conditions [#7](issues/0007-test-memory-usage-under-various-conditions.md)
-  - [x] Verify token usage optimization [#8](issues/0008-verify-token-usage-optimization.md)
-  - [x] Monitor token usage regressions automatically [#9](issues/0009-monitor-token-usage-regressions-automatically.md)
+- [x] Complete cross-component integration tests [#1](issues/archive/0001-complete-cross-component-integration-tests.md)
+  - [x] Test orchestrator with all agent combinations [#2](issues/archive/0002-test-orchestrator-with-all-agent-combinations.md)
+  - [x] Verify storage integration with search functionality [#3](issues/archive/0003-verify-storage-integration-with-search-functionality.md)
+  - [x] Test configuration hot-reload with all components [#4](issues/archive/0004-test-configuration-hot-reload-with-all-components.md)
+  - [x] Add performance tests [#5](issues/archive/0005-add-performance-tests.md)
+  - [x] Implement benchmarks for query processing time [#6](issues/archive/0006-implement-benchmarks-for-query-processing-time.md)
+  - [x] Test memory usage under various conditions [#7](issues/archive/0007-test-memory-usage-under-various-conditions.md)
+  - [x] Verify token usage optimization [#8](issues/archive/0008-verify-token-usage-optimization.md)
+  - [x] Monitor token usage regressions automatically [#9](issues/archive/0009-monitor-token-usage-regressions-automatically.md)
 
-Issue #1 remains **In progress**, while issues #2–#9 are marked **Done**,
-matching the checkboxes above.
+Issues #1–#9 are marked **Done**, matching the checkboxes above.
 
 ### 2.3 Behavior Tests
 
-- [x] Complete BDD test scenarios [#10](issues/0010-complete-bdd-test-scenarios.md)
-  - [ ] Add scenarios for all user-facing features [#11](issues/0011-add-scenarios-for-all-user-facing-features.md)
-  - [x] Test all reasoning modes with realistic queries [#12](issues/0012-test-all-reasoning-modes-with-realistic-queries.md)
-  - [x] Verify error handling and recovery [#13](issues/0013-verify-error-handling-and-recovery.md)
-- [x] Enhance test step definitions [#14](issues/0014-enhance-test-step-definitions.md)
-  - [x] Add more detailed assertions [#15](issues/0015-add-more-detailed-assertions.md)
-  - [ ] Implement better test isolation [#16](issues/0016-implement-better-test-isolation.md)
-  - [x] Create more comprehensive test contexts [#17](issues/0017-create-more-comprehensive-test-contexts.md)
+- [x] Complete BDD test scenarios [#10](issues/archive/0010-complete-bdd-test-scenarios.md)
+  - [x] Add scenarios for all user-facing features [#11](issues/archive/0011-add-scenarios-for-all-user-facing-features.md)
+  - [x] Test all reasoning modes with realistic queries [#12](issues/archive/0012-test-all-reasoning-modes-with-realistic-queries.md)
+  - [x] Verify error handling and recovery [#13](issues/archive/0013-verify-error-handling-and-recovery.md)
+- [x] Enhance test step definitions [#14](issues/archive/0014-enhance-test-step-definitions.md)
+  - [x] Add more detailed assertions [#15](issues/archive/0015-add-more-detailed-assertions.md)
+  - [x] Implement better test isolation [#16](issues/archive/0016-implement-better-test-isolation.md)
+  - [x] Create more comprehensive test contexts [#17](issues/archive/0017-create-more-comprehensive-test-contexts.md)
 
-Issues #10, #12–#15, and #17 are marked **Done**. Issues #11 and #16 remain
-**In progress**, matching the checkboxes above.
+Issues #10–#17 are marked **Done**, matching the checkboxes above.
 
 ### 4.1 Code Documentation
 
@@ -229,8 +227,8 @@ completed.
 ### Latest Test Results
 
 - `flake8` reports no style errors.
-- `uv run mypy src` completes in ~7s after excluding site packages;
-  issue [#22](issues/0022-investigate-mypy-hang.md) closed.
+  - `uv run mypy src` completes in ~7s after excluding site packages;
+    issue [#22](issues/archive/0022-investigate-mypy-hang.md) closed.
 - Unit tests begin executing but stall around 42% and were manually
   interrupted. See [#23](issues/0023-unit-test-hang.md).
 
