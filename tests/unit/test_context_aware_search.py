@@ -6,6 +6,8 @@ from unittest.mock import patch, MagicMock
 from autoresearch.search import Search, SearchContext
 from autoresearch.config.models import SearchConfig, ContextAwareSearchConfig
 
+pytestmark = [pytest.mark.slow, pytest.mark.requires_nlp]
+
 
 @pytest.fixture
 def reset_search_context():

@@ -2,6 +2,10 @@ import importlib
 import sys
 import types
 
+import pytest
+
+pytestmark = pytest.mark.requires_nlp
+
 
 def test_optional_dependencies_not_imported_on_module_load(monkeypatch):
     for name in ("spacy", "bertopic", "sentence_transformers"):

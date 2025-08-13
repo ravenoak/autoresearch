@@ -11,6 +11,7 @@ from freezegun import freeze_time
 def test_ram_eviction(storage_manager, monkeypatch):
     StorageManager.clear_all()
     config = ConfigModel(ram_budget_mb=1)
+    config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     # reload config property
     ConfigLoader()._config = None
@@ -25,6 +26,7 @@ def test_ram_eviction(storage_manager, monkeypatch):
 def test_score_eviction(storage_manager, monkeypatch):
     StorageManager.clear_all()
     config = ConfigModel(ram_budget_mb=1, graph_eviction_policy="score")
+    config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
@@ -53,6 +55,7 @@ def test_lru_eviction_order(storage_manager, monkeypatch):
 
     storage.StorageManager.state.lru.clear()
     config = ConfigModel(ram_budget_mb=1)
+    config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
