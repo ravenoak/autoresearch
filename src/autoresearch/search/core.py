@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, TYPE_CHECKING
 
 import requests
 import numpy as np
@@ -56,23 +56,6 @@ try:
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
-
-try:
-    from sentence_transformers import SentenceTransformer
-
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-
-try:
-    import spacy
-    import spacy.cli
-
-    SPACY_AVAILABLE = True
-except ImportError:  # pragma: no cover - optional dependency
-    spacy = None  # type: ignore[assignment]
-    SPACY_AVAILABLE = False
-
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..cache import get_cached_results, cache_results
@@ -81,6 +64,34 @@ from ..storage import StorageManager
 
 from .http import close_http_session, get_http_session
 from .context import SearchContext
+
+SentenceTransformer: Any | None = None
+SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+
+def _try_import_sentence_transformers() -> bool:
+    """Lazily import SentenceTransformer when needed."""
+    global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
+    if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
+        return SENTENCE_TRANSFORMERS_AVAILABLE
+    cfg = get_config()
+    if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
+        return False
+    try:  # pragma: no cover - optional dependency
+        from sentence_transformers import SentenceTransformer as ST  # type: ignore
+
+        SentenceTransformer = ST
+        SENTENCE_TRANSFORMERS_AVAILABLE = True
+    except Exception:
+        SentenceTransformer = None
+        SENTENCE_TRANSFORMERS_AVAILABLE = False
+    return SENTENCE_TRANSFORMERS_AVAILABLE
+
+
+if TYPE_CHECKING:  # pragma: no cover - for type checking only
+    from sentence_transformers import SentenceTransformer as SentenceTransformerType
+else:  # pragma: no cover - runtime fallback
+    SentenceTransformerType = Any
 
 log = get_logger(__name__)
 
@@ -180,21 +191,22 @@ class Search:
             cls.close_http_session()
 
     @classmethod
-    def get_sentence_transformer(cls) -> Optional[SentenceTransformer]:
+    def get_sentence_transformer(cls) -> Optional[SentenceTransformerType]:
         """Get or initialize the sentence transformer model.
 
         Returns:
             SentenceTransformer: The sentence transformer model, or None if not available
         """
-        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+        if not _try_import_sentence_transformers():
             log.warning(
-                "sentence-transformers package is not installed. Semantic similarity scoring will be disabled."
+                "sentence-transformers package is not installed. Semantic similarity scoring will be disabled.",
             )
             return None
 
         if cls._sentence_transformer is None:
             try:
                 # Use a small, fast model for semantic similarity
+                assert SentenceTransformer is not None
                 cls._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
                 log.info("Initialized sentence transformer model")
             except Exception as e:

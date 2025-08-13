@@ -24,6 +24,8 @@ def _try_import_spacy() -> bool:
     global spacy, SPACY_AVAILABLE
     if spacy is not None or SPACY_AVAILABLE:
         return SPACY_AVAILABLE
+    if not get_config().search.context_aware.enabled:
+        return False
     try:  # pragma: no cover - optional dependency
         import spacy as spacy_mod  # type: ignore
         import spacy.cli  # type: ignore
@@ -41,6 +43,8 @@ def _try_import_bertopic() -> bool:
     global BERTopic, BERTOPIC_AVAILABLE
     if BERTopic is not None or BERTOPIC_AVAILABLE:
         return BERTOPIC_AVAILABLE
+    if not get_config().search.context_aware.enabled:
+        return False
     try:  # pragma: no cover - optional dependency
         from bertopic import BERTopic as BERTopic_cls  # type: ignore
 
@@ -57,6 +61,8 @@ def _try_import_sentence_transformers() -> bool:
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
     if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
         return SENTENCE_TRANSFORMERS_AVAILABLE
+    if not get_config().search.context_aware.enabled:
+        return False
     try:  # pragma: no cover - optional dependency
         from sentence_transformers import SentenceTransformer as ST  # type: ignore
 
@@ -123,9 +129,12 @@ class SearchContext:
         self.topic_model: BERTopicType | None = None
         self.dictionary: dict[str, int] | None = None
         self.nlp: Language | None = None
-        self._initialize_nlp()
+        if get_config().search.context_aware.enabled:
+            self._initialize_nlp()
 
     def _initialize_nlp(self) -> None:
+        if not get_config().search.context_aware.enabled:
+            return
         if not _try_import_spacy() or spacy is None:
             return
         spacy_mod = cast(Any, spacy)
@@ -187,6 +196,8 @@ class SearchContext:
             log.warning(f"Entity extraction failed: {e}")
 
     def build_topic_model(self) -> None:
+        if not get_config().search.context_aware.enabled:
+            return
         if (
             not _try_import_bertopic()
             or not self.search_history
