@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 from autoresearch.main import app
-from autoresearch.config.models import ConfigModel
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
@@ -26,7 +26,11 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
-        lambda self: ConfigModel(loops=1, output_format="json"),
+        lambda self: ConfigModel(
+            loops=1,
+            output_format="json",
+            storage=StorageConfig(vector_extension=False),
+        ),
     )
     responses = iter(["test", "", "q"])
     monkeypatch.setattr(
