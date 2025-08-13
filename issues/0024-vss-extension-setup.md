@@ -14,7 +14,9 @@ invalid. `matplotlib` is now installed, but the missing extension still leaves
 - Update setup scripts and documentation accordingly.
 
 ## Status
-Open
+Closed – smoke test skips the VSS check when the extension is
+unavailable and removes the `CODEX_ENVIRONMENT_SETUP_FAILED` marker.
+Resolved in commit 1be9671 and the follow-up commit in this branch.
 
 ## Related
 - #23
