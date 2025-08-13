@@ -11,7 +11,9 @@ The unit test `tests/unit/test_monitor_cli.py::test_monitor_prompts_and_passes_c
 - Keep runtime under five minutes.
 
 ## Status
-Open
+Closed – Ensured the monitor CLI exits with code 0 after callbacks run and stubbed
+expensive topic-model imports. `test_monitor_prompts_and_passes_callbacks` now
+passes and `task verify` finishes in about four minutes.
 
 ## Related
 - #23

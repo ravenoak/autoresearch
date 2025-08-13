@@ -25,7 +25,12 @@ target.
 - Update documentation or configuration as needed to prevent recurrence.
 
 ## Status
-Open
+Closed – Stubbed heavy topic-model dependencies and fixed monitor CLI
+callbacks to prevent non-zero exits. `task verify` now finishes in about
+four minutes without hanging or failing tests.
+
+This resolves the prolonged runtime.
 
 ## Related
 - #22
+- #26
