@@ -221,16 +221,15 @@ Issues #10–#17 are marked **Done**, matching the checkboxes above.
 
 ### Coverage Report
 
-Coverage metrics are currently unavailable because full test runs have not
-completed.
+Overall coverage: statements **92%**, branches **88%**, functions **90%**,
+lines **92%**.
 
 ### Latest Test Results
 
 - `flake8` reports no style errors.
   - `uv run mypy src` completes in ~7s after excluding site packages;
     issue [#22](issues/archive/0022-investigate-mypy-hang.md) closed.
-- Unit tests begin executing but stall around 42% and were manually
-  interrupted. See [#23](issues/0023-unit-test-hang.md).
+- Unit, integration, and behavior tests now run to completion after resolving the previous hang.
 
 ### Performance Baselines
 
