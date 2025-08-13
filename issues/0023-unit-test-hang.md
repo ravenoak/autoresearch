@@ -13,14 +13,11 @@ leading to the perceived hang.
 
 ### Latest observation
 
-`task verify` was re-run on the current environment and again stalled at
-42% for several minutes before being manually interrupted. The long pause
-occurs while `narwhals` and other transitive dependencies are imported via
-`bertopic`, suggesting the heavy import chain remains unresolved.
-
-Potential approaches include marking the affected test as `slow`, lazily
-importing the topic-modelling stack, or isolating the dependency behind a
-feature flag so that the majority of the unit suite can complete quickly.
+After commits 4e955dc and 7e0da5c introduced lazy imports, `task verify`
+now runs to completion but takes ~12 minutes and fails
+`tests/unit/test_monitor_cli.py::test_monitor_prompts_and_passes_callbacks`
+(exit code 1). The hang is eliminated, but runtime exceeds the 5-minute
+target.
 
 ## Acceptance Criteria
 - Identify the test or dependency causing the hang.
