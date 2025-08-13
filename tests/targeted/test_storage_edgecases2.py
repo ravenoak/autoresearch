@@ -9,10 +9,14 @@ def test_current_ram_fallback(monkeypatch):
     def fake_import(name, *a, **k):
         if name == "psutil":
             raise ImportError
+        if name == "resource":
+            return types.SimpleNamespace(
+                RUSAGE_SELF=0,
+                getrusage=lambda x: types.SimpleNamespace(ru_maxrss=1024 * 1024),
+            )
         return orig_import(name, *a, **k)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
-    monkeypatch.setattr(storage, "resource", types.SimpleNamespace(getrusage=lambda x: types.SimpleNamespace(ru_maxrss=1024*1024)))
     mb = storage.StorageManager._current_ram_mb()
     assert mb == 1024.0
 
