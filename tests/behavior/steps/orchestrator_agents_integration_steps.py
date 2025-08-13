@@ -86,6 +86,8 @@ def system_configured_with_multiple_agents(test_context):
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="dialectical",
         loops=1,
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
     test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
 
@@ -156,9 +158,9 @@ def run_query_with_dialectical_reasoning(test_context, mock_agent_factory, monke
 @then("the agents should be executed in the correct sequence")
 def agents_executed_in_correct_sequence(test_context):
     """Verify that agents were executed in the correct sequence."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     expected_sequence = test_context["agents"]
     assert test_context["executed_agents"] == expected_sequence
@@ -167,9 +169,9 @@ def agents_executed_in_correct_sequence(test_context):
 @then("each agent should receive the state from previous agents")
 def agents_receive_state_from_previous(test_context):
     """Verify that each agent received the state from previous agents."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     for i, agent_name in enumerate(test_context["executed_agents"]):
         if i > 0:
@@ -180,9 +182,9 @@ def agents_receive_state_from_previous(test_context):
 @then("the final result should include contributions from all agents")
 def result_includes_all_agent_contributions(test_context):
     """Verify that the final result includes contributions from all agents."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     for agent_name in test_context["agents"]:
         assert agent_name in str(test_context["result"])
@@ -206,6 +208,8 @@ def agent_that_raises_error(mock_agent_factory, test_context):
         reasoning_mode="direct",
         loops=1,
         max_errors=1,
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
 
 
@@ -291,7 +295,11 @@ def agent_with_specific_execution_conditions(mock_agent_factory, test_context):
     mock_agent_factory.get.side_effect = get_agent
 
     test_context["config"] = ConfigModel(
-        agents=["ConditionalAgent", "Synthesizer"], reasoning_mode="direct", loops=1
+        agents=["ConditionalAgent", "Synthesizer"],
+        reasoning_mode="direct",
+        loops=1,
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
 
 
@@ -328,9 +336,9 @@ def run_query_not_meeting_conditions(test_context, mock_agent_factory, monkeypat
 @then("that agent should not be executed")
 def agent_not_executed(test_context):
     """Verify that the conditional agent was not executed."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     assert "ConditionalAgent" not in test_context["executed_agents"]
 
@@ -338,9 +346,9 @@ def agent_not_executed(test_context):
 @then("the orchestrator should continue with other agents")
 def orchestrator_continues_with_other_agents_after_skip(test_context):
     """Verify that the orchestrator continued with other agents after skipping one."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     assert "Synthesizer" in test_context["executed_agents"]
 
@@ -348,8 +356,8 @@ def orchestrator_continues_with_other_agents_after_skip(test_context):
 @then("the final result should not include contributions from the skipped agent")
 def result_excludes_skipped_agent_contributions(test_context):
     """Verify that the final result doesn't include contributions from the skipped agent."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in test_context:
-        pytest.skip(f"Test skipped due to exception: {test_context['exception']}")
+        raise test_context["exception"]
 
     assert "ConditionalAgent" not in str(test_context["result"])
