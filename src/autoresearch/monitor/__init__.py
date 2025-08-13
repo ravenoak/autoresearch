@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Union
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich.prompt import Prompt
 from rich.progress import Progress
 from rich.live import Live
 from rich.tree import Tree
+from ..main import Prompt
 from ..orchestration import metrics as orch_metrics
 from ..resource_monitor import ResourceMonitor
 from .system_monitor import SystemMonitor

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch import search as search_module
-from autoresearch.orchestration import orchestrator as orch_mod
+from autoresearch.orchestration import execution as exec_mod
 from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
@@ -12,16 +12,16 @@ from autoresearch.output_format import FormatTemplate
 
 def test_log_sources(monkeypatch):
     msgs = []
-    monkeypatch.setattr(orch_mod, "log", MagicMock())
-    orch_mod.log.info = lambda msg, **k: msgs.append(msg)
+    monkeypatch.setattr(exec_mod, "log", MagicMock())
+    exec_mod.log.info = lambda msg, **k: msgs.append(msg)
     Orchestrator._log_sources("A", {"sources": [{"title": "T"}]})
     assert any("provided 1 sources" in m for m in msgs)
 
 
 def test_log_sources_missing(monkeypatch):
     msgs = []
-    monkeypatch.setattr(orch_mod, "log", MagicMock())
-    orch_mod.log.warning = lambda msg, **k: msgs.append(msg)
+    monkeypatch.setattr(exec_mod, "log", MagicMock())
+    exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
     Orchestrator._log_sources("A", {})
     assert any("provided no sources" in m for m in msgs)
 
@@ -37,8 +37,8 @@ def test_persist_claims(monkeypatch):
 def test_persist_claims_invalid(monkeypatch):
     monkeypatch.setattr(StorageManager, "persist_claim", lambda c: None)
     msgs = []
-    monkeypatch.setattr(orch_mod, "log", MagicMock())
-    orch_mod.log.warning = lambda msg, **k: msgs.append(msg)
+    monkeypatch.setattr(exec_mod, "log", MagicMock())
+    exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
     result = {"claims": ["bad", {"foo": 1}]}
     Orchestrator._persist_claims("A", result, StorageManager)
     assert any("Skipping invalid claim format" in m for m in msgs)
