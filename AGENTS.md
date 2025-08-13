@@ -36,10 +36,10 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, and `duckdb-extension-vss` are present using `uv pip list`.
-  - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. A stub
-    lives at `extensions/vss_stub.duckdb_extension` and is used in tests when
-    this variable is unset. Point it to a real `vss.duckdb_extension` to enable
-    the actual extension.
+  - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
+    must either disable the `vector_extension` entirely or point this variable
+    to the stub at `extensions/vss_stub.duckdb_extension`. Set it to a real
+    `vss.duckdb_extension` only when the actual extension is available.
   - If `CODEX_ENVIRONMENT_SETUP_FAILED` exists, inspect
     `codex_setup.log` for setup details.
 
