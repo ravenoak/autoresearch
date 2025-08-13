@@ -38,7 +38,6 @@ from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
-from .visualization import save_rdf_graph
 
 
 @dataclass
@@ -1424,4 +1423,6 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Generate a simple PNG visualization of the RDF graph."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()
+        from .visualization import save_rdf_graph
+
         save_rdf_graph(store, output_path)

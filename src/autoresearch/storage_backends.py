@@ -6,11 +6,13 @@ of interacting with different storage systems. The current implementation
 focuses on DuckDB as the primary backend for relational storage and vector search.
 """
 
+from __future__ import annotations
+
 import os
 from threading import Lock
 from queue import Queue
 from contextlib import contextmanager
-from typing import Any, Optional, List, Dict, Iterator
+from typing import Any, Optional, List, Dict, Iterator, TYPE_CHECKING
 import time
 
 import duckdb
@@ -20,7 +22,9 @@ from .errors import StorageError, NotFoundError
 from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import KUZU_QUERY_COUNTER, KUZU_QUERY_TIME
-import kuzu
+
+if TYPE_CHECKING:  # pragma: no cover - type hints only
+    import kuzu
 
 log = get_logger(__name__)
 
@@ -854,6 +858,11 @@ class KuzuStorageBackend:
         self._lock = Lock()
 
     def setup(self, db_path: str | None = None) -> None:
+        try:
+            import kuzu  # type: ignore
+        except Exception as e:  # pragma: no cover - optional dependency
+            raise StorageError("Failed to initialize Kuzu", cause=e)
+
         cfg = ConfigLoader().config.storage
         path = db_path or cfg.kuzu_path
         with self._lock:

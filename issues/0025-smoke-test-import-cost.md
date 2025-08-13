@@ -15,7 +15,11 @@ imports defeat this purpose and mirror the unit test hang reported in #23.
 - Update setup instructions if additional steps are introduced.
 
 ## Status
-Open
+Closed
+
+Startup cost for `scripts/smoke_test.py` is ~2.6 s after lazily loading
+distributed and visualization dependencies. Heavy packages like `ray` and
+`matplotlib` no longer load during `autoresearch.storage` import.
 
 ## Related
 - #23
