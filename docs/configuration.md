@@ -91,7 +91,7 @@ These options are set in the `[core]` section of the configuration file.
 | `output_format` | string | `null` | Format for output (null = auto-detect) | `null`, `"markdown"`, `"json"`, `"terminal"` |
 | `tracing_enabled` | boolean | `false` | Enable OpenTelemetry tracing | `true`, `false` |
 | `graph_eviction_policy` | string | `"LRU"` | Policy for evicting items from the knowledge graph | `"LRU"`, `"score"` |
-| `default_model` | string | `"gpt-3.5-turbo"` | Default LLM model to use | Any valid model name |
+| `default_model` | string | `"mistral"` | Default LLM model to use | Any valid model name |
 | `active_profile` | string | `null` | Active configuration profile | Any defined profile name |
 
 ## Storage Configuration
@@ -213,7 +213,7 @@ model = "gpt-4"
 
 [agent.Contrarian]
 enabled = true
-model = "gpt-3.5-turbo"
+model = "mistral"
 
 [agent.FactChecker]
 enabled = true
