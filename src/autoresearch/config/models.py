@@ -245,7 +245,7 @@ class ConfigModel(BaseModel):
         description="Named coalitions of agents for message broadcasting",
     )
     graph_eviction_policy: str = Field(default="LRU")
-    default_model: str = Field(default="gpt-3.5-turbo")
+    default_model: str = Field(default="mistral")
     active_profile: Optional[str] = None
     distributed: bool = Field(
         default=False,

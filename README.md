@@ -299,7 +299,7 @@ Use `rdfs` with a small `ontology_reasoner_timeout` in test environments, and sw
 enabled = true
 
 # Model to use for this agent
-model = "gpt-3.5-turbo"
+model = "mistral"
 
 [agent.Contrarian]
 enabled = true
@@ -307,7 +307,7 @@ model = "gpt-4"
 
 [agent.FactChecker]
 enabled = true
-model = "gpt-3.5-turbo"
+model = "mistral"
 ```
 
 Additional specialized agents such as `Researcher`, `Critic`, `Summarizer`,

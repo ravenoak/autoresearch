@@ -59,7 +59,7 @@ path = "data/research.duckdb"
 vector_extension = true
 
 [agent.Synthesizer]
-model = "gpt-3.5-turbo"
+model = "mistral"
 
 [agent.Contrarian]
 enabled = true
