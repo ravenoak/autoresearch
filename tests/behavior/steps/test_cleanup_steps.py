@@ -45,6 +45,8 @@ def system_configured_with_multiple_agents(cleanup_context, config_model):
     config.agents = ["Synthesizer", "Contrarian", "FactChecker"]
     config.reasoning_mode = "dialectical"
     config.loops = 1
+    config.llm_backend = "dummy"
+    config.default_model = "dummy-model"
 
     # Track initial state
     cleanup_context["initial_env_vars"] = os.environ.copy()
@@ -99,9 +101,9 @@ def run_query_with_dialectical_reasoning(config, cleanup_context, monkeypatch):
 @then("all monkeypatches should be properly cleaned up")
 def monkeypatches_properly_cleaned_up(cleanup_context):
     """Verify that all monkeypatches are properly cleaned up."""
-    # Skip this check if there was an error during execution
+    # Surface any error captured during execution
     if "error" in cleanup_context:
-        pytest.skip(f"Test skipped due to error: {cleanup_context['error']}")
+        raise cleanup_context["error"]
 
     # Check that monkeypatched functions are restored
     for path, original_value in cleanup_context["monkeypatches"]:
@@ -124,9 +126,9 @@ def monkeypatches_properly_cleaned_up(cleanup_context):
 @then("all mocks should be properly cleaned up")
 def mocks_properly_cleaned_up(cleanup_context):
     """Verify that all mocks are properly cleaned up."""
-    # Skip this check if there was an error during execution
+    # Surface any error captured during execution
     if "error" in cleanup_context:
-        pytest.skip(f"Test skipped due to error: {cleanup_context['error']}")
+        raise cleanup_context["error"]
 
     # Check that mocked objects are no longer in use
     for mock in cleanup_context["mocks"]:

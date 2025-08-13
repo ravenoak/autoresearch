@@ -22,6 +22,8 @@ def system_configured_with_multiple_agents(extended_test_context):
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="dialectical",
         loops=1,
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
     extended_test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
 
@@ -96,6 +98,8 @@ def system_configured_for_multiple_loops(extended_test_context):
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="dialectical",
         loops=3,  # Run 3 loops
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
     extended_test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
 
@@ -179,11 +183,9 @@ def run_query_with_multiple_loops(extended_test_context, monkeypatch):
 @then("each loop should execute the agents in the correct sequence")
 def each_loop_executes_agents_in_correct_sequence(extended_test_context):
     """Verify that each loop executes the agents in the correct sequence."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # Verify that we have the expected number of loops
     assert len(extended_test_context["loop_executions"]) == 3, (
@@ -201,11 +203,9 @@ def each_loop_executes_agents_in_correct_sequence(extended_test_context):
 @then("the state should be preserved between loops")
 def state_preserved_between_loops(extended_test_context):
     """Verify that the state is preserved between loops."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # Verify that the state from the last agent in loop 1 is passed to the first agent in loop 2
     last_agent_loop1 = extended_test_context["loop_executions"][1][-1]
@@ -224,11 +224,9 @@ def state_preserved_between_loops(extended_test_context):
 @then("the final result should include contributions from all loops")
 def result_includes_all_loop_contributions(extended_test_context):
     """Verify that the final result includes contributions from all loops."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # The result should include all agents from all loops
     result_str = str(extended_test_context["result"])
@@ -247,6 +245,8 @@ def system_configured_with_direct_reasoning_mode(extended_test_context):
         agents=["Synthesizer", "Contrarian", "FactChecker"],
         reasoning_mode="direct",  # Use direct reasoning mode
         loops=1,
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
     extended_test_context["agents"] = ["Synthesizer", "Contrarian", "FactChecker"]
     extended_test_context["primary_agent"] = (
@@ -322,11 +322,9 @@ def run_query_with_direct_reasoning_mode(extended_test_context, monkeypatch):
 @then("only the primary agent should be executed")
 def only_primary_agent_executed(extended_test_context):
     """Verify that only the primary agent was executed."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # In direct mode, only the primary agent (Synthesizer) should be executed
     assert len(extended_test_context["executed_agents"]) == 1, (
@@ -343,11 +341,9 @@ def only_primary_agent_executed(extended_test_context):
 @then("the final result should include only the primary agent's contribution")
 def result_includes_only_primary_agent_contribution(extended_test_context):
     """Verify that the final result includes only the primary agent's contribution."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # The result should include only the primary agent
     result_str = str(extended_test_context["result"])
@@ -392,6 +388,8 @@ def agent_that_modifies_state(extended_test_context, monkeypatch):
         agents=extended_test_context["agents"],
         reasoning_mode="dialectical",
         loops=3,  # Run 3 loops
+        llm_backend="dummy",
+        default_model="dummy-model",
     )
 
     # Store the agent for later use
@@ -401,11 +399,9 @@ def agent_that_modifies_state(extended_test_context, monkeypatch):
 @then("the state modifications should be preserved between loops")
 def state_modifications_preserved_between_loops(extended_test_context):
     """Verify that state modifications are preserved between loops."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # Verify that the counter was incremented in each loop
     for loop in range(1, 4):  # Loops 1, 2, 3
@@ -421,11 +417,9 @@ def state_modifications_preserved_between_loops(extended_test_context):
 @then("the final result should reflect the cumulative state changes")
 def result_reflects_cumulative_state_changes(extended_test_context):
     """Verify that the final result reflects the cumulative state changes."""
-    # Skip this assertion if there was an exception during execution
+    # Surface any error captured during execution
     if "exception" in extended_test_context:
-        pytest.skip(
-            f"Test skipped due to exception: {extended_test_context['exception']}"
-        )
+        raise extended_test_context["exception"]
 
     # The result should include the final counter value
     result_str = str(extended_test_context["result"])
