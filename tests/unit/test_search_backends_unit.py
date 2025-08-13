@@ -8,6 +8,7 @@ from autoresearch.errors import SearchError
 
 def test_register_backend_and_lookup(monkeypatch):
     Search.backends = {}
+    original_defaults = dict(Search._default_backends)
 
     @Search.register_backend("dummy")
     def dummy_backend(query: str, max_results: int = 5):
@@ -24,6 +25,9 @@ def test_register_backend_and_lookup(monkeypatch):
 
     results = Search.external_lookup("x", max_results=1)
     assert results == [{"title": "t", "url": "u", "backend": "dummy"}]
+
+    Search.reset()
+    Search._default_backends = original_defaults
 
 
 def test_external_lookup_unknown_backend(monkeypatch):

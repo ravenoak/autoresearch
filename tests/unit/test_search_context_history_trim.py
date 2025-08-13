@@ -1,7 +1,12 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from autoresearch.search.context import SearchContext
+
+
+pytestmark = pytest.mark.requires_nlp
 
 
 def make_config(max_history):
