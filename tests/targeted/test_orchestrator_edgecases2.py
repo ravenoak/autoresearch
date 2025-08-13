@@ -23,7 +23,7 @@ def test_adaptive_token_budget():
 
 
 def test_categorize_error_cases():
-    assert Orchestrator._categorize_error(TimeoutError()) == "transient"
+    assert Orchestrator._categorize_error(TimeoutError("timeout")) == "transient"
     nf = NotFoundError("x", resource_type="a", resource_id="b")
     assert Orchestrator._categorize_error(nf) == "recoverable"
     assert Orchestrator._categorize_error(AgentError("configuration bad")) == "recoverable"
