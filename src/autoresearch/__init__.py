@@ -11,6 +11,8 @@ interfaces and a modular architecture.
 import importlib
 import sys
 from importlib.metadata import version as _version
+from typing import TYPE_CHECKING, Any
+import warnings
 
 try:  # pragma: no cover - best effort patch
     module = importlib.import_module("pydantic.root_model")
@@ -20,7 +22,7 @@ except Exception:  # pragma: no cover
 
 __version__ = _version("autoresearch")
 
-try:  # pragma: no cover - optional distributed extras
+if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
     from .distributed import (
         InMemoryBroker,
         ProcessExecutor,
@@ -32,19 +34,6 @@ try:  # pragma: no cover - optional distributed extras
         start_result_aggregator,
         start_storage_coordinator,
     )
-except Exception as exc:  # pragma: no cover - missing optional deps
-    ProcessExecutor = None  # type: ignore
-    RayExecutor = None  # type: ignore
-    StorageCoordinator = None  # type: ignore
-    ResultAggregator = None  # type: ignore
-    InMemoryBroker = None  # type: ignore
-    RedisBroker = None  # type: ignore
-    start_storage_coordinator = None  # type: ignore
-    start_result_aggregator = None  # type: ignore
-    publish_claim = None  # type: ignore
-    import warnings
-
-    warnings.warn(f"Distributed features unavailable: {exc}")
 
 __all__ = [
     "__version__",
@@ -58,3 +47,29 @@ __all__ = [
     "start_result_aggregator",
     "publish_claim",
 ]
+
+_DISTRIBUTED_ATTRS = {
+    "RayExecutor",
+    "ProcessExecutor",
+    "StorageCoordinator",
+    "ResultAggregator",
+    "InMemoryBroker",
+    "RedisBroker",
+    "start_storage_coordinator",
+    "start_result_aggregator",
+    "publish_claim",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Lazily import distributed features on first access."""
+    if name in _DISTRIBUTED_ATTRS:
+        try:  # pragma: no cover - optional distributed extras
+            module = importlib.import_module(".distributed", __name__)
+        except Exception as exc:  # pragma: no cover - missing optional deps
+            warnings.warn(f"Distributed features unavailable: {exc}")
+            raise AttributeError(name) from exc
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(name)
