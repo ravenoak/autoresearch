@@ -3,6 +3,8 @@ import importlib
 import duckdb
 from fastapi.testclient import TestClient
 
+from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import metrics
 
 
@@ -13,6 +15,12 @@ class DummyConn:
 
 def test_metrics_collection_and_endpoint(monkeypatch):
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
+
+    cfg = ConfigModel.model_construct(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["metrics"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader.reset_instance()
+
     api = importlib.import_module("autoresearch.api")
     app = api.app
     start_queries = metrics.QUERY_COUNTER._value.get()
