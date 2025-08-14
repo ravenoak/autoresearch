@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from autoresearch.storage_backends import DuckDBStorageBackend
+
+import pytest
+
 from autoresearch.errors import StorageError
+from autoresearch.storage_backends import DuckDBStorageBackend
 
 
 def test_connection_context_no_pool():
@@ -46,10 +48,10 @@ def test_persist_claim_calls_execute(mock_connect):
 @patch("autoresearch.storage_backends.duckdb.connect")
 def test_persist_claim_failure(mock_connect):
     conn = MagicMock()
-    conn.execute.side_effect = Exception("fail")
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()
     backend.setup(db_path=":memory:")
+    conn.execute.side_effect = Exception("fail")
     with pytest.raises(StorageError):
         backend.persist_claim({"id": "c1"})
 
@@ -68,10 +70,10 @@ def test_vector_search_no_vss(mock_connect):
 @patch("autoresearch.storage_backends.duckdb.connect")
 def test_vector_search_failure(mock_connect):
     conn = MagicMock()
-    conn.execute.side_effect = Exception("boom")
     mock_connect.return_value = conn
     backend = DuckDBStorageBackend()
     backend.setup(db_path=":memory:")
+    conn.execute.side_effect = Exception("boom")
     backend._has_vss = True
     with pytest.raises(StorageError):
         backend.vector_search([0.1, 0.2, 0.3])
