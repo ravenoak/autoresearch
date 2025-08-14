@@ -41,6 +41,7 @@ def config_init(
 ) -> None:
     """Initialize configuration files with default values."""
     from pathlib import Path
+    from importlib.resources import as_file, files
     import shutil
 
     target_dir = Path(config_dir) if config_dir else Path.cwd()
@@ -57,16 +58,18 @@ def config_init(
             f"Environment file already exists at {env_path}. Use --force to overwrite."
         )
         return
-    example_dir = Path(__file__).parent.parent.parent / "examples"
+    example_dir = files("autoresearch.examples")
     example_toml = example_dir / "autoresearch.toml"
     example_env = example_dir / ".env.example"
-    if not example_toml.exists():
+    if not example_toml.is_file():
         typer.echo(f"Example configuration file not found at {example_toml}.")
         return
-    shutil.copy(example_toml, toml_path)
+    with as_file(example_toml) as src:
+        shutil.copy(src, toml_path)
     typer.echo(f"Created configuration file at {toml_path}")
-    if example_env.exists():
-        shutil.copy(example_env, env_path)
+    if example_env.is_file():
+        with as_file(example_env) as src:
+            shutil.copy(src, env_path)
         typer.echo(f"Created environment file at {env_path}")
     else:
         with open(env_path, "w") as f:
@@ -115,9 +118,7 @@ def config_reasoning(
     token_budget: Optional[int] = typer.Option(
         None, help="Token budget for a single run"
     ),
-    max_errors: Optional[int] = typer.Option(
-        None, help="Abort after this many errors"
-    ),
+    max_errors: Optional[int] = typer.Option(None, help="Abort after this many errors"),
     show: bool = typer.Option(
         False, "--show", help="Display current reasoning configuration"
     ),
@@ -147,7 +148,10 @@ def config_reasoning(
     if max_errors is not None:
         updates["max_errors"] = max_errors
     new_cfg = ConfigModel.model_validate({**data, **updates})
-    path = next((p for p in _config_loader.search_paths if p.exists()), _config_loader.search_paths[0])
+    path = next(
+        (p for p in _config_loader.search_paths if p.exists()),
+        _config_loader.search_paths[0],
+    )
     try:
         existing = tomllib.loads(path.read_text()) if path.exists() else {}
     except Exception as e:  # pragma: no cover - unexpected format
