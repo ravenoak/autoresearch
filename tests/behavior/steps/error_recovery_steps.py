@@ -11,6 +11,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import AgentError, StorageError, TimeoutError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import AgentFactory, Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.storage import StorageManager
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
@@ -185,8 +186,8 @@ def failing_agent_fallback(monkeypatch, isolate_network, restore_environment):
         classmethod(lambda cls, name, llm_adapter=None: FailingAgent()),
     )
     monkeypatch.setattr(
-        Orchestrator,
-        "_handle_agent_error",
+        OrchestrationUtils,
+        "handle_agent_error",
         handle,
     )
     return cfg
@@ -289,7 +290,7 @@ def run_orchestrator(
     params: dict = {}
     logs: list[str] = []
     state = {"active": True}
-    original_handle = Orchestrator._handle_agent_error
+    original_handle = OrchestrationUtils.handle_agent_error
     original_get = AgentFactory.get
 
     def recording_get(name: str, llm_adapter=None):
@@ -324,7 +325,7 @@ def run_orchestrator(
             side_effect=recording_get,
         ),
         patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            "autoresearch.orchestration.orchestration_utils.OrchestrationUtils.handle_agent_error",
             side_effect=spy_handle,
         ),
         patch(

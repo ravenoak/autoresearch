@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from autoresearch.agents.prompts import PromptTemplate, PromptTemplateRegistry
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import Search
@@ -34,7 +34,7 @@ def test_check_agent_can_execute_false():
     cfg = ConfigModel()
     state = QueryState(query="q")
     agent = DummyAgent()
-    assert not Orchestrator._check_agent_can_execute(agent, "Dummy", state, cfg)
+    assert not OrchestrationUtils.check_agent_can_execute(agent, "Dummy", state, cfg)
 
 
 def test_external_lookup_unknown_backend(monkeypatch):

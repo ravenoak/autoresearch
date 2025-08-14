@@ -25,34 +25,11 @@ from ..logging_utils import get_logger
 from ..models import QueryResponse
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
-from .budgeting import _apply_adaptive_token_budget
 from .circuit_breaker import CircuitBreakerManager, CircuitBreakerState
-from .execution import (
-    _call_agent_start_callback,
-    _check_agent_can_execute,
-    _deliver_messages,
-    _execute_agent,
-    _execute_agent_with_token_counting,
-    _execute_cycle,
-    _execute_cycle_async,
-    _get_agent,
-    _handle_agent_completion,
-    _log_agent_execution,
-    _log_sources,
-    _persist_claims,
-    _rotate_list,
-)
-from .error_handling import (
-    _apply_recovery_strategy,
-    _categorize_error,
-    _handle_agent_error,
-)
 from .metrics import OrchestrationMetrics, record_query
+from .orchestration_utils import OrchestrationUtils
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
-from .token_utils import _capture_token_usage as capture_token_usage
-from .token_utils import _execute_with_adapter as execute_with_adapter
-from .utils import calculate_result_confidence, get_memory_usage
 
 log = get_logger(__name__)
 
@@ -152,7 +129,7 @@ class Orchestrator:
         )
         Orchestrator._cb_manager = cb_manager
 
-        Orchestrator._apply_adaptive_token_budget(config, query)  # type: ignore[attr-defined]
+        OrchestrationUtils.apply_adaptive_token_budget(config, query)
 
         token_budget = getattr(config, "token_budget", None)
         if (
@@ -205,7 +182,7 @@ class Orchestrator:
                 },
             )
 
-            primus_index = Orchestrator._execute_cycle(  # type: ignore[attr-defined]
+            primus_index = OrchestrationUtils.execute_cycle(
                 loop,
                 loops,
                 agents,
@@ -287,7 +264,7 @@ class Orchestrator:
         )
         Orchestrator._cb_manager = cb_manager
 
-        Orchestrator._apply_adaptive_token_budget(config, query)  # type: ignore[attr-defined]
+        OrchestrationUtils.apply_adaptive_token_budget(config, query)
 
         token_budget = getattr(config, "token_budget", None)
         if (
@@ -341,7 +318,7 @@ class Orchestrator:
                 },
             )
 
-            primus_index = await Orchestrator._execute_cycle_async(  # type: ignore[attr-defined]
+            primus_index = await OrchestrationUtils.execute_cycle_async(
                 loop,
                 loops,
                 agents,
@@ -416,47 +393,3 @@ class Orchestrator:
     def query_ontology(query: str) -> rdflib.query.Result:
         """Query the ontology graph via the storage manager."""
         return StorageManager.query_ontology(query)
-
-
-# Attach helper functions from submodules
-Orchestrator._get_agent = staticmethod(_get_agent)  # type: ignore[attr-defined]
-Orchestrator._check_agent_can_execute = staticmethod(  # type: ignore[attr-defined]
-    _check_agent_can_execute
-)
-Orchestrator._deliver_messages = staticmethod(_deliver_messages)  # type: ignore[attr-defined]
-Orchestrator._log_agent_execution = staticmethod(  # type: ignore[attr-defined]
-    _log_agent_execution
-)
-Orchestrator._call_agent_start_callback = staticmethod(  # type: ignore[attr-defined]
-    _call_agent_start_callback
-)
-Orchestrator._execute_agent_with_token_counting = staticmethod(  # type: ignore[attr-defined]
-    _execute_agent_with_token_counting
-)
-Orchestrator._handle_agent_completion = staticmethod(  # type: ignore[attr-defined]
-    _handle_agent_completion
-)
-Orchestrator._log_sources = staticmethod(_log_sources)  # type: ignore[attr-defined]
-Orchestrator._persist_claims = staticmethod(_persist_claims)  # type: ignore[attr-defined]
-Orchestrator._handle_agent_error = staticmethod(_handle_agent_error)  # type: ignore[attr-defined]
-Orchestrator._categorize_error = staticmethod(_categorize_error)  # type: ignore[attr-defined]
-Orchestrator._apply_recovery_strategy = staticmethod(  # type: ignore[attr-defined]
-    _apply_recovery_strategy
-)
-Orchestrator._execute_agent = staticmethod(_execute_agent)  # type: ignore[attr-defined]
-Orchestrator._execute_cycle = staticmethod(_execute_cycle)  # type: ignore[attr-defined]
-Orchestrator._execute_cycle_async = staticmethod(  # type: ignore[attr-defined]
-    _execute_cycle_async
-)
-Orchestrator._rotate_list = staticmethod(_rotate_list)  # type: ignore[attr-defined]
-Orchestrator._apply_adaptive_token_budget = staticmethod(  # type: ignore[attr-defined]
-    _apply_adaptive_token_budget
-)
-Orchestrator._get_memory_usage = staticmethod(get_memory_usage)  # type: ignore[attr-defined]
-Orchestrator._calculate_result_confidence = staticmethod(  # type: ignore[attr-defined]
-    calculate_result_confidence
-)
-Orchestrator._capture_token_usage = staticmethod(capture_token_usage)  # type: ignore[attr-defined]
-Orchestrator._execute_with_adapter = staticmethod(  # type: ignore[attr-defined]
-    execute_with_adapter
-)

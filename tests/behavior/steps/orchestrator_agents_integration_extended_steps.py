@@ -10,6 +10,7 @@ from pytest_bdd import scenario, given, when, then
 from unittest.mock import MagicMock, patch
 
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm import DummyAdapter
 
@@ -108,7 +109,7 @@ def system_configured_for_multiple_loops(extended_test_context):
 def run_query_with_multiple_loops(extended_test_context, monkeypatch):
     """Run a query with multiple loops."""
     # Store original functions for cleanup verification
-    extended_test_context["original_execute_agent"] = Orchestrator._execute_agent
+    extended_test_context["original_execute_agent"] = OrchestrationUtils.execute_agent
 
     # Track executed agents by loop
     mock_agent_factory = MagicMock()
@@ -164,7 +165,7 @@ def run_query_with_multiple_loops(extended_test_context, monkeypatch):
         )
 
     # Use monkeypatch for automatic cleanup
-    monkeypatch.setattr(Orchestrator, "_execute_agent", execute_and_track_state)
+    monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
     # Run the query
     with patch(
@@ -258,7 +259,7 @@ def system_configured_with_direct_reasoning_mode(extended_test_context):
 def run_query_with_direct_reasoning_mode(extended_test_context, monkeypatch):
     """Run a query with the direct reasoning mode."""
     # Store original functions for cleanup verification
-    extended_test_context["original_execute_agent"] = Orchestrator._execute_agent
+    extended_test_context["original_execute_agent"] = OrchestrationUtils.execute_agent
 
     # Track executed agents
     mock_agent_factory = MagicMock()
@@ -303,7 +304,7 @@ def run_query_with_direct_reasoning_mode(extended_test_context, monkeypatch):
         )
 
     # Use monkeypatch for automatic cleanup
-    monkeypatch.setattr(Orchestrator, "_execute_agent", execute_and_track_state)
+    monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
     # Run the query
     with patch(

@@ -9,6 +9,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError, NotFoundError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 
 
 @scenario("../features/reasoning_mode.feature", "Direct mode runs Synthesizer only")
@@ -203,7 +204,7 @@ def _run_orchestrator_with_failure(
     state = {"active": True}
     recovery_info: dict = {}
 
-    original_handle = Orchestrator._handle_agent_error
+    original_handle = OrchestrationUtils.handle_agent_error
 
     def spy_handle(agent_name: str, e: Exception, state_obj, metrics):
         info = original_handle(agent_name, e, state_obj, metrics)
@@ -249,7 +250,7 @@ def _run_orchestrator_with_failure(
 
         with (
             patch(
-                "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+                "autoresearch.orchestration.orchestration_utils.OrchestrationUtils.handle_agent_error",
                 side_effect=spy_handle,
             ),
             patch(
@@ -312,7 +313,7 @@ def _run_orchestrator_with_failure(
             side_effect=get_agent,
         ),
         patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            "autoresearch.orchestration.orchestration_utils.OrchestrationUtils.handle_agent_error",
             side_effect=spy_handle,
         ),
         patch(

@@ -1,5 +1,6 @@
 import pytest
 from autoresearch.orchestration.orchestrator import Orchestrator, ReasoningMode
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import NotFoundError
 
@@ -12,7 +13,7 @@ class DummyFactory:
 
 def test_get_agent_not_found():
     with pytest.raises(NotFoundError):
-        Orchestrator._get_agent("X", DummyFactory)
+        OrchestrationUtils.get_agent("X", DummyFactory)
 
 
 def test_parse_config_direct_mode():

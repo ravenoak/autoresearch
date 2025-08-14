@@ -8,7 +8,7 @@ recorded when using LLM adapters.
 from unittest.mock import MagicMock
 from typing import Any
 
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm.token_counting import compress_prompt
@@ -32,7 +32,7 @@ def test_capture_token_usage_counts_correctly(monkeypatch, flexible_llm_adapter)
     monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: flexible_llm_adapter)
 
     # Execute
-    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+    with OrchestrationUtils.capture_token_usage("agent", metrics, mock_config) as (
         token_counter,
         wrapped_adapter,
     ):
@@ -55,7 +55,7 @@ def test_token_budget_truncates_prompt(monkeypatch, flexible_llm_adapter):
 
     monkeypatch.setattr(llm, "get_llm_adapter", lambda name: flexible_llm_adapter)
 
-    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+    with OrchestrationUtils.capture_token_usage("agent", metrics, mock_config) as (
         token_counter,
         wrapped_adapter,
     ):
@@ -82,7 +82,7 @@ def test_prompt_passed_to_adapter_is_compressed(monkeypatch, flexible_llm_adapte
     flexible_llm_adapter.generate = spy_generate
     monkeypatch.setattr(llm, "get_pooled_adapter", lambda name: flexible_llm_adapter)
 
-    with Orchestrator._capture_token_usage("agent", metrics, mock_config) as (
+    with OrchestrationUtils.capture_token_usage("agent", metrics, mock_config) as (
         _,
         wrapped_adapter,
     ):

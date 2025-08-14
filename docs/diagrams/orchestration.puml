@@ -6,20 +6,28 @@ package "Orchestration" {
     + {static} run_query(query, config, callbacks, agent_factory, storage_manager): QueryResponse
     + {static} run_parallel_query(query, config, agent_groups): QueryResponse
     - {static} _parse_config(config): Dict
-    - {static} _get_agent(agent_name, agent_factory): Agent
-    - {static} _check_agent_can_execute(agent, agent_name, state, config): bool
-    - {static} _log_agent_execution(agent_name, state, loop): void
-    - {static} _call_agent_start_callback(agent_name, state, callbacks): void
-    - {static} _execute_agent_with_token_counting(agent, agent_name, state, config, metrics): Dict
-    - {static} _handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop): void
-    - {static} _log_sources(agent_name, result): void
-    - {static} _persist_claims(agent_name, result, storage_manager): void
-    - {static} _handle_agent_error(agent_name, e, state, metrics): void
-    - {static} _execute_agent(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop): void
-    - {static} _execute_cycle(loop, loops, agents, primus_index, max_errors, state, config, metrics, callbacks, agent_factory, storage_manager, tracer): int
-    - {static} _execute_with_adapter(agent, state, config, adapter): Dict
-    - {static} _rotate_list(items, start_idx): List
-    - {static} _capture_token_usage(agent_name, metrics, config): Iterator
+  }
+
+  class OrchestrationUtils {
+    + {static} get_agent(agent_name, agent_factory): Agent
+    + {static} check_agent_can_execute(agent, agent_name, state, config): bool
+    + {static} log_agent_execution(agent_name, state, loop): void
+    + {static} call_agent_start_callback(agent_name, state, callbacks): void
+    + {static} execute_agent_with_token_counting(agent, agent_name, state, config, metrics): Dict
+    + {static} handle_agent_completion(agent_name, result, state, metrics, callbacks, duration, loop): void
+    + {static} log_sources(agent_name, result): void
+    + {static} persist_claims(agent_name, result, storage_manager): void
+    + {static} handle_agent_error(agent_name, e, state, metrics): void
+    + {static} execute_agent(agent_name, state, config, metrics, callbacks, agent_factory, storage_manager, loop): void
+    + {static} execute_cycle(loop, loops, agents, primus_index, max_errors, state, config, metrics, callbacks, agent_factory, storage_manager, tracer): int
+    + {static} execute_with_adapter(agent, state, config, adapter): Dict
+    + {static} rotate_list(items, start_idx): List
+    + {static} capture_token_usage(agent_name, metrics, config): Iterator
+    + {static} categorize_error(exc): str
+    + {static} apply_recovery_strategy(agent, category, exc, state): Dict
+    + {static} apply_adaptive_token_budget(config, query): void
+    + {static} get_memory_usage(): float
+    + {static} calculate_result_confidence(result): float
   }
 
   class QueryState {

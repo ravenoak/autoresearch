@@ -16,6 +16,7 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
 
 
@@ -55,7 +56,7 @@ def test_execute_agent_records_errors_and_circuit_breaker(
         lambda name: failing_agent,
     )
 
-    Orchestrator._execute_agent(
+    OrchestrationUtils.execute_agent(
         "FailingAgent",
         state,
         test_config,
@@ -103,7 +104,7 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
     object.__setattr__(test_config, "retry_attempts", 2)
     object.__setattr__(test_config, "retry_backoff", 0)
 
-    Orchestrator._execute_agent(
+    OrchestrationUtils.execute_agent(
         "RetryAgent",
         state,
         test_config,
