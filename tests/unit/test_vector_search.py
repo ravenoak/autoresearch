@@ -1,10 +1,11 @@
 from unittest.mock import MagicMock
+
 import networkx as nx
 import pytest
 
-from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.storage import StorageManager
 
 
 class DummyConn:
@@ -41,9 +42,7 @@ class MockDuckDBBackend:
     def vector_search(self, query_embedding, k=5):
         self._conn.execute("SET hnsw_ef_search=10")
         vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
-        sql = (
-            f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
-        )
+        sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
         self._conn.execute(sql)
         return [{"node_id": "n1", "embedding": [0.1, 0.2]}]
 
@@ -65,7 +64,9 @@ def _mock_config():
 def test_create_hnsw_index(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(
+        StorageManager.context, "db_backend", mock_backend, raising=False
+    )
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -84,7 +85,9 @@ def test_create_hnsw_index(monkeypatch):
 def test_vector_search_builds_query(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(
+        StorageManager.context, "db_backend", mock_backend, raising=False
+    )
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -105,7 +108,9 @@ def test_vector_search_builds_query(monkeypatch):
 def test_vector_search_uses_config_nprobe(monkeypatch):
     dummy = DummyConn()
     mock_backend = MockDuckDBBackend(dummy)
-    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(
+        StorageManager.context, "db_backend", mock_backend, raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: _mock_config())
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
@@ -128,7 +133,9 @@ class FailingBackend(MockDuckDBBackend):
 def test_vector_search_failure(monkeypatch):
     dummy = FailingConn()
     mock_backend = FailingBackend(dummy)
-    monkeypatch.setattr(StorageManager.context, "db_backend", mock_backend, raising=False)
+    monkeypatch.setattr(
+        StorageManager.context, "db_backend", mock_backend, raising=False
+    )
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
@@ -179,7 +186,12 @@ def test_embedding_update_triggers_index_refresh(monkeypatch):
 
     monkeypatch.setattr(StorageManager, "refresh_vector_index", refresh)
 
-    StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "c", "embedding": [0.1]})
-    StorageManager.persist_claim({"id": "c1", "embedding": [0.2]}, partial_update=True)
+    StorageManager.persist_claim(
+        {"id": "c1", "type": "fact", "content": "c", "embedding": [0.1]}
+    )
+    StorageManager.persist_claim(
+        {"id": "c1", "type": "fact", "content": "c", "embedding": [0.2]},
+        partial_update=True,
+    )
 
     assert called["count"] == 2
