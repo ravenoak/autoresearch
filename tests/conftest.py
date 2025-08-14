@@ -40,6 +40,7 @@ from autoresearch.storage import (  # noqa: E402
     teardown as storage_teardown,
 )  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
+from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 import duckdb  # noqa: E402
 
 _orig_option = typer.Option
@@ -239,6 +240,14 @@ def cleanup_storage():
     storage_teardown(remove_db=True)
     yield
     storage_teardown(remove_db=True)
+
+
+@pytest.fixture(autouse=True)
+def reset_cb_manager():
+    """Ensure circuit breaker state does not leak between tests."""
+    Orchestrator._cb_manager = None
+    yield
+    Orchestrator._cb_manager = None
 
 
 @pytest.fixture(autouse=True)
