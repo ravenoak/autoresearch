@@ -9,22 +9,32 @@ from autoresearch.models import QueryResponse
 
 def _setup(monkeypatch):
     cfg = ConfigModel(api=APIConfig())
-    cfg.api.role_permissions["anonymous"] = ["query", "metrics", "capabilities"]
+    cfg.api.role_permissions["anonymous"] = [
+        "query",
+        "metrics",
+        "capabilities",
+        "config",
+        "health",
+    ]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     return cfg
 
 
 def test_query_endpoint(monkeypatch):
     _setup(monkeypatch)
-    monkeypatch.setattr(Orchestrator, "run_query", lambda *a, **k: QueryResponse(
-        answer="Machine learning is ...",
-        citations=["https://example.com"],
-        reasoning=["step 1", "step 2"],
-        metrics={
-            "cycles_completed": 1,
-            "total_tokens": {"input": 5, "output": 7, "total": 12},
-        },
-    ))
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda *a, **k: QueryResponse(
+            answer="Machine learning is ...",
+            citations=["https://example.com"],
+            reasoning=["step 1", "step 2"],
+            metrics={
+                "cycles_completed": 1,
+                "total_tokens": {"input": 5, "output": 7, "total": 12},
+            },
+        ),
+    )
     client = TestClient(api_app)
     resp = client.post("/query", json={"query": "Explain ML"})
     assert resp.status_code == 200
@@ -60,7 +70,13 @@ def test_stream_endpoint(monkeypatch):
 
 def test_batch_endpoint(monkeypatch):
     _setup(monkeypatch)
-    monkeypatch.setattr(Orchestrator, "run_query", lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}))
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer=q, citations=[], reasoning=[], metrics={}
+        ),
+    )
     client = TestClient(api_app)
     payload = {"queries": [{"query": "a"}, {"query": "b"}, {"query": "c"}]}
     resp = client.post("/query/batch?page=1&page_size=2", json=payload)

@@ -80,7 +80,9 @@ class SearchConfig(BaseModel):
     max_workers: int = Field(default=4, ge=1)
     http_pool_size: int = Field(default=10, ge=1)
 
-    _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
+    _normalize_ranking_weights = model_validator(mode="after")(
+        normalize_ranking_weights
+    )
 
 
 class StorageConfig(BaseModel):
@@ -147,7 +149,7 @@ class APIConfig(BaseModel):
         default_factory=lambda: {
             "anonymous": ["query"],
             "user": ["query"],
-            "admin": ["query", "metrics", "capabilities"],
+            "admin": ["query", "metrics", "capabilities", "config", "health"],
         },
         description="Mapping of roles to allowed actions",
     )
@@ -169,7 +171,9 @@ class DistributedConfig(BaseModel):
     address: str | None = Field(default=None, description="Ray cluster address")
     num_cpus: int = Field(default=1, ge=1)
     message_broker: str = Field(default="memory")
-    broker_url: str | None = Field(default=None, description="URL for the message broker")
+    broker_url: str | None = Field(
+        default=None, description="URL for the message broker"
+    )
 
 
 class AnalysisConfig(BaseModel):
@@ -253,15 +257,15 @@ class ConfigModel(BaseModel):
     )
     distributed_config: DistributedConfig = Field(default_factory=DistributedConfig)
 
-    _validate_reasoning_mode = field_validator(
-        "reasoning_mode", mode="before"
-    )(validate_reasoning_mode)
-    _validate_token_budget = field_validator(
-        "token_budget", mode="before"
-    )(validate_token_budget)
-    _validate_eviction_policy = field_validator(
-        "graph_eviction_policy", mode="before"
-    )(validate_eviction_policy)
+    _validate_reasoning_mode = field_validator("reasoning_mode", mode="before")(
+        validate_reasoning_mode
+    )
+    _validate_token_budget = field_validator("token_budget", mode="before")(
+        validate_token_budget
+    )
+    _validate_eviction_policy = field_validator("graph_eviction_policy", mode="before")(
+        validate_eviction_policy
+    )
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ConfigModel":

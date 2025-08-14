@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-from typing import List, Optional, cast
+import threading
+from typing import Any, List, Optional, cast
 from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
-from fastapi.background import BackgroundTasks
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import (
@@ -85,10 +85,11 @@ async def get_openapi_schema(request: Request):
         - **POST /query/stream**: Stream updates for a query
         - **POST /query/batch**: Execute multiple queries
         - **POST /query/async**: Run a query in the background
-        - **GET /query/{id}**: Check the status of an async query
-        - **DELETE /query/{id}**: Cancel a running async query
+        - **GET /query/{query_id}**: Check the status of an async query
+        - **DELETE /query/{query_id}**: Cancel a running async query
         - **GET /config**: Retrieve current configuration
         - **PUT /config**: Update configuration at runtime
+        - **GET /health**: Check service status
         - **GET /metrics**: Retrieve Prometheus metrics for monitoring
         - **GET /capabilities**: Discover system capabilities
         """,
@@ -221,11 +222,10 @@ async def batch_query_endpoint(
 @router.post("/query/async")
 async def async_query_endpoint(
     request: QueryRequest,
-    background_tasks: BackgroundTasks,
     http_request: Request,
     _: None = require_permission("query"),
 ) -> dict:
-    """Run a query in the background and return its ID."""
+    """Run a query asynchronously and return its ID."""
     config = get_config()
     if request.reasoning_mode is not None:
         config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
@@ -236,11 +236,15 @@ async def async_query_endpoint(
 
     task_id = str(uuid4())
     config_copy = config.model_copy(deep=True)
+    entry: dict[str, Any] = {"event": threading.Event(), "result": None}
+    http_request.app.state.async_tasks[task_id] = entry
 
-    async def _run() -> None:
+    def runner() -> None:
         try:
-            result = Orchestrator.run_query(request.query, config_copy)
-        except Exception as exc:
+            result = asyncio.run(
+                Orchestrator.run_query_async(request.query, config_copy)
+            )
+        except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
             reasoning = ["An error occurred during processing."]
@@ -249,46 +253,55 @@ async def async_query_endpoint(
                     reasoning.append(f"Suggestion: {suggestion}")
             else:
                 reasoning.append("Please check the logs for details.")
-            error_resp = QueryResponse(
+            result = QueryResponse(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
                 metrics={"error": error_info.message, "error_details": error_data},
             )
-            http_request.app.state.async_tasks[task_id] = error_resp
-            return
-        http_request.app.state.async_tasks[task_id] = result
+        if task_id in http_request.app.state.async_tasks:
+            entry["result"] = result
+            entry["event"].set()
 
-    background_tasks.add_task(_run)
-    return {"id": task_id}
-
-
-@router.get("/query/{task_id}")
-async def get_query_status(task_id: str, request: Request) -> Response:
-    task = request.app.state.async_tasks.get(task_id)
-    if task is None:
-        return PlainTextResponse("processing", status_code=202)
-    del request.app.state.async_tasks[task_id]
-    if isinstance(task, QueryResponse):
-        return JSONResponse(task.model_dump())
-    return JSONResponse(task)
+    threading.Thread(target=runner, daemon=True).start()
+    return {"query_id": task_id}
 
 
-@router.delete("/query/{task_id}")
-async def cancel_query(task_id: str, request: Request) -> Response:
-    task = request.app.state.async_tasks.get(task_id)
-    if task is None:
+@router.get("/query/{query_id}")
+async def get_query_status(query_id: str, request: Request) -> Response:
+    entry = request.app.state.async_tasks.get(query_id)
+    if entry is None:
         return PlainTextResponse("not found", status_code=404)
-    del request.app.state.async_tasks[task_id]
+    if not entry["event"].is_set():
+        return JSONResponse({"status": "running"})
+    result = entry["result"]
+    del request.app.state.async_tasks[query_id]
+    if isinstance(result, QueryResponse):
+        return JSONResponse(result.model_dump())
+    return JSONResponse(result)
+
+
+@router.delete("/query/{query_id}")
+async def cancel_query(query_id: str, request: Request) -> Response:
+    entry = request.app.state.async_tasks.get(query_id)
+    if entry is None:
+        return PlainTextResponse("not found", status_code=404)
+    del request.app.state.async_tasks[query_id]
     return PlainTextResponse("canceled")
 
 
 @router.get("/metrics")
-async def metrics_endpoint() -> Response:
-    """Expose Prometheus metrics without authentication."""
+async def metrics_endpoint(_: None = require_permission("metrics")) -> Response:
+    """Expose Prometheus metrics."""
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@router.get("/health")
+def health_endpoint(_: None = require_permission("health")) -> dict:
+    """Simple health check endpoint."""
+    return {"status": "ok"}
 
 
 @router.get("/capabilities")
@@ -333,7 +346,7 @@ def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
 
 
 @router.get("/config")
-def get_config_endpoint(_: None = require_permission("capabilities")) -> dict:
+def get_config_endpoint(_: None = require_permission("config")) -> dict:
     """Return the current configuration."""
     return get_config().model_dump(mode="json")
 
@@ -342,7 +355,7 @@ def get_config_endpoint(_: None = require_permission("capabilities")) -> dict:
 def update_config_endpoint(
     updates: dict,
     request: Request,
-    _: None = require_permission("capabilities"),
+    _: None = require_permission("config"),
 ) -> dict:
     """Update configuration at runtime."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
@@ -361,7 +374,7 @@ def update_config_endpoint(
 def replace_config_endpoint(
     new_config: dict,
     request: Request,
-    _: None = require_permission("capabilities"),
+    _: None = require_permission("config"),
 ) -> dict:
     """Replace the entire configuration at runtime."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
@@ -376,7 +389,7 @@ def replace_config_endpoint(
 
 @router.delete("/config")
 def reload_config_endpoint(
-    request: Request, _: None = require_permission("capabilities")
+    request: Request, _: None = require_permission("config")
 ) -> dict:
     """Reload configuration from disk and discard runtime changes."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
