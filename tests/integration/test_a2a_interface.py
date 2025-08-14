@@ -19,11 +19,12 @@ for name in list(sys.modules):
     if name.startswith("a2a"):
         del sys.modules[name]
 
-from autoresearch.a2a_interface import A2AInterface, A2A_AVAILABLE  # noqa: E402
-from a2a.utils.message import new_agent_text_message, get_message_text  # noqa: E402
 from a2a.types import Message  # noqa: E402
-from autoresearch.config.models import ConfigModel  # noqa: E402
+from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: E402
+
+from autoresearch.a2a_interface import A2A_AVAILABLE, A2AInterface  # noqa: E402
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
+from autoresearch.config.models import ConfigModel  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 
@@ -42,7 +43,7 @@ def running_server(monkeypatch):
 
     start_times: list[float] = []
 
-    def run_query(query, config, *_, **__):
+    def run_query(self, query, config, *_, **__):
         start_times.append(time.perf_counter())
         time.sleep(0.1)
 
@@ -52,7 +53,10 @@ def running_server(monkeypatch):
 
         return Result(f"answer for {query}")
 
-    monkeypatch.setattr(interface.orchestrator, "run_query", run_query)
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+        run_query,
+    )
 
     interface.start()
     try:
@@ -74,11 +78,15 @@ def test_concurrent_queries(running_server):
         async with httpx.AsyncClient() as client:
             tasks = [client.post(url, json=_build_payload(f"q{i}")) for i in range(3)]
             responses = await asyncio.gather(*tasks)
+            for resp in responses:
+                resp.raise_for_status()
         return [resp.json() for resp in responses]
 
     results = asyncio.run(send_all())
-    assert max(start_times) - min(start_times) < 0.1
+    assert len(start_times) == 3
     for i, data in enumerate(results):
         assert data["status"] == "success"
         msg = Message.model_validate(data["message"])
         assert get_message_text(msg) == f"answer for q{i}"
+
+    assert max(start_times) - min(start_times) < 0.1
