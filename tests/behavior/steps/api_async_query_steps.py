@@ -235,7 +235,7 @@ def failing_async_query(failure: str, api_client, monkeypatch):
             side_effect=run_async,
         ),
         patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator._handle_agent_error",
+            "autoresearch.orchestration.orchestration_utils.OrchestrationUtils.handle_agent_error",
             side_effect=handle,
         ),
     ):

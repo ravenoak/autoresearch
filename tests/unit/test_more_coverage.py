@@ -1,9 +1,9 @@
 from queue import Queue
 from unittest.mock import MagicMock
 
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch import search as search_module
 from autoresearch.orchestration import execution as exec_mod
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.search import Search, close_http_session, get_http_session
 from autoresearch.storage import StorageManager
 from autoresearch.storage_backends import DuckDBStorageBackend
@@ -14,7 +14,7 @@ def test_log_sources(monkeypatch):
     msgs = []
     monkeypatch.setattr(exec_mod, "log", MagicMock())
     exec_mod.log.info = lambda msg, **k: msgs.append(msg)
-    Orchestrator._log_sources("A", {"sources": [{"title": "T"}]})
+    OrchestrationUtils.log_sources("A", {"sources": [{"title": "T"}]})
     assert any("provided 1 sources" in m for m in msgs)
 
 
@@ -22,7 +22,7 @@ def test_log_sources_missing(monkeypatch):
     msgs = []
     monkeypatch.setattr(exec_mod, "log", MagicMock())
     exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
-    Orchestrator._log_sources("A", {})
+    OrchestrationUtils.log_sources("A", {})
     assert any("provided no sources" in m for m in msgs)
 
 
@@ -30,7 +30,7 @@ def test_persist_claims(monkeypatch):
     calls = []
     monkeypatch.setattr(StorageManager, "persist_claim", lambda c: calls.append(c["id"]))
     result = {"claims": [{"id": "c1"}, {"id": "c2"}]}
-    Orchestrator._persist_claims("A", result, StorageManager)
+    OrchestrationUtils.persist_claims("A", result, StorageManager)
     assert calls == ["c1", "c2"]
 
 
@@ -40,7 +40,7 @@ def test_persist_claims_invalid(monkeypatch):
     monkeypatch.setattr(exec_mod, "log", MagicMock())
     exec_mod.log.warning = lambda msg, **k: msgs.append(msg)
     result = {"claims": ["bad", {"foo": 1}]}
-    Orchestrator._persist_claims("A", result, StorageManager)
+    OrchestrationUtils.persist_claims("A", result, StorageManager)
     assert any("Skipping invalid claim format" in m for m in msgs)
 
 

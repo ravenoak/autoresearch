@@ -325,9 +325,7 @@ def _execute_cycle(
                         f"({max_errors}) reached"
                     )
                     break
-                from .orchestrator import Orchestrator
-
-                Orchestrator._execute_agent(  # type: ignore[attr-defined]
+                _execute_agent(
                     agent_name,
                     state,
                     config,
@@ -395,10 +393,8 @@ async def _execute_cycle_async(
         async def run_agent(name: str) -> None:
             if state.error_count >= max_errors:
                 return
-            from .orchestrator import Orchestrator
-
             await asyncio.to_thread(
-                Orchestrator._execute_agent,  # type: ignore[attr-defined]
+                _execute_agent,
                 name,
                 state,
                 config,

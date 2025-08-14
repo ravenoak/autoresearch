@@ -10,6 +10,7 @@ from pytest_bdd import scenario, given, when, then
 from unittest.mock import MagicMock, patch
 
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm import DummyAdapter
 
@@ -103,7 +104,7 @@ def system_using_dummy_llm_adapter(monkeypatch):
 def run_query_with_dialectical_reasoning(test_context, mock_agent_factory, monkeypatch):
     """Run a query with the dialectical reasoning mode."""
     # Store original functions for cleanup verification
-    test_context["original_execute_agent"] = Orchestrator._execute_agent
+    test_context["original_execute_agent"] = OrchestrationUtils.execute_agent
 
     # Track executed agents
     original_get = mock_agent_factory.get
@@ -139,7 +140,7 @@ def run_query_with_dialectical_reasoning(test_context, mock_agent_factory, monke
         )
 
     # Use monkeypatch for automatic cleanup
-    monkeypatch.setattr(Orchestrator, "_execute_agent", execute_and_track_state)
+    monkeypatch.setattr(OrchestrationUtils, "execute_agent", execute_and_track_state)
 
     # Run the query using a context manager for proper cleanup
     with patch(
@@ -217,7 +218,7 @@ def agent_that_raises_error(mock_agent_factory, test_context):
 def run_query_with_error_agent(test_context, mock_agent_factory, monkeypatch):
     """Run a query with the error-raising agent."""
     # Store original functions for cleanup verification
-    test_context["original_handle_error"] = Orchestrator._handle_agent_error
+    test_context["original_handle_error"] = OrchestrationUtils.handle_agent_error
 
     # Track errors
     def handle_and_track_error(self, error, agent_name, state, config):
@@ -227,7 +228,7 @@ def run_query_with_error_agent(test_context, mock_agent_factory, monkeypatch):
         )
 
     # Use monkeypatch for automatic cleanup
-    monkeypatch.setattr(Orchestrator, "_handle_agent_error", handle_and_track_error)
+    monkeypatch.setattr(OrchestrationUtils, "handle_agent_error", handle_and_track_error)
 
     # Run the query using a context manager for proper cleanup
     with patch(

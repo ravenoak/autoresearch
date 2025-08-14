@@ -1,7 +1,7 @@
 import builtins
 import sys
 import types
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 
 
 def test_get_memory_usage_psutil(monkeypatch):
@@ -9,7 +9,7 @@ def test_get_memory_usage_psutil(monkeypatch):
         Process=lambda: types.SimpleNamespace(memory_info=lambda: types.SimpleNamespace(rss=42 * 1024 * 1024))
     )
     monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
-    assert Orchestrator._get_memory_usage() == 42.0
+    assert OrchestrationUtils.get_memory_usage() == 42.0
 
 
 def test_get_memory_usage_fallback(monkeypatch):
@@ -29,4 +29,4 @@ def test_get_memory_usage_fallback(monkeypatch):
         RUSAGE_SELF=0,
     )
     monkeypatch.setitem(sys.modules, "resource", fake_resource)
-    assert Orchestrator._get_memory_usage() == 2.0
+    assert OrchestrationUtils.get_memory_usage() == 2.0

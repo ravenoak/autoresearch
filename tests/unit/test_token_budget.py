@@ -1,7 +1,7 @@
 from hypothesis import given, strategies as st
 
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
@@ -11,7 +11,7 @@ from autoresearch.orchestration.metrics import OrchestrationMetrics
 )
 def test_budget_within_bounds(initial_budget, query):
     cfg = ConfigModel(token_budget=initial_budget)
-    Orchestrator._apply_adaptive_token_budget(cfg, query)
+    OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
     q_tokens = len(query.split())
     max_budget = max(initial_budget // cfg.loops, q_tokens * 20)
     assert cfg.token_budget >= q_tokens
@@ -21,7 +21,7 @@ def test_budget_within_bounds(initial_budget, query):
 @given(st.text(min_size=1))
 def test_budget_none_unmodified(query):
     cfg = ConfigModel(token_budget=None)
-    Orchestrator._apply_adaptive_token_budget(cfg, query)
+    OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
     assert cfg.token_budget is None
 
 
@@ -33,7 +33,7 @@ def test_budget_none_unmodified(query):
 def test_budget_scaling_exact(initial_budget, loops, q_tokens):
     query = " ".join("x" for _ in range(q_tokens))
     cfg = ConfigModel(token_budget=initial_budget, loops=loops)
-    Orchestrator._apply_adaptive_token_budget(cfg, query)
+    OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
 
     budget = initial_budget
     if loops > 1:
