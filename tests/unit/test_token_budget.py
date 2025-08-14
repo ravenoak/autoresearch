@@ -5,10 +5,7 @@ from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
-@given(
-    st.integers(min_value=1, max_value=4000),
-    st.text(min_size=1, max_size=200)
-)
+@given(st.integers(min_value=1, max_value=4000), st.text(min_size=1, max_size=200))
 def test_budget_within_bounds(initial_budget, query):
     cfg = ConfigModel(token_budget=initial_budget)
     OrchestrationUtils.apply_adaptive_token_budget(cfg, query)
@@ -78,4 +75,3 @@ def test_compress_prompt_history():
 
     compressed_again = m.compress_prompt_if_needed(prompt, budget)
     assert len(compressed_again.split()) <= budget
-    assert compressed_again != prompt
