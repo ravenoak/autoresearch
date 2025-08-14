@@ -3,6 +3,7 @@ from autoresearch.agents.messages import MessageProtocol
 from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
 
 
@@ -60,21 +61,27 @@ def test_orchestrator_handles_coalitions(monkeypatch, tmp_path):
         agent = SimpleAgent(name=name)
         return agent
 
-    def fake_execute(
-        agent_name,
+    def fake_execute_cycle(
+        loop,
+        loops,
+        agents,
+        primus_index,
+        max_errors,
         state,
         config,
         metrics,
         callbacks,
         agent_factory,
         storage_manager,
-        loop,
+        tracer,
         cb_manager,
     ):
-        executed.append(agent_name)
+        for agent in agents[primus_index]:
+            executed.append(agent)
+        return primus_index
 
     monkeypatch.setattr(AgentFactory, "get", staticmethod(fake_get))
-    monkeypatch.setattr(Orchestrator, "_execute_agent", fake_execute)
+    monkeypatch.setattr(OrchestrationUtils, "execute_cycle", fake_execute_cycle)
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
 
