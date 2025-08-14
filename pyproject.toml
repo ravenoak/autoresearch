@@ -162,7 +162,7 @@ autoresearch = "autoresearch.main:app"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--maxfail=1 --disable-warnings -q --cov=autoresearch.orchestration.orchestrator --cov=autoresearch.storage --cov=autoresearch.storage_backends --cov=autoresearch.search.core --cov=autoresearch.streamlit_ui --cov-report=xml --cov-report=term-missing --cov-fail-under=90 -m 'not slow and not requires_ui and not requires_vss'"
-testpaths = ["tests/unit", "tests/integration", "tests/behavior", "tests/targeted"]
+testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
 python_files = ["test_*.py", "*_steps.py"]
 markers = [
     "behavior: mark behavior (BDD) tests",

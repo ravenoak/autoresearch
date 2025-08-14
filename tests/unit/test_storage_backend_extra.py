@@ -4,6 +4,15 @@ from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.errors import StorageError
 
 
+def test_connection_context_no_pool():
+    backend = DuckDBStorageBackend()
+    mock_conn = MagicMock()
+    backend._conn = mock_conn
+    backend._pool = None
+    with backend.connection() as conn:
+        assert conn is mock_conn
+
+
 @patch("autoresearch.storage_backends.duckdb.connect")
 def test_persist_claim_calls_execute(mock_connect):
     conn = MagicMock()

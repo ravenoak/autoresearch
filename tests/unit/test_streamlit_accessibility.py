@@ -35,8 +35,7 @@ def test_display_query_input_has_accessibility(monkeypatch):
         columns=lambda *a, **k: (Dummy(), Dummy()),
         container=lambda: Dummy(),
         form=lambda *a, **k: Dummy(),
-        form_submit_button=lambda *a, **k: calls["form_submit_button"].append(k)
-        or False,
+        form_submit_button=lambda *a, **k: calls["form_submit_button"].append(k) or False,
         session_state=types.SimpleNamespace(
             config=types.SimpleNamespace(
                 reasoning_mode=streamlit_app.ReasoningMode.DIALECTICAL, loops=2

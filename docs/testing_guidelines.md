@@ -9,7 +9,7 @@ Tests are organized into four categories:
 1. **Unit Tests** (`tests/unit/`): Test individual components in isolation
 2. **Integration Tests** (`tests/integration/`): Test interactions between components
 3. **Behavior Tests** (`tests/behavior/`): BDD-style tests using Gherkin syntax
-4. **Targeted Tests** (`tests/targeted/`): Edge cases and extra scenarios included in the standard test run
+4. **Targeted Tests** (`tests/targeted/`): Temporary tests for specific issues. Run them manually and migrate to unit or integration suites once validated.
 
 ## Running tests
 
@@ -26,7 +26,7 @@ task test:integration  # integration tests excluding slow tests
 task test:behavior     # behavior-driven tests
 task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
-task test:all          # entire suite including slow tests and targeted tests
+task test:all          # entire suite including slow tests
 ```
 You can also invoke the slow suite directly with:
 

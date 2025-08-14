@@ -64,7 +64,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
-  - Execute any targeted suites in `tests/targeted` and fold them into the
+  - Execute any targeted tests in `tests/targeted` separately and fold them into the
     main test directories once validated.
 - Before running any tests, install the development extras with
   `uv pip install -e '.[full,parsers,git,llm,dev]'`. These extras are required
@@ -91,7 +91,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - `benchmark_token_memory.py` for performance baselines
   - `evaluate_ranking.py`, `optimize_search_weights.py`, `visualize_rdf.py`, and `upgrade.py`
 - [`Taskfile.yml`](Taskfile.yml) provides additional helpers:
-  - `task unit`, `task integration`, and `task behavior` run targeted test suites.
+  - `task unit`, `task integration`, and `task behavior` run their respective test suites.
   - `task test:all` executes the entire suite, and `task coverage` produces coverage reports.
   - `task check-baselines` enforces token regression thresholds.
   - `task wheels` builds wheels for all platforms.
