@@ -169,18 +169,29 @@ def test_persist_to_rdf():
     with patch.object(StorageManager.context, "rdf_store", mock_rdf_store):
         with patch("rdflib.URIRef") as mock_uri_ref:
             with patch("rdflib.Literal") as mock_literal:
-                # Set up the mocks
-                mock_uri_ref.side_effect = lambda x: x
-                mock_literal.side_effect = lambda x: x
+                # Avoid running the ontology reasoner during the test
+                with patch(
+                    "autoresearch.storage.run_ontology_reasoner"
+                ) as mock_reasoner:
+                    mock_reasoner.return_value = None
 
-                # Call the method
-                StorageManager._persist_to_rdf(claim)
+                    # Set up the mocks
+                    mock_uri_ref.side_effect = lambda x: x
+                    mock_literal.side_effect = lambda x: x
 
-                # Verify the RDF store was updated correctly
-                assert mock_rdf_store.add.call_count == 2
+                    # Call the method
+                    StorageManager._persist_to_rdf(claim)
 
-                # Check attribute triples
-                mock_rdf_store.add.assert_any_call(("urn:claim:test-id", "urn:prop:verified", True))
-                mock_rdf_store.add.assert_any_call(
-                    ("urn:claim:test-id", "urn:prop:source", "test-source")
-                )
+                    # Verify the RDF store was updated correctly
+                    assert mock_rdf_store.add.call_count == 2
+
+                    # Check attribute triples
+                    mock_rdf_store.add.assert_any_call(
+                        ("urn:claim:test-id", "urn:prop:verified", True)
+                    )
+                    mock_rdf_store.add.assert_any_call(
+                        ("urn:claim:test-id", "urn:prop:source", "test-source")
+                    )
+
+                    # Ensure the reasoner was invoked exactly once
+                    mock_reasoner.assert_called_once_with(mock_rdf_store)
