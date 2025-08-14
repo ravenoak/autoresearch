@@ -20,3 +20,4 @@ def test_record_and_regression(tmp_path):
 
     assert metrics.check_query_regression("q", baseline_path) is True
     assert metrics.check_query_regression("q", baseline_path, threshold=2) is False
+    assert metrics.check_query_regression("missing", baseline_path) is False

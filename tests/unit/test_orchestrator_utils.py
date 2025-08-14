@@ -9,6 +9,7 @@ from autoresearch.orchestration.orchestrator import (
     OrchestrationError,
 )
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.state import QueryState
 
 
 @given(st.lists(st.integers()), st.integers())
@@ -54,3 +55,26 @@ def test_calculate_result_confidence(num_citations, reasoning_len, error_count):
     )
     score = Orchestrator._calculate_result_confidence(resp)
     assert 0.1 <= score <= 1.0
+
+
+def test_apply_recovery_strategy():
+    state = QueryState(query="q")
+    info = Orchestrator._apply_recovery_strategy(
+        "A", "transient", Exception("e"), state
+    )
+    assert info["recovery_strategy"] == "retry_with_backoff"
+    assert "fallback" in state.results
+
+    state = QueryState(query="q")
+    info = Orchestrator._apply_recovery_strategy(
+        "A", "recoverable", Exception("e"), state
+    )
+    assert info["recovery_strategy"] == "fallback_agent"
+    assert "fallback" in state.results
+
+    state = QueryState(query="q")
+    info = Orchestrator._apply_recovery_strategy(
+        "A", "critical", Exception("e"), state
+    )
+    assert info["recovery_strategy"] == "fail_gracefully"
+    assert "error" in state.results

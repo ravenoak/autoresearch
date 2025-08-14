@@ -99,6 +99,11 @@ def test_calculate_bm25_scores(mock_bm25, sample_results):
     assert scores[2] > scores[0] > scores[1] > scores[3]
 
 
+def test_rank_results_empty_input(monkeypatch):
+    monkeypatch.setattr("autoresearch.search.core.BM25_AVAILABLE", True)
+    assert Search.rank_results("q", []) == []
+
+
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", True)
 def test_calculate_semantic_similarity(sample_results):
     """Test the semantic similarity scoring functionality."""
