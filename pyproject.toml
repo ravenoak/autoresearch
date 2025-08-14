@@ -44,6 +44,12 @@ dependencies = [
     "setuptools",
     "owlrl>=7.1.4",
 ]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"autoresearch.examples" = ["autoresearch.toml", ".env.example"]
 [project.optional-dependencies]
 # Minimal install: only core embedding model support
 minimal = [
