@@ -12,8 +12,9 @@ class DummyStorage(StorageManager):
     called = False
 
     @staticmethod
-    def setup(db_path=None):
+    def setup(db_path=None, context=None, *args, **kwargs):
         DummyStorage.called = True
+        return context
 
 
 def test_set_and_get_delegate():
