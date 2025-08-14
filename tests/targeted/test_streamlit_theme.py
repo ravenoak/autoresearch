@@ -1,10 +1,15 @@
 import types
+import pytest
 from autoresearch import streamlit_app, streamlit_ui
+
+pytestmark = pytest.mark.requires_ui
 
 
 def test_apply_theme_settings(monkeypatch):
     calls = []
-    fake_st = types.SimpleNamespace(markdown=lambda *a, **k: calls.append(a), session_state={"dark_mode": True})
+    fake_st = types.SimpleNamespace(
+        markdown=lambda *a, **k: calls.append(a), session_state={"dark_mode": True}
+    )
     monkeypatch.setattr(streamlit_ui, "st", fake_st)
     streamlit_app.apply_theme_settings()
     assert calls
