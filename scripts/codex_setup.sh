@@ -78,6 +78,9 @@ if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
 fi
 
 # Confirm required extras are installed
+# Tests marked `requires_ui`, `requires_vss`, `requires_git`, and `requires_nlp`
+# depend on these packages. Update this list and AGENTS.md when adding new
+# markers or optional test extras.
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
