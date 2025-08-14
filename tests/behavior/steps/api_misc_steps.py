@@ -4,8 +4,6 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, APIConfig
 
 
-
-
 @given("the API server is running")
 def api_server_running(test_context, api_client, monkeypatch):
     cfg = ConfigModel(api=APIConfig())
