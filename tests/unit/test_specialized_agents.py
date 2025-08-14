@@ -54,6 +54,7 @@ def mock_config():
     """Create a mock configuration for testing."""
     config = MagicMock(spec=ConfigModel)
     config.max_results_per_query = 3
+    config.search = MagicMock(max_results_per_query=3)
     config.default_model = "test-model"
 
     # Add agent_config attribute with get method
@@ -91,7 +92,8 @@ def test_researcher_agent_execute(mock_llm_adapter, mock_state, mock_config):
 
         # Verify the search was called with the correct parameters
         mock_search.assert_called_once_with(
-            mock_state.query, max_results=mock_config.max_results_per_query * 2
+            mock_state.query,
+            max_results=mock_config.search.max_results_per_query * 2,
         )
 
         # Verify the LLM adapter was called with the correct parameters
@@ -277,7 +279,9 @@ def test_researcher_agent_processes_feedback(mock_llm_adapter, mock_state, mock_
     agent = ResearcherAgent(name="Researcher", llm_adapter=mock_llm_adapter)
     mock_config.enable_feedback = True
     mock_state.add_feedback_event(
-        FeedbackEvent(source="Critic", target="Researcher", content="More stats", cycle=0)
+        FeedbackEvent(
+            source="Critic", target="Researcher", content="More stats", cycle=0
+        )
     )
 
     with patch("autoresearch.search.Search.external_lookup") as mock_search:
