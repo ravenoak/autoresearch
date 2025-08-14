@@ -249,7 +249,7 @@ def run() -> None:
                     progress.update(task, advance=1)
                     on_cycle_end(loop, state)
 
-                result = Orchestrator.run_query(
+                result = Orchestrator().run_query(
                     query, config, {"on_cycle_end": wrapped_on_cycle}
                 )
             fmt = config.output_format or (

@@ -1353,7 +1353,7 @@ def display_query_history():
         with st.spinner("Processing query..."):
             try:
                 # Run the query
-                result = Orchestrator.run_query(
+                result = Orchestrator().run_query(
                     st.session_state.current_query,
                     st.session_state.config,
                 )
@@ -1439,7 +1439,7 @@ def display_query_history():
         with st.spinner(f"Rerunning query: {rerun_query[:50]}..."):
             try:
                 # Run the query
-                result = Orchestrator.run_query(rerun_query, st.session_state.config)
+                result = Orchestrator().run_query(rerun_query, st.session_state.config)
 
                 # Update token usage metrics
                 if (

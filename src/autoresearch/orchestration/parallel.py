@@ -59,7 +59,7 @@ def execute_parallel_query(
         group_config.token_budget = getattr(config, "token_budget", 4000)
 
         try:
-            return Orchestrator.run_query(query, group_config)
+            return Orchestrator().run_query(query, group_config)
         except (
             AgentError,
             TimeoutError,

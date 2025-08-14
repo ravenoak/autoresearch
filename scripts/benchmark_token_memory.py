@@ -41,7 +41,7 @@ def run_benchmark() -> dict[str, float | dict[str, dict[str, int]]]:
 
     memory_before = StorageManager._current_ram_mb()
     start = time.perf_counter()
-    response = Orchestrator.run_query("benchmark query", cfg)
+    response = Orchestrator().run_query("benchmark query", cfg)
     duration = time.perf_counter() - start
     memory_after = StorageManager._current_ram_mb()
 

@@ -375,7 +375,7 @@ def search(
                     "[green]Processing query...",
                     total=loops,
                 )
-                result = Orchestrator.run_query(
+                result = Orchestrator().run_query(
                     query, config, callbacks={"on_cycle_end": on_cycle_end}
                 )
 

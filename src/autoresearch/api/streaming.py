@@ -34,7 +34,7 @@ async def query_stream_endpoint(
 
     def run() -> None:
         try:
-            result = Orchestrator.run_query(
+            result = Orchestrator().run_query(
                 request.query, config, callbacks={"on_cycle_end": on_cycle_end}
             )
         except Exception as exc:  # pragma: no cover - defensive
