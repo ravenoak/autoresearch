@@ -1,8 +1,12 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **August 13, 2025**.
-Phase 2 testing tasks are complete: integration and behavior tests pass and total coverage has reached **92%**. Milestone dates are synchronized with the release plan and listed below.
+Last updated **August 14, 2025**.
+Phase 2 testing tasks remain open: `task coverage` fails in
+`tests/unit/test_main_config_commands.py::test_config_init_command_force`
+and coverage is not generated, while `task verify` fails in
+`tests/unit/test_eviction.py::test_lru_eviction_order`. Milestone dates are
+synchronized with the release plan and listed below.
 ## Milestones
 
 | Version | Target Date | Key Goals |
@@ -22,7 +26,12 @@ complete documentation. Key activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-Integration and behavior tests now pass and total coverage exceeds the **90%** target. The release was originally planned for **July 20, 2025**, but the schedule slipped. With **Phase 2** complete, the **0.1.0** milestone remains targeted for **November 15, 2025** while packaging validation and documentation work continue. Remaining blockers include packaging scripts that need additional configuration.
+Unit tests still fail (`tests/unit/test_main_config_commands.py::test_config_init_command_force` and
+`tests/unit/test_eviction.py::test_lru_eviction_order`), so coverage is not
+generated and integration and behavior suites remain pending. The release was
+originally planned for **July 20, 2025**, but the schedule slipped. The
+**0.1.0** milestone remains targeted for **November 15, 2025** while these
+failures (tracked in issues #27 and #28) and packaging tasks are resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
