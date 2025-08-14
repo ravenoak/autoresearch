@@ -75,7 +75,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   `task test:slow` or `uv run pytest -m requires_nlp`. Skip them with
   `-m 'not requires_nlp'` if the extras are unavailable.
   - See [tests/behavior/README.md](tests/behavior/README.md) for markers
-    such as `requires_ui`, `requires_vss`, and `requires_nlp` to select specific scenarios.
+    such as `requires_ui`, `requires_vss`, `requires_git`, and `requires_nlp` to select specific scenarios.
+  - Tag tests that rely on optional extras with the appropriate marker
+    (`requires_ui`, `requires_vss`, `requires_git`, or `requires_nlp`). When
+    introducing new markers, update this document and `scripts/codex_setup.sh`
+    so setup remains in sync.
 
 ### Cleanup
 - Run `task clean` to remove `__pycache__` and `.mypy_cache` directories.
