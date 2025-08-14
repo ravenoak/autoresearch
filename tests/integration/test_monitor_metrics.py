@@ -22,7 +22,7 @@ def dummy_run_query(query, config, callbacks=None, **kwargs):
 
 def setup_patches(monkeypatch):
     cfg = ConfigModel(loops=1, output_format="json")
-    cfg.api.role_permissions["anonymous"] = ["query"]
+    cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     responses = iter(["test", ""])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
@@ -91,12 +91,24 @@ def test_monitor_start_cli(monkeypatch):
 
     monkeypatch.setattr(ResourceMonitor, "start", fake_start)
     monkeypatch.setattr(ResourceMonitor, "stop", fake_stop)
-    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.start", lambda self: calls.setdefault("sys_start", True))
-    monkeypatch.setattr("autoresearch.monitor.SystemMonitor.stop", lambda self: calls.setdefault("sys_stop", True))
-    monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda x: (_ for _ in ()).throw(KeyboardInterrupt()))
+    monkeypatch.setattr(
+        "autoresearch.monitor.SystemMonitor.start",
+        lambda self: calls.setdefault("sys_start", True),
+    )
+    monkeypatch.setattr(
+        "autoresearch.monitor.SystemMonitor.stop",
+        lambda self: calls.setdefault("sys_stop", True),
+    )
+    monkeypatch.setattr(
+        "autoresearch.monitor.time.sleep",
+        lambda x: (_ for _ in ()).throw(KeyboardInterrupt()),
+    )
 
     runner = CliRunner()
-    result = runner.invoke(cli_app, ["monitor", "start", "--prometheus", "--port", "9999", "--interval", "0.1"])
+    result = runner.invoke(
+        cli_app,
+        ["monitor", "start", "--prometheus", "--port", "9999", "--interval", "0.1"],
+    )
     assert result.exit_code == 0
     assert calls["port"] == 9999
     assert calls["stop"]

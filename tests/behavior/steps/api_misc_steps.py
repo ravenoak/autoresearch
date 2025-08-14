@@ -4,8 +4,13 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, APIConfig
 
 
+
+
 @given("the API server is running")
-def api_server_running(test_context, api_client):
+def api_server_running(test_context, api_client, monkeypatch):
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"].append("health")
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     test_context["client"] = api_client
 
 

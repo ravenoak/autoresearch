@@ -6,7 +6,7 @@ from autoresearch.config.loader import ConfigLoader
 @given("the API server is running with config permissions")
 def api_server_with_permissions(test_context, api_client, monkeypatch):
     cfg = ConfigModel(api=APIConfig())
-    cfg.api.role_permissions["anonymous"].append("capabilities")
+    cfg.api.role_permissions["anonymous"].append("config")
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     test_context["client"] = api_client
 
@@ -65,7 +65,9 @@ def test_update_config():
     pass
 
 
-@scenario("../features/api_config.feature", "Replace configuration via the config endpoint")
+@scenario(
+    "../features/api_config.feature", "Replace configuration via the config endpoint"
+)
 def test_replace_config():
     pass
 

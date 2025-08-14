@@ -11,7 +11,13 @@ import time
 def _setup(monkeypatch):
     cfg = ConfigModel(_env_file=None, _cli_parse_args=[])
     # allow all permissions for anonymous for simplicity
-    cfg.api.role_permissions["anonymous"] = ["query", "metrics", "capabilities"]
+    cfg.api.role_permissions["anonymous"] = [
+        "query",
+        "metrics",
+        "capabilities",
+        "config",
+        "health",
+    ]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     return cfg
 
