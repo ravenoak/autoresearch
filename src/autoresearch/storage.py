@@ -888,6 +888,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                     # Note: We're careful not to modify the input claim
                     merged_claim = existing_claim.copy()
 
+                    # Ensure the claim id is preserved for downstream persistence
+                    merged_claim["id"] = claim_id
+
                     # Update basic fields if provided
                     if "type" in claim:
                         merged_claim["type"] = claim["type"]
