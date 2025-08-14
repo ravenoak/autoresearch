@@ -55,7 +55,10 @@ regular storage APIs.
 The storage system supports automatic eviction of claims when the memory usage exceeds the configured budget:
 
 1. **LRU (Least Recently Used)** - Evicts the least recently accessed claims
-2. **Low Score** - Evicts claims with the lowest relevance scores
+2. **Score** - Evicts claims with the lowest relevance scores
+3. **Hybrid** - Combines recency and confidence score for balanced eviction
+4. **Adaptive** - Dynamically chooses the best policy based on usage patterns
+5. **Priority** - Evicts nodes using configurable priority tiers
 
 The eviction process is triggered automatically by the `_enforce_ram_budget()` method when the memory usage exceeds the configured budget.
 
