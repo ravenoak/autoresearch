@@ -13,9 +13,7 @@ def validate_rdf_backend(cls, v: str) -> str:
     """Validate the RDF backend configuration."""
     valid_backends = ["sqlite", "berkeleydb", "memory"]
     if v not in valid_backends:
-        raise ConfigError(
-            "Invalid RDF backend", valid_backends=valid_backends, provided=v
-        )
+        raise ConfigError("Invalid RDF backend", valid_backends=valid_backends, provided=v)
     return v
 
 
@@ -34,9 +32,7 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
             suggestion="Check the default weight values",
         )
     if abs(defaults_total - 1.0) > 0.001:
-        default_weights = {
-            name: value / defaults_total for name, value in default_weights.items()
-        }
+        default_weights = {name: value / defaults_total for name, value in default_weights.items()}
 
     weight_fields = set(default_weights.keys())
     provided = self.model_fields_set & weight_fields
@@ -122,7 +118,13 @@ def validate_token_budget(cls, v: int | str | None) -> int | None:
 
 def validate_eviction_policy(cls, v: str | object) -> str:
     """Validate the graph eviction policy configuration."""
-    valid_policies = {"lru": "LRU", "score": "score"}
+    valid_policies = {
+        "lru": "LRU",
+        "score": "score",
+        "hybrid": "hybrid",
+        "priority": "priority",
+        "adaptive": "adaptive",
+    }
     if not isinstance(v, str):
         v = getattr(v, "value", v)
     v = str(v)

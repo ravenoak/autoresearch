@@ -72,17 +72,13 @@ class SearchConfig(BaseModel):
     citation_count_factor: float = Field(default=0.4, ge=0.0, le=1.0)
     use_feedback: bool = Field(default=False)
     feedback_weight: float = Field(default=0.3, ge=0.0, le=1.0)
-    context_aware: ContextAwareSearchConfig = Field(
-        default_factory=ContextAwareSearchConfig
-    )
+    context_aware: ContextAwareSearchConfig = Field(default_factory=ContextAwareSearchConfig)
     local_file: LocalFileConfig = Field(default_factory=LocalFileConfig)
     local_git: LocalGitConfig = Field(default_factory=LocalGitConfig)
     max_workers: int = Field(default=4, ge=1)
     http_pool_size: int = Field(default=10, ge=1)
 
-    _normalize_ranking_weights = model_validator(mode="after")(
-        normalize_ranking_weights
-    )
+    _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
 
 
 class StorageConfig(BaseModel):
@@ -171,9 +167,7 @@ class DistributedConfig(BaseModel):
     address: str | None = Field(default=None, description="Ray cluster address")
     num_cpus: int = Field(default=1, ge=1)
     message_broker: str = Field(default="memory")
-    broker_url: str | None = Field(
-        default=None, description="URL for the message broker"
-    )
+    broker_url: str | None = Field(default=None, description="URL for the message broker")
 
 
 class AnalysisConfig(BaseModel):
@@ -248,7 +242,13 @@ class ConfigModel(BaseModel):
         default_factory=dict,
         description="Named coalitions of agents for message broadcasting",
     )
-    graph_eviction_policy: str = Field(default="LRU")
+    graph_eviction_policy: str = Field(
+        default="LRU",
+        description=(
+            "Policy for evicting nodes from the knowledge graph. Supported "
+            'policies: "LRU", "score", "hybrid", "priority", "adaptive"'
+        ),
+    )
     default_model: str = Field(default="mistral")
     active_profile: Optional[str] = None
     distributed: bool = Field(
@@ -260,9 +260,7 @@ class ConfigModel(BaseModel):
     _validate_reasoning_mode = field_validator("reasoning_mode", mode="before")(
         validate_reasoning_mode
     )
-    _validate_token_budget = field_validator("token_budget", mode="before")(
-        validate_token_budget
-    )
+    _validate_token_budget = field_validator("token_budget", mode="before")(validate_token_budget)
     _validate_eviction_policy = field_validator("graph_eviction_policy", mode="before")(
         validate_eviction_policy
     )

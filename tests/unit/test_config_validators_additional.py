@@ -31,7 +31,10 @@ def test_token_budget_invalid(budget):
         ConfigModel(token_budget=budget)
 
 
-@pytest.mark.parametrize("policy", ["LRU", "score"])
+@pytest.mark.parametrize(
+    "policy",
+    ["LRU", "score", "hybrid", "priority", "adaptive"],
+)
 def test_eviction_policy_valid(policy):
     cfg = ConfigModel(graph_eviction_policy=policy)
     assert cfg.graph_eviction_policy == policy
