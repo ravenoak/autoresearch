@@ -274,7 +274,7 @@ def visualize_query_cli(query: str, output_path: str, *, layout: str = "spring")
         def on_cycle_end(loop: int, _state: Any) -> None:
             progress.update(task, advance=1)
 
-        result = Orchestrator.run_query(query, config, {"on_cycle_end": on_cycle_end})
+        result = Orchestrator().run_query(query, config, {"on_cycle_end": on_cycle_end})
 
     fmt = "json" if not sys.stdout.isatty() else "markdown"
     OutputFormatter.format(result, fmt)

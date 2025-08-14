@@ -121,7 +121,7 @@ async def query_endpoint(
     tracer = get_tracer(__name__)
     with tracer.start_as_current_span("/query"):
         try:
-            result = Orchestrator.run_query(request.query, config)
+            result = Orchestrator().run_query(request.query, config)
         except Exception as exc:
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
@@ -235,15 +235,15 @@ async def async_query_endpoint(
         config.llm_backend = request.llm_backend
 
     task_id = str(uuid4())
-    config_copy = config.model_copy(deep=True)
+    config_copy: ConfigModel = config.model_copy(deep=True)
     entry: dict[str, Any] = {"event": threading.Event(), "result": None}
     http_request.app.state.async_tasks[task_id] = entry
 
     def runner() -> None:
         try:
-            result = asyncio.run(
-                Orchestrator.run_query_async(request.query, config_copy)
-            )
+            orchestrator = cast(Any, Orchestrator())
+            coro = orchestrator.run_query_async(request.query, config_copy)
+            result = asyncio.run(coro)
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)

@@ -37,7 +37,9 @@ log = get_logger(__name__)
 class Orchestrator:
     """Coordinates multi-agent dialectical cycles with rotating Primus."""
 
-    _cb_manager: CircuitBreakerManager | None = None
+    def __init__(self) -> None:
+        """Initialize orchestrator state for a single query."""
+        self._cb_manager: CircuitBreakerManager | None = None
 
     @staticmethod
     def _parse_config(config: ConfigModel) -> Dict[str, Any]:
@@ -90,19 +92,18 @@ class Orchestrator:
             "coalitions": coalitions,
         }
 
-    @staticmethod
-    def get_circuit_breaker_state(agent_name: str) -> CircuitBreakerState:
-        if Orchestrator._cb_manager is None:
+    def get_circuit_breaker_state(self, agent_name: str) -> CircuitBreakerState:
+        if self._cb_manager is None:
             return {
                 "state": "closed",
                 "failure_count": 0.0,
                 "last_failure_time": 0.0,
                 "recovery_attempts": 0,
             }
-        return Orchestrator._cb_manager.get_circuit_breaker_state(agent_name)
+        return self._cb_manager.get_circuit_breaker_state(agent_name)
 
-    @staticmethod
     def run_query(
+        self,
         query: str,
         config: ConfigModel,
         callbacks: Dict[str, Callable[..., None]] | None = None,
@@ -117,7 +118,7 @@ class Orchestrator:
         metrics = OrchestrationMetrics()
         callbacks = callbacks or {}
 
-        config_params = Orchestrator._parse_config(config)
+        config_params = self._parse_config(config)
         agents = config_params["agent_groups"]
         primus_index = config_params["primus_index"]
         loops = config_params["loops"]
@@ -127,7 +128,7 @@ class Orchestrator:
             config_params["circuit_breaker_threshold"],
             config_params["circuit_breaker_cooldown"],
         )
-        Orchestrator._cb_manager = cb_manager
+        self._cb_manager = cb_manager
 
         OrchestrationUtils.apply_adaptive_token_budget(config, query)
 
@@ -237,6 +238,7 @@ class Orchestrator:
 
     @staticmethod
     async def run_query_async(
+        self,
         query: str,
         config: ConfigModel,
         callbacks: Dict[str, Callable[..., None]] | None = None,
@@ -252,7 +254,7 @@ class Orchestrator:
         metrics = OrchestrationMetrics()
         callbacks = callbacks or {}
 
-        config_params = Orchestrator._parse_config(config)
+        config_params = self._parse_config(config)
         agents = config_params["agent_groups"]
         primus_index = config_params["primus_index"]
         loops = config_params["loops"]
@@ -262,7 +264,7 @@ class Orchestrator:
             config_params["circuit_breaker_threshold"],
             config_params["circuit_breaker_cooldown"],
         )
-        Orchestrator._cb_manager = cb_manager
+        self._cb_manager = cb_manager
 
         OrchestrationUtils.apply_adaptive_token_budget(config, query)
 
