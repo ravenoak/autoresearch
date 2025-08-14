@@ -426,7 +426,8 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Get configuration
         cfg = ConfigLoader().config
-        policy = cfg.graph_eviction_policy
+        # Normalize policy name to ensure deterministic comparisons
+        policy = cfg.graph_eviction_policy.lower()
         lru = StorageManager.state.lru
 
         # Track eviction metrics
@@ -590,8 +591,14 @@ class StorageManager(metaclass=StorageManagerMeta):
                     popped = StorageManager._pop_low_score()
                     if popped and StorageManager.context.graph.has_node(popped):
                         nodes_to_evict.append(popped)
+            elif policy == "lru":
+                # LRU policy: evict least recently used nodes deterministically
+                for _ in range(batch_size):
+                    popped = StorageManager._pop_lru()
+                    if popped and StorageManager.context.graph.has_node(popped):
+                        nodes_to_evict.append(popped)
             else:
-                # Default to LRU policy
+                # Unknown policy - default to LRU for safety
                 for _ in range(batch_size):
                     popped = StorageManager._pop_lru()
                     if popped and StorageManager.context.graph.has_node(popped):
@@ -1356,6 +1363,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                 StorageManager.context.db_backend.clear()
             if StorageManager.context.rdf_store is not None:
                 StorageManager.context.rdf_store.remove((None, None, None))
+            # Clear LRU cache to keep state consistent
+            StorageManager.state.lru.clear()
 
     # ------------------------------------------------------------------
     # Ontology-based reasoning utilities
