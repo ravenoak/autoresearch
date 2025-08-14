@@ -11,6 +11,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Keep `AGENTS.md` files current and commit updates alongside related code changes.
 - When instructions affect environment setup or tooling, update `scripts/codex_setup.sh` to match.
 - Changes to tooling must be reflected in both this document and `scripts/codex_setup.sh` so documentation and setup stay in sync.
+- Changes under `tests/` must keep this document and `scripts/codex_setup.sh` in sync to reflect new test requirements.
 
 ## Binary artifacts
 - Do not commit binary files such as `.duckdb_extension` modules.
@@ -50,6 +51,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   to `.venv/bin/pytest`.
 - Run `task verify` before committing; it performs linting, type checking,
   and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
+- Generate explicit coverage reports with `task coverage`.
 - Use `rg` for repository searches instead of `grep -R` or `ls -R`.
   Example: `rg <pattern>`.
 - If `task` is unavailable, run these commands individually:
@@ -62,6 +64,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the unit suite: `uv run pytest -q`.
   - Execute BDD tests in `tests/behavior`: `uv run pytest tests/behavior`.
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
+  - Execute any targeted suites in `tests/targeted` and fold them into the
+    main test directories once validated.
 - Before running any tests, install the development extras with
   `uv pip install -e '.[full,parsers,git,llm,dev]'`. These extras are required
   for full test runs, including integration and behavior tests.
