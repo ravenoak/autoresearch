@@ -125,7 +125,7 @@ def test_search_loops_option(monkeypatch):
 
     captured = {}
 
-    def _run(query, config, callbacks=None):
+    def _run(self, query, config, callbacks=None):
         captured["loops"] = config.loops
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 

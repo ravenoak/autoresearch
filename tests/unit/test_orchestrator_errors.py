@@ -145,7 +145,7 @@ def test_orchestrator_raises_after_error(monkeypatch, test_config, failing_agent
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        Orchestrator.run_query("test query", test_config)
+        Orchestrator().run_query("test query", test_config)
 
     # Verify the error contains the agent errors
     assert excinfo.value.context.get("errors") is not None
@@ -164,7 +164,7 @@ def test_invalid_agent_name_raises(test_config):
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        Orchestrator.run_query("test query", test_config)
+        Orchestrator().run_query("test query", test_config)
 
     # Verify the error contains the agent errors
     assert excinfo.value.context.get("errors") is not None
@@ -190,7 +190,7 @@ def test_callback_error_propagates(test_config):
 
     # Execute and Verify
     with pytest.raises(RuntimeError):
-        Orchestrator.run_query(
+        Orchestrator().run_query(
             "test query",
             test_config,
             callbacks={"on_cycle_start": bad_callback},
@@ -233,7 +233,7 @@ def test_agent_error_is_wrapped(monkeypatch, test_config, error_type, error_mess
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        Orchestrator.run_query("test query", test_config)
+        Orchestrator().run_query("test query", test_config)
 
     # Verify the error contains agent errors
     assert excinfo.value.context.get("errors") is not None
@@ -251,7 +251,7 @@ def test_parallel_query_error_claims(monkeypatch):
 
     cfg = ConfigModel(agents=[], loops=1)
 
-    def mock_run_query(query, config):
+    def mock_run_query(self, query, config, callbacks=None):
         if config.agents == ["A"]:
             return QueryResponse(
                 answer="a",
@@ -284,7 +284,7 @@ def test_parallel_query_timeout_claims(monkeypatch):
     original_sleep = time.sleep
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
-    def mock_run_query(query, config):
+    def mock_run_query(self, query, config, callbacks=None):
         if config.agents == ["slow"]:
             original_sleep(0.002)
             return QueryResponse(

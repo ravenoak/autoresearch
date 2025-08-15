@@ -27,7 +27,7 @@ def _setup(monkeypatch):
 def test_query_endpoint_runtime_error(monkeypatch):
     _setup(monkeypatch)
 
-    def raise_error(q, c):
+    def raise_error(self, q, c, callbacks=None):
         raise RuntimeError("fail")
 
     monkeypatch.setattr(Orchestrator, "run_query", raise_error)
@@ -41,7 +41,9 @@ def test_query_endpoint_runtime_error(monkeypatch):
 
 def test_query_endpoint_invalid_response(monkeypatch):
     _setup(monkeypatch)
-    monkeypatch.setattr(Orchestrator, "run_query", lambda q, c: {"foo": "bar"})
+    monkeypatch.setattr(
+        Orchestrator, "run_query", lambda self, q, c, callbacks=None: {"foo": "bar"}
+    )
     client = TestClient(app)
     resp = client.post("/query", json={"query": "q"})
     assert resp.status_code == 200

@@ -4,7 +4,7 @@ from autoresearch.models import QueryResponse
 from autoresearch.config.models import ConfigModel
 
 
-def _mock_run_query(query, config):
+def _mock_run_query(self, query, config, callbacks=None):
     return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
 

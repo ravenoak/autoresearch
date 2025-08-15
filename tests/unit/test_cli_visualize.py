@@ -26,7 +26,7 @@ def test_summary_table_render():
 def test_search_visualize_option(monkeypatch):
     runner = CliRunner()
 
-    def _mock_run(query, config, callbacks=None):
+    def _mock_run(self, query, config, callbacks=None):
         return QueryResponse(answer='a', citations=[], reasoning=[], metrics={'m': 1})
 
     monkeypatch.setattr(Orchestrator, 'run_query', _mock_run)
