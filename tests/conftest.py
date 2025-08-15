@@ -40,7 +40,6 @@ from autoresearch.storage import (  # noqa: E402
     teardown as storage_teardown,
 )  # noqa: E402
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
-from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 import duckdb  # noqa: E402
 
 _orig_option = typer.Option
