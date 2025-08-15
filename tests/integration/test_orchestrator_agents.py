@@ -135,7 +135,7 @@ def test_circuit_breaker_opens(monkeypatch):
 
     orch = Orchestrator()
     with pytest.raises(Exception):
-        Orchestrator._orig_run_query(orch, "q", cfg)
+        orch.run_query("q", cfg)
 
     state = orch.get_circuit_breaker_state("Bad")
     assert state["state"] == "open"
