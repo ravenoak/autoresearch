@@ -1,12 +1,11 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 14, 2025**, unit
-tests `tests/unit/test_main_config_commands.py::test_config_init_command_force`
-and `tests/unit/test_eviction.py::test_lru_eviction_order` fail, so coverage is
-not generated and integration and behavior suites remain pending. Issues #27 and
-#28 track these blockers. The **0.1.0** release is still targeted for
-**November 15, 2025**.
+organized by phases from the code complete plan. As of **August 15, 2025**, `task
+verify` reports **13 failing unit tests** and overall coverage of **66%**, well
+below the 90% requirement. Integration and behavior suites remain pending.
+Issues #27 and #28 track these blockers. The **0.1.0** release is still
+targeted for **November 15, 2025**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
@@ -232,11 +231,8 @@ Coverage could not be generated because `task coverage` fails in
 
 ### Latest Test Results
 
-- `task coverage` failed in
-  `tests/unit/test_main_config_commands.py::test_config_init_command_force`.
-- `task verify` failed in
-  `tests/unit/test_eviction.py::test_lru_eviction_order`; these issues are
-  tracked in #27 and #28.
+- `task verify` reports 13 failing unit tests and total coverage of 66%.
+  See #28 for a detailed list of failing tests.
 - `flake8` reports no style errors.
 - `uv run mypy src` completes in ~7s after excluding site packages;
   issue [#22](issues/archive/0022-investigate-mypy-hang.md) closed.
