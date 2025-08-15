@@ -1,5 +1,5 @@
-# Ensure we are running with Python 3.12 or newer
 #!/usr/bin/env bash
+# Ensure we are running with Python 3.12 or newer
 set -euo pipefail
 
 # Abort if python3.12 is not available
