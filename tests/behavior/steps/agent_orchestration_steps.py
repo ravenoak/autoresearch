@@ -94,7 +94,8 @@ def run_orchestrator_on_query(query):
         "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
         side_effect=spy_parse,
     ):
-        Orchestrator.run_query(query, cfg)
+        orch = Orchestrator()
+        orch.run_query(query, cfg)
 
     return {"record": record, "config_params": config_params}
 
@@ -197,7 +198,15 @@ def run_two_queries(monkeypatch):
     original_run_query = Orchestrator.run_query
     query_data = {"primus_indices": []}
 
-    def mock_run_query(query, config, callbacks=None):
+    def mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         query_data["primus_indices"].append(config.primus_start)
         config.primus_start = (config.primus_start + 1) % len(config.agents)
         return QueryResponse(
@@ -215,8 +224,9 @@ def run_two_queries(monkeypatch):
         primus_start=0,
     )
 
-    Orchestrator.run_query("Query 1", config)
-    Orchestrator.run_query("Query 2", config)
+    orch = Orchestrator()
+    orch.run_query("Query 1", config)
+    orch.run_query("Query 2", config)
 
     monkeypatch.setattr(Orchestrator, "run_query", original_run_query)
 

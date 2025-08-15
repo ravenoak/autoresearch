@@ -42,7 +42,14 @@ def test_cli_primus_start(bdd_context):
 )
 def run_with_budget(query, loops, budget, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -69,7 +76,14 @@ def check_budget_config(bdd_context, loops, budget):
 @when(parsers.parse('I run `autoresearch search "{query}" --agents {agents}`'))
 def run_with_agents(query, agents, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -116,7 +130,14 @@ def run_parallel_cli(g1, g2, query, monkeypatch, cli_runner, bdd_context):
 def run_with_reasoning(query, mode, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
 
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -140,7 +161,14 @@ def check_reasoning_mode(bdd_context, mode):
 def run_with_primus(query, index, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
 
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 

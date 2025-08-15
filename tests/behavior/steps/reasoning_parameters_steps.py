@@ -20,7 +20,14 @@ def test_adaptive_budget_flags(bdd_context):
 def run_breaker_cli(query, threshold, cooldown, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
 
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -56,7 +63,14 @@ def check_breaker_config(bdd_context, threshold, cooldown):
 def run_adaptive_cli(query, factor, buffer, monkeypatch, cli_runner, bdd_context):
     ConfigLoader.reset_instance()
 
-    def mock_run_query(q, cfg, callbacks=None):
+    def mock_run_query(
+        q,
+        cfg,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         bdd_context["cfg"] = cfg
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 

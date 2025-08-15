@@ -607,7 +607,15 @@ def api_client_factory() -> Callable[[dict[str, str] | None], TestClient]:
 def mock_run_query():
     """Return a simple Orchestrator.run_query stub for tests."""
 
-    def _mock_run_query(self, query, config, callbacks=None):
+    def _mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         return QueryResponse(
             answer="ok", citations=[], reasoning=[], metrics={"m": 1}
         )

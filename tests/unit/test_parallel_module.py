@@ -47,7 +47,15 @@ def test_calculate_result_confidence():
 def test_execute_parallel_query_basic(monkeypatch):
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
-    def mock_run_query(self, query, config, callbacks=None):
+    def mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         return QueryResponse(
             answer=config.agents[0],
             citations=[],
@@ -74,7 +82,15 @@ def test_execute_parallel_query_basic(monkeypatch):
 def test_execute_parallel_query_agent_error(monkeypatch, caplog):
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
-    def mock_run_query(self, query, config, callbacks=None):
+    def mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         raise AgentError("boom", agent_name="A")
 
     synthesizer = MagicMock()
