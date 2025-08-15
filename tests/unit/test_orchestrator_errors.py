@@ -251,7 +251,15 @@ def test_parallel_query_error_claims(monkeypatch):
 
     cfg = ConfigModel(agents=[], loops=1)
 
-    def mock_run_query(self, query, config, callbacks=None):
+    def mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         if config.agents == ["A"]:
             return QueryResponse(
                 answer="a",
@@ -284,7 +292,15 @@ def test_parallel_query_timeout_claims(monkeypatch):
     original_sleep = time.sleep
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
-    def mock_run_query(self, query, config, callbacks=None):
+    def mock_run_query(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         if config.agents == ["slow"]:
             original_sleep(0.002)
             return QueryResponse(

@@ -9,7 +9,15 @@ from autoresearch.api import app as api_app
 from autoresearch.orchestration.orchestrator import Orchestrator
 
 
-def _mock_run_query_error(query, config, *args, **kwargs):
+def _mock_run_query_error(
+    self,
+    query,
+    config,
+    callbacks=None,
+    *,
+    agent_factory=None,
+    storage_manager=None,
+):
     raise RuntimeError("boom")
 
 

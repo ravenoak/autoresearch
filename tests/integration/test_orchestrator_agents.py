@@ -65,7 +65,8 @@ def test_run_query_with_coalitions(monkeypatch):
         coalitions={"Team": ["FactChecker", "Contrarian"]},
     )
 
-    response = Orchestrator.run_query("q", cfg)
+    orch = Orchestrator()
+    response = orch.run_query("q", cfg)
 
     assert response.answer == "FactChecker, Contrarian, Synthesizer"
     assert calls == ["FactChecker", "Contrarian", "Synthesizer"]
@@ -83,7 +84,14 @@ def test_run_query_with_coalitions(monkeypatch):
 def test_run_parallel_query_aggregates_results(monkeypatch):
     cfg = ConfigModel(agents=[], loops=1)
 
-    def mock_run_query(query, config):
+    def mock_run_query(
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         if config.agents == ["A"]:
             return QueryResponse(
                 answer="a", citations=[], reasoning=["claim A"], metrics={}

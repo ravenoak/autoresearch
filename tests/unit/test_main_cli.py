@@ -40,7 +40,15 @@ def test_search_reasoning_mode_option(monkeypatch, mode, config_loader):
 
     captured = {}
 
-    def _run(self, query, config, callbacks=None):
+    def _run(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -58,7 +66,15 @@ def test_search_primus_start_option(monkeypatch, config_loader):
 
     captured = {}
 
-    def _run(self, query, config, callbacks=None):
+    def _run(
+        self,
+        query,
+        config,
+        callbacks=None,
+        *,
+        agent_factory=None,
+        storage_manager=None,
+    ):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
