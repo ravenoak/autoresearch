@@ -23,6 +23,7 @@ import tests.stubs  # noqa: F401,E402
 
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402, F401
+from autoresearch.models import QueryResponse  # noqa: E402, F401
 
 
 from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
@@ -600,3 +601,15 @@ def api_client_factory() -> Callable[[dict[str, str] | None], TestClient]:
         return client
 
     return _make
+
+
+@pytest.fixture
+def mock_run_query():
+    """Return a simple Orchestrator.run_query stub for tests."""
+
+    def _mock_run_query(self, query, config, callbacks=None):
+        return QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={"m": 1}
+        )
+
+    return _mock_run_query
