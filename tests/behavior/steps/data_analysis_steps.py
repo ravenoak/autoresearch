@@ -1,6 +1,8 @@
+import pytest
 from pytest_bdd import given, when, then
 from autoresearch.data_analysis import metrics_dataframe
-import polars as pl
+
+pl = pytest.importorskip("polars")
 
 
 @given("sample metrics")
