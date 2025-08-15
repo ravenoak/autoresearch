@@ -67,6 +67,23 @@ fi
 # Run the main setup script to install all extras needed for testing
 ./scripts/setup.sh full,parsers,git,llm,dev,test
 
+# Install pre-downloaded packages for offline use. Place wheel files in
+# $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for
+# details.
+if [ -n "${WHEELS_DIR:-}" ] && [ -d "$WHEELS_DIR" ]; then
+    if ls "$WHEELS_DIR"/*.whl >/dev/null 2>&1; then
+        echo "Installing wheels from $WHEELS_DIR"
+        uv pip install --no-index --find-links "$WHEELS_DIR" "$WHEELS_DIR"/*.whl
+    fi
+fi
+
+if [ -n "${ARCHIVES_DIR:-}" ] && [ -d "$ARCHIVES_DIR" ]; then
+    if ls "$ARCHIVES_DIR"/*.tar.gz >/dev/null 2>&1; then
+        echo "Installing archives from $ARCHIVES_DIR"
+        uv pip install --no-index --find-links "$ARCHIVES_DIR" "$ARCHIVES_DIR"/*.tar.gz
+    fi
+fi
+
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
 if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
     if uv pip install duckdb-extension-vss; then

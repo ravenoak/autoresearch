@@ -37,12 +37,26 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, and `duckdb-extension-vss` are present using `uv pip list`.
-  - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
+- `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
     must either disable the `vector_extension` entirely or point this variable
     to the stub at `extensions/vss_stub.duckdb_extension`. Set it to a real
     `vss.duckdb_extension` only when the actual extension is available.
   - If `CODEX_ENVIRONMENT_SETUP_FAILED` exists, inspect
     `codex_setup.log` for setup details.
+
+### Offline setup
+- Use local Python packages when network access is unavailable.
+  - Place pre-downloaded wheels under `./wheels` and source archives under
+    `./archives`.
+  - Before running `scripts/codex_setup.sh`, export `WHEELS_DIR` and
+    `ARCHIVES_DIR` to point at these directories. The setup script installs
+    them with `uv pip --no-index`.
+- Pre-download DuckDB extensions with `scripts/download_duckdb_extensions.py`
+  and set `VECTOR_EXTENSION_PATH` to the local `.duckdb_extension` file. If a
+  real extension is not available, leave `VECTOR_EXTENSION_PATH` unset and the
+  setup script will default to `extensions/vss_stub.duckdb_extension`.
+- Keep this section and `scripts/codex_setup.sh` in sync when offline
+  requirements change.
 
 ## Verification steps
 - Always run tests with `uv run` or inside the activated `.venv`; all tests
