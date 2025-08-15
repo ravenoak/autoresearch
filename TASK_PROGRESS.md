@@ -1,11 +1,12 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 15, 2025**, `task
-verify` reports **13 failing unit tests** and overall coverage of **66%**, well
-below the 90% requirement. Integration and behavior suites remain pending.
-Issues #27 and #28 track these blockers. The **0.1.0** release is still
-targeted for **November 15, 2025**.
+organized by phases from the code complete plan. As of **August 16, 2025**, `pytest`
+aborts before collecting tests (`ModuleNotFoundError: fastapi`), so coverage is
+unavailable. Issue [#28](issues/0028-unit-tests-after-orchestrator-refactor.md)
+lists **13 failing unit tests**, and issue
+[#27](issues/0027-orchestrator-instance-cb-manager.md) documents the underlying
+refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
@@ -59,41 +60,41 @@ targeted for **November 15, 2025**.
 
 ### 2.1 Unit Tests
 
-- [x] Complete test coverage for all modules
-  - [x] Ensure at least 90% code coverage
-  - [x] Add tests for edge cases and error conditions
-  - [x] Implement property-based testing for complex components
-- [x] Enhance test fixtures
-  - [x] Create more realistic test data
-  - [x] Implement comprehensive mock LLM adapters
-  - [x] Add parameterized tests for configuration variations
+- [ ] Complete test coverage for all modules
+  - [ ] Ensure at least 90% code coverage
+  - [ ] Add tests for edge cases and error conditions
+  - [ ] Implement property-based testing for complex components
+- [ ] Enhance test fixtures
+  - [ ] Create more realistic test data
+  - [ ] Implement comprehensive mock LLM adapters
+  - [ ] Add parameterized tests for configuration variations
 
 ### 2.2 Integration Tests
 
-- [x] Complete cross-component integration tests [#1](issues/archive/0001-complete-cross-component-integration-tests.md)
-  - [x] Test orchestrator with all agent combinations [#2](issues/archive/0002-test-orchestrator-with-all-agent-combinations.md)
-  - [x] Verify storage integration with search functionality [#3](issues/archive/0003-verify-storage-integration-with-search-functionality.md)
-  - [x] Test configuration hot-reload with all components [#4](issues/archive/0004-test-configuration-hot-reload-with-all-components.md)
-  - [x] Add performance tests [#5](issues/archive/0005-add-performance-tests.md)
-  - [x] Implement benchmarks for query processing time [#6](issues/archive/0006-implement-benchmarks-for-query-processing-time.md)
-  - [x] Test memory usage under various conditions [#7](issues/archive/0007-test-memory-usage-under-various-conditions.md)
-  - [x] Verify token usage optimization [#8](issues/archive/0008-verify-token-usage-optimization.md)
-  - [x] Monitor token usage regressions automatically [#9](issues/archive/0009-monitor-token-usage-regressions-automatically.md)
+- [ ] Complete cross-component integration tests [#1](issues/archive/0001-complete-cross-component-integration-tests.md)
+  - [ ] Test orchestrator with all agent combinations [#2](issues/archive/0002-test-orchestrator-with-all-agent-combinations.md)
+  - [ ] Verify storage integration with search functionality [#3](issues/archive/0003-verify-storage-integration-with-search-functionality.md)
+  - [ ] Test configuration hot-reload with all components [#4](issues/archive/0004-test-configuration-hot-reload-with-all-components.md)
+  - [ ] Add performance tests [#5](issues/archive/0005-add-performance-tests.md)
+  - [ ] Implement benchmarks for query processing time [#6](issues/archive/0006-implement-benchmarks-for-query-processing-time.md)
+  - [ ] Test memory usage under various conditions [#7](issues/archive/0007-test-memory-usage-under-various-conditions.md)
+  - [ ] Verify token usage optimization [#8](issues/archive/0008-verify-token-usage-optimization.md)
+  - [ ] Monitor token usage regressions automatically [#9](issues/archive/0009-monitor-token-usage-regressions-automatically.md)
 
-Issues #1–#9 are marked **Done**, matching the checkboxes above.
+Issues #1–#9 remain open and require further work.
 
 ### 2.3 Behavior Tests
 
-- [x] Complete BDD test scenarios [#10](issues/archive/0010-complete-bdd-test-scenarios.md)
-  - [x] Add scenarios for all user-facing features [#11](issues/archive/0011-add-scenarios-for-all-user-facing-features.md)
-  - [x] Test all reasoning modes with realistic queries [#12](issues/archive/0012-test-all-reasoning-modes-with-realistic-queries.md)
-  - [x] Verify error handling and recovery [#13](issues/archive/0013-verify-error-handling-and-recovery.md)
-- [x] Enhance test step definitions [#14](issues/archive/0014-enhance-test-step-definitions.md)
-  - [x] Add more detailed assertions [#15](issues/archive/0015-add-more-detailed-assertions.md)
-  - [x] Implement better test isolation [#16](issues/archive/0016-implement-better-test-isolation.md)
-  - [x] Create more comprehensive test contexts [#17](issues/archive/0017-create-more-comprehensive-test-contexts.md)
+- [ ] Complete BDD test scenarios [#10](issues/archive/0010-complete-bdd-test-scenarios.md)
+  - [ ] Add scenarios for all user-facing features [#11](issues/archive/0011-add-scenarios-for-all-user-facing-features.md)
+  - [ ] Test all reasoning modes with realistic queries [#12](issues/archive/0012-test-all-reasoning-modes-with-realistic-queries.md)
+  - [ ] Verify error handling and recovery [#13](issues/archive/0013-verify-error-handling-and-recovery.md)
+- [ ] Enhance test step definitions [#14](issues/archive/0014-enhance-test-step-definitions.md)
+  - [ ] Add more detailed assertions [#15](issues/archive/0015-add-more-detailed-assertions.md)
+  - [ ] Implement better test isolation [#16](issues/archive/0016-implement-better-test-isolation.md)
+  - [ ] Create more comprehensive test contexts [#17](issues/archive/0017-create-more-comprehensive-test-contexts.md)
 
-Issues #10–#17 are marked **Done**, matching the checkboxes above.
+Issues #10–#17 remain open until the test suite passes.
 
 ### 4.1 Code Documentation
 
@@ -226,16 +227,16 @@ Issues #10–#17 are marked **Done**, matching the checkboxes above.
 
 ### Coverage Report
 
-Coverage could not be generated because `task coverage` fails in
-`tests/unit/test_main_config_commands.py::test_config_init_command_force`.
+Coverage could not be generated because `pytest` fails to import `fastapi`
+(see [#28](issues/0028-unit-tests-after-orchestrator-refactor.md)).
 
 ### Latest Test Results
 
-- `task verify` reports 13 failing unit tests and total coverage of 66%.
-  See #28 for a detailed list of failing tests.
-- `flake8` reports no style errors.
-- `uv run mypy src` completes in ~7s after excluding site packages;
-  issue [#22](issues/archive/0022-investigate-mypy-hang.md) closed.
+- `pytest --cov=src` aborts with `ModuleNotFoundError: fastapi`.
+  See [#28](issues/0028-unit-tests-after-orchestrator-refactor.md) for the
+  failing test list.
+- `uv run flake8 src tests` reports no style errors.
+- `uv run mypy src` fails to load `pydantic.mypy` (`No module named 'pydantic'`).
 
 ### Performance Baselines
 
