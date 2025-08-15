@@ -1,25 +1,40 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **August 16, 2025**.
+Last updated **August 20, 2025**.
 Phase 2 testing tasks remain open: `task verify` fails with 13 unit tests
 following the Orchestrator refactor, so coverage is not generated. See
 [#28](issues/0028-unit-tests-after-orchestrator-refactor.md) for the full
-list of failures. Milestone dates are adjusted and listed below.
+list of failures. To collect feedback while these issues
+([#27](issues/0027-orchestrator-instance-cb-manager.md),
+[#28](issues/0028-unit-tests-after-orchestrator-refactor.md)) are
+resolved, an alpha pre-release precedes the final 0.1.0 milestone.
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0 | 2026-03-01 | Finalize packaging, docs and CI checks |
+| 0.1.0-alpha.1 | 2025-11-15 | Alpha preview to gather feedback while fixing tests (#27, #28) |
+| 0.1.0 | 2026-03-01 | Finalize packaging, docs and CI checks once tests pass (#27, #28) |
 | 0.1.1 | 2026-05-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-08-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2026-10-15 | Distributed execution support, monitoring utilities |
 | 1.0.0 | 2027-01-15 | Full feature set, performance tuning and stable interfaces |
 
+## 0.1.0-alpha.1 – Alpha preview
+
+This pre-release provides an early package for testing while unit tests and
+packaging tasks remain open ([#27](issues/0027-orchestrator-instance-cb-manager.md),
+[#28](issues/0028-unit-tests-after-orchestrator-refactor.md)). Key activities
+include:
+
+- Provide an installable package for early adopters.
+- Collect feedback while fixing failing tests and packaging issues.
+
 ## 0.1.0 – First public preview
 
-The initial release focuses on making the project installable and providing
-complete documentation. Key activities include:
+The final 0.1.0 release focuses on making the project installable and
+providing complete documentation once the open issues are resolved. Key
+activities include:
 
 - Running all unit, integration and behavior tests.
 - Finalizing API reference and user guides.

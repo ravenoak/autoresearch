@@ -3,8 +3,8 @@
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
-This schedule was last updated on **August 14, 2025** and reflects the fact that
-the codebase currently sits at the **unreleased 0.1.0** version defined in
+This schedule was last updated on **August 20, 2025** and reflects the fact that
+the codebase currently sits at the **unreleased 0.1.0a1** version defined in
 `autoresearch.__version__`.
 Phase 2 testing tasks remain open: `task coverage` fails in
 `tests/unit/test_main_config_commands.py::test_config_init_command_force`
@@ -15,19 +15,20 @@ and Phase 4 activities remain planned.
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0** | 2025-11-15 | Finalize packaging, docs and CI checks; resolve failing tests and generate coverage |
-| **0.1.1** | 2026-02-01 | Bug fixes and documentation updates |
-| **0.2.0** | 2026-04-15 | API stabilization, configuration hot-reload, improved search backends |
-| **0.3.0** | 2026-07-15 | Distributed execution support, monitoring utilities |
-| **1.0.0** | 2026-10-01 | Full feature set, performance tuning and stable interfaces |
+| **0.1.0-alpha.1** | 2025-11-15 | Alpha preview to gather feedback while fixing tests (#27, #28) |
+| **0.1.0** | 2026-03-01 | Finalize packaging, docs and CI checks once tests pass (#27, #28) |
+| **0.1.1** | 2026-05-15 | Bug fixes and documentation updates |
+| **0.2.0** | 2026-08-01 | API stabilization, configuration hot-reload, improved search backends |
+| **0.3.0** | 2026-10-15 | Distributed execution support, monitoring utilities |
+| **1.0.0** | 2027-01-15 | Full feature set, performance tuning and stable interfaces |
 
-The **0.1.0** release was originally aimed for **July 20, 2025**, but the
-schedule slipped. `task coverage` currently fails in
-`tests/unit/test_main_config_commands.py::test_config_init_command_force`,
-and `task verify` fails in `tests/unit/test_eviction.py::test_lru_eviction_order`,
-so coverage is not available. Packaging checks and documentation work
-continue, so the milestone remains targeted for **November 15, 2025** while
-these failures (issues #27 and #28) and packaging tasks are completed.
+The project originally targeted **0.1.0** for **July 20, 2025**, but the
+schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1**
+release is scheduled for **November 15, 2025** even as `task coverage` fails
+in `tests/unit/test_main_config_commands.py::test_config_init_command_force`
+and `task verify` fails in `tests/unit/test_eviction.py::test_lru_eviction_order`.
+The final **0.1.0** milestone is now set for **March 1, 2026** while these
+failures (issues #27 and #28) and packaging tasks are resolved.
 
 The following tasks remain before publishing **0.1.0**:
 
