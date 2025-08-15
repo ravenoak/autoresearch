@@ -19,7 +19,7 @@ tests inconsistent, causing unit failures.
 - `task test:unit` completes successfully with no cross-test interference.
 
 ## Status
-Open
+Completed – instance-level circuit breaker verified by dedicated unit test
 
 ## Related
 - #28
