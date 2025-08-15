@@ -41,8 +41,7 @@ def config_init(
 ) -> None:
     """Initialize configuration files with default values."""
     from pathlib import Path
-    from importlib.resources import as_file, files
-    import shutil
+    from importlib.resources import files
 
     target_dir = Path(config_dir) if config_dir else Path.cwd()
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -61,22 +60,24 @@ def config_init(
     example_dir = files("autoresearch.examples")
     example_toml = example_dir / "autoresearch.toml"
     example_env = example_dir / ".env.example"
+
     if not example_toml.is_file():
         typer.echo(f"Example configuration file not found at {example_toml}.")
         return
-    with as_file(example_toml) as src:
-        shutil.copy(src, toml_path)
+
+    toml_path.write_text(example_toml.read_text())
     typer.echo(f"Created configuration file at {toml_path}")
+
     if example_env.is_file():
-        with as_file(example_env) as src:
-            shutil.copy(src, env_path)
+        env_path.write_text(example_env.read_text())
         typer.echo(f"Created environment file at {env_path}")
     else:
-        with open(env_path, "w") as f:
-            f.write("# Autoresearch environment variables\n")
-            f.write("# Add your API keys and other secrets here\n\n")
-            f.write("# OpenAI API key\n")
-            f.write("# OPENAI_API_KEY=your-api-key\n")
+        env_path.write_text(
+            "# Autoresearch environment variables\n"
+            "# Add your API keys and other secrets here\n\n"
+            "# OpenAI API key\n"
+            "# OPENAI_API_KEY=your-api-key\n"
+        )
         typer.echo(f"Created basic environment file at {env_path}")
     typer.echo("Configuration initialized successfully.")
     typer.echo("Edit these files to customize your configuration.")
