@@ -236,7 +236,6 @@ class Orchestrator:
 
         return state.synthesize()
 
-    @staticmethod
     async def run_query_async(
         self,
         query: str,

@@ -43,11 +43,11 @@ The orchestration workflow is illustrated by the PlantUML description in `docs/d
 
 ## Deployment Considerations
 
-The orchestrator can run agents either sequentially or concurrently.  When
-integrated into an asynchronous application you can use
-`Orchestrator.run_query_async` which executes agents using `asyncio`.  Passing
-`concurrent=True` will dispatch each agent within a cycle to background
-threads, allowing I/O bound agents to overlap.
+The orchestrator can run agents either sequentially or concurrently. When
+integrated into an asynchronous application, use `run_query_async` on an
+`Orchestrator` instance to execute agents using `asyncio`. Passing
+`concurrent=True` dispatches each agent within a cycle to background threads,
+allowing I/O bound agents to overlap.
 
 For large scale deployments, set `distributed=true` and configure the
 `[distributed]` section to enable multi-process orchestration via Ray. When
