@@ -3,7 +3,6 @@ from typer.testing import CliRunner
 
 from autoresearch.cli_utils import ascii_bar_graph, summary_table
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
 
 
 def test_ascii_bar_graph_basic():
@@ -23,13 +22,10 @@ def test_summary_table_render():
     assert '1' in output
 
 
-def test_search_visualize_option(monkeypatch):
+def test_search_visualize_option(monkeypatch, mock_run_query):
     runner = CliRunner()
 
-    def _mock_run(self, query, config, callbacks=None):
-        return QueryResponse(answer='a', citations=[], reasoning=[], metrics={'m': 1})
-
-    monkeypatch.setattr(Orchestrator, 'run_query', _mock_run)
+    monkeypatch.setattr(Orchestrator, 'run_query', mock_run_query)
 
     import sys
     import types

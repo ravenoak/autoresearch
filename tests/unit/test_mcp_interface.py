@@ -1,20 +1,15 @@
 from autoresearch import mcp_interface
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
 from autoresearch.config.models import ConfigModel
-
-
-def _mock_run_query(self, query, config, callbacks=None):
-    return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
 
 def _mock_load_config():
     return ConfigModel()
 
 
-def test_client_server_roundtrip(monkeypatch):
+def test_client_server_roundtrip(monkeypatch, mock_run_query):
     monkeypatch.setattr(mcp_interface._config_loader, "load_config", _mock_load_config)
-    monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query)
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
 
     server = mcp_interface.create_server()
 

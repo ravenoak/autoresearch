@@ -15,23 +15,19 @@ from autoresearch.models import QueryResponse  # noqa: E402
 from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 
 
-def _mock_run_query(self, query, config, callbacks=None):
-    return QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
-
-
-def test_search_default_output_tty(monkeypatch):
+def test_search_default_output_tty(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query)
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
     assert "# Answer" in result.stdout
 
 
-def test_search_default_output_json(monkeypatch):
+def test_search_default_output_json(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
-    monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query)
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0

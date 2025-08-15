@@ -7,11 +7,6 @@ from fastapi.testclient import TestClient
 from autoresearch.main import app as cli_app
 from autoresearch.api import app as api_app
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
-
-
-def _mock_run_query(query, config, *args, **kwargs):
-    return QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
 
 
 def _mock_run_query_error(query, config, *args, **kwargs):
@@ -24,13 +19,13 @@ def fast_sleep(monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: original_sleep(0.001))
 
 
-def test_cli_watcher_cleanup(monkeypatch):
+def test_cli_watcher_cleanup(monkeypatch, mock_run_query):
     initial = sum(
         1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
     )
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query)
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     result = runner.invoke(cli_app, ["search", "q"])
     assert result.exit_code == 0
     for _ in range(10):
@@ -54,11 +49,11 @@ def test_cli_watcher_cleanup(monkeypatch):
     )
 
 
-def test_api_watcher_cleanup(monkeypatch):
+def test_api_watcher_cleanup(monkeypatch, mock_run_query):
     initial = sum(
         1 for t in threading.enumerate() if t.name == "ConfigWatcher" and t.is_alive()
     )
-    monkeypatch.setattr(Orchestrator, "run_query", _mock_run_query)
+    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     with TestClient(api_app) as client:
         resp = client.post("/query", json={"query": "q"})
         assert resp.status_code == 200
