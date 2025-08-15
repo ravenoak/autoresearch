@@ -1,9 +1,9 @@
-from unittest.mock import patch
 import asyncio
+from unittest.mock import patch
 
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.orchestration import ReasoningMode
 from autoresearch.config.models import ConfigModel
+from autoresearch.orchestration import ReasoningMode
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class DummyAgent:
@@ -46,7 +46,8 @@ def test_async_custom_agents_concurrent():
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        asyncio.run(Orchestrator.run_query_async("q", cfg, concurrent=True))
+        orchestrator = Orchestrator()
+        asyncio.run(orchestrator.run_query_async("q", cfg, concurrent=True))
 
     assert sorted(record) == ["A1", "A2", "A3"]
 

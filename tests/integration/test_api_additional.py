@@ -1,11 +1,13 @@
-from autoresearch.api import app as api_app
-from autoresearch.config.models import ConfigModel
-from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
-from fastapi.testclient import TestClient
 import asyncio
 import time
+
+from fastapi.testclient import TestClient
+
+from autoresearch.api import app as api_app
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def _setup(monkeypatch):
@@ -45,7 +47,7 @@ def test_config_endpoints(monkeypatch):
 def test_async_query_status(monkeypatch):
     _setup(monkeypatch)
 
-    async def dummy_async(query, config, callbacks=None, **k):
+    async def dummy_async(self, query, config, callbacks=None, **k):
         await asyncio.sleep(0.01)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -75,7 +77,7 @@ def test_async_query_status(monkeypatch):
 def test_async_query_cancel(monkeypatch):
     _setup(monkeypatch)
 
-    async def long_async(query, config, callbacks=None, **k):
+    async def long_async(self, query, config, callbacks=None, **k):
         await asyncio.sleep(0.1)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 

@@ -190,8 +190,8 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
         params.update(out)
         return out
 
-    async def run_async(q: str, cfg: ConfigModel):
-        return Orchestrator.run_query(q, cfg)
+    async def run_async(self, q: str, cfg: ConfigModel, callbacks=None, **kwargs):
+        return self.run_query(q, cfg)
 
     with (
         patch(
