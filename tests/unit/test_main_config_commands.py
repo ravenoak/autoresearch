@@ -31,8 +31,12 @@ def test_config_init_command_force(tmp_path):
     )
     assert result.exit_code == 0
     example_dir = files("autoresearch.examples")
-    assert cfg.read_text() == (example_dir / "autoresearch.toml").read_text()
-    assert env.read_text() == (example_dir / ".env.example").read_text()
+    assert cfg.read_text(encoding="utf-8") == (
+        example_dir / "autoresearch.toml"
+    ).read_text(encoding="utf-8")
+    assert env.read_text(encoding="utf-8") == (example_dir / ".env.example").read_text(
+        encoding="utf-8"
+    )
     assert "Configuration initialized successfully." in result.stdout
 
 
