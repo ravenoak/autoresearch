@@ -55,7 +55,13 @@ class StorageState:
     """Holds runtime storage state for injection."""
 
     context: StorageContext = field(default_factory=StorageContext)
-    lru: "OrderedDict[str, float]" = field(default_factory=OrderedDict)
+    # Use a monotonically increasing counter rather than wall-clock timestamps
+    # for LRU bookkeeping. Relying on ``time.time`` can yield identical values
+    # when operations occur in rapid succession which then makes eviction order
+    # dependent on dict insertion ordering. A simple counter guarantees a stable
+    # and deterministic order across runs.
+    lru: "OrderedDict[str, int]" = field(default_factory=OrderedDict)
+    lru_counter: int = 0
     lock: RLock = field(default_factory=RLock)
 
 
@@ -348,10 +354,15 @@ class StorageManager(metaclass=StorageManagerMeta):
             This method only removes the node from the LRU cache, not from the graph.
             The caller is responsible for removing the node from the graph if needed.
         """
-        lru = StorageManager.state.lru
+        state = StorageManager.state
+        lru = state.lru
         if not lru:
             return None
-        node_id, _ = lru.popitem(last=False)
+        # Select the oldest entry by counter. The node_id provides a
+        # deterministic tie-breaker when two nodes share the same counter,
+        # which can occur if the counter is manually manipulated in tests.
+        node_id, _ = min(lru.items(), key=lambda item: (item[1], item[0]))
+        del lru[node_id]
         return node_id
 
     @staticmethod
@@ -752,7 +763,10 @@ class StorageManager(metaclass=StorageManagerMeta):
             attrs["confidence"] = claim["confidence"]
         assert StorageManager.context.graph is not None
         StorageManager.context.graph.add_node(claim["id"], **attrs)
-        StorageManager.state.lru[claim["id"]] = time.time()
+        # Increment the counter and store it to maintain deterministic ordering
+        state = StorageManager.state
+        state.lru_counter += 1
+        state.lru[claim["id"]] = state.lru_counter
         for rel in claim.get("relations", []):
             assert StorageManager.context.graph is not None
             StorageManager.context.graph.add_edge(
@@ -1234,9 +1248,12 @@ class StorageManager(metaclass=StorageManagerMeta):
         """
         if _delegate and _delegate is not StorageManager:
             return _delegate.touch_node(node_id)
-        lru = StorageManager.state.lru
-        with StorageManager.state.lock:
-            lru[node_id] = time.time()
+        state = StorageManager.state
+        lru = state.lru
+        with state.lock:
+            state.lru_counter += 1
+            lru[node_id] = state.lru_counter
+            # ``move_to_end`` maintains the deque order for faster popping
             lru.move_to_end(node_id)
 
     @staticmethod
@@ -1364,7 +1381,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             if StorageManager.context.rdf_store is not None:
                 StorageManager.context.rdf_store.remove((None, None, None))
             # Clear LRU cache to keep state consistent
-            StorageManager.state.lru.clear()
+            state = StorageManager.state
+            state.lru.clear()
+            state.lru_counter = 0
 
     # ------------------------------------------------------------------
     # Ontology-based reasoning utilities
