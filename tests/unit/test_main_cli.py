@@ -15,7 +15,7 @@ from autoresearch.models import QueryResponse  # noqa: E402
 from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 
 
-def _mock_run_query(query, config, callbacks=None):
+def _mock_run_query(self, query, config, callbacks=None):
     return QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
 
 
@@ -44,7 +44,7 @@ def test_search_reasoning_mode_option(monkeypatch, mode, config_loader):
 
     captured = {}
 
-    def _run(query, config, callbacks=None):
+    def _run(self, query, config, callbacks=None):
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -62,7 +62,7 @@ def test_search_primus_start_option(monkeypatch, config_loader):
 
     captured = {}
 
-    def _run(query, config, callbacks=None):
+    def _run(self, query, config, callbacks=None):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
