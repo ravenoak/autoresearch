@@ -5,8 +5,9 @@ breaker manager. The refactor introduced API changes and incomplete updates that
 leave tests in an inconsistent state.
 
 ## Context
-- Environment setup gaps are resolved and tooling like Go Task and `flake8` are
-  available.
+- Environment setup gaps persist; `flake8` and `typer` are missing and `task` was
+  initially unavailable.
+- This ticket is blocked by `codex-setup-missing-go-task.md`.
 - The refactor changed `_cb_manager` usage from class-level to instance-level.
 - Existing tests still assume class-level state, causing failures and hangs.
 - Fixtures and helper utilities may need redesign to use fresh Orchestrator
@@ -15,6 +16,7 @@ leave tests in an inconsistent state.
   `numpy` package after installing full extras.
 
 ## Current Failures
+- `uv run pytest -q` fails early with `ModuleNotFoundError: No module named 'typer'`.
 - `tests/unit/test_additional_coverage.py::test_streamlit_metrics` (error)
 - `tests/unit/test_cache.py::test_search_uses_cache`
 - `tests/unit/test_cache.py::test_cache_lifecycle`
