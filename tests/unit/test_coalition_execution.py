@@ -16,7 +16,7 @@ class DummyAgent:
         return {}
 
 
-def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator_runner):
+def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
     record = []
     AgentFactory._registry.clear()
 
@@ -36,7 +36,7 @@ def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator_runne
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
 
-    orchestrator_runner().run_query("q", cfg)
+    orchestrator.run_query("q", cfg)
 
     assert set(record[:2]) == {"A", "B"}
 

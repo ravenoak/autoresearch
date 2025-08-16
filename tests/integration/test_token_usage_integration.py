@@ -44,7 +44,7 @@ def test_token_usage_matches_baseline(monkeypatch, token_baseline):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
 
     baseline = json.loads(BASELINE_PATH.read_text())

@@ -23,10 +23,10 @@ def _setup(monkeypatch):
     return cfg
 
 
-def test_query_endpoint_runtime_error(monkeypatch, orchestrator_runner):
+def test_query_endpoint_runtime_error(monkeypatch, orchestrator):
     _setup(monkeypatch)
 
-    orch = orchestrator_runner()
+    orch = orchestrator
 
     def raise_error(q, c, callbacks=None):
         raise RuntimeError("fail")
@@ -41,9 +41,9 @@ def test_query_endpoint_runtime_error(monkeypatch, orchestrator_runner):
     assert data["metrics"]["error"] == "fail"
 
 
-def test_query_endpoint_invalid_response(monkeypatch, orchestrator_runner):
+def test_query_endpoint_invalid_response(monkeypatch, orchestrator):
     _setup(monkeypatch)
-    orch = orchestrator_runner()
+    orch = orchestrator
     monkeypatch.setattr(orch, "run_query", lambda q, c, callbacks=None: {"foo": "bar"})
     monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: orch)
     client = TestClient(app)

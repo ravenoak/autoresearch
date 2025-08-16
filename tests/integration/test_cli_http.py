@@ -38,7 +38,7 @@ class DummyStorage:
 def _patch_run_query(monkeypatch):
     original = Orchestrator.run_query
 
-    def wrapper(query, config, callbacks=None, **kwargs):
+    def wrapper(self, query, config, callbacks=None, **kwargs):
         # Set DummyStorage as the delegate
         from autoresearch.storage import set_delegate
 
@@ -46,6 +46,7 @@ def _patch_run_query(monkeypatch):
 
         try:
             return original(
+                self,
                 query,
                 config,
                 callbacks,

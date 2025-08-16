@@ -129,7 +129,7 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
     with loader.watching(on_change):
         loader.load_config()
         events.append((loader.config.agents, loader.config.search.backends))
-        Orchestrator.run_query("q", loader.config)
+        Orchestrator().run_query("q", loader.config)
         cfg_file.write_text(
             tomli_w.dumps(
                 {
@@ -144,7 +144,7 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
         repo.index.add([str(cfg_file)])
         repo.index.commit("update config")
         time.sleep(0.1)
-        Orchestrator.run_query("q", loader.config)
+        Orchestrator().run_query("q", loader.config)
 
     assert calls == ["AgentA", "AgentB"]
     assert search_calls == ["b1", "b2"]
@@ -237,7 +237,7 @@ def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
             loader.config.storage.duckdb_path,
         )
     )
-    Orchestrator.run_query("q", loader.config)
+    Orchestrator().run_query("q", loader.config)
     cfg_file.write_text(
         tomli_w.dumps(
             {
@@ -256,7 +256,7 @@ def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
     repo.index.add([str(cfg_file)])
     repo.index.commit("update config")
     time.sleep(0.2)
-    Orchestrator.run_query("q", loader.config)
+    Orchestrator().run_query("q", loader.config)
     loader.stop_watching()
 
     assert weights == [(0.7, 0.2, 0.1), (0.2, 0.7, 0.1)]

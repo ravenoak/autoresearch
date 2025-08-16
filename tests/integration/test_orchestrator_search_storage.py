@@ -56,7 +56,7 @@ def test_orchestrator_search_storage(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    resp = Orchestrator.run_query("q", cfg)
+    resp = Orchestrator().run_query("q", cfg)
     assert isinstance(resp, QueryResponse)
     assert calls == ["TestAgent"]
     assert stored == [
@@ -124,7 +124,7 @@ def test_orchestrator_multiple_agents_aggregate_results(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    resp = Orchestrator.run_query("q", cfg)
+    resp = Orchestrator().run_query("q", cfg)
     assert isinstance(resp, QueryResponse)
     assert calls == ["Searcher", "Synthesizer"]
     assert stored == [
@@ -157,8 +157,8 @@ def test_orchestrator_persists_across_queries(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    resp1 = Orchestrator.run_query("q1", cfg)
-    resp2 = Orchestrator.run_query("q2", cfg)
+    resp1 = Orchestrator().run_query("q1", cfg)
+    resp2 = Orchestrator().run_query("q2", cfg)
 
     assert isinstance(resp1, QueryResponse)
     assert isinstance(resp2, QueryResponse)
@@ -230,7 +230,7 @@ def test_orchestrator_uses_config_context(config_context, monkeypatch):
     cfg.agents = ["Searcher", "Synthesizer"]
     cfg.loops = 1
 
-    resp = Orchestrator.run_query("q", cfg)
+    resp = Orchestrator().run_query("q", cfg)
 
     assert isinstance(resp, QueryResponse)
     assert calls == ["Searcher", "Synthesizer"]

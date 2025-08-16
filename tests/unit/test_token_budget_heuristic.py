@@ -2,7 +2,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 
 
-def test_token_budget_adjustment(monkeypatch, orchestrator_runner):
+def test_token_budget_adjustment(monkeypatch, orchestrator):
     recorded = {}
 
     def fake_execute_cycle(
@@ -30,6 +30,6 @@ def test_token_budget_adjustment(monkeypatch, orchestrator_runner):
         update={"group_size": 2, "total_groups": 2, "total_agents": 3}
     )
 
-    orchestrator_runner().run_query("q", cfg)
+    orchestrator.run_query("q", cfg)
 
     assert recorded["budget"] == 13

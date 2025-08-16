@@ -79,7 +79,7 @@ def test_orchestrator_agent_combinations(monkeypatch, agents):
     )
 
     cfg = ConfigModel(agents=list(agents), loops=1)
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)
     assert search_calls == calls
@@ -119,7 +119,7 @@ def test_orchestrator_agent_pairings(monkeypatch, agents):
     )
 
     cfg = ConfigModel(agents=list(agents), loops=1)
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)
     assert search_calls == calls
@@ -170,7 +170,7 @@ def test_orchestrator_failure_modes(monkeypatch, agents, fail_index):
 
     cfg = ConfigModel(agents=list(agents), loops=1, max_errors=1)
     with pytest.raises(OrchestrationError):
-        Orchestrator.run_query("q", cfg)
+        Orchestrator().run_query("q", cfg)
 
     failing_agent = agents[fail_index]
     if failing_agent == "Synthesizer":

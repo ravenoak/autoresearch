@@ -1,7 +1,7 @@
 from autoresearch.config.models import ConfigModel
 
 
-def test_circuit_breaker_state_is_instance_isolated(monkeypatch, orchestrator_runner):
+def test_circuit_breaker_state_is_instance_isolated(monkeypatch, orchestrator_factory):
     cfg = ConfigModel(loops=1, agents=["Synthesizer"])
 
     call = {"count": 0}
@@ -27,8 +27,8 @@ def test_circuit_breaker_state_is_instance_isolated(monkeypatch, orchestrator_ru
         fail_first,
     )
 
-    o1 = orchestrator_runner()
-    o2 = orchestrator_runner()
+    o1 = orchestrator_factory()
+    o2 = orchestrator_factory()
 
     o1.run_query("q", cfg)
     o2.run_query("q", cfg)

@@ -1,18 +1,26 @@
 import pytest
 from types import SimpleNamespace
+from typing import Callable
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration import metrics
 
 
 @pytest.fixture
-def orchestrator_runner():
+def orchestrator_factory():
     """Return a factory for creating fresh ``Orchestrator`` instances."""
 
     def _factory() -> Orchestrator:
         return Orchestrator()
 
     return _factory
+
+
+@pytest.fixture
+def orchestrator(orchestrator_factory: Callable[[], Orchestrator]) -> Orchestrator:
+    """Provide a fresh ``Orchestrator`` instance for each test."""
+
+    return orchestrator_factory()
 
 
 @pytest.fixture(autouse=True)

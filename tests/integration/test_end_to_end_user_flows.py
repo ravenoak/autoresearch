@@ -87,7 +87,7 @@ def test_end_to_end_successful_flow(monkeypatch):
 
     cfg = ConfigModel(agents=["Searcher", "Synthesizer"], loops=1)
 
-    resp = Orchestrator.run_query("q", cfg)
+    resp = Orchestrator().run_query("q", cfg)
 
     assert isinstance(resp, QueryResponse)
     assert calls == ["Searcher", "Synthesizer"]
@@ -112,7 +112,7 @@ def test_end_to_end_search_failure(monkeypatch):
     cfg = ConfigModel(agents=["Searcher"], loops=1, max_errors=1)
 
     with pytest.raises(OrchestrationError) as exc:
-        Orchestrator.run_query("q", cfg)
+        Orchestrator().run_query("q", cfg)
 
     assert calls == ["Searcher"]
     assert stored == []

@@ -38,7 +38,7 @@ def test_orchestrator_run_query(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert calls == ["Synthesizer"]
     assert response.answer == "Answer from Synthesizer"

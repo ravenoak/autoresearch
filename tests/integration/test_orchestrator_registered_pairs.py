@@ -42,7 +42,7 @@ def test_orchestrator_all_registered_pairs(monkeypatch, pair):
     cfg = ConfigModel(agents=pair, loops=1)
 
     # Execute
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
 
     # Verify
     assert isinstance(response, QueryResponse)

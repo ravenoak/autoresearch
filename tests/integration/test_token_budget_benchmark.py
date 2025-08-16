@@ -39,7 +39,7 @@ def test_token_usage_budget_regression(monkeypatch, token_baseline):
         api=SimpleNamespace(role_permissions={"anonymous": ["query"]}),
     )
 
-    Orchestrator.run_query("q", cfg)
+    Orchestrator().run_query("q", cfg)
     tokens = {"Dummy": {"in": 3, "out": 8}}
 
     token_baseline(tokens)

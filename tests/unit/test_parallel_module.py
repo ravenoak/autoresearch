@@ -43,7 +43,7 @@ def test_calculate_result_confidence():
     assert 0.5 <= score <= 1.0
 
 
-def test_execute_parallel_query_basic(monkeypatch, orchestrator_runner):
+def test_execute_parallel_query_basic(monkeypatch, orchestrator_factory):
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
     class DummySpan:
@@ -86,8 +86,8 @@ def test_execute_parallel_query_basic(monkeypatch, orchestrator_runner):
             metrics={"token_usage": {"total": 10, "max_tokens": 100}, "errors": []},
         )
 
-    orc1 = orchestrator_runner()
-    orc2 = orchestrator_runner()
+    orc1 = orchestrator_factory()
+    orc2 = orchestrator_factory()
     mock1 = MagicMock(side_effect=run_query_stub)
     mock2 = MagicMock(side_effect=run_query_stub)
     monkeypatch.setattr(orc1, "run_query", mock1)
@@ -122,7 +122,7 @@ def test_execute_parallel_query_basic(monkeypatch, orchestrator_runner):
     assert mock1.called and mock2.called
 
 
-def test_execute_parallel_query_agent_error(monkeypatch, caplog, orchestrator_runner):
+def test_execute_parallel_query_agent_error(monkeypatch, caplog, orchestrator_factory):
     cfg = ConfigModel.model_construct(agents=[], loops=1)
 
     class DummySpan:
@@ -160,7 +160,7 @@ def test_execute_parallel_query_agent_error(monkeypatch, caplog, orchestrator_ru
     ):
         raise AgentError("boom", agent_name="A")
 
-    orc = orchestrator_runner()
+    orc = orchestrator_factory()
     mock_run = MagicMock(side_effect=run_query_error)
     monkeypatch.setattr(orc, "run_query", mock_run)
 

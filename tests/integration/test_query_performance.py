@@ -71,7 +71,7 @@ def test_query_performance(monkeypatch) -> None:
 
     _, mem_before = get_metrics()
     start = time.perf_counter()
-    response = Orchestrator.run_query("performance test query", cfg)
+    response = Orchestrator().run_query("performance test query", cfg)
     latency = time.perf_counter() - start
     _, mem_after = get_metrics()
 
