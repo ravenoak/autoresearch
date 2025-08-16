@@ -60,14 +60,15 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator_runner):
     )
 
     client = TestClient(app)
-    client.post("/query", json={"query": "hi"})
+    headers = {"X-API-Key": ""}
+    client.post("/query", headers=headers, json={"query": "hi"})
 
     assert metrics.QUERY_COUNTER._value.get() == start_queries + 1
     assert metrics.ERROR_COUNTER._value.get() == start_errors + 1
     assert metrics.TOKENS_IN_COUNTER._value.get() >= 5
     assert metrics.TOKENS_OUT_COUNTER._value.get() >= 7
 
-    resp = client.get("/metrics")
+    resp = client.get("/metrics", headers=headers)
     assert resp.status_code == 200
     body = resp.text
     assert "autoresearch_queries_total" in body
