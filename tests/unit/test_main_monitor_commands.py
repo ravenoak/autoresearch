@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 from typer.testing import CliRunner
-from unittest.mock import patch, MagicMock
+
 from autoresearch.main import app
 
 
@@ -20,6 +22,7 @@ def test_serve_a2a_command(mock_a2a_interface_class):
     # Setup
     runner = CliRunner()
     mock_a2a_interface = MagicMock()
+    mock_a2a_interface.start.side_effect = SystemExit
     mock_a2a_interface_class.return_value = mock_a2a_interface
 
     result = runner.invoke(app, ["serve-a2a", "--host", "localhost", "--port", "8765"])
@@ -35,6 +38,7 @@ def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class):
     # Setup
     runner = CliRunner()
     mock_a2a_interface = MagicMock()
+    mock_a2a_interface.start.side_effect = KeyboardInterrupt
     mock_a2a_interface_class.return_value = mock_a2a_interface
 
     result = runner.invoke(app, ["serve-a2a"])

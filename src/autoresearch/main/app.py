@@ -2,46 +2,47 @@
 
 from __future__ import annotations
 
-import sys
 import os
-from typing import Optional, Any
+import sys
+import time
+from typing import Any, Optional
 
 import typer
 from rich.console import Console
-from rich.prompt import Prompt
 from rich.progress import Progress
+from rich.prompt import Prompt
+
+from ..cli_helpers import handle_command_not_found, parse_agent_groups
+from ..cli_utils import (
+    Verbosity,
+    console,
+    format_success,
+    get_verbosity,
+    print_command_example,
+    print_error,
+    print_info,
+    print_success,
+    print_verbose,
+    print_warning,
+    set_verbosity,
+)
+from ..cli_utils import sparql_query_cli as _cli_sparql
+from ..cli_utils import (
+    visualize_metrics_cli,
+)
+from ..cli_utils import visualize_query_cli as _cli_visualize_query
+from ..cli_utils import visualize_rdf_cli as _cli_visualize
+from ..config.loader import ConfigLoader
+from ..config.models import ConfigModel
+from ..error_utils import format_error_for_cli, get_error_info
+from ..errors import StorageError
+from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
-import time
-
-from ..config.models import ConfigModel
-from ..config.loader import ConfigLoader
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter
-from ..logging_utils import configure_logging
 from ..storage import StorageManager
-from ..errors import StorageError
-from ..cli_utils import (
-    console,
-    print_success,
-    print_error,
-    print_warning,
-    print_info,
-    print_command_example,
-    format_success,
-    print_verbose,
-    set_verbosity,
-    get_verbosity,
-    Verbosity,
-    visualize_rdf_cli as _cli_visualize,
-    visualize_query_cli as _cli_visualize_query,
-    visualize_metrics_cli,
-    sparql_query_cli as _cli_sparql,
-)
-from ..error_utils import get_error_info, format_error_for_cli
-from ..cli_helpers import handle_command_not_found, parse_agent_groups
-
 
 app = typer.Typer(
     help=(
@@ -59,8 +60,9 @@ app = typer.Typer(
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
-from .config_cli import config_app as _config_app, config_init  # noqa: E402
 from ..cli_backup import backup_app as _backup_app  # noqa: E402
+
+from .config_cli import config_app as _config_app, config_init  # noqa: E402  # isort: skip
 
 config_app = _config_app  # type: ignore[has-type]
 app.add_typer(config_app, name="config")
@@ -527,8 +529,8 @@ def serve_a2a(
         return
 
     console = Console()
+    a2a_interface = None
 
-    # Create an A2A interface
     try:
         a2a_interface = A2AInterface(host=host, port=port)
 
@@ -543,12 +545,12 @@ def serve_a2a(
         a2a_interface.start()
 
         # Keep the main thread running until interrupted
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        if a2a_interface is not None:
             a2a_interface.stop()
-            console.print("[bold yellow]Server stopped[/bold yellow]")
+        console.print("[bold yellow]Server stopped[/bold yellow]")
     except Exception as e:
         console.print(f"[bold red]Error starting A2A server:[/bold red] {str(e)}")
 
