@@ -13,6 +13,13 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Changes to tooling must be reflected in both this document and `scripts/codex_setup.sh` so documentation and setup stay in sync.
 - Changes under `tests/` must keep this document and `scripts/codex_setup.sh` in sync to reflect new test requirements.
 
+## Issue tracking
+- Track work items in the `/issues` directory.
+- Tickets use the template and naming rules in [`issues/README.md`](issues/README.md).
+- File names are slugged titles without numeric prefixes.
+- When work is finished, set `Status` to `Archived` and move the ticket to `/issues/archive/` without renaming.
+- When issue tooling changes, update this file, `issues/AGENTS.md`, and `scripts/codex_setup.sh` to keep documentation and setup aligned.
+
 ## Binary artifacts
 - Do not commit binary files such as `.duckdb_extension` modules.
 - Required binaries are downloaded during setup and referenced via `VECTOR_EXTENSION_PATH`.
