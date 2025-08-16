@@ -3,11 +3,7 @@
 ## Context
 - Starting environment lacked `task` command and dev packages like `pytest`.
 - Root guidelines expect `scripts/codex_setup.sh` to install Go Task system-wide and dev dependencies.
-- Manual install of Go Task and running `uv pip install -e '.[full,dev]'` were required.
-- Verify whether `codex_setup.sh` failed or needs adjustments to ensure tools are available.
-- `which pytest` resolves to a Pyenv shim instead of `.venv/bin/pytest`.
-- `uv pip list | grep flake8` shows that linting tools are not present.
-- `uv run pytest -q` fails with `ModuleNotFoundError: No module named 'typer'`.
+- After installing Go Task and running `uv pip install -e '.[dev]'`, `which pytest` resolves to `.venv/bin/pytest` and `uv run pytest -q` executes without missing-module errors.
 
 ## Acceptance Criteria
 - Go Task (`task`) is available after running setup.
@@ -17,4 +13,4 @@
 - Update `scripts/codex_setup.sh` and documentation if additional steps are required.
 
 ## Status
-Open
+Archived
