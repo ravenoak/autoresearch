@@ -69,8 +69,16 @@ except Exception:  # pragma: no cover
         def table(self, name: str) -> "TinyDB":
             return self
 
-        def truncate(self) -> None:  # pragma: no cover - intentionally a no-op
-            """Provide a ``truncate`` method matching TinyDB's interface."""
+        def truncate(self) -> None:
+            """Remove all documents from the table.
+
+            The real TinyDB ``Table`` class returns ``None`` from
+            :meth:`truncate`, so this stub mirrors that behaviour and clears
+            the in-memory data store.
+            """
+
+            self._data.clear()
+            return None
 
         def drop_tables(self) -> None:
             self._data.clear()
