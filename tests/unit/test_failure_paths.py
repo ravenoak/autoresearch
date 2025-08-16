@@ -2,13 +2,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from autoresearch.agents.prompts import PromptTemplate, PromptTemplateRegistry
+from autoresearch.api import app
+from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.errors import SearchError, StorageError
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
-from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
-from autoresearch.api import app
-from autoresearch.errors import SearchError, StorageError
 
 
 class DummyAgent:
@@ -43,6 +43,12 @@ def test_external_lookup_unknown_backend(monkeypatch):
     cfg.search.backends = ["missing"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(
+        "autoresearch.search.core.get_cached_results",
+        lambda *_, **__: (_ for _ in ()).throw(
+            AssertionError("cache lookup should not occur for unknown backends")
+        ),
+    )
     with pytest.raises(SearchError):
         Search.external_lookup("q")
 
