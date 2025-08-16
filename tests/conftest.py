@@ -1,15 +1,19 @@
-import os
 import importlib
-import sys
 import importlib.util
+import os
+import sys
 from pathlib import Path
 from typing import Callable
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from unittest.mock import patch, MagicMock
 
 import pytest
-from typer.testing import CliRunner
 from pytest_httpx import httpx_mock  # noqa: F401
+
+try:
+    from typer.testing import CliRunner
+except Exception:  # pragma: no cover - typer optional in some environments
+    CliRunner = MagicMock()
 
 try:
     from fastapi.testclient import TestClient
@@ -26,33 +30,34 @@ if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))
 
+import duckdb  # noqa: E402
+
 # Ensure real dependencies are loaded before test stubs
 import networkx  # noqa: F401,E402
-import rdflib  # noqa: F401,E402
 import prometheus_client  # noqa: F401,E402
-import tests.stubs  # noqa: F401,E402
-
-from autoresearch.config.loader import ConfigLoader  # noqa: E402
-from autoresearch.config.models import ConfigModel  # noqa: E402, F401
-from autoresearch.models import QueryResponse  # noqa: E402, F401
-
-
-from autoresearch.api import app as api_app, SLOWAPI_STUB, reset_request_log  # noqa: E402
+import rdflib  # noqa: F401,E402
 import typer  # noqa: E402
+
+import tests.stubs  # noqa: F401,E402
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402
     AgentFactory,
     AgentRegistry,
-)  # noqa: E402
+)
+from autoresearch.api import SLOWAPI_STUB  # noqa: E402
+from autoresearch.api import app as api_app  # noqa: E402
+from autoresearch.api import reset_request_log  # noqa: E402
+from autoresearch.config.loader import ConfigLoader  # noqa: E402
+from autoresearch.config.models import ConfigModel  # noqa: E402, F401
+from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 from autoresearch.llm.registry import LLMFactory  # noqa: E402
+from autoresearch.models import QueryResponse  # noqa: E402, F401
 from autoresearch.storage import (  # noqa: E402
     StorageContext,
-    set_delegate as set_storage_delegate,
-    setup as storage_setup,
-    teardown as storage_teardown,
-)  # noqa: E402
-from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
-import duckdb  # noqa: E402
+)
+from autoresearch.storage import set_delegate as set_storage_delegate  # noqa: E402
+from autoresearch.storage import setup as storage_setup  # noqa: E402
+from autoresearch.storage import teardown as storage_teardown  # noqa: E402
 
 _orig_option = typer.Option
 
@@ -329,9 +334,7 @@ def mock_storage_components():
                 )
             if self.has_db_backend:
                 self.patches.append(
-                    patch.object(
-                        storage.StorageManager.context, "db_backend", self.db_backend
-                    )
+                    patch.object(storage.StorageManager.context, "db_backend", self.db_backend)
                 )
             if self.has_rdf:
                 self.patches.append(
@@ -359,8 +362,8 @@ def mock_storage_components():
 def storage_context_factory(tmp_path):
     """Return a factory for creating isolated ``StorageContext`` instances."""
 
-    from uuid import uuid4
     from contextlib import contextmanager
+    from uuid import uuid4
 
     @contextmanager
     def _make():
@@ -405,9 +408,7 @@ def mock_config():
             self.patcher = None
 
         def __enter__(self):
-            self.patcher = patch(
-                "autoresearch.config.loader.ConfigLoader.config", self.config
-            )
+            self.patcher = patch("autoresearch.config.loader.ConfigLoader.config", self.config)
             self.patcher.start()
             return self.config
 
@@ -507,9 +508,7 @@ def realistic_claim_batch(claim_factory):
         claim_factory.create_claim(claim_id="claim-b", embedding=[0.2] * 384),
         claim_factory.create_claim(claim_id="claim-c", embedding=[0.3] * 384),
     ]
-    claims[0]["relations"] = [
-        {"src": "claim-a", "dst": "source-1", "rel": "cites", "weight": 1.0}
-    ]
+    claims[0]["relations"] = [{"src": "claim-a", "dst": "source-1", "rel": "cites", "weight": 1.0}]
     claims[1]["relations"] = [
         {"src": "claim-b", "dst": "claim-a", "rel": "supports", "weight": 0.8}
     ]
