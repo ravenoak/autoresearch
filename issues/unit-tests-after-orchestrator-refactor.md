@@ -23,7 +23,7 @@ leave tests in an inconsistent state.
 - `tests/unit/test_cache.py::test_search_uses_cache`
   - AttributeError: 'TinyDB' object has no attribute 'truncate'
 - `tests/unit/test_cache.py::test_cache_lifecycle`
-  - AssertionError: assert False
+  - passes but coverage check fails (`fail-under=90`)
 - `tests/unit/test_cache.py::test_cache_is_backend_specific`
   - AttributeError: 'TinyDB' object has no attribute 'truncate'
 - `tests/unit/test_failure_paths.py::test_external_lookup_unknown_backend`
