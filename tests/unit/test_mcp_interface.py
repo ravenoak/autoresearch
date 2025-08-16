@@ -1,6 +1,6 @@
-from autoresearch import mcp_interface
 from types import MethodType
 
+from autoresearch import mcp_interface
 from autoresearch.config.models import ConfigModel
 
 
