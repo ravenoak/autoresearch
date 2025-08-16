@@ -104,7 +104,9 @@ fi
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
-for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 hypothesis tomli_w freezegun duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers spacy bertopic fastapi; do
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 hypothesis tomli_w freezegun \
+    duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers \
+    transformers spacy bertopic fastapi responses uvicorn psutil; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -115,7 +117,7 @@ if [ "$missing" -ne 0 ]; then
     echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|hypothesis|tomli_w|freezegun|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
+uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
 
 # Helper for retrying flaky network operations
 retry() {
