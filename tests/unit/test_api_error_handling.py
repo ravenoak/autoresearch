@@ -5,7 +5,6 @@ from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.config.loader import ConfigLoader
 import types
 import contextlib
-from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def _setup(monkeypatch):
@@ -24,10 +23,10 @@ def _setup(monkeypatch):
     return cfg
 
 
-def test_query_endpoint_runtime_error(monkeypatch):
+def test_query_endpoint_runtime_error(monkeypatch, orchestrator_runner):
     _setup(monkeypatch)
 
-    orch = Orchestrator()
+    orch = orchestrator_runner()
 
     def raise_error(q, c, callbacks=None):
         raise RuntimeError("fail")
@@ -42,9 +41,9 @@ def test_query_endpoint_runtime_error(monkeypatch):
     assert data["metrics"]["error"] == "fail"
 
 
-def test_query_endpoint_invalid_response(monkeypatch):
+def test_query_endpoint_invalid_response(monkeypatch, orchestrator_runner):
     _setup(monkeypatch)
-    orch = Orchestrator()
+    orch = orchestrator_runner()
     monkeypatch.setattr(orch, "run_query", lambda q, c, callbacks=None: {"foo": "bar"})
     monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: orch)
     client = TestClient(app)

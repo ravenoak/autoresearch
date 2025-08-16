@@ -5,7 +5,6 @@ from typer.testing import CliRunner
 
 from autoresearch.cli_utils import ascii_bar_graph, summary_table
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 def test_ascii_bar_graph_basic():
@@ -26,10 +25,10 @@ def test_summary_table_render():
     assert "1" in output
 
 
-def test_search_visualize_option(monkeypatch, dummy_storage):
+def test_search_visualize_option(monkeypatch, dummy_storage, orchestrator_runner):
     runner = CliRunner()
 
-    orch = Orchestrator()
+    orch = orchestrator_runner()
     run_query_mock = MagicMock(
         return_value=QueryResponse(
             answer="ok", citations=[], reasoning=[], metrics={"m": 1}
