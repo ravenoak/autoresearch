@@ -272,7 +272,16 @@ def test_parallel_query_error_claims(monkeypatch):
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
 
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(
+        orchestrator,
+        "run_query",
+        mock_run_query.__get__(orchestrator, Orchestrator),
+    )
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.Orchestrator",
+        lambda: orchestrator,
+    )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         lambda name: synthesizer,
@@ -319,7 +328,16 @@ def test_parallel_query_timeout_claims(monkeypatch):
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
 
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(
+        orchestrator,
+        "run_query",
+        mock_run_query.__get__(orchestrator, Orchestrator),
+    )
+    monkeypatch.setattr(
+        "autoresearch.orchestration.orchestrator.Orchestrator",
+        lambda: orchestrator,
+    )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         lambda name: synthesizer,
