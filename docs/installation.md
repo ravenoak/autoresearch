@@ -80,6 +80,18 @@ uv run pytest -q
 uv run pytest tests/behavior
 ```
 
+### Offline installation
+
+To install without network access, pre-download the required packages and point the setup script at their locations:
+
+```bash
+export WHEELS_DIR=/path/to/wheels
+export ARCHIVES_DIR=/path/to/archives
+./scripts/setup.sh
+```
+
+`WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should contain source archives (`*.tar.gz`). The setup script installs these caches with `uv pip --no-index` so dependencies resolve offline.
+
 ## Minimal installation
 
 The project can be installed with only the minimal optional dependencies:
@@ -103,7 +115,7 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `uv pip install -e '.[full,parsers,git,llm,dev]'`. Optional
+running the helper, reinstall using `uv sync --all-extras && uv pip install -e .`. Optional
 features are disabled when their dependencies are missing. Specify extras
 explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
 

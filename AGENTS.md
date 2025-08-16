@@ -42,7 +42,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
-  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script also installs [Go Task](https://taskfile.dev) system-wide so `task` commands work out of the box. After setup, verify `/usr/local/bin/task` exists; if missing, reinstall Go Task using `curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin`.
+  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
   - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, `duckdb-extension-vss`, and `fastapi` are present using `uv pip list`.
 - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
