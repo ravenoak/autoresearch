@@ -137,7 +137,7 @@ def test_config_hot_reload(tmp_path, monkeypatch):
     with loader.watching(on_change):
         loader.load_config()
         events.append((loader.config.agents, loader.config.search.backends))
-        Orchestrator.run_query("q", loader.config)
+        Orchestrator().run_query("q", loader.config)
         cfg_file.write_text(
             tomli_w.dumps(
                 {
@@ -152,7 +152,7 @@ def test_config_hot_reload(tmp_path, monkeypatch):
         repo.index.add([str(cfg_file)])
         repo.index.commit("update config")
         time.sleep(0.1)
-        Orchestrator.run_query("q", loader.config)
+        Orchestrator().run_query("q", loader.config)
 
     assert calls == ["AgentA", "AgentB"]
     assert stored == ["AgentA", "AgentB"]

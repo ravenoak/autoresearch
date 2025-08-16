@@ -25,10 +25,10 @@ def test_summary_table_render():
     assert "1" in output
 
 
-def test_search_visualize_option(monkeypatch, dummy_storage, orchestrator_runner):
+def test_search_visualize_option(monkeypatch, dummy_storage, orchestrator):
     runner = CliRunner()
 
-    orch = orchestrator_runner()
+    orch = orchestrator
     run_query_mock = MagicMock(
         return_value=QueryResponse(
             answer="ok", citations=[], reasoning=[], metrics={"m": 1}

@@ -46,7 +46,7 @@ def test_agent_registry_coalitions():
     assert AgentRegistry.get_coalition("squad") == ["Simple"]
 
 
-def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator_runner):
+def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator):
     AgentFactory.register("A1", SimpleAgent)
     AgentFactory.register("A2", SimpleAgent)
     cfg = ConfigModel.model_construct(
@@ -84,7 +84,7 @@ def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator_run
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
 
-    orchestrator_runner().run_query("q", cfg)
+    orchestrator.run_query("q", cfg)
 
     assert executed == ["A1", "A2"]
 

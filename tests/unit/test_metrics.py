@@ -14,14 +14,14 @@ class DummyConn:
         return self
 
 
-def test_metrics_collection_and_endpoint(monkeypatch, orchestrator_runner):
+def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.reset_instance()
-    orch = orchestrator_runner()
+    orch = orchestrator
 
     def fake_run_query(query, config, callbacks=None, **kwargs):
         metrics.record_query()

@@ -66,7 +66,7 @@ def test_all_agent_pairs(monkeypatch, agents):
     cfg.loops = 1
     cfg.enable_feedback = True
 
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert response.answer
 
@@ -87,6 +87,6 @@ def test_registered_coalitions(monkeypatch, coalition):
     cfg.loops = 1
     cfg.enable_feedback = True
 
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     assert isinstance(response, QueryResponse)
     assert response.answer

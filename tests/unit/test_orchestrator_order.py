@@ -19,7 +19,7 @@ class DummyAgent:
         return {}
 
 
-def test_custom_agents_order(orchestrator_runner):
+def test_custom_agents_order(orchestrator):
     record = []
 
     def get_agent(name):
@@ -30,12 +30,12 @@ def test_custom_agents_order(orchestrator_runner):
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        orchestrator_runner().run_query("q", cfg)
+        orchestrator.run_query("q", cfg)
 
     assert record == ["A1", "A2", "A3"]
 
 
-def test_async_custom_agents_concurrent(orchestrator_runner):
+def test_async_custom_agents_concurrent(orchestrator):
     record = []
 
     def get_agent(name):
@@ -46,8 +46,8 @@ def test_async_custom_agents_concurrent(orchestrator_runner):
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        orchestrator = orchestrator_runner()
-        asyncio.run(orchestrator.run_query_async("q", cfg, concurrent=True))
+        orch = orchestrator
+        asyncio.run(orch.run_query_async("q", cfg, concurrent=True))
 
     assert sorted(record) == ["A1", "A2", "A3"]
 

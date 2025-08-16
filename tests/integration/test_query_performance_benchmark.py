@@ -86,7 +86,7 @@ def test_token_budget_limit(monkeypatch, token_baseline):
     ConfigLoader()._config = None
 
     # Execute
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
 
     token_baseline(tokens)

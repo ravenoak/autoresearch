@@ -72,7 +72,7 @@ def test_orchestrator_all_agent_combinations(monkeypatch, agents):
     monkeypatch.setattr(Orchestrator, "_capture_token_usage", no_token_capture)
 
     cfg = ConfigModel(agents=list(agents), loops=1)
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
 
     assert isinstance(response, QueryResponse)
     assert calls == list(agents)

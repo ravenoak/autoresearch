@@ -129,7 +129,7 @@ def test_retry_with_backoff_on_transient_error(monkeypatch, test_config):
 
 
 def test_orchestrator_raises_after_error(
-    monkeypatch, test_config, failing_agent, orchestrator_runner
+    monkeypatch, test_config, failing_agent, orchestrator
 ):
     """Test that the orchestrator raises an OrchestrationError after an agent error.
 
@@ -147,14 +147,14 @@ def test_orchestrator_raises_after_error(
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        orchestrator_runner().run_query("test query", test_config)
+        orchestrator.run_query("test query", test_config)
 
     # Verify the error contains the agent errors
     assert excinfo.value.context.get("errors") is not None
     assert len(excinfo.value.context["errors"]) > 0
 
 
-def test_invalid_agent_name_raises(test_config, orchestrator_runner):
+def test_invalid_agent_name_raises(test_config, orchestrator):
     """Test that using an invalid agent name raises an OrchestrationError.
 
     This test verifies that when an unknown agent name is specified in the
@@ -166,7 +166,7 @@ def test_invalid_agent_name_raises(test_config, orchestrator_runner):
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        orchestrator_runner().run_query("test query", test_config)
+        orchestrator.run_query("test query", test_config)
 
     # Verify the error contains the agent errors
     assert excinfo.value.context.get("errors") is not None
@@ -178,7 +178,7 @@ def test_invalid_agent_name_raises(test_config, orchestrator_runner):
     assert any("Unknown" in msg and "agent" in msg.lower() for msg in error_messages)
 
 
-def test_callback_error_propagates(test_config, orchestrator_runner):
+def test_callback_error_propagates(test_config, orchestrator):
     """Test that errors in callbacks propagate to the caller.
 
     This test verifies that when a callback function raises an exception,
@@ -192,7 +192,7 @@ def test_callback_error_propagates(test_config, orchestrator_runner):
 
     # Execute and Verify
     with pytest.raises(RuntimeError):
-        orchestrator_runner().run_query(
+        orchestrator.run_query(
             "test query",
             test_config,
             callbacks={"on_cycle_start": bad_callback},
@@ -207,7 +207,7 @@ def test_callback_error_propagates(test_config, orchestrator_runner):
     ],
 )
 def test_agent_error_is_wrapped(
-    monkeypatch, test_config, error_type, error_message, orchestrator_runner
+    monkeypatch, test_config, error_type, error_message, orchestrator
 ):
     """Test that agent errors are wrapped in AgentError.
 
@@ -237,7 +237,7 @@ def test_agent_error_is_wrapped(
 
     # Execute and Verify
     with pytest.raises(OrchestrationError) as excinfo:
-        orchestrator_runner().run_query("test query", test_config)
+        orchestrator.run_query("test query", test_config)
 
     # Verify the error contains agent errors
     assert excinfo.value.context.get("errors") is not None
@@ -250,7 +250,7 @@ def test_agent_error_is_wrapped(
     assert any(error_message in error for error in error_strings)
 
 
-def test_parallel_query_error_claims(monkeypatch, orchestrator_runner):
+def test_parallel_query_error_claims(monkeypatch, orchestrator):
     """Errors from parallel groups are added to the response claims."""
 
     cfg = ConfigModel(agents=[], loops=1)
@@ -276,15 +276,15 @@ def test_parallel_query_error_claims(monkeypatch, orchestrator_runner):
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
 
-    orchestrator = orchestrator_runner()
+    orch = orchestrator
     monkeypatch.setattr(
-        orchestrator,
+        orch,
         "run_query",
-        mock_run_query.__get__(orchestrator, Orchestrator),
+        mock_run_query.__get__(orch, Orchestrator),
     )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
-        lambda: orchestrator,
+        lambda: orch,
     )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
@@ -297,7 +297,7 @@ def test_parallel_query_error_claims(monkeypatch, orchestrator_runner):
     assert any("Error in agent group ['B']" in c for c in resp.reasoning)
 
 
-def test_parallel_query_timeout_claims(monkeypatch, orchestrator_runner):
+def test_parallel_query_timeout_claims(monkeypatch, orchestrator):
     """Timeouts from parallel groups are added to the response claims."""
 
     cfg = ConfigModel(agents=[], loops=1)
@@ -332,15 +332,15 @@ def test_parallel_query_timeout_claims(monkeypatch, orchestrator_runner):
     synthesizer = MagicMock()
     synthesizer.execute.return_value = {"answer": "final"}
 
-    orchestrator = orchestrator_runner()
+    orch = orchestrator
     monkeypatch.setattr(
-        orchestrator,
+        orch,
         "run_query",
-        mock_run_query.__get__(orchestrator, Orchestrator),
+        mock_run_query.__get__(orch, Orchestrator),
     )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.Orchestrator",
-        lambda: orchestrator,
+        lambda: orch,
     )
     monkeypatch.setattr(
         "autoresearch.orchestration.orchestrator.AgentFactory.get",

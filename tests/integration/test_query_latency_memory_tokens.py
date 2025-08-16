@@ -42,7 +42,7 @@ def test_query_latency_memory_tokens(monkeypatch, token_baseline):
 
     memory_before = StorageManager._current_ram_mb()
     start = time.perf_counter()
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     latency = time.perf_counter() - start
     memory_after = StorageManager._current_ram_mb()
 

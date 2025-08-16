@@ -43,7 +43,7 @@ def test_token_usage_regression(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
-    response = Orchestrator.run_query("q", cfg)
+    response = Orchestrator().run_query("q", cfg)
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
     total_tokens = sum(v.get("in", 0) + v.get("out", 0) for v in tokens.values())
 

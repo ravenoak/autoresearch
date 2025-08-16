@@ -17,7 +17,7 @@ class DummyAgent:
         return {}
 
 
-def _run(cfg, orchestrator_runner):
+def _run(cfg, orchestrator_factory):
     record = []
 
     def get_agent(name):
@@ -27,24 +27,24 @@ def _run(cfg, orchestrator_runner):
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        orchestrator_runner().run_query("q", cfg)
+        orchestrator_factory().run_query("q", cfg)
 
     return record
 
 
-def test_direct_mode_executes_once(orchestrator_runner):
+def test_direct_mode_executes_once(orchestrator_factory):
     cfg = ConfigModel(loops=3, reasoning_mode=ReasoningMode.DIRECT)
-    record = _run(cfg, orchestrator_runner)
+    record = _run(cfg, orchestrator_factory)
     assert record == ["Synthesizer"]
 
 
-def test_chain_of_thought_mode_loops(orchestrator_runner):
+def test_chain_of_thought_mode_loops(orchestrator_factory):
     cfg = ConfigModel(loops=2, reasoning_mode=ReasoningMode.CHAIN_OF_THOUGHT)
-    record = _run(cfg, orchestrator_runner)
+    record = _run(cfg, orchestrator_factory)
     assert record == ["Synthesizer", "Synthesizer"]
 
 
-def test_chain_of_thought_records_steps(orchestrator_runner):
+def test_chain_of_thought_records_steps(orchestrator_factory):
     cfg = ConfigModel(loops=3, reasoning_mode=ReasoningMode.CHAIN_OF_THOUGHT)
 
     class DummySynth:
@@ -73,7 +73,7 @@ def test_chain_of_thought_records_steps(orchestrator_runner):
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         return_value=agent,
     ):
-        resp = orchestrator_runner().run_query("q", cfg)
+        resp = orchestrator_factory().run_query("q", cfg)
 
     steps = [c["content"] for c in resp.reasoning]
     assert steps == ["step-1", "step-2", "step-3"]

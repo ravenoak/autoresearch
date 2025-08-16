@@ -23,7 +23,7 @@ class Receiver(Agent):
         return {"results": {"received": content}}
 
 
-def test_agents_exchange_messages(monkeypatch, orchestrator_runner):
+def test_agents_exchange_messages(monkeypatch, orchestrator):
     cfg = ConfigModel(agents=["Sender", "Receiver"], loops=1, enable_agent_messages=True)
 
     def get_agent(name):
@@ -33,7 +33,7 @@ def test_agents_exchange_messages(monkeypatch, orchestrator_runner):
 
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", "/tmp/release_tokens.json")
     monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", "/tmp/query_tokens.json")
-    resp = orchestrator_runner().run_query("test", cfg)
+    resp = orchestrator.run_query("test", cfg)
 
     assert resp.answer == "No answer synthesized"
     assert resp.metrics["delivered_messages"]["Receiver"][0]["content"] == "ping"
