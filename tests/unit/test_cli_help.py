@@ -1,7 +1,8 @@
-import sys
 import importlib
+import sys
 import types
 from pathlib import Path
+
 from typer.testing import CliRunner
 
 
@@ -20,13 +21,15 @@ def test_cli_help_no_ansi(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
@@ -52,13 +55,15 @@ def test_search_help_includes_interactive(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
@@ -84,13 +89,15 @@ def test_search_help_includes_visualize(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
@@ -115,8 +122,8 @@ def test_search_loops_option(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
     from autoresearch.models import QueryResponse
 
     loaded = {}
@@ -126,18 +133,18 @@ def test_search_loops_option(monkeypatch):
         loaded["loops"] = cfg.loops
         return cfg
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
 
     captured = {}
 
     class DummyOrchestrator:
-        def run_query(self, query, config, callbacks=None):
+        def run_query(self, query, config, visualize=None, callbacks=None):
             captured["loops"] = config.loops
             return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
-
-    import importlib
 
     module = importlib.import_module("autoresearch.main.app")
     monkeypatch.setattr(module, "Orchestrator", lambda: DummyOrchestrator())
@@ -165,13 +172,15 @@ def test_search_help_includes_ontology_flags(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
@@ -195,13 +204,15 @@ def test_visualize_help_includes_layout(monkeypatch):
     dummy_storage.StorageManager = StorageManager
     dummy_storage.setup = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
-    from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
+    from autoresearch.config.models import ConfigModel
 
     def _load(self):
         return ConfigModel.model_construct(loops=1)
 
-    monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
+    monkeypatch.setattr(
+        ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False
+    )
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
     main = importlib.import_module("autoresearch.main")
