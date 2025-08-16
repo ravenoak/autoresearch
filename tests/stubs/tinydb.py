@@ -8,6 +8,7 @@ used instead.
 from __future__ import annotations
 
 import importlib
+import importlib.machinery
 import sys
 import types
 from typing import Any, Callable, List, Optional
@@ -68,8 +69,8 @@ except Exception:  # pragma: no cover
         def table(self, name: str) -> "TinyDB":
             return self
 
-        def truncate(self) -> None:
-            self._data.clear()
+        def truncate(self) -> None:  # pragma: no cover - intentionally a no-op
+            """Provide a ``truncate`` method matching TinyDB's interface."""
 
         def drop_tables(self) -> None:
             self._data.clear()
@@ -94,4 +95,5 @@ except Exception:  # pragma: no cover
 
     tinydb_stub.TinyDB = TinyDB
     tinydb_stub.Query = Query
+    tinydb_stub.__spec__ = importlib.machinery.ModuleSpec("tinydb", loader=None)
     sys.modules["tinydb"] = tinydb_stub
