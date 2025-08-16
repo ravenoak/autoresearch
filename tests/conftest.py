@@ -615,9 +615,8 @@ def mock_run_query():
         *,
         agent_factory=None,
         storage_manager=None,
+        visualize=False,
     ):
-        return QueryResponse(
-            answer="ok", citations=[], reasoning=[], metrics={"m": 1}
-        )
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={"m": 1})
 
     return _mock_run_query

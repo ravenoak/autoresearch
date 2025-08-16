@@ -110,6 +110,7 @@ class Orchestrator:
         *,
         agent_factory: type[AgentFactory] = AgentFactory,
         storage_manager: type[StorageManager] = StorageManager,
+        visualize: bool = False,
     ) -> QueryResponse:
         """Run a query through dialectical agent cycles."""
         setup_tracing(getattr(config, "tracing_enabled", False))
@@ -117,6 +118,9 @@ class Orchestrator:
         record_query()
         metrics = OrchestrationMetrics()
         callbacks = callbacks or {}
+
+        if visualize:
+            log.debug("Visualization requested for query")
 
         config_params = self._parse_config(config)
         agents = config_params["agent_groups"]
