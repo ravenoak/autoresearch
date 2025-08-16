@@ -5,16 +5,14 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration import metrics
 
 
-@pytest.fixture(autouse=True)
-def orchestrator_runner(monkeypatch):
-    """Provide fresh orchestrator instances for class-level calls in unit tests."""
-    orig_run_query = Orchestrator.run_query
+@pytest.fixture
+def orchestrator_runner():
+    """Return a factory for creating fresh ``Orchestrator`` instances."""
 
-    def run_query_wrapper(query, config, callbacks=None, **kwargs):
-        return orig_run_query(Orchestrator(), query, config, callbacks, **kwargs)
+    def _factory() -> Orchestrator:
+        return Orchestrator()
 
-    monkeypatch.setattr(Orchestrator, "run_query", staticmethod(run_query_wrapper))
-    monkeypatch.setattr(Orchestrator, "_orig_run_query", orig_run_query, raising=False)
+    return _factory
 
 
 @pytest.fixture(autouse=True)

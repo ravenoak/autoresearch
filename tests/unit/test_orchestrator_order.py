@@ -19,7 +19,7 @@ class DummyAgent:
         return {}
 
 
-def test_custom_agents_order():
+def test_custom_agents_order(orchestrator_runner):
     record = []
 
     def get_agent(name):
@@ -30,7 +30,7 @@ def test_custom_agents_order():
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        Orchestrator.run_query("q", cfg)
+        orchestrator_runner().run_query("q", cfg)
 
     assert record == ["A1", "A2", "A3"]
 
