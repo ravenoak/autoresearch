@@ -2,7 +2,7 @@
 
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **August 16, 2025**, `uv run pytest -q`
-aborts before collecting tests (`ModuleNotFoundError: typer`), so coverage is
+aborts before collecting tests (`ModuleNotFoundError: pytest_httpx`), so coverage is
 unavailable. Issue [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
 lists **13 failing unit tests**, and issue
 [refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
@@ -231,7 +231,7 @@ Coverage could not be generated because `pytest` fails to import `fastapi`
 
 ### Latest Test Results
 
-- `uv run pytest --cov=src` aborts with `ModuleNotFoundError: typer`.
+- `uv run pytest --cov=src` aborts with `ModuleNotFoundError: pytest_httpx`.
   See [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md) for the
   failing test list.
 - `uv run flake8 src tests` fails: `error: Failed to spawn: flake8`.
