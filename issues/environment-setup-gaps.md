@@ -22,6 +22,11 @@ fails the coverage check (`fail-under=90`). The full test suite continues to
 produce hundreds of failures, primarily `TypeError` exceptions in
 Orchestrator-related integration tests, so `task verify` remains broken.
 
+After manually installing `pytest-bdd`, `pytest-httpx`, `pytest-cov`, and
+`tomli_w`, the behavior test suite executes but fails at
+`tests/behavior/steps/api_async_query_steps.py::test_async_query_result`
+because the async status response lacks an "answer" field.
+
 ## Acceptance Criteria
 - Go Task is available after running the setup scripts.
 - Development dependencies (e.g., `flake8`, `pytest-bdd`, `pytest-httpx`) install

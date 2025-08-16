@@ -1,9 +1,11 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 16, 2025**, `uv run pytest -q`
-aborts before collecting tests (`ModuleNotFoundError: pytest_httpx`), so coverage is
-unavailable. Issue [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
+organized by phases from the code complete plan. After installing missing
+testing dependencies (`pytest-bdd`, `pytest-httpx`, `pytest-cov`, and `tomli_w`),
+the behavior test suite runs but the first failure occurs in
+`test_async_query_result` where the async status response lacks an "answer"
+field. Issue [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
 lists **13 failing unit tests**, and issue
 [refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
 
@@ -231,9 +233,14 @@ Coverage could not be generated because `pytest` fails to import `fastapi`
 
 ### Latest Test Results
 
-- `uv run pytest --cov=src` aborts with `ModuleNotFoundError: pytest_httpx`.
-  See [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md) for the
-  failing test list.
+- Installed missing test dependencies (`pytest-bdd`, `pytest-httpx`,
+  `pytest-cov`, and `tomli_w`).
+- `uv run pytest tests/behavior -q --maxfail=1` fails:
+  `tests/behavior/steps/api_async_query_steps.py::test_async_query_result`
+  asserts `data.get("answer")` is `None`.
+- `uv run pytest --cov=src` continues to fail; see
+  [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
+  for the failing test list.
 - `uv run flake8 src tests` fails: `error: Failed to spawn: flake8`.
 - `uv run mypy src` fails to load `pydantic.mypy` (`No module named 'pydantic'`).
 
