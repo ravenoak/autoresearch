@@ -13,18 +13,14 @@ symptoms indicate the automated setup scripts and documentation have drifted
 from the expected tooling.
 
 Creating the virtual environment with `uv venv` and installing
-`uv pip install -e '.[dev-minimal]'` now places `pytest`, `flake8`, and
-`mypy` inside `.venv`, and `which pytest` resolves correctly. However,
-Go Task remains unavailable and `ruff` is missing from the default
-installation. Manual steps are also required to add `black` and `isort`.
-Running linting reveals unresolved issues: `uv run ruff check --fix src
-tests` reports `E402` in `src/autoresearch/visualization.py`, and
-`uv run flake8 src tests` flags `E701` in `tests/stubs/a2a.py`.
-Executing `uv run pytest tests/unit/test_cache.py::test_cache_lifecycle -q`
-fails the coverage check (`fail-under=90`) even though the test passes.
-Running the full suite still produces 181 failures, primarily
-`TypeError` exceptions in Orchestrator-related integration tests, so
-`task verify` remains broken.
+`uv pip install -e '.[dev-minimal]'` now places `pytest`, `flake8`, `mypy`, and
+`ruff` inside `.venv`, and `which pytest` resolves correctly. However,
+Go Task remains unavailable and manual steps are still required to add `black`
+and `isort`. Running a targeted test such as
+`uv run pytest tests/unit/test_cache.py::test_cache_lifecycle -q` succeeds but
+fails the coverage check (`fail-under=90`). The full test suite continues to
+produce hundreds of failures, primarily `TypeError` exceptions in
+Orchestrator-related integration tests, so `task verify` remains broken.
 
 ## Acceptance Criteria
 - Go Task is available after running the setup scripts.

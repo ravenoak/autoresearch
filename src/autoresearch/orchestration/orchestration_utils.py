@@ -1,14 +1,19 @@
-from __future__ import annotations
-
 """Utility helpers for orchestration components.
 
 This module groups functions that were previously attached dynamically to
-:class:`~autoresearch.orchestration.orchestrator.Orchestrator`.  Keeping them in a
+:class:`~autoresearch.orchestration.orchestrator.Orchestrator`. Keeping them in a
 separate utility class makes the helpers easier to import directly in tests and
 other modules without relying on dynamic attribute assignment.
 """
 
+from __future__ import annotations
+
 from .budgeting import _apply_adaptive_token_budget
+from .error_handling import (
+    _apply_recovery_strategy,
+    _categorize_error,
+    _handle_agent_error,
+)
 from .execution import (
     _call_agent_start_callback,
     _check_agent_can_execute,
@@ -23,11 +28,6 @@ from .execution import (
     _log_sources,
     _persist_claims,
     _rotate_list,
-)
-from .error_handling import (
-    _apply_recovery_strategy,
-    _categorize_error,
-    _handle_agent_error,
 )
 from .token_utils import _capture_token_usage, _execute_with_adapter
 from .utils import calculate_result_confidence, get_memory_usage
