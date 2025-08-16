@@ -26,7 +26,7 @@ def test_summary_table_render():
     assert "1" in output
 
 
-def test_search_visualize_option(monkeypatch):
+def test_search_visualize_option(monkeypatch, dummy_storage):
     runner = CliRunner()
 
     orch = Orchestrator()
@@ -36,24 +36,6 @@ def test_search_visualize_option(monkeypatch):
         )
     )
     monkeypatch.setattr(orch, "run_query", run_query_mock)
-
-    import sys
-    import types
-
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
 
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader

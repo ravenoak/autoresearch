@@ -1,26 +1,10 @@
 import importlib
-import sys
-import types
 from pathlib import Path
 
 from typer.testing import CliRunner
 
 
-def test_cli_help_no_ansi(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_cli_help_no_ansi(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -40,21 +24,7 @@ def test_cli_help_no_ansi(monkeypatch):
     assert "Usage:" in result.stdout
 
 
-def test_search_help_includes_interactive(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_search_help_includes_interactive(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -74,21 +44,7 @@ def test_search_help_includes_interactive(monkeypatch):
     assert "--loops" in result.stdout
 
 
-def test_search_help_includes_visualize(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_search_help_includes_visualize(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -107,21 +63,7 @@ def test_search_help_includes_visualize(monkeypatch):
     assert "--visualize" in result.stdout
 
 
-def test_search_loops_option(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_search_loops_option(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
     from autoresearch.models import QueryResponse
@@ -157,21 +99,7 @@ def test_search_loops_option(monkeypatch):
     assert captured["loops"] == 4
 
 
-def test_search_help_includes_ontology_flags(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_search_help_includes_ontology_flags(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 
@@ -189,21 +117,7 @@ def test_search_help_includes_ontology_flags(monkeypatch):
     assert result.exit_code == 0
 
 
-def test_visualize_help_includes_layout(monkeypatch):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_visualize_help_includes_layout(monkeypatch, dummy_storage):
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.config.models import ConfigModel
 

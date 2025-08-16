@@ -1,25 +1,11 @@
 import importlib
-import sys
-import types
 
 from typer.testing import CliRunner
 
 
-def test_first_run_detection_respects_search_paths(tmp_path, monkeypatch, config_loader):
-    dummy_storage = types.ModuleType("autoresearch.storage")
-
-    class StorageManager:
-        @staticmethod
-        def persist_claim(claim):
-            pass
-
-        @staticmethod
-        def setup(*a, **k):
-            pass
-
-    dummy_storage.StorageManager = StorageManager
-    dummy_storage.setup = lambda *a, **k: None
-    monkeypatch.setitem(sys.modules, "autoresearch.storage", dummy_storage)
+def test_first_run_detection_respects_search_paths(
+    tmp_path, monkeypatch, config_loader, dummy_storage
+):
 
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
