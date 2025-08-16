@@ -52,20 +52,8 @@ else
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Install Go Task for running Taskfile commands if not already installed
-if ! command -v task >/dev/null 2>&1; then
-    curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
-fi
-
-# Verify Go Task was installed
-if [ ! -x /usr/local/bin/task ]; then
-    echo "Go Task not found at /usr/local/bin/task." >&2
-    echo "Re-run: curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin" >&2
-    exit 1
-fi
-
 # Run the main setup script to install all extras needed for testing
-./scripts/setup.sh full,parsers,git,llm,dev,test
+./scripts/setup.sh
 
 # Install pre-downloaded packages for offline use. Place wheel files in
 # $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for
@@ -84,6 +72,18 @@ if [ -n "${ARCHIVES_DIR:-}" ] && [ -d "$ARCHIVES_DIR" ]; then
     fi
 fi
 
+# Verify CLI tools resolve inside the virtual environment
+source .venv/bin/activate
+for cmd in task flake8 pytest; do
+    cmd_path=$(command -v "$cmd" || true)
+    if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
+        echo "$cmd is not resolved inside .venv: $cmd_path" >&2
+        deactivate
+        exit 1
+    fi
+done
+deactivate
+
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
 if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
     if uv pip install duckdb-extension-vss; then
@@ -101,7 +101,7 @@ fi
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
-for pkg in pytest pytest-bdd pytest-httpx pytest-cov hypothesis tomli_w freezegun duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers spacy bertopic fastapi; do
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 hypothesis tomli_w freezegun duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers transformers spacy bertopic fastapi; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -112,7 +112,7 @@ if [ "$missing" -ne 0 ]; then
     echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|hypothesis|tomli_w|freezegun|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
+uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|hypothesis|tomli_w|freezegun|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
 
 # Helper for retrying flaky network operations
 retry() {
