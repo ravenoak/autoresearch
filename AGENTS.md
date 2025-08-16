@@ -44,7 +44,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
-  - After running `scripts/codex_setup.sh`, verify `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, `duckdb-extension-vss`, `a2a-sdk`, `GitPython`, and `fastapi` are present using `uv pip list`.
+  - After running `scripts/codex_setup.sh`, verify `pytest-bdd`, `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, `duckdb-extension-vss`, `a2a-sdk`, `GitPython`, and `fastapi` are present using `uv pip list`.
 - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
     must either disable the `vector_extension` entirely or point this variable
     to the stub at `extensions/vss_stub.duckdb_extension`. Set it to a real
