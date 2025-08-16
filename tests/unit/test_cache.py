@@ -1,5 +1,10 @@
 from threading import Thread
 
+import importlib.util
+
+if not importlib.util.find_spec("tinydb"):
+    import tests.stubs.tinydb  # noqa: F401
+
 from autoresearch import cache
 from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel
