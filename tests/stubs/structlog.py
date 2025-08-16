@@ -18,9 +18,14 @@ except Exception:  # pragma: no cover - fall back to stub
     def configure(*args, **kwargs):  # noqa: D401 - simple placeholder
         """Stubbed configure function."""
 
+    def make_filtering_bound_logger(level):  # noqa: D401 - simple placeholder
+        """Return the stubbed :class:`BoundLogger` regardless of level."""
+        return BoundLogger
+
     structlog_stub.BoundLogger = BoundLogger
     structlog_stub.get_logger = get_logger
     structlog_stub.configure = configure
+    structlog_stub.make_filtering_bound_logger = make_filtering_bound_logger
     sys.modules["structlog"] = structlog_stub
 else:  # pragma: no cover - real library available
     sys.modules["structlog"] = _structlog
