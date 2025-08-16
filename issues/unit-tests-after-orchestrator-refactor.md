@@ -11,6 +11,9 @@ leave tests in an inconsistent state.
   instances per test.
 - Additional failures stem from `tests/stubs/numpy.py` shadowing the real
   `numpy` package after installing full extras.
+- `uv run pytest -q` currently aborts early with `ModuleNotFoundError: typer`,
+  indicating the development environment lacks required dependencies and must
+  be fixed before addressing these failures.
 
 ## Current Failures
 - `tests/unit/test_additional_coverage.py::test_streamlit_metrics`
