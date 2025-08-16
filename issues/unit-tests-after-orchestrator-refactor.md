@@ -15,13 +15,20 @@ leave tests in an inconsistent state.
   `numpy` package after installing full extras.
 
 ## Current Failures
-- `tests/unit/test_additional_coverage.py::test_streamlit_metrics` (error - metrics teardown)
-- `tests/unit/test_cache.py::test_search_uses_cache` (TinyDB `truncate` missing)
+- `tests/unit/test_additional_coverage.py::test_streamlit_metrics`
+  - teardown fixture `reset_orchestration_metrics` fails: AttributeError: 'types.SimpleNamespace' object has no attribute 'set'
+- `tests/unit/test_cache.py::test_search_uses_cache`
+  - AttributeError: 'TinyDB' object has no attribute 'truncate'
 - `tests/unit/test_cache.py::test_cache_lifecycle`
+  - AssertionError: assert False
 - `tests/unit/test_cache.py::test_cache_is_backend_specific`
+  - AttributeError: 'TinyDB' object has no attribute 'truncate'
 - `tests/unit/test_failure_paths.py::test_external_lookup_unknown_backend`
+  - AttributeError: 'Query' object has no attribute 'query'
 - `tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`
+  - AttributeError: 'Query' object has no attribute 'query'
 - `tests/unit/test_failure_scenarios.py::test_external_lookup_unknown_backend`
+  - AttributeError: 'Query' object has no attribute 'query'
 
 ## Acceptance Criteria
 - Unit tests are updated to accommodate the instance-level `_cb_manager`.
