@@ -10,6 +10,11 @@ This directory provides reusable fixtures for building test contexts.
   data directory. The returned `ConfigContext` bundles the loader, loaded
   `ConfigModel`, and the data directory.
 
+## Storage helpers
+
+- `dummy_storage` – registers a minimal `autoresearch.storage` stub so tests
+  can import the storage module without hitting real backends.
+
 ### Composing scenarios
 
 Fixtures can be combined to craft richer test cases:
