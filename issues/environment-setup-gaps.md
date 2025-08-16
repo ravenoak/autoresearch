@@ -5,7 +5,7 @@ The prepared environment again misses key development tools. `task --version`
 returns `command not found`, and `uv pip list | grep flake8` shows no result.
 `which pytest` resolves to `/root/.pyenv/shims/pytest` instead of
 `.venv/bin/pytest`. Running `uv run pytest -q` aborts with
-`ModuleNotFoundError: typer` before collecting tests. Attempting to install
+`ModuleNotFoundError: pytest_httpx` before collecting tests. Attempting to install
 development extras via `uv pip install -e '.[full,dev]'` triggers downloads of
 hundreds of megabytes of GPU-related packages such as `torch` and
 `nvidia-cudnn-cu12`, making setup impractical without prebuilt wheels. These
