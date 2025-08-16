@@ -1,7 +1,10 @@
 import pytest
+import shutil
+import importlib.resources as importlib_resources
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
 from importlib.resources import files
+
 from autoresearch.main import app
 
 
@@ -11,7 +14,23 @@ def mock_config_loader():
     return MagicMock()
 
 
-def test_config_init_command(tmp_path):
+@pytest.fixture
+def example_resources(tmp_path, monkeypatch):
+    """Provide temporary example config files."""
+    src_dir = files("autoresearch.examples")
+    temp_dir = tmp_path / "examples"
+    shutil.copytree(src_dir, temp_dir)
+
+    def _files(package: str):
+        if package == "autoresearch.examples":
+            return temp_dir
+        return importlib_resources.files(package)
+
+    monkeypatch.setattr(importlib_resources, "files", _files)
+    return temp_dir
+
+
+def test_config_init_command(tmp_path, example_resources):
     """Test the config init command."""
     runner = CliRunner()
     result = runner.invoke(app, ["config", "init", "--config-dir", str(tmp_path)])
@@ -19,7 +38,7 @@ def test_config_init_command(tmp_path):
     assert "Configuration initialized successfully." in result.stdout
 
 
-def test_config_init_command_force(tmp_path):
+def test_config_init_command_force(tmp_path, example_resources):
     """Test the config init command with force flag."""
     runner = CliRunner()
     cfg = tmp_path / "autoresearch.toml"
@@ -30,7 +49,7 @@ def test_config_init_command_force(tmp_path):
         app, ["config", "init", "--config-dir", str(tmp_path), "--force"]
     )
     assert result.exit_code == 0
-    example_dir = files("autoresearch.examples")
+    example_dir = example_resources
     assert cfg.read_text(encoding="utf-8") == (
         example_dir / "autoresearch.toml"
     ).read_text(encoding="utf-8")
