@@ -1,5 +1,5 @@
-import builtins
-import sys
+import builtins  # needed for import monkeypatching
+import sys  # used for module inspection
 import types
 from unittest.mock import MagicMock
 
