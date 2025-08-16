@@ -2,7 +2,6 @@ from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.agents.messages import MessageProtocol
 from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
 

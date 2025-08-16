@@ -1,6 +1,5 @@
 from autoresearch.agents.base import Agent, AgentRole
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.orchestration.state import QueryState
 

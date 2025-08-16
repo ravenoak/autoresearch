@@ -1,5 +1,6 @@
 from typer.testing import CliRunner
 from unittest.mock import patch, MagicMock
+from types import MethodType
 import sys
 import pytest
 
@@ -10,7 +11,6 @@ sys.modules.setdefault("pynndescent", MagicMock())
 
 from autoresearch.main import app  # noqa: E402
 import importlib  # noqa: E402
-from types import MethodType
 
 main_app = importlib.import_module("autoresearch.main.app")  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402
