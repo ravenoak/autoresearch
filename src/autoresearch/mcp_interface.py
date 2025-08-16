@@ -19,12 +19,14 @@ _config_loader: ConfigLoader = ConfigLoader()
 def create_server(host: str = "127.0.0.1", port: int = 8080) -> FastMCP:
     """Create a FastMCP server exposing the research tool."""
     config = _config_loader.load_config()
+    orchestrator = Orchestrator()
     server: FastMCP = FastMCP("Autoresearch", host=host, port=port)
+    setattr(server, "orchestrator", orchestrator)
 
     @server.tool
     async def research(query: str) -> dict[str, Any]:
         try:
-            result = Orchestrator().run_query(query, config)
+            result = server.orchestrator.run_query(query, config)
             return {
                 "answer": result.answer,
                 "citations": [
