@@ -604,13 +604,13 @@ class StorageManager(metaclass=StorageManagerMeta):
                         nodes_to_evict.append(popped)
             elif policy == "lru":
                 # LRU policy: evict least recently used nodes deterministically
-                for _ in range(batch_size):
+                while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
                     popped = StorageManager._pop_lru()
                     if popped and StorageManager.context.graph.has_node(popped):
                         nodes_to_evict.append(popped)
             else:
                 # Unknown policy - default to LRU for safety
-                for _ in range(batch_size):
+                while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
                     popped = StorageManager._pop_lru()
                     if popped and StorageManager.context.graph.has_node(popped):
                         nodes_to_evict.append(popped)
