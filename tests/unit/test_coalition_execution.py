@@ -1,5 +1,4 @@
 
-from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.config.models import ConfigModel
 from autoresearch.agents.registry import AgentFactory
 
