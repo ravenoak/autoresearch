@@ -55,6 +55,9 @@ rm -rf /var/lib/apt/lists/*
 # Run the main setup script to install all extras needed for testing
 ./scripts/setup.sh
 
+# Install all extras to ensure dev packages are present
+uv sync --all-extras
+
 # Install pre-downloaded packages for offline use. Place wheel files in
 # $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for
 # details.
@@ -138,10 +141,6 @@ if retry 3 uv run python -c "from sentence_transformers import SentenceTransform
     echo "SentenceTransformer model downloaded"
 else
     echo 'Failed to download SentenceTransformer model.' >&2
-    exit 1
-fi
-if [ ! -d "$SENTENCE_MODEL_DIR" ]; then
-    echo "SentenceTransformer model not found at $SENTENCE_MODEL_DIR" >&2
     exit 1
 fi
 
