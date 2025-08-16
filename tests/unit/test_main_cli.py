@@ -1,15 +1,18 @@
-from typer.testing import CliRunner
-from unittest.mock import patch, MagicMock
 import sys
-import pytest
+from types import MethodType
+from unittest.mock import MagicMock, patch
 
+import pytest
+from typer.testing import CliRunner
 
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("umap", MagicMock())
 sys.modules.setdefault("pynndescent", MagicMock())
 
-from autoresearch.main import app  # noqa: E402
 import importlib  # noqa: E402
+
+from autoresearch.main import app  # noqa: E402
+
 main_app = importlib.import_module("autoresearch.main.app")  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402
 from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
@@ -18,7 +21,11 @@ from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 def test_search_default_output_tty(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(
+        orchestrator, "run_query", MethodType(mock_run_query, orchestrator)
+    )
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orchestrator)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
     assert "# Answer" in result.stdout
@@ -27,7 +34,11 @@ def test_search_default_output_tty(monkeypatch, mock_run_query):
 def test_search_default_output_json(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(
+        orchestrator, "run_query", MethodType(mock_run_query, orchestrator)
+    )
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orchestrator)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
@@ -48,12 +59,15 @@ def test_search_reasoning_mode_option(monkeypatch, mode, config_loader):
         *,
         agent_factory=None,
         storage_manager=None,
+        visualize=False,
     ):
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(orchestrator, "run_query", MethodType(_run, orchestrator))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orchestrator)
     monkeypatch.setattr(main_app, "_config_loader", config_loader)
-    monkeypatch.setattr(Orchestrator, "run_query", _run)
 
     result = runner.invoke(app, ["search", "q", "--reasoning-mode", mode])
 
@@ -74,12 +88,15 @@ def test_search_primus_start_option(monkeypatch, config_loader):
         *,
         agent_factory=None,
         storage_manager=None,
+        visualize=False,
     ):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
+    orchestrator = Orchestrator()
+    monkeypatch.setattr(orchestrator, "run_query", MethodType(_run, orchestrator))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orchestrator)
     monkeypatch.setattr(main_app, "_config_loader", config_loader)
-    monkeypatch.setattr(Orchestrator, "run_query", _run)
 
     result = runner.invoke(app, ["search", "q", "--primus-start", "2"])
 
