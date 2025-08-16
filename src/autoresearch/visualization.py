@@ -1,14 +1,14 @@
-from __future__ import annotations
-
 """Utilities for generating graphical representations of query results."""
 
-from typing import Any, Dict
+from __future__ import annotations
 
-import networkx as nx
+from pathlib import Path
+from typing import Any
+
 import matplotlib
 import matplotlib.pyplot as plt
+import networkx as nx
 import rdflib
-from pathlib import Path
 
 from .models import QueryResponse
 
@@ -93,7 +93,7 @@ def save_rdf_graph(
     """
 
     plt.figure(figsize=(8, 6))
-    nodes: Dict[str, int] = {}
+    nodes: dict[str, int] = {}
     idx = 0
     for s, p, o in graph:
         s_str, o_str = str(s), str(o)
