@@ -118,25 +118,35 @@ def test_search_loops_option(monkeypatch):
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
     from autoresearch.models import QueryResponse
-    from autoresearch.orchestration.orchestrator import Orchestrator
+
+    loaded = {}
 
     def _load(self):
-        return ConfigModel.model_construct()
-
-    captured = {}
-
-    def _run(self, query, config, callbacks=None):
-        captured["loops"] = config.loops
-        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+        cfg = ConfigModel.model_construct()
+        loaded["loops"] = cfg.loops
+        return cfg
 
     monkeypatch.setattr(ConfigLoader, "search_paths", [Path("dummy.toml")], raising=False)
     monkeypatch.setattr(ConfigLoader, "env_path", Path("dummy.env"), raising=False)
     monkeypatch.setattr(ConfigLoader, "load_config", _load)
-    monkeypatch.setattr(Orchestrator, "run_query", _run)
+
+    captured = {}
+
+    class DummyOrchestrator:
+        def run_query(self, query, config, callbacks=None):
+            captured["loops"] = config.loops
+            return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    import importlib
+
+    module = importlib.import_module("autoresearch.main.app")
+    monkeypatch.setattr(module, "Orchestrator", lambda: DummyOrchestrator())
     main = importlib.import_module("autoresearch.main")
+
     runner = CliRunner()
     result = runner.invoke(main.app, ["search", "q", "--loops", "4"])
     assert result.exit_code == 0
+    assert loaded["loops"] == 2
     assert captured["loops"] == 4
 
 
