@@ -12,6 +12,17 @@ hundreds of megabytes of GPU-related packages such as `torch` and
 symptoms indicate the automated setup scripts and documentation have drifted
 from the expected tooling.
 
+Creating the virtual environment with `uv venv` and installing
+`uv pip install -e '.[dev-minimal]'` now places `pytest`, `flake8`, and
+`mypy` inside `.venv`, and `which pytest` resolves correctly. However,
+Go Task remains unavailable and `ruff` is missing from the default
+installation. Running linting reveals unresolved issues:
+`uv run ruff check --fix src tests` reports `E402` in
+`src/autoresearch/visualization.py`, and `uv run flake8 src tests`
+flags `E701` in `tests/stubs/a2a.py`. Executing `uv run pytest -q`
+produces 181 failures, primarily `TypeError` exceptions in
+Orchestrator-related integration tests, so `task verify` still fails.
+
 ## Acceptance Criteria
 - Go Task is available after running the setup scripts.
 - Development dependencies (e.g., `flake8`, `pytest-bdd`, `pytest-httpx`) install
