@@ -25,6 +25,15 @@ need additional configuration. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 
+## Issue tracking
+
+Work items are tracked in-repo under [`issues/`](issues). Tickets follow
+the template and naming conventions in
+[`issues/README.md`](issues/README.md). File names are slugged titles
+without numeric prefixes. When a ticket is complete, set its `Status` to
+`Archived` and move the file to [`issues/archive/`](issues/archive)
+without renaming.
+
 ## Installation
 
 Autoresearch requires **Python 3.12 or newer**. The `scripts/setup.sh` helper
