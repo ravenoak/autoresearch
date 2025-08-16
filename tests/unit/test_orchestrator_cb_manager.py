@@ -10,7 +10,8 @@ def test_cb_manager_is_instance_scoped():
     o1 = Orchestrator()
     o2 = Orchestrator()
 
-    with patch.object(Orchestrator, "run_query", Orchestrator._orig_run_query):
+    orig_run_query = Orchestrator.run_query
+    with patch.object(Orchestrator, "run_query", orig_run_query):
         with patch(
             "autoresearch.orchestration.orchestrator.OrchestrationUtils.execute_cycle",
             return_value=0,
