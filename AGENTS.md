@@ -17,6 +17,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Track work items in the `/issues` directory.
 - Tickets use the template and naming rules in [`issues/README.md`](issues/README.md).
 - File names are slugged titles without numeric prefixes.
+- Do not include numeric identifiers in ticket titles or content; reference tickets by slugged filenames.
 - When work is finished, set `Status` to `Archived` and move the ticket to `/issues/archive/` without renaming.
 - When issue tooling changes, update this file, `issues/AGENTS.md`, and `scripts/codex_setup.sh` to keep documentation and setup aligned.
 
