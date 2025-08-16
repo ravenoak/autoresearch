@@ -3,8 +3,8 @@ import importlib
 import duckdb
 from fastapi.testclient import TestClient
 
-from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -32,9 +32,10 @@ def test_metrics_collection_and_endpoint(monkeypatch):
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(orch, "run_query", fake_run_query)
-    import autoresearch.api.routing as routing
     import sys
     import types
+
+    import autoresearch.api.routing as routing
 
     monkeypatch.setattr(routing, "create_orchestrator", lambda: orch)
     prom = types.SimpleNamespace(
