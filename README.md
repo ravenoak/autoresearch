@@ -20,7 +20,7 @@ skipped. `task verify` also fails in
 `tests/unit/test_eviction.py::test_lru_eviction_order`. Packaging checks
 and documentation continue, so the milestone is now targeted for
 **November 15, 2025**. Remaining blockers include these failing tests
-(issues #27 and #28), missing coverage, and packaging scripts that
+(issues [refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) and [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)), missing coverage, and packaging scripts that
 need additional configuration. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
