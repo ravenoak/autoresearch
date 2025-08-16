@@ -18,6 +18,7 @@ Open
 ## Naming
 File names must be slugged (kebab-case) titles with no numeric prefixes.
 For example: `refactor-orchestrator-instance-circuit-breaker.md`.
+Do not include numeric identifiers in ticket titles or content; reference tickets by slugged filenames.
 
 ## Workflow
 Set `Status` to `Open` while work is active. When finished, change it to
