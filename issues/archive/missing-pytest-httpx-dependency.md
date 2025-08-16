@@ -11,4 +11,4 @@
 - Documentation and setup scripts remain in sync regarding required dev dependencies.
 
 ## Status
-Open
+Archived

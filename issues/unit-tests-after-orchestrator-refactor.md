@@ -5,8 +5,6 @@ breaker manager. The refactor introduced API changes and incomplete updates that
 leave tests in an inconsistent state.
 
 ## Context
-- Environment setup now includes `task`, `flake8`, `typer`, and other dev
-  dependencies.
 - The refactor changed `_cb_manager` usage from class-level to instance-level.
 - Existing tests still assume class-level state, causing failures and hangs.
 - Fixtures and helper utilities may need redesign to use fresh Orchestrator
@@ -29,6 +27,12 @@ leave tests in an inconsistent state.
   - AttributeError: 'Query' object has no attribute 'query'
 - `tests/unit/test_failure_scenarios.py::test_external_lookup_unknown_backend`
   - AttributeError: 'Query' object has no attribute 'query'
+- `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command`
+  - assert 130 == 0
+- `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`
+  - assert 403 == 200
+- `tests/unit/test_property_storage.py::test_pop_lru_order`
+  - AssertionError: assert ['0', '1'] == ['1', '0']
 
 ## Acceptance Criteria
 - Unit tests are updated to accommodate the instance-level `_cb_manager`.
