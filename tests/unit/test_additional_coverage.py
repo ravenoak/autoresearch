@@ -133,7 +133,9 @@ def test_streamlit_metrics(monkeypatch):
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
     fake_psutil = types.SimpleNamespace(
         cpu_percent=lambda interval=None: 10.0,
-        virtual_memory=lambda: types.SimpleNamespace(percent=20.0, used=1024**3, total=2 * 1024**3),
+        virtual_memory=lambda: types.SimpleNamespace(
+            percent=20.0, used=1024**3, total=2 * 1024**3
+        ),
         Process=lambda pid=None: types.SimpleNamespace(
             memory_info=lambda: types.SimpleNamespace(rss=50 * 1024**2)
         ),
@@ -141,12 +143,15 @@ def test_streamlit_metrics(monkeypatch):
     monkeypatch.setattr(streamlit_psutil, "cpu_percent", fake_psutil.cpu_percent)
     monkeypatch.setattr(streamlit_psutil, "virtual_memory", fake_psutil.virtual_memory)
     monkeypatch.setattr(streamlit_psutil, "Process", fake_psutil.Process)
-    monkeypatch.setattr(
-        orch_metrics.TOKENS_IN_COUNTER, "_value", types.SimpleNamespace(get=lambda: 1)
-    )
-    monkeypatch.setattr(
-        orch_metrics.TOKENS_OUT_COUNTER, "_value", types.SimpleNamespace(get=lambda: 2)
-    )
+
+    def make_counter(v: int) -> types.SimpleNamespace:
+        ns = types.SimpleNamespace(value=v)
+        ns.get = lambda ns=ns: ns.value
+        ns.set = lambda val, ns=ns: setattr(ns, "value", val)
+        return ns
+
+    monkeypatch.setattr(orch_metrics.TOKENS_IN_COUNTER, "_value", make_counter(1))
+    monkeypatch.setattr(orch_metrics.TOKENS_OUT_COUNTER, "_value", make_counter(2))
     metrics_data = collect_system_metrics()
     assert metrics_data["cpu_percent"] == 10.0
     assert metrics_data["tokens_in_total"] == 1
