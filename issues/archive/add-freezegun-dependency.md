@@ -1,4 +1,4 @@
-# Issue 19: Add freezegun dependency
+# Add freezegun dependency
 
 Track the gap "Missing freezegun dependency causes unit tests to fail" discovered during testing.
 
@@ -11,7 +11,5 @@ Running `uv run pytest tests/unit -q` raised `ModuleNotFoundError: No module nam
 - Setup instructions mention the dependency
 
 ## Status
-Done – `freezegun` added to development dependencies and setup instructions updated.
+Archived
 
-## Related
-- #18

@@ -1,4 +1,4 @@
-# Issue 9: Monitor token usage regressions automatically
+# Monitor token usage regressions automatically
 
 Track the task "Monitor token usage regressions automatically" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,8 +13,5 @@ time.
 - Historical token usage archived
 
 ## Status
-Done – see tests/integration/test_token_usage_regression.py
+Archived
 
-## Related
-- #1
-- #8

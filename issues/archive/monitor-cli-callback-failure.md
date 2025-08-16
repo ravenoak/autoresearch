@@ -1,4 +1,4 @@
-# Issue 26: Monitor CLI callback test fails
+# Monitor CLI callback test fails
 
 The unit test `tests/unit/test_monitor_cli.py::test_monitor_prompts_and_passes_callbacks` fails with `assert 1 == 0` after running `task verify`.
 
@@ -11,9 +11,6 @@ The unit test `tests/unit/test_monitor_cli.py::test_monitor_prompts_and_passes_c
 - Keep runtime under five minutes.
 
 ## Status
-Closed – Ensured the monitor CLI exits with code 0 after callbacks run and stubbed
-expensive topic-model imports. `test_monitor_prompts_and_passes_callbacks` now
-passes and `task verify` finishes in about four minutes.
+Archived
 
-## Related
-- #23
+

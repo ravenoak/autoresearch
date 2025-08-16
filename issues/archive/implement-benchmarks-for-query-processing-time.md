@@ -1,4 +1,4 @@
-# Issue 6: Implement benchmarks for query processing time
+# Implement benchmarks for query processing time
 
 Track the task "Implement benchmarks for query processing time" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,8 +13,5 @@ representative scenarios.
 - Benchmarks reproducible locally and in CI
 
 ## Status
-Done – see tests/integration/test_query_performance_benchmark.py
+Archived
 
-## Related
-- #1
-- #5

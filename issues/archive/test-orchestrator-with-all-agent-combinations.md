@@ -1,4 +1,4 @@
-# Issue 2: Test orchestrator with all agent combinations
+# Test orchestrator with all agent combinations
 
 Track the task "Test orchestrator with all agent combinations" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ moderator, specialist, and user agents.
 - Supported combinations documented
 
 ## Status
-Done – see tests/integration/test_orchestrator_all_agent_combinations.py
+Archived
 
-## Related
-- #1

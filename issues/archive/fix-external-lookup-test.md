@@ -1,4 +1,4 @@
-# Issue 21: Fix external lookup unknown backend test
+# Fix external lookup unknown backend test
 
 Track the failing test `tests/unit/test_failure_paths.py::test_external_lookup_unknown_backend` discovered during verification.
 
@@ -11,7 +11,5 @@ Track the failing test `tests/unit/test_failure_paths.py::test_external_lookup_u
 - Document any remaining deviations.
 
 ## Status
-Closed – `Search.external_lookup` now raises `SearchError` for unknown backends and tests pass.
+Archived
 
-## Related
-- #18

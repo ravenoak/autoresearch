@@ -1,4 +1,4 @@
-# Issue 20: Remove unused asyncio import
+# Remove unused asyncio import
 
 Track the gap "flake8 fails due to unused asyncio import" discovered during testing.
 
@@ -10,7 +10,5 @@ Running `task verify` fails at the flake8 step with `tests/behavior/steps/api_as
 - `task verify` passes flake8 stage
 
 ## Status
-Done – removed unused `asyncio` import and flake8 now passes.
+Archived
 
-## Related
-- #18

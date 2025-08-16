@@ -1,4 +1,4 @@
-# Issue 7: Test memory usage under various conditions
+# Test memory usage under various conditions
 
 Track the task "Test memory usage under various conditions" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,8 +13,5 @@ detect leaks or excessive growth.
 - Memory profiles documented
 
 ## Status
-Done – see tests/integration/test_query_latency_memory_tokens.py
+Archived
 
-## Related
-- #1
-- #5

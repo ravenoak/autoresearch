@@ -1,4 +1,4 @@
-# Issue 18: Address slow unit test execution
+# Address slow unit test execution
 
 Track the gap "Unit tests exceed reasonable execution time" discovered during testing.
 
@@ -12,7 +12,5 @@ performance issues or hanging tests.
 - Document any remaining long-running tests and rationale
 
 ## Status
-Done – replaced thread `Lock` with `RLock` to avoid deadlock in `StorageManager.touch_node`; unit tests now complete within CI time limits.
+Archived
 
-## Related
-- #5

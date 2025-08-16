@@ -1,4 +1,4 @@
-# Issue 16: Implement better test isolation
+# Implement better test isolation
 
 Track the task "Implement better test isolation" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -12,11 +12,9 @@ Ensure tests run independently without shared state or side effects.
 - Shared resources isolated
 
 ## Status
-Completed – fixtures now clean up state and parallel test runs pass without
-interference.
+Archived
+
 
 ## Next steps
 - Monitor for future isolation regressions
 
-## Related
-- #14

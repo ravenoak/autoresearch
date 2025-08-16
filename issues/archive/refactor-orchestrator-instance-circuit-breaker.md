@@ -1,4 +1,4 @@
-# Issue 27: Refactor Orchestrator to instance-level circuit breaker
+# Refactor Orchestrator to instance-level circuit breaker
 
 The orchestrator currently uses a class-level `_cb_manager` that persists across
 queries and tests, leading to shared state and cross-test interference. A prior
@@ -7,10 +7,10 @@ tests inconsistent, causing unit failures.
 
 ## Context
 - `_cb_manager` lives on the `Orchestrator` class in
-  `src/autoresearch/orchestration/orchestrator.py`.
+ `src/autoresearch/orchestration/orchestrator.py`.
 - Shared state bleeds between queries and tests.
 - Refactoring requires allocating a new circuit breaker manager per query and
-  propagating this change through dependent modules and tests.
+ propagating this change through dependent modules and tests.
 
 ## Acceptance Criteria
 - `_cb_manager` is an instance attribute initialized for each query.
@@ -19,7 +19,5 @@ tests inconsistent, causing unit failures.
 - `task test:unit` completes successfully with no cross-test interference.
 
 ## Status
-Completed – instance-level circuit breaker verified by dedicated unit test
+Archived
 
-## Related
-- #28

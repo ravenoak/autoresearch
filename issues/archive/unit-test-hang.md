@@ -1,4 +1,4 @@
-# Issue 23: Unit test suite hangs during verification
+# Unit test suite hangs during verification
 
 Running `task verify` triggers `uv run pytest tests/unit --cov=src --cov-report=term-missing --cov-append`.
 The test suite progresses to about 42% and then stalls indefinitely. Manual interruption shows the process still running.
@@ -25,12 +25,8 @@ target.
 - Update documentation or configuration as needed to prevent recurrence.
 
 ## Status
-Closed – Stubbed heavy topic-model dependencies and fixed monitor CLI
-callbacks to prevent non-zero exits. `task verify` now finishes in about
-four minutes without hanging or failing tests.
+Archived
+
 
 This resolves the prolonged runtime.
 
-## Related
-- #22
-- #26
