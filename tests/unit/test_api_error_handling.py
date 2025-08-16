@@ -27,10 +27,13 @@ def _setup(monkeypatch):
 def test_query_endpoint_runtime_error(monkeypatch):
     _setup(monkeypatch)
 
-    def raise_error(self, q, c, callbacks=None):
+    orch = Orchestrator()
+
+    def raise_error(q, c, callbacks=None):
         raise RuntimeError("fail")
 
-    monkeypatch.setattr(Orchestrator, "run_query", raise_error)
+    monkeypatch.setattr(orch, "run_query", raise_error)
+    monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: orch)
     client = TestClient(app)
     resp = client.post("/query", json={"query": "q"})
     assert resp.status_code == 200
@@ -41,9 +44,9 @@ def test_query_endpoint_runtime_error(monkeypatch):
 
 def test_query_endpoint_invalid_response(monkeypatch):
     _setup(monkeypatch)
-    monkeypatch.setattr(
-        Orchestrator, "run_query", lambda self, q, c, callbacks=None: {"foo": "bar"}
-    )
+    orch = Orchestrator()
+    monkeypatch.setattr(orch, "run_query", lambda q, c, callbacks=None: {"foo": "bar"})
+    monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: orch)
     client = TestClient(app)
     resp = client.post("/query", json={"query": "q"})
     assert resp.status_code == 200

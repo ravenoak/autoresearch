@@ -20,10 +20,9 @@ from ..config import ConfigLoader, ConfigModel, get_config
 from ..error_utils import format_error_for_api, get_error_info
 from ..models import BatchQueryRequest, QueryRequest, QueryResponse
 from ..orchestration import ReasoningMode
-from ..orchestration.orchestrator import Orchestrator
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
-from .deps import require_permission
+from .deps import require_permission, create_orchestrator
 from .errors import handle_rate_limit
 from .middleware import (
     AuthMiddleware,
@@ -121,7 +120,7 @@ async def query_endpoint(
     tracer = get_tracer(__name__)
     with tracer.start_as_current_span("/query"):
         try:
-            result = Orchestrator().run_query(request.query, config)
+            result = create_orchestrator().run_query(request.query, config)
         except Exception as exc:
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
@@ -241,7 +240,7 @@ async def async_query_endpoint(
 
     def runner() -> None:
         try:
-            orchestrator = cast(Any, Orchestrator())
+            orchestrator = cast(Any, create_orchestrator())
             coro = orchestrator.run_query_async(request.query, config_copy)
             result = asyncio.run(coro)
         except Exception as exc:  # pragma: no cover - defensive

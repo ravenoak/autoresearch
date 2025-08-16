@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 from fastapi.responses import StreamingResponse
 
-from .deps import require_permission
+from .deps import require_permission, create_orchestrator
 from ..config import get_config
 from ..error_utils import get_error_info, format_error_for_api
 from ..models import QueryRequest, QueryResponse
 from ..orchestration import ReasoningMode
-from ..orchestration.orchestrator import Orchestrator
 from .webhooks import notify_webhook
 
 
@@ -34,7 +33,7 @@ async def query_stream_endpoint(
 
     def run() -> None:
         try:
-            result = Orchestrator().run_query(
+            result = create_orchestrator().run_query(
                 request.query, config, callbacks={"on_cycle_end": on_cycle_end}
             )
         except Exception as exc:  # pragma: no cover - defensive

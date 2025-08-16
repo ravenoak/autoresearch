@@ -10,7 +10,7 @@ interfaces and a modular architecture.
 # creation.
 import importlib
 import sys
-from importlib.metadata import version as _version
+from importlib.metadata import PackageNotFoundError, version as _version
 from typing import TYPE_CHECKING, Any
 import warnings
 
@@ -20,7 +20,10 @@ try:  # pragma: no cover - best effort patch
 except Exception:  # pragma: no cover
     pass
 
-__version__ = _version("autoresearch")
+try:
+    __version__ = _version("autoresearch")
+except PackageNotFoundError:  # pragma: no cover - fallback for tests
+    __version__ = "0.0.0"
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
     from .distributed import (
