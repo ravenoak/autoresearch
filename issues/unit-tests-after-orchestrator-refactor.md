@@ -9,30 +9,26 @@ leave tests in an inconsistent state.
 - Existing tests expect class-level state, causing failures and potential hangs.
 - Fixtures and helper utilities may need redesign to use fresh Orchestrator
  instances per test.
+- Additional failures stem from `tests/stubs/numpy.py` shadowing the real
+  `numpy` package after installing full extras.
 
 ## Current Failures
-- `tests/unit/test_api_error_handling.py::test_query_endpoint_runtime_error`
-- `tests/unit/test_api_error_handling.py::test_query_endpoint_invalid_response`
-- `tests/unit/test_cli_help.py::test_search_loops_option`
-- `tests/unit/test_cli_visualize.py::test_search_visualize_option`
-- `tests/unit/test_main_cli.py::test_search_reasoning_mode_option[direct]`
-- `tests/unit/test_main_cli.py::test_search_reasoning_mode_option[dialectical]`
-- `tests/unit/test_main_cli.py::test_search_primus_start_option`
-- `tests/unit/test_mcp_interface.py::test_client_server_roundtrip`
+- `tests/unit/test_failure_paths.py::test_external_lookup_unknown_backend`
+- `tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`
+- `tests/unit/test_failure_scenarios.py::test_external_lookup_unknown_backend`
+- `tests/unit/test_formattemplate_property.py::test_formattemplate_render`
+- `tests/unit/test_main_config_commands.py::test_config_init_command_force`
 - `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`
-- `tests/unit/test_orchestrator_errors.py::test_parallel_query_error_claims`
-- `tests/unit/test_orchestrator_errors.py::test_parallel_query_timeout_claims`
-- `tests/unit/test_parallel_module.py::test_execute_parallel_query_basic`
-- `tests/unit/test_parallel_module.py::test_execute_parallel_query_agent_error`
-- `tests/unit/test_orchestrator_utils.py::test_execute_cycle_calls_agf`
-- `tests/unit/test_orchestrator_utils.py::test_execute_cycle_sends_cancel`
-- `tests/unit/test_output_formatter_property.py::test_format_all_shapes`
-- `tests/unit/test_property_evaluate_weights.py::test_suggest_weights`
-- `tests/unit/test_property_search.py::test_ordering`
-- `tests/unit/test_property_search.py::test_weight_interpretation`
-- `tests/unit/test_property_storage.py::test_store_and_retrieve`
-- `tests/unit/test_property_storage.py::test_handles_missing`
-- `tests/unit/test_property_vector_search.py::test_vector_search_interface`
+- `tests/unit/test_orchestrator_utils.py::test_rotate_list_property`
+- `tests/unit/test_orchestrator_utils.py::test_calculate_result_confidence`
+- `tests/unit/test_output_formatter_property.py::test_output_formatter_json_markdown`
+- `tests/unit/test_property_evaluate_weights.py::test_evaluate_weights_scale_invariant`
+- `tests/unit/test_property_search.py::test_generate_queries_variants`
+- `tests/unit/test_property_search.py::test_generate_queries_embeddings`
+- `tests/unit/test_property_storage.py::test_pop_lru_order`
+- `tests/unit/test_property_storage.py::test_pop_low_score`
+- `tests/unit/test_property_vector_search.py::test_vector_search_calls_backend`
+- `tests/unit/test_additional_coverage.py::test_streamlit_metrics` (error)
 
 ## Acceptance Criteria
 - Unit tests are updated to accommodate the instance-level `_cb_manager`.
