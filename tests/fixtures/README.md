@@ -25,3 +25,8 @@ def test_with_extra_data(config_context):
 
 Extend the `config_context` setup or modify the generated files to suit
 complex testing needs.
+
+## Storage helpers
+
+- `dummy_storage` – registers a no-op `autoresearch.storage` module so tests
+  can run without initializing the real storage system.

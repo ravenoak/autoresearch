@@ -16,7 +16,11 @@ try:
 except Exception:  # pragma: no cover - fastapi optional in some environments
     TestClient = MagicMock()
 
-pytest_plugins = ["tests.fixtures.config", "pytest_httpx"]
+pytest_plugins = [
+    "tests.fixtures.config",
+    "tests.fixtures.storage",
+    "pytest_httpx",
+]
 
 if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
