@@ -3,7 +3,7 @@ import os
 import shlex
 
 import pytest
-from pytest_bdd import given, parsers, when, then
+from pytest_bdd import given, parsers, then, when
 
 from autoresearch import cache, tracing
 from autoresearch.agents.registry import AgentRegistry
@@ -116,6 +116,7 @@ def temp_config(tmp_path, monkeypatch, mock_llm_adapter):
 def dummy_query_response(monkeypatch):
     """Provide a deterministic orchestrator result for interface tests."""
     response = QueryResponse(
+        query="test query",
         answer="test answer",
         citations=["source"],
         reasoning=["step"],
@@ -204,18 +205,14 @@ def orchestrator_failure(monkeypatch):
     return _simulate
 
 
-@given(
-    parsers.re(
-        "the (?:Autoresearch )?application is running(?: with default configuration)?"
-    )
-)
+@given(parsers.re("the (?:Autoresearch )?application is running(?: with default configuration)?"))
 def application_running(temp_config):
     """Ensure the application runs with isolated config and mocked LLM."""
     return
 
 
 # Shared CLI step implementations
-@when(parsers.parse('I run `{command}`'))
+@when(parsers.parse("I run `{command}`"))
 def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_environment):
     args = shlex.split(command)
     if args and args[0] == "autoresearch":

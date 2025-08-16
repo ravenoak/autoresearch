@@ -5,9 +5,10 @@ It contains Pydantic models that define the structure of data used throughout th
 particularly for query requests, responses, and related data structures.
 """
 
-from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ReasoningMode(str, Enum):
@@ -64,12 +65,14 @@ class QueryResponse(BaseModel):
     It includes the final answer, supporting citations, reasoning steps, and execution metrics.
 
     Attributes:
+        query (Optional[str]): The original query that produced this response.
         answer (str): The final answer to the user's query.
         citations (List[Any]): A list of citations or sources that support the answer.
         reasoning (List[Any]): A list of reasoning steps or explanations that led to the answer.
         metrics (Dict[str, Any]): Performance and execution metrics for the query processing.
     """
 
+    query: Optional[str] = Field(None, description="The original query that produced this response")
     answer: str
     citations: List[Any]
     reasoning: List[Any]
@@ -79,6 +82,4 @@ class QueryResponse(BaseModel):
 class BatchQueryRequest(BaseModel):
     """Request model for executing multiple queries."""
 
-    queries: List[QueryRequest] = Field(
-        ..., description="List of queries to execute sequentially"
-    )
+    queries: List[QueryRequest] = Field(..., description="List of queries to execute sequentially")
