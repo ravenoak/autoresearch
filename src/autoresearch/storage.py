@@ -52,7 +52,11 @@ class StorageContext:
 # Container for stateful components
 @dataclass
 class StorageState:
-    """Holds runtime storage state for injection."""
+    """Holds runtime storage state for injection.
+
+    The ``lru`` field is an :class:`collections.OrderedDict` whose ordering is
+    used to determine eviction order.
+    """
 
     context: StorageContext = field(default_factory=StorageContext)
     # Use a monotonically increasing counter rather than wall-clock timestamps
@@ -343,9 +347,11 @@ class StorageManager(metaclass=StorageManagerMeta):
         and returns its ID. This is used by the _enforce_ram_budget method when
         the graph_eviction_policy is set to "lru".
 
-        The LRU cache is an OrderedDict that maintains the order in which nodes
-        were accessed, with the least recently used node at the beginning and
-        the most recently used node at the end.
+        The LRU cache is an :class:`collections.OrderedDict` that maintains the
+        order in which nodes were accessed, with the least recently used node at
+        the beginning and the most recently used node at the end.  This method
+        relies on that ordering and uses ``popitem(last=False)`` to remove the
+        oldest entry.
 
         Returns:
             str | None: The ID of the least recently used node, or None if the cache is empty.
@@ -358,11 +364,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         lru = state.lru
         if not lru:
             return None
-        # Select the oldest entry by counter. The node_id provides a
-        # deterministic tie-breaker when two nodes share the same counter,
-        # which can occur if the counter is manually manipulated in tests.
-        node_id, _ = min(lru.items(), key=lambda item: (item[1], item[0]))
-        del lru[node_id]
+        node_id, _ = lru.popitem(last=False)
         return node_id
 
     @staticmethod
@@ -1235,10 +1237,12 @@ class StorageManager(metaclass=StorageManagerMeta):
     def touch_node(node_id: str) -> None:
         """Update access time for a node in the LRU cache.
 
-        This method updates the access timestamp for a node in the LRU (Least Recently Used)
-        cache and moves it to the end of the cache order, marking it as most recently used.
-        This affects the eviction policy, as nodes with older access times are evicted first
-        when the RAM budget is exceeded.
+        This method updates the access timestamp for a node in the LRU (Least
+        Recently Used) cache and moves it to the end of the cache order,
+        marking it as most recently used.  The implementation relies on the
+        ordering properties of :class:`collections.OrderedDict`, meaning older
+        entries remain at the beginning and are evicted first when the RAM
+        budget is exceeded.
 
         If a custom implementation is set via set_delegate(), the call is
         delegated to that implementation.
