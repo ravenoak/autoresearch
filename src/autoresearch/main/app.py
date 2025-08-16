@@ -376,7 +376,10 @@ def search(
                     total=loops,
                 )
                 result = Orchestrator().run_query(
-                    query, config, callbacks={"on_cycle_end": on_cycle_end}
+                    query,
+                    config,
+                    callbacks={"on_cycle_end": on_cycle_end},
+                    visualize=visualize,
                 )
 
         fmt = output or (
