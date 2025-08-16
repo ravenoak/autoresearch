@@ -1,4 +1,4 @@
-# Issue 24: Fix VSS extension and smoke test failures
+# Fix VSS extension and smoke test failures
 
 The environment smoke test fails because the VSS DuckDB extension is missing or
 invalid. `matplotlib` is now installed, but the missing extension still leaves
@@ -14,9 +14,6 @@ invalid. `matplotlib` is now installed, but the missing extension still leaves
 - Update setup scripts and documentation accordingly.
 
 ## Status
-Closed – smoke test skips the VSS check when the extension is
-unavailable and removes the `CODEX_ENVIRONMENT_SETUP_FAILED` marker.
-Resolved in commit 1be9671 and the follow-up commit in this branch.
+Archived
 
-## Related
-- #23
+

@@ -1,4 +1,4 @@
-# Issue 15: Add more detailed assertions
+# Add more detailed assertions
 
 Track the task "Add more detailed assertions" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ effects.
 - Failure messages are descriptive
 
 ## Status
-Done – assertions added in tests/integration/test_relevance_ranking_integration.py
+Archived
 
-## Related
-- #14

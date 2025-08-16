@@ -1,4 +1,4 @@
-# Issue 22: Investigate mypy hang during verification
+# Investigate mypy hang during verification
 
 Running `uv run mypy src` appears to hang without producing output even after several minutes. This prevents `task verify` from completing.
 
@@ -11,11 +11,8 @@ Running `uv run mypy src` appears to hang without producing output even after se
 - Document any configuration changes needed.
 
 ## Status
-Closed – Added `no_site_packages` and disabled `import-untyped` errors in
-`pyproject.toml`, preventing mypy from traversing third-party packages.
-`uv run mypy src` now completes in around seven seconds without errors.
+Archived
+
 
 This resolves the hang observed during verification.
 
-## Related
-- #1

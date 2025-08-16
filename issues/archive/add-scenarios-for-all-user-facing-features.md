@@ -1,4 +1,4 @@
-# Issue 11: Add scenarios for all user-facing features
+# Add scenarios for all user-facing features
 
 Track the task "Add scenarios for all user-facing features" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,8 +13,6 @@ outcomes.
 - Feature docs link to scenarios
 
 ## Status
-Done – scenarios and documentation links now cover all user-facing
-features.
+Archived
 
-## Related
-- #10
+

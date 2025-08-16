@@ -1,4 +1,4 @@
-# Issue 12: Test all reasoning modes with realistic queries
+# Test all reasoning modes with realistic queries
 
 Track the task "Test all reasoning modes with realistic queries" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ reasoning mode.
 - Performance within acceptable limits
 
 ## Status
-Done – see tests/integration/test_mcp_reasoning_modes.py
+Archived
 
-## Related
-- #10

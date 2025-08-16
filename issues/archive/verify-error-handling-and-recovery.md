@@ -1,4 +1,4 @@
-# Issue 13: Verify error handling and recovery
+# Verify error handling and recovery
 
 Track the task "Verify error handling and recovery" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ state.
 - Recovery restores normal operation
 
 ## Status
-Done – see tests/integration/test_search_error_handling.py
+Archived
 
-## Related
-- #10

@@ -1,4 +1,4 @@
-# Issue 17: Create more comprehensive test contexts
+# Create more comprehensive test contexts
 
 Track the task "Create more comprehensive test contexts" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ scenarios.
 - Complex scenarios compose contexts easily
 
 ## Status
-Done – expanded fixtures in `tests/fixtures/config.py`
+Archived
 
-## Related
-- #14

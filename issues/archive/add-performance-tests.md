@@ -1,4 +1,4 @@
-# Issue 5: Add performance tests
+# Add performance tests
 
 Track the task "Add performance tests" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ typical and peak loads.
 - Performance suite integrated into CI
 
 ## Status
-Done – see tests/integration/test_performance.py
+Archived
 
-## Related
-- #1

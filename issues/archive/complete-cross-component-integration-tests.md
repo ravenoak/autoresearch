@@ -1,4 +1,4 @@
-# Issue 1: Complete cross-component integration tests
+# Complete cross-component integration tests
 
 Track the task "Complete cross-component integration tests" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,16 +13,6 @@ and search components together to validate end-to-end behavior.
 - Integration suite runs in CI
 
 ## Status
-Completed – full cross-component scenarios added in
-tests/integration/test_end_to_end_user_flows.py and the suite runs via
-`task integration` in CI.
+Archived
 
-## Related
-- #2
-- #3
-- #4
-- #5
-- #6
-- #7
-- #8
-- #9
+

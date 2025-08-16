@@ -1,4 +1,4 @@
-# Issue 14: Enhance test step definitions
+# Enhance test step definitions
 
 Track the task "Enhance test step definitions" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,9 +13,5 @@ parameterization.
 - Style checks pass on step files
 
 ## Status
-Done – see tests/behavior/steps/common_steps.py
+Archived
 
-## Related
-- #15
-- #16
-- #17

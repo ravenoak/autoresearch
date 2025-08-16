@@ -1,4 +1,4 @@
-# Issue 4: Test configuration hot-reload with all components
+# Test configuration hot-reload with all components
 
 Track the task "Test configuration hot-reload with all components" from Phase 2 of `TASK_PROGRESS.md`.
 See [TASK_PROGRESS.md](../TASK_PROGRESS.md) for overall status.
@@ -13,7 +13,5 @@ orchestrator, agents, storage, and search without restarts.
 - No data loss or interruptions during reload
 
 ## Status
-Done – see tests/integration/test_config_hot_reload_components.py
+Archived
 
-## Related
-- #1
