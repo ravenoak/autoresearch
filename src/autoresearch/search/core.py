@@ -22,16 +22,26 @@ import json
 import math
 import os
 import re
-import subprocess
 import shutil
-from dataclasses import dataclass
+import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    cast,
+)
 
-import requests
 import numpy as np
+import requests
 from docx import Document
 from pdfminer.high_level import extract_text as extract_pdf_text
 
@@ -56,14 +66,13 @@ try:
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
+from ..cache import cache_results, get_cached_results
+from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
-from ..cache import get_cached_results, cache_results
-from ..config.loader import get_config
 from ..storage import StorageManager
-
-from .http import close_http_session, get_http_session
 from .context import SearchContext
+from .http import close_http_session, get_http_session
 
 SentenceTransformer: Any | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -873,11 +882,6 @@ class Search:
                 results.extend(docs)
 
         def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
-            cached = get_cached_results(search_query, name)
-            if cached is not None:
-                cls.add_embeddings(cached, query_embedding)
-                return name, cached[:max_results]
-
             backend = Search.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
@@ -890,6 +894,12 @@ class Search:
                     provided=name,
                     suggestion="Configure a valid search backend in your configuration file",
                 )
+
+            cached = get_cached_results(search_query, name)
+            if cached is not None:
+                cls.add_embeddings(cached, query_embedding)
+                return name, cached[:max_results]
+
             try:
                 backend_results = backend(search_query, max_results)
             except requests.exceptions.Timeout as exc:

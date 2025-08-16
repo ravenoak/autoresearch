@@ -1,11 +1,12 @@
 import sys
 import types
+
 import pytest
 import requests
 
+from autoresearch import distributed
 from autoresearch.errors import SearchError
 from autoresearch.search import Search
-from autoresearch import distributed
 
 
 def _make_cfg(backends):
@@ -41,6 +42,12 @@ def test_external_lookup_unknown_backend(monkeypatch):
     cfg = _make_cfg(["missing"])
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     Search.backends.pop("missing", None)
+    monkeypatch.setattr(
+        "autoresearch.search.core.get_cached_results",
+        lambda *_, **__: (_ for _ in ()).throw(
+            AssertionError("cache lookup should not occur for unknown backends")
+        ),
+    )
     with pytest.raises(SearchError):
         Search.external_lookup("q", max_results=1)
 
