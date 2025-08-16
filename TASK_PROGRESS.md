@@ -1,12 +1,11 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 16, 2025**, `pytest`
-aborts before collecting tests (`ModuleNotFoundError: fastapi`), so coverage is
+organized by phases from the code complete plan. As of **August 16, 2025**, `uv run pytest -q`
+aborts before collecting tests (`ModuleNotFoundError: typer`), so coverage is
 unavailable. Issue [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
 lists **13 failing unit tests**, and issue
-[refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying
-refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
+[refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
@@ -232,10 +231,10 @@ Coverage could not be generated because `pytest` fails to import `fastapi`
 
 ### Latest Test Results
 
-- `pytest --cov=src` aborts with `ModuleNotFoundError: fastapi`.
+- `uv run pytest --cov=src` aborts with `ModuleNotFoundError: typer`.
   See [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md) for the
   failing test list.
-- `uv run flake8 src tests` reports no style errors.
+- `uv run flake8 src tests` fails: `error: Failed to spawn: flake8`.
 - `uv run mypy src` fails to load `pydantic.mypy` (`No module named 'pydantic'`).
 
 ### Performance Baselines

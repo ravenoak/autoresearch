@@ -9,4 +9,4 @@ Unit tests fail with `ModuleNotFoundError: No module named 'numpy.random'; 'nump
 - Affected tests (e.g., property and vector search modules) run without `ModuleNotFoundError`.
 
 ## Status
-Open
+Archived
