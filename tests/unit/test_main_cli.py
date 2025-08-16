@@ -10,6 +10,8 @@ sys.modules.setdefault("pynndescent", MagicMock())
 
 from autoresearch.main import app  # noqa: E402
 import importlib  # noqa: E402
+from types import MethodType
+
 main_app = importlib.import_module("autoresearch.main.app")  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402
 from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
@@ -18,7 +20,9 @@ from autoresearch.orchestration.orchestrator import Orchestrator  # noqa: E402
 def test_search_default_output_tty(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
+    orch = Orchestrator()
+    monkeypatch.setattr(orch, "run_query", MethodType(mock_run_query, orch))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
     assert "# Answer" in result.stdout
@@ -27,8 +31,10 @@ def test_search_default_output_tty(monkeypatch, mock_run_query):
 def test_search_default_output_json(monkeypatch, mock_run_query):
     runner = CliRunner()
     monkeypatch.setattr("sys.stdout.isatty", lambda: False)
-    monkeypatch.setattr(Orchestrator, "run_query", mock_run_query)
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    orch = Orchestrator()
+    monkeypatch.setattr(orch, "run_query", MethodType(mock_run_query, orch))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
     result = runner.invoke(app, ["search", "q"])
     assert result.exit_code == 0
     assert "{" in result.stdout
@@ -48,12 +54,15 @@ def test_search_reasoning_mode_option(monkeypatch, mode, config_loader):
         *,
         agent_factory=None,
         storage_manager=None,
+        visualize=False,
     ):
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(main_app, "_config_loader", config_loader)
-    monkeypatch.setattr(Orchestrator, "run_query", _run)
+    orch = Orchestrator()
+    monkeypatch.setattr(orch, "run_query", MethodType(_run, orch))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
 
     result = runner.invoke(app, ["search", "q", "--reasoning-mode", mode])
 
@@ -74,12 +83,15 @@ def test_search_primus_start_option(monkeypatch, config_loader):
         *,
         agent_factory=None,
         storage_manager=None,
+        visualize=False,
     ):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(main_app, "_config_loader", config_loader)
-    monkeypatch.setattr(Orchestrator, "run_query", _run)
+    orch = Orchestrator()
+    monkeypatch.setattr(orch, "run_query", MethodType(_run, orch))
+    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
 
     result = runner.invoke(app, ["search", "q", "--primus-start", "2"])
 
