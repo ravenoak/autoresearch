@@ -3,6 +3,7 @@ from datetime import timedelta
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import metrics
+from autoresearch import storage
 from autoresearch.storage import StorageManager
 from freezegun import freeze_time
 
@@ -14,6 +15,7 @@ def test_ram_eviction(storage_manager, monkeypatch):
     )
     config = ConfigModel(ram_budget_mb=1)
     config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     # reload config property
     ConfigLoader()._config = None
@@ -54,17 +56,21 @@ def test_score_eviction(storage_manager, monkeypatch):
     assert "high" in graph.nodes
 
 
-def test_lru_eviction_order(storage_manager, monkeypatch):
+def test_lru_eviction_order(monkeypatch, tmp_path):
+    storage.teardown(remove_db=True)
+    db_file = tmp_path / "kg.duckdb"
+    config = ConfigModel(ram_budget_mb=1)
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+    storage.setup(str(db_file))
     StorageManager.clear_all()
     monkeypatch.setattr(
         "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
     )
-    config = ConfigModel(ram_budget_mb=1)
-    config.search.context_aware.enabled = False
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
-    ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
-    with freeze_time() as frozen_time:
+    with freeze_time("2024-01-01") as frozen_time:
         StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
         frozen_time.tick(delta=timedelta(seconds=1))
         StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
@@ -95,7 +101,7 @@ def test_lru_eviction_sequence(storage_manager, monkeypatch):
     # Avoid eviction during setup
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
 
-    with freeze_time() as frozen_time:
+    with freeze_time("2024-01-01") as frozen_time:
         StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
         frozen_time.tick(delta=timedelta(seconds=1))
         StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})

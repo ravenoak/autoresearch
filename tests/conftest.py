@@ -18,7 +18,10 @@ if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))
 
-
+# Ensure real dependencies are loaded before test stubs
+import networkx  # noqa: F401,E402
+import rdflib  # noqa: F401,E402
+import prometheus_client  # noqa: F401,E402
 import tests.stubs  # noqa: F401,E402
 
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
