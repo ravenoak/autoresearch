@@ -5,7 +5,7 @@ breaker manager. The refactor introduced API changes and incomplete updates that
 leave tests in an inconsistent state.
 
 ## Context
-- The in-progress refactor in issue #27 changed `_cb_manager` usage.
+- The in-progress refactor in [refactor orchestrator to instance-level circuit breaker](archive/refactor-orchestrator-instance-circuit-breaker.md) changed `_cb_manager` usage.
 - Existing tests expect class-level state, causing failures and potential hangs.
 - Fixtures and helper utilities may need redesign to use fresh Orchestrator
   instances per test.
@@ -34,4 +34,4 @@ leave tests in an inconsistent state.
 Open
 
 ## Related
-- #27
+- [refactor orchestrator to instance-level circuit breaker](archive/refactor-orchestrator-instance-circuit-breaker.md)

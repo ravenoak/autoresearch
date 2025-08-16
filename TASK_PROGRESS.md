@@ -3,9 +3,9 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **August 16, 2025**, `pytest`
 aborts before collecting tests (`ModuleNotFoundError: fastapi`), so coverage is
-unavailable. Issue [#28](issues/0028-unit-tests-after-orchestrator-refactor.md)
+unavailable. Issue [unit tests after orchestrator refactor](issues/unit-tests-after-orchestrator-refactor.md)
 lists **13 failing unit tests**, and issue
-[#27](issues/0027-orchestrator-instance-cb-manager.md) documents the underlying
+[refactor orchestrator to instance-level circuit breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying
 refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
@@ -228,12 +228,12 @@ Issues #10–#17 remain open until the test suite passes.
 ### Coverage Report
 
 Coverage could not be generated because `pytest` fails to import `fastapi`
-(see [#28](issues/0028-unit-tests-after-orchestrator-refactor.md)).
+(see [unit tests after orchestrator refactor](issues/unit-tests-after-orchestrator-refactor.md)).
 
 ### Latest Test Results
 
 - `pytest --cov=src` aborts with `ModuleNotFoundError: fastapi`.
-  See [#28](issues/0028-unit-tests-after-orchestrator-refactor.md) for the
+  See [unit tests after orchestrator refactor](issues/unit-tests-after-orchestrator-refactor.md) for the
   failing test list.
 - `uv run flake8 src tests` reports no style errors.
 - `uv run mypy src` fails to load `pydantic.mypy` (`No module named 'pydantic'`).
