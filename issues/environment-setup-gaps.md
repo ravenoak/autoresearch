@@ -7,7 +7,9 @@ prints nothing, `uv pip list | grep flake8` shows no result, and `uv run pytest
 -q` aborts with `ModuleNotFoundError: typer`. Attempting to reinstall
 dependencies with `uv pip install -e '.[full,parsers,git,llm,dev]'` begins
 downloading hundreds of megabytes of CUDA-enabled packages, making setup
-impractical without prebuilt wheels. The virtual environment also exposes
+impractical without prebuilt wheels. Running `uv sync --all-extras` triggers the
+same large downloads for GPU-backed libraries such as Torch and NVIDIA CUDA
+components. The virtual environment also exposes
 `pytest` via a pyenv shim instead of `.venv/bin/pytest`. These symptoms suggest
 the automated setup scripts and documentation remain out of sync with the
 expected tooling.
