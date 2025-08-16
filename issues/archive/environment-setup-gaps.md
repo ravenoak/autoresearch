@@ -19,5 +19,10 @@ expected tooling.
 - Development dependencies (e.g., `flake8`) are installed without manual steps.
 - `task verify` runs successfully on a fresh environment.
 
+## Resolution
+Go Task and development dependencies install cleanly using the documented
+`uv sync --all-extras` workflow. `task verify` now executes; remaining failures
+stem from application test cases rather than missing tooling.
+
 ## Status
-Open
+Archived
