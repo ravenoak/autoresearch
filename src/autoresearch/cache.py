@@ -220,7 +220,10 @@ def clear() -> None:
         ```
     """
     db = get_db()
-    db.truncate()
+    if hasattr(db, "drop_tables"):
+        db.drop_tables()
+    else:
+        db.table("_default").truncate()
 
 
 # Initialise default cache on import
