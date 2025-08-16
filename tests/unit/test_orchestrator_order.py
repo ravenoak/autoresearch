@@ -35,7 +35,7 @@ def test_custom_agents_order(orchestrator_runner):
     assert record == ["A1", "A2", "A3"]
 
 
-def test_async_custom_agents_concurrent():
+def test_async_custom_agents_concurrent(orchestrator_runner):
     record = []
 
     def get_agent(name):
@@ -46,7 +46,7 @@ def test_async_custom_agents_concurrent():
         "autoresearch.orchestration.orchestrator.AgentFactory.get",
         side_effect=get_agent,
     ):
-        orchestrator = Orchestrator()
+        orchestrator = orchestrator_runner()
         asyncio.run(orchestrator.run_query_async("q", cfg, concurrent=True))
 
     assert sorted(record) == ["A1", "A2", "A3"]

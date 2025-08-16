@@ -7,7 +7,6 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
-from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class DummyConn:
@@ -15,14 +14,14 @@ class DummyConn:
         return self
 
 
-def test_metrics_collection_and_endpoint(monkeypatch):
+def test_metrics_collection_and_endpoint(monkeypatch, orchestrator_runner):
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.reset_instance()
-    orch = Orchestrator()
+    orch = orchestrator_runner()
 
     def fake_run_query(query, config, callbacks=None, **kwargs):
         metrics.record_query()
