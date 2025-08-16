@@ -10,4 +10,4 @@
 - Documentation stays in sync with tooling requirements.
 
 ## Status
-Open
+Archived
