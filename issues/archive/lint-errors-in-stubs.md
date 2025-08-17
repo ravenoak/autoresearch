@@ -14,4 +14,4 @@ coverage threshold is not met and broader orchestrator tests error, so `task ver
 - `task verify` succeeds once lint issues are fixed.
 
 ## Status
-Open
+Archived
