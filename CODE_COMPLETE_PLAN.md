@@ -5,8 +5,8 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **August 24, 2025**, Autoresearch targets an **0.1.0-alpha.1** preview
-on **November 15, 2025** and a final **0.1.0** release on **March 1, 2026**.
+As of **August 17, 2025**, Autoresearch targets an **0.1.0-alpha.1** preview
+on **February 15, 2026** and a final **0.1.0** release on **June 1, 2026**.
 `uv run flake8 src tests` fails in
 `src/autoresearch/orchestration/metrics.py:102:1` (E303), `uv run mypy src`
 reports missing attributes in `src/autoresearch/search/core.py`, and `uv run

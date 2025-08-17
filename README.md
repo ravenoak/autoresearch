@@ -8,7 +8,7 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 ## Roadmap
 
-Autoresearch is currently in the **Development** phase preparing for the
+As of **August 17, 2025**, Autoresearch is in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
@@ -23,8 +23,9 @@ src` reports missing attributes in `src/autoresearch/search/core.py`.
 `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
 and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
 coverage is not generated and integration and behavior suites are
-skipped. An **0.1.0-alpha.1** preview is scheduled for **November 15,
-2025**, with the final **0.1.0** milestone targeted for **March 1, 2026**.
+skipped. An **0.1.0-alpha.1** preview is scheduled for **February 15,
+2026** to collect feedback while tests stabilize, with the final
+**0.1.0** milestone targeted for **June 1, 2026**.
 Remaining blockers include these failing tests
 ([resolve-current-test-failures](issues/resolve-current-test-failures.md))
 and release documentation updates

@@ -3,7 +3,7 @@
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
-This schedule was last updated on **August 24, 2025** and reflects the fact that
+This schedule was last updated on **August 17, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0a1** version defined in
 `autoresearch.__version__`. Phase 2 testing tasks remain incomplete:
 `uv run flake8 src tests` fails in
@@ -23,17 +23,17 @@ planned.
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0-alpha.1** | 2025-11-15 | Alpha preview to gather feedback while testing settles ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
-| **0.1.0** | 2026-03-01 | Finalize packaging, docs and CI checks with tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/update-release-documentation.md)) |
-| **0.1.1** | 2026-05-15 | Bug fixes and documentation updates |
-| **0.2.0** | 2026-08-01 | API stabilization, configuration hot-reload, improved search backends |
-| **0.3.0** | 2026-10-15 | Distributed execution support, monitoring utilities |
-| **1.0.0** | 2027-01-15 | Full feature set, performance tuning and stable interfaces |
+| **0.1.0-alpha.1** | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
+| **0.1.0** | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/update-release-documentation.md)) |
+| **0.1.1** | 2026-08-15 | Bug fixes and documentation updates |
+| **0.2.0** | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
+| **0.3.0** | 2027-01-15 | Distributed execution support, monitoring utilities |
+| **1.0.0** | 2027-04-01 | Full feature set, performance tuning and stable interfaces |
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
 schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1**
-release is scheduled for **November 15, 2025**. The final **0.1.0** milestone is
-now set for **March 1, 2026** while packaging tasks are resolved.
+release is scheduled for **February 15, 2026**. The final **0.1.0** milestone is
+now set for **June 1, 2026** while packaging tasks are resolved.
 
 The following tasks remain before publishing **0.1.0**:
 
