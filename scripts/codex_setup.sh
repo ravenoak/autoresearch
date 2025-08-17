@@ -21,9 +21,13 @@ if ! command -v uv >/dev/null 2>&1; then
     exit 1
 fi
 
-# Ensure Python 3.12 is available before proceeding
-if ! command -v python3.12 >/dev/null 2>&1; then
-    echo "python3.12 is required but was not found in PATH" >&2
+# Ensure Python 3.12 or newer is available before proceeding
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required but was not found in PATH" >&2
+    exit 1
+fi
+if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)' >/dev/null 2>&1; then
+    echo "Python 3.12 or newer is required" >&2
     exit 1
 fi
 

@@ -2,14 +2,14 @@
 # Ensure we are running with Python 3.12 or newer
 set -euo pipefail
 
-# Abort if python3.12 is not available
-if ! command -v python3.12 >/dev/null 2>&1; then
-    echo "python3.12 is required but was not found in PATH" >&2
+# Abort if python3 is not available
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required but was not found in PATH" >&2
     exit 1
 fi
 
-PYTHON_VERSION=$(python3.12 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-if python3.12 - <<'EOF'
+PYTHON_VERSION=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+if python3 - <<'EOF'
 import sys
 sys.exit(0 if sys.version_info >= (3, 12) else 1)
 EOF

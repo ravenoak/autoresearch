@@ -15,6 +15,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 
 ## Issue tracking
 - Track work items in the `/issues` directory.
+- If the issue tracker directory moves or is renamed, update this section to reference the new location.
 - Tickets use the template and naming rules in [`issues/README.md`](issues/README.md).
 - File names are slugged titles without numeric prefixes.
 - Do not include numeric identifiers in ticket titles or content; reference tickets by slugged filenames.
@@ -33,18 +34,18 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Documents in `docs/external_research_papers/` are copies of academic papers and can be referenced using best-practices.
 - Use **uv** for dependency management and project interactions.
   - **Run all commands inside the `uv` virtual environment.** Activate it with `source .venv/bin/activate` or prefix commands with `uv run` or `uv pip`.
-  - Python **3.12 or newer** is required. Confirm with `python --version`.
+  - Python **3.12 or newer** is required. Confirm with `python3 --version`.
   - Create a virtual environment with `uv venv`.
     - Quick start: `uv venv && uv sync --all-extras`.
     - `scripts/setup.sh` verifies the interpreter and fails if it is too old.
-    - Both setup scripts abort if `python3.12` is not found on your `PATH`.
+    - Both setup scripts abort if `python3` is missing or older than 3.12.
     - Install dependencies and extras:
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
   - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
   - Confirm dev tools are installed with `uv pip list | grep flake8`.
-  - After running `scripts/codex_setup.sh`, verify `pytest-bdd`, `pytest-cov`, `tomli_w`, `hypothesis`, `freezegun`, `responses`, `uvicorn`, `psutil`, `duckdb-extension-vss`, `a2a-sdk`, `GitPython`, and `fastapi` are present using `uv pip list`.
+  - After running `scripts/codex_setup.sh`, verify `pytest`, `pytest-bdd`, `pytest-httpx`, `pytest-cov`, `flake8`, `hypothesis`, `tomli_w`, `freezegun`, `duckdb-extension-vss`, `a2a-sdk`, `GitPython`, `pdfminer-six`, `python-docx`, `sentence-transformers`, `transformers`, `spacy`, `bertopic`, `fastapi`, `responses`, `uvicorn`, and `psutil` are present using `uv pip list`.
 - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
     must either disable the `vector_extension` entirely or point this variable
     to the stub at `extensions/vss_stub.duckdb_extension`. Set it to a real
