@@ -52,16 +52,17 @@ interpreters via pyenv or another tool, specify the path when creating the
 environment, e.g. `uv venv -p python3.12`.
 Both setup scripts abort if `python3.12` cannot be located.
 The project recently transitioned from **Poetry** to
-[**uv**](https://github.com/astral-sh/uv) for dependency management. You can
-install the project using `uv` or plain **pip**.
+[**uv**](https://github.com/astral-sh/uv) for dependency management. The `uv.lock`
+file is the authoritative source of pinned dependencies, replacing the old
+`poetry.lock`. You can install the project using `uv` or plain **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features
 and upgrade instructions.
-The `scripts/setup.sh` helper ensures the lock file is current and installs
+The `scripts/setup.sh` helper ensures `uv.lock` is current and installs
 all optional extras so development and runtime dependencies are available for testing.
 Run `scripts/setup.sh` to install dependencies automatically. CI environments
 must include all extras, so run `uv sync --all-extras && uv pip install -e .`.
 The `dev-minimal` option is only for local smoke tests. After editing
-`pyproject.toml`, run `uv lock` and reinstall with all extras to apply updates.
+`pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall with all extras to apply updates.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:

@@ -42,7 +42,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
     - Install dependencies and extras:
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
-  - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
+  - When modifying `pyproject.toml`, regenerate `uv.lock` with `uv lock` before reinstalling.
+    `uv.lock` is the authoritative lock file; do not commit `poetry.lock`.
     - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
     - Confirm dev tools are installed with `uv pip list | grep flake8`.
     - Verify each CLI tool runs from the virtual environment:
@@ -167,6 +168,7 @@ in the commit body. Closes #123.
 ```
 
 ## Legacy workflow
-Autoresearch previously relied on **Poetry**. Use `uv venv` to create the
+Autoresearch previously relied on **Poetry**, but `uv.lock` now tracks dependencies
+and the old `poetry.lock` file has been removed. Use `uv venv` to create the
 environment, `uv pip install -e '.[full,dev]'` to install dependencies, and `uv run <cmd>`
 to invoke tools. Run `uv run pip install -e .` if you need an editable install.
