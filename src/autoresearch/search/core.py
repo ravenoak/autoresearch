@@ -114,6 +114,7 @@ class hybridmethod:
 
     def __get__(self, obj: Any, objtype: type | None = None) -> Callable[..., Any]:
         if obj is None:
+            assert objtype is not None
 
             def wrapper(*args: Any, **kwargs: Any) -> Any:
                 instance = objtype.get_instance()  # type: ignore[attr-defined]
@@ -158,12 +159,10 @@ class Search:
         Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
     # Expose shared instance registries for legacy access
-    backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, Any]]]]] = (
-        _default_backends
+    backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = _default_backends
+    embedding_backends: Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]] = (
+        _default_embedding_backends
     )
-    embedding_backends: ClassVar[
-        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
-    ] = _default_embedding_backends
     _shared_instance: ClassVar[Optional["Search"]] = None
 
     def __init__(self, cache: Optional[SearchCache] = None) -> None:
@@ -174,7 +173,7 @@ class Search:
             str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
         ] = dict(self._default_embedding_backends)
         self._sentence_transformer: Optional[SentenceTransformerType] = None
-        self.cache = cache or get_cache()
+        self.cache: SearchCache = cache or get_cache()
 
     @classmethod
     def get_instance(cls) -> "Search":
