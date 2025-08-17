@@ -389,17 +389,18 @@ def test_external_lookup_hybrid_query(monkeypatch):
 
     monkeypatch.setattr(Search, "get_sentence_transformer", lambda: DummyModel())
 
-    Search.backends["kw"] = lambda q, max_results: [
-        {"title": "KW", "url": "kw"}
-    ]
-    Search.embedding_backends["emb"] = lambda e, max_results: [
-        {"title": "VEC", "url": "vec"}
-    ]
+    with Search.temporary_state() as search:
+        search.backends["kw"] = lambda q, max_results: [
+            {"title": "KW", "url": "kw"}
+        ]
+        search.embedding_backends["emb"] = lambda e, max_results: [
+            {"title": "VEC", "url": "vec"}
+        ]
 
-    monkeypatch.setattr(Search, "cross_backend_rank", lambda q, b, query_embedding=None: [
-        *b.get("kw", []), *b.get("emb", [])
-    ])
+        monkeypatch.setattr(search, "cross_backend_rank", lambda q, b, query_embedding=None: [
+            *b.get("kw", []), *b.get("emb", [])
+        ])
 
-    results = Search.external_lookup("hello", max_results=1)
-    urls = {r["url"] for r in results}
-    assert "kw" in urls and "vec" in urls
+        results = search.external_lookup("hello", max_results=1)
+        urls = {r["url"] for r in results}
+        assert "kw" in urls and "vec" in urls

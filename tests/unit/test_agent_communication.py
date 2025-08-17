@@ -40,53 +40,55 @@ def test_coalition_management_in_state():
 
 
 def test_agent_registry_coalitions():
-    AgentFactory.register("Simple", SimpleAgent)
-    AgentRegistry.create_coalition("squad", ["Simple"])
-    assert "squad" in AgentRegistry.list_coalitions()
-    assert AgentRegistry.get_coalition("squad") == ["Simple"]
+    with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
+        AgentFactory.register("Simple", SimpleAgent)
+        AgentRegistry.create_coalition("squad", ["Simple"])
+        assert "squad" in AgentRegistry.list_coalitions()
+        assert AgentRegistry.get_coalition("squad") == ["Simple"]
 
 
 def test_orchestrator_handles_coalitions(monkeypatch, tmp_path, orchestrator):
-    AgentFactory.register("A1", SimpleAgent)
-    AgentFactory.register("A2", SimpleAgent)
-    cfg = ConfigModel.model_construct(
-        agents=["team"],
-        loops=1,
-        coalitions={"team": ["A1", "A2"]},
-    )
-    executed: list[str] = []
+    with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
+        AgentFactory.register("A1", SimpleAgent)
+        AgentFactory.register("A2", SimpleAgent)
+        cfg = ConfigModel.model_construct(
+            agents=["team"],
+            loops=1,
+            coalitions={"team": ["A1", "A2"]},
+        )
+        executed: list[str] = []
 
-    def fake_get(name):
-        agent = SimpleAgent(name=name)
-        return agent
+        def fake_get(name):
+            agent = SimpleAgent(name=name)
+            return agent
 
-    def fake_execute_cycle(
-        loop,
-        loops,
-        agents,
-        primus_index,
-        max_errors,
-        state,
-        config,
-        metrics,
-        callbacks,
-        agent_factory,
-        storage_manager,
-        tracer,
-        cb_manager,
-    ):
-        for agent in agents[primus_index]:
-            executed.append(agent)
-        return primus_index
+        def fake_execute_cycle(
+            loop,
+            loops,
+            agents,
+            primus_index,
+            max_errors,
+            state,
+            config,
+            metrics,
+            callbacks,
+            agent_factory,
+            storage_manager,
+            tracer,
+            cb_manager,
+        ):
+            for agent in agents[primus_index]:
+                executed.append(agent)
+            return primus_index
 
-    monkeypatch.setattr(AgentFactory, "get", staticmethod(fake_get))
-    monkeypatch.setattr(OrchestrationUtils, "execute_cycle", fake_execute_cycle)
-    monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
-    monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
+        monkeypatch.setattr(AgentFactory, "get", staticmethod(fake_get))
+        monkeypatch.setattr(OrchestrationUtils, "execute_cycle", fake_execute_cycle)
+        monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(tmp_path / "rel.json"))
+        monkeypatch.setenv("AUTORESEARCH_QUERY_TOKENS", str(tmp_path / "qt.json"))
 
-    orchestrator.run_query("q", cfg)
+        orchestrator.run_query("q", cfg)
 
-    assert executed == ["A1", "A2"]
+        assert executed == ["A1", "A2"]
 
 
 def test_message_protocols():
