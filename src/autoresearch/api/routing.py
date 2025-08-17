@@ -255,19 +255,19 @@ async def async_query_endpoint(
                 metrics={"error": error_info.message, "error_details": error_data},
             )
 
-    task = asyncio.create_task(runner())
-    http_request.app.state.async_tasks[task_id] = task
+    future: asyncio.Future = asyncio.create_task(runner())
+    http_request.app.state.async_tasks[task_id] = future
     return {"query_id": task_id}
 
 
 @router.get("/query/{query_id}")
 async def get_query_status(query_id: str, request: Request) -> Response:
-    task = request.app.state.async_tasks.get(query_id)
-    if task is None:
-        return PlainTextResponse("not found", status_code=404)
-    if not task.done():
+    future = request.app.state.async_tasks.get(query_id)
+    if future is None:
+        return JSONResponse({"detail": "not found"}, status_code=404)
+    if not future.done():
         return JSONResponse({"status": "running"})
-    result = await task
+    result = future.result()
     del request.app.state.async_tasks[query_id]
     if isinstance(result, QueryResponse):
         return JSONResponse(result.model_dump())
@@ -276,10 +276,10 @@ async def get_query_status(query_id: str, request: Request) -> Response:
 
 @router.delete("/query/{query_id}")
 async def cancel_query(query_id: str, request: Request) -> Response:
-    task = request.app.state.async_tasks.get(query_id)
-    if task is None:
+    future = request.app.state.async_tasks.get(query_id)
+    if future is None:
         return PlainTextResponse("not found", status_code=404)
-    task.cancel()
+    future.cancel()
     del request.app.state.async_tasks[query_id]
     return PlainTextResponse("canceled")
 
