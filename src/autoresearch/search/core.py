@@ -67,7 +67,7 @@ try:
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
-from ..cache import cache_results, get_cached_results
+from ..cache import Cache, get_cache
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
@@ -799,7 +799,10 @@ class Search:
 
     @classmethod
     def external_lookup(
-        cls, query: str | Dict[str, Any], max_results: int = 5
+        cls,
+        query: str | Dict[str, Any],
+        max_results: int = 5,
+        cache_obj: Cache | None = None,
     ) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends.
 
@@ -838,6 +841,7 @@ class Search:
             ]
         """
         cfg = get_config()
+        cache_obj = cache_obj or get_cache()
 
         if isinstance(query, dict):
             text_query = str(query.get("text", ""))
@@ -898,7 +902,7 @@ class Search:
                     suggestion="Configure a valid search backend in your configuration file",
                 )
 
-            cached = get_cached_results(search_query, name)
+            cached = cache_obj.get_cached_results(search_query, name)
             if cached is not None:
                 cls.add_embeddings(cached, query_embedding)
                 return name, cached[:max_results]
@@ -944,7 +948,7 @@ class Search:
                 )
 
             if backend_results:
-                cache_results(search_query, name, backend_results)
+                cache_obj.cache_results(search_query, name, backend_results)
                 cls.add_embeddings(backend_results, query_embedding)
                 for r in backend_results:
                     r.setdefault("backend", name)
@@ -1469,3 +1473,29 @@ def _duckdb_embedding_backend(
             }
         )
     return formatted
+
+
+class SearchInstance:
+    """Thin wrapper around :class:`Search` with an instance-specific cache."""
+
+    def __init__(self, cache: Cache | None = None) -> None:
+        self._cache = cache or get_cache()
+
+    def external_lookup(
+        self, query: str | Dict[str, Any], max_results: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Delegate to :meth:`Search.external_lookup` using the instance cache."""
+        return Search.external_lookup(
+            query, max_results=max_results, cache_obj=self._cache
+        )
+
+
+_shared_search: Optional[SearchInstance] = None
+
+
+def get_search() -> SearchInstance:
+    """Return a process-wide search instance."""
+    global _shared_search
+    if _shared_search is None:
+        _shared_search = SearchInstance()
+    return _shared_search
