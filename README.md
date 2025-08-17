@@ -12,16 +12,22 @@ Autoresearch is currently in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
-planned for **July 20, 2025**, but the schedule slipped. Running `task
-coverage` on **August 14, 2025** fails in
-`tests/unit/test_main_config_commands.py::test_config_init_command_force`,
-so coverage is not generated and integration and behavior suites are
-skipped. `task verify` also fails in
-`tests/unit/test_eviction.py::test_lru_eviction_order`. Packaging checks
-and documentation continue, so the milestone is now targeted for
-**November 15, 2025**. Remaining blockers include these failing tests
-(issues [refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) and [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)), missing coverage, and packaging scripts that
-need additional configuration. See
+planned for **July 20, 2025**, but the schedule slipped. `uv run flake8
+src tests` now fails in
+`src/autoresearch/orchestration/metrics.py:102:1` (E303) and `uv run mypy
+src` reports missing attributes in `src/autoresearch/search/core.py`.
+`uv run pytest -q` fails in
+`tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
+coverage is not generated and integration and behavior suites are
+skipped. An **0.1.0-alpha.1** preview is scheduled for **November 15,
+2025**, with the final **0.1.0** milestone targeted for **March 1, 2026**.
+Remaining blockers include these failing tests
+([resolve-current-test-failures](issues/resolve-current-test-failures.md))
+and packaging scripts that need additional configuration. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 

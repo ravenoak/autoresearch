@@ -1,13 +1,16 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. After installing missing
-testing dependencies (`pytest-bdd`, `pytest-httpx`, `pytest-cov`, and `tomli_w`),
-the behavior test suite runs but the first failure occurs in
-`test_async_query_result` where the async status response lacks an "answer"
-field. Issue [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
-lists **13 failing unit tests**, and issue
-[refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md) documents the underlying refactor. The **0.1.0** release is now targeted for **March 1, 2026**.
+organized by phases from the code complete plan. After installing development
+extras with `uv sync --all-extras`, `uv run flake8 src tests` fails in
+`src/autoresearch/orchestration/metrics.py:102:1`, `uv run mypy src` reports six
+attribute errors in `src/autoresearch/search/core.py`, and `uv run pytest -q`
+fails in `tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`. The
+**0.1.0** release is now targeted for **March 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
@@ -72,30 +75,30 @@ lists **13 failing unit tests**, and issue
 
 ### 2.2 Integration Tests
 
-- [ ] Complete cross-component integration tests [#1](issues/archive/0001-complete-cross-component-integration-tests.md)
-  - [ ] Test orchestrator with all agent combinations [#2](issues/archive/0002-test-orchestrator-with-all-agent-combinations.md)
-  - [ ] Verify storage integration with search functionality [#3](issues/archive/0003-verify-storage-integration-with-search-functionality.md)
-  - [ ] Test configuration hot-reload with all components [#4](issues/archive/0004-test-configuration-hot-reload-with-all-components.md)
-  - [ ] Add performance tests [#5](issues/archive/0005-add-performance-tests.md)
-  - [ ] Implement benchmarks for query processing time [#6](issues/archive/0006-implement-benchmarks-for-query-processing-time.md)
-  - [ ] Test memory usage under various conditions [#7](issues/archive/0007-test-memory-usage-under-various-conditions.md)
-  - [ ] Verify token usage optimization [#8](issues/archive/0008-verify-token-usage-optimization.md)
-  - [ ] Monitor token usage regressions automatically [#9](issues/archive/0009-monitor-token-usage-regressions-automatically.md)
+- [ ] Complete cross-component integration tests [complete-cross-component-integration-tests](issues/archive/complete-cross-component-integration-tests.md)
+  - [ ] Test orchestrator with all agent combinations [test-orchestrator-with-all-agent-combinations](issues/archive/test-orchestrator-with-all-agent-combinations.md)
+  - [ ] Verify storage integration with search functionality [verify-storage-integration-with-search-functionality](issues/archive/verify-storage-integration-with-search-functionality.md)
+  - [ ] Test configuration hot-reload with all components [test-configuration-hot-reload-with-all-components](issues/archive/test-configuration-hot-reload-with-all-components.md)
+  - [ ] Add performance tests [add-performance-tests](issues/archive/add-performance-tests.md)
+  - [ ] Implement benchmarks for query processing time [implement-benchmarks-for-query-processing-time](issues/archive/implement-benchmarks-for-query-processing-time.md)
+  - [ ] Test memory usage under various conditions [test-memory-usage-under-various-conditions](issues/archive/test-memory-usage-under-various-conditions.md)
+  - [ ] Verify token usage optimization [verify-token-usage-optimization](issues/archive/verify-token-usage-optimization.md)
+  - [ ] Monitor token usage regressions automatically [monitor-token-usage-regressions-automatically](issues/archive/monitor-token-usage-regressions-automatically.md)
 
-Issues #1–#9 remain open and require further work.
+These integration test issues remain open and require further work.
 
 ### 2.3 Behavior Tests
 
-- [ ] Complete BDD test scenarios [#10](issues/archive/0010-complete-bdd-test-scenarios.md)
-  - [ ] Add scenarios for all user-facing features [#11](issues/archive/0011-add-scenarios-for-all-user-facing-features.md)
-  - [ ] Test all reasoning modes with realistic queries [#12](issues/archive/0012-test-all-reasoning-modes-with-realistic-queries.md)
-  - [ ] Verify error handling and recovery [#13](issues/archive/0013-verify-error-handling-and-recovery.md)
-- [ ] Enhance test step definitions [#14](issues/archive/0014-enhance-test-step-definitions.md)
-  - [ ] Add more detailed assertions [#15](issues/archive/0015-add-more-detailed-assertions.md)
-  - [ ] Implement better test isolation [#16](issues/archive/0016-implement-better-test-isolation.md)
-  - [ ] Create more comprehensive test contexts [#17](issues/archive/0017-create-more-comprehensive-test-contexts.md)
+- [ ] Complete BDD test scenarios [complete-bdd-test-scenarios](issues/archive/complete-bdd-test-scenarios.md)
+  - [ ] Add scenarios for all user-facing features [add-scenarios-for-all-user-facing-features](issues/archive/add-scenarios-for-all-user-facing-features.md)
+  - [ ] Test all reasoning modes with realistic queries [test-all-reasoning-modes-with-realistic-queries](issues/archive/test-all-reasoning-modes-with-realistic-queries.md)
+  - [ ] Verify error handling and recovery [verify-error-handling-and-recovery](issues/archive/verify-error-handling-and-recovery.md)
+- [ ] Enhance test step definitions [enhance-test-step-definitions](issues/archive/enhance-test-step-definitions.md)
+  - [ ] Add more detailed assertions [add-more-detailed-assertions](issues/archive/add-more-detailed-assertions.md)
+  - [ ] Implement better test isolation [implement-better-test-isolation](issues/archive/implement-better-test-isolation.md)
+  - [ ] Create more comprehensive test contexts [create-more-comprehensive-test-contexts](issues/archive/create-more-comprehensive-test-contexts.md)
 
-Issues #10–#17 remain open until the test suite passes.
+These behavior test issues remain open until the test suite passes.
 
 ### 4.1 Code Documentation
 
@@ -228,21 +231,21 @@ Issues #10–#17 remain open until the test suite passes.
 
 ### Coverage Report
 
-Coverage could not be generated because `pytest` fails to import `fastapi`
-(see [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)).
+Coverage could not be generated because `uv run pytest -q` reports
+failures; see [resolve-current-test-failures](issues/resolve-current-test-failures.md).
 
 ### Latest Test Results
 
-- Installed missing test dependencies (`pytest-bdd`, `pytest-httpx`,
-  `pytest-cov`, and `tomli_w`).
-- `uv run pytest tests/behavior -q --maxfail=1` fails:
-  `tests/behavior/steps/api_async_query_steps.py::test_async_query_result`
-  asserts `data.get("answer")` is `None`.
-- `uv run pytest --cov=src` continues to fail; see
-  [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
-  for the failing test list.
-- `uv run flake8 src tests` fails: `error: Failed to spawn: flake8`.
-- `uv run mypy src` fails to load `pydantic.mypy` (`No module named 'pydantic'`).
+- `uv run flake8 src tests` reports:
+  `src/autoresearch/orchestration/metrics.py:102:1: E303 too many blank lines (4)`.
+- `uv run mypy src` reports six attribute errors in
+  `src/autoresearch/search/core.py`.
+- `uv run pytest -q` fails:
+  - `tests/unit/test_cache.py::test_search_uses_cache` – `SearchError: Unknown search backend 'dummy'`
+  - `tests/unit/test_cache.py::test_cache_is_backend_specific` – `SearchError: Unknown search backend 'b1'`
+  - `tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure` – `assert False`
+  - `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt` – `assert 130 == 0`
+  - `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint` – `assert 403 == 200`
 
 ### Performance Baselines
 

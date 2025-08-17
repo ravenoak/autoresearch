@@ -3,6 +3,14 @@
 
 Based on a thorough analysis of the Autoresearch codebase, I've developed a comprehensive plan to bring the project to completion. This plan addresses all aspects of the system, from core functionality to testing and documentation.
 
+## Status
+
+As of **August 24, 2025**, Autoresearch targets an **0.1.0-alpha.1** preview
+on **November 15, 2025** and a final **0.1.0** release on **March 1, 2026**.
+Failing tests and documentation gaps remain open; see
+[resolve-current-test-failures](issues/resolve-current-test-failures.md) and
+[update-release-documentation](issues/update-release-documentation.md).
+
 ## 1. Core System Completion
 
 ### 1.1 Orchestration System
