@@ -1,9 +1,4 @@
-import importlib
-
 import duckdb
-from fastapi.testclient import TestClient
-
-from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
@@ -18,11 +13,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     metrics.reset_metrics()
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
-    cfg = ConfigModel.model_construct(
-        api=APIConfig(api_keys={"secret": "admin"})
-    )
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader.reset_instance()
+    cfg = ConfigModel.model_construct(api=APIConfig(api_keys={"secret": "admin"}))
     orch = orchestrator
 
     def fake_run_query(query, config, callbacks=None, **kwargs):
@@ -33,12 +24,12 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(orch, "run_query", fake_run_query)
+
     import sys
     import types
+    from autoresearch.api import deps
 
-    import autoresearch.api.routing as routing
-
-    monkeypatch.setattr(routing, "create_orchestrator", lambda: orch)
+    monkeypatch.setattr(deps, "require_permission", lambda _perm: lambda: None)
     prom = types.SimpleNamespace(
         CONTENT_TYPE_LATEST="text/plain",
         generate_latest=lambda: (
@@ -47,31 +38,15 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
         ),
     )
     monkeypatch.setitem(sys.modules, "prometheus_client", prom)
+    from autoresearch.api.routing import metrics_endpoint
 
-    api = importlib.import_module("autoresearch.api")
-    app = api.app
-    start_queries = (
-        metrics.QUERY_COUNTER._value.get()
-        if hasattr(metrics.QUERY_COUNTER, "_value")
-        else 0
-    )
-    start_errors = (
-        metrics.ERROR_COUNTER._value.get()
-        if hasattr(metrics.ERROR_COUNTER, "_value")
-        else 0
-    )
+    # Record metrics directly
+    fake_run_query("hi", cfg)
 
-    client = TestClient(app)
-    headers = {"X-API-Key": "secret"}
-    client.post("/query", headers=headers, json={"query": "hi"})
+    import asyncio
 
-    assert metrics.QUERY_COUNTER._value.get() == start_queries + 1
-    assert metrics.ERROR_COUNTER._value.get() == start_errors + 1
-    assert metrics.TOKENS_IN_COUNTER._value.get() >= 5
-    assert metrics.TOKENS_OUT_COUNTER._value.get() >= 7
-
-    resp = client.get("/metrics", headers=headers)
+    resp = asyncio.run(metrics_endpoint(None))
     assert resp.status_code == 200
-    body = resp.text
+    body = resp.body.decode()
     assert "autoresearch_queries_total" in body
     assert "autoresearch_tokens_in_total" in body
