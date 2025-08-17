@@ -13,6 +13,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Changes to tooling must be reflected in both this document and `scripts/codex_setup.sh` so documentation and setup stay in sync.
 - Changes under `tests/` must keep this document and `scripts/codex_setup.sh` in sync to reflect new test requirements.
 
+## Date references
+- Use the container's system clock for current dates.
+- Derive past dates from `git log` commit timestamps.
+- Format dates consistently (e.g., `August 17, 2025`).
+
 ## Issue tracking
 - Track work items in the `/issues` directory.
 - If the issue tracker directory moves or is renamed, update this section to reference the new location.
