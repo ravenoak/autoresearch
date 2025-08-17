@@ -1,5 +1,5 @@
 import duckdb
-from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.config.models import ConfigModel, APIConfig
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
 
