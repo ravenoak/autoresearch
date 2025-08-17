@@ -10,6 +10,7 @@ backwards compatibility, and thin wrapper functions mirror the original API.
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, List, Optional
@@ -55,7 +56,11 @@ class SearchCache:
         """Store search results for a specific query/backend combination."""
         db = self.get_db()
         db.upsert(
-            {"query": query, "backend": backend, "results": results},
+            {
+                "query": query,
+                "backend": backend,
+                "results": deepcopy(results),
+            },
             (Query().query == query) & (Query().backend == backend),
         )
 
@@ -67,7 +72,7 @@ class SearchCache:
         condition = (Query().query == query) & (Query().backend == backend)
         row = db.get(condition)
         if row:
-            return list(row.get("results", []))
+            return deepcopy(row.get("results", []))
         return None
 
     def clear(self) -> None:
