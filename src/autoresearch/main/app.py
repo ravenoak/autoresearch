@@ -543,7 +543,13 @@ def serve_a2a(
         console.print("\nPress Ctrl+C to stop the server")
 
         # Start the server
-        a2a_interface.start()
+        try:
+            a2a_interface.start()
+        except KeyboardInterrupt:
+            if a2a_interface is not None:
+                a2a_interface.stop()
+            console.print("[bold yellow]Server stopped[/bold yellow]")
+            return 0
 
         # Keep the main thread running until interrupted
         while True:
