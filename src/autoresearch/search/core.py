@@ -32,6 +32,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterator,
     List,
@@ -148,23 +149,25 @@ class Search:
     """
 
     # Registry mapping backend name to callable
-    backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
+    backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, str]]]]] = {}
 
     # Snapshot of default backends for resetting
-    _default_backends: Dict[str, Callable[[str, int], List[Dict[str, str]]]] = {}
+    _default_backends: ClassVar[
+        Dict[str, Callable[[str, int], List[Dict[str, str]]]]
+    ] = {}
 
     # Registry mapping embedding backend name to callable
-    embedding_backends: Dict[
-        str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
+    embedding_backends: ClassVar[
+        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
 
     # Snapshot of default embedding backends for resetting
-    _default_embedding_backends: Dict[
-        str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
+    _default_embedding_backends: ClassVar[
+        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
 
     # Singleton instance of the sentence transformer model
-    _sentence_transformer = None
+    _sentence_transformer: ClassVar[Optional[SentenceTransformerType]] = None
 
     @staticmethod
     def get_http_session() -> requests.Session:
@@ -188,13 +191,11 @@ class Search:
     @contextmanager
     def temporary_state(cls) -> Iterator[type["Search"]]:
         """Yield a Search subclass with isolated state."""
-        TempSearch = type("TempSearch", (cls,), {})
+        TempSearch: type["Search"] = type("TempSearch", (cls,), {})
         TempSearch.backends = dict(cls.backends)
         TempSearch.embedding_backends = dict(cls.embedding_backends)
         TempSearch._default_backends = dict(cls._default_backends)
-        TempSearch._default_embedding_backends = dict(
-            cls._default_embedding_backends
-        )
+        TempSearch._default_embedding_backends = dict(cls._default_embedding_backends)
         TempSearch._sentence_transformer = None
         try:
             yield TempSearch
