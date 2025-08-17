@@ -4,13 +4,18 @@ This module tests the BM25 algorithm, semantic similarity scoring, source credib
 assessment, and the overall ranking functionality.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-import numpy as np
+import os
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
-from autoresearch.search import Search
-from autoresearch.config.models import SearchConfig
+import numpy as np
+import pytest
+from hypothesis import HealthCheck, given, settings, strategies as st
+
+from autoresearch.cache import SearchCache
+from autoresearch.config.models import ContextAwareSearchConfig, SearchConfig
 from autoresearch.errors import ConfigError
+from autoresearch.search import Search
 
 
 @pytest.fixture
@@ -302,3 +307,72 @@ def test_search_config_invalid_weights():
             semantic_similarity_weight=0.3,
             source_credibility_weight=0.5,
         )
+
+
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@given(data=st.data())
+def test_rank_results_sorted(mock_config, data):
+    """Ranking must return results sorted by relevance_score."""
+    n = data.draw(st.integers(min_value=1, max_value=5))
+    results = [
+        {
+            "title": f"title {i}",
+            "url": f"https://example.com/{i}",
+            "snippet": "s",
+        }
+        for i in range(n)
+    ]
+    bm25 = data.draw(
+        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
+    )
+    semantic = data.draw(
+        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
+    )
+    credibility = data.draw(
+        st.lists(st.floats(min_value=0, max_value=1), min_size=n, max_size=n)
+    )
+    with (
+        patch("autoresearch.search.core.get_config", return_value=mock_config),
+        patch.object(Search, "calculate_bm25_scores", return_value=bm25),
+        patch.object(Search, "calculate_semantic_similarity", return_value=semantic),
+        patch.object(Search, "assess_source_credibility", return_value=credibility),
+    ):
+        ranked = Search.rank_results("q", results)
+
+    assert len(ranked) == n
+    assert all(
+        ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"]
+        for i in range(len(ranked) - 1)
+    )
+
+
+@given(texts=st.lists(st.text(min_size=1), min_size=1, max_size=5))
+def test_external_lookup_uses_cache(texts):
+    """External lookups should reuse cached results."""
+    results = [
+        {"title": t, "url": f"https://example.com/{i}", "snippet": "s"}
+        for i, t in enumerate(texts)
+    ]
+    backend = MagicMock(return_value=results)
+    with TemporaryDirectory() as tmpdir:
+        cache = SearchCache(db_path=os.path.join(tmpdir, "cache.json"))
+        search = Search(cache=cache)
+        search.backends = {"mock": backend}
+        cfg = MagicMock()
+        cfg.search = SearchConfig(
+            backends=["mock"],
+            embedding_backends=[],
+            use_bm25=False,
+            use_semantic_similarity=False,
+            use_source_credibility=False,
+            bm25_weight=0.0,
+            semantic_similarity_weight=0.0,
+            source_credibility_weight=1.0,
+            context_aware=ContextAwareSearchConfig(enabled=False),
+        )
+        with patch("autoresearch.search.core.get_config", return_value=cfg):
+            first = search.external_lookup("query")
+            second = search.external_lookup("query")
+
+    assert backend.call_count == 1
+    assert second == first
