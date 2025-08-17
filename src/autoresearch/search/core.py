@@ -192,9 +192,7 @@ class Search:
         TempSearch.backends = dict(cls.backends)
         TempSearch.embedding_backends = dict(cls.embedding_backends)
         TempSearch._default_backends = dict(cls._default_backends)
-        TempSearch._default_embedding_backends = dict(
-            cls._default_embedding_backends
-        )
+        TempSearch._default_embedding_backends = dict(cls._default_embedding_backends)
         TempSearch._sentence_transformer = None
         try:
             yield TempSearch
@@ -922,7 +920,7 @@ class Search:
                     backend=name,
                     query=text_query,
                     suggestion="Check your network connection and ensure the search backend is properly configured",
-                )
+                ) from exc
             except json.JSONDecodeError as exc:
                 log.warning(f"{name} search returned invalid JSON: {exc}")
                 raise SearchError(
