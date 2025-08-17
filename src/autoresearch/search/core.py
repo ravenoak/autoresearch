@@ -67,7 +67,16 @@ try:
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
-from ..cache import SearchCache, get_cache
+from ..cache import (
+    SearchCache,
+    cache_results as _cache_results,
+    get_cache,
+    get_cached_results as _get_cached_results,
+)
+
+# Re-export cache helpers for backward compatibility
+cache_results = _cache_results
+get_cached_results = _get_cached_results
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
@@ -75,7 +84,7 @@ from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
 
-SentenceTransformer: Any | None = None
+SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
@@ -153,7 +162,7 @@ class Search:
 
     # Class-level registries for default backends
     _default_backends: ClassVar[
-        Dict[str, Callable[[str, int], List[Dict[str, str]]]]
+        Dict[str, Callable[[str, int], List[Dict[str, Any]]]]
     ] = {}
     _default_embedding_backends: ClassVar[
         Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
@@ -708,8 +717,8 @@ class Search:
     def register_backend(
         cls, name: str
     ) -> Callable[
-        [Callable[[str, int], List[Dict[str, str]]]],
-        Callable[[str, int], List[Dict[str, str]]],
+        [Callable[[str, int], List[Dict[str, Any]]]],
+        Callable[[str, int], List[Dict[str, Any]]],
     ]:
         """Register a search backend function.
 
@@ -733,8 +742,8 @@ class Search:
         """
 
         def decorator(
-            func: Callable[[str, int], List[Dict[str, str]]],
-        ) -> Callable[[str, int], List[Dict[str, str]]]:
+            func: Callable[[str, int], List[Dict[str, Any]]],
+        ) -> Callable[[str, int], List[Dict[str, Any]]]:
             cls._default_backends[name] = func
             return func
 
@@ -960,8 +969,11 @@ class Search:
             if backend_results:
                 for r in backend_results:
                     r.setdefault("backend", name)
-                self.cache.cache_results(search_query, name, backend_results)
+            self.cache.cache_results(search_query, name, backend_results)
+            if query_embedding is not None:
                 self.add_embeddings(backend_results, query_embedding)
+            else:
+                self.add_embeddings(backend_results)
             return name, backend_results
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
