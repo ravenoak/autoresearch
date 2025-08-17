@@ -142,9 +142,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - When new scripts or tasks are added, update both this file and `scripts/codex_setup.sh` accordingly.
 
 ## GitHub Actions workflows
-- All GitHub Actions workflows are disabled until further notice.
-- Store workflow files in `.github/workflows.disabled`; `.github/workflows` must remain empty.
-- Each workflow file must start with `# NOTE: This workflow is disabled. Move to .github/workflows to enable.`
+- The CI workflow in `.github/workflows/ci.yml` is dispatch-only.
+- All workflows must be dispatch-only or remain disabled in `.github/workflows.disabled`.
+- Disabled workflow files must start with `# NOTE: This workflow is disabled. Move to .github/workflows to enable.`
 - Standardize on these actions versions:
   - `actions/checkout@v4`
   - `actions/setup-python@v5`
