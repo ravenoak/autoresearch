@@ -54,4 +54,4 @@ setup.
 - `task verify` runs successfully on a fresh environment.
 
 ## Status
-Open
+Archived
