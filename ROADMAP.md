@@ -2,13 +2,20 @@
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
 Last updated **August 24, 2025**.
-Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` reports
-E303 in `src/autoresearch/orchestration/metrics.py:102:1`, `uv run mypy src`
-raises attribute errors in `src/autoresearch/search/core.py`, and `uv run
-pytest -q` fails in multiple unit tests. To collect feedback while these
-issues
-([resolve-current-test-failures](issues/resolve-current-test-failures.md))
-are addressed, an alpha pre-release precedes the final 0.1.0 milestone.
+Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` fails in
+`src/autoresearch/orchestration/metrics.py:102:1` (E303), `uv run mypy src`
+reports missing attributes in `src/autoresearch/search/core.py`, and `uv run
+pytest -q` fails in
+`tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
+coverage is not generated and integration and behavior suites are skipped.
+To collect feedback while
+[resolve-current-test-failures](issues/resolve-current-test-failures.md) and
+[update-release-documentation](issues/update-release-documentation.md) are
+addressed, an alpha pre-release precedes the final 0.1.0 milestone.
 ## Milestones
 
 | Version | Target Date | Key Goals |

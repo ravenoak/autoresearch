@@ -7,9 +7,20 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 As of **August 24, 2025**, Autoresearch targets an **0.1.0-alpha.1** preview
 on **November 15, 2025** and a final **0.1.0** release on **March 1, 2026**.
-Failing tests and documentation gaps remain open; see
-[resolve-current-test-failures](issues/resolve-current-test-failures.md) and
-[update-release-documentation](issues/update-release-documentation.md).
+`uv run flake8 src tests` fails in
+`src/autoresearch/orchestration/metrics.py:102:1` (E303), `uv run mypy src`
+reports missing attributes in `src/autoresearch/search/core.py`, and `uv run
+pytest -q` fails in
+`tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
+coverage is not generated and integration and behavior suites are skipped.
+Outstanding issues include these failing tests
+([resolve-current-test-failures](issues/resolve-current-test-failures.md))
+and release documentation updates
+([update-release-documentation](issues/update-release-documentation.md)).
 
 ## 1. Core System Completion
 
