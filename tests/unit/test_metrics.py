@@ -16,6 +16,10 @@ class DummyConn:
 
 def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
+    monkeypatch.setattr(
+        "autoresearch.api.middleware.AuthMiddleware._resolve_role",
+        lambda self, key, cfg: ("admin", None),
+    )
 
     cfg = ConfigModel.model_construct(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
@@ -60,15 +64,14 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     )
 
     client = TestClient(app)
-    headers = {"X-API-Key": ""}
-    client.post("/query", headers=headers, json={"query": "hi"})
+    client.post("/query", json={"query": "hi"})
 
     assert metrics.QUERY_COUNTER._value.get() == start_queries + 1
     assert metrics.ERROR_COUNTER._value.get() == start_errors + 1
     assert metrics.TOKENS_IN_COUNTER._value.get() >= 5
     assert metrics.TOKENS_OUT_COUNTER._value.get() >= 7
 
-    resp = client.get("/metrics", headers=headers)
+    resp = client.get("/metrics")
     assert resp.status_code == 200
     body = resp.text
     assert "autoresearch_queries_total" in body

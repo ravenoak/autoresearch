@@ -10,7 +10,7 @@ if "a2a" not in sys.modules:
     client_stub = types.ModuleType("a2a.client")
 
     class A2AClient:
-        ...
+        pass
 
     def _missing(name: str, *_a, **_k):
         if name.startswith("__"):
@@ -34,7 +34,9 @@ if "a2a" not in sys.modules:
         metadata: dict[str, Any] | None = None
         role: str = "agent"
 
-    def new_agent_text_message(content: str = "", metadata: dict[str, Any] | None = None) -> Message:
+    def new_agent_text_message(
+        content: str = "", metadata: dict[str, Any] | None = None
+    ) -> Message:
         return Message(content=content, metadata=metadata or {})
 
     def get_message_text(msg: Message) -> str:
@@ -46,7 +48,7 @@ if "a2a" not in sys.modules:
     sys.modules["a2a.utils.message"] = message_stub
 
     class MessageSendParams(BaseModel):
-        ...
+        pass
 
     class SendMessageRequest(BaseModel):
         message: Message | None = None

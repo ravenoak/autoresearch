@@ -17,6 +17,8 @@ if "streamlit" not in sys.modules:
     st_stub.selectbox = lambda *a, **k: None
     st_stub.slider = lambda *a, **k: 0
     st_stub.button = lambda *a, **k: False
+    st_stub.metric = lambda *a, **k: None
+    st_stub.sidebar = types.SimpleNamespace(metric=lambda *a, **k: None)
     st_stub.columns = lambda *a, **k: (
         types.SimpleNamespace(),
         types.SimpleNamespace(),
