@@ -491,6 +491,7 @@ def serve(
         server.run()
     except KeyboardInterrupt:
         console.print("[bold yellow]Server stopped[/bold yellow]")
+        raise typer.Exit(code=0)
 
 
 @app.command()
@@ -551,6 +552,7 @@ def serve_a2a(
         if a2a_interface is not None:
             a2a_interface.stop()
         console.print("[bold yellow]Server stopped[/bold yellow]")
+        raise typer.Exit(code=0)
     except Exception as e:
         console.print(f"[bold red]Error starting A2A server:[/bold red] {str(e)}")
 
