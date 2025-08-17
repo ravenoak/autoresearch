@@ -1,5 +1,5 @@
 import importlib.util
-from threading import Thread
+from threading import Thread  # for thread-safety test
 
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
