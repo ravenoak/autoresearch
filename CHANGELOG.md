@@ -2,11 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+Reference issues by slugged filename (for example,
+`issues/archive/example-issue.md`) and avoid numeric prefixes.
+
 ## [Unreleased]
 - Update release plan to align milestones with the 2025 development timeline.
-  - Add rich configuration context fixtures with sample data for tests. [#17](issues/archive/0017-create-more-comprehensive-test-contexts.md)
+  - Add rich configuration context fixtures with sample data for tests. [create-more-comprehensive-test-contexts](issues/archive/create-more-comprehensive-test-contexts.md)
 - Optimize mypy configuration to skip site packages, preventing hangs during
-verification. [#22](issues/archive/0022-investigate-mypy-hang.md).
+verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Document virtual environment best practices in the developer guide.
 
 ## [0.1.0-alpha.1] - 2025-08-09
