@@ -27,8 +27,9 @@ skipped. An **0.1.0-alpha.1** preview is scheduled for **November 15,
 2025**, with the final **0.1.0** milestone targeted for **March 1, 2026**.
 Remaining blockers include these failing tests
 ([resolve-current-test-failures](issues/resolve-current-test-failures.md))
-and packaging scripts that need additional configuration. See
-[docs/release_plan.md](docs/release_plan.md) for the full milestone
+and release documentation updates
+([update-release-documentation](issues/update-release-documentation.md)).
+See [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 
 ## Issue tracking

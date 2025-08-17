@@ -1,9 +1,18 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. Current lint, type, and test
-checks all pass (`flake8`, `mypy`, and `pytest`). The **0.1.0** release is now
-targeted for **March 1, 2026**.
+organized by phases from the code complete plan. `uv run flake8 src tests`
+fails in `src/autoresearch/orchestration/metrics.py:102:1` (E303), `uv run mypy src`
+reports missing attributes in `src/autoresearch/search/core.py`, and `uv run
+pytest -q` fails in
+`tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
+coverage is not generated and integration and behavior suites are skipped.
+An **0.1.0-alpha.1** preview is scheduled for **November 15, 2025**, with the
+final **0.1.0** release targeted for **March 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
@@ -224,13 +233,13 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-`pytest` runs with coverage and meets the 90% threshold.
+Coverage is not generated because tests fail.
 
 ### Latest Test Results
 
-- `uv run flake8 src tests` – no issues
-- `uv run mypy src` – success, no type errors
-- `uv run pytest -q` – all tests pass
+- `uv run flake8 src tests` – fails in `src/autoresearch/orchestration/metrics.py:102:1` (E303)
+- `uv run mypy src` – missing attributes in `src/autoresearch/search/core.py`
+- `uv run pytest -q` – fails in `tests/unit/test_cache.py::test_search_uses_cache`, `tests/unit/test_cache.py::test_cache_is_backend_specific`, `tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`, `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`, and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`
 
 ### Performance Baselines
 

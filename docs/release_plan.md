@@ -5,12 +5,19 @@ This document outlines the upcoming release milestones for **Autoresearch**. Dat
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
 This schedule was last updated on **August 24, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0a1** version defined in
-`autoresearch.__version__`.
-Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` reports
-`src/autoresearch/orchestration/metrics.py:102:1: E303`, `uv run mypy src`
-raises attribute errors in `src/autoresearch/search/core.py`, and `uv run
-pytest -q` fails in several unit tests. Phase 3 (stabilization/testing/documentation)
-and Phase 4 activities remain planned.
+`autoresearch.__version__`. Phase 2 testing tasks remain incomplete:
+`uv run flake8 src tests` fails in
+`src/autoresearch/orchestration/metrics.py:102:1` (E303), `uv run mypy src`
+reports missing attributes in `src/autoresearch/search/core.py`, and `uv run
+pytest -q` fails in
+`tests/unit/test_cache.py::test_search_uses_cache`,
+`tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
+`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
+and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
+coverage is not generated and integration and behavior suites are skipped.
+Phase 3 (stabilization/testing/documentation) and Phase 4 activities remain
+planned.
 
 ## Milestones
 
