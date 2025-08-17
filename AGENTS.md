@@ -43,8 +43,15 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
   - When modifying `pyproject.toml`, regenerate the lock file with `uv lock` before reinstalling.
-  - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
-  - Confirm dev tools are installed with `uv pip list | grep flake8`.
+    - Codex environments run `scripts/codex_setup.sh`, which delegates to `scripts/setup.sh` and installs all dev dependencies and extras with `uv sync --all-extras` so tools like `flake8`, `mypy`, and `pytest` are available and real rate limits are enforced. The setup script installs [Go Task](https://taskfile.dev) inside the virtual environment. After setup, ensure `task`, `flake8`, and `pytest` resolve to paths under `.venv/bin`.
+    - Confirm dev tools are installed with `uv pip list | grep flake8`.
+    - Verify each CLI tool runs from the virtual environment:
+      - `task --version`
+      - `flake8 --version`
+      - `pytest --version`
+      - `mypy --version`
+      If any command is missing, rerun `scripts/codex_setup.sh` or reinstall
+      with `uv sync --all-extras && uv pip install -e .`.
   - After running `scripts/codex_setup.sh`, verify `pytest`, `pytest-bdd`, `pytest-httpx`, `pytest-cov`, `flake8`, `hypothesis`, `tomli_w`, `freezegun`, `duckdb-extension-vss`, `a2a-sdk`, `GitPython`, `pdfminer-six`, `python-docx`, `sentence-transformers`, `transformers`, `spacy`, `bertopic`, `fastapi`, `responses`, `uvicorn`, and `psutil` are present using `uv pip list`.
 - `VECTOR_EXTENSION_PATH` selects the DuckDB vector search extension. Tests
     must either disable the `vector_extension` entirely or point this variable
@@ -72,6 +79,13 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   must run inside this environment.
 - Verify the environment by running `which pytest` and ensure it resolves
   to `.venv/bin/pytest`.
+- Confirm tool availability and versions:
+  - `task --version`
+  - `flake8 --version`
+  - `mypy --version`
+  - `pytest --version`
+  If any command fails, reinstall with `uv sync --all-extras` or rerun
+  `scripts/codex_setup.sh`.
 - Run `task verify` before committing; it performs linting, type checking,
   and all tests with coverage (see [`Taskfile.yml`](Taskfile.yml)).
 - Generate explicit coverage reports with `task coverage`.

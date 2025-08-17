@@ -26,10 +26,12 @@ if ! command -v python3 >/dev/null 2>&1; then
     echo "python3 is required but was not found in PATH" >&2
     exit 1
 fi
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
 if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)' >/dev/null 2>&1; then
-    echo "Python 3.12 or newer is required" >&2
+    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION" >&2
     exit 1
 fi
+echo "Using Python $PYTHON_VERSION"
 
 echo "Setting up Codex environment..."
 
@@ -81,13 +83,18 @@ fi
 
 # Verify CLI tools resolve inside the virtual environment
 source .venv/bin/activate
-for cmd in task flake8 pytest; do
+for cmd in task flake8 pytest mypy; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
         echo "$cmd is not resolved inside .venv: $cmd_path" >&2
         deactivate
         exit 1
     fi
+    "$cmd" --version >/dev/null 2>&1 || {
+        echo "$cmd failed to run" >&2
+        deactivate
+        exit 1
+    }
 done
 deactivate
 
@@ -108,7 +115,7 @@ fi
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
-for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 hypothesis tomli_w freezegun \
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 mypy hypothesis tomli_w freezegun \
     duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers \
     transformers spacy bertopic fastapi responses uvicorn psutil; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
@@ -121,7 +128,7 @@ if [ "$missing" -ne 0 ]; then
     echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
+uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|mypy|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
 
 # Helper for retrying flaky network operations
 retry() {
@@ -150,6 +157,8 @@ else
     exit 1
 fi
 
+# Ensure pip is available for spaCy model download
+uv pip install pip >/dev/null
 if retry 3 uv run python -m spacy download en_core_web_sm; then
     echo "spaCy en_core_web_sm model downloaded"
 else

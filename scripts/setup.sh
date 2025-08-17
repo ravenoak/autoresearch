@@ -114,13 +114,18 @@ uv run python scripts/smoke_test.py
 
 # Verify required CLI tools resolve inside the virtual environment
 source .venv/bin/activate
-for cmd in task flake8 pytest; do
+for cmd in task flake8 pytest mypy; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
         echo "$cmd is not resolved inside .venv: $cmd_path" >&2
         deactivate
         exit 1
     fi
+    "$cmd" --version >/dev/null 2>&1 || {
+        echo "$cmd failed to run" >&2
+        deactivate
+        exit 1
+    }
 done
 deactivate
 
