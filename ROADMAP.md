@@ -1,20 +1,20 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **August 16, 2025**.
-Phase 2 testing tasks remain open: `task verify` currently stops at flake8 due
-to unused imports and the unit tests listed in
-[unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)
-remain failing, so coverage is not generated. To collect feedback while these
-issues ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md),
-[unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md))
-are resolved, an alpha pre-release precedes the final 0.1.0 milestone.
+Last updated **August 17, 2025**.
+Phase 2 testing tasks are complete: `uv run flake8 src tests`,
+`uv run mypy src`, and `uv run pytest -m 'not requires_nlp' -q` all pass after
+installing development extras, enabling coverage generation. To collect
+feedback while related issues
+([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md),
+[unit-tests-after-orchestrator-refactor](issues/archive/unit-tests-after-orchestrator-refactor.md))
+remain archived, an alpha pre-release precedes the final 0.1.0 milestone.
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2025-11-15 | Alpha preview to gather feedback while fixing tests ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md), [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)) |
-| 0.1.0 | 2026-03-01 | Finalize packaging, docs and CI checks once tests pass ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md), [unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)) |
+| 0.1.0-alpha.1 | 2025-11-15 | Alpha preview to gather feedback while testing settles ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md), [unit-tests-after-orchestrator-refactor](issues/archive/unit-tests-after-orchestrator-refactor.md)) |
+| 0.1.0 | 2026-03-01 | Finalize packaging, docs and CI checks with tests passing ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md), [unit-tests-after-orchestrator-refactor](issues/archive/unit-tests-after-orchestrator-refactor.md)) |
 | 0.1.1 | 2026-05-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-08-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2026-10-15 | Distributed execution support, monitoring utilities |
@@ -22,9 +22,10 @@ are resolved, an alpha pre-release precedes the final 0.1.0 milestone.
 
 ## 0.1.0-alpha.1 – Alpha preview
 
-This pre-release provides an early package for testing while unit tests and
-packaging tasks remain open ([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md),
-[unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md)). Key activities
+This pre-release provides an early package for testing while packaging tasks
+remain open. Related issues
+([refactor-orchestrator-instance-circuit-breaker](issues/archive/refactor-orchestrator-instance-circuit-breaker.md),
+[unit-tests-after-orchestrator-refactor](issues/archive/unit-tests-after-orchestrator-refactor.md)) are archived. Key activities
 include:
 
 - Provide an installable package for early adopters.
@@ -40,13 +41,10 @@ activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-Unit tests still fail (for example,
-`tests/unit/test_cli_help.py::test_search_loops_option`), so coverage is not
-generated and integration and behavior suites remain pending. The release was
-originally planned for **July 20, 2025**, but the schedule slipped. The
-**0.1.0** milestone is now targeted for **March 1, 2026** while these failures
-([unit-tests-after-orchestrator-refactor](issues/unit-tests-after-orchestrator-refactor.md))
-and packaging tasks are resolved.
+Unit tests now pass, so integration and behavior suites can run and coverage
+reports are generated. The release was originally planned for **July 20, 2025**, but
+the schedule slipped. The **0.1.0** milestone is now targeted for **March 1, 2026**
+while packaging tasks are resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
 
