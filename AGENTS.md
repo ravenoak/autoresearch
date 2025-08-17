@@ -18,6 +18,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - If the issue tracker directory moves or is renamed, update this section to reference the new location.
 - Tickets follow the template and style guide in [`issues/README.md`](issues/README.md).
 - File names must be slugged titles; numeric identifiers in filenames or content are prohibited. Reference issues by slugged filename.
+- In `CHANGELOG.md`, link issues using their slugged filenames (for example, `issues/archive/example-issue.md`) and avoid numeric prefixes.
 - When work is finished, set `Status` to `Archived` and move the ticket to `/issues/archive/` without renaming.
 - When issue tooling changes, update this file, `issues/AGENTS.md`, and `scripts/codex_setup.sh` to keep documentation and setup aligned.
 
