@@ -3,7 +3,7 @@
 This directory holds planning tickets. Write each issue in the following format:
 
 ```
-# Title of the issue
+# Title in sentence case
 
 ## Context
 Describe background and motivation.
@@ -14,6 +14,12 @@ List the requirements for completion.
 ## Status
 Open
 ```
+
+## Style guide
+
+- Titles are written in **sentence case**.
+- Include the `Context`, `Acceptance Criteria`, and `Status` sections with
+  those exact headings.
 
 ## Naming
 File names must be slugged (kebab-case) titles with no numeric prefixes.
