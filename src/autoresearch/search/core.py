@@ -51,7 +51,7 @@ try:
 
     GITPYTHON_AVAILABLE = True
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    Repo = None  # type: ignore
+    Repo = cast(Any, None)
     GITPYTHON_AVAILABLE = False
     import warnings
 
@@ -88,7 +88,7 @@ def _try_import_sentence_transformers() -> bool:
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
     try:  # pragma: no cover - optional dependency
-        from sentence_transformers import SentenceTransformer as ST  # type: ignore
+        from sentence_transformers import SentenceTransformer as ST
 
         SentenceTransformer = ST
         SENTENCE_TRANSFORMERS_AVAILABLE = True
@@ -300,7 +300,7 @@ class Search:
             if scores.size and scores.max() > 0:
                 scores = scores / scores.max()
 
-            return scores.tolist()
+            return cast(List[float], scores.tolist())
         except Exception as e:
             log.warning(f"BM25 scoring failed: {e}")
             return [1.0] * len(documents)  # Return neutral scores
