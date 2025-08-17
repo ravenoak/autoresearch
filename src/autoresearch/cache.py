@@ -18,22 +18,25 @@ from typing import Any, Dict, List, Optional
 from tinydb import TinyDB, Query
 
 
+_db_path: Path = Path(os.getenv("TINYDB_PATH", "cache.json"))
+
+
 class SearchCache:
     """TinyDB-backed cache that can be instantiated per test or service."""
 
     def __init__(self, db_path: Optional[str] = None) -> None:
         self._db_lock = Lock()
         self._db: Optional[TinyDB] = None
-        self._db_path = Path(db_path or os.getenv("TINYDB_PATH", "cache.json"))
+        self._db_path = Path(db_path) if db_path is not None else _db_path
         # Eagerly initialise so the file exists for tests
         self.setup()
 
     def setup(self, db_path: Optional[str] = None) -> TinyDB:
         """Initialise the TinyDB instance if needed."""
         with self._db_lock:
-            if db_path is not None:
-                self._db_path = Path(db_path)
-            if self._db is None:
+            path = Path(db_path) if db_path is not None else _db_path
+            if self._db is None or path != self._db_path:
+                self._db_path = path
                 self._db = TinyDB(self._db_path)
             return self._db
 

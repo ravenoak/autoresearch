@@ -549,7 +549,7 @@ def serve_a2a(
             if a2a_interface is not None:
                 a2a_interface.stop()
             console.print("[bold yellow]Server stopped[/bold yellow]")
-            return 0
+            return
 
         # Keep the main thread running until interrupted
         while True:
