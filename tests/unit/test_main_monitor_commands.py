@@ -29,7 +29,7 @@ def test_serve_a2a_command(mock_a2a_interface_class):
 
     assert result.exit_code == 0
     mock_a2a_interface_class.assert_called_once_with(host="localhost", port=8765)
-    assert "Starting A2A server" in result.stdout
+    assert "Starting A2A server on localhost:8765" in result.stdout
 
 
 @patch("autoresearch.a2a_interface.A2AInterface")

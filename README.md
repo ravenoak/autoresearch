@@ -204,10 +204,15 @@ Then send a request with the helper client:
 from autoresearch.mcp_interface import query
 print(query("What is quantum computing?")["answer"])
 ```
-Send a query and check collected metrics:
+Send a query and check collected metrics. The `/metrics` endpoint requires an
+API key whose role grants the `metrics` permission (the built-in `admin` role
+includes it):
 ```bash
-curl -X POST http://localhost:8000/query -d '{"query": "Explain machine learning"}' -H "Content-Type: application/json"
-curl http://localhost:8000/metrics
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: secret" \
+  -d '{"query": "Explain machine learning"}'
+curl -H "X-API-Key: secret" http://localhost:8000/metrics
 ```
 
 To search your own documents or repositories, enable the `local_file` or
