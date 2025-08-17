@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Any
 from unittest.mock import patch
@@ -79,10 +80,10 @@ def request_status(bdd_context: dict[str, Any], monkeypatch) -> None:
 
     monkeypatch.setattr(time, "sleep", lambda *_: None)
     query_id = bdd_context["query_id"]
-    future = api_app.state.async_tasks.get(query_id)
-    if future is not None and hasattr(future, "done"):
-        while not future.done():
-            time.sleep(0)
+    task = api_app.state.async_tasks.get(query_id)
+    assert isinstance(task, asyncio.Task)
+    while not task.done():
+        time.sleep(0)
     client = bdd_context["client"]
     resp = client.get(f"/query/{query_id}")
     bdd_context["status_response"] = resp
@@ -242,14 +243,14 @@ def failing_async_query(failure: str, api_client, monkeypatch):
         resp = api_client.post("/query/async", json={"query": "fail"})
         data = resp.json()
         query_id = data.get("query_id") or data.get("id")
-        future = api_app.state.async_tasks.get(query_id)
-        if future is not None and hasattr(future, "done"):
-            while not future.done():
-                time.sleep(0)
-            try:
-                future.result()
-            except Exception:
-                pass
+        task = api_app.state.async_tasks.get(query_id)
+        assert isinstance(task, asyncio.Task)
+        while not task.done():
+            time.sleep(0)
+        try:
+            task.result()
+        except Exception:
+            pass
         status = api_client.get(f"/query/{query_id}")
         assert query_id not in api_app.state.async_tasks
         state["active"] = False

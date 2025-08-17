@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import patch
 
 from pytest_bdd import given, parsers, scenario, then, when
@@ -223,10 +224,10 @@ def send_async_query(test_context: dict, query: str, mode: str, config: ConfigMo
                 "state": state,
             }
         query_id = submit.json()["query_id"]
-        future = client.app.state.async_tasks.get(query_id)
-        if future is not None:
-            while not future.done():
-                pass
+        task = client.app.state.async_tasks.get(query_id)
+        assert isinstance(task, asyncio.Task)
+        while not task.done():
+            pass
         response = client.get(f"/query/{query_id}")
     state["active"] = False
     data = {}

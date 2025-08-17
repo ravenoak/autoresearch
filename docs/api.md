@@ -182,7 +182,9 @@ curl -X DELETE http://localhost:8000/config
 
 ### `POST /query/async`
 
-Run a query in the background and return an identifier.
+Run a query in the background and return an identifier. Queries are
+scheduled as `asyncio.Task` objects within the server's event loop, and the
+task ID can be used to poll for completion or cancel the work.
 
 ```bash
 curl -X POST http://localhost:8000/query/async \
@@ -221,13 +223,16 @@ When complete:
 
 ### `DELETE /query/<id>`
 
-Cancel a running asynchronous query and remove it from the server.
+Cancel a running asynchronous query and remove it from the server. The task is
+cancelled using `Task.cancel()` and deleted from the in-memory registry.
 
 ```bash
 curl -X DELETE http://localhost:8000/query/<id>
 ```
 
-Returns `{"status": "cancelled"}` when the task is terminated or `{"status": "finished"}` if it already completed. Unknown IDs return **404**.
+Returns `canceled` when the task is terminated. If the query already
+completed, the task will have been removed and the endpoint responds with
+**404**.
 
  
 
