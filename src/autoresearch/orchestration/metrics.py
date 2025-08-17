@@ -14,21 +14,12 @@ from prometheus_client import Counter, Histogram
 
 from .circuit_breaker import CircuitBreakerState
 
-
 log = logging.getLogger(__name__)
 
-QUERY_COUNTER = Counter(
-    "autoresearch_queries_total", "Total number of queries processed"
-)
-ERROR_COUNTER = Counter(
-    "autoresearch_errors_total", "Total number of errors during processing"
-)
-TOKENS_IN_COUNTER = Counter(
-    "autoresearch_tokens_in_total", "Total input tokens processed"
-)
-TOKENS_OUT_COUNTER = Counter(
-    "autoresearch_tokens_out_total", "Total output tokens produced"
-)
+QUERY_COUNTER = Counter("autoresearch_queries_total", "Total number of queries processed")
+ERROR_COUNTER = Counter("autoresearch_errors_total", "Total number of errors during processing")
+TOKENS_IN_COUNTER = Counter("autoresearch_tokens_in_total", "Total input tokens processed")
+TOKENS_OUT_COUNTER = Counter("autoresearch_tokens_out_total", "Total output tokens produced")
 EVICTION_COUNTER = Counter(
     "autoresearch_duckdb_evictions_total",
     "Total nodes evicted from RAM to DuckDB",
@@ -75,14 +66,17 @@ def reset_metrics() -> None:
 @contextmanager
 def temporary_metrics() -> Iterator[None]:
     """Provide a context where metric counters are restored on exit."""
-    snapshot = [c._value.get() for c in [
-        QUERY_COUNTER,
-        ERROR_COUNTER,
-        TOKENS_IN_COUNTER,
-        TOKENS_OUT_COUNTER,
-        EVICTION_COUNTER,
-        KUZU_QUERY_COUNTER,
-    ]]
+    snapshot = [
+        c._value.get()
+        for c in [
+            QUERY_COUNTER,
+            ERROR_COUNTER,
+            TOKENS_IN_COUNTER,
+            TOKENS_OUT_COUNTER,
+            EVICTION_COUNTER,
+            KUZU_QUERY_COUNTER,
+        ]
+    ]
     hist_sum = KUZU_QUERY_TIME._sum.get()
     hist_count = KUZU_QUERY_TIME._count.get()
     try:
@@ -216,9 +210,7 @@ class OrchestrationMetrics:
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
 
-    def record_circuit_breaker(
-        self, agent_name: str, state: CircuitBreakerState
-    ) -> None:
+    def record_circuit_breaker(self, agent_name: str, state: CircuitBreakerState) -> None:
         """Record the circuit breaker ``state`` for ``agent_name``."""
         self.circuit_breakers[agent_name] = state
 
@@ -260,8 +252,7 @@ class OrchestrationMetrics:
         return {
             "total_duration_seconds": total_duration,
             "cycles_completed": len(self.cycle_durations),
-            "avg_cycle_duration_seconds": total_duration
-            / max(1, len(self.cycle_durations)),
+            "avg_cycle_duration_seconds": total_duration / max(1, len(self.cycle_durations)),
             "total_tokens": {
                 "input": total_tokens_in,
                 "output": total_tokens_out,
@@ -321,9 +312,7 @@ class OrchestrationMetrics:
         data[query] = self._total_tokens()
         path.write_text(json.dumps(data, indent=2))
 
-    def check_query_regression(
-        self, query: str, baseline_path: Path, threshold: int = 0
-    ) -> bool:
+    def check_query_regression(self, query: str, baseline_path: Path, threshold: int = 0) -> bool:
         """Return ``True`` if token usage exceeds the baseline."""
         if not baseline_path.exists():
             return False
