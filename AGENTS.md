@@ -89,6 +89,9 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Run the entire suite with coverage: `uv run pytest --cov=src`.
   - Execute any targeted tests in `tests/targeted` separately and fold them into the
     main test directories once validated.
+- Requests to the `/metrics` endpoint must include an API key mapped to a role
+  with the `metrics` permission (the default `admin` role works). Tests hitting
+  this endpoint should set the `X-API-Key` header accordingly.
 - Before running any tests, install the development extras with
   `uv pip install -e '.[full,parsers,git,llm,dev]'`. These extras are required
   for full test runs, including integration and behavior tests.

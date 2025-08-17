@@ -18,8 +18,9 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     metrics.reset_metrics()
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
-    cfg = ConfigModel.model_construct(api=APIConfig())
-    cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
+    cfg = ConfigModel.model_construct(
+        api=APIConfig(api_keys={"secret": "admin"})
+    )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.reset_instance()
     orch = orchestrator
@@ -61,7 +62,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     )
 
     client = TestClient(app)
-    headers = {"X-API-Key": ""}
+    headers = {"X-API-Key": "secret"}
     client.post("/query", headers=headers, json={"query": "hi"})
 
     assert metrics.QUERY_COUNTER._value.get() == start_queries + 1
