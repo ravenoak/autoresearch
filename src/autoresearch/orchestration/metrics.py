@@ -114,7 +114,6 @@ def temporary_metrics() -> Iterator[None]:
                 exc_info=True,
             )
 
-
 def _get_system_usage() -> Tuple[float, float, float, float]:
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
