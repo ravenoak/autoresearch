@@ -901,6 +901,8 @@ class Search:
             cached = get_cached_results(search_query, name)
             if cached is not None:
                 cls.add_embeddings(cached, query_embedding)
+                for r in cached:
+                    r.setdefault("backend", name)
                 return name, cached[:max_results]
 
             try:
@@ -944,10 +946,10 @@ class Search:
                 )
 
             if backend_results:
-                cache_results(search_query, name, backend_results)
-                cls.add_embeddings(backend_results, query_embedding)
                 for r in backend_results:
                     r.setdefault("backend", name)
+                cache_results(search_query, name, backend_results)
+                cls.add_embeddings(backend_results, query_embedding)
             return name, backend_results
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
