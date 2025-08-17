@@ -923,7 +923,7 @@ class Search:
                     backend=name,
                     query=text_query,
                     suggestion="Check your network connection and ensure the search backend is properly configured",
-                ) from exc
+                )
             except json.JSONDecodeError as exc:
                 log.warning(f"{name} search returned invalid JSON: {exc}")
                 raise SearchError(
