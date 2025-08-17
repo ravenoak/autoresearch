@@ -1,8 +1,10 @@
 # Remediate unit tests after Orchestrator refactor
 
-Unit tests fail following the attempted shift to an instance-based circuit
-breaker manager. The refactor introduced API changes and incomplete updates that
-leave tests in an inconsistent state.
+Unit tests initially failed following the attempted shift to an instance-based
+circuit breaker manager. The refactor introduced API changes and incomplete
+updates that left tests in an inconsistent state. After installing development
+extras and updating fixtures, `uv run flake8 src tests`, `uv run mypy src`, and
+`uv run pytest -m 'not requires_nlp' -q` all pass on **August 17, 2025**.
 
 ## Context
 - The refactor changed `_cb_manager` usage from class-level to instance-level.
@@ -49,5 +51,5 @@ leave tests in an inconsistent state.
 - `task test:unit` passes reliably.
 
 ## Status
-Open
+Archived
 
