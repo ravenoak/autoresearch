@@ -4,13 +4,14 @@ from threading import Thread
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
 
-from autoresearch import cache
+from autoresearch.cache import SearchCache
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 
 
 def test_search_uses_cache(monkeypatch):
-    cache.clear()
+    cache = SearchCache()
+    search = Search(cache=cache)
 
     calls = {"count": 0}
 
@@ -18,8 +19,8 @@ def test_search_uses_cache(monkeypatch):
         calls["count"] += 1
         return [{"title": "Python", "url": "https://python.org"}]
 
-    with Search.temporary_state():
-        monkeypatch.setattr(Search, "backends", {"dummy": backend})
+    with search.temporary_state() as s:
+        s.backends = {"dummy": backend}
         cfg = ConfigModel.model_construct(loops=1)
         cfg.search.backends = ["dummy"]
         # Disable context-aware search to avoid issues with SearchContext
@@ -28,14 +29,14 @@ def test_search_uses_cache(monkeypatch):
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
         # first call uses backend
-        results1 = Search.external_lookup("python")
+        results1 = s.external_lookup("python")
         assert calls["count"] == 1
         assert len(results1) == 1
         assert results1[0]["title"] == "Python"
         assert results1[0]["url"] == "https://python.org"
 
         # second call should be served from cache
-        results2 = Search.external_lookup("python")
+        results2 = s.external_lookup("python")
         assert calls["count"] == 1
         assert len(results2) == len(results1)
         assert results2[0]["title"] == results1[0]["title"]
@@ -44,14 +45,13 @@ def test_search_uses_cache(monkeypatch):
 
 def test_cache_lifecycle(tmp_path):
     """Exercise basic cache operations using a temporary database."""
-    orig_path = cache._db_path
-    cache.teardown(remove_file=False)
-
     db_path = tmp_path / "cache.json"
-    db1 = cache.setup(str(db_path))
+    cache = SearchCache(str(db_path))
+
     assert db_path.exists()
 
     # setup called again should return the same instance
+    db1 = cache.get_db()
     db2 = cache.setup(str(db_path))
     assert db1 is db2
 
@@ -65,19 +65,14 @@ def test_cache_lifecycle(tmp_path):
     cache.teardown(remove_file=True)
     assert not db_path.exists()
 
-    cache._db_path = orig_path
-
 
 def test_setup_thread_safe(tmp_path):
     """Ensure multiple setup calls from threads share the same database."""
-    orig_path = cache._db_path
-    cache.teardown(remove_file=False)
-
-    db_path = tmp_path / "cache.json"
+    cache = SearchCache(str(tmp_path / "cache.json"))
     results = []
 
     def worker() -> None:
-        results.append(cache.setup(str(db_path)))
+        results.append(cache.setup())
 
     threads = [Thread(target=worker) for _ in range(5)]
     for t in threads:
@@ -89,11 +84,11 @@ def test_setup_thread_safe(tmp_path):
     assert all(db is first for db in results)
 
     cache.teardown(remove_file=True)
-    cache._db_path = orig_path
 
 
 def test_cache_is_backend_specific(monkeypatch):
-    cache.clear()
+    cache = SearchCache()
+    search = Search(cache=cache)
 
     calls = {"b1": 0, "b2": 0}
 
@@ -105,8 +100,8 @@ def test_cache_is_backend_specific(monkeypatch):
         calls["b2"] += 1
         return [{"title": "B2", "url": "u2"}]
 
-    with Search.temporary_state():
-        monkeypatch.setattr(Search, "backends", {"b1": backend1, "b2": backend2})
+    with search.temporary_state() as s:
+        s.backends = {"b1": backend1, "b2": backend2}
 
         cfg1 = ConfigModel.model_construct(loops=1)
         cfg1.search.backends = ["b1"]
@@ -116,26 +111,26 @@ def test_cache_is_backend_specific(monkeypatch):
         cfg2.search.context_aware.enabled = False
 
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
-        results1 = Search.external_lookup("python")
+        results1 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 0}
         assert len(results1) == 1
         assert results1[0]["title"] == "B1"
         assert results1[0]["url"] == "u1"
         # second call with backend1 should use cache
-        results1_cached = Search.external_lookup("python")
+        results1_cached = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 0}
         assert len(results1_cached) == len(results1)
         assert results1_cached[0]["title"] == results1[0]["title"]
         assert results1_cached[0]["url"] == results1[0]["url"]
 
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
-        results2 = Search.external_lookup("python")
+        results2 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results2) == 1
         assert results2[0]["title"] == "B2"
         assert results2[0]["url"] == "u2"
         # second call with backend2 should also use cache
-        results2_cached = Search.external_lookup("python")
+        results2_cached = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results2_cached) == len(results2)
         assert results2_cached[0]["title"] == results2[0]["title"]
@@ -143,7 +138,7 @@ def test_cache_is_backend_specific(monkeypatch):
 
         # switching back to backend1 should still use cached results
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
-        results3 = Search.external_lookup("python")
+        results3 = s.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results3) == len(results1)
         assert results3[0]["title"] == results1[0]["title"]
@@ -151,7 +146,8 @@ def test_cache_is_backend_specific(monkeypatch):
 
 
 def test_context_aware_query_expansion_uses_cache(monkeypatch):
-    cache.clear()
+    cache = SearchCache()
+    search = Search(cache=cache)
 
     calls = {"count": 0}
 
@@ -169,8 +165,8 @@ def test_context_aware_query_expansion_uses_cache(monkeypatch):
         def build_topic_model(self) -> None:  # pragma: no cover - no-op
             pass
 
-    with Search.temporary_state():
-        monkeypatch.setattr(Search, "backends", {"dummy": backend})
+    with search.temporary_state() as s:
+        s.backends = {"dummy": backend}
         cfg = ConfigModel.model_construct(loops=1)
         cfg.search.backends = ["dummy"]
         cfg.search.context_aware.enabled = True
@@ -182,9 +178,9 @@ def test_context_aware_query_expansion_uses_cache(monkeypatch):
             lambda: DummyContext(),
         )
 
-        results1 = Search.external_lookup("python")
+        results1 = s.external_lookup("python")
         assert calls["count"] == 1
-        results2 = Search.external_lookup("python")
+        results2 = s.external_lookup("python")
         assert calls["count"] == 1
         assert results2[0]["title"] == results1[0]["title"]
         assert results2[0]["url"] == results1[0]["url"]

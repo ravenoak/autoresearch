@@ -67,7 +67,7 @@ try:
     BM25_AVAILABLE = True
 except ImportError:
     BM25_AVAILABLE = False
-from ..cache import cache_results, get_cached_results
+from ..cache import SearchCache, get_cache
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
@@ -106,6 +106,23 @@ else:  # pragma: no cover - runtime fallback
 log = get_logger(__name__)
 
 
+class hybridmethod:
+    """Descriptor allowing methods usable as instance or shared class methods."""
+
+    def __init__(self, func: Callable[..., Any]) -> None:
+        self.func = func
+
+    def __get__(self, obj: Any, objtype: type | None = None) -> Callable[..., Any]:
+        if obj is None:
+
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                instance = objtype.get_instance()  # type: ignore[attr-defined]
+                return self.func(instance, *args, **kwargs)
+
+            return wrapper
+        return self.func.__get__(obj, objtype)  # type: ignore[misc]
+
+
 @dataclass(frozen=True)
 class DomainAuthorityScore:
     """Immutable domain authority score used for credibility ranking."""
@@ -131,43 +148,42 @@ DOMAIN_AUTHORITY_SCORES: Tuple[DomainAuthorityScore, ...] = (
 
 
 class Search:
-    """Provides utilities for search query generation and external lookups.
+    """Provides utilities for search query generation and external lookups."""
 
-    This class contains methods for generating search query variants,
-    performing external lookups using registered backends, and handling
-    search-related errors. It uses a registry pattern to allow dynamic
-    registration of search backends.
-
-    The class supports:
-    - Registering custom search backends via decorators
-    - Generating multiple query variants from a single query
-    - Creating simple vector embeddings for queries
-    - Performing external lookups with configurable backends
-    - Ranking search results using BM25, semantic similarity, and source credibility
-    - Caching search results to improve performance
-    - Handling various error conditions (timeouts, network errors, etc.)
-    """
-
-    # Registry mapping backend name to callable
-    backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, str]]]]] = {}
-
-    # Snapshot of default backends for resetting
+    # Class-level registries for default backends
     _default_backends: ClassVar[
         Dict[str, Callable[[str, int], List[Dict[str, str]]]]
     ] = {}
-
-    # Registry mapping embedding backend name to callable
-    embedding_backends: ClassVar[
-        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
-    ] = {}
-
-    # Snapshot of default embedding backends for resetting
     _default_embedding_backends: ClassVar[
         Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
+    # Expose shared instance registries for legacy access
+    backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, Any]]]]] = (
+        _default_backends
+    )
+    embedding_backends: ClassVar[
+        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
+    ] = _default_embedding_backends
+    _shared_instance: ClassVar[Optional["Search"]] = None
 
-    # Singleton instance of the sentence transformer model
-    _sentence_transformer: ClassVar[Optional[SentenceTransformerType]] = None
+    def __init__(self, cache: Optional[SearchCache] = None) -> None:
+        self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
+            self._default_backends
+        )
+        self.embedding_backends: Dict[
+            str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
+        ] = dict(self._default_embedding_backends)
+        self._sentence_transformer: Optional[SentenceTransformerType] = None
+        self.cache = cache or get_cache()
+
+    @classmethod
+    def get_instance(cls) -> "Search":
+        """Return the shared Search instance used by class-level calls."""
+        if cls._shared_instance is None:
+            cls._shared_instance = cls()
+        cls.backends = cls._shared_instance.backends
+        cls.embedding_backends = cls._shared_instance.embedding_backends
+        return cls._shared_instance
 
     @staticmethod
     def get_http_session() -> requests.Session:
@@ -179,31 +195,30 @@ class Search:
         """Close the pooled HTTP session."""
         close_http_session()
 
-    @classmethod
-    def reset(cls) -> None:
-        """Reset global registries and close pooled resources."""
-        cls.backends = dict(cls._default_backends)
-        cls.embedding_backends = dict(cls._default_embedding_backends)
-        cls._sentence_transformer = None
-        cls.close_http_session()
+    @hybridmethod
+    def reset(self) -> None:
+        """Reset registries and close pooled resources."""
+        self.backends = dict(self._default_backends)
+        self.embedding_backends = dict(self._default_embedding_backends)
+        self._sentence_transformer = None
+        self.close_http_session()
+        type(self).backends = self.backends
+        type(self).embedding_backends = self.embedding_backends
 
-    @classmethod
+    @hybridmethod
     @contextmanager
-    def temporary_state(cls) -> Iterator[type["Search"]]:
-        """Yield a Search subclass with isolated state."""
-        TempSearch: type["Search"] = type("TempSearch", (cls,), {})
-        TempSearch.backends = dict(cls.backends)
-        TempSearch.embedding_backends = dict(cls.embedding_backends)
-        TempSearch._default_backends = dict(cls._default_backends)
-        TempSearch._default_embedding_backends = dict(cls._default_embedding_backends)
-        TempSearch._sentence_transformer = None
+    def temporary_state(self) -> Iterator["Search"]:
+        """Yield a Search instance with isolated state."""
+        temp = type(self)(cache=self.cache)
+        temp.backends = dict(self.backends)
+        temp.embedding_backends = dict(self.embedding_backends)
         try:
-            yield TempSearch
+            yield temp
         finally:
-            TempSearch.close_http_session()
+            temp.close_http_session()
 
-    @classmethod
-    def get_sentence_transformer(cls) -> Optional[SentenceTransformerType]:
+    @hybridmethod
+    def get_sentence_transformer(self) -> Optional[SentenceTransformerType]:
         """Get or initialize the sentence transformer model.
 
         Returns:
@@ -215,17 +230,17 @@ class Search:
             )
             return None
 
-        if cls._sentence_transformer is None:
+        if self._sentence_transformer is None:
             try:
                 # Use a small, fast model for semantic similarity
                 assert SentenceTransformer is not None
-                cls._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
+                self._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
                 log.info("Initialized sentence transformer model")
             except Exception as e:
                 log.warning(f"Failed to initialize sentence transformer model: {e}")
                 return None
 
-        return cls._sentence_transformer
+        return self._sentence_transformer
 
     @staticmethod
     def preprocess_text(text: str) -> List[str]:
@@ -305,9 +320,9 @@ class Search:
             log.warning(f"BM25 scoring failed: {e}")
             return [1.0] * len(documents)  # Return neutral scores
 
-    @classmethod
+    @hybridmethod
     def calculate_semantic_similarity(
-        cls,
+        self,
         query: str,
         documents: List[Dict[str, Any]],
         query_embedding: Optional[np.ndarray] = None,
@@ -321,7 +336,7 @@ class Search:
         Returns:
             List[float]: The semantic similarity scores for each document
         """
-        model = cls.get_sentence_transformer()
+        model = self.get_sentence_transformer()
         if model is None and query_embedding is None:
             return [1.0] * len(documents)  # Return neutral scores
 
@@ -370,14 +385,14 @@ class Search:
             log.warning(f"Semantic similarity calculation failed: {e}")
             return [1.0] * len(documents)  # Return neutral scores
 
-    @classmethod
+    @hybridmethod
     def add_embeddings(
-        cls,
+        self,
         documents: List[Dict[str, Any]],
         query_embedding: Optional[np.ndarray] = None,
     ) -> None:
         """Add embeddings and similarity scores to documents in-place."""
-        model = cls.get_sentence_transformer()
+        model = self.get_sentence_transformer()
         if model is None:
             return
 
@@ -468,9 +483,9 @@ class Search:
             merged.append(bm25 * bm25_weight + semantic * semantic_weight)
         return merged
 
-    @classmethod
+    @hybridmethod
     def rank_results(
-        cls,
+        self,
         query: str,
         results: List[Dict[str, Any]],
         query_embedding: Optional[np.ndarray] = None,
@@ -510,17 +525,17 @@ class Search:
 
         # Calculate scores using different algorithms
         bm25_scores = (
-            cls.calculate_bm25_scores(query, results)
+            self.calculate_bm25_scores(query, results)
             if search_cfg.use_bm25
             else [1.0] * len(results)
         )
         semantic_scores = (
-            cls.calculate_semantic_similarity(query, results, query_embedding)
+            self.calculate_semantic_similarity(query, results, query_embedding)
             if search_cfg.use_semantic_similarity
             else [1.0] * len(results)
         )
         credibility_scores = (
-            cls.assess_source_credibility(results)
+            self.assess_source_credibility(results)
             if search_cfg.use_source_credibility
             else [1.0] * len(results)
         )
@@ -534,7 +549,7 @@ class Search:
         ]
 
         # Merge BM25 and semantic scores using weights
-        merged_scores = cls.merge_rank_scores(
+        merged_scores = self.merge_rank_scores(
             bm25_scores,
             embedding_scores,
             search_cfg.bm25_weight,
@@ -569,9 +584,9 @@ class Search:
 
         return ranked_results
 
-    @classmethod
+    @hybridmethod
     def cross_backend_rank(
-        cls,
+        self,
         query: str,
         backend_results: Dict[str, List[Dict[str, Any]]],
         query_embedding: Optional[np.ndarray] = None,
@@ -588,18 +603,18 @@ class Search:
                 doc.setdefault("backend", name)
                 all_results.append(doc)
 
-        return cls.rank_results(query, all_results, query_embedding)
+        return self.rank_results(query, all_results, query_embedding)
 
-    @classmethod
+    @hybridmethod
     def embedding_lookup(
-        cls, query_embedding: np.ndarray, max_results: int = 5
+        self, query_embedding: np.ndarray, max_results: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Perform embedding-based search using registered backends."""
         cfg = get_config()
         results: Dict[str, List[Dict[str, Any]]] = {}
 
         for name in cfg.search.embedding_backends:
-            backend = cls.embedding_backends.get(name)
+            backend = self.embedding_backends.get(name)
             if not backend:
                 log.warning(f"Unknown embedding backend '{name}'")
                 continue
@@ -721,8 +736,7 @@ class Search:
         def decorator(
             func: Callable[[str, int], List[Dict[str, str]]],
         ) -> Callable[[str, int], List[Dict[str, str]]]:
-            cls.backends[name] = func
-            cls._default_backends.setdefault(name, func)
+            cls._default_backends[name] = func
             return func
 
         return decorator
@@ -739,8 +753,7 @@ class Search:
         def decorator(
             func: Callable[[np.ndarray, int], List[Dict[str, Any]]],
         ) -> Callable[[np.ndarray, int], List[Dict[str, Any]]]:
-            cls.embedding_backends[name] = func
-            cls._default_embedding_backends.setdefault(name, func)
+            cls._default_embedding_backends[name] = func
             return func
 
         return decorator
@@ -797,9 +810,9 @@ class Search:
 
         return queries
 
-    @classmethod
+    @hybridmethod
     def external_lookup(
-        cls, query: str | Dict[str, Any], max_results: int = 5
+        self, query: str | Dict[str, Any], max_results: int = 5
     ) -> List[Dict[str, Any]]:
         """Perform an external search using configured backends.
 
@@ -870,7 +883,7 @@ class Search:
         # Determine query embedding when hybrid search is enabled
         if query_embedding is None and cfg.search.hybrid_query:
             try:
-                model = cls.get_sentence_transformer()
+                model = self.get_sentence_transformer()
                 if model is not None:
                     query_embedding = model.encode(search_query)
                     if hasattr(query_embedding, "tolist"):
@@ -879,16 +892,16 @@ class Search:
                 log.warning(f"Embedding generation failed: {exc}")
 
         if query_embedding is not None:
-            emb_results = cls.embedding_lookup(query_embedding, max_results)
+            emb_results = self.embedding_lookup(query_embedding, max_results)
             for name, docs in emb_results.items():
                 results_by_backend[name] = docs
                 results.extend(docs)
 
         def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
-            backend = Search.backends.get(name)
+            backend = self.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
-                available_backends = list(Search.backends.keys()) or [
+                available_backends = list(self.backends.keys()) or [
                     "No backends registered"
                 ]
                 raise SearchError(
@@ -898,9 +911,9 @@ class Search:
                     suggestion="Configure a valid search backend in your configuration file",
                 )
 
-            cached = get_cached_results(search_query, name)
+            cached = self.cache.get_cached_results(search_query, name)
             if cached is not None:
-                cls.add_embeddings(cached, query_embedding)
+                self.add_embeddings(cached, query_embedding)
                 for r in cached:
                     r.setdefault("backend", name)
                 return name, cached[:max_results]
@@ -948,8 +961,8 @@ class Search:
             if backend_results:
                 for r in backend_results:
                     r.setdefault("backend", name)
-                cache_results(search_query, name, backend_results)
-                cls.add_embeddings(backend_results, query_embedding)
+                self.cache.cache_results(search_query, name, backend_results)
+                self.add_embeddings(backend_results, query_embedding)
             return name, backend_results
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
@@ -965,7 +978,7 @@ class Search:
 
         if results:
             # Rank the results from all backends together
-            ranked_results = cls.cross_backend_rank(
+            ranked_results = self.cross_backend_rank(
                 text_query, results_by_backend, query_embedding
             )
 
@@ -989,6 +1002,11 @@ class Search:
         ]
 
         return fallback_results
+
+
+def get_search() -> Search:
+    """Return the shared :class:`Search` instance."""
+    return Search.get_instance()
 
 
 @Search.register_backend("duckduckgo")
