@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from typer.testing import CliRunner
+from typer.testing import CliRunner  # Typer's CLI test runner
 
 from autoresearch.main import app
 
