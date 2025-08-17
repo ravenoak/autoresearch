@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from concurrent.futures import Future
 from typing import Any, List, Optional, cast
 from uuid import uuid4
 
@@ -22,16 +23,16 @@ from ..models import BatchQueryRequest, QueryRequest, QueryResponse
 from ..orchestration import ReasoningMode
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
-from .deps import require_permission, create_orchestrator
+from .deps import create_orchestrator, require_permission
 from .errors import handle_rate_limit
 from .middleware import (
+    SLOWAPI_STUB,
     AuthMiddleware,
     FallbackRateLimitMiddleware,
-    RateLimitMiddleware,
-    RateLimitExceeded,
     Limiter,
+    RateLimitExceeded,
+    RateLimitMiddleware,
     get_remote_address,
-    SLOWAPI_STUB,
 )
 from .streaming import query_stream_endpoint
 from .utils import (
@@ -235,14 +236,19 @@ async def async_query_endpoint(
 
     task_id = str(uuid4())
     config_copy: ConfigModel = config.model_copy(deep=True)
-    entry: dict[str, Any] = {"event": threading.Event(), "result": None}
-    http_request.app.state.async_tasks[task_id] = entry
+    future: Future[QueryResponse] = Future()
+    http_request.app.state.async_tasks[task_id] = future
 
     def runner() -> None:
         try:
             orchestrator = cast(Any, create_orchestrator())
             coro = orchestrator.run_query_async(request.query, config_copy)
             result = asyncio.run(coro)
+            validated = (
+                result
+                if isinstance(result, QueryResponse)
+                else QueryResponse.model_validate(result)
+            )
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
@@ -252,15 +258,14 @@ async def async_query_endpoint(
                     reasoning.append(f"Suggestion: {suggestion}")
             else:
                 reasoning.append("Please check the logs for details.")
-            result = QueryResponse(
+            validated = QueryResponse(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
                 metrics={"error": error_info.message, "error_details": error_data},
             )
-        if task_id in http_request.app.state.async_tasks:
-            entry["result"] = result
-            entry["event"].set()
+        if task_id in http_request.app.state.async_tasks and not future.cancelled():
+            future.set_result(validated)
 
     threading.Thread(target=runner, daemon=True).start()
     return {"query_id": task_id}
@@ -268,12 +273,12 @@ async def async_query_endpoint(
 
 @router.get("/query/{query_id}")
 async def get_query_status(query_id: str, request: Request) -> Response:
-    entry = request.app.state.async_tasks.get(query_id)
-    if entry is None:
+    future = request.app.state.async_tasks.get(query_id)
+    if future is None:
         return PlainTextResponse("not found", status_code=404)
-    if not entry["event"].is_set():
+    if not future.done():
         return JSONResponse({"status": "running"})
-    result = entry["result"]
+    result = future.result()
     del request.app.state.async_tasks[query_id]
     if isinstance(result, QueryResponse):
         return JSONResponse(result.model_dump())
@@ -282,9 +287,10 @@ async def get_query_status(query_id: str, request: Request) -> Response:
 
 @router.delete("/query/{query_id}")
 async def cancel_query(query_id: str, request: Request) -> Response:
-    entry = request.app.state.async_tasks.get(query_id)
-    if entry is None:
+    future = request.app.state.async_tasks.get(query_id)
+    if future is None:
         return PlainTextResponse("not found", status_code=404)
+    future.cancel()
     del request.app.state.async_tasks[query_id]
     return PlainTextResponse("canceled")
 
