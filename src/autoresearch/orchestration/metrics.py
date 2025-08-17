@@ -3,15 +3,19 @@ Metrics collection for orchestration system.
 """
 
 import json
+import logging
 import os
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Tuple, Iterator
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Tuple
 
 from prometheus_client import Counter, Histogram
 
 from .circuit_breaker import CircuitBreakerState
+
+
+log = logging.getLogger(__name__)
 
 QUERY_COUNTER = Counter(
     "autoresearch_queries_total", "Total number of queries processed"
@@ -53,12 +57,19 @@ def reset_metrics() -> None:
         try:
             c._value.set(0)  # type: ignore[attr-defined]
         except Exception:  # pragma: no cover - defensive
-            pass
+            log.debug(
+                "Failed to reset counter %s; leaving value unchanged",
+                c,
+                exc_info=True,
+            )
     try:
         KUZU_QUERY_TIME._sum.set(0)  # type: ignore[attr-defined]
         KUZU_QUERY_TIME._count.set(0)  # type: ignore[attr-defined]
     except Exception:  # pragma: no cover - defensive
-        pass
+        log.debug(
+            "Failed to reset Kuzu query histogram; leaving values unchanged",
+            exc_info=True,
+        )
 
 
 @contextmanager
@@ -89,12 +100,19 @@ def temporary_metrics() -> Iterator[None]:
             try:
                 c._value.set(val)  # type: ignore[attr-defined]
             except Exception:  # pragma: no cover
-                pass
+                log.debug(
+                    "Failed to restore counter %s to snapshot value",
+                    c,
+                    exc_info=True,
+                )
         try:
             KUZU_QUERY_TIME._sum.set(hist_sum)  # type: ignore[attr-defined]
             KUZU_QUERY_TIME._count.set(hist_count)  # type: ignore[attr-defined]
         except Exception:  # pragma: no cover
-            pass
+            log.debug(
+                "Failed to restore Kuzu query histogram snapshot",
+                exc_info=True,
+            )
 
 
 def _get_system_usage() -> Tuple[float, float, float, float]:
@@ -122,10 +140,17 @@ def _get_system_usage() -> Tuple[float, float, float, float]:
             if count:
                 gpu_util /= count
         except Exception:  # pragma: no cover - optional dependency
-            pass
+            log.debug(
+                "pynvml unavailable; GPU metrics default to zero",
+                exc_info=True,
+            )
 
         return cpu, mem_mb, gpu_util, gpu_mem
     except Exception:
+        log.debug(
+            "psutil unavailable; returning zero system usage metrics",
+            exc_info=True,
+        )
         return 0.0, 0.0, 0.0, 0.0
 
 
@@ -212,6 +237,11 @@ class OrchestrationMetrics:
             try:
                 data = json.loads(path.read_text())
             except Exception:
+                log.debug(
+                    "Failed to read release metrics from %s; starting fresh",
+                    path,
+                    exc_info=True,
+                )
                 data = {}
         data[self.release] = self.token_counts
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -281,6 +311,11 @@ class OrchestrationMetrics:
             try:
                 data = json.loads(path.read_text())
             except Exception:
+                log.debug(
+                    "Failed to read token metrics from %s; starting fresh",
+                    path,
+                    exc_info=True,
+                )
                 data = {}
 
         data[query] = self._total_tokens()
@@ -295,6 +330,11 @@ class OrchestrationMetrics:
         try:
             baseline = json.loads(baseline_path.read_text())
         except Exception:
+            log.debug(
+                "Failed to read baseline tokens from %s; assuming no regression",
+                baseline_path,
+                exc_info=True,
+            )
             return False
         baseline_total = baseline.get(query)
         if baseline_total is None:
