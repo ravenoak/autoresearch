@@ -192,9 +192,7 @@ class Search:
         TempSearch.backends = dict(cls.backends)
         TempSearch.embedding_backends = dict(cls.embedding_backends)
         TempSearch._default_backends = dict(cls._default_backends)
-        TempSearch._default_embedding_backends = dict(
-            cls._default_embedding_backends
-        )
+        TempSearch._default_embedding_backends = dict(cls._default_embedding_backends)
         TempSearch._sentence_transformer = None
         try:
             yield TempSearch
@@ -943,7 +941,7 @@ class Search:
                 )
 
             if backend_results:
-                cache_results(text_query, name, backend_results)
+                cache_results(search_query, name, backend_results)
                 cls.add_embeddings(backend_results, query_embedding)
                 for r in backend_results:
                     r.setdefault("backend", name)

@@ -1,13 +1,12 @@
-from threading import Thread
-
 import importlib.util
+from threading import Thread
 
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
 
 from autoresearch import cache
-from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel
+from autoresearch.search import Search
 
 
 def test_search_uses_cache(monkeypatch):
@@ -122,6 +121,12 @@ def test_cache_is_backend_specific(monkeypatch):
         assert len(results1) == 1
         assert results1[0]["title"] == "B1"
         assert results1[0]["url"] == "u1"
+        # second call with backend1 should use cache
+        results1_cached = Search.external_lookup("python")
+        assert calls == {"b1": 1, "b2": 0}
+        assert len(results1_cached) == len(results1)
+        assert results1_cached[0]["title"] == results1[0]["title"]
+        assert results1_cached[0]["url"] == results1[0]["url"]
 
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
         results2 = Search.external_lookup("python")
@@ -129,10 +134,57 @@ def test_cache_is_backend_specific(monkeypatch):
         assert len(results2) == 1
         assert results2[0]["title"] == "B2"
         assert results2[0]["url"] == "u2"
+        # second call with backend2 should also use cache
+        results2_cached = Search.external_lookup("python")
+        assert calls == {"b1": 1, "b2": 1}
+        assert len(results2_cached) == len(results2)
+        assert results2_cached[0]["title"] == results2[0]["title"]
+        assert results2_cached[0]["url"] == results2[0]["url"]
 
+        # switching back to backend1 should still use cached results
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
         results3 = Search.external_lookup("python")
         assert calls == {"b1": 1, "b2": 1}
         assert len(results3) == len(results1)
         assert results3[0]["title"] == results1[0]["title"]
         assert results3[0]["url"] == results1[0]["url"]
+
+
+def test_context_aware_query_expansion_uses_cache(monkeypatch):
+    cache.clear()
+
+    calls = {"count": 0}
+
+    def backend(query: str, max_results: int = 5):
+        calls["count"] += 1
+        return [{"title": "Python", "url": "https://python.org"}]
+
+    class DummyContext:
+        def expand_query(self, q: str) -> str:
+            return q + " expanded"
+
+        def add_to_history(self, q, results) -> None:  # pragma: no cover - no-op
+            pass
+
+        def build_topic_model(self) -> None:  # pragma: no cover - no-op
+            pass
+
+    with Search.temporary_state():
+        monkeypatch.setattr(Search, "backends", {"dummy": backend})
+        cfg = ConfigModel.model_construct(loops=1)
+        cfg.search.backends = ["dummy"]
+        cfg.search.context_aware.enabled = True
+        cfg.search.context_aware.use_topic_modeling = False
+        cfg.search.use_semantic_similarity = False
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        monkeypatch.setattr(
+            "autoresearch.search.core.SearchContext.get_instance",
+            lambda: DummyContext(),
+        )
+
+        results1 = Search.external_lookup("python")
+        assert calls["count"] == 1
+        results2 = Search.external_lookup("python")
+        assert calls["count"] == 1
+        assert results2[0]["title"] == results1[0]["title"]
+        assert results2[0]["url"] == results1[0]["url"]
