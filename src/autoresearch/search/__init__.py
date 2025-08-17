@@ -1,6 +1,6 @@
 """Search subpackage."""
 
-from .core import Search
+from .core import Search, get_search
 from .context import (
     SearchContext,
     SPACY_AVAILABLE,
@@ -13,6 +13,7 @@ from ..config.loader import get_config
 
 __all__ = [
     "Search",
+    "get_search",
     "SearchContext",
     "get_http_session",
     "set_http_session",
