@@ -12,4 +12,7 @@ Recent test runs show multiple failures and lint issues:
 - `uv run pytest -q` passes with all tests succeeding
 
 ## Status
-Open
+Archived
+
+All linters and tests now pass. `flake8`, `mypy`, and `pytest` complete
+without errors, resolving the previously reported failures.
