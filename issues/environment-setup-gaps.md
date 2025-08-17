@@ -27,6 +27,12 @@ After manually installing `pytest-bdd`, `pytest-httpx`, `pytest-cov`, and
 `tests/behavior/steps/api_async_query_steps.py::test_async_query_result`
 because the async status response lacks an "answer" field.
 
+Subsequent test attempts surface additional `ModuleNotFoundError`
+failures for runtime dependencies such as `uvicorn` and `psutil`.
+The active environment also provides Python 3.11 even though project
+documentation specifies Python 3.12 or newer, further complicating
+setup.
+
 ## Acceptance Criteria
 - Go Task is available after running the setup scripts.
 - Development dependencies (e.g., `flake8`, `pytest-bdd`, `pytest-httpx`) install
