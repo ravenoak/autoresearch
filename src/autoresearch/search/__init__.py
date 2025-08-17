@@ -1,4 +1,7 @@
-"""Search subpackage."""
+"""Search subpackage.
+
+See :mod:`docs.search_spec` for behaviour and test details.
+"""
 
 from .core import Search, get_search
 from .context import (
