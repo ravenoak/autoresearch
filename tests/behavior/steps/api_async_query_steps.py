@@ -51,10 +51,10 @@ def submit_async_query(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_sync(q: str, config: ConfigModel) -> QueryResponse:
+    async def run_async(q: str, config: ConfigModel) -> QueryResponse:
         return dummy_query_response.model_copy(deep=True)
 
-    monkeypatch.setattr(Orchestrator, "run_query", run_sync)
+    monkeypatch.setattr(Orchestrator, "run_query_async", run_async)
 
     client = bdd_context["client"]
     resp = client.post("/query/async", json={"query": query})
@@ -115,11 +115,11 @@ def async_query_submitted(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_sync(q: str, config: ConfigModel) -> QueryResponse:
-        time.sleep(1)
+    async def run_async(q: str, config: ConfigModel) -> QueryResponse:
+        await asyncio.sleep(1)
         return dummy_query_response.model_copy(deep=True)
 
-    monkeypatch.setattr(Orchestrator, "run_query", run_sync)
+    monkeypatch.setattr(Orchestrator, "run_query_async", run_async)
 
     resp = api_client.post("/query/async", json={"query": "slow"})
     bdd_context["client"] = api_client
@@ -204,7 +204,7 @@ def failing_async_query(failure: str, api_client, monkeypatch):
     state = {"active": True}
     recovery_info: dict[str, str] = {}
 
-    def run_async(q: str, config: ConfigModel):
+    async def run_async(q: str, config: ConfigModel):
         if failure == "times out":
             raise TimeoutError("simulated timeout")
         raise AgentError("simulated crash")
@@ -232,7 +232,7 @@ def failing_async_query(failure: str, api_client, monkeypatch):
 
     with (
         patch(
-            "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+            "autoresearch.orchestration.orchestrator.Orchestrator.run_query_async",
             side_effect=run_async,
         ),
         patch(
