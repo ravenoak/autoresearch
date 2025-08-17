@@ -187,17 +187,19 @@ class Search:
     @classmethod
     @contextmanager
     def temporary_state(cls) -> Iterator[type["Search"]]:
-        """Provide a context-managed Search with isolated state."""
-        original_backends = dict(cls.backends)
-        original_embedding_backends = dict(cls.embedding_backends)
-        original_model = cls._sentence_transformer
+        """Yield a Search subclass with isolated state."""
+        TempSearch = type("TempSearch", (cls,), {})
+        TempSearch.backends = dict(cls.backends)
+        TempSearch.embedding_backends = dict(cls.embedding_backends)
+        TempSearch._default_backends = dict(cls._default_backends)
+        TempSearch._default_embedding_backends = dict(
+            cls._default_embedding_backends
+        )
+        TempSearch._sentence_transformer = None
         try:
-            yield cls
+            yield TempSearch
         finally:
-            cls.backends = original_backends
-            cls.embedding_backends = original_embedding_backends
-            cls._sentence_transformer = original_model
-            cls.close_http_session()
+            TempSearch.close_http_session()
 
     @classmethod
     def get_sentence_transformer(cls) -> Optional[SentenceTransformerType]:

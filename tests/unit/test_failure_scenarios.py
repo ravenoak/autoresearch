@@ -28,28 +28,28 @@ def _make_cfg(backends):
 def test_external_lookup_network_failure(monkeypatch):
     def failing_backend(query, max_results):
         raise requests.exceptions.RequestException("fail")
-
-    Search.backends["fail"] = failing_backend
-    cfg = _make_cfg(["fail"])
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    with pytest.raises(SearchError) as exc:
-        Search.external_lookup("q", max_results=1)
-    assert isinstance(exc.value.__cause__, requests.exceptions.RequestException)
-    Search.backends.pop("fail")
+    with Search.temporary_state() as search:
+        search.backends["fail"] = failing_backend
+        cfg = _make_cfg(["fail"])
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        with pytest.raises(SearchError) as exc:
+            search.external_lookup("q", max_results=1)
+        assert isinstance(exc.value.__cause__, requests.exceptions.RequestException)
 
 
 def test_external_lookup_unknown_backend(monkeypatch):
-    cfg = _make_cfg(["missing"])
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    Search.backends.pop("missing", None)
-    monkeypatch.setattr(
-        "autoresearch.search.core.get_cached_results",
-        lambda *_, **__: (_ for _ in ()).throw(
-            AssertionError("cache lookup should not occur for unknown backends")
-        ),
-    )
-    with pytest.raises(SearchError):
-        Search.external_lookup("q", max_results=1)
+    with Search.temporary_state() as search:
+        cfg = _make_cfg(["missing"])
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        search.backends.pop("missing", None)
+        monkeypatch.setattr(
+            "autoresearch.search.core.get_cached_results",
+            lambda *_, **__: (_ for _ in ()).throw(
+                AssertionError("cache lookup should not occur for unknown backends")
+            ),
+        )
+        with pytest.raises(SearchError):
+            search.external_lookup("q", max_results=1)
 
 
 def test_external_lookup_fallback(monkeypatch):

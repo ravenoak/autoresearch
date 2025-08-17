@@ -15,6 +15,7 @@ class DummyConn:
 
 
 def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
+    metrics.reset_metrics()
     monkeypatch.setattr(duckdb, "connect", lambda *a, **k: DummyConn())
 
     cfg = ConfigModel.model_construct(api=APIConfig())

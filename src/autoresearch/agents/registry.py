@@ -8,6 +8,7 @@ It includes a registry for agent types and a factory for creating agent instance
 from typing import Any, Dict, Type, List
 from dataclasses import dataclass
 from threading import Lock
+from contextlib import contextmanager
 import logging
 
 from .base import Agent
@@ -70,6 +71,24 @@ class AgentRegistry:
             A list of names of all registered agent types
         """
         return list(cls._registry.keys())
+
+    @classmethod
+    def reset(cls) -> None:
+        """Clear all registered agents and coalitions."""
+        cls._registry.clear()
+        cls._coalitions.clear()
+
+    @classmethod
+    @contextmanager
+    def temporary_state(cls):
+        """Isolate registry state within a context."""
+        registry = dict(cls._registry)
+        coalitions = dict(cls._coalitions)
+        try:
+            yield cls
+        finally:
+            cls._registry = registry
+            cls._coalitions = coalitions
 
     # ------------------------------------------------------------------
     # Coalition management
@@ -215,6 +234,27 @@ class AgentFactory:
         if cls._delegate and cls._delegate is not cls:
             return cls._delegate.list_available()
         return list(cls._registry.keys())
+
+    @classmethod
+    def reset(cls) -> None:
+        """Clear registered classes, instances, and delegates."""
+        cls._registry.clear()
+        cls._instances.clear()
+        cls._delegate = None
+
+    @classmethod
+    @contextmanager
+    def temporary_state(cls):
+        """Provide a context with isolated factory state."""
+        registry = dict(cls._registry)
+        instances = dict(cls._instances)
+        delegate = cls._delegate
+        try:
+            yield cls
+        finally:
+            cls._registry = registry
+            cls._instances = instances
+            cls._delegate = delegate
 
     @classmethod
     def reset_instances(cls) -> None:

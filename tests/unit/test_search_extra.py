@@ -27,30 +27,32 @@ from autoresearch.errors import SearchError  # noqa: E402
 
 
 def test_unknown_backend_raises(monkeypatch):
-    Search.backends = {}
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["missing"]
-    cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    with pytest.raises(SearchError):
-        Search.external_lookup("q")
+    with Search.temporary_state() as search:
+        search.backends = {}
+        cfg = ConfigModel(loops=1)
+        cfg.search.backends = ["missing"]
+        cfg.search.context_aware.enabled = False
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        with pytest.raises(SearchError):
+            search.external_lookup("q")
 
 
 def test_backend_json_error(monkeypatch):
     def bad_backend(query, max_results=5):
         raise json.JSONDecodeError("bad", "", 0)
 
-    Search.backends = {"bad": bad_backend}
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["bad"]
-    cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    was = sys.modules.pop("pytest")
-    try:
-        with pytest.raises(SearchError):
-            Search.external_lookup("q")
-    finally:
-        sys.modules["pytest"] = was
+    with Search.temporary_state() as search:
+        search.backends = {"bad": bad_backend}
+        cfg = ConfigModel(loops=1)
+        cfg.search.backends = ["bad"]
+        cfg.search.context_aware.enabled = False
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        was = sys.modules.pop("pytest")
+        try:
+            with pytest.raises(SearchError):
+                search.external_lookup("q")
+        finally:
+            sys.modules["pytest"] = was
 
 
 def test_http_session_reuse():

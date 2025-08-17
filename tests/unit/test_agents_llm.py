@@ -3,7 +3,7 @@ from unittest.mock import patch
 from autoresearch.agents.dialectical.synthesizer import SynthesizerAgent
 from autoresearch.agents.dialectical.contrarian import ContrarianAgent
 from autoresearch.agents.dialectical.fact_checker import FactChecker
-from autoresearch.agents.registry import AgentFactory
+from autoresearch.agents.registry import AgentFactory, AgentRegistry
 from autoresearch.orchestration.state import QueryState
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm.adapters import LLMAdapter
@@ -73,37 +73,38 @@ def test_fact_checker_with_injected_adapter(mock_search):
 def test_agent_factory_with_injected_adapter():
     """Test creating agents through the factory with injected adapters."""
     # Register the agent classes if not already registered
-    AgentFactory.register("Synthesizer", SynthesizerAgent)
-    AgentFactory.register("Contrarian", ContrarianAgent)
-    AgentFactory.register("FactChecker", FactChecker)
+    with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
+        AgentFactory.register("Synthesizer", SynthesizerAgent)
+        AgentFactory.register("Contrarian", ContrarianAgent)
+        AgentFactory.register("FactChecker", FactChecker)
 
-    # Create a mock adapter
-    mock_adapter = MockAdapter()
+        # Create a mock adapter
+        mock_adapter = MockAdapter()
 
-    # Create agents through the factory with the injected adapter
-    synthesizer = AgentFactory.create("Synthesizer", llm_adapter=mock_adapter)
-    contrarian = AgentFactory.create("Contrarian", llm_adapter=mock_adapter)
-    fact_checker = AgentFactory.create("FactChecker", llm_adapter=mock_adapter)
+        # Create agents through the factory with the injected adapter
+        synthesizer = AgentFactory.create("Synthesizer", llm_adapter=mock_adapter)
+        contrarian = AgentFactory.create("Contrarian", llm_adapter=mock_adapter)
+        fact_checker = AgentFactory.create("FactChecker", llm_adapter=mock_adapter)
 
-    # Verify that the adapters were injected
-    assert synthesizer.llm_adapter is mock_adapter
-    assert contrarian.llm_adapter is mock_adapter
-    assert fact_checker.llm_adapter is mock_adapter
+        # Verify that the adapters were injected
+        assert synthesizer.llm_adapter is mock_adapter
+        assert contrarian.llm_adapter is mock_adapter
+        assert fact_checker.llm_adapter is mock_adapter
 
-    # Test that the agents work with the injected adapter
-    state = QueryState(
-        query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}]
-    )
-    cfg = ConfigModel.model_construct()
+        # Test that the agents work with the injected adapter
+        state = QueryState(
+            query="q", claims=[{"id": "1", "type": "thesis", "content": "a"}]
+        )
+        cfg = ConfigModel.model_construct()
 
-    # Test synthesizer
-    result = synthesizer.execute(state, cfg)
-    assert result["claims"][0]["content"].startswith("mocked:")
+        # Test synthesizer
+        result = synthesizer.execute(state, cfg)
+        assert result["claims"][0]["content"].startswith("mocked:")
 
-    # Test contrarian
-    result = contrarian.execute(state, cfg)
-    assert result["claims"][0]["type"] == "antithesis"
-    assert result["claims"][0]["content"].startswith("mocked:")
+        # Test contrarian
+        result = contrarian.execute(state, cfg)
+        assert result["claims"][0]["type"] == "antithesis"
+        assert result["claims"][0]["content"].startswith("mocked:")
 
 
 # Legacy tests using patching (kept for backward compatibility)

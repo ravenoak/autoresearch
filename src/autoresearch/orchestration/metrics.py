@@ -6,7 +6,8 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Iterator
+from contextlib import contextmanager
 
 from prometheus_client import Counter, Histogram
 
@@ -36,6 +37,66 @@ KUZU_QUERY_TIME = Histogram(
     "autoresearch_kuzu_query_seconds",
     "Time spent executing Kuzu queries",
 )
+
+
+def reset_metrics() -> None:
+    """Reset all Prometheus counters to zero."""
+    counters = [
+        QUERY_COUNTER,
+        ERROR_COUNTER,
+        TOKENS_IN_COUNTER,
+        TOKENS_OUT_COUNTER,
+        EVICTION_COUNTER,
+        KUZU_QUERY_COUNTER,
+    ]
+    for c in counters:
+        try:
+            c._value.set(0)  # type: ignore[attr-defined]
+        except Exception:  # pragma: no cover - defensive
+            pass
+    try:
+        KUZU_QUERY_TIME._sum.set(0)  # type: ignore[attr-defined]
+        KUZU_QUERY_TIME._count.set(0)  # type: ignore[attr-defined]
+    except Exception:  # pragma: no cover - defensive
+        pass
+
+
+@contextmanager
+def temporary_metrics() -> Iterator[None]:
+    """Provide a context where metric counters are restored on exit."""
+    snapshot = [c._value.get() for c in [
+        QUERY_COUNTER,
+        ERROR_COUNTER,
+        TOKENS_IN_COUNTER,
+        TOKENS_OUT_COUNTER,
+        EVICTION_COUNTER,
+        KUZU_QUERY_COUNTER,
+    ]]
+    hist_sum = KUZU_QUERY_TIME._sum.get()
+    hist_count = KUZU_QUERY_TIME._count.get()
+    try:
+        yield
+    finally:
+        counters = [
+            QUERY_COUNTER,
+            ERROR_COUNTER,
+            TOKENS_IN_COUNTER,
+            TOKENS_OUT_COUNTER,
+            EVICTION_COUNTER,
+            KUZU_QUERY_COUNTER,
+        ]
+        for c, val in zip(counters, snapshot):
+            try:
+                c._value.set(val)  # type: ignore[attr-defined]
+            except Exception:  # pragma: no cover
+                pass
+        try:
+            KUZU_QUERY_TIME._sum.set(hist_sum)  # type: ignore[attr-defined]
+            KUZU_QUERY_TIME._count.set(hist_count)  # type: ignore[attr-defined]
+        except Exception:  # pragma: no cover
+            pass
+
+
 
 
 def _get_system_usage() -> Tuple[float, float, float, float]:

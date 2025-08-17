@@ -7,37 +7,32 @@ from autoresearch.errors import SearchError
 
 
 def test_register_backend_and_lookup(monkeypatch):
-    Search.backends = {}
-    original_defaults = dict(Search._default_backends)
+    with Search.temporary_state() as search:
+        @search.register_backend("dummy")
+        def dummy_backend(query: str, max_results: int = 5):
+            return [{"title": "t", "url": "u"}]
 
-    @Search.register_backend("dummy")
-    def dummy_backend(query: str, max_results: int = 5):
-        return [{"title": "t", "url": "u"}]
+        cfg = ConfigModel(loops=1)
+        cfg.search.backends = ["dummy"]
+        cfg.search.context_aware.enabled = False
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        monkeypatch.setattr(search, "get_sentence_transformer", lambda: None)
+        monkeypatch.setattr(
+            search, "cross_backend_rank", lambda q, b, query_embedding=None: b["dummy"]
+        )
 
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["dummy"]
-    cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    monkeypatch.setattr(Search, "get_sentence_transformer", lambda: None)
-    monkeypatch.setattr(
-        Search, "cross_backend_rank", lambda q, b, query_embedding=None: b["dummy"]
-    )
-
-    results = Search.external_lookup("x", max_results=1)
-    assert results == [{"title": "t", "url": "u", "backend": "dummy"}]
-
-    Search.reset()
-    Search._default_backends = original_defaults
+        results = search.external_lookup("x", max_results=1)
+        assert results == [{"title": "t", "url": "u", "backend": "dummy"}]
 
 
 def test_external_lookup_unknown_backend(monkeypatch):
-    Search.backends = {}
-    cfg = ConfigModel(loops=1)
-    cfg.search.backends = ["unknown"]
-    cfg.search.context_aware.enabled = False
-    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    with pytest.raises(SearchError):
-        Search.external_lookup("q", max_results=1)
+    with Search.temporary_state() as search:
+        cfg = ConfigModel(loops=1)
+        cfg.search.backends = ["unknown"]
+        cfg.search.context_aware.enabled = False
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+        with pytest.raises(SearchError):
+            search.external_lookup("q", max_results=1)
 
 
 def test_local_git_backend_ast_search(tmp_path, monkeypatch):
