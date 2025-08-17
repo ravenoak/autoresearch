@@ -34,8 +34,8 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
         CONTENT_TYPE_LATEST="text/plain",
         generate_latest=lambda: (
             f"autoresearch_queries_total {metrics.QUERY_COUNTER._value.get()}\n"
-            f"autoresearch_tokens_in_total {metrics.TOKENS_IN_COUNTER._value.get()}\n".encode()
-        ),
+            f"autoresearch_tokens_in_total {metrics.TOKENS_IN_COUNTER._value.get()}\n"
+        ).encode(),
     )
     monkeypatch.setitem(sys.modules, "prometheus_client", prom)
     from autoresearch.api.routing import metrics_endpoint
