@@ -323,7 +323,9 @@ def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_
     cfg.search.source_credibility_weight = 0.0
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
@@ -343,7 +345,9 @@ def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_resu
     cfg.search.source_credibility_weight = 0.0
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
@@ -363,7 +367,9 @@ def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_sear
     cfg.search.source_credibility_weight = 1.0
     mock_get_config.return_value = cfg
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [0.8, 0.2, 0.1])
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.8, 0.2, 0.1])
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",

@@ -245,8 +245,11 @@ def test_rank_results_with_disabled_features(
 @patch("autoresearch.search.core.get_config")
 @patch("autoresearch.search.core.BM25_AVAILABLE", False)
 @patch("autoresearch.search.core.SENTENCE_TRANSFORMERS_AVAILABLE", False)
+@patch(
+    "autoresearch.search.core._try_import_sentence_transformers", return_value=False
+)
 def test_rank_results_with_unavailable_libraries(
-    mock_get_config, mock_config, sample_results
+    _mock_try_import, mock_get_config, mock_config, sample_results
 ):
     """Test ranking when required libraries are not available."""
     mock_get_config.return_value = mock_config

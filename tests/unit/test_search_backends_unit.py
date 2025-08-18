@@ -74,7 +74,9 @@ def test_rank_results_merges_scores(monkeypatch):
 
     docs = [{"title": "a", "snippet": ""}, {"title": "b", "snippet": ""}]
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda self, q, d: [1.0, 0.0])
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", staticmethod(lambda q, d: [1.0, 0.0])
+    )
     monkeypatch.setattr(
         Search, "calculate_semantic_similarity", lambda self, q, d, e: [0.0, 1.0]
     )
