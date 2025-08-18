@@ -24,6 +24,7 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -53,13 +54,6 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     Repo = cast(Any, None)
     GITPYTHON_AVAILABLE = False
-    import warnings
-
-    warnings.warn(
-        "Local Git search backend disabled: 'gitpython' is not installed. "
-        'Install with `pip install "autoresearch[git]"` to enable it.',
-        stacklevel=2,
-    )
 
 try:
     from rank_bm25 import BM25Okapi
@@ -79,6 +73,13 @@ from ..logging_utils import get_logger
 from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+
+if not GITPYTHON_AVAILABLE:
+    warnings.warn(
+        "Local Git search backend disabled: 'gitpython' is not installed. "
+        'Install with `pip install "autoresearch[git]"` to enable it.',
+        stacklevel=2,
+    )
 
 # Re-export cache helpers for backward compatibility
 cache_results = _cache_results
