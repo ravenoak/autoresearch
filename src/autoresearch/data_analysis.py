@@ -1,3 +1,12 @@
+"""Utilities for summarizing agent performance metrics.
+
+This module exposes helpers for converting nested timing information into a
+Polars :class:`~polars.DataFrame`. The ``polars`` dependency is optional; pass
+``polars_enabled=True`` or set ``analysis.polars_enabled`` in the configuration
+to activate it. When Polars is unavailable or disabled, ``metrics_dataframe``
+raises :class:`RuntimeError`.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
@@ -10,7 +19,9 @@ except Exception:  # pragma: no cover - optional dependency
 from .config import ConfigLoader
 
 
-def metrics_dataframe(metrics: Dict[str, Any], polars_enabled: Optional[bool] = None) -> "pl.DataFrame":
+def metrics_dataframe(
+    metrics: Dict[str, Any], polars_enabled: Optional[bool] = None
+) -> "pl.DataFrame":
     """Return a Polars DataFrame summarizing agent timings."""
     cfg = ConfigLoader().config.analysis
     if polars_enabled is None:
