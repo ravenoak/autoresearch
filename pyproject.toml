@@ -45,6 +45,12 @@ dependencies = [
     "owlrl>=7.1.4",
 ]
 
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+]
+
 [tool.setuptools]
 include-package-data = true
 
