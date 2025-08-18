@@ -1,12 +1,13 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 18, 2025**, `uv run flake8 src tests`
-reports E402 import-order errors in `src/autoresearch/search/core.py`, `uv run mypy src`
-passes without issues, and `uv run pytest tests/unit/test_failure_scenarios.py` passes tests
-but fails coverage with total 21% < required 90%, so integration and behavior
-suites remain skipped. Outstanding checks are tracked in
-[resolve-current-test-failures](issues/resolve-current-test-failures.md).
+organized by phases from the code complete plan. As of **August 18, 2025**,
+`uv run flake8 src tests` passes, `uv run mypy src` fails with `Error
+importing plugin "pydantic.mypy": No module named 'pydantic'`, and
+`uv run pytest -q` reports 30 collection errors including missing
+`pytest_bdd`, so integration and behavior suites remain failing.
+Outstanding checks were tracked in
+[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md).
 An **0.1.0-alpha.1** preview is scheduled for **February 15, 2026**, with the
 final **0.1.0** release targeted for **June 1, 2026**.
 
