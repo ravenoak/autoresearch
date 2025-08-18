@@ -553,7 +553,7 @@ class Search:
 
         # Calculate scores using different algorithms
         bm25_scores = (
-            self.calculate_bm25_scores(query, results)
+            type(self).calculate_bm25_scores(query, results)
             if search_cfg.use_bm25
             else [1.0] * len(results)
         )
