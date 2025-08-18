@@ -1,15 +1,8 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
-Last updated **August 18, 2025**.
-Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` passes,
-`uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No
-module named 'pydantic'`, and `uv run pytest -q` reports 30 collection
-errors including missing `pytest_bdd`, so integration and behavior suites
-remain failing. To collect feedback while checks stabilize,
-[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)
-remains in the archive, and an alpha pre-release precedes the final 0.1.0
-milestone.
+Last updated **August 18, 2025**. For current test and coverage status, see
+[docs/release_plan.md](docs/release_plan.md).
 ## Milestones
 
 | Version | Target Date | Key Goals |
