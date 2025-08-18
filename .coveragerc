@@ -1,0 +1,4 @@
+[run]
+omit =
+[report]
+include = src/autoresearch/config/models.py
