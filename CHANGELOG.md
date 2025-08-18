@@ -6,6 +6,8 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Track environment alignment to ensure Python 3.12 and dev tooling are
+  available. [align-environment-with-requirements](issues/align-environment-with-requirements.md)
 - Update release plan to align milestones with the 2025 development timeline.
   - Add rich configuration context fixtures with sample data for tests. [create-more-comprehensive-test-contexts](issues/archive/create-more-comprehensive-test-contexts.md)
 - Optimize mypy configuration to skip site packages, preventing hangs during
