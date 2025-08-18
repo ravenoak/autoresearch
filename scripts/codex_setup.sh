@@ -83,19 +83,27 @@ fi
 
 # Verify CLI tools resolve inside the virtual environment
 source .venv/bin/activate
-for cmd in task flake8 pytest mypy; do
+missing_tools=()
+for cmd in task flake8 pytest mypy pytest-bdd pydantic; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
-        echo "$cmd is not resolved inside .venv: $cmd_path" >&2
-        deactivate
-        exit 1
+        echo "$cmd is not resolved inside .venv: ${cmd_path:-not found}" >&2
+        missing_tools+=("$cmd")
+        continue
     fi
-    "$cmd" --version >/dev/null 2>&1 || {
-        echo "$cmd failed to run" >&2
-        deactivate
-        exit 1
-    }
+    if [[ "$cmd" == "pydantic" ]]; then
+        "$cmd" version >/dev/null 2>&1 || missing_tools+=("$cmd")
+    else
+        "$cmd" --version >/dev/null 2>&1 || missing_tools+=("$cmd")
+    fi
 done
+if (( ${#missing_tools[@]} )); then
+    echo "Missing CLI tools: ${missing_tools[*]}. Running uv sync --all-extras" >&2
+    deactivate
+    uv sync --all-extras
+    echo "ERROR: Required tools missing after sync: ${missing_tools[*]}" >&2
+    exit 1
+fi
 deactivate
 
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
