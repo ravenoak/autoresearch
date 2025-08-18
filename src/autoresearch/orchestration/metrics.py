@@ -108,8 +108,7 @@ def temporary_metrics() -> Iterator[None]:
                 exc_info=True,
             )
 
-
-def _get_system_usage() -> Tuple[float, float, float, float]:
+def _get_system_usage() -> Tuple[float, float, float, float]:  # noqa: E302
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
         import psutil  # type: ignore
