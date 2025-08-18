@@ -26,12 +26,17 @@ if ! command -v python3 >/dev/null 2>&1; then
     echo "python3 is required but was not found in PATH" >&2
     exit 1
 fi
+
+PYTHON_BIN=$(command -v python3)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
 if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)' >/dev/null 2>&1; then
-    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION" >&2
-    exit 1
+    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION. Installing Python 3.12..." >&2
+    uv python install 3.12
+    PYTHON_BIN=$(uv python find 3.12)
+    PYTHON_VERSION=$("$PYTHON_BIN" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')
+    PATH="$(dirname "$PYTHON_BIN"):$PATH"
 fi
-echo "Using Python $PYTHON_VERSION"
+echo "Using Python $PYTHON_VERSION from $PYTHON_BIN"
 
 echo "Setting up Codex environment..."
 

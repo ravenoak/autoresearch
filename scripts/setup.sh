@@ -8,20 +8,22 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
+PYTHON_BIN=$(command -v python3)
 PYTHON_VERSION=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-if python3 - <<'EOF'
+if ! python3 - <<'EOF' >/dev/null 2>&1
 import sys
 sys.exit(0 if sys.version_info >= (3, 12) else 1)
 EOF
 then
-    echo "Using Python $PYTHON_VERSION"
-else
-    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION" >&2
-    exit 1
+    echo "Python 3.12 or newer is required. Found $PYTHON_VERSION. Installing Python 3.12..." >&2
+    uv python install 3.12
+    PYTHON_BIN=$(uv python find 3.12)
+    PYTHON_VERSION=$("$PYTHON_BIN" -c 'import sys; print("%d.%d" % sys.version_info[:2])')
 fi
+echo "Using Python $PYTHON_VERSION from $PYTHON_BIN"
 
 # Create a Python 3.12+ virtual environment
-uv venv
+uv venv --python "$PYTHON_BIN"
 VENV_PYTHON="./.venv/bin/python"
 "$VENV_PYTHON" - <<'EOF'
 import sys
