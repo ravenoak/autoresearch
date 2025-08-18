@@ -5,13 +5,17 @@ This document outlines the upcoming release milestones for **Autoresearch**. Dat
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
 This schedule was last updated on **August 18, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0a1** version defined in
-`autoresearch.__version__`. Phase 2 testing tasks remain incomplete:
-`uv run flake8 src tests` passes, `uv run mypy src` fails with `Error
-importing plugin "pydantic.mypy": No module named 'pydantic'`, `uv run
-pytest -q` stops with 30 collection errors including missing `pytest_bdd`,
-and `uv run pytest --cov=src` fails with 14 errors, so integration and
-behavior suites are skipped. Phase 3 (stabilization/testing/documentation)
-and Phase 4 activities remain planned.
+`autoresearch.__version__`. Phase 3 (stabilization/testing/documentation) and
+Phase 4 activities remain planned.
+
+## Test and Coverage Status
+
+Phase 2 testing tasks remain incomplete:
+
+- `uv run flake8 src tests` passes.
+- `uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No module named 'pydantic'`.
+- `uv run pytest -q` stops with 30 collection errors including missing `pytest_bdd`.
+- `uv run pytest --cov=src` fails with 14 errors, so integration and behavior suites are skipped and coverage is unavailable.
 
 ## Milestones
 
@@ -31,7 +35,7 @@ now set for **June 1, 2026** while packaging tasks are resolved.
 
 The following tasks remain before publishing **0.1.0**:
 
-- [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md)); `uv run flake8 src tests` passes, `uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No module named 'pydantic'`, `uv run pytest -q` reports 30 collection errors including missing `pytest_bdd`, and `uv run pytest --cov=src` stops with 14 errors.
+- [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md)).
 - [ ] Install optional dependencies with `uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
 - [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [ ] Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
