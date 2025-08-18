@@ -43,7 +43,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   - Create a virtual environment with `uv venv`.
     - Quick start: `uv venv && uv sync --all-extras`.
     - `scripts/setup.sh` verifies the interpreter and fails if it is too old.
-    - Both setup scripts abort if `python3` is missing or older than 3.12.
+    - Setup fails fast when Python is older than 3.12; both setup scripts install or select Python 3.12 and abort if they cannot.
     - Install dependencies and extras:
       - Run `uv sync --all-extras` followed by `uv pip install -e .` for the standard setup.
       - Use `uv pip install -e '.[full,dev]'` only to reinstall dependencies if tools are missing or `uv sync` is unavailable.
