@@ -491,7 +491,7 @@ def serve(
         server.run()
     except KeyboardInterrupt:
         console.print("[bold yellow]Server stopped[/bold yellow]")
-        raise typer.Exit(code=0)
+        return
 
 
 @app.command()
