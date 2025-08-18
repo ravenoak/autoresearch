@@ -54,14 +54,16 @@ def _setup_search(monkeypatch, w1: float, w2: float, w3: float) -> None:
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [1.0] * len(r))
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", lambda self, q, r: [1.0] * len(r)
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
-        lambda q, r, query_embedding=None: [1.0] * len(r),
+        lambda self, q, r, query_embedding=None: [1.0] * len(r),
     )
     monkeypatch.setattr(
-        Search, "assess_source_credibility", lambda r: [1.0] * len(r)
+        Search, "assess_source_credibility", lambda self, r: [1.0] * len(r)
     )
 
 
@@ -101,14 +103,16 @@ def test_rank_results_invalid_sum(monkeypatch):
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, r: [1.0] * len(r))
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", lambda self, q, r: [1.0] * len(r)
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",
-        lambda q, r, query_embedding=None: [1.0] * len(r),
+        lambda self, q, r, query_embedding=None: [1.0] * len(r),
     )
     monkeypatch.setattr(
-        Search, "assess_source_credibility", lambda r: [1.0] * len(r)
+        Search, "assess_source_credibility", lambda self, r: [1.0] * len(r)
     )
     with pytest.raises(ConfigError):
         Search.rank_results("q", results)

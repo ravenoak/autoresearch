@@ -41,6 +41,7 @@ from typing import (
     Tuple,
     cast,
 )
+from weakref import WeakSet
 
 import numpy as np
 import requests
@@ -169,7 +170,13 @@ class Search:
     _default_backends: ClassVar[
         Dict[str, Callable[[str, int], List[Dict[str, Any]]]]
     ] = {}
+    _builtin_backends: ClassVar[
+        Dict[str, Callable[[str, int], List[Dict[str, Any]]]]
+    ] = {}
     _default_embedding_backends: ClassVar[
+        Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
+    ] = {}
+    _builtin_embedding_backends: ClassVar[
         Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
     # Expose shared instance registries for legacy access
@@ -178,6 +185,7 @@ class Search:
         _default_embedding_backends
     )
     _shared_instance: ClassVar[Optional["Search"]] = None
+    _instances: ClassVar[WeakSet["Search"]] = WeakSet()
 
     def __init__(self, cache: Optional[SearchCache] = None) -> None:
         self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
@@ -188,6 +196,7 @@ class Search:
         ] = dict(self._default_embedding_backends)
         self._sentence_transformer: Optional[SentenceTransformerType] = None
         self.cache: SearchCache = cache or get_cache()
+        type(self)._instances.add(self)
 
     @classmethod
     def get_instance(cls) -> "Search":
@@ -211,9 +220,15 @@ class Search:
     @hybridmethod
     def reset(self) -> None:
         """Reset registries and close pooled resources."""
-        self.backends = dict(self._default_backends)
-        self.embedding_backends = dict(self._default_embedding_backends)
+        # Restore class-level registries to their built-in state
+        type(self)._default_backends = dict(self._builtin_backends)
+        type(self)._default_embedding_backends = dict(
+            self._builtin_embedding_backends
+        )
+        self.backends = dict(type(self)._default_backends)
+        self.embedding_backends = dict(type(self)._default_embedding_backends)
         self._sentence_transformer = None
+        type(self)._sentence_transformer = None
         self.close_http_session()
         type(self).backends = self.backends
         type(self).embedding_backends = self.embedding_backends
@@ -279,7 +294,7 @@ class Search:
 
     @staticmethod
     def calculate_bm25_scores(
-        query: str, documents: List[Dict[str, str]]
+        self, query: str, documents: List[Dict[str, str]]
     ) -> List[float]:
         """Calculate BM25 scores for a query and documents.
 
@@ -750,6 +765,13 @@ class Search:
             func: Callable[[str, int], List[Dict[str, Any]]],
         ) -> Callable[[str, int], List[Dict[str, Any]]]:
             cls._default_backends[name] = func
+            if cls._shared_instance is not None:
+                cls._shared_instance.backends[name] = func
+                cls.backends = cls._shared_instance.backends
+            else:
+                cls._builtin_backends[name] = func
+            for inst in cls._instances:
+                inst.backends[name] = func
             return func
 
         return decorator
@@ -767,6 +789,13 @@ class Search:
             func: Callable[[np.ndarray, int], List[Dict[str, Any]]],
         ) -> Callable[[np.ndarray, int], List[Dict[str, Any]]]:
             cls._default_embedding_backends[name] = func
+            if cls._shared_instance is not None:
+                cls._shared_instance.embedding_backends[name] = func
+                cls.embedding_backends = cls._shared_instance.embedding_backends
+            else:
+                cls._builtin_embedding_backends[name] = func
+            for inst in cls._instances:
+                inst.embedding_backends[name] = func
             return func
 
         return decorator
