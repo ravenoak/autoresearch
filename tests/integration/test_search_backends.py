@@ -165,7 +165,7 @@ def test_ranking_across_backends(monkeypatch):
     monkeypatch.setattr(
         Search,
         "calculate_bm25_scores",
-        lambda q, docs: [0.3, 0.9],
+        staticmethod(lambda q, docs: [0.3, 0.9]),
     )
     monkeypatch.setattr(
         Search,
@@ -257,7 +257,7 @@ def test_combined_local_and_web_results(monkeypatch, tmp_path):
     monkeypatch.setattr(
         Search,
         "calculate_bm25_scores",
-        lambda q, docs: [0.9, 0.1],
+        staticmethod(lambda q, docs: [0.9, 0.1]),
     )
     monkeypatch.setattr(
         Search,
@@ -290,7 +290,9 @@ def test_weight_optimization_improves_ranking(monkeypatch):
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, docs: [0.2, 0.9])
+    monkeypatch.setattr(
+        Search, "calculate_bm25_scores", staticmethod(lambda q, docs: [0.2, 0.9])
+    )
     monkeypatch.setattr(
         Search,
         "calculate_semantic_similarity",

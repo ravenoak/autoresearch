@@ -55,7 +55,7 @@ def _setup_search(monkeypatch, w1: float, w2: float, w3: float) -> None:
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
     monkeypatch.setattr(
-        Search, "calculate_bm25_scores", lambda self, q, r: [1.0] * len(r)
+        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0] * len(r))
     )
     monkeypatch.setattr(
         Search,
@@ -104,7 +104,7 @@ def test_rank_results_invalid_sum(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
     monkeypatch.setattr(
-        Search, "calculate_bm25_scores", lambda self, q, r: [1.0] * len(r)
+        Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0] * len(r))
     )
     monkeypatch.setattr(
         Search,
