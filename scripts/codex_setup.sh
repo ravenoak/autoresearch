@@ -69,8 +69,8 @@ rm -rf /var/lib/apt/lists/*
 # Install Go Task inside the virtual environment
 curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
 
-# Install all extras to ensure dev packages are present
-uv sync --all-extras
+# Sync all development extras in editable mode
+uv pip install -e '.[full,parsers,git,llm,dev]'
 
 # Install pre-downloaded packages for offline use. Place wheel files in
 # $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for
@@ -92,32 +92,47 @@ fi
 # Verify CLI tools resolve inside the virtual environment
 source .venv/bin/activate
 missing_tools=()
-for cmd in task flake8 pytest mypy pytest-bdd pydantic; do
+for cmd in task flake8 pytest mypy; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
         echo "$cmd is not resolved inside .venv: ${cmd_path:-not found}" >&2
         missing_tools+=("$cmd")
         continue
     fi
-    if [[ "$cmd" == "pydantic" ]]; then
-        "$cmd" version >/dev/null 2>&1 || missing_tools+=("$cmd")
-    else
-        "$cmd" --version >/dev/null 2>&1 || missing_tools+=("$cmd")
+    "$cmd" --version >/dev/null 2>&1 || missing_tools+=("$cmd")
+done
+
+# Ensure required development packages are installed in the virtual environment
+required_pkgs=(flake8 pytest-bdd freezegun tomli_w hypothesis pytest-cov pydantic)
+missing_pkgs=()
+for pkg in "${required_pkgs[@]}"; do
+    if ! uv pip show "$pkg" >/dev/null 2>&1; then
+        echo "$pkg is not installed in .venv" >&2
+        missing_pkgs+=("$pkg")
     fi
 done
-if (( ${#missing_tools[@]} )); then
-    echo "Missing CLI tools: ${missing_tools[*]}. Running uv sync --all-extras" >&2
+
+if (( ${#missing_tools[@]} )) || (( ${#missing_pkgs[@]} )); then
+    echo "Missing CLI tools: ${missing_tools[*]}" >&2
+    echo "Missing packages: ${missing_pkgs[*]}" >&2
     deactivate
-    uv sync --all-extras
-    echo "ERROR: Required tools missing after sync: ${missing_tools[*]}" >&2
+    uv pip install -e '.[full,parsers,git,llm,dev]'
+    echo "ERROR: Required tools or packages missing after install" >&2
     exit 1
 fi
 
 # Post-install version checks
 task --version
 flake8 --version
-pytest-bdd --version
-pydantic version
+python - <<'PY'
+import pydantic
+print(pydantic.__version__)
+PY
+
+# Confirm key packages import successfully
+python - <<'PY'
+import freezegun, tomli_w, hypothesis, pytest_cov, pytest_bdd
+PY
 deactivate
 
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
@@ -137,7 +152,7 @@ fi
 echo "Verifying required extras..."
 missing=0
 missing_pkgs=""
-for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 mypy hypothesis tomli_w freezegun \
+for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 mypy pydantic hypothesis tomli_w freezegun \
     duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers \
     transformers spacy bertopic fastapi responses uvicorn psutil; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
