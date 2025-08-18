@@ -73,16 +73,16 @@ from ..cache import (
     get_cache,
     get_cached_results as _get_cached_results,
 )
-
-# Re-export cache helpers for backward compatibility
-cache_results = _cache_results
-get_cached_results = _get_cached_results
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+
+# Re-export cache helpers for backward compatibility
+cache_results = _cache_results
+get_cached_results = _get_cached_results
 
 SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -123,10 +123,14 @@ class hybridmethod:
 
     def __get__(self, obj: Any, objtype: type | None = None) -> Callable[..., Any]:
         if obj is None:
-            assert objtype is not None
+            if objtype is None or not hasattr(objtype, "get_instance"):
+                raise AttributeError(
+                    "hybridmethod requires a class with get_instance()"
+                )
+            get_instance = cast(Callable[[], Any], getattr(objtype, "get_instance"))
 
             def wrapper(*args: Any, **kwargs: Any) -> Any:
-                instance = objtype.get_instance()  # type: ignore[attr-defined]
+                instance = get_instance()
                 return self.func(instance, *args, **kwargs)
 
             return wrapper
