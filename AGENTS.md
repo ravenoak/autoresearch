@@ -22,6 +22,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 
 ## Workflow
 - Place `AGENTS.md` in directories requiring custom instructions. Nested files override parent guidance.
+- See [tests/AGENTS.md](tests/AGENTS.md) for test markers, extras, and cleanup.
+- See [docs/AGENTS.md](docs/AGENTS.md) for documentation citations and formatting rules.
 - Use the container’s clock for current dates and derive past dates from `git log`.
 - Track work items in [`/issues`](issues); follow the rules in [issues/AGENTS.md](issues/AGENTS.md) and the template in [issues/README.md](issues/README.md).
 - Avoid committing binary artifacts; the `extensions/` directory is placeholder only.
@@ -29,4 +31,5 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Write focused commits with imperative subject lines ≤ 50 characters, wrap bodies at 72 characters, and reference related issues.
 
 ## Changelog
+- 2025-08-18: Refer to `tests/AGENTS.md` and `docs/AGENTS.md` for scoped rules.
 - Future updates to these instructions will be recorded here.
