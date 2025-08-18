@@ -1,6 +1,6 @@
 # Release Plan
 
-This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
+This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md). See the [README](../README.md) for installation details and [ROADMAP](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
 This schedule was last updated on **August 18, 2025** and reflects the fact that
@@ -35,18 +35,21 @@ schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1**
 release is scheduled for **February 15, 2026**. The final **0.1.0** milestone is
 now set for **June 1, 2026** while packaging tasks are resolved.
 
-The following tasks remain before publishing **0.1.0**:
+The following tasks remain before publishing **0.1.0-alpha.1**:
 
 - [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
-- [ ] Install optional dependencies with `uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
+- [ ] Set up the environment with `uv venv && uv sync --all-extras && uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
 - [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [ ] Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
-- [ ] Assemble final release notes and confirm README instructions.
+- [ ] Assemble preliminary release notes and confirm README instructions.
 
-### Current Blockers
+### Blockers before 0.1.0-alpha.1
 
-- Type checking failures and missing test dependencies ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
-- Packaging scripts require additional configuration before they run reliably.
+| Blocker | Related Issue |
+| ------- | ------------- |
+| Test suite failures and missing dependencies | [resolve-current-test-failures](../issues/resolve-current-test-failures.md) |
+| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](../issues/align-environment-with-requirements.md) |
+| Packaging scripts require configuration | [update-release-documentation](../issues/archive/update-release-documentation.md) |
 
 Resolving these issues will determine the new completion date for **0.1.0**.
 
