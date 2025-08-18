@@ -34,7 +34,7 @@ class SearchCache:
     def setup(self, db_path: Optional[str] = None) -> TinyDB:
         """Initialise the TinyDB instance if needed."""
         with self._db_lock:
-            path = Path(db_path) if db_path is not None else _db_path
+            path = Path(db_path) if db_path is not None else self._db_path
             if self._db is None or path != self._db_path:
                 self._db_path = path
                 self._db = TinyDB(self._db_path)

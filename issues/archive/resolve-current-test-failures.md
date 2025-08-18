@@ -13,4 +13,4 @@ Recent checks show linting passes, but type checking and coverage fail:
 - `uv run pytest -q` passes with all tests succeeding and required coverage
 
 ## Status
-Open
+Archived

@@ -900,7 +900,7 @@ class Search:
                 log.warning(f"Embedding generation failed: {exc}")
 
         if query_embedding is not None:
-            emb_results = self.embedding_lookup(query_embedding, max_results)
+            emb_results = type(self).embedding_lookup(query_embedding, max_results)
             for name, docs in emb_results.items():
                 results_by_backend[name] = docs
                 results.extend(docs)
@@ -921,7 +921,7 @@ class Search:
 
             cached = self.cache.get_cached_results(search_query, name)
             if cached is not None:
-                self.add_embeddings(cached, query_embedding)
+                type(self).add_embeddings(cached, query_embedding)
                 for r in cached:
                     r.setdefault("backend", name)
                 return name, cached[:max_results]
@@ -970,10 +970,7 @@ class Search:
                 for r in backend_results:
                     r.setdefault("backend", name)
             self.cache.cache_results(search_query, name, backend_results)
-            if query_embedding is not None:
-                self.add_embeddings(backend_results, query_embedding)
-            else:
-                self.add_embeddings(backend_results)
+            type(self).add_embeddings(backend_results, query_embedding)
             return name, backend_results
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
