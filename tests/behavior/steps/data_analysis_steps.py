@@ -1,5 +1,6 @@
 import pytest
-from pytest_bdd import given, when, then
+from pytest_bdd import given, then, when
+
 from autoresearch.data_analysis import metrics_dataframe
 
 pl = pytest.importorskip("polars")
@@ -10,6 +11,7 @@ def sample_metrics(bdd_context) -> None:
     bdd_context["metrics"] = {"agent_timings": {"A": [1.0, 2.0]}}
 
 
+# Spec: docs/specs/data-analysis.md#polars-enabled
 @when("I generate metrics dataframe with Polars enabled")
 def generate_df_enabled(bdd_context) -> None:
     metrics = bdd_context["metrics"]
@@ -17,6 +19,7 @@ def generate_df_enabled(bdd_context) -> None:
     bdd_context["error"] = None
 
 
+# Spec: docs/specs/data-analysis.md#polars-disabled
 @when("I generate metrics dataframe with Polars disabled")
 def generate_df_disabled(bdd_context) -> None:
     metrics = bdd_context["metrics"]
@@ -29,11 +32,13 @@ def generate_df_disabled(bdd_context) -> None:
         bdd_context["error"] = e
 
 
+# Spec: docs/specs/data-analysis.md#polars-enabled
 @then("a Polars dataframe should be returned")
 def assert_polars_dataframe(bdd_context) -> None:
     assert isinstance(bdd_context["result"], pl.DataFrame)
 
 
+# Spec: docs/specs/data-analysis.md#polars-disabled
 @then("the operation should fail with polars disabled error")
 def assert_polars_disabled_error(bdd_context) -> None:
     assert bdd_context["result"] is None

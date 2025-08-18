@@ -7,12 +7,14 @@ Feature: Orchestrator and Agents Integration
     Given the system is configured with multiple agents
     And the system is using a dummy LLM adapter for testing
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Integrate multiple agents, propagating state and capturing errors
   Scenario: Orchestrator executes agents in the correct order
     When I run a query with the dialectical reasoning mode
     Then the agents should be executed in the correct sequence
     And each agent should receive the state from previous agents
     And the final result should include contributions from all agents
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Integrate multiple agents, propagating state and capturing errors
   Scenario: Orchestrator handles agent errors gracefully
     Given an agent that will raise an error
     When I run a query with that agent
@@ -20,6 +22,7 @@ Feature: Orchestrator and Agents Integration
     And the orchestrator should continue with other agents if possible
     And the final result should include information about the error
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Integrate multiple agents, propagating state and capturing errors
   Scenario: Orchestrator respects agent execution conditions
     Given an agent that can only execute under specific conditions
     When I run a query that doesn't meet those conditions

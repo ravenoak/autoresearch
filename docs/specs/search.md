@@ -13,15 +13,18 @@ point.
 - Query local directories, document formats and Git repositories.
 - Maintain responsive vector search performance.
 
-## Related tests
+## Traceability
 
-- [search_cli.feature](../../tests/behavior/features/search_cli.feature)
-- [hybrid_search.feature](../../tests/behavior/features/hybrid_search.feature)
-- [storage_search_integration.feature](../../tests/behavior/features/storage_search_integration.feature)
-- [local_sources.feature](../../tests/behavior/features/local_sources.feature)
-- [vector_search_performance.feature](../../tests/behavior/features/vector_search_performance.feature)
+- **Modules**
+  - `src/autoresearch/search/`
+- **Tests**
+  - [search_cli.feature](../../tests/behavior/features/search_cli.feature)
+  - [hybrid_search.feature](../../tests/behavior/features/hybrid_search.feature)
+  - [storage_search_integration.feature](../../tests/behavior/features/storage_search_integration.feature)
+  - [local_sources.feature](../../tests/behavior/features/local_sources.feature)
+  - [vector_search_performance.feature](../../tests/behavior/features/vector_search_performance.feature)
 
 ## Extending
 
 Add new behaviours with accompanying feature files and reference them
-under **Related tests**.
+under **Traceability**.

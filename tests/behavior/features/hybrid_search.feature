@@ -1,4 +1,5 @@
 Feature: Hybrid Search
+  # Spec: docs/specs/search.md#key-behaviors - Combine keyword and vector retrieval for hybrid search results
   Scenario: Combine keyword and vector results
     Given a directory with text files
     And I have persisted claims with embeddings

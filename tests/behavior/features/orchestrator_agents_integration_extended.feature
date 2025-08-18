@@ -7,6 +7,7 @@ Feature: Extended orchestrator and agents integration
     Given the system is configured with multiple agents
     And the system is using a dummy LLM adapter for testing
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Support multiple reasoning loops and modes while preserving agent state
   Scenario: Orchestrator executes multiple loops correctly
     Given the system is configured to run multiple reasoning loops
     When I run a query with multiple loops
@@ -14,12 +15,14 @@ Feature: Extended orchestrator and agents integration
     And the state should be preserved between loops
     And the final result should include contributions from all loops
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Support multiple reasoning loops and modes while preserving agent state
   Scenario: Orchestrator supports different reasoning modes
     Given the system is configured with the "direct" reasoning mode
     When I run a query with the direct reasoning mode
     Then only the primary agent should be executed
     And the final result should include only the primary agent's contribution
 
+  # Spec: docs/specs/orchestration.md#key-behaviors - Support multiple reasoning loops and modes while preserving agent state
   Scenario: Orchestrator preserves agent state between loops
     Given the system is configured to run multiple reasoning loops
     And an agent that modifies the state in a specific way
