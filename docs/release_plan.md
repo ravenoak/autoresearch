@@ -12,10 +12,12 @@ Phase 4 activities remain planned.
 
 Phase 2 testing tasks remain incomplete:
 
-- `uv run flake8 src tests` passes.
-- `uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No module named 'pydantic'`.
-- `uv run pytest -q` stops with 30 collection errors including missing `pytest_bdd`.
-- `uv run pytest --cov=src` fails with 14 errors, so integration and behavior suites are skipped and coverage is unavailable.
+ - `uv run flake8 src tests` passes.
+ - `uv run mypy src` fails with 2 errors in `src/autoresearch/search/core.py`.
+ - `uv run pytest -q` is interrupted after 4 failures (TypeError in
+   `Search.calculate_bm25_scores`), with 362 passed, 8 skipped, 97
+   deselected and 30 warnings.
+ - `uv run pytest --cov=src` not yet run due to failing tests.
 
 ## Milestones
 
