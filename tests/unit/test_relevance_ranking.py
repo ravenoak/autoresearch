@@ -6,6 +6,7 @@ assessment, and the overall ranking functionality.
 
 import os
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -300,6 +301,31 @@ def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
         ranked_results = Search.rank_results("test query", sample_results)
 
     assert ranked_results[0]["url"] == "https://example.com/unrelated"
+
+
+@patch("autoresearch.search.core.get_config")
+def test_rank_results_patched_bm25_function(
+    mock_get_config, mock_config, sample_results
+):
+    """`rank_results` should pass both query and documents to BM25 scorer."""
+    mock_config.search.bm25_weight = 1.0
+    mock_config.search.semantic_similarity_weight = 0.0
+    mock_config.search.source_credibility_weight = 0.0
+    mock_get_config.return_value = mock_config
+
+    captured: Dict[str, Any] = {}
+
+    def fake_bm25(query: str, documents: List[Dict[str, Any]]) -> List[float]:
+        captured["query"] = query
+        captured["documents"] = documents
+        return [0.1] * len(documents)
+
+    with patch.object(Search, "calculate_bm25_scores", fake_bm25):
+        ranked = Search.rank_results("q", sample_results)
+
+    assert captured["query"] == "q"
+    assert captured["documents"] is sample_results
+    assert len(ranked) == len(sample_results)
 
 
 def test_search_config_invalid_weights():
