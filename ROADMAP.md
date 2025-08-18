@@ -7,7 +7,7 @@ Last updated **August 18, 2025**. For current test and coverage status, see
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](issues/resolve-current-test-failures.md)) |
+| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures and aligning environment requirements ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [align-environment-with-requirements](issues/align-environment-with-requirements.md)) |
 | 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
 | 0.1.1 | 2026-08-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
@@ -17,12 +17,15 @@ Last updated **August 18, 2025**. For current test and coverage status, see
 ## 0.1.0-alpha.1 – Alpha preview
 
 This pre-release provides an early package for testing while packaging tasks
-remain open. Related issue
-([resolve-current-test-failures](issues/resolve-current-test-failures.md))
-tracks outstanding test work. Key activities include:
+remain open. Related issues
+([resolve-current-test-failures](issues/resolve-current-test-failures.md),
+[align-environment-with-requirements](issues/align-environment-with-requirements.md))
+track outstanding test and environment work. Key activities include:
 
 - Provide an installable package for early adopters.
 - Collect feedback while fixing failing tests and packaging issues.
+- Align development environment with project requirements (Python 3.12 and
+  dev tooling).
 
 ## 0.1.0 – First public preview
 
