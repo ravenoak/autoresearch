@@ -1,11 +1,12 @@
 # Resolve current test failures
 
 ## Context
-Recent checks show linting passes, but type checking and coverage fail:
+Recent checks show linting and type checking succeed, but the full test
+suite still fails and coverage remains below the required threshold:
 - `uv run flake8 src tests` reports no issues
-- `uv run mypy src` reports 10 errors
-- `uv run pytest tests/unit/test_failure_scenarios.py` passes tests but fails
-  coverage with total 21% < required 90%
+- `uv run mypy src` completes without errors
+- `uv run pytest -q` exits with 52 failures across search, API, and
+  orchestrator scenarios
 
 ## Acceptance Criteria
 - Flake8 runs without errors

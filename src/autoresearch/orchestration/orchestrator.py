@@ -30,12 +30,19 @@ from .metrics import OrchestrationMetrics, record_query
 from .orchestration_utils import OrchestrationUtils
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
+from .token_utils import _capture_token_usage
 
 log = get_logger(__name__)
 
 
 class Orchestrator:
     """Coordinates multi-agent dialectical cycles with rotating Primus."""
+
+    # Expose token usage capture helper for tests that monkeypatch the
+    # orchestrator directly. Previously this utility lived only within
+    # ``token_utils``, which caused AttributeError in tests expecting
+    # ``Orchestrator._capture_token_usage``.
+    _capture_token_usage = staticmethod(_capture_token_usage)
 
     def __init__(self) -> None:
         """Initialize orchestrator state for a single query."""
