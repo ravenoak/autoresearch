@@ -231,9 +231,10 @@ Coverage is generated but fails to meet the 90% threshold.
 
 ### Latest Test Results
 
-- `uv run flake8 src tests` – E402 import-order errors in `src/autoresearch/search/core.py`
+- `uv run flake8 src tests` – passes with no issues
 - `uv run mypy src` – passes with no issues
-- `uv run pytest tests/unit/test_failure_scenarios.py` – tests pass but coverage 21% < required 90%.
+- `uv run pytest -q` – 52 failures across search, API, and orchestrator
+  scenarios; coverage below required 90%
 
 ### Performance Baselines
 

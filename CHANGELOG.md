@@ -29,6 +29,8 @@ Planned first public release bringing the core research workflow to life.
 - Refined token budget heuristics and asynchronous cancellation handling.
 - Cleaned up CLI commands and installer scripts.
 - Numerous bug fixes and reliability tweaks since the initial prototype was created in May 2025.
+- Exposed token usage capture helper on the orchestrator for easier testing
+  ([issues/resolve-current-test-failures.md](issues/resolve-current-test-failures.md)).
 
 See the [release plan](docs/release_plan.md) for upcoming milestones.
 
