@@ -299,6 +299,9 @@ class Search:
     ) -> List[float]:
         """Calculate BM25 scores for a query and documents.
 
+        See ``docs/algorithms/bm25.md`` for the formula and normalization
+        approach.
+
         Args:
             query: The search query
             documents: The documents to score
@@ -357,6 +360,9 @@ class Search:
         query_embedding: Optional[np.ndarray] = None,
     ) -> List[float]:
         """Calculate semantic similarity scores for a query and documents.
+
+        See ``docs/algorithms/semantic_similarity.md`` for the cosine similarity
+        formulation used.
 
         Args:
             query: The search query
@@ -457,7 +463,10 @@ class Search:
 
     @staticmethod
     def assess_source_credibility(documents: List[Dict[str, str]]) -> List[float]:
-        """Assess the credibility of sources based on domain authority and other factors.
+        """Assess the credibility of sources using domain authority heuristics.
+
+        See ``docs/algorithms/source_credibility.md`` for the scoring
+        background.
 
         Args:
             documents: The documents to assess
