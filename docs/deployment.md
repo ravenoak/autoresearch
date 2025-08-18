@@ -120,6 +120,22 @@ To publish a development build to the TestPyPI repository run:
 ```bash
 ./scripts/publish_dev.py
 ```
+
+The script requires the `build` and `twine` packages. Install them with:
+
+```bash
+uv pip install build twine
+```
+
+Use the `--dry-run` flag to verify the process without uploading:
+
+```bash
+uv run python scripts/publish_dev.py --dry-run
+```
+
+For an actual upload, provide a TestPyPI API token by setting
+`TWINE_USERNAME=__token__` and `TWINE_PASSWORD=<token>` before running the
+script without `--dry-run`.
 ## Upgrading
 Run `uv pip install -U autoresearch` to refresh an existing installation.
 For pip based installs use:
