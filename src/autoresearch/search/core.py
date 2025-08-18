@@ -294,7 +294,7 @@ class Search:
 
     @staticmethod
     def calculate_bm25_scores(
-        self, query: str, documents: List[Dict[str, str]]
+        query: str, documents: List[Dict[str, str]]
     ) -> List[float]:
         """Calculate BM25 scores for a query and documents.
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any, Dict, cast
 
 import anyio
 from fastmcp import FastMCP, Client
@@ -26,7 +26,7 @@ def create_server(host: str = "127.0.0.1", port: int = 8080) -> FastMCP:
     @server.tool
     async def research(query: str) -> dict[str, Any]:
         try:
-            result = server.orchestrator.run_query(query, config)
+            result = cast(Any, server).orchestrator.run_query(query, config)
             return {
                 "answer": result.answer,
                 "citations": [
