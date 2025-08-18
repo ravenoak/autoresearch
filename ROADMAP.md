@@ -1,8 +1,11 @@
 # Autoresearch Roadmap
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
+Installation and environment details are covered in the [README](README.md).
 Last updated **August 18, 2025**. For current test and coverage status, see
-[docs/release_plan.md](docs/release_plan.md).
+[docs/release_plan.md](docs/release_plan.md). Use Python 3.12+ with
+`uv venv && uv sync --all-extras && uv pip install -e '.[full,parsers,git,llm,dev]'`
+before running tests.
 ## Milestones
 
 | Version | Target Date | Key Goals |
@@ -13,6 +16,14 @@ Last updated **August 18, 2025**. For current test and coverage status, see
 | 0.2.0 | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2027-01-15 | Distributed execution support, monitoring utilities |
 | 1.0.0 | 2027-04-01 | Full feature set, performance tuning and stable interfaces |
+
+### Blockers before 0.1.0-alpha.1
+
+| Blocker | Related Issue |
+| ------- | ------------- |
+| Test suite failures and missing dependencies | [resolve-current-test-failures](issues/resolve-current-test-failures.md) |
+| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](issues/align-environment-with-requirements.md) |
+| Packaging scripts require configuration | [update-release-documentation](issues/archive/update-release-documentation.md) |
 
 ## 0.1.0-alpha.1 – Alpha preview
 
