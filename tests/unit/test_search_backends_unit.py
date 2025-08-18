@@ -16,7 +16,9 @@ def test_register_backend_and_lookup(monkeypatch):
         cfg.search.backends = ["dummy"]
         cfg.search.context_aware.enabled = False
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-        monkeypatch.setattr(search, "get_sentence_transformer", lambda: None)
+        monkeypatch.setattr(Search, "get_sentence_transformer", lambda self: None)
+        monkeypatch.setattr(Search, "embedding_lookup", lambda emb, max_results=5: {})
+        monkeypatch.setattr(Search, "add_embeddings", lambda docs, emb=None: None)
         monkeypatch.setattr(
             search, "cross_backend_rank", lambda q, b, query_embedding=None: b["dummy"]
         )
@@ -72,11 +74,13 @@ def test_rank_results_merges_scores(monkeypatch):
 
     docs = [{"title": "a", "snippet": ""}, {"title": "b", "snippet": ""}]
 
-    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda q, d: [1.0, 0.0])
+    monkeypatch.setattr(Search, "calculate_bm25_scores", lambda self, q, d: [1.0, 0.0])
     monkeypatch.setattr(
-        Search, "calculate_semantic_similarity", lambda q, d, e: [0.0, 1.0]
+        Search, "calculate_semantic_similarity", lambda self, q, d, e: [0.0, 1.0]
     )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda d: [0.0, 0.0])
+    monkeypatch.setattr(
+        Search, "assess_source_credibility", lambda self, d: [0.0, 0.0]
+    )
 
     ranked = Search.rank_results("q", docs)
     assert ranked[0]["title"] == "a"

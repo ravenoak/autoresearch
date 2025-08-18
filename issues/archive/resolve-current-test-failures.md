@@ -14,4 +14,4 @@ suite still fails and coverage remains below the required threshold:
 - `uv run pytest -q` passes with all tests succeeding and required coverage
 
 ## Status
-Open
+Archived
