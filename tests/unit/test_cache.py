@@ -13,6 +13,12 @@ def test_search_uses_cache(monkeypatch):
     cache = SearchCache()
     search = Search(cache=cache)
 
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(lambda q, d: [1.0] * len(d)),
+    )
+
     calls = {"count": 0}
 
     def backend(query: str, max_results: int = 5):
@@ -90,6 +96,12 @@ def test_cache_is_backend_specific(monkeypatch):
     cache = SearchCache()
     search = Search(cache=cache)
 
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(lambda q, d: [1.0] * len(d)),
+    )
+
     calls = {"b1": 0, "b2": 0}
 
     def backend1(query: str, max_results: int = 5):
@@ -148,6 +160,12 @@ def test_cache_is_backend_specific(monkeypatch):
 def test_context_aware_query_expansion_uses_cache(monkeypatch):
     cache = SearchCache()
     search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(lambda q, d: [1.0] * len(d)),
+    )
 
     calls = {"count": 0}
 
