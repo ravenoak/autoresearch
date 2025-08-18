@@ -3,7 +3,7 @@
 This document outlines the upcoming release milestones for **Autoresearch**. Dates are aspirational and may shift as development progresses. The publishing workflow follows the steps in [deployment.md](deployment.md).
 
 The project kicked off in **May 2025** (see the initial commit dated `2025-05-18`).
-This schedule was last updated on **August 17, 2025** and reflects the fact that
+This schedule was last updated on **August 18, 2025** and reflects the fact that
 the codebase currently sits at the **unreleased 0.1.0a1** version defined in
 `autoresearch.__version__`. Phase 2 testing tasks remain incomplete:
 `uv run flake8 src tests` reports E402 import-order errors in
@@ -18,7 +18,7 @@ and Phase 4 activities remain planned.
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
 | **0.1.0-alpha.1** | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
-| **0.1.0** | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/update-release-documentation.md)) |
+| **0.1.0** | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/archive/update-release-documentation.md)) |
 | **0.1.1** | 2026-08-15 | Bug fixes and documentation updates |
 | **0.2.0** | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
 | **0.3.0** | 2027-01-15 | Distributed execution support, monitoring utilities |
@@ -36,7 +36,6 @@ The following tasks remain before publishing **0.1.0**:
 - [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [ ] Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
 - [ ] Assemble final release notes and confirm README instructions.
-- [ ] Keep release documentation synchronized across project files ([update-release-documentation](../issues/update-release-documentation.md)).
 
 ### Current Blockers
 

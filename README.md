@@ -8,7 +8,7 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 ## Roadmap
 
-As of **August 17, 2025**, Autoresearch is in the **Development** phase preparing for the
+As of **August 18, 2025**, Autoresearch is in the **Development** phase preparing for the
 upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
@@ -21,9 +21,7 @@ suites remain skipped. An **0.1.0-alpha.1** preview is scheduled for
 **February 15, 2026** to collect feedback while checks stabilize, with the
 final **0.1.0** milestone targeted for **June 1, 2026**. Remaining
 blockers include these failing checks
-([resolve-current-test-failures](issues/resolve-current-test-failures.md))
-and release documentation updates
-([update-release-documentation](issues/update-release-documentation.md)).
+([resolve-current-test-failures](issues/resolve-current-test-failures.md)).
 See [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 
