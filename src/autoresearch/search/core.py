@@ -73,16 +73,16 @@ from ..cache import (
     get_cache,
     get_cached_results as _get_cached_results,
 )
-
-# Re-export cache helpers for backward compatibility
-cache_results = _cache_results
-get_cached_results = _get_cached_results
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+
+# Re-export cache helpers for backward compatibility
+cache_results = _cache_results
+get_cached_results = _get_cached_results
 
 SentenceTransformer: SentenceTransformerType | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
