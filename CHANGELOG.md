@@ -13,7 +13,7 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Document virtual environment best practices in the developer guide.
 - Synchronize release documentation across project files. [update-release-documentation](issues/archive/update-release-documentation.md)
 
-## [0.1.0-alpha.1] - 2025-08-09
+## [0.1.0-alpha.1] - 2026-02-15
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
 
 ## [0.1.0] - Unreleased
