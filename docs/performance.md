@@ -30,12 +30,18 @@ The orchestration metrics module provides helpers to automatically compress
 prompts and adjust token budgets. After each cycle the orchestrator uses
 `suggest_token_budget` to expand or shrink the configured budget. The heuristic
 tracks both the overall token usage and per-agent historical averages so the
-budget gradually converges toward typical usage without starving any agent.
-`compress_prompt_if_needed` likewise tracks prompt lengths and lowers its
-compression threshold when the average length exceeds the available budget. If
-a prompt still exceeds the budget after compression, a summarization step can be
-supplied to ``compress_prompt`` to further reduce the text. This adaptive
-behaviour helps prevent runaway token consumption.
+budget gradually converges toward typical usage without starving any agent. It
+applies expansion when usage spikes and contracts when cycles run lean, never
+allowing the budget to drop below one token. `compress_prompt_if_needed`
+likewise tracks prompt lengths and lowers its compression threshold when the
+average length exceeds the available budget. This causes later prompts to be
+compressed earlier if recent prompts were long. If a prompt still exceeds the
+budget after compression, a summarization step can be supplied to
+``compress_prompt`` to further reduce the text. This adaptive behaviour helps
+prevent runaway token consumption.
+
+See [Token Budget Helpers Specification](token_budget_spec.md) for the precise
+expected behaviour of these algorithms and the accompanying unit tests.
 
 When a token budget is set, the orchestrator applies this compression step
 inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
