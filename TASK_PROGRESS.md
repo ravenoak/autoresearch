@@ -2,10 +2,11 @@
 
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **August 17, 2025**, `uv run flake8 src tests`
-reports no issues, `uv run mypy src` reports 10 errors across cache and search
-modules, and `uv run pytest tests/unit/test_failure_scenarios.py` passes tests
-but fails coverage with total 21% < required 90, so integration and behavior
-suites remain skipped.
+reports E402 import-order errors in `src/autoresearch/search/core.py`, `uv run mypy src`
+passes without issues, and `uv run pytest tests/unit/test_failure_scenarios.py` passes tests
+but fails coverage with total 21% < required 90%, so integration and behavior
+suites remain skipped. Outstanding checks are tracked in
+[resolve-current-test-failures](issues/resolve-current-test-failures.md).
 An **0.1.0-alpha.1** preview is scheduled for **February 15, 2026**, with the
 final **0.1.0** release targeted for **June 1, 2026**.
 
@@ -232,9 +233,9 @@ Coverage is generated but fails to meet the 90% threshold.
 
 ### Latest Test Results
 
-- `uv run flake8 src tests` – reports no issues
-- `uv run mypy src` – 10 errors (e.g., argument type in `cache.py` and union attribute in `search/core.py`)
-- `uv run pytest tests/unit/test_failure_scenarios.py` – tests pass but coverage 21% < required 90%
+- `uv run flake8 src tests` – E402 import-order errors in `src/autoresearch/search/core.py`
+- `uv run mypy src` – passes with no issues
+- `uv run pytest tests/unit/test_failure_scenarios.py` – tests pass but coverage 21% < required 90%.
 
 ### Performance Baselines
 
