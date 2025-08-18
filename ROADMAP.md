@@ -2,19 +2,20 @@
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
 Last updated **August 18, 2025**.
-Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` reports
-E402 import-order errors in `src/autoresearch/search/core.py`, `uv run mypy
-src` passes without issues, and `uv run pytest tests/unit/test_failure_scenarios.py`
-passes but coverage is **21%** < required **90%**, so integration and
-behavior suites remain skipped. To collect feedback while
-[resolve-current-test-failures](issues/resolve-current-test-failures.md) is
-addressed, an alpha pre-release precedes the final 0.1.0 milestone.
+Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` passes,
+`uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No
+module named 'pydantic'`, and `uv run pytest -q` reports 30 collection
+errors including missing `pytest_bdd`, so integration and behavior suites
+remain failing. To collect feedback while checks stabilize,
+[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)
+remains in the archive, and an alpha pre-release precedes the final 0.1.0
+milestone.
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](issues/resolve-current-test-failures.md)) |
-| 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
+| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)) |
+| 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
 | 0.1.1 | 2026-08-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2027-01-15 | Distributed execution support, monitoring utilities |
@@ -24,8 +25,8 @@ addressed, an alpha pre-release precedes the final 0.1.0 milestone.
 
 This pre-release provides an early package for testing while packaging tasks
 remain open. Related issue
-([resolve-current-test-failures](issues/resolve-current-test-failures.md)) is
-open. Key activities include:
+([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md))
+is archived. Key activities include:
 
 - Provide an installable package for early adopters.
 - Collect feedback while fixing failing tests and packaging issues.
@@ -40,8 +41,8 @@ activities include:
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
 
-Linting and coverage still fail (see
-[resolve-current-test-failures](issues/resolve-current-test-failures.md)), so
+Type checking and tests still fail (see
+[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)), so
 integration and behavior suites remain blocked. The release was originally
 planned for **July 20, 2025**, but the schedule slipped. The **0.1.0**
 milestone is now targeted for **June 1, 2026** while packaging tasks are
