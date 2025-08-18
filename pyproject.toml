@@ -208,7 +208,6 @@ markers = [
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
-no_site_packages = true
 disable_error_code = ["import-untyped"]
 plugins = ["pydantic.mypy"]
 check_untyped_defs = true

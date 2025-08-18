@@ -78,7 +78,7 @@ def temporary_metrics() -> Iterator[None]:
         ]
     ]
     hist_sum = KUZU_QUERY_TIME._sum.get()
-    hist_count = KUZU_QUERY_TIME._count.get()
+    hist_count = KUZU_QUERY_TIME._count.get()  # type: ignore[attr-defined]
     try:
         yield
     finally:
