@@ -87,6 +87,12 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
   must run inside this environment.
 - Verify the environment by running `which pytest` and ensure it resolves
   to `.venv/bin/pytest`.
+- `scripts/codex_setup.sh` runs the following post-install checks to confirm
+  tooling is available:
+    - `task --version`
+    - `flake8 --version`
+    - `pytest-bdd --version`
+    - `pydantic version`
 - Confirm tool availability and versions:
     - `task --version`
     - `flake8 --version`
