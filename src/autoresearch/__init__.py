@@ -23,7 +23,7 @@ except Exception:  # pragma: no cover
 try:
     __version__ = _version("autoresearch")
 except PackageNotFoundError:  # pragma: no cover - fallback for tests
-    __version__ = "0.0.0"
+    __version__ = "0.1.0a1"
 
 if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
     from .distributed import (

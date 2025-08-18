@@ -18,6 +18,10 @@ the final **0.1.0** milestone targeted for **June 1, 2026**. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule, outstanding tasks, and current test and coverage status.
 
+Current checks show `flake8` and `mypy` passing, while `pytest -q`
+fails during collection due to missing optional dependencies like
+`tomli_w`, `freezegun`, and `pytest_bdd`.
+
 Outstanding test work is tracked in
 [resolve-current-test-failures](issues/resolve-current-test-failures.md).
 
