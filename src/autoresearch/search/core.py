@@ -48,20 +48,6 @@ import requests
 from docx import Document
 from pdfminer.high_level import extract_text as extract_pdf_text
 
-try:
-    from git import Repo
-
-    GITPYTHON_AVAILABLE = True
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    Repo = cast(Any, None)
-    GITPYTHON_AVAILABLE = False
-
-try:
-    from rank_bm25 import BM25Okapi
-
-    BM25_AVAILABLE = True
-except ImportError:
-    BM25_AVAILABLE = False
 from ..cache import (
     SearchCache,
     cache_results as _cache_results,
@@ -75,6 +61,23 @@ from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
 
+Repo: Any | None
+try:
+    from git import Repo as GitRepo  # noqa: E402
+
+    Repo = GitRepo
+    GITPYTHON_AVAILABLE = True
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    Repo = None
+    GITPYTHON_AVAILABLE = False
+
+try:
+    from rank_bm25 import BM25Okapi  # noqa: E402
+
+    BM25_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency
+    BM25_AVAILABLE = False
+
 if not GITPYTHON_AVAILABLE:
     warnings.warn(
         "Local Git search backend disabled: 'gitpython' is not installed. "
@@ -86,7 +89,7 @@ if not GITPYTHON_AVAILABLE:
 cache_results = _cache_results
 get_cached_results = _get_cached_results
 
-SentenceTransformer: SentenceTransformerType | None = None
+SentenceTransformer: type[SentenceTransformerType] | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
@@ -222,9 +225,7 @@ class Search:
         """Reset registries and close pooled resources."""
         # Restore class-level registries to their built-in state
         type(self)._default_backends = dict(self._builtin_backends)
-        type(self)._default_embedding_backends = dict(
-            self._builtin_embedding_backends
-        )
+        type(self)._default_embedding_backends = dict(self._builtin_embedding_backends)
         self.backends = dict(type(self)._default_backends)
         self.embedding_backends = dict(type(self)._default_embedding_backends)
         self._sentence_transformer = None
@@ -1306,6 +1307,9 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
     if not repo_root.exists():
         log.warning("local_git repo_path does not exist: %s", repo_path)
         return []
+
+    if Repo is None:
+        raise SearchError("local_git backend requires gitpython")
 
     repo = Repo(repo_path)
     head_hash = repo.head.commit.hexsha
