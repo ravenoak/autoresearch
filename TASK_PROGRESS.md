@@ -231,11 +231,18 @@ Coverage is generated but fails to meet the 90% threshold.
 
 ### Latest Test Results
 
- - `uv run flake8 src tests` – passes with no issues
- - `uv run mypy src` – fails with 2 errors in `src/autoresearch/search/core.py`
- - `uv run pytest -q` – interrupted after 4 failures (TypeError in
-   `Search.calculate_bm25_scores`), with 362 passed, 8 skipped, 97
-   deselected and 30 warnings; coverage remains below required 90%
+- `uv venv && uv sync --all-extras` – cancelled during large
+  dependency downloads
+- `uv pip install -e .` – installed package in editable mode
+- `task --version` – 3.34.1
+- `flake8 --version` – 7.1.1
+- `pytest --version` – 8.3.2
+- `mypy --version` – 1.10.0
+- `uv run flake8 src tests` – passes with no issues
+- `uv run mypy src` – fails with 2 errors in `src/autoresearch/search/core.py`
+- `uv run pytest -q` – interrupted after 4 failures (TypeError in
+  `Search.calculate_bm25_scores`), with 362 passed, 8 skipped, 97
+  deselected and 30 warnings; coverage remains below required 90%
 
 ### Performance Baselines
 
