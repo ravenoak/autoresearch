@@ -3,14 +3,22 @@
 
 from __future__ import annotations
 
+import argparse
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Build the package and upload it to TestPyPI using ``twine``."""
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Build the package but skip uploading",
+    )
+    args = parser.parse_args(argv)
 
     dist = Path("dist")
     if dist.exists():
@@ -24,6 +32,10 @@ def main() -> int:
     if not files:
         print("No distribution files found in 'dist'")
         return 1
+
+    if args.dry_run:
+        print("Dry run selected; skipping upload")
+        return 0
 
     upload_cmd = ["uv", "run", "twine", "upload", "--repository", "testpypi", *files]
     return subprocess.call(upload_cmd)
