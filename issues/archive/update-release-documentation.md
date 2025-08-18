@@ -9,4 +9,4 @@ Project documents such as `README.md`, `ROADMAP.md`, `CODE_COMPLETE_PLAN.md`, `T
 - Documentation updates are coordinated with code changes
 
 ## Status
-Open
+Archived
