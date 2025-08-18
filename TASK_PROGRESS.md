@@ -231,10 +231,11 @@ Coverage is generated but fails to meet the 90% threshold.
 
 ### Latest Test Results
 
-- `uv run flake8 src tests` – passes with no issues
-- `uv run mypy src` – passes with no issues
-- `uv run pytest -q` – 52 failures across search, API, and orchestrator
-  scenarios; coverage below required 90%
+ - `uv run flake8 src tests` – passes with no issues
+ - `uv run mypy src` – fails with 2 errors in `src/autoresearch/search/core.py`
+ - `uv run pytest -q` – interrupted after 4 failures (TypeError in
+   `Search.calculate_bm25_scores`), with 362 passed, 8 skipped, 97
+   deselected and 30 warnings; coverage remains below required 90%
 
 ### Performance Baselines
 
