@@ -6,8 +6,8 @@ organized by phases from the code complete plan. As of **August 18, 2025**,
 importing plugin "pydantic.mypy": No module named 'pydantic'`, and
 `uv run pytest -q` reports 30 collection errors including missing
 `pytest_bdd`, so integration and behavior suites remain failing.
-Outstanding checks were tracked in
-[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md).
+Outstanding checks are tracked in
+[resolve-current-test-failures](issues/resolve-current-test-failures.md).
 An **0.1.0-alpha.1** preview is scheduled for **February 15, 2026**, with the
 final **0.1.0** release targeted for **June 1, 2026**.
 

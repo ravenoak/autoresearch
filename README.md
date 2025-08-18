@@ -20,9 +20,9 @@ importing plugin "pydantic.mypy": No module named 'pydantic'`, and
 integration and behavior suites remain failing. An **0.1.0-alpha.1**
 preview is scheduled for **February 15, 2026** to collect feedback while
 checks stabilize, with the final **0.1.0** milestone targeted for
-**June 1, 2026**. Previous blocker
-([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md))
-is archived, but test fixes continue. See
+**June 1, 2026**. Current blocker
+([resolve-current-test-failures](issues/resolve-current-test-failures.md))
+remains open while test fixes continue. See
 [docs/release_plan.md](docs/release_plan.md) for the full milestone
 schedule and outstanding tasks.
 

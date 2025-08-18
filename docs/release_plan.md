@@ -17,8 +17,8 @@ and Phase 4 activities remain planned.
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0-alpha.1** | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md)) |
-| **0.1.0** | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md), [update-release-documentation](../issues/archive/update-release-documentation.md)) |
+| **0.1.0-alpha.1** | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
+| **0.1.0** | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/archive/update-release-documentation.md)) |
 | **0.1.1** | 2026-08-15 | Bug fixes and documentation updates |
 | **0.2.0** | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
 | **0.3.0** | 2027-01-15 | Distributed execution support, monitoring utilities |
@@ -31,7 +31,7 @@ now set for **June 1, 2026** while packaging tasks are resolved.
 
 The following tasks remain before publishing **0.1.0**:
 
-- [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md)); `uv run flake8 src tests` passes, `uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No module named 'pydantic'`, `uv run pytest -q` reports 30 collection errors including missing `pytest_bdd`, and `uv run pytest --cov=src` stops with 14 errors.
+- [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)); `uv run flake8 src tests` passes, `uv run mypy src` fails with `Error importing plugin "pydantic.mypy": No module named 'pydantic'`, `uv run pytest -q` reports 30 collection errors including missing `pytest_bdd`, and `uv run pytest --cov=src` stops with 14 errors.
 - [ ] Install optional dependencies with `uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
 - [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [ ] Verify `python -m build` and `scripts/publish_dev.py` create valid packages across platforms.
@@ -39,7 +39,7 @@ The following tasks remain before publishing **0.1.0**:
 
 ### Current Blockers
 
-- Type checking failures and missing test dependencies ([resolve-current-test-failures](../issues/archive/resolve-current-test-failures.md)).
+- Type checking failures and missing test dependencies ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
 - Packaging scripts require additional configuration before they run reliably.
 
 Resolving these issues will determine the new completion date for **0.1.0**.

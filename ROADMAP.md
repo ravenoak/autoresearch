@@ -7,15 +7,15 @@ Phase 2 testing tasks remain incomplete: `uv run flake8 src tests` passes,
 module named 'pydantic'`, and `uv run pytest -q` reports 30 collection
 errors including missing `pytest_bdd`, so integration and behavior suites
 remain failing. To collect feedback while checks stabilize,
-[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)
-remains in the archive, and an alpha pre-release precedes the final 0.1.0
+[resolve-current-test-failures](issues/resolve-current-test-failures.md)
+remains open, and an alpha pre-release precedes the final 0.1.0
 milestone.
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)) |
-| 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
+| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](issues/resolve-current-test-failures.md)) |
+| 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
 | 0.1.1 | 2026-08-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2027-01-15 | Distributed execution support, monitoring utilities |
@@ -25,8 +25,8 @@ milestone.
 
 This pre-release provides an early package for testing while packaging tasks
 remain open. Related issue
-([resolve-current-test-failures](issues/archive/resolve-current-test-failures.md))
-is archived. Key activities include:
+([resolve-current-test-failures](issues/resolve-current-test-failures.md))
+is open. Key activities include:
 
 - Provide an installable package for early adopters.
 - Collect feedback while fixing failing tests and packaging issues.
@@ -42,7 +42,7 @@ activities include:
 - Verifying packaging metadata and TestPyPI uploads.
 
 Type checking and tests still fail (see
-[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md)), so
+[resolve-current-test-failures](issues/resolve-current-test-failures.md)), so
 integration and behavior suites remain blocked. The release was originally
 planned for **July 20, 2025**, but the schedule slipped. The **0.1.0**
 milestone is now targeted for **June 1, 2026** while packaging tasks are
