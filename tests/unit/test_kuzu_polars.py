@@ -1,7 +1,8 @@
 import pytest
 
-from autoresearch.storage_backends import KuzuStorageBackend
 from autoresearch.data_analysis import metrics_dataframe
+from autoresearch.storage_backends import KuzuStorageBackend
+
 pytest.importorskip("polars")
 
 
@@ -15,6 +16,7 @@ def test_kuzu_backend_roundtrip(tmp_path):
     assert result["content"] == "hello"
 
 
+# Spec: docs/specs/data-analysis.md#polars-enabled
 def test_metrics_dataframe():
     metrics = {"agent_timings": {"A": [1.0, 2.0], "B": [3.0]}}
     df = metrics_dataframe(metrics, polars_enabled=True)

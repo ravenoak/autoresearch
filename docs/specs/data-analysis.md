@@ -9,3 +9,12 @@ This spec describes behavior of `metrics_dataframe` for summarizing agent timing
 
 ## Polars disabled
 - If `analysis.polars_enabled` is false or the `polars` package is missing, `metrics_dataframe` raises `RuntimeError`.
+
+## Traceability
+
+- **Modules**
+  - `src/autoresearch/data_analysis.py`
+- **Tests**
+  - `../../tests/unit/test_data_analysis.py`
+  - `../../tests/unit/test_kuzu_polars.py`
+  - `../../tests/behavior/features/data_analysis.feature`

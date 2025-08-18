@@ -7,6 +7,7 @@ Feature: Storage and Search Integration
     Given the storage system is initialized
     And the search system is configured
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: Store and retrieve claims using vector search
     When I store a claim with text "Artificial intelligence has made significant progress in recent years"
     And I store a claim with text "Machine learning is a subset of artificial intelligence"
@@ -16,6 +17,7 @@ Feature: Storage and Search Integration
     And the search results should be ordered by relevance
     And the search results should not include claims about climate change
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: Search results respect LRU eviction policy
     Given the storage system has a maximum capacity of 2 claims
     And the storage system uses "lru" eviction policy
@@ -27,6 +29,7 @@ Feature: Storage and Search Integration
     And the search results should include "Third claim for testing"
     And the search results should not include "First claim for testing"
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: Search results respect score-based eviction policy
     Given the storage system has a maximum capacity of 2 claims
     And the storage system uses "score" eviction policy
@@ -38,6 +41,7 @@ Feature: Storage and Search Integration
     And the search results should include "High relevance claim"
     And the search results should not include "Low relevance claim"
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: LRU eviction policy respects claim access patterns
     Given the storage system has a maximum capacity of 2 claims
     And the storage system uses "lru" eviction policy
@@ -50,12 +54,14 @@ Feature: Storage and Search Integration
     And the search results should include "Third claim for testing"
     And the search results should not include "Second claim for testing"
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: Search handles storage errors gracefully
     Given the storage system will raise an error on vector search
     When I perform a vector search for "test query"
     Then the search should return an empty result
     And the error should be logged
 
+  # Spec: docs/specs/search.md#key-behaviors - Integrate with the storage subsystem, respecting eviction policies
   Scenario: Update existing claims and search for updated content
     When I store a claim with text "Original claim about biology"
     And I perform a vector search for "biology"

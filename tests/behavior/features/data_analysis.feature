@@ -4,11 +4,13 @@ Feature: Data analysis utilities
   I want to summarize metrics with Polars
   So that I can analyze agent performance
 
+  # Spec: docs/specs/data-analysis.md#polars-enabled
   Scenario: Generate metrics dataframe when Polars enabled
     Given sample metrics
     When I generate metrics dataframe with Polars enabled
     Then a Polars dataframe should be returned
 
+  # Spec: docs/specs/data-analysis.md#polars-disabled
   Scenario: Fail to generate metrics dataframe when Polars disabled
     Given sample metrics
     When I generate metrics dataframe with Polars disabled

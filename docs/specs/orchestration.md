@@ -14,15 +14,18 @@ and error handling while providing detailed logging and token counting.
 - Run agent groups in parallel and synthesize their results.
 - Record token usage and emit structured debug logs.
 
-## Related tests
+## Traceability
 
-- [orchestration_system.feature](../../tests/behavior/features/orchestration_system.feature)
-- [agent_orchestration.feature](../../tests/behavior/features/agent_orchestration.feature)
-- [orchestrator_agents_integration.feature](../../tests/behavior/features/orchestrator_agents_integration.feature)
-- [orchestrator_agents_integration_extended.feature](../../tests/behavior/features/orchestrator_agents_integration_extended.feature)
-- [parallel_query_execution.feature](../../tests/behavior/features/parallel_query_execution.feature)
+- **Modules**
+  - `src/autoresearch/orchestration/`
+- **Tests**
+  - [orchestration_system.feature](../../tests/behavior/features/orchestration_system.feature)
+  - [agent_orchestration.feature](../../tests/behavior/features/agent_orchestration.feature)
+  - [orchestrator_agents_integration.feature](../../tests/behavior/features/orchestrator_agents_integration.feature)
+  - [orchestrator_agents_integration_extended.feature](../../tests/behavior/features/orchestrator_agents_integration_extended.feature)
+  - [parallel_query_execution.feature](../../tests/behavior/features/parallel_query_execution.feature)
 
 ## Extending
 
 Document new orchestration behaviors and reference the corresponding
-feature files under **Related tests**.
+feature files under **Traceability**.
