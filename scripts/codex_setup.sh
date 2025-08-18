@@ -66,6 +66,9 @@ rm -rf /var/lib/apt/lists/*
 # Run the main setup script to install all extras needed for testing
 ./scripts/setup.sh
 
+# Install Go Task inside the virtual environment
+curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+
 # Install all extras to ensure dev packages are present
 uv sync --all-extras
 
@@ -109,6 +112,12 @@ if (( ${#missing_tools[@]} )); then
     echo "ERROR: Required tools missing after sync: ${missing_tools[*]}" >&2
     exit 1
 fi
+
+# Post-install version checks
+task --version
+flake8 --version
+pytest-bdd --version
+pydantic version
 deactivate
 
 # Ensure duckdb-extension-vss is installed for DuckDB vector search support
