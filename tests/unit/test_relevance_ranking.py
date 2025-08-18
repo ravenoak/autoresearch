@@ -320,7 +320,11 @@ def test_rank_results_patched_bm25_function(
         captured["documents"] = documents
         return [0.1] * len(documents)
 
-    with patch.object(Search, "calculate_bm25_scores", fake_bm25):
+    with patch.object(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(fake_bm25),
+    ):
         ranked = Search.rank_results("q", sample_results)
 
     assert captured["query"] == "q"
