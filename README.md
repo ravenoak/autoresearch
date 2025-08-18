@@ -13,20 +13,14 @@ upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
 planned for **July 20, 2025**, but the schedule slipped. `uv run flake8
-src tests` now fails in
-`src/autoresearch/orchestration/metrics.py:102:1` (E303) and `uv run mypy
-src` reports missing attributes in `src/autoresearch/search/core.py`.
-`uv run pytest -q` fails in
-`tests/unit/test_cache.py::test_search_uses_cache`,
-`tests/unit/test_cache.py::test_cache_is_backend_specific`,
-`tests/unit/test_failure_scenarios.py::test_external_lookup_network_failure`,
-`tests/unit/test_main_monitor_commands.py::test_serve_a2a_command_keyboard_interrupt`,
-and `tests/unit/test_metrics.py::test_metrics_collection_and_endpoint`, so
-coverage is not generated and integration and behavior suites are
-skipped. An **0.1.0-alpha.1** preview is scheduled for **February 15,
-2026** to collect feedback while tests stabilize, with the final
-**0.1.0** milestone targeted for **June 1, 2026**.
-Remaining blockers include these failing tests
+src tests` reports E402 import-order errors in
+`src/autoresearch/search/core.py`, `uv run mypy src` passes without
+issues, and `uv run pytest tests/unit/test_failure_scenarios.py` passes
+but coverage is **21%** < required **90%**, so integration and behavior
+suites remain skipped. An **0.1.0-alpha.1** preview is scheduled for
+**February 15, 2026** to collect feedback while checks stabilize, with the
+final **0.1.0** milestone targeted for **June 1, 2026**. Remaining
+blockers include these failing checks
 ([resolve-current-test-failures](issues/resolve-current-test-failures.md))
 and release documentation updates
 ([update-release-documentation](issues/update-release-documentation.md)).
