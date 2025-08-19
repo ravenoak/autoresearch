@@ -2,7 +2,7 @@
 
 This roadmap summarizes planned features for upcoming releases. Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **August 18, 2025**. For current test and coverage status, see
+Last updated **August 19, 2025**. For current test and coverage status, see
 [docs/release_plan.md](docs/release_plan.md). Use Python 3.12+ with
 `uv venv && uv sync --all-extras && uv pip install -e '.[full,parsers,git,llm,dev]'`
 before running tests.
@@ -10,12 +10,12 @@ before running tests.
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2026-02-15 | Alpha preview to collect feedback while resolving test suite failures and aligning environment requirements ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [align-environment-with-requirements](issues/align-environment-with-requirements.md)) |
-| 0.1.0 | 2026-06-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
-| 0.1.1 | 2026-08-15 | Bug fixes and documentation updates |
-| 0.2.0 | 2026-11-01 | API stabilization, configuration hot-reload, improved search backends |
-| 0.3.0 | 2027-01-15 | Distributed execution support, monitoring utilities |
-| 1.0.0 | 2027-04-01 | Full feature set, performance tuning and stable interfaces |
+| 0.1.0-alpha.1 | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures and aligning environment requirements ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [align-environment-with-requirements](issues/align-environment-with-requirements.md)) |
+| 0.1.0 | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
+| 0.1.1 | 2026-09-15 | Bug fixes and documentation updates |
+| 0.2.0 | 2026-12-01 | API stabilization, configuration hot-reload, improved search backends |
+| 0.3.0 | 2027-03-01 | Distributed execution support, monitoring utilities |
+| 1.0.0 | 2027-06-01 | Full feature set, performance tuning and stable interfaces |
 
 ### Blockers before 0.1.0-alpha.1
 
@@ -51,8 +51,8 @@ activities include:
 Type checking and tests still fail (see
 [resolve-current-test-failures](issues/resolve-current-test-failures.md)), so
 integration and behavior suites remain blocked. The release was originally
-planned for **July 20, 2025**, but the schedule slipped. The **0.1.0**
-milestone is now targeted for **June 1, 2026** while packaging tasks are
+planned for **July 20, 2025**, but the schedule slipped. The **0.1.0**
+milestone is now targeted for **July 1, 2026** while packaging tasks are
 resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
@@ -65,7 +65,7 @@ Before publishing 0.1.0 the release plan lists several checks:
 
 Any remaining issues from these tasks will be addressed in 0.1.1.
 - CLI backup commands and testing utilities remain pending, while specialized agents—Moderator, Specialist, and User—are already implemented (`src/autoresearch/agents/specialized/moderator.py`, `src/autoresearch/agents/specialized/domain_specialist.py`, `src/autoresearch/agents/specialized/user_agent.py`) and will receive comprehensive unit tests once testing passes.
-The 0.1.1 release is planned for **August 15, 2026**.
+The 0.1.1 release is planned for **September 15, 2026**.
 
 ## 0.2.0 – API stabilization and improved search
 
