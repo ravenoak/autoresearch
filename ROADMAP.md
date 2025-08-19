@@ -10,8 +10,8 @@ before running tests.
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| 0.1.0-alpha.1 | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures and aligning environment requirements ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [align-environment-with-requirements](issues/align-environment-with-requirements.md)) |
-| 0.1.0 | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](issues/resolve-current-test-failures.md), [update-release-documentation](issues/archive/update-release-documentation.md)) |
+| 0.1.0-alpha.1 | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures and aligning environment requirements ([resolve-test-failures], [align-environment-reqs]) |
+| 0.1.0 | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-test-failures], [update-release-documentation]) |
 | 0.1.1 | 2026-09-15 | Bug fixes and documentation updates |
 | 0.2.0 | 2026-12-01 | API stabilization, configuration hot-reload, improved search backends |
 | 0.3.0 | 2027-03-01 | Distributed execution support, monitoring utilities |
@@ -21,16 +21,16 @@ before running tests.
 
 | Blocker | Related Issue |
 | ------- | ------------- |
-| Test suite failures and missing dependencies | [resolve-current-test-failures](issues/resolve-current-test-failures.md) |
-| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](issues/align-environment-with-requirements.md) |
-| Packaging scripts require configuration | [update-release-documentation](issues/archive/update-release-documentation.md) |
+| Test suite failures and missing dependencies | [resolve-test-failures] |
+| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-reqs] |
+| Packaging scripts require configuration | [update-release-documentation] |
 
 ## 0.1.0-alpha.1 – Alpha preview
 
 This pre-release provides an early package for testing while packaging tasks
 remain open. Related issues
-([resolve-current-test-failures](issues/resolve-current-test-failures.md),
-[align-environment-with-requirements](issues/align-environment-with-requirements.md))
+([resolve-test-failures],
+[align-environment-reqs])
 track outstanding test and environment work. Key activities include:
 
 - Provide an installable package for early adopters.
@@ -49,7 +49,7 @@ activities include:
 - Verifying packaging metadata and TestPyPI uploads.
 
 Type checking and tests still fail (see
-[resolve-current-test-failures](issues/resolve-current-test-failures.md)), so
+[resolve-test-failures]), so
 integration and behavior suites remain blocked. The release was originally
 planned for **July 20, 2025**, but the schedule slipped. The **0.1.0**
 milestone is now targeted for **July 1, 2026** while packaging tasks are
@@ -89,3 +89,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 - Provide deployment scripts and configuration validation (CODE_COMPLETE_PLAN lines 178-186; TASK_PROGRESS lines 206-216).
 - Optimize performance across all components and finalize documentation.
 
+
+[resolve-test-failures]: issues/archive/resolve-current-test-failures.md
+[align-environment-reqs]: issues/align-environment-with-requirements.md
+[update-release-documentation]: issues/archive/update-release-documentation.md

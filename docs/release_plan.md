@@ -18,15 +18,15 @@ Phase 2 testing tasks remain incomplete:
  - `flake8 src tests` passes.
  - `mypy src` currently stalls and needs configuration.
  - `pytest -q` runs with all dependencies installed but fails due to search
-   scoring bug ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
+   scoring bug ([resolve-test-failures]).
  - `pytest --cov=src` not yet run because tests fail.
 
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
-| **0.1.0-alpha.1** | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
-| **0.1.0** | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
+| **0.1.0-alpha.1** | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures ([resolve-test-failures]) |
+| **0.1.0** | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-test-failures]) |
 | **0.1.1** | 2026-09-15 | Bug fixes and documentation updates |
 | **0.2.0** | 2026-12-01 | API stabilization, configuration hot-reload, improved search backends |
 | **0.3.0** | 2027-03-01 | Distributed execution support, monitoring utilities |
@@ -39,7 +39,7 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 The following tasks remain before publishing **0.1.0-alpha.1**:
 
-- [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
+- [ ] Resolve remaining test failures ([resolve-test-failures]).
   - [ ] Set up the environment with `uv venv && uv sync --all-extras` and
       `uv pip install -e '.[full,parsers,git,llm,dev]'`. Verified flake8 7.3.0,
       mypy 1.17.1, pytest 8.4.1, pytest-bdd 8.1.0 and pydantic 2.11.7; see
@@ -55,7 +55,7 @@ The following tasks remain before publishing **0.1.0-alpha.1**:
 
 | Blocker | Related Issue |
 | ------- | ------------- |
-| Test suite failures | [resolve-current-test-failures](../issues/resolve-current-test-failures.md) |
+| Test suite failures | [resolve-test-failures] |
 
 Resolving these issues will determine the new completion date for **0.1.0**.
 
@@ -85,3 +85,5 @@ Before tagging **0.1.0**, ensure the following checks pass (after installing opt
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports at least **90%** total coverage
+
+[resolve-test-failures]: ../issues/archive/resolve-current-test-failures.md
