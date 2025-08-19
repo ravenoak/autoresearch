@@ -25,7 +25,7 @@ import re
 import shutil
 import subprocess
 import warnings
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,10 +50,12 @@ from pdfminer.high_level import extract_text as extract_pdf_text
 
 from ..cache import (
     SearchCache,
-    cache_results as _cache_results,
-    get_cache,
-    get_cached_results as _get_cached_results,
 )
+from ..cache import cache_results as _cache_results
+from ..cache import (
+    get_cache,
+)
+from ..cache import get_cached_results as _get_cached_results
 from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
@@ -129,9 +131,7 @@ class hybridmethod:
     def __get__(self, obj: Any, objtype: type | None = None) -> Callable[..., Any]:
         if obj is None:
             if objtype is None or not hasattr(objtype, "get_instance"):
-                raise AttributeError(
-                    "hybridmethod requires a class with get_instance()"
-                )
+                raise AttributeError("hybridmethod requires a class with get_instance()")
             get_instance = cast(Callable[[], Any], getattr(objtype, "get_instance"))
 
             def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -139,7 +139,7 @@ class hybridmethod:
                 return self.func(instance, *args, **kwargs)
 
             return wrapper
-        return self.func.__get__(obj, objtype)  # type: ignore[misc]
+        return cast(Callable[..., Any], self.func.__get__(obj, objtype))
 
 
 @dataclass(frozen=True)
@@ -170,12 +170,8 @@ class Search:
     """Provides utilities for search query generation and external lookups."""
 
     # Class-level registries for default backends
-    _default_backends: ClassVar[
-        Dict[str, Callable[[str, int], List[Dict[str, Any]]]]
-    ] = {}
-    _builtin_backends: ClassVar[
-        Dict[str, Callable[[str, int], List[Dict[str, Any]]]]
-    ] = {}
+    _default_backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, Any]]]]] = {}
+    _builtin_backends: ClassVar[Dict[str, Callable[[str, int], List[Dict[str, Any]]]]] = {}
     _default_embedding_backends: ClassVar[
         Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]]
     ] = {}
@@ -194,9 +190,9 @@ class Search:
         self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
             self._default_backends
         )
-        self.embedding_backends: Dict[
-            str, Callable[[np.ndarray, int], List[Dict[str, Any]]]
-        ] = dict(self._default_embedding_backends)
+        self.embedding_backends: Dict[str, Callable[[np.ndarray, int], List[Dict[str, Any]]]] = (
+            dict(self._default_embedding_backends)
+        )
         self._sentence_transformer: Optional[SentenceTransformerType] = None
         self.cache: SearchCache = cache or get_cache()
         type(self)._instances.add(self)
@@ -294,9 +290,7 @@ class Search:
         return tokens
 
     @staticmethod
-    def calculate_bm25_scores(
-        query: str, documents: List[Dict[str, str]]
-    ) -> List[float]:
+    def calculate_bm25_scores(query: str, documents: List[Dict[str, str]]) -> List[float]:
         """Calculate BM25 scores for a query and documents.
 
         See ``docs/algorithms/bm25.md`` for the formula and normalization
@@ -310,9 +304,7 @@ class Search:
             List[float]: The BM25 scores for each document
         """
         if not BM25_AVAILABLE:
-            log.warning(
-                "rank-bm25 package is not installed. BM25 scoring will be disabled."
-            )
+            log.warning("rank-bm25 package is not installed. BM25 scoring will be disabled.")
             return [1.0] * len(documents)  # Return neutral scores
 
         # Preprocess the query
@@ -455,9 +447,7 @@ class Search:
                     documents[index]["embedding"] = list(emb)
                 if query_embedding is not None:
                     q = np.array(query_embedding, dtype=float)
-                    sim = float(
-                        np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb))
-                    )
+                    sim = float(np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb)))
                     documents[index]["similarity"] = (sim + 1) / 2
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
@@ -654,7 +644,10 @@ class Search:
                 doc.setdefault("backend", name)
                 all_results.append(doc)
 
-        return self.rank_results(query, all_results, query_embedding)
+        return cast(
+            List[Dict[str, Any]],
+            self.rank_results(query, all_results, query_embedding),
+        )
 
     @hybridmethod
     def embedding_lookup(
@@ -716,8 +709,7 @@ class Search:
         total = 0.0
         for docs in data.values():
             scores = [
-                w_sem * d["semantic"] + w_bm * d["bm25"] + w_cred * d["credibility"]
-                for d in docs
+                w_sem * d["semantic"] + w_bm * d["bm25"] + w_cred * d["credibility"] for d in docs
             ]
             ranked = [
                 docs[i]["relevance"]
@@ -757,9 +749,7 @@ class Search:
         return best, score
 
     @classmethod
-    def register_backend(
-        cls, name: str
-    ) -> Callable[
+    def register_backend(cls, name: str) -> Callable[
         [Callable[[str, int], List[Dict[str, Any]]]],
         Callable[[str, int], List[Dict[str, Any]]],
     ]:
@@ -800,9 +790,7 @@ class Search:
         return decorator
 
     @classmethod
-    def register_embedding_backend(
-        cls, name: str
-    ) -> Callable[
+    def register_embedding_backend(cls, name: str) -> Callable[
         [Callable[[np.ndarray, int], List[Dict[str, Any]]]],
         Callable[[np.ndarray, int], List[Dict[str, Any]]],
     ]:
@@ -966,9 +954,7 @@ class Search:
             backend = self.backends.get(name)
             if not backend:
                 log.warning(f"Unknown search backend '{name}'")
-                available_backends = list(self.backends.keys()) or [
-                    "No backends registered"
-                ]
+                available_backends = list(self.backends.keys()) or ["No backends registered"]
                 raise SearchError(
                     f"Unknown search backend '{name}'",
                     available_backends=available_backends,
@@ -1032,7 +1018,7 @@ class Search:
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
+            futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
                 executor.submit(run_backend, name): name for name in cfg.search.backends
             }
             for future in as_completed(futures):
@@ -1062,8 +1048,7 @@ class Search:
 
         # Fallback results when all backends fail
         fallback_results = [
-            {"title": f"Result {i + 1} for {text_query}", "url": ""}
-            for i in range(max_results)
+            {"title": f"Result {i + 1} for {text_query}", "url": ""} for i in range(max_results)
         ]
 
         return fallback_results
@@ -1260,12 +1245,8 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
                 str(root),
             ]
             try:
-                output = subprocess.check_output(
-                    cmd, text=True, stderr=subprocess.DEVNULL
-                )
-            except (
-                subprocess.CalledProcessError
-            ) as exc:  # pragma: no cover - ripgrep no match
+                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
                 output = exc.output or ""
             for line in output.splitlines():
                 parts = line.split(":", 2)
@@ -1303,9 +1284,7 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
             idx = text.lower().find(query.lower())
             if idx != -1:
                 snippet = text[idx : idx + 200]
-                results.append(
-                    {"title": file.name, "url": str(file), "snippet": snippet}
-                )
+                results.append({"title": file.name, "url": str(file), "snippet": snippet})
                 if len(results) >= max_results:
                     return results
 
@@ -1357,12 +1336,8 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                 str(repo_root),
             ]
             try:
-                output = subprocess.check_output(
-                    cmd, text=True, stderr=subprocess.DEVNULL
-                )
-            except (
-                subprocess.CalledProcessError
-            ) as exc:  # pragma: no cover - ripgrep no match
+                output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError as exc:  # pragma: no cover - ripgrep no match
                 output = exc.output or ""
             for line in output.splitlines():
                 parts = line.split(":", 2)
@@ -1478,11 +1453,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                             part,
                             re.IGNORECASE,
                         )
-                        snippet = (
-                            snippet_match.group(0).strip()
-                            if snippet_match
-                            else part[:200]
-                        )
+                        snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
                         results.append(
                             {
                                 "title": d.b_path or d.a_path or "diff",
