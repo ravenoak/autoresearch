@@ -57,18 +57,19 @@ Resolving these items will determine the new completion date for **0.1.0**.
 2. **Development** – implement features and expand test coverage.
 3. **Stabilization** – fix bugs, write documentation and run the full test
    suite.
-4. **Publish** – follow the workflow in `deployment.md`: bump the version, run
-   tests, publish to TestPyPI using `./scripts/publish_dev.py`, then release to
-   PyPI with `twine upload dist/*`.
+4. **Publish** – follow the workflow in `deployment.md`: run
+   `task bump-version -- <new-version>`, run tests, publish to TestPyPI using
+   `./scripts/publish_dev.py`, then release to PyPI with `twine upload dist/*`.
 
 Each milestone may include additional patch releases for critical fixes.
 
 ## Packaging Workflow
 
-1. `uv pip install build twine`
-2. `uv run python -m build`
-3. `uv run python scripts/publish_dev.py --dry-run`
-4. Set `TWINE_USERNAME` and `TWINE_PASSWORD` then run
+1. `task bump-version -- <new-version>`
+2. `uv pip install build twine`
+3. `uv run python -m build`
+4. `uv run python scripts/publish_dev.py --dry-run`
+5. Set `TWINE_USERNAME` and `TWINE_PASSWORD` then run
    `uv run python scripts/publish_dev.py` to upload to TestPyPI.
 
 ## CI Checklist

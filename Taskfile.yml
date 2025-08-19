@@ -93,6 +93,11 @@ tasks:
       - find . -type d -name '.mypy_cache' -exec rm -rf {} +
     desc: "Remove Python cache directories"
 
+  bump-version:
+    cmds:
+      - uv run python scripts/bump_version.py {{.CLI_ARGS}}
+    desc: "Update project version numbers"
+
   check-baselines:
     cmds:
       - uv run python scripts/check_token_regression.py --threshold 5
