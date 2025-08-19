@@ -13,7 +13,7 @@ preparing for the upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
 planned for **July 20, 2025**, but the schedule slipped. An
-**0.1.0-alpha.1** preview is scheduled for **February 15, 2026**, with
+**0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
 the final **0.1.0** milestone targeted for **June 1, 2026**. See
 [ROADMAP.md](ROADMAP.md) for feature milestones and
 [docs/release_plan.md](docs/release_plan.md) for the full schedule,
@@ -26,16 +26,8 @@ fails during collection due to missing optional dependencies like
 Outstanding test work is tracked in
 [resolve-current-test-failures](issues/resolve-current-test-failures.md).
 
-### Blockers before 0.1.0-alpha.1
-
-| Blocker | Related Issue |
-| ------- | ------------- |
-| Test suite failures and missing dependencies | [resolve-current-test-failures](issues/resolve-current-test-failures.md) |
-| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](issues/align-environment-with-requirements.md) |
-| Packaging scripts require configuration | [update-release-documentation](issues/archive/update-release-documentation.md) |
-
-The same blocker summary appears in [ROADMAP.md](ROADMAP.md) and
-[docs/release_plan.md](docs/release_plan.md#blockers-before-010-alpha1).
+See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
+alpha release checklist.
 
 ## Issue tracking
 
