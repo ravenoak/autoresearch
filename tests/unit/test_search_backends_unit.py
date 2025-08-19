@@ -86,4 +86,4 @@ def test_rank_results_merges_scores(monkeypatch):
 
     ranked = Search.rank_results("q", docs)
     assert ranked[0]["title"] == "a"
-    assert ranked[0]["merged_score"] == pytest.approx(0.7)
+    assert ranked[0]["merged_score"] == pytest.approx(0.75)

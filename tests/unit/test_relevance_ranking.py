@@ -143,13 +143,13 @@ def test_calculate_semantic_similarity(sample_results):
         )
 
     # Check that scores are in the expected range
-    assert all(-1 <= score <= 1 for score in scores)
+    assert all(0 <= score <= 1 for score in scores)
 
     # Check that similar documents have higher scores
     assert scores[0] > 0.9  # Very similar
     assert scores[2] > 0.9  # Very similar
     assert 0 < scores[1] < 1  # Somewhat similar
-    assert scores[3] < 0  # Negative similarity
+    assert scores[3] == 0  # Opposite direction yields 0 after normalization
 
 
 def test_assess_source_credibility(sample_results):
@@ -263,9 +263,9 @@ def test_rank_results_with_unavailable_libraries(
     # Check that we got results back
     assert len(ranked_results) == len(sample_results)
 
-    # Check that all scores are neutral (1.0) for unavailable features
+    # Check that all scores are neutral for unavailable features
     assert all(result["bm25_score"] == 1.0 for result in ranked_results)
-    assert all(result["semantic_score"] == 1.0 for result in ranked_results)
+    assert all(result["semantic_score"] == 0.5 for result in ranked_results)
 
 
 @patch("autoresearch.search.core.get_config")
