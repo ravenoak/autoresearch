@@ -36,9 +36,12 @@ def test_algorithm_docs_exist() -> None:
 def test_core_docstrings_reference_docs() -> None:
     """Core search functions should mention their algorithm docs."""
 
-    assert DOC_PATHS["bm25"] in (core.calculate_bm25_scores.__doc__ or "")
-    assert DOC_PATHS["semantic"] in (core.calculate_semantic_similarity.__doc__ or "")
-    assert DOC_PATHS["credibility"] in (core.assess_source_credibility.__doc__ or "")
+    assert DOC_PATHS["bm25"] in (
+        core.Search.calculate_bm25_scores.__doc__ or ""
+    )
+    assert DOC_PATHS["credibility"] in (
+        core.Search.assess_source_credibility.__doc__ or ""
+    )
     module_doc = core.__doc__ or ""
     for rel_path in DOC_PATHS.values():
         assert rel_path in module_doc
