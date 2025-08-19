@@ -82,6 +82,19 @@ def check_markdown_output_with_flag(bdd_context):
     assert result.stderr == ""
 
 
+@when(parsers.re(r'I run `autoresearch search "(?P<query>.+)" --output graph`'))
+def run_with_graph_flag(query, bdd_context, cli_runner):
+    result = cli_runner.invoke(cli_app, ["search", query, "--output", "graph"])
+    bdd_context["graph_flag_result"] = result
+
+
+@then('the output should include "Knowledge Graph"')
+def check_graph_output(bdd_context):
+    result = bdd_context["graph_flag_result"]
+    assert "Knowledge Graph" in result.stdout
+    assert result.stderr == ""
+
+
 @scenario("../features/output_formatting.feature", "Default TTY output")
 def test_default_tty_output(bdd_context):
     assert bdd_context["terminal_result"].exit_code == 0
@@ -100,3 +113,8 @@ def test_explicit_json_flag(bdd_context):
 @scenario("../features/output_formatting.feature", "Explicit Markdown flag")
 def test_explicit_markdown_flag(bdd_context):
     assert bdd_context["markdown_flag_result"].exit_code == 0
+
+
+@scenario("../features/output_formatting.feature", "Graph output format")
+def test_graph_output(bdd_context):
+    assert bdd_context["graph_flag_result"].exit_code == 0

@@ -1,4 +1,6 @@
 """Step definitions for cache management feature."""
+import os
+from pathlib import Path
 
 from pytest_bdd import scenario, given, when, then, parsers
 from . import common_steps  # noqa: F401
@@ -23,6 +25,11 @@ def test_cache_miss():
 
 @scenario("../features/cache_management.feature", "Clear cache removes stored results")
 def test_clear_cache():
+    pass
+
+
+@scenario("../features/cache_management.feature", "Teardown removes cache file")
+def test_teardown_removes_cache_file():
     pass
 
 
@@ -60,6 +67,11 @@ def clear_cache():
     cache.clear()
 
 
+@when("I teardown the cache with file removal")
+def teardown_cache_with_file_removal():
+    cache.teardown(remove_file=True)
+
+
 @then("the cached data is returned")
 def cached_data_returned(bdd_context):
     assert bdd_context["retrieved"] == bdd_context["results"]
@@ -79,3 +91,9 @@ def retrieval_yields_stored(query, backend, bdd_context):
 @then(parsers.parse('retrieving results for query "{query}" and backend "{backend}" yields no data'))
 def retrieval_yields_none(query, backend):
     assert cache.get_cached_results(query, backend) is None
+
+
+@then("the cache file is removed")
+def cache_file_removed():
+    path = Path(os.environ["TINYDB_PATH"])
+    assert not path.exists()

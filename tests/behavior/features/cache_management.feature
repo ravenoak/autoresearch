@@ -22,3 +22,8 @@ Feature: Cache management
     Given cached results for query "clear" and backend "test"
     When I clear the cache
     Then retrieving results for query "clear" and backend "test" yields no data
+
+  Scenario: Teardown removes cache file
+    Given cached results for query "remove" and backend "test"
+    When I teardown the cache with file removal
+    Then the cache file is removed
