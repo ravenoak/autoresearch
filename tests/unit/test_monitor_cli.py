@@ -7,7 +7,6 @@ from autoresearch.models import QueryResponse
 from autoresearch.search import Search
 
 
-
 def assert_bm25_signature(query, documents):
     """Stub ensuring BM25 receives ``(query, documents)``."""
     assert isinstance(query, str)
@@ -57,7 +56,8 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
 def test_monitor_metrics(monkeypatch):
     runner = CliRunner()
     monkeypatch.setattr(
-        "autoresearch.monitor._collect_system_metrics", lambda: {"cpu_percent": 1.0, "memory_percent": 2.0}
+        "autoresearch.monitor._collect_system_metrics",
+        lambda: {"cpu_percent": 1.0, "memory_percent": 2.0},
     )
     result = runner.invoke(app, ["monitor"])
     assert result.exit_code == 0
