@@ -19,5 +19,8 @@ avoid failures and missing tooling.
 - pytest-bdd 8.1.0
 - pydantic 2.11.7
 
+Verified that `uv venv && uv sync --all-extras` followed by
+`uv pip install -e '.[full,parsers,git,llm,dev]'` installs these tools.
+
 ## Status
 Archived

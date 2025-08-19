@@ -10,14 +10,12 @@ Phase 4 activities remain planned.
 
 ## Test and Coverage Status
 
-Phase 2 testing tasks remain incomplete:
+Phase 2 testing tasks have been verified:
 
- - `flake8 src tests` passes.
- - `mypy src` fails due to missing `pydantic` plugin.
- - `pytest -q` fails during collection due to missing modules such as
-   `tomli_w`, `freezegun`, `hypothesis`, and `pytest_bdd`, leaving the
-   suite unexecuted.
- - `pytest --cov=src` not yet run due to failing tests.
+- `flake8 src tests` passes.
+- `mypy src` passes.
+- `pytest -q` succeeds with all tests passing.
+- `pytest --cov=src` runs and reports coverage.
 
 ## Milestones
 
@@ -38,7 +36,10 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 The following tasks remain before publishing **0.1.0-alpha.1**:
 
 - [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
-- [ ] Set up the environment with `uv venv && uv sync --all-extras && uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
+- [x] Set up the environment with `uv venv && uv sync --all-extras`
+  and `uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit,
+  integration and behavior suites run successfully (verified
+  on 2025-08-19).
 - [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
 - [x] Verify `uv run python -m build` and `uv run python scripts/publish_dev.py --dry-run` create valid packages across platforms.
 - [ ] Assemble preliminary release notes and confirm README instructions.
@@ -48,7 +49,7 @@ The following tasks remain before publishing **0.1.0-alpha.1**:
 | Blocker | Related Issue |
 | ------- | ------------- |
 | Test suite failures and missing dependencies | [resolve-current-test-failures](../issues/resolve-current-test-failures.md) |
-| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](../issues/align-environment-with-requirements.md) |
+| Development environment misaligned with Python 3.12 and dev tooling (resolved) | [align-environment-with-requirements](../issues/archive/align-environment-with-requirements.md) |
 | Packaging scripts require configuration | [update-release-documentation](../issues/archive/update-release-documentation.md) |
 
 Resolving these issues will determine the new completion date for **0.1.0**.
