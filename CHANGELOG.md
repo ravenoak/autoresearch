@@ -21,6 +21,10 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 
+### Preliminary release notes
+- Aligned FastAPI (>=0.115.12) and SlowAPI (0.1.9) pins across project files.
+- Updated release plan to reflect installed test dependencies and active blockers.
+
 ## [0.1.0-alpha.1] - 2026-03-01
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
 

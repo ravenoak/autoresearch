@@ -19,7 +19,7 @@ been verified to install successfully with `uv pip install`.
 | a2a-sdk | 0.3.0 |
 | dspy-ai | 2.6.27 |
 | duckdb | 1.3.0 |
-| fastapi | 0.116.1 |
+| fastapi | 0.115.12 |
 | fastmcp | 2.11.2 |
 | httpx | 0.28.1 |
 | kuzu | 0.11.1 |
