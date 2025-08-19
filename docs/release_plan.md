@@ -55,8 +55,8 @@ The following tasks remain before publishing **0.1.0-alpha.1**:
 
     Verified flake8 7.3.0, mypy 1.17.1, pytest 8.4.1, pytest-bdd 8.1.0 and
     pydantic 2.11.7; see
-    [align-environment-with-requirements](../issues/align-environment-with-
-    requirements.md).
+    [align-environment-with-requirements](../issues/archive/align-environment-
+    with-requirements.md).
 - [x] Ensure new dependency pins are reflected in the lock file and docs.
       `slowapi` is locked to **0.1.9** and `fastapi` is at least **0.115.12**,
       matching `pyproject.toml` and [installation.md](installation.md).

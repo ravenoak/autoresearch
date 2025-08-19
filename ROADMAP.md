@@ -112,5 +112,5 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 - Optimize performance across all components and finalize documentation.
 
 [resolve-test-failures]: issues/archive/resolve-current-test-failures.md
-[align-environment-reqs]: issues/align-environment-with-requirements.md
+[align-environment-reqs]: issues/archive/align-environment-with-requirements.md
 [update-release-documentation]: issues/archive/update-release-documentation.md

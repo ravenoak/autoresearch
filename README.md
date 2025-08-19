@@ -24,14 +24,14 @@ fails during collection due to missing optional dependencies like
 `tomli_w`, `freezegun`, and `pytest_bdd`.
 
 Outstanding test work is tracked in
-[resolve-current-test-failures](issues/resolve-current-test-failures.md).
+[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md).
 
 ### Blockers before 0.1.0-alpha.1
 
 | Blocker | Related Issue |
 | ------- | ------------- |
-| Test suite failures and missing dependencies | [resolve-current-test-failures](issues/resolve-current-test-failures.md) |
-| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](issues/align-environment-with-requirements.md) |
+| Test suite failures and missing dependencies | [resolve-current-test-failures](issues/archive/resolve-current-test-failures.md) |
+| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](issues/archive/align-environment-with-requirements.md) |
 | Packaging scripts require configuration | [update-release-documentation](issues/archive/update-release-documentation.md) |
 
 The same blocker summary appears in [ROADMAP.md](ROADMAP.md) and
