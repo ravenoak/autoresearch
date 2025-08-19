@@ -5,6 +5,7 @@ These instructions apply to files in the `scripts/` directory.
 ## Usage
 - Provide a clear CLI interface or usage comment at the top of each script.
 - Validate inputs and fail fast on incorrect usage.
+- Invoke Python scripts via `uv run` to ensure dependencies resolve.
 
 ## Safety
 - Avoid destructive actions without an explicit confirmation flag.
