@@ -1,9 +1,9 @@
 # Source Credibility Heuristics
 
-Autoresearch estimates credibility using heuristic domain authority scores. Each
-recognized domain receives a value between 0 and 1 derived from curated lists of
-trusted sources. Higher scores indicate more reliable domains and affect the
-weight of a document in the final ranking.
+Autoresearch estimates credibility using heuristic domain authority scores.
+Each recognized domain receives a value between 0 and 1 derived from curated
+lists of trusted sources. Higher scores indicate more reliable domains and
+affect the weight of a document in the final ranking.
 
 ## Scoring algorithm
 
@@ -23,6 +23,9 @@ The :code:`AUTHORITY` table maps domains and suffixes such as ``.edu`` or
 ``.gov`` to scores in the :math:`[0, 1]` interval. Unknown domains default to
 ``0.5``.
 
+These heuristic scores are already normalized to ``[0, 1]`` and require no
+additional scaling before being combined with other ranking metrics.
+
 ## Example ranking
 
 Assume three results share the same base relevance score of ``0.7`` and a
@@ -40,5 +43,6 @@ final = (1 - w) * relevance + w * credibility
 
 ## References
 
-- Moz. "Domain Authority."
-  [https://moz.com/learn/seo/domain-authority](https://moz.com/learn/seo/domain-authority)
+- Moz. "Domain Authority."[^moz]
+
+[^moz]: https://moz.com/learn/seo/domain-authority

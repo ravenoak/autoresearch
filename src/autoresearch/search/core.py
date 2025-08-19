@@ -361,8 +361,8 @@ class Search:
     ) -> List[float]:
         """Calculate semantic similarity scores for a query and documents.
 
-        See ``docs/algorithms/semantic_similarity.md`` for the cosine similarity
-        formulation used.
+        See ``docs/algorithms/semantic_similarity.md`` for the cosine
+        similarity formulation and normalization used.
 
         Args:
             query: The search query
@@ -373,7 +373,7 @@ class Search:
         """
         model = self.get_sentence_transformer()
         if model is None and query_embedding is None:
-            return [1.0] * len(documents)  # Return neutral scores
+            return [0.5] * len(documents)  # Return neutral scores
 
         try:
             if query_embedding is None:
@@ -388,14 +388,15 @@ class Search:
 
             for idx, doc in enumerate(documents):
                 if "similarity" in doc:
-                    similarities.append(float(doc["similarity"]))
+                    sim = float(doc["similarity"])
+                    similarities.append((sim + 1) / 2)
                     continue
                 if "embedding" in doc:
                     doc_embedding = np.array(doc["embedding"], dtype=float)
                     sim = np.dot(query_embedding, doc_embedding) / (
                         np.linalg.norm(query_embedding) * np.linalg.norm(doc_embedding)
                     )
-                    similarities.append(float(sim))
+                    similarities.append((sim + 1) / 2)
                     continue
 
                 # Fallback to encoding text
@@ -413,12 +414,12 @@ class Search:
                     sim = np.dot(query_embedding, emb) / (
                         np.linalg.norm(query_embedding) * np.linalg.norm(emb)
                     )
-                    similarities[index] = float(sim)
+                    similarities[index] = (sim + 1) / 2
 
-            return [s if s is not None else 1.0 for s in similarities]
+            return [s if s is not None else 0.5 for s in similarities]
         except Exception as e:
             log.warning(f"Semantic similarity calculation failed: {e}")
-            return [1.0] * len(documents)  # Return neutral scores
+            return [0.5] * len(documents)  # Return neutral scores
 
     @hybridmethod
     def add_embeddings(
@@ -457,7 +458,7 @@ class Search:
                     sim = float(
                         np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb))
                     )
-                    documents[index]["similarity"] = sim
+                    documents[index]["similarity"] = (sim + 1) / 2
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
 
@@ -514,7 +515,11 @@ class Search:
         bm25_weight: float,
         semantic_weight: float,
     ) -> List[float]:
-        """Merge BM25 and semantic scores using provided weights."""
+        """Merge BM25 and semantic scores using provided weights.
+
+        See ``docs/algorithms/bm25.md`` and
+        ``docs/algorithms/semantic_similarity.md`` for score details.
+        """
 
         merged: List[float] = []
         for bm25, semantic in zip(bm25_scores, semantic_scores):
@@ -529,6 +534,11 @@ class Search:
         query_embedding: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
         """Rank search results using configurable relevance algorithms.
+
+        The final score is a weighted combination of BM25, semantic
+        similarity, and source credibility scores. See
+        ``docs/algorithms/bm25.md``, ``docs/algorithms/semantic_similarity.md``,
+        and ``docs/algorithms/source_credibility.md`` for details.
 
         Args:
             query: The search query
@@ -579,7 +589,7 @@ class Search:
         )
 
         # Include vector similarity from DuckDB results when available
-        duckdb_scores = [r.get("similarity", 0.0) for r in results]
+        duckdb_scores = [r.get("similarity", 0.5) for r in results]
 
         # Average semantic embedding similarity with DuckDB score
         embedding_scores = [
@@ -630,9 +640,12 @@ class Search:
         query_embedding: Optional[np.ndarray] = None,
     ) -> List[Dict[str, Any]]:
         """Rank combined results from multiple backends.
-        Each backend's results are merged and ranked together using the
-        configured relevance algorithm. A ``backend`` field is added to every
-        result indicating its origin.
+
+        Each backend's results are merged and ranked using the weighted
+        scoring described in ``docs/algorithms/bm25.md``,
+        ``docs/algorithms/semantic_similarity.md``, and
+        ``docs/algorithms/source_credibility.md``. A ``backend`` field is
+        added to every result indicating its origin.
         """
 
         all_results: List[Dict[str, Any]] = []
