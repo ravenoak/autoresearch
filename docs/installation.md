@@ -56,15 +56,26 @@ been verified to install successfully with `uv pip install`.
 Use `uv` to manage the environment when working from a clone:
 
 ```bash
-# Create the virtual environment
+# Create the virtual environment (.venv/)
 uv venv
-# Full feature set including development tools (required for CI)
-uv pip install -e '.[full,parsers,git,llm,dev]'
-# Lightweight install for quick smoke tests
-# uv pip install -e '.[dev-minimal]'
+# Install pinned dependencies and all extras
+uv sync --all-extras
+# Link the project in editable mode
+uv pip install -e .
+# Activate the environment
+source .venv/bin/activate
 ```
-Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock` before syncing.
-Selecting Python 3.11 results in an error similar to:
+
+Alternatively run `task install` or the setup helper:
+
+```bash
+task install
+# or
+./scripts/setup.sh
+```
+
+Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`
+before syncing. Selecting Python 3.11 results in an error similar to:
 ```
 Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 3.11.*, no compatible version could be found.
@@ -86,7 +97,8 @@ uv run pytest tests/behavior
 
 ### Offline installation
 
-To install without network access, pre-download the required packages and point the setup script at their locations:
+To install without network access, pre-download the required packages and
+point the setup script at their locations:
 
 ```bash
 export WHEELS_DIR=/path/to/wheels
@@ -94,7 +106,9 @@ export ARCHIVES_DIR=/path/to/archives
 ./scripts/setup.sh
 ```
 
-`WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should contain source archives (`*.tar.gz`). The setup script installs these caches with `uv pip --no-index` so dependencies resolve offline.
+`WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should
+contain source archives (`*.tar.gz`). The setup script installs these caches
+with `uv pip --no-index` so dependencies resolve offline.
 
 ## Minimal installation
 
@@ -104,14 +118,10 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
-If you cloned the repository, run the setup helper. Omit the argument to
-install all extras required for CI; use `dev-minimal` only for quick smoke
-tests:
+If you cloned the repository, run the setup helper:
 
 ```bash
 ./scripts/setup.sh
-# For a lightweight local setup:
-# ./scripts/setup.sh dev-minimal
 ```
 
 The helper ensures the lock file is refreshed and installs every optional
@@ -119,9 +129,11 @@ extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using `uv sync --all-extras && uv pip install -e .`. Optional
-features are disabled when their dependencies are missing. Specify extras
-explicitly with pip to enable additional features, e.g. ``pip install "autoresearch[minimal,nlp]"``.
+running the helper, reinstall using
+`uv sync --all-extras && uv pip install -e .`.
+Optional features are disabled when their dependencies are missing. Specify
+extras explicitly with pip to enable additional features, e.g.
+``pip install "autoresearch[minimal,nlp]"``.
 
 ## Optional extras
 
@@ -152,7 +164,9 @@ To upgrade an existing installation run:
 python scripts/upgrade.py
 ```
 
-The helper script installs or upgrades using `uv pip`. When a `pyproject.toml` is present it runs `uv pip install -U autoresearch`; otherwise it falls back to `pip install -U autoresearch`.
+The helper script installs or upgrades using `uv pip`. When a
+`pyproject.toml` is present it runs `uv pip install -U autoresearch`;
+otherwise it falls back to `pip install -U autoresearch`.
 
 Use pip extras when upgrading to ensure optional dependencies remain
 installed. For example:
@@ -182,7 +196,7 @@ long time or fail on low-memory machines.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
 - Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `uv pip install -e '.[full,parsers,git,llm,dev]'`.
+  to running `uv pip install -e .`.
 - You can omit heavy extras by specifying only the groups you need,
   e.g. `uv pip install -e '.[minimal]'` when rapid setup is more important
   than optional features.

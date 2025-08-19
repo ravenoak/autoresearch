@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Usage: ./scripts/setup.sh
+# Create .venv and install all extras using uv.
 # Ensure we are running with Python 3.12 or newer
 set -euo pipefail
 
