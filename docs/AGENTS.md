@@ -1,5 +1,7 @@
 # Documentation Guidelines
 
+These instructions apply to files in the `docs/` directory.
+
 ## Citation rules
 - Provide a working URL or relative path for every citation.
 - Use inline links or reference-style footnotes.

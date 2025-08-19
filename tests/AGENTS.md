@@ -1,5 +1,7 @@
 # Test Guidelines
 
+These instructions apply to files in the `tests/` directory.
+
 ## Markers
 - Use `slow` for tests that exceed typical runtime or touch external
   services.
@@ -9,7 +11,7 @@
 - Register any new markers in `pytest.ini`.
 
 ## Required extras
-- Install dev dependencies with `uv pip install -e '.[full,parsers,git,llm,dev]'`.
+- Install base dev dependencies as described in the repository root `AGENTS.md`.
 - Include `.[nlp]` when running tests marked `requires_nlp`.
 - Add extras corresponding to any other markers as needed.
 
