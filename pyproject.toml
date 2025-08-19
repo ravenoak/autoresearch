@@ -202,7 +202,8 @@ markers = [
     "slow: tests that take a long time to run",
     "requires_ui: tests that depend on the ui extra",
     "requires_vss: tests that depend on the vss extra",
-    "requires_git: tests that depend on the git extra"
+    "requires_git: tests that depend on the git extra",
+    "requires_nlp: tests needing NLP resources"
 ]
 
 [tool.mypy]
