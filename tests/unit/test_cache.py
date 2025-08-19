@@ -1,5 +1,6 @@
 import importlib.util
 from threading import Thread  # for thread-safety test
+from typing import Any, Dict, List
 
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
@@ -9,8 +10,8 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 
 
-def assert_bm25_signature(query, documents):
-    """Ensure bm25 stub receives ``(query, documents)`` in that order."""
+def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[float]:
+    """Ensure BM25 stub receives ``(query, documents)`` in that order."""
     assert isinstance(query, str)
     assert isinstance(documents, list)
     return [1.0] * len(documents)
