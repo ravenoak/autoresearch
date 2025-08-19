@@ -1,5 +1,9 @@
 # Documentation Guidelines
 
+These instructions apply to the `docs/` directory and its
+subdirectories. Refer to the repository root `AGENTS.md` for general
+workflows.
+
 ## Citation rules
 - Provide a working URL or relative path for every citation.
 - Use inline links or reference-style footnotes.

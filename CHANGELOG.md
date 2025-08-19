@@ -19,6 +19,10 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Pin Python version and expand setup checks to prevent environment drift. [align-environment-with-requirements](issues/align-environment-with-requirements.md)
 - Enable Pydantic plugin for static type analysis. [resolve-current-test-failures](issues/resolve-current-test-failures.md)
 
+- Clarify `AGENTS.md` scopes and consolidate cleanup guidance across
+  directories. Note absence of `AGENTS.md` in `src/`, `examples/`, and
+  `scripts/`.
+
 ## [0.1.0-alpha.1] - 2026-02-15
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
 

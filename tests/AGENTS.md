@@ -1,5 +1,9 @@
 # Test Guidelines
 
+These instructions apply to the `tests/` directory and subdirectories.
+Refer to the repository root `AGENTS.md` for environment and workflow
+details.
+
 ## Markers
 - Use `slow` for tests that exceed typical runtime or touch external
   services.

@@ -1,5 +1,8 @@
 # Issues directory guidelines
 
+These instructions apply to the `issues/` directory. Refer to the
+repository root `AGENTS.md` for overall project guidelines.
+
 Follow these rules when managing in-repo tickets.
 
 - Use the template and naming conventions in [issues/README.md](README.md).

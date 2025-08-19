@@ -9,7 +9,8 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Use Python 3.12+ and manage dependencies with `uv`; run all commands inside the virtual environment (`uv venv && uv sync --all-extras`).
 - `VECTOR_EXTENSION_PATH` must point to `extensions/vss_stub.duckdb_extension` unless a real `vss.duckdb_extension` is available.
 - Documents in `docs/inspirational_docs/` are inspirational only; cite external sources from `docs/external_research_papers/`.
-- Remove build artifacts with `task clean` and delete temporary files such as `kg.duckdb` or `rdf_store`.
+- Remove build artifacts and temporary files with `task clean`; see
+  [tests/AGENTS.md](tests/AGENTS.md) for test-generated artifacts.
 
 ## Tooling
 - Verify tooling within `.venv` (`task`, `flake8`, `pytest`, `mypy`, `pytest-bdd`, `pydantic`); rerun `scripts/codex_setup.sh` if any command is missing.
@@ -22,8 +23,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 
 ## Workflow
 - Place `AGENTS.md` in directories requiring custom instructions. Nested files override parent guidance.
-- See [tests/AGENTS.md](tests/AGENTS.md) for test markers, extras, and cleanup.
-- See [docs/AGENTS.md](docs/AGENTS.md) for documentation citations and formatting rules.
+- See [tests/AGENTS.md](tests/AGENTS.md) for rules scoped to the
+  `tests/` directory, including markers, required extras, and cleanup
+  details.
+- See [docs/AGENTS.md](docs/AGENTS.md) for rules scoped to the `docs/`
+  directory, including citation and formatting expectations.
 - Use the container’s clock for current dates and derive past dates from `git log`.
 - Track work items in [`/issues`](issues); follow the rules in [issues/AGENTS.md](issues/AGENTS.md) and the template in [issues/README.md](issues/README.md).
 - Avoid committing binary artifacts; the `extensions/` directory is placeholder only.
@@ -32,4 +36,6 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 
 ## Changelog
 - 2025-08-18: Refer to `tests/AGENTS.md` and `docs/AGENTS.md` for scoped rules.
+- 2025-08-19: Clarified scopes for nested `AGENTS.md` files and routed
+  cleanup guidance to `tests/AGENTS.md`.
 - Future updates to these instructions will be recorded here.
