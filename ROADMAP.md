@@ -111,6 +111,6 @@ The 1.0.0 milestone aims for a polished, production-ready system:
   lines 178-186; TASK_PROGRESS lines 206-216).
 - Optimize performance across all components and finalize documentation.
 
-[resolve-test-failures]: issues/archive/resolve-current-test-failures.md
+[resolve-test-failures]: issues/resolve-current-test-failures.md
 [align-environment-reqs]: issues/align-environment-with-requirements.md
 [update-release-documentation]: issues/archive/update-release-documentation.md
