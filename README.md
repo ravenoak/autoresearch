@@ -20,12 +20,10 @@ the final **0.1.0** milestone targeted for **July 1, 2026**. See
 outstanding tasks, and current test and coverage status. The release
 workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
-Current checks show `flake8` and `mypy` passing, while `pytest -q`
-fails during collection due to missing optional dependencies like
-`tomli_w`, `freezegun`, and `pytest_bdd`.
-
-Outstanding test work was tracked in
-[resolve-current-test-failures](issues/resolve-current-test-failures.md).
+Current checks show `uv run --extra dev-minimal flake8 src tests` and
+`uv run --extra dev-minimal mypy src` passing. `uv run --extra
+dev-minimal pytest -q` completes with all tests passing and coverage
+above the 90% threshold enforced by `--cov-fail-under=90`.
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
