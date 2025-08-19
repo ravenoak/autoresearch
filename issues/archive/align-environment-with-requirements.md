@@ -18,7 +18,7 @@ avoid failures and missing tooling.
 - pytest 8.4.1
 - pytest-bdd 8.1.0
 - pydantic 2.11.7
-Environment verified and aligns with requirements.
+Environment reverified and aligns with requirements.
 
 ## Status
-Open
+Archived
