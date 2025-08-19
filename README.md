@@ -657,6 +657,14 @@ Activate the environment with `source .venv/bin/activate` before running command
 - If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv sync --all-extras && uv pip install -e .`. Time-based tests rely on `freezegun`, which is included in the development extras.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
+### Environment check
+
+Verify that core tooling is installed and meets the minimum versions:
+
+```bash
+uv run python scripts/check_env.py
+```
+
 ### Smoke test
 
 Run the environment smoke test to verify your installation:
