@@ -186,7 +186,9 @@ def test_rank_results(mock_get_config, mock_config, sample_results):
     # Mock the scoring methods to return predictable scores
     with (
         patch.object(
-            Search, "calculate_bm25_scores", return_value=[0.8, 0.6, 0.9, 0.1]
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.8, 0.6, 0.9, 0.1]),
         ),
         patch.object(
             Search, "calculate_semantic_similarity", return_value=[0.7, 0.5, 0.9, 0.1]
@@ -275,7 +277,11 @@ def test_rank_results_weighted_combination(mock_get_config, mock_config, sample_
     mock_get_config.return_value = mock_config
 
     with (
-        patch.object(Search, "calculate_bm25_scores", return_value=[0.1, 0.9, 0.1, 0.1]),
+        patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.1, 0.9, 0.1, 0.1]),
+        ),
         patch.object(Search, "calculate_semantic_similarity", return_value=[0.9, 0.1, 0.2, 0.3]),
         patch.object(Search, "assess_source_credibility", return_value=[1.0]*4),
     ):
@@ -294,7 +300,11 @@ def test_rank_results_bm25_only(mock_get_config, mock_config, sample_results):
     mock_get_config.return_value = mock_config
 
     with (
-        patch.object(Search, "calculate_bm25_scores", return_value=[0.2, 0.4, 0.1, 0.9]),
+        patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.2, 0.4, 0.1, 0.9]),
+        ),
         patch.object(Search, "calculate_semantic_similarity", return_value=[0.5] * 4),
         patch.object(Search, "assess_source_credibility", return_value=[0.6] * 4),
     ):
@@ -366,7 +376,11 @@ def test_rank_results_sorted(mock_config, data):
     )
     with (
         patch("autoresearch.search.core.get_config", return_value=mock_config),
-        patch.object(Search, "calculate_bm25_scores", return_value=bm25),
+        patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: bm25),
+        ),
         patch.object(Search, "calculate_semantic_similarity", return_value=semantic),
         patch.object(Search, "assess_source_credibility", return_value=credibility),
     ):

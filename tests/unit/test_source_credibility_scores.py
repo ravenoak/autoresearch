@@ -32,7 +32,11 @@ def test_rank_results_prefers_higher_credibility():
     )
     with (
         patch("autoresearch.search.core.get_config", return_value=cfg),
-        patch.object(Search, "calculate_bm25_scores", return_value=[0.5, 0.5]),
+        patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.5, 0.5]),
+        ),
         patch.object(
             Search, "calculate_semantic_similarity", return_value=[0.5, 0.5]
         ),
