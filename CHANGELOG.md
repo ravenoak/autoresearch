@@ -8,7 +8,7 @@ Reference issues by slugged filename (for example,
 ## [Unreleased]
 - Track environment alignment to ensure Python 3.12 and dev tooling are
   available. [align-environment-with-requirements](issues/align-environment-with-requirements.md)
-- Update release plan to align milestones with the 2025 development timeline.
+ - Update release plan with revised milestone schedule.
   - Add rich configuration context fixtures with sample data for tests. [create-more-comprehensive-test-contexts](issues/archive/create-more-comprehensive-test-contexts.md)
 - Optimize mypy configuration to skip site packages, preventing hangs during
 verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
@@ -18,8 +18,9 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Correct search backend registration and reset logic. [resolve-current-test-failures](issues/resolve-current-test-failures.md)
 - Pin Python version and expand setup checks to prevent environment drift. [align-environment-with-requirements](issues/align-environment-with-requirements.md)
 - Enable Pydantic plugin for static type analysis. [resolve-current-test-failures](issues/resolve-current-test-failures.md)
+- Document final release workflow and TestPyPI publishing steps.
 
-## [0.1.0-alpha.1] - 2026-02-15
+## [0.1.0-alpha.1] - 2026-03-01
 - Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
 
 ## [0.1.0] - Unreleased
