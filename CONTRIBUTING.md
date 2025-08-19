@@ -139,7 +139,6 @@ uv run mypy src
 # if you need quicker iterations.
 ```
 
-For additional dialectical reasoning tips, consult `AGENTS.md` in the repository root.
 
 ### Imports
 

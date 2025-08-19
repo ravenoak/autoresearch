@@ -11,7 +11,7 @@ These instructions apply to files in the `tests/` directory.
 - Register any new markers in `pytest.ini`.
 
 ## Required extras
-- Install base dev dependencies as described in the repository root `AGENTS.md`.
+- Install base development dependencies with `task install`.
 - Include `.[nlp]` when running tests marked `requires_nlp`.
 - Add extras corresponding to any other markers as needed.
 
