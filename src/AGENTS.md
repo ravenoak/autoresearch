@@ -12,4 +12,4 @@ These instructions apply to files in the `src/` directory.
 
 ## Type checking
 - Use explicit type hints for function signatures and critical variables.
-- Run `task check` to validate types before committing.
+- Run `task check` to validate types before committing. When invoking tools directly, prefix them with `uv run`.

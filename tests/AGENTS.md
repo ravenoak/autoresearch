@@ -11,7 +11,7 @@ These instructions apply to files in the `tests/` directory.
 - Register any new markers in `pytest.ini`.
 
 ## Required extras
-- Install base development dependencies with `task install`.
+- Install base development dependencies with `task install` (uses `uv`).
 - Include `.[nlp]` when running tests marked `requires_nlp`.
 - Add extras corresponding to any other markers as needed.
 
@@ -21,3 +21,4 @@ These instructions apply to files in the `tests/` directory.
 - Prefer fixtures like `tmp_path` and `monkeypatch` to isolate side
   effects.
 - Run `task clean` if tests generate build artifacts.
+- When invoking `pytest` directly, prefix the command with `uv run`.
