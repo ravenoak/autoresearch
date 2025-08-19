@@ -5,8 +5,8 @@ organized by phases from the code complete plan. As of **August 18, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status. Outstanding test failures are tracked in
 [resolve-current-test-failures](issues/resolve-current-test-failures.md).
-An **0.1.0-alpha.1** preview is scheduled for **February 15, 2026**, with
-the final **0.1.0** release targeted for **June 1, 2026**.
+An **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
+the final **0.1.0** release targeted for **July 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
