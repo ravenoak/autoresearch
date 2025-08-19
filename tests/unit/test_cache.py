@@ -9,6 +9,13 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 
 
+def assert_bm25_signature(query, documents):
+    """Ensure bm25 stub receives ``(query, documents)`` in that order."""
+    assert isinstance(query, str)
+    assert isinstance(documents, list)
+    return [1.0] * len(documents)
+
+
 def test_search_uses_cache(monkeypatch):
     cache = SearchCache()
     search = Search(cache=cache)
@@ -16,7 +23,7 @@ def test_search_uses_cache(monkeypatch):
     monkeypatch.setattr(
         Search,
         "calculate_bm25_scores",
-        staticmethod(lambda q, d: [1.0] * len(d)),
+        staticmethod(assert_bm25_signature),
     )
 
     calls = {"count": 0}
@@ -99,7 +106,7 @@ def test_cache_is_backend_specific(monkeypatch):
     monkeypatch.setattr(
         Search,
         "calculate_bm25_scores",
-        staticmethod(lambda q, d: [1.0] * len(d)),
+        staticmethod(assert_bm25_signature),
     )
 
     calls = {"b1": 0, "b2": 0}
@@ -164,7 +171,7 @@ def test_context_aware_query_expansion_uses_cache(monkeypatch):
     monkeypatch.setattr(
         Search,
         "calculate_bm25_scores",
-        staticmethod(lambda q, d: [1.0] * len(d)),
+        staticmethod(assert_bm25_signature),
     )
 
     calls = {"count": 0}

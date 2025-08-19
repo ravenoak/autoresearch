@@ -4,10 +4,21 @@ from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+from autoresearch.search import Search
+
+
+
+def assert_bm25_signature(query, documents):
+    """Stub ensuring BM25 receives ``(query, documents)``."""
+    assert isinstance(query, str)
+    assert isinstance(documents, list)
+    return [1.0] * len(documents)
 
 
 def dummy_run_query(query, config, callbacks=None, **kwargs):
     assert callbacks is not None and "on_cycle_end" in callbacks
+    # Exercise BM25 scoring to verify call signature
+    Search.calculate_bm25_scores(query, [{"title": "t", "url": "u"}])
     dummy_state = type(
         "S",
         (),
@@ -37,6 +48,7 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
         "autoresearch.main.Prompt.ask",
         lambda *a, **k: next(responses),
     )
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(assert_bm25_signature))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
     result = runner.invoke(app, ["monitor", "run"])
     assert result.exit_code == 0
