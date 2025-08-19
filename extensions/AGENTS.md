@@ -3,7 +3,7 @@
 These instructions apply to files in the `extensions/` directory.
 
 ## Coding style
-- Follow repository conventions: PEP 8 with 4-space indentation and lines ≤100 characters.
+- Follow repository conventions.
 - Organize imports with `isort`'s default profile.
 
 ## Tooling
