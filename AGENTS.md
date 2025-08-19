@@ -12,7 +12,7 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Remove build artifacts with `task clean` and delete temporary files such as `kg.duckdb` or `rdf_store`.
 
 ## Tooling
-- Verify tooling within `.venv` (`task`, `flake8`, `pytest`, `mypy`, `pytest-bdd`, `pydantic`); rerun `scripts/codex_setup.sh` if any command is missing.
+- Verify tooling and versions within `.venv` (`task`, `flake8`, `pytest`, `mypy`, `pytest-bdd`, `pydantic`); rerun `scripts/codex_setup.sh` if any command is missing.
 - Use `task` for common workflows; run `task verify` before committing and `task coverage` for explicit reports. See [Taskfile.yml](Taskfile.yml).
 - Prefer `rg` for repository searches. If `task` is unavailable, use `uv run` equivalents for formatting, linting, type checking, and tests.
 - Utility scripts live in [scripts/](scripts); run `task --list` or inspect the directory for more helpers.

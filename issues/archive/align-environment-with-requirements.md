@@ -10,5 +10,14 @@ avoid failures and missing tooling.
 - Development tools such as task, flake8, mypy, pytest, pytest-bdd and
   pydantic are available in the virtual environment.
 
+## 2025-08-19
+- Python 3.12.10
+- task 3.44.1
+- flake8 7.3.0
+- mypy 1.17.1
+- pytest 8.4.1
+- pytest-bdd 8.1.0
+- pydantic 2.11.7
+
 ## Status
-Open
+Archived

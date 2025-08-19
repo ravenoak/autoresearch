@@ -99,7 +99,12 @@ for cmd in task flake8 pytest mypy; do
         missing_tools+=("$cmd")
         continue
     fi
-    "$cmd" --version >/dev/null 2>&1 || missing_tools+=("$cmd")
+    if ! version=$("$cmd" --version 2>&1); then
+        echo "$cmd is not installed or failed to report a version" >&2
+        missing_tools+=("$cmd")
+    else
+        echo "$cmd version: $version"
+    fi
 done
 
 # Ensure required development packages are installed in the virtual environment
@@ -122,11 +127,14 @@ if (( ${#missing_tools[@]} )) || (( ${#missing_pkgs[@]} )); then
 fi
 
 # Post-install version checks
-task --version
-flake8 --version
-python - <<'PY'
-import pydantic
+task --version >/dev/null 2>&1 || { echo 'task is required but missing' >&2; exit 1; }
+flake8 --version >/dev/null 2>&1 || { echo 'flake8 is required but missing' >&2; exit 1; }
+mypy --version >/dev/null 2>&1 || { echo 'mypy is required but missing' >&2; exit 1; }
+pytest --version >/dev/null 2>&1 || { echo 'pytest is required but missing' >&2; exit 1; }
+python - <<'PY' || { echo 'pytest-bdd is required but missing' >&2; exit 1; }
+import pydantic, importlib.metadata
 print(pydantic.__version__)
+print(importlib.metadata.version('pytest-bdd'))
 PY
 
 # Confirm key packages import successfully
