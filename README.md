@@ -14,7 +14,7 @@ preparing for the upcoming **0.1.0** release. The version is defined in
 **not** been published yet. The first official release was originally
 planned for **July 20, 2025**, but the schedule slipped. An
 **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
-the final **0.1.0** milestone targeted for **June 1, 2026**. See
+the final **0.1.0** milestone targeted for **July 1, 2026**. See
 [ROADMAP.md](ROADMAP.md) for feature milestones and
 [docs/release_plan.md](docs/release_plan.md) for the full schedule,
 outstanding tasks, and current test and coverage status.
