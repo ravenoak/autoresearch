@@ -20,4 +20,4 @@ avoid failures and missing tooling.
 - pydantic 2.11.7
 
 ## Status
-Archived
+Open

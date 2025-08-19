@@ -40,10 +40,11 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 The following tasks remain before publishing **0.1.0-alpha.1**:
 
 - [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
- - [ ] Set up the environment with `uv venv && uv sync --all-extras && uv pip
-     install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration
-     and behavior suites run successfully, including extras like `tomli_w`,
-     `freezegun`, `hypothesis` and `pytest_bdd`.
+  - [ ] Set up the environment with `uv venv && uv sync --all-extras` and
+      `uv pip install -e '.[full,parsers,git,llm,dev]'`. Verified flake8 7.3.0,
+      mypy 1.17.1, pytest 8.4.1, pytest-bdd 8.1.0 and pydantic 2.11.7; see
+      [align-environment-with-requirements](../issues/align-environment-with-
+      requirements.md).
  - [x] Ensure new dependency pins are reflected in the lock file and docs.
      `slowapi` is locked to **0.1.9** and `fastapi` is at least **0.115.12**,
      matching `pyproject.toml` and [installation.md](installation.md).
