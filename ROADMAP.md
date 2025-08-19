@@ -27,14 +27,8 @@ before running tests.
 - 1.0.0 (2027-06-01): Full feature set, performance tuning and stable
   interfaces.
 
-### Blockers before 0.1.0-alpha.1
-
-- Test suite failures and missing dependencies
-  ([resolve-test-failures]).
-- Development environment misaligned with Python 3.12 and dev tooling
-  ([align-environment-reqs]).
-- Packaging scripts require configuration
-  ([update-release-documentation]).
+See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
+alpha release checklist.
 
 ## 0.1.0-alpha.1 – Alpha preview
 

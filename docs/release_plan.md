@@ -39,37 +39,17 @@ Phase 2 testing tasks remain incomplete:
   interfaces.
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
-schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1** release
-is scheduled for **March 1, 2026**. The final **0.1.0** milestone is now set for
-**July 1, 2026** while packaging tasks are resolved.
+schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1**
+release is scheduled for **2026-03-01**. The final **0.1.0** milestone is
+now set for **July 1, 2026** while packaging tasks are resolved.
 
-The following tasks remain before publishing **0.1.0-alpha.1**:
+### Alpha release checklist
 
-- [ ] Resolve remaining test failures ([resolve-test-failures]).
-  - [ ] Set up the environment with:
+- [ ] Resolve remaining test failures ([resolve-test-failures])
+- [ ] `task coverage` reports at least **90%** total coverage
+- [ ] Assemble preliminary release notes and confirm README instructions
 
-    ```
-    uv venv && uv sync --all-extras &&
-    uv pip install -e '.[full,parsers,git,llm,dev]'
-    ```
-
-    Verified flake8 7.3.0, mypy 1.17.1, pytest 8.4.1, pytest-bdd 8.1.0 and
-    pydantic 2.11.7; see
-    [align-environment-with-requirements](../issues/align-environment-with-
-    requirements.md).
-- [x] Ensure new dependency pins are reflected in the lock file and docs.
-      `slowapi` is locked to **0.1.9** and `fastapi` is at least **0.115.12**,
-      matching `pyproject.toml` and [installation.md](installation.md).
-- [x] Verify `uv run python -m build` and
-      `uv run python scripts/publish_dev.py --dry-run` create valid packages
-      across platforms.
-- [ ] Assemble preliminary release notes and confirm README instructions.
-
-### Blockers before 0.1.0-alpha.1
-
-- Test suite failures ([resolve-test-failures])
-
-Resolving these issues will determine the new completion date for **0.1.0**.
+Resolving these items will determine the new completion date for **0.1.0**.
 
 ## Release Phases
 
