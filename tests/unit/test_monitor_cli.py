@@ -1,13 +1,21 @@
+from typing import Any, Dict, List
+
 from typer.testing import CliRunner
-from autoresearch.main import app
-from autoresearch.config.models import ConfigModel, StorageConfig
+
+try:
+    import docx  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    import tests.stubs.docx  # noqa: F401
+
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.main import app
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.search import Search
 
 
-def assert_bm25_signature(query, documents):
+def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[float]:
     """Stub ensuring BM25 receives ``(query, documents)``."""
     assert isinstance(query, str)
     assert isinstance(documents, list)
@@ -17,7 +25,7 @@ def assert_bm25_signature(query, documents):
 def dummy_run_query(query, config, callbacks=None, **kwargs):
     assert callbacks is not None and "on_cycle_end" in callbacks
     # Exercise BM25 scoring to verify call signature
-    Search.calculate_bm25_scores(query, [{"title": "t", "url": "u"}])
+    Search.calculate_bm25_scores(query=query, documents=[{"title": "t", "url": "u"}])
     dummy_state = type(
         "S",
         (),
