@@ -23,8 +23,8 @@ Current checks show `flake8` and `mypy` passing, while `pytest -q`
 fails during collection due to missing optional dependencies like
 `tomli_w`, `freezegun`, and `pytest_bdd`.
 
-Outstanding test work is tracked in
-[resolve-current-test-failures](issues/resolve-current-test-failures.md).
+Outstanding test work was tracked in
+[resolve-current-test-failures](issues/archive/resolve-current-test-failures.md).
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
