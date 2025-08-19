@@ -7,5 +7,4 @@ These rules apply to files in this directory. Follow them when managing in-repo 
   ticket content are prohibited. Reference issues by slugged filename.
 - Open tickets stay in this directory. Move completed ones to `archive/`
   with `Status` set to `Archived` and do not rename them.
-- Keep this file and the repository root `AGENTS.md` current when issue
-  tooling evolves.
+- Keep this file current as issue tooling evolves.

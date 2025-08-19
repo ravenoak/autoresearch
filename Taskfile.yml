@@ -1,6 +1,20 @@
 version: '3'
 
 tasks:
+  install:
+    cmds:
+      - uv venv
+      - uv sync --all-extras
+      - uv pip install -e .
+    desc: "Initialize development environment"
+  check:
+    cmds:
+      - uv run flake8 src tests
+      - uv run mypy src
+      - uv run pytest tests/unit -q
+      - uv run pytest tests/integration -m "not slow" -q
+      - uv run pytest tests/behavior -q
+    desc: "Run lint, type check, and tests"
   unit:
     cmds:
       - uv run pytest tests/unit -q

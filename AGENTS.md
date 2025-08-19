@@ -1,39 +1,38 @@
-# Contribution Guidelines
+# Autoresearch Guidelines
 
-> Special note: before work begins, `scripts/codex_setup.sh` is executed to set up the environment. If it fails, a `CODEX_ENVIRONMENT_SETUP_FAILED` file will be created. If this marker is present, inspect `codex_setup.log` for details. This guide is the only document that may mention `scripts/codex_setup.sh`; do not reference it elsewhere.
-
-Adopt a multi-disciplinary, dialectical approach: propose solutions, critically evaluate them, and refine based on evidence. Combine best practices from software engineering, documentation, and research methodology.
+## Snapshot
+- **Purpose:** AI-assisted research orchestration framework.
+- **Primary language:** Python.
+- **Key outputs:** Library, CLI, and documentation for automated research workflows.
 
 ## Environment
-- Keep `scripts/codex_setup.sh` in sync with these instructions; see the script for full setup, offline installs, and DuckDB extension options.
-- Use Python 3.12+ and manage dependencies with `uv`; run all commands inside the virtual environment (`uv venv && uv sync --all-extras`).
-- `VECTOR_EXTENSION_PATH` must point to `extensions/vss_stub.duckdb_extension` unless a real `vss.duckdb_extension` is available.
-- Remove build artifacts with `task clean` and delete temporary files such as `kg.duckdb` or `rdf_store`.
+- Run `task install` to initialize the Python 3.12+ environment and install hooks or dependencies.
+- Keep `scripts/codex_setup.sh` aligned with these instructions; it is the only script permitted to reference this file.
 
-## Tooling
-- Verify tooling and versions within `.venv` (`task`, `flake8`, `pytest`, `mypy`, `pytest-bdd`, `pydantic`); rerun `scripts/codex_setup.sh` if any command is missing.
-- Use `task` for common workflows; run `task verify` before committing and `task coverage` for explicit reports. See [Taskfile.yml](Taskfile.yml).
-- Prefer `rg` for repository searches. If `task` is unavailable, use `uv run` equivalents for formatting, linting, type checking, and tests.
-- Utility scripts live in [scripts/](scripts); run `task --list` or inspect the directory for more helpers.
-- Dependencies are tracked in `uv.lock`; the previous `poetry.lock` is removed.
-- Install dev extras with `uv pip install -e '.[full,parsers,git,llm,dev]'`; add `.[nlp]` for tests marked `requires_nlp` (see [tests/behavior/README.md](tests/behavior/README.md)).
-- Requests to the `/metrics` endpoint must include an API key with the `metrics` permission.
+## Build and Test
+- `task check` – quick lint, type check, and test run.
+- `task verify` – run before committing; performs linting, type checks, and the full test suite with coverage.
+- `task clean` – remove build artifacts.
+- For testing details see `docs/testing_guidelines.md` (load only if needed).
+- See `tests/AGENTS.md` for test markers and extras.
 
-## Workflow
-- Place `AGENTS.md` in directories requiring custom instructions. Nested files override parent guidance.
-- See [tests/AGENTS.md](tests/AGENTS.md) for test markers, extras, and cleanup.
-- See [docs/AGENTS.md](docs/AGENTS.md) for documentation citations and formatting rules.
-- Use the container’s clock for current dates and derive past dates from `git log`.
-- Track work items in [`/issues`](issues); follow the rules in [issues/AGENTS.md](issues/AGENTS.md) and the template in [issues/README.md](issues/README.md).
-- Avoid committing binary artifacts; the `extensions/` directory is placeholder only.
-- GitHub Actions workflows must be dispatch-only, use `actions/checkout@v4`, `actions/setup-python@v5`, and `actions/upload-artifact@v4`, and verify Python 3.12+.
-- Write focused commits with imperative subject lines ≤ 50 characters, wrap bodies at 72 characters, and reference related issues.
+## Coding Conventions
+- Follow PEP 8 with 4-space indentation.
+- Format with **black** and ensure **flake8** passes.
+- Keep lines ≤ 100 characters and include docstrings for public APIs.
+- Additional style guidance lives in `CONTRIBUTING.md` (load only if needed).
 
-## Missing AGENTS files
-- `src/` — add instructions for source code conventions.
-- `scripts/` — document usage patterns for helper scripts.
-- `examples/` — clarify expectations for example projects.
+## Dialectical Process
+- Apply a Socratic approach: state assumptions, question them, compare alternatives, and refine based on evidence.
+- Document reasoning steps in commits and discussions.
+
+## Policy
+- Only `scripts/codex_setup.sh` may mention `AGENTS.md`; do not reference this file elsewhere.
+- This file's scope is the entire repository; nested `AGENTS.md` files override these rules.
+- For extensive details, consult docs under `docs/` as required.
 
 ## Changelog
-- 2025-08-18: Refer to `tests/AGENTS.md` and `docs/AGENTS.md` for scoped rules.
-- Future updates to these instructions will be recorded here.
+- 2025-08-19: Added project snapshot, environment steps, Task commands, coding conventions, and AGENTS referencing policy.
+
+This `AGENTS.md` follows the AGENTS.md spec: its scope is the entire repo and nested rules override it.
+
