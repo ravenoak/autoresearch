@@ -18,13 +18,12 @@ version defined in `autoresearch.__version__`. Phase 3
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
 
-Phase 2 testing tasks remain incomplete:
+Current status:
 
-- `flake8 src tests` passes.
-- `mypy src` currently stalls and needs configuration.
-- `pytest -q` runs with all dependencies installed but fails due to search
-  scoring bug ([resolve-test-failures]).
-- `pytest --cov=src` not yet run because tests fail.
+- `uv run --extra dev-minimal flake8 src tests` passes.
+- `uv run --extra dev-minimal mypy src` reports no issues.
+- `uv run --extra dev-minimal pytest -q` completes with all tests passing and
+  coverage above the 90% threshold enforced by `--cov-fail-under=90`.
 
 ## Milestones
 
