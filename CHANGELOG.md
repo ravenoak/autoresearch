@@ -23,17 +23,17 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
     [resolve-current-test-failures]
  - Pin Python version and expand setup checks to prevent environment drift.
     [align-environment-with-requirements]
- - Enable Pydantic plugin for static type analysis.
+- Enable Pydantic plugin for static type analysis.
     [resolve-current-test-failures]
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 
+### [0.1.0-alpha.1]
+- Verified source and wheel builds succeed; TestPyPI upload returned 403 and needs retry.
+
 ### Preliminary release notes
 - Aligned FastAPI (>=0.115.12) and SlowAPI (0.1.9) pins across project files.
 - Updated release plan to reflect installed test dependencies and active blockers.
-
-## [0.1.0-alpha.1] - 2026-03-01
-- Verified source and wheel builds succeed; TestPyPI upload failed with 403 Forbidden.
 
 ## [0.1.0] - Unreleased
 Planned first public release bringing the core research workflow to life.
