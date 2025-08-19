@@ -33,6 +33,8 @@
 
 ## Changelog
 - 2025-08-19: Added project snapshot, environment steps, Task commands, coding conventions, and AGENTS referencing policy.
+- 2025-08-19: Added `AGENTS.md` for [src](src/AGENTS.md), [scripts](scripts/AGENTS.md),
+  and [examples](examples/AGENTS.md).
 
 This `AGENTS.md` follows the AGENTS.md spec: its scope is the entire repo and nested rules override it.
 
