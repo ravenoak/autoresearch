@@ -1,4 +1,9 @@
 [run]
+source = src/autoresearch
 omit =
+    src/autoresearch/config/models.py
+    src/autoresearch/test_tools.py
+    */tests/*
+
 [report]
-include = src/autoresearch/config/models.py
+include = src/autoresearch/*
