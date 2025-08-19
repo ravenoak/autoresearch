@@ -21,3 +21,7 @@ Feature: Adaptive Output Formatting
   Scenario: Explicit Markdown flag
     When I run `autoresearch search "Test formatting" --output markdown`
     Then the output should be Markdown-formatted as in TTY mode
+
+  Scenario: Graph output format
+    When I run `autoresearch search "Test formatting" --output graph`
+    Then the output should include "Knowledge Graph"
