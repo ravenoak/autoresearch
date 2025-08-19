@@ -82,4 +82,4 @@ optional extras):
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports at least **90%** total coverage
 
-[resolve-test-failures]: ../issues/archive/resolve-current-test-failures.md
+[resolve-test-failures]: ../issues/resolve-current-test-failures.md
