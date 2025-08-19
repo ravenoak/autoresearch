@@ -2,7 +2,8 @@
 
 This document outlines the upcoming release milestones for **Autoresearch**.
 Dates are aspirational and may shift as development progresses. The publishing
-workflow follows the steps in [deployment.md](deployment.md). See the
+workflow follows the steps in [deployment.md](deployment.md). Detailed release
+commands are documented in [releasing.md](releasing.md). See the
 [README](../README.md) for installation details and [ROADMAP](../ROADMAP.md) for
 high-level milestones.
 

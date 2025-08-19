@@ -17,7 +17,8 @@ planned for **July 20, 2025**, but the schedule slipped. An
 the final **0.1.0** milestone targeted for **June 1, 2026**. See
 [ROADMAP.md](ROADMAP.md) for feature milestones and
 [docs/release_plan.md](docs/release_plan.md) for the full schedule,
-outstanding tasks, and current test and coverage status.
+outstanding tasks, and current test and coverage status. The release
+workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
 Current checks show `flake8` and `mypy` passing, while `pytest -q`
 fails during collection due to missing optional dependencies like
