@@ -8,4 +8,5 @@ These instructions apply to files in the `examples/` directory.
 
 ## Licensing
 - Assume sample data is covered by the project's AGPL-3.0 license unless noted.
-- Document third-party assets with their original licenses and required attribution.
+- Document third-party assets with their original licenses and required
+  attribution.
