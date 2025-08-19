@@ -2,8 +2,9 @@
 
 Autoresearch can combine results from multiple search backends. By default the
 system merges all responses and ranks them together using a hybrid algorithm
-that mixes BM25 keyword scores, semantic similarity of embeddings and the
-credibility of each source.
+that mixes [BM25 keyword scores](algorithms/bm25.md),
+[semantic similarity](algorithms/semantic_similarity.md) and
+[source credibility](algorithms/source_credibility.md).
 
 Enable or disable backends in the `[search]` section of `autoresearch.toml`:
 
@@ -29,5 +30,5 @@ source_credibility_weight = 0.1
 ```
 
 Use `scripts/optimize_search_weights.py` with a labelled evaluation dataset to
-automatically discover good values. The script runs a grid search and updates the
-configuration file with the best-performing weights.
+automatically discover good values. The script runs a grid search and updates
+the configuration file with the best-performing weights.

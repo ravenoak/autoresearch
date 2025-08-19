@@ -161,6 +161,11 @@ class SearchContext:
             log.warning(f"Failed to initialize spaCy NLP model: {e}")
 
     def add_to_history(self, query: str, results: List[Dict[str, str]]) -> None:
+        """Record a query and results for context-aware search.
+
+        Extracts entities from the query and result snippets so later searches
+        can expand or reweight terms.
+        """
         cfg = get_config()
         max_history = cfg.search.context_aware.max_history_items
         self.search_history.append(
@@ -174,6 +179,10 @@ class SearchContext:
             self._extract_entities(result.get("snippet", ""))
 
     def _extract_entities(self, text: str) -> None:
+        """Update entity frequency counts from text.
+
+        Uses spaCy when available, otherwise falls back to simple tokenization.
+        """
         if not SPACY_AVAILABLE or self.nlp is None:
             for token in text.split():
                 self.entities[token.lower()] += 1
@@ -196,6 +205,7 @@ class SearchContext:
             log.warning(f"Entity extraction failed: {e}")
 
     def build_topic_model(self) -> None:
+        """Create a BERTopic model from accumulated search history."""
         if not get_config().search.context_aware.enabled:
             return
         if (
@@ -229,6 +239,7 @@ class SearchContext:
             log.warning(f"Failed to build topic model: {e}")
 
     def expand_query(self, query: str) -> str:
+        """Expand a query with frequent entities from prior searches."""
         cfg = get_config()
         context_cfg = cfg.search.context_aware
         if not context_cfg.enabled:
