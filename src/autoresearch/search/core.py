@@ -12,6 +12,13 @@ The module includes:
 2. Decorator for registering search backends
 3. Built-in backends for DuckDuckGo and Serper
 4. Error handling for network issues, timeouts, and invalid responses
+
+See also the algorithm references in ``docs/algorithms`` for detailed
+descriptions of the ranking components:
+
+* ``docs/algorithms/bm25.md`` – lexical BM25 scoring
+* ``docs/algorithms/semantic_similarity.md`` – embedding-based similarity
+* ``docs/algorithms/source_credibility.md`` – domain credibility heuristics
 """
 
 from __future__ import annotations

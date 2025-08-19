@@ -1,6 +1,9 @@
 """Search subpackage.
 
-See :mod:`docs.search_spec` for behaviour and test details.
+See :mod:`docs.search_spec` for behaviour and test details. Algorithm
+background for relevance ranking lives in
+``docs/algorithms/bm25.md``, ``docs/algorithms/semantic_similarity.md``,
+and ``docs/algorithms/source_credibility.md``.
 """
 
 from .core import Search, get_search
