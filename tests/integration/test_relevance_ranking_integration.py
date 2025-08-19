@@ -52,7 +52,9 @@ def test_example_weights_and_ranking(monkeypatch):
     for query, docs in data.items():
         with (
             patch.object(
-                Search, "calculate_bm25_scores", return_value=[d["bm25"] for d in docs]
+                Search,
+                "calculate_bm25_scores",
+                staticmethod(lambda q, documents: [d["bm25"] for d in docs]),
             ),
             patch.object(
                 Search,
