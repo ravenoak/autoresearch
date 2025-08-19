@@ -8,7 +8,6 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Keep `scripts/codex_setup.sh` in sync with these instructions; see the script for full setup, offline installs, and DuckDB extension options.
 - Use Python 3.12+ and manage dependencies with `uv`; run all commands inside the virtual environment (`uv venv && uv sync --all-extras`).
 - `VECTOR_EXTENSION_PATH` must point to `extensions/vss_stub.duckdb_extension` unless a real `vss.duckdb_extension` is available.
-- Documents in `docs/inspirational_docs/` are inspirational only; cite external sources from `docs/external_research_papers/`.
 - Remove build artifacts with `task clean` and delete temporary files such as `kg.duckdb` or `rdf_store`.
 
 ## Tooling
@@ -29,6 +28,11 @@ Adopt a multi-disciplinary, dialectical approach: propose solutions, critically 
 - Avoid committing binary artifacts; the `extensions/` directory is placeholder only.
 - GitHub Actions workflows must be dispatch-only, use `actions/checkout@v4`, `actions/setup-python@v5`, and `actions/upload-artifact@v4`, and verify Python 3.12+.
 - Write focused commits with imperative subject lines ≤ 50 characters, wrap bodies at 72 characters, and reference related issues.
+
+## Missing AGENTS files
+- `src/` — add instructions for source code conventions.
+- `scripts/` — document usage patterns for helper scripts.
+- `examples/` — clarify expectations for example projects.
 
 ## Changelog
 - 2025-08-18: Refer to `tests/AGENTS.md` and `docs/AGENTS.md` for scoped rules.

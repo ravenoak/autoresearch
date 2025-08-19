@@ -1,6 +1,6 @@
 # Issues directory guidelines
 
-Follow these rules when managing in-repo tickets.
+These rules apply to files in this directory. Follow them when managing in-repo tickets.
 
 - Use the template and naming conventions in [issues/README.md](README.md).
 - File names must be slugged titles; numeric identifiers in filenames or
