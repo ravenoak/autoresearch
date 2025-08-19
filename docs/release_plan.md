@@ -10,21 +10,23 @@ Phase 4 activities remain planned.
 
 ## Test and Coverage Status
 
+The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
+confirmed in `pyproject.toml` and [installation.md](installation.md).
+
 Phase 2 testing tasks remain incomplete:
 
  - `flake8 src tests` passes.
- - `mypy src` fails due to missing `pydantic` plugin.
- - `pytest -q` fails during collection due to missing modules such as
-   `tomli_w`, `freezegun`, `hypothesis`, and `pytest_bdd`, leaving the
-   suite unexecuted.
- - `pytest --cov=src` not yet run due to failing tests.
+ - `mypy src` currently stalls and needs configuration.
+ - `pytest -q` runs with all dependencies installed but fails due to search
+   scoring bug ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
+ - `pytest --cov=src` not yet run because tests fail.
 
 ## Milestones
 
 | Version | Target Date | Key Goals |
 | ------- | ----------- | --------- |
 | **0.1.0-alpha.1** | 2026-03-01 | Alpha preview to collect feedback while resolving test suite failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
-| **0.1.0** | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md), [update-release-documentation](../issues/archive/update-release-documentation.md)) |
+| **0.1.0** | 2026-07-01 | Finalize packaging, docs and CI checks with all tests passing ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)) |
 | **0.1.1** | 2026-09-15 | Bug fixes and documentation updates |
 | **0.2.0** | 2026-12-01 | API stabilization, configuration hot-reload, improved search backends |
 | **0.3.0** | 2027-03-01 | Distributed execution support, monitoring utilities |
@@ -38,8 +40,13 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 The following tasks remain before publishing **0.1.0-alpha.1**:
 
 - [ ] Resolve remaining test failures ([resolve-current-test-failures](../issues/resolve-current-test-failures.md)).
-- [ ] Set up the environment with `uv venv && uv sync --all-extras && uv pip install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration and behavior suites run successfully.
-- [ ] Ensure new dependency pins are reflected in the lock file and docs. `slowapi` is locked to **0.1.9** and `fastapi` must be **0.115** or newer.
+ - [ ] Set up the environment with `uv venv && uv sync --all-extras && uv pip
+     install -e '.[full,parsers,git,llm,dev]'` so the full unit, integration
+     and behavior suites run successfully, including extras like `tomli_w`,
+     `freezegun`, `hypothesis` and `pytest_bdd`.
+ - [x] Ensure new dependency pins are reflected in the lock file and docs.
+     `slowapi` is locked to **0.1.9** and `fastapi` is at least **0.115.12**,
+     matching `pyproject.toml` and [installation.md](installation.md).
 - [x] Verify `uv run python -m build` and `uv run python scripts/publish_dev.py --dry-run` create valid packages across platforms.
 - [ ] Assemble preliminary release notes and confirm README instructions.
 
@@ -47,9 +54,7 @@ The following tasks remain before publishing **0.1.0-alpha.1**:
 
 | Blocker | Related Issue |
 | ------- | ------------- |
-| Test suite failures and missing dependencies | [resolve-current-test-failures](../issues/resolve-current-test-failures.md) |
-| Development environment misaligned with Python 3.12 and dev tooling | [align-environment-with-requirements](../issues/align-environment-with-requirements.md) |
-| Packaging scripts require configuration | [update-release-documentation](../issues/archive/update-release-documentation.md) |
+| Test suite failures | [resolve-current-test-failures](../issues/resolve-current-test-failures.md) |
 
 Resolving these issues will determine the new completion date for **0.1.0**.
 
