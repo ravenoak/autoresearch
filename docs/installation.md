@@ -58,15 +58,22 @@ Use `uv` to manage the environment when working from a clone:
 ```bash
 # Create the virtual environment (.venv/)
 uv venv
-# Install pinned dependencies and all extras
-uv sync --all-extras
+# Install pinned dependencies for minimal development
+uv sync --extra dev-minimal
 # Link the project in editable mode
 uv pip install -e .
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Alternatively run `task install` or the setup helper:
+Add extras later as needed:
+
+```bash
+uv sync --extra nlp --extra ui
+uv pip install -e .
+```
+
+Alternatively run `task install` for the minimal setup or the helper script:
 
 ```bash
 task install
@@ -130,7 +137,7 @@ these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
 assertions are evaluated. If you wish to revert to stub-only testing after
 running the helper, reinstall using
-`uv sync --all-extras && uv pip install -e .`.
+`uv sync --extra nlp --extra ui && uv pip install -e .`.
 Optional features are disabled when their dependencies are missing. Specify
 extras explicitly with pip to enable additional features, e.g.
 ``pip install "autoresearch[minimal,nlp]"``.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Usage: AR_INSTALL_UI=1 AR_INSTALL_GPU=1 ./scripts/codex_setup.sh
 set -euo pipefail
 
 LOG_FILE="codex_setup.log"
@@ -63,14 +64,21 @@ else
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Run the main setup script to install all extras needed for testing
-./scripts/setup.sh
+# Create virtual environment and install minimal dev dependencies
+uv venv
+uv sync --extra dev-minimal
+uv pip install -e .
 
 # Install Go Task inside the virtual environment
 curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
 
-# Sync all development extras in editable mode
-uv pip install -e '.[full,parsers,git,llm,dev]'
+# Install optional extras on demand
+if [ "${AR_INSTALL_UI:-0}" -eq 1 ]; then
+    uv sync --extra ui
+fi
+if [ "${AR_INSTALL_GPU:-0}" -eq 1 ]; then
+    uv sync --extra nlp
+fi
 
 # Install pre-downloaded packages for offline use. Place wheel files in
 # $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for
@@ -121,7 +129,7 @@ if (( ${#missing_tools[@]} )) || (( ${#missing_pkgs[@]} )); then
     echo "Missing CLI tools: ${missing_tools[*]}" >&2
     echo "Missing packages: ${missing_pkgs[*]}" >&2
     deactivate
-    uv pip install -e '.[full,parsers,git,llm,dev]'
+    uv pip install -e .
     echo "ERROR: Required tools or packages missing after install" >&2
     exit 1
 fi
@@ -153,16 +161,12 @@ if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
     fi
 fi
 
-# Confirm required extras are installed
-# Tests marked `requires_ui`, `requires_vss`, `requires_git`, and `requires_nlp`
-# depend on these packages. Update this list and AGENTS.md when adding new
-# markers or optional test extras.
-echo "Verifying required extras..."
+# Confirm required packages are installed
+echo "Verifying required packages..."
 missing=0
 missing_pkgs=""
 for pkg in pytest pytest-bdd pytest-httpx pytest-cov flake8 mypy pydantic hypothesis tomli_w freezegun \
-    duckdb-extension-vss a2a-sdk GitPython pdfminer-six python-docx sentence-transformers \
-    transformers spacy bertopic fastapi responses uvicorn psutil; do
+    responses uvicorn psutil a2a-sdk; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "Missing required package: $pkg" >&2
         missing=1
@@ -173,7 +177,8 @@ if [ "$missing" -ne 0 ]; then
     echo "ERROR: Missing dev packages: $missing_pkgs" >&2
     exit 1
 fi
-uv pip list | grep -E 'pytest(-bdd|-httpx)?|pytest-cov|flake8|mypy|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|duckdb-extension-vss|a2a-sdk|GitPython|pdfminer-six|python-docx|sentence-transformers|transformers|spacy|bertopic|fastapi'
+uv pip list | grep -E \
+    'pytest(-bdd|-httpx)?|pytest-cov|flake8|mypy|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|a2a-sdk'
 
 # Helper for retrying flaky network operations
 retry() {
@@ -194,30 +199,36 @@ retry() {
 }
 
 # Pre-download models so tests can run without network access
-SENTENCE_MODEL_DIR="$HOME/.cache/torch/sentence_transformers/all-MiniLM-L6-v2"
-if retry 3 uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"; then
-    echo "SentenceTransformer model downloaded"
-else
-    echo 'Failed to download SentenceTransformer model.' >&2
-    exit 1
+if uv pip show sentence-transformers >/dev/null 2>&1; then
+    SENTENCE_MODEL_DIR="$HOME/.cache/torch/sentence_transformers/all-MiniLM-L6-v2"
+    if retry 3 uv run python -c \
+        "from sentence_transformers import SentenceTransformer;\
+SentenceTransformer('all-MiniLM-L6-v2')"; then
+        echo "SentenceTransformer model downloaded"
+    else
+        echo 'Failed to download SentenceTransformer model.' >&2
+        exit 1
+    fi
 fi
 
 # Ensure pip is available for spaCy model download
-uv pip install pip >/dev/null
-if retry 3 uv run python -m spacy download en_core_web_sm; then
-    echo "spaCy en_core_web_sm model downloaded"
-else
-    echo 'Failed to download spaCy model.' >&2
-    exit 1
-fi
-SPACY_MODEL_DIR=$(uv run python - <<'PY'
+if uv pip show spacy >/dev/null 2>&1; then
+    uv pip install pip >/dev/null
+    if retry 3 uv run python -m spacy download en_core_web_sm; then
+        echo "spaCy en_core_web_sm model downloaded"
+    else
+        echo 'Failed to download spaCy model.' >&2
+        exit 1
+    fi
+    SPACY_MODEL_DIR=$(uv run python - <<'PY'
 import os, en_core_web_sm
 print(os.path.dirname(en_core_web_sm.__file__))
 PY
-)
-if [ ! -d "$SPACY_MODEL_DIR" ]; then
-    echo "spaCy model en_core_web_sm not found at $SPACY_MODEL_DIR" >&2
-    exit 1
+    )
+    if [ ! -d "$SPACY_MODEL_DIR" ]; then
+        echo "spaCy model en_core_web_sm not found at $SPACY_MODEL_DIR" >&2
+        exit 1
+    fi
 fi
 
 # Pre-load ontology reasoner so tests can run offline
@@ -249,5 +260,5 @@ else
     echo "VECTOR_EXTENSION_PATH already set to $VECTOR_EXTENSION_PATH"
 fi
 
-# All Python setup is handled by setup.sh using uv pip
+# Python environment configured via uv sync and optional extras
 
