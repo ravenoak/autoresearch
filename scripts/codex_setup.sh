@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Usage: AR_INSTALL_UI=1 AR_INSTALL_GPU=1 ./scripts/codex_setup.sh
+# Agent-specific bootstrap; see AGENTS.md for repository-wide guidelines.
 set -euo pipefail
 
 LOG_FILE="codex_setup.log"
@@ -8,7 +9,7 @@ set -x
 
 # NOTE: Keep this script in sync with AGENTS.md.
 # When tooling, helper scripts, or test directories change, update both this
-# file and AGENTS.md so new test requirements are captured here.
+# file and AGENTS.md so new requirements are captured in each.
 
 # Pre-flight: ensure uv is installed
 if ! command -v uv >/dev/null 2>&1; then

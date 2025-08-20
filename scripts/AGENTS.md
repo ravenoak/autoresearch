@@ -2,15 +2,24 @@
 
 These instructions apply to files in the `scripts/` directory.
 
-## Usage
+## Snapshot
+- **Purpose:** automation utilities and environment helpers.
+- **Primary languages:** Bash and Python.
+- **Key outputs:** CLI tools and setup scripts.
+
+## Conventions
 - Provide a clear CLI interface or usage comment at the top of each script.
 - Validate inputs and fail fast on incorrect usage.
 - Invoke Python scripts via `uv run` to ensure dependencies resolve.
-
-## Safety
 - Avoid destructive actions without an explicit confirmation flag.
 - Do not require elevated privileges or modify user system settings.
-
-## Cross-platform
 - Use POSIX-compliant shell features or portable Python constructs.
 - Test on Linux and macOS; avoid hard-coded paths and file extensions.
+
+## Reasoning and Continuous Improvement
+- Explain nontrivial logic with inline comments referencing design choices.
+- Record updates in commit messages when scripts evolve.
+
+## AGENTS.md Compliance
+- Scope: `scripts/` directory; nested `AGENTS.md` files override these rules.
+- This AGENTS.md follows the [AGENTS.md spec](https://gist.github.com).
