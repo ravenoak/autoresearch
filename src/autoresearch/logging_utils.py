@@ -42,6 +42,7 @@ concerns about concurrency issues.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from typing import Optional, cast
 
@@ -164,3 +165,34 @@ def get_logger(name: Optional[str] = None) -> structlog.BoundLogger:
         ```
     """
     return cast(structlog.BoundLogger, structlog.get_logger(name))
+
+
+def configure_logging_from_env(
+    env_var: str = "AUTORESEARCH_LOG_LEVEL",
+    default_level: int = logging.INFO,
+) -> None:
+    """Configure logging using a level from an environment variable.
+
+    This helper reads ``env_var`` to determine the log level and passes the
+    result to :func:`configure_logging`. If the variable is unset or contains an
+    invalid level name, ``default_level`` is used or a ``ValueError`` is raised
+    respectively.
+
+    Args:
+        env_var: Name of the environment variable that stores the log level.
+            Defaults to ``"AUTORESEARCH_LOG_LEVEL"``.
+        default_level: Fallback level if the variable is missing.
+            Defaults to ``logging.INFO``.
+
+    Raises:
+        ValueError: If the environment value is set but not a valid log level.
+    """
+    level_name = os.getenv(env_var, "")
+    if level_name:
+        try:
+            level = getattr(logging, level_name.upper())
+        except AttributeError:
+            raise ValueError(f"Invalid log level: {level_name}") from None
+    else:
+        level = default_level
+    configure_logging(level=level)

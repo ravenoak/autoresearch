@@ -31,7 +31,7 @@ documented behaviour.
 | `src/autoresearch/extensions.py` | [extensions.md](extensions.md) | `../../tests/unit/test_vss_extension_loader.py<br>../../tests/unit/test_duckdb_storage_backend.py` |
 | `src/autoresearch/kg_reasoning.py` | [kg-reasoning.md](kg-reasoning.md) | `../../tests/unit/test_kg_reasoning.py` |
 | `src/autoresearch/llm/` | [llm.md](llm.md) | `../../tests/unit/test_agents_llm.py<br>../../tests/unit/test_llm_adapter.py<br>../../tests/unit/test_llm_capabilities.py` |
-| `src/autoresearch/logging_utils.py` | [logging-utils.md](logging-utils.md) | `../../tests/unit/test_logging_utils.py` |
+| `src/autoresearch/logging_utils.py` | [logging-utils.md](logging-utils.md) | `../../tests/unit/test_logging_utils.py`<br>`../../tests/unit/test_logging_utils_env.py` |
 | `src/autoresearch/main/` | [main.md](main.md) | `../../tests/unit/test_main_backup_commands.py<br>../../tests/unit/test_main_cli.py<br>../../tests/unit/test_main_config_commands.py` |
 | `src/autoresearch/mcp_interface.py` | [mcp-interface.md](mcp-interface.md) | `../../tests/unit/test_mcp_interface.py<br>../../tests/behavior/features/mcp_interface.feature` |
 | `src/autoresearch/models.py` | [models.md](models.md) | `../../tests/unit/test_models_docstrings.py` |
