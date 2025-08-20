@@ -10,8 +10,9 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for running Taskfile commands. After
-cloning the repository, initialize the environment and validate tool versions:
+[**Go Task**](https://taskfile.dev/). Install Go Task before invoking any
+`task` commands. After cloning the repository, initialize the environment and
+validate tool versions:
 
 ```bash
 task install
@@ -55,26 +56,26 @@ without renaming.
 ## Installation
 
 Autoresearch requires **Python 3.12 or newer**. The `scripts/setup.sh` helper
-installs all optional extras and invokes `python3.12` directly when checking
-the interpreter version, so make
-sure it is available on your `PATH`. On Debian/Ubuntu systems install it with
-`sudo apt-get install python3.12 python3.12-venv`. If you manage multiple
-interpreters via pyenv or another tool, specify the path when creating the
-environment, e.g. `uv venv -p python3.12`.
-Both setup scripts abort if `python3.12` cannot be located.
+installs Go Task and the development extras, invoking `python3.12` directly
+when checking the interpreter version, so make sure it is available on your
+`PATH`. On Debian/Ubuntu systems install it with `sudo apt-get install
+python3.12 python3.12-venv`. If you manage multiple interpreters via pyenv or
+another tool, specify the path when creating the environment, e.g. `uv venv -p
+python3.12`. Both setup scripts abort if `python3.12` cannot be located.
 The project recently transitioned from **Poetry** to
 [**uv**](https://github.com/astral-sh/uv) for dependency management. The `uv.lock`
 file is the authoritative source of pinned dependencies, replacing the old
 `poetry.lock`. You can install the project using `uv` or plain **pip**.
 See [docs/installation.md](docs/installation.md) for details on optional features
 and upgrade instructions.
-The `scripts/setup.sh` helper ensures `uv.lock` is current and installs
-all optional extras so development and runtime dependencies are available for testing.
-Run `task install` to install only the `dev-minimal` extras for linting and
-tests. Use `scripts/setup.sh` when the full dependency set is required. CI
-environments install every extra with `uv sync --all-extras && uv pip install -e .`.
-After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall
-with the needed extras to apply updates.
+The `scripts/setup.sh` helper ensures `uv.lock` is current and installs the
+development extras so tooling is available for testing. Run `task install` to
+install only the `dev-minimal` extras for linting and tests. Use
+`scripts/setup.sh` when the full toolchain is required. CI environments install
+every extra with `uv sync --all-extras && uv pip install -e .`. After editing
+`pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall with the
+needed extras to apply updates. After either setup path, run `uv run python
+scripts/check_env.py` to confirm the tool versions meet the requirements.
 The `task` commands rely on [Go Task](https://taskfile.dev/). Install it
 with your package manager (for example `brew install go-task/tap/go-task` on
 macOS) or use the official install script:
