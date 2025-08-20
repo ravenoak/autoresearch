@@ -3,10 +3,8 @@ import tomli_w
 from autoresearch.config.loader import ConfigLoader
 
 
-def test_config_reload_on_change(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    cfg_path = tmp_path / "autoresearch.toml"
-    cfg_path.write_text(tomli_w.dumps({"core": {"loops": 1}}))
+def test_config_reload_on_change(example_autoresearch_toml):
+    cfg_path = example_autoresearch_toml
 
     # Create a new ConfigLoader instance after changing the working directory
     # This ensures it will look for config files in the temporary directory

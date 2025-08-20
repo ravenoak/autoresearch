@@ -4,7 +4,7 @@ from typer.testing import CliRunner
 
 
 def test_first_run_detection_respects_search_paths(
-    tmp_path, monkeypatch, config_loader, dummy_storage
+    example_autoresearch_toml, monkeypatch, config_loader, dummy_storage
 ):
 
     from autoresearch.config.models import ConfigModel
@@ -19,8 +19,7 @@ def test_first_run_detection_respects_search_paths(
     app_mod = importlib.import_module("autoresearch.main.app")
     monkeypatch.setattr(app_mod, "_config_loader", config_loader)
 
-    config_file = tmp_path / "autoresearch.toml"
-    config_file.write_text("[core]\nloops = 1\n")
+    config_file = example_autoresearch_toml
 
     config_loader.search_paths = [config_file]
     config_loader._update_watch_paths()

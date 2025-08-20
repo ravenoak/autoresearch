@@ -93,26 +93,6 @@ def mock_llm_adapter(monkeypatch):
 
 
 @pytest.fixture
-def temp_config(tmp_path, monkeypatch, mock_llm_adapter):
-    """Create an isolated configuration file for each scenario.
-
-    The working directory is changed to a temporary location and a minimal
-    `autoresearch.toml` is written. Any state is discarded after the test
-    completes, preventing leakage between scenarios.
-    """
-    monkeypatch.chdir(tmp_path)
-    cfg = {
-        "core": {"backend": "lmstudio", "loops": 1, "ram_budget_mb": 512},
-        "search": {"backends": [], "context_aware": {"enabled": False}},
-    }
-    with open("autoresearch.toml", "w") as f:
-        import tomli_w
-
-        f.write(tomli_w.dumps(cfg))
-    return tmp_path / "autoresearch.toml"
-
-
-@pytest.fixture
 def dummy_query_response(monkeypatch):
     """Provide a deterministic orchestrator result for interface tests."""
     response = QueryResponse(

@@ -1,10 +1,10 @@
 from autoresearch.config.loader import ConfigLoader
 
 
-def test_env_file_parsing(tmp_path):
+def test_env_file_parsing(example_env_file):
     """ConfigLoader should populate ConfigModel from .env file."""
-    env_path = tmp_path / ".env"
-    env_path.write_text("\n".join(["loops=5", "storage__rdf_path=env.db"]))
+    env_path = example_env_file
+    env_path.write_text("loops=5\nstorage__rdf_path=env.db\n")
     loader = ConfigLoader.new_for_tests(env_path=env_path)
     cfg = loader.load_config()
     assert cfg.loops == 5

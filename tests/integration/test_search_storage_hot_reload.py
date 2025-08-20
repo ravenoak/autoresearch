@@ -9,12 +9,11 @@ from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
 
-def test_search_storage_hot_reload(tmp_path, monkeypatch):
+def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
     """Search and storage should respect configuration reloads."""
 
     # Setup
-    monkeypatch.chdir(tmp_path)
-    cfg_file = tmp_path / "autoresearch.toml"
+    cfg_file = example_autoresearch_toml
     cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b1"]}}))
     ConfigLoader.reset_instance()
 
@@ -66,6 +65,7 @@ def test_search_storage_hot_reload(tmp_path, monkeypatch):
         events.append(loader.config.search.backends)
         Search.external_lookup("q", max_results=1)
         cfg_file.write_text(tomli_w.dumps({"search": {"backends": ["b2"]}}))
+        loader._config_time = 0
         time.sleep(0.1)
         Search.external_lookup("q", max_results=1)
 

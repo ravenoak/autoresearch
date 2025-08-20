@@ -108,6 +108,10 @@ Use fixtures for common setup and teardown to reduce code duplication:
 3. Use the `scope` parameter to control the lifetime of the fixture
 4. Use the `yield` statement for teardown code
 
+Common project fixtures live in `tests/conftest.py`. Use
+`example_autoresearch_toml` for a realistic `autoresearch.toml` and
+`example_env_file` for a sample `.env` with required variables.
+
 Example:
 
 ```python

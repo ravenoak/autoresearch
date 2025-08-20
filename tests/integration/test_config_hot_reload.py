@@ -60,10 +60,9 @@ def make_agent(name, calls, stored):
     return DummyAgent(name)
 
 
-def test_config_hot_reload(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    repo = git.Repo.init(tmp_path)
-    cfg_file = tmp_path / "autoresearch.toml"
+def test_config_hot_reload(example_autoresearch_toml, monkeypatch):
+    cfg_file = example_autoresearch_toml
+    repo = git.Repo.init(cfg_file.parent)
     cfg_file.write_text(
         tomli_w.dumps(
             {
