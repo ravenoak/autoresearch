@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: AR_INSTALL_UI=1 AR_INSTALL_GPU=1 ./scripts/codex_setup.sh
+# Usage: AR_INSTALL_UI=1 AR_INSTALL_NLP=1 ./scripts/codex_setup.sh
 # Agent-specific bootstrap; see AGENTS.md for repository-wide guidelines.
 set -euo pipefail
 
@@ -65,10 +65,8 @@ else
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment and install minimal dev dependencies
-uv venv
+# Install minimal dev dependencies
 uv sync --extra dev-minimal
-uv pip install -e .
 
 # Install Go Task inside the virtual environment
 curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
@@ -77,7 +75,7 @@ curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
 if [ "${AR_INSTALL_UI:-0}" -eq 1 ]; then
     uv sync --extra ui
 fi
-if [ "${AR_INSTALL_GPU:-0}" -eq 1 ]; then
+if [ "${AR_INSTALL_NLP:-0}" -eq 1 ]; then
     uv sync --extra nlp
 fi
 

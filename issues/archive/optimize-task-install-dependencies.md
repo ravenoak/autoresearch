@@ -12,4 +12,4 @@ extras would improve setup time while still enabling linting and tests.
 - scripts/codex_setup.sh reflects the streamlined dependency set.
 
 ## Status
-Open
+Archived
