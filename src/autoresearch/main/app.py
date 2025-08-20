@@ -140,9 +140,7 @@ def start_watcher(
 
         print_info("Available Commands:", symbol=False)
         print_command_example("search", "Run a search query")
-        print_command_example(
-            "monitor", "Start interactive resource and metrics monitor"
-        )
+        print_command_example("monitor", "Start interactive resource and metrics monitor")
         print_command_example("config", "Configuration management commands")
         print_command_example("backup", "Backup and restore operations")
         print_command_example("serve", "Start an MCP server")
@@ -153,17 +151,16 @@ def start_watcher(
         console.print("")
 
         # Suggest initializing configuration
-        if typer.confirm(
-            "Would you like to initialize the configuration now?", default=True
-        ):
+        if typer.confirm("Would you like to initialize the configuration now?", default=True):
             ctx.invoke(config_init)
             return
 
-    try:
-        StorageManager.setup()
-    except StorageError as e:
-        typer.echo(f"Storage initialization failed: {e}")
-        raise typer.Exit(code=1)
+    if ctx.invoked_subcommand != "config":
+        try:
+            StorageManager.setup()
+        except StorageError as e:
+            typer.echo(f"Storage initialization failed: {e}")
+            raise typer.Exit(code=1)
 
     watch_ctx = _config_loader.watching()
     watch_ctx.__enter__()
@@ -341,12 +338,8 @@ def search(
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
     if not query or query.strip() == "":
         print_warning("You need to provide a query to search for.")
-        print_command_example(
-            'autoresearch search "What is quantum computing?"', "Example query"
-        )
-        print_command_example(
-            "autoresearch search --help", "Show help for search command"
-        )
+        print_command_example('autoresearch search "What is quantum computing?"', "Example query")
+        print_command_example("autoresearch search --help", "Show help for search command")
         return
 
     try:
@@ -454,12 +447,8 @@ app.add_typer(monitor_app, name="monitor")
 
 @app.command()
 def serve(
-    host: str = typer.Option(
-        "127.0.0.1", "--host", help="Host to bind the MCP server to"
-    ),
-    port: int = typer.Option(
-        8080, "--port", "-p", help="Port to bind the MCP server to"
-    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the MCP server to"),
+    port: int = typer.Option(8080, "--port", "-p", help="Port to bind the MCP server to"),
 ) -> None:
     """Start an MCP server that exposes Autoresearch as a tool.
 
@@ -496,12 +485,8 @@ def serve(
 
 @app.command()
 def serve_a2a(
-    host: str = typer.Option(
-        "127.0.0.1", "--host", help="Host to bind the A2A server to"
-    ),
-    port: int = typer.Option(
-        8765, "--port", "-p", help="Port to bind the A2A server to"
-    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the A2A server to"),
+    port: int = typer.Option(8765, "--port", "-p", help="Port to bind the A2A server to"),
 ) -> None:
     """Start an A2A server that exposes Autoresearch as an agent.
 
@@ -791,15 +776,9 @@ def capabilities(
 
 @app.command("test_mcp")
 def test_mcp(
-    host: str = typer.Option(
-        "127.0.0.1", "--host", help="Host where the MCP server is running"
-    ),
-    port: int = typer.Option(
-        8080, "--port", "-p", help="Port where the MCP server is running"
-    ),
-    query: Optional[str] = typer.Option(
-        None, "--query", "-q", help="Query to test with"
-    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host where the MCP server is running"),
+    port: int = typer.Option(8080, "--port", "-p", help="Port where the MCP server is running"),
+    query: Optional[str] = typer.Option(None, "--query", "-q", help="Query to test with"),
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
@@ -854,15 +833,9 @@ def test_mcp(
 
 @app.command("test_a2a")
 def test_a2a(
-    host: str = typer.Option(
-        "127.0.0.1", "--host", help="Host where the A2A server is running"
-    ),
-    port: int = typer.Option(
-        8765, "--port", "-p", help="Port where the A2A server is running"
-    ),
-    query: Optional[str] = typer.Option(
-        None, "--query", "-q", help="Query to test with"
-    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host where the A2A server is running"),
+    port: int = typer.Option(8765, "--port", "-p", help="Port where the A2A server is running"),
+    query: Optional[str] = typer.Option(None, "--query", "-q", help="Query to test with"),
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
@@ -920,9 +893,7 @@ def test_a2a(
 @app.command("visualize")
 def visualize(
     query: str = typer.Argument(..., help="Query to visualize"),
-    output: str = typer.Argument(
-        "query_graph.png", help="Output PNG path for the visualization"
-    ),
+    output: str = typer.Argument("query_graph.png", help="Output PNG path for the visualization"),
     layout: str = typer.Option(
         "spring",
         "--layout",
@@ -974,12 +945,8 @@ def sparql_query(
 
 @app.command("gui")
 def gui(
-    port: int = typer.Option(
-        8501, "--port", "-p", help="Port to run the Streamlit app on"
-    ),
-    browser: bool = typer.Option(
-        True, "--browser/--no-browser", help="Open browser automatically"
-    ),
+    port: int = typer.Option(8501, "--port", "-p", help="Port to run the Streamlit app on"),
+    browser: bool = typer.Option(True, "--browser/--no-browser", help="Open browser automatically"),
 ) -> None:
     """Launch the Streamlit GUI.
 

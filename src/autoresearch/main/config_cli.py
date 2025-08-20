@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from typing import Optional, Any
 
-import typer
-import tomllib
+import importlib.resources as importlib_resources
 import tomli_w
+import tomllib
+import typer
 
-from ..config.models import ConfigModel
-from ..config.loader import ConfigLoader
-from ..errors import ConfigError
-from ..config_utils import validate_config
-from .app import _config_loader
 from ..cli_backup import backup_app
+from ..config.loader import ConfigLoader
+from ..config.models import ConfigModel
+from ..config_utils import validate_config
+from ..errors import ConfigError
+from .app import _config_loader
 
 config_app = typer.Typer(help="Configuration management commands")
 
@@ -41,23 +42,18 @@ def config_init(
 ) -> None:
     """Initialize configuration files with default values."""
     from pathlib import Path
-    from importlib.resources import files
 
     target_dir = Path(config_dir) if config_dir else Path.cwd()
     target_dir.mkdir(parents=True, exist_ok=True)
     toml_path = target_dir / "autoresearch.toml"
     env_path = target_dir / ".env"
     if toml_path.exists() and not force:
-        typer.echo(
-            f"Configuration file already exists at {toml_path}. Use --force to overwrite."
-        )
+        typer.echo(f"Configuration file already exists at {toml_path}. Use --force to overwrite.")
         return
     if env_path.exists() and not force:
-        typer.echo(
-            f"Environment file already exists at {env_path}. Use --force to overwrite."
-        )
+        typer.echo(f"Environment file already exists at {env_path}. Use --force to overwrite.")
         return
-    example_dir = files("autoresearch.examples")
+    example_dir = importlib_resources.files("autoresearch.examples")
     example_toml = example_dir / "autoresearch.toml"
     example_env = example_dir / ".env.example"
 
@@ -116,13 +112,9 @@ def config_reasoning(
         None, help="Index of starting agent for dialectical mode"
     ),
     mode: Optional[str] = typer.Option(None, help="Reasoning mode to use"),
-    token_budget: Optional[int] = typer.Option(
-        None, help="Token budget for a single run"
-    ),
+    token_budget: Optional[int] = typer.Option(None, help="Token budget for a single run"),
     max_errors: Optional[int] = typer.Option(None, help="Abort after this many errors"),
-    show: bool = typer.Option(
-        False, "--show", help="Display current reasoning configuration"
-    ),
+    show: bool = typer.Option(False, "--show", help="Display current reasoning configuration"),
 ) -> None:
     """Get or update reasoning configuration options."""
     cfg = _config_loader.load_config()
