@@ -8,7 +8,7 @@ commands are documented in [releasing.md](releasing.md). See the
 high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 19, 2025** and
+`2025-05-18`). This schedule was last updated on **August 20, 2025** and
 reflects the fact that the codebase currently sits at the **unreleased 0.1.0a1**
 version defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -45,7 +45,7 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 ### Alpha release checklist
 
 - [ ] `task coverage` reports at least **90%** total coverage (currently ~67%)
-- [ ] Assemble preliminary release notes and confirm README instructions
+- [x] Assemble preliminary release notes and confirm README instructions
 
 Resolving these items will determine the new completion date for **0.1.0**.
 
