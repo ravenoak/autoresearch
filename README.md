@@ -59,10 +59,11 @@ See [docs/installation.md](docs/installation.md) for details on optional feature
 and upgrade instructions.
 The `scripts/setup.sh` helper ensures `uv.lock` is current and installs
 all optional extras so development and runtime dependencies are available for testing.
-Run `task install` or `scripts/setup.sh` to install dependencies automatically.
-CI environments must include all extras, so run `uv sync --all-extras && uv pip install -e .`.
-After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and
-reinstall with all extras to apply updates.
+Run `task install` to install only the `dev-minimal` extras for linting and
+tests. Use `scripts/setup.sh` when the full dependency set is required. CI
+environments install every extra with `uv sync --all-extras && uv pip install -e .`.
+After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall
+with the needed extras to apply updates.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:
@@ -74,16 +75,21 @@ with and without extras:
   SlowAPI's rate‑limiting middleware. This may change how certain tests
   behave and can make them slower.
 
-Reinstall with `uv sync --all-extras && uv pip install -e .` if you need to
-restore extras after running the setup script.
+Reinstall optional features with
+`uv sync --extra nlp --extra ui && uv pip install -e .` if you need them later.
 
 ### Using uv
 Python 3.12 or newer is required. Set up the development environment with:
 ```bash
 uv venv
-uv sync --all-extras
+uv sync --extra dev-minimal
 uv pip install -e .
 source .venv/bin/activate
+```
+Install GPU or UI features later with:
+```
+uv sync --extra nlp --extra ui
+uv pip install -e .
 ```
 `uv venv` creates the virtual environment in `.venv/` by default. Activate it
 with the last command or prefix tools with `uv run`.
@@ -100,10 +106,11 @@ Install only the minimal optional dependencies using pip:
 ```bash
 pip install autoresearch[minimal]
 ```
-When working from a clone, run `scripts/setup.sh` which installs all
-development dependencies and optional extras via **uv**.
-Use extras to enable additional features, e.g. `pip install "autoresearch[minimal,nlp]"`.
-Local Git search requires the `git` extra.
+When working from a clone, run `task install` for minimal dev dependencies.
+Add extras as needed, e.g. `uv sync --extra nlp` for GPU features or
+`uv sync --extra ui` for the Streamlit interface. The `scripts/setup.sh`
+helper installs every extra when you need the full stack. Local Git search
+requires the `git` extra.
 To upgrade a cloned environment run `python scripts/upgrade.py`.
 
 ### Using pip
@@ -516,16 +523,25 @@ For a detailed breakdown of the requirements and architecture, see
 
 ## Development setup
 
-Create a virtual environment, run `uv lock` if `pyproject.toml` changed, and install all extras:
+Create a virtual environment, run `uv lock` if `pyproject.toml` changed, and
+sync minimal dev dependencies:
 
 ```bash
 uv venv
-uv sync --all-extras
+uv sync --extra dev-minimal
 uv pip install -e .
 source .venv/bin/activate
 ```
 
-Alternatively run `task install` or the helper script:
+Add extras when needed:
+
+```bash
+uv sync --extra nlp --extra ui
+uv pip install -e .
+```
+
+Alternatively run `task install` for minimal dependencies or `scripts/setup.sh`
+for the full stack:
 
 ```bash
 task install
@@ -536,39 +552,41 @@ These commands install the same dependencies non-interactively.
 
 For offline installs, pre-download wheels and source archives and set `WHEELS_DIR` and `ARCHIVES_DIR` before running the setup script.
 
-The helper installs all dependencies with `uv sync --all-extras` and
-links the package in editable mode using `uv pip install -e .`. Tools such as `flake8`, `mypy`, `pytest` and `tomli_w`
-are therefore available for development and testing. Tests will run even without
-extras because stub versions of optional packages are bundled, but coverage is
-limited. Installing extras enables the real implementations—for example
-SlowAPI’s middleware, which enforces rate limits during integration tests.
+The helper installs all dependencies with `uv sync --all-extras` and links the
+package in editable mode using `uv pip install -e .`. Tools such as `flake8`,
+`mypy`, `pytest` and `tomli_w` are therefore available for development and
+testing. Tests run even without extras because stub versions of optional
+packages are bundled, but coverage is limited. Installing extras enables the
+real implementations—for example SlowAPI’s middleware, which enforces rate
+limits during integration tests.
 
 ### Virtual environment best practices
 
-- Use `uv venv` to create the environment and rerun `uv sync --all-extras`
-  whenever `pyproject.toml` changes.
+- Use `uv venv` to create the environment and rerun `uv sync --extra
+  dev-minimal` whenever `pyproject.toml` changes. Add extras with `uv sync
+  --extra <name>`.
 - Activate the environment with `source .venv/bin/activate` or prefix commands
   with `uv run` so tooling resolves to the virtual environment.
 - Avoid committing the `.venv` directory and recreate it if dependencies
   become inconsistent.
-- Install development extras with
-  `uv sync --all-extras && uv pip install -e .` to ensure linters and
-  optional features are available.
+- Install extras with `uv sync --extra <name> && uv pip install -e .` when
+  optional features are required.
 
 ## Running tests
 
-All test commands require the project to be installed with the full extras so
-linters, `mypy`, `pytest`, and optional dependencies are available. The
-`scripts/setup.sh` helper installs all extras with `uv sync --all-extras`
-automatically for both local development and CI.
+Most test commands work with the `dev-minimal` extras installed by `task
+install`. Scenarios marked `requires_ui`, `requires_vss`, or `requires_git`
+need their corresponding extras. The `scripts/setup.sh` helper installs every
+extra with `uv sync --all-extras` for full coverage.
 
 The full suite, including behavior-driven tests, relies on additional optional
 extras such as `pdfminer` and `gitpython`. Tests can run without them using
 bundled stubs, but real behaviour – including SlowAPI rate limiting – is only
-exercised when the extras are installed. Install them with:
+exercised when the extras are installed. Install only what you need, for
+example:
 
 ```bash
-uv sync --all-extras
+uv sync --extra nlp --extra ui --extra vss
 uv pip install -e .
 ```
 
@@ -596,8 +614,8 @@ uv run pytest -m slow
 ```
 
 Several unit and integration tests rely on `gitpython` and the DuckDB VSS
-extension. Install the corresponding extras as needed, for example run
-`uv sync --all-extras && uv pip install -e .` for the default suites.
+extension. Install the corresponding extras as needed, for example:
+`uv sync --extra git --extra vss && uv pip install -e .`.
 
 All testing commands are wrapped by `task`, which activates the `.venv`
 environment before running each tool.
@@ -638,7 +656,7 @@ and those that rely on optional extras. Install the extras and run pytest
 without filtering the markers:
 
 ```bash
-uv sync --all-extras
+uv sync --extra nlp --extra ui --extra vss
 uv pip install -e .
 uv run pytest -m "slow or requires_ui or requires_vss"
 ```
@@ -649,7 +667,7 @@ Previous versions used Poetry for environment management. `uv` now handles depen
 
 ```bash
 uv venv
-uv sync --all-extras
+uv sync --extra dev-minimal
 uv pip install -e .
 ```
 
@@ -657,7 +675,10 @@ Activate the environment with `source .venv/bin/activate` before running command
 
 ### Troubleshooting
 
-- If tests fail with `ModuleNotFoundError`, ensure all dependencies are installed in the virtual environment using `uv sync --all-extras && uv pip install -e .`. Time-based tests rely on `freezegun`, which is included in the development extras.
+- If tests fail with `ModuleNotFoundError`, ensure the needed extras are
+  installed in the virtual environment, e.g. `uv sync --extra git && uv pip
+  install -e .`. Time-based tests rely on `freezegun`, which is included in the
+  development extras.
 - When starting the API with `uvicorn autoresearch.api:app --reload`, install `uvicorn` if the command is not found and verify that port `8000` is free.
 
 ### Environment check

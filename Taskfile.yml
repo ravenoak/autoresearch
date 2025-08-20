@@ -4,7 +4,7 @@ tasks:
   install:
     cmds:
       - uv venv
-      - uv sync --all-extras
+      - uv sync --extra dev-minimal
       - uv pip install -e .
     desc: "Initialize development environment"
   check:
