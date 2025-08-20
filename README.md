@@ -6,6 +6,8 @@ data in local databases so that searches and knowledge graphs remain on your mac
 The project is built around a modular Python package located under `src/autoresearch/`.
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
+Autoresearch requires **Python 3.12 or newer**.
+
 For current capabilities and known limitations see [docs/release_notes.md](docs/release_notes.md).
 
 ## Roadmap
