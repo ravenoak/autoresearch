@@ -41,6 +41,25 @@ final = (1 - w) * relevance + w * credibility
 | https://dept.example.edu/resource     | 0.80        | 0.72        | 2    |
 | https://unknown.xyz/post              | 0.50        | 0.64        | 3    |
 
+## Evaluation results
+
+The final ranking score :math:`s(d)` combines normalized BM25
+(:math:`b(d)`), semantic similarity (:math:`m(d)`), and credibility
+(:math:`c(d)`):
+
+\[
+s(d) = w_{bm25} b(d) + w_{sem} m(d) + w_{cred} c(d)
+\]
+
+Running `uv run scripts/simulate_scoring.py --query "python"` on the
+sample dataset yields the following ranked scores:
+
+| ID | Final | BM25 | Semantic | Credibility |
+|----|-------|------|----------|-------------|
+| 3  | 0.96  | 1.00 | 1.00     | 0.80        |
+| 1  | 0.90  | 0.90 | 0.89     | 0.90        |
+| 2  | 0.12  | 0.00 | 0.00     | 0.60        |
+
 ## References
 
 - Moz. "Domain Authority."[^moz]

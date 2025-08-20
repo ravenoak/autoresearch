@@ -22,6 +22,24 @@ This specification outlines expected behaviors for the token budgeting helpers i
 - Otherwise returns `max(current_budget, 1)`.
 - Budgets are never allowed to drop below `1` token.
 
+Expressed as equations, the suggested budget :math:`B'` is:
+
+\[
+\begin{aligned}
+\text{expand\_threshold} &= B (1 + m)\\
+\text{shrink\_threshold} &= B (1 - m)\\
+B' &=
+  \begin{cases}
+    \max(\lfloor \max(\delta, \bar{u})(1+m) \rfloor, 1), & \delta > \text{expand\_threshold}\ \text{or}\ \bar{u} > B \\
+    \max(\lfloor \bar{u}(1+m) \rfloor, 1), & \delta < \text{shrink\_threshold}\ \text{and}\ \bar{u} < \text{shrink\_threshold} \\
+    \max(B, 1), & \text{otherwise}
+  \end{cases}
+\end{aligned}
+\]
+
+The function is monotonic in :math:`\delta`: for identical histories,
+if :math:`\delta_1 \le \delta_2` then :math:`B'(\delta_1) \le B'(\delta_2)`.
+
 ## Tests
 Unit tests in `tests/unit/test_metrics_token_budget_spec.py` exercise:
 - Threshold adaptation based on prompt history.
