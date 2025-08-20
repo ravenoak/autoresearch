@@ -21,6 +21,8 @@ These instructions apply to files in the `tests/` directory.
   `.[vss]` extra.
 - Use `requires_git` for tests that rely on Git operations; pair with the
   `.[git]` extra.
+- Use `error_recovery`, `reasoning_modes`, and `user_workflows` markers to
+  categorize behavior scenarios.
 - Register any new markers in `pytest.ini`.
 - Include extras corresponding to any other markers as needed.
 - Remove temporary files such as `kg.duckdb` and `rdf_store`.
