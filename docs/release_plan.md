@@ -22,8 +22,8 @@ Current checks show:
 
 - `uv run --extra dev-minimal flake8 src tests` passes.
 - `uv run --extra dev-minimal mypy src` reports no issues.
-- `uv run --extra dev-minimal pytest -q` returns failing tests with total
-  coverage around 67%.
+- `uv run --extra dev-minimal pytest -q --cov=src --cov-report=term`
+  returns failing tests with total coverage around 67%.
 
 ## Milestones
 

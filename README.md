@@ -26,8 +26,8 @@ workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
 Current checks show `uv run --extra dev-minimal flake8 src tests` and
 `uv run --extra dev-minimal mypy src` passing. `uv run --extra
-dev-minimal pytest -q` completes with all tests passing and coverage
-above the 90% threshold enforced by `--cov-fail-under=90`.
+dev-minimal pytest -q --cov=src --cov-report=term` returns failing tests
+with total coverage around 67%.
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
