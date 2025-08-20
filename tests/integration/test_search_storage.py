@@ -94,7 +94,9 @@ def test_search_returns_persisted_claim(monkeypatch):
 
     monkeypatch.setattr(Search, "get_http_session", lambda: DummySession())
 
-    results = Search.external_lookup({"text": "", "embedding": np.array(claim["embedding"])}, max_results=1)
+    results = Search.external_lookup(
+        {"text": "", "embedding": np.array(claim["embedding"])}, max_results=1
+    )
     assert results[0]["url"] == claim["id"]
     assert results[0]["snippet"] == claim["content"]
 
@@ -123,6 +125,7 @@ def test_storage_cleared_between_tests(monkeypatch):
 
 def test_external_lookup_persists_results(monkeypatch):
     cfg = _config_without_network()
+    cfg.search.backends = ["b"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
 
@@ -141,3 +144,56 @@ def test_external_lookup_persists_results(monkeypatch):
 
     Search.external_lookup("q", max_results=1)
     assert stored == ["u1"], "search results should be persisted"
+
+
+def test_search_reflects_updated_claim(monkeypatch):
+    cfg = _config_without_network()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    store: dict[str, dict] = {
+        "c1": {
+            "id": "c1",
+            "type": "fact",
+            "content": "old",
+            "embedding": [0.2, 0.1],
+        }
+    }
+
+    monkeypatch.setattr(
+        StorageManager, "persist_claim", lambda claim: store.update({claim["id"]: claim})
+    )
+    monkeypatch.setattr(
+        StorageManager,
+        "update_claim",
+        lambda claim, partial_update=False: store[claim["id"]].update(claim),
+    )
+    monkeypatch.setattr(Search, "backends", {})
+    monkeypatch.setattr(
+        Search,
+        "cross_backend_rank",
+        lambda q, b, query_embedding=None: sum(b.values(), []),
+    )
+
+    def vector_search(embedding, k=5):
+        claim = store["c1"]
+        return [
+            {
+                "node_id": claim["id"],
+                "content": claim["content"],
+                "embedding": claim["embedding"],
+                "similarity": 1.0,
+            }
+        ]
+
+    monkeypatch.setattr(StorageManager, "vector_search", vector_search)
+    monkeypatch.setattr(StorageManager, "refresh_vector_index", lambda: None)
+
+    StorageManager.persist_claim(store["c1"])
+    StorageManager.update_claim({"id": "c1", "content": "new"}, partial_update=True)
+
+    results = Search.external_lookup(
+        {"text": "", "embedding": np.array(store["c1"]["embedding"])},
+        max_results=1,
+    )
+    assert results[0]["snippet"] == "new", "search should reflect updated storage"

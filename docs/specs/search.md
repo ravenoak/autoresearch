@@ -23,6 +23,9 @@ point.
   - [storage_search_integration.feature](../../tests/behavior/features/storage_search_integration.feature)
   - [local_sources.feature](../../tests/behavior/features/local_sources.feature)
   - [vector_search_performance.feature](../../tests/behavior/features/vector_search_performance.feature)
+  - [`test_search_storage.py`](../../tests/integration/test_search_storage.py)
+  - [`test_config_hot_reload_components.py`]
+    (../../tests/integration/test_config_hot_reload_components.py)
 
 ## Extending
 
