@@ -1,10 +1,9 @@
 import shutil
 from importlib import resources as importlib_resources
-from importlib.resources import files
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 from autoresearch.main import app
 
@@ -18,7 +17,7 @@ def mock_config_loader():
 @pytest.fixture
 def example_resources(tmp_path, monkeypatch):
     """Provide temporary example config files."""
-    src_dir = files("autoresearch.examples")
+    src_dir = importlib_resources.files("autoresearch.examples")
     temp_dir = tmp_path / "examples"
     shutil.copytree(src_dir, temp_dir)
 
@@ -41,9 +40,7 @@ def test_config_init_command(tmp_path, example_resources):
     assert "Configuration initialized successfully." in result.stdout
 
 
-def test_config_init_command_force(
-    example_autoresearch_toml, example_env_file, example_resources
-):
+def test_config_init_command_force(example_autoresearch_toml, example_env_file, example_resources):
     """Test the config init command with force flag."""
     runner = CliRunner()
     cfg = example_autoresearch_toml
@@ -55,9 +52,9 @@ def test_config_init_command_force(
     )
     assert result.exit_code == 0
     example_dir = example_resources
-    assert cfg.read_text(encoding="utf-8") == (
-        example_dir / "autoresearch.toml"
-    ).read_text(encoding="utf-8")
+    assert cfg.read_text(encoding="utf-8") == (example_dir / "autoresearch.toml").read_text(
+        encoding="utf-8"
+    )
     assert env.read_text(encoding="utf-8") == (example_dir / ".env.example").read_text(
         encoding="utf-8"
     )
@@ -80,9 +77,7 @@ def test_config_validate_command_valid(
             "autoresearch.main.config_cli.validate_config", return_value=(True, [])
         ) as mock_validate,
     ):
-        result = runner.invoke(
-            app, ["config", "validate"], prog_name="autoresearch"
-        )
+        result = runner.invoke(app, ["config", "validate"], prog_name="autoresearch")
     assert result.exit_code == 0
     mock_loader_class.assert_called_once()
     mock_validate.assert_called_once_with(mock_config_loader)
@@ -106,9 +101,7 @@ def test_config_validate_command_invalid(
             return_value=(False, ["Error 1", "Error 2"]),
         ) as mock_validate,
     ):
-        result = runner.invoke(
-            app, ["config", "validate"], prog_name="autoresearch"
-        )
+        result = runner.invoke(app, ["config", "validate"], prog_name="autoresearch")
     assert result.exit_code == 1
     mock_loader_class.assert_called_once()
     mock_validate.assert_called_once_with(mock_config_loader)
