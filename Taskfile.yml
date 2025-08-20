@@ -8,14 +8,16 @@ tasks:
       - uv pip install -e .
     desc: "Initialize development environment"
   check:
+    # Minimal validation for quick feedback. Skips slow tests and scenarios
+    # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
       - uv run python scripts/check_env.py
       - uv run flake8 src tests
       - uv run mypy src
       - uv run pytest tests/unit -q
-      - uv run pytest tests/integration -m "not slow" -q
+      - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
       - uv run pytest tests/behavior -q
-    desc: "Run lint, type check, and tests"
+    desc: "Run lint, type check, and fast tests"
   unit:
     cmds:
       - uv run pytest tests/unit -q
@@ -23,8 +25,8 @@ tasks:
 
   integration:
     cmds:
-      - uv run pytest tests/integration -m "not slow" -q
-    desc: "Run integration tests with uv"
+      - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
+    desc: "Run integration tests without slow/UI/VSS scenarios with uv"
 
   behavior:
     cmds:
@@ -42,8 +44,8 @@ tasks:
 
   test:integration:
     cmds:
-      - uv run pytest tests/integration -m "not slow" -q
-    desc: "Run integration tests with uv"
+      - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
+    desc: "Run integration tests without slow/UI/VSS scenarios with uv"
 
   test:behavior:
     cmds:
@@ -51,19 +53,25 @@ tasks:
     desc: "Run BDD (behavior) tests with uv"
 
   test:all:
+    # Full run before releases. Includes slow tests but continues to skip
+    # UI and VSS scenarios unless the `ui` or `vss` extras are installed.
     cmds:
-      - uv run pytest -q
-    desc: "Run the entire test suite including slow tests with uv"
+      - uv run pytest -m 'not requires_ui and not requires_vss' -q
+    desc: "Run all tests including slow ones (UI/VSS scenarios skipped)"
 
   test:fast:
+    # Minimal test run used for rapid iteration. Excludes slow tests and any
+    # requiring UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv run pytest -m 'not slow'
-    desc: "Run tests excluding those marked slow with uv"
+      - uv run pytest -m 'not slow and not requires_ui and not requires_vss'
+    desc: "Run tests excluding slow/UI/VSS scenarios with uv"
 
   test:slow:
+    # Executes only slow tests while skipping UI (`.[ui]`) and VSS (`.[vss]`)
+    # scenarios unless those extras are installed.
     cmds:
-      - uv run pytest -m slow
-    desc: "Run only tests marked as slow with uv"
+      - uv run pytest -m 'slow and not requires_ui and not requires_vss'
+    desc: "Run slow tests excluding UI/VSS scenarios with uv"
 
   test:benchmarks:
     cmds:
@@ -78,14 +86,18 @@ tasks:
     desc: "Run full test suite with coverage reporting"
 
   verify:
+    # Coverage-enabled check before committing. Still skips slow tests and
+    # optional UI (`.[ui]`) and VSS (`.[vss]`) scenarios to keep runtime
+    # reasonable.
     cmds:
       - uv run python scripts/check_env.py
       - uv run flake8 src tests
       - uv run mypy src
       - uv run pytest tests/unit --cov=src --cov-report=term-missing --cov-append
-      - uv run pytest tests/integration -m "not slow" --cov=src --cov-report=term-missing --cov-append
+      - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" \
+          --cov=src --cov-report=term-missing --cov-append
       - uv run pytest tests/behavior --cov=src --cov-report=xml --cov-report=term-missing
-    desc: "Run linting, type checks and all test suites with coverage"
+    desc: "Run linting, type checks and fast tests with coverage"
 
   clean:
     cmds:
