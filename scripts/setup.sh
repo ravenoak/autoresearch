@@ -33,8 +33,11 @@ if sys.version_info < (3, 12):
     raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
 EOF
 
-# Install Go Task inside the virtual environment
-curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+# Install Go Task inside the virtual environment if missing
+if [ ! -x .venv/bin/task ]; then
+    echo "Installing Go Task..."
+    curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+fi
 
 # Install all locked dependencies and extras
 echo "Installing all extras via uv sync --all-extras"

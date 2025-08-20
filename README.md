@@ -65,7 +65,12 @@ environments install every extra with `uv sync --all-extras && uv pip install -e
 After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall
 with the needed extras to apply updates.
 The `task` commands rely on [Go Task](https://taskfile.dev/). Install it
-separately if it is not already available on your system.
+with your package manager (for example `brew install go-task/tap/go-task` on
+macOS) or use the official install script:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh
+```
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:
