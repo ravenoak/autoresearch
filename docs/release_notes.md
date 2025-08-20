@@ -11,6 +11,12 @@ to produce evidence-backed answers and stores data on the user's machine.
 - Uses local databases for searches and knowledge graphs.
 - Manages dependencies with uv and supports optional extras for features like
   rate limiting.
+- Supports direct, dialectical, and chain-of-thought modes for queries (see
+  [agent system](agent_system.md)).
+- Pluggable search and storage backends enable local-first workflows (see
+  [search backends](search_backends.md) and [storage](storage.md)).
+- Quickstart and advanced guides help explore features (see [quickstart
+  guides](quickstart_guides.md) and [advanced usage](advanced_usage.md)).
 
 ## Known Limitations
 
@@ -22,5 +28,11 @@ to produce evidence-backed answers and stores data on the user's machine.
 - Quick start commands expect an LLM backend like LM Studio; without one,
   searches fail.
 - Loading the VSS extension may require network access and can fail offline.
+- `task` commands need Go Task; install it as noted in
+  [installation](installation.md).
+- CLI operations error without `python-docx` or `pdfminer.six`; see
+  [installation](installation.md).
+- VSS search and some tests require network access; see
+  [DuckDB compatibility](duckdb_compatibility.md).
 
 For installation and usage instructions see the [README](../README.md).

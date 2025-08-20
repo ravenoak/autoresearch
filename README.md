@@ -64,6 +64,8 @@ tests. Use `scripts/setup.sh` when the full dependency set is required. CI
 environments install every extra with `uv sync --all-extras && uv pip install -e .`.
 After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall
 with the needed extras to apply updates.
+The `task` commands rely on [Go Task](https://taskfile.dev/). Install it
+separately if it is not already available on your system.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:
@@ -77,6 +79,10 @@ with and without extras:
 
 Reinstall optional features with
 `uv sync --extra nlp --extra ui && uv pip install -e .` if you need them later.
+CLI operations such as document ingestion require optional packages like
+`python-docx` and `pdfminer.six`. If the CLI exits with
+`ModuleNotFoundError`, install these packages or sync the appropriate extras
+as described in [docs/installation.md](docs/installation.md).
 
 ### Using uv
 Python 3.12 or newer is required. Set up the development environment with:
