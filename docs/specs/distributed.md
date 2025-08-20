@@ -1,6 +1,9 @@
 # Distributed
 
-Distributed execution utilities.
+Distributed execution utilities. See [distributed coordination][dc] for
+coalition and scheduling details.
+
+[dc]: ../algorithms/distributed_coordination.md
 
 ## Traceability
 
