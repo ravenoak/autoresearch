@@ -5,6 +5,10 @@ tasks:
     cmds:
       - uv sync --extra dev-minimal
     desc: "Initialize development environment"
+  check-env:
+    cmds:
+      - uv run python scripts/check_env.py
+    desc: "Validate required tool versions"
   check:
     deps: [check-env]
     # Minimal validation for quick feedback. Skips slow tests and scenarios
@@ -96,11 +100,6 @@ tasks:
           --cov=src --cov-report=term-missing --cov-append
       - uv run pytest tests/behavior --cov=src --cov-report=xml --cov-report=term-missing
     desc: "Run linting, type checks and fast tests with coverage"
-
-  check-env:
-    cmds:
-      - uv run python scripts/check_env.py
-    desc: "Validate required tool versions"
 
   clean:
     cmds:
