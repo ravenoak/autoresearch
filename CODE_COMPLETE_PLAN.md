@@ -11,8 +11,7 @@ preview on **2026-03-01** and a final **0.1.0** release on
 fails with `Error importing plugin "pydantic.mypy": No module named
 'pydantic'`, and `uv run pytest -q` stops with 30 collection errors
 including missing `pytest_bdd`, so integration and behavior suites remain
-failing. Outstanding issues include these checks
-([resolve-current-test-failures](issues/resolve-current-test-failures.md)).
+failing.
 
 ## 1. Core System Completion
 

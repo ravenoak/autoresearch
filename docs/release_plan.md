@@ -22,15 +22,14 @@ Current checks show:
 
 - `uv run --extra dev-minimal flake8 src tests` passes.
 - `uv run --extra dev-minimal mypy src` reports no issues.
-- `uv run --extra dev-minimal pytest -q` completes with all tests passing and
-  coverage above the 90% threshold enforced by `--cov-fail-under=90`.
+- `uv run --extra dev-minimal pytest -q` returns failing tests with total
+  coverage around 67%.
 
 ## Milestones
 
-- **0.1.0-alpha.1** (2026-03-01): Alpha preview to collect feedback while
-  resolving test suite failures ([resolve-test-failures]).
-- **0.1.0** (2026-07-01): Finalize packaging, docs and CI checks with all tests
-  passing ([resolve-test-failures]).
+- **0.1.0-alpha.1** (2026-03-01): Alpha preview to collect feedback.
+- **0.1.0** (2026-07-01): Finalize packaging, docs and CI checks with all
+  tests passing.
 - **0.1.1** (2026-09-15): Bug fixes and documentation updates.
 - **0.2.0** (2026-12-01): API stabilization, configuration hot-reload,
   improved search backends.
@@ -45,8 +44,7 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] Resolve remaining test failures ([resolve-test-failures])
-- [ ] `task coverage` reports at least **90%** total coverage
+- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%)
 - [ ] Assemble preliminary release notes and confirm README instructions
 
 Resolving these items will determine the new completion date for **0.1.0**.
@@ -82,5 +80,3 @@ optional extras):
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports at least **90%** total coverage
-
-[resolve-test-failures]: ../issues/resolve-current-test-failures.md

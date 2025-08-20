@@ -18,13 +18,10 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
  - Synchronize release documentation across project files.
     [update-release-documentation]
  - Fix BM25 search scoring method signature.
-    [resolve-current-test-failures]
  - Correct search backend registration and reset logic.
-    [resolve-current-test-failures]
  - Pin Python version and expand setup checks to prevent environment drift.
     [align-environment-with-requirements]
-- Enable Pydantic plugin for static type analysis.
-    [resolve-current-test-failures]
+ - Enable Pydantic plugin for static type analysis.
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 
@@ -49,13 +46,11 @@ Planned first public release bringing the core research workflow to life.
 - Refined token budget heuristics and asynchronous cancellation handling.
 - Cleaned up CLI commands and installer scripts.
 - Numerous bug fixes and reliability tweaks since the initial prototype was created in May 2025.
-  - Exposed token usage capture helper on the orchestrator for easier testing
-    ([resolve-current-test-failures]).
+  - Exposed token usage capture helper on the orchestrator for easier testing.
 
 See the [release plan](docs/release_plan.md) for upcoming milestones.
 
 [align-environment-with-requirements]: issues/align-environment-with-requirements.md
 [create-more-comprehensive-test-contexts]: issues/archive/create-more-comprehensive-test-contexts.md
 [update-release-documentation]: issues/archive/update-release-documentation.md
-[resolve-current-test-failures]: issues/resolve-current-test-failures.md
 
