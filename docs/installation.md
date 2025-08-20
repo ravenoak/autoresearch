@@ -4,8 +4,9 @@ This guide explains how to install Autoresearch and manage optional features.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. After cloning,
-initialize the environment and verify the toolchain:
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
+before running `task`. After cloning, initialize the environment and verify
+the toolchain:
 
 ```bash
 task install
@@ -113,15 +114,7 @@ Because autoresearch requires Python >=3.12,<4.0 and the current Python is
 Verify the environment by running:
 
 ```bash
-task --version
-uv pip list | grep flake8
-uv run flake8 src tests
-uv run mypy src
-uv run pytest --version
-uv run python -c "import importlib.metadata; print(importlib.metadata.version('pytest-bdd'))"
-uv run python -c "import pydantic; print(pydantic.__version__)"
-uv run pytest -q
-uv run pytest tests/behavior
+uv run python scripts/check_env.py
 ```
 
 ### Offline installation

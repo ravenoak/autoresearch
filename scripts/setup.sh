@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
-# Create .venv and install all extras using uv.
+# Create .venv, install Go Task and development extras using uv.
 # Ensure we are running with Python 3.12 or newer.
-# Run scripts/check_env.py after setup to validate tool versions.
+# Run `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
 
 # Abort if python3 is not available
@@ -40,9 +40,9 @@ if [ ! -x .venv/bin/task ]; then
     curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
 fi
 
-# Install all locked dependencies and extras
-echo "Installing all extras via uv sync --all-extras"
-uv sync --all-extras
+# Install locked dependencies and development extras
+echo "Installing development extras via uv sync --extra dev"
+uv sync --extra dev
 
 # Link the project in editable mode so tools are available
 uv pip install -e .
@@ -137,8 +137,10 @@ for cmd in task flake8 pytest mypy; do
 done
 deactivate
 
-# For a comprehensive toolchain check see scripts/check_env.py
-# or run `uv run python scripts/check_env.py`.
+# Validate required tool versions
+echo "Validating tool versions..."
+uv run python scripts/check_env.py
+
 # Run mypy to ensure type hints are valid and stubs are picked up
 echo "Running mypy..."
 uv run mypy src
