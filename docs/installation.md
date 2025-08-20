@@ -4,6 +4,8 @@ This guide explains how to install Autoresearch and manage optional features.
 
 Autoresearch uses **uv** for dependency management. The examples below use `uv`.
 
+Autoresearch requires **Python 3.12 or newer**.
+
 ## Requirements
 
 - Python 3.12 or newer (but below 4.0)

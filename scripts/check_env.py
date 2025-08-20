@@ -14,6 +14,11 @@ import sys
 from dataclasses import dataclass
 from importlib import metadata
 
+if sys.version_info < (3, 12):
+    raise SystemExit(
+        f"Python 3.12+ required, found {sys.version_info.major}.{sys.version_info.minor}"
+    )
+
 try:  # pragma: no cover - packaging is required
     from packaging.version import Version
 except ModuleNotFoundError as exc:  # pragma: no cover

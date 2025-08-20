@@ -8,10 +8,10 @@ tasks:
       - uv pip install -e .
     desc: "Initialize development environment"
   check:
+    deps: [check-env]
     # Minimal validation for quick feedback. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv run python scripts/check_env.py
       - uv run flake8 src tests
       - uv run mypy src
       - uv run pytest tests/unit -q
@@ -86,11 +86,11 @@ tasks:
     desc: "Run full test suite with coverage reporting"
 
   verify:
+    deps: [check-env]
     # Coverage-enabled check before committing. Still skips slow tests and
     # optional UI (`.[ui]`) and VSS (`.[vss]`) scenarios to keep runtime
     # reasonable.
     cmds:
-      - uv run python scripts/check_env.py
       - uv run flake8 src tests
       - uv run mypy src
       - uv run pytest tests/unit --cov=src --cov-report=term-missing --cov-append
@@ -98,6 +98,11 @@ tasks:
           --cov=src --cov-report=term-missing --cov-append
       - uv run pytest tests/behavior --cov=src --cov-report=xml --cov-report=term-missing
     desc: "Run linting, type checks and fast tests with coverage"
+
+  check-env:
+    cmds:
+      - uv run python scripts/check_env.py
+    desc: "Validate required tool versions"
 
   clean:
     cmds:
