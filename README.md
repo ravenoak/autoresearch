@@ -64,6 +64,14 @@ tests. Use `scripts/setup.sh` when the full dependency set is required. CI
 environments install every extra with `uv sync --all-extras && uv pip install -e .`.
 After editing `pyproject.toml`, regenerate `uv.lock` with `uv lock` and reinstall
 with the needed extras to apply updates.
+
+Install [Go Task](https://taskfile.dev) to run the `task` commands:
+
+```bash
+curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+```
+
+The `scripts/setup.sh` helper installs Go Task automatically when it is missing.
 Several dependencies are pinned for compatibility—`slowapi` is locked to
 **0.1.9** and `fastapi` must be **0.115** or newer. The test suite works both
 with and without extras:

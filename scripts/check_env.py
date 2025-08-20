@@ -55,14 +55,23 @@ def check_python() -> CheckResult:
 
 
 def check_task() -> CheckResult:
-    proc = subprocess.run(
-        ["task", "--version"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        proc = subprocess.run(
+            ["task", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise VersionError(
+            "Go Task is not installed. Install it from "
+            "https://taskfile.dev/installation/ or run scripts/setup.sh"
+        ) from exc
     if proc.returncode != 0:
-        raise VersionError("Go Task is not installed")
+        raise VersionError(
+            "Go Task is not installed. Install it from "
+            "https://taskfile.dev/installation/ or run scripts/setup.sh"
+        )
     match = re.search(r"(\d+\.\d+\.\d+)", proc.stdout)
     if not match:
         raise VersionError("Could not determine Go Task version")

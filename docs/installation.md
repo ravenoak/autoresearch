@@ -10,6 +10,18 @@ Autoresearch requires **Python 3.12 or newer**.
 
 - Python 3.12 or newer (but below 4.0)
 - `git` and build tools if compiling optional packages
+- Go Task for running `task` commands
+
+### Install Go Task
+
+Go Task executes the project's Taskfile targets. Install it with:
+
+```bash
+curl -sL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+```
+
+The `scripts/setup.sh` helper installs Go Task automatically when it is
+missing.
 
 ### Core dependencies
 
