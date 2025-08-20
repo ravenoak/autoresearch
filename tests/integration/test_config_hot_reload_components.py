@@ -31,9 +31,7 @@ def make_agent(name, calls, stored):
 
         def execute(self, state, config, **kwargs):
             Search.external_lookup("q", max_results=1)
-            StorageManager.persist_claim(
-                {"id": self.name, "type": "fact", "content": self.name}
-            )
+            StorageManager.persist_claim({"id": self.name, "type": "fact", "content": self.name})
             calls.append(self.name)
             state.update(
                 {
@@ -92,9 +90,7 @@ def test_config_hot_reload_components(example_autoresearch_toml, monkeypatch):
 
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
-    )
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
     monkeypatch.setattr(
         AgentFactory,
         "get",
@@ -107,9 +103,7 @@ def test_config_hot_reload_components(example_autoresearch_toml, monkeypatch):
         for b in cfg.search.backends:
             results.extend(Search.backends[b](query, max_results))
         for r in results:
-            StorageManager.persist_claim(
-                {"id": r["url"], "type": "source", "content": r["title"]}
-            )
+            StorageManager.persist_claim({"id": r["url"], "type": "source", "content": r["title"]})
         return results
 
     monkeypatch.setattr(Search, "external_lookup", external_lookup)
@@ -151,9 +145,7 @@ def test_config_hot_reload_components(example_autoresearch_toml, monkeypatch):
     assert events[0] == (["AgentA"], ["b1"]) and events[-1] == (["AgentB"], ["b2"])
 
 
-def test_config_hot_reload_search_weights_and_storage(
-    example_autoresearch_toml, monkeypatch
-):
+def test_config_hot_reload_search_weights_and_storage(example_autoresearch_toml, monkeypatch):
     """Search weights and storage settings should update without restart."""
 
     cfg_file = example_autoresearch_toml
@@ -186,13 +178,9 @@ def test_config_hot_reload_search_weights_and_storage(
                 "search": {
                     "backends": data["search"]["backends"],
                     "context_aware": {"enabled": False},
-                    "semantic_similarity_weight": data["search"][
-                        "semantic_similarity_weight"
-                    ],
+                    "semantic_similarity_weight": data["search"]["semantic_similarity_weight"],
                     "bm25_weight": data["search"]["bm25_weight"],
-                    "source_credibility_weight": data["search"][
-                        "source_credibility_weight"
-                    ],
+                    "source_credibility_weight": data["search"]["source_credibility_weight"],
                 },
                 "storage": {"duckdb_path": data["storage"]["duckdb_path"]},
             }
@@ -262,3 +250,48 @@ def test_config_hot_reload_search_weights_and_storage(
     assert weights == [(0.7, 0.2, 0.1), (0.2, 0.7, 0.1)]
     assert paths == ["db1.duckdb", "db2.duckdb"]
     assert events[0] == (0.7, "db1.duckdb") and events[-1] == (0.2, "db2.duckdb")
+
+
+def test_config_reload_failure_keeps_previous(example_autoresearch_toml, monkeypatch):
+    cfg_file = example_autoresearch_toml
+    repo = git.Repo.init(cfg_file.parent)
+    cfg_file.write_text(
+        tomli_w.dumps(
+            {
+                "agents": ["AgentA"],
+                "search": {"backends": ["b1"], "context_aware": {"enabled": False}},
+            }
+        )
+    )
+    repo.index.add([str(cfg_file)])
+    repo.index.commit("init config")
+    loader = ConfigLoader.new_for_tests()
+
+    def fake_load(self):
+        data = tomllib.loads(cfg_file.read_text())
+        return ConfigModel.from_dict(
+            {
+                "agents": data["agents"],
+                "loops": 1,
+                "search": {
+                    "backends": data["search"]["backends"],
+                    "context_aware": {"enabled": False},
+                },
+            }
+        )
+
+    monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
+
+    events: list[list[str]] = []
+
+    with loader.watching(lambda cfg: events.append(cfg.agents)):
+        loader.load_config()
+        events.append(loader.config.agents)
+        cfg_file.write_text("agents = [")
+        repo.index.add([str(cfg_file)])
+        repo.index.commit("bad config")
+        time.sleep(0.1)
+        assert not loader._watch_thread.is_alive()
+
+    assert events == [["AgentA"]]
+    assert loader.config.agents == ["AgentA"]
