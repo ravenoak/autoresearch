@@ -1,9 +1,12 @@
 # Release Notes
 
-Autoresearch is a local-first research assistant that coordinates multiple agents
-to produce evidence-backed answers and stores data on the user's machine.
+Autoresearch is a local-first research assistant that coordinates multiple
+agents to produce evidence-backed answers and stores data on the user's
+machine.
 
-## Capabilities
+## 0.1.0-alpha.1
+
+### Capabilities
 
 - Coordinates dialectical, contrarian, and fact-checking agents to synthesize
   answers.
@@ -18,7 +21,7 @@ to produce evidence-backed answers and stores data on the user's machine.
 - Quickstart and advanced guides help explore features (see [quickstart
   guides](quickstart_guides.md) and [advanced usage](advanced_usage.md)).
 
-## Known Limitations
+### Known Limitations
 
 - The project is pre-release (0.1.0a1) and has not been published on PyPI.
 - Installation with all extras pulls large machine learning packages and may be

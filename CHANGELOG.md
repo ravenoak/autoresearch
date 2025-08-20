@@ -24,6 +24,8 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
  - Enable Pydantic plugin for static type analysis.
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
+- Drafted preliminary release notes and validated README installation steps.
+  [assemble-release-notes-readme]
 
 ### [0.1.0-alpha.1]
 - Verified source and wheel builds succeed; TestPyPI upload returned 403 and needs retry.
@@ -53,4 +55,5 @@ See the [release plan](docs/release_plan.md) for upcoming milestones.
 [align-environment-with-requirements]: issues/archive/align-environment-with-requirements.md
 [create-more-comprehensive-test-contexts]: issues/archive/create-more-comprehensive-test-contexts.md
 [update-release-documentation]: issues/archive/update-release-documentation.md
+[assemble-release-notes-readme]: issues/archive/assemble-release-notes-and-validate-readme.md
 

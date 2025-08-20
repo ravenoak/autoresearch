@@ -55,6 +55,14 @@ without renaming.
 
 ## Installation
 
+Install Go Task before running any `task` commands. After cloning the repository
+run:
+
+```bash
+task install
+uv run python scripts/check_env.py
+```
+
 Autoresearch requires **Python 3.12 or newer**. The `scripts/setup.sh` helper
 installs Go Task and the development extras, invoking `python3.12` directly
 when checking the interpreter version, so make sure it is available on your
