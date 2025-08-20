@@ -11,6 +11,19 @@ Autoresearch requires **Python 3.12 or newer**.
 - Python 3.12 or newer (but below 4.0)
 - `git` and build tools if compiling optional packages
 
+### Go Task
+
+Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
+Install it before invoking `task`:
+
+```bash
+# macOS
+brew install go-task/tap/go-task
+
+# Linux
+curl -sSL https://taskfile.dev/install.sh | sh
+```
+
 ### Core dependencies
 
 The following packages are required at the minimum versions listed. Each has
