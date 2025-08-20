@@ -58,21 +58,17 @@ been verified to install successfully with `uv pip install`.
 Use `uv` to manage the environment when working from a clone:
 
 ```bash
-# Create the virtual environment (.venv/)
-uv venv
 # Install pinned dependencies for minimal development
 uv sync --extra dev-minimal
-# Link the project in editable mode
-uv pip install -e .
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Add extras later as needed:
+Add heavy extras on demand:
 
 ```bash
-uv sync --extra nlp --extra ui
-uv pip install -e .
+uv sync --extra ui
+uv sync --extra nlp
 ```
 
 Alternatively run `task install` for the minimal setup or the helper script:
@@ -137,9 +133,8 @@ The helper ensures the lock file is refreshed and installs every optional
 extra needed for the test suite. Tests normally rely on stubbed versions of
 these extras, so running the suite without them is recommended. Extras such as
 `slowapi` may enable real behaviour (like rate limiting) that changes how
-assertions are evaluated. If you wish to revert to stub-only testing after
-running the helper, reinstall using
-`uv sync --extra nlp --extra ui && uv pip install -e .`.
+  assertions are evaluated. If you wish to revert to stub-only testing after
+  running the helper, reinstall using `uv sync --extra ui --extra nlp`.
 Optional features are disabled when their dependencies are missing. Specify
 extras explicitly with pip to enable additional features, e.g.
 ``pip install "autoresearch[minimal,nlp]"``.
@@ -204,9 +199,9 @@ long time or fail on low-memory machines.
 - Install `gcc`, `g++` and the Python development headers beforehand.
 - If compilation hangs or exhausts memory, set `HDBSCAN_NO_OPENMP=1` to
   disable OpenMP optimizations.
-- Consider installing a pre-built wheel with `pip install hdbscan` prior
-  to running `uv pip install -e .`.
-- You can omit heavy extras by specifying only the groups you need,
-  e.g. `uv pip install -e '.[minimal]'` when rapid setup is more important
+- Consider installing a pre-built wheel with `pip install hdbscan` before
+  running `uv sync`.
+- You can omit heavy extras by syncing only the groups you need,
+  e.g. `uv sync --extra dev-minimal` when rapid setup is more important
   than optional features.
 
