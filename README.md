@@ -6,9 +6,20 @@ data in local databases so that searches and knowledge graphs remain on your mac
 The project is built around a modular Python package located under `src/autoresearch/`.
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
-Autoresearch requires **Python 3.12 or newer**.
+## Prerequisites
 
-For current capabilities and known limitations see [docs/release_notes.md](docs/release_notes.md).
+Autoresearch requires **Python 3.12 or newer**,
+[**uv**](https://github.com/astral-sh/uv), and
+[**Go Task**](https://taskfile.dev/) for running Taskfile commands. After
+cloning the repository, initialize the environment and validate tool versions:
+
+```bash
+task install
+uv run python scripts/check_env.py
+```
+
+For current capabilities and known limitations see
+[docs/release_notes.md](docs/release_notes.md).
 
 ## Roadmap
 

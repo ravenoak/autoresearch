@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Create .venv and install all extras using uv.
-# Ensure we are running with Python 3.12 or newer
+# Ensure we are running with Python 3.12 or newer.
+# Run scripts/check_env.py after setup to validate tool versions.
 set -euo pipefail
 
 # Abort if python3 is not available
@@ -136,6 +137,8 @@ for cmd in task flake8 pytest mypy; do
 done
 deactivate
 
+# For a comprehensive toolchain check see scripts/check_env.py
+# or run `uv run python scripts/check_env.py`.
 # Run mypy to ensure type hints are valid and stubs are picked up
 echo "Running mypy..."
 uv run mypy src
