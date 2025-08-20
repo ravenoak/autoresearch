@@ -12,6 +12,17 @@ def run_cli_query(query, monkeypatch, bdd_context, cli_runner, dummy_query_respo
     bdd_context.update({"cli_result": result, "expected": dummy_query_response})
 
 
+@when(parsers.parse('I run `autoresearch search "{query}" --reasoning-mode {mode}` in a terminal'))
+def run_cli_query_with_mode(
+    query, mode, monkeypatch, bdd_context, cli_runner, dummy_query_response
+):
+    """Run CLI search specifying a reasoning mode."""
+
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+    result = cli_runner.invoke(cli_app, ["search", query, "--reasoning-mode", mode])
+    bdd_context.update({"cli_result": result, "expected": dummy_query_response})
+
+
 @then(
     "I should receive a readable Markdown answer with `answer`, `citations`, "
     "`reasoning`, and `metrics` sections",
@@ -35,11 +46,7 @@ def check_cli_output(bdd_context):
         assert str(value) in out
 
 
-@when(
-    parsers.parse(
-        'I send a POST request to `/query` with JSON `{ "query": "{query}" }`'
-    )
-)
+@when(parsers.parse('I send a POST request to `/query` with JSON `{ "query": "{query}" }`'))
 def send_http_query(query, bdd_context, api_client, dummy_query_response):
     response = api_client.post("/query", json={"query": query})
     bdd_context.update({"http_response": response, "expected": dummy_query_response})
@@ -65,12 +72,10 @@ def run_mcp_cli_query(query, monkeypatch, bdd_context, cli_runner, dummy_query_r
     bdd_context.update({"mcp_result": result, "expected": dummy_query_response})
 
 
-@when(
-    parsers.parse(
-        'I run `autoresearch search "{query}" -i` and refine to "{refined}" then exit'
-    )
-)
-def run_interactive_query(query, refined, monkeypatch, bdd_context, cli_runner, dummy_query_response):
+@when(parsers.parse('I run `autoresearch search "{query}" -i` and refine to "{refined}" then exit'))
+def run_interactive_query(
+    query, refined, monkeypatch, bdd_context, cli_runner, dummy_query_response
+):
     from autoresearch.config.models import ConfigModel
     from autoresearch.config.loader import ConfigLoader
 
@@ -93,7 +98,7 @@ def run_visualize_cli(query, file, tmp_path, bdd_context, cli_runner, dummy_quer
     bdd_context.update({"viz_result": result, "viz_path": out, "expected": dummy_query_response})
 
 
-@when(parsers.re(r'I run `autoresearch visualize-rdf (?P<file>.+)`'))
+@when(parsers.re(r"I run `autoresearch visualize-rdf (?P<file>.+)`"))
 def run_visualize_rdf_cli(file, tmp_path, bdd_context, cli_runner):
     out = tmp_path / file
     result = cli_runner.invoke(cli_app, ["visualize-rdf", str(out)])
@@ -158,4 +163,13 @@ def test_visualize_query():
 
 @scenario("../features/query_interface.feature", "Visualize RDF graph via CLI")
 def test_visualize_rdf_cli():
+    pass
+
+
+@scenario(
+    "../features/query_interface.feature",
+    "Submit query via CLI with reasoning mode",
+)
+def test_cli_query_with_reasoning_mode():
+    """CLI query works when specifying reasoning mode."""
     pass
