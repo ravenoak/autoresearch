@@ -234,8 +234,9 @@ and several tests fail.
 - `task --version` – 3.44.1
 - `uv run --extra dev-minimal flake8 src tests` – passes
 - `uv run --extra dev-minimal mypy src` – success
-- `uv run --extra dev-minimal pytest -q` – reports failing tests and
-  ~67% coverage
+- `uv sync --extra dev-minimal --extra test` – success
+- `uv run task verify` – fails: configuration command tests fail
+- `uv run --extra dev-minimal pytest -q` – fails: configuration command tests, ~67% coverage
 
 ### Performance Baselines
 
