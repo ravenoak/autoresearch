@@ -29,3 +29,7 @@ Feature: Query Interface
   Scenario: Visualize RDF graph via CLI
     When I run `autoresearch visualize-rdf rdf_graph.png`
     Then the visualization file "rdf_graph.png" should exist
+
+  Scenario: Submit query via CLI with reasoning mode
+    When I run `autoresearch search "What is Promise Theory?" --reasoning-mode direct` in a terminal
+    Then I should receive a readable Markdown answer with `answer`, `citations`, `reasoning`, and `metrics` sections
