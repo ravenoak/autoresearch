@@ -50,7 +50,7 @@ Planned first public release bringing the core research workflow to life.
 
 See the [release plan](docs/release_plan.md) for upcoming milestones.
 
-[align-environment-with-requirements]: issues/align-environment-with-requirements.md
+[align-environment-with-requirements]: issues/archive/align-environment-with-requirements.md
 [create-more-comprehensive-test-contexts]: issues/archive/create-more-comprehensive-test-contexts.md
 [update-release-documentation]: issues/archive/update-release-documentation.md
 
