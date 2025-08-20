@@ -3,8 +3,7 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **August 18, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
-status. Outstanding test failures are tracked in
-[resolve-current-test-failures](issues/resolve-current-test-failures.md).
+status.
 An **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
 the final **0.1.0** release targeted for **July 1, 2026**.
 
@@ -227,15 +226,16 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Coverage is generated but fails to meet the 90% threshold.
+`task coverage` reports roughly 67% total coverage, below the 90% threshold,
+and several tests fail.
 
 ### Latest Test Results
 
 - `task --version` – 3.44.1
 - `uv run --extra dev-minimal flake8 src tests` – passes
 - `uv run --extra dev-minimal mypy src` – success
-- `uv run --extra dev-minimal pytest -q` – long-running; partial log shows
-  363 passed, 8 skipped, 97 deselected, coverage ≥90%
+- `uv run --extra dev-minimal pytest -q` – reports failing tests and
+  ~67% coverage
 
 ### Performance Baselines
 
