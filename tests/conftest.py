@@ -630,3 +630,48 @@ def mock_run_query():
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={"m": 1})
 
     return _mock_run_query
+
+
+SAMPLE_TOML = """
+[core]
+backend = "lmstudio"
+loops = 1
+ram_budget_mb = 512
+
+[search]
+backends = []
+
+[search.context_aware]
+enabled = false
+"""
+
+SAMPLE_ENV = """SERPER_API_KEY=test_key
+OPENAI_API_KEY=test_key
+"""
+
+
+@pytest.fixture()
+def example_env_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Write a sample ``.env`` and populate required variables."""
+    env_path = tmp_path / ".env"
+    env_path.write_text(SAMPLE_ENV)
+    monkeypatch.setenv("SERPER_API_KEY", "test_key")
+    monkeypatch.setenv("OPENAI_API_KEY", "test_key")
+    return env_path
+
+
+@pytest.fixture()
+def example_autoresearch_toml(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, example_env_file: Path
+) -> Path:
+    """Provide a realistic ``autoresearch.toml`` for tests."""
+    monkeypatch.chdir(tmp_path)
+    cfg_path = tmp_path / "autoresearch.toml"
+    cfg_path.write_text(SAMPLE_TOML)
+    return cfg_path
+
+
+@pytest.fixture()
+def temp_config(example_autoresearch_toml: Path) -> Path:
+    """Compatibility alias for legacy tests expecting ``temp_config``."""
+    return example_autoresearch_toml

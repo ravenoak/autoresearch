@@ -48,10 +48,9 @@ def make_agent(name, calls, stored):
     return DummyAgent(name)
 
 
-def test_config_hot_reload_components(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    repo = git.Repo.init(tmp_path)
-    cfg_file = tmp_path / "autoresearch.toml"
+def test_config_hot_reload_components(example_autoresearch_toml, monkeypatch):
+    cfg_file = example_autoresearch_toml
+    repo = git.Repo.init(cfg_file.parent)
     cfg_file.write_text(
         tomli_w.dumps(
             {
@@ -152,12 +151,13 @@ def test_config_hot_reload_components(tmp_path, monkeypatch):
     assert events[0] == (["AgentA"], ["b1"]) and events[-1] == (["AgentB"], ["b2"])
 
 
-def test_config_hot_reload_search_weights_and_storage(tmp_path, monkeypatch):
+def test_config_hot_reload_search_weights_and_storage(
+    example_autoresearch_toml, monkeypatch
+):
     """Search weights and storage settings should update without restart."""
 
-    monkeypatch.chdir(tmp_path)
-    repo = git.Repo.init(tmp_path)
-    cfg_file = tmp_path / "autoresearch.toml"
+    cfg_file = example_autoresearch_toml
+    repo = git.Repo.init(cfg_file.parent)
     cfg_file.write_text(
         tomli_w.dumps(
             {

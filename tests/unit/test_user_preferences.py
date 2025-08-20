@@ -37,11 +37,14 @@ def test_user_agent_loads_preferences(monkeypatch, simple_state):
     assert result["metadata"]["user_preferences"]["focus_areas"] == ["ai"]
 
 
-def test_user_preferences_hot_reload(tmp_path, monkeypatch, simple_state):
-    monkeypatch.chdir(tmp_path)
+def test_user_preferences_hot_reload(example_autoresearch_toml, monkeypatch, simple_state):
     ConfigLoader.reset_instance()
-    cfg_path = tmp_path / "autoresearch.toml"
-    cfg_path.write_text(tomli_w.dumps({"core": {"loops": 1}, "user_preferences": {"detail_level": "concise"}}))
+    cfg_path = example_autoresearch_toml
+    cfg_path.write_text(
+        tomli_w.dumps(
+            {"core": {"loops": 1}, "user_preferences": {"detail_level": "concise"}}
+        )
+    )
 
     loader = ConfigLoader()
     loader._config = loader.load_config()
