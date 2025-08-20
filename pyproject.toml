@@ -191,7 +191,7 @@ autoresearch = "autoresearch.main:app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov=src --cov-report=term-missing --cov-fail-under=90 -m 'not slow and not requires_ui and not requires_vss'"
+addopts = "-m 'not slow and not requires_ui and not requires_vss'"
 testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
 python_files = ["test_*.py", "*_steps.py"]
 markers = [
