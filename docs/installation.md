@@ -68,6 +68,8 @@ been verified to install successfully with `uv pip install`.
 
 ## Development setup
 
+Install Go Task before running any `task` commands mentioned below.
+
 Use `uv` to manage the environment when working from a clone:
 
 ```bash
@@ -84,7 +86,8 @@ uv sync --extra ui
 uv sync --extra nlp
 ```
 
-Alternatively run `task install` for the minimal setup or the helper script:
+After installing Go Task, you can run `task install` for the minimal setup or
+the helper script:
 
 ```bash
 task install
