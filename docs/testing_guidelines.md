@@ -28,6 +28,10 @@ task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
 task test:all          # entire suite including slow tests
 ```
+
+Run `task coverage` before committing to execute the full suite with coverage
+and token regression checks.
+
 You can also invoke the slow suite directly with:
 
 ```bash
