@@ -31,6 +31,15 @@ maximizer `w_h` with `f(w_h) → max_{w∈Δ} f(w)` as `h → 0`. The simulation
 (../../tests/analysis/weight_convergence_metrics.json) shows identical scores
 for steps `0.1`, `0.05`, and `0.025`, empirically supporting convergence.
 
+## Ranking stability
+
+Python's sort is stable, so duplicate scores should preserve input order.
+Property-based tests, [test_property_ranking_ties.py][tprt], randomize result
+sequences and show the ranked output matches the original order. A simulation,
+[ranking_tie_analysis.py](../../tests/analysis/ranking_tie_analysis.py), reports
+stability `1.0` in
+[ranking_tie_metrics.json](../../tests/analysis/ranking_tie_metrics.json).
+
 ## Token budget heuristics
 
 Property-based tests verify that weighted scores remain normalized and
@@ -92,6 +101,19 @@ Ignoring noise, the update gives `e^{t+1} = (1 - α/3) e^t`, so after two steps
 `|e^t| ≤ (1 - α/3) |g|`. The bound is checked in
 [test_property_coordination_stability.py][tpcs].
 
+The update also has a fixed point at the ground truth. If
+`b_s^0 = b_c^0 = b_f^0 = g`, then `b_s^t = g` for all `t`. The property-based
+[test_property_coordination_fixed_point.py][tpcfp] samples random `α` and `g`
+and confirms the invariant.
+
 [tpdc]: ../../tests/unit/test_property_dialectical_coordination.py
 [tpwc]: ../../tests/unit/test_property_weight_convergence.py
 [tpcs]: ../../tests/unit/test_property_coordination_stability.py
+[tprt]: ../../tests/unit/test_property_ranking_ties.py
+[tpcfp]: ../../tests/unit/test_property_coordination_fixed_point.py
+
+## Summary
+
+The simulations and property-based tests demonstrate stable ranking under
+ties and convergence of coordination updates to fixed points. Stored metrics
+support future audits of these behaviors.
