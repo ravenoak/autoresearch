@@ -7,6 +7,7 @@ import pytest
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
+from tests.analysis.distributed_coordination_analysis import simulate
 
 Orchestrator = orch_mod.Orchestrator
 AgentFactory = orch_mod.AgentFactory
@@ -23,9 +24,7 @@ pytestmark = [pytest.mark.slow, pytest.mark.integration]
 
 pytest.importorskip("pytest_benchmark")
 
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
-)
+SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
 spec = importlib.util.spec_from_file_location("benchmark_token_memory", SCRIPT_PATH)
 benchmark_module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -77,9 +76,7 @@ def test_token_budget_limit(monkeypatch, token_baseline):
     """Token usage should respect the configured budget."""
 
     # Setup
-    monkeypatch.setattr(
-        AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name)
-    )
+    monkeypatch.setattr(AgentFactory, "get", lambda name, llm_adapter=None: DummyAgent(name))
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy", token_budget=4)
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -90,3 +87,11 @@ def test_token_budget_limit(monkeypatch, token_baseline):
     tokens = response.metrics["execution_metrics"]["agent_tokens"]
 
     token_baseline(tokens)
+
+
+def test_distributed_coordination_overhead(benchmark):
+    """Benchmark coordination overhead across processes."""
+    single = simulate(node_count=1, duration=0.1)
+    multi = benchmark(lambda: simulate(node_count=4, duration=0.1))
+
+    assert multi["cpu_percent"] >= single["cpu_percent"]
