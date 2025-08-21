@@ -5,13 +5,13 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **August 18, 2025**, Autoresearch targets an **0.1.0-alpha.1**
+As of **August 20, 2025**, Autoresearch targets an **0.1.0-alpha.1**
 preview on **2026-03-01** and a final **0.1.0** release on
-**July 1, 2026**. `uv run flake8 src tests` passes, yet `uv run mypy src`
-fails with `Error importing plugin "pydantic.mypy": No module named
-'pydantic'`, and `uv run pytest -q` stops with 30 collection errors
-including missing `pytest_bdd`, so integration and behavior suites remain
-failing.
+**July 1, 2026**. `uv run flake8 src tests` and `uv run mypy src` both
+pass, and `uv run pytest tests/unit -q` reports 253 passing tests.
+`uv run pytest tests/integration -m "not slow and not requires_ui and not
+requires_vss" -q` currently yields numerous failures, so integration and
+behavior suites remain outstanding.
 
 ## 1. Core System Completion
 
