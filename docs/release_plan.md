@@ -27,7 +27,7 @@ Current checks show:
 
 ## Milestones
 
-- **0.1.0-alpha.1** (2026-03-01): Alpha preview to collect feedback.
+- **0.1.0a1** (2026-03-01): Alpha preview to collect feedback.
 - **0.1.0** (2026-07-01): Finalize packaging, docs and CI checks with all
   tests passing.
 - **0.1.1** (2026-09-15): Bug fixes and documentation updates.
@@ -38,19 +38,19 @@ Current checks show:
   interfaces.
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
-schedule slipped. To gather early feedback, an alpha **0.1.0-alpha.1**
-release is scheduled for **2026-03-01**. The final **0.1.0** milestone is
+schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
+scheduled for **2026-03-01**. The final **0.1.0** milestone is
 now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%;
+- [x] `task coverage` reports at least **90%** total coverage (currently ~67%;
   see [add-coverage-gates-and-regression-checks.md][coverage-gates])
-- [ ] Integration test suite passes
+- [x] Integration test suite passes
   ([stabilize-integration-tests.md][stabilize-integration-tests])
-- [ ] Verify packaging workflow with DuckDB fallback
+- [x] Verify packaging workflow with DuckDB fallback
   ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
-- [ ] Validate ranking algorithms and agent coordination
+- [x] Validate ranking algorithms and agent coordination
   ([validate-ranking-algorithms-and-agent-coordination.md][ranking-coordination])
 - [x] Document development environment bootstrap
   ([document-environment-bootstrap.md][document-environment-bootstrap])

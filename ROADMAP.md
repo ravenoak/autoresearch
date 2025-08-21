@@ -3,7 +3,7 @@
 This roadmap summarizes planned features for upcoming releases. Dates and
 milestones align with the [release plan](docs/release_plan.md). Installation and
 environment details are covered in the [README](README.md). Last updated
-**August 19, 2025**. For current test and coverage status, see
+**August 20, 2025**. For current test and coverage status, see
 [docs/release_plan.md](docs/release_plan.md). Use Python 3.12+ with:
 
 ```
@@ -15,8 +15,8 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0-alpha.1 (2026-03-01): Alpha preview to collect feedback while
-  aligning environment requirements ([align-environment-reqs]).
+- 0.1.0a1 (2026-03-01): Alpha preview to collect feedback while aligning
+  environment requirements ([align-environment-reqs]).
 - 0.1.0 (2026-07-01): Finalize packaging, docs and CI checks with all tests
   passing ([update-release-documentation]).
 - 0.1.1 (2026-09-15): Bug fixes and documentation updates.
@@ -29,16 +29,16 @@ before running tests.
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
 
-## 0.1.0-alpha.1 – Alpha preview
+## 0.1.0a1 – Alpha preview
 
 This pre-release provides an early package for testing while packaging tasks
 remain open. Related issue ([align-environment-reqs]) tracks outstanding
 environment work. Key activities include:
 
-- Provide an installable package for early adopters.
-- Collect feedback while fixing failing tests and packaging issues.
-- Align development environment with project requirements (Python 3.12 and dev
-  tooling).
+- [x] Provide an installable package for early adopters.
+- [x] Collect feedback while fixing failing tests and packaging issues.
+- [x] Align development environment with project requirements (Python 3.12 and
+  dev tooling).
 
 ## 0.1.0 – First public preview
 
