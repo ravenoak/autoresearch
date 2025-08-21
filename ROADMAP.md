@@ -36,10 +36,15 @@ This pre-release provides an early package for testing while packaging tasks
 remain open. Related issue ([prepare-alpha-release]) tracks outstanding
 environment work. Key activities include:
 
-- [ ] Provide an installable package for early adopters.
-- [ ] Collect feedback while fixing failing tests and packaging issues.
-- [ ] Align development environment with project requirements (Python 3.12 and
-  dev tooling).
+- [x] Environment bootstrap in place.
+- [ ] Packaging verification with DuckDB fallback.
+- [ ] Integration tests stabilized.
+- [ ] Coverage gates enforce 90% threshold.
+- [ ] Algorithm validation for ranking and coordination.
+
+These steps depend on one another:
+environment bootstrap → packaging verification → integration tests →
+coverage gates → algorithm validation.
 
 ## 0.1.0 – First public preview
 
