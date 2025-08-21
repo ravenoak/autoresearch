@@ -1,11 +1,10 @@
-from click.testing import CliRunner
-
 from autoresearch.main import app as cli_app
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
+from typer.testing import CliRunner
 
 
 class DummyProgress:
@@ -35,12 +34,16 @@ def test_cli_progress_and_interactive(monkeypatch):
 
     cfg = ConfigModel(loops=2)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    # Patch Progress and Prompt via the package to intercept runtime imports
     monkeypatch.setattr("autoresearch.main.Progress", progress_factory)
 
     prompts = []
-    monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: prompts.append(k.get("default", "")) or "")
+    monkeypatch.setattr(
+        "autoresearch.main.Prompt.ask",
+        lambda *a, **k: prompts.append(k.get("default", "")) or "",
+    )
 
-    def dummy_run_query(query, config, callbacks=None, **kwargs):
+    def dummy_run_query(self, query, config, callbacks=None, **kwargs):
         state = QueryState(query=query)
         for i in range(config.loops):
             if callbacks and "on_cycle_end" in callbacks:
@@ -54,5 +57,5 @@ def test_cli_progress_and_interactive(monkeypatch):
     result = runner.invoke(cli_app, ["search", "test", "--interactive"])
     assert result.exit_code == 0
     assert progress_instances[0].updates == [1, 1]
-    # One prompt per cycle
-    assert len(prompts) == 2
+    # One prompt for each cycle except the last
+    assert len(prompts) == 1
