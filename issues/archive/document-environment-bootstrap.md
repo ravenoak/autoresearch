@@ -15,4 +15,4 @@ needed so contributors can reproduce the expected setup.
   steps.
 
 ## Status
-Open
+Archived
