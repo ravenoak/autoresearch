@@ -9,6 +9,19 @@ Running `uv run scripts/simulate_scoring.py --query "python"` on the
 sample dataset produced a ranking consistent with the formula in
 [source_credibility.md](source_credibility.md).
 
+## Ranking weights
+
+Grid-searching the weight vector with
+[tests/analysis/weight_tuning_analysis.py]
+(../../tests/analysis/weight_tuning_analysis.py) converged to `(0.5, 0.3, 0.2)`
+with NDCG `1.0`, recorded in
+[weight_tuning_metrics.json](../../tests/analysis/weight_tuning_metrics.json).
+Property-based tests verify invariants:
+
+- [test_property_bm25_normalization.py][tpbn] keeps BM25 scores in `[0, 1]`.
+- [test_property_weight_tuning.py][tpwt] confirms tuned weights sum to one
+  and improve NDCG.
+
 ## Token budget heuristics
 
 Property-based tests verify that weighted scores remain normalized and
@@ -52,3 +65,19 @@ monotonic
 
 [thp]: ../../tests/unit/test_heuristic_properties.py
 [tbseq]: ../../tests/unit/test_property_token_budget_sequence.py
+[tpbn]: ../../tests/unit/test_property_bm25_normalization.py
+[tpwt]: ../../tests/unit/test_property_weight_tuning.py
+
+## Coordination policies
+
+[tests/analysis/dialectical_cycle_analysis.py]
+(../../tests/analysis/dialectical_cycle_analysis.py) runs 100 trials of the
+dialectical update with noise `0.1` and stores the final mean and deviation
+in
+[dialectical_metrics.json](../../tests/analysis/dialectical_metrics.json).
+The results match the convergence bound in
+[dialectical_coordination.md](dialectical_coordination.md). A property-based
+test, [test_property_dialectical_coordination.py][tpdc], validates
+convergence to the ground truth in the noiseless case.
+
+[tpdc]: ../../tests/unit/test_property_dialectical_coordination.py
