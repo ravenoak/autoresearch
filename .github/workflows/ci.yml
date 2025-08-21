@@ -35,7 +35,9 @@ jobs:
       - name: Run task verify
         run: uv run task verify
       - name: Run tests with coverage
-        run: uv run pytest --cov=src
+        run: uv run pytest --cov=src --cov-report=xml --cov-fail-under=90
+      - name: Check token regression
+        run: uv run python scripts/check_token_regression.py --threshold 5
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
