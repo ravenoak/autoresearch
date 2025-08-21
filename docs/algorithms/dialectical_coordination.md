@@ -18,6 +18,22 @@ convergence to \(g\). The `scripts/dialectical_coordination_demo.py`
 script runs many trials and reports the mean and deviation of final
 syntheses, showing robustness to noise.
 
+In matrix form, letting \(x^t = [b_s^t, b_c^t, b_f^t]^T\) and ignoring
+noise, the policy is
+
+\[
+x^{t+1} = A x^t + u, \quad
+A = \begin{bmatrix}
+  \tfrac{1}{3} & \tfrac{1}{3} & \tfrac{1}{3} \\
+  1 & 0 & 0 \\
+  1 - \alpha & 0 & \alpha
+\end{bmatrix},
+u = \begin{bmatrix} 0 \\ 0 \\ \alpha g \end{bmatrix}.
+\]
+
+The eigenvalues of \(A\) have largest magnitude \((1 - \alpha)/3 < 1\),
+so repeated application converges to \([g, g, g]^T\) in expectation.
+
 Assumptions
 - Agents share scalar beliefs and update synchronously.
 - Noise \(\varepsilon_t\) has zero mean and bounded variance.
