@@ -2,28 +2,37 @@ import time
 
 import pytest
 import rdflib
-from hypothesis import given, strategies as st, settings, HealthCheck
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 import autoresearch.kg_reasoning as kr
-from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.errors import StorageError
 
 
-def _mock_config(reasoner: str, timeout: float | None = None) -> ConfigModel:
+def _mock_config(
+    reasoner: str, timeout: float | None = None, max_triples: int | None = None
+) -> ConfigModel:
     return ConfigModel.model_construct(
         storage=StorageConfig(
             ontology_reasoner=reasoner,
             ontology_reasoner_timeout=timeout,
+            ontology_reasoner_max_triples=max_triples,
         )
     )
 
 
-def _patch_config(monkeypatch, reasoner: str, timeout: float | None = None) -> None:
+def _patch_config(
+    monkeypatch,
+    reasoner: str,
+    timeout: float | None = None,
+    max_triples: int | None = None,
+) -> None:
     monkeypatch.setattr(
         ConfigLoader,
         "load_config",
-        lambda self: _mock_config(reasoner, timeout),
+        lambda self: _mock_config(reasoner, timeout, max_triples),
     )
     ConfigLoader()._config = None
 
@@ -74,3 +83,34 @@ def test_reasoner_timeout(monkeypatch, timeout):
     _patch_config(monkeypatch, "slow_prop", timeout=timeout)
     with pytest.raises(StorageError):
         kr.run_ontology_reasoner(g)
+
+
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@pytest.mark.unit
+@given(
+    count=st.integers(min_value=0, max_value=5),
+    limit=st.integers(min_value=1, max_value=5),
+)
+def test_reasoner_respects_triple_limit(monkeypatch, count, limit):
+    g = rdflib.Graph()
+    for i in range(count):
+        g.add(
+            (
+                rdflib.URIRef(f"urn:s{i}"),
+                rdflib.URIRef("urn:p"),
+                rdflib.URIRef("urn:o"),
+            )
+        )
+
+    called = {}
+
+    def mark(store: rdflib.Graph) -> None:
+        called["hit"] = True
+
+    monkeypatch.setitem(kr._REASONER_PLUGINS, "marker", mark)
+    _patch_config(monkeypatch, "marker", max_triples=limit)
+    kr.run_ontology_reasoner(g)
+    if count <= limit:
+        assert "hit" in called
+    else:
+        assert "hit" not in called
