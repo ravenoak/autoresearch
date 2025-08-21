@@ -18,14 +18,19 @@ before running tests.
 - 0.1.0a1 (2026-03-01, status: open): Alpha preview to collect feedback while
   aligning environment requirements ([prepare-alpha-release]).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
-  with all tests passing ([update-release-documentation]).
-- 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates.
+  with all tests passing
+  ([finalize-first-public-preview-release]).
+- 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
+  ([deliver-bug-fixes-and-docs-update]).
 - 0.2.0 (2026-12-01, status: planned): API stabilization, configuration
-  hot-reload, improved search backends.
-- 0.3.0 (2027-03-01, status: planned): Distributed execution support,
-  monitoring utilities.
+  hot-reload and improved search backends
+  ([stabilize-api-and-improve-search]).
+- 0.3.0 (2027-03-01, status: planned): Distributed execution support and
+  monitoring utilities
+  ([support-distributed-execution-and-monitoring]).
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
-  and stable interfaces.
+  and stable interfaces
+  ([reach-stable-performance-and-interfaces]).
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
@@ -36,15 +41,17 @@ This pre-release provides an early package for testing while packaging tasks
 remain open. Related issue ([prepare-alpha-release]) tracks outstanding
 environment work. Key activities include:
 
-- [x] Environment bootstrap in place.
-- [ ] Packaging verification with DuckDB fallback.
-- [ ] Integration tests stabilized.
-- [ ] Coverage gates enforce 90% threshold.
-- [ ] Algorithm validation for ranking and coordination.
+- [ ] Packaging verification with DuckDB fallback
+  ([packaging-fallback]).
+- [ ] Integration tests stabilized
+  ([stabilize-integration-tests]).
+- [ ] Coverage gates enforce 90% threshold
+  ([coverage-gates]).
+- [ ] Algorithm validation for ranking and coordination ([ranking]).
 
 These steps depend on one another:
-environment bootstrap → packaging verification → integration tests →
-coverage gates → algorithm validation.
+packaging verification → integration tests → coverage gates → algorithm
+validation.
 
 ## 0.1.0 – First public preview
 
@@ -110,5 +117,13 @@ The 1.0.0 milestone aims for a polished, production-ready system:
   lines 178-186; TASK_PROGRESS lines 206-216).
 - Optimize performance across all components and finalize documentation.
 
-[update-release-documentation]: issues/archive/update-release-documentation.md
 [prepare-alpha-release]: issues/prepare-alpha-release.md
+[finalize-first-public-preview-release]: issues/finalize-first-public-preview-release.md
+[deliver-bug-fixes-and-docs-update]: issues/deliver-bug-fixes-and-docs-update.md
+[stabilize-api-and-improve-search]: issues/stabilize-api-and-improve-search.md
+[support-distributed-execution-and-monitoring]: issues/support-distributed-execution-and-monitoring.md
+[reach-stable-performance-and-interfaces]: issues/reach-stable-performance-and-interfaces.md
+[packaging-fallback]: issues/verify-packaging-workflow-and-duckdb-fallback.md
+[stabilize-integration-tests]: issues/stabilize-integration-tests.md
+[coverage-gates]: issues/add-coverage-gates-and-regression-checks.md
+[ranking]: issues/validate-ranking-algorithms-and-agent-coordination.md
