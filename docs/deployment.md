@@ -133,6 +133,9 @@ Use the `--dry-run` flag to verify the process without uploading:
 uv run python scripts/publish_dev.py --dry-run
 ```
 
+If the VSS extension cannot be downloaded during deployment, the application
+logs a warning and starts without vector search support.
+
 For an actual upload, provide a TestPyPI API token by setting
 `TWINE_USERNAME=__token__` and `TWINE_PASSWORD=<token>` before running the
 script without `--dry-run`.
@@ -166,14 +169,18 @@ extras.
    ```
 3. Run the unit and behavior test suites.
 4. Build the distribution artifacts:
+```bash
+uv run python -m build
+```
+5. Validate the package on TestPyPI without uploading:
    ```bash
-   uv run python -m build
+   ./scripts/publish_dev.py --dry-run
    ```
-5. Publish a development build to TestPyPI:
+6. If the metadata looks correct, publish to the TestPyPI repository:
    ```bash
    ./scripts/publish_dev.py
    ```
-6. If everything looks good, publish to the main PyPI repository:
+7. If everything looks good, publish to the main PyPI repository:
    ```bash
    uv run twine upload dist/*
    ```

@@ -29,6 +29,8 @@ Note:
     The script uses DuckDB's native extension installation mechanism and will download
     the appropriate extension for your platform. The vss extension is also available
     as a Python package (duckdb-extension-vss) which can be installed via pip or poetry.
+    If an extension cannot be downloaded, the script logs a warning and continues so
+    Autoresearch can run without optional features like vector search.
 """
 
 import argparse
@@ -231,6 +233,8 @@ def main():
             "\nFailed to download extensions: %s. Proceeding without them.",
             ", ".join(failed),
         )
+        if "vss" in failed:
+            logger.warning("VSS extension unavailable; vector search will be disabled.")
 
 
 if __name__ == "__main__":
