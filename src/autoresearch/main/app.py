@@ -58,7 +58,7 @@ app = typer.Typer(
 # ``typer.Typer`` doesn't set ``name`` attribute on the object itself.
 # ``click.testing.CliRunner`` expects a ``name`` attribute when invoking the
 # application. Expose it explicitly so tests can run the CLI via ``CliRunner``.
-app.name = "autoresearch"
+app.name = "autoresearch"  # type: ignore[attr-defined]
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
