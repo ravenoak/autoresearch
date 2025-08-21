@@ -1,5 +1,6 @@
 import importlib.util
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -48,26 +49,31 @@ class DefaultPathConn:
         pass
 
 
-def test_download_extension_network_failure(monkeypatch, tmp_path, caplog):
-    """Extension downloads warn and continue on network failure."""
+def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
+    """Network failures load offline env and continue."""
+    env_file = tmp_path / ".env.offline"
+    stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"
+    stub_path.parent.mkdir(parents=True, exist_ok=True)
+    stub_path.write_text("stub")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
+
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(duckdb, "connect", lambda path: FailingConn(path))
     caplog.set_level(logging.WARNING)
     result = dde.download_extension("vss", tmp_path, "linux_amd64")
-    assert result is None
-    assert "Error downloading vss extension" in caplog.text
+    assert result == str(stub_path)
+    assert os.environ["VECTOR_EXTENSION_PATH"] == str(stub_path)
+    assert "Falling back to offline configuration" in caplog.text
 
     monkeypatch.setattr(
         sys,
         "argv",
-        [
-            "download_duckdb_extensions.py",
-            "--output-dir",
-            str(tmp_path),
-        ],
+        ["download_duckdb_extensions.py", "--output-dir", str(tmp_path)],
     )
-    monkeypatch.setattr(dde, "download_extension", lambda *a, **k: None)
-    dde.main()  # Should not raise SystemExit
-    assert "Proceeding without them" in caplog.text
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+    dde.main()
+    assert "Extensions downloaded successfully" in caplog.text
 
 
 def test_download_extension_fallback_path(monkeypatch, tmp_path):

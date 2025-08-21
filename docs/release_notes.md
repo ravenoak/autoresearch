@@ -39,3 +39,40 @@ machine.
   [DuckDB compatibility](duckdb_compatibility.md).
 
 For installation and usage instructions see the [README](../README.md).
+
+## Packaging Logs
+
+### Build
+
+```text
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - poetry-core>=2.0.0,<3.0.0
+* Getting build dependencies for sdist...
+* Building sdist...
+* Building wheel from sdist
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - poetry-core>=2.0.0,<3.0.0
+* Getting build dependencies for wheel...
+* Building wheel...
+Successfully built autoresearch-0.1.0a1.tar.gz and autoresearch-0.1.0a1-py3-none-any.whl
+```
+
+### Test Publishing
+
+```text
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - poetry-core>=2.0.0,<3.0.0
+* Getting build dependencies for sdist...
+* Building sdist...
+* Building wheel from sdist
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:
+  - poetry-core>=2.0.0,<3.0.0
+* Getting build dependencies for wheel...
+* Building wheel...
+Successfully built autoresearch-0.1.0a1.tar.gz and autoresearch-0.1.0a1-py3-none-any.whl
+Dry run selected; skipping upload
+```
