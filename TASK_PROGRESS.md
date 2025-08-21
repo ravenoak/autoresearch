@@ -237,6 +237,9 @@ and several tests fail.
 - `uv sync --extra dev-minimal --extra test` – success
 - `uv run task verify` – fails: configuration command tests fail
 - `uv run --extra dev-minimal pytest -q` – fails: configuration command tests, ~67% coverage
+- `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q`
+  – fails: missing `pytest_httpx`; earlier run showed 39 integration failures
+- `task check` – command unavailable (`task` utility missing in environment)
 
 ### Performance Baselines
 

@@ -16,6 +16,8 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
 - Configuration tests write temporary TOML files via `tomli-w`.
 - Baseline JSON files in `tests/integration/baselines/` hold expected
   metrics and token counts for comparison.
+- Some tests rely on `owlrl` for RDF reasoning; install this package to
+  avoid failures during integration runs.
 
 No external databases or network services need to be running. Temporary
 artifacts are created under `tmp_path` and cleaned automatically.
