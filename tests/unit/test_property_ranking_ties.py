@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import string
 
-import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from autoresearch.search import Search

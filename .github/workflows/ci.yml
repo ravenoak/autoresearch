@@ -36,6 +36,8 @@ jobs:
         run: uv run task verify
       - name: Run task coverage
         run: uv run task coverage
+      - name: Enforce coverage threshold
+        run: uv run coverage report --fail-under=90
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

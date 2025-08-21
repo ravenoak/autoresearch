@@ -27,6 +27,7 @@ task test:behavior     # behavior-driven tests
 task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
 task test:all          # entire suite including slow tests
+task coverage          # full suite with coverage and regression checks
 ```
 
 Run `task coverage` before committing to execute the full suite with coverage
