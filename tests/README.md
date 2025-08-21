@@ -11,8 +11,8 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
 
 ## Required services and data
 
-- HTTP calls are mocked using `pytest-httpx`; ensure the package is
-  installed.
+- HTTP calls, including webhook notifications, are mocked using
+  `pytest-httpx`; ensure the package is installed.
 - Configuration tests write temporary TOML files via `tomli-w`.
 - Baseline JSON files in `tests/integration/baselines/` hold expected
   metrics and token counts for comparison.

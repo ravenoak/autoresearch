@@ -13,7 +13,6 @@ from autoresearch.llm import DummyAdapter
 from autoresearch.errors import StorageError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
-import responses
 
 
 class DummyStorage:
@@ -102,9 +101,7 @@ def test_cli_flow(monkeypatch):
 
     try:
         # Execute
-        result = runner.invoke(
-            cli_app, ["search", "test query", "--output", "markdown"]
-        )
+        result = runner.invoke(cli_app, ["search", "test query", "--output", "markdown"])
 
         # Verify
         assert result.exit_code == 0
@@ -126,29 +123,28 @@ def test_http_flow(monkeypatch):
     """
     # Setup
     _common_patches(monkeypatch)
-    client = TestClient(api_app)
+    with TestClient(api_app) as client:
+        # Add a dummy claim to ensure the test passes
+        DummyStorage.persisted.append(
+            {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+        )
 
-    # Add a dummy claim to ensure the test passes
-    DummyStorage.persisted.append(
-        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
-    )
+        try:
+            # Execute
+            resp = client.post("/query", json={"query": "test query"})
 
-    try:
-        # Execute
-        resp = client.post("/query", json={"query": "test query"})
+            # Verify
+            assert resp.status_code == 200
+            data = resp.json()
+            for key in ["answer", "citations", "reasoning", "metrics"]:
+                assert key in data
+            assert DummyStorage.persisted
+        finally:
+            # Cleanup
+            from autoresearch.storage import set_delegate
 
-        # Verify
-        assert resp.status_code == 200
-        data = resp.json()
-        for key in ["answer", "citations", "reasoning", "metrics"]:
-            assert key in data
-        assert DummyStorage.persisted
-    finally:
-        # Cleanup
-        from autoresearch.storage import set_delegate
-
-        set_delegate(None)
-        DummyStorage.persisted = []
+            set_delegate(None)
+            DummyStorage.persisted = []
 
 
 def test_http_no_query_field(monkeypatch):
@@ -159,21 +155,21 @@ def test_http_no_query_field(monkeypatch):
     """
     # Setup
     _common_patches(monkeypatch)
-    client = TestClient(api_app)
+    with TestClient(api_app) as client:
+        try:
+            # Execute
+            resp = client.post("/query", json={})
 
-    try:
-        # Execute
-        resp = client.post("/query", json={})
+            # Verify
+            assert resp.status_code == 422
+            detail = resp.json()["detail"]
+            assert detail[0]["msg"].startswith("Field required")
+        finally:
+            # Cleanup
+            from autoresearch.storage import set_delegate
 
-        # Verify
-        assert resp.status_code == 400
-        assert resp.json()["detail"] == "`query` field is required"
-    finally:
-        # Cleanup
-        from autoresearch.storage import set_delegate
-
-        set_delegate(None)
-        DummyStorage.persisted = []
+            set_delegate(None)
+            DummyStorage.persisted = []
 
 
 def test_cli_storage_error(monkeypatch):
@@ -199,62 +195,60 @@ def test_http_api_key(monkeypatch):
     """API should require the correct key when enabled."""
     cfg = _common_patches(monkeypatch)
     cfg.api.api_key = "secret"
-    client = TestClient(api_app)
-
-    DummyStorage.persisted.append(
-        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
-    )
-
-    try:
-        resp = client.post(
-            "/query",
-            json={"query": "test query"},
-            headers={"X-API-Key": "secret"},
+    with TestClient(api_app) as client:
+        DummyStorage.persisted.append(
+            {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
         )
-        assert resp.status_code == 200
 
-        resp = client.post(
-            "/query",
-            json={"query": "test query"},
-            headers={"X-API-Key": "bad"},
-        )
-        assert resp.status_code == 401
-    finally:
-        from autoresearch.storage import set_delegate
+        try:
+            resp = client.post(
+                "/query",
+                json={"query": "test query"},
+                headers={"X-API-Key": "secret"},
+            )
+            assert resp.status_code == 200
 
-        set_delegate(None)
-        DummyStorage.persisted = []
+            resp = client.post(
+                "/query",
+                json={"query": "test query"},
+                headers={"X-API-Key": "bad"},
+            )
+            assert resp.status_code == 401
+        finally:
+            from autoresearch.storage import set_delegate
+
+            set_delegate(None)
+            DummyStorage.persisted = []
 
 
 def test_http_throttling(monkeypatch):
     """Exceeding the rate limit should return 429."""
     cfg = _common_patches(monkeypatch)
     cfg.api.rate_limit = 1
-    client = TestClient(api_app)
+    with TestClient(api_app) as client:
+        DummyStorage.persisted.append(
+            {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
+        )
 
-    DummyStorage.persisted.append(
-        {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
-    )
+        from autoresearch import api as api_mod
 
-    from autoresearch import api as api_mod
+        try:
+            resp1 = client.post("/query", json={"query": "test"})
+            assert resp1.status_code == 200
+            resp2 = client.post("/query", json={"query": "test"})
+            assert resp2.status_code == 429
+        finally:
+            from autoresearch.storage import set_delegate
 
-    try:
-        resp1 = client.post("/query", json={"query": "test"})
-        assert resp1.status_code == 200
-        resp2 = client.post("/query", json={"query": "test"})
-        assert resp2.status_code == 429
-    finally:
-        from autoresearch.storage import set_delegate
-
-        set_delegate(None)
-        DummyStorage.persisted = []
-        api_mod.get_request_logger().reset()
+            set_delegate(None)
+            DummyStorage.persisted = []
+            api_mod.get_request_logger().reset()
 
 
 def test_stream_endpoint(monkeypatch):
     """Streaming endpoint should yield multiple updates."""
 
-    def dummy_run_query(query, config, callbacks=None, **kwargs):
+    def dummy_run_query(self, query, config, callbacks=None, **kwargs):
         state = QueryState(query=query)
         for i in range(2):
             if callbacks and "on_cycle_end" in callbacks:
@@ -263,16 +257,15 @@ def test_stream_endpoint(monkeypatch):
 
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel(loops=2))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
-    client = TestClient(api_app)
-
-    with client.stream("POST", "/query/stream", json={"query": "q"}) as resp:
-        assert resp.status_code == 200
-        chunks = [line for line in resp.iter_lines()]
+    with TestClient(api_app) as client:
+        with client.stream("POST", "/query/stream", json={"query": "q"}) as resp:
+            assert resp.status_code == 200
+            chunks = [line for line in resp.iter_lines()]
 
     assert len(chunks) == 3
 
 
-def test_webhook_notification(monkeypatch):
+def test_webhook_notification(monkeypatch, httpx_mock):
     """Final response should be POSTed to provided webhook URL."""
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: ConfigModel(loops=1))
     monkeypatch.setattr(
@@ -282,13 +275,11 @@ def test_webhook_notification(monkeypatch):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
-    client = TestClient(api_app)
-
-    with responses.RequestsMock() as rsps:
-        rsps.post("http://hook", status=200)
+    with TestClient(api_app) as client:
+        httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
         resp = client.post("/query", json={"query": "hi", "webhook_url": "http://hook"})
         assert resp.status_code == 200
-        assert len(rsps.calls) == 1
+        assert len(httpx_mock.get_requests()) == 1
 
 
 def test_batch_query(monkeypatch):
@@ -297,16 +288,15 @@ def test_batch_query(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(
+        lambda self, q, c, callbacks=None, **k: QueryResponse(
             answer=q, citations=[], reasoning=[], metrics={}
         ),
     )
-    client = TestClient(api_app)
-
-    payload = {"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}]}
-    resp = client.post("/query/batch?page=1&size=2", json=payload)
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["page"] == 1
-    assert len(data["results"]) == 2
-    assert data["results"][0]["answer"] == "q1"
+    with TestClient(api_app) as client:
+        payload = {"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}]}
+        resp = client.post("/query/batch?page=1&page_size=2", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["page"] == 1
+        assert len(data["results"]) == 2
+        assert data["results"][0]["answer"] == "q1"

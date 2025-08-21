@@ -325,7 +325,9 @@ test = [
     { name = "freezegun" },
     { name = "owlrl" },
     { name = "psutil" },
+    { name = "pytest-httpx" },
     { name = "responses" },
+    { name = "tomli-w" },
     { name = "uvicorn" },
 ]
 ui = [
@@ -399,6 +401,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev-minimal'", specifier = ">=6.1.1" },
     { name = "pytest-httpx", marker = "extra == 'dev'", specifier = ">=0.35.0" },
     { name = "pytest-httpx", marker = "extra == 'dev-minimal'", specifier = ">=0.35.0" },
+    { name = "pytest-httpx", marker = "extra == 'test'", specifier = ">=0.35.0" },
     { name = "python-docx", marker = "extra == 'dev'", specifier = ">=1.2.0" },
     { name = "python-docx", marker = "extra == 'parsers'", specifier = ">=1.2.0" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
@@ -433,6 +436,7 @@ requires-dist = [
     { name = "tinydb", specifier = ">=4.8.0" },
     { name = "tomli-w", marker = "extra == 'dev'", specifier = ">=1.2.0" },
     { name = "tomli-w", marker = "extra == 'dev-minimal'", specifier = ">=1.2.0" },
+    { name = "tomli-w", marker = "extra == 'test'", specifier = ">=1.2.0" },
     { name = "transformers", marker = "extra == 'dev'", specifier = ">=4.53.0" },
     { name = "transformers", marker = "extra == 'llm'", specifier = ">=4.53.0" },
     { name = "transformers", marker = "extra == 'nlp'", specifier = ">=4.53.0" },
