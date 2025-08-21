@@ -240,6 +240,14 @@ Aim for high test coverage:
 3. Use parameterization to test multiple inputs
 4. Test both positive and negative scenarios
 
+Use `task coverage` to run the full suite with coverage and enforce the
+90% threshold. The command also invokes
+`scripts/check_token_regression.py` to detect token usage regressions. For
+a quicker pre-commit check run `task verify`, which executes a reduced
+suite with coverage and the same regression guard. If legitimate changes
+exceed the threshold, update `tests/integration/baselines/token_usage.json`
+and commit the new baseline.
+
 ## Template
 
 A template for unit tests is available at `tests/unit/test_template.py`. Use this template as a starting point for new test files.

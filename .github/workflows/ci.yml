@@ -35,13 +35,18 @@ jobs:
       - name: Run task verify
         run: uv run task verify
       - name: Run tests with coverage
-        run: uv run pytest --cov=src --cov-report=xml --cov-fail-under=90
-      - name: Check token regression
-        run: uv run python scripts/check_token_regression.py --threshold 5
+        run: uv run pytest --cov=src --cov-report=xml
       - name: Upload coverage
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data
-          path: .coverage
+          path: |
+            .coverage
+            coverage.xml
+      - name: Check token regression
+        run: uv run python scripts/check_token_regression.py --threshold 5
+      - name: Enforce coverage threshold
+        run: uv run coverage report --fail-under=90
       - name: Exercise extension download fallback
         run: uv run pytest tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_failure
