@@ -11,9 +11,9 @@ resource management with configurable eviction policies.
 
 Note on VSS Extension:
 The vector search functionality requires the DuckDB VSS extension.
-If the extension is not available, the system will still work, but
-vector search operations will fail. Claims and embeddings will still
-be stored in the database, but similarity search will not be available.
+If the extension is not available, the system continues to operate but
+vector search calls return empty results. Claims and embeddings are still
+stored in the database.
 The system attempts to install and load the VSS extension automatically
 if it's enabled in the configuration.
 """
@@ -216,11 +216,7 @@ def teardown(
         if _kuzu_backend is not None:
             try:
                 _kuzu_backend.close()
-                if (
-                    remove_db
-                    and _kuzu_backend._path
-                    and os.path.exists(_kuzu_backend._path)
-                ):
+                if remove_db and _kuzu_backend._path and os.path.exists(_kuzu_backend._path):
                     os.remove(_kuzu_backend._path)
             except Exception as e:
                 log.warning(f"Failed to close Kuzu connection: {e}")
@@ -323,9 +319,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             mem = psutil.Process(os.getpid()).memory_info().rss
             return float(mem) / (1024**2)
         except Exception as e:  # pragma: no cover - psutil may not be available
-            log.debug(
-                f"Failed to get memory usage with psutil: {e}, falling back to resource"
-            )
+            log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
             try:
                 import resource
 
@@ -496,19 +490,16 @@ class StorageManager(metaclass=StorageManagerMeta):
                         recency_score = recency_ranks.get(
                             node_id, 1.0
                         )  # Higher is worse (more recent = 0)
-                        confidence_score = 1.0 - StorageManager.context.graph.nodes[
-                            node_id
-                        ].get("confidence", 0.5)  # Higher is worse
+                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get(
+                            "confidence", 0.5
+                        )  # Higher is worse
 
                         hybrid_scores[node_id] = (
-                            recency_weight * recency_score
-                            + confidence_weight * confidence_score
+                            recency_weight * recency_score + confidence_weight * confidence_score
                         )
 
                 # Sort by hybrid score (highest first = worst candidates)
-                candidates = sorted(
-                    hybrid_scores.items(), key=lambda x: x[1], reverse=True
-                )
+                candidates = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -527,9 +518,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     frequencies = list(StorageManager._access_frequency.values())
                     if frequencies:
                         mean = sum(frequencies) / len(frequencies)
-                        variance = sum((f - mean) ** 2 for f in frequencies) / len(
-                            frequencies
-                        )
+                        variance = sum((f - mean) ** 2 for f in frequencies) / len(frequencies)
                         access_variance = variance
 
                 # If high variance, use score-based (some nodes much more important)
@@ -567,33 +556,24 @@ class StorageManager(metaclass=StorageManagerMeta):
                 }
 
                 # Get custom tiers from config if available
-                if hasattr(cfg, "priority_tiers") and isinstance(
-                    cfg.priority_tiers, dict
-                ):
+                if hasattr(cfg, "priority_tiers") and isinstance(cfg.priority_tiers, dict):
                     priority_tiers.update(cfg.priority_tiers)
 
                 # Assign priority to each node
                 node_priorities = {}
                 for node_id in StorageManager.context.graph.nodes:
-                    node_type = StorageManager.context.graph.nodes[node_id].get(
-                        "type", "default"
-                    )
+                    node_type = StorageManager.context.graph.nodes[node_id].get("type", "default")
                     # Map node type to priority tier
                     tier = priority_tiers.get(node_type, priority_tiers["default"])
                     # Adjust by confidence
                     confidence_boost = (
-                        StorageManager.context.graph.nodes[node_id].get(
-                            "confidence", 0.5
-                        )
-                        * 0.5
+                        StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
                     )
                     # Final priority score (lower = higher priority)
                     node_priorities[node_id] = tier - confidence_boost
 
                 # Sort by priority (highest first = worst candidates)
-                candidates = sorted(
-                    node_priorities.items(), key=lambda x: x[1], reverse=True
-                )
+                candidates = sorted(node_priorities.items(), key=lambda x: x[1], reverse=True)
 
                 # Take the top batch_size candidates
                 nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
@@ -640,8 +620,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     batch_size * 2,
                     (
                         len(StorageManager.context.graph.nodes) // 5
-                        if StorageManager.context.graph
-                        and StorageManager.context.graph.nodes
+                        if StorageManager.context.graph and StorageManager.context.graph.nodes
                         else 1
                     ),
                 )
@@ -969,9 +948,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             assert StorageManager.context.db_backend is not None
             if is_update:
                 # Update existing records
-                StorageManager.context.db_backend.update_claim(
-                    claim_to_persist, partial_update
-                )
+                StorageManager.context.db_backend.update_claim(claim_to_persist, partial_update)
                 StorageManager._update_rdf_claim(claim_to_persist, partial_update)
                 StorageManager._persist_to_kuzu(claim_to_persist)
             else:
@@ -1146,15 +1123,18 @@ class StorageManager(metaclass=StorageManagerMeta):
     def vector_search(query_embedding: list[float], k: int = 5) -> list[dict[str, Any]]:
         """Search for claims by vector similarity.
 
-        This method performs a vector similarity search using the provided query embedding.
-        It validates the search parameters, ensures storage is initialized, and then
-        executes the search using the DuckDB VSS extension if available.
+        This method performs a vector similarity search using the provided query
+        embedding. It validates the search parameters, ensures storage is
+        initialized, and then executes the search using the DuckDB VSS extension
+        if available.
 
-        The search uses cosine similarity by default (configurable via storage.hnsw_metric)
-        and returns the k most similar claims, ordered by similarity score.
+        The search uses cosine similarity by default (configurable via
+        ``storage.hnsw_metric``) and returns the ``k`` most similar claims,
+        ordered by similarity score.
 
-        If a custom implementation is set via set_delegate(), the call is
-        delegated to that implementation.
+        If the VSS extension is not loaded, the call returns an empty list and a
+        warning is logged. If a custom implementation is set via
+        ``set_delegate()``, the call is delegated to that implementation.
 
         Args:
             query_embedding: The query embedding vector as a list of floats.
@@ -1168,8 +1148,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                                  Each result contains 'node_id' and 'embedding'.
 
         Raises:
-            StorageError: If the search parameters are invalid, storage is not initialized,
-                         or the VSS extension is not available.
+            StorageError: If the search parameters are invalid or storage is not
+                initialized.
             NotFoundError: If no embeddings are found in the database.
         """
         if _delegate and _delegate is not StorageManager:
@@ -1183,10 +1163,10 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Check if VSS extension is available
         if not StorageManager.has_vss():
-            raise StorageError(
-                "Vector search not available: VSS extension not loaded",
-                suggestion="Ensure the VSS extension is properly installed and enabled in the configuration",
+            log.warning(
+                "Vector search requested but VSS extension is unavailable; returning empty result"
             )
+            return []
 
         # Use the DuckDBStorageBackend to perform the vector search
         db_backend = StorageManager.context.db_backend
@@ -1444,9 +1424,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         return StorageManager.query_rdf(query)
 
     @staticmethod
-    def query_with_reasoning(
-        query: str, engine: Optional[str] = None
-    ) -> rdflib.query.Result:
+    def query_with_reasoning(query: str, engine: Optional[str] = None) -> rdflib.query.Result:
         """Run a SPARQL query after applying ontology reasoning."""
         StorageManager._ensure_storage_initialized()
         store = StorageManager.get_rdf_store()

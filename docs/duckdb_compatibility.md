@@ -69,7 +69,10 @@ If you already have the `.duckdb_extension` file available, copy it under
 detect the file and skip the download step, making offline installation
 easier.
 
-This will download the appropriate VSS extension for the specified platform and store it in the specified directory. The script will output the exact path to use in your configuration file.
+This will download the appropriate VSS extension for the specified platform and
+store it in the specified directory. If the download fails, the script logs a
+warning and exits so the application can continue without the extension. The
+script will output the exact path to use in your configuration file.
 
 ### Configuration for Offline Use
 
@@ -108,5 +111,7 @@ If you encounter issues with the VSS extension:
 3. Set the `vector_extension_path` in your configuration to point to the extension file
 4. For offline environments, use the `.env.offline` configuration
 
-If the extension fails to load, the system will log an error but continue to function without vector search capabilities.
+If the extension fails to load, Autoresearch logs a warning and runs without
+vector search. Calls to ``StorageManager.vector_search`` then return an empty
+list.
 
