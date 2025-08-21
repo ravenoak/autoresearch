@@ -2,9 +2,10 @@
 
 ## Context
 The project targets an initial alpha release, but foundational pieces remain
-incomplete. Environment reproducibility is fragile, tests are unstable, and
-packaging steps lack verification. A consolidated plan is needed to coordinate
-these efforts.
+incomplete. Environment reproducibility is fragile because setup details are
+scattered. [docs/installation.md](../docs/installation.md) now provides the
+canonical instructions. Tests are unstable and packaging steps lack
+verification, so a consolidated plan is needed to coordinate these efforts.
 
 ## Acceptance Criteria
 - Record the following PR-sized tasks with linked issues and dependency notes:
