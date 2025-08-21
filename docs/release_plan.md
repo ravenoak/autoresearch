@@ -46,21 +46,21 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%;
-  see [add-coverage-gates-and-regression-checks.md][coverage-gates])
-- [ ] Integration test suite passes
-  ([stabilize-integration-tests.md][stabilize-integration-tests])
-- [ ] Verify packaging workflow with DuckDB fallback
-  ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
-- [ ] Validate ranking algorithms and agent coordination (see
-  [ranking])
 - [x] Document development environment bootstrap
   ([document-environment-bootstrap.md][env-bootstrap])
+- [ ] Packaging verification with DuckDB fallback
+  ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
+- [ ] Integration test suite passes
+  ([stabilize-integration-tests.md][stabilize-integration-tests])
+- [ ] Coverage gates report at least **90%** total coverage (currently ~67%;
+  see [add-coverage-gates-and-regression-checks.md][coverage-gates])
+- [ ] Validate ranking algorithms and agent coordination (see
+  [ranking])
 - [x] Assemble preliminary release notes and confirm README instructions
   ([assemble-release-notes-and-validate-readme.md][release-notes])
 
-These tasks depend on each other in order: environment bootstrap → packaging →
-integration tests → coverage → algorithm validation.
+These tasks depend on each other in order: environment bootstrap → packaging
+verification → integration tests → coverage gates → algorithm validation.
 
 Resolving these items will determine the new completion date for **0.1.0**.
 
