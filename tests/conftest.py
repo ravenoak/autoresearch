@@ -54,10 +54,10 @@ from autoresearch.llm.registry import LLMFactory  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402, F401
 from autoresearch.storage import (  # noqa: E402
     StorageContext,
+    StorageManager,
 )
 from autoresearch.storage import set_delegate as set_storage_delegate  # noqa: E402
 from autoresearch.storage import setup as storage_setup  # noqa: E402
-from autoresearch.storage import teardown as storage_teardown  # noqa: E402
 
 _orig_option = typer.Option
 
@@ -253,9 +253,9 @@ def reset_rate_limiting():
 @pytest.fixture(autouse=True)
 def cleanup_storage():
     """Remove any persistent storage state between tests."""
-    storage_teardown(remove_db=True)
+    StorageManager.teardown(remove_db=True)
     yield
-    storage_teardown(remove_db=True)
+    StorageManager.teardown(remove_db=True)
 
 
 @pytest.fixture(autouse=True)
@@ -373,7 +373,7 @@ def storage_context_factory(tmp_path):
         try:
             yield ctx
         finally:
-            storage_teardown(remove_db=True, context=ctx)
+            StorageManager.teardown(remove_db=True, context=ctx)
 
     return _make
 
