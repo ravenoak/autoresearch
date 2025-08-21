@@ -80,6 +80,8 @@ when checking the interpreter version, so make sure it is available on your
 python3.12 python3.12-venv`. If you manage multiple interpreters via pyenv or
 another tool, specify the path when creating the environment, e.g. `uv venv -p
 python3.12`. Both setup scripts abort if `python3.12` cannot be located.
+Agent demos can bootstrap via `scripts/codex_setup.sh`, which follows the same
+environment checks.
 The project recently transitioned from **Poetry** to
 [**uv**](https://github.com/astral-sh/uv) for dependency management. The `uv.lock`
 file is the authoritative source of pinned dependencies, replacing the old

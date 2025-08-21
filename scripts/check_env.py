@@ -27,6 +27,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover
 REQUIREMENTS = {
     "python": "3.12.0",
     "task": "3.0.0",
+    "uv": "0.7.0",
     "flake8": "7.2.0",
     "mypy": "1.10.0",
     "pytest": "8.3.5",
@@ -81,6 +82,21 @@ def check_task() -> CheckResult:
     return CheckResult("Go Task", current, REQUIREMENTS["task"])
 
 
+def check_uv() -> CheckResult:
+    try:
+        proc = subprocess.run(["uv", "--version"], capture_output=True, text=True, check=False)
+    except FileNotFoundError as exc:
+        hint = "uv is not installed. Install it from https://github.com/astral-sh/uv"
+        raise VersionError(hint) from exc
+    if proc.returncode != 0:
+        raise VersionError("uv is not installed. Install it from https://github.com/astral-sh/uv")
+    match = re.search(r"(\d+\.\d+\.\d+)", proc.stdout)
+    if not match:
+        raise VersionError("Could not determine uv version")
+    current = match.group(1)
+    return CheckResult("uv", current, REQUIREMENTS["uv"])
+
+
 def check_module(module: str, package: str | None = None) -> CheckResult:
     importlib.import_module(module)
     pkg = package or module
@@ -96,6 +112,7 @@ def main() -> None:
     checks = [
         check_python,
         check_task,
+        check_uv,
         lambda: check_module("flake8"),
         lambda: check_module("mypy"),
         lambda: check_module("pytest"),
@@ -110,9 +127,7 @@ def main() -> None:
             if result.ok():
                 print(f"{result.name} {result.current}")
             else:
-                errors.append(
-                    f"{result.name} {result.current} < required {result.required}"
-                )
+                errors.append(f"{result.name} {result.current} < required {result.required}")
         except Exception as exc:  # pragma: no cover - failure paths
             errors.append(str(exc))
 

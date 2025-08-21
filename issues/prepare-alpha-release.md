@@ -8,7 +8,8 @@ these efforts.
 
 ## Acceptance Criteria
 - Record the following PR-sized tasks with linked issues and dependency notes:
-  - Clarify environment bootstrap (see `document-environment-bootstrap.md`).
+  - Clarify environment bootstrap and make `docs/installation.md`
+    the canonical reference (see `document-environment-bootstrap.md`).
   - Stabilize the integration test suite (see `stabilize-integration-tests.md`).
   - Verify packaging workflow and add fallback when DuckDB extensions cannot be
     downloaded (see `verify-packaging-workflow-and-duckdb-fallback.md`).
