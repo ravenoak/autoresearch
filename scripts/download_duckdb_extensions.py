@@ -29,7 +29,8 @@ Note:
     The script uses DuckDB's native extension installation mechanism and will download
     the appropriate extension for your platform. The vss extension is also available
     as a Python package (duckdb-extension-vss) which can be installed via pip or poetry.
-    If an extension cannot be downloaded, the script logs a warning and continues so
+    If an extension cannot be downloaded due to network issues, the script loads
+    `.env.offline` and uses the `VECTOR_EXTENSION_PATH` provided there so
     Autoresearch can run without optional features like vector search.
 """
 
@@ -40,6 +41,7 @@ import sys
 import tempfile
 import shutil
 import logging
+from dotenv import dotenv_values
 
 try:
     import duckdb
@@ -83,6 +85,19 @@ def detect_platform():
     else:
         logger.warning(f"Unknown platform: {system} {machine}. Defaulting to linux_amd64.")
         return "linux_amd64"
+
+
+def load_offline_env(env_path: str = ".env.offline") -> dict:
+    """Load environment variables from an offline configuration file."""
+    if not os.path.exists(env_path):
+        logger.warning("Offline env file not found at %s", env_path)
+        return {}
+    offline_vars = dotenv_values(env_path)
+    for key, value in offline_vars.items():
+        if value is not None:
+            os.environ[key] = value
+    logger.info("Loaded offline configuration from %s", env_path)
+    return offline_vars
 
 
 def download_extension(extension_name, output_dir, platform_name=None):
@@ -156,6 +171,14 @@ def download_extension(extension_name, output_dir, platform_name=None):
             )
             return output_extension_dir
 
+        except duckdb.IOException as e:
+            logger.warning(
+                "Network error downloading %s extension: %s. Falling back to offline configuration.",
+                extension_name,
+                e,
+            )
+            offline_vars = load_offline_env()
+            return offline_vars.get("VECTOR_EXTENSION_PATH")
         except Exception as e:
             logger.error(f"Error downloading {extension_name} extension: {e}")
             return None

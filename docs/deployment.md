@@ -130,11 +130,17 @@ uv pip install build twine
 Use the `--dry-run` flag to verify the process without uploading:
 
 ```bash
-uv run python scripts/publish_dev.py --dry-run
+uv run scripts/publish_dev.py --dry-run
 ```
 
-If the VSS extension cannot be downloaded during deployment, the application
-logs a warning and starts without vector search support.
+The packaging commands `uv run python -m build` and
+`uv run scripts/publish_dev.py --dry-run` were verified.  See the release notes
+for the recorded logs.
+
+If the VSS extension cannot be downloaded because the network is unavailable,
+`download_duckdb_extensions.py` loads `.env.offline` and uses the
+`VECTOR_EXTENSION_PATH` value so the service starts without vector search
+support.
 
 For an actual upload, provide a TestPyPI API token by setting
 `TWINE_USERNAME=__token__` and `TWINE_PASSWORD=<token>` before running the
