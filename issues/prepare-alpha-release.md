@@ -11,10 +11,11 @@ these efforts.
   - Clarify environment bootstrap (see `document-environment-bootstrap.md`).
   - Stabilize the integration test suite (see `stabilize-integration-tests.md`).
   - Verify packaging workflow and add fallback when DuckDB extensions cannot be
-    downloaded.
-  - Add coverage gates and regression checks in CI.
-  - Provide proofs or simulations for ranking algorithms and agent
-    coordination.
+    downloaded (see `verify-packaging-workflow-and-duckdb-fallback.md`).
+  - Add coverage gates and regression checks in CI (see
+    `add-coverage-gates-and-regression-checks.md`).
+  - Provide proofs or simulations for ranking algorithms and agent coordination
+    (see `validate-ranking-algorithms-and-agent-coordination.md`).
 - Ensure roadmap and release plan capture the updated sequencing and
   requirements.
 

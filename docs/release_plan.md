@@ -44,8 +44,18 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%)
+- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%;
+  see [add-coverage-gates-and-regression-checks.md][coverage-gates])
+- [ ] Integration test suite passes
+  ([stabilize-integration-tests.md][stabilize-integration-tests])
+- [ ] Verify packaging workflow with DuckDB fallback
+  ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
+- [ ] Validate ranking algorithms and agent coordination
+  ([validate-ranking-algorithms-and-agent-coordination.md][ranking-coordination])
+- [x] Document development environment bootstrap
+  ([document-environment-bootstrap.md][document-environment-bootstrap])
 - [x] Assemble preliminary release notes and confirm README instructions
+  ([assemble-release-notes-and-validate-readme.md][assemble-release-notes])
 
 Resolving these items will determine the new completion date for **0.1.0**.
 
@@ -80,3 +90,10 @@ optional extras):
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports at least **90%** total coverage
+
+[coverage-gates]: ../issues/add-coverage-gates-and-regression-checks.md
+[stabilize-integration-tests]: ../issues/stabilize-integration-tests.md
+[packaging-fallback]: ../issues/verify-packaging-workflow-and-duckdb-fallback.md
+[ranking-coordination]: ../issues/validate-ranking-algorithms-and-agent-coordination.md
+[document-environment-bootstrap]: ../issues/archive/document-environment-bootstrap.md
+[assemble-release-notes]: ../issues/archive/assemble-release-notes-and-validate-readme.md
