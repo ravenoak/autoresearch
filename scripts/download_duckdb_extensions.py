@@ -30,8 +30,9 @@ Note:
     the appropriate extension for your platform. The vss extension is also available
     as a Python package (duckdb-extension-vss) which can be installed via pip or poetry.
     If an extension cannot be downloaded due to network issues, the script loads
-    `.env.offline` and uses the `VECTOR_EXTENSION_PATH` provided there so
-    Autoresearch can run without optional features like vector search.
+    `.env.offline` and uses the `VECTOR_EXTENSION_PATH` provided there to copy a
+    previously downloaded file into the output directory. This fallback lets
+    Autoresearch continue without optional features like vector search.
 """
 
 import argparse
@@ -98,6 +99,25 @@ def load_offline_env(env_path: str = ".env.offline") -> dict:
             os.environ[key] = value
     logger.info("Loaded offline configuration from %s", env_path)
     return offline_vars
+
+
+def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | None:
+    """Use an already downloaded extension when network access fails.
+
+    The path is read from ``VECTOR_EXTENSION_PATH`` in ``.env.offline``. When
+    available, the extension file is copied into ``output_extension_dir`` so
+    packaging behaves the same as a successful download.
+    """
+    offline_vars = load_offline_env()
+    path = offline_vars.get("VECTOR_EXTENSION_PATH")
+    if path and os.path.exists(path):
+        os.makedirs(output_extension_dir, exist_ok=True)
+        dst = os.path.join(output_extension_dir, os.path.basename(path))
+        shutil.copy2(path, dst)
+        logger.info("Copied offline extension from %s", path)
+        return output_extension_dir
+    logger.warning("No offline extension configured for %s", extension_name)
+    return None
 
 
 def download_extension(extension_name, output_dir, platform_name=None):
@@ -173,15 +193,16 @@ def download_extension(extension_name, output_dir, platform_name=None):
 
         except duckdb.IOException as e:
             logger.warning(
-                "Network error downloading %s extension: %s. Falling back to offline configuration.",
+                "Network error downloading %s extension: %s. Attempting offline fallback.",
                 extension_name,
                 e,
             )
-            offline_vars = load_offline_env()
-            return offline_vars.get("VECTOR_EXTENSION_PATH")
+            return _offline_fallback(extension_name, output_extension_dir)
         except Exception as e:
-            logger.error(f"Error downloading {extension_name} extension: {e}")
-            return None
+            logger.error(
+                "Error downloading %s extension: %s", extension_name, e
+            )
+            return _offline_fallback(extension_name, output_extension_dir)
         finally:
             conn.close()
 
