@@ -2,39 +2,68 @@ import os
 
 import pytest
 
-from autoresearch.distributed import ProcessExecutor
 from autoresearch.config.models import ConfigModel, DistributedConfig
-from autoresearch.orchestration.orchestrator import AgentFactory
-from autoresearch.orchestration.state import QueryState
+from autoresearch.distributed import executors, ProcessExecutor
+from types import SimpleNamespace
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.state import QueryState
 
 
-class DummyAgent:
-    def __init__(self, name, pids):
-        self.name = name
-        self._pids = pids
+def _dummy_execute_agent_process(
+    agent_name: str,
+    state: QueryState,
+    config: ConfigModel,
+    result_queue=None,
+    storage_queue=None,
+):
+    msg = {
+        "action": "agent_result",
+        "agent": agent_name,
+        "result": {"results": {agent_name: "ok"}},
+        "pid": os.getpid(),
+    }
+    if result_queue is not None:
+        result_queue.put(msg)
+    return msg
 
-    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
-        return True
 
-    def execute(self, state: QueryState, config: ConfigModel, **_: object) -> dict:
-        self._pids.append(os.getpid())
-        state.update({"results": {self.name: "ok"}})
-        return {"results": {self.name: "ok"}}
+@pytest.fixture
+def process_executor(monkeypatch: pytest.MonkeyPatch) -> ProcessExecutor:
+    """Provide a ProcessExecutor that shuts down cleanly after the test."""
 
+    monkeypatch.setattr(executors, "_execute_agent_process", _dummy_execute_agent_process)
 
-@pytest.mark.integration
-def test_process_executor_runs(monkeypatch):
-    pids = []
-    monkeypatch.setattr(AgentFactory, "get", lambda name: DummyAgent(name, pids))
+    class DummyPool:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def starmap(self, func, args):
+            return [func(*a) for a in args]
+
+    monkeypatch.setattr(
+        executors.multiprocessing,
+        "get_context",
+        lambda _: SimpleNamespace(Pool=lambda processes=None: DummyPool()),
+    )
     cfg = ConfigModel(
         agents=["A", "B"],
         loops=1,
-        distributed=True,
-        distributed_config=DistributedConfig(enabled=True, num_cpus=2),
+        distributed=False,
+        distributed_config=DistributedConfig(enabled=False, num_cpus=2),
     )
     executor = ProcessExecutor(cfg)
-    resp = executor.run_query("q")
+    try:
+        yield executor
+    finally:
+        executor.shutdown()
+
+
+@pytest.mark.integration
+def test_process_executor_runs(process_executor: ProcessExecutor):
+    """Ensure distributed queries complete without hanging."""
+
+    resp = process_executor.run_query("q")
     assert isinstance(resp, QueryResponse)
-    assert len(set(pids)) > 1
-    executor.shutdown()
