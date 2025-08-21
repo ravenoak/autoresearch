@@ -40,6 +40,12 @@ sequences and show the ranked output matches the original order. A simulation,
 stability `1.0` in
 [ranking_tie_metrics.json](../../tests/analysis/ranking_tie_metrics.json).
 
+## Ranking correctness
+
+The simulation [`ranking_correctness_analysis.py`][rca] draws random relevance
+scores and confirms that sorting by score yields a non-increasing sequence.
+Results show correctness `1.0` in [`ranking_correctness_metrics.json`][rcm].
+
 ## Token budget heuristics
 
 Property-based tests verify that weighted scores remain normalized and
@@ -85,6 +91,8 @@ monotonic
 [tbseq]: ../../tests/unit/test_property_token_budget_sequence.py
 [tpbn]: ../../tests/unit/test_property_bm25_normalization.py
 [tpwt]: ../../tests/unit/test_property_weight_tuning.py
+[rca]: ../../tests/analysis/ranking_correctness_analysis.py
+[rcm]: ../../tests/analysis/ranking_correctness_metrics.json
 
 ## Coordination policies
 
@@ -111,6 +119,14 @@ and confirms the invariant.
 [tpcs]: ../../tests/unit/test_property_coordination_stability.py
 [tprt]: ../../tests/unit/test_property_ranking_ties.py
 [tpcfp]: ../../tests/unit/test_property_coordination_fixed_point.py
+[aca]: ../../tests/analysis/agent_coordination_analysis.py
+[acm]: ../../tests/analysis/agent_coordination_metrics.json
+
+## Agent coordination
+
+[`agent_coordination_analysis.py`][aca] spawns locked processes that increment a
+shared counter. The final value matches the expected total, recorded in
+[`agent_coordination_metrics.json`][acm], demonstrating proper synchronization.
 
 ## Summary
 
