@@ -299,6 +299,22 @@ class StorageManager(metaclass=StorageManagerMeta):
         return ctx
 
     @staticmethod
+    def teardown(
+        remove_db: bool = False,
+        context: StorageContext | None = None,
+        state: StorageState | None = None,
+    ) -> None:
+        """Close storage connections and optionally remove database files."""
+        st = state or StorageManager.state
+        ctx = context or st.context
+        if _delegate and _delegate is not StorageManager:
+            _delegate.teardown(remove_db, ctx, st)  # type: ignore[attr-defined]
+            return
+        StorageManager.state = st
+        StorageManager.context = ctx
+        teardown(remove_db, ctx, st)
+
+    @staticmethod
     def _current_ram_mb() -> float:
         """Calculate the approximate RAM usage of the current process in MB.
 
