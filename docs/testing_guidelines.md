@@ -30,7 +30,15 @@ task test:all          # entire suite including slow tests
 ```
 
 Run `task coverage` before committing to execute the full suite with coverage
-and token regression checks.
+and token regression checks. The command fails if line coverage drops below
+90%. CI stores a baseline `coverage.xml` and compares future runs against it to
+detect regressions. To perform the comparison locally, run:
+
+```bash
+python scripts/check_token_regression.py \
+    --coverage-baseline baseline/coverage.xml \
+    --coverage-current coverage.xml
+```
 
 You can also invoke the slow suite directly with:
 
@@ -38,7 +46,12 @@ You can also invoke the slow suite directly with:
 pytest -m slow
 ```
 
-`task test:fast` usually finishes in about **3 minutes**. The slow tests add roughly **7 minutes**, so `task test:all` takes around **10 minutes** total and is used by CI. Maintain at least **90% coverage**. When running suites separately, prefix each command with `coverage run -p` and merge the results using `coverage combine` before generating a report with `coverage html` or `coverage xml`.
+`task test:fast` usually finishes in about **3 minutes**. The slow tests add
+roughly **7 minutes**, so `task test:all` takes around **10 minutes** total
+and is used by CI. Maintain at least **90% coverage**. When running suites
+separately, prefix each command with `coverage run -p` and merge the results
+using `coverage combine` before generating a report with `coverage html` or
+`coverage xml`.
 
 ## Naming Conventions
 
@@ -246,15 +259,18 @@ Aim for high test coverage:
 
 Use `task coverage` to run the full suite with coverage and enforce the
 90% threshold. The command also invokes
-`scripts/check_token_regression.py` to detect token usage regressions. For
-a quicker pre-commit check run `task verify`, which executes a reduced
-suite with coverage and the same regression guard. If legitimate changes
-exceed the threshold, update `tests/integration/baselines/token_usage.json`
-and commit the new baseline.
+`scripts/check_token_regression.py` to detect token usage regressions.
+CI compares `coverage.xml` against a cached baseline so any drop in
+coverage is caught. For a quicker pre-commit check run `task verify`,
+which executes a reduced suite with coverage and the same regression
+guard. If legitimate changes exceed the token threshold, update
+`tests/integration/baselines/token_usage.json` and commit the new
+baseline.
 
 ## Template
 
-A template for unit tests is available at `tests/unit/test_template.py`. Use this template as a starting point for new test files.
+A template for unit tests is available at `tests/unit/test_template.py`. Use
+this template as a starting point for new test files.
 
 ## Example
 

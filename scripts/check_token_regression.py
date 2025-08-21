@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-"""Compare token metrics or coverage against baselines and enforce thresholds."""
+"""Compare token metrics or coverage against baselines and enforce thresholds.
+
+Usage:
+    python scripts/check_token_regression.py --threshold 5
+    python scripts/check_token_regression.py \
+        --coverage-baseline baseline/coverage.xml \
+        --coverage-current current/coverage.xml
+"""
 
 from __future__ import annotations
 
