@@ -33,6 +33,12 @@ brew install go-task/tap/go-task
 curl -sSL https://taskfile.dev/install.sh | sh
 ```
 
+After installation, initialize the environment:
+
+```bash
+task install
+```
+
 ### Core dependencies
 
 The following packages are required at the minimum versions listed. Each has
