@@ -13,5 +13,12 @@ loggers.
 
 ## Traceability
 
-- `../../tests/unit/test_logging_utils.py`
-- `../../tests/unit/test_logging_utils_env.py`
+- Modules
+  - [src/autoresearch/logging_utils.py][m1]
+- Tests
+  - [tests/unit/test_logging_utils.py][t1]
+  - [tests/unit/test_logging_utils_env.py][t2]
+
+[m1]: ../../src/autoresearch/logging_utils.py
+[t1]: ../../tests/unit/test_logging_utils.py
+[t2]: ../../tests/unit/test_logging_utils_env.py

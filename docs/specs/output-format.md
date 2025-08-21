@@ -12,14 +12,14 @@ plain text, graph views, or custom templates.
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/output_format.py`
-- **Tests**
-  - [output_formatting.feature](../../tests/behavior/features/output_formatting.feature)
-  - `../../tests/unit/test_output_format.py`
-  - `../../tests/unit/test_template.py`
+- Modules
+  - [src/autoresearch/output_format.py][m1]
+- Tests
+  - [tests/behavior/features/output_formatting.feature][t1]
+  - [tests/unit/test_output_format.py][t2]
+  - [tests/unit/test_template.py][t3]
 
-## Extending
-
-Add new behaviours with accompanying feature files and reference them
-under **Traceability**.
+[m1]: ../../src/autoresearch/output_format.py
+[t1]: ../../tests/behavior/features/output_formatting.feature
+[t2]: ../../tests/unit/test_output_format.py
+[t3]: ../../tests/unit/test_template.py

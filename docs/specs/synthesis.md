@@ -12,7 +12,10 @@ Helpers for building answers and rationales with token-aware compression.
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/synthesis.py`
-- **Tests**
-  - `../../tests/behavior/features/synthesis.feature`
+- Modules
+  - [src/autoresearch/synthesis.py][m1]
+- Tests
+  - [tests/behavior/features/synthesis.feature][t1]
+
+[m1]: ../../src/autoresearch/synthesis.py
+[t1]: ../../tests/behavior/features/synthesis.feature

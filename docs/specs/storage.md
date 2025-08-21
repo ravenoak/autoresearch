@@ -17,9 +17,14 @@ The storage subsystem persists claims and enables hybrid retrieval across graph,
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/storage.py`
-- **Tests**
-  - `../../tests/unit/test_storage*.py`
-  - `../../tests/integration/test_*storage*.py`
-  - `../../tests/behavior/features/storage_search_integration.feature`
+- Modules
+  - [src/autoresearch/storage.py][m1]
+- Tests
+  - [tests/behavior/features/storage_search_integration.feature][t1]
+  - [tests/integration/test_][t2]
+  - [tests/unit/test_storage][t3]
+
+[m1]: ../../src/autoresearch/storage.py
+[t1]: ../../tests/behavior/features/storage_search_integration.feature
+[t2]: ../../tests/integration/test_
+[t3]: ../../tests/unit/test_storage

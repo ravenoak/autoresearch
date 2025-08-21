@@ -4,4 +4,10 @@ Small helper utilities used by the CLI.
 
 ## Traceability
 
-- `../../tests/unit/test_cli_helpers.py`
+- Modules
+  - [src/autoresearch/cli_helpers.py][m1]
+- Tests
+  - [tests/unit/test_cli_helpers.py][t1]
+
+[m1]: ../../src/autoresearch/cli_helpers.py
+[t1]: ../../tests/unit/test_cli_helpers.py
