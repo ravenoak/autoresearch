@@ -41,3 +41,5 @@ jobs:
         with:
           name: coverage-data
           path: .coverage
+      - name: Exercise extension download fallback
+        run: uv run pytest tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_failure

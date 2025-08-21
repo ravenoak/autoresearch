@@ -232,8 +232,7 @@ uv run python -c "import owlrl" || { echo 'Failed to pre-load ontology reasoner.
 if retry 3 uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions; then
     echo "DuckDB extensions downloaded"
 else
-    echo 'Failed to download DuckDB extensions.' >&2
-    exit 1
+    echo 'Failed to download DuckDB extensions; continuing without them.' >&2
 fi
 # Export the path to the VSS extension for downstream tools. If no real
 # extension is available, fall back to the stub so tests can run without

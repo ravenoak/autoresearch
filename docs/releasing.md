@@ -20,3 +20,13 @@ Follow these steps to publish a new version of Autoresearch.
   ```bash
   uv run twine upload dist/*
   ```
+
+- If DuckDB extensions fail to download during packaging, the build continues
+  with a warning. Download them manually when needed:
+
+  ```bash
+  uv run python scripts/download_duckdb_extensions.py --output-dir ./extensions
+  ```
+
+  Place the resulting `.duckdb_extension` file in `extensions/vss/` and update
+  `VECTOR_EXTENSION_PATH` if required.

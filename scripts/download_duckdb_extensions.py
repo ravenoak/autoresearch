@@ -37,7 +37,6 @@ import platform
 import sys
 import tempfile
 import shutil
-from pathlib import Path
 import logging
 
 try:
@@ -50,9 +49,10 @@ except ImportError:
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
 
 def detect_platform():
     """Detect the current platform for DuckDB extension compatibility."""
@@ -81,6 +81,7 @@ def detect_platform():
     else:
         logger.warning(f"Unknown platform: {system} {machine}. Defaulting to linux_amd64.")
         return "linux_amd64"
+
 
 def download_extension(extension_name, output_dir, platform_name=None):
     """
@@ -117,7 +118,9 @@ def download_extension(extension_name, output_dir, platform_name=None):
             conn.install_extension(extension_name)
 
             # Verify the extension was installed
-            result = conn.execute("SELECT * FROM duckdb_extensions() WHERE extension_name = ?", [extension_name]).fetchall()
+            result = conn.execute(
+                "SELECT * FROM duckdb_extensions() WHERE extension_name = ?", [extension_name]
+            ).fetchall()
             if not result:
                 logger.error(f"Failed to install {extension_name} extension.")
                 return None
@@ -146,7 +149,9 @@ def download_extension(extension_name, output_dir, platform_name=None):
                 logger.error(f"No {extension_name} extension files found")
                 return None
 
-            logger.info(f"Successfully downloaded {extension_name} extension to {output_extension_dir}")
+            logger.info(
+                f"Successfully downloaded {extension_name} extension to {output_extension_dir}"
+            )
             return output_extension_dir
 
         except Exception as e:
@@ -155,12 +160,21 @@ def download_extension(extension_name, output_dir, platform_name=None):
         finally:
             conn.close()
 
+
 def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description="Download DuckDB extensions for offline use.")
-    parser.add_argument("--output-dir", default="./extensions", help="Directory to save extensions to")
-    parser.add_argument("--extensions", default="vss", help="Comma-separated list of extensions to download")
-    parser.add_argument("--platform", default=None, help="Platform to download extensions for (auto-detect if not specified)")
+    parser.add_argument(
+        "--output-dir", default="./extensions", help="Directory to save extensions to"
+    )
+    parser.add_argument(
+        "--extensions", default="vss", help="Comma-separated list of extensions to download"
+    )
+    parser.add_argument(
+        "--platform",
+        default=None,
+        help="Platform to download extensions for (auto-detect if not specified)",
+    )
 
     args = parser.parse_args()
 
@@ -175,37 +189,49 @@ def main():
     platform_name = args.platform or detect_platform()
     logger.info(f"Using platform: {platform_name}")
 
-    # Download each extension
-    success = True
+    # Download each extension and record failures
+    failed = []
     for extension in extensions:
         result = download_extension(extension, output_dir, platform_name)
         if result is None:
-            success = False
+            failed.append(extension)
 
     # Print configuration instructions
-    if success:
+    if not failed:
         logger.info("\nExtensions downloaded successfully!")
-        logger.info("\nTo use the downloaded extensions, add the following to your autoresearch.toml file:")
+        logger.info(
+            "\nTo use the downloaded extensions, add the following to your autoresearch.toml file:"
+        )
         logger.info("\n[storage.duckdb]")
 
         # Find the actual vss extension file to provide the correct path
         vss_extension_file = None
-        vss_dir = os.path.join(output_dir, 'extensions', 'vss')
+        vss_dir = os.path.join(output_dir, "extensions", "vss")
         if os.path.exists(vss_dir):
             for file in os.listdir(vss_dir):
-                if file.endswith('.duckdb_extension'):
+                if file.endswith(".duckdb_extension"):
                     vss_extension_file = os.path.join(vss_dir, file)
                     break
 
         if vss_extension_file:
-            logger.info(f"vector_extension_path = \"{vss_extension_file}\"")
-            logger.info("\nNote: The vector_extension_path must point to the .duckdb_extension file, not just the directory.")
+            logger.info(f'vector_extension_path = "{vss_extension_file}"')
+            logger.info(
+                "\nNote: The vector_extension_path must point to the .duckdb_extension file, not just the directory."
+            )
         else:
-            logger.info(f"vector_extension_path = \"{os.path.join(output_dir, 'extensions', 'vss', 'vss.duckdb_extension')}\"")
-            logger.info("\nNote: The vector_extension_path must point to the .duckdb_extension file. Please verify the exact filename.")
+            logger.info(
+                f"vector_extension_path = \"{os.path.join(output_dir, 'extensions', 'vss', 'vss.duckdb_extension')}\""
+            )
+            logger.info(
+                "\nNote: The vector_extension_path must point to the .duckdb_extension file."
+                " Please verify the exact filename."
+            )
     else:
-        logger.error("\nFailed to download some extensions. See errors above.")
-        sys.exit(1)
+        logger.warning(
+            "\nFailed to download extensions: %s. Proceeding without them.",
+            ", ".join(failed),
+        )
+
 
 if __name__ == "__main__":
     main()
