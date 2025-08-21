@@ -9,5 +9,10 @@ Sample configuration resources for quick-start setups.
 
 ## Traceability
 
-- `src/autoresearch/examples/`
-- `../../tests/unit/test_examples_package.py`
+- Modules
+  - [src/autoresearch/examples/][m1]
+- Tests
+  - [tests/unit/test_examples_package.py][t1]
+
+[m1]: ../../src/autoresearch/examples/
+[t1]: ../../tests/unit/test_examples_package.py

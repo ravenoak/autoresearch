@@ -12,13 +12,12 @@ It exposes a `SearchCache` class and a functional wrapper API.
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/cache.py`
-- **Tests**
-  - [cache_management.feature](../../tests/behavior/features/cache_management.feature)
-  - `../../tests/unit/test_cache.py`
+- Modules
+  - [src/autoresearch/cache.py][m1]
+- Tests
+  - [tests/behavior/features/cache_management.feature][t1]
+  - [tests/unit/test_cache.py][t2]
 
-## Extending
-
-Add new behaviours with accompanying feature files and reference them
-under **Traceability**.
+[m1]: ../../src/autoresearch/cache.py
+[t1]: ../../tests/behavior/features/cache_management.feature
+[t2]: ../../tests/unit/test_cache.py

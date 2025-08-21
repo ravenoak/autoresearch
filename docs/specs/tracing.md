@@ -9,7 +9,10 @@ OpenTelemetry helpers for instrumenting operations.
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/tracing.py`
-- **Tests**
-  - `../../tests/behavior/features/tracing.feature`
+- Modules
+  - [src/autoresearch/tracing.py][m1]
+- Tests
+  - [tests/behavior/features/tracing.feature][t1]
+
+[m1]: ../../src/autoresearch/tracing.py
+[t1]: ../../tests/behavior/features/tracing.feature

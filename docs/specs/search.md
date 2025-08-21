@@ -15,19 +15,22 @@ point.
 
 ## Traceability
 
-- **Modules**
-  - `src/autoresearch/search/`
-- **Tests**
-  - [search_cli.feature](../../tests/behavior/features/search_cli.feature)
-  - [hybrid_search.feature](../../tests/behavior/features/hybrid_search.feature)
-  - [storage_search_integration.feature](../../tests/behavior/features/storage_search_integration.feature)
-  - [local_sources.feature](../../tests/behavior/features/local_sources.feature)
-  - [vector_search_performance.feature](../../tests/behavior/features/vector_search_performance.feature)
-  - [`test_search_storage.py`](../../tests/integration/test_search_storage.py)
-  - [`test_config_hot_reload_components.py`]
-    (../../tests/integration/test_config_hot_reload_components.py)
+- Modules
+  - [src/autoresearch/search/][m1]
+- Tests
+  - [tests/behavior/features/hybrid_search.feature][t1]
+  - [tests/behavior/features/local_sources.feature][t2]
+  - [tests/behavior/features/search_cli.feature][t3]
+  - [tests/behavior/features/storage_search_integration.feature][t4]
+  - [tests/behavior/features/vector_search_performance.feature][t5]
+  - [tests/integration/test_config_hot_reload_components.py][t6]
+  - [tests/integration/test_search_storage.py][t7]
 
-## Extending
-
-Add new behaviours with accompanying feature files and reference them
-under **Traceability**.
+[m1]: ../../src/autoresearch/search/
+[t1]: ../../tests/behavior/features/hybrid_search.feature
+[t2]: ../../tests/behavior/features/local_sources.feature
+[t3]: ../../tests/behavior/features/search_cli.feature
+[t4]: ../../tests/behavior/features/storage_search_integration.feature
+[t5]: ../../tests/behavior/features/vector_search_performance.feature
+[t6]: ../../tests/integration/test_config_hot_reload_components.py
+[t7]: ../../tests/integration/test_search_storage.py

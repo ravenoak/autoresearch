@@ -16,6 +16,14 @@ coalition and scheduling details.
 
 ## Traceability
 
-- `../../tests/unit/test_distributed.py`
-- `../../tests/unit/test_distributed_extra.py`
-- `../../tests/integration/test_distributed_agent_storage.py`
+- Modules
+  - [src/autoresearch/distributed/][m1]
+- Tests
+  - [tests/integration/test_distributed_agent_storage.py][t1]
+  - [tests/unit/test_distributed.py][t2]
+  - [tests/unit/test_distributed_extra.py][t3]
+
+[m1]: ../../src/autoresearch/distributed/
+[t1]: ../../tests/integration/test_distributed_agent_storage.py
+[t2]: ../../tests/unit/test_distributed.py
+[t3]: ../../tests/unit/test_distributed_extra.py

@@ -16,6 +16,7 @@ tasks:
     cmds:
       - uv run flake8 src tests
       - uv run mypy src
+      - uv run python scripts/check_spec_tests.py
       - uv run pytest tests/unit -q
       - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
       - uv run pytest tests/behavior -q
@@ -97,6 +98,7 @@ tasks:
     cmds:
       - uv run flake8 src tests
       - uv run mypy src
+      - uv run python scripts/check_spec_tests.py
       - uv run pytest tests/unit --cov=src --cov-report=term-missing --cov-append
       - uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" \
           --cov=src --cov-report=term-missing --cov-append
