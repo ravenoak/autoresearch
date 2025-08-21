@@ -108,6 +108,8 @@ test = [
     "responses >=0.25.7",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
+    "pytest-httpx >=0.35.0",
+    "tomli-w >=1.2.0",
 ]
 # Full install: all features for power users and development
 full = [
