@@ -7,6 +7,10 @@ scattered. [docs/installation.md](../docs/installation.md) now provides the
 canonical instructions. Tests are unstable and packaging steps lack
 verification, so a consolidated plan is needed to coordinate these efforts.
 
+## Milestone
+
+- 0.1.0a1 (2026-03-01)
+
 ## Acceptance Criteria
 - Record the following PR-sized tasks with linked issues and dependency notes:
   - Clarify environment bootstrap and make `docs/installation.md`

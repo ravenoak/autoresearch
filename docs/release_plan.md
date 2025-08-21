@@ -27,15 +27,17 @@ Current checks show:
 
 ## Milestones
 
-- **0.1.0a1** (2026-03-01): Alpha preview to collect feedback.
-- **0.1.0** (2026-07-01): Finalize packaging, docs and CI checks with all
-  tests passing.
-- **0.1.1** (2026-09-15): Bug fixes and documentation updates.
-- **0.2.0** (2026-12-01): API stabilization, configuration hot-reload,
-  improved search backends.
-- **0.3.0** (2027-03-01): Distributed execution support, monitoring utilities.
-- **1.0.0** (2027-06-01): Full feature set, performance tuning and stable
-  interfaces.
+- **0.1.0a1** (2026-03-01, status: open): Alpha preview to collect feedback
+  ([prepare-alpha-release]).
+- **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
+  checks with all tests passing.
+- **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates.
+- **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
+  hot-reload, improved search backends.
+- **0.3.0** (2027-03-01, status: planned): Distributed execution support,
+  monitoring utilities.
+- **1.0.0** (2027-06-01, status: planned): Full feature set, performance
+  tuning and stable interfaces.
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
 schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
@@ -44,18 +46,21 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [x] `task coverage` reports at least **90%** total coverage (currently ~67%;
+- [ ] `task coverage` reports at least **90%** total coverage (currently ~67%;
   see [add-coverage-gates-and-regression-checks.md][coverage-gates])
-- [x] Integration test suite passes
+- [ ] Integration test suite passes
   ([stabilize-integration-tests.md][stabilize-integration-tests])
-- [x] Verify packaging workflow with DuckDB fallback
+- [ ] Verify packaging workflow with DuckDB fallback
   ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
-- [x] Validate ranking algorithms and agent coordination
-  ([validate-ranking-algorithms-and-agent-coordination.md][ranking-coordination])
+- [ ] Validate ranking algorithms and agent coordination (see
+  [ranking])
 - [x] Document development environment bootstrap
-  ([document-environment-bootstrap.md][document-environment-bootstrap])
+  ([document-environment-bootstrap.md][env-bootstrap])
 - [x] Assemble preliminary release notes and confirm README instructions
-  ([assemble-release-notes-and-validate-readme.md][assemble-release-notes])
+  ([assemble-release-notes-and-validate-readme.md][release-notes])
+
+These tasks depend on each other in order: environment bootstrap → packaging →
+integration tests → coverage → algorithm validation.
 
 Resolving these items will determine the new completion date for **0.1.0**.
 
@@ -94,6 +99,7 @@ optional extras):
 [coverage-gates]: ../issues/add-coverage-gates-and-regression-checks.md
 [stabilize-integration-tests]: ../issues/stabilize-integration-tests.md
 [packaging-fallback]: ../issues/verify-packaging-workflow-and-duckdb-fallback.md
-[ranking-coordination]: ../issues/validate-ranking-algorithms-and-agent-coordination.md
-[document-environment-bootstrap]: ../issues/archive/document-environment-bootstrap.md
-[assemble-release-notes]: ../issues/archive/assemble-release-notes-and-validate-readme.md
+[ranking]: ../issues/validate-ranking-algorithms-and-agent-coordination.md
+[env-bootstrap]: ../issues/archive/document-environment-bootstrap.md
+[release-notes]: ../issues/archive/assemble-release-notes-and-validate-readme.md
+[prepare-alpha-release]: ../issues/prepare-alpha-release.md
