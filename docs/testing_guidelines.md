@@ -338,6 +338,8 @@ to run every test.
 - Config tests write temporary files and require `tomli-w`.
 - Baseline JSON files in `tests/integration/baselines/` store expected
   metrics and token counts.
+- RDF persistence tests load `owlrl` to apply reasoning rules.
+- Some search backends rely on `python-docx` for document parsing.
 - No external services are required; all components run in memory.
 
 ## Updating Baselines

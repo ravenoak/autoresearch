@@ -9,8 +9,6 @@ from typing import Any, Optional
 
 import typer
 from rich.console import Console
-from rich.progress import Progress
-from rich.prompt import Prompt
 
 from ..cli_helpers import handle_command_not_found, parse_agent_groups
 from ..cli_utils import (
@@ -57,6 +55,10 @@ app = typer.Typer(
     pretty_exceptions_enable=False,
     # Disable pretty exceptions to handle them ourselves
 )
+# ``typer.Typer`` doesn't set ``name`` attribute on the object itself.
+# ``click.testing.CliRunner`` expects a ``name`` attribute when invoking the
+# application. Expose it explicitly so tests can run the CLI via ``CliRunner``.
+app.name = "autoresearch"
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
@@ -344,6 +346,8 @@ def search(
 
     try:
         loops = getattr(config, "loops", 1)
+
+        from . import Progress, Prompt
 
         def on_cycle_end(loop: int, state: QueryState) -> None:
             progress.update(task, advance=1)
