@@ -7,6 +7,21 @@ LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
+# Helper for retrying flaky network operations
+retry() {
+    local -r max_attempts="$1"; shift
+    local attempt=1
+    until "$@"; do
+        if (( attempt == max_attempts )); then
+            echo "Command failed after $attempt attempts: $*" >&2
+            return 1
+        fi
+        echo "Attempt $attempt failed: $*. Retrying..." >&2
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+}
+
 # NOTE: Keep this script in sync with AGENTS.md.
 # When tooling, helper scripts, or test directories change, update both this
 # file and AGENTS.md so new requirements are captured in each.
@@ -43,24 +58,21 @@ echo "Using Python $PYTHON_VERSION from $PYTHON_BIN"
 echo "Setting up Codex environment..."
 
 export DEBIAN_FRONTEND=noninteractive
-if apt-get update; then
-    echo "apt-get update completed"
-else
-    echo "apt-get update failed" >&2
+if ! retry 3 apt-get update; then
+    echo "apt-get update failed. Check network connectivity or package sources." >&2
     exit 1
 fi
-if apt-get install -y \
-        build-essential python3-dev python3-venv cmake pkg-config git libssl-dev libffi-dev libxml2-dev libargon2-dev libblas-dev liblapack-dev libopenblas-dev liblmdb-dev libz3-dev libcurl4-openssl-dev \
+if ! retry 3 apt-get install -y \
+        build-essential python3-dev python3-venv cmake pkg-config git \
+        libssl-dev libffi-dev libxml2-dev libargon2-dev libblas-dev \
+        liblapack-dev libopenblas-dev liblmdb-dev libz3-dev \
+        libcurl4-openssl-dev \
     ; then
-    echo "apt-get install completed"
-else
-    echo "apt-get install failed" >&2
+    echo "apt-get install failed. Verify packages or run the command manually." >&2
     exit 1
 fi
-if apt-get clean; then
-    echo "apt-get clean completed"
-else
-    echo "apt-get clean failed" >&2
+if ! retry 3 apt-get clean; then
+    echo "apt-get clean failed. Try running 'apt-get clean' manually." >&2
     exit 1
 fi
 rm -rf /var/lib/apt/lists/*
@@ -178,24 +190,6 @@ if [ "$missing" -ne 0 ]; then
 fi
 uv pip list | grep -E \
     'pytest(-bdd|-httpx)?|pytest-cov|flake8|mypy|hypothesis|tomli_w|freezegun|responses|uvicorn|psutil|a2a-sdk'
-
-# Helper for retrying flaky network operations
-retry() {
-    local -r max_attempts="$1"; shift
-    local attempt=1
-    while (( attempt <= max_attempts )); do
-        if "$@"; then
-            return 0
-        fi
-        if (( attempt == max_attempts )); then
-            echo "Command failed after $attempt attempts: $*" >&2
-            return 1
-        fi
-        echo "Attempt $attempt failed: $*. Retrying..." >&2
-        attempt=$((attempt + 1))
-        sleep 2
-    done
-}
 
 # Pre-download models so tests can run without network access
 if uv pip show sentence-transformers >/dev/null 2>&1; then

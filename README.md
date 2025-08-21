@@ -10,9 +10,19 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/). Install Go Task before invoking any
-`task` commands. After cloning the repository, initialize the environment and
-validate tool versions:
+[**Go Task**](https://taskfile.dev/). Install Go Task with your package
+manager or the official install script before invoking any `task` commands:
+
+```bash
+# macOS
+brew install go-task/tap/go-task
+
+# Linux
+curl -sSL https://taskfile.dev/install.sh | sh
+```
+
+After cloning the repository, initialize the environment and validate tool
+versions:
 
 ```bash
 task install
