@@ -252,5 +252,8 @@ else
     echo "VECTOR_EXTENSION_PATH already set to $VECTOR_EXTENSION_PATH"
 fi
 
+# Validate required tool versions
+uv run python scripts/check_env.py
+
 # Python environment configured via uv sync and optional extras
 
