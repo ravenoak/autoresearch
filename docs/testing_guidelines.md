@@ -320,6 +320,14 @@ with a stub in the case of the `distributed` extra). Install them with
 `uv pip install -e '.[full,parsers,git,llm,dev,ui,analysis,vss,distributed]'`
 to run every test.
 
+## Required services and data
+
+- Network calls are mocked via `pytest-httpx`; install it if missing.
+- Config tests write temporary files and require `tomli-w`.
+- Baseline JSON files in `tests/integration/baselines/` store expected
+  metrics and token counts.
+- No external services are required; all components run in memory.
+
 ## Updating Baselines
 
 Some integration tests compare runtime metrics against JSON files in
