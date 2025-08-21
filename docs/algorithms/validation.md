@@ -21,6 +21,15 @@ Property-based tests verify invariants:
 - [test_property_bm25_normalization.py][tpbn] keeps BM25 scores in `[0, 1]`.
 - [test_property_weight_tuning.py][tpwt] confirms tuned weights sum to one
   and improve NDCG.
+- [test_property_weight_convergence.py][tpwc] shows halving the step never
+  decreases NDCG.
+
+Let `f(w)` denote the NDCG for weights `w` on the simplex `Δ`. The function is
+continuous on compact `Δ`, so the grid `L_h = {w ∈ Δ | w_i ∈ hℕ}` contains a
+maximizer `w_h` with `f(w_h) → max_{w∈Δ} f(w)` as `h → 0`. The simulation in
+[weight_convergence_metrics.json]
+(../../tests/analysis/weight_convergence_metrics.json) shows identical scores
+for steps `0.1`, `0.05`, and `0.025`, empirically supporting convergence.
 
 ## Token budget heuristics
 
@@ -78,6 +87,11 @@ in
 The results match the convergence bound in
 [dialectical_coordination.md](dialectical_coordination.md). A property-based
 test, [test_property_dialectical_coordination.py][tpdc], validates
-convergence to the ground truth in the noiseless case.
+convergence to the ground truth in the noiseless case. Let `e^t = b_s^t - g`.
+Ignoring noise, the update gives `e^{t+1} = (1 - α/3) e^t`, so after two steps
+`|e^t| ≤ (1 - α/3) |g|`. The bound is checked in
+[test_property_coordination_stability.py][tpcs].
 
 [tpdc]: ../../tests/unit/test_property_dialectical_coordination.py
+[tpwc]: ../../tests/unit/test_property_weight_convergence.py
+[tpcs]: ../../tests/unit/test_property_coordination_stability.py
