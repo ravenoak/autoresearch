@@ -28,6 +28,7 @@ documented behaviour.
 | `src/autoresearch/distributed/` | [distributed.md](distributed.md) | `../../tests/unit/test_distributed.py<br>../../tests/unit/test_distributed_extra.py<br>../../tests/integration/test_distributed_agent_storage.py` |
 | `src/autoresearch/error_utils.py` | [error-utils.md](error-utils.md) | `../../tests/unit/test_error_utils_additional.py` |
 | `src/autoresearch/errors.py` | [errors.md](errors.md) | `../../tests/unit/test_config_errors.py<br>../../tests/unit/test_config_validation_errors.py<br>../../tests/unit/test_errors.py` |
+| `src/autoresearch/examples/` | [examples.md](examples.md) | `../../tests/unit/test_examples_package.py` |
 | `src/autoresearch/extensions.py` | [extensions.md](extensions.md) | `../../tests/unit/test_vss_extension_loader.py<br>../../tests/unit/test_duckdb_storage_backend.py` |
 | `src/autoresearch/kg_reasoning.py` | [kg-reasoning.md](kg-reasoning.md) | `../../tests/unit/test_kg_reasoning.py` |
 | `src/autoresearch/llm/` | [llm.md](llm.md) | `../../tests/unit/test_agents_llm.py<br>../../tests/unit/test_llm_adapter.py<br>../../tests/unit/test_llm_capabilities.py` |
