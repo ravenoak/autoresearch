@@ -4,9 +4,10 @@ This guide explains how to install Autoresearch and manage optional features.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
-before running `task`. After cloning, bootstrap the environment and verify
-the toolchain:
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. **Install Go Task
+before running any `task` commands** such as `task install`. After installing
+Go Task and cloning the repository, bootstrap the environment and verify the
+toolchain:
 
 ```bash
 task install
