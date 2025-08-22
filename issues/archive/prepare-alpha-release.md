@@ -37,4 +37,4 @@ verification, so a consolidated plan is needed to coordinate these efforts.
    coverage gates and integration tests.
 
 ## Status
-Open
+Archived

@@ -46,6 +46,8 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
+- [x] Environment bootstrap documented and installation instructions
+  consolidated ([document-environment-bootstrap.md][environment-bootstrap])
 - [x] Packaging verification with DuckDB fallback
   ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
 - [x] Integration test suite passes
@@ -54,8 +56,8 @@ now set for **July 1, 2026** while packaging tasks are resolved.
   (see [add-coverage-gates-and-regression-checks.md][coverage-gates])
 - [x] Validate ranking algorithms and agent coordination (see [ranking])
 
-These tasks completed in order: packaging verification → integration tests →
-coverage gates → algorithm validation.
+These tasks completed in order: environment bootstrap → packaging verification
+→ integration tests → coverage gates → algorithm validation.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.
 
@@ -95,7 +97,8 @@ optional extras):
 [stabilize-integration-tests]: ../issues/archive/stabilize-integration-tests.md
 [packaging-fallback]: ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md
 [ranking]: ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md
-[prepare-alpha-release]: ../issues/prepare-alpha-release.md
+[environment-bootstrap]: ../issues/archive/document-environment-bootstrap.md
+[prepare-alpha-release]: ../issues/archive/prepare-alpha-release.md
 [finalize-first-public-preview-release]: ../issues/finalize-first-public-preview-release.md
 [deliver-bug-fixes-and-docs-update]: ../issues/deliver-bug-fixes-and-docs-update.md
 [stabilize-api-and-improve-search]: ../issues/stabilize-api-and-improve-search.md
