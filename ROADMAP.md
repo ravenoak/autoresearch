@@ -3,12 +3,12 @@
 This roadmap summarizes planned features for upcoming releases. Dates and
 milestones align with the [release plan](docs/release_plan.md). Installation and
 environment details are covered in the [README](README.md). Last updated
-**August 22, 2025**.
+**August 23, 2025**.
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current test and coverage results. Use Python
-3.12+ with:
+See [STATUS.md](STATUS.md) for current test and coverage results. Current
+coverage from the unit subset is **24%**. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -19,7 +19,7 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0a1 (2026-03-01, status: completed): Alpha preview to collect feedback
+- 0.1.0a1 (2026-03-01, status: in progress): Alpha preview to collect feedback
   while aligning environment requirements ([prepare-alpha-release]).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
   with all tests passing
@@ -51,8 +51,8 @@ environment work. Key activities included:
   ([packaging-fallback]).
 - [x] Integration tests stabilized
   ([stabilize-integration-tests]).
-- [x] Coverage gates enforce 90% threshold
-  ([coverage-gates]).
+- [ ] Coverage gates target **90%** total coverage; current coverage is
+  **24%** ([coverage-gates]).
 - [x] Algorithm validation for ranking and coordination ([ranking]).
 
 These steps completed in sequence: environment bootstrap → packaging

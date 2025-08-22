@@ -9,7 +9,10 @@ Reference issues by slugged filename (for example,
 - Track environment alignment to ensure Python 3.12 and dev tooling are
   available.
     [align-environment-with-requirements]
- - Update release plan with revised milestone schedule.
+ - Update release plan with revised milestone schedule; 0.1.0a1 marked in
+   progress and coverage noted at **24%**.
+ - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 24% coverage and
+   TestPyPI 403).
   - Add rich configuration context fixtures with sample data for tests.
     [create-more-comprehensive-test-contexts]
 - Optimize mypy configuration to skip site packages, preventing hangs during
