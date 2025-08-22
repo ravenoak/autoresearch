@@ -27,6 +27,7 @@ def cleanup_rdf_store():
     ConfigLoader.reset_instance()
 
 
+@pytest.mark.slow
 def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     """Test that claims are properly persisted to the RDF store.
 
@@ -79,6 +80,7 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     assert str(store.store.engine.url).startswith("sqlite:///")
 
 
+@pytest.mark.slow
 def test_memory_backend_initializes(tmp_path, monkeypatch):
     """RDF store should use in-memory backend when configured."""
     cfg = ConfigModel(

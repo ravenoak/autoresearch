@@ -35,6 +35,7 @@ def make_agent(name, calls, store_calls):
 pairs = list(itertools.permutations(["AgentA", "AgentB", "AgentC", "Synthesizer"], 2))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("agents", pairs)
 def test_orchestrator_all_agent_pairings(monkeypatch, agents):
     calls: list[str] = []

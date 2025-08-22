@@ -136,6 +136,7 @@ def test_orchestrator_agent_pairings(monkeypatch, agents):
 pairings = list(itertools.permutations(["AgentA", "AgentB", "Synthesizer"], 2))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "agents, fail_index",
     [(p, i) for p in pairings for i in range(len(p))],

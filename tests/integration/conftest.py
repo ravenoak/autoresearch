@@ -2,10 +2,18 @@ import json
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
-pytestmark = pytest.mark.slow
+from autoresearch.api import app as api_app
 
 BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "token_baselines.json"
+
+
+@pytest.fixture
+def api_client():
+    """Provide a FastAPI TestClient that closes after use."""
+    with TestClient(api_app) as client:
+        yield client
 
 
 @pytest.fixture

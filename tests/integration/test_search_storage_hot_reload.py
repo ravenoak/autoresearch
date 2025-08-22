@@ -4,11 +4,14 @@ import tomllib
 
 from types import SimpleNamespace
 
+import pytest
+
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 
 
+@pytest.mark.slow
 def test_search_storage_hot_reload(example_autoresearch_toml, monkeypatch):
     """Search and storage should respect configuration reloads."""
 

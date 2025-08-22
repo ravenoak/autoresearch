@@ -5,6 +5,8 @@ import sys
 import shutil
 from pathlib import Path
 
+import pytest
+
 
 SCRIPT = Path(__file__).parents[2] / "scripts" / "upgrade.py"
 
@@ -38,11 +40,13 @@ def run_upgrade(tmp_path: Path, poetry_env: bool):
     return calls
 
 
+@pytest.mark.slow
 def test_upgrade_with_poetry(tmp_path):
     calls = run_upgrade(tmp_path, poetry_env=True)
     assert ["poetry", "update", "autoresearch"] in calls
 
 
+@pytest.mark.slow
 def test_upgrade_with_pip(tmp_path):
     calls = run_upgrade(tmp_path, poetry_env=False)
     expected = [sys.executable, "-m", "pip", "install", "-U", "autoresearch"]
