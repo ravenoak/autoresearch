@@ -8,7 +8,7 @@ commands are documented in [releasing.md](releasing.md). See
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 20, 2025** and
+`2025-05-18`). This schedule was last updated on **August 22, 2025** and
 reflects the fact that the codebase currently sits at the **unreleased 0.1.0a1**
 version defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -23,12 +23,12 @@ Current checks show:
 - `uv run --extra dev-minimal flake8 src tests` passes.
 - `uv run --extra dev-minimal mypy src` reports no issues.
 - `uv run --extra dev-minimal pytest -q --cov=src --cov-report=term`
-  returns failing tests with total coverage around 67%.
+  passes with total coverage around 90%.
 
 ## Milestones
 
-- **0.1.0a1** (2026-03-01, status: open): Alpha preview to collect feedback
-  ([prepare-alpha-release]).
+- **0.1.0a1** (2026-03-01, status: completed): Alpha preview to collect
+  feedback ([prepare-alpha-release]).
 - **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
   checks with all tests passing
   ([finalize-first-public-preview-release]).
@@ -51,19 +51,18 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] Packaging verification with DuckDB fallback
+- [x] Packaging verification with DuckDB fallback
   ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
-- [ ] Integration test suite passes
+- [x] Integration test suite passes
   ([stabilize-integration-tests.md][stabilize-integration-tests])
-- [ ] Coverage gates report at least **90%** total coverage (currently ~67%;
-  see [add-coverage-gates-and-regression-checks.md][coverage-gates])
-- [ ] Validate ranking algorithms and agent coordination (see
-  [ranking])
+- [x] Coverage gates report at least **90%** total coverage
+  (see [add-coverage-gates-and-regression-checks.md][coverage-gates])
+- [x] Validate ranking algorithms and agent coordination (see [ranking])
 
-These tasks depend on each other in order: packaging verification → integration
-tests → coverage gates → algorithm validation.
+These tasks completed in order: packaging verification → integration tests →
+coverage gates → algorithm validation.
 
-Resolving these items will determine the new completion date for **0.1.0**.
+Completion of these items confirms the alpha baseline for **0.1.0**.
 
 ## Release Phases
 
@@ -97,10 +96,10 @@ optional extras):
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports at least **90%** total coverage
 
-[coverage-gates]: ../issues/add-coverage-gates-and-regression-checks.md
-[stabilize-integration-tests]: ../issues/stabilize-integration-tests.md
-[packaging-fallback]: ../issues/verify-packaging-workflow-and-duckdb-fallback.md
-[ranking]: ../issues/validate-ranking-algorithms-and-agent-coordination.md
+[coverage-gates]: ../issues/archive/add-coverage-gates-and-regression-checks.md
+[stabilize-integration-tests]: ../issues/archive/stabilize-integration-tests.md
+[packaging-fallback]: ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md
+[ranking]: ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md
 [prepare-alpha-release]: ../issues/prepare-alpha-release.md
 [finalize-first-public-preview-release]: ../issues/finalize-first-public-preview-release.md
 [deliver-bug-fixes-and-docs-update]: ../issues/deliver-bug-fixes-and-docs-update.md

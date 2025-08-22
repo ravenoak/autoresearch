@@ -14,4 +14,4 @@ See [docs/algorithms/validation.md](../docs/algorithms/validation.md)
 for the collected results.
 
 ## Status
-Open
+Archived

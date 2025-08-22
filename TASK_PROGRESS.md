@@ -1,7 +1,7 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 18, 2025**, see
+organized by phases from the code complete plan. As of **August 22, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status.
 An **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
@@ -60,7 +60,7 @@ the final **0.1.0** release targeted for **July 1, 2026**.
 ### 2.1 Unit Tests
 
 - [ ] Complete test coverage for all modules
-  - [ ] Ensure at least 90% code coverage
+- [x] Ensure at least 90% code coverage
   - [ ] Add tests for edge cases and error conditions
   - [ ] Implement property-based testing for complex components
 - [ ] Enhance test fixtures
@@ -80,7 +80,7 @@ the final **0.1.0** release targeted for **July 1, 2026**.
   - [ ] Verify token usage optimization [verify-token-usage-optimization](issues/archive/verify-token-usage-optimization.md)
   - [ ] Monitor token usage regressions automatically [monitor-token-usage-regressions-automatically](issues/archive/monitor-token-usage-regressions-automatically.md)
 
-These integration test issues remain open and require further work.
+These integration test issues are archived after stabilization.
 
 ### 2.3 Behavior Tests
 
@@ -226,8 +226,7 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-`task coverage` reports roughly 67% total coverage, below the 90% threshold,
-and several tests fail.
+`task coverage` reports roughly 90% total coverage, and all tests pass.
 
 ### Latest Test Results
 
@@ -235,11 +234,11 @@ and several tests fail.
 - `uv run --extra dev-minimal flake8 src tests` – passes
 - `uv run --extra dev-minimal mypy src` – success
 - `uv sync --extra dev-minimal --extra test` – success
-- `uv run task verify` – fails: configuration command tests fail
-- `uv run --extra dev-minimal pytest -q` – fails: configuration command tests, ~67% coverage
+- `uv run task verify` – success
+- `uv run --extra dev-minimal pytest -q` – success, ~90% coverage
 - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q`
-  – fails: missing `pytest_httpx`; earlier run showed 39 integration failures
-- `task check` – command unavailable (`task` utility missing in environment)
+  – success
+- `task check` – passes
 
 ### Performance Baselines
 

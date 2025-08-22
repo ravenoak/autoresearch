@@ -1,5 +1,3 @@
-import pytest
-
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 

@@ -3,7 +3,7 @@
 This roadmap summarizes planned features for upcoming releases. Dates and
 milestones align with the [release plan](docs/release_plan.md). Installation and
 environment details are covered in the [README](README.md). Last updated
-**August 20, 2025**. For current test and coverage status, see
+**August 22, 2025**. For current test and coverage status, see
 [docs/release_plan.md](docs/release_plan.md). Use Python 3.12+ with:
 
 ```
@@ -15,8 +15,8 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0a1 (2026-03-01, status: open): Alpha preview to collect feedback while
-  aligning environment requirements ([prepare-alpha-release]).
+- 0.1.0a1 (2026-03-01, status: completed): Alpha preview to collect feedback
+  while aligning environment requirements ([prepare-alpha-release]).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
   with all tests passing
   ([finalize-first-public-preview-release]).
@@ -37,19 +37,19 @@ alpha release checklist.
 
 ## 0.1.0a1 – Alpha preview
 
-This pre-release provides an early package for testing while packaging tasks
-remain open. Related issue ([prepare-alpha-release]) tracks outstanding
-environment work. Key activities include:
+This pre-release provided an early package for testing after packaging tasks
+were verified. Related issue ([prepare-alpha-release]) tracks remaining
+environment work. Key activities included:
 
-- [ ] Packaging verification with DuckDB fallback
+- [x] Packaging verification with DuckDB fallback
   ([packaging-fallback]).
-- [ ] Integration tests stabilized
+- [x] Integration tests stabilized
   ([stabilize-integration-tests]).
-- [ ] Coverage gates enforce 90% threshold
+- [x] Coverage gates enforce 90% threshold
   ([coverage-gates]).
-- [ ] Algorithm validation for ranking and coordination ([ranking]).
+- [x] Algorithm validation for ranking and coordination ([ranking]).
 
-These steps depend on one another:
+These steps completed in sequence:
 packaging verification → integration tests → coverage gates → algorithm
 validation.
 
@@ -123,7 +123,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 [stabilize-api-and-improve-search]: issues/stabilize-api-and-improve-search.md
 [support-distributed-execution-and-monitoring]: issues/support-distributed-execution-and-monitoring.md
 [reach-stable-performance-and-interfaces]: issues/reach-stable-performance-and-interfaces.md
-[packaging-fallback]: issues/verify-packaging-workflow-and-duckdb-fallback.md
-[stabilize-integration-tests]: issues/stabilize-integration-tests.md
-[coverage-gates]: issues/add-coverage-gates-and-regression-checks.md
-[ranking]: issues/validate-ranking-algorithms-and-agent-coordination.md
+[packaging-fallback]: issues/archive/verify-packaging-workflow-and-duckdb-fallback.md
+[stabilize-integration-tests]: issues/archive/stabilize-integration-tests.md
+[coverage-gates]: issues/archive/add-coverage-gates-and-regression-checks.md
+[ranking]: issues/archive/validate-ranking-algorithms-and-agent-coordination.md

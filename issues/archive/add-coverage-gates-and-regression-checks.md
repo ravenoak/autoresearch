@@ -10,4 +10,4 @@ To reach the alpha release target, coverage thresholds and regression checks mus
 - Document how to run coverage locally using `task coverage`.
 
 ## Status
-Open
+Archived

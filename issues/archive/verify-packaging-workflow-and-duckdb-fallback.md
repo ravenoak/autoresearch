@@ -10,4 +10,4 @@ We need to verify the packaging workflow and provide a fallback when VSS extensi
 - Document the verified packaging steps and fallback behavior.
 
 ## Status
-Open
+Archived
