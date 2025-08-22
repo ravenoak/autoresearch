@@ -8,6 +8,9 @@ uvicorn autoresearch.api:app --reload
 
 Once the server is running you can interact with the endpoints described below.
 
+For details on orchestrator state transitions and the API contract see
+[orchestrator_state.md](orchestrator_state.md).
+
 ## Endpoints
 
 ### `POST /query`

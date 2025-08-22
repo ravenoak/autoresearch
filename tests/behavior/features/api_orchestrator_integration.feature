@@ -7,6 +7,7 @@ Feature: API and Orchestrator Integration
     Given the API server is running
     And the orchestrator is configured with test agents
 
+  # Spec: docs/orchestrator_state.md#api-contract - Forward queries through orchestrator
   Scenario: API forwards queries to the orchestrator
     When I send a query "What is artificial intelligence?" to the API
     Then the orchestrator should receive the query
@@ -15,6 +16,7 @@ Feature: API and Orchestrator Integration
     And the response should include citations
     And the response should include reasoning
 
+  # Spec: docs/orchestrator_state.md#api-contract - Surface orchestrator failures via API
   Scenario: API handles orchestrator errors gracefully
     Given the orchestrator is configured to raise an error
     When I send a query "Test query" to the API
