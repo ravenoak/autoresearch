@@ -49,6 +49,19 @@ The simulation [`ranking_correctness_analysis.py`][rca] draws random relevance
 scores and confirms that sorting by score yields a non-increasing sequence.
 Results show correctness `1.0` in [`ranking_correctness_metrics.json`][rcm].
 
+## Empirical ranking evaluation
+
+Running `uv run scripts/evaluate_ranking.py examples/search_evaluation.csv`
+with default weights yielded precision@1 `0.00` and recall@1 `0.00`. The
+dataset is stored in
+[examples/search_evaluation.csv](../../examples/search_evaluation.csv).
+
+## Gradient-descent tuning
+
+Executing `uv run scripts/weight_tuning_convergence.py --iterations 50 --trials`
+`5` produced mean weights `(0.349, 0.257, 0.394)` with zero deviation,
+indicating deterministic convergence over five trials.
+
 ## Token budget heuristics
 
 Property-based tests verify that weighted scores remain normalized and

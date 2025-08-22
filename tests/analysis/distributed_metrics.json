@@ -1,14 +1,14 @@
 {
   "1": {
     "cpu_percent": 0.0,
-    "memory_mb": 44.68359375
+    "memory_mb": 136.41015625
   },
   "2": {
-    "cpu_percent": 29.7,
-    "memory_mb": 49.2265625
+    "cpu_percent": 29.0,
+    "memory_mb": 140.41015625
   },
   "4": {
-    "cpu_percent": 40.5,
-    "memory_mb": 49.3515625
+    "cpu_percent": 39.1,
+    "memory_mb": 140.53515625
   }
 }
