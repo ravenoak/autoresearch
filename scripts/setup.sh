@@ -94,7 +94,9 @@ else:
 if [ -z "$VSS_EXTENSION" ]; then
     VSS_EXTENSION="./extensions/vss/vss.duckdb_extension"
     echo "Warning: VSS extension file not found. Using default path: $VSS_EXTENSION"
-    echo "You may need to place the extension manually in this location."
+    echo "Creating stub so tests can run without vector search..."
+    mkdir -p "$(dirname "$VSS_EXTENSION")"
+    : > "$VSS_EXTENSION"
 fi
 
 # Set up .env file with vector_extension_path if it doesn't exist

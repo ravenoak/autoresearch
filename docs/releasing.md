@@ -26,7 +26,9 @@ Follow these steps to publish a new version of Autoresearch.
 - If DuckDB extensions fail to download during packaging, the build
   continues with a warning. The download script falls back to
   `VECTOR_EXTENSION_PATH` defined in `.env.offline` and copies the
-  referenced file into `extensions/vss/`. Run the script manually when
+  referenced file into `extensions/vss/`. When no offline copy is
+  available, it creates a stub `vss.duckdb_extension` so packaging and
+  tests proceed without vector search. Run the script manually when
   needed:
 
   ```bash
@@ -35,5 +37,6 @@ Follow these steps to publish a new version of Autoresearch.
 
   At runtime, if the extension remains unavailable, the storage backend
   reads `.env.offline` for a `VECTOR_EXTENSION_PATH` fallback before
-  continuing without vector search.
+  continuing without vector search. `scripts/setup.sh` mirrors this
+  behavior by writing a stub file when no extension is present.
 
