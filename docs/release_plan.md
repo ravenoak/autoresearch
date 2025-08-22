@@ -13,17 +13,12 @@ reflects the fact that the codebase currently sits at the **unreleased 0.1.0a1**
 version defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
-## Test and Coverage Status
+## Status
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
-
-Current checks show:
-
-- `uv run --extra dev-minimal flake8 src tests` passes.
-- `uv run --extra dev-minimal mypy src` reports no issues.
-- `uv run --extra dev-minimal pytest -q --cov=src --cov-report=term`
-  passes with total coverage around 90%.
+Current test and coverage results are tracked in
+[../STATUS.md](../STATUS.md).
 
 ## Milestones
 
