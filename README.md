@@ -9,6 +9,9 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
 source for environment setup and optional features.
 
+For orchestrator state transitions and API contracts see
+[docs/orchestrator_state.md](docs/orchestrator_state.md).
+
 ## Prerequisites
 
 Autoresearch requires **Python 3.12+**,

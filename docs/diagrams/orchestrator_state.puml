@@ -1,0 +1,12 @@
+@startuml
+skinparam dpi 150
+skinparam monochrome true
+
+[*] --> Idle
+Idle --> Preparing : start()
+Preparing --> Running : launch()
+Running --> Complete : finish()
+Running --> Error : fail()
+Complete --> [*]
+Error --> [*]
+@enduml

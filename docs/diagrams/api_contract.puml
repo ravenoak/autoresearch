@@ -1,0 +1,16 @@
+@startuml
+skinparam dpi 150
+skinparam monochrome true
+
+participant Client
+participant API
+participant Orchestrator
+participant Agent
+
+Client -> API : submitQuery()
+API -> Orchestrator : dispatch(request)
+Orchestrator -> Agent : runTask()
+Agent --> Orchestrator : result
+Orchestrator --> API : respond(result)
+API --> Client : deliver(response)
+@enduml
