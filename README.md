@@ -13,8 +13,10 @@ source for environment setup and optional features.
 
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
-[Go Task](https://taskfile.dev/). For detailed setup instructions, see
-[docs/installation.md](docs/installation.md).
+[Go Task](https://taskfile.dev/). After cloning, run `./scripts/setup.sh` for
+the full developer bootstrap or `task install` for a minimal environment. See
+[docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
+details.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).

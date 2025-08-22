@@ -6,21 +6,28 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. **Install Go Task
-before running any `task` commands** such as `task install`. After installing
-Go Task and cloning the repository, bootstrap the environment and verify the
-toolchain:
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
+before running any `task` commands.
+
+## After cloning
+
+Run a bootstrap command immediately:
 
 ```bash
-task install
+./scripts/setup.sh  # full developer bootstrap
+# or
+task install        # minimal environment
+```
+
+If you see errors like `task: command not found` or `uv: command not found`,
+diagnose the environment with
+[`scripts/check_env.py`](../scripts/check_env.py):
+
+```bash
 uv run python scripts/check_env.py
 ```
 
-This sequence installs the minimal development dependencies and checks that
-**uv** and Go Task meet the version requirements.
-The helper script automates additional setup:
-
-- [`scripts/setup.sh`](../scripts/setup.sh) – full developer bootstrap
+The script reports missing tools and version mismatches.
 
 ## Requirements
 
