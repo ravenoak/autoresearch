@@ -4,16 +4,16 @@ The orchestrator adjusts its token allowance using
 `suggest_token_budget` from
 [`orchestration.metrics`](../../src/autoresearch/orchestration/metrics.py).
 Let `u_t` denote tokens consumed in cycle `t` and `b_t` the budget before
-adaptation. With margin `m`, the update is
+adaptation. With margin `m`, the update follows the piecewise rule
 
-```
-if u_t > b_t * (1 + m):
-    b_{t+1} = ceil(u_t * (1 + m))
-elif u_t < b_t * (1 - m):
-    b_{t+1} = ceil(u_t * (1 + m))
-else:
-    b_{t+1} = b_t
-```
+\[
+b_{t+1} =
+\begin{cases}
+\lceil u_t (1 + m) \rceil & u_t > b_t (1 + m) \\
+\lceil u_t (1 + m) \rceil & u_t < b_t (1 - m) \\
+b_t & \text{otherwise}
+\end{cases}
+\]
 
 ## Convergence
 
@@ -38,6 +38,10 @@ step 1: 27
 ...
 final budget: 27
 ```
+
+The regression test
+[`test_token_budget_convergence.py`](../../tests/unit/test_token_budget_convergence.py)
+asserts that the limit `ceil(u * (1 + m))` is reached for constant usage.
 
 For details on usage recording and metrics, see the
 [token budget specification](../token_budget_spec.md).
