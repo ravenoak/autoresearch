@@ -131,6 +131,19 @@ Verify the environment by running:
 uv run python scripts/check_env.py
 ```
 
+### Packaging verification
+
+Build and validate distribution artifacts before publishing:
+
+```bash
+uv run python -m build
+uv run python scripts/publish_dev.py --dry-run
+```
+
+If the DuckDB VSS extension cannot be downloaded,
+`scripts/download_duckdb_extensions.py` reads `.env.offline` and uses
+`VECTOR_EXTENSION_PATH` so the project works without vector search support.
+
 ### Offline installation
 
 To install without network access, pre-download the required packages and
