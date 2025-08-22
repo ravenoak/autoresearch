@@ -2,9 +2,8 @@
 """Compare token metrics or coverage against baselines and enforce thresholds.
 
 Usage:
-    python scripts/check_token_regression.py --threshold 5
-    python scripts/check_token_regression.py \
-        --coverage-baseline baseline/coverage.xml \
+    uv run python scripts/check_token_regression.py --threshold 5
+    uv run python scripts/check_token_regression.py \
         --coverage-current current/coverage.xml
 """
 
@@ -48,13 +47,22 @@ def main() -> int:
         "--release",
         default=os.getenv("AUTORESEARCH_RELEASE", "development"),
     )
-    parser.add_argument("--coverage-baseline", type=Path)
-    parser.add_argument("--coverage-current", type=Path)
+    parser.add_argument(
+        "--coverage-baseline",
+        type=Path,
+        default=Path("baseline/coverage.xml"),
+        help="Path to baseline coverage XML",
+    )
+    parser.add_argument(
+        "--coverage-current",
+        type=Path,
+        help="Path to current coverage XML",
+    )
     args = parser.parse_args()
 
-    if args.coverage_baseline or args.coverage_current:
-        if not args.coverage_baseline or not args.coverage_current:
-            parser.error("Both --coverage-baseline and --coverage-current are required")
+    if args.coverage_current:
+        if not args.coverage_current.exists():
+            parser.error(f"Coverage file not found: {args.coverage_current}")
         if not args.coverage_baseline.exists():
             print(f"No baseline coverage at {args.coverage_baseline}")
             return 0
