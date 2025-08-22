@@ -28,15 +28,15 @@ preparing for the upcoming **0.1.0** release. The version is defined in
 planned for **July 20, 2025**, but the schedule slipped. An
 **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
 the final **0.1.0** milestone targeted for **July 1, 2026**. See
+
 [ROADMAP.md](ROADMAP.md) for feature milestones and
 [docs/release_plan.md](docs/release_plan.md) for the full schedule,
 outstanding tasks, and current test and coverage status. The release
 workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
-Current checks show `uv run --extra dev-minimal flake8 src tests` and
-`uv run --extra dev-minimal mypy src` passing. `uv run --extra
-dev-minimal pytest -q --cov=src --cov-report=term` returns failing tests
-with total coverage around 67%.
+## Status
+
+See [STATUS.md](STATUS.md) for current test and coverage results.
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.
