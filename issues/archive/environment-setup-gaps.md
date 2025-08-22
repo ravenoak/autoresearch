@@ -34,7 +34,7 @@ documentation specifies Python 3.12 or newer, further complicating
 setup.
 
 ## 2025-08-17
-- Ran `scripts/codex_setup.sh` after removing `.venv`.
+- Ran the setup script after removing `.venv`.
   - Go Task, `flake8`, `mypy`, and `pytest` installed in `.venv`.
   - Setup failed to download the DuckDB VSS extension due to network
     errors but continued with a stub.

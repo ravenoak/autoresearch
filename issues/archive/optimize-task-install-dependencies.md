@@ -9,7 +9,7 @@ extras would improve setup time while still enabling linting and tests.
 ## Acceptance Criteria
 - `task install` installs only the `dev-minimal` extras by default.
 - Documentation notes how to install heavy extras on demand.
-- scripts/codex_setup.sh reflects the streamlined dependency set.
+- Setup scripts reflect the streamlined dependency set.
 
 ## Status
 Archived

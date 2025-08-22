@@ -17,12 +17,10 @@ uv run python scripts/check_env.py
 ```
 
 This sequence installs the minimal development dependencies and checks that
-**uv** and Go Task meet the version requirements. The helper scripts automate
-additional setup:
+**uv** and Go Task meet the version requirements.
+The helper script automates additional setup:
 
 - [`scripts/setup.sh`](../scripts/setup.sh) – full developer bootstrap
-- [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) – agent demo
-  bootstrap
 
 ## Requirements
 
@@ -116,7 +114,6 @@ After installing Go Task, pick a bootstrap method:
 
 - `task install` – minimal setup
 - [`scripts/setup.sh`](../scripts/setup.sh) – full developer toolchain
-- [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) – agent demo bootstrap
 
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`
 before syncing. Selecting Python 3.11 results in an error similar to:
@@ -153,12 +150,9 @@ point the setup script at their locations:
 export WHEELS_DIR=/path/to/wheels
 export ARCHIVES_DIR=/path/to/archives
 ./scripts/setup.sh
-# or
-./scripts/codex_setup.sh
 ```
 
-Both [`scripts/setup.sh`](../scripts/setup.sh) and
-[`scripts/codex_setup.sh`](../scripts/codex_setup.sh) respect these variables.
+[`scripts/setup.sh`](../scripts/setup.sh) respects these variables.
 
 `WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should
 contain source archives (`*.tar.gz`). The setup script installs these caches
@@ -176,13 +170,10 @@ If you cloned the repository, run the appropriate setup helper:
 
 ```bash
 ./scripts/setup.sh
-# or
-./scripts/codex_setup.sh
 ```
 
 [`scripts/setup.sh`](../scripts/setup.sh) installs every optional extra needed
-for development. [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) targets
-agent demos and omits heavier tooling.
+for development.
 
 The helper ensures the lock file is refreshed and installs every optional
 extra needed for the test suite. Tests normally rely on stubbed versions of
