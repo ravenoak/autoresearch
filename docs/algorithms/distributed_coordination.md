@@ -56,3 +56,14 @@ A stress test using the `multiprocessing.Manager().Queue` backing
 When one worker crashed after 5\,000 messages, the remaining workers drained
 the queue in 1.017 s, about 9\,834 msg/s. An empty `get` raised a timeout
 after 0.1 s, providing an upper bound on failure detection latency.
+
+## Performance Simulation
+
+[`distributed_coordination_analysis.py`][dc-analysis]
+runs CPU and memory simulations for 1, 2, and 4 workers and saves metrics to
+[`distributed_metrics.json`](../../tests/analysis/distributed_metrics.json).
+A plot of these metrics is shown below.
+
+![CPU and memory scaling](../diagrams/distributed_coordination_performance.svg)
+
+[dc-analysis]: ../../tests/analysis/distributed_coordination_analysis.py

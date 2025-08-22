@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120"
+     viewBox="0 0 200 120">
+  <polyline points="40,100 100,80 160,70" stroke="blue"
+            fill="none" stroke-width="2"/>
+  <polyline points="40,90 100,90 160,85" stroke="green"
+            fill="none" stroke-width="2"/>
+  <text x="40" y="110">1</text>
+  <text x="100" y="110">2</text>
+  <text x="160" y="110">4</text>
+  <text x="10" y="80" fill="blue">CPU</text>
+  <text x="10" y="95" fill="green">Memory</text>
+</svg>

@@ -12,9 +12,20 @@ loss \(L = \sum_i (y_i - s_i)^2\), the gradient for each weight is
 \(w_{t+1} = \text{normalize}(w_t - \eta \nabla L)\)
 
 converge for small \(\eta\) because \(L\) is convex in \(w\).
-`scripts/weight_tuning_convergence.py` demonstrates convergence and
-robustness: several random initializations yield similar final weights
-and losses.
+[`weight_tuning_convergence.py`](../../scripts/weight_tuning_convergence.py)
+demonstrates convergence and robustness: several random initializations yield
+similar final weights and losses.
+
+Solving the normal equations of the unconstrained problem
+\(\min_w \|F w - y\|_2^2\) gives
+\(w^* = (F^T F)^{-1} F^T y\). Projecting \(w^*\) onto the simplex
+enforces non-negative weights summing to one and matches the normalized
+gradient update above.
+
+`[evaluate_ranking.py](../../scripts/evaluate_ranking.py)` assesses weight
+quality on labelled data. Running
+`uv run scripts/evaluate_ranking.py examples/search_evaluation.csv`
+reports `Precision@1: 0.00  Recall@1: 0.00`, motivating careful tuning.
 
 Assumptions
 - Features are normalized to the \([0, 1]\) range.
