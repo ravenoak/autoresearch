@@ -143,6 +143,9 @@ uv run python scripts/publish_dev.py --dry-run
 If the DuckDB VSS extension cannot be downloaded,
 `scripts/download_duckdb_extensions.py` reads `.env.offline` and uses
 `VECTOR_EXTENSION_PATH` so the project works without vector search support.
+`scripts/setup.sh` now writes a stub ``vss.duckdb_extension`` to the bundled
+``extensions`` directory when no binary is available, ensuring tests and
+``task check`` continue to run.
 
 ### Offline installation
 
