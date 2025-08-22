@@ -35,18 +35,22 @@ if sys.version_info < (3, 12):
     raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
 EOF
 
-# Install Go Task inside the virtual environment if missing
-if [ ! -x .venv/bin/task ]; then
-    echo "Installing Go Task..."
-    curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
-fi
-
 # Install locked dependencies and development extras
 echo "Installing development extras via uv sync --extra dev"
 uv sync --extra dev
 
 # Link the project in editable mode so tools are available
 uv pip install -e .
+
+# Ensure Go Task is installed after bootstrapping
+if [ ! -x .venv/bin/task ]; then
+    echo "Go Task missing; installing..."
+    curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+fi
+if ! .venv/bin/task --version >/dev/null 2>&1; then
+    echo "task --version failed; Go Task is required but was not installed" >&2
+    exit 1
+fi
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions

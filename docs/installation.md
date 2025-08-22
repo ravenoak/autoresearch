@@ -19,6 +19,9 @@ Run a bootstrap command immediately:
 task install        # minimal environment
 ```
 
+`./scripts/setup.sh` installs Go Task when missing and exits if `task --version`
+fails.
+
 If you see errors like `task: command not found` or `uv: command not found`,
 diagnose the environment with
 [`scripts/check_env.py`](../scripts/check_env.py):
