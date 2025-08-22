@@ -46,9 +46,12 @@ from dotenv import dotenv_values
 
 try:
     import duckdb
-except ImportError:
-    print("Error: duckdb package is not installed. Please install it with 'pip install duckdb'.")
-    sys.exit(1)
+except ImportError:  # pragma: no cover - fallback when duckdb is missing
+    duckdb = None
+    print(
+        "duckdb package not found; attempting offline fallback if configured",
+        file=sys.stderr,
+    )
 
 # Configure logging
 logging.basicConfig(
@@ -139,6 +142,10 @@ def download_extension(extension_name, output_dir, platform_name=None):
     output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
 
+    if duckdb is None:
+        logger.warning("duckdb package not available; falling back to offline copy if present")
+        return _offline_fallback(extension_name, output_extension_dir)
+
     # Create a temporary database to download the extension
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_db_path = os.path.join(temp_dir, "temp.duckdb")
@@ -199,9 +206,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
             )
             return _offline_fallback(extension_name, output_extension_dir)
         except Exception as e:
-            logger.error(
-                "Error downloading %s extension: %s", extension_name, e
-            )
+            logger.error("Error downloading %s extension: %s", extension_name, e)
             return _offline_fallback(extension_name, output_extension_dir)
         finally:
             conn.close()

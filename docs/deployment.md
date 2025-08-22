@@ -118,7 +118,7 @@ python scripts/deploy.py
 To publish a development build to the TestPyPI repository run:
 
 ```bash
-./scripts/publish_dev.py
+uv run python scripts/publish_dev.py
 ```
 
 The script requires the `build` and `twine` packages. Install them with:
@@ -130,7 +130,7 @@ uv pip install build twine
 Use the `--dry-run` flag to verify the process without uploading:
 
 ```bash
-uv run scripts/publish_dev.py --dry-run
+uv run python scripts/publish_dev.py --dry-run
 ```
 
 The packaging commands `uv run python -m build` and
@@ -180,11 +180,11 @@ uv run python -m build
 ```
 5. Validate the package on TestPyPI without uploading:
    ```bash
-   ./scripts/publish_dev.py --dry-run
+   uv run python scripts/publish_dev.py --dry-run
    ```
 6. If the metadata looks correct, publish to the TestPyPI repository:
    ```bash
-   ./scripts/publish_dev.py
+   uv run python scripts/publish_dev.py
    ```
 7. If everything looks good, publish to the main PyPI repository:
    ```bash

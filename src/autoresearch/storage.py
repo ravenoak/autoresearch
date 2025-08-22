@@ -116,9 +116,15 @@ def setup(
         except ConfigError:
             cfg = StorageConfig()
 
-        # Initialize DuckDB backend
+        # Initialize DuckDB backend with graceful fallback when VSS is missing
         ctx.db_backend = DuckDBStorageBackend()
-        ctx.db_backend.setup(db_path)
+        try:
+            ctx.db_backend.setup(db_path)
+        except StorageError as exc:
+            log.warning("DuckDB setup failed (%s); retrying without vector search", exc)
+            cfg.vector_extension = False
+            ctx.db_backend = DuckDBStorageBackend()
+            ctx.db_backend.setup(db_path)
 
         # Initialize Kuzu backend when enabled
         if cfg.use_kuzu:
