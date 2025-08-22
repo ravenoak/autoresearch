@@ -18,6 +18,9 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
   metrics and token counts for comparison.
 - Some tests rely on `owlrl` and `rdflib_sqlalchemy` for RDF reasoning and
   persistence; install these packages to avoid failures during integration runs.
+- Fixtures such as `example_autoresearch_toml` and `example_env_file` provide
+  temporary configuration and environment data. Use `tmp_path` and
+  `monkeypatch` to isolate side effects in tests.
 
 No external databases or network services need to be running. Temporary
 artifacts are created under `tmp_path` and cleaned automatically.
