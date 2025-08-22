@@ -19,6 +19,7 @@ descriptions of the ranking components:
 * ``docs/algorithms/bm25.md`` – lexical BM25 scoring
 * ``docs/algorithms/semantic_similarity.md`` – embedding-based similarity
 * ``docs/algorithms/source_credibility.md`` – domain credibility heuristics
+* ``docs/algorithms/relevance_ranking.md`` – convergence of the combined score
 """
 
 from __future__ import annotations
@@ -535,7 +536,9 @@ class Search:
         The final score is a weighted combination of BM25, semantic
         similarity, and source credibility scores. See
         ``docs/algorithms/bm25.md``, ``docs/algorithms/semantic_similarity.md``,
-        and ``docs/algorithms/source_credibility.md`` for details.
+        and ``docs/algorithms/source_credibility.md`` for details. Convergence
+        of the weighted ranking is discussed in
+        ``docs/algorithms/relevance_ranking.md``.
 
         Args:
             query: The search query

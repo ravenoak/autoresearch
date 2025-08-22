@@ -374,7 +374,9 @@ class OrchestrationMetrics:
         calculation considers the current cycle usage, per-agent
         historical averages, and the overall average across cycles. When
         usage stabilizes, the update converges to ``ceil(u * (1 + margin))``
-        for constant usage ``u``.
+        for constant usage ``u``. See
+        ``docs/algorithms/token_budgeting.md`` for derivation and
+        convergence analysis.
         """
 
         total = self._total_tokens()

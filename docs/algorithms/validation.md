@@ -1,7 +1,9 @@
 # Algorithm Validation
 
 This document summarizes evaluations of ranking and token budgeting
-heuristics.
+heuristics. Theoretical background appears in
+[`relevance_ranking.md`](relevance_ranking.md) and
+[`token_budgeting.md`](token_budgeting.md).
 
 ## Scoring heuristics
 
