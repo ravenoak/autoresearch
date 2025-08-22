@@ -1,4 +1,4 @@
-### Autoresearch — **Formal Requirements Specification v1.0 (Enhanced & Clarified)**
+# Autoresearch — **Formal Requirements Specification v1.0 (Enhanced & Clarified)**
 
 ---
 
@@ -104,6 +104,17 @@ Must     | Unit tests for logging utilities.          |
 | Distributed add-on | Ray vs Dask                  | Prototype Ray transport adapter later; keep single-process by default. |
 | Local search tool  | `ripgrep` CLI vs pure Python | Default to **ripgrep** when available for fast indexing; fall back to Python scanning. |
 | Licensing          | MIT + “AGPL preferred”       | Tag core MIT; provide AGPL switch for users who need copyleft.         |
+
+---
+
+## 8  Pinned Dependencies
+
+### slowapi 0.1.9
+
+SlowAPI supplies request rate limiting for FastAPI. It is pinned to
+version 0.1.9 because newer releases require Starlette APIs that
+conflict with FastAPI 0.115.12. The pin prevents runtime errors until
+the libraries align on compatible versions.
 
 ---
 
