@@ -8,6 +8,9 @@ tasks:
   check-env:
     cmds:
       - uv run python scripts/check_env.py
+      - >
+          uv run python -c "import pytest_httpx" 2>/dev/null ||
+          echo "Warning: pytest-httpx missing; install with 'task install' or 'uv sync --extra dev-minimal'."
     desc: "Validate required tool versions"
   check:
     deps: [check-env]
