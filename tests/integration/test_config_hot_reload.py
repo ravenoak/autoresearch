@@ -28,6 +28,8 @@ class Search:
 
 
 pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.slow,
     pytest.mark.requires_git,
     pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
 ]
