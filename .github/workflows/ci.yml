@@ -37,7 +37,8 @@ jobs:
       - name: Run task coverage
         run: uv run task coverage
       - name: Enforce coverage threshold
-        run: uv run coverage report --fail-under=90
+        run: |
+          uv run coverage report --fail-under=90
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -73,7 +74,6 @@ jobs:
       - name: Check coverage regression
         run: |
           uv run python scripts/check_token_regression.py \
-            --coverage-baseline baseline/coverage.xml \
             --coverage-current current/coverage.xml
       - name: Save coverage baseline
         uses: actions/cache/save@v4

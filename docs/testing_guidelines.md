@@ -30,15 +30,20 @@ task test:all          # entire suite including slow tests
 task coverage          # full suite with coverage and regression checks
 ```
 
-Run `task coverage` before committing to execute the full suite with coverage
-and token regression checks. The command fails if line coverage drops below
-90%. CI stores a baseline `coverage.xml` and compares future runs against it to
-detect regressions. To perform the comparison locally, run:
+Run `task coverage` before committing to execute the full suite with
+coverage and token regression checks. The command fails if line coverage
+drops below 90%. CI stores a baseline `coverage.xml` in
+`baseline/coverage.xml` and compares future runs against it to detect
+regressions. To perform the comparison locally, run:
 
 ```bash
-python scripts/check_token_regression.py \
-    --coverage-baseline baseline/coverage.xml \
-    --coverage-current coverage.xml
+uv run python scripts/check_token_regression.py --coverage-current coverage.xml
+```
+
+After tests complete, verify coverage meets the threshold:
+
+```bash
+uv run coverage report --fail-under=90
 ```
 
 You can also invoke the slow suite directly with:
