@@ -14,3 +14,17 @@ def test_prune_context_drops_old_messages():
     pruned = prune_context(msgs, 4)
     assert sum(len(m.split()) for m in pruned) <= 4
     assert pruned == msgs[-4:]
+
+
+def test_compress_prompt_zero_budget_handles_ellipsis():
+    prompt = "one two three four"
+    compressed = compress_prompt(prompt, 0)
+    tokens = compressed.split()
+    assert tokens[0] == "one"
+    assert tokens[-1] == "four"
+    assert "..." in tokens
+
+
+def test_prune_context_zero_budget_returns_empty():
+    msgs = ["a", "b"]
+    assert prune_context(msgs, 0) == []

@@ -8,3 +8,8 @@ Feature: Error recovery workflow
     Given a transient error occurs
     When the orchestrator executes the query "fail once"
     Then bdd_context should record "recovery_applied" as true
+
+  Scenario: Persistent error fails without recovery
+    Given a persistent error occurs
+    When the orchestrator executes the query "fail always"
+    Then bdd_context should record "recovery_applied" as false
