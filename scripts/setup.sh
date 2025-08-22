@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# For agent demos, use ./scripts/codex_setup.sh instead.
 # Create .venv, install Go Task and development extras using uv.
 # Ensure we are running with Python 3.12 or newer.
 # Run `uv run python scripts/check_env.py` at the end to validate tool versions.
