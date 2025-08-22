@@ -90,6 +90,10 @@ been verified to install successfully with `uv pip install`.
 | setuptools | 80.9.0 |
 | owlrl | 7.1.4 |
 
+The table reflects minima validated for Python 3.12. Some packages use higher
+pins than their upstream defaults to avoid compatibility issues, such as
+`fastmcp>=2.11.2` and `watchfiles>=1.1.0`.
+
 ## Development setup
 
 Install Go Task before running any `task` commands mentioned below.
