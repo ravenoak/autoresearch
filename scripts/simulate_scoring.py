@@ -3,6 +3,11 @@
 
 Usage:
     uv run scripts/simulate_scoring.py --query "example"
+    uv run scripts/simulate_scoring.py --query "python" --weights 0.5 0.3 0.2
+
+The optional ``--weights`` flag explores alternative weight vectors.
+Scores with identical totals break ties by credibility and then document id
+to guarantee reproducible ordering.
 """
 
 from __future__ import annotations
@@ -37,7 +42,7 @@ SAMPLE_DOCS: List[Doc] = [
     },
 ]
 
-WEIGHTS = (0.4, 0.4, 0.2)  # semantic, bm25, credibility
+WEIGHTS = (0.4, 0.4, 0.2)  # default weights: semantic, bm25, credibility
 
 
 def tokenize(text: str) -> List[str]:
@@ -56,7 +61,22 @@ def cosine_similarity(vec1: List[int], vec2: List[int]) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Simulate scoring heuristics")
     parser.add_argument("--query", required=True, help="Search query")
+    parser.add_argument(
+        "--weights",
+        nargs=3,
+        type=float,
+        metavar=("SEMANTIC", "BM25", "CRED"),
+        help="Weights for semantic, BM25, and credibility components",
+    )
     args = parser.parse_args()
+
+    weights = args.weights or WEIGHTS
+    if any(w < 0 for w in weights):  # fail fast on invalid input
+        parser.error("weights must be non-negative")
+    total = sum(weights)
+    if total == 0:
+        parser.error("weights must sum to a positive number")
+    weights = tuple(w / total for w in weights)
 
     corpus = [tokenize(d["text"]) for d in SAMPLE_DOCS]
     bm25 = BM25Okapi(corpus)
@@ -76,10 +96,11 @@ def main() -> None:
 
     results: List[tuple[int, float, float, float, float]] = []
     for doc, bm, sem in zip(SAMPLE_DOCS, bm25_norm, sem_norm):
-        final = WEIGHTS[0] * sem + WEIGHTS[1] * bm + WEIGHTS[2] * doc["credibility"]
+        final = weights[0] * sem + weights[1] * bm + weights[2] * doc["credibility"]
         results.append((doc["id"], final, bm, sem, doc["credibility"]))
 
-    results.sort(key=lambda r: r[1], reverse=True)
+    # sort by final score, breaking ties by credibility then id for stability
+    results.sort(key=lambda r: (r[1], r[4], -r[0]), reverse=True)
     for doc_id, final, bm, sem, cred in results:
         print(
             f"id={doc_id} final={final:.2f} bm25={bm:.2f} "
