@@ -3,15 +3,16 @@ from __future__ import annotations
 
 from autoresearch.agents.dialectical.synthesizer import SynthesizerAgent
 from autoresearch.config.models import ConfigModel
+from autoresearch.llm.adapters import LLMAdapter
 from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.orchestration.state import QueryState
 
 
-class DummyAdapter:
+class DummyAdapter(LLMAdapter):
     def __init__(self, output: str) -> None:
         self.output = output
 
-    def generate(self, prompt: str, model: str | None = None) -> str:  # noqa: D401
+    def generate(self, prompt: str, model: str | None = None, **kwargs) -> str:  # noqa: D401
         """Return preset output regardless of prompt."""
         return self.output
 

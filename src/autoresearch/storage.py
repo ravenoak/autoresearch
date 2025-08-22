@@ -1148,15 +1148,13 @@ class StorageManager(metaclass=StorageManagerMeta):
         This method performs a vector similarity search using the provided query
         embedding. It validates the search parameters, ensures storage is
         initialized, and then executes the search using the DuckDB VSS extension
-        if available.
-
-        The search uses cosine similarity by default (configurable via
-        ``storage.hnsw_metric``) and returns the ``k`` most similar claims,
+        if available. The search uses cosine similarity by default (configurable
+        via ``storage.hnsw_metric``) and returns the ``k`` most similar claims,
         ordered by similarity score.
 
-        If the VSS extension is not loaded, the call returns an empty list and a
-        warning is logged. If a custom implementation is set via
-        ``set_delegate()``, the call is delegated to that implementation.
+        If the VSS extension is not loaded, a ``StorageError`` is raised. If a
+        custom implementation is set via ``set_delegate()``, the call is
+        delegated to that implementation.
 
         Args:
             query_embedding: The query embedding vector as a list of floats.
@@ -1170,8 +1168,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                                  Each result contains 'node_id' and 'embedding'.
 
         Raises:
-            StorageError: If the search parameters are invalid or storage is not
-                initialized.
+            StorageError: If the search parameters are invalid, storage is not
+                initialized, or the VSS extension is unavailable.
             NotFoundError: If no embeddings are found in the database.
         """
         if _delegate and _delegate is not StorageManager:
@@ -1185,10 +1183,9 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Check if VSS extension is available
         if not StorageManager.has_vss():
-            log.warning(
-                "Vector search requested but VSS extension is unavailable; returning empty result"
+            raise StorageError(
+                "VSS extension is not available", suggestion="Install the DuckDB VSS extension"
             )
-            return []
 
         # Use the DuckDBStorageBackend to perform the vector search
         db_backend = StorageManager.context.db_backend
