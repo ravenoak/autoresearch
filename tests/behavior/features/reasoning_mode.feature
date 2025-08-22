@@ -1,4 +1,5 @@
 # Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
+@behavior @reasoning_modes
 Feature: Reasoning Mode Selection
   As a user
   I want to choose how the system reasons
@@ -49,6 +50,15 @@ Feature: Reasoning Mode Selection
     And the reasoning mode selected should be "dialectical"
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Contrarian, FactChecker"
+
+  Scenario: Direct reasoning with a realistic query
+    Given loops is set to 1 in configuration
+    And reasoning mode is "direct"
+    When I run the orchestrator on query "Why is the sky blue?"
+    Then the loops used should be 1
+    And the reasoning mode selected should be "direct"
+    And the agent groups should be "Synthesizer"
+    And the agents executed should be "Synthesizer"
 
   Scenario: Direct mode agent failure triggers fallback
     Given reasoning mode is "direct"

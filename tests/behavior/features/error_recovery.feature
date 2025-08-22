@@ -1,4 +1,4 @@
-@behavior
+@behavior @error_recovery
 # Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
 # Recovery paths: retry_with_backoff, fail_gracefully, fallback_agent
 Feature: Error Recovery
@@ -86,6 +86,19 @@ Feature: Error Recovery
     And the system state should be restored
     And the logs should include "recovery"
     And the response should list a timeout error
+
+  Scenario: Recovery after critical agent failure
+    Given an agent that fails during execution
+    When I run the orchestrator on query "recover test"
+    Then the reasoning mode selected should be "dialectical"
+    And the loops used should be 1
+    And the agent groups should be "Faulty"
+    And the agents executed should be "Faulty"
+    And a recovery strategy "fail_gracefully" should be recorded
+    And error category "critical" should be recorded
+    And recovery should be applied
+    And the logs should include "recovery"
+    And the response should list an agent execution error
 
   Scenario: Recovery after agent failure with fallback
     Given an agent that fails triggering fallback

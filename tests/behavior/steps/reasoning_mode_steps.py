@@ -44,6 +44,13 @@ def test_dialectical_real_query():
 
 
 @scenario(
+    "../features/reasoning_mode.feature", "Direct reasoning with a realistic query"
+)
+def test_direct_real_query():
+    pass
+
+
+@scenario(
     "../features/reasoning_mode.feature",
     "Unsupported reasoning mode fails gracefully",
 )

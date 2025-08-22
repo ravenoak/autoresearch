@@ -75,6 +75,14 @@ def test_error_recovery_timeout():
 
 @scenario(
     "../features/error_recovery.feature",
+    "Recovery after critical agent failure",
+)
+def test_error_recovery_agent_failure():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
     "Unsupported reasoning mode during recovery fails gracefully",
 )
 def test_error_recovery_unsupported_mode():

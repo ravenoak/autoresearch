@@ -239,3 +239,25 @@ def test_orchestrator_uses_config_context(config_context, monkeypatch):
         {"id": "u2", "type": "source", "content": "Doc2"},
     ]
     assert resp.answer == "Synthesized: Doc1, Doc2"
+
+
+def test_orchestrator_handles_empty_search_results(monkeypatch):
+    """Orchestrator stores nothing when search yields no results."""
+
+    calls: list[str] = []
+    stored: list[dict[str, str]] = []
+
+    monkeypatch.setattr(Search, "external_lookup", lambda q, max_results=2: [])
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim))
+    monkeypatch.setattr(AgentFactory, "get", lambda name: _make_agent(calls, stored))
+
+    cfg = ConfigModel(agents=["TestAgent"], loops=1)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+
+    resp = Orchestrator().run_query("q", cfg)
+
+    assert isinstance(resp, QueryResponse)
+    assert calls == ["TestAgent"]
+    assert stored == []
+    assert resp.answer == "done"
