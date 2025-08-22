@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from autoresearch.agents.prompts import PromptTemplate, PromptTemplateRegistry
 from autoresearch.api import app
 from autoresearch.config.models import APIConfig, ConfigModel
-from autoresearch.errors import SearchError, StorageError
+from autoresearch.errors import SearchError
 from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import Search
@@ -54,12 +54,11 @@ def test_external_lookup_unknown_backend(monkeypatch):
 
 
 def test_vector_search_vss_unavailable(monkeypatch):
-    """StorageManager.vector_search raises StorageError when VSS is missing."""
+    """Vector search returns an empty list when VSS is unavailable."""
     monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     monkeypatch.setattr(StorageManager.context, "db_backend", object())
-    with pytest.raises(StorageError):
-        StorageManager.vector_search([0.1, 0.2, 0.3])
+    assert StorageManager.vector_search([0.1, 0.2, 0.3]) == []
 
 
 def test_query_endpoint_validation_error(monkeypatch):
