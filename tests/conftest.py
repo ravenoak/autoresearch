@@ -645,8 +645,8 @@ backends = []
 enabled = false
 """
 
-SAMPLE_ENV = """SERPER_API_KEY=test_key
-OPENAI_API_KEY=test_key
+SAMPLE_ENV = """OPENAI_API_KEY=your-openai-api-key
+SERPER_API_KEY=your-serper-api-key
 """
 
 
@@ -655,8 +655,8 @@ def example_env_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Write a sample ``.env`` and populate required variables."""
     env_path = tmp_path / ".env"
     env_path.write_text(SAMPLE_ENV)
-    monkeypatch.setenv("SERPER_API_KEY", "test_key")
-    monkeypatch.setenv("OPENAI_API_KEY", "test_key")
+    monkeypatch.setenv("SERPER_API_KEY", "your-serper-api-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "your-openai-api-key")
     return env_path
 
 
