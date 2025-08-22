@@ -1,6 +1,7 @@
 # Api
 
-FastAPI app aggregator for Autoresearch.
+FastAPI app aggregator for Autoresearch. See [API rate limiting
+model](../algorithms/api_rate_limiting.md) for load control guidance.
 
 ## Traceability
 

@@ -1,6 +1,7 @@
 # Config
 
-Specification for config module.
+Specification for config module. See [config hot reload
+algorithm](../algorithms/config_hot_reload.md) for reload behavior.
 
 ## Traceability
 
