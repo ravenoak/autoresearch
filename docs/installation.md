@@ -1,6 +1,8 @@
 # Installation
 
-This guide explains how to install Autoresearch and manage optional features.
+This guide is the canonical bootstrap reference for Autoresearch. It covers
+the minimal developer workflow and links to helper scripts for specific
+environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
@@ -14,12 +16,13 @@ task install
 uv run python scripts/check_env.py
 ```
 
-This is the canonical bootstrap sequence. It installs the minimal
-development dependencies and checks that **uv** and Go Task meet the version
-requirements. The helper scripts automate additional setup:
+This sequence installs the minimal development dependencies and checks that
+**uv** and Go Task meet the version requirements. The helper scripts automate
+additional setup:
 
-- `./scripts/setup.sh` – installs the full development toolchain
-- `./scripts/codex_setup.sh` – agent-oriented bootstrap used by some demos
+- [`scripts/setup.sh`](../scripts/setup.sh) – full developer bootstrap
+- [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) – agent demo
+  bootstrap
 
 ## Requirements
 
@@ -109,14 +112,11 @@ uv sync --extra ui
 uv sync --extra nlp
 ```
 
-After installing Go Task, you can run `task install` for the minimal setup or
-the helper script:
+After installing Go Task, pick a bootstrap method:
 
-```bash
-task install
-# or
-./scripts/setup.sh
-```
+- `task install` – minimal setup
+- [`scripts/setup.sh`](../scripts/setup.sh) – full developer toolchain
+- [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) – agent demo bootstrap
 
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`
 before syncing. Selecting Python 3.11 results in an error similar to:
@@ -140,7 +140,12 @@ point the setup script at their locations:
 export WHEELS_DIR=/path/to/wheels
 export ARCHIVES_DIR=/path/to/archives
 ./scripts/setup.sh
+# or
+./scripts/codex_setup.sh
 ```
+
+Both [`scripts/setup.sh`](../scripts/setup.sh) and
+[`scripts/codex_setup.sh`](../scripts/codex_setup.sh) respect these variables.
 
 `WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should
 contain source archives (`*.tar.gz`). The setup script installs these caches
@@ -154,11 +159,17 @@ The project can be installed with only the minimal optional dependencies:
 pip install autoresearch[minimal]
 ```
 
-If you cloned the repository, run the setup helper:
+If you cloned the repository, run the appropriate setup helper:
 
 ```bash
 ./scripts/setup.sh
+# or
+./scripts/codex_setup.sh
 ```
+
+[`scripts/setup.sh`](../scripts/setup.sh) installs every optional extra needed
+for development. [`scripts/codex_setup.sh`](../scripts/codex_setup.sh) targets
+agent demos and omits heavier tooling.
 
 The helper ensures the lock file is refreshed and installs every optional
 extra needed for the test suite. Tests normally rely on stubbed versions of
