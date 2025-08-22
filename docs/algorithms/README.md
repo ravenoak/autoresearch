@@ -12,3 +12,4 @@
 - [Dialectical Agent Coordination](dialectical_coordination.md)
 - [Token Budget Adaptation](token_budgeting.md)
 - [Error Recovery via Exponential Backoff](error_recovery.md)
+- [Cache Eviction Strategy](cache_eviction.md)
