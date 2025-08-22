@@ -47,7 +47,22 @@ Conclusions
   fact-checker influence; variability stays low across trials, yielding
   stable answers.
 
+## Distributed coordination
+
+The simulation [distributed_coordination_analysis.py][dca]
+spawns 1, 2, and 4 workers under `ResourceMonitor`. Metrics in
+[distributed_metrics.json][dmj] show:
+
+- 1 node: CPU 0.0% memory 136.4 MB
+- 2 nodes: CPU 29.0% memory 140.4 MB
+- 4 nodes: CPU 39.1% memory 140.5 MB
+
+These observations highlight the overhead as node count increases.
+
 ## References
 1. G. Irving et al. "AI Safety via Debate." https://arxiv.org/abs/1805.00899
 2. Y. Du et al. "Improving Factuality with Multi-Agent Debate."
    https://arxiv.org/abs/2402.06720
+
+[dca]: ../../tests/analysis/distributed_coordination_analysis.py
+[dmj]: ../../tests/analysis/distributed_metrics.json
