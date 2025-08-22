@@ -2,8 +2,9 @@
 
 These results reflect the latest development state.
 
-- `task verify` – flake8 and mypy pass. `tests/unit/test_main_config_commands.py`
+- `task check` – flake8 and mypy run. `tests/unit/test_main_config_commands.py`
   succeeds (4 passed).
-- `task coverage` – running `tests/unit/test_main_config_commands.py` reports
+- `task verify` – attempted full suite, but execution exceeded time limits.
+- `task coverage` – `pytest tests/unit/test_main_config_commands.py` reports
   24% total coverage.
 
