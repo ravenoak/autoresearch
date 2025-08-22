@@ -1,16 +1,17 @@
 # Release Plan
 
 This document outlines the upcoming release milestones for **Autoresearch**.
-Dates are aspirational and may shift as development progresses. The publishing
-workflow follows the steps in [deployment.md](deployment.md). Detailed release
-commands are documented in [releasing.md](releasing.md). See
+Dates are aspirational and may shift as development progresses.
+The publishing workflow follows the steps in
+[deployment.md](deployment.md). Detailed release commands are documented in
+[releasing.md](releasing.md). See
 [installation.md](installation.md) for environment setup and
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
 `2025-05-18`). This schedule was last updated on **August 23, 2025** and
-reflects the fact that the codebase currently sits at the **unreleased 0.1.0a1**
-version defined in `autoresearch.__version__`. Phase 3
+reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
+defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Status
@@ -23,21 +24,28 @@ Current test and coverage results are tracked in
 ## Milestones
 
 - **0.1.0a1** (2026-03-01, status: in progress): Alpha preview to collect
-  feedback ([prepare-alpha-release]).
+  feedback
+  ([prepare-alpha-release](
+  ../issues/archive/prepare-alpha-release.md)).
 - **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
   checks with all tests passing
-  ([finalize-first-public-preview-release]).
+  ([finalize-first-public-preview-release](
+  ../issues/finalize-first-public-preview-release.md)).
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update]).
+  ([deliver-bug-fixes-and-docs-update](
+  ../issues/deliver-bug-fixes-and-docs-update.md)).
 - **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends
-  ([stabilize-api-and-improve-search]).
+  ([stabilize-api-and-improve-search](
+  ../issues/stabilize-api-and-improve-search.md)).
 - **0.3.0** (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities
-  ([support-distributed-execution-and-monitoring]).
+  ([support-distributed-execution-and-monitoring](
+  ../issues/support-distributed-execution-and-monitoring.md)).
 - **1.0.0** (2027-06-01, status: planned): Full feature set, performance
   tuning and stable interfaces
-  ([reach-stable-performance-and-interfaces]).
+  ([reach-stable-performance-and-interfaces](
+  ../issues/reach-stable-performance-and-interfaces.md)).
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
 schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
@@ -47,14 +55,23 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 ### Alpha release checklist
 
 - [x] Environment bootstrap documented and installation instructions
-  consolidated ([document-environment-bootstrap.md][environment-bootstrap])
+  consolidated
+  ([document-environment-bootstrap.md](
+  ../issues/archive/document-environment-bootstrap.md))
 - [x] Packaging verification with DuckDB fallback
-  ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
+  ([verify-packaging-workflow-and-duckdb-fallback.md](
+  ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md))
 - [x] Integration test suite passes
-  ([stabilize-integration-tests.md][stabilize-integration-tests])
+  ([stabilize-integration-tests.md](
+  ../issues/archive/stabilize-integration-tests.md))
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **24%** (see [add-coverage-gates-and-regression-checks.md][coverage-gates])
-- [x] Validate ranking algorithms and agent coordination (see [ranking])
+  **24%** (see
+  [add-coverage-gates-and-regression-checks.md](
+  ../issues/archive/add-coverage-gates-and-regression-checks.md))
+- [x] Validate ranking algorithms and agent coordination
+  (see
+  [validate-ranking-algorithms-and-agent-coordination.md](
+  ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md))
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
@@ -99,14 +116,3 @@ optional extras):
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` currently reports **24%** total coverage; target **90%**
 
-[coverage-gates]: ../issues/archive/add-coverage-gates-and-regression-checks.md
-[stabilize-integration-tests]: ../issues/archive/stabilize-integration-tests.md
-[packaging-fallback]: ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md
-[ranking]: ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md
-[environment-bootstrap]: ../issues/archive/document-environment-bootstrap.md
-[prepare-alpha-release]: ../issues/archive/prepare-alpha-release.md
-[finalize-first-public-preview-release]: ../issues/finalize-first-public-preview-release.md
-[deliver-bug-fixes-and-docs-update]: ../issues/deliver-bug-fixes-and-docs-update.md
-[stabilize-api-and-improve-search]: ../issues/stabilize-api-and-improve-search.md
-[support-distributed-execution-and-monitoring]: ../issues/support-distributed-execution-and-monitoring.md
-[reach-stable-performance-and-interfaces]: ../issues/reach-stable-performance-and-interfaces.md

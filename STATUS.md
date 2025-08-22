@@ -1,6 +1,9 @@
 # Status
 
-These results reflect the latest development state after attempting to run tasks in a fresh environment.
+These results reflect the latest development state after attempting to run
+tasks in a fresh environment. Refer to the
+[roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for scheduled
+milestones.
 
 ## `task check`
 ```text
