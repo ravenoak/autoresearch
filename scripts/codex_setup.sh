@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_INSTALL_UI=1 AR_INSTALL_NLP=1 ./scripts/codex_setup.sh
 # Agent-specific bootstrap; see AGENTS.md for repository-wide guidelines.
+# For the full developer environment, run ./scripts/setup.sh (docs/installation.md).
 set -euo pipefail
 
 LOG_FILE="codex_setup.log"
