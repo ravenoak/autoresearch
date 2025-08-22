@@ -45,6 +45,8 @@ This pre-release provided an early package for testing after packaging tasks
 were verified. Related issue ([prepare-alpha-release]) tracks remaining
 environment work. Key activities included:
 
+- [x] Environment bootstrap documented and installation instructions
+  consolidated ([environment-bootstrap]).
 - [x] Packaging verification with DuckDB fallback
   ([packaging-fallback]).
 - [x] Integration tests stabilized
@@ -53,9 +55,8 @@ environment work. Key activities included:
   ([coverage-gates]).
 - [x] Algorithm validation for ranking and coordination ([ranking]).
 
-These steps completed in sequence:
-packaging verification → integration tests → coverage gates → algorithm
-validation.
+These steps completed in sequence: environment bootstrap → packaging
+verification → integration tests → coverage gates → algorithm validation.
 
 ## 0.1.0 – First public preview
 
@@ -121,7 +122,8 @@ The 1.0.0 milestone aims for a polished, production-ready system:
   lines 178-186; TASK_PROGRESS lines 206-216).
 - Optimize performance across all components and finalize documentation.
 
-[prepare-alpha-release]: issues/prepare-alpha-release.md
+[environment-bootstrap]: issues/archive/document-environment-bootstrap.md
+[prepare-alpha-release]: issues/archive/prepare-alpha-release.md
 [finalize-first-public-preview-release]: issues/finalize-first-public-preview-release.md
 [deliver-bug-fixes-and-docs-update]: issues/deliver-bug-fixes-and-docs-update.md
 [stabilize-api-and-improve-search]: issues/stabilize-api-and-improve-search.md
