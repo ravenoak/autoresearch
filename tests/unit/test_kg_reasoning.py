@@ -171,3 +171,11 @@ def test_run_ontology_reasoner_skips_when_limit_exceeded(monkeypatch, caplog):
     import autoresearch.kg_reasoning as kr
 
     kr._REASONER_PLUGINS.pop("dummy_limit", None)
+
+
+def test_run_ontology_reasoner_unknown(monkeypatch):
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "does_not_exist")
+    with pytest.raises(StorageError) as excinfo:
+        run_ontology_reasoner(g)
+    assert "unknown ontology reasoner" in str(excinfo.value).lower()
