@@ -107,6 +107,9 @@ uv sync --extra dev-minimal
 source .venv/bin/activate
 ```
 
+Run `task install` or `uv sync --extra dev-minimal` before executing tests to
+ensure the minimal dependencies are available.
+
 Add heavy extras on demand:
 
 ```bash
