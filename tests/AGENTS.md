@@ -25,6 +25,9 @@ These instructions apply to files in the `tests/` directory.
   categorize behavior scenarios.
 - Register any new markers in `pytest.ini`.
 - Include extras corresponding to any other markers as needed.
+- Scenarios tagged `error_recovery` or `reasoning_modes` run with the base
+  `.[test]` extra; add `[nlp]`, `[ui]`, or `[vss]` only when combining with
+  their respective `requires_*` markers.
 - Remove temporary files such as `kg.duckdb` and `rdf_store`.
 - Prefer fixtures like `tmp_path` and `monkeypatch` to isolate side effects.
 - Run `task clean` if tests generate build artifacts.
