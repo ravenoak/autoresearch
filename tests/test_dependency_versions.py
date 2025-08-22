@@ -40,4 +40,3 @@ def _parse_docs() -> dict[str, str]:
 def test_dependency_versions_match() -> None:
     """CI guardrail verifying docs align with pyproject dependencies."""
     assert _parse_pyproject() == _parse_docs()
-
