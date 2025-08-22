@@ -1,9 +1,9 @@
 # Autoresearch Roadmap
 
-This roadmap summarizes planned features for upcoming releases. Dates and
-milestones align with the [release plan](docs/release_plan.md). Installation and
-environment details are covered in the [README](README.md). Last updated
-**August 23, 2025**.
+This roadmap summarizes planned features for upcoming releases.
+Dates and milestones align with the [release plan](docs/release_plan.md).
+Installation and environment details are covered in the [README](README.md).
+Last updated **August 23, 2025**.
 
 ## Status
 
@@ -20,49 +20,58 @@ before running tests.
 ## Milestones
 
 - 0.1.0a1 (2026-03-01, status: in progress): Alpha preview to collect feedback
-  while aligning environment requirements ([prepare-alpha-release]).
+  while aligning environment requirements
+  ([prepare-alpha-release](issues/archive/prepare-alpha-release.md)).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
   with all tests passing
-  ([finalize-first-public-preview-release]).
+  ([finalize-first-public-preview-release](
+  issues/finalize-first-public-preview-release.md)).
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update]).
+  ([deliver-bug-fixes-and-docs-update](
+  issues/deliver-bug-fixes-and-docs-update.md)).
 - 0.2.0 (2026-12-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends
-  ([stabilize-api-and-improve-search]).
+  ([stabilize-api-and-improve-search](
+  issues/stabilize-api-and-improve-search.md)).
 - 0.3.0 (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities
-  ([support-distributed-execution-and-monitoring]).
+  ([support-distributed-execution-and-monitoring](
+  issues/support-distributed-execution-and-monitoring.md)).
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
   and stable interfaces
-  ([reach-stable-performance-and-interfaces]).
+  ([reach-stable-performance-and-interfaces](
+  issues/reach-stable-performance-and-interfaces.md)).
 
-See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
-alpha release checklist.
+See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
+for the alpha release checklist.
 
 ## 0.1.0a1 – Alpha preview
 
 This pre-release provided an early package for testing after packaging tasks
-were verified. Related issue ([prepare-alpha-release]) tracks remaining
-environment work. Key activities included:
+were verified. Related issue
+([prepare-alpha-release](issues/archive/prepare-alpha-release.md)) tracks
+remaining environment work. Key activities included:
 
 - [x] Environment bootstrap documented and installation instructions
-  consolidated ([environment-bootstrap]).
+  consolidated
+  ([environment-bootstrap](issues/archive/document-environment-bootstrap.md)).
 - [x] Packaging verification with DuckDB fallback
-  ([packaging-fallback]).
+  ([packaging-fallback](issues/archive/verify-packaging-workflow-and-duckdb-fallback.md)).
 - [x] Integration tests stabilized
-  ([stabilize-integration-tests]).
+  ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **24%** ([coverage-gates]).
-- [x] Algorithm validation for ranking and coordination ([ranking]).
+  **24%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
+- [x] Algorithm validation for ranking and coordination
+  ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 
 These steps completed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
 
 ## 0.1.0 – First public preview
 
-The final 0.1.0 release focuses on making the project installable and providing
-complete documentation once the open issues are resolved. Key activities
-include:
+The final 0.1.0 release focuses on making the project installable and
+providing complete documentation once the open issues are resolved. Key
+activities include:
 
 - Running all unit, integration and behavior tests (see [STATUS.md](STATUS.md)).
 - Finalizing API reference and user guides.
@@ -96,10 +105,10 @@ Any remaining issues from these tasks will be addressed in 0.1.1.
 
 The next minor release focuses on API improvements and search enhancements:
 
-- Complete all search backends with cross-backend ranking and embedding-based
-  search (see tasks in CODE_COMPLETE_PLAN lines 38-46).
-- Add streaming responses and webhook notifications to the REST API (implemented
-  per TASK_PROGRESS lines 143-150).
+- Complete all search backends with cross-backend ranking and
+  embedding-based search (see tasks in CODE_COMPLETE_PLAN lines 38-46).
+- Add streaming responses and webhook notifications to the REST API
+  (implemented per TASK_PROGRESS lines 143-150).
 - Support hybrid keyword/semantic search and a unified ranking algorithm.
 - Continue refining the web interface and visualization tools.
 
@@ -107,8 +116,8 @@ The next minor release focuses on API improvements and search enhancements:
 
 Key features planned for this release include:
 
-- Distributed agent execution across processes and storage backends (see
-  CODE_COMPLETE_PLAN lines 156-160 and TASK_PROGRESS lines 182-192).
+- Distributed agent execution across processes and storage backends
+  (see CODE_COMPLETE_PLAN lines 156-160 and TASK_PROGRESS lines 182-192).
 - Coordination mechanisms for distributed agents and parallel search.
 - Expanded monitoring including real-time metrics and GPU usage.
 
@@ -118,18 +127,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 
 - Complete packaging for all platforms with containerization support
   (CODE_COMPLETE_PLAN lines 168-176; TASK_PROGRESS lines 194-204).
-- Provide deployment scripts and configuration validation (CODE_COMPLETE_PLAN
-  lines 178-186; TASK_PROGRESS lines 206-216).
+- Provide deployment scripts and configuration validation
+  (CODE_COMPLETE_PLAN lines 178-186; TASK_PROGRESS lines 206-216).
 - Optimize performance across all components and finalize documentation.
 
-[environment-bootstrap]: issues/archive/document-environment-bootstrap.md
-[prepare-alpha-release]: issues/archive/prepare-alpha-release.md
-[finalize-first-public-preview-release]: issues/finalize-first-public-preview-release.md
-[deliver-bug-fixes-and-docs-update]: issues/deliver-bug-fixes-and-docs-update.md
-[stabilize-api-and-improve-search]: issues/stabilize-api-and-improve-search.md
-[support-distributed-execution-and-monitoring]: issues/support-distributed-execution-and-monitoring.md
-[reach-stable-performance-and-interfaces]: issues/reach-stable-performance-and-interfaces.md
-[packaging-fallback]: issues/archive/verify-packaging-workflow-and-duckdb-fallback.md
-[stabilize-integration-tests]: issues/archive/stabilize-integration-tests.md
-[coverage-gates]: issues/archive/add-coverage-gates-and-regression-checks.md
-[ranking]: issues/archive/validate-ranking-algorithms-and-agent-coordination.md
