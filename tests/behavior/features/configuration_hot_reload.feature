@@ -16,3 +16,8 @@ Feature: Configuration & Hot Reload
     When I modify "autoresearch.toml" to enable a new agent
     Then the orchestrator should reload the configuration automatically
     And the new agent should be visible in the next iteration cycle
+
+  Scenario: Ignore invalid configuration changes
+    Given the application is running
+    When I modify "autoresearch.toml" with invalid content
+    Then the orchestrator should keep the previous configuration

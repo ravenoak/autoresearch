@@ -22,3 +22,8 @@ Feature: Monitor CLI
     Then the monitor command should exit with an error
     And the monitor output should include a friendly metrics backend error message
 
+  Scenario: Resource monitoring for a duration
+    When I run `autoresearch monitor resources -d 1`
+    Then the monitor command should exit successfully
+    And the monitor output should show CPU and memory usage
+

@@ -121,3 +121,33 @@ def test_monitor_watch():
 def test_monitor_backend_unavailable():
     """Scenario: Metrics backend unavailable."""
     pass
+
+
+@when("I run `autoresearch monitor resources -d 1`")
+def run_monitor_resources(
+    monkeypatch,
+    bdd_context,
+    cli_runner,
+    dummy_query_response,
+    reset_global_registries,
+):
+    """Execute resource monitoring for a short duration."""
+
+    def fake_record(self):
+        self.resource_usage.append((time.time(), 10.0, 5.0, 0.0, 0.0))
+
+    monkeypatch.setattr(
+        "autoresearch.orchestration.metrics.OrchestrationMetrics.record_system_resources",
+        fake_record,
+    )
+    monkeypatch.setattr("autoresearch.monitor.time.sleep", lambda *_: None)
+    result = cli_runner.invoke(cli_app, ["monitor", "resources", "-d", "1"])
+    bdd_context["monitor_result"] = result
+
+
+@scenario(
+    "../features/monitor_cli.feature", "Resource monitoring for a duration"
+)
+def test_monitor_resources_duration():
+    """Scenario: Resource monitoring for a duration."""
+    pass
