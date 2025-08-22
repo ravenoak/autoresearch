@@ -1,6 +1,7 @@
 from autoresearch.config.models import ConfigModel
 import autoresearch.search as search
 from autoresearch.llm import pool as llm_pool
+import requests
 
 
 def test_search_pool_reuse_and_cleanup(monkeypatch):
@@ -26,3 +27,12 @@ def test_llm_pool_reuse_and_cleanup(monkeypatch):
     llm_pool.close_session()
     s3 = llm_pool.get_session()
     assert s3 is not s1
+
+
+def test_set_http_session(monkeypatch):
+    """Injected session is returned by ``get_http_session``."""
+    search.close_http_session()
+    session = requests.Session()
+    search.set_http_session(session)
+    assert search.get_http_session() is session
+    search.close_http_session()

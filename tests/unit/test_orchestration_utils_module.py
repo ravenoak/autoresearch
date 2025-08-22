@@ -43,3 +43,16 @@ def test_calculate_result_confidence():
     )
     score = utils.calculate_result_confidence(resp)
     assert 0.5 <= score <= 1.0
+
+
+def test_calculate_result_confidence_penalties():
+    resp = QueryResponse(
+        answer="a",
+        citations=[],
+        reasoning=[],
+        metrics={
+            "token_usage": {"total": 95, "max_tokens": 100},
+            "errors": ["e1", "e2", "e3", "e4", "e5"],
+        },
+    )
+    assert utils.calculate_result_confidence(resp) == 0.1
