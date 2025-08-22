@@ -7,7 +7,10 @@ heuristics.
 
 Running `uv run scripts/simulate_scoring.py --query "python"` on the
 sample dataset produced a ranking consistent with the formula in
-[source_credibility.md](source_credibility.md).
+[source_credibility.md](source_credibility.md). The script now accepts a
+`--weights w_sem w_bm25 w_cred` flag for exploring alternate weight
+vectors. Scores that tie after weighting break by source credibility and
+document id to ensure deterministic rankings.
 
 ## Ranking weights
 
@@ -107,7 +110,10 @@ test, [test_property_dialectical_coordination.py][tpdc], validates
 convergence to the ground truth in the noiseless case. Let `e^t = b_s^t - g`.
 Ignoring noise, the update gives `e^{t+1} = (1 - α/3) e^t`, so after two steps
 `|e^t| ≤ (1 - α/3) |g|`. The bound is checked in
-[test_property_coordination_stability.py][tpcs].
+[test_property_coordination_stability.py][tpcs]. Another property-based
+test, [test_dialectical_cycle_property.py][tdcp], draws pairs of `α` values and
+shows that larger fact-checker influence never lowers the final mean belief,
+mirroring the monotonic pull toward the ground truth.
 
 The update also has a fixed point at the ground truth. If
 `b_s^0 = b_c^0 = b_f^0 = g`, then `b_s^t = g` for all `t`. The property-based
@@ -121,6 +127,7 @@ and confirms the invariant.
 [tpcfp]: ../../tests/unit/test_property_coordination_fixed_point.py
 [aca]: ../../tests/analysis/agent_coordination_analysis.py
 [acm]: ../../tests/analysis/agent_coordination_metrics.json
+[tdcp]: ../../tests/analysis/test_dialectical_cycle_property.py
 
 ## Agent coordination
 
