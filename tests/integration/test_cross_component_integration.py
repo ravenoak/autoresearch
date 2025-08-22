@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.config_utils import apply_preset
 from autoresearch.models import QueryResponse
@@ -29,6 +31,7 @@ class SearchAgent:
         return {"results": {self.name: "ok"}}
 
 
+@pytest.mark.slow
 def test_preset_drives_cross_component_flow(monkeypatch):
     """Preset config enables orchestrator, search, and storage integration."""
     calls: list[str] = []

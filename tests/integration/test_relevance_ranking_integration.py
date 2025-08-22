@@ -26,6 +26,7 @@ def load_data():
     return data
 
 
+@pytest.mark.slow
 def test_example_weights_and_ranking(monkeypatch):
     data = load_data()
 

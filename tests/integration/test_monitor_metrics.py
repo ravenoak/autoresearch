@@ -1,10 +1,10 @@
-from typer.testing import CliRunner
-from fastapi.testclient import TestClient
-from prometheus_client import CollectorRegistry, generate_latest
 import time
 
+import pytest
+from typer.testing import CliRunner
+from prometheus_client import CollectorRegistry, generate_latest
+
 from autoresearch.main import app as cli_app
-from autoresearch.api import app as api_app
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import metrics
@@ -30,15 +30,15 @@ def setup_patches(monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
 
-def test_monitor_cli_increments_counter(monkeypatch):
+@pytest.mark.slow
+def test_monitor_cli_increments_counter(monkeypatch, api_client):
     setup_patches(monkeypatch)
     runner = CliRunner()
     start = metrics.QUERY_COUNTER._value.get()
     result = runner.invoke(cli_app, ["monitor", "run"])
     assert result.exit_code == 0
     assert metrics.QUERY_COUNTER._value.get() == start + 1
-    client = TestClient(api_app)
-    resp = client.get("/metrics")
+    resp = api_client.get("/metrics")
     assert resp.status_code == 200
     assert "autoresearch_queries_total" in resp.text
 
@@ -59,7 +59,7 @@ def test_resource_monitor_collects_metrics():
     assert monitor.token_snapshots
 
 
-def test_system_monitor_metrics_exposed(monkeypatch):
+def test_system_monitor_metrics_exposed(monkeypatch, api_client):
     setup_patches(monkeypatch)
     cfg = ConfigModel(loops=1, output_format="json")
     cfg.api.role_permissions["anonymous"] = ["metrics"]
@@ -73,13 +73,13 @@ def test_system_monitor_metrics_exposed(monkeypatch):
     time.sleep(0.05)
     monitor.stop()
 
-    client = TestClient(api_app)
-    resp = client.get("/metrics")
+    resp = api_client.get("/metrics")
     assert resp.status_code == 200
     assert "autoresearch_system_cpu_percent" in resp.text
     assert "autoresearch_system_memory_percent" in resp.text
 
 
+@pytest.mark.slow
 def test_monitor_start_cli(monkeypatch):
     calls = {}
 

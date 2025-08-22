@@ -81,6 +81,7 @@ def test_run_query_with_coalitions(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 def test_run_parallel_query_aggregates_results(monkeypatch):
     cfg = ConfigModel(agents=[], loops=1)
 

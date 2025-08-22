@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from autoresearch.agents.dialectical.synthesizer import SynthesizerAgent
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.state import QueryState
@@ -11,6 +13,7 @@ class DummyAdapter:
         return "integration"
 
 
+@pytest.mark.slow
 def test_synthesizer_integration_cycle() -> None:
     """Run synthesizer across cycles and update QueryState."""
     cfg = ConfigModel()

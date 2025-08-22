@@ -1,9 +1,13 @@
+import pytest
 from typer.testing import CliRunner
+
 from autoresearch.main import app as cli_app
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
+
+pytestmark = pytest.mark.slow
 
 
 def _setup(monkeypatch):

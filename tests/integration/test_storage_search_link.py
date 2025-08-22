@@ -56,6 +56,7 @@ def _duckdb_backend_with_citations(query_embedding, max_results=5):
     return results[:max_results]
 
 
+@pytest.mark.slow
 def test_external_lookup_returns_citations(monkeypatch):
     # Disable network backends and ranking complexity
     monkeypatch.setattr(Search, "backends", {})
