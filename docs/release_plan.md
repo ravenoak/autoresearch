@@ -8,7 +8,7 @@ commands are documented in [releasing.md](releasing.md). See
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 22, 2025** and
+`2025-05-18`). This schedule was last updated on **August 23, 2025** and
 reflects the fact that the codebase currently sits at the **unreleased 0.1.0a1**
 version defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -22,7 +22,7 @@ Current test and coverage results are tracked in
 
 ## Milestones
 
-- **0.1.0a1** (2026-03-01, status: completed): Alpha preview to collect
+- **0.1.0a1** (2026-03-01, status: in progress): Alpha preview to collect
   feedback ([prepare-alpha-release]).
 - **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
   checks with all tests passing
@@ -52,12 +52,18 @@ now set for **July 1, 2026** while packaging tasks are resolved.
   ([verify-packaging-workflow-and-duckdb-fallback.md][packaging-fallback])
 - [x] Integration test suite passes
   ([stabilize-integration-tests.md][stabilize-integration-tests])
-- [x] Coverage gates report at least **90%** total coverage
-  (see [add-coverage-gates-and-regression-checks.md][coverage-gates])
+- [ ] Coverage gates target **90%** total coverage; current coverage is
+  **24%** (see [add-coverage-gates-and-regression-checks.md][coverage-gates])
 - [x] Validate ranking algorithms and agent coordination (see [ranking])
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
+
+### Remaining blockers before tagging 0.1.0a1
+
+- `task verify` stalls during `mypy`; type checking must complete.
+- Total coverage is **24%**, short of the **90%** gate.
+- TestPyPI upload returns HTTP 403, so packaging needs a retry.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.
 
@@ -91,7 +97,7 @@ optional extras):
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` reports at least **90%** total coverage
+- [ ] `task coverage` currently reports **24%** total coverage; target **90%**
 
 [coverage-gates]: ../issues/archive/add-coverage-gates-and-regression-checks.md
 [stabilize-integration-tests]: ../issues/archive/stabilize-integration-tests.md
