@@ -10,3 +10,5 @@
 - [Weight Tuning](weight_tuning.md)
 - [Config Hot Reload](config_hot_reload.md)
 - [Dialectical Agent Coordination](dialectical_coordination.md)
+- [Token Budget Adaptation](token_budgeting.md)
+- [Error Recovery via Exponential Backoff](error_recovery.md)

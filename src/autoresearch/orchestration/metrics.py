@@ -108,6 +108,7 @@ def temporary_metrics() -> Iterator[None]:
                 exc_info=True,
             )
 
+
 def _get_system_usage() -> Tuple[float, float, float, float]:  # noqa: E302
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
@@ -371,7 +372,9 @@ class OrchestrationMetrics:
 
         ``margin`` controls how aggressively the budget adapts. The
         calculation considers the current cycle usage, per-agent
-        historical averages, and the overall average across cycles.
+        historical averages, and the overall average across cycles. When
+        usage stabilizes, the update converges to ``ceil(u * (1 + margin))``
+        for constant usage ``u``.
         """
 
         total = self._total_tokens()
