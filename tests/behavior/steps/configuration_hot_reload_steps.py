@@ -51,6 +51,29 @@ def check_agent_visible(check_hot_reload: ConfigModel):
     assert "NewAgent" in check_hot_reload.agents
 
 
+@when(
+    parsers.parse('I modify "{file}" with invalid content'),
+    target_fixture="modify_config_invalid",
+)
+def modify_config_invalid(file, tmp_path):
+    ConfigLoader.reset_instance()
+    loader = ConfigLoader()
+    cfg_before = loader.load_config()
+    with open(file, "w") as f:
+        f.write("invalid = [this is not valid toml]")
+    try:
+        loader.load_config()
+    except Exception:
+        pass
+    return cfg_before
+
+
+@then("the orchestrator should keep the previous configuration")
+def config_unchanged(modify_config_invalid: ConfigModel):
+    cfg_after = ConfigLoader().load_config()
+    assert cfg_after == modify_config_invalid
+
+
 @when("I start the application", target_fixture="start_application")
 def start_application():
     ConfigLoader.reset_instance()
@@ -80,4 +103,12 @@ def test_load_config_startup():
 
 @scenario("../features/configuration_hot_reload.feature", "Hot-reload on config change")
 def test_hot_reload_config():
+    pass
+
+
+@scenario(
+    "../features/configuration_hot_reload.feature",
+    "Ignore invalid configuration changes",
+)
+def test_ignore_invalid_config():
     pass

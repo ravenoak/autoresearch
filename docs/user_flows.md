@@ -41,6 +41,12 @@ This document describes the typical user flows for all interface modalities of t
    autoresearch config reasoning --show
    ```
 
+4. **Ignore Invalid Changes**
+   - If `autoresearch.toml` contains invalid syntax, the last valid configuration
+     remains active until the file is fixed.
+   - See `tests/behavior/features/configuration_hot_reload.feature`
+     for automated coverage.
+
 ### Monitoring Flow
 
 1. **Display System Metrics**
@@ -54,10 +60,17 @@ This document describes the typical user flows for all interface modalities of t
    autoresearch monitor run
    ```
 
-3. **View Agent Activity**
+3. **Record Resource Usage**
+   ```bash
+   autoresearch monitor resources -d 60
+   ```
+   - Captures CPU and memory metrics for the specified duration.
+   - Verified by `tests/behavior/features/monitor_cli.feature`.
+
+4. **View Agent Activity**
    - The monitor shows which agents are active and their current status
 
-4. **Exit Monitor**
+5. **Exit Monitor**
    - Press Ctrl+C to exit the monitor
 
 ### Local Directory and Git Repository Search Flow
