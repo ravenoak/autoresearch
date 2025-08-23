@@ -16,6 +16,18 @@ converge for small \(\eta\) because \(L\) is convex in \(w\).
 demonstrates convergence and robustness: several random initializations yield
 similar final weights and losses.
 
+## Simulation
+Running `uv run scripts/weight_tuning_convergence.py --iterations 50 --trials 3`
+prints
+
+```
+weight_0: mean=0.349 stdev=0.000
+weight_1: mean=0.257 stdev=0.000
+weight_2: mean=0.394 stdev=0.000
+```
+
+showing that different seeds converge to nearly identical weights.
+
 Solving the normal equations of the unconstrained problem
 \(\min_w \|F w - y\|_2^2\) gives
 \(w^* = (F^T F)^{-1} F^T y\). Projecting \(w^*\) onto the simplex
