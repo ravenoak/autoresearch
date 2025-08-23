@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import threading
 from collections import Counter
 from typing import cast
@@ -63,3 +64,30 @@ def get_request_logger(app: FastAPI | None = None) -> RequestLogger:
 def reset_request_log(app: FastAPI | None = None) -> None:
     """Clear the application's request log."""
     get_request_logger(app).reset()
+
+
+def generate_bearer_token(length: int = 32) -> str:
+    """Return a random URL-safe token.
+
+    Args:
+        length: Number of bytes of entropy for the token.
+
+    Returns:
+        Secure token suitable for use as a bearer credential.
+    """
+
+    return secrets.token_urlsafe(length)
+
+
+def verify_bearer_token(token: str, expected: str) -> bool:
+    """Validate a bearer token using constant-time comparison.
+
+    Args:
+        token: Token supplied by the client.
+        expected: Reference token from configuration.
+
+    Returns:
+        ``True`` if the tokens match, ``False`` otherwise.
+    """
+
+    return secrets.compare_digest(token, expected)

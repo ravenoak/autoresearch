@@ -2,6 +2,7 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.api.utils import generate_bearer_token
 
 
 def _setup(monkeypatch):
@@ -18,10 +19,11 @@ def _setup(monkeypatch):
 
 def test_http_bearer_token(monkeypatch, api_client):
     cfg = _setup(monkeypatch)
-    cfg.api.bearer_token = "token"
+    token = generate_bearer_token()
+    cfg.api.bearer_token = token
 
     resp = api_client.post(
-        "/query", json={"query": "q"}, headers={"Authorization": "Bearer token"}
+        "/query", json={"query": "q"}, headers={"Authorization": f"Bearer {token}"}
     )
     assert resp.status_code == 200
 
