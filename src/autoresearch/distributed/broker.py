@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 from queue import Queue
-from typing import Any, Tuple, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Tuple, cast
 
 from ..logging_utils import get_logger
 
@@ -60,7 +60,30 @@ class RedisBroker:
         self.client.close()
 
 
-BrokerType = InMemoryBroker | RedisBroker
+class RayBroker:
+    """Message broker backed by Ray's distributed queue."""
+
+    def __init__(self, queue_name: str = "autoresearch") -> None:
+        import ray
+        from ray.util.queue import Queue as RayQueue
+
+        if not ray.is_initialized():  # pragma: no cover - optional init
+            ray.init(ignore_reinit_error=True, configure_logging=False)
+        self._ray = ray
+        self.queue = RayQueue(actor_options={"name": queue_name})
+
+    def publish(self, message: dict[str, Any]) -> None:
+        self.queue.put(message)
+
+    def shutdown(self) -> None:
+        try:
+            if self._ray.is_initialized():
+                self._ray.shutdown()
+        except Exception as e:  # pragma: no cover - best effort
+            log.warning("Failed to shutdown Ray", exc_info=e)
+
+
+BrokerType = InMemoryBroker | RedisBroker | RayBroker
 
 
 def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
@@ -69,4 +92,6 @@ def get_message_broker(name: str | None, url: str | None = None) -> BrokerType:
         return InMemoryBroker()
     if name == "redis":
         return RedisBroker(url)
+    if name == "ray":
+        return RayBroker()
     raise ValueError(f"Unsupported message broker: {name}")
