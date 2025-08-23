@@ -7,7 +7,8 @@ from typing import List, Dict, Any, Optional
 from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
 import time
-from pydantic import BaseModel, Field
+from threading import RLock
+from pydantic import BaseModel, Field, PrivateAttr
 
 from ..models import QueryResponse
 
@@ -28,37 +29,44 @@ class QueryState(BaseModel):
     last_updated: float = Field(default_factory=time.time)
     error_count: int = 0
 
+    _lock: RLock = PrivateAttr(default_factory=RLock)
+
     def update(self, result: Dict[str, Any]) -> None:
         """Update state with agent result."""
-        if "claims" in result:
-            self.claims.extend(result["claims"])
-        if "sources" in result:
-            self.sources.extend(result["sources"])
-        for k, v in result.get("metadata", {}).items():
-            self.metadata[k] = v
-        # Update results with agent-specific outputs
-        self.results.update(result.get("results", {}))
-        # Update timestamp
-        self.last_updated = time.time()
+        with self._lock:
+            if "claims" in result:
+                self.claims.extend(result["claims"])
+            if "sources" in result:
+                self.sources.extend(result["sources"])
+            for k, v in result.get("metadata", {}).items():
+                self.metadata[k] = v
+            # Update results with agent-specific outputs
+            self.results.update(result.get("results", {}))
+            # Update timestamp
+            self.last_updated = time.time()
 
     def add_error(self, error_info: Dict[str, Any]) -> None:
         """Track execution errors."""
-        self.error_count += 1
-        if "errors" not in self.metadata:
-            self.metadata["errors"] = []
-        self.metadata["errors"].append(error_info)
+        with self._lock:
+            self.error_count += 1
+            if "errors" not in self.metadata:
+                self.metadata["errors"] = []
+            self.metadata["errors"].append(error_info)
 
     def add_message(self, message: Dict[str, Any]) -> None:
         """Store a message exchanged between agents."""
-        self.messages.append(message)
+        with self._lock:
+            self.messages.append(message)
 
     def add_feedback_event(self, event: FeedbackEvent) -> None:
         """Store a feedback event exchanged between agents."""
-        self.feedback_events.append(event)
+        with self._lock:
+            self.feedback_events.append(event)
 
     def get_feedback_events(self, *, recipient: Optional[str] = None) -> List[FeedbackEvent]:
         """Retrieve feedback events for a specific recipient."""
-        events = self.feedback_events
+        with self._lock:
+            events = list(self.feedback_events)
         if recipient is not None:
             events = [e for e in events if e.target == recipient]
         return events
@@ -92,7 +100,8 @@ class QueryState(BaseModel):
         protocol: MessageProtocol | None = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve messages for a specific recipient or coalition."""
-        messages = self.messages
+        with self._lock:
+            messages = list(self.messages)
         if recipient is not None:
             messages = [m for m in messages if m.get("to") in (None, recipient)]
         if coalition is not None:
@@ -153,27 +162,28 @@ class QueryState(BaseModel):
             max_sources: Maximum number of sources to keep.
         """
 
-        pruned = {"claims": 0, "sources": 0, "messages": 0, "feedback": 0}
+        with self._lock:
+            pruned = {"claims": 0, "sources": 0, "messages": 0, "feedback": 0}
 
-        if len(self.claims) > max_claims:
-            excess = len(self.claims) - max_claims
-            del self.claims[0:excess]
-            pruned["claims"] = excess
+            if len(self.claims) > max_claims:
+                excess = len(self.claims) - max_claims
+                del self.claims[0:excess]
+                pruned["claims"] = excess
 
-        if len(self.sources) > max_sources:
-            excess = len(self.sources) - max_sources
-            del self.sources[0:excess]
-            pruned["sources"] = excess
+            if len(self.sources) > max_sources:
+                excess = len(self.sources) - max_sources
+                del self.sources[0:excess]
+                pruned["sources"] = excess
 
-        if len(self.messages) > max_messages:
-            excess = len(self.messages) - max_messages
-            del self.messages[0:excess]
-            pruned["messages"] = excess
+            if len(self.messages) > max_messages:
+                excess = len(self.messages) - max_messages
+                del self.messages[0:excess]
+                pruned["messages"] = excess
 
-        if len(self.feedback_events) > max_feedback:
-            excess = len(self.feedback_events) - max_feedback
-            del self.feedback_events[0:excess]
-            pruned["feedback"] = excess
+            if len(self.feedback_events) > max_feedback:
+                excess = len(self.feedback_events) - max_feedback
+                del self.feedback_events[0:excess]
+                pruned["feedback"] = excess
 
-        if any(pruned.values()):
-            self.metadata.setdefault("pruned", []).append(pruned)
+            if any(pruned.values()):
+                self.metadata.setdefault("pruned", []).append(pruned)
