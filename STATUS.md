@@ -7,18 +7,20 @@ milestones.
 
 ## `task check`
 ```text
-bash: command not found: task
+FAILED tests/unit/test_failure_paths.py::test_vector_search_vss_unavailable - autoresearch.errors.StorageError: VSS extension...
+FAILED tests/unit/test_main_cli.py::test_serve_command - assert 130 == 0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ```
-Result: task CLI not installed; checks did not run.
+Result: tests failed and run interrupted.
 
 ## `task verify`
 ```text
-bash: command not found: task
+not run
 ```
-Result: task CLI not installed; no tests executed.
+Result: skipped due to earlier failures.
 
 ## `task coverage`
 ```text
-ImportError: No module named 'pytest_httpx'
+not run
 ```
-Result: tests failed at import stage; coverage report not produced.
+Result: coverage report not produced.
