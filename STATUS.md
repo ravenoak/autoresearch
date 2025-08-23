@@ -15,7 +15,8 @@ Result: both commands completed without issues.
 ```text
 uv run pytest tests/unit -q
 ```
-Result: 391 passed, 4 skipped, 24 deselected.
+Result: run stalled in this environment after tests began.
+Previous baseline: 391 passed, 4 skipped, 24 deselected.
 
 ## Integration tests
 ```text
