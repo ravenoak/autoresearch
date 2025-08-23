@@ -7,13 +7,10 @@ milestones.
 
 ## `task check`
 ```text
-uv run flake8 src tests
-uv run mypy src
-uv run python scripts/check_spec_tests.py
-uv run pytest tests/unit -k main_cli -q
+.venv/bin/task check
 ```
-Result: flake8, mypy, spec checks, and a subset of unit tests passed. The
-`task` runner is still missing, so commands were invoked via `uv run`.
+Result: flake8 and mypy ran, but the command was interrupted before tests
+completed.
 
 ## `task verify`
 ```text
@@ -25,6 +22,8 @@ concurrent query handling.
 
 ## `task coverage`
 ```text
-not run
+.venv/bin/task coverage
 ```
-Result: skipped due to failing tests.
+Result: 1 failed, 386 passed, 4 skipped, and 24 deselected. The failing
+`tests/unit/test_main_backup_commands.py::test_backup_schedule_command`
+prevented coverage data from being generated.

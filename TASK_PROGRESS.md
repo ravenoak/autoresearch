@@ -1,7 +1,7 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 22, 2025**, see
+organized by phases from the code complete plan. As of **August 23, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status.
 An **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
@@ -226,11 +226,14 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-`task coverage` reports roughly 90% total coverage, and all tests pass.
+`task coverage` failed due to
+`tests/unit/test_main_backup_commands.py::test_backup_schedule_command`. No
+coverage metrics were produced.
 
 ### Latest Test Results
 
-- `task --version` – not installed
+- `.venv/bin/task check` – interrupted before tests finished
+- `.venv/bin/task coverage` – 1 failed, 386 passed, 4 skipped, 24 deselected
 - `uv run flake8 src tests` – passes
 - `uv run mypy src` – success
 - `uv run python scripts/check_spec_tests.py` – success
