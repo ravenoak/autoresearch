@@ -1,12 +1,12 @@
 # Resolve test failures and task tooling
 
 ## Context
-Go Task is still unavailable on `PATH`, so repository tasks cannot run
-directly. After installing minimal development extras, `flake8`, `mypy`,
-spec checks, and a subset of unit tests pass. Running the full test suite
-reveals failures in storage persistence eviction, token budget convergence,
-API authentication, and concurrent query handling. Integration tests also
-error during collection because the `redis` package is missing.
+ Go Task now installs correctly, but `task check` stalls after starting the
+ unit test suite. With minimal development extras, `flake8`, `mypy`, spec
+ checks, and a subset of unit tests pass. Running the full test suite
+ reveals failures in storage persistence eviction, token budget convergence,
+ API authentication, and concurrent query handling. Integration tests still
+ error during collection because the `redis` package is missing.
 
 ## Dependencies
 
