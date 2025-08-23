@@ -13,4 +13,4 @@ Core ranking and convergence algorithms lack formal proofs, leaving behavior and
 - Review proofs for clarity and correctness.
 
 ## Status
-Open
+Archived
