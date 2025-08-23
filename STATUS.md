@@ -7,20 +7,25 @@ milestones.
 
 ## `task check`
 ```text
-FAILED tests/unit/test_failure_paths.py::test_vector_search_vss_unavailable - autoresearch.errors.StorageError: VSS extension...
-FAILED tests/unit/test_main_cli.py::test_serve_command - assert 130 == 0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+bash: command not found: task
 ```
-Result: tests failed and run interrupted.
+Result: task runner missing; manual checks executed:
+
+- `uv run flake8 src tests` – passed
+- `uv run mypy src` – passed
+- `uv run python scripts/check_spec_tests.py` – passed
+- `uv run pytest tests/unit -q` – 2 failed, 606 passed, 26 skipped
+- `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q` – 178 passed, 4 skipped
+- `uv run pytest tests/behavior -q` – many failures, run interrupted
 
 ## `task verify`
 ```text
 not run
 ```
-Result: skipped due to earlier failures.
+Result: skipped; depends on `task` and passing tests.
 
 ## `task coverage`
 ```text
 not run
 ```
-Result: coverage report not produced.
+Result: skipped due to failing tests.
