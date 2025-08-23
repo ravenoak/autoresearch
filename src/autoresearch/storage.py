@@ -1152,7 +1152,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         via ``storage.hnsw_metric``) and returns the ``k`` most similar claims,
         ordered by similarity score.
 
-        If the VSS extension is not loaded, a ``StorageError`` is raised. If a
+        If the VSS extension is not loaded, an empty list is returned. If a
         custom implementation is set via ``set_delegate()``, the call is
         delegated to that implementation.
 
@@ -1168,8 +1168,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                                  Each result contains 'node_id' and 'embedding'.
 
         Raises:
-            StorageError: If the search parameters are invalid, storage is not
-                initialized, or the VSS extension is unavailable.
+            StorageError: If the search parameters are invalid or storage is not
+                initialized.
             NotFoundError: If no embeddings are found in the database.
         """
         if _delegate and _delegate is not StorageManager:
@@ -1183,9 +1183,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Check if VSS extension is available
         if not StorageManager.has_vss():
-            raise StorageError(
-                "VSS extension is not available", suggestion="Install the DuckDB VSS extension"
-            )
+            return []
 
         # Use the DuckDBStorageBackend to perform the vector search
         db_backend = StorageManager.context.db_backend
