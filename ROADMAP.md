@@ -19,9 +19,9 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0a1 (2026-03-01, status: in progress): Alpha preview to collect feedback
+- 0.1.0a1 (2026-03-01, status: completed): Alpha preview to collect feedback
   while aligning environment requirements
-  ([prepare-alpha-release](issues/archive/prepare-alpha-release.md)).
+  ([prepare-initial-alpha-release](issues/archive/prepare-initial-alpha-release.md)).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
   with all tests passing
   ([finalize-first-public-preview-release](
@@ -49,8 +49,8 @@ for the alpha release checklist.
 
 This pre-release provided an early package for testing after packaging tasks
 were verified. Related issue
-([prepare-alpha-release](issues/archive/prepare-alpha-release.md)) tracks
-remaining environment work. Key activities included:
+([prepare-initial-alpha-release](issues/archive/prepare-initial-alpha-release.md))
+captured the environment work. Key activities included:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated
