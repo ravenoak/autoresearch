@@ -7,7 +7,8 @@ This module provides a storage system that combines three backends:
 3. RDFLib: For semantic graph storage and SPARQL queries
 
 The storage system supports claim persistence, vector search, and automatic
-resource management with configurable eviction policies.
+resource management with configurable eviction policies. See
+``docs/algorithms/cache_eviction.md`` for proofs of the LRU policy.
 
 Note on VSS Extension:
 The vector search functionality requires the DuckDB VSS extension.
@@ -364,7 +365,8 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Remove and return the least recently used node from the LRU cache.
 
         This method implements the "Least Recently Used" (LRU) eviction policy.
-        It removes the node that was accessed least recently from the LRU cache
+        See ``docs/algorithms/cache_eviction.md`` for analysis and proofs. It
+        removes the node that was accessed least recently from the LRU cache
         and returns its ID. This is used by the _enforce_ram_budget method when
         the graph_eviction_policy is set to "lru".
 
@@ -436,8 +438,9 @@ class StorageManager(metaclass=StorageManagerMeta):
         - "adaptive": Dynamically selects the best policy based on usage patterns
         - "priority": Evicts nodes based on configurable priority tiers
 
-        The method continues evicting nodes until the RAM usage falls below the budget
-        or there are no more nodes to evict.
+        See ``docs/algorithms/cache_eviction.md`` for proofs of the LRU policy.
+        The method continues evicting nodes until the RAM usage falls below the
+        budget or there are no more nodes to evict.
 
         Args:
             budget_mb: The maximum amount of RAM to use in megabytes. If <= 0,

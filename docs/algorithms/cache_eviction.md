@@ -17,6 +17,13 @@ note outlines the policy used to discard entries when space runs low.
 - LRU is a stack algorithm, so a cache of size \(k\) is always a subset of
   a cache of size \(k+1\), minimizing misses among recency policies [1].
 
+## Proof sketch
+
+LRU exhibits the stack property: for cache size :math:`k`, the set of cached
+items is contained in the set for size :math:`k+1`. Mattson et al. proved that
+any replacement policy with this property incurs the fewest misses for all
+request sequences. Therefore LRU is optimal among recency-based policies.
+
 ## Simulation
 Running `uv run scripts/simulate_cache_eviction.py --budget 20 --steps 5`
 shows bounded memory:
@@ -30,6 +37,9 @@ final memory 12/20
 ## References
 1. R. Arpaci-Dusseau and A. Arpaci-Dusseau. "Operating Systems: Three Easy
    Pieces – Caching: The LRU Policy." https://pages.cs.wisc.edu/~remzi/OSTEP/
+2. J. Mattson, R. Gecsei, D. Slutz, and I. Traiger. "Evaluation Techniques
+   for Storage Hierarchies." *IBM Systems Journal*, 1970.
+   https://doi.org/10.1147/sj.92.0134
 
 ## Assumptions
 - Each item reports its memory footprint on insertion.

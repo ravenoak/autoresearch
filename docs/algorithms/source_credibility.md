@@ -26,6 +26,19 @@ The :code:`AUTHORITY` table maps domains and suffixes such as ``.edu`` or
 These heuristic scores are already normalized to ``[0, 1]`` and require no
 additional scaling before being combined with other ranking metrics.
 
+## Proof of score bounds
+
+Let :math:`r, c \in [0, 1]` be relevance and credibility scores with weight
+:math:`w \in [0, 1]`. The combined score is
+
+\[
+f = (1 - w) r + w c.
+\]
+
+Because the coefficients are non‑negative and sum to ``1``, :math:`f` is a
+convex combination of :math:`r` and :math:`c`, ensuring
+:math:`f \in [0, 1]`.
+
 ## Example ranking
 
 Assume three results share the same base relevance score of ``0.7`` and a
@@ -63,5 +76,7 @@ sample dataset yields the following ranked scores:
 ## References
 
 - Moz. "Domain Authority."[^moz]
+- R. Baeza-Yates and B. Ribeiro-Neto. *Modern Information Retrieval*.
+  https://www.mir2ed.org
 
 [^moz]: https://moz.com/learn/seo/domain-authority
