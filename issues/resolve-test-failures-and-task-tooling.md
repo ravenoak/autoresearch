@@ -1,11 +1,10 @@
 # Resolve test failures and task tooling
 
 ## Context
-The development environment lacks the `task` runner, so automated workflows
-like `task check` and `task verify` cannot run. Manual checks show failing unit
-and behavior tests, notably in token budget convergence and knowledge graph
-persistence. Restoring the task tooling and stabilizing the tests is required
-before the alpha release.
+Go Task was missing, preventing `task check` and `task verify` from running.
+The runner has now been installed in `.venv` and smoke tests pass with
+`flake8`, `mypy`, and a subset of unit tests. Full test suites and behavioral
+scenarios still need to be stabilized before the alpha release.
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.

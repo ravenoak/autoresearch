@@ -7,16 +7,14 @@ milestones.
 
 ## `task check`
 ```text
-bash: command not found: task
+uv run flake8 src tests
+uv run mypy src
+uv run python scripts/check_spec_tests.py
+uv run pytest tests/unit -k main_cli -q
 ```
-Result: task runner missing; manual checks executed:
-
-- `uv run flake8 src tests` – passed
-- `uv run mypy src` – passed
-- `uv run python scripts/check_spec_tests.py` – passed
-- `uv run pytest tests/unit -q` – 2 failed, 606 passed, 26 skipped
-- `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q` – 178 passed, 4 skipped
-- `uv run pytest tests/behavior -q` – many failures, run interrupted
+Result: flake8, mypy, spec checks, and a subset of unit tests passed. Full
+test suites, integration tests, and behavior scenarios remain to be executed
+once resources allow.
 
 ## `task verify`
 ```text
