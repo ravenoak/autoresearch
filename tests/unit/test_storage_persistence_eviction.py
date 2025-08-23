@@ -1,11 +1,14 @@
+import pytest
+
 from autoresearch.storage import StorageManager
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration import metrics
 
 
-def test_persistence_and_eviction(storage_manager, tmp_path, monkeypatch):
-    cfg = ConfigModel(ram_budget_mb=1)
+@pytest.mark.parametrize("policy", ["lru", "score", "hybrid"])
+def test_persistence_and_eviction(storage_manager, tmp_path, monkeypatch, policy):
+    cfg = ConfigModel(ram_budget_mb=1, graph_eviction_policy=policy)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 1000)
@@ -14,7 +17,9 @@ def test_persistence_and_eviction(storage_manager, tmp_path, monkeypatch):
     claim = {"id": "p1", "type": "fact", "content": "c"}
     db_file = tmp_path / "kg.duckdb"
     monkeypatch.setenv("DUCKDB_PATH", str(db_file))
+    StorageManager._access_frequency["p1"] = 1
     StorageManager.persist_claim(claim)
     assert StorageManager.context.db_backend._path == str(db_file)
     assert "p1" not in StorageManager.get_graph().nodes
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
+    assert "p1" not in StorageManager._access_frequency
