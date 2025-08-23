@@ -42,6 +42,12 @@ uv sync --extra dev
 # Link the project in editable mode so tools are available
 uv pip install -e .
 
+# Verify dev extras like pytest_httpx are installed
+if ! uv pip show pytest_httpx >/dev/null 2>&1; then
+    echo "pytest_httpx is required for tests but was not installed" >&2
+    exit 1
+fi
+
 # Ensure Go Task is installed after bootstrapping
 if [ ! -x .venv/bin/task ]; then
     echo "Go Task missing; installing..."

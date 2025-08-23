@@ -19,8 +19,17 @@ Run a bootstrap command immediately:
 task install        # minimal environment
 ```
 
-`./scripts/setup.sh` installs Go Task when missing and exits if `task --version`
-fails.
+`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` extras
+(including test-only packages such as `pytest_httpx`), and exits if
+`task --version` fails.
+
+After the script completes, confirm Go Task and the development packages are
+available:
+
+```bash
+task --version
+uv pip show pytest_httpx
+```
 
 If you see errors like `task: command not found` or `uv: command not found`,
 diagnose the environment with
