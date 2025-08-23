@@ -22,6 +22,6 @@ and `tests/unit/test_token_budget_convergence.py::test_suggest_token_budget_conv
 
 ## `task coverage`
 ```text
-not run
+task coverage
 ```
-Result: skipped due to failing tests.
+Result: command terminated before completion; coverage metrics unavailable.

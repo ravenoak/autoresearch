@@ -226,14 +226,14 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-`task coverage` reports roughly 90% total coverage, and all tests pass.
+`task coverage` could not complete in this environment; coverage metrics are unavailable.
 
 ### Latest Test Results
 
 - `task --version` – 3.44.1
 - `task check` – 1 failed, 607 passed, 26 skipped, 24 deselected (token budget convergence)
 - `task verify` – 2 failed, 606 passed, 26 skipped, 24 deselected (relevance ranking cache deadline; token budget convergence)
-- `task coverage` – not run
+- `task coverage` – failed to complete (timeout)
 - Integration and behavior suites remain unstable; see issue tracker
 
 ### Performance Baselines
