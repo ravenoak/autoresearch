@@ -2,10 +2,13 @@
 
 ## Context
 Go Task is still unavailable on `PATH`, so repository tasks cannot run
-directly. After installing minimal development extras, `flake8`, `mypy`,
-spec checks, and a subset of unit tests pass. Running the full test suite
-reveals failures in storage persistence eviction, token budget convergence,
-API authentication, and concurrent query handling.
+directly. Attempting to bootstrap with `scripts/setup.sh` triggered
+multi-hundred-megabyte downloads for packages such as `torch`,
+`nvidia-cublas-cu12`, and `nvidia-cudnn-cu12` before installing basic
+tools, and the process was terminated early. As a result `flake8`, `mypy`,
+spec checks, and a subset of unit tests cannot run. Existing test failures
+cover storage persistence eviction, token budget convergence, API
+authentication, and concurrent query handling.
 
 ## Dependencies
 
@@ -13,6 +16,7 @@ API authentication, and concurrent query handling.
 - [correct-token-budget-convergence-logic](correct-token-budget-convergence-logic.md)
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
 - [fix-concurrent-query-interface-behavior](fix-concurrent-query-interface-behavior.md)
+- [streamline-dev-environment-setup](streamline-dev-environment-setup.md)
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.
