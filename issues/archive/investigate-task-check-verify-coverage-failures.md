@@ -7,6 +7,14 @@ these tasks run. Executing tests directly via `uv run pytest` triggers
 `ModuleNotFoundError: No module named pytest_httpx`, revealing that dev
 dependencies are absent.
 
+## Milestone
+
+- 0.1.0a1 (2026-03-01)
+
+## Dependencies
+
+- [prepare-initial-alpha-release](prepare-initial-alpha-release.md)
+
 ## Acceptance Criteria
 - `task --version` succeeds.
 - Dev dependencies, including `pytest_httpx`, install via setup scripts.
@@ -15,4 +23,4 @@ dependencies are absent.
 - `task coverage` produces a coverage report and overall percentage.
 
 ## Status
-Open
+Archived

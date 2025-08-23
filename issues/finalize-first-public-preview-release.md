@@ -9,6 +9,11 @@ required to finalize this milestone.
 
 - 0.1.0 (2026-07-01)
 
+## Dependencies
+
+- [prepare-initial-alpha-release](archive/prepare-initial-alpha-release.md)
+- [investigate-task-check-verify-coverage-failures](archive/investigate-task-check-verify-coverage-failures.md)
+
 ## Acceptance Criteria
 - Package builds verified and published to TestPyPI.
 - Documentation and release notes finalized.
