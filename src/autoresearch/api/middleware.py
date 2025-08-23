@@ -98,21 +98,29 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return "anonymous", None
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in {"/docs", "/openapi.json"}:
-            return await call_next(request)
         loader = cast(ConfigLoader, request.app.state.config_loader)
         loader._config = loader.load_config()
         cfg = loader._config.api
-        role, error = self._resolve_role(request.headers.get("X-API-Key"), cfg)
-        if error:
-            return error
+
+        api_key = request.headers.get("X-API-Key")
+        credentials: HTTPAuthorizationCredentials | None = await security(request)
+        token = credentials.credentials if credentials else None
+
+        role, key_error = self._resolve_role(api_key, cfg)
+        key_valid = key_error is None
+        token_valid = bool(token and verify_bearer_token(token, cfg.bearer_token)) if cfg.bearer_token else False
+
+        auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
+        if auth_configured and not (key_valid or token_valid):
+            if cfg.api_keys or cfg.api_key:
+                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+            return JSONResponse({"detail": "Invalid token"}, status_code=401)
+
+        if token_valid and not key_valid:
+            role = "user"
+
         request.state.role = role
         request.state.permissions = set(cfg.role_permissions.get(role, []))
-        if cfg.bearer_token:
-            credentials: HTTPAuthorizationCredentials | None = await security(request)
-            token = credentials.credentials if credentials else None
-            if not token or not verify_bearer_token(token, cfg.bearer_token):
-                return JSONResponse({"detail": "Invalid token"}, status_code=401)
         return await call_next(request)
 
 

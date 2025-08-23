@@ -20,6 +20,20 @@ def _setup(monkeypatch):
     return cfg
 
 
+def test_docs_endpoints_require_auth(monkeypatch, api_client):
+    cfg = ConfigModel(api=APIConfig(api_key="secret"))
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    assert api_client.get("/docs").status_code == 401
+    ok = api_client.get("/docs", headers={"X-API-Key": "secret"})
+    assert ok.status_code == 200
+
+    openapi = api_client.get(
+        "/openapi.json", headers={"X-API-Key": "secret"}
+    )
+    assert openapi.status_code == 200
+
+
 def test_query_endpoint(monkeypatch, api_client):
     _setup(monkeypatch)
     monkeypatch.setattr(
