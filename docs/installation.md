@@ -16,12 +16,12 @@ Run a bootstrap command immediately:
 ```bash
 ./scripts/setup.sh  # full developer bootstrap
 # or
-task install        # minimal environment
+task install        # developer environment
 ```
 
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` extras
-(including test-only packages such as `pytest_httpx`), and exits if
-`task --version` fails.
+(including test-only packages such as `pytest_httpx` and `redis`), and exits
+if `task --version` fails.
 
 After the script completes, confirm Go Task and the development packages are
 available:
@@ -97,6 +97,7 @@ been verified to install successfully with `uv pip install`.
 | rank-bm25 | 0.2.2 |
 | rdflib | 7.1.4 |
 | rdflib-sqlalchemy | 0.5.4 |
+| redis | 6.2 |
 | requests | 2.32.4 |
 | responses | 0.25.8 |
 | rich | 14.1.0 |
@@ -120,14 +121,14 @@ Install Go Task before running any `task` commands mentioned below.
 Use `uv` to manage the environment when working from a clone:
 
 ```bash
-# Install pinned dependencies for minimal development
-uv sync --extra dev-minimal
+# Install pinned dependencies for development
+uv sync --extra dev
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Run `task install` or `uv sync --extra dev-minimal` before executing tests to
-ensure the minimal dependencies are available.
+Run `task install` or `uv sync --extra dev` before executing tests to ensure
+the development dependencies are available.
 
 Add heavy extras on demand:
 
@@ -138,7 +139,7 @@ uv sync --extra nlp
 
 After installing Go Task, pick a bootstrap method:
 
-- `task install` – minimal setup
+- `task install` – developer setup
 - [`scripts/setup.sh`](../scripts/setup.sh) – full developer toolchain
 
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`
@@ -223,7 +224,7 @@ Additional functionality is grouped into optional extras:
 - `parsers` – PDF and DOCX document ingestion
 - `ui` – the reference Streamlit interface
 - `vss` – DuckDB VSS extension for vector search
-- `distributed` – distributed processing with Ray
+- `distributed` – distributed processing with Ray and Redis
 - `analysis` – Polars-based data analysis utilities
 - `git` – local Git repository search support
 - `full` – installs most extras (nlp, ui, vss, distributed, analysis)

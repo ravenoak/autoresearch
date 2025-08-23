@@ -1,7 +1,8 @@
 import pytest
-import redis
 
 from autoresearch.distributed.broker import RedisBroker
+
+redis = pytest.importorskip("redis")
 
 pytestmark = pytest.mark.slow
 

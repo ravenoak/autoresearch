@@ -4,6 +4,8 @@ These results reflect the latest development state after manually running tests
 without the Go Task CLI. Refer to the [roadmap](ROADMAP.md) and
 [release plan](docs/release_plan.md) for scheduled milestones.
 
+The development extras now include `redis>=6.2` for distributed broker tests.
+
 ## Lint and type checks
 ```text
 uv run flake8 src tests
@@ -22,7 +24,7 @@ Previous baseline: 391 passed, 4 skipped, 24 deselected.
 ```text
 uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
 ```
-Result: error during collection; `ModuleNotFoundError: No module named 'redis'`.
+Result: 180 passed, 4 skipped, 86 deselected, 5 warnings. Redis available.
 
 ## Behavior tests
 ```text
