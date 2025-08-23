@@ -13,4 +13,4 @@ def test_suggest_token_budget():
     m = OrchestrationMetrics()
     m.record_tokens("A", 5, 5)
     assert m.suggest_token_budget(8) == 11
-    assert m.suggest_token_budget(20) == 5
+    assert m.suggest_token_budget(20) == 11

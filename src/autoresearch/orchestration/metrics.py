@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import time
+import math
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple
@@ -371,19 +372,24 @@ class OrchestrationMetrics:
         """Return an adjusted token budget based on recorded usage.
 
         ``margin`` controls how aggressively the budget adapts. The
-        calculation considers the current cycle usage, per-agent
-        historical averages, and the overall average across cycles. When
-        usage stabilizes, the update converges to ``ceil(u * (1 + margin))``
-        for constant usage ``u``. See
-        ``docs/algorithms/token_budgeting.md`` for derivation and
-        convergence analysis.
+        calculation considers the most recent per-cycle usage, per-agent
+        historical averages, and the overall average across the last ten
+        cycles. Zero-usage cycles are ignored so external callers may
+        update ``token_usage_history`` directly. When usage stabilizes, the
+        update converges to ``ceil(u * (1 + margin))`` for constant usage
+        ``u``. See ``docs/algorithms/token_budgeting.md`` for derivation
+        and convergence analysis.
         """
 
         total = self._total_tokens()
         delta = total - self._last_total_tokens
         self._last_total_tokens = total
-        self.token_usage_history.append(delta)
-        avg_used = sum(self.token_usage_history) / len(self.token_usage_history)
+        if delta > 0:
+            self.token_usage_history.append(delta)
+
+        recent_usage = self.token_usage_history[-10:]
+        avg_used = sum(recent_usage) / len(recent_usage) if recent_usage else 0
+        latest = recent_usage[-1] if recent_usage else 0
 
         max_agent_delta = 0
         max_agent_avg = 0.0
@@ -394,22 +400,23 @@ class OrchestrationMetrics:
             self._last_agent_totals[name] = total_agent
             history = self.agent_usage_history.setdefault(name, [])
             history.append(agent_delta)
-            agent_avg = sum(history) / len(history)
+            recent_agent = history[-10:]
+            agent_avg = sum(recent_agent) / len(recent_agent) if recent_agent else 0
             if agent_delta > max_agent_delta:
                 max_agent_delta = agent_delta
             if agent_avg > max_agent_avg:
                 max_agent_avg = agent_avg
 
-        delta = max(delta, max_agent_delta)
+        latest = max(latest, max_agent_delta)
         avg_used = max(avg_used, max_agent_avg)
 
         expand_threshold = current_budget * (1 + margin)
         shrink_threshold = current_budget * (1 - margin)
 
-        if delta > expand_threshold or avg_used > current_budget:
-            return max(int(max(delta, avg_used) * (1 + margin)), 1)
+        if latest >= expand_threshold or avg_used >= current_budget:
+            return max(math.ceil(max(latest, avg_used) * (1 + margin)), 1)
 
-        if delta < shrink_threshold and avg_used < shrink_threshold:
-            return max(int(avg_used * (1 + margin)), 1)
+        if latest < shrink_threshold and avg_used < shrink_threshold:
+            return max(math.ceil(avg_used * (1 + margin)), 1)
 
         return max(current_budget, 1)
