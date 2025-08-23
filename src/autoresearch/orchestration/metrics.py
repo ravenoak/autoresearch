@@ -4,9 +4,9 @@ Metrics collection for orchestration system.
 
 import json
 import logging
+import math
 import os
 import time
-import math
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple
@@ -410,13 +410,9 @@ class OrchestrationMetrics:
         latest = max(latest, max_agent_delta)
         avg_used = max(avg_used, max_agent_avg)
 
-        expand_threshold = current_budget * (1 + margin)
-        shrink_threshold = current_budget * (1 - margin)
+        desired = max(math.ceil(max(latest, avg_used) * (1 + margin)), 1)
 
-        if latest >= expand_threshold or avg_used >= current_budget:
-            return max(math.ceil(max(latest, avg_used) * (1 + margin)), 1)
-
-        if latest < shrink_threshold and avg_used < shrink_threshold:
-            return max(math.ceil(avg_used * (1 + margin)), 1)
+        if current_budget != desired:
+            return desired
 
         return max(current_budget, 1)
