@@ -1,5 +1,8 @@
 import math
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
@@ -34,3 +37,32 @@ def test_budget_recovers_after_spike() -> None:
         m.token_usage_history.append(u)
         budget = m.suggest_token_budget(budget, margin=0.2)
     assert budget == math.ceil(50 * 1.2)
+
+
+@given(
+    start=st.integers(min_value=1, max_value=120),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+)
+def test_convergence_from_any_start(start: int, margin: float) -> None:
+    """Budgets converge to ceil(u * (1 + m)) from arbitrary starts."""
+    m = OrchestrationMetrics()
+    usage = 50
+    budget = start
+    for _ in range(6):
+        m.token_usage_history.append(usage)
+        budget = m.suggest_token_budget(budget, margin=margin)
+    assert budget == math.ceil(usage * (1 + margin))
+
+
+@given(
+    start=st.integers(min_value=1, max_value=120),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+)
+def test_zero_usage_bottoms_out(start: int, margin: float) -> None:
+    """Zero usage drives the budget down to one token."""
+    m = OrchestrationMetrics()
+    budget = start
+    for _ in range(5):
+        m.token_usage_history.append(0)
+        budget = m.suggest_token_budget(budget, margin=margin)
+    assert budget == 1
