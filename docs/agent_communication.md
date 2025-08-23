@@ -1,6 +1,7 @@
 # Agent Communication
 
-Autoresearch can optionally let agents exchange short messages during each reasoning cycle.
+Autoresearch can optionally let agents exchange short messages during each
+reasoning cycle.
 When `enable_agent_messages` is `true`, any agent may call `send_message()` to
 share information with its peers. These messages are stored on the shared
 `QueryState` and can be retrieved with `get_messages()` in later steps.
@@ -30,4 +31,5 @@ agent messages and can influence subsequent reasoning.
 enable_feedback = true
 ```
 
-For a brief overview of available agents see [Agents](agents.md).
+For a brief overview of available agents see
+[Agents Overview](agents_overview.md).
