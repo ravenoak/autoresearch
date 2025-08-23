@@ -7,21 +7,18 @@ milestones.
 
 ## `task check`
 ```text
-uv run flake8 src tests
-uv run mypy src
-uv run python scripts/check_spec_tests.py
-uv run pytest tests/unit -k main_cli -q
+task check
 ```
-Result: flake8, mypy, spec checks, and a subset of unit tests passed. The
-`task` runner is still missing, so commands were invoked via `uv run`.
+Result: 1 failed, 607 passed, 26 skipped, 24 deselected. Failing test:
+`tests/unit/test_token_budget_convergence.py::test_suggest_token_budget_converges`.
 
 ## `task verify`
 ```text
-uv run pytest
+task verify
 ```
-Result: 15 failed, 616 passed, 31 skipped, and 144 deselected. Failing tests
-cover storage persistence, token budget convergence, API authentication, and
-concurrent query handling.
+Result: 2 failed, 606 passed, 26 skipped, 24 deselected. Failing tests:
+`tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache`
+and `tests/unit/test_token_budget_convergence.py::test_suggest_token_budget_converges`.
 
 ## `task coverage`
 ```text

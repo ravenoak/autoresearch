@@ -230,12 +230,10 @@ These behavior test issues remain open until the test suite passes.
 
 ### Latest Test Results
 
-- `task --version` – not installed
-- `uv run flake8 src tests` – passes
-- `uv run mypy src` – success
-- `uv run python scripts/check_spec_tests.py` – success
-- `uv run pytest tests/unit -k main_cli -q` – 7 passed, 1 skipped
-- `uv run pytest` – 15 failed, 616 passed, 31 skipped, 144 deselected
+- `task --version` – 3.44.1
+- `task check` – 1 failed, 607 passed, 26 skipped, 24 deselected (token budget convergence)
+- `task verify` – 2 failed, 606 passed, 26 skipped, 24 deselected (relevance ranking cache deadline; token budget convergence)
+- `task coverage` – not run
 - Integration and behavior suites remain unstable; see issue tracker
 
 ### Performance Baselines
