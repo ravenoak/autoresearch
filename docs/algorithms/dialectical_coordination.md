@@ -47,6 +47,17 @@ Conclusions
   fact-checker influence; variability stays low across trials, yielding
   stable answers.
 
+## Simulation
+
+Running `uv run scripts/dialectical_coordination_demo.py --loops 3 --trials 10`
+prints results such as
+
+```
+mean=0.976 stdev=0.333
+```
+
+showing rapid convergence toward the ground truth with low variance.
+
 ## Distributed coordination
 
 The simulation [distributed_coordination_analysis.py][dca]
