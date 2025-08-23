@@ -1,12 +1,12 @@
 # Resolve test failures and task tooling
 
 ## Context
- Go Task now installs correctly, but `task check` stalls after starting the
- unit test suite. With minimal development extras, `flake8`, `mypy`, spec
- checks, and a subset of unit tests pass. Running the full test suite
+ Go Task now installs correctly, and `redis` is installed, but `task check`
+ reports new unit test failures. With minimal development extras, `flake8`,
+ `mypy`, spec checks, and most unit tests pass. Running the full test suite
  reveals failures in storage persistence eviction, token budget convergence,
- API authentication, and concurrent query handling. Integration tests still
- error during collection because the `redis` package is missing.
+ API authentication, concurrent query handling, Redis broker detection, and
+ monitor CLI metrics. Integration and behavior test suites remain unreliable.
 
 ## Dependencies
 
@@ -15,6 +15,7 @@
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
 - [fix-concurrent-query-interface-behavior](archive/fix-concurrent-query-interface-behavior.md)
 - [add-redis-dependency-for-integration-tests](add-redis-dependency-for-integration-tests.md)
+- [fix-monitor-cli-metrics-failure](fix-monitor-cli-metrics-failure.md)
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.
