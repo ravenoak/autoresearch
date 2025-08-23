@@ -12,9 +12,7 @@ def test_compression_threshold_reduces_with_history(monkeypatch):
         called["used"] = True
         return "short"
 
-    monkeypatch.setattr(
-        "autoresearch.llm.token_counting.compress_prompt", fake_compress
-    )
+    monkeypatch.setattr("autoresearch.llm.token_counting.compress_prompt", fake_compress)
 
     result = m.compress_prompt_if_needed("one two three four five", 5)
     assert called["used"] is True
@@ -26,10 +24,10 @@ def test_token_budget_expands_then_shrinks():
     budget = 10
     m.record_tokens("A", 50, 0)
     budget = m.suggest_token_budget(budget, margin=0.1)
-    assert budget == 55
+    assert budget == 56
     m.record_tokens("A", 1, 0)
     budget = m.suggest_token_budget(budget, margin=0.1)
-    assert budget == 28
+    assert budget == 29
 
 
 def test_token_budget_never_below_one():

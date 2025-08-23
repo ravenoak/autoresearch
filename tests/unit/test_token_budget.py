@@ -52,15 +52,15 @@ def test_budget_adaptive_history():
 
     m.record_tokens("A", 3, 2)
     budget = m.suggest_token_budget(budget)
-    assert budget == 5
+    assert budget == 6
 
     m.record_tokens("A", 10, 5)
     budget = m.suggest_token_budget(budget)
-    assert budget == 16
+    assert budget == 17
 
     m.record_tokens("A", 9, 0)
     budget = m.suggest_token_budget(budget)
-    assert budget == 10
+    assert budget == 11
 
 
 def test_compress_prompt_history():

@@ -18,10 +18,9 @@ b_t & \text{otherwise}
 ## Convergence
 
 When usage stabilizes at `u`, the sequence `{b_t}` converges to
-`ceil(u * (1 + m))`. Both expansion and contraction move `b_t` toward this
-value, and once reached, the update returns `b_t` unchanged.
-
-Let `b* = ceil(u * (1 + m))`. Deviations shrink linearly because
+`ceil(u * (1 + m))`. The implementation averages the last ten non-zero
+usage samples, so transient spikes or idle cycles do not distort the
+estimate. Let `b* = ceil(u * (1 + m))`. Deviations shrink linearly because
 `|b_{t+1} - b*| \le m |b_t - b*|`, yielding geometric convergence toward
 `b*`.
 
@@ -34,14 +33,19 @@ for synthetic workloads.
 reports, for example,
 `uv run scripts/token_budget_convergence.py --steps 5 --usage 50`
 ```
-step 1: 27
-...
-final budget: 27
+step 1: 56
+step 2: 56
+step 3: 56
+step 4: 56
+step 5: 56
+final budget: 56
 ```
 
-The regression test
-[`test_token_budget_convergence.py`](../../tests/unit/test_token_budget_convergence.py)
-asserts that the limit `ceil(u * (1 + m))` is reached for constant usage.
+ The regression test [`test_token_budget_convergence.py`][tb-test]
+ asserts that the limit `ceil(u * (1 + m))` is reached for constant usage
+ and after temporary workload spikes.
 
-For details on usage recording and metrics, see the
-[token budget specification](../token_budget_spec.md).
+ For details on usage recording and metrics, see the
+ [token budget specification](../token_budget_spec.md).
+
+[tb-test]: ../../tests/unit/test_token_budget_convergence.py

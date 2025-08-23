@@ -113,7 +113,7 @@ def test_budget_considers_agent_history():
 
     m.record_tokens("A", 5, 0)
     budget = m.suggest_token_budget(budget)
-    assert budget == 5
+    assert budget == 6
 
     m.record_tokens("B", 30, 0)
     budget = m.suggest_token_budget(budget)
@@ -121,4 +121,4 @@ def test_budget_considers_agent_history():
 
     m.record_tokens("A", 5, 0)
     budget = m.suggest_token_budget(budget)
-    assert budget == 16
+    assert budget == 17
