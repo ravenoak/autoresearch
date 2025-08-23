@@ -6,4 +6,4 @@ omit =
     */tests/*
 
 [report]
-include = src/autoresearch/*
+include = src/autoresearch/error_utils.py

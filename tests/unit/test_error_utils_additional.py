@@ -10,7 +10,16 @@ from autoresearch.error_utils import (
     format_error_for_a2a,
     get_error_info,
 )
-from autoresearch.errors import ConfigError, LLMError, TimeoutError
+from autoresearch.errors import (
+    ConfigError,
+    LLMError,
+    TimeoutError,
+    AgentError,
+    StorageError,
+    SearchError,
+    NotFoundError,
+    BackupError,
+)
 
 
 def test_error_info_to_dict_and_str():
@@ -51,6 +60,11 @@ def test_formatters():
         (ConfigError("bad"), "Check your configuration file"),
         (LLMError("api_key missing", model="gpt"), "API key"),
         (TimeoutError("t", timeout=5), "5"),
+        (AgentError("oops", agent_name="demo"), "demo"),
+        (StorageError("store"), "database file"),
+        (SearchError("timeout"), "internet"),
+        (NotFoundError("missing", resource_type="item", resource_id="42"), "item"),
+        (BackupError("b", suggestion="retry"), "retry"),
     ],
 )
 def test_get_error_info(exc, substr):
