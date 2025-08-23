@@ -10,7 +10,8 @@ stable interfaces and tuned performance.
 
 ## Dependencies
 
-- [support-distributed-execution-and-monitoring](support-distributed-execution-and-monitoring.md)
+- [support-distributed-execution-and-monitoring](archive/support-distributed-execution-and-monitoring.md)
+- [formalize-algorithm-proofs-for-research-modules](formalize-algorithm-proofs-for-research-modules.md)
 
 ## Acceptance Criteria
 - Complete cross-platform packaging with containerization support.

@@ -10,7 +10,7 @@ monitoring utilities.
 
 ## Dependencies
 
-- [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
+- [stabilize-api-and-improve-search](../stabilize-api-and-improve-search.md)
 
 ## Acceptance Criteria
 - Coordinate agents across processes and storage backends.
@@ -18,4 +18,4 @@ monitoring utilities.
 - Document deployment patterns for distributed execution.
 
 ## Status
-Open
+Archived

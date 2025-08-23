@@ -9,10 +9,10 @@ API authentication, and concurrent query handling.
 
 ## Dependencies
 
-- [address-storage-persistence-eviction-failure](address-storage-persistence-eviction-failure.md)
+- [address-storage-persistence-eviction-failure](archive/address-storage-persistence-eviction-failure.md)
 - [correct-token-budget-convergence-logic](correct-token-budget-convergence-logic.md)
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
-- [fix-concurrent-query-interface-behavior](fix-concurrent-query-interface-behavior.md)
+- [fix-concurrent-query-interface-behavior](archive/fix-concurrent-query-interface-behavior.md)
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.
