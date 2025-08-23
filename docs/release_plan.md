@@ -100,10 +100,13 @@ Each milestone may include additional patch releases for critical fixes.
 
 1. `task bump-version -- <new-version>`
 2. `uv pip install build twine`
-3. `uv run python -m build`
-4. `uv run python scripts/publish_dev.py --dry-run`
-5. Set `TWINE_USERNAME` and `TWINE_PASSWORD` then run
-   `uv run python scripts/publish_dev.py` to upload to TestPyPI.
+3. `uv build`
+4. `uv run twine check dist/*`
+5. `uv run python scripts/publish_dev.py --dry-run`
+6. Set `TWINE_USERNAME` and `TWINE_PASSWORD` then run
+   `uv run twine upload --repository testpypi dist/*`
+7. After verifying TestPyPI, publish to PyPI with
+   `uv run twine upload dist/*`.
 
 ## CI Checklist
 
