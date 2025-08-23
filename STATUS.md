@@ -12,15 +12,16 @@ uv run mypy src
 uv run python scripts/check_spec_tests.py
 uv run pytest tests/unit -k main_cli -q
 ```
-Result: flake8, mypy, spec checks, and a subset of unit tests passed. Full
-test suites, integration tests, and behavior scenarios remain to be executed
-once resources allow.
+Result: flake8, mypy, spec checks, and a subset of unit tests passed. The
+`task` runner is still missing, so commands were invoked via `uv run`.
 
 ## `task verify`
 ```text
-not run
+uv run pytest
 ```
-Result: skipped; depends on `task` and passing tests.
+Result: 15 failed, 616 passed, 31 skipped, and 144 deselected. Failing tests
+cover storage persistence, token budget convergence, API authentication, and
+concurrent query handling.
 
 ## `task coverage`
 ```text
