@@ -234,6 +234,11 @@ def teardown(
         ctx.rdf_store = None
         if st.lru is not None:
             st.lru.clear()
+        # Clear access frequency tracking to avoid stale state between runs
+        try:
+            StorageManager._access_frequency.clear()
+        except NameError:  # pragma: no cover - StorageManager not yet defined
+            pass
         st.context = ctx
 
 
@@ -629,6 +634,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                     StorageManager.context.graph.remove_node(node_id)
                     if node_id in lru:
                         del lru[node_id]
+                    # Remove node from access frequency tracker to keep state consistent
+                    StorageManager._access_frequency.pop(node_id, None)
                     EVICTION_COUNTER.inc()
                     nodes_evicted += 1
 
