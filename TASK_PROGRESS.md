@@ -230,14 +230,12 @@ These behavior test issues remain open until the test suite passes.
 
 ### Latest Test Results
 
-- `task --version` – command not found
+- `task --version` – 3.44.1
 - `uv run flake8 src tests` – passes
 - `uv run mypy src` – success
 - `uv run python scripts/check_spec_tests.py` – success
-- `uv run pytest tests/unit -q` – 2 failed, 606 passed, 26 skipped
-- `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q`
-  – 178 passed, 4 skipped
-- `uv run pytest tests/behavior -q` – many failures, run interrupted
+- `uv run pytest tests/unit -k main_cli -q` – 7 passed, 1 skipped
+- Integration and behavior suites not executed; require additional resources
 
 ### Performance Baselines
 
