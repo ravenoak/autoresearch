@@ -32,6 +32,7 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 
 ### [0.1.0-alpha.1]
 - Verified source and wheel builds succeed; TestPyPI upload returned 403 and needs retry.
+- See [release notes](docs/release_notes/v0.1.0a1.md) for features and gaps.
 
 ### Preliminary release notes
 - Aligned FastAPI (>=0.115.12) and SlowAPI (0.1.9) pins across project files.
