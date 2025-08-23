@@ -8,25 +8,28 @@ from typing import Any, Dict, List, Union
 
 import typer
 from rich.console import Console
-from rich.table import Table
-from rich.progress import Progress
 from rich.live import Live
+from rich.progress import Progress
+from rich.table import Table
 from rich.tree import Tree
-from ..main import Prompt
-from ..orchestration import metrics as orch_metrics
-from ..resource_monitor import ResourceMonitor
-from .system_monitor import SystemMonitor
 
 from ..config.loader import ConfigLoader
+from ..logging_utils import get_logger
+from ..main import Prompt
+from ..orchestration import metrics as orch_metrics
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
 from ..output_format import OutputFormatter
-from ..logging_utils import get_logger
+from ..resource_monitor import ResourceMonitor
+from .node_health import NodeHealthMonitor
+from .system_monitor import SystemMonitor
 
 monitor_app = typer.Typer(help="Monitoring utilities", invoke_without_command=True)
 
 _loader = ConfigLoader()
 _system_monitor: SystemMonitor | None = None
+
+__all__ = ["SystemMonitor", "NodeHealthMonitor"]
 log = get_logger(__name__)
 
 
@@ -65,6 +68,7 @@ def _collect_system_metrics() -> Dict[str, Any]:
             metrics.update(SystemMonitor.collect())
 
         import psutil  # type: ignore
+
         mem = psutil.virtual_memory()
         proc = psutil.Process()
         metrics.setdefault("memory_percent", mem.percent)
@@ -132,7 +136,9 @@ def _render_graph(data: Dict[str, List[str]], *, tree: bool = False) -> Union[Ta
 
 
 @monitor_app.command("metrics")
-def metrics(watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously")) -> None:
+def metrics(
+    watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously")
+) -> None:
     """Display system metrics in real time."""
     console = Console()
 
@@ -249,12 +255,8 @@ def run() -> None:
                     progress.update(task, advance=1)
                     on_cycle_end(loop, state)
 
-                result = Orchestrator().run_query(
-                    query, config, {"on_cycle_end": wrapped_on_cycle}
-                )
-            fmt = config.output_format or (
-                "json" if not sys.stdout.isatty() else "markdown"
-            )
+                result = Orchestrator().run_query(query, config, {"on_cycle_end": wrapped_on_cycle})
+            fmt = config.output_format or ("json" if not sys.stdout.isatty() else "markdown")
             OutputFormatter.format(result, fmt)
         except Exception as e:
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
