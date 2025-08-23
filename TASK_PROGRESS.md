@@ -230,15 +230,14 @@ These behavior test issues remain open until the test suite passes.
 
 ### Latest Test Results
 
-- `task --version` – 3.44.1
-- `uv run --extra dev-minimal flake8 src tests` – passes
-- `uv run --extra dev-minimal mypy src` – success
-- `uv sync --extra dev-minimal --extra test` – success
-- `uv run task verify` – success
-- `uv run --extra dev-minimal pytest -q` – success, ~90% coverage
+- `task --version` – command not found
+- `uv run flake8 src tests` – passes
+- `uv run mypy src` – success
+- `uv run python scripts/check_spec_tests.py` – success
+- `uv run pytest tests/unit -q` – 2 failed, 606 passed, 26 skipped
 - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q`
-  – success
-- `task check` – passes
+  – 178 passed, 4 skipped
+- `uv run pytest tests/behavior -q` – many failures, run interrupted
 
 ### Performance Baselines
 
