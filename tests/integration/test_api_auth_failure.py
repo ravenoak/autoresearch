@@ -34,3 +34,20 @@ def test_permission_denied(monkeypatch, api_client):
     cfg.api.role_permissions = {"user": ["query"]}
     resp = api_client.get("/metrics", headers={"X-API-Key": "u"})
     assert resp.status_code == 403
+
+
+def test_docs_protected(monkeypatch, api_client):
+    """Documentation endpoints require authentication when configured."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+
+    unauth = api_client.get("/docs")
+    assert unauth.status_code == 401
+
+    ok = api_client.get("/docs", headers={"X-API-Key": "secret"})
+    assert ok.status_code == 200
+
+    openapi = api_client.get(
+        "/openapi.json", headers={"X-API-Key": "secret"}
+    )
+    assert openapi.status_code == 200

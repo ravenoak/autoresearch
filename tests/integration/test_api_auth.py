@@ -88,3 +88,24 @@ def test_invalid_api_key(monkeypatch, api_client):
         "/query", json={"query": "q"}, headers={"X-API-Key": "bad"}
     )
     assert bad.status_code == 401
+
+
+def test_api_key_or_token(monkeypatch, api_client):
+    """Either a valid API key or bearer token authenticates the request."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+    token = generate_bearer_token()
+    cfg.api.bearer_token = token
+
+    ok_key = api_client.post(
+        "/query", json={"query": "q"}, headers={"X-API-Key": "secret"}
+    )
+    assert ok_key.status_code == 200
+
+    ok_token = api_client.post(
+        "/query", json={"query": "q"}, headers={"Authorization": f"Bearer {token}"}
+    )
+    assert ok_token.status_code == 200
+
+    missing = api_client.post("/query", json={"query": "q"})
+    assert missing.status_code == 401

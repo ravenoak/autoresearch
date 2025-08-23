@@ -124,6 +124,28 @@ def test_api_key_roles_integration(monkeypatch, api_client):
     assert bad.status_code == 401
 
 
+def test_stream_requires_api_key(monkeypatch, api_client):
+    """/query/stream rejects requests lacking a valid API key."""
+
+    def dummy_run_query(query, config, callbacks=None, **k):
+        state = QueryState(query=query)
+        if callbacks and "on_cycle_end" in callbacks:
+            callbacks["on_cycle_end"](0, state)
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    cfg = ConfigModel(api=APIConfig(api_key="secret"))
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
+
+    unauth = api_client.post("/query/stream", json={"query": "q"})
+    assert unauth.status_code == 401
+
+    with api_client.stream(
+        "POST", "/query/stream", json={"query": "q"}, headers={"X-API-Key": "secret"}
+    ) as resp:
+        assert resp.status_code == 200
+
+
 def test_batch_query_async_order(monkeypatch, api_client):
     """/query/batch should process queries concurrently while preserving order."""
 

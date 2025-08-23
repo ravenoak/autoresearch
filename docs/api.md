@@ -283,6 +283,10 @@ api_keys = {admin = "secret1", user = "secret2"}
 Include the desired key in the `X-API-Key` header. The associated role will be
 available as `request.state.role` inside the application.
 
+If both API keys and a bearer token are configured, either credential grants
+access. The documentation routes `/docs` and `/openapi.json` are also protected
+when authentication is enabled.
+
 ### Headers
 
 Use these HTTP headers when authentication is enabled:
@@ -290,7 +294,8 @@ Use these HTTP headers when authentication is enabled:
 - `X-API-Key`: API key from `[api].api_key` or the `[api].api_keys` mapping.
 - `Authorization: Bearer <token>`: bearer token from `[api].bearer_token`.
 
-Requests missing required credentials receive a **401 Unauthorized** response.
+Requests with missing or invalid credentials receive a **401 Unauthorized**
+response. Authenticated clients lacking permission receive **403 Forbidden**.
 
 ### Role permissions
 
