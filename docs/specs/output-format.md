@@ -17,9 +17,7 @@ plain text, graph views, or custom templates.
 - Tests
   - [tests/behavior/features/output_formatting.feature][t1]
   - [tests/unit/test_output_format.py][t2]
-  - [tests/unit/test_template.py][t3]
 
 [m1]: ../../src/autoresearch/output_format.py
 [t1]: ../../tests/behavior/features/output_formatting.feature
 [t2]: ../../tests/unit/test_output_format.py
-[t3]: ../../tests/unit/test_template.py
