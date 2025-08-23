@@ -1,10 +1,8 @@
 # Status
 
-These results reflect the latest development state after manually running tests
-without the Go Task CLI. Refer to the [roadmap](ROADMAP.md) and
+These results reflect running `task check` after installing development
+dependencies. Refer to the [roadmap](ROADMAP.md) and
 [release plan](docs/release_plan.md) for scheduled milestones.
-
-The development extras now include `redis>=6.2` for distributed broker tests.
 
 ## Lint and type checks
 ```text
@@ -15,16 +13,15 @@ Result: both commands completed without issues.
 
 ## Unit tests
 ```text
-uv run pytest tests/unit/test_cache.py -q
+uv run pytest tests/unit -q
 ```
-Result: 5 passed, 5 warnings.
-Previous baseline: 391 passed, 4 skipped, 24 deselected.
+Result: 389 passed, 2 failed, 4 skipped, 24 deselected, 31 warnings.
+Failures:
+- tests/unit/test_distributed_redis.py::test_get_message_broker_redis_missing
+- tests/unit/test_monitor_cli.py::test_monitor_metrics
 
 ## Integration tests
-```text
-uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
-```
-Result: 180 passed, 4 skipped, 86 deselected, 5 warnings. Redis available.
+Not executed; unit test failures prevented running this step.
 
 ## Spec tests
 ```text
@@ -33,7 +30,4 @@ uv run scripts/check_spec_tests.py
 Result: no spec files missing test references.
 
 ## Behavior tests
-```text
-uv run pytest tests/behavior -q
-```
-Result: run interrupted; suite did not complete in this environment.
+Not executed; awaiting resolution of unit test failures.

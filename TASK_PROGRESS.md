@@ -233,10 +233,10 @@ These behavior test issues remain open until the test suite passes.
 
  - `uv run flake8 src tests` – passed
  - `uv run mypy src` – passed
- - `uv run pytest tests/unit -q` – 391 passed, 4 skipped, 24 deselected
- - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q` – error:
-   `ModuleNotFoundError: No module named 'redis'`
- - `uv run pytest tests/behavior -q` – interrupted; suite did not complete
+ - `uv run pytest tests/unit -q` – 389 passed, 2 failed, 4 skipped, 24 deselected
+   - Failures: `test_distributed_redis.py::test_get_message_broker_redis_missing`,
+     `test_monitor_cli.py::test_monitor_metrics`
+ - Integration and behavior test suites were not executed due to unit test failures
 
 ### Performance Baselines
 
