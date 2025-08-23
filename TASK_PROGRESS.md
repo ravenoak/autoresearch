@@ -230,11 +230,12 @@ These behavior test issues remain open until the test suite passes.
 
 ### Latest Test Results
 
-- `task --version` – 3.44.1
-- `task check` – 1 failed, 607 passed, 26 skipped, 24 deselected (token budget convergence)
-- `task verify` – 2 failed, 606 passed, 26 skipped, 24 deselected (relevance ranking cache deadline; token budget convergence)
-- `task coverage` – failed to complete (timeout)
-- Integration and behavior suites remain unstable; see issue tracker
+ - `uv run flake8 src tests` – passed
+ - `uv run mypy src` – passed
+ - `uv run pytest tests/unit -q` – 391 passed, 4 skipped, 24 deselected
+ - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q` – error:
+   `ModuleNotFoundError: No module named 'redis'`
+ - `uv run pytest tests/behavior -q` – interrupted; suite did not complete
 
 ### Performance Baselines
 

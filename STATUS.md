@@ -1,27 +1,30 @@
 # Status
 
-These results reflect the latest development state after attempting to run
-tasks in a fresh environment. Refer to the
-[roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for scheduled
-milestones.
+These results reflect the latest development state after manually running tests
+without the Go Task CLI. Refer to the [roadmap](ROADMAP.md) and
+[release plan](docs/release_plan.md) for scheduled milestones.
 
-## `task check`
+## Lint and type checks
 ```text
-task check
+uv run flake8 src tests
+uv run mypy src
 ```
-Result: 1 failed, 607 passed, 26 skipped, 24 deselected. Failing test:
-`tests/unit/test_token_budget_convergence.py::test_suggest_token_budget_converges`.
+Result: both commands completed without issues.
 
-## `task verify`
+## Unit tests
 ```text
-task verify
+uv run pytest tests/unit -q
 ```
-Result: 2 failed, 606 passed, 26 skipped, 24 deselected. Failing tests:
-`tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache`
-and `tests/unit/test_token_budget_convergence.py::test_suggest_token_budget_converges`.
+Result: 391 passed, 4 skipped, 24 deselected.
 
-## `task coverage`
+## Integration tests
 ```text
-task coverage
+uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
 ```
-Result: command terminated before completion; coverage metrics unavailable.
+Result: error during collection; `ModuleNotFoundError: No module named 'redis'`.
+
+## Behavior tests
+```text
+uv run pytest tests/behavior -q
+```
+Result: run interrupted; suite did not complete in this environment.
