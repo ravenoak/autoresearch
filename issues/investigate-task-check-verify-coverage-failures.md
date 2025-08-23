@@ -1,9 +1,15 @@
 # Investigate task check, verify, and coverage failures
 
 ## Context
-`task check`, `task verify`, and `task coverage` were attempted in a fresh environment but did not complete. `task check` halted at 38% of unit tests with a failure, `task verify` stalled during `mypy`, and `task coverage` was interrupted around 39% of the unit test run. No coverage report was generated.
+`task check`, `task verify`, and `task coverage` were attempted in a fresh
+environment but did not complete. The `task` command is missing, so none of
+these tasks run. Executing tests directly via `uv run pytest` triggers
+`ModuleNotFoundError: No module named pytest_httpx`, revealing that dev
+dependencies are absent.
 
 ## Acceptance Criteria
+- `task --version` succeeds.
+- Dev dependencies, including `pytest_httpx`, install via setup scripts.
 - `task check` completes successfully.
 - `task verify` runs to completion.
 - `task coverage` produces a coverage report and overall percentage.
