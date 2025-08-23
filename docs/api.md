@@ -262,6 +262,16 @@ curl -H "Authorization: Bearer $AUTORESEARCH_API__BEARER_TOKEN" \
   -d '{"query": "test"}' http://localhost:8000/query
 ```
 
+Generate random tokens with `generate_bearer_token`:
+
+```python
+from autoresearch.api.utils import generate_bearer_token
+token = generate_bearer_token()
+```
+
+Token comparison uses constant-time verification to guard against timing
+attacks.
+
 When multiple API keys with different roles are needed, define `[api].api_keys`
 as a mapping from key to role:
 

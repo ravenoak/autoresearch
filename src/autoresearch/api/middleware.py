@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..config import ConfigLoader, get_config
 from .errors import handle_rate_limit
-from .utils import RequestLogger
+from .utils import RequestLogger, verify_bearer_token
 
 # Lazily import SlowAPI and fall back to a minimal stub when unavailable
 Limiter: Any
@@ -111,7 +111,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if cfg.bearer_token:
             credentials: HTTPAuthorizationCredentials | None = await security(request)
             token = credentials.credentials if credentials else None
-            if token != cfg.bearer_token:
+            if not token or not verify_bearer_token(token, cfg.bearer_token):
                 return JSONResponse({"detail": "Invalid token"}, status_code=401)
         return await call_next(request)
 
