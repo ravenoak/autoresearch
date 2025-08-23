@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure each spec in docs/specs references at least one test.
+"""Verify that each spec references existing tests.
 
 Usage:
     uv run python scripts/check_spec_tests.py
@@ -7,21 +7,33 @@ Usage:
 from __future__ import annotations
 
 import pathlib
+import re
 
 SPEC_DIR = pathlib.Path(__file__).resolve().parent.parent / "docs" / "specs"
 
 
 def main() -> int:
-    missing: list[pathlib.Path] = []
+    root = SPEC_DIR.parent.parent
+    missing: dict[pathlib.Path, list[str]] = {}
+    pattern = re.compile(r"\.\./\.\./tests/[\w/._-]+")
     for path in SPEC_DIR.glob("*.md"):
         if path.name == "README.md":
             continue
-        if "../../tests/" not in path.read_text():
-            missing.append(path)
+        text = path.read_text()
+        refs = pattern.findall(text)
+        bad = []
+        for ref in refs:
+            target = (path.parent / ref).resolve()
+            if not target.exists():
+                bad.append(ref)
+        if not refs or bad:
+            missing[path] = bad
     if missing:
-        print("Spec files missing test references:")
-        for p in missing:
-            print(f"- {p.relative_to(SPEC_DIR.parent.parent)}")
+        print("Spec files with missing test references:")
+        for spec, refs in missing.items():
+            print(f"- {spec.relative_to(root)}")
+            for ref in refs:
+                print(f"  {ref}")
         return 1
     return 0
 

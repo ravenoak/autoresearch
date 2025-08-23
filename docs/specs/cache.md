@@ -15,9 +15,7 @@ It exposes a `SearchCache` class and a functional wrapper API.
 - Modules
   - [src/autoresearch/cache.py][m1]
 - Tests
-  - [tests/behavior/features/cache_management.feature][t1]
-  - [tests/unit/test_cache.py][t2]
+  - [tests/unit/test_cache.py][t1]
 
 [m1]: ../../src/autoresearch/cache.py
-[t1]: ../../tests/behavior/features/cache_management.feature
-[t2]: ../../tests/unit/test_cache.py
+[t1]: ../../tests/unit/test_cache.py

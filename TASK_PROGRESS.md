@@ -60,6 +60,7 @@ the final **0.1.0** release targeted for **July 1, 2026**.
 ### 2.1 Unit Tests
 
 - [ ] Complete test coverage for all modules
+  - [x] Verified spec documents reference existing tests
 - [x] Ensure at least 90% code coverage
   - [ ] Add tests for edge cases and error conditions
   - [ ] Implement property-based testing for complex components

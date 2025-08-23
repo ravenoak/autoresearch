@@ -21,10 +21,10 @@ The storage subsystem persists claims and enables hybrid retrieval across graph,
   - [src/autoresearch/storage.py][m1]
 - Tests
   - [tests/behavior/features/storage_search_integration.feature][t1]
-  - [tests/integration/test_][t2]
-  - [tests/unit/test_storage][t3]
+  - [tests/integration/test_search_storage.py][t2]
+  - [tests/unit/test_storage_eviction.py][t3]
 
 [m1]: ../../src/autoresearch/storage.py
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
-[t2]: ../../tests/integration/test_
-[t3]: ../../tests/unit/test_storage
+[t2]: ../../tests/integration/test_search_storage.py
+[t3]: ../../tests/unit/test_storage_eviction.py

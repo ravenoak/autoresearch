@@ -15,9 +15,9 @@ Result: both commands completed without issues.
 
 ## Unit tests
 ```text
-uv run pytest tests/unit -q
+uv run pytest tests/unit/test_cache.py -q
 ```
-Result: run stalled in this environment after tests began.
+Result: 5 passed, 5 warnings.
 Previous baseline: 391 passed, 4 skipped, 24 deselected.
 
 ## Integration tests
@@ -25,6 +25,12 @@ Previous baseline: 391 passed, 4 skipped, 24 deselected.
 uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss" -q
 ```
 Result: 180 passed, 4 skipped, 86 deselected, 5 warnings. Redis available.
+
+## Spec tests
+```text
+uv run scripts/check_spec_tests.py
+```
+Result: no spec files missing test references.
 
 ## Behavior tests
 ```text
