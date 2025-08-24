@@ -22,6 +22,15 @@ variables. Common options include:
 - `AUTORESEARCH_API__ROLE_PERMISSIONS`
 - `AUTORESEARCH_API__RATE_LIMIT`
 
+### Authentication
+
+Setting `AUTORESEARCH_API__API_KEY` enables a single shared key while
+`AUTORESEARCH_API__API_KEYS` maps multiple keys to roles. Use
+`AUTORESEARCH_API__BEARER_TOKEN` to require an `Authorization: Bearer` header.
+Requests missing valid credentials return **401**. If a key is valid but lacks
+the required permission, the server responds with **403**. Modify
+`AUTORESEARCH_API__ROLE_PERMISSIONS` to assign actions to roles.
+
 Restart the server after changing these values.
 
 ## Endpoints
