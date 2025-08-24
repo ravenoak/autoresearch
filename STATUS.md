@@ -19,7 +19,8 @@ Result: both commands completed without issues after installing
 task check
 ```
 Result: unit suite executes with token budget tests marked as expected
-failures. `task verify` not executed due to environment constraints.
+failures. `task verify` and `task coverage` attempted but terminated
+early in this environment.
 
 ## Integration tests
 Not executed.
