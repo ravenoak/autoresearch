@@ -2,6 +2,8 @@
 
 - [BM25 Ranking Formula](bm25.md)
 - [API Rate Limiting](api_rate_limiting.md)
+- [API Authentication](api_authentication.md)
+- [API Auth Error Paths](api_auth_error_paths.md)
 - [Ontology Reasoning](ontology_reasoning.md)
 - [Semantic Similarity](semantic_similarity.md)
 - [Source Credibility](source_credibility.md)
@@ -15,3 +17,4 @@
 - [Error Recovery via Exponential Backoff](error_recovery.md)
 - [Cache Eviction Strategy](cache_eviction.md)
 - [Resource Monitoring](resource_monitor.md)
+- [Monitor CLI](monitor_cli.md)

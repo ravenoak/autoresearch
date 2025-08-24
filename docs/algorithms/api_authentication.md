@@ -67,6 +67,11 @@ Plotting `naive_times` shows longer durations when more prefix characters match,
 while `secure_times` remain flat. This supports the correctness of the
 constant-time strategy.
 
+## Error paths
+
+See [API auth error paths](api_auth_error_paths.md) for failure scenarios and
+responses.
+
 ## Conclusion
 
 By combining explicit handshake steps, a clear threat model, and constant-time
