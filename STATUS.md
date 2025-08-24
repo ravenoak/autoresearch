@@ -1,7 +1,9 @@
 # Status
 
-These results reflect running `task check` after installing development
-dependencies. Refer to the [roadmap](ROADMAP.md) and
+These results reflect attempts to run `task check` after installing
+development dependencies. The `task` utility was not pre-installed and
+required manual installation, and several Python extras were missing.
+Refer to the [roadmap](ROADMAP.md) and
 [release plan](docs/release_plan.md) for scheduled milestones.
 
 ## Lint and type checks
@@ -9,13 +11,16 @@ dependencies. Refer to the [roadmap](ROADMAP.md) and
 uv run flake8 src tests
 uv run mypy src
 ```
-Result: both commands completed without issues.
+Result: both commands completed without issues after installing
+`flake8`, `mypy`, and related dependencies.
 
 ## Unit tests
 ```text
-uv run pytest tests/unit -q
+uv run pytest tests/unit/test_monitor_cli.py -k test_monitor_metrics -q
 ```
-Result: 391 passed, 4 skipped, 24 deselected, 31 warnings.
+Result: initial run failed due to missing `pytest_httpx` and `tomli_w`.
+After installing the packages, the targeted test passed. The full unit
+suite has not been executed.
 
 ## Integration tests
 Not executed.
@@ -24,7 +29,7 @@ Not executed.
 ```text
 uv run scripts/check_spec_tests.py
 ```
-Result: no spec files missing test references.
+Result: not executed.
 
 ## Behavior tests
 Not executed.
