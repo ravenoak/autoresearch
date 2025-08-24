@@ -137,14 +137,86 @@ def test_query_status_and_cancel(monkeypatch, api_client):
     cfg.api.api_keys = {"adm": "admin"}
     cfg.api.role_permissions = {"admin": ["query"]}
 
-    future = asyncio.Future()
+    loop = asyncio.new_event_loop()
+    future = loop.create_future()
     future.set_result(QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}))
     api_client.app.state.async_tasks["abc"] = future
 
     status = api_client.get("/query/abc", headers={"X-API-Key": "adm"})
     assert status.status_code == 200
 
-    future2 = asyncio.Future()
+    future2 = loop.create_future()
     api_client.app.state.async_tasks["def"] = future2
     cancel = api_client.delete("/query/def", headers={"X-API-Key": "adm"})
     assert cancel.status_code == 200
+
+
+def test_invalid_bearer_token(monkeypatch, api_client):
+    """Invalid bearer token should return 401."""
+    cfg = _setup(monkeypatch)
+    cfg.api.bearer_token = generate_bearer_token()
+    resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer wrong"})
+    assert resp.status_code == 401
+
+
+def test_missing_bearer_token(monkeypatch, api_client):
+    """Requests without a token are rejected."""
+    cfg = _setup(monkeypatch)
+    cfg.api.bearer_token = generate_bearer_token()
+    resp = api_client.post("/query", json={"query": "q"})
+    assert resp.status_code == 401
+
+
+def test_permission_denied(monkeypatch, api_client):
+    """API key lacking permission results in 403."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"u": "user"}
+    cfg.api.role_permissions = {"user": ["query"]}
+    resp = api_client.get("/metrics", headers={"X-API-Key": "u"})
+    assert resp.status_code == 403
+
+
+def test_docs_protected(monkeypatch, api_client):
+    """Documentation endpoints require authentication when configured."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+
+    unauth = api_client.get("/docs")
+    assert unauth.status_code == 401
+
+    ok = api_client.get("/docs", headers={"X-API-Key": "secret"})
+    assert ok.status_code == 200
+
+    openapi = api_client.get("/openapi.json", headers={"X-API-Key": "secret"})
+    assert openapi.status_code == 200
+
+
+def test_invalid_key_and_token(monkeypatch, api_client):
+    """Both credentials invalid results in 401."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+    cfg.api.bearer_token = generate_bearer_token()
+    resp = api_client.post(
+        "/query",
+        json={"query": "q"},
+        headers={"X-API-Key": "wrong", "Authorization": "Bearer bad"},
+    )
+    assert resp.status_code == 401
+
+
+def test_query_status_permission_denied(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"u": "user"}
+    cfg.api.role_permissions = {"user": []}
+    api_client.app.state.async_tasks["id"] = asyncio.new_event_loop().create_future()
+    resp = api_client.get("/query/id", headers={"X-API-Key": "u"})
+    assert resp.status_code == 403
+
+
+def test_cancel_query_permission_denied(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"u": "user"}
+    cfg.api.role_permissions = {"user": []}
+    api_client.app.state.async_tasks["id"] = asyncio.new_event_loop().create_future()
+    resp = api_client.delete("/query/id", headers={"X-API-Key": "u"})
+    assert resp.status_code == 403

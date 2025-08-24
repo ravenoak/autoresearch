@@ -41,6 +41,17 @@ uv run python scripts/check_env.py
 
 The script reports missing tools and version mismatches.
 
+### API authentication
+
+Protect the HTTP API by setting one or more variables:
+
+- `AUTORESEARCH_API__API_KEY` – single shared key
+- `AUTORESEARCH_API__API_KEYS` – map keys to roles
+- `AUTORESEARCH_API__BEARER_TOKEN` – bearer token authentication
+
+Requests without valid credentials receive a **401** response. Permissions per
+role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
+
 ## Requirements
 
 - Python 3.12 or newer (but below 4.0)
