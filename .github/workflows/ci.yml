@@ -33,8 +33,14 @@ jobs:
         run: uv pip sync uv.lock
       - name: Install extras
         run: uv pip install -e '.[full,parsers,git,llm,dev]'
+      - name: Install Go Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -b ~/.local/bin
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Validate tool versions
         run: uv run python scripts/check_env.py
+      - name: Run task check
+        run: uv run task check
       - name: Run task verify
         run: uv run task verify
       - name: Run task coverage

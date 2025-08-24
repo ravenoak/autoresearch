@@ -6,8 +6,9 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
-before running any `task` commands.
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. The setup script
+installs Go Task automatically, but manual installation instructions are below
+if needed.
 
 ## After cloning
 
@@ -19,16 +20,16 @@ Run a bootstrap command immediately:
 task install        # developer environment
 ```
 
-`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` extras
-(including test-only packages such as `pytest_httpx` and `redis`), and exits
-if `task --version` fails.
+`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
+extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
+`hypothesis`, and `redis`), and exits if `task --version` fails.
 
 After the script completes, confirm Go Task and the development packages are
 available:
 
 ```bash
 task --version
-uv pip show pytest_httpx
+uv pip show pytest_httpx tomli_w freezegun hypothesis
 ```
 
 If you see errors like `task: command not found` or `uv: command not found`,
@@ -62,7 +63,7 @@ role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
 ### Go Task
 
 Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
-Install it before invoking `task`:
+`scripts/setup.sh` installs it automatically, but you can install it manually:
 
 ```bash
 # macOS

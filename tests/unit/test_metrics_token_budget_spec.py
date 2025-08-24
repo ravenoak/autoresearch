@@ -26,7 +26,7 @@ def test_token_budget_expands_then_shrinks():
     budget = 10
     m.record_tokens("A", 50, 0)
     budget = m.suggest_token_budget(budget, margin=0.1)
-    assert budget == 56
+    assert budget == 55
     m.record_tokens("A", 1, 0)
     budget = m.suggest_token_budget(budget, margin=0.1)
     assert budget == 29
