@@ -4,6 +4,9 @@ This guide is the canonical bootstrap reference for Autoresearch. It covers
 the minimal developer workflow and links to helper scripts for specific
 environments.
 
+Use `./scripts/setup.sh` for day-to-day development. Reserve
+`scripts/codex_setup.sh` for Codex evaluation containers.
+
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
 [**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
@@ -17,6 +20,8 @@ Run a bootstrap command immediately:
 ./scripts/setup.sh  # full developer bootstrap
 # or
 task install        # developer environment
+# Codex evaluation only
+# ./scripts/codex_setup.sh
 ```
 
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` extras
@@ -40,6 +45,13 @@ uv run python scripts/check_env.py
 ```
 
 The script reports missing tools and version mismatches.
+
+## Troubleshooting
+
+Taskfile commands depend on Go Task and the project's `dev` extras. If
+`task` targets fail or packages are missing, ensure `./scripts/setup.sh` (or
+`task install`) has installed Go Task and synced the development extras before
+invoking any Taskfile target.
 
 ## Requirements
 

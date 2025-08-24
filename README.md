@@ -17,7 +17,9 @@ For orchestrator state transitions and API contracts see
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
 [Go Task](https://taskfile.dev/). After cloning, run `./scripts/setup.sh` for
-the full developer bootstrap or `task install` for a minimal environment. See
+typical development or `task install` for a minimal environment. Use
+`scripts/codex_setup.sh` **only** when preparing a Codex evaluation
+environment. See
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 
@@ -61,6 +63,13 @@ See [docs/installation.md](docs/installation.md) for the authoritative
 installation guide, including environment setup, optional features and
 upgrade instructions.
 
+## Troubleshooting
+
+Taskfile targets depend on Go Task and the project's development extras. If you
+encounter `task: command not found` or missing package errors, run
+`./scripts/setup.sh` (or `task install`) to install Go Task and sync the dev
+dependencies before invoking any `task` commands.
+
 ## Building the documentation
 
 Install MkDocs and generate the static site:
@@ -74,4 +83,6 @@ Use `mkdocs serve` to preview the documentation locally.
 
 ## Accessibility
 
-CLI output uses Markdown headings and plain-text lists so screen readers can navigate sections. Help messages avoid color-only cues and respect the `NO_COLOR` environment variable for ANSI-free output.
+CLI output uses Markdown headings and plain-text lists so screen readers can
+navigate sections. Help messages avoid color-only cues and respect the
+`NO_COLOR` environment variable for ANSI-free output.
