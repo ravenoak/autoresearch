@@ -227,17 +227,15 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-`task coverage` could not complete in this environment; coverage metrics are unavailable.
+Attempts to run `task install` and `task verify` stalled when large GPU and ML
+packages like `torch` and CUDA began downloading. As a result, `task check`,
+`task verify`, and `coverage html` could not run to generate updated metrics.
+The `baseline/coverage.xml` file still reports roughly twenty-two percent
+coverage.
 
 ### Latest Test Results
 
-- `uv run flake8 src tests` – passed
-- `uv run mypy src` – passed
-- `uv run python scripts/check_spec_tests.py` – passed
-- `uv run pytest tests/unit -q` – 639 passed, 5 failed, 26 skipped, 24 deselected, 2 xfailed
-- `uv run pytest tests/integration -m 'not slow and not requires_ui and not requires_vss and not requires_distributed' -q` – 192 passed, 1 failed, 4 skipped, 86 deselected
-- `uv run pytest tests/behavior -q` – numerous failures; run interrupted
-- Coverage collection reports **24%** overall
+No tests ran in this environment.
 
 ### Performance Baselines
 
