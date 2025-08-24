@@ -9,6 +9,19 @@ from typing import Optional
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge, start_http_server
 
 
+def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
+    """Return a registry-bound gauge, resetting its value if reused."""
+    try:
+        gauge = Gauge(name, description, registry=registry)
+    except ValueError:
+        existing = registry._names_to_collectors.get(name)
+        if not isinstance(existing, Gauge):  # pragma: no cover - defensive
+            raise
+        gauge = existing
+    gauge.set(0)
+    return gauge
+
+
 class NodeHealthMonitor:
     """Expose Prometheus metrics and perform basic health checks."""
 
@@ -26,17 +39,17 @@ class NodeHealthMonitor:
         self.port = port
         self.interval = interval
         self.registry = registry or REGISTRY
-        self.redis_gauge = Gauge(
+        self.redis_gauge = _gauge(
             "autoresearch_redis_up",
             "Redis health status (1=up)",
             registry=self.registry,
         )
-        self.ray_gauge = Gauge(
+        self.ray_gauge = _gauge(
             "autoresearch_ray_up",
             "Ray health status (1=up)",
             registry=self.registry,
         )
-        self.health_gauge = Gauge(
+        self.health_gauge = _gauge(
             "autoresearch_node_health",
             "Overall node health (1=healthy)",
             registry=self.registry,

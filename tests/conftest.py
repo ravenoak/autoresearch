@@ -45,13 +45,14 @@ from autoresearch.agents.registry import (  # noqa: E402
     AgentRegistry,
 )
 from autoresearch.api import SLOWAPI_STUB  # noqa: E402
-from autoresearch.api import app as api_app  # noqa: E402
 from autoresearch.api import reset_request_log  # noqa: E402
+from autoresearch.api import app as api_app  # noqa: E402
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402, F401
 from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 from autoresearch.llm.registry import LLMFactory  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402, F401
+from autoresearch.orchestration import metrics  # noqa: E402
 from autoresearch.storage import (  # noqa: E402
     StorageContext,
     StorageManager,
@@ -248,6 +249,14 @@ def reset_rate_limiting():
     yield
     reset_limiter_state()
     reset_request_log()
+
+
+@pytest.fixture(autouse=True)
+def reset_orchestration_metrics():
+    """Reset global orchestration counters before and after each test."""
+    metrics.reset_metrics()
+    yield
+    metrics.reset_metrics()
 
 
 @pytest.fixture(autouse=True)

@@ -10,13 +10,27 @@ import time
 from typing import Optional
 
 import structlog
-from prometheus_client import Gauge, start_http_server, CollectorRegistry, REGISTRY
+from prometheus_client import REGISTRY, CollectorRegistry, Gauge, start_http_server
+
 from .orchestration import metrics as orch_metrics
 
 log = structlog.get_logger(__name__)
 
 
 _DEF_REGISTRY = REGISTRY
+
+
+def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
+    """Return a registry-bound gauge, resetting its value if reused."""
+    try:
+        gauge = Gauge(name, description, registry=registry)
+    except ValueError:
+        existing = registry._names_to_collectors.get(name)
+        if not isinstance(existing, Gauge):  # pragma: no cover - defensive
+            raise
+        gauge = existing
+    gauge.set(0)
+    return gauge
 
 
 def _get_gpu_stats() -> tuple[float, float]:
@@ -43,6 +57,7 @@ def _get_gpu_stats() -> tuple[float, float]:
 
     try:  # pragma: no cover - may not be present
         import subprocess
+
         try:
             import psutil  # type: ignore
 
@@ -117,32 +132,32 @@ class ResourceMonitor:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-        self.cpu_gauge = Gauge(
+        self.cpu_gauge = _gauge(
             "autoresearch_cpu_percent",
             "Process CPU usage percent",
             registry=self.registry,
         )
-        self.mem_gauge = Gauge(
+        self.mem_gauge = _gauge(
             "autoresearch_memory_mb",
             "Process memory usage in MB",
             registry=self.registry,
         )
-        self.gpu_gauge = Gauge(
+        self.gpu_gauge = _gauge(
             "autoresearch_gpu_percent",
             "GPU utilization percent",
             registry=self.registry,
         )
-        self.gpu_mem_gauge = Gauge(
+        self.gpu_mem_gauge = _gauge(
             "autoresearch_gpu_memory_mb",
             "GPU memory usage in MB",
             registry=self.registry,
         )
-        self.tokens_in_gauge = Gauge(
+        self.tokens_in_gauge = _gauge(
             "autoresearch_tokens_in_snapshot_total",
             "Total input tokens at last snapshot",
             registry=self.registry,
         )
-        self.tokens_out_gauge = Gauge(
+        self.tokens_out_gauge = _gauge(
             "autoresearch_tokens_out_snapshot_total",
             "Total output tokens at last snapshot",
             registry=self.registry,
