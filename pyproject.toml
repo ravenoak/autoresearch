@@ -109,6 +109,7 @@ test = [
     "responses >=0.25.7",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
+    "redis >=6.2",
     "pytest-httpx >=0.35.0",
     "tomli-w >=1.2.0",
 ]
@@ -157,6 +158,7 @@ dev = [
     "responses >=0.25.7",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
+    "redis >=6.2",
 ]
 # Minimal dev dependencies for CI and lightweight setups
 dev-minimal = [
@@ -176,6 +178,7 @@ dev-minimal = [
     "responses >=0.25.7",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
+    "redis >=6.2",
 ]
 
 # Packaging utilities for building and publishing distributions
