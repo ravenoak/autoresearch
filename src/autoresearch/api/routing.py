@@ -261,7 +261,9 @@ async def async_query_endpoint(
 
 
 @router.get("/query/{query_id}")
-async def get_query_status(query_id: str, request: Request) -> Response:
+async def get_query_status(
+    query_id: str, request: Request, _: None = require_permission("query")
+) -> Response:
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return JSONResponse({"detail": "not found"}, status_code=404)
@@ -275,7 +277,9 @@ async def get_query_status(query_id: str, request: Request) -> Response:
 
 
 @router.delete("/query/{query_id}")
-async def cancel_query(query_id: str, request: Request) -> Response:
+async def cancel_query(
+    query_id: str, request: Request, _: None = require_permission("query")
+) -> Response:
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return PlainTextResponse("not found", status_code=404)

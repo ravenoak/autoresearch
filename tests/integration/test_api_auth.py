@@ -1,3 +1,5 @@
+import asyncio
+
 from autoresearch.api.utils import generate_bearer_token
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
@@ -128,3 +130,21 @@ def test_api_key_overrides_invalid_token(monkeypatch, api_client):
         headers={"X-API-Key": "secret", "Authorization": "Bearer bad"},
     )
     assert resp.status_code == 200
+
+
+def test_query_status_and_cancel(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"adm": "admin"}
+    cfg.api.role_permissions = {"admin": ["query"]}
+
+    future = asyncio.Future()
+    future.set_result(QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}))
+    api_client.app.state.async_tasks["abc"] = future
+
+    status = api_client.get("/query/abc", headers={"X-API-Key": "adm"})
+    assert status.status_code == 200
+
+    future2 = asyncio.Future()
+    api_client.app.state.async_tasks["def"] = future2
+    cancel = api_client.delete("/query/def", headers={"X-API-Key": "adm"})
+    assert cancel.status_code == 200
