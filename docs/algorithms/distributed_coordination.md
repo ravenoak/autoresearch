@@ -33,12 +33,15 @@ utilities in `src/autoresearch/distributed` provide these primitives.
   workers and joining those processes bounds recovery time by `O(M / P + P)`
   ([executors.py](../../src/autoresearch/distributed/executors.py)).
 
-## Resource Monitoring Model
+## Speedup Model
 
-- `ResourceMonitor` samples CPU and memory every interval `i`, producing
-  `n = T / i` snapshots over run time `T`. Average CPU `C` and memory `M` are
-  `C = (1/n) \sum c_k` and `M = (1/n) \sum m_k`. Each sample has `O(1)` cost,
-  so monitoring overhead grows linearly with `n`.
+For a workload with serial fraction `s` and parallel fraction `p`, Amdahl's
+Law bounds speedup by `1 / (s + p / P)` where `P` is the number of workers.
+Beyond that point additional workers yield diminishing returns.
+
+## Monitoring
+
+See [Resource Monitor](resource_monitor.md) for CPU and memory sampling models.
 
 ## Coordination Overhead Model
 

@@ -14,3 +14,4 @@
 - [Relevance Ranking](relevance_ranking.md)
 - [Error Recovery via Exponential Backoff](error_recovery.md)
 - [Cache Eviction Strategy](cache_eviction.md)
+- [Resource Monitoring](resource_monitor.md)

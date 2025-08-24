@@ -1,4 +1,7 @@
-"""Distributed execution utilities."""
+"""Distributed execution utilities.
+
+See docs/algorithms/distributed_coordination.md for mathematical models.
+"""
 
 from .broker import (
     InMemoryBroker,

@@ -1,3 +1,8 @@
+"""Coordinate distributed storage and result aggregation.
+
+See docs/algorithms/distributed_coordination.md for scaling models.
+"""
+
 from __future__ import annotations
 
 import multiprocessing
