@@ -5,7 +5,7 @@ import types
 from typing import Any, Callable, cast
 
 from fastapi import Request, Response
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from limits.util import parse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -85,15 +85,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if cfg.api_keys:
             role = cfg.api_keys.get(key)
             if not role:
-                return "anonymous", JSONResponse(
-                    {"detail": "Invalid API key"}, status_code=401
-                )
+                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return role, None
         if cfg.api_key:
             if key != cfg.api_key:
-                return "anonymous", JSONResponse(
-                    {"detail": "Invalid API key"}, status_code=401
-                )
+                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return "user", None
         return "anonymous", None
 
@@ -107,13 +103,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
         token = credentials.credentials if credentials else None
 
         role, key_error = self._resolve_role(api_key, cfg)
-        key_valid = key_error is None
-        token_valid = bool(token and verify_bearer_token(token, cfg.bearer_token)) if cfg.bearer_token else False
+        key_valid = bool(api_key) and key_error is None
+        token_valid = (
+            bool(token and verify_bearer_token(token, cfg.bearer_token))
+            if cfg.bearer_token
+            else False
+        )
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
             if cfg.api_keys or cfg.api_key:
-                return JSONResponse({"detail": "Invalid API key"}, status_code=401)
+                return key_error or JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return JSONResponse({"detail": "Invalid token"}, status_code=401)
 
         if token_valid and not key_valid:
@@ -141,9 +141,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
             request.state.view_rate_limit = (limit_obj, [ip])
             if count > cfg_limit:
                 if SLOWAPI_STUB:
-                    return handle_rate_limit(
-                        request, RateLimitExceeded(cast("Limit", None))
-                    )
+                    return handle_rate_limit(request, RateLimitExceeded(cast("Limit", None)))
                 limit_wrapper = Limit(
                     limit_obj,
                     get_remote_address,
@@ -158,9 +156,7 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
                 return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
         response = await call_next(request)
         if cfg_limit and not SLOWAPI_STUB:
-            response = self.limiter._inject_headers(
-                response, request.state.view_rate_limit
-            )
+            response = self.limiter._inject_headers(response, request.state.view_rate_limit)
         return response
 
 

@@ -284,8 +284,9 @@ Include the desired key in the `X-API-Key` header. The associated role will be
 available as `request.state.role` inside the application.
 
 If both API keys and a bearer token are configured, either credential grants
-access. The documentation routes `/docs` and `/openapi.json` are also protected
-when authentication is enabled.
+access. When both headers are sent, a valid bearer token overrides an incorrect
+`X-API-Key` value. The documentation routes `/docs` and `/openapi.json` are also
+protected when authentication is enabled.
 
 ### Headers
 
@@ -300,11 +301,11 @@ response. Authenticated clients lacking permission receive **403 Forbidden**.
 ### Role permissions
 
 Use `[api].role_permissions` to restrict which endpoints each role can call.
-Permissions are `query`, `metrics` and `capabilities`.
+Permissions are `query`, `metrics`, `capabilities`, `config` and `health`.
 
 ```toml
 [api.role_permissions]
-admin = ["query", "metrics", "capabilities"]
+admin = ["query", "metrics", "capabilities", "config", "health"]
 user = ["query"]
 ```
 
