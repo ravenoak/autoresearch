@@ -45,7 +45,9 @@ router.post("/query/stream")(query_stream_endpoint)
 
 
 @router.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
+async def custom_swagger_ui_html(
+    _: None = require_permission("docs"),
+):
     """Serve custom Swagger UI documentation."""
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
@@ -56,7 +58,10 @@ async def custom_swagger_ui_html():
 
 
 @router.get("/openapi.json", include_in_schema=False)
-async def get_openapi_schema(request: Request):
+async def get_openapi_schema(
+    request: Request,
+    _: None = require_permission("docs"),
+):
     """Serve the OpenAPI schema for the API."""
     openapi_schema = get_openapi(
         title="Autoresearch API",
@@ -143,9 +148,7 @@ async def query_endpoint(
             return error_resp
     try:
         validated = (
-            result
-            if isinstance(result, QueryResponse)
-            else QueryResponse.model_validate(result)
+            result if isinstance(result, QueryResponse) else QueryResponse.model_validate(result)
         )
     except ValidationError as exc:  # pragma: no cover - should not happen
         error_info = get_error_info(exc)
@@ -198,9 +201,7 @@ async def batch_query_endpoint(
     start = (page - 1) * page_size
     selected = batch.queries[start : start + page_size]  # noqa: E203
 
-    async def run_one(
-        idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]
-    ) -> None:
+    async def run_one(idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]) -> None:
         from . import query_endpoint as api_query_endpoint
 
         results[idx] = cast(QueryResponse, await api_query_endpoint(q))
@@ -386,9 +387,7 @@ def replace_config_endpoint(
 
 
 @router.delete("/config")
-def reload_config_endpoint(
-    request: Request, _: None = require_permission("config")
-) -> dict:
+def reload_config_endpoint(request: Request, _: None = require_permission("config")) -> dict:
     """Reload configuration from disk and discard runtime changes."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
     try:
