@@ -83,7 +83,10 @@ rm -rf /var/lib/apt/lists/*
 uv sync --extra dev-minimal
 
 # Install Go Task inside the virtual environment and expose it on PATH
-curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+if ! retry 3 bash -c "curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin"; then
+    echo 'task installation failed; see https://taskfile.dev/#/installation' >&2
+    exit 1
+fi
 export PATH=".venv/bin:$PATH"
 command -v task >/dev/null 2>&1 || {
     echo 'task installation failed; not on PATH' >&2

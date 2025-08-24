@@ -79,6 +79,15 @@ After installation, initialize the environment:
 task install
 ```
 
+#### Troubleshooting
+
+- If the install script completes but `task` is missing, ensure the install
+  directory (often `~/.local/bin`) appears in your `PATH`.
+- Network failures during installation are usually transient. Rerun the
+  command or download the installer and execute it locally.
+- For permission errors, run the installer with a writable `-b` path or use a
+  package manager such as `brew` or `apt`.
+
 ### Core dependencies
 
 The following packages are required at the minimum versions listed. Each has
