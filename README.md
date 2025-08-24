@@ -21,6 +21,15 @@ the full developer bootstrap or `task install` for a minimal environment. See
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 
+To bootstrap a Python 3.12+ environment with development and test extras run:
+
+```bash
+task install
+```
+
+This installs tools like `pytest-httpx`, `duckdb`, and `networkx` needed for
+local testing.
+
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
 

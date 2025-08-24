@@ -82,10 +82,15 @@ rm -rf /var/lib/apt/lists/*
 # Install minimal dev dependencies
 uv sync --extra dev-minimal
 
-# Install Go Task inside the virtual environment
+# Install Go Task inside the virtual environment and expose it on PATH
 curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+export PATH=".venv/bin:$PATH"
+command -v task >/dev/null 2>&1 || {
+    echo 'task installation failed; not on PATH' >&2
+    exit 1
+}
 # Verify Task installation by printing its version
-./.venv/bin/task --version
+task --version
 
 # Install optional extras on demand
 if [ "${AR_INSTALL_UI:-0}" -eq 1 ]; then

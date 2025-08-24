@@ -9,7 +9,7 @@ vars:
 tasks:
   install:
     cmds:
-      - uv sync --extra dev
+      - uv sync --extra dev --extra test
     desc: "Initialize development environment"
   check-env:
     cmds:
