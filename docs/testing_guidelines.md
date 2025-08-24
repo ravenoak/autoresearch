@@ -18,6 +18,9 @@ Before running any tests ensure the project is installed with the
 these groups so both local and CI environments have every optional dependency
 available.
 
+Redis is an optional dependency but required for distributed tests. The
+integration suite skips those tests automatically when Redis is missing.
+
 Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
 
 ```bash

@@ -22,20 +22,22 @@ class _FakeRedisClient:
 
 
 def test_get_message_broker_redis_roundtrip(monkeypatch):
+    """Round trip messages through the Redis broker."""
+
     client = _FakeRedisClient()
-    dummy_module = types.SimpleNamespace(
-        Redis=types.SimpleNamespace(from_url=lambda url: client)
-    )
+    dummy_module = types.SimpleNamespace(Redis=types.SimpleNamespace(from_url=lambda url: client))
     monkeypatch.setitem(sys.modules, "redis", dummy_module)
 
     broker = get_message_broker("redis")
     broker.publish({"a": 1})
     assert client.entries[0][0] == "autoresearch"
-    assert client.entries[0][1] == "{\"a\": 1}"
+    assert client.entries[0][1] == '{"a": 1}'
     broker.shutdown()
 
 
 def test_get_message_broker_redis_missing(monkeypatch):
-    sys.modules.pop("redis", None)
+    """Raise an error when the Redis module cannot be imported."""
+
+    monkeypatch.setitem(sys.modules, "redis", None)
     with pytest.raises(ModuleNotFoundError):
         get_message_broker("redis")
