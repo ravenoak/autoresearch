@@ -27,5 +27,6 @@ Run the monitor command to print current CPU and memory usage:
 uv run autoresearch monitor
 ```
 
-This displays a JSON object containing `cpu_percent`, `memory_percent`, and
-other counters. Pass `--watch` to refresh continuously.
+The command outputs a single JSON object containing `cpu_percent`,
+`memory_percent`, token counters, and more, then exits with status code 0.
+Pass `--watch` to refresh the metrics continuously.
