@@ -2,6 +2,10 @@
 
 Interactive monitoring commands for Autoresearch.
 
+The metrics command increments the `autoresearch_queries_total` counter each
+time system statistics are collected. Monitor commands now skip storage
+initialization so metrics can be displayed without a configured database.
+
 ## Traceability
 
 - Modules
