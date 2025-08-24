@@ -408,8 +408,8 @@ class OrchestrationMetrics:
         ``ceil(u * (1 + margin))`` for constant usage ``u``. Negative
         ``margin`` values are treated as zero.
 
-        See ``docs/algorithms/token_budgeting.md`` for derivation and
-        convergence analysis.
+        See ``docs/algorithms/token_budgeting.md`` for derivation and a
+        formal proof of convergence.
         """
 
         margin = max(margin, 0.0)
