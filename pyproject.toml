@@ -111,6 +111,7 @@ test = [
     "psutil >=7.0.0",
     "redis >=6.2",
     "pytest-httpx >=0.35.0",
+    "pytest-bdd >=8.1.0",
     "tomli-w >=1.2.0",
 ]
 # Full install: all features for power users and development
@@ -199,6 +200,7 @@ autoresearch = "autoresearch.main:app"
 minversion = "6.0"
 addopts = "-m 'not slow and not requires_ui and not requires_vss and not requires_distributed'"
 testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
+bdd_features_base_dir = "tests/behavior/features"
 python_files = ["test_*.py", "*_steps.py"]
 markers = [
     "behavior: mark behavior (BDD) tests",
