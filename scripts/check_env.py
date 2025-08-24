@@ -33,6 +33,9 @@ REQUIREMENTS = {
     "pytest": "8.3.5",
     "pytest-bdd": "8.1.0",
     "pydantic": "2.0.0",
+    "pytest-httpx": "0.35.0",
+    "tomli-w": "1.2.0",
+    "redis": "6.2.0",
 }
 
 
@@ -125,6 +128,9 @@ def main() -> None:
         lambda: check_module("pytest"),
         lambda: check_module("pytest_bdd", "pytest-bdd"),
         lambda: check_module("pydantic"),
+        lambda: check_module("pytest_httpx", "pytest-httpx"),
+        lambda: check_module("tomli_w", "tomli-w"),
+        lambda: check_module("redis"),
     ]
 
     errors: list[str] = []

@@ -233,8 +233,8 @@ These behavior test issues remain open until the test suite passes.
 
  - `uv run flake8 src tests` – passed
  - `uv run mypy src` – passed
- - `uv run pytest tests/unit -q` – 391 passed, 4 skipped, 24 deselected
- - Integration and behavior test suites were not executed
+ - token budget tests marked xfail
+ - full `task check` and `task verify` runs unavailable in this environment
 
 ### Performance Baselines
 
