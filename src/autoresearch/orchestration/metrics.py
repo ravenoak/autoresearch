@@ -406,7 +406,9 @@ class OrchestrationMetrics:
         remains unchanged. A window of only zero-usage samples drives the
         budget to one token. When usage stabilizes, the update converges to
         ``ceil(u * (1 + margin))`` for constant usage ``u``. Negative
-        ``margin`` values are treated as zero.
+        ``margin`` values are treated as zero and the implementation
+        subtracts a tiny epsilon before applying ``ceil`` to avoid
+        floating-point inflation.
 
         See ``docs/algorithms/token_budgeting.md`` for derivation and a
         formal proof of convergence.
@@ -446,6 +448,11 @@ class OrchestrationMetrics:
                 max_agent_avg = agent_avg
 
         usage_candidates = [latest, avg_used, max_agent_delta, max_agent_avg]
-        desired = max(math.ceil(max(usage_candidates) * (1 + margin)), 1)
+
+        # Subtract a tiny epsilon before ``ceil`` to counter floating-point
+        # rounding that would otherwise inflate budgets (e.g. ``55.0000000001``
+        # becoming ``56``).
+        scaled = max(usage_candidates) * (1 + margin)
+        desired = max(math.ceil(scaled - 1e-9), 1)
 
         return desired

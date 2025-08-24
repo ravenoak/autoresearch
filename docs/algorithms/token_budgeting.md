@@ -13,6 +13,10 @@ and `\bar{a}_t = \max_i \bar{a}_{i,t}`. With margin `m`, the update is
 b_{t+1} = \left\lceil \max(u_t, \bar{u}_t, a_t, \bar{a}_t) (1 + m) \right\rceil.
 \]
 
+Negative margins are clamped to zero to avoid suggesting budgets below
+observed usage. The implementation subtracts a tiny epsilon before the
+ceiling to prevent floating-point drift from inflating the result.
+
 When the new target differs from the current budget the algorithm
 immediately adjusts. If no usage has ever been recorded, the budget is
 left unchanged. Ten consecutive zero-usage samples after activity shrink
