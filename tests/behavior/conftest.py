@@ -10,8 +10,6 @@ if str(ROOT) not in sys.path:
 import os  # noqa: E402
 import pytest  # noqa: E402
 
-import pytest
-
 
 pytest_plugins = ("pytest_bdd",)
 
@@ -20,6 +18,7 @@ pytest_plugins = ("pytest_bdd",)
 def pytest_configure(config):
     """Load step modules after pytest-bdd config."""
     config.pluginmanager.import_plugin("tests.behavior.steps")
+
 
 from autoresearch.api import reset_request_log  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402

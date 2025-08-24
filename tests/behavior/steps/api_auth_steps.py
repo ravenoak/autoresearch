@@ -68,6 +68,13 @@ def send_query_with_header(api_client_factory, test_context, query, header, valu
     test_context["response"] = resp
 
 
+@when(parsers.parse('I send a query "{query}" without credentials'))
+def send_query_without_credentials(api_client_factory, test_context, query):
+    client = api_client_factory()
+    resp = client.post("/query", json={"query": query})
+    test_context["response"] = resp
+
+
 @when("I send two queries to the API")
 def send_two_queries(api_client_factory, test_context):
     client = api_client_factory()
@@ -118,4 +125,9 @@ def test_invalid_bearer_token():
 
 @scenario("../features/api_auth.feature", "Rate limit exceeded")
 def test_rate_limit_exceeded():
+    pass
+
+
+@scenario("../features/api_auth.feature", "Missing API key")
+def test_missing_api_key():
     pass

@@ -23,7 +23,7 @@ def test_resolve_role_invalid_key():
     role, err = middleware._resolve_role("bad", cfg.api)
     assert role == "anonymous"
     assert err is not None
-    assert err.status_code == 403
+    assert err.status_code == 401
 
 
 def test_resolve_role_missing_key():
@@ -53,4 +53,4 @@ def test_dispatch_invalid_token(monkeypatch):
         return Response("ok")
 
     resp = asyncio.run(middleware.dispatch(request, call_next))
-    assert resp.status_code == 403
+    assert resp.status_code == 401

@@ -14,6 +14,17 @@ model, and why comparisons run in constant time.
 5. On success the request proceeds; otherwise a **401 Unauthorized** response is
    returned.
 
+## Configuration
+
+API authentication is configured under the `[api]` section of
+`autoresearch.toml` or via environment variables:
+
+- `AUTORESEARCH_API__API_KEY` or `AUTORESEARCH_API__API_KEYS` for API keys.
+- `AUTORESEARCH_API__BEARER_TOKEN` for a bearer token.
+
+Requests with missing or invalid credentials receive **401 Unauthorized**.
+Authenticated clients lacking permission receive **403 Forbidden**.
+
 ## Threat model
 
 - Adversaries may sniff traffic, replay requests, or attempt token guessing.
