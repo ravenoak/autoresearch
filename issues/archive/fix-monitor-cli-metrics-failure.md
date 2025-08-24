@@ -12,4 +12,5 @@ The monitor CLI is not producing the expected metrics and needs investigation.
 - Update documentation if monitor behavior changes.
 
 ## Status
-Open
+Archived
+

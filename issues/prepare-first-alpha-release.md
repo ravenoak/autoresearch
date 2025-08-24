@@ -1,14 +1,13 @@
 # Prepare first alpha release
 
 ## Context
-Version 0.1.0a1 will be the project's first public alpha. A fresh clone on
-**August 24, 2025** lacked the Go Task binary and dev extras such as
-`tomli_w`, `freezegun`, and `hypothesis`, so `task check` and `task verify`
-could not run. After manually installing `pytest-httpx` and `pytest-bdd`, unit
-tests still aborted during collection with `ModuleNotFoundError: tomli_w`, and
+Version 0.1.0a1 will be the project's first public alpha. Go Task and dev
+extras now install via the setup script, but `task check` fails on `flake8`
+warnings in `src/autoresearch/orchestration/metrics.py` and
+`tests/behavior/features/conftest.py`. Running
 `uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
-reported "no match in any of [<Dir features>]". Integration tests execute with
-`redis` installed, but coverage remains at **24%**, far below the **90%**
+still reports "no match in any of [<Dir features>]". Integration tests execute
+with `redis` installed, but coverage remains at **24%**, far below the **90%**
 target. The TestPyPI upload returns HTTP 403, and release notes and packaging
 steps are incomplete.
 
