@@ -18,19 +18,19 @@ Result: passed
 ```text
 uv run pytest tests/unit -q
 ```
-Result: 340 passed, 3 skipped, 24 deselected, 1 xfailed, 1 xpassed, 31 warnings
+Result: 639 passed, 5 failed, 26 skipped, 24 deselected, 2 xfailed, 53 warnings
 
 ## Integration tests
 ```text
 uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss and not requires_distributed" -q
 ```
-Result: passed
+Result: 192 passed, 1 failed, 4 skipped, 86 deselected
 
 ## Behavior tests
 ```text
 uv run pytest tests/behavior -q
 ```
-Result: passed
+Result: numerous failures; run interrupted after keyboard interrupt
 
 ## Coverage
-Coverage collected; 387 tests passed across all suites
+Coverage collection reports **24%** overall

@@ -78,7 +78,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 ### Prerequisites for tagging 0.1.0a1
 
-- `task verify` stalls during `mypy`; type checking must complete.
+- `flake8` and `mypy` pass, but several unit and integration tests still fail.
 - Total coverage is **24%**, short of the **90%** gate.
 - TestPyPI upload returns HTTP 403, so packaging needs a retry.
 
