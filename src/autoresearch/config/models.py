@@ -143,9 +143,16 @@ class APIConfig(BaseModel):
     )
     role_permissions: Dict[str, List[str]] = Field(
         default_factory=lambda: {
-            "anonymous": ["query"],
-            "user": ["query"],
-            "admin": ["query", "metrics", "capabilities", "config", "health"],
+            "anonymous": ["query", "docs"],
+            "user": ["query", "docs"],
+            "admin": [
+                "query",
+                "docs",
+                "metrics",
+                "capabilities",
+                "config",
+                "health",
+            ],
         },
         description="Mapping of roles to allowed actions",
     )

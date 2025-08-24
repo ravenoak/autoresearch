@@ -14,7 +14,8 @@ from .webhooks import notify_webhook
 
 
 async def query_stream_endpoint(
-    request: QueryRequest, _=require_permission("query")
+    request: QueryRequest,
+    _: None = require_permission("query"),
 ) -> StreamingResponse:
     """Stream incremental query results as JSON lines."""
     config = get_config()

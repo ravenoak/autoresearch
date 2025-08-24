@@ -298,8 +298,8 @@ available as `request.state.role` inside the application.
 
 If both API keys and a bearer token are configured, either credential grants
 access. When both headers are sent, a valid bearer token overrides an incorrect
-`X-API-Key` value. The documentation routes `/docs` and `/openapi.json` are also
-protected when authentication is enabled.
+`X-API-Key` value. The documentation routes `/docs` and `/openapi.json` require
+the `docs` permission and are protected when authentication is enabled.
 
 ### Headers
 
@@ -314,16 +314,17 @@ response. Authenticated clients lacking permission receive **403 Forbidden**.
 ### Role permissions
 
 Use `[api].role_permissions` to restrict which endpoints each role can call.
-Permissions are `query`, `metrics`, `capabilities`, `config` and `health`.
+Permissions are `query`, `docs`, `metrics`, `capabilities`, `config` and
+`health`.
 
 ```toml
 [api.role_permissions]
-admin = ["query", "metrics", "capabilities", "config", "health"]
-user = ["query"]
+admin = ["query", "docs", "metrics", "capabilities", "config", "health"]
+user = ["query", "docs"]
 ```
 
-By default `user` can only submit queries while `admin` has access to all
-endpoints.
+By default `user` can submit queries and view documentation, while `admin`
+has access to all endpoints.
 
 ## Throttling
 
