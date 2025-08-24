@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Demonstrate distributed scheduling throughput.
+"""Demonstrate distributed scheduling throughput using multiple processes.
 
 Usage:
     uv run python scripts/simulate_distributed_coordination.py --workers 2
@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import argparse
 import time
-
-from autoresearch.config.models import ConfigModel, DistributedConfig
-from autoresearch.distributed import ProcessExecutor
+from concurrent.futures import ProcessPoolExecutor
 
 
 def _square(x: int) -> int:
@@ -28,17 +26,15 @@ def main(workers: int, tasks: int) -> None:
         tasks: How many integers to square per loop.
     """
 
-    config = ConfigModel(
-        distributed=True,
-        distributed_config=DistributedConfig(enabled=True, num_cpus=workers),
-    )
-    executor = ProcessExecutor(config)
+    if workers <= 0 or tasks <= 0:
+        raise SystemExit("workers and tasks must be positive")
+
     start = time.perf_counter()
-    for _ in range(10):
-        executor.run_query(_square, range(tasks))
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        for _ in range(10):
+            list(executor.map(_square, range(tasks)))
     duration = time.perf_counter() - start
-    print(f"Processed {tasks * 10} tasks in {duration:.3f}s with {workers} workers")
-    executor.shutdown()
+    print(f"Processed {tasks * 10} tasks in {duration:.3f}s " f"with {workers} workers")
 
 
 if __name__ == "__main__":
@@ -47,4 +43,3 @@ if __name__ == "__main__":
     parser.add_argument("--tasks", type=int, default=100, help="tasks per loop")
     args = parser.parse_args()
     main(args.workers, args.tasks)
-

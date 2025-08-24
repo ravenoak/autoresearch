@@ -48,9 +48,18 @@ See [Resource Monitor](resource_monitor.md) for CPU and memory sampling models.
 - For `P` processes sending control messages with latency `\ell` and payload
   size `s`, coordination cost is roughly `P * (\ell + s / B)` where `B` is
   broker bandwidth. Shared memory queues make `\ell` negligible, giving
-  overhead `O(P)`. A simple CPU-bound simulation showed average utilization
-  rising from ~0% with one node to ~30% with two nodes and ~40% with four
-  nodes, while memory stayed near 45–49 MB.
+overhead `O(P)`. A simple CPU-bound simulation showed average
+utilization rising from ~0% with one node to ~30% with two nodes and
+~40% with four nodes, while memory stayed near 45–49 MB.
+
+## Baseline
+
+Running `uv run scripts/simulate_distributed_coordination.py --workers 2`
+`--tasks 100` processed 1\,000 tasks in about 0.22 s,
+or roughly 4\,600 tasks/s. The simulation squares `tasks` integers across
+10 loops, so the invariant `N = 10 \times tasks` fixes the workload size.
+Throughput follows `T = N / t` where `N` is the number of tasks and `t` is
+execution time.
 
 ## Simulation
 
