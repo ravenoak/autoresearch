@@ -2,7 +2,9 @@
 
 The `ResourceMonitor` samples CPU, memory, GPU, and token counts to expose
 time-series metrics. The `monitor` CLI uses these helpers to print the current
-snapshot in JSON or table form.
+snapshot in JSON or table form. Gauges reset to zero on startup so repeated
+runs begin with clean metrics. Reset global counters between tests to avoid
+cross-test contamination.
 
 ## Sampling Model
 

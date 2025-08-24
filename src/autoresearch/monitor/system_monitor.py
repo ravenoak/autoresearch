@@ -5,7 +5,20 @@ import time
 from typing import Dict, Optional
 
 import psutil  # type: ignore
-from prometheus_client import Gauge, CollectorRegistry, REGISTRY
+from prometheus_client import REGISTRY, CollectorRegistry, Gauge
+
+
+def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
+    """Return a registry-bound gauge, resetting its value if reused."""
+    try:
+        gauge = Gauge(name, description, registry=registry)
+    except ValueError:
+        existing = registry._names_to_collectors.get(name)
+        if not isinstance(existing, Gauge):  # pragma: no cover - defensive
+            raise
+        gauge = existing
+    gauge.set(0)
+    return gauge
 
 
 class SystemMonitor:
@@ -19,12 +32,12 @@ class SystemMonitor:
     ) -> None:
         self.interval = interval
         self.registry = registry or REGISTRY
-        self.cpu_gauge = Gauge(
+        self.cpu_gauge = _gauge(
             "autoresearch_system_cpu_percent",
             "System wide CPU usage percent",
             registry=self.registry,
         )
-        self.mem_gauge = Gauge(
+        self.mem_gauge = _gauge(
             "autoresearch_system_memory_percent",
             "System memory usage percent",
             registry=self.registry,
