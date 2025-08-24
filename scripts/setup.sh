@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# Create .venv, install Go Task and development extras using uv.
+# Create .venv, install Go Task and development/test extras using uv.
 # Ensure we are running with Python 3.12 or newer.
 # Run `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
@@ -35,18 +35,20 @@ if sys.version_info < (3, 12):
     raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
 EOF
 
-# Install locked dependencies and development extras
-echo "Installing development extras via uv sync --extra dev"
-uv sync --extra dev
+# Install locked dependencies and development/test extras
+echo "Installing development and test extras via uv sync --extra dev --extra test"
+uv sync --extra dev --extra test
 
 # Link the project in editable mode so tools are available
 uv pip install -e .
 
-# Verify dev extras like pytest_httpx are installed
-if ! uv pip show pytest_httpx >/dev/null 2>&1; then
-    echo "pytest_httpx is required for tests but was not installed" >&2
-    exit 1
-fi
+# Verify dev and test extras are installed
+for pkg in pytest_httpx tomli_w freezegun hypothesis; do
+    if ! uv pip show "$pkg" >/dev/null 2>&1; then
+        echo "$pkg is required for tests but was not installed" >&2
+        exit 1
+    fi
+done
 
 # Ensure Go Task is installed after bootstrapping
 if [ ! -x .venv/bin/task ]; then

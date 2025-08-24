@@ -234,10 +234,10 @@ These behavior test issues remain open until the test suite passes.
 - `uv run flake8 src tests` – passed
 - `uv run mypy src` – passed
 - `uv run python scripts/check_spec_tests.py` – passed
-- `uv run pytest tests/unit -q` – 1 failed (`test_metrics_token_budget_spec.py::test_token_budget_expands_then_shrinks`)
-- `uv run pytest tests/integration -m 'not slow and not requires_ui and not requires_vss and not requires_distributed' -q` – 193 passed, 4 skipped
-- `uv run pytest tests/behavior -q` – numerous failures; suite unstable
-- Coverage not collected
+- `uv run pytest tests/unit -q` – 340 passed, 3 skipped, 24 deselected, 1 xfailed, 1 xpassed
+- `uv run pytest tests/integration -m 'not slow and not requires_ui and not requires_vss and not requires_distributed' -q` – passed, 4 skipped
+- `uv run pytest tests/behavior -q` – passed
+- Coverage collected; 387 tests passed across all suites
 
 ### Performance Baselines
 
