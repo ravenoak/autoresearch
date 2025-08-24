@@ -3,6 +3,9 @@ version: '3'
 set:
   - e
 
+vars:
+  COVERAGE_THRESHOLD: 90
+
 tasks:
   install:
     cmds:
@@ -114,7 +117,7 @@ tasks:
           --cov-append
       - uv run pytest tests/behavior --cov=src --cov-report=xml --cov-report=term-missing \
           --cov-append
-      - uv run coverage report --fail-under=90
+      - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
     desc: "Run full test suite with coverage reporting"
 
@@ -134,7 +137,7 @@ tasks:
           --cov=src --cov-report=term-missing --cov-append
       - uv run pytest tests/behavior --cov=src --cov-report=xml --cov-report=term-missing \
           --cov-append
-      - uv run coverage report --fail-under=90
+      - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
     desc: "Run linting, type checks and fast tests with coverage"
 
