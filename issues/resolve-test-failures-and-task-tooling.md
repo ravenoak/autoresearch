@@ -16,6 +16,7 @@
 - [fix-concurrent-query-interface-behavior](archive/fix-concurrent-query-interface-behavior.md)
 - [add-redis-dependency-for-integration-tests](add-redis-dependency-for-integration-tests.md)
 - [fix-monitor-cli-metrics-failure](fix-monitor-cli-metrics-failure.md)
+- [fix-pytest-bdd-feature-discovery](fix-pytest-bdd-feature-discovery.md)
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.
