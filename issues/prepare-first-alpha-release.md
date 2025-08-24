@@ -10,6 +10,23 @@ Coverage sits at **24%**, far below the **90%** target, and the TestPyPI
 upload currently returns HTTP 403. Release notes and packaging steps are
 incomplete.
 
+## Milestone
+
+- 0.1.0a1 (2026-04-15)
+
+## Dependencies
+
+- [document-environment-bootstrap](
+  archive/document-environment-bootstrap.md)
+- [verify-packaging-workflow-and-duckdb-fallback](
+  archive/verify-packaging-workflow-and-duckdb-fallback.md)
+- [stabilize-integration-tests](
+  archive/stabilize-integration-tests.md)
+- [add-coverage-gates-and-regression-checks](
+  archive/add-coverage-gates-and-regression-checks.md)
+- [validate-ranking-algorithms-and-agent-coordination](
+  archive/validate-ranking-algorithms-and-agent-coordination.md)
+
 ## Acceptance Criteria
 - `task check` and `task verify` complete on a fresh clone without
   hanging during `mypy`.

@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 23, 2025** and
+`2025-05-18`). This schedule was last updated on **August 24, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -23,10 +23,10 @@ Current test and coverage results are tracked in
 
 ## Milestones
 
-- **0.1.0a1** (2026-03-01, status: in progress): Alpha preview to collect
+- **0.1.0a1** (2026-04-15, status: in progress): Alpha preview to collect
   feedback
-  ([prepare-alpha-release](
-  ../issues/archive/prepare-alpha-release.md)).
+  ([prepare-first-alpha-release](
+  ../issues/prepare-first-alpha-release.md)).
 - **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
   checks with all tests passing
   ([finalize-first-public-preview-release](
@@ -49,8 +49,8 @@ Current test and coverage results are tracked in
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
 schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
-scheduled for **2026-03-01**. The final **0.1.0** milestone is
-now set for **July 1, 2026** while packaging tasks are resolved.
+now re-targeted for **April 15, 2026**. The final **0.1.0** milestone is set
+for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
@@ -76,11 +76,14 @@ now set for **July 1, 2026** while packaging tasks are resolved.
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
 
-### Remaining blockers before tagging 0.1.0a1
+### Prerequisites for tagging 0.1.0a1
 
 - `task verify` stalls during `mypy`; type checking must complete.
 - Total coverage is **24%**, short of the **90%** gate.
 - TestPyPI upload returns HTTP 403, so packaging needs a retry.
+
+The **0.1.0a1** date is re-targeted for **April 15, 2026** and the release
+remains in progress until these prerequisites are satisfied.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.
 
