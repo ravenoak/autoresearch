@@ -8,6 +8,11 @@
  API authentication, concurrent query handling, Redis broker detection, and
  monitor CLI metrics. Integration and behavior test suites remain unreliable.
 
+ A fresh clone on **August 24, 2025** lacked Go Task and several dev
+ dependencies. Manual installs of `pytest-httpx` and `pytest-bdd` succeeded, yet
+ `uv run pytest` still exited during collection with
+ `ModuleNotFoundError` for `tomli_w`, `freezegun`, and `hypothesis`.
+
  Redis-dependent integration tests skip cleanly when `redis` is missing
  (verified 2025-08-24).
 

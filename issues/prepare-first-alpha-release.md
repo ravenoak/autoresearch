@@ -1,15 +1,16 @@
 # Prepare first alpha release
 
 ## Context
-Version 0.1.0a1 will be the project's first public alpha. After running
-`scripts/codex_setup.sh`, `task check` and `task verify` execute but both
-fail at `tests/unit/test_monitor_cli.py` asserting `130 == 0`. Behavior
-tests still cannot collect because `pytest-bdd` does not discover the
-feature directory. Integration tests now run with `redis` installed, and
-required extras such as `pytest_httpx` and `tomli_w` are available.
-Coverage remains at **24%**, far below the **90%** target, the TestPyPI
-upload returns HTTP 403, and release notes and packaging steps are
-incomplete.
+Version 0.1.0a1 will be the project's first public alpha. A fresh clone on
+**August 24, 2025** lacked the Go Task binary and dev extras such as
+`tomli_w`, `freezegun`, and `hypothesis`, so `task check` and `task verify`
+could not run. After manually installing `pytest-httpx` and `pytest-bdd`, unit
+tests still aborted during collection with `ModuleNotFoundError: tomli_w`, and
+`uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
+reported "no match in any of [<Dir features>]". Integration tests execute with
+`redis` installed, but coverage remains at **24%**, far below the **90%**
+target. The TestPyPI upload returns HTTP 403, and release notes and packaging
+steps are incomplete.
 
 ## Milestone
 
