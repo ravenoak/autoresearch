@@ -327,6 +327,10 @@ The base directory for feature files is set in `pytest.ini`:
 bdd_features_base_dir = tests/behavior/features
 ```
 
+Run behavior tests from the repository root so this path resolves correctly.
+`task behavior` and `uv run pytest --rootdir=. tests/behavior -q` both
+respect the configured base directory.
+
 The `pytest-bdd` plugin is provided through the `.[test]` extra and registered
 in `tests/behavior/conftest.py` so `bdd_features_base_dir` is honored when
 loading Gherkin files.
