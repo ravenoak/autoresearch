@@ -16,6 +16,16 @@ Feature: API Authentication and Rate Limiting
     When I send a query "test" with header "Authorization" set to "Bearer bad"
     Then the response status should be 401
 
+  Scenario: Missing credentials
+    Given the API requires an API key "secret"
+    When I send a query "test" without credentials
+    Then the response status should be 401
+
+  Scenario: Insufficient permission
+    Given the API requires an API key "secret" with role "user" and no permissions
+    When I send a query "test" with header "X-API-Key" set to "secret"
+    Then the response status should be 403
+
   Scenario: Rate limit exceeded
     Given the API rate limit is 1 request per minute
     When I send two queries to the API

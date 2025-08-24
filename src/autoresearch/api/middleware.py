@@ -92,12 +92,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if match_role:
                 return match_role, None
             if key:
-                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=403)
+                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return "anonymous", None
         if cfg.api_key:
             if not (key and secrets.compare_digest(key, cfg.api_key)):
                 if key:
-                    return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=403)
+                    return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
                 return "anonymous", None
             return "user", None
         return "anonymous", None
@@ -113,11 +113,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         role, key_error = self._resolve_role(api_key, cfg)
         key_valid = bool(api_key) and key_error is None
-        token_valid = (
-            bool(token and verify_bearer_token(token, cfg.bearer_token))
-            if cfg.bearer_token
-            else False
-        )
+        token_valid = verify_bearer_token(token, cfg.bearer_token)
         provided_key = bool(api_key)
         provided_token = bool(token)
 
@@ -130,9 +126,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
             if provided_key:
-                return key_error or JSONResponse({"detail": "Invalid API key"}, status_code=403)
+                return key_error or JSONResponse({"detail": "Invalid API key"}, status_code=401)
             if provided_token:
-                return JSONResponse({"detail": "Invalid token"}, status_code=403)
+                return JSONResponse({"detail": "Invalid token"}, status_code=401)
             if cfg.api_keys or cfg.api_key:
                 return JSONResponse({"detail": "Missing API key"}, status_code=401)
             return JSONResponse({"detail": "Missing token"}, status_code=401)

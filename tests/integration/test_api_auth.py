@@ -35,7 +35,8 @@ def test_http_bearer_token(monkeypatch, api_client):
     assert resp.status_code == 200
 
     resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"})
-    assert resp.status_code == 403
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid token"
 
 
 def test_role_assignments(monkeypatch, api_client):
@@ -57,7 +58,8 @@ def test_role_assignments(monkeypatch, api_client):
     assert resp_token.json() == {"role": "user"}
 
     resp_bad = api_client.get("/whoami", headers={"X-API-Key": "bad"})
-    assert resp_bad.status_code == 403
+    assert resp_bad.status_code == 401
+    assert resp_bad.json()["detail"] == "Invalid API key"
 
     resp_missing = api_client.get("/whoami")
     assert resp_missing.status_code == 401
@@ -111,7 +113,8 @@ def test_invalid_api_key(monkeypatch, api_client):
     cfg.api.api_keys = {"good": "user"}
 
     bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
-    assert bad.status_code == 403
+    assert bad.status_code == 401
+    assert bad.json()["detail"] == "Invalid API key"
 
 
 def test_api_key_or_token(monkeypatch, api_client):
@@ -180,11 +183,12 @@ def test_query_status_and_cancel(monkeypatch, api_client):
 
 
 def test_invalid_bearer_token(monkeypatch, api_client):
-    """Invalid bearer token should return 403."""
+    """Invalid bearer token should return 401."""
     cfg = _setup(monkeypatch)
     cfg.api.bearer_token = generate_bearer_token()
     resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer wrong"})
-    assert resp.status_code == 403
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid token"
 
 
 def test_missing_bearer_token(monkeypatch, api_client):
@@ -220,7 +224,7 @@ def test_docs_protected(monkeypatch, api_client):
 
 
 def test_invalid_key_and_token(monkeypatch, api_client):
-    """Both credentials invalid results in 403."""
+    """Both credentials invalid results in 401."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     cfg.api.bearer_token = generate_bearer_token()
@@ -229,7 +233,7 @@ def test_invalid_key_and_token(monkeypatch, api_client):
         json={"query": "q"},
         headers={"X-API-Key": "wrong", "Authorization": "Bearer bad"},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 def test_query_status_permission_denied(monkeypatch, api_client):

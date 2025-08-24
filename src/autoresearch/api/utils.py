@@ -79,7 +79,7 @@ def generate_bearer_token(length: int = 32) -> str:
     return secrets.token_urlsafe(length)
 
 
-def verify_bearer_token(token: str, expected: str) -> bool:
+def verify_bearer_token(token: str | None, expected: str | None) -> bool:
     """Validate a bearer token using constant-time comparison.
 
     Args:
@@ -87,7 +87,9 @@ def verify_bearer_token(token: str, expected: str) -> bool:
         expected: Reference token from configuration.
 
     Returns:
-        ``True`` if the tokens match, ``False`` otherwise.
+        ``True`` if both values are present and match, ``False`` otherwise.
     """
 
+    if not (token and expected):
+        return False
     return secrets.compare_digest(token, expected)
