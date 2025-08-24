@@ -1,6 +1,8 @@
 # Monitor
 
-Interactive monitoring commands for Autoresearch.
+Interactive monitoring commands for Autoresearch. See
+[monitor CLI algorithm](../algorithms/monitor_cli.md) for command flow and
+error handling.
 
 The metrics command reports system statistics without changing the
 `autoresearch_queries_total` counter. Monitor commands now skip storage
