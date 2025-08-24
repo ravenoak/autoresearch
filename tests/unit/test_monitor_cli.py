@@ -70,3 +70,4 @@ def test_monitor_metrics(monkeypatch):
     result = runner.invoke(app, ["monitor"])
     assert result.exit_code == 0
     assert "cpu_percent" in result.stdout
+    assert "memory_percent" in result.stdout

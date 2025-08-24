@@ -18,3 +18,14 @@ The monitor runs an HTTP server that serves `/metrics` and performs checks
 at a fixed interval. Gauges include `autoresearch_redis_up`,
 `autoresearch_ray_up`, and `autoresearch_node_health`. Use Prometheus to
 scrape the metrics and set alerts when values drop to `0`.
+
+## CLI usage
+
+Run the monitor command to print current CPU and memory usage:
+
+```bash
+uv run autoresearch monitor
+```
+
+This displays a JSON object containing `cpu_percent`, `memory_percent`, and
+other counters. Pass `--watch` to refresh continuously.
