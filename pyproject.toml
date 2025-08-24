@@ -113,6 +113,8 @@ test = [
     "pytest-httpx >=0.35.0",
     "pytest-bdd >=8.1.0",
     "tomli-w >=1.2.0",
+    "duckdb >=1.0.0",
+    "networkx >=3.3",
 ]
 # Full install: all features for power users and development
 full = [
@@ -160,6 +162,8 @@ dev = [
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
     "redis >=6.2",
+    "duckdb >=1.0.0",
+    "networkx >=3.3",
 ]
 # Minimal dev dependencies for CI and lightweight setups
 dev-minimal = [
