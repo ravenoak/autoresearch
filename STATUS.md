@@ -1,10 +1,10 @@
 # Status
 
-These results reflect attempts to run `task check` after installing
-development dependencies. The `task` utility was not pre-installed and
-required manual installation, and several Python extras were missing.
-Refer to the [roadmap](ROADMAP.md) and
-[release plan](docs/release_plan.md) for scheduled milestones.
+As of **August 24, 2025**, these results reflect attempts to exercise the
+development workflow. `task` was installed via the upstream script and
+`task install` pulled development dependencies. Refer to the
+[roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for
+scheduled milestones.
 
 ## Lint and type checks
 ```text
@@ -16,11 +16,10 @@ Result: both commands completed without issues after installing
 
 ## Unit tests
 ```text
-uv run pytest tests/unit/test_monitor_cli.py -k test_monitor_metrics -q
+task check
 ```
-Result: initial run failed due to missing `pytest_httpx` and `tomli_w`.
-After installing the packages, the targeted test passed. The full unit
-suite has not been executed.
+Result: unit suite launched but `pytest tests/unit -q` hung and was
+interrupted manually. `task verify` aborted with exit status 2.
 
 ## Integration tests
 Not executed.
