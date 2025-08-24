@@ -169,6 +169,7 @@ class OrchestrationMetrics:
         self.prompt_lengths: List[int] = []
         self.token_usage_history: List[int] = []
         self._last_total_tokens = 0
+        self._ever_used_tokens = False
         self.agent_usage_history: Dict[str, List[int]] = {}
         self._last_agent_totals: Dict[str, int] = {}
         self.circuit_breakers: Dict[str, CircuitBreakerState] = {}
@@ -386,16 +387,16 @@ class OrchestrationMetrics:
         delta = total - self._last_total_tokens
         self._last_total_tokens = total
         if delta > 0:
-            self.token_usage_history.append(delta)
+            self._ever_used_tokens = True
+        self.token_usage_history.append(delta)
 
         recent_usage = self.token_usage_history[-10:]
-        if not recent_usage:
+        if all(u == 0 for u in recent_usage):
+            if self._ever_used_tokens:
+                return 1
             return max(current_budget, 1)
 
         nonzero_usage = [u for u in recent_usage if u > 0]
-        if not nonzero_usage:
-            return 1
-
         avg_used = sum(nonzero_usage) / len(nonzero_usage)
         latest = recent_usage[-1]
 
@@ -416,12 +417,7 @@ class OrchestrationMetrics:
             if agent_avg > max_agent_avg:
                 max_agent_avg = agent_avg
 
-        latest = max(latest, max_agent_delta)
-        avg_used = max(avg_used, max_agent_avg)
+        usage_candidates = [latest, avg_used, max_agent_delta, max_agent_avg]
+        desired = max(math.ceil(max(usage_candidates) * (1 + margin)), 1)
 
-        desired = max(math.ceil(max(latest, avg_used) * (1 + margin)), 1)
-
-        if current_budget != desired:
-            return desired
-
-        return max(current_budget, 1)
+        return desired

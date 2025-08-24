@@ -3,18 +3,20 @@
 The orchestrator adjusts its token allowance using
 `suggest_token_budget` from
 [`orchestration.metrics`](../../src/autoresearch/orchestration/metrics.py).
-Let `u_t` denote tokens consumed in cycle `t`, `\bar{u}_t` the mean usage
-across the last ten **non-zero** cycles, and `b_t` the budget before
-adaptation. With margin `m`, the update sets
+Let `u_t` denote tokens consumed in cycle `t` and `\bar{u}_t` the mean
+usage across the last ten **non-zero** cycles. For each agent `i`, let
+`a_{i,t}` be the tokens it used in cycle `t` and `\bar{a}_{i,t}` the
+mean across its last ten non-zero samples. Define `a_t = \max_i a_{i,t}`
+and `\bar{a}_t = \max_i \bar{a}_{i,t}`. With margin `m`, the update is
 
 \[
-b_{t+1} = \left\lceil \max(u_t, \bar{u}_t) (1 + m) \right\rceil.
+b_{t+1} = \left\lceil \max(u_t, \bar{u}_t, a_t, \bar{a}_t) (1 + m) \right\rceil.
 \]
 
 When the new target differs from the current budget the algorithm
-immediately adjusts, expanding or shrinking to the computed value. If no
-usage has been observed, the budget is left unchanged. A window composed
-only of zeros drives the budget to a minimum of one token.
+immediately adjusts. If no usage has ever been recorded, the budget is
+left unchanged. Ten consecutive zero-usage samples after activity shrink
+the budget to a minimum of one token.
 
 ## Convergence
 

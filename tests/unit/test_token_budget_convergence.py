@@ -1,4 +1,5 @@
 import math
+from typing import List
 
 from hypothesis import given
 from hypothesis import strategies as st
@@ -6,52 +7,47 @@ from hypothesis import strategies as st
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 
 
+def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, start: int) -> int:
+    budget = start
+    for u in usage:
+        metrics.record_tokens("agent", u, 0)
+        budget = metrics.suggest_token_budget(budget, margin=margin)
+    return budget
+
+
 def test_suggest_token_budget_converges() -> None:
     """Repeated updates reach ceil(u * (1 + m)) for constant usage."""
     m = OrchestrationMetrics()
-    usage = 50
-    budget = usage
-    for _ in range(8):
-        m.token_usage_history.append(usage)
-        budget = m.suggest_token_budget(budget, margin=0.2)
-    assert budget == math.ceil(usage * 1.2)
+    budget = _run_cycles(m, [50] * 8, margin=0.2, start=50)
+    assert budget == math.ceil(50 * 1.2)
 
 
 def test_budget_tracks_growth() -> None:
     """Sustained increases raise the budget to the new level."""
     m = OrchestrationMetrics()
-    usage_pattern = [30, 30, 50, 50, 50]
-    budget = usage_pattern[0]
-    for u in usage_pattern:
-        m.token_usage_history.append(u)
-        budget = m.suggest_token_budget(budget, margin=0.2)
+    usage = [30, 30, 50, 50, 50]
+    budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
     assert budget == math.ceil(50 * 1.2)
 
 
 def test_budget_recovers_after_spike() -> None:
     """A one-off spike does not inflate the long-term budget."""
     m = OrchestrationMetrics()
-    usage_pattern = [50, 80] + [50] * 20
-    budget = usage_pattern[0]
-    for u in usage_pattern:
-        m.token_usage_history.append(u)
-        budget = m.suggest_token_budget(budget, margin=0.2)
+    usage = [50, 80] + [50] * 20
+    budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
     assert budget == math.ceil(50 * 1.2)
 
 
 @given(
-    start=st.integers(min_value=1, max_value=120),
+    start=st.integers(min_value=0, max_value=120),
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
 def test_convergence_from_any_start(start: int, margin: float) -> None:
     """Budgets converge to ceil(u * (1 + m)) from arbitrary starts."""
     m = OrchestrationMetrics()
-    usage = 50
-    budget = start
-    for _ in range(6):
-        m.token_usage_history.append(usage)
-        budget = m.suggest_token_budget(budget, margin=margin)
-    assert budget == math.ceil(usage * (1 + margin))
+    usage = [50] * 6
+    budget = _run_cycles(m, usage, margin=margin, start=start)
+    assert budget == math.ceil(50 * (1 + margin))
 
 
 @given(
@@ -61,9 +57,10 @@ def test_convergence_from_any_start(start: int, margin: float) -> None:
 def test_zero_usage_bottoms_out(start: int, margin: float) -> None:
     """Zero usage drives the budget down to one token."""
     m = OrchestrationMetrics()
-    budget = start
-    for _ in range(5):
-        m.token_usage_history.append(0)
+    # First cycle with usage to enable shrinkage
+    m.record_tokens("agent", 10, 0)
+    budget = m.suggest_token_budget(start, margin=margin)
+    for _ in range(10):
         budget = m.suggest_token_budget(budget, margin=margin)
     assert budget == 1
 
@@ -79,15 +76,25 @@ def test_initial_call_without_usage_keeps_budget(start: int, margin: float) -> N
 
 
 @given(
-    start=st.integers(min_value=1, max_value=500),
+    start=st.integers(min_value=0, max_value=500),
     usage=st.integers(min_value=1, max_value=500),
     margin=st.sampled_from([0.0, 1.0]),
 )
 def test_margin_extremes_converge(start: int, usage: int, margin: float) -> None:
     """Budgets converge for margin 0 and 1."""
     m = OrchestrationMetrics()
-    budget = start
-    for _ in range(6):
-        m.token_usage_history.append(usage)
-        budget = m.suggest_token_budget(budget, margin=margin)
+    budget = _run_cycles(m, [usage] * 6, margin=margin, start=start)
     assert budget == math.ceil(usage * (1 + margin))
+
+
+def test_agent_average_preserves_budget() -> None:
+    """Per-agent averages keep the budget elevated after idle cycles."""
+    m = OrchestrationMetrics()
+    budget = 100
+    for _ in range(5):
+        m.record_tokens("b", 100, 0)
+        budget = m.suggest_token_budget(budget, margin=0.2)
+    for _ in range(5):
+        m.record_tokens("a", 10, 0)
+        budget = m.suggest_token_budget(budget, margin=0.2)
+    assert budget == math.ceil(100 * 1.2)
