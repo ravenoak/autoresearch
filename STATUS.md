@@ -2,7 +2,7 @@
 
 As of **August 24, 2025**, these results reflect attempts to exercise the
 development workflow. Environment provisioning used `scripts/codex_setup.sh`
-to install `task` and required development dependencies. Refer to the
+to install `task` (v3.44.1) and required development dependencies. Refer to the
 [roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for
 scheduled milestones.
 

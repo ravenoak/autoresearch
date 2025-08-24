@@ -234,8 +234,9 @@ These behavior test issues remain open until the test suite passes.
 - `uv run flake8 src tests` – passed
 - `uv run mypy src` – passed
 - token budget tests marked xfail
-- `task check` – command not found
-- `task verify` – not run
+- `task check` – failed; `tests/unit/test_monitor_cli.py::test_monitor_metrics`
+  asserted `130 == 0`
+- `task verify` – failed on the same monitor CLI metrics tests
 - `task coverage` – not run
 - `uv run pytest tests/integration -m requires_distributed -q` – skipped 5 tests
   (redis missing)
