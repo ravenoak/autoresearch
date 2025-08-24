@@ -15,13 +15,10 @@ Result: both commands completed without issues.
 ```text
 uv run pytest tests/unit -q
 ```
-Result: 389 passed, 2 failed, 4 skipped, 24 deselected, 31 warnings.
-Failures:
-- tests/unit/test_distributed_redis.py::test_get_message_broker_redis_missing
-- tests/unit/test_monitor_cli.py::test_monitor_metrics
+Result: 391 passed, 4 skipped, 24 deselected, 31 warnings.
 
 ## Integration tests
-Not executed; unit test failures prevented running this step.
+Not executed.
 
 ## Spec tests
 ```text
@@ -30,4 +27,4 @@ uv run scripts/check_spec_tests.py
 Result: no spec files missing test references.
 
 ## Behavior tests
-Not executed; awaiting resolution of unit test failures.
+Not executed.
