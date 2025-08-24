@@ -1,8 +1,8 @@
 # Status
 
 As of **August 24, 2025**, these results reflect attempts to exercise the
-development workflow. `task` was installed via the upstream script and
-`task install` pulled development dependencies. Refer to the
+development workflow. Environment provisioning used `scripts/codex_setup.sh`
+to install `task` and required development dependencies. Refer to the
 [roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for
 scheduled milestones.
 
@@ -17,20 +17,27 @@ Result: both commands completed without issues after installing
 ## Unit tests
 ```text
 task check
+task verify
 ```
-Result: unit suite executes with token budget tests marked as expected
-failures. `task verify` and `task coverage` attempted but terminated
-early in this environment.
+Result: both commands execute but fail due to monitor CLI metrics tests
+asserting `130 == 0` in
+`tests/unit/test_monitor_cli.py::test_monitor_metrics` and
+`::test_monitor_prompts_and_passes_callbacks`. Coverage not collected.
 
 ## Integration tests
-Redis not installed; `uv run pytest tests/integration -m requires_distributed -q`
-skipped all `requires_distributed` scenarios.
+```text
+uv run pytest tests/integration -m requires_distributed -q
+```
+Result: 2 passed, 3 skipped, confirming `redis` is available.
 
 ## Spec tests
 ```text
 uv run scripts/check_spec_tests.py
 ```
-Result: not executed.
+Result: completed without reported issues.
 
 ## Behavior tests
-Not executed.
+```text
+uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q
+```
+Result: `ERROR: not found: ... (no match in any of [<Dir features>])`.
