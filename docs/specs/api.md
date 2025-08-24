@@ -11,6 +11,9 @@ credentials on every request and assigns a role to the connection. Endpoints
 use a `require_permission` dependency to verify that the role has access to a
 given resource.
 
+Requests without credentials return **401**. Invalid API keys or bearer
+tokens and authenticated clients lacking permission return **403**.
+
 ## Configuration
 
 Authentication settings live in `autoresearch.toml` under `[api]` or via
@@ -35,12 +38,22 @@ permissions constrain the impact of a leaked credential.
 
 - Modules
   - [src/autoresearch/api/][m1]
-- Tests
-  - [tests/unit/test_api.py][t1]
-  - [tests/unit/test_api_error_handling.py][t2]
-  - [tests/unit/test_api_imports.py][t3]
+  - Tests
+    - [tests/unit/test_api.py][t1]
+    - [tests/unit/test_api_error_handling.py][t2]
+    - [tests/unit/test_api_imports.py][t3]
+    - [tests/unit/test_api_auth_middleware.py][t4]
+    - [tests/unit/test_api_auth_deps.py][t5]
+    - [tests/integration/test_api_auth.py][t6]
+    - [tests/integration/test_api_streaming.py][t7]
+    - [tests/integration/test_api_docs.py][t8]
 
 [m1]: ../../src/autoresearch/api/
 [t1]: ../../tests/unit/test_api.py
 [t2]: ../../tests/unit/test_api_error_handling.py
 [t3]: ../../tests/unit/test_api_imports.py
+[t4]: ../../tests/unit/test_api_auth_middleware.py
+[t5]: ../../tests/unit/test_api_auth_deps.py
+[t6]: ../../tests/integration/test_api_auth.py
+[t7]: ../../tests/integration/test_api_streaming.py
+[t8]: ../../tests/integration/test_api_docs.py
