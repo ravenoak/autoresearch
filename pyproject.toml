@@ -215,7 +215,7 @@ markers = [
 python_version = "3.12"
 ignore_missing_imports = true
 disable_error_code = ["import-untyped"]
-plugins = ["pydantic.mypy"]
+no_site_packages = true
 check_untyped_defs = true
 
 [tool.flake8]
