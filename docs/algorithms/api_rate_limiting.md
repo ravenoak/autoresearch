@@ -5,6 +5,38 @@ clients. The token bucket model grants each client a bucket with a
 maximum capacity ``C`` and refill rate ``R`` tokens per second. Each
 request removes one token; requests are denied when the bucket is empty.
 
+## Derivations
+
+Let ``L`` be the sustained limit in requests per second. To tolerate
+bursts lasting ``T`` seconds the bucket must hold
+
+\[
+C = L T
+\]
+
+tokens, enough to cover the burst. The refill rate equals the sustained
+limit,
+
+\[
+R = L,
+\]
+
+restoring one token per ``1 / L`` seconds. When the bucket is empty the
+worst-case latency for a single request is the wait for one token,
+
+\[
+W = 1 / R.
+\]
+
+If a burst exceeds capacity by ``\Delta`` requests the final request
+waits
+
+\[
+W = \Delta / R
+\]
+
+seconds before service.
+
 ## Complexity
 
 Token checks and refills operate in constant time per request. Memory
