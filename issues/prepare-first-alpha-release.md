@@ -1,17 +1,15 @@
 # Prepare first alpha release
 
 ## Context
-Version 0.1.0a1 will be the project's first public alpha. The environment
-provisions via `scripts/setup.sh`, yet `task check` stalls during unit tests
-and `task verify` hangs during `mypy`. Integration tests require the
-`redis` package, behavior tests remain unreliable, and several unit tests
-need additional dependencies such as `pytest_httpx` and `tomli_w`.
-Coverage sits at **24%**, far below the **90%** target, and the TestPyPI
-upload currently returns HTTP 403. Release notes and packaging steps are
+Version 0.1.0a1 will be the project's first public alpha. After running
+`scripts/codex_setup.sh`, `task check` and `task verify` execute but both
+fail at `tests/unit/test_monitor_cli.py` asserting `130 == 0`. Behavior
+tests still cannot collect because `pytest-bdd` does not discover the
+feature directory. Integration tests now run with `redis` installed, and
+required extras such as `pytest_httpx` and `tomli_w` are available.
+Coverage remains at **24%**, far below the **90%** target, the TestPyPI
+upload returns HTTP 403, and release notes and packaging steps are
 incomplete.
-
-Redis-dependent integration tests now skip cleanly when `redis` is missing
-(verified 2025-08-24).
 
 ## Milestone
 

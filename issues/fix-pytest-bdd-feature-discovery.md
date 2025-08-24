@@ -1,10 +1,10 @@
 # Fix pytest-bdd feature discovery
 
 ## Context
-Running `uv run pytest tests/integration/test_concurrent_queries.py \
- tests/behavior/features/api_orchestrator_integration.feature -q` fails
-with "not found" because `pytest-bdd` cannot discover the feature
-directory. Behavior tests cannot execute reliably.
+Running `uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
+reports `ERROR: not found: ... (no match in any of [<Dir features>])` because
+`pytest-bdd` cannot discover the feature directory. Behavior tests cannot
+execute reliably.
 
 ## Acceptance Criteria
 - `uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
