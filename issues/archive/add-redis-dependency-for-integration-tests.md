@@ -16,4 +16,4 @@ fails because it no longer raises `ModuleNotFoundError`.
 - Documentation notes redis requirement for distributed broker tests.
 
 ## Status
-Open
+Archived

@@ -14,7 +14,7 @@ package.__path__ = [str(Path(__file__).resolve().parents[2] / "src" / "autoresea
 sys.modules.setdefault("autoresearch.monitor", package)
 from autoresearch.monitor.node_health import NodeHealthMonitor  # noqa: E402
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
 
 
 class DummyRedis:

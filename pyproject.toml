@@ -155,7 +155,6 @@ dev = [
     "spacy >=3.7.2",
     "bertopic >=0.17.3",
     "responses >=0.25.7",
-    "redis >=6.2",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
 ]
@@ -175,7 +174,6 @@ dev-minimal = [
     "types-tabulate >=0.9.0",
     "freezegun >=1.5.0",
     "responses >=0.25.7",
-    "redis >=6.2",
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
 ]
@@ -196,7 +194,7 @@ autoresearch = "autoresearch.main:app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-m 'not slow and not requires_ui and not requires_vss'"
+addopts = "-m 'not slow and not requires_ui and not requires_vss and not requires_distributed'"
 testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
 python_files = ["test_*.py", "*_steps.py"]
 markers = [
@@ -208,7 +206,8 @@ markers = [
     "requires_ui: tests that depend on the ui extra",
     "requires_vss: tests that depend on the vss extra",
     "requires_git: tests that depend on the git extra",
-    "requires_nlp: tests needing NLP resources"
+    "requires_nlp: tests needing NLP resources",
+    "requires_distributed: tests that depend on the distributed extra"
 ]
 
 [tool.mypy]

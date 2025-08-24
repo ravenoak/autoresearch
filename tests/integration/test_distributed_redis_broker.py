@@ -8,7 +8,7 @@ if importlib.util.find_spec("redis") is None:
     pytest.skip("redis not installed", allow_module_level=True)
 import redis
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
 
 
 class FakeRedis:
