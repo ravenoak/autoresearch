@@ -1,3 +1,5 @@
+import asyncio
+
 from autoresearch.api.utils import generate_bearer_token
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
@@ -61,3 +63,21 @@ def test_invalid_key_and_token(monkeypatch, api_client):
         headers={"X-API-Key": "wrong", "Authorization": "Bearer bad"},
     )
     assert resp.status_code == 401
+
+
+def test_query_status_permission_denied(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"u": "user"}
+    cfg.api.role_permissions = {"user": []}
+    api_client.app.state.async_tasks["id"] = asyncio.Future()
+    resp = api_client.get("/query/id", headers={"X-API-Key": "u"})
+    assert resp.status_code == 403
+
+
+def test_cancel_query_permission_denied(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"u": "user"}
+    cfg.api.role_permissions = {"user": []}
+    api_client.app.state.async_tasks["id"] = asyncio.Future()
+    resp = api_client.delete("/query/id", headers={"X-API-Key": "u"})
+    assert resp.status_code == 403

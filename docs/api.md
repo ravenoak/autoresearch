@@ -11,6 +11,19 @@ Once the server is running you can interact with the endpoints described below.
 For details on orchestrator state transitions and the API contract see
 [orchestrator_state.md](orchestrator_state.md).
 
+## Configuration
+
+API settings live in `autoresearch.toml` under `[api]` or via environment
+variables. Common options include:
+
+- `AUTORESEARCH_API__API_KEY`
+- `AUTORESEARCH_API__API_KEYS`
+- `AUTORESEARCH_API__BEARER_TOKEN`
+- `AUTORESEARCH_API__ROLE_PERMISSIONS`
+- `AUTORESEARCH_API__RATE_LIMIT`
+
+Restart the server after changing these values.
+
 ## Endpoints
 
 ### `POST /query`
