@@ -7,6 +7,10 @@ note outlines the policy used to discard entries when space runs low.
 - Least Recently Used (LRU): the cache tracks access order and removes the
   stalest entry first.
 
+## Metrics
+- Each eviction increments an `EVICTION_COUNTER` metric for observability.
+- Accesses update a frequency table that hybrid and adaptive policies use.
+
 ## Complexity
 - Insert and access: O(1) using an ordered dictionary.
 - Evict: O(1) per removed entry.
