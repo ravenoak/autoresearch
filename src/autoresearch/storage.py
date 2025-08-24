@@ -1246,10 +1246,11 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         This method updates the access timestamp for a node in the LRU (Least
         Recently Used) cache and moves it to the end of the cache order,
-        marking it as most recently used.  The implementation relies on the
-        ordering properties of :class:`collections.OrderedDict`, meaning older
-        entries remain at the beginning and are evicted first when the RAM
-        budget is exceeded.
+        marking it as most recently used.  It also increments an access
+        counter used by hybrid and adaptive eviction policies.  The
+        implementation relies on the ordering properties of
+        :class:`collections.OrderedDict`, meaning older entries remain at the
+        beginning and are evicted first when the RAM budget is exceeded.
 
         If a custom implementation is set via set_delegate(), the call is
         delegated to that implementation.
@@ -1266,6 +1267,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             lru[node_id] = state.lru_counter
             # ``move_to_end`` maintains the deque order for faster popping
             lru.move_to_end(node_id)
+            StorageManager._access_frequency[node_id] = (
+                StorageManager._access_frequency.get(node_id, 0) + 1
+            )
 
     @staticmethod
     def get_duckdb_conn() -> duckdb.DuckDBPyConnection:
