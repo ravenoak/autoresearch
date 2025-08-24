@@ -1,5 +1,8 @@
 import asyncio
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
 from autoresearch.api.utils import generate_bearer_token
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
@@ -33,6 +36,31 @@ def test_http_bearer_token(monkeypatch, api_client):
 
     resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"})
     assert resp.status_code == 401
+
+
+def test_role_assignments(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"adm": "admin"}
+    token = generate_bearer_token()
+    cfg.api.bearer_token = token
+
+    @api_client.app.get("/whoami")
+    async def whoami(request: Request):
+        return JSONResponse({"role": request.state.role})
+
+    resp_key = api_client.get("/whoami", headers={"X-API-Key": "adm"})
+    assert resp_key.status_code == 200
+    assert resp_key.json() == {"role": "admin"}
+
+    resp_token = api_client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
+    assert resp_token.status_code == 200
+    assert resp_token.json() == {"role": "user"}
+
+    resp_bad = api_client.get("/whoami", headers={"X-API-Key": "bad"})
+    assert resp_bad.status_code == 401
+
+    resp_missing = api_client.get("/whoami")
+    assert resp_missing.status_code == 401
 
 
 def test_rate_limit(monkeypatch, api_client):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import secrets
 import types
 from typing import Any, Callable, cast
 
@@ -83,12 +84,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
         if cfg.api_keys:
-            role = cfg.api_keys.get(key)
-            if not role:
-                return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            return role, None
+            match_role: str | None = None
+            if key:
+                for candidate, role in cfg.api_keys.items():
+                    if secrets.compare_digest(candidate, key):
+                        match_role = role
+            if match_role:
+                return match_role, None
+            return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
         if cfg.api_key:
-            if key != cfg.api_key:
+            if not (key and secrets.compare_digest(key, cfg.api_key)):
                 return "anonymous", JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return "user", None
         return "anonymous", None
@@ -110,17 +115,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
             else False
         )
 
+        if token_valid and not key_valid:
+            role = "user"
+
+        request.state.role = role
+        request.state.permissions = set(cfg.role_permissions.get(role, []))
+
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
             if cfg.api_keys or cfg.api_key:
                 return key_error or JSONResponse({"detail": "Invalid API key"}, status_code=401)
             return JSONResponse({"detail": "Invalid token"}, status_code=401)
 
-        if token_valid and not key_valid:
-            role = "user"
-
-        request.state.role = role
-        request.state.permissions = set(cfg.role_permissions.get(role, []))
         return await call_next(request)
 
 

@@ -284,6 +284,14 @@ curl -H "Authorization: Bearer $AUTORESEARCH_API__BEARER_TOKEN" \
   -d '{"query": "test"}' http://localhost:8000/query
 ```
 
+Credentials may also be specified directly in `autoresearch.toml`:
+
+```toml
+[api]
+api_key = "mysecret"
+bearer_token = "mytoken"
+```
+
 Generate random tokens with `generate_bearer_token`:
 
 ```python
