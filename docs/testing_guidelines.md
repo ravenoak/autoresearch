@@ -320,6 +320,14 @@ Behavior tests in `tests/behavior/` use **pytest-bdd**. Steps share
 state via the `bdd_context` fixture and scenarios end with assertions
 that validate this context. When writing scenario functions:
 
+The base directory for feature files is set in `pytest.ini`:
+
+```ini
+bdd_features_base_dir = tests/behavior/features
+```
+
+The `pytest-bdd` plugin is provided through the `.[test]` extra.
+
 * Use `@scenario` to map a Gherkin scenario to the test.
 * Accept `bdd_context` (and other fixtures if needed) and assert that
   steps populated expected values.
