@@ -61,10 +61,11 @@ def _calculate_health(cpu: float, mem: float) -> str:
 
 
 def _collect_system_metrics() -> Dict[str, Any]:
-    """Collect basic CPU and memory metrics."""
+    """Collect basic CPU, memory, and GPU metrics."""
     metrics: Dict[str, Any] = {}
     try:
         from .system_monitor import SystemMonitor
+        from ..resource_monitor import _get_gpu_stats
 
         if _system_monitor:
             metrics.update(_system_monitor.metrics)
@@ -79,6 +80,9 @@ def _collect_system_metrics() -> Dict[str, Any]:
         metrics.setdefault("memory_percent", mem.percent)
         metrics["memory_used_mb"] = mem.used / (1024 * 1024)
         metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
+        gpu_percent, gpu_mem = _get_gpu_stats()
+        metrics["gpu_percent"] = gpu_percent
+        metrics["gpu_memory_mb"] = gpu_mem
     except Exception as e:
         log.warning("Failed to collect system metrics", exc_info=e)
 

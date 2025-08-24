@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List
 
 from typer.testing import CliRunner
@@ -63,11 +64,9 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
 
 def test_monitor_metrics(monkeypatch):
     runner = CliRunner()
-    monkeypatch.setattr(
-        "autoresearch.monitor._collect_system_metrics",
-        lambda: {"cpu_percent": 1.0, "memory_percent": 2.0},
-    )
+    expected = {"cpu_percent": 1.0, "memory_percent": 2.0}
+    monkeypatch.setattr("autoresearch.monitor._collect_system_metrics", lambda: expected)
     result = runner.invoke(app, ["monitor"])
     assert result.exit_code == 0
-    assert "cpu_percent" in result.stdout
-    assert "memory_percent" in result.stdout
+    assert json.loads(result.stdout) == expected
+    assert result.stdout.strip() == json.dumps(expected)
