@@ -81,11 +81,11 @@ def test_zero_usage_bottoms_out(start: int, margin: float) -> None:
 
 
 @given(
-    start=st.integers(min_value=1, max_value=500),
+    start=st.integers(min_value=0, max_value=500),
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
 def test_initial_call_without_usage_keeps_budget(start: int, margin: float) -> None:
-    """No usage history leaves the budget unchanged."""
+    """No usage history leaves the budget unchanged, even when zero."""
     m = OrchestrationMetrics()
     assert m.suggest_token_budget(start, margin=margin) == start
 
@@ -132,9 +132,7 @@ def test_sparse_usage_retains_history(first: int, second: int, gap: int, margin:
         budget = m.suggest_token_budget(budget, margin=margin)
     m.record_tokens("agent", second, 0)
     budget = m.suggest_token_budget(budget, margin=margin)
-    expected = math.ceil(
-        max(second, (first + second) / 2) * (1 + margin) - 1e-9
-    )
+    expected = math.ceil(max(second, (first + second) / 2) * (1 + margin) - 1e-9)
     assert budget == expected
 
 
@@ -142,7 +140,11 @@ def test_sparse_usage_retains_history(first: int, second: int, gap: int, margin:
     start=st.integers(min_value=0, max_value=500),
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
-def test_budget_never_below_one(start: int, margin: float) -> None:
-    """The suggested budget is always at least one token."""
+def test_budget_lower_bound(start: int, margin: float) -> None:
+    """Uninitialized budgets stay fixed; active ones floor at one."""
     m = OrchestrationMetrics()
-    assert m.suggest_token_budget(start, margin=margin) >= 1
+    budget = m.suggest_token_budget(start, margin=margin)
+    if start == 0:
+        assert budget == 0
+    else:
+        assert budget >= 1

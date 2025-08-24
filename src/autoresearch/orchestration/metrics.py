@@ -427,7 +427,7 @@ class OrchestrationMetrics:
         if all(u == 0 for u in recent_usage):
             if self._ever_used_tokens:
                 return 1
-            return max(current_budget, 1)
+            return current_budget
 
         avg_used = _mean_last_nonzero(self.token_usage_history)
         latest = recent_usage[-1]
@@ -453,6 +453,6 @@ class OrchestrationMetrics:
         # rounding that would otherwise inflate budgets (e.g. ``55.0000000001``
         # becoming ``56``).
         scaled = max(usage_candidates) * (1 + margin)
-        desired = max(math.ceil(scaled - 1e-9), 1)
+        desired = math.ceil(scaled - 1e-9)
 
-        return desired
+        return max(desired, 1)
