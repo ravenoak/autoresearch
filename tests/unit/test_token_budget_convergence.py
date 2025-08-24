@@ -1,3 +1,9 @@
+"""Convergence tests for ``suggest_token_budget``.
+
+See ``docs/algorithms/token_budgeting.md#proof-of-convergence`` for the
+mathematical justification.
+"""
+
 import math
 from typing import List
 
@@ -16,7 +22,11 @@ def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, 
 
 
 def test_suggest_token_budget_converges() -> None:
-    """Repeated updates reach ceil(u * (1 + m)) for constant usage."""
+    """Repeated updates reach ``ceil(u * (1 + m))`` for constant usage.
+
+    See ``docs/algorithms/token_budgeting.md#proof-of-convergence`` for the
+    full proof.
+    """
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [50] * 8, margin=0.2, start=50)
     assert budget == math.ceil(50 * 1.2)

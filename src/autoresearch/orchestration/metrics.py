@@ -399,15 +399,22 @@ class OrchestrationMetrics:
     def suggest_token_budget(self, current_budget: int, *, margin: float = 0.1) -> int:
         """Return an adjusted token budget based on recorded usage.
 
-        ``margin`` controls how aggressively the budget adapts. The
-        calculation considers the most recent per-cycle usage, per-agent
-        historical averages, and the overall average across the last ten
-        non-zero samples. If no usage has been observed, the budget
-        remains unchanged. A window of only zero-usage samples drives the
-        budget to one token. When usage stabilizes, the update converges to
-        ``ceil(u * (1 + margin))`` for constant usage ``u``. See
-        ``docs/algorithms/token_budgeting.md`` for derivation and
-        convergence analysis.
+        Args:
+            current_budget: Current allowance for tokens.
+            margin: Fractional buffer used to inflate the estimated usage.
+
+        Returns:
+            int: Updated budget that tracks recent token usage.
+
+        ``margin`` controls how aggressively the budget adapts. The calculation
+        considers the most recent per-cycle usage, per-agent historical
+        averages, and the overall average across the last ten non-zero samples.
+        If no usage has been observed, the budget remains unchanged. A window of
+        only zero-usage samples drives the budget to one token. When usage
+        stabilizes, the update converges to ``ceil(u * (1 + margin))`` for
+        constant usage ``u``. See
+        ``docs/algorithms/token_budgeting.md#proof-of-convergence`` for a formal
+        proof.
         """
 
         total = self._total_tokens()

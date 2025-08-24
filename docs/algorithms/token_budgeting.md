@@ -22,15 +22,32 @@ the budget to a minimum of one token.
 
 When usage stabilizes at `u`, the sequence `{b_t}` converges to
 `ceil(u * (1 + m))`. Averaging the last ten non-zero samples prevents
-spikes or idle cycles from skewing the estimate. Let `b* = ceil(u * (1 +
-m))`. Each step sets `b_{t+1}` exactly to `b*`, so convergence occurs in
-one iteration once the usage statistics stabilize.
+spikes or idle cycles from skewing the estimate.
+
+### Proof of Convergence
+
+Assume there exists `T` such that for all `t \ge T` each agent consumes
+exactly `u > 0` tokens. After at most ten cycles the histories examined
+by the algorithm contain only `u`, so for all `t \ge T + 9`
+
+```
+u_t = u,  \bar{u}_t = u,  a_t = u,  \bar{a}_t = u.
+```
+
+Let `b* = ceil(u * (1 + m))`. For all `t \ge T + 9`,
+
+```
+b_{t+1} = \lceil \max(u, u, u, u) (1 + m) \rceil = b*.
+```
+
+Thus the sequence `{b_t}` becomes constant at `b*` and converges within
+ten iterations of usage stabilizing.
 
 ## Simulation
 
-Run `uv run scripts/token_budget_convergence.py` to observe convergence
-for synthetic workloads. As an example,
-`uv run scripts/token_budget_convergence.py --steps 5 --usage 50 --margin 0.2`
+Run [`token_budget_convergence.py`](../../scripts/token_budget_convergence.py)
+to observe convergence for synthetic workloads. As an example,
+`uv run scripts/token_budget_convergence.py --steps 10 --usage 50 --margin 0.2`
 produces
 ```
 step 1: 60
@@ -38,6 +55,11 @@ step 2: 60
 step 3: 60
 step 4: 60
 step 5: 60
+step 6: 60
+step 7: 60
+step 8: 60
+step 9: 60
+step 10: 60
 final budget: 60
 ```
 
