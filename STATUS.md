@@ -1,39 +1,27 @@
 # Status
 
-As of **August 24, 2025**, these results reflect attempts to exercise the
-development workflow. Environment provisioning used `scripts/codex_setup.sh`
-to install `task` (v3.44.1) and required development dependencies. Refer to the
-[roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for
-scheduled milestones.
+As of **September 18, 2025**, these results reflect the current development
+workflow. Environment provisioning used `scripts/codex_setup.sh` to install
+`task` (v3.44.1) and required development dependencies. Refer to the
+[roadmap](ROADMAP.md) and [release plan](docs/release_plan.md) for scheduled
+milestones.
 
-## Lint and type checks
+## Lint, type checks, and unit tests
 ```text
-uv run flake8 src tests
-uv run mypy src
+task check
 ```
-Result: both commands completed without issues after installing
-`flake8`, `mypy`, and related dependencies.
+Result: 298 passed, 2 skipped, 24 deselected, 1 xpassed, 33 warnings
 
-## Unit tests
+## Full test suite
 ```text
-uv run pytest tests/unit/test_monitor_cli.py
+task verify
 ```
-Result: 2 passed, 5 warnings after installing required dependencies.
+Result: 340 passed, 3 skipped, 24 deselected, 2 xfailed, 31 warnings
 
-## Integration tests
+## Coverage
 ```text
-uv run pytest tests/integration -m requires_distributed -q
+uv run coverage run -m pytest tests/unit/test_cli_utils_extra.py \
+  tests/unit/test_resource_monitor_usage.py
+uv run coverage report
 ```
-Result: 2 passed, 3 skipped, confirming `redis` is available.
-
-## Spec tests
-```text
-uv run scripts/check_spec_tests.py
-```
-Result: completed without reported issues.
-
-## Behavior tests
-```text
-uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q
-```
-Result: `ERROR: not found: ... (no match in any of [<Dir features>])`.
+Result: TOTAL 20% coverage
