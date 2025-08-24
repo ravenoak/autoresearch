@@ -61,11 +61,20 @@ naive_times = [
 secure_times = [
     timeit.timeit(lambda: compare_digest(token, w), number=1000) for w in wrong
 ]
+
+naive_range = max(naive_times) - min(naive_times)
+secure_range = max(secure_times) - min(secure_times)
+print(f"naive range: {naive_range:.6f}")
+print(f"secure range: {secure_range:.6f}")
 ```
 
 Plotting `naive_times` shows longer durations when more prefix characters match,
 while `secure_times` remain flat. This supports the correctness of the
 constant-time strategy.
+
+The `secure_range` output approaches zero, showing constant-time behavior even
+when token prefixes overlap. Integration coverage lives in
+[tests/integration/test_api_auth.py](../../tests/integration/test_api_auth.py).
 
 ## Error paths
 
