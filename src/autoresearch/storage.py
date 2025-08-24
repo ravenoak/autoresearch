@@ -350,10 +350,11 @@ class StorageManager(metaclass=StorageManagerMeta):
             log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
             try:
                 import resource
+                import sys
 
                 usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-                # ru_maxrss is KB on Linux, bytes on macOS
-                if usage > 1024**2:
+                # ``ru_maxrss`` units vary by platform: bytes on macOS, KB on Linux.
+                if sys.platform == "darwin":
                     return usage / (1024**2)
                 return usage / 1024
             except Exception as e:
@@ -506,8 +507,9 @@ class StorageManager(metaclass=StorageManagerMeta):
 
                 # Get recency information
                 recency_ranks = {}
-                for i, (node_id, _) in enumerate(lru.items()):
-                    recency_ranks[node_id] = i / max(1, len(lru))  # Normalize to 0-1
+                # Iterate from most to least recent so older nodes receive higher ranks.
+                for i, node_id in enumerate(reversed(lru)):
+                    recency_ranks[node_id] = i / max(1, len(lru) - 1)
 
                 # Calculate hybrid scores
                 for node_id in StorageManager.context.graph.nodes:
