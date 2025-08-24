@@ -84,6 +84,8 @@ uv sync --extra dev-minimal
 
 # Install Go Task inside the virtual environment
 curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+# Verify Task installation by printing its version
+./.venv/bin/task --version
 
 # Install optional extras on demand
 if [ "${AR_INSTALL_UI:-0}" -eq 1 ]; then
@@ -148,7 +150,8 @@ if (( ${#missing_tools[@]} )) || (( ${#missing_pkgs[@]} )); then
 fi
 
 # Post-install version checks
-task --version >/dev/null 2>&1 || { echo 'task is required but missing' >&2; exit 1; }
+# Ensure Task is available and report its version
+task --version || { echo 'task is required but missing' >&2; exit 1; }
 flake8 --version >/dev/null 2>&1 || { echo 'flake8 is required but missing' >&2; exit 1; }
 mypy --version >/dev/null 2>&1 || { echo 'mypy is required but missing' >&2; exit 1; }
 pytest --version >/dev/null 2>&1 || { echo 'pytest is required but missing' >&2; exit 1; }
