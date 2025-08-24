@@ -1,7 +1,8 @@
 # Resource Monitor
 
-The `ResourceMonitor` samples CPU, memory, and GPU usage to expose
-time-series metrics.
+The `ResourceMonitor` samples CPU, memory, GPU, and token counts to expose
+time-series metrics. The `monitor` CLI uses these helpers to print the current
+snapshot in JSON or table form.
 
 ## Sampling Model
 
@@ -13,6 +14,13 @@ With a sampling interval `i` over runtime `T`, the monitor records
 
 Each observation costs `O(1)`, so monitoring overhead grows linearly with
 `n`.
+
+Typical metrics include:
+
+- `cpu_percent` and `memory_percent`
+- `memory_used_mb` and `process_memory_mb`
+- `gpu_percent` and `gpu_memory_mb`
+- `tokens_in_total` and `tokens_out_total`
 
 ## References
 
