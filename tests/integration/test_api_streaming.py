@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import time
@@ -45,7 +44,9 @@ def test_config_webhooks(monkeypatch, api_client, httpx_mock):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
 
     httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
@@ -70,7 +71,9 @@ def test_batch_query_pagination(monkeypatch, api_client):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer=q, citations=[], reasoning=[], metrics={}
+        ),
     )
 
     payload = {"queries": [{"query": "q1"}, {"query": "q2"}, {"query": "q3"}, {"query": "q4"}]}
@@ -93,7 +96,9 @@ def test_batch_query_defaults(monkeypatch, api_client):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer=q, citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer=q, citations=[], reasoning=[], metrics={}
+        ),
     )
 
     payload = {"queries": [{"query": "a"}, {"query": "b"}, {"query": "c"}]}
@@ -114,14 +119,16 @@ def test_api_key_roles_integration(monkeypatch, api_client):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
 
     resp = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
     assert resp.status_code == 200
 
     bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
-    assert bad.status_code == 401
+    assert bad.status_code == 403
 
 
 def test_stream_requires_api_key(monkeypatch, api_client):
@@ -144,6 +151,9 @@ def test_stream_requires_api_key(monkeypatch, api_client):
         "POST", "/query/stream", json={"query": "q"}, headers={"X-API-Key": "secret"}
     ) as resp:
         assert resp.status_code == 200
+
+    bad = api_client.post("/query/stream", json={"query": "q"}, headers={"X-API-Key": "bad"})
+    assert bad.status_code == 403
 
 
 def test_batch_query_async_order(monkeypatch, api_client):
