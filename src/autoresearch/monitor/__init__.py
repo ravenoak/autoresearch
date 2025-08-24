@@ -44,7 +44,9 @@ def default_callback(
         if watch:
             metrics(watch=True)
         else:
-            typer.echo(json.dumps(_collect_system_metrics()))
+            data = _collect_system_metrics()
+            typer.echo(json.dumps(data))
+            raise typer.Exit(code=0)
 
 
 def _calculate_health(cpu: float, mem: float) -> str:
@@ -64,8 +66,8 @@ def _collect_system_metrics() -> Dict[str, Any]:
     """Collect basic CPU, memory, and GPU metrics."""
     metrics: Dict[str, Any] = {}
     try:
-        from .system_monitor import SystemMonitor
         from ..resource_monitor import _get_gpu_stats
+        from .system_monitor import SystemMonitor
 
         if _system_monitor:
             metrics.update(_system_monitor.metrics)
