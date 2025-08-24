@@ -234,7 +234,9 @@ These behavior test issues remain open until the test suite passes.
  - `uv run flake8 src tests` – passed
  - `uv run mypy src` – passed
  - token budget tests marked xfail
- - full `task check` and `task verify` runs unavailable in this environment
+ - `task check` – terminated early
+ - `task verify` – terminated early
+ - `task coverage` – terminated early
 
 ### Performance Baselines
 
