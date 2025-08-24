@@ -154,6 +154,33 @@ def record_query() -> None:
     QUERY_COUNTER.inc()
 
 
+def _mean_last_nonzero(values: List[int], n: int = 10) -> float:
+    """Return the mean of the last ``n`` positive entries in ``values``.
+
+    Parameters
+    ----------
+    values:
+        Sequence of token deltas.
+    n:
+        Maximum number of non-zero samples to average.
+
+    Returns
+    -------
+    float
+        Mean of the last ``n`` non-zero values or ``0.0`` if none exist.
+    """
+
+    total = 0
+    count = 0
+    for v in reversed(values):
+        if v > 0:
+            total += v
+            count += 1
+            if count == n:
+                break
+    return total / count if count else 0.0
+
+
 class OrchestrationMetrics:
     """Collects metrics during query execution."""
 
@@ -375,9 +402,9 @@ class OrchestrationMetrics:
         ``margin`` controls how aggressively the budget adapts. The
         calculation considers the most recent per-cycle usage, per-agent
         historical averages, and the overall average across the last ten
-        non-zero cycles. If no usage has been observed, the budget remains
-        unchanged. A window of only zero-usage samples drives the budget
-        to one token. When usage stabilizes, the update converges to
+        non-zero samples. If no usage has been observed, the budget
+        remains unchanged. A window of only zero-usage samples drives the
+        budget to one token. When usage stabilizes, the update converges to
         ``ceil(u * (1 + margin))`` for constant usage ``u``. See
         ``docs/algorithms/token_budgeting.md`` for derivation and
         convergence analysis.
@@ -396,8 +423,7 @@ class OrchestrationMetrics:
                 return 1
             return max(current_budget, 1)
 
-        nonzero_usage = [u for u in recent_usage if u > 0]
-        avg_used = sum(nonzero_usage) / len(nonzero_usage)
+        avg_used = _mean_last_nonzero(self.token_usage_history)
         latest = recent_usage[-1]
 
         max_agent_delta = 0
@@ -409,9 +435,7 @@ class OrchestrationMetrics:
             self._last_agent_totals[name] = total_agent
             history = self.agent_usage_history.setdefault(name, [])
             history.append(agent_delta)
-            recent_agent = history[-10:]
-            nonzero_agent = [u for u in recent_agent if u > 0]
-            agent_avg = sum(nonzero_agent) / len(nonzero_agent) if nonzero_agent else 0
+            agent_avg = _mean_last_nonzero(history)
             if agent_delta > max_agent_delta:
                 max_agent_delta = agent_delta
             if agent_avg > max_agent_avg:
