@@ -1,12 +1,14 @@
 """Step definitions for API authentication and rate limiting."""
 
-from pytest_bdd import scenario, given, when, then, parsers
-from . import api_orchestrator_integration_steps  # noqa: F401
-from autoresearch.config.models import ConfigModel, APIConfig
-from autoresearch.config.loader import ConfigLoader
+from pytest_bdd import given, parsers, scenario, then, when
+
 from autoresearch.api import config_loader, get_request_logger
-from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import Orchestrator
+
+from . import api_orchestrator_integration_steps  # noqa: F401
 
 
 @given("the API server is running")
@@ -61,9 +63,31 @@ def set_rate_limit(monkeypatch, limit):
     get_request_logger().reset()
 
 
+@given(parsers.parse('the API requires an API key "{key}" with role "{role}" and no permissions'))
+def require_api_key_no_permissions(monkeypatch, key, role):
+    cfg = ConfigModel(api=APIConfig(api_keys={key: role}, role_permissions={role: []}))
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setenv("AUTORESEARCH_API_KEY", key)
+    config_loader._config = None
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
+    )
+
+
 @when(parsers.parse('I send a query "{query}" with header "{header}" set to "{value}"'))
 def send_query_with_header(api_client_factory, test_context, query, header, value):
     client = api_client_factory({header: value})
+    resp = client.post("/query", json={"query": query})
+    test_context["response"] = resp
+
+
+@when(parsers.parse('I send a query "{query}" without credentials'))
+def send_query_without_credentials(api_client_factory, test_context, query):
+    client = api_client_factory()
     resp = client.post("/query", json={"query": query})
     test_context["response"] = resp
 
@@ -118,4 +142,14 @@ def test_invalid_bearer_token():
 
 @scenario("../features/api_auth.feature", "Rate limit exceeded")
 def test_rate_limit_exceeded():
+    pass
+
+
+@scenario("../features/api_auth.feature", "Missing credentials")
+def test_missing_credentials():
+    pass
+
+
+@scenario("../features/api_auth.feature", "Insufficient permission")
+def test_insufficient_permission():
     pass

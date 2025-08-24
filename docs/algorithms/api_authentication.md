@@ -14,6 +14,17 @@ model, and why comparisons run in constant time.
 5. On success the request proceeds; otherwise a **401 Unauthorized** response is
    returned.
 
+## Configuration
+
+Credentials are defined in `autoresearch.toml` under `[api]`:
+
+- `api_key` – single shared key.
+- `api_keys` – mapping of keys to roles.
+- `bearer_token` – value for the `Authorization` header.
+
+Roles gain capabilities via `[api.role_permissions]` with entries such as
+`query` or `docs`.
+
 ## Threat model
 
 - Adversaries may sniff traffic, replay requests, or attempt token guessing.
