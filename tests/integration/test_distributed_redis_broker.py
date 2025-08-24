@@ -1,8 +1,12 @@
+import importlib.util
+
 import pytest
 
 from autoresearch.distributed.broker import RedisBroker
 
-redis = pytest.importorskip("redis")
+if importlib.util.find_spec("redis") is None:
+    pytest.skip("redis not installed", allow_module_level=True)
+import redis
 
 pytestmark = pytest.mark.slow
 

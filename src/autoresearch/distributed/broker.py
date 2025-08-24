@@ -48,7 +48,13 @@ class RedisBroker:
     """Message broker backed by Redis."""
 
     def __init__(self, url: str | None = None, queue_name: str = "autoresearch") -> None:
-        import redis
+        try:
+            import redis
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "RedisBroker requires the 'redis' package. Install it via the"
+                " '[distributed]' extra."
+            ) from exc
 
         self.client = redis.Redis.from_url(url or "redis://localhost:6379/0")
         self.queue = RedisQueue(self.client, queue_name)
