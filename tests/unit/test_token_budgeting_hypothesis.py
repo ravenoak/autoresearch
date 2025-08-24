@@ -58,3 +58,28 @@ def test_capture_token_usage_respects_budget(
     if original_len <= budget:
         assert tokens_in == original_len
     assert len(captured["prompt"].split()) == tokens_in
+
+
+@given(
+    start=st.integers(min_value=1, max_value=200),
+    usage=st.integers(min_value=1, max_value=200),
+    margin=st.floats(max_value=-0.01, allow_infinity=False, allow_nan=False),
+)
+def test_negative_margin_treated_as_zero(start: int, usage: int, margin: float) -> None:
+    """Negative margins behave identically to zero margin."""
+    metrics = OrchestrationMetrics()
+    metrics.record_tokens("agent", usage, 0)
+    budget_neg = metrics.suggest_token_budget(start, margin=margin)
+
+    metrics_zero = OrchestrationMetrics()
+    metrics_zero.record_tokens("agent", usage, 0)
+    budget_zero = metrics_zero.suggest_token_budget(start, margin=0)
+
+    assert budget_neg == budget_zero
+
+
+@given(margin=st.floats(min_value=-1.0, max_value=2.0, allow_nan=False))
+def test_budget_floor_with_zero_start(margin: float) -> None:
+    """A zero starting budget is elevated to one token."""
+    metrics = OrchestrationMetrics()
+    assert metrics.suggest_token_budget(0, margin=margin) == 1

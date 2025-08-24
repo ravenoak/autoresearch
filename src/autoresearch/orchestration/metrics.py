@@ -405,10 +405,14 @@ class OrchestrationMetrics:
         non-zero samples. If no usage has been observed, the budget
         remains unchanged. A window of only zero-usage samples drives the
         budget to one token. When usage stabilizes, the update converges to
-        ``ceil(u * (1 + margin))`` for constant usage ``u``. See
-        ``docs/algorithms/token_budgeting.md`` for derivation and
+        ``ceil(u * (1 + margin))`` for constant usage ``u``. Negative
+        ``margin`` values are treated as zero.
+
+        See ``docs/algorithms/token_budgeting.md`` for derivation and
         convergence analysis.
         """
+
+        margin = max(margin, 0.0)
 
         total = self._total_tokens()
         delta = total - self._last_total_tokens
