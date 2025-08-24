@@ -28,5 +28,6 @@ uv run autoresearch monitor
 ```
 
 The command outputs a single JSON object containing `cpu_percent`,
-`memory_percent`, token counters, and more, then exits with status code 0.
-Pass `--watch` to refresh the metrics continuously.
+`memory_percent`, token counters, and more. Query and token counters are
+initialised to `0` when no queries have been executed so they always appear
+in the output. Pass `--watch` to refresh the metrics continuously.

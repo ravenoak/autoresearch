@@ -35,6 +35,13 @@ KUZU_QUERY_TIME = Histogram(
 )
 
 
+def ensure_counters_initialized() -> None:
+    """Ensure global counters are registered without changing their values."""
+    QUERY_COUNTER.inc(0)
+    TOKENS_IN_COUNTER.inc(0)
+    TOKENS_OUT_COUNTER.inc(0)
+
+
 def reset_metrics() -> None:
     """Reset all Prometheus counters to zero."""
     counters = [

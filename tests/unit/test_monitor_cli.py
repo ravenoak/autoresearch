@@ -98,3 +98,30 @@ def test_monitor_metrics(monkeypatch):
     assert data["queries_total"] == 5
     assert data["tokens_in_total"] == 7
     assert data["tokens_out_total"] == 9
+
+
+def test_monitor_metrics_default_counters(monkeypatch):
+    runner = CliRunner()
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: type("C", (), {})())
+    orch_metrics.reset_metrics()
+
+    class Mem:
+        percent = 2.0
+        used = 2 * 1024 * 1024
+
+    class Proc:
+        def memory_info(self):
+            return type("I", (), {"rss": 3 * 1024 * 1024})()
+
+    monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: 1.0)
+    monkeypatch.setattr(psutil, "virtual_memory", lambda: Mem)
+    monkeypatch.setattr(psutil, "Process", lambda: Proc())
+    monkeypatch.setattr("autoresearch.resource_monitor._get_gpu_stats", lambda: (4.0, 5.0))
+
+    result = runner.invoke(app, ["monitor"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["queries_total"] == 0
+    assert data["tokens_in_total"] == 0
+    assert data["tokens_out_total"] == 0

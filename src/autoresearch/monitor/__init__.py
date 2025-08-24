@@ -88,6 +88,7 @@ def _collect_system_metrics() -> Dict[str, Any]:
     except Exception as e:
         log.warning("Failed to collect system metrics", exc_info=e)
 
+    orch_metrics.ensure_counters_initialized()
     metrics["queries_total"] = int(orch_metrics.QUERY_COUNTER._value.get())
     metrics["tokens_in_total"] = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
     metrics["tokens_out_total"] = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
