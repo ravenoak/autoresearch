@@ -3,9 +3,8 @@
 ## Context
 Running `uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
 reports `ERROR: not found: ... (no match in any of [<Dir features>])` because
-`pytest-bdd` cannot discover the feature directory. Behavior tests cannot
-execute reliably. This was reproduced on **August 24, 2025** after manually
-installing `pytest-bdd`.
+`pytest-bdd` cannot discover the feature directory even with the plugin
+installed. Behavior tests cannot execute reliably.
 
 ## Acceptance Criteria
 - `uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`

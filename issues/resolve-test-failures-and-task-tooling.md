@@ -1,29 +1,25 @@
 # Resolve test failures and task tooling
 
 ## Context
- Go Task now installs correctly, and `redis` is installed, but `task check`
- reports new unit test failures. With minimal development extras, `flake8`,
- `mypy`, spec checks, and most unit tests pass. Running the full test suite
- reveals failures in storage persistence eviction, token budget convergence,
- API authentication, concurrent query handling, Redis broker detection, and
- monitor CLI metrics. Integration and behavior test suites remain unreliable.
+Go Task and `redis` are installed, yet `task check` fails with `flake8`
+warnings for an unused import in
+`src/autoresearch/orchestration/metrics.py` and import order in
+`tests/behavior/features/conftest.py`. Targeted unit tests such as
+`test_monitor_cli.py::test_monitor_metrics` and
+`test_token_budget_convergence.py::test_suggest_token_budget_converges`
+now pass, but API authentication, concurrent query handling, Redis broker
+detection, and behavior feature discovery remain unresolved.
 
- A fresh clone on **August 24, 2025** lacked Go Task and several dev
- dependencies. Manual installs of `pytest-httpx` and `pytest-bdd` succeeded, yet
- `uv run pytest` still exited during collection with
- `ModuleNotFoundError` for `tomli_w`, `freezegun`, and `hypothesis`.
-
- Redis-dependent integration tests skip cleanly when `redis` is missing
- (verified 2025-08-24).
+Redis-dependent integration tests skip cleanly when `redis` is missing.
 
 ## Dependencies
 
 - [address-storage-persistence-eviction-failure](archive/address-storage-persistence-eviction-failure.md)
-- [correct-token-budget-convergence-logic](correct-token-budget-convergence-logic.md)
+- [correct-token-budget-convergence-logic](archive/correct-token-budget-convergence-logic.md)
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
 - [fix-concurrent-query-interface-behavior](archive/fix-concurrent-query-interface-behavior.md)
 - [add-redis-dependency-for-integration-tests](add-redis-dependency-for-integration-tests.md)
-- [fix-monitor-cli-metrics-failure](fix-monitor-cli-metrics-failure.md)
+- [fix-monitor-cli-metrics-failure](archive/fix-monitor-cli-metrics-failure.md)
 - [fix-pytest-bdd-feature-discovery](fix-pytest-bdd-feature-discovery.md)
 
 ## Acceptance Criteria

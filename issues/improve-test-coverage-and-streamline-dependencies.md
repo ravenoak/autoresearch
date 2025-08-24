@@ -1,9 +1,8 @@
 # Improve test coverage and streamline dependencies
 
 ## Context
-Attempts to run `task install` and `task verify` stalled when large GPU and
-machine learning packages like `torch` and CUDA began downloading. Without a
-successful install, the test suite and `coverage html` could not run to
+Current `task install` completes with minimal dependencies, but `task verify`
+fails due to `flake8` errors, preventing `coverage html` from running to
 identify low-coverage modules. The existing baseline at
 `baseline/coverage.xml` shows roughly twenty-two percent coverage, leaving most
 modules untested.
