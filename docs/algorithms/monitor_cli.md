@@ -17,7 +17,22 @@ The `autoresearch monitor` commands stream system metrics and resource usage.
 - When the endpoint fails to start, the command stops gracefully without
   leaving background threads.
 
+## Reliability analysis
+
+A Monte Carlo model estimates how often metrics collection fails and the
+latency of successful samples. Run the simulation to explore different
+failure rates and observe average latency:
+
+```bash
+uv run scripts/monitor_cli_reliability.py --runs 1000 --fail-rate 0.05
+```
+
+This informs retry budgets and helps tune sampling intervals.
+
 ## References
 
 - [src/autoresearch/monitor/](../../src/autoresearch/monitor/)
+- [scripts/monitor_cli_reliability.py](../../scripts/monitor_cli_reliability.py)
 - [tests/unit/test_monitor_cli.py](../../tests/unit/test_monitor_cli.py)
+- [tests/integration/test_monitor_metrics.py](../../tests/integration/test_monitor_metrics.py)
+- [tests/behavior/steps/monitor_cli_steps.py](../../tests/behavior/steps/monitor_cli_steps.py)
