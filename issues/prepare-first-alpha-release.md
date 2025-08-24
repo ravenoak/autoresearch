@@ -10,6 +10,9 @@ Coverage sits at **24%**, far below the **90%** target, and the TestPyPI
 upload currently returns HTTP 403. Release notes and packaging steps are
 incomplete.
 
+Redis-dependent integration tests now skip cleanly when `redis` is missing
+(verified 2025-08-24).
+
 ## Milestone
 
 - 0.1.0a1 (2026-04-15)
