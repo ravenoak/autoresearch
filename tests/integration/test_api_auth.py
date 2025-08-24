@@ -1,8 +1,8 @@
+from autoresearch.api.utils import generate_bearer_token
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.api.utils import generate_bearer_token
 
 
 def _setup(monkeypatch):
@@ -12,7 +12,9 @@ def _setup(monkeypatch):
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(answer="ok", citations=[], reasoning=[], metrics={}),
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
     )
     return cfg
 
@@ -27,9 +29,7 @@ def test_http_bearer_token(monkeypatch, api_client):
     )
     assert resp.status_code == 200
 
-    resp = api_client.post(
-        "/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"}
-    )
+    resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"})
     assert resp.status_code == 401
 
 
@@ -61,9 +61,7 @@ def test_role_permissions(monkeypatch, api_client):
     ok = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "adm"})
     assert ok.status_code == 200
 
-    denied = api_client.post(
-        "/query", json={"query": "q"}, headers={"X-API-Key": "usr"}
-    )
+    denied = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "usr"})
     assert denied.status_code == 403
 
 
@@ -71,9 +69,7 @@ def test_single_api_key(monkeypatch, api_client):
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
 
-    ok = api_client.post(
-        "/query", json={"query": "q"}, headers={"X-API-Key": "secret"}
-    )
+    ok = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
     assert ok.status_code == 200
 
     missing = api_client.post("/query", json={"query": "q"})
@@ -84,9 +80,7 @@ def test_invalid_api_key(monkeypatch, api_client):
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"good": "user"}
 
-    bad = api_client.post(
-        "/query", json={"query": "q"}, headers={"X-API-Key": "bad"}
-    )
+    bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
 
 
@@ -97,9 +91,7 @@ def test_api_key_or_token(monkeypatch, api_client):
     token = generate_bearer_token()
     cfg.api.bearer_token = token
 
-    ok_key = api_client.post(
-        "/query", json={"query": "q"}, headers={"X-API-Key": "secret"}
-    )
+    ok_key = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
     assert ok_key.status_code == 200
 
     ok_token = api_client.post(
@@ -109,3 +101,30 @@ def test_api_key_or_token(monkeypatch, api_client):
 
     missing = api_client.post("/query", json={"query": "q"})
     assert missing.status_code == 401
+
+
+def test_token_overrides_invalid_api_key(monkeypatch, api_client):
+    """Valid token bypasses an incorrect API key header."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+    token = generate_bearer_token()
+    cfg.api.bearer_token = token
+    resp = api_client.post(
+        "/query",
+        json={"query": "q"},
+        headers={"X-API-Key": "bad", "Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+
+
+def test_api_key_overrides_invalid_token(monkeypatch, api_client):
+    """Valid API key is accepted even when token is incorrect."""
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+    cfg.api.bearer_token = generate_bearer_token()
+    resp = api_client.post(
+        "/query",
+        json={"query": "q"},
+        headers={"X-API-Key": "secret", "Authorization": "Bearer bad"},
+    )
+    assert resp.status_code == 200
