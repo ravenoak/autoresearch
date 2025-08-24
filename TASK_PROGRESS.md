@@ -231,12 +231,14 @@ These behavior test issues remain open until the test suite passes.
 
 ### Latest Test Results
 
- - `uv run flake8 src tests` – passed
- - `uv run mypy src` – passed
- - token budget tests marked xfail
- - `task check` – terminated early
- - `task verify` – terminated early
- - `task coverage` – terminated early
+- `uv run flake8 src tests` – passed
+- `uv run mypy src` – passed
+- token budget tests marked xfail
+- `task check` – command not found
+- `task verify` – not run
+- `task coverage` – not run
+- `uv run pytest tests/integration -m requires_distributed -q` – skipped 5 tests
+  (redis missing)
 
 ### Performance Baselines
 

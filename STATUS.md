@@ -23,7 +23,8 @@ failures. `task verify` and `task coverage` attempted but terminated
 early in this environment.
 
 ## Integration tests
-Not executed.
+Redis not installed; `uv run pytest tests/integration -m requires_distributed -q`
+skipped all `requires_distributed` scenarios.
 
 ## Spec tests
 ```text

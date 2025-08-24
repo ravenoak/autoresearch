@@ -8,6 +8,9 @@
  API authentication, concurrent query handling, Redis broker detection, and
  monitor CLI metrics. Integration and behavior test suites remain unreliable.
 
+ Redis-dependent integration tests skip cleanly when `redis` is missing
+ (verified 2025-08-24).
+
 ## Dependencies
 
 - [address-storage-persistence-eviction-failure](archive/address-storage-persistence-eviction-failure.md)
