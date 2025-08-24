@@ -157,7 +157,7 @@ def start_watcher(
             ctx.invoke(config_init)
             return
 
-    if ctx.invoked_subcommand != "config":
+    if ctx.invoked_subcommand not in {"config", "monitor"}:
         try:
             StorageManager.setup()
         except StorageError as e:
