@@ -1,4 +1,7 @@
-"""Background resource usage monitoring utilities."""
+"""Background resource usage monitoring utilities.
+
+See docs/algorithms/resource_monitor.md for sampling models.
+"""
 
 from __future__ import annotations
 

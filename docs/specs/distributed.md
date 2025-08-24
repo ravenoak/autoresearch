@@ -22,8 +22,10 @@ coalition and scheduling details.
   - [tests/integration/test_distributed_agent_storage.py][t1]
   - [tests/unit/test_distributed.py][t2]
   - [tests/unit/test_distributed_extra.py][t3]
+  - [tests/analysis/test_distributed_coordination.py][t4]
 
 [m1]: ../../src/autoresearch/distributed/
 [t1]: ../../tests/integration/test_distributed_agent_storage.py
 [t2]: ../../tests/unit/test_distributed.py
 [t3]: ../../tests/unit/test_distributed_extra.py
+[t4]: ../../tests/analysis/test_distributed_coordination.py
