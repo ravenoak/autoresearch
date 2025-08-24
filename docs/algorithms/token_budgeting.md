@@ -20,11 +20,25 @@ the budget to a minimum of one token.
 
 ## Convergence
 
-When usage stabilizes at `u`, the sequence `{b_t}` converges to
-`ceil(u * (1 + m))`. Averaging the last ten non-zero samples prevents
-spikes or idle cycles from skewing the estimate. Let `b* = ceil(u * (1 +
-m))`. Each step sets `b_{t+1}` exactly to `b*`, so convergence occurs in
-one iteration once the usage statistics stabilize.
+Let usage settle at a constant value `u` and define
+`b* = ceil(u * (1 + m))`. Averaging the last ten non-zero samples blocks
+isolated spikes from influencing the limit.
+
+### Proof
+
+Assume there exists `T` such that for all `t >= T`, every agent consumes
+`u` tokens. Because `\bar{u}_t` and each `\bar{a}_{i,t}` average the last
+ten non-zero values, for `t >= T + 10` these statistics equal `u`. At that
+point the update becomes
+
+\[
+b_{t+1} = \left\lceil \max(u, u, u, u) (1 + m) \right\rceil = b*.
+\]
+
+Since `b*` is a fixed point of the update rule, the sequence `{b_t}` is
+constant for `t > T + 10`. Thus `{b_t}` converges to `b*`. Ten consecutive
+zero-usage cycles after activity similarly force all candidates to zero,
+yielding the fixed point `b_t = 1`.
 
 ## Simulation
 
