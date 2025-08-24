@@ -35,8 +35,9 @@ task coverage          # full suite with coverage and regression checks
 
 Run `task coverage` before committing to execute the full suite with
 coverage and token regression checks. The command fails if line coverage
-drops below 90%. CI stores a baseline `coverage.xml` in
-`baseline/coverage.xml` and compares future runs against it to detect
+drops below 90%. The threshold is controlled by the `COVERAGE_THRESHOLD`
+variable, set to `90` in the Taskfile and CI workflow. CI stores a baseline
+`coverage.xml` in `baseline/coverage.xml` and compares future runs against it to detect
 regressions. To perform the comparison locally, run:
 
 ```bash
