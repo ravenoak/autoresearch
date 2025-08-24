@@ -1,7 +1,7 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 22, 2025**, see
+organized by phases from the code complete plan. As of **August 24, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status.
 An **0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
@@ -233,13 +233,11 @@ These behavior test issues remain open until the test suite passes.
 
 - `uv run flake8 src tests` – passed
 - `uv run mypy src` – passed
-- token budget tests marked xfail
-- `task check` – failed; `tests/unit/test_monitor_cli.py::test_monitor_metrics`
-  asserted `130 == 0`
-- `task verify` – failed on the same monitor CLI metrics tests
-- `task coverage` – not run
-- `uv run pytest tests/integration -m requires_distributed -q` – skipped 5 tests
-  (redis missing)
+- `uv run python scripts/check_spec_tests.py` – passed
+- `uv run pytest tests/unit -q` – 1 failed (`test_metrics_token_budget_spec.py::test_token_budget_expands_then_shrinks`)
+- `uv run pytest tests/integration -m 'not slow and not requires_ui and not requires_vss and not requires_distributed' -q` – 193 passed, 4 skipped
+- `uv run pytest tests/behavior -q` – numerous failures; suite unstable
+- Coverage not collected
 
 ### Performance Baselines
 
