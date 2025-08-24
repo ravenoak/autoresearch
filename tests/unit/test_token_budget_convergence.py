@@ -3,7 +3,7 @@
 The mathematical proof appears in ``docs/algorithms/token_budgeting.md``.
 """
 
-import math
+from decimal import Decimal, ROUND_HALF_EVEN
 from typing import List
 
 from hypothesis import given
@@ -20,14 +20,18 @@ def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, 
     return budget
 
 
+def _round_half_even(value: float) -> int:
+    return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
+
+
 def test_suggest_token_budget_converges() -> None:
-    """Repeated updates reach ``ceil(u * (1 + m))`` for constant usage.
+    """Repeated updates reach ``round(u * (1 + m))`` for constant usage.
 
     See ``docs/algorithms/token_budgeting.md`` for the formal proof.
     """
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [50] * 8, margin=0.2, start=50)
-    assert budget == math.ceil(50 * 1.2 - 1e-9)
+    assert budget == _round_half_even(50 * 1.2)
 
 
 def test_budget_tracks_growth() -> None:
@@ -35,7 +39,7 @@ def test_budget_tracks_growth() -> None:
     m = OrchestrationMetrics()
     usage = [30, 30, 50, 50, 50]
     budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
-    assert budget == math.ceil(50 * 1.2 - 1e-9)
+    assert budget == _round_half_even(50 * 1.2)
 
 
 def test_budget_recovers_after_spike() -> None:
@@ -43,14 +47,14 @@ def test_budget_recovers_after_spike() -> None:
     m = OrchestrationMetrics()
     usage = [50, 80] + [50] * 20
     budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
-    assert budget == math.ceil(50 * 1.2 - 1e-9)
+    assert budget == _round_half_even(50 * 1.2)
 
 
 def test_margin_precision_converges() -> None:
     """Decimal margins avoid rounding inflation."""
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [50] * 8, margin=0.1, start=50)
-    assert budget == math.ceil(50 * 1.1 - 1e-9)
+    assert budget == _round_half_even(50 * 1.1)
 
 
 @given(
@@ -58,11 +62,11 @@ def test_margin_precision_converges() -> None:
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
 def test_convergence_from_any_start(start: int, margin: float) -> None:
-    """Budgets converge to ceil(u * (1 + m)) from arbitrary starts."""
+    """Budgets converge to round(u * (1 + m)) from arbitrary starts."""
     m = OrchestrationMetrics()
     usage = [50] * 6
     budget = _run_cycles(m, usage, margin=margin, start=start)
-    assert budget == math.ceil(50 * (1 + margin) - 1e-9)
+    assert budget == _round_half_even(50 * (1 + margin))
 
 
 @given(
@@ -100,7 +104,7 @@ def test_margin_boundaries_converge(start: int, usage: int, margin: float) -> No
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [usage] * 6, margin=margin, start=start)
     expected_margin = max(margin, 0.0)
-    assert budget == math.ceil(usage * (1 + expected_margin) - 1e-9)
+    assert budget == _round_half_even(usage * (1 + expected_margin))
 
 
 def test_agent_average_preserves_budget() -> None:
@@ -113,7 +117,7 @@ def test_agent_average_preserves_budget() -> None:
     for _ in range(5):
         m.record_tokens("a", 10, 0)
         budget = m.suggest_token_budget(budget, margin=0.2)
-    assert budget == math.ceil(100 * 1.2)
+    assert budget == _round_half_even(100 * 1.2)
 
 
 @given(
@@ -132,7 +136,7 @@ def test_sparse_usage_retains_history(first: int, second: int, gap: int, margin:
         budget = m.suggest_token_budget(budget, margin=margin)
     m.record_tokens("agent", second, 0)
     budget = m.suggest_token_budget(budget, margin=margin)
-    expected = math.ceil(max(second, (first + second) / 2) * (1 + margin) - 1e-9)
+    expected = _round_half_even(max(second, (first + second) / 2) * (1 + margin))
     assert budget == expected
 
 
