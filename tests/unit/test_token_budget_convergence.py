@@ -98,3 +98,33 @@ def test_agent_average_preserves_budget() -> None:
         m.record_tokens("a", 10, 0)
         budget = m.suggest_token_budget(budget, margin=0.2)
     assert budget == math.ceil(100 * 1.2)
+
+
+@given(
+    first=st.integers(min_value=1, max_value=200),
+    second=st.integers(min_value=1, max_value=200),
+    gap=st.integers(min_value=10, max_value=30),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+)
+def test_sparse_usage_retains_history(first: int, second: int, gap: int, margin: float) -> None:
+    """Old non-zero samples influence the average despite long idle gaps."""
+    m = OrchestrationMetrics()
+    budget = first
+    m.record_tokens("agent", first, 0)
+    budget = m.suggest_token_budget(budget, margin=margin)
+    for _ in range(gap):
+        budget = m.suggest_token_budget(budget, margin=margin)
+    m.record_tokens("agent", second, 0)
+    budget = m.suggest_token_budget(budget, margin=margin)
+    expected = math.ceil(max(second, (first + second) / 2) * (1 + margin))
+    assert budget == expected
+
+
+@given(
+    start=st.integers(min_value=0, max_value=500),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+)
+def test_budget_never_below_one(start: int, margin: float) -> None:
+    """The suggested budget is always at least one token."""
+    m = OrchestrationMetrics()
+    assert m.suggest_token_budget(start, margin=margin) >= 1
