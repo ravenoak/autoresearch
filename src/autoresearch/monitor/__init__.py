@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from typing import Any, Dict, List, Union
@@ -40,7 +41,10 @@ def default_callback(
 ) -> None:
     """Display system metrics when no subcommand is provided."""
     if ctx.invoked_subcommand is None:
-        metrics(watch=watch)
+        if watch:
+            metrics(watch=True)
+        else:
+            typer.echo(json.dumps(_collect_system_metrics()))
 
 
 def _calculate_health(cpu: float, mem: float) -> str:
@@ -71,6 +75,7 @@ def _collect_system_metrics() -> Dict[str, Any]:
 
         mem = psutil.virtual_memory()
         proc = psutil.Process()
+        metrics.setdefault("cpu_percent", psutil.cpu_percent(interval=None))
         metrics.setdefault("memory_percent", mem.percent)
         metrics["memory_used_mb"] = mem.used / (1024 * 1024)
         metrics["process_memory_mb"] = proc.memory_info().rss / (1024 * 1024)
