@@ -4,7 +4,7 @@ from autoresearch.distributed.broker import RedisBroker
 
 redis = pytest.importorskip("redis")
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
 
 
 class FakeRedis:

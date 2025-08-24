@@ -345,14 +345,23 @@ features that rely on additional extras:
 - `vss` – loads the DuckDB vector extension used by
   `tests/integration/test_vector_extension_extended.py` and
   `tests/integration/test_knn_benchmark.py`.
-- `distributed` – installs Ray so that the distributed integration tests
-  exercise real processes instead of the lightweight stub in
+- `distributed` – installs Ray and Redis so distributed integration tests run
+  against real services instead of the lightweight stub in
   `tests/conftest.py`.
 
 If these extras are missing the corresponding tests are skipped (or run
 with a stub in the case of the `distributed` extra). Install them with
 `uv pip install -e '.[full,parsers,git,llm,dev,ui,analysis,vss,distributed]'`
 to run every test.
+
+### Distributed tests
+
+Install the extra and run the marked scenarios directly:
+
+```bash
+uv pip install -e '.[distributed]'
+pytest -m requires_distributed
+```
 
 ## Required services and data
 

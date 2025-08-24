@@ -21,6 +21,8 @@ These instructions apply to files in the `tests/` directory.
   `.[vss]` extra.
 - Use `requires_git` for tests that rely on Git operations; pair with the
   `.[git]` extra.
+- Use `requires_distributed` for tests that depend on Redis or Ray; pair with
+  the `.[distributed]` extra.
 - Use `error_recovery`, `reasoning_modes`, and `user_workflows` markers to
   categorize behavior scenarios.
 - Register any new markers in `pytest.ini`.
