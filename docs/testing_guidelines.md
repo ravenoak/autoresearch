@@ -335,6 +335,16 @@ The `pytest-bdd` plugin is provided through the `.[test]` extra and registered
 in `tests/behavior/conftest.py` so `bdd_features_base_dir` is honored when
 loading Gherkin files.
 
+To execute a single feature file, reference it directly from the repository
+root:
+
+```
+uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q
+```
+
+The `tests/behavior/features/conftest.py` path hook ensures step definitions
+load correctly in this mode.
+
 * Use `@scenario` to map a Gherkin scenario to the test.
 * Accept `bdd_context` (and other fixtures if needed) and assert that
   steps populated expected values.
