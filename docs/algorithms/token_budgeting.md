@@ -4,15 +4,17 @@ The orchestrator adjusts its token allowance using
 `suggest_token_budget` from
 [`orchestration.metrics`](../../src/autoresearch/orchestration/metrics.py).
 Let `u_t` denote tokens consumed in cycle `t`, `\bar{u}_t` the mean usage
-across the last ten cycles, and `b_t` the budget before adaptation. With
-margin `m`, the update sets
+across the last ten **non-zero** cycles, and `b_t` the budget before
+adaptation. With margin `m`, the update sets
 
 \[
 b_{t+1} = \left\lceil \max(u_t, \bar{u}_t) (1 + m) \right\rceil.
 \]
 
 When the new target differs from the current budget the algorithm
-immediately adjusts, expanding or shrinking to the computed value.
+immediately adjusts, expanding or shrinking to the computed value. If no
+usage has been observed, the budget is left unchanged. A window composed
+only of zeros drives the budget to a minimum of one token.
 
 ## Convergence
 

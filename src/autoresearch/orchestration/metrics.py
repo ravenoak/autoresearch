@@ -374,11 +374,12 @@ class OrchestrationMetrics:
         ``margin`` controls how aggressively the budget adapts. The
         calculation considers the most recent per-cycle usage, per-agent
         historical averages, and the overall average across the last ten
-        cycles. Zero-usage cycles are ignored so external callers may
-        update ``token_usage_history`` directly. When usage stabilizes, the
-        update converges to ``ceil(u * (1 + margin))`` for constant usage
-        ``u``. See ``docs/algorithms/token_budgeting.md`` for derivation
-        and convergence analysis.
+        non-zero cycles. If no usage has been observed, the budget remains
+        unchanged. A window of only zero-usage samples drives the budget
+        to one token. When usage stabilizes, the update converges to
+        ``ceil(u * (1 + margin))`` for constant usage ``u``. See
+        ``docs/algorithms/token_budgeting.md`` for derivation and
+        convergence analysis.
         """
 
         total = self._total_tokens()
@@ -388,8 +389,15 @@ class OrchestrationMetrics:
             self.token_usage_history.append(delta)
 
         recent_usage = self.token_usage_history[-10:]
-        avg_used = sum(recent_usage) / len(recent_usage) if recent_usage else 0
-        latest = recent_usage[-1] if recent_usage else 0
+        if not recent_usage:
+            return max(current_budget, 1)
+
+        nonzero_usage = [u for u in recent_usage if u > 0]
+        if not nonzero_usage:
+            return 1
+
+        avg_used = sum(nonzero_usage) / len(nonzero_usage)
+        latest = recent_usage[-1]
 
         max_agent_delta = 0
         max_agent_avg = 0.0
@@ -401,7 +409,8 @@ class OrchestrationMetrics:
             history = self.agent_usage_history.setdefault(name, [])
             history.append(agent_delta)
             recent_agent = history[-10:]
-            agent_avg = sum(recent_agent) / len(recent_agent) if recent_agent else 0
+            nonzero_agent = [u for u in recent_agent if u > 0]
+            agent_avg = sum(nonzero_agent) / len(nonzero_agent) if nonzero_agent else 0
             if agent_delta > max_agent_delta:
                 max_agent_delta = agent_delta
             if agent_avg > max_agent_avg:

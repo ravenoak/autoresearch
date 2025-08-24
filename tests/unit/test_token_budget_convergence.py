@@ -66,3 +66,28 @@ def test_zero_usage_bottoms_out(start: int, margin: float) -> None:
         m.token_usage_history.append(0)
         budget = m.suggest_token_budget(budget, margin=margin)
     assert budget == 1
+
+
+@given(
+    start=st.integers(min_value=1, max_value=500),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+)
+def test_initial_call_without_usage_keeps_budget(start: int, margin: float) -> None:
+    """No usage history leaves the budget unchanged."""
+    m = OrchestrationMetrics()
+    assert m.suggest_token_budget(start, margin=margin) == start
+
+
+@given(
+    start=st.integers(min_value=1, max_value=500),
+    usage=st.integers(min_value=1, max_value=500),
+    margin=st.sampled_from([0.0, 1.0]),
+)
+def test_margin_extremes_converge(start: int, usage: int, margin: float) -> None:
+    """Budgets converge for margin 0 and 1."""
+    m = OrchestrationMetrics()
+    budget = start
+    for _ in range(6):
+        m.token_usage_history.append(usage)
+        budget = m.suggest_token_budget(budget, margin=margin)
+    assert budget == math.ceil(usage * (1 + margin))
