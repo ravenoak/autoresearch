@@ -79,7 +79,7 @@ def test_negative_margin_treated_as_zero(start: int, usage: int, margin: float) 
 
 
 @given(margin=st.floats(min_value=-1.0, max_value=2.0, allow_nan=False))
-def test_budget_floor_with_zero_start(margin: float) -> None:
-    """A zero starting budget is elevated to one token."""
+def test_zero_start_remains_zero_without_usage(margin: float) -> None:
+    """A zero starting budget stays zero until usage occurs."""
     metrics = OrchestrationMetrics()
-    assert metrics.suggest_token_budget(0, margin=margin) == 1
+    assert metrics.suggest_token_budget(0, margin=margin) == 0
