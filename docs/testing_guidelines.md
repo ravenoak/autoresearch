@@ -327,7 +327,9 @@ The base directory for feature files is set in `pytest.ini`:
 bdd_features_base_dir = tests/behavior/features
 ```
 
-The `pytest-bdd` plugin is provided through the `.[test]` extra.
+The `pytest-bdd` plugin is provided through the `.[test]` extra and registered
+in `tests/behavior/conftest.py` so `bdd_features_base_dir` is honored when
+loading Gherkin files.
 
 * Use `@scenario` to map a Gherkin scenario to the test.
 * Accept `bdd_context` (and other fixtures if needed) and assert that

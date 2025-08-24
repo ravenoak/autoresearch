@@ -10,6 +10,8 @@ if str(ROOT) not in sys.path:
 import os  # noqa: E402
 import pytest  # noqa: E402
 
+pytest_plugins = ("pytest_bdd",)
+
 from autoresearch.api import reset_request_log  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 from autoresearch.orchestration.state import QueryState  # noqa: E402
