@@ -20,6 +20,8 @@ machine.
   [search backends](search_backends.md) and [storage](storage.md)).
 - Quickstart and advanced guides help explore features (see [quickstart
   guides](quickstart_guides.md) and [advanced usage](advanced_usage.md)).
+- HTTP API authenticates using configured API keys or bearer tokens. Any
+  provided credential must be valid or the request receives a 401 response.
 
 ### Known Limitations
 

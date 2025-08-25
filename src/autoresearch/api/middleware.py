@@ -111,24 +111,29 @@ class AuthMiddleware(BaseHTTPMiddleware):
         credentials: HTTPAuthorizationCredentials | None = await security(request)
         token = credentials.credentials if credentials else None
 
-        role, key_error = self._resolve_role(api_key, cfg)
-        key_valid = bool(api_key) and key_error is None
-        token_valid = verify_bearer_token(token, cfg.bearer_token)
+        key_role, key_error = self._resolve_role(api_key, cfg)
         provided_key = bool(api_key)
-        provided_token = bool(token)
+        if provided_key and key_error:
+            return key_error
+        key_valid = provided_key and key_error is None
 
-        if token_valid and not key_valid:
+        token_valid = verify_bearer_token(token, cfg.bearer_token)
+        provided_token = bool(token)
+        if provided_token and not token_valid:
+            return JSONResponse({"detail": "Invalid token"}, status_code=401)
+
+        if key_valid:
+            role = key_role
+        elif token_valid:
             role = "user"
+        else:
+            role = "anonymous"
 
         request.state.role = role
         request.state.permissions = set(cfg.role_permissions.get(role, []))
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
-            if provided_key:
-                return key_error or JSONResponse({"detail": "Invalid API key"}, status_code=401)
-            if provided_token:
-                return JSONResponse({"detail": "Invalid token"}, status_code=401)
             if cfg.api_keys or cfg.api_key:
                 return JSONResponse({"detail": "Missing API key"}, status_code=401)
             return JSONResponse({"detail": "Missing token"}, status_code=401)

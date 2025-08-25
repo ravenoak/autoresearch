@@ -23,6 +23,10 @@ Follow these steps to publish a new version of Autoresearch.
   uv run twine upload dist/*
   ```
 
+- Configure authentication in `config.yml` using `api.api_key`,
+  `api.api_keys`, or `api.bearer_token`. Any supplied credential must be valid
+  or the server returns a 401 error.
+
 - If DuckDB extensions fail to download during packaging, the build
   continues with a warning. The download script falls back to
   `VECTOR_EXTENSION_PATH` defined in `.env.offline` and copies the
