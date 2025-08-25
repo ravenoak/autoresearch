@@ -21,7 +21,8 @@ task install        # lightweight dev-minimal and test extras
 ```
 
 `task install` syncs the `dev-minimal` and `test` extras for a quick setup.
-Install heavier groups only when needed:
+This keeps large ML packages such as spaCy and transformers optional.
+Install additional groups only when required:
 
 ```bash
 uv sync --extra nlp  # spaCy and BERTopic
@@ -247,7 +248,9 @@ extras explicitly with pip to enable additional features, e.g.
 
 ## Optional extras
 
-Additional functionality is grouped into optional extras:
+Additional functionality is grouped into optional extras. These are not
+installed by `task install`; enable them with `uv sync --extra <name>` or
+`pip install "autoresearch[<name>]"`:
 
 - `nlp` – language processing via spaCy and BERTopic
 - `llm` – heavy dependencies like `sentence-transformers` and `transformers`
