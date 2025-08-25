@@ -138,8 +138,8 @@ def test_api_key_or_token(monkeypatch, api_client):
     assert missing.status_code == 401
 
 
-def test_token_overrides_invalid_api_key(monkeypatch, api_client):
-    """Valid token bypasses an incorrect API key header."""
+def test_invalid_api_key_with_valid_token(monkeypatch, api_client):
+    """Invalid API key causes rejection even when token is valid."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     token = generate_bearer_token()
@@ -149,11 +149,12 @@ def test_token_overrides_invalid_api_key(monkeypatch, api_client):
         json={"query": "q"},
         headers={"X-API-Key": "bad", "Authorization": f"Bearer {token}"},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid API key"
 
 
-def test_api_key_overrides_invalid_token(monkeypatch, api_client):
-    """Valid API key is accepted even when token is incorrect."""
+def test_invalid_token_with_valid_api_key(monkeypatch, api_client):
+    """Invalid bearer token is rejected even with a valid API key."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     cfg.api.bearer_token = generate_bearer_token()
@@ -162,7 +163,8 @@ def test_api_key_overrides_invalid_token(monkeypatch, api_client):
         json={"query": "q"},
         headers={"X-API-Key": "secret", "Authorization": "Bearer bad"},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid token"
 
 
 def test_query_status_and_cancel(monkeypatch, api_client):
