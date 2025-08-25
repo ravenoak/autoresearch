@@ -119,6 +119,7 @@ def test_budget_considers_agent_history():
     budget = m.suggest_token_budget(budget)
     assert budget == 33
 
+    # ``B`` is idle in the next cycle, so its historical average decays
     m.record_tokens("A", 5, 0)
     budget = m.suggest_token_budget(budget)
     assert budget == 17

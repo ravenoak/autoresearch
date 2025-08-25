@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
-from decimal import ROUND_HALF_EVEN, Decimal
+from decimal import ROUND_CEILING, Decimal
 from os import getenv
 from pathlib import Path
 from time import time
@@ -184,6 +184,29 @@ def _mean_last_nonzero(values: list[int], n: int = 10) -> float:
             if count == n:
                 break
     return total / count if count else 0.0
+
+
+def _mean_last(values: list[int], n: int = 10) -> float:
+    """Return the mean of the last ``n`` entries in ``values``.
+
+    Unlike :func:`_mean_last_nonzero`, zeros are included so the mean
+    reflects periods where an agent produced no tokens.
+
+    Parameters
+    ----------
+    values:
+        Sequence of token deltas.
+    n:
+        Maximum number of samples to average.
+
+    Returns
+    -------
+    float
+        Mean of the last ``n`` values or ``0.0`` if ``values`` is empty.
+    """
+
+    recent = values[-n:]
+    return sum(recent) / len(recent) if recent else 0.0
 
 
 class OrchestrationMetrics:
@@ -412,8 +435,9 @@ class OrchestrationMetrics:
 
         ``margin`` controls how aggressively the budget adapts. The
         calculation considers the most recent per-cycle usage, per-agent
-        historical averages, and the overall average across the last ten
-        non-zero samples. If no usage has been observed, the budget
+        historical averages (which include zero-use cycles), and the
+        overall average across the last ten non-zero samples. If no usage
+        has been observed, the budget
         remains unchanged. A window of only zero-usage samples drives the
         budget to one token. When usage stabilizes, the update converges to
         ``round(u * (1 + margin))`` for constant usage ``u``. Negative
@@ -450,7 +474,7 @@ class OrchestrationMetrics:
             self._last_agent_totals[name] = total_agent
             history = self.agent_usage_history.setdefault(name, [])
             history.append(agent_delta)
-            agent_avg = _mean_last_nonzero(history)
+            agent_avg = _mean_last(history)
             if agent_delta > max_agent_delta:
                 max_agent_delta = agent_delta
             if agent_avg > max_agent_avg:
@@ -458,10 +482,9 @@ class OrchestrationMetrics:
 
         usage_candidates = [latest, avg_used, max_agent_delta, max_agent_avg]
 
-        # Round using ``Decimal`` to avoid floating-point drift that could
-        # otherwise inflate the budget (e.g. ``14.5000000001`` rounding to
-        # ``15``).
+        # Round using ``Decimal`` to avoid floating-point drift, then apply
+        # a ceiling so that half-way cases round up.
         scaled = Decimal(str(max(usage_candidates))) * (Decimal("1") + Decimal(str(margin)))
-        desired = int(scaled.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
+        desired = int(scaled.to_integral_value(rounding=ROUND_CEILING))
 
         return max(desired, 1)
