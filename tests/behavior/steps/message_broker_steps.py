@@ -1,5 +1,5 @@
 from pytest_bdd import given, when, then
-from autoresearch.distributed import get_message_broker, InMemoryBroker
+from autoresearch.distributed import get_message_broker, InMemoryBroker, RedisBroker
 
 
 @given('the message broker name "{name}"')
@@ -30,3 +30,8 @@ def assert_broker_error(bdd_context) -> None:
     err = bdd_context.get("broker_error")
     assert err is not None
     assert "Unsupported message broker" in str(err)
+
+
+@then("a redis broker should be returned")
+def assert_redis_broker(bdd_context) -> None:
+    assert isinstance(bdd_context["broker"], RedisBroker)

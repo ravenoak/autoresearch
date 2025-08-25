@@ -14,3 +14,9 @@ Feature: Message broker selection
     Given the message broker name "unknown"
     When I obtain a message broker instance
     Then a message broker error should be raised
+
+  @requires_distributed
+  Scenario: Redis broker detection
+    Given the message broker name "redis"
+    When I obtain a message broker instance
+    Then a redis broker should be returned
