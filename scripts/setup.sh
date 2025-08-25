@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# Create .venv, install Go Task and development/test extras using uv.
+# Create .venv, install Go Task to ~/.local/bin, and development/test extras using uv.
 # Ensure we are running with Python 3.12 or newer.
 # Run `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
@@ -51,11 +51,12 @@ for pkg in pytest_httpx tomli_w freezegun hypothesis; do
 done
 
 # Ensure Go Task is installed after bootstrapping
-if [ ! -x .venv/bin/task ]; then
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v task >/dev/null 2>&1; then
     echo "Go Task missing; installing..."
-    curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin
+    curl -sL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
 fi
-if ! .venv/bin/task --version >/dev/null 2>&1; then
+if ! command -v task >/dev/null 2>&1; then
     echo "task --version failed; Go Task is required but was not installed" >&2
     exit 1
 fi
@@ -137,7 +138,7 @@ uv run python scripts/smoke_test.py
 
 # Verify required CLI tools resolve inside the virtual environment
 source .venv/bin/activate
-for cmd in task flake8 pytest mypy; do
+for cmd in flake8 pytest mypy; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
         echo "$cmd is not resolved inside .venv: $cmd_path" >&2
@@ -151,6 +152,12 @@ for cmd in task flake8 pytest mypy; do
     }
 done
 deactivate
+
+# Verify Go Task resolves after environment activation
+task --version >/dev/null 2>&1 || {
+    echo "task failed to run" >&2
+    exit 1
+}
 
 # Validate required tool versions
 echo "Validating tool versions..."
