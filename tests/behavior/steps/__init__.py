@@ -14,6 +14,8 @@ from . import backup_cli_steps  # noqa: F401
 from . import serve_cli_steps  # noqa: F401
 from . import completion_cli_steps  # noqa: F401
 from . import capabilities_cli_steps  # noqa: F401
+from . import api_auth_steps  # noqa: F401
+from . import api_orchestrator_integration_steps  # noqa: F401
 
 __all__ = [
     "app_running",
