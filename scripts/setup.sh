@@ -43,7 +43,7 @@ uv sync --extra dev --extra test
 uv pip install -e .
 
 # Verify dev and test extras are installed
-for pkg in pytest_httpx tomli_w freezegun hypothesis; do
+for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "$pkg is required for tests but was not installed" >&2
         exit 1
@@ -167,9 +167,9 @@ chmod +x scripts/smoke_test.py
 echo "Running smoke test to verify environment..."
 uv run python scripts/smoke_test.py
 
-# Verify required CLI tools resolve inside the virtual environment
+# Verify required CLI tools and extras resolve inside the virtual environment
 source .venv/bin/activate
-for cmd in flake8 pytest mypy; do
+for cmd in task flake8 mypy; do
     cmd_path=$(command -v "$cmd" || true)
     if [[ "$cmd_path" != "$VIRTUAL_ENV"/* ]]; then
         echo "$cmd is not resolved inside .venv: $cmd_path" >&2
@@ -182,15 +182,13 @@ for cmd in flake8 pytest mypy; do
         exit 1
     }
 done
-deactivate
-
-# Verify Go Task resolves after environment activation
-source .venv/bin/activate
-task --version >/dev/null 2>&1 || {
-    echo "task failed to run" >&2
-    deactivate
-    exit 1
-}
+for pkg in pytest_httpx tomli_w redis; do
+    python -c "import $pkg" >/dev/null 2>&1 || {
+        echo "$pkg failed to import" >&2
+        deactivate
+        exit 1
+    }
+done
 deactivate
 
 # Validate required tool versions

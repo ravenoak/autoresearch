@@ -10,6 +10,7 @@ tasks:
   install:
     cmds:
       - uv sync --extra dev-minimal --extra test
+      - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: "Initialize dev env without heavy ML extras and verify lint"
   check-env:
