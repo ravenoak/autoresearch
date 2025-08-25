@@ -2,10 +2,11 @@
 
 ## Context
 Go Task and `redis` install correctly, and linting and type checks pass. However
-`./.venv/bin/task check` reports 33 failing tests and seven errors. Failures stem
-from DuckDB table creation errors, missing CLI help options, broken backup
-subcommands, and incorrect token budget history logic. Behavior feature
-discovery and API authentication remain unresolved.
+`task check` still reports 34 failing tests and seven errors. Failures include
+DuckDB table creation errors, monitor command failures, TypeErrors in metrics
+tests, missing CLI help options, broken backup subcommands, and incorrect token
+budget history logic. Behavior feature discovery and API authentication remain
+unresolved.
 
 Redis-dependent integration tests skip cleanly when `redis` is missing.
 
@@ -15,10 +16,12 @@ Redis-dependent integration tests skip cleanly when `redis` is missing.
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
 - [fix-concurrent-query-interface-behavior](archive/fix-concurrent-query-interface-behavior.md)
 - [add-redis-dependency-for-integration-tests](add-redis-dependency-for-integration-tests.md)
+- [fix-metrics-summary-type-errors](fix-metrics-summary-type-errors.md)
 - [fix-monitor-cli-metrics-failure](archive/fix-monitor-cli-metrics-failure.md)
 - [fix-pytest-bdd-feature-discovery](fix-pytest-bdd-feature-discovery.md)
 - [fix-storage-table-creation-errors](fix-storage-table-creation-errors.md)
 - [repair-cli-help-and-backup-commands](repair-cli-help-and-backup-commands.md)
+- [repair-monitor-serve-command](repair-monitor-serve-command.md)
 - [correct-token-budget-history-logic](correct-token-budget-history-logic.md)
 
 ## Acceptance Criteria
