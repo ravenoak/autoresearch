@@ -10,7 +10,7 @@ tasks:
   install:
     cmds:
       - uv sync --extra dev-minimal --extra test
-    desc: "Initialize development environment"
+    desc: "Initialize dev env without heavy ML extras"
   check-env:
     cmds:
       - uv run python scripts/check_env.py
