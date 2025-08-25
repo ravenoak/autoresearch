@@ -1,18 +1,17 @@
 from datetime import timedelta
 
+from freezegun import freeze_time
+
+from autoresearch import storage
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import metrics
-from autoresearch import storage
 from autoresearch.storage import StorageManager
-from freezegun import freeze_time
 
 
 def test_ram_eviction(storage_manager, monkeypatch):
     StorageManager.clear_all()
-    monkeypatch.setattr(
-        "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
-    )
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1)
     config.search.context_aware.enabled = False
     config.storage.rdf_backend = "memory"
@@ -29,20 +28,14 @@ def test_ram_eviction(storage_manager, monkeypatch):
 
 def test_score_eviction(storage_manager, monkeypatch):
     StorageManager.clear_all()
-    monkeypatch.setattr(
-        "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
-    )
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1, graph_eviction_policy="score")
     config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
-    StorageManager.persist_claim(
-        {"id": "low", "type": "fact", "content": "a", "confidence": 0.1}
-    )
-    StorageManager.persist_claim(
-        {"id": "high", "type": "fact", "content": "b", "confidence": 0.9}
-    )
+    StorageManager.persist_claim({"id": "low", "type": "fact", "content": "a", "confidence": 0.1})
+    StorageManager.persist_claim({"id": "high", "type": "fact", "content": "b", "confidence": 0.9})
     calls = [0]
 
     def fake_ram():
@@ -66,9 +59,7 @@ def test_lru_eviction_order(monkeypatch, tmp_path):
     ConfigLoader()._config = None
     storage.setup(str(db_file))
     StorageManager.clear_all()
-    monkeypatch.setattr(
-        "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
-    )
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
     with freeze_time("2024-01-01") as frozen_time:
         StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
@@ -90,9 +81,7 @@ def test_lru_eviction_order(monkeypatch, tmp_path):
 def test_lru_eviction_sequence(storage_manager, monkeypatch):
     """Verify older nodes are evicted before newer ones with LRU policy."""
     StorageManager.clear_all()
-    monkeypatch.setattr(
-        "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
-    )
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1)
     config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
@@ -129,3 +118,38 @@ def test_lru_eviction_sequence(storage_manager, monkeypatch):
     graph = StorageManager.get_graph()
     assert "c2" not in graph.nodes
     assert "c3" in graph.nodes
+
+
+def test_initialize_storage_in_memory(monkeypatch):
+    """Regression test ensuring in-memory DuckDB creates required tables."""
+
+    storage.teardown(remove_db=True)
+
+    config = ConfigModel()
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+    config.storage.vector_extension = False
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    # DuckDB <1.0 lacks fetchone; skip schema version initialization
+    monkeypatch.setattr(
+        storage.DuckDBStorageBackend, "_initialize_schema_version", lambda self: None
+    )
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_run_migrations", lambda self: None)
+
+    called = {"flag": False}
+
+    original_create = storage.DuckDBStorageBackend._create_tables
+
+    def wrapped_create(self, skip_migrations: bool = False) -> None:
+        called["flag"] = True
+        return original_create(self, skip_migrations)
+
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_create_tables", wrapped_create)
+
+    ctx = storage.initialize_storage(":memory:")
+    backend = ctx.db_backend
+    assert backend is not None
+    assert called["flag"]

@@ -162,6 +162,49 @@ def setup(
     st.context = ctx
 
 
+def initialize_storage(
+    db_path: str | None = None,
+    context: StorageContext | None = None,
+    state: StorageState | None = None,
+) -> StorageContext:
+    """Initialize storage and ensure DuckDB tables exist.
+
+    ``setup`` initializes connections and creates tables for persistent
+    databases. DuckDB's in-memory databases start empty on every
+    invocation, so this helper explicitly recreates the schema when the
+    ``:memory:`` path is used.
+
+    Args:
+        db_path: Optional path to the DuckDB database. ``:memory:`` creates
+            an ephemeral database.
+        context: Optional :class:`StorageContext` to initialize.
+        state: Optional :class:`StorageState` providing runtime storage
+            state.
+
+    Returns:
+        StorageContext: The initialized storage context.
+
+    Raises:
+        StorageError: If the DuckDB backend is missing after initialization.
+    """
+
+    st = state or _default_state
+    ctx = context or st.context
+
+    # Run regular setup
+    setup(db_path, ctx, st)
+
+    backend = ctx.db_backend
+    if backend is None:
+        raise StorageError("DuckDB backend not initialized")
+
+    # In-memory databases do not persist tables; ensure the schema exists
+    if backend._path == ":memory:":
+        backend._create_tables(skip_migrations=True)
+
+    return ctx
+
+
 def teardown(
     remove_db: bool = False,
     context: StorageContext | None = None,
