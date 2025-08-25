@@ -16,14 +16,18 @@ from queue import Queue
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
-import duckdb
 from dotenv import dotenv_values
+
+import duckdb
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
 from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import KUZU_QUERY_COUNTER, KUZU_QUERY_TIME
+
+# Use "Any" for DuckDB connection due to incomplete type hints in duckdb.
+DuckDBConnection = Any
 
 if TYPE_CHECKING:  # pragma: no cover - type hints only
     import kuzu
@@ -45,11 +49,11 @@ class DuckDBStorageBackend:
 
     def __init__(self):
         """Initialize the DuckDB storage backend."""
-        self._conn: Optional[duckdb.DuckDBPyConnection] = None
+        self._conn: Optional[DuckDBConnection] = None
         self._path: Optional[str] = None
         self._lock = Lock()
         self._has_vss: bool = False
-        self._pool: Optional[Queue[duckdb.DuckDBPyConnection]] = None
+        self._pool: Optional[Queue[DuckDBConnection]] = None
         self._max_connections: int = 1
 
     def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
@@ -117,7 +121,7 @@ class DuckDBStorageBackend:
                         log.info("VSS extension loaded successfully")
                     else:
                         log.warning("VSS extension not available")
-                except (duckdb.Error, StorageError) as e:
+                except (duckdb.Error, StorageError) as e:  # type: ignore[attr-defined]
                     log.error(f"Failed to load VSS extension: {e}")
                     self._has_vss = False
                     last_exc = e
@@ -135,7 +139,7 @@ class DuckDBStorageBackend:
                                     log.info("VSS extension loaded from offline cache")
                                 else:
                                     log.warning("VSS extension offline fallback unavailable")
-                            except (duckdb.Error, StorageError) as e:
+                            except (duckdb.Error, StorageError) as e:  # type: ignore[attr-defined]
                                 log.error(f"Offline VSS load failed: {e}")
                                 self._has_vss = False
                                 last_exc = e
@@ -787,7 +791,7 @@ class DuckDBStorageBackend:
                 suggestion="Check that the VSS extension is properly installed and that embeddings exist in the database",
             )
 
-    def get_connection(self) -> duckdb.DuckDBPyConnection:
+    def get_connection(self) -> DuckDBConnection:
         """
         Get the DuckDB connection.
 
@@ -802,7 +806,7 @@ class DuckDBStorageBackend:
         return self._conn
 
     @contextmanager
-    def connection(self) -> Iterator[duckdb.DuckDBPyConnection]:
+    def connection(self) -> Iterator[DuckDBConnection]:
         """Context manager that yields a connection from the pool."""
         if self._pool is None:
             if self._conn is None:

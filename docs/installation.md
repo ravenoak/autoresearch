@@ -17,9 +17,10 @@ Run a bootstrap command immediately:
 ```bash
 ./scripts/setup.sh  # full developer bootstrap
 # or
-task install        # developer environment
+task install        # lightweight dev-minimal and test extras
 ```
 
+`task install` syncs the `dev-minimal` and `test` extras for a quick setup.
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
 extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
 `hypothesis`, and `redis`), and exits if `task --version` fails.
@@ -144,13 +145,13 @@ Use `uv` to manage the environment when working from a clone:
 
 ```bash
 # Install pinned dependencies for development
-uv sync --extra dev
+uv sync --extra dev-minimal --extra test
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Run `task install` or `uv sync --extra dev` before executing tests to ensure
-the development dependencies are available.
+Run `task install` or `uv sync --extra dev-minimal --extra test` before
+executing tests to ensure the development dependencies are available.
 
 Add heavy extras on demand:
 

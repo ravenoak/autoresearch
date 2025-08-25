@@ -7,12 +7,16 @@ particularly the VSS extension used for vector similarity search.
 
 import os
 from pathlib import Path
+from typing import Any
 
 import duckdb
 
 from .config import ConfigLoader
 from .errors import StorageError
 from .logging_utils import get_logger
+
+# Use "Any" for DuckDB connections due to incomplete upstream type hints.
+DuckDBConnection = Any
 
 log = get_logger(__name__)
 
@@ -28,7 +32,7 @@ class VSSExtensionLoader:
     """
 
     @staticmethod
-    def load_extension(conn: duckdb.DuckDBPyConnection) -> bool:
+    def load_extension(conn: DuckDBConnection) -> bool:
         """Load the VSS extension into the provided DuckDB connection.
 
         This method attempts to load the VSS extension using the following strategy:
@@ -65,13 +69,9 @@ class VSSExtensionLoader:
                         log.info("VSS extension loaded successfully from filesystem")
                         extension_loaded = True
                     else:
-                        log.warning(
-                            "VSS extension failed verification after filesystem load"
-                        )
-                except duckdb.Error as e:
-                    log.warning(
-                        "Failed to load VSS extension from filesystem: %s", e
-                    )
+                        log.warning("VSS extension failed verification after filesystem load")
+                except duckdb.Error as e:  # type: ignore[attr-defined]
+                    log.warning("Failed to load VSS extension from filesystem: %s", e)
 
         if not extension_loaded:
             try:
@@ -84,7 +84,7 @@ class VSSExtensionLoader:
                     extension_loaded = True
                 else:
                     log.warning("VSS extension may not be fully loaded")
-            except duckdb.Error as e:
+            except duckdb.Error as e:  # type: ignore[attr-defined]
                 log.error(f"Failed to load VSS extension: {e}")
                 if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
                     raise StorageError("Failed to load VSS extension", cause=e)
@@ -92,7 +92,7 @@ class VSSExtensionLoader:
         return extension_loaded
 
     @staticmethod
-    def verify_extension(conn: duckdb.DuckDBPyConnection, verbose: bool = True) -> bool:
+    def verify_extension(conn: DuckDBConnection, verbose: bool = True) -> bool:
         """
         Verify that the VSS extension is loaded and functioning correctly.
 
@@ -118,7 +118,7 @@ class VSSExtensionLoader:
                 if verbose:
                     log.warning("VSS extension is not loaded")
                 return False
-        except duckdb.Error as e:
+        except duckdb.Error as e:  # type: ignore[attr-defined]
             if verbose:
                 log.warning(f"VSS extension verification failed: {e}")
             return False
