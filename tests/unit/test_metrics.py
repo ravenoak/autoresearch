@@ -1,5 +1,5 @@
 import duckdb
-from autoresearch.config.models import ConfigModel, APIConfig
+from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import metrics
 
@@ -27,6 +27,7 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
 
     import sys
     import types
+
     from autoresearch.api import deps
 
     monkeypatch.setattr(deps, "require_permission", lambda _perm: lambda: None)
@@ -50,3 +51,11 @@ def test_metrics_collection_and_endpoint(monkeypatch, orchestrator):
     body = resp.body.decode()
     assert "autoresearch_queries_total" in body
     assert "autoresearch_tokens_in_total" in body
+
+
+def test_reset_metrics_clears_counters():
+    metrics.QUERY_COUNTER.inc()
+    metrics.ERROR_COUNTER.inc()
+    metrics.reset_metrics()
+    assert metrics.QUERY_COUNTER._value.get() == 0
+    assert metrics.ERROR_COUNTER._value.get() == 0
