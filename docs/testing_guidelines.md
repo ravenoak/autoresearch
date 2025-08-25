@@ -333,15 +333,14 @@ respect the configured base directory.
 
 The `pytest-bdd` plugin is provided through the `.[test]` extra, loaded via
 ``-p pytest_bdd`` in ``pytest.ini``, and registered in
-``tests/behavior/__init__.py``. This combination ensures the
-``bdd_features_base_dir`` setting is honored when feature files are targeted
-directly.
+``tests/behavior/__init__.py``. ``tests/behavior/conftest.py`` also configures
+``bdd_features_base_dir`` so paths like
+``tests/behavior/features/<feature>.feature`` resolve when invoked directly.
 
 ``tests/behavior/features/__init__.py`` marks the directory as a package so
-pytest can discover scenarios when feature files are invoked directly.
+pytest can discover scenarios when feature files are targeted by path.
 
-To execute a single feature file, reference it directly from the repository
-root:
+To execute a single feature file, run from the repository root:
 
 ```
 uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q
