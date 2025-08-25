@@ -136,6 +136,7 @@ def test_api_key_or_token(monkeypatch, api_client):
 
     missing = api_client.post("/query", json={"query": "q"})
     assert missing.status_code == 401
+    assert missing.json()["detail"] == "Missing API key or token"
 
 
 def test_invalid_api_key_with_valid_token(monkeypatch, api_client):

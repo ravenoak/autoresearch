@@ -134,6 +134,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
+            if (cfg.api_keys or cfg.api_key) and cfg.bearer_token:
+                return JSONResponse({"detail": "Missing API key or token"}, status_code=401)
             if cfg.api_keys or cfg.api_key:
                 return JSONResponse({"detail": "Missing API key"}, status_code=401)
             return JSONResponse({"detail": "Missing token"}, status_code=401)

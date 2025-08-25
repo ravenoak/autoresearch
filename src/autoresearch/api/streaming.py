@@ -3,20 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+
 from fastapi.responses import StreamingResponse
 
-from .deps import require_permission, create_orchestrator
 from ..config import get_config
-from ..error_utils import get_error_info, format_error_for_api
+from ..error_utils import format_error_for_api, get_error_info
 from ..models import QueryRequest, QueryResponse
 from ..orchestration import ReasoningMode
+from .deps import create_orchestrator
 from .webhooks import notify_webhook
 
 
-async def query_stream_endpoint(
-    request: QueryRequest,
-    _: None = require_permission("query"),
-) -> StreamingResponse:
+async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
     """Stream incremental query results as JSON lines."""
     config = get_config()
 
