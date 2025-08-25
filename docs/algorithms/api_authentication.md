@@ -11,11 +11,11 @@ model, and why comparisons run in constant time.
    - `Authorization: Bearer <token>` for a bearer token.
 3. The server fetches the expected credential from configuration.
 4. Verification uses a constant-time comparison.
-5. On success the request proceeds. Missing or invalid credentials trigger a
-   **401 Unauthorized** response with messages such as ``Missing API key``,
-   ``Invalid API key``, ``Missing token``, or ``Invalid token``. Authenticated
-   clients lacking required permissions receive **403 Forbidden** with an
-   ``Insufficient permissions`` detail.
+5. The resolved role is checked against ``[api].role_permissions``.
+   Missing or invalid credentials trigger **401 Unauthorized** with messages
+   such as ``Missing API key``, ``Invalid API key``, ``Missing token``, or
+   ``Invalid token``. Authenticated clients lacking required permissions
+   receive **403 Forbidden** with an ``Insufficient permissions`` detail.
 
 ## Configuration
 

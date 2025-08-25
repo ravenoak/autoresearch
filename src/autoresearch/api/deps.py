@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 
 from ..orchestration.orchestrator import Orchestrator
+from .utils import enforce_permission
 
 
 def require_permission(permission: str):
@@ -16,10 +17,7 @@ def require_permission(permission: str):
 
     async def checker(request: Request) -> None:
         permissions = getattr(request.state, "permissions", None)
-        if permissions is None:
-            raise HTTPException(status_code=401, detail="Authentication required")
-        if permission not in permissions:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        enforce_permission(permissions, permission)
 
     return Depends(checker)
 

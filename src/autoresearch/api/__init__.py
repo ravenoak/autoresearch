@@ -5,15 +5,18 @@ from __future__ import annotations
 from . import routing
 from .middleware import (
     SLOWAPI_STUB,
-    RateLimitExceeded as _RateLimitExceeded,
+)
+from .middleware import Limiter as _Limiter
+from .middleware import RateLimitExceeded as _RateLimitExceeded
+from .middleware import (
     dynamic_limit,
     get_remote_address,
-    Limiter as _Limiter,
     parse,
 )
 from .utils import (
     RequestLogger,
     create_request_logger,
+    enforce_permission,
     get_request_logger,
     reset_request_log,
 )
@@ -40,6 +43,7 @@ __all__ = [
     "RateLimitExceeded",
     "Limiter",
     "query_endpoint",
+    "enforce_permission",
     "create_request_logger",
     "get_request_logger",
     "RequestLogger",
