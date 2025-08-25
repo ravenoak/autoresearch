@@ -21,14 +21,15 @@ the full developer bootstrap or `task install` for a minimal environment. See
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 
-To bootstrap a Python 3.12+ environment with development and test extras run:
+To bootstrap a Python 3.12+ environment with the lightweight development and test
+extras run:
 
 ```bash
 task install
 ```
 
-This installs tools like `pytest-httpx`, `duckdb`, and `networkx` needed for
-local testing.
+This syncs the `dev-minimal` and `test` extras to install tools like
+`pytest-httpx`, `duckdb`, and `networkx` needed for local testing.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
@@ -70,6 +71,23 @@ See [docs/installation.md](docs/installation.md) for the authoritative
 installation guide, including environment setup, optional features and
 upgrade instructions.
 
+### Optional extras
+
+Autoresearch exposes optional extras to enable additional features:
+
+- `nlp` – language processing via spaCy and BERTopic
+- `llm` – heavy LLM libraries like `sentence-transformers`
+- `parsers` – PDF and DOCX document ingestion
+- `ui` – reference Streamlit interface
+- `vss` – DuckDB VSS extension for vector search
+- `distributed` – Ray and Redis for distributed processing
+- `analysis` – Polars-based data analysis utilities
+- `git` – local Git repository search
+- `full` – installs `nlp`, `ui`, `vss`, `distributed`, and `analysis`
+
+Install extras with `uv sync --extra nlp` or
+`pip install "autoresearch[nlp]"`.
+
 ## Building the documentation
 
 Install MkDocs and generate the static site:
@@ -83,4 +101,6 @@ Use `mkdocs serve` to preview the documentation locally.
 
 ## Accessibility
 
-CLI output uses Markdown headings and plain-text lists so screen readers can navigate sections. Help messages avoid color-only cues and respect the `NO_COLOR` environment variable for ANSI-free output.
+CLI output uses Markdown headings and plain-text lists so screen readers can
+navigate sections. Help messages avoid color-only cues and respect the
+`NO_COLOR` environment variable for ANSI-free output.

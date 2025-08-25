@@ -29,7 +29,6 @@ from dataclasses import dataclass, field
 from threading import RLock
 from typing import Any, ClassVar, Iterator, Optional, cast
 
-import duckdb
 import networkx as nx
 import rdflib
 
@@ -39,6 +38,9 @@ from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
+
+# Use "Any" for DuckDB connections due to incomplete upstream type hints.
+DuckDBConnection = Any
 
 
 @dataclass
@@ -1274,7 +1276,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             )
 
     @staticmethod
-    def get_duckdb_conn() -> duckdb.DuckDBPyConnection:
+    def get_duckdb_conn() -> DuckDBConnection:
         """Get the DuckDB connection used for relational storage.
 
         This method returns the global DuckDB connection used for relational
@@ -1285,7 +1287,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         delegated to that implementation.
 
         Returns:
-            duckdb.DuckDBPyConnection: The DuckDB connection instance.
+            DuckDBConnection: The DuckDB connection instance.
 
         Raises:
             NotFoundError: If the connection cannot be initialized or remains None after initialization.
@@ -1304,7 +1306,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
     @staticmethod
     @contextmanager
-    def connection() -> Iterator[duckdb.DuckDBPyConnection]:
+    def connection() -> Iterator[DuckDBConnection]:
         """Borrow a DuckDB connection from the pool."""
         if _delegate and _delegate is not StorageManager:
             with _delegate.connection() as conn:
