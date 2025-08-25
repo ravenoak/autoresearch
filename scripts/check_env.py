@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -119,9 +120,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
 
-    checks = [
-        check_python,
-        check_task,
+    checks = [check_python]
+
+    if shutil.which("task") is None:
+        print(
+            "WARNING: Go Task is not installed; run scripts/setup.sh before "
+            "using task commands",
+            file=sys.stderr,
+        )
+    else:
+        checks.append(check_task)
+
+    checks += [
         check_uv,
         lambda: check_module("flake8"),
         lambda: check_module("mypy"),

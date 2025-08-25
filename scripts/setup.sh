@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# Create .venv, install Go Task to ~/.local/bin, and development/test extras using uv.
+# Create .venv, install Go Task to .venv/bin, and development/test extras using uv.
 # Ensure we are running with Python 3.12 or newer.
 # Run `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
@@ -50,16 +50,47 @@ for pkg in pytest_httpx tomli_w freezegun hypothesis; do
     fi
 done
 
-# Ensure Go Task is installed after bootstrapping
-export PATH="$HOME/.local/bin:$PATH"
+# Ensure Go Task is installed inside the virtual environment
+VENV_BIN="$(pwd)/.venv/bin"
+export PATH="$VENV_BIN:$PATH"
 if ! command -v task >/dev/null 2>&1; then
-    echo "Go Task missing; installing..."
-    curl -sL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+    echo "Go Task missing; installing into $VENV_BIN..."
+    curl -sL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
 fi
 if ! command -v task >/dev/null 2>&1; then
     echo "task --version failed; Go Task is required but was not installed" >&2
     exit 1
 fi
+
+# Append Go Task path to activation scripts if absent
+for script in "$VENV_BIN/activate" \
+    "$VENV_BIN/activate.fish" \
+    "$VENV_BIN/activate.csh" \
+    "$VENV_BIN/activate.bat" \
+    "$VENV_BIN/activate.ps1"; do
+    if [ -f "$script" ] && ! grep -q 'VIRTUAL_ENV.*bin' "$script"; then
+        case "$script" in
+            *.fish)
+                echo 'set -gx PATH "$VIRTUAL_ENV/bin" $PATH' >>"$script"
+                ;;
+            *.csh)
+                echo 'setenv PATH "$VIRTUAL_ENV/bin:$PATH"' >>"$script"
+                ;;
+            *.ps1)
+                echo '$env:PATH = "$env:VIRTUAL_ENV/bin:" + $env:PATH' >>"$script"
+                ;;
+            *.bat)
+                echo 'set "PATH=%VIRTUAL_ENV%\\bin;%PATH%"' >>"$script"
+                ;;
+            *)
+                {
+                    echo 'PATH="$VIRTUAL_ENV/bin:$PATH"'
+                    echo 'export PATH'
+                } >>"$script"
+                ;;
+        esac
+    fi
+done
 
 # Create extensions directory if it doesn't exist
 mkdir -p extensions
@@ -154,10 +185,13 @@ done
 deactivate
 
 # Verify Go Task resolves after environment activation
+source .venv/bin/activate
 task --version >/dev/null 2>&1 || {
     echo "task failed to run" >&2
+    deactivate
     exit 1
 }
+deactivate
 
 # Validate required tool versions
 echo "Validating tool versions..."
