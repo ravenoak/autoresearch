@@ -128,7 +128,8 @@ def test_api_key_roles_integration(monkeypatch, api_client):
     assert resp.status_code == 200
 
     bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
-    assert bad.status_code == 403
+    assert bad.status_code == 401
+    assert bad.json()["detail"] == "Invalid API key"
 
 
 def test_stream_requires_api_key(monkeypatch, api_client):
@@ -153,7 +154,8 @@ def test_stream_requires_api_key(monkeypatch, api_client):
         assert resp.status_code == 200
 
     bad = api_client.post("/query/stream", json={"query": "q"}, headers={"X-API-Key": "bad"})
-    assert bad.status_code == 403
+    assert bad.status_code == 401
+    assert bad.json()["detail"] == "Invalid API key"
 
 
 def test_batch_query_async_order(monkeypatch, api_client):

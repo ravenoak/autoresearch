@@ -63,6 +63,7 @@ def test_role_assignments(monkeypatch, api_client):
 
     resp_missing = api_client.get("/whoami")
     assert resp_missing.status_code == 401
+    assert resp_missing.json()["detail"] == "Missing API key"
 
 
 def test_rate_limit(monkeypatch, api_client):
@@ -106,6 +107,7 @@ def test_single_api_key(monkeypatch, api_client):
 
     missing = api_client.post("/query", json={"query": "q"})
     assert missing.status_code == 401
+    assert missing.json()["detail"] == "Missing API key"
 
 
 def test_invalid_api_key(monkeypatch, api_client):
@@ -197,6 +199,7 @@ def test_missing_bearer_token(monkeypatch, api_client):
     cfg.api.bearer_token = generate_bearer_token()
     resp = api_client.post("/query", json={"query": "q"})
     assert resp.status_code == 401
+    assert resp.json()["detail"] == "Missing token"
 
 
 def test_permission_denied(monkeypatch, api_client):
