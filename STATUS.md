@@ -1,14 +1,13 @@
 # Status
 
-As of **August 25, 2025**, `scripts/codex_setup.sh` installs Go Task and the
-`dev` and `test` extras. Linting and type checks pass, but many unit tests
-fail.
+As of **August 25, 2025**, `uv sync --extra dev-minimal` installs the minimal
+development environment. `task` is not available in the container, so commands
+were run directly with `uv run`.
 
 ## Lint, type checks, and spec tests
 ```text
 uv run flake8 src tests
 uv run mypy src
-uv run python scripts/check_spec_tests.py
 ```
 Result: passed
 
@@ -16,22 +15,21 @@ Result: passed
 ```text
 uv run pytest tests/unit -q
 ```
-Result: 39 failed, 629 passed, 26 skipped, 24 deselected, 2 xfailed,
-32 warnings, 7 errors
+Result: 39 failed, 629 passed, 26 skipped, 24 deselected, 1 xfailed, 1 xpassed,
+31 warnings, 7 errors
 
 ## Integration tests
 ```text
 uv run pytest tests/integration -m \
   "not slow and not requires_ui and not requires_vss and not requires_distributed" -q
 ```
-Result: not run; blocking unit-test failures remain.
+Result: 16 failed, 148 passed, 6 skipped, 86 deselected, 5 warnings, 38 errors
 
 ## Behavior tests
 ```text
 uv run pytest tests/behavior -q
 ```
-Result: not run; feature discovery issue persists.
+Result: 213 errors, 2 skipped, 36 deselected, 5 warnings
 
 ## Coverage
-`task verify` executed a targeted subset but failed the coverage gate,
-reporting **14%** overall.
+Coverage not collected; failing tests must be resolved first.
