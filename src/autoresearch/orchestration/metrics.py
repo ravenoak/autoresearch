@@ -4,12 +4,11 @@ Metrics collection for orchestration system.
 
 import json
 import logging
-import math
-import os
-import time
 from contextlib import contextmanager
-from decimal import Decimal, ROUND_HALF_EVEN
+from decimal import ROUND_HALF_EVEN, Decimal
+from os import getenv
 from pathlib import Path
+from time import time
 from typing import Any, Dict, Iterator, List, Tuple
 
 from prometheus_client import Counter, Histogram
@@ -199,7 +198,7 @@ class OrchestrationMetrics:
         self.error_counts: Dict[str, int] = {}
         self.last_cycle_start: float | None = None
         self.resource_usage: List[Tuple[float, float, float, float, float]] = []
-        self.release = os.getenv("AUTORESEARCH_RELEASE", "development")
+        self.release = getenv("AUTORESEARCH_RELEASE", "development")
         self._release_logged = False
         self.prompt_lengths: List[int] = []
         self.token_usage_history: List[int] = []
@@ -211,12 +210,12 @@ class OrchestrationMetrics:
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
-        self.last_cycle_start = time.time()
+        self.last_cycle_start = time()
 
     def end_cycle(self) -> None:
         """Mark the end of a cycle and record duration."""
         if self.last_cycle_start:
-            duration = time.time() - self.last_cycle_start
+            duration = time() - self.last_cycle_start
             self.cycle_durations.append(duration)
             self.last_cycle_start = None
 
@@ -229,7 +228,7 @@ class OrchestrationMetrics:
     def record_system_resources(self) -> None:
         """Record current CPU, memory, and GPU usage."""
         cpu, mem, gpu, gpu_mem = _get_system_usage()
-        self.resource_usage.append((time.time(), cpu, mem, gpu, gpu_mem))
+        self.resource_usage.append((time(), cpu, mem, gpu, gpu_mem))
 
     def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int) -> None:
         """Record token usage for an agent."""
@@ -256,7 +255,7 @@ class OrchestrationMetrics:
         if self._release_logged:
             return
         path = Path(
-            os.getenv(
+            getenv(
                 "AUTORESEARCH_RELEASE_METRICS",
                 "tests/integration/baselines/release_tokens.json",
             )
@@ -328,7 +327,7 @@ class OrchestrationMetrics:
         """
         if path is None:
             path = Path(
-                os.getenv(
+                getenv(
                     "AUTORESEARCH_QUERY_TOKENS",
                     "tests/integration/baselines/query_tokens.json",
                 )
@@ -458,9 +457,7 @@ class OrchestrationMetrics:
         # Round using ``Decimal`` to avoid floating-point drift that could
         # otherwise inflate the budget (e.g. ``14.5000000001`` rounding to
         # ``15``).
-        scaled = Decimal(str(max(usage_candidates))) * (
-            Decimal("1") + Decimal(str(margin))
-        )
+        scaled = Decimal(str(max(usage_candidates))) * (Decimal("1") + Decimal(str(margin)))
         desired = int(scaled.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
 
         return max(desired, 1)
