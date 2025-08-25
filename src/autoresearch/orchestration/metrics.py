@@ -1,12 +1,13 @@
 """Metrics collection for orchestration system."""
 
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
 from decimal import ROUND_HALF_EVEN, Decimal
 from os import getenv
 from pathlib import Path
 from time import time
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any
 
 from prometheus_client import Counter, Histogram
 
@@ -114,7 +115,7 @@ def temporary_metrics() -> Iterator[None]:
             )
 
 
-def _get_system_usage() -> Tuple[float, float, float, float]:  # noqa: E302
+def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
         import psutil  # type: ignore
@@ -158,7 +159,7 @@ def record_query() -> None:
     QUERY_COUNTER.inc()
 
 
-def _mean_last_nonzero(values: List[int], n: int = 10) -> float:
+def _mean_last_nonzero(values: list[int], n: int = 10) -> float:
     """Return the mean of the last ``n`` positive entries in ``values``.
 
     Parameters
@@ -189,21 +190,21 @@ class OrchestrationMetrics:
     """Collects metrics during query execution."""
 
     def __init__(self) -> None:
-        self.agent_timings: Dict[str, List[float]] = {}
-        self.token_counts: Dict[str, Dict[str, int]] = {}
-        self.cycle_durations: List[float] = []
-        self.error_counts: Dict[str, int] = {}
+        self.agent_timings: dict[str, list[float]] = {}
+        self.token_counts: dict[str, dict[str, int]] = {}
+        self.cycle_durations: list[float] = []
+        self.error_counts: dict[str, int] = {}
         self.last_cycle_start: float | None = None
-        self.resource_usage: List[Tuple[float, float, float, float, float]] = []
+        self.resource_usage: list[tuple[float, float, float, float, float]] = []
         self.release = getenv("AUTORESEARCH_RELEASE", "development")
         self._release_logged = False
-        self.prompt_lengths: List[int] = []
-        self.token_usage_history: List[int] = []
+        self.prompt_lengths: list[int] = []
+        self.token_usage_history: list[int] = []
         self._last_total_tokens = 0
         self._ever_used_tokens = False
-        self.agent_usage_history: Dict[str, List[int]] = {}
-        self._last_agent_totals: Dict[str, int] = {}
-        self.circuit_breakers: Dict[str, CircuitBreakerState] = {}
+        self.agent_usage_history: dict[str, list[int]] = {}
+        self._last_agent_totals: dict[str, int] = {}
+        self.circuit_breakers: dict[str, CircuitBreakerState] = {}
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -252,13 +253,14 @@ class OrchestrationMetrics:
         if self._release_logged:
             return
         import json
+
         path = Path(
             getenv(
                 "AUTORESEARCH_RELEASE_METRICS",
                 "tests/integration/baselines/release_tokens.json",
             )
         )
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
         if path.exists():
             try:
                 data = json.loads(path.read_text())
@@ -274,7 +276,7 @@ class OrchestrationMetrics:
         path.write_text(json.dumps(data, indent=2))
         self._release_logged = True
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get a summary of all metrics."""
         total_duration = sum(self.cycle_durations)
         total_tokens_in = sum(tc["in"] for tc in self.token_counts.values())
@@ -333,7 +335,7 @@ class OrchestrationMetrics:
                 )
             )
 
-        data: Dict[str, int] = {}
+        data: dict[str, int] = {}
         if path.exists():
             try:
                 data = json.loads(path.read_text())

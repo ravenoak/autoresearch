@@ -1,7 +1,7 @@
 """Load behavior fixtures when running feature files directly."""
 
-import sys
 from pathlib import Path
+import sys
 
 # Import behavior-level fixtures and plugin registrations
 import tests.behavior.conftest  # noqa: F401
