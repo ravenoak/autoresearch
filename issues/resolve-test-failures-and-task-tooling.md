@@ -1,19 +1,15 @@
 # Resolve test failures and task tooling
 
 ## Context
-Go Task and `redis` are installed, yet `task check` fails with `flake8`
-warnings for an unused import in
-`src/autoresearch/orchestration/metrics.py` and import order in
-`tests/behavior/features/conftest.py`. Targeted unit tests such as
-`test_monitor_cli.py::test_monitor_metrics` and
-`test_token_budget_convergence.py::test_suggest_token_budget_converges`
-now pass, but API authentication, concurrent query handling, Redis broker
-detection, and behavior feature discovery remain unresolved.
+Go Task and `redis` install correctly, and linting and type checks pass. However
+`./.venv/bin/task check` reports 33 failing tests and seven errors. Failures stem
+from DuckDB table creation errors, missing CLI help options, broken backup
+subcommands, and incorrect token budget history logic. Behavior feature
+discovery and API authentication remain unresolved.
 
 Redis-dependent integration tests skip cleanly when `redis` is missing.
 
 ## Dependencies
-
 - [address-storage-persistence-eviction-failure](archive/address-storage-persistence-eviction-failure.md)
 - [correct-token-budget-convergence-logic](archive/correct-token-budget-convergence-logic.md)
 - [repair-api-authentication-endpoints](repair-api-authentication-endpoints.md)
@@ -21,6 +17,9 @@ Redis-dependent integration tests skip cleanly when `redis` is missing.
 - [add-redis-dependency-for-integration-tests](add-redis-dependency-for-integration-tests.md)
 - [fix-monitor-cli-metrics-failure](archive/fix-monitor-cli-metrics-failure.md)
 - [fix-pytest-bdd-feature-discovery](fix-pytest-bdd-feature-discovery.md)
+- [fix-storage-table-creation-errors](fix-storage-table-creation-errors.md)
+- [repair-cli-help-and-backup-commands](repair-cli-help-and-backup-commands.md)
+- [correct-token-budget-history-logic](correct-token-budget-history-logic.md)
 
 ## Acceptance Criteria
 - Go Task installed in `.venv` and available on `PATH`.
