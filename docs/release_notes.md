@@ -63,6 +63,8 @@ Successfully built autoresearch-0.1.0a1.tar.gz and autoresearch-0.1.0a1-py3-none
 
 ### Test Publishing
 
+Dry-run upload using ``scripts/publish_dev.py --dry-run --repository testpypi``:
+
 ```text
 * Creating isolated environment: venv+pip...
 * Installing packages in isolated environment:

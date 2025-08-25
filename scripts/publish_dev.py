@@ -2,11 +2,11 @@
 """Publish a development build to the TestPyPI repository.
 
 Usage:
-    uv run scripts/publish_dev.py [--dry-run]
+    uv run scripts/publish_dev.py [--dry-run] [--repository REPO]
 
-Required environment variables:
-    TWINE_USERNAME -- TestPyPI username
-    TWINE_PASSWORD -- TestPyPI password
+Authentication uses one of the following methods:
+    - ``TWINE_API_TOKEN`` -- API token for TestPyPI
+    - ``TWINE_USERNAME`` and ``TWINE_PASSWORD`` -- legacy username/password
 
 The script builds the package and uploads it to TestPyPI using ``twine``.
 """
@@ -30,13 +30,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Build the package but skip uploading",
     )
+    parser.add_argument(
+        "--repository",
+        default="testpypi",
+        help="Repository name for twine upload",
+    )
     args = parser.parse_args(argv)
 
     dist = Path("dist")
     if dist.exists():
         shutil.rmtree(dist)
 
-    build_cmd = ["uv", "run", "python", "-m", "build"]
+    build_cmd = ["uv", "run", "--extra", "build", "python", "-m", "build"]
     if subprocess.call(build_cmd):
         return 1
 
@@ -49,17 +54,35 @@ def main(argv: list[str] | None = None) -> int:
         print("Dry run selected; skipping upload")
         return 0
 
-    if not os.getenv("TWINE_USERNAME") or not os.getenv("TWINE_PASSWORD"):
-        print("TWINE_USERNAME and TWINE_PASSWORD must be set in the environment")
+    env = os.environ.copy()
+    token = env.get("TWINE_API_TOKEN")
+    username = env.get("TWINE_USERNAME")
+    password = env.get("TWINE_PASSWORD")
+    if token:
+        env.setdefault("TWINE_USERNAME", "__token__")
+        env.setdefault("TWINE_PASSWORD", token)
+    elif not username or not password:
+        print(
+            "Set TWINE_API_TOKEN or both TWINE_USERNAME and TWINE_PASSWORD in the environment"
+        )
         return 1
 
-    upload_cmd = ["uv", "run", "twine", "upload", "--repository", "testpypi", *files]
-    result = subprocess.run(upload_cmd, capture_output=True, text=True)
+    upload_cmd = [
+        "uv",
+        "run",
+        "twine",
+        "upload",
+        "--repository",
+        args.repository,
+        *files,
+    ]
+    result = subprocess.run(upload_cmd, capture_output=True, text=True, env=env)
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
     if result.returncode != 0:
-        if "403" in result.stdout or "403" in result.stderr:
-            print("Upload failed: received HTTP 403 from repository")
+        out = result.stdout + result.stderr
+        if "403" in out or "401" in out or "Forbidden" in out or "Unauthorized" in out:
+            print("Authentication failed: check your TestPyPI credentials")
             return 1
         return result.returncode
     return 0
