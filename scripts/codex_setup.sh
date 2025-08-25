@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: AR_INSTALL_UI=1 AR_INSTALL_NLP=1 ./scripts/codex_setup.sh
-# Codex environment bootstrap for this evaluation container; see AGENTS.md for
-# repository-wide guidelines. For any other environment, use
-# `./scripts/setup.sh`.
+# Codex-only environment bootstrap for this evaluation container; see AGENTS.md
+# for repository-wide guidelines. Do not use or document this script outside the
+# AGENTS.md system. For any other environment, use `./scripts/setup.sh`.
 set -euo pipefail
 
 LOG_FILE="codex_setup.log"

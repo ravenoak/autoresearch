@@ -11,7 +11,10 @@
   hooks or dependencies.
 - Use **uv** for package management; prefix standalone Python commands with
   `uv run`.
-- If provisioning fails, consult `scripts/codex_setup.sh`.
+- For provisioning issues within this evaluation, `scripts/codex_setup.sh`
+  bootstraps the Codex environment. It is Codex-specific, non-generic, and
+  must not be referenced outside AGENTS.md files or the script itself. Use
+  `scripts/setup.sh` for any other environment.
 
 ## Testing
 - `task check` – run early for linting, type checks, and a fast test suite.
@@ -38,7 +41,8 @@
 
 ## AGENTS.md Compliance
 - Only `scripts/codex_setup.sh` may mention `AGENTS.md`; keep it aligned with
-  these instructions.
+  these instructions. Do not reference `scripts/codex_setup.sh` outside this
+  AGENTS.md system or the script itself.
 - This file's scope is the entire repository; nested `AGENTS.md` files override
   these rules.
 - This AGENTS.md follows the [AGENTS.md spec](https://gist.github.com) and acts
@@ -46,6 +50,8 @@
 - For extensive details, consult docs under `docs/` as required.
 
 ## Changelog
+- 2025-08-21: Clarified Codex-only scope for `scripts/codex_setup.sh` and
+  restricted references to AGENTS files.
 - 2025-08-20: Restructured instructions, added dialectical reasoning and
   continuous improvement guidance, and cited AGENTS.md spec.
 - 2025-08-19: Added project snapshot, environment steps, Task commands,
