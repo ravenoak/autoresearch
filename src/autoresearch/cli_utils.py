@@ -244,17 +244,24 @@ def sparql_query_cli(query: str, engine: str | None = None, apply_reasoning: boo
     console.print(tabulate(rows, headers=headers, tablefmt="github"))
 
 
-def visualize_query_cli(query: str, output_path: str, *, layout: str = "spring") -> None:
+def visualize_query_cli(
+    query: str,
+    output_path: str,
+    *,
+    layout: str = "spring",
+    interactive: bool = False,
+    loops: int | None = None,
+    ontology: str | None = None,
+) -> None:
     """Run a query and save a knowledge graph visualization.
 
-    Parameters
-    ----------
-    query:
-        Natural language query to run.
-    output_path:
-        Where to save the rendered PNG image.
-    layout:
-        Layout algorithm for the graph visualization.
+    Args:
+        query: Natural language query to run.
+        output_path: Where to save the rendered PNG image.
+        layout: Layout algorithm for the graph visualization.
+        interactive: Refine the query between agent cycles.
+        loops: Number of reasoning cycles to run.
+        ontology: Ontology file to load before executing the query.
     """
     from rich.progress import Progress
 
@@ -263,16 +270,38 @@ def visualize_query_cli(query: str, output_path: str, *, layout: str = "spring")
     from .monitor import _collect_system_metrics, _render_metrics
     from .output_format import OutputFormatter
     from .visualization import save_knowledge_graph
+    from . import Prompt
 
     loader = ConfigLoader()
     config = loader.load_config()
+
+    updates: dict[str, Any] = {}
+    if loops is not None:
+        updates["loops"] = loops
+    if updates:
+        config = config.model_copy(update=updates)
+
+    if ontology:
+        from .storage import StorageManager
+
+        StorageManager.load_ontology(ontology)
+
     loops = getattr(config, "loops", 1)
 
     with Progress() as progress:
         task = progress.add_task("[green]Processing query...", total=loops)
 
-        def on_cycle_end(loop: int, _state: Any) -> None:
+        def on_cycle_end(loop: int, state: Any) -> None:
             progress.update(task, advance=1)
+            if interactive and loop < loops - 1:
+                refinement = Prompt.ask(
+                    "Refine query or press Enter to continue (q to abort)",
+                    default="",
+                )
+                if refinement.lower() == "q":
+                    state.error_count = getattr(config, "max_errors", 3)
+                elif refinement:
+                    state.query = refinement
 
         result = Orchestrator().run_query(query, config, {"on_cycle_end": on_cycle_end})
 

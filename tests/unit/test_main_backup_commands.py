@@ -2,6 +2,7 @@ from datetime import datetime
 from typer.testing import CliRunner
 from unittest.mock import patch
 
+from autoresearch.errors import BackupError
 from autoresearch.main import app
 from autoresearch.storage_backup import BackupInfo
 
@@ -19,9 +20,7 @@ def test_backup_create_command(mock_manager):
     )
 
     # Execute
-    result = runner.invoke(
-        app, ["backup", "create", "--dir", "test_backups", "--compress"]
-    )
+    result = runner.invoke(app, ["backup", "create", "--dir", "test_backups", "--compress"])
 
     # Verify
     assert result.exit_code == 0
@@ -173,3 +172,50 @@ def test_backup_recover_command(mock_manager):
     assert result.exit_code == 0
     mock_manager.restore_point_in_time.assert_called_once()
     assert "Point-in-time recovery completed successfully" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_create_error(mock_manager):
+    runner = CliRunner()
+    mock_manager.create_backup.side_effect = Exception("boom")
+    result = runner.invoke(app, ["backup", "create"])
+    assert result.exit_code == 1
+    assert "Unexpected error creating backup" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_list_error(mock_manager):
+    runner = CliRunner()
+    mock_manager.list_backups.side_effect = BackupError("oops")
+    result = runner.invoke(app, ["backup", "list"])
+    assert result.exit_code == 1
+    assert "Error listing backups" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_restore_error(mock_manager, monkeypatch):
+    runner = CliRunner()
+    mock_manager.restore_backup.side_effect = BackupError("fail")
+    monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "y")
+    result = runner.invoke(app, ["backup", "restore", "p"])
+    assert result.exit_code == 1
+    assert "Error restoring backup" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_schedule_error(mock_manager):
+    runner = CliRunner()
+    mock_manager.schedule_backup.side_effect = BackupError("bad")
+    result = runner.invoke(app, ["backup", "schedule"])
+    assert result.exit_code == 1
+    assert "Error scheduling backups" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_recover_error(mock_manager, monkeypatch):
+    runner = CliRunner()
+    mock_manager.restore_point_in_time.side_effect = BackupError("bad")
+    monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "y")
+    result = runner.invoke(app, ["backup", "recover", "2023-01-01 00:00:00"])
+    assert result.exit_code == 1
+    assert "Error performing point-in-time recovery" in result.stdout

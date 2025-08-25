@@ -128,7 +128,8 @@ def start_watcher(
     if is_first_run and ctx.invoked_subcommand is None:
         console.print("\n" + format_success("Welcome to Autoresearch!", symbol=False))
         console.print(
-            "A local-first research assistant that coordinates multiple agents to produce evidence-backed answers.\n"
+            "A local-first research assistant that coordinates multiple agents "
+            "to produce evidence-backed answers.\n"
         )
 
         print_info("Getting Started:", symbol=False)
@@ -301,7 +302,8 @@ def search(
         autoresearch search --agents Synthesizer,Contrarian "What is quantum computing?"
 
         # Run agent groups in parallel
-        autoresearch search --parallel --agent-groups "Synthesizer,Contrarian" "FactChecker" "Impacts of AI"
+        autoresearch search --parallel --agent-groups "Synthesizer,Contrarian" \
+            "FactChecker" "Impacts of AI"
     """
     config = _config_loader.load_config()
 
@@ -494,9 +496,9 @@ def serve_a2a(
 ) -> None:
     """Start an A2A server that exposes Autoresearch as an agent.
 
-    This allows other A2A-compatible agents to interact with Autoresearch via the Agent-to-Agent protocol.
-    The server exposes Autoresearch's capabilities as an agent that can process queries, manage configuration,
-    and discover capabilities.
+    This allows other A2A-compatible agents to interact with Autoresearch via the
+    Agent-to-Agent protocol. The server exposes Autoresearch's capabilities as an
+    agent that can process queries, manage configuration, and discover capabilities.
 
     Examples:
         # Start the A2A server on the default host and port
@@ -846,8 +848,9 @@ def test_a2a(
 ) -> None:
     """Test the A2A interface.
 
-    This command tests the A2A interface by sending test requests and displaying the responses.
-    It can test the connection to the A2A server, the capabilities endpoint, and the query functionality.
+    This command tests the A2A interface by sending test requests and displaying the
+    responses. It can test the connection to the A2A server, the capabilities
+    endpoint, and the query functionality.
 
     Examples:
         # Run a test suite with default queries
@@ -903,10 +906,33 @@ def visualize(
         "--layout",
         help="Graph layout algorithm (spring or circular)",
     ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Refine the query interactively between agent cycles",
+    ),
+    loops: int | None = typer.Option(
+        None,
+        "--loops",
+        help="Number of reasoning cycles to run",
+    ),
+    ontology: str | None = typer.Option(
+        None,
+        "--ontology",
+        help="Load an ontology file before executing the query",
+    ),
 ) -> None:
     """Run a query and render a knowledge graph."""
     try:
-        _cli_visualize_query(query, output, layout=layout)
+        _cli_visualize_query(
+            query,
+            output,
+            layout=layout,
+            interactive=interactive,
+            loops=loops,
+            ontology=ontology,
+        )
     except Exception:
         raise typer.Exit(1)
 
