@@ -10,8 +10,10 @@ is set up correctly, including:
 """
 
 import os
+import subprocess
 import sys
 from pathlib import Path
+
 
 def print_status(message, success=True):
     """Print a status message with color."""
@@ -24,6 +26,7 @@ def print_status(message, success=True):
 def print_warning(message) -> None:
     """Print a warning message in yellow."""
     print(f"\033[93m⚠ {message}\033[0m")
+
 
 def check_dependencies():
     """Check that required Python packages are installed."""
@@ -40,10 +43,12 @@ def check_dependencies():
 
     return len(missing_packages) == 0
 
+
 def check_duckdb_vss():
     """Check that DuckDB and the VSS extension can be loaded."""
     try:
         import duckdb
+
         conn = duckdb.connect(":memory:")
         print_status("DuckDB can be loaded")
 
@@ -54,7 +59,7 @@ def check_duckdb_vss():
             with open(env_path, "r") as f:
                 for line in f:
                     if line.startswith("VECTOR_EXTENSION_PATH="):
-                        vss_path = line.strip().split("=", 1)[1].strip('"\'')
+                        vss_path = line.strip().split("=", 1)[1].strip("\"'")
                         break
 
         if vss_path and os.path.exists(vss_path):
@@ -69,9 +74,7 @@ def check_duckdb_vss():
                         f"Network error loading VSS extension: {e}; continuing without it"
                     )
                     return True
-                print_status(
-                    f"Failed to load VSS extension from {vss_path}: {e}", False
-                )
+                print_status(f"Failed to load VSS extension from {vss_path}: {e}", False)
                 return False
 
         # Skip check when the extension file is unavailable
@@ -81,10 +84,12 @@ def check_duckdb_vss():
         print_status(f"Failed to load DuckDB: {e}", False)
         return False
 
+
 def check_storage():
     """Check that the storage system can be initialized and key features work."""
     try:
         from autoresearch.storage import StorageManager
+
         try:
             StorageManager.setup()
         except Exception as e:
@@ -114,8 +119,13 @@ def check_storage():
                 # The "HNSW index keys must be of type FLOAT[N]" error is common in test environments
                 # where there are no actual embeddings in the database
                 error_str = str(e)
-                if "HNSW index keys must be of type FLOAT[N]" in error_str or "HNSW index 'metric'" in error_str:
-                    print_status(f"HNSW index creation failed with acceptable error (test environment): {e}")
+                if (
+                    "HNSW index keys must be of type FLOAT[N]" in error_str
+                    or "HNSW index 'metric'" in error_str
+                ):
+                    print_status(
+                        f"HNSW index creation failed with acceptable error (test environment): {e}"
+                    )
                 else:
                     print_status(f"Failed to create HNSW index: {e}", False)
         else:
@@ -124,11 +134,14 @@ def check_storage():
         # Check RDF store
         try:
             import rdflib
+
             store = StorageManager.get_rdf_store()
             # Check if the store is persistent by checking its type
             # Memory store doesn't have a 'name' attribute, so we need to handle that case
             try:
-                is_persistent = not isinstance(store, rdflib.Graph) or (hasattr(store.store, 'name') and store.store.name != "default")
+                is_persistent = not isinstance(store, rdflib.Graph) or (
+                    hasattr(store.store, "name") and store.store.name != "default"
+                )
                 if is_persistent:
                     print_status("RDF store is persistent")
                 else:
@@ -146,6 +159,28 @@ def check_storage():
         print_status(f"Failed to initialize storage system: {e}", False)
         return False
 
+
+def run_behavior_smoke():
+    """Run a minimal behavior test invocation to verify path resolution."""
+    cmd = ["pytest", "--rootdir=.", "tests/behavior", "-q", "--maxfail=1"]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parent.parent,
+    )
+    if result.returncode in (0, 1):
+        print_status("BDD paths resolve")
+        if result.returncode == 1:
+            print_warning("BDD smoke run reported failing scenarios")
+        return True
+    print_status("BDD paths failed to resolve", False)
+    output = result.stderr or result.stdout
+    if output:
+        print(output.strip())
+    return False
+
+
 def main():
     """Run all smoke tests."""
     print("\n=== Autoresearch Environment Smoke Test ===\n")
@@ -153,18 +188,21 @@ def main():
     deps_ok = check_dependencies()
     duckdb_ok = check_duckdb_vss()
     storage_ok = check_storage()
+    behavior_ok = run_behavior_smoke()
 
     print("\n=== Summary ===")
     print_status("Dependencies", deps_ok)
     print_status("DuckDB and VSS", duckdb_ok)
     print_status("Storage System", storage_ok)
+    print_status("BDD Paths", behavior_ok)
 
-    if deps_ok and duckdb_ok and storage_ok:
+    if deps_ok and duckdb_ok and storage_ok and behavior_ok:
         print("\n\033[92mAll tests passed! The environment is set up correctly.\033[0m")
         return 0
     else:
         print("\n\033[91mSome tests failed. Please check the output above for details.\033[0m")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

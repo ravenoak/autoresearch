@@ -198,7 +198,7 @@ uv run pytest
 # Run specific test categories
 uv run pytest tests/unit
 uv run pytest tests/integration
-uv run pytest tests/behavior
+uv run pytest --rootdir=. tests/behavior -q
 
 # Run with coverage report
 uv run pytest --cov=src

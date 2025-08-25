@@ -200,7 +200,12 @@ autoresearch = "autoresearch.main:app"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-m 'not slow and not requires_ui and not requires_vss and not requires_distributed'"
-testpaths = ["tests/unit", "tests/integration", "tests/behavior"]
+testpaths = [
+    "tests/unit",
+    "tests/integration",
+    "tests/behavior",
+    "tests/behavior/features",
+]
 bdd_features_base_dir = "tests/behavior/features"
 python_files = ["test_*.py", "*_steps.py"]
 markers = [

@@ -5,7 +5,7 @@ Version 0.1.0a1 will be the project's first public alpha. Go Task and dev
 extras now install via the setup script, but `task check` fails on `flake8`
 warnings in `src/autoresearch/orchestration/metrics.py` and
 `tests/behavior/features/conftest.py`. Running
-`uv run pytest tests/behavior/features/api_orchestrator_integration.feature -q`
+`uv run pytest --rootdir=. tests/behavior -q`
 still reports "no match in any of [<Dir features>]". Integration tests execute
 with `redis` installed, but coverage remains at **24%**, far below the **90%**
 target. The TestPyPI upload returns HTTP 403, and release notes and packaging
