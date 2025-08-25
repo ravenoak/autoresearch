@@ -33,4 +33,4 @@ uv run pytest tests/behavior -q
 Result: numerous failures; run interrupted after keyboard interrupt
 
 ## Coverage
-Coverage collection reports **24%** overall
+Coverage collection of targeted modules reports **44%** overall
