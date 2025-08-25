@@ -17,6 +17,22 @@ Follow these steps to publish a new version of Autoresearch.
   uv run scripts/publish_dev.py
   ```
 
+## TestPyPI authentication
+
+Generate an API token from [TestPyPI](https://test.pypi.org/manage/account/)
+and store it securely:
+
+1. Sign in and open **Account settings → API tokens**.
+2. Create a token scoped to the project or your entire account.
+3. Export the token as ``TWINE_API_TOKEN`` or set
+   ``TWINE_USERNAME=__token__`` and ``TWINE_PASSWORD=<token>``.
+
+If the upload fails with a 403 response:
+
+- Confirm you are using a TestPyPI token rather than a PyPI token.
+- Ensure the token has permission to upload the project.
+- Regenerate the token if it may be revoked or expired.
+
 - Release to PyPI once the TestPyPI upload is verified.
 
   ```bash
