@@ -14,7 +14,7 @@ package.__path__ = [str(Path(__file__).resolve().parents[2] / "src" / "autoresea
 sys.modules.setdefault("autoresearch.monitor", package)
 from autoresearch.monitor.node_health import NodeHealthMonitor  # noqa: E402
 
-pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
+pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed, pytest.mark.redis]
 
 
 class DummyRedis:
@@ -56,3 +56,25 @@ def test_node_health_monitor(monkeypatch: pytest.MonkeyPatch, free_tcp_port: int
     assert registry.get_sample_value("autoresearch_redis_up") == 1.0
     assert registry.get_sample_value("autoresearch_ray_up") == 1.0
     assert registry.get_sample_value("autoresearch_node_health") == 1.0
+
+
+def test_node_health_monitor_redis_down(monkeypatch: pytest.MonkeyPatch, free_tcp_port: int) -> None:
+    import redis
+
+    class FailingRedis(DummyRedis):
+        def ping(self) -> bool:
+            raise redis.ConnectionError()
+
+    monkeypatch.setattr(redis.Redis, "from_url", lambda url: FailingRedis())
+    monkeypatch.setitem(sys.modules, "ray", DummyRay)
+    registry = CollectorRegistry()
+    monitor = NodeHealthMonitor(
+        redis_url="redis://localhost:6379/0",
+        ray_address="auto",
+        port=free_tcp_port,
+        interval=0.1,
+        registry=registry,
+    )
+    monitor.check_once()
+    assert registry.get_sample_value("autoresearch_redis_up") == 0.0
+    assert registry.get_sample_value("autoresearch_node_health") == 0.0
