@@ -16,6 +16,7 @@
 - [Relevance Ranking](relevance_ranking.md)
 - [Error Recovery via Exponential Backoff](error_recovery.md)
 - [Cache Eviction Strategy](cache_eviction.md)
+- [Storage Eviction](storage_eviction.md)
 - [Resource Monitoring](resource_monitor.md)
 - [Monitor CLI](monitor_cli.md)
 - [Graph Visualization Pipeline](visualization.md)

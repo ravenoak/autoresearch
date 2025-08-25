@@ -47,3 +47,10 @@ usage is linear in the number of tracked clients.
 - Distributed clocks can drift, causing inconsistent refill times.
 - Buckets must expire for idle clients to avoid unbounded memory use.
 - Bursty traffic may need jitter or leaky bucket smoothing.
+
+## Verification
+
+Property-based tests
+[tests/unit/test_property_api_rate_limit_bounds.py](../../tests/unit/test_property_api_rate_limit_bounds.py)
+generate random request patterns to confirm that a client never exceeds its
+configured bound.

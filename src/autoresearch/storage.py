@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import os
 import time
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from threading import RLock
@@ -1474,3 +1474,48 @@ class StorageManager(metaclass=StorageManagerMeta):
         from .visualization import save_rdf_graph
 
         save_rdf_graph(store, output_path)
+
+
+class EvictionPolicy:
+    """Base class for simple eviction policy simulations."""
+
+    def __init__(self, capacity: int) -> None:
+        self.capacity = capacity
+
+    def record(self, key: str) -> str | None:
+        """Record access to ``key`` and return any evicted item."""
+        raise NotImplementedError
+
+
+class FIFOEvictionPolicy(EvictionPolicy):
+    """First-in, first-out eviction policy."""
+
+    def __init__(self, capacity: int) -> None:
+        super().__init__(capacity)
+        self._queue: deque[str] = deque()
+
+    def record(self, key: str) -> str | None:
+        if key in self._queue:
+            return None
+        self._queue.append(key)
+        if len(self._queue) > self.capacity:
+            return self._queue.popleft()
+        return None
+
+
+class LRUEvictionPolicy(EvictionPolicy):
+    """Least recently used eviction policy."""
+
+    def __init__(self, capacity: int) -> None:
+        super().__init__(capacity)
+        self._order: OrderedDict[str, None] = OrderedDict()
+
+    def record(self, key: str) -> str | None:
+        if key in self._order:
+            self._order.move_to_end(key)
+        else:
+            self._order[key] = None
+        if len(self._order) > self.capacity:
+            evicted, _ = self._order.popitem(last=False)
+            return evicted
+        return None
