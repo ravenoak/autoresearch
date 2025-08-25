@@ -10,6 +10,13 @@ Autoresearch requires **Python 3.12 or newer**,
 installs Go Task to `~/.local/bin` and adds that directory to `PATH`.
 Manual installation instructions are below if needed.
 
+Redis is required only for tests or features that use the
+`.[distributed]` extra. When Redis is missing those tests are skipped and
+distributed features remain disabled.
+
+Optional extras enable additional capabilities and are installed on
+demand with `uv sync --extra <name>`.
+
 ## After cloning
 
 Run a bootstrap command immediately:

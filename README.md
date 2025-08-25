@@ -24,6 +24,14 @@ setup is complete. See
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 
+Optional extras provide features such as NLP, a UI, or distributed
+processing. Install them on demand with `uv sync --extra <name>` or
+`pip install "autoresearch[<name>]"`.
+
+A running Redis server is needed only for the `[distributed]` extra or tests
+tagged `requires_distributed`. When Redis is absent those scenarios are
+skipped.
+
 To bootstrap a Python 3.12+ environment with the lightweight development and test
 extras run:
 
