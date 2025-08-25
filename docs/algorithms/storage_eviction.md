@@ -9,6 +9,13 @@ policies. We model two strategies:
 Both policies operate in constant time per update and require memory
 linear in cache size.
 
+## DuckDB Initialization
+
+Use `initialize_storage()` when the DuckDB path is `:memory:`. In-memory
+databases start empty on each run, so the helper recreates the `nodes`,
+`edges`, `embeddings`, and `metadata` tables before eviction logic is
+evaluated.
+
 ## Verification
 
 Simulation tests
