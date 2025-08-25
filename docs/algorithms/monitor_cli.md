@@ -9,6 +9,11 @@ The `autoresearch monitor` commands stream system metrics and resource usage.
 3. `monitor resources` collects samples for a duration and reports
    aggregates.
 4. `monitor start --prometheus` launches a Prometheus metrics endpoint.
+5. `monitor serve` runs a node health server and exits 0 when stopped.
+
+## Interrupt Handling
+
+- `monitor serve` catches `KeyboardInterrupt` and shuts down cleanly.
 
 ## Error Handling
 

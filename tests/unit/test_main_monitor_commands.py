@@ -47,3 +47,37 @@ def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class):
     mock_a2a_interface_class.assert_called_once()
     assert "Starting A2A server" in result.stdout
     assert "Server stopped" in result.stdout
+
+
+@patch("autoresearch.monitor.cli.NodeHealthMonitor")
+def test_monitor_serve_command(mock_monitor_class):
+    """Test the monitor serve command."""
+    runner = CliRunner()
+    mock_monitor = MagicMock()
+    mock_monitor.start.side_effect = SystemExit
+    mock_monitor_class.return_value = mock_monitor
+
+    result = runner.invoke(app, ["monitor", "serve"])
+
+    assert result.exit_code == 0
+    mock_monitor_class.assert_called_once()
+    mock_monitor.start.assert_called_once()
+    mock_monitor.stop.assert_called_once()
+    assert "Starting node health server" in result.stdout
+
+
+@patch("autoresearch.monitor.cli.NodeHealthMonitor")
+def test_monitor_serve_command_keyboard_interrupt(mock_monitor_class):
+    """Test the monitor serve command with KeyboardInterrupt."""
+    runner = CliRunner()
+    mock_monitor = MagicMock()
+    mock_monitor.start.side_effect = KeyboardInterrupt
+    mock_monitor_class.return_value = mock_monitor
+
+    result = runner.invoke(app, ["monitor", "serve"])
+
+    assert result.exit_code == 0
+    mock_monitor_class.assert_called_once()
+    mock_monitor.start.assert_called_once()
+    mock_monitor.stop.assert_called_once()
+    assert "Server stopped" in result.stdout

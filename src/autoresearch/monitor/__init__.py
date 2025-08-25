@@ -302,3 +302,6 @@ def start(
         if _system_monitor:
             _system_monitor.stop()
             _system_monitor = None
+
+
+from . import cli as _cli  # noqa: E402,F401
