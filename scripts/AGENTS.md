@@ -6,6 +6,8 @@ These instructions apply to files in the `scripts/` directory.
 - **Purpose:** automation utilities and environment helpers.
 - **Primary languages:** Bash and Python.
 - **Key outputs:** CLI tools and setup scripts.
+- `codex_setup.sh` bootstraps only the Codex evaluation environment and must
+  not be referenced outside AGENTS.md files or the script itself.
 
 ## Conventions
 - Provide a clear CLI interface or usage comment at the top of each script.
