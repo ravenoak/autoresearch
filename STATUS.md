@@ -27,7 +27,7 @@ Result: 16 failed, 148 passed, 6 skipped, 86 deselected, 5 warnings, 38 errors
 
 ## Behavior tests
 ```text
-uv run pytest tests/behavior -q
+uv run pytest --rootdir=. tests/behavior -q
 ```
 Result: 213 errors, 2 skipped, 36 deselected, 5 warnings
 
