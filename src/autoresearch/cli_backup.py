@@ -1,4 +1,5 @@
 """Typer commands for managing database backups."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -74,6 +75,14 @@ def backup_create(
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
         raise typer.Exit(code=1)
 
+    except KeyboardInterrupt:
+        console.print("[bold yellow]Backup creation cancelled.[/bold yellow]")
+        raise typer.Exit(code=1)
+
+    except Exception as e:  # pragma: no cover - defensive
+        console.print(f"[bold red]Unexpected error creating backup:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
 
 @backup_app.command("restore")
 def backup_restore(
@@ -100,7 +109,8 @@ def backup_restore(
     try:
         if not force:
             console.print(
-                "[bold yellow]Warning:[/bold yellow] Restoring a backup will create new database files."
+                "[bold yellow]Warning:[/bold yellow] "
+                "Restoring a backup will create new database files."
             )
             console.print("The original files will not be modified, but you will need to configure")
             console.print("the application to use the restored files if you want to use them.")
@@ -131,6 +141,14 @@ def backup_restore(
         console.print(f"[bold red]Error restoring backup:[/bold red] {str(e)}")
         if hasattr(e, "context") and "suggestion" in e.context:
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        raise typer.Exit(code=1)
+
+    except KeyboardInterrupt:
+        console.print("[bold yellow]Restore cancelled by user.[/bold yellow]")
+        raise typer.Exit(code=1)
+
+    except Exception as e:  # pragma: no cover - defensive
+        console.print(f"[bold red]Unexpected error restoring backup:[/bold red] {e}")
         raise typer.Exit(code=1)
 
 
@@ -175,14 +193,20 @@ def backup_list(
         console.print(table)
 
         if len(backups) > limit:
-            console.print(
-                f"Showing {limit} of {len(backups)} backups. Use --limit to show more."
-            )
+            console.print(f"Showing {limit} of {len(backups)} backups. Use --limit to show more.")
 
     except BackupError as e:
         console.print(f"[bold red]Error listing backups:[/bold red] {str(e)}")
         if hasattr(e, "context") and "suggestion" in e.context:
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        raise typer.Exit(code=1)
+
+    except KeyboardInterrupt:
+        console.print("[bold yellow]Listing cancelled by user.[/bold yellow]")
+        raise typer.Exit(code=1)
+
+    except Exception as e:  # pragma: no cover - defensive
+        console.print(f"[bold red]Unexpected error listing backups:[/bold red] {e}")
         raise typer.Exit(code=1)
 
 
@@ -239,6 +263,14 @@ def backup_schedule(
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
         raise typer.Exit(code=1)
 
+    except KeyboardInterrupt:
+        console.print("[bold yellow]Scheduling cancelled by user.[/bold yellow]")
+        raise typer.Exit(code=1)
+
+    except Exception as e:  # pragma: no cover - defensive
+        console.print(f"[bold red]Unexpected error scheduling backups:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
 
 @backup_app.command("recover")
 def backup_recover(
@@ -279,7 +311,8 @@ def backup_recover(
 
         if not force:
             console.print(
-                "[bold yellow]Warning:[/bold yellow] Point-in-time recovery will create new database files."
+                "[bold yellow]Warning:[/bold yellow] "
+                "Point-in-time recovery will create new database files."
             )
             console.print("The original files will not be modified, but you will need to configure")
             console.print("the application to use the recovered files if you want to use them.")
@@ -293,9 +326,7 @@ def backup_recover(
                 return
 
         with Progress() as progress:
-            task = progress.add_task(
-                "[green]Performing point-in-time recovery...", total=1
-            )
+            task = progress.add_task("[green]Performing point-in-time recovery...", total=1)
             restored_paths = BackupManager.restore_point_in_time(
                 backup_dir=backup_dir or "backups",
                 target_time=target_time,
@@ -303,9 +334,7 @@ def backup_recover(
             )
             progress.update(task, completed=1)
 
-        console.print(
-            "[bold green]Point-in-time recovery completed successfully:[/bold green]"
-        )
+        console.print("[bold green]Point-in-time recovery completed successfully:[/bold green]")
         console.print(f"  Target time: {target_time}")
         console.print(f"  DuckDB database: {restored_paths['db_path']}")
         console.print(f"  RDF store: {restored_paths['rdf_path']}")
@@ -314,11 +343,19 @@ def backup_recover(
         )
 
     except BackupError as e:
-        console.print(
-            f"[bold red]Error performing point-in-time recovery:[/bold red] {str(e)}"
-        )
+        console.print(f"[bold red]Error performing point-in-time recovery:[/bold red] {str(e)}")
         if hasattr(e, "context") and "suggestion" in e.context:
             console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        raise typer.Exit(code=1)
+
+    except KeyboardInterrupt:
+        console.print("[bold yellow]Recovery cancelled by user.[/bold yellow]")
+        raise typer.Exit(code=1)
+
+    except Exception as e:  # pragma: no cover - defensive
+        console.print(
+            f"[bold red]Unexpected error performing point-in-time recovery:[/bold red] {e}"
+        )
         raise typer.Exit(code=1)
 
 
