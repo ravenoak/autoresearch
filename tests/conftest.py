@@ -30,14 +30,13 @@ if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(src_path))
 
-import duckdb  # noqa: E402
-
 # Ensure real dependencies are loaded before test stubs
 import networkx  # noqa: F401,E402
 import prometheus_client  # noqa: F401,E402
 import rdflib  # noqa: F401,E402
 import typer  # noqa: E402
 
+import duckdb  # noqa: E402
 import tests.stubs  # noqa: F401,E402
 from autoresearch import cache, storage  # noqa: E402
 from autoresearch.agents.registry import (  # noqa: E402
@@ -58,7 +57,6 @@ from autoresearch.storage import (  # noqa: E402
     StorageManager,
 )
 from autoresearch.storage import set_delegate as set_storage_delegate  # noqa: E402
-from autoresearch.storage import setup as storage_setup  # noqa: E402
 
 _orig_option = typer.Option
 
@@ -207,10 +205,10 @@ def reset_registries():
 
 @pytest.fixture
 def storage_manager(tmp_path):
-    """Initialise storage in a temporary location and clean up."""
+    """Initialize storage in a temporary location and clean up."""
     db_file = tmp_path / "kg.duckdb"
     storage.teardown(remove_db=True)
-    storage.setup(str(db_file))
+    storage.initialize_storage(str(db_file))
     set_storage_delegate(storage.StorageManager)
     yield storage
     storage.teardown(remove_db=True)
@@ -378,7 +376,7 @@ def storage_context_factory(tmp_path):
     def _make():
         ctx = StorageContext()
         db_file = tmp_path / f"{uuid4()}.duckdb"
-        storage_setup(str(db_file), context=ctx)
+        storage.initialize_storage(str(db_file), context=ctx)
         try:
             yield ctx
         finally:

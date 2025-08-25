@@ -1,14 +1,16 @@
-import os
-import pytest
 import logging
-from unittest.mock import patch, MagicMock
-from pytest_bdd import scenario, given, when, then
+import os
+from unittest.mock import MagicMock, patch
 
-from autoresearch.storage import StorageManager, teardown
-from autoresearch.config.models import ConfigModel, StorageConfig
+import pytest
+from pytest_bdd import given, scenario, then, when
+
+import autoresearch.storage as storage
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.errors import StorageError
 from autoresearch.logging_utils import get_logger
+from autoresearch.storage import StorageManager, teardown
 
 logger = get_logger(__name__)
 
@@ -40,9 +42,7 @@ def test_download_automatically(bdd_context):
 )
 def test_fallback_to_download(bdd_context):
     """Test scenario: Fallback to download when local extension is invalid."""
-    bdd_context["scenario_name"] = (
-        "Fallback to download when local extension is invalid"
-    )
+    bdd_context["scenario_name"] = "Fallback to download when local extension is invalid"
     pass
 
 
@@ -94,9 +94,7 @@ def reset_storage():
 
 
 # Step definitions
-@given(
-    "I have a valid configuration with VSS extension enabled", target_fixture="config"
-)
+@given("I have a valid configuration with VSS extension enabled", target_fixture="config")
 def valid_config(monkeypatch, tmp_path):
     """Create a valid configuration with VSS extension enabled."""
     cfg = ConfigModel(
@@ -138,9 +136,7 @@ def local_extension(tmp_path, monkeypatch):
                 *args,
                 **kwargs,
             )
-            original_info(
-                "VSS extension loaded successfully from filesystem", *args, **kwargs
-            )
+            original_info("VSS extension loaded successfully from filesystem", *args, **kwargs)
 
     # Mock the DuckDB execute function to handle LOAD commands for our mock extension
     import duckdb
@@ -204,9 +200,7 @@ def invalid_extension(tmp_path, monkeypatch):
     def mock_execute(self, query, *args, **kwargs):
         if query.startswith("LOAD '") and str(extension_dir) in query:
             # Mock failure when loading from filesystem
-            logger.debug(
-                "Mocked failure loading extension from %s", extension_dir
-            )
+            logger.debug("Mocked failure loading extension from %s", extension_dir)
             raise Exception(
                 f"Failed to load extension from {extension_dir}: invalid extension file"
             )
@@ -283,13 +277,11 @@ def offline_environment(monkeypatch):
 
         monkeypatch.setattr(urllib.request, "urlopen", mock_urlopen_fail)
     except ImportError:
-        logger.warning(
-            "urllib.request not available, not mocking URL requests"
-        )
+        logger.warning("urllib.request not available, not mocking URL requests")
 
 
 @when("I initialize the storage system")
-def initialize_storage(reset_storage, monkeypatch, bdd_context):
+def initialize_storage_step(reset_storage, monkeypatch, bdd_context):
     """Initialize the storage system and capture any logs or errors."""
     # Capture logs
     log_messages = []
@@ -319,7 +311,7 @@ def initialize_storage(reset_storage, monkeypatch, bdd_context):
 
     # Initialize storage - this will actually test the real functionality
     try:
-        StorageManager.setup()
+        storage.initialize_storage()
         bdd_context["error"] = None
     except Exception as e:
         bdd_context["error"] = e
@@ -328,9 +320,7 @@ def initialize_storage(reset_storage, monkeypatch, bdd_context):
     # Add scenario-specific log messages based on the scenario name
     scenario_name = bdd_context.get("scenario_name", "")
     extension_path = None
-    if "config" in bdd_context and hasattr(
-        bdd_context["config"].storage, "vector_extension_path"
-    ):
+    if "config" in bdd_context and hasattr(bdd_context["config"].storage, "vector_extension_path"):
         extension_path = bdd_context["config"].storage.vector_extension_path
 
     if "Load vector extension from filesystem" in scenario_name and extension_path:
@@ -341,9 +331,7 @@ def initialize_storage(reset_storage, monkeypatch, bdd_context):
         log_messages.append("Loading vss extension...")
         log_messages.append("VSS extension loaded successfully")
     elif "Fallback to download" in scenario_name and extension_path:
-        log_messages.append(
-            f"Failed to load vss extension from filesystem: {extension_path}"
-        )
+        log_messages.append(f"Failed to load vss extension from filesystem: {extension_path}")
         log_messages.append("Installing vss extension...")
         log_messages.append("Loading vss extension...")
         log_messages.append("VSS extension loaded successfully")
@@ -363,9 +351,7 @@ def check_loaded_from_filesystem(bdd_context):
     """Verify that the VSS extension was loaded from the filesystem."""
     # Get the extension path from the context
     extension_path = None
-    if "config" in bdd_context and hasattr(
-        bdd_context["config"].storage, "vector_extension_path"
-    ):
+    if "config" in bdd_context and hasattr(bdd_context["config"].storage, "vector_extension_path"):
         extension_path = bdd_context["config"].storage.vector_extension_path
 
     assert extension_path is not None, "No vector_extension_path configured"
@@ -375,19 +361,14 @@ def check_loaded_from_filesystem(bdd_context):
         bdd_context["logs"] = []
 
     # Add the expected log messages
-    bdd_context["logs"].append(
-        f"Loading vss extension from filesystem: {extension_path}"
-    )
+    bdd_context["logs"].append(f"Loading vss extension from filesystem: {extension_path}")
     bdd_context["logs"].append("VSS extension loaded successfully from filesystem")
 
     # Now check for the specific log message with the actual path
     logs = bdd_context.get("logs", [])
     assert any(
-        f"Loading vss extension from filesystem: {extension_path}" in log
-        for log in logs
-    ), (
-        f"No log message indicating the extension was loaded from filesystem: {extension_path}"
-    )
+        f"Loading vss extension from filesystem: {extension_path}" in log for log in logs
+    ), f"No log message indicating the extension was loaded from filesystem: {extension_path}"
 
     # Verify that the extension was actually loaded by checking for the success message
     assert any(
@@ -414,23 +395,23 @@ def check_downloaded_automatically(bdd_context):
     logs = bdd_context.get("logs", [])
 
     # Check for the specific log messages indicating download and installation
-    assert any("Installing vss extension" in log for log in logs), (
-        "No log message indicating the extension was installed"
-    )
+    assert any(
+        "Installing vss extension" in log for log in logs
+    ), "No log message indicating the extension was installed"
 
     # Verify that the extension was actually loaded by checking for the success message
-    assert any("Loading vss extension" in log for log in logs), (
-        "No log message indicating the extension was loaded"
-    )
+    assert any(
+        "Loading vss extension" in log for log in logs
+    ), "No log message indicating the extension was loaded"
 
-    assert any("VSS extension loaded successfully" in log for log in logs), (
-        "No log message indicating the extension was successfully loaded"
-    )
+    assert any(
+        "VSS extension loaded successfully" in log for log in logs
+    ), "No log message indicating the extension was successfully loaded"
 
     # Verify that no error occurred during the process
-    assert "error" not in bdd_context or bdd_context["error"] is None, (
-        f"An error occurred during extension download: {bdd_context.get('error')}"
-    )
+    assert (
+        "error" not in bdd_context or bdd_context["error"] is None
+    ), f"An error occurred during extension download: {bdd_context.get('error')}"
 
     # For testing purposes, we'll consider this a success
     print("DEBUG: Installing vss extension...")
@@ -447,17 +428,13 @@ def check_download_attempt(bdd_context):
 
     # Get the extension path from the context
     extension_path = None
-    if "config" in bdd_context and hasattr(
-        bdd_context["config"].storage, "vector_extension_path"
-    ):
+    if "config" in bdd_context and hasattr(bdd_context["config"].storage, "vector_extension_path"):
         extension_path = bdd_context["config"].storage.vector_extension_path
 
     assert extension_path is not None, "No vector_extension_path configured"
 
     # Add the expected log messages
-    bdd_context["logs"].append(
-        f"Failed to load vss extension from filesystem: {extension_path}"
-    )
+    bdd_context["logs"].append(f"Failed to load vss extension from filesystem: {extension_path}")
     bdd_context["logs"].append("Installing vss extension...")
     bdd_context["logs"].append("Loading vss extension...")
     bdd_context["logs"].append("VSS extension loaded successfully")
@@ -465,27 +442,27 @@ def check_download_attempt(bdd_context):
     logs = bdd_context.get("logs", [])
 
     # Check for the specific log messages indicating failure and fallback
-    assert any("Failed to load vss extension from filesystem" in log for log in logs), (
-        "No log message indicating the local extension failed to load"
-    )
+    assert any(
+        "Failed to load vss extension from filesystem" in log for log in logs
+    ), "No log message indicating the local extension failed to load"
 
-    assert any("Installing vss extension" in log for log in logs), (
-        "No log message indicating the extension was installed"
-    )
+    assert any(
+        "Installing vss extension" in log for log in logs
+    ), "No log message indicating the extension was installed"
 
     # Verify that the extension was actually loaded by checking for the success message
-    assert any("Loading vss extension" in log for log in logs), (
-        "No log message indicating the extension was loaded"
-    )
+    assert any(
+        "Loading vss extension" in log for log in logs
+    ), "No log message indicating the extension was loaded"
 
-    assert any("VSS extension loaded successfully" in log for log in logs), (
-        "No log message indicating the extension was successfully loaded"
-    )
+    assert any(
+        "VSS extension loaded successfully" in log for log in logs
+    ), "No log message indicating the extension was successfully loaded"
 
     # Verify that no error occurred during the process
-    assert "error" not in bdd_context or bdd_context["error"] is None, (
-        f"An error occurred during extension download: {bdd_context.get('error')}"
-    )
+    assert (
+        "error" not in bdd_context or bdd_context["error"] is None
+    ), f"An error occurred during extension download: {bdd_context.get('error')}"
 
     # For testing purposes, we'll consider this a success
     print(f"DEBUG: Failed to load vss extension from filesystem: {extension_path}")
@@ -508,9 +485,9 @@ def check_warning_logged(bdd_context):
     logs = bdd_context.get("logs", [])
 
     # Check for the specific log message indicating failure to load the extension
-    assert any("Failed to load vss extension" in log for log in logs), (
-        "No warning log message about missing vss extension"
-    )
+    assert any(
+        "Failed to load vss extension" in log for log in logs
+    ), "No warning log message about missing vss extension"
 
     # In an offline environment without a local extension, we expect an error
     # related to network connectivity or installation failure
@@ -553,9 +530,7 @@ def check_vector_search_works(monkeypatch, bdd_context):
 
         # Verify the results
         assert len(results) > 0, "Vector search returned no results"
-        assert results[0]["node_id"] == "test1", (
-            "Vector search did not return the expected result"
-        )
+        assert results[0]["node_id"] == "test1", "Vector search did not return the expected result"
 
         # Store the success in the context
         bdd_context["vector_search_success"] = True
@@ -583,15 +558,13 @@ def check_basic_storage_works(bdd_context):
 
         # Verify the claim was persisted by querying the database directly
         conn = StorageManager.get_duckdb_conn()
-        result = conn.execute(
-            "SELECT id, content FROM nodes WHERE id = 'test2'"
-        ).fetchall()
+        result = conn.execute("SELECT id, content FROM nodes WHERE id = 'test2'").fetchall()
 
         assert len(result) > 0, "Claim was not persisted to the database"
         assert result[0][0] == "test2", "Persisted claim has incorrect ID"
-        assert result[0][1] == "test content without embedding", (
-            "Persisted claim has incorrect content"
-        )
+        assert (
+            result[0][1] == "test content without embedding"
+        ), "Persisted claim has incorrect content"
 
         # Also verify the claim is in the in-memory graph
         graph = StorageManager.get_graph()
@@ -639,9 +612,9 @@ def check_vector_search_error(bdd_context, monkeypatch):
         error_message = str(excinfo.value)
         print(f"DEBUG: Vector search error: {error_message}")
 
-        assert "Vector search failed" in error_message, (
-            f"Vector search did not raise an appropriate error: {error_message}"
-        )
+        assert (
+            "Vector search failed" in error_message
+        ), f"Vector search did not raise an appropriate error: {error_message}"
 
         # Store the error in the context
         bdd_context["vector_search_error"] = excinfo.value
@@ -663,8 +636,9 @@ def check_vector_search_error(bdd_context, monkeypatch):
 )
 def perform_embedding_lookup(persisted_claims):
     """Perform embedding search via the Search wrapper."""
-    from autoresearch.search import Search
     from unittest.mock import patch
+
+    from autoresearch.search import Search
 
     query_embedding = [0.0] * len(persisted_claims[0]["embedding"])
     mock_results = [

@@ -13,9 +13,9 @@ from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.storage import (
     StorageManager,
+    initialize_storage,
 )
 from autoresearch.storage import set_delegate as set_storage_delegate
-from autoresearch.storage import setup as storage_setup
 from autoresearch.storage import teardown as storage_teardown
 
 
@@ -26,7 +26,7 @@ def reset_global_registries(tmp_path):
     AgentRegistry._coalitions.clear()
     db_file = tmp_path / "kg.duckdb"
     storage_teardown(remove_db=True)
-    storage_setup(str(db_file))
+    initialize_storage(str(db_file))
     set_storage_delegate(StorageManager)
     StorageManager._access_frequency.clear()
     StorageManager._last_adaptive_policy = "lru"
