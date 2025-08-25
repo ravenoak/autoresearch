@@ -11,4 +11,4 @@ initialize required tables during tests, causing seven errors and multiple failu
 - `./.venv/bin/task check` passes the affected tests.
 
 ## Status
-Open
+Archived

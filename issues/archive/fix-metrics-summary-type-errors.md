@@ -13,4 +13,4 @@ utilities return incorrect types.
 - Documentation clarifies expected metrics interfaces.
 
 ## Status
-Open
+Archived

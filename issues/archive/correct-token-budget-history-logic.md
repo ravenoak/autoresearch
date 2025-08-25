@@ -12,4 +12,4 @@ incorrect values, such as 16 instead of 17 and 33 instead of 17.
 - Documentation explains the adaptive budget formula.
 
 ## Status
-Open
+Archived
