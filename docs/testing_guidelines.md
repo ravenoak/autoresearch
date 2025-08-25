@@ -337,6 +337,9 @@ The `pytest-bdd` plugin is provided through the `.[test]` extra, loaded via
 ``bdd_features_base_dir`` setting is honored when feature files are targeted
 directly.
 
+``tests/behavior/features/__init__.py`` marks the directory as a package so
+pytest can discover scenarios when feature files are invoked directly.
+
 To execute a single feature file, reference it directly from the repository
 root:
 
