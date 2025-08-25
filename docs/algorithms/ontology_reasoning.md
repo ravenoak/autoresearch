@@ -12,6 +12,17 @@ provided store. Plugins registered through `register_reasoner` or referenced as
   limit, reasoning is skipped.
 - The call logs the number of input triples and the engine used.
 
+## Correctness
+
+Let *G* be the input graph and *R* the set of inference rules provided by the
+reasoner. RDF semantics define entailment as the minimal graph *G′* such that
+*G ⊨ G′*[^rdfs]. OWL RL extends this with rule applications that preserve
+soundness[^owlrl]. `run_ontology_reasoner` is correct when every triple added to
+the store is derivable by repeated application of rules in *R* and no rule
+remains applicable. Because the algorithm never removes existing triples and
+terminates only after reaching a fixpoint, the resulting graph represents the
+RDF or OWL RL closure of the input.
+
 ## Complexity
 
 Let *n* denote the number of triples. OWL RL reasoning runs in `O(n^3)` time in

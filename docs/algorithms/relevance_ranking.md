@@ -22,18 +22,28 @@ Idempotence implies zero inversions after the first pass. Any initial order
 has at most \(n(n-1)/2\) inversions for \(n\) results. After sorting once,
 all inversions vanish, giving geometric decay with ratio \(0\).
 
+## Monotonic improvement
+
+Let :math:`R_t` be the ranking after :math:`t` iterations and let
+:math:`I(R_t)` count inversions relative to the final order
+:math:`R_*`. The sorting operator :math:`T` satisfies
+:math:`R_{t+1} = T(R_t)` and guarantees
+:math:`I(R_{t+1}) \le I(R_t)` because each pass fixes misplaced pairs.
+Since :math:`I(R_1) = 0`, the sequence :math:`I(R_t)` decreases monotonically
+to zero. This derivation uses the inversion count formula
+:math:`I(R) = |\{(i, j) : i < j, R_i \succ R_j\}|`.
+
 ## Simulation
 
-Run `uv run scripts/ranking_convergence.py --items 5` to verify the
-idempotence property empirically. The script reports the iteration when the
-ordering stabilizes, which is `1` in practice.
+Run `uv run scripts/ranking_convergence.py --items 5` to explore convergence.
+[`ranking_convergence.py`](../../scripts/ranking_convergence.py) reports the
+iteration when the ordering stabilizes, which is `1` in practice.
 
-[`ranking_convergence.py`](../../scripts/ranking_convergence.py) contains the
-simulation code and prints the final ranking and convergence step.
-
-The regression test
+Regression tests
 [`test_ranking_idempotence.py`](../../tests/unit/test_ranking_idempotence.py)
-confirms that re-ranking a sorted list leaves the order unchanged.
+and
+[`test_ranking_convergence.py`](../../tests/unit/test_ranking_convergence.py)
+validate idempotence and monotonic improvement.
 
 ## References
 
