@@ -21,6 +21,13 @@ task install        # lightweight dev-minimal and test extras
 ```
 
 `task install` syncs the `dev-minimal` and `test` extras for a quick setup.
+Install heavier groups only when needed:
+
+```bash
+uv sync --extra nlp  # spaCy and BERTopic
+uv sync --extra llm  # sentence-transformers and transformers
+```
+
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
 extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
 `hypothesis`, and `redis`), and exits if `task --version` fails.
