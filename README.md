@@ -16,8 +16,10 @@ For orchestrator state transitions and API contracts see
 
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
-[Go Task](https://taskfile.dev/). After cloning, run `./scripts/setup.sh` for
-the full developer bootstrap or `task install` for a minimal environment. See
+[Go Task](https://taskfile.dev/). `scripts/setup.sh` installs Go Task to
+`~/.local/bin` and prepends it to `PATH` when missing. After cloning, run
+`./scripts/setup.sh` for the full developer bootstrap or `task install` for a
+minimal environment. See
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 

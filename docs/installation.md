@@ -7,8 +7,8 @@ environments.
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
 [**Go Task**](https://taskfile.dev/) for Taskfile commands. The setup script
-installs Go Task automatically, but manual installation instructions are below
-if needed.
+installs Go Task to `~/.local/bin` and adds that directory to `PATH`.
+Manual installation instructions are below if needed.
 
 ## After cloning
 
@@ -63,7 +63,8 @@ role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
 ### Go Task
 
 Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
-`scripts/setup.sh` installs it automatically, but you can install it manually:
+`scripts/setup.sh` installs it to `~/.local/bin` and prepends that path if
+missing, but you can install it manually:
 
 ```bash
 # macOS
@@ -81,8 +82,8 @@ task install
 
 #### Troubleshooting
 
-- If the install script completes but `task` is missing, ensure the install
-  directory (often `~/.local/bin`) appears in your `PATH`.
+- `scripts/setup.sh` adds `~/.local/bin` to `PATH`, but if `task` is missing
+  ensure that directory is present.
 - Network failures during installation are usually transient. Rerun the
   command or download the installer and execute it locally.
 - For permission errors, run the installer with a writable `-b` path or use a
