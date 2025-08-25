@@ -41,13 +41,11 @@ from .webhooks import notify_webhook
 
 router = APIRouter()
 
-router.post("/query/stream")(query_stream_endpoint)
+router.post("/query/stream", dependencies=[require_permission("query")])(query_stream_endpoint)
 
 
-@router.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html(
-    _: None = require_permission("docs"),
-):
+@router.get("/docs", include_in_schema=False, dependencies=[require_permission("docs")])
+async def custom_swagger_ui_html() -> Response:
     """Serve custom Swagger UI documentation."""
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
@@ -57,11 +55,8 @@ async def custom_swagger_ui_html(
     )
 
 
-@router.get("/openapi.json", include_in_schema=False)
-async def get_openapi_schema(
-    request: Request,
-    _: None = require_permission("docs"),
-):
+@router.get("/openapi.json", include_in_schema=False, dependencies=[require_permission("docs")])
+async def get_openapi_schema(request: Request) -> dict:
     """Serve the OpenAPI schema for the API."""
     openapi_schema = get_openapi(
         title="Autoresearch API",
@@ -101,11 +96,9 @@ async def get_openapi_schema(
     return openapi_schema
 
 
-@router.post("/query", response_model=None)
+@router.post("/query", response_model=None, dependencies=[require_permission("query")])
 async def query_endpoint(
-    request: QueryRequest,
-    stream: bool = False,
-    _: None = require_permission("query"),
+    request: QueryRequest, stream: bool = False
 ) -> StreamingResponse | QueryResponse:
     """Process a query and return a structured response."""
     config = get_config()
@@ -187,12 +180,10 @@ async def query_endpoint(
     "/query/batch",
     summary="Batch Query Endpoint",
     description="Execute multiple queries with pagination support",
+    dependencies=[require_permission("query")],
 )
 async def batch_query_endpoint(
-    batch: BatchQueryRequest,
-    page: int = 1,
-    page_size: int = 10,
-    _: None = require_permission("query"),
+    batch: BatchQueryRequest, page: int = 1, page_size: int = 10
 ) -> dict:
     """Execute multiple queries with pagination."""
     if page < 1 or page_size < 1:
@@ -218,12 +209,8 @@ async def batch_query_endpoint(
     }
 
 
-@router.post("/query/async")
-async def async_query_endpoint(
-    request: QueryRequest,
-    http_request: Request,
-    _: None = require_permission("query"),
-) -> dict:
+@router.post("/query/async", dependencies=[require_permission("query")])
+async def async_query_endpoint(request: QueryRequest, http_request: Request) -> dict:
     """Run a query asynchronously and return its ID."""
     config = get_config()
     if request.reasoning_mode is not None:
@@ -261,10 +248,8 @@ async def async_query_endpoint(
     return {"query_id": task_id}
 
 
-@router.get("/query/{query_id}")
-async def get_query_status(
-    query_id: str, request: Request, _: None = require_permission("query")
-) -> Response:
+@router.get("/query/{query_id}", dependencies=[require_permission("query")])
+async def get_query_status(query_id: str, request: Request) -> Response:
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return JSONResponse({"detail": "not found"}, status_code=404)
@@ -277,10 +262,8 @@ async def get_query_status(
     return JSONResponse(result)
 
 
-@router.delete("/query/{query_id}")
-async def cancel_query(
-    query_id: str, request: Request, _: None = require_permission("query")
-) -> Response:
+@router.delete("/query/{query_id}", dependencies=[require_permission("query")])
+async def cancel_query(query_id: str, request: Request) -> Response:
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return PlainTextResponse("not found", status_code=404)
@@ -289,22 +272,22 @@ async def cancel_query(
     return PlainTextResponse("canceled")
 
 
-@router.get("/metrics")
-async def metrics_endpoint(_: None = require_permission("metrics")) -> Response:
+@router.get("/metrics", dependencies=[require_permission("metrics")])
+async def metrics_endpoint(_: None = None) -> Response:
     """Expose Prometheus metrics."""
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@router.get("/health")
-def health_endpoint(_: None = require_permission("health")) -> dict:
+@router.get("/health", dependencies=[require_permission("health")])
+def health_endpoint(_: None = None) -> dict:
     """Simple health check endpoint."""
     return {"status": "ok"}
 
 
-@router.get("/capabilities")
-def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
+@router.get("/capabilities", dependencies=[require_permission("capabilities")])
+def capabilities_endpoint(_: None = None) -> dict:
     config = get_config()
     reasoning_modes = [m.value for m in ReasoningMode]
     llm_backends = getattr(config, "llm_backends", [])
@@ -344,18 +327,14 @@ def capabilities_endpoint(_: None = require_permission("capabilities")) -> dict:
     }
 
 
-@router.get("/config")
-def get_config_endpoint(_: None = require_permission("config")) -> dict:
+@router.get("/config", dependencies=[require_permission("config")])
+def get_config_endpoint(_: None = None) -> dict:
     """Return the current configuration."""
     return get_config().model_dump(mode="json")
 
 
-@router.put("/config")
-def update_config_endpoint(
-    updates: dict,
-    request: Request,
-    _: None = require_permission("config"),
-) -> dict:
+@router.put("/config", dependencies=[require_permission("config")])
+def update_config_endpoint(updates: dict, request: Request, _: None = None) -> dict:
     """Update configuration at runtime."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
     current = loader.config.model_dump(mode="python")
@@ -369,12 +348,8 @@ def update_config_endpoint(
     return new_cfg.model_dump(mode="json")
 
 
-@router.post("/config")
-def replace_config_endpoint(
-    new_config: dict,
-    request: Request,
-    _: None = require_permission("config"),
-) -> dict:
+@router.post("/config", dependencies=[require_permission("config")])
+def replace_config_endpoint(new_config: dict, request: Request, _: None = None) -> dict:
     """Replace the entire configuration at runtime."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
     try:
@@ -386,8 +361,8 @@ def replace_config_endpoint(
     return new_cfg.model_dump(mode="json")
 
 
-@router.delete("/config")
-def reload_config_endpoint(request: Request, _: None = require_permission("config")) -> dict:
+@router.delete("/config", dependencies=[require_permission("config")])
+def reload_config_endpoint(request: Request, _: None = None) -> dict:
     """Reload configuration from disk and discard runtime changes."""
     loader = cast(ConfigLoader, request.app.state.config_loader)
     try:

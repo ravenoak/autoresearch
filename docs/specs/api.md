@@ -14,8 +14,12 @@ credentials on every request and assigns a role to the connection. Endpoints
 use a `require_permission` dependency to verify that the role has access to a
 given resource.
 
-Requests without credentials return **401**. Invalid API keys or bearer
-tokens and authenticated clients lacking permission return **403**.
+Requests without credentials return **401** with a descriptive message such as
+`Missing API key`, `Missing token`, or `Missing API key or token` when both
+credentials are configured. Invalid API keys or bearer tokens return **401**
+with `Invalid API key` or `Invalid token`. Authenticated clients lacking
+permission receive **403** `Insufficient permissions`. Streaming and webhook
+requests follow the same rules.
 
 ## Configuration
 
@@ -48,8 +52,9 @@ permissions constrain the impact of a leaked credential.
     - [tests/unit/test_api_auth_middleware.py][t4]
     - [tests/unit/test_api_auth_deps.py][t5]
     - [tests/integration/test_api_auth.py][t6]
-    - [tests/integration/test_api_streaming.py][t7]
-    - [tests/integration/test_api_docs.py][t8]
+    - [tests/integration/test_api_auth_middleware.py][t7]
+    - [tests/integration/test_api_streaming.py][t8]
+    - [tests/integration/test_api_docs.py][t9]
 
 [m1]: ../../src/autoresearch/api/
 [t1]: ../../tests/unit/test_api.py
@@ -58,5 +63,6 @@ permissions constrain the impact of a leaked credential.
 [t4]: ../../tests/unit/test_api_auth_middleware.py
 [t5]: ../../tests/unit/test_api_auth_deps.py
 [t6]: ../../tests/integration/test_api_auth.py
-[t7]: ../../tests/integration/test_api_streaming.py
-[t8]: ../../tests/integration/test_api_docs.py
+[t7]: ../../tests/integration/test_api_auth_middleware.py
+[t8]: ../../tests/integration/test_api_streaming.py
+[t9]: ../../tests/integration/test_api_docs.py
