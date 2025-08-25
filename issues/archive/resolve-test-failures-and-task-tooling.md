@@ -33,4 +33,4 @@ Redis-dependent integration tests skip cleanly when `redis` is missing.
 - `STATUS.md` and `TASK_PROGRESS.md` document the passing test results.
 
 ## Status
-Open
+Archived

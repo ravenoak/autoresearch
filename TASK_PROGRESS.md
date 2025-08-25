@@ -232,22 +232,19 @@ complete in this environment.
 
 ### Latest Test Results
 
-Selective unit and integration tests executed:
+Full suite attempts:
 
 ```
-uv run pytest tests/unit/test_api_auth_middleware.py \
-  tests/unit/test_resource_monitor_start.py \
-  tests/unit/test_metrics_helpers.py \
-  tests/unit/test_visualization_rdf.py \
-  tests/unit/test_distributed_broker.py \
-  tests/integration/test_metrics_query_tokens.py \
-  --cov=autoresearch.resource_monitor --cov=autoresearch.orchestration.metrics \
-  --cov=autoresearch.distributed.broker --cov=autoresearch.distributed.coordinator \
-  --cov=autoresearch.distributed.executors --cov=autoresearch.visualization \
-  --cov-report=xml --cov-report=term-missing
+./.venv/bin/task check
 ```
 
-Result: 15 passed
+Result: 39 failed, 629 passed, 26 skipped, 24 deselected, 2 xfailed, 32 warnings, 7 errors
+
+```
+./.venv/bin/task verify
+```
+
+Result: coverage 14%, below the 90% threshold
 
 ### Performance Baselines
 

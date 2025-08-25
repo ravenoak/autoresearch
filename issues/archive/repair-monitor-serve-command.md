@@ -13,4 +13,4 @@ mishandles interrupts.
 - Documentation describes the `monitor serve` workflow.
 
 ## Status
-Open
+Archived

@@ -13,5 +13,5 @@ needs review.
 - Document auth configuration in project docs.
 
 ## Status
-Open
+Archived
 

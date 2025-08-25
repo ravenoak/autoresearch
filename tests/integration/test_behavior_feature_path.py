@@ -24,4 +24,3 @@ def test_direct_feature_invocation() -> None:
         text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-

@@ -12,4 +12,4 @@ without raising errors.
 - `tests/unit/test_cli_help.py` and `tests/unit/test_main_backup_commands.py` pass.
 
 ## Status
-Open
+Archived
