@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Import behavior-level fixtures and plugin registrations
-from tests.behavior.conftest import *  # noqa: F401,F403
+import tests.behavior.conftest  # noqa: F401
 
 # Ensure repository root on sys.path for imports
 ROOT = Path(__file__).resolve().parents[3]

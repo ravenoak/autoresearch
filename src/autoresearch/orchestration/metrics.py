@@ -1,8 +1,5 @@
-"""
-Metrics collection for orchestration system.
-"""
+"""Metrics collection for orchestration system."""
 
-import json
 import logging
 from contextlib import contextmanager
 from decimal import ROUND_HALF_EVEN, Decimal
@@ -254,6 +251,7 @@ class OrchestrationMetrics:
         """Persist token counts for this release."""
         if self._release_logged:
             return
+        import json
         path = Path(
             getenv(
                 "AUTORESEARCH_RELEASE_METRICS",
@@ -325,6 +323,8 @@ class OrchestrationMetrics:
         ``AUTORESEARCH_QUERY_TOKENS`` environment variable or
         ``tests/integration/baselines/query_tokens.json``.
         """
+        import json
+
         if path is None:
             path = Path(
                 getenv(
@@ -350,6 +350,8 @@ class OrchestrationMetrics:
 
     def check_query_regression(self, query: str, baseline_path: Path, threshold: int = 0) -> bool:
         """Return ``True`` if token usage exceeds the baseline."""
+        import json
+
         if not baseline_path.exists():
             return False
         try:
