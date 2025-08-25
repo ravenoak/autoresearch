@@ -227,15 +227,28 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Attempts to run `task install` and `task verify` stalled when large GPU and ML
-packages like `torch` and CUDA began downloading. As a result, `task check`,
-`task verify`, and `coverage html` could not run to generate updated metrics.
-The `baseline/coverage.xml` file still reports roughly twenty-two percent
-coverage.
+Running a focused subset of tests with coverage produced **44%** line coverage
+across targeted modules. Full `task coverage` was attempted but could not
+complete in this environment.
 
 ### Latest Test Results
 
-No tests ran in this environment.
+Selective unit and integration tests executed:
+
+```
+uv run pytest tests/unit/test_api_auth_middleware.py \
+  tests/unit/test_resource_monitor_start.py \
+  tests/unit/test_metrics_helpers.py \
+  tests/unit/test_visualization_rdf.py \
+  tests/unit/test_distributed_broker.py \
+  tests/integration/test_metrics_query_tokens.py \
+  --cov=autoresearch.resource_monitor --cov=autoresearch.orchestration.metrics \
+  --cov=autoresearch.distributed.broker --cov=autoresearch.distributed.coordinator \
+  --cov=autoresearch.distributed.executors --cov=autoresearch.visualization \
+  --cov-report=xml --cov-report=term-missing
+```
+
+Result: 15 passed
 
 ### Performance Baselines
 
