@@ -14,6 +14,15 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Make the ``features`` package importable so feature files can be targeted by
+# their direct paths. This mirrors ``bdd_features_base_dir`` in ``pytest.ini``
+# and ensures ``pytest`` resolves paths like
+# ``tests/behavior/features/<feature>.feature``.
+FEATURES_DIR = Path(__file__).resolve().parent / "features"
+FEATURES_PARENT = FEATURES_DIR.parent
+if str(FEATURES_PARENT) not in sys.path:
+    sys.path.insert(0, str(FEATURES_PARENT))
+
 from autoresearch.api import reset_request_log  # noqa: E402
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
@@ -26,7 +35,8 @@ pytest_plugins = ("pytest_bdd",)
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Load step modules after pytest-bdd config."""
+    """Load step modules and configure feature base directory."""
+    config.option.bdd_features_base_dir = str(FEATURES_DIR)
     config.pluginmanager.import_plugin("tests.behavior.steps")
 
 
