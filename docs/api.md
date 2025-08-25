@@ -27,10 +27,15 @@ variables. Common options include:
 Setting `AUTORESEARCH_API__API_KEY` enables a single shared key while
 `AUTORESEARCH_API__API_KEYS` maps multiple keys to roles. Use
 `AUTORESEARCH_API__BEARER_TOKEN` to require an `Authorization: Bearer` header.
-Requests without credentials or with invalid credentials return **401**.
-Authenticated clients lacking permission receive **403**. Modify
-`AUTORESEARCH_API__ROLE_PERMISSIONS` to assign
-actions to roles.
+
+Authentication follows a two-step handshake:
+
+1. Credentials are validated against configured keys or the bearer token.
+2. The resolved role is checked against `[api].role_permissions`.
+
+Missing or invalid credentials yield **401 Unauthorized**. Authenticated
+clients without the required permission receive **403 Forbidden**. Adjust
+`AUTORESEARCH_API__ROLE_PERMISSIONS` to assign actions to roles.
 
 Restart the server after changing these values.
 

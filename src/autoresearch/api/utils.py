@@ -5,7 +5,7 @@ import threading
 from collections import Counter
 from typing import cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 
 class RequestLogger:
@@ -93,3 +93,22 @@ def verify_bearer_token(token: str | None, expected: str | None) -> bool:
     if not (token and expected):
         return False
     return secrets.compare_digest(token, expected)
+
+
+def enforce_permission(permissions: set[str] | None, required: str) -> None:
+    """Ensure a client has a specific permission.
+
+    Args:
+        permissions: Permissions granted to the client or ``None`` when
+            authentication is missing.
+        required: Permission required for the requested action.
+
+    Raises:
+        HTTPException: ``401`` if ``permissions`` is ``None`` and ``403`` when
+            ``required`` is absent from ``permissions``.
+    """
+
+    if permissions is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if required not in permissions:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
