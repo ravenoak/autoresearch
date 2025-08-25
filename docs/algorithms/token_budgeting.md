@@ -6,8 +6,9 @@ The orchestrator adjusts its token allowance using
 Let `u_t` denote tokens consumed in cycle `t` and `\bar{u}_t` the mean
 usage across the last ten **non-zero** cycles. For each agent `i`, let
 `a_{i,t}` be the tokens it used in cycle `t` and `\bar{a}_{i,t}` the
-mean across its last ten non-zero samples. Define `a_t = \max_i a_{i,t}`
-and `\bar{a}_t = \max_i \bar{a}_{i,t}`. With margin `m`, the update is
+mean across its last ten cycles, **including zeros** when the agent is
+idle. Define `a_t = \max_i a_{i,t}` and `\bar{a}_t = \max_i \bar{a}_{i,t}`.
+With margin `m`, the update is
 
 \[
 b_{t+1} = \left\lceil \max(u_t, \bar{u}_t, a_t, \bar{a}_t) (1 + m) \right\rceil.
@@ -21,6 +22,26 @@ When the new target differs from the current budget the algorithm
 immediately adjusts. If no usage has ever been recorded, the budget is
 left unchanged. Ten consecutive zero-usage samples after activity shrink
 the budget to a minimum of one token.
+
+## Worked Example
+
+Consider two agents, ``A`` and ``B``, with margin ``m = 0.1``:
+
+1. **Cycle 1** – ``A`` uses five tokens. Candidates: ``u_1 = 5``,
+   ``\bar{u}_1 = 5``, ``a_1 = 5`` and ``\bar{a}_1 = 5``. The budget is
+   ``ceil(5 \times 1.1) = 6``.
+2. **Cycle 2** – ``B`` uses thirty tokens while ``A`` is idle, so its
+   history records a zero. ``\bar{a}_{A,2} = (5 + 0) / 2 = 2.5`` and
+   ``\bar{a}_{B,2} = 30``. Candidates become ``u_2 = 30``,
+   ``\bar{u}_2 = 17.5``, ``a_2 = 30`` and ``\bar{a}_2 = 30``. The budget
+   rises to ``ceil(30 \times 1.1) = 33``.
+3. **Cycle 3** – ``A`` again uses five tokens. ``B`` contributes zero so
+   ``\bar{a}_{B,3} = (30 + 0) / 2 = 15``. The candidates are now
+   ``u_3 = 5``, ``\bar{u}_3 = 13.3``, ``a_3 = 5`` and ``\bar{a}_3 = 15``.
+   The budget drops to ``ceil(15 \times 1.1) = 17``.
+
+This illustrates how an agent's past activity influences future budgets
+even when another agent was responsible for a prior spike.
 
 ## Convergence
 

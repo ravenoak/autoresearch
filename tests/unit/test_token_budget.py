@@ -47,6 +47,8 @@ def test_budget_scaling_exact(initial_budget, loops, q_tokens):
 
 
 def test_budget_adaptive_history():
+    """Budget adapts to an agent's evolving token usage."""
+
     m = OrchestrationMetrics()
     budget = 10
 
