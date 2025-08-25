@@ -13,10 +13,12 @@ Tests are organized into four categories:
 
 ## Running tests
 
-Before running any tests ensure the project is installed with the
-`[full,parsers,git,llm,dev]` extras. The `scripts/setup.sh` helper installs
-these groups so both local and CI environments have every optional dependency
-available.
+Two installation strategies support different workflows:
+
+- **Minimal:** `task install` syncs the `dev-minimal` and `test` extras for
+  linting and core tests.
+- **Full:** `uv sync --extra dev --extra test` installs heavier optional
+  dependencies for integration scenarios.
 
 Redis is an optional dependency but required for distributed tests. The
 integration suite skips those tests automatically when Redis is missing.
