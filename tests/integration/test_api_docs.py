@@ -26,7 +26,8 @@ def test_docs_endpoints_require_auth(monkeypatch, api_client):
 
     assert api_client.get("/docs").status_code == 401
     bad = api_client.get("/docs", headers={"X-API-Key": "bad"})
-    assert bad.status_code == 403
+    assert bad.status_code == 401
+    assert bad.json()["detail"] == "Invalid API key"
     ok = api_client.get("/docs", headers={"X-API-Key": "secret"})
     assert ok.status_code == 200
 
