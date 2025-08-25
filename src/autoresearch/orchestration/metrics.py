@@ -4,7 +4,6 @@ Metrics collection for orchestration system.
 
 import json
 import logging
-import math
 import os
 import time
 from contextlib import contextmanager
@@ -458,9 +457,7 @@ class OrchestrationMetrics:
         # Round using ``Decimal`` to avoid floating-point drift that could
         # otherwise inflate the budget (e.g. ``14.5000000001`` rounding to
         # ``15``).
-        scaled = Decimal(str(max(usage_candidates))) * (
-            Decimal("1") + Decimal(str(margin))
-        )
+        scaled = Decimal(str(max(usage_candidates))) * (Decimal("1") + Decimal(str(margin)))
         desired = int(scaled.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
 
         return max(desired, 1)

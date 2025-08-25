@@ -7,8 +7,8 @@ environments.
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
 [**Go Task**](https://taskfile.dev/) for Taskfile commands. The setup script
-installs Go Task automatically, but manual installation instructions are below
-if needed.
+installs Go Task in `~/.local/bin` and adds that directory to `PATH`, but
+manual installation instructions are below if needed.
 
 ## After cloning
 
@@ -70,7 +70,8 @@ Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
 brew install go-task/tap/go-task
 
 # Linux
-curl -sSL https://taskfile.dev/install.sh | sh
+curl -sSL https://taskfile.dev/install.sh | sh -s -- -b ~/.local/bin
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 After installation, initialize the environment:

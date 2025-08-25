@@ -1,4 +1,5 @@
 """Load behavior fixtures when running feature files directly."""
+
 import sys
 from pathlib import Path
 
@@ -8,4 +9,4 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # Import behavior-level fixtures and plugin registrations
-from tests.behavior.conftest import *  # noqa: F401,F403
+from tests.behavior.conftest import *  # noqa: F401,F403,E402
