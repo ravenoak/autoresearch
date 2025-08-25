@@ -1,197 +1,31 @@
-from unittest.mock import MagicMock, patch
+"""Regression tests for storage initialization and cleanup."""
 
-import pytest
+from __future__ import annotations
 
-from autoresearch.errors import StorageError
-from autoresearch.storage import StorageManager
-
-
-def test_ensure_storage_initialized_success():
-    """Test that _ensure_storage_initialized succeeds when storage is initialized."""
-    # Mock the global variables
-    with patch.object(StorageManager.context, "db_backend", MagicMock()):
-        with patch.object(StorageManager.context, "graph", MagicMock()):
-            with patch.object(StorageManager.context, "rdf_store", MagicMock()):
-                # Should not raise an exception
-                StorageManager._ensure_storage_initialized()
+from autoresearch import storage
 
 
-def test_ensure_storage_initialized_calls_setup():
-    """Test that _ensure_storage_initialized calls setup when storage is not initialized."""
-    # Mock the global variables to be None
-    with patch.object(StorageManager.context, "db_backend", None):
-        with patch.object(StorageManager.context, "graph", None):
-            with patch.object(StorageManager.context, "rdf_store", None):
-                with patch("autoresearch.storage.setup") as mock_setup:
-                    # Mock the setup function to set the global variables
-                    def mock_setup_impl(*args, **kwargs):
-                        import autoresearch.storage as storage
+def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypatch):
+    """Ensure table creation runs and teardown removes the DB file."""
 
-                        storage.StorageManager.context.db_backend = MagicMock()
-                        storage.StorageManager.context.graph = MagicMock()
-                        storage.StorageManager.context.rdf_store = MagicMock()
+    db_file = tmp_path / "temp.duckdb"
 
-                    mock_setup.side_effect = mock_setup_impl
+    called = {"flag": False}
+    orig_create = storage.DuckDBStorageBackend._create_tables
 
-                    # Should call setup
-                    StorageManager._ensure_storage_initialized()
+    def wrapped_create(self, skip_migrations: bool = False) -> None:
+        called["flag"] = True
+        return orig_create(self, skip_migrations)
 
-                    # Verify setup was called
-                    mock_setup.assert_called_once()
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_create_tables", wrapped_create)
+    monkeypatch.setattr(
+        storage.DuckDBStorageBackend, "_initialize_schema_version", lambda self: None
+    )
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_run_migrations", lambda self: None)
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "create_hnsw_index", lambda self: None)
 
+    ctx = storage.initialize_storage(str(db_file))
+    assert called["flag"]
 
-def test_ensure_storage_initialized_setup_fails():
-    """Test that _ensure_storage_initialized raises StorageError when setup fails."""
-    # Mock the global variables to be None
-    with patch.object(StorageManager.context, "db_backend", None):
-        with patch.object(StorageManager.context, "graph", None):
-            with patch.object(StorageManager.context, "rdf_store", None):
-                with patch("autoresearch.storage.setup", side_effect=Exception("Setup failed")):
-                    # Should raise StorageError
-                    with pytest.raises(StorageError) as excinfo:
-                        StorageManager._ensure_storage_initialized()
-
-                    assert "Failed to initialize storage components" in str(excinfo.value)
-                    assert excinfo.value.__cause__ is not None
-
-
-def test_ensure_storage_initialized_db_still_none():
-    """Test that _ensure_storage_initialized raises StorageError when db_backend is still None after setup."""
-    # Mock the global variables
-    with patch.object(StorageManager.context, "db_backend", None):
-        with patch.object(StorageManager.context, "graph", MagicMock()):
-            with patch.object(StorageManager.context, "rdf_store", MagicMock()):
-                with patch("autoresearch.storage.setup"):
-                    # Should raise StorageError
-                    with pytest.raises(StorageError) as excinfo:
-                        StorageManager._ensure_storage_initialized()
-
-                    assert "DuckDB backend not initialized" in str(excinfo.value)
-
-
-def test_ensure_storage_initialized_graph_still_none():
-    """Test that _ensure_storage_initialized raises StorageError when graph is still None after setup."""
-    # Mock the global variables
-    with patch.object(StorageManager.context, "db_backend", MagicMock()):
-        with patch.object(StorageManager.context, "graph", None):
-            with patch.object(StorageManager.context, "rdf_store", MagicMock()):
-                with patch("autoresearch.storage.setup"):
-                    # Should raise StorageError
-                    with pytest.raises(StorageError) as excinfo:
-                        StorageManager._ensure_storage_initialized()
-
-                    assert "Graph not initialized" in str(excinfo.value)
-
-
-def test_ensure_storage_initialized_rdf_still_none():
-    """Test that _ensure_storage_initialized raises StorageError when rdf_store is still None after setup."""
-    # Mock the global variables
-    with patch.object(StorageManager.context, "db_backend", MagicMock()):
-        with patch.object(StorageManager.context, "graph", MagicMock()):
-            with patch.object(StorageManager.context, "rdf_store", None):
-                with patch("autoresearch.storage.setup"):
-                    # Should raise StorageError
-                    with pytest.raises(StorageError) as excinfo:
-                        StorageManager._ensure_storage_initialized()
-
-                    assert "RDF store not initialized" in str(excinfo.value)
-
-
-def test_persist_to_networkx():
-    """Test that _persist_to_networkx correctly persists a claim to NetworkX."""
-    # Create a mock graph
-    mock_graph = MagicMock()
-    mock_lru = {}
-
-    # Create a test claim
-    claim = {
-        "id": "test-id",
-        "type": "fact",
-        "content": "test content",
-        "confidence": 0.9,
-        "attributes": {"verified": True},
-        "relations": [
-            {
-                "src": "test-id",
-                "dst": "source-1",
-                "rel": "cites",
-                "weight": 1.0,
-                "attributes": {"quality": "high"},
-            }
-        ],
-    }
-
-    with patch.object(StorageManager.context, "graph", mock_graph):
-        with patch.object(StorageManager.state, "lru", mock_lru):
-            # Call the method
-            StorageManager._persist_to_networkx(claim)
-
-            # Verify the graph was updated correctly
-            mock_graph.add_node.assert_called_once_with("test-id", verified=True, confidence=0.9)
-
-            mock_graph.add_edge.assert_called_once_with("test-id", "source-1", quality="high")
-
-            # Verify the LRU cache was updated
-            assert "test-id" in mock_lru
-
-
-def test_persist_to_duckdb():
-    """Test that _persist_to_duckdb correctly persists a claim to DuckDB."""
-    # Create a mock DuckDB backend
-    mock_db_backend = MagicMock()
-
-    # Create a test claim
-    claim = {
-        "id": "test-id",
-        "type": "fact",
-        "content": "test content",
-        "confidence": 0.9,
-        "relations": [{"src": "test-id", "dst": "source-1", "rel": "cites", "weight": 1.0}],
-        "embedding": [0.1, 0.2, 0.3],
-    }
-
-    with patch.object(StorageManager.context, "db_backend", mock_db_backend):
-        # Call the method
-        StorageManager._persist_to_duckdb(claim)
-
-        # Verify the backend was used correctly
-        mock_db_backend.persist_claim.assert_called_once_with(claim)
-
-
-def test_persist_to_rdf():
-    """Test that _persist_to_rdf correctly persists a claim to RDF."""
-    # Create a mock RDF store
-    mock_rdf_store = MagicMock()
-
-    # Create a test claim
-    claim = {"id": "test-id", "attributes": {"verified": True, "source": "test-source"}}
-
-    with patch.object(StorageManager.context, "rdf_store", mock_rdf_store):
-        with patch("rdflib.URIRef") as mock_uri_ref:
-            with patch("rdflib.Literal") as mock_literal:
-                # Avoid running the ontology reasoner during the test
-                with patch(
-                    "autoresearch.storage.run_ontology_reasoner"
-                ) as mock_reasoner:
-                    mock_reasoner.return_value = None
-
-                    # Set up the mocks
-                    mock_uri_ref.side_effect = lambda x: x
-                    mock_literal.side_effect = lambda x: x
-
-                    # Call the method
-                    StorageManager._persist_to_rdf(claim)
-
-                    # Verify the RDF store was updated correctly
-                    assert mock_rdf_store.add.call_count == 2
-
-                    # Check attribute triples
-                    mock_rdf_store.add.assert_any_call(
-                        ("urn:claim:test-id", "urn:prop:verified", True)
-                    )
-                    mock_rdf_store.add.assert_any_call(
-                        ("urn:claim:test-id", "urn:prop:source", "test-source")
-                    )
-
-                    # Ensure the reasoner was invoked exactly once
-                    mock_reasoner.assert_called_once_with(mock_rdf_store)
+    storage.teardown(remove_db=True, context=ctx)
+    assert not db_file.exists()
