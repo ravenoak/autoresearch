@@ -13,6 +13,8 @@ and error handling while providing detailed logging and token counting.
   state.
 - Run agent groups in parallel and synthesize their results.
 - Record token usage and emit structured debug logs.
+- Metrics helpers depend on callables (e.g., `time.time`) so tests can swap
+  implementations without using `types.SimpleNamespace`.
 
 ## Traceability
 

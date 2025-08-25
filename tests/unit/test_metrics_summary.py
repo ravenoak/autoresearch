@@ -1,14 +1,15 @@
-import types
 import pytest
+
 from autoresearch.orchestration import metrics
 
 
 def _fake_time_gen():
-    t = {'v': 0}
+    t = {"v": 0}
 
-    def fake():
-        t['v'] += 1
-        return t['v']
+    def fake() -> int:
+        t["v"] += 1
+        return t["v"]
+
     return fake
 
 
@@ -21,7 +22,8 @@ def _fake_time_gen():
 )
 def test_metrics_summary(monkeypatch, records):
     fake_time = _fake_time_gen()
-    monkeypatch.setattr(metrics, "time", types.SimpleNamespace(time=fake_time))
+    monkeypatch.setattr(metrics.time, "time", fake_time)
+    assert callable(metrics.time.time)
 
     m = metrics.OrchestrationMetrics()
     total_in = total_out = 0

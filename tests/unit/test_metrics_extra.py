@@ -1,11 +1,12 @@
-import types
-
 from autoresearch.orchestration import metrics
 
 
 def test_cycle_and_agent_metrics(monkeypatch, tmp_path):
-    fake_time = types.SimpleNamespace(time=lambda: 1.0)
-    monkeypatch.setattr(metrics, "time", fake_time)
+    def fake_time() -> float:
+        return 1.0
+
+    monkeypatch.setattr(metrics.time, "time", fake_time)
+    assert callable(metrics.time.time)
     path = tmp_path / "dir" / "release.json"
     monkeypatch.setenv("AUTORESEARCH_RELEASE_METRICS", str(path))
     m = metrics.OrchestrationMetrics()

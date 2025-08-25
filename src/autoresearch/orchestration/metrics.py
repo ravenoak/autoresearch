@@ -1,12 +1,12 @@
 """Metrics collection for orchestration system."""
 
 import logging
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from decimal import ROUND_CEILING, Decimal
 from os import getenv
 from pathlib import Path
-from time import time
 from typing import Any
 
 from prometheus_client import Counter, Histogram
@@ -231,12 +231,12 @@ class OrchestrationMetrics:
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
-        self.last_cycle_start = time()
+        self.last_cycle_start = time.time()
 
     def end_cycle(self) -> None:
         """Mark the end of a cycle and record duration."""
         if self.last_cycle_start:
-            duration = time() - self.last_cycle_start
+            duration = time.time() - self.last_cycle_start
             self.cycle_durations.append(duration)
             self.last_cycle_start = None
 
@@ -249,7 +249,7 @@ class OrchestrationMetrics:
     def record_system_resources(self) -> None:
         """Record current CPU, memory, and GPU usage."""
         cpu, mem, gpu, gpu_mem = _get_system_usage()
-        self.resource_usage.append((time(), cpu, mem, gpu, gpu_mem))
+        self.resource_usage.append((time.time(), cpu, mem, gpu, gpu_mem))
 
     def record_tokens(self, agent_name: str, tokens_in: int, tokens_out: int) -> None:
         """Record token usage for an agent."""
