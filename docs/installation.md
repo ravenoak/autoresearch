@@ -17,9 +17,10 @@ Run a bootstrap command immediately:
 ```bash
 ./scripts/setup.sh  # full developer bootstrap
 # or
-task install        # developer environment
+task install        # lightweight developer environment
 ```
 
+`task install` syncs only the `dev-minimal` extras for a faster setup.
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
 extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
 `hypothesis`, and `redis`), and exits if `task --version` fails.
@@ -143,13 +144,13 @@ Use `uv` to manage the environment when working from a clone:
 
 ```bash
 # Install pinned dependencies for development
-uv sync --extra dev
+uv sync --extra dev-minimal
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Run `task install` or `uv sync --extra dev` before executing tests to ensure
-the development dependencies are available.
+Run `task install` or `uv sync --extra dev-minimal` before executing tests to
+ensure the development dependencies are available.
 
 Add heavy extras on demand:
 
@@ -160,7 +161,7 @@ uv sync --extra nlp
 
 After installing Go Task, pick a bootstrap method:
 
-- `task install` – developer setup
+- `task install` – lightweight developer setup
 - [`scripts/setup.sh`](../scripts/setup.sh) – full developer toolchain
 
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`

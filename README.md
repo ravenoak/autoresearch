@@ -17,18 +17,18 @@ For orchestrator state transitions and API contracts see
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
 [Go Task](https://taskfile.dev/). After cloning, run `./scripts/setup.sh` for
-the full developer bootstrap or `task install` for a minimal environment. See
-[docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
-details.
+the full developer bootstrap or `task install` for a lightweight environment.
+See [docs/installation.md#after-cloning](docs/installation.md#after-cloning)
+for details.
 
-To bootstrap a Python 3.12+ environment with development and test extras run:
+To bootstrap a Python 3.12+ environment with minimal development extras run:
 
 ```bash
 task install
 ```
 
-This installs tools like `pytest-httpx`, `duckdb`, and `networkx` needed for
-local testing.
+This uses the `dev-minimal` extras to install tools like `pytest-httpx`,
+`duckdb`, and `networkx` needed for local testing.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
@@ -69,6 +69,28 @@ without renaming.
 See [docs/installation.md](docs/installation.md) for the authoritative
 installation guide, including environment setup, optional features and
 upgrade instructions.
+
+### Optional extras
+
+Autoresearch exposes optional features via pip extras:
+
+- `nlp` – language processing via spaCy and BERTopic
+- `llm` – heavy model dependencies like `sentence-transformers` and
+  `transformers`
+- `parsers` – PDF and DOCX document ingestion
+- `ui` – the reference Streamlit interface
+- `vss` – DuckDB vector search extension
+- `distributed` – distributed processing with Ray and Redis
+- `analysis` – Polars-based data analysis utilities
+- `git` – local Git repository search support
+- `full` – installs most extras (nlp, ui, vss, distributed, analysis) but omits
+  `parsers` and `git`
+
+Install extras with pip:
+
+```bash
+pip install "autoresearch[nlp,ui]"
+```
 
 ## Building the documentation
 
