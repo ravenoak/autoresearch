@@ -11,8 +11,8 @@ required to finalize this milestone.
 
 ## Dependencies
 
-- [prepare-initial-alpha-release](archive/prepare-initial-alpha-release.md)
-- [investigate-task-check-verify-coverage-failures](archive/investigate-task-check-verify-coverage-failures.md)
+- [prepare-initial-alpha-release](prepare-initial-alpha-release.md)
+- [investigate-task-check-verify-coverage-failures](investigate-task-check-verify-coverage-failures.md)
 
 ## Acceptance Criteria
 - Package builds verified and published to TestPyPI.
@@ -20,4 +20,4 @@ required to finalize this milestone.
 - All CI checks pass with required coverage thresholds.
 
 ## Status
-Open
+Archived

@@ -5,6 +5,10 @@ The A2A MCP integration needs behavior-driven tests to verify handshake
 success, timeout handling, and recovery from errors. Breaking the effort into
 smaller tasks will ease review and coordination.
 
+## Dependencies
+
+- None
+
 ## Acceptance Criteria
 - Add a handshake success scenario in
   `tests/behavior/features/a2a_mcp_integration.feature`.

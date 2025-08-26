@@ -22,10 +22,10 @@ before running tests.
 - 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements
   ([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)).
-- 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
-  with all tests passing
+- 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI
+  checks with all tests passing
   ([finalize-first-public-preview-release](
-  issues/finalize-first-public-preview-release.md)).
+  issues/archive/finalize-first-public-preview-release.md)).
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   issues/deliver-bug-fixes-and-docs-update.md)).
