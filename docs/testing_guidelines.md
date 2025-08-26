@@ -53,6 +53,13 @@ After tests complete, verify coverage meets the threshold:
 uv run coverage report --fail-under=90
 ```
 
+The [scripts/simulate_llm_adapter.py](../scripts/simulate_llm_adapter.py)
+script models adapter switching and token budgets for exploratory testing:
+
+```bash
+uv run python scripts/simulate_llm_adapter.py "example prompt"
+```
+
 You can also invoke the slow suite directly with:
 
 ```bash
