@@ -47,12 +47,12 @@ For current capabilities and known limitations see
 
 ## Roadmap
 
-As of **August 18, 2025**, Autoresearch is in the **Development** phase
+As of **August 26, 2025**, Autoresearch is in the **Development** phase
 preparing for the upcoming **0.1.0** release. The version is defined in
 `autoresearch.__version__` and mirrored in `pyproject.toml`, but it has
 **not** been published yet. The first official release was originally
 planned for **July 20, 2025**, but the schedule slipped. An
-**0.1.0-alpha.1** preview is scheduled for **2026-03-01**, with
+**0.1.0-alpha.1** preview is re-targeted for **2026-06-15**, with
 the final **0.1.0** milestone targeted for **July 1, 2026**. See
 
 [ROADMAP.md](ROADMAP.md) for feature milestones and
@@ -62,7 +62,9 @@ workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current test and coverage results.
+See [STATUS.md](STATUS.md) for current test and coverage results. Task-level
+progress and test reconciliation live in
+[TASK_PROGRESS.md](TASK_PROGRESS.md).
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the
 alpha release checklist.

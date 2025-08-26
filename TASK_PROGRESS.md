@@ -3,7 +3,7 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **August 26, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
-status. An **0.1.0-alpha.1** preview is scheduled for **2026-04-15**, with the
+status. An **0.1.0-alpha.1** preview is re-targeted for **2026-06-15**, with the
 final **0.1.0** release targeted for **July 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
@@ -32,10 +32,10 @@ final **0.1.0** release targeted for **July 1, 2026**.
 
 ### 1.3 Storage System
 
-- [x] Complete the DuckDB integration
-  - [x] Optimize vector search capabilities
-  - [x] Implement efficient eviction policies (see `StorageManager._enforce_ram_budget`)
-  - [x] Add support for incremental updates (see `StorageManager.persist_claim`)
+- [ ] Complete the DuckDB integration
+  - [ ] Optimize vector search capabilities
+  - [ ] Implement efficient eviction policies (see `StorageManager._enforce_ram_budget`)
+  - [ ] Add support for incremental updates (see `StorageManager.persist_claim`)
 - [x] Enhance the RDF knowledge graph
   - [x] Implement more sophisticated reasoning capabilities
   - [x] Add support for ontology-based reasoning
@@ -44,9 +44,9 @@ final **0.1.0** release targeted for **July 1, 2026**.
 
 ### 1.4 Search System
 
-- [x] Complete all search backends
+- [ ] Complete all search backends
   - [x] Finalize the local file search implementation
-  - [x] Enhance the local git search with better code understanding
+  - [ ] Enhance the local git search with better code understanding
   - [x] Implement cross-backend result ranking
 - [x] Add semantic search capabilities
   - [x] Implement embedding-based search across all backends
@@ -60,7 +60,7 @@ final **0.1.0** release targeted for **July 1, 2026**.
 
 - [ ] Complete test coverage for all modules
   - [x] Verified spec documents reference existing tests
-- [x] Ensure at least 90% code coverage
+- [ ] Ensure at least 90% code coverage
   - [ ] Add tests for edge cases and error conditions
   - [ ] Implement property-based testing for complex components
 - [ ] Enhance test fixtures
@@ -175,11 +175,11 @@ These behavior test issues remain open until the test suite passes.
 
 ### 5.1 Performance Optimization
 
-- [x] Complete token usage optimization
-  - [x] Implement prompt compression techniques
-  - [x] Add context pruning for long conversations
-  - [x] Create adaptive token budget management
-  - [x] Use per-agent historical averages for budget adjustment
+- [ ] Complete token usage optimization
+  - [ ] Implement prompt compression techniques
+  - [ ] Add context pruning for long conversations
+  - [ ] Create adaptive token budget management
+  - [ ] Use per-agent historical averages for budget adjustment
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
@@ -226,7 +226,7 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Running a focused subset of tests with coverage produced **44%** line coverage
+Running a focused subset of tests with coverage produced **14%** line coverage
 across targeted modules. Full `task coverage` was attempted but could not
 complete in this environment.
 
@@ -238,7 +238,7 @@ Full suite attempts:
 ./.venv/bin/task check
 ```
 
-Result: 39 failed, 629 passed, 26 skipped, 24 deselected, 2 xfailed, 32 warnings, 7 errors
+Result: 39 failed, 624 passed, 26 skipped, 24 deselected, 1 xfailed, 1 xpassed, 32 warnings, 7 errors
 
 ```
 ./.venv/bin/task verify
@@ -258,4 +258,6 @@ Current benchmark metrics for a single dummy query:
 
 ### Phase 1 Review
 
-All orchestrator, specialized agent, search, and storage features match the CODE_COMPLETE_PLAN Phase 1 goals. No discrepancies were found during review.
+Storage and search features remain under active development as tests reveal
+failing scenarios. Further work is required to meet the CODE_COMPLETE_PLAN Phase
+1 goals.

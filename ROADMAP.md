@@ -8,7 +8,7 @@ Last updated **August 26, 2025**.
 ## Status
 
 See [STATUS.md](STATUS.md) for current test and coverage results. Current
-coverage from the unit subset is **67%**. Use Python 3.12+ with:
+coverage from the unit subset is **14%**. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -19,7 +19,7 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0a1 (2026-04-15, status: in progress): Alpha preview to collect
+- 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements
   ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
@@ -52,17 +52,17 @@ are verified. Related issue
 ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
 the work. Tagging **0.1.0a1** requires `task verify` to complete, coverage to
 reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
-**April 15, 2026**. Key activities include:
+**June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated
   ([environment-bootstrap](issues/archive/document-environment-bootstrap.md)).
 - [x] Packaging verification with DuckDB fallback
   ([packaging-fallback](issues/archive/verify-packaging-workflow-and-duckdb-fallback.md)).
-- [x] Integration tests stabilized
+- [ ] Integration tests stabilized
   ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **67%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
+  **14%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
 - [x] Algorithm validation for ranking and coordination
   ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 
