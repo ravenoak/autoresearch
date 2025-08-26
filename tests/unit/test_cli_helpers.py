@@ -7,6 +7,9 @@ import typer
 import pytest
 
 
+pytestmark = pytest.mark.usefixtures("dummy_storage")
+
+
 def test_find_similar_commands_basic():
     cmds = ["search", "serve", "backup"]
     matches = find_similar_commands("serch", cmds)
