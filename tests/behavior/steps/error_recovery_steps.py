@@ -99,6 +99,14 @@ def test_error_recovery_agent_fallback():
 
 @scenario(
     "../features/error_recovery.feature",
+    "Error recovery with a realistic query",
+)
+def test_error_recovery_realistic_query():
+    pass
+
+
+@scenario(
+    "../features/error_recovery.feature",
     "Successful run does not trigger recovery",
 )
 def test_error_recovery_none():
@@ -267,9 +275,7 @@ def network_outage_agent(monkeypatch, isolate_network, restore_environment):
 
 
 @given(parsers.parse('reasoning mode is "{mode}"'))
-def set_reasoning_mode(
-    config: ConfigModel, mode: str, isolate_network, restore_environment
-):
+def set_reasoning_mode(config: ConfigModel, mode: str, isolate_network, restore_environment):
     config.reasoning_mode = ReasoningMode(mode)
     return config
 
@@ -352,9 +358,7 @@ def run_orchestrator(
                     dummy_state.metadata.update(result.get("metadata", {}))
                     dummy_state.results.update(result.get("results", {}))
 
-                dummy_state = types.SimpleNamespace(
-                    update=update, metadata={}, results={}
-                )
+                dummy_state = types.SimpleNamespace(update=update, metadata={}, results={})
                 dummy_metrics = types.SimpleNamespace(record_error=lambda agent: None)
                 info = original_handle(agent_name, e, dummy_state, dummy_metrics)
                 info["recovery_applied"] = dummy_state.metadata.get("recovery_applied")
@@ -440,8 +444,7 @@ def assert_timeout_error(run_result: dict) -> None:
     errors = run_result["response"].metadata.get("errors", [])
     _assert_error_schema(errors)
     assert any(
-        e.get("error_type") == "TimeoutError"
-        and "simulated timeout" in e.get("message", "")
+        e.get("error_type") == "TimeoutError" and "simulated timeout" in e.get("message", "")
         for e in errors
     ), errors
 
@@ -477,9 +480,7 @@ def assert_mode(run_result: dict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
-    expected = [
-        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
-    ]
+    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
@@ -490,9 +491,7 @@ def assert_order(run_result: dict, order: str) -> None:
 
 
 @then("the system state should be restored")
-def assert_state_restored(
-    run_result: dict | None = None, error_result: dict | None = None
-) -> None:
+def assert_state_restored(run_result: dict | None = None, error_result: dict | None = None) -> None:
     result = run_result or error_result
     assert result and result.get("state", {}).get("active") is False
 

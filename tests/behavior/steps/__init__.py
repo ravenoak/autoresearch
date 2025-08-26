@@ -8,14 +8,20 @@ from .common_steps import (
 )  # noqa: F401
 
 # Import step modules so pytest-bdd discovers them when running the package.
-from . import distributed_execution_steps  # noqa: F401
-from . import config_cli_steps  # noqa: F401
-from . import backup_cli_steps  # noqa: F401
-from . import serve_cli_steps  # noqa: F401
-from . import completion_cli_steps  # noqa: F401
-from . import capabilities_cli_steps  # noqa: F401
-from . import api_auth_steps  # noqa: F401
-from . import api_orchestrator_integration_steps  # noqa: F401
+for _mod in [
+    "distributed_execution_steps",
+    "config_cli_steps",
+    "backup_cli_steps",
+    "serve_cli_steps",
+    "completion_cli_steps",
+    "capabilities_cli_steps",
+    "api_auth_steps",
+    "api_orchestrator_integration_steps",
+]:
+    try:
+        __import__(f"tests.behavior.steps.{_mod}")
+    except Exception:  # pragma: no cover - optional imports
+        pass
 
 __all__ = [
     "app_running",

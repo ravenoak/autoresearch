@@ -22,31 +22,31 @@ def test_default_mode():
     pass
 
 
-@scenario(
-    "../features/reasoning_mode.feature", "Chain-of-thought mode loops Synthesizer"
-)
+@scenario("../features/reasoning_mode.feature", "Chain-of-thought mode loops Synthesizer")
 def test_chain_of_thought_mode():
     pass
 
 
-@scenario(
-    "../features/reasoning_mode.feature", "Dialectical mode with custom Primus start"
-)
+@scenario("../features/reasoning_mode.feature", "Dialectical mode with custom Primus start")
 def test_dialectical_custom_primus():
     pass
 
 
-@scenario(
-    "../features/reasoning_mode.feature", "Dialectical reasoning with a realistic query"
-)
+@scenario("../features/reasoning_mode.feature", "Dialectical reasoning with a realistic query")
 def test_dialectical_real_query():
     pass
 
 
-@scenario(
-    "../features/reasoning_mode.feature", "Direct reasoning with a realistic query"
-)
+@scenario("../features/reasoning_mode.feature", "Direct reasoning with a realistic query")
 def test_direct_real_query():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
+    "Chain-of-thought reasoning with a realistic query",
+)
+def test_cot_real_query():
     pass
 
 
@@ -90,9 +90,7 @@ def test_loop_overflow():
     pass
 
 
-@given(
-    parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config"
-)
+@given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")
 def loops_config(count: int, monkeypatch):
     cfg = ConfigModel(agents=["Synthesizer", "Contrarian", "FactChecker"], loops=count)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
@@ -356,9 +354,7 @@ def run_orchestrator_failure(
     isolate_network,
     restore_environment,
 ):
-    return _run_orchestrator_with_failure(
-        query, config, isolate_network, restore_environment
-    )
+    return _run_orchestrator_with_failure(query, config, isolate_network, restore_environment)
 
 
 @when(
@@ -388,9 +384,7 @@ def assert_mode(run_result: dict, mode: str) -> None:
 
 @then(parsers.parse('the agent groups should be "{groups}"'))
 def assert_groups(run_result: dict, groups: str) -> None:
-    expected = [
-        [a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")
-    ]
+    expected = [[a.strip() for a in grp.split(",") if a.strip()] for grp in groups.split(";")]
     assert run_result["config_params"].get("agent_groups") == expected
 
 
@@ -429,9 +423,7 @@ def assert_recovery_applied(run_result: dict) -> None:
 
 
 @then("the system state should be restored")
-def assert_state_restored(
-    run_result: dict | None = None, error_result: dict | None = None
-) -> None:
+def assert_state_restored(run_result: dict | None = None, error_result: dict | None = None) -> None:
     result = run_result or error_result
     assert result and result.get("state", {}).get("active") is False
 
