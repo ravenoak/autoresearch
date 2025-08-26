@@ -1,15 +1,14 @@
 # Prepare first alpha release
 
 ## Context
-Version 0.1.0a1 will be the project's first public alpha. The setup script
-installs Go Task and dev extras, but the `task` runner is not currently
-available in the environment, so checks run directly with `uv run`. `uv run
-flake8 src tests` and `uv run mypy src` pass, yet `uv run pytest tests/unit -q`
-reports **31 failures**, mostly in CLI and backup command tests with
-`StorageError` from uninitialized DuckDB tables. Integration and behavior
-suites emit only errors before halting. Coverage remains at **67%**, far below
-the **90%** target. The TestPyPI upload returns HTTP 403, and release notes and
-packaging steps are incomplete.
+Version 0.1.0a1 will be the project's first public alpha. Running
+`scripts/setup.sh` now installs Go Task alongside development and test extras,
+allowing checks to run via `./.venv/bin/task`. `flake8` and `mypy` succeed, yet
+`./.venv/bin/task check` still reports numerous failures. Unit tests surface
+`StorageError: Failed to initialize schema version` and CLI help regressions,
+while integration and behavior suites abort early. Coverage remains at **67%**
+and TestPyPI uploads continue to fail with HTTP 403. Release notes and
+packaging instructions are still incomplete.
 
 ## Milestone
 
