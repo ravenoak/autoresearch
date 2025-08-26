@@ -197,3 +197,28 @@ def test_search_reflects_updated_claim(monkeypatch):
         max_results=1,
     )
     assert results[0]["snippet"] == "new", "search should reflect updated storage"
+
+
+def test_search_persists_multiple_backend_results(monkeypatch):
+    cfg = _config_without_network()
+    cfg.search.backends = ["b1", "b2"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader()._config = None
+    stored: list[str] = []
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+
+    def b1(query: str, max_results: int = 5):
+        return [{"title": "Paris", "url": "u1"}]
+
+    def b2(query: str, max_results: int = 5):
+        return [{"title": "France", "url": "u2"}]
+
+    monkeypatch.setattr(Search, "backends", {"b1": b1, "b2": b2})
+    monkeypatch.setattr(
+        Search,
+        "cross_backend_rank",
+        lambda q, b, query_embedding=None: sum(b.values(), []),
+    )
+
+    Search.external_lookup("What is the capital of France?", max_results=2)
+    assert stored == ["u1", "u2"]

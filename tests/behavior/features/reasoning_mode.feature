@@ -32,6 +32,14 @@ Feature: Reasoning Mode Selection
     And the agent groups should be "Synthesizer; Contrarian; FactChecker"
     And the agents executed should be "Synthesizer, Synthesizer"
 
+  Scenario: Chain-of-thought reasoning with a realistic query
+    Given reasoning mode is "chain-of-thought"
+    When I run the orchestrator on query "How do airplanes fly?"
+    Then the loops used should be 2
+    And the reasoning mode selected should be "chain-of-thought"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Synthesizer"
+
   Scenario: Dialectical mode with custom Primus start
     Given loops is set to 1 in configuration
     And reasoning mode is "dialectical"

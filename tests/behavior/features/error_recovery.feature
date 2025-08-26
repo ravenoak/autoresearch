@@ -114,6 +114,15 @@ Feature: Error Recovery
     And the logs should include "recovery"
     And the response should list an agent execution error
 
+  Scenario: Error recovery with a realistic query
+    Given an agent that raises a transient error
+    And reasoning mode is "dialectical"
+    When I run the orchestrator on query "What is the capital of France?"
+    Then the reasoning mode selected should be "dialectical"
+    And a recovery strategy "retry_with_backoff" should be recorded
+    And recovery should be applied
+    And the system state should be restored
+
   Scenario: Unsupported reasoning mode during recovery fails gracefully
     Given an agent that raises a transient error
     When I run the orchestrator on query "recover test" with unsupported reasoning mode "quantum"
