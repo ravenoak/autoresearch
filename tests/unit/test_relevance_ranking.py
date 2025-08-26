@@ -423,3 +423,65 @@ def test_external_lookup_uses_cache(texts):
 
     assert backend.call_count == 1
     assert second == first
+
+
+@patch("autoresearch.search.core.get_config")
+def test_relevance_score_monotonic(mock_get_config, mock_config):
+    """Increasing a component score should raise the final relevance score."""
+    docs1 = [
+        {"title": "a", "url": "https://a", "snippet": ""},
+        {"title": "b", "url": "https://b", "snippet": ""},
+    ]
+    docs2 = [
+        {"title": "a", "url": "https://a", "snippet": ""},
+        {"title": "b", "url": "https://b", "snippet": ""},
+    ]
+    mock_get_config.return_value = mock_config
+    with (
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.5, 0.5]),
+        patch.object(Search, "assess_source_credibility", return_value=[0.5, 0.5]),
+    ):
+        with patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.2, 0.4]),
+        ):
+            before_rank = Search.rank_results("q", docs1)
+            before = {r["url"]: r["relevance_score"] for r in before_rank}["https://a"]
+        with patch.object(
+            Search,
+            "calculate_bm25_scores",
+            staticmethod(lambda q, d: [0.8, 0.4]),
+        ):
+            after_rank = Search.rank_results("q", docs2)
+            after = {r["url"]: r["relevance_score"] for r in after_rank}["https://a"]
+
+    assert after > before
+    assert after_rank[0]["url"] == "https://a"
+
+
+@patch("autoresearch.search.core.get_config")
+def test_weight_sensitivity(mock_get_config, mock_config):
+    """Adjusting weights should reorder results to match their emphasis."""
+    docs = [
+        {"title": "a", "url": "https://a", "snippet": ""},
+        {"title": "b", "url": "https://b", "snippet": ""},
+    ]
+    with (
+        patch.object(Search, "calculate_bm25_scores", return_value=[0.9, 0.1]),
+        patch.object(Search, "calculate_semantic_similarity", return_value=[0.1, 0.9]),
+        patch.object(Search, "assess_source_credibility", return_value=[0.5, 0.5]),
+    ):
+        mock_config.search.bm25_weight = 0.7
+        mock_config.search.semantic_similarity_weight = 0.2
+        mock_config.search.source_credibility_weight = 0.1
+        mock_get_config.return_value = mock_config
+        ranked_bm25 = Search.rank_results("q", docs)
+
+        mock_config.search.bm25_weight = 0.2
+        mock_config.search.semantic_similarity_weight = 0.7
+        mock_config.search.source_credibility_weight = 0.1
+        ranked_sem = Search.rank_results("q", docs)
+
+    assert ranked_bm25[0]["url"] == "https://a"
+    assert ranked_sem[0]["url"] == "https://b"

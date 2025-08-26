@@ -26,9 +26,12 @@ This specification outlines expected behaviors for the
 - Final result ordering uses weighted combination of
   [BM25](algorithms/bm25.md),
   [semantic similarity](algorithms/semantic_similarity.md), and
-  [domain authority scores](algorithms/source_credibility.md).
+  [domain authority scores](algorithms/source_credibility.md). The formula
+  is detailed in [search ranking](algorithms/search_ranking.md).
 
 ## Tests
 Property-based tests in `tests/unit/test_relevance_ranking.py` verify:
 - Results are returned in non-increasing order of `relevance_score`.
 - Cached lookups avoid redundant backend calls while preserving ranking.
+- Raising any component score increases the final `relevance_score`.
+- Changing relevance weights alters ordering to reflect their emphasis.
