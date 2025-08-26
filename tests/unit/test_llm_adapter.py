@@ -1,5 +1,6 @@
 import responses
 from autoresearch.llm import get_llm_adapter, DummyAdapter
+from autoresearch.llm.token_counting import compress_prompt
 
 
 def test_dummy_adapter_generation():
@@ -39,3 +40,15 @@ def test_openai_adapter(monkeypatch):
     assert text == "ok"
     headers = responses.calls[0].request.headers
     assert headers.get("Authorization") == "Bearer test"
+
+
+def test_compress_prompt_falls_back_when_summary_exceeds_budget():
+    """Ellipsis fallback when summary exceeds token budget."""
+
+    def summarizer(_: str, __: int) -> str:
+        return "one two three four"
+
+    prompt = "alpha beta gamma delta epsilon zeta"
+    result = compress_prompt(prompt, 3, summarizer)
+    assert result == "alpha ... zeta"
+    assert len(result.split()) == 3
