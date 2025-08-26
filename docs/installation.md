@@ -19,10 +19,10 @@ and distributed features stay disabled.
 Optional extras enable additional capabilities and are installed on
 demand with `uv sync --extra <name>`.
 
-For a lean setup, sync only the minimal development and test extras:
+For a lean setup, sync only the minimal development extras:
 
 ```bash
-uv sync --extra dev-minimal --extra test
+uv sync --extra dev-minimal
 ```
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
@@ -36,18 +36,18 @@ Run the setup script immediately after cloning:
 ./scripts/setup.sh  # full developer bootstrap
 ```
 
-After the script completes you can use `task install` to provision all
-development tools via the `dev` and `test` extras:
+After the script completes you can use `task install` to provision the
+minimal development tools:
 
 ```bash
 task install
 ```
 
-Install additional groups only when required:
+Include extras only when required. Example:
 
 ```bash
-uv sync --extra nlp  # spaCy and BERTopic
-uv sync --extra llm  # sentence-transformers and transformers
+EXTRAS="test nlp" task install  # adds test and NLP packages
+uv sync --extra llm             # sentence-transformers and transformers
 ```
 
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and

@@ -39,6 +39,17 @@ EOF
 VENV_BIN="$(pwd)/.venv/bin"
 export PATH="$VENV_BIN:$PATH"
 
+# Ensure Go Task is available for later Taskfile commands
+if ! command -v task >/dev/null 2>&1; then
+    echo "Go Task missing; installing into $VENV_BIN..."
+    curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
+    export PATH="$VENV_BIN:$PATH"
+fi
+task --version >/dev/null 2>&1 || {
+    echo "task --version failed; Go Task is required but was not installed" >&2
+    exit 1
+}
+
 # Install locked dependencies and development/test extras
 echo "Installing development and test extras via uv sync --extra dev --extra test"
 uv sync --extra dev --extra test
@@ -53,16 +64,6 @@ for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do
         exit 1
     fi
 done
-
-# Ensure Go Task is installed inside the virtual environment
-if ! command -v task >/dev/null 2>&1; then
-    echo "Go Task missing; installing into $VENV_BIN..."
-    curl -sL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
-fi
-if ! command -v task >/dev/null 2>&1; then
-    echo "task --version failed; Go Task is required but was not installed" >&2
-    exit 1
-fi
 
 # Append Go Task path to activation scripts if absent
 for script in "$VENV_BIN/activate" \
