@@ -14,10 +14,21 @@ import time
 
 from .storage_backup import BackupManager, BackupConfig
 from .errors import BackupError
+from .cli_helpers import report_missing_tables
 
 backup_app = typer.Typer(
     help="Backup and restore operations",
 )
+
+
+def _render_backup_error(console: Console, prefix: str, error: BackupError) -> None:
+    """Render a backup-related error with context information."""
+    console.print(f"[bold red]{prefix}:[/bold red] {error}")
+    ctx = getattr(error, "context", {}) or {}
+    if "suggestion" in ctx:
+        console.print(f"[yellow]Suggestion:[/yellow] {ctx['suggestion']}")
+    if "missing_tables" in ctx:
+        report_missing_tables(ctx["missing_tables"], console)
 
 
 @backup_app.command("create")
@@ -70,9 +81,7 @@ def backup_create(
         console.print(f"  Compressed: {'Yes' if backup_info.compressed else 'No'}")
 
     except BackupError as e:
-        console.print(f"[bold red]Error creating backup:[/bold red] {str(e)}")
-        if hasattr(e, "context") and "suggestion" in e.context:
-            console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        _render_backup_error(console, "Error creating backup", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
@@ -138,9 +147,7 @@ def backup_restore(
         )
 
     except BackupError as e:
-        console.print(f"[bold red]Error restoring backup:[/bold red] {str(e)}")
-        if hasattr(e, "context") and "suggestion" in e.context:
-            console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        _render_backup_error(console, "Error restoring backup", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
@@ -196,9 +203,7 @@ def backup_list(
             console.print(f"Showing {limit} of {len(backups)} backups. Use --limit to show more.")
 
     except BackupError as e:
-        console.print(f"[bold red]Error listing backups:[/bold red] {str(e)}")
-        if hasattr(e, "context") and "suggestion" in e.context:
-            console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        _render_backup_error(console, "Error listing backups", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
@@ -258,9 +263,7 @@ def backup_schedule(
             console.print("[bold green]Scheduled backups stopped.[/bold green]")
 
     except BackupError as e:
-        console.print(f"[bold red]Error scheduling backups:[/bold red] {str(e)}")
-        if hasattr(e, "context") and "suggestion" in e.context:
-            console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        _render_backup_error(console, "Error scheduling backups", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:
@@ -343,9 +346,9 @@ def backup_recover(
         )
 
     except BackupError as e:
-        console.print(f"[bold red]Error performing point-in-time recovery:[/bold red] {str(e)}")
-        if hasattr(e, "context") and "suggestion" in e.context:
-            console.print(f"[yellow]Suggestion:[/yellow] {e.context['suggestion']}")
+        _render_backup_error(
+            console, "Error performing point-in-time recovery", e
+        )
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:

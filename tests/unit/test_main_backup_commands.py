@@ -1,10 +1,19 @@
 from datetime import datetime
-from typer.testing import CliRunner
 from unittest.mock import patch
+
+import pytest
+from typer.testing import CliRunner
 
 from autoresearch.errors import BackupError
 from autoresearch.main import app
 from autoresearch.storage_backup import BackupInfo
+
+
+@pytest.fixture(autouse=True)
+def _patch_storage_setup():
+    """Prevent real storage initialization during CLI tests."""
+    with patch("autoresearch.main.app.StorageManager.setup", return_value=None):
+        yield
 
 
 @patch("autoresearch.cli_backup.BackupManager")
@@ -181,6 +190,18 @@ def test_backup_create_error(mock_manager):
     result = runner.invoke(app, ["backup", "create"])
     assert result.exit_code == 1
     assert "Unexpected error creating backup" in result.stdout
+
+
+@patch("autoresearch.cli_backup.BackupManager")
+def test_backup_create_missing_tables(mock_manager):
+    runner = CliRunner()
+    mock_manager.create_backup.side_effect = BackupError(
+        "bad", missing_tables=["t1"]
+    )
+    result = runner.invoke(app, ["backup", "create"])
+    assert result.exit_code == 1
+    assert "Missing required tables" in result.stdout
+    assert "t1" in result.stdout
 
 
 @patch("autoresearch.cli_backup.BackupManager")

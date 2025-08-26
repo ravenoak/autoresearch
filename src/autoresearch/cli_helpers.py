@@ -7,6 +7,8 @@ from typing import Sequence, List
 import click
 import typer
 
+from rich.console import Console
+
 from .cli_utils import (
     print_error,
     print_info,
@@ -36,6 +38,24 @@ def parse_agent_groups(groups: Sequence[str]) -> List[List[str]]:
         if agents:
             parsed.append(agents)
     return parsed
+
+
+def report_missing_tables(tables: Sequence[str], console: Console | None = None) -> None:
+    """Report missing database tables in a user-friendly way."""
+    if not tables:
+        return
+    names = ", ".join(sorted(tables))
+    if console is None:
+        print_error(
+            f"Missing required tables: {names}",
+            suggestion="Ensure the storage schema has been initialized.",
+        )
+    else:
+        console.print(f"[bold red]Missing required tables: {names}[/bold red]")
+        console.print(
+            "[yellow]Suggestion:[/yellow] "
+            "Ensure the storage schema has been initialized."
+        )
 
 
 def handle_command_not_found(ctx: typer.Context, command: str) -> None:
