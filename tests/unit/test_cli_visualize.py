@@ -5,6 +5,10 @@ from typer.testing import CliRunner
 
 from autoresearch.cli_utils import ascii_bar_graph, summary_table
 from autoresearch.models import QueryResponse
+import pytest
+
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
 def test_ascii_bar_graph_basic():

@@ -1,8 +1,14 @@
 from unittest.mock import MagicMock, patch
-
+import importlib
+import pytest
 from typer.testing import CliRunner  # Typer's CLI test runner
 
-from autoresearch.main import app
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
+
+
+def _main():
+    return importlib.import_module("autoresearch.main")
 
 
 def test_monitor_command(monkeypatch):
@@ -11,7 +17,7 @@ def test_monitor_command(monkeypatch):
     monkeypatch.setattr(
         "autoresearch.monitor._collect_system_metrics", lambda: {"cpu_percent": 1.0}
     )
-    result = runner.invoke(app, ["monitor"])
+    result = runner.invoke(_main().app, ["monitor"])
     assert result.exit_code == 0
     assert "cpu_percent" in result.stdout
 
@@ -25,7 +31,9 @@ def test_serve_a2a_command(mock_a2a_interface_class):
     mock_a2a_interface.start.side_effect = SystemExit
     mock_a2a_interface_class.return_value = mock_a2a_interface
 
-    result = runner.invoke(app, ["serve-a2a", "--host", "localhost", "--port", "8765"])
+    result = runner.invoke(
+        _main().app, ["serve-a2a", "--host", "localhost", "--port", "8765"]
+    )
 
     assert result.exit_code == 0
     mock_a2a_interface_class.assert_called_once_with(host="localhost", port=8765)
@@ -41,7 +49,7 @@ def test_serve_a2a_command_keyboard_interrupt(mock_a2a_interface_class):
     mock_a2a_interface.start.side_effect = KeyboardInterrupt
     mock_a2a_interface_class.return_value = mock_a2a_interface
 
-    result = runner.invoke(app, ["serve-a2a"])
+    result = runner.invoke(_main().app, ["serve-a2a"])
 
     assert result.exit_code == 0
     mock_a2a_interface_class.assert_called_once()
@@ -57,7 +65,7 @@ def test_monitor_serve_command(mock_monitor_class):
     mock_monitor.start.side_effect = SystemExit
     mock_monitor_class.return_value = mock_monitor
 
-    result = runner.invoke(app, ["monitor", "serve"])
+    result = runner.invoke(_main().app, ["monitor", "serve"])
 
     assert result.exit_code == 0
     mock_monitor_class.assert_called_once()
@@ -74,7 +82,7 @@ def test_monitor_serve_command_keyboard_interrupt(mock_monitor_class):
     mock_monitor.start.side_effect = KeyboardInterrupt
     mock_monitor_class.return_value = mock_monitor
 
-    result = runner.invoke(app, ["monitor", "serve"])
+    result = runner.invoke(_main().app, ["monitor", "serve"])
 
     assert result.exit_code == 0
     mock_monitor_class.assert_called_once()

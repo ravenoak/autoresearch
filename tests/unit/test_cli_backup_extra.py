@@ -1,7 +1,13 @@
 from datetime import datetime
+
+import pytest
 from typer.testing import CliRunner
+
 from autoresearch.cli_backup import backup_app, _format_size
 from autoresearch.errors import BackupError
+
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
 class DummyInfo:

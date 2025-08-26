@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from rich.console import Console
@@ -29,6 +30,38 @@ def _render_backup_error(console: Console, prefix: str, error: BackupError) -> N
         console.print(f"[yellow]Suggestion:[/yellow] {ctx['suggestion']}")
     if "missing_tables" in ctx:
         report_missing_tables(ctx["missing_tables"], console)
+
+
+def _validate_dir(path: Optional[str], console: Console) -> str:
+    """Validate that a path is a directory or can be created as one."""
+    try:
+        p = Path(path or "backups")
+    except OSError as e:
+        console.print(
+            f"[bold red]Invalid backup directory:[/bold red] {path} ({e})"
+        )
+        raise typer.Exit(code=1)
+    if p.exists() and not p.is_dir():
+        console.print(
+            f"[bold red]Invalid backup directory:[/bold red] {p} is not a directory"
+        )
+        raise typer.Exit(code=1)
+    return str(p)
+
+
+def _validate_file(path: str, console: Console) -> str:
+    """Validate that a path points to an existing file."""
+    try:
+        p = Path(path)
+    except OSError as e:
+        console.print(f"[bold red]Invalid backup path:[/bold red] {path} ({e})")
+        raise typer.Exit(code=1)
+    if not p.exists() or not p.is_file():
+        console.print(
+            f"[bold red]Invalid backup path:[/bold red] {p} does not exist"
+        )
+        raise typer.Exit(code=1)
+    return str(p)
 
 
 @backup_app.command("create")
@@ -61,8 +94,9 @@ def backup_create(
     console = Console()
 
     try:
+        dir_path = _validate_dir(backup_dir, console)
         config = BackupConfig(
-            backup_dir=backup_dir or "backups",
+            backup_dir=dir_path,
             compress=compress,
             max_backups=max_backups,
             retention_days=retention_days,
@@ -70,7 +104,7 @@ def backup_create(
         with Progress() as progress:
             task = progress.add_task("[green]Creating backup...", total=1)
             backup_info = BackupManager.create_backup(
-                backup_dir=backup_dir, compress=compress, config=config
+                backup_dir=dir_path, compress=compress, config=config
             )
             progress.update(task, completed=1)
 
@@ -135,7 +169,7 @@ def backup_restore(
         with Progress() as progress:
             task = progress.add_task("[green]Restoring backup...", total=1)
             restored_paths = BackupManager.restore_backup(
-                backup_path=backup_path, target_dir=target_dir
+                backup_path=_validate_file(backup_path, console), target_dir=target_dir
             )
             progress.update(task, completed=1)
 
@@ -178,12 +212,13 @@ def backup_list(
     console = Console()
 
     try:
-        backups = BackupManager.list_backups(backup_dir)
+        dir_path = _validate_dir(backup_dir, console)
+        backups = BackupManager.list_backups(dir_path)
         if not backups:
-            console.print(f"No backups found in {backup_dir or 'backups'}")
+            console.print(f"No backups found in {dir_path}")
             return
 
-        table = Table(title=f"Backups in {backup_dir or 'backups'}")
+        table = Table(title=f"Backups in {dir_path}")
         table.add_column("Timestamp", style="cyan")
         table.add_column("Path", style="green")
         table.add_column("Size", style="magenta")
@@ -246,9 +281,10 @@ def backup_schedule(
     console = Console()
 
     try:
+        dir_path = _validate_dir(backup_dir, console)
         BackupManager.schedule_backup(
             interval_hours=interval,
-            backup_dir=backup_dir,
+            backup_dir=dir_path,
             max_backups=max_backups,
             retention_days=retention_days,
         )
@@ -330,8 +366,9 @@ def backup_recover(
 
         with Progress() as progress:
             task = progress.add_task("[green]Performing point-in-time recovery...", total=1)
+            dir_path = _validate_dir(backup_dir, console)
             restored_paths = BackupManager.restore_point_in_time(
-                backup_dir=backup_dir or "backups",
+                backup_dir=dir_path,
                 target_time=target_time,
                 target_dir=target_dir,
             )

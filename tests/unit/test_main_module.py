@@ -1,6 +1,11 @@
 import unittest
 from unittest.mock import patch
 
+import pytest
+
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
+
 
 class TestMainModule(unittest.TestCase):
     """Test the __main__ module."""

@@ -13,6 +13,10 @@ from autoresearch.cli_utils import (
 )
 from rich.console import Console
 import os
+import pytest
+
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
 
 
 def test_print_error_suggestion(monkeypatch):

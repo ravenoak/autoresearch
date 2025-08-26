@@ -3,17 +3,25 @@ from unittest.mock import patch, MagicMock
 from types import MethodType
 import sys
 import pytest
+import importlib
 
 
 sys.modules.setdefault("bertopic", MagicMock())
 sys.modules.setdefault("umap", MagicMock())
 sys.modules.setdefault("pynndescent", MagicMock())
 
-from autoresearch.main import app  # noqa: E402
-import importlib  # noqa: E402
-
-main_app = importlib.import_module("autoresearch.main.app")  # noqa: E402
 from autoresearch.models import QueryResponse  # noqa: E402
+
+
+pytestmark = pytest.mark.usefixtures("dummy_storage")
+
+
+def _main():
+    return importlib.import_module("autoresearch.main")
+
+
+def _app_mod():
+    return importlib.import_module("autoresearch.main.app")
 
 
 def test_search_default_output_tty(monkeypatch, mock_run_query, orchestrator):
@@ -21,8 +29,8 @@ def test_search_default_output_tty(monkeypatch, mock_run_query, orchestrator):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     orch = orchestrator
     monkeypatch.setattr(orch, "run_query", MethodType(mock_run_query, orch))
-    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
-    result = runner.invoke(app, ["search", "q"])
+    monkeypatch.setattr(_app_mod(), "Orchestrator", lambda: orch)
+    result = runner.invoke(_main().app, ["search", "q"])
     assert result.exit_code == 0
     assert "# Answer" in result.stdout
 
@@ -33,16 +41,14 @@ def test_search_default_output_json(monkeypatch, mock_run_query, orchestrator):
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     orch = orchestrator
     monkeypatch.setattr(orch, "run_query", MethodType(mock_run_query, orch))
-    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
-    result = runner.invoke(app, ["search", "q"])
+    monkeypatch.setattr(_app_mod(), "Orchestrator", lambda: orch)
+    result = runner.invoke(_main().app, ["search", "q"])
     assert result.exit_code == 0
     assert "{" in result.stdout
 
 
 @pytest.mark.parametrize("mode", ["direct", "dialectical"])
-def test_search_reasoning_mode_option(
-    monkeypatch, mode, config_loader, orchestrator
-):
+def test_search_reasoning_mode_option(monkeypatch, mode, config_loader, orchestrator):
     runner = CliRunner()
 
     captured = {}
@@ -60,12 +66,12 @@ def test_search_reasoning_mode_option(
         captured["mode"] = config.reasoning_mode
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
-    monkeypatch.setattr(main_app, "_config_loader", config_loader)
+    monkeypatch.setattr(_app_mod(), "_config_loader", config_loader)
     orch = orchestrator
     monkeypatch.setattr(orch, "run_query", MethodType(_run, orch))
-    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
+    monkeypatch.setattr(_app_mod(), "Orchestrator", lambda: orch)
 
-    result = runner.invoke(app, ["search", "q", "--reasoning-mode", mode])
+    result = runner.invoke(_main().app, ["search", "q", "--reasoning-mode", mode])
 
     assert result.exit_code == 0
     assert captured["mode"].value == mode
@@ -89,12 +95,12 @@ def test_search_primus_start_option(monkeypatch, config_loader, orchestrator):
         captured["start"] = config.primus_start
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
-    monkeypatch.setattr(main_app, "_config_loader", config_loader)
+    monkeypatch.setattr(_app_mod(), "_config_loader", config_loader)
     orch = orchestrator
     monkeypatch.setattr(orch, "run_query", MethodType(_run, orch))
-    monkeypatch.setattr(main_app, "Orchestrator", lambda: orch)
+    monkeypatch.setattr(_app_mod(), "Orchestrator", lambda: orch)
 
-    result = runner.invoke(app, ["search", "q", "--primus-start", "2"])
+    result = runner.invoke(_main().app, ["search", "q", "--primus-start", "2"])
 
     assert result.exit_code == 0
     assert captured["start"] == 2
@@ -105,8 +111,8 @@ def test_config_command(monkeypatch, config_loader):
     from autoresearch.config.models import ConfigModel
 
     monkeypatch.setattr(ConfigModel, "json", ConfigModel.model_dump_json)
-    monkeypatch.setattr(main_app, "_config_loader", config_loader)
-    result = runner.invoke(app, ["config"])
+    monkeypatch.setattr(_app_mod(), "_config_loader", config_loader)
+    result = runner.invoke(_main().app, ["config"])
     assert result.exit_code == 0
     assert '"loops"' in result.stdout
 
@@ -121,11 +127,13 @@ def test_serve_command(mock_create_server, monkeypatch, config_loader):
     mock_create_server.return_value = mock_server_instance
 
     # Mock the config loader
-    monkeypatch.setattr(main_app, "_config_loader", config_loader)
+    monkeypatch.setattr(_app_mod(), "_config_loader", config_loader)
 
     # Run the command with Ctrl+C simulation
     mock_server_instance.run.side_effect = KeyboardInterrupt()
-    result = runner.invoke(app, ["serve", "--host", "localhost", "--port", "8888"])
+    result = runner.invoke(
+        _main().app, ["serve", "--host", "localhost", "--port", "8888"]
+    )
 
     # Verify the command executed successfully
     assert result.exit_code == 0

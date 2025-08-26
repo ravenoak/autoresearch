@@ -8,6 +8,9 @@ from typer.testing import CliRunner
 from autoresearch.main import app
 
 
+pytestmark = pytest.mark.usefixtures("dummy_storage")
+
+
 @pytest.fixture
 def mock_config_loader():
     """Create a mock ConfigLoader for testing."""
