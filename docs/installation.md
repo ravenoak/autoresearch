@@ -6,8 +6,9 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. The setup script
-installs Go Task to `~/.local/bin` and adds that directory to `PATH`.
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Run
+`./scripts/setup.sh` before invoking any `task` commands; it installs Go
+Task to `.venv/bin` and updates activation scripts so the binary resolves.
 Manual installation instructions are below if needed.
 
 Redis is required only for tests or features that use the
@@ -19,16 +20,19 @@ demand with `uv sync --extra <name>`.
 
 ## After cloning
 
-Run a bootstrap command immediately:
+Run the setup script immediately after cloning:
 
 ```bash
 ./scripts/setup.sh  # full developer bootstrap
-# or
-task install        # lightweight dev-minimal and test extras
 ```
 
-`task install` syncs the `dev-minimal` and `test` extras for a quick setup.
-This keeps large ML packages such as spaCy and transformers optional.
+After the script completes you can use `task install` for a quick refresh of
+the `dev-minimal` and `test` extras:
+
+```bash
+task install
+```
+
 Install additional groups only when required:
 
 ```bash
@@ -36,9 +40,9 @@ uv sync --extra nlp  # spaCy and BERTopic
 uv sync --extra llm  # sentence-transformers and transformers
 ```
 
-`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
-extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
-`hypothesis`, and `redis`), and exits if `task --version` fails.
+`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and
+`test` extras (including packages such as `pytest_httpx`, `tomli_w`,
+`freezegun`, `hypothesis`, and `redis`), and exits if `task --version` fails.
 
 After the script completes, confirm Go Task and the development packages are
 available:
@@ -79,8 +83,8 @@ role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
 ### Go Task
 
 Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
-`scripts/setup.sh` installs it to `~/.local/bin` and prepends that path if
-missing, but you can install it manually:
+`scripts/setup.sh` installs it to `.venv/bin` and adjusts activation scripts,
+but you can install it manually:
 
 ```bash
 # macOS
@@ -98,8 +102,8 @@ task install
 
 #### Troubleshooting
 
-- `scripts/setup.sh` adds `~/.local/bin` to `PATH`, but if `task` is missing
-  ensure that directory is present.
+- `scripts/setup.sh` adds `.venv/bin` to activation scripts, but if `task` is
+  missing ensure that directory is present.
 - Network failures during installation are usually transient. Rerun the
   command or download the installer and execute it locally.
 - For permission errors, run the installer with a writable `-b` path or use a
@@ -154,7 +158,7 @@ pins than their upstream defaults to avoid compatibility issues, such as
 
 ## Development setup
 
-Install Go Task before running any `task` commands mentioned below.
+Run `./scripts/setup.sh` before running any `task` commands mentioned below.
 
 Use `uv` to manage the environment when working from a clone:
 

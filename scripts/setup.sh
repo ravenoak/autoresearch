@@ -35,6 +35,10 @@ if sys.version_info < (3, 12):
     raise SystemExit(f"uv venv created Python {sys.version.split()[0]}, but >=3.12 is required")
 EOF
 
+# Add virtual environment bin to PATH for subsequent commands
+VENV_BIN="$(pwd)/.venv/bin"
+export PATH="$VENV_BIN:$PATH"
+
 # Install locked dependencies and development/test extras
 echo "Installing development and test extras via uv sync --extra dev --extra test"
 uv sync --extra dev --extra test
@@ -51,8 +55,6 @@ for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do
 done
 
 # Ensure Go Task is installed inside the virtual environment
-VENV_BIN="$(pwd)/.venv/bin"
-export PATH="$VENV_BIN:$PATH"
 if ! command -v task >/dev/null 2>&1; then
     echo "Go Task missing; installing into $VENV_BIN..."
     curl -sL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
