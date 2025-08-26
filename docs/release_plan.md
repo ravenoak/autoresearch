@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 24, 2025** and
+`2025-05-18`). This schedule was last updated on **August 26, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -23,7 +23,7 @@ Current test and coverage results are tracked in
 
 ## Milestones
 
-- **0.1.0a1** (2026-04-15, status: in progress): Alpha preview to collect
+- **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
   feedback
   ([prepare-first-alpha-release](
   ../issues/prepare-first-alpha-release.md)).
@@ -49,7 +49,7 @@ Current test and coverage results are tracked in
 
 The project originally targeted **0.1.0** for **July 20, 2025**, but the
 schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
-now re-targeted for **April 15, 2026**. The final **0.1.0** milestone is set
+now re-targeted for **June 15, 2026**. The final **0.1.0** milestone is set
 for **July 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
@@ -61,11 +61,11 @@ for **July 1, 2026** while packaging tasks are resolved.
 - [x] Packaging verification with DuckDB fallback
   ([verify-packaging-workflow-and-duckdb-fallback.md](
   ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md))
-- [x] Integration test suite passes
+- [ ] Integration test suite passes
   ([stabilize-integration-tests.md](
   ../issues/archive/stabilize-integration-tests.md))
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **67%** (see
+  **14%** (see
   [add-coverage-gates-and-regression-checks.md](
   ../issues/archive/add-coverage-gates-and-regression-checks.md))
 - [x] Validate ranking algorithms and agent coordination
@@ -79,10 +79,10 @@ These tasks completed in order: environment bootstrap → packaging verification
 ### Prerequisites for tagging 0.1.0a1
 
 - `flake8` and `mypy` pass, but several unit and integration tests still fail.
-- Total coverage is **67%**, short of the **90%** gate.
+- Total coverage is **14%**, short of the **90%** gate.
 - TestPyPI upload returns HTTP 403, so packaging needs a retry.
 
-The **0.1.0a1** date is re-targeted for **April 15, 2026** and the release
+The **0.1.0a1** date is re-targeted for **June 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.
@@ -120,5 +120,5 @@ optional extras):
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` currently reports **67%** total coverage; target **90%**
+- [ ] `task coverage` currently reports **14%** total coverage; target **90%**
 
