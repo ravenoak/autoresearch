@@ -11,7 +11,7 @@ Autoresearch requires **Python 3.12 or newer**,
 Task to `.venv/bin` and updates activation scripts so the binary resolves.
 Manual installation instructions are below if needed.
 
-The Redis package installs with the `dev-minimal` extra. A running Redis
+The Redis package installs with the `dev` extra. A running Redis
 server is required only for tests or features that use the
 `.[distributed]` extra; when the service is absent those tests are skipped
 and distributed features stay disabled.
@@ -36,8 +36,8 @@ Run the setup script immediately after cloning:
 ./scripts/setup.sh  # full developer bootstrap
 ```
 
-After the script completes you can use `task install` for a quick refresh of
-the `dev-minimal` and `test` extras:
+After the script completes you can use `task install` to provision all
+development tools via the `dev` and `test` extras:
 
 ```bash
 task install
@@ -174,13 +174,13 @@ Use `uv` to manage the environment when working from a clone:
 
 ```bash
 # Install pinned dependencies for development
-uv sync --extra dev-minimal --extra test
+uv sync --extra dev --extra test
 # Activate the environment
 source .venv/bin/activate
 ```
 
-Run `task install` or `uv sync --extra dev-minimal --extra test` before
-executing tests to ensure the development dependencies are available.
+Run `task install` or `uv sync --extra dev --extra test` before executing
+tests to ensure the development dependencies are available.
 
 Add heavy extras on demand:
 
