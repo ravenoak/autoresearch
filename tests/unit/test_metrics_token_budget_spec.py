@@ -1,7 +1,7 @@
-import pytest
-from decimal import Decimal, ROUND_HALF_EVEN
+import math
+from decimal import Decimal, ROUND_CEILING
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis import strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
@@ -33,31 +33,47 @@ def test_token_budget_expands_then_shrinks():
     assert budget == 55
     m.record_tokens("A", 1, 0)
     budget = m.suggest_token_budget(budget, margin=0.1)
-    assert budget == 28
+    assert budget == 29
 
 
-@pytest.mark.xfail(reason="budget floor not enforced", strict=False)
-def test_token_budget_never_below_one():
+def test_budget_shrinks_to_one_after_zero_usage():
     m = OrchestrationMetrics()
-    budget = 2
-    m.record_tokens("A", 0, 0)
-    budget = m.suggest_token_budget(budget, margin=0.5)
+    budget = 20
+    m.record_tokens("A", 5, 0)
+    budget = m.suggest_token_budget(budget, margin=0.2)
+    for _ in range(10):
+        m.record_tokens("A", 0, 0)
+        budget = m.suggest_token_budget(budget, margin=0.2)
     assert budget == 1
+
+
+def test_budget_converges_for_constant_usage():
+    m = OrchestrationMetrics()
+    margin = 0.2
+    usage = 50
+    budget = 1
+    for _ in range(12):
+        m.record_tokens("agent", usage, 0)
+        budget = m.suggest_token_budget(budget, margin=margin)
+    target = math.ceil(usage * (1 + margin))
+    assert budget == target
+    for _ in range(3):
+        m.record_tokens("agent", usage, 0)
+        budget = m.suggest_token_budget(budget, margin=margin)
+        assert budget == target
 
 
 @given(
     usage=st.integers(min_value=1, max_value=100),
-    n=st.integers(min_value=0, max_value=200),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
-def test_rounding_half_cases(usage: int, n: int) -> None:
-    """Calculated budgets follow Decimal half-even rounding."""
-    margin = (2 * n + 1) / (2 * usage) - 1
-    assume(0.0 <= margin <= 1.0)
+def test_budget_rounds_up(usage: int, margin: float) -> None:
+    """The update uses ceiling rounding on the scaled usage."""
     m = OrchestrationMetrics()
     budget = usage
     for _ in range(6):
         m.record_tokens("agent", usage, 0)
         budget = m.suggest_token_budget(budget, margin=margin)
     scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
-    expected = int(scaled.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN))
+    expected = int(scaled.to_integral_value(rounding=ROUND_CEILING))
     assert budget == expected
