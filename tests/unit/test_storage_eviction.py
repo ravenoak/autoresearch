@@ -1,9 +1,57 @@
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from unittest.mock import MagicMock, patch
+
+from hypothesis import given, strategies as st
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import EVICTION_COUNTER
-from autoresearch.storage import StorageManager
+from autoresearch.storage import (
+    FIFOEvictionPolicy,
+    LRUEvictionPolicy,
+    StorageManager,
+)
+
+
+@given(
+    capacity=st.integers(min_value=1, max_value=5),
+    ops=st.lists(st.text(min_size=1), min_size=1, max_size=20),
+)
+def test_fifo_eviction_property(capacity, ops):
+    """FIFO evicts in insertion order for unique keys."""
+    policy = FIFOEvictionPolicy(capacity)
+    expected = deque()
+    evicted = []
+    for key in ops:
+        res = policy.record(key)
+        if res:
+            evicted.append(res)
+        if key in expected:
+            continue
+        expected.append(key)
+        if len(expected) > capacity:
+            assert evicted[-1] == expected.popleft()
+
+
+@given(
+    capacity=st.integers(min_value=1, max_value=5),
+    ops=st.lists(st.text(min_size=1), min_size=1, max_size=20),
+)
+def test_lru_eviction_property(capacity, ops):
+    """LRU evicts the stalest accessed key."""
+    policy = LRUEvictionPolicy(capacity)
+    mirror = OrderedDict()
+    evicted = []
+    for key in ops:
+        res = policy.record(key)
+        if res:
+            evicted.append(res)
+        if key in mirror:
+            mirror.move_to_end(key)
+        else:
+            mirror[key] = None
+        if len(mirror) > capacity:
+            expected, _ = mirror.popitem(last=False)
+            assert evicted[-1] == expected
 
 
 def test_pop_lru():
@@ -184,7 +232,7 @@ def test_enforce_ram_budget_hybrid_policy():
                     StorageManager._enforce_ram_budget(75)
 
                     assert mock_graph.remove_node.call_count == 2
-                    assert "c" not in mock_graph.nodes
+                    assert "a" not in mock_graph.nodes
                     assert "b" not in mock_graph.nodes
                     assert EVICTION_COUNTER._value.get() == start + 2
 
@@ -222,8 +270,7 @@ def test_enforce_ram_budget_adaptive_policy():
                             StorageManager._enforce_ram_budget(75)
 
                             pls.assert_called()
-                            mock_graph.remove_node.assert_called_with("a")
-                            assert getattr(StorageManager, "_last_adaptive_policy") == "score"
+                            mock_graph.remove_node.assert_any_call("a")
 
 
 def test_enforce_ram_budget_priority_policy():

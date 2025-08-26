@@ -1,13 +1,27 @@
 # Storage Eviction
 
-Autoresearch manages bounded in-memory data with configurable eviction
-policies. We model two strategies:
+Autoresearch bounds in-memory data by enforcing a RAM budget. The
+`StorageManager` applies eviction policies when the budget is exceeded.
 
-- **LRU**: removes the least recently accessed item.
-- **FIFO**: evicts items in insertion order.
+## RAM budget algorithm
 
-Both policies operate in constant time per update and require memory
-linear in cache size.
+Given a budget `B` megabytes and current usage `U`, the algorithm:
+
+1. Measure current RAM.
+2. If `U \leq B`, exit.
+3. Compute target `T = B * (1 - safety_margin)` where the margin defaults
+   to `10%`.
+4. Select an eviction policy from configuration:
+   - `lru` – remove least recently used nodes.
+   - `score` – drop lowest confidence nodes.
+   - `hybrid` – mix recency and score.
+   - `adaptive` – choose `lru` or `score` based on access variance.
+   - `priority` – evict by type tiers with confidence adjustments.
+5. Remove nodes in batches until usage `\leq T`, updating metrics after
+   each deletion.
+
+The routine runs in `O(k)` time where `k` is the number of evicted nodes.
+Removal touches only the NetworkX graph; DuckDB and RDF records persist.
 
 ## DuckDB Initialization
 
@@ -18,6 +32,9 @@ evaluated.
 
 ## Verification
 
-Simulation tests
-[tests/analysis/test_storage_eviction.py](../../tests/analysis/test_storage_eviction.py)
-exercise typical access patterns and confirm the expected eviction order.
+Simulation tests [analysis-test]
+and property checks [unit-test]
+exercise access patterns and confirm deterministic eviction.
+
+[analysis-test]: ../../tests/analysis/test_storage_eviction.py
+[unit-test]: ../../tests/unit/test_storage_eviction.py

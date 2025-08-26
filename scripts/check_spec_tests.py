@@ -10,15 +10,21 @@ import pathlib
 import re
 
 SPEC_DIR = pathlib.Path(__file__).resolve().parent.parent / "docs" / "specs"
+EXTRA_SPECS = [
+    pathlib.Path(__file__).resolve().parent.parent
+    / "docs"
+    / "algorithms"
+    / "storage_eviction.md",
+]
 
 
 def main() -> int:
     root = SPEC_DIR.parent.parent
     missing: dict[pathlib.Path, list[str]] = {}
     pattern = re.compile(r"\.\./\.\./tests/[\w/._-]+")
-    for path in SPEC_DIR.glob("*.md"):
-        if path.name == "README.md":
-            continue
+    spec_files = [p for p in SPEC_DIR.glob("*.md") if p.name != "README.md"]
+    spec_files.extend(EXTRA_SPECS)
+    for path in spec_files:
         text = path.read_text()
         refs = pattern.findall(text)
         bad = []
