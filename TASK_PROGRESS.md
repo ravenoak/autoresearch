@@ -239,13 +239,14 @@ Full suite attempts:
 ./.venv/bin/task check
 ```
 
-Result: 39 failed, 624 passed, 26 skipped, 24 deselected, 1 xfailed, 1 xpassed, 32 warnings, 7 errors
+Result: 13 failed, 425 passed, 3 skipped, 24 deselected, 1 xpassed, 30 warnings, 4 errors
 
 ```
 ./.venv/bin/task verify
 ```
 
-Result: coverage 14%, below the 90% threshold
+Result: failed during collection with a circular import in distributed
+executors; coverage not generated
 
 ### Performance Baselines
 
