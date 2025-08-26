@@ -77,3 +77,41 @@ def test_budget_rounds_up(usage: int, margin: float) -> None:
     scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
     expected = int(scaled.to_integral_value(rounding=ROUND_CEILING))
     assert budget == expected
+
+
+def test_budget_respects_bounds_during_spike():
+    m = OrchestrationMetrics()
+    margin = 0.2
+    spike = 100
+    usage = 10
+    budget = 5
+    m.record_tokens("agent", spike, 0)
+    budget = m.suggest_token_budget(budget, margin=margin)
+    target = math.ceil(usage * (1 + margin))
+    upper = math.ceil(spike * (1 + margin))
+    for _ in range(10):
+        m.record_tokens("agent", usage, 0)
+        budget = m.suggest_token_budget(budget, margin=margin)
+        assert target <= budget <= upper
+    assert budget == target
+
+
+@given(
+    spike=st.integers(min_value=1, max_value=200),
+    usage=st.integers(min_value=1, max_value=200),
+    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+    start=st.integers(min_value=1, max_value=200),
+)
+def test_convergence_bound_holds(spike: int, usage: int, margin: float, start: int) -> None:
+    """After a spike the budget stays within bounds and reaches the limit."""
+    m = OrchestrationMetrics()
+    budget = start
+    m.record_tokens("agent", spike, 0)
+    budget = m.suggest_token_budget(budget, margin=margin)
+    target = math.ceil(usage * (1 + margin))
+    upper = math.ceil(max(spike, usage) * (1 + margin))
+    for _ in range(10):
+        m.record_tokens("agent", usage, 0)
+        budget = m.suggest_token_budget(budget, margin=margin)
+        assert target <= budget <= upper
+    assert budget == target
