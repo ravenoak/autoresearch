@@ -58,20 +58,34 @@ isolated spikes from influencing the limit.
   `\bar{a}_{i,t}` averages the last ten per-agent totals **including**
   zeros.
 
-### Derivation
+### Bounds and derivation
 
-For `t >= T + 10` the candidates satisfy
-`u_t = \bar{u}_t = a_t = \bar{a}_t = u`. Substituting into the update
-rule yields
+Define `M_t = \max(u_t, \bar{u}_t, a_t, \bar{a}_t)`. For `t >= T`
+the update rule becomes
+
+\[
+b_{t+1} = \left\lceil M_t (1 + m) \right\rceil.
+\]
+
+Let `U = \max_{j < T} u_j`. While history retains a pre-`T` spike,
+`u \le M_t \le U`, giving the bounds
+
+\[
+\left\lceil u (1 + m) \right\rceil \le b_{t+1} \le \left\lceil U (1 + m) \right\rceil.
+\]
+
+Each cycle after `T` replaces one pre-`T` value in the running averages.
+Hence `M_t` decreases monotonically to `u` and for `t >= T + 10` the
+window contains only the constant usage. Substituting `M_t = u` yields
 
 \[
 b_{t+1} = \left\lceil u (1 + m) \right\rceil = b*.
 \]
 
-Thus `b*` is a fixed point and the sequence `{b_t}` remains constant for
-`t > T + 10`. Ten consecutive zero-usage cycles after activity force all
-usage candidates to zero. The implementation floors the suggestion at
-one token, giving the fixed point `b_t = 1` in that case.
+Thus convergence occurs within ten cycles of stable usage. Ten
+consecutive zero-usage cycles after activity force all candidates to
+zero. The implementation floors the suggestion at one token, giving the
+fixed point `b_t = 1` in that case.
 
 ## Simulation
 
@@ -90,11 +104,13 @@ final budget: 60
 
 The regression test [`test_token_budget_convergence.py`][tb-test]
 asserts that the limit `ceil(u * (1 + m))` is reached for constant usage
-and after temporary workload spikes. Property-based tests further validate
-convergence from arbitrary starting budgets and the minimum budget when
-usage is zero.
+and after temporary workload spikes. Simulation tests
+[`test_metrics_token_budget_spec.py`][bounds-test] verify the bounds on
+intermediate budgets and use Hypothesis to explore edge cases such as
+large spikes and near-zero margins.
 
  For details on usage recording and metrics, see the
  [token budget specification](../token_budget_spec.md).
 
 [tb-test]: ../../tests/unit/test_token_budget_convergence.py
+[bounds-test]: ../../tests/unit/test_metrics_token_budget_spec.py
