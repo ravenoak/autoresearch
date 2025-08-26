@@ -65,6 +65,39 @@ def test_local_git_backend_ast_search(tmp_path, monkeypatch):
     assert any("my_special_function" in r["snippet"] for r in results)
 
 
+def test_local_git_backend_missing_repo(monkeypatch):
+    """Return empty list when repo_path is not configured."""
+
+    cfg = ConfigModel(loops=1)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+    assert _local_git_backend("query") == []
+
+
+def test_local_git_backend_nonexistent_repo(monkeypatch, tmp_path):
+    """Return empty list when repo_path does not exist."""
+
+    cfg = ConfigModel(loops=1)
+    cfg.search.local_git.repo_path = str(tmp_path / "missing")
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+    assert _local_git_backend("query") == []
+
+
+def test_local_git_backend_requires_gitpython(monkeypatch, tmp_path):
+    """Raise SearchError when gitpython is unavailable."""
+
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    cfg = ConfigModel(loops=1)
+    cfg.search.local_git.repo_path = str(repo_dir)
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr("autoresearch.search.core.Repo", None)
+
+    with pytest.raises(SearchError):
+        _local_git_backend("query")
+
+
 def test_rank_results_merges_scores(monkeypatch):
     cfg = ConfigModel(loops=1)
     cfg.search.bm25_weight = 0.7
