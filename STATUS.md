@@ -15,9 +15,9 @@ Result: `flake8` and `mypy` pass, but unit tests fail.
 ```text
 task check
 ```
-Result: 39 failing unit tests, many raising
-`StorageError: Failed to initialize schema version`; integration and behavior
-suites do not run.
+Result: 13 failing unit tests and 4 errors. Several
+`StorageError: Failed to create tables` errors persist, so integration and
+behavior suites do not run.
 
 ## Integration tests
 ```text
@@ -30,5 +30,6 @@ Behavior tests did not run; `task check` stops during unit phase.
 ```
 
 ## Coverage
-`task verify` reports total coverage at **14%**, below the required 90%
-threshold.
+`task verify` fails during collection with a circular import in the
+distributed executors. Coverage remains unavailable; the previous baseline was
+**14%**, below the required 90% threshold.
