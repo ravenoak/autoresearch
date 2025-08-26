@@ -1,5 +1,3 @@
-"""Tests for token recording and regression checks."""
-
 """Tests for token recording, regression checks, and coverage targets."""
 
 import json
