@@ -415,6 +415,18 @@ pytest -m requires_distributed
 - Some search backends rely on `python-docx` for document parsing.
 - No external services are required; all components run in memory.
 
+### Storage fixtures
+
+- Use the `duckdb_path` fixture for storage tests. It invokes
+  `StorageManager.initialize_schema()` and yields a clean database path to
+  prevent cross-test contamination:
+
+  ```python
+  def test_example(duckdb_path):
+      storage.setup(duckdb_path)
+      ...
+  ```
+
 ## Updating Baselines
 
 Some integration tests compare runtime metrics against JSON files in

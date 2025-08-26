@@ -199,16 +199,27 @@ def reset_registries():
     AgentRegistry._registry = agent_reg
     AgentFactory._registry = agent_fact
     LLMFactory._registry = llm_reg
-    AgentFactory.set_delegate(None)
-    set_storage_delegate(None)
+
+
+AgentFactory.set_delegate(None)
+set_storage_delegate(None)
 
 
 @pytest.fixture
-def storage_manager(tmp_path):
-    """Initialize storage in a temporary location and clean up."""
+def duckdb_path(tmp_path):
+    """Create a fresh DuckDB schema and return its path."""
     db_file = tmp_path / "kg.duckdb"
     storage.teardown(remove_db=True)
-    storage.initialize_storage(str(db_file))
+    initializer = getattr(StorageManager, "initialize_schema", storage.initialize_storage)
+    initializer(str(db_file))
+    yield str(db_file)
+    storage.teardown(remove_db=True)
+
+
+@pytest.fixture
+def storage_manager(duckdb_path):
+    """Initialize storage using a prepared DuckDB path and clean up."""
+    storage.initialize_storage(duckdb_path)
     set_storage_delegate(storage.StorageManager)
     yield storage
     storage.teardown(remove_db=True)
