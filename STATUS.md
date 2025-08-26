@@ -1,37 +1,33 @@
 # Status
 
-As of **August 26, 2025**, `uv sync --extra dev-minimal --extra test` installs
-the development environment. The `task` runner is not available, so commands
-were run directly with `uv run`.
+As of **August 26, 2025**, running `scripts/setup.sh` provisions the development
+environment with Go Task and required extras. The VSS extension falls back to a
+stub when network access is unavailable, but `./.venv/bin/task` is available for
+checks.
 
 ## Lint, type checks, and spec tests
 ```text
-uv run flake8 src tests
-uv run mypy src
-uv run python scripts/check_spec_tests.py
+./.venv/bin/task check
 ```
 Result: passed
 
 ## Unit tests
 ```text
-uv run pytest tests/unit -q
+./.venv/bin/task check
 ```
-Result: 31 failed, 295 passed, 2 skipped, 24 deselected, 1 xfailed, 1 xpassed,
-29 warnings, 3 errors
+Result: fails with `StorageError: Failed to initialize schema version` during
+unit tests and halts before integration and behavior suites.
 
 ## Integration tests
 ```text
-uv run pytest tests/integration -m \
-  "not slow and not requires_ui and not requires_vss and not requires_distributed" -q
+Integration tests did not run; `task check` stops during unit phase.
 ```
-Result: reported only errors before run was interrupted
 
 ## Behavior tests
 ```text
-uv run pytest --rootdir=. tests/behavior -q
+Behavior tests did not run; `task check` stops during unit phase.
 ```
-Result: reported only errors before run was interrupted
 
 ## Coverage
-Coverage data not generated; previous baseline remains at 67%, below required
-90% threshold
+Coverage data was not generated; previous baseline remains at 67%, below the
+required 90% threshold.
