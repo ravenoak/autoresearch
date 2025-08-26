@@ -8,6 +8,9 @@ This directory holds planning tickets. Write each issue in the following format:
 ## Context
 Describe background and motivation.
 
+## Dependencies
+List upstream issue slugs in the order they must be addressed.
+
 ## Acceptance Criteria
 List the requirements for completion.
 
@@ -18,13 +21,16 @@ Open
 ## Style guide
 
 - Titles are written in **sentence case**.
-- Include the `Context`, `Acceptance Criteria`, and `Status` sections with
-  those exact headings.
+- Include the `Context`, `Dependencies`, `Acceptance Criteria`, and `Status`
+  sections with those exact headings.
+- List dependencies using slugged filenames and relative links in completion
+  order.
 
 ## Naming
 File names must be slugged (kebab-case) titles with no numeric prefixes.
 For example: `refactor-orchestrator-instance-circuit-breaker.md`.
-Do not include numeric identifiers in ticket titles or content; reference tickets by slugged filenames.
+Do not include numeric identifiers in ticket titles or content; reference
+tickets by slugged filenames using relative links.
 
 ## Workflow
 Set `Status` to `Open` while work is active. When finished, change it to

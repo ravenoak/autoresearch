@@ -11,7 +11,7 @@ now packaged and targeted tests confirm baseline coverage at 67%.
 
 ## Dependencies
 
-- [finalize-first-public-preview-release](finalize-first-public-preview-release.md)
+- [finalize-first-public-preview-release](archive/finalize-first-public-preview-release.md)
 
 ## Acceptance Criteria
 - Apply high-priority bug fixes discovered after the 0.1.0 release.

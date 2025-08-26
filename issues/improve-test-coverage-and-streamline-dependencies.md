@@ -7,6 +7,10 @@ not bundled and manual test runs show 39 failing unit tests, many raising
 missing packages (`pytest-bdd`, `freezegun`, `hypothesis`), `task verify` aborts
 with coverage at **14%**, leaving significant modules untested.
 
+## Dependencies
+
+- None
+
 ## Acceptance Criteria
 - `task install` completes without heavyweight GPU or ML dependencies by
 default.

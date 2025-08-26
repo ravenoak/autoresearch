@@ -9,6 +9,10 @@ The latest unit suite shows repeated failures in
 `tests/unit/test_eviction.py` and `tests/unit/test_storage_utils.py`,
 confirming the schema initialization gap.
 
+## Dependencies
+
+- None
+
 ## Acceptance Criteria
 - DuckDB storage tables are created automatically for tests.
 - Unit tests in `tests/unit` no longer raise `StorageError`.
