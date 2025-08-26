@@ -7,7 +7,7 @@ warnings in `src/autoresearch/orchestration/metrics.py` and
 `tests/behavior/features/conftest.py`. Running
 `uv run pytest --rootdir=. tests/behavior -q`
 still reports "no match in any of [<Dir features>]". Integration tests execute
-with `redis` installed, but coverage remains at **24%**, far below the **90%**
+with `redis` installed, but coverage remains at **67%**, far below the **90%**
 target. The TestPyPI upload returns HTTP 403, and release notes and packaging
 steps are incomplete.
 

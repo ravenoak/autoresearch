@@ -1,11 +1,11 @@
 # Improve test coverage and streamline dependencies
 
 ## Context
-Current `task install` completes with minimal dependencies, but `task verify`
-fails due to `flake8` errors, preventing `coverage html` from running to
-identify low-coverage modules. The existing baseline at
-`baseline/coverage.xml` shows roughly twenty-two percent coverage, leaving most
-modules untested.
+Current `uv sync --extra dev` installs development dependencies, but
+`task verify` cannot run because `task` is missing and manual test runs show
+39 failing unit tests, many raising `StorageError` when DuckDB tables are not
+initialized. The refreshed `baseline/coverage.xml` reports roughly sixty-seven
+percent coverage, still leaving significant modules untested.
 
 ## Acceptance Criteria
 - `task install` completes without heavyweight GPU or ML dependencies by
