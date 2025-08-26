@@ -3,7 +3,7 @@
 ## Context
 After the first public preview, follow-up fixes and documentation updates
 are required to address outstanding issues. The example environment file is
-now packaged and targeted tests confirm baseline coverage at 24%.
+now packaged and targeted tests confirm baseline coverage at 67%.
 
 ## Milestone
 

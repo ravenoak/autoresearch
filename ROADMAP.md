@@ -3,12 +3,12 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **August 24, 2025**.
+Last updated **August 26, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current test and coverage results. Current
-coverage from the unit subset is **24%**. Use Python 3.12+ with:
+coverage from the unit subset is **67%**. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -62,7 +62,7 @@ reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
 - [x] Integration tests stabilized
   ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **24%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
+  **67%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
 - [x] Algorithm validation for ranking and coordination
   ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 

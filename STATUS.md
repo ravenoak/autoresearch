@@ -1,8 +1,8 @@
 # Status
 
-As of **August 25, 2025**, `uv sync --extra dev-minimal` installs the minimal
-development environment. `task` is not available in the container, so commands
-were run directly with `uv run`.
+As of **August 26, 2025**, `uv sync --extra dev` installs the development
+environment. `task` is not available in the container, so commands were run
+directly with `uv run`.
 
 ## Lint, type checks, and spec tests
 ```text
@@ -15,8 +15,8 @@ Result: passed
 ```text
 uv run pytest tests/unit -q
 ```
-Result: 39 failed, 629 passed, 26 skipped, 24 deselected, 1 xfailed, 1 xpassed,
-31 warnings, 7 errors
+Result: 39 failed, 624 passed, 26 skipped, 24 deselected, 1 xfailed, 1 xpassed,
+32 warnings, 7 errors
 
 ## Integration tests
 ```text
@@ -32,4 +32,7 @@ uv run pytest --rootdir=. tests/behavior -q
 Result: 213 errors, 2 skipped, 36 deselected, 5 warnings
 
 ## Coverage
-Coverage not collected; failing tests must be resolved first.
+```text
+uv run python -m coverage report --fail-under=90
+```
+Result: 67% total coverage; below required 90% threshold

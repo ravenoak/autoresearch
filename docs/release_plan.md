@@ -65,7 +65,7 @@ for **July 1, 2026** while packaging tasks are resolved.
   ([stabilize-integration-tests.md](
   ../issues/archive/stabilize-integration-tests.md))
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **24%** (see
+  **67%** (see
   [add-coverage-gates-and-regression-checks.md](
   ../issues/archive/add-coverage-gates-and-regression-checks.md))
 - [x] Validate ranking algorithms and agent coordination
@@ -79,7 +79,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 ### Prerequisites for tagging 0.1.0a1
 
 - `flake8` and `mypy` pass, but several unit and integration tests still fail.
-- Total coverage is **24%**, short of the **90%** gate.
+- Total coverage is **67%**, short of the **90%** gate.
 - TestPyPI upload returns HTTP 403, so packaging needs a retry.
 
 The **0.1.0a1** date is re-targeted for **April 15, 2026** and the release
@@ -120,5 +120,5 @@ optional extras):
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` currently reports **24%** total coverage; target **90%**
+- [ ] `task coverage` currently reports **67%** total coverage; target **90%**
 
