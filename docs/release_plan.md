@@ -26,7 +26,7 @@ Current test and coverage results are tracked in
 - **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
   feedback
   ([prepare-first-alpha-release](
-  ../issues/prepare-first-alpha-release.md)).
+  ../issues/archive/prepare-first-alpha-release.md)).
 - **0.1.0** (2026-07-01, status: planned): Finalize packaging, docs and CI
   checks with all tests passing
   ([finalize-first-public-preview-release](
@@ -72,6 +72,8 @@ for **July 1, 2026** while packaging tasks are resolved.
   (see
   [validate-ranking-algorithms-and-agent-coordination.md](
   ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md))
+- [ ] Confirm CHANGELOG.md, STATUS.md and this plan share the same coverage
+  details before tagging.
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.

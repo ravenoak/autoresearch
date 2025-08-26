@@ -19,15 +19,15 @@ instructions are still incomplete.
 ## Dependencies
 
 - [document-environment-bootstrap](
-  archive/document-environment-bootstrap.md)
+  document-environment-bootstrap.md)
 - [verify-packaging-workflow-and-duckdb-fallback](
-  archive/verify-packaging-workflow-and-duckdb-fallback.md)
+  verify-packaging-workflow-and-duckdb-fallback.md)
 - [stabilize-integration-tests](
-  archive/stabilize-integration-tests.md)
+  stabilize-integration-tests.md)
 - [add-coverage-gates-and-regression-checks](
-  archive/add-coverage-gates-and-regression-checks.md)
+  add-coverage-gates-and-regression-checks.md)
 - [validate-ranking-algorithms-and-agent-coordination](
-  archive/validate-ranking-algorithms-and-agent-coordination.md)
+  validate-ranking-algorithms-and-agent-coordination.md)
 
 ## Acceptance Criteria
 - `task check` and `task verify` complete on a fresh clone without
@@ -42,5 +42,5 @@ instructions are still incomplete.
 - Backlog prioritized for post-alpha milestones.
 
 ## Status
-Open
+Archived
 

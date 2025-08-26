@@ -21,7 +21,7 @@ before running tests.
 
 - 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements
-  ([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)).
+  ([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)).
 - 0.1.0 (2026-07-01, status: planned): Finalize packaging, docs and CI checks
   with all tests passing
   ([finalize-first-public-preview-release](
@@ -49,7 +49,7 @@ for the alpha release checklist.
 
 This pre-release will provide an early package for testing once packaging tasks
 are verified. Related issue
-([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
+([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)) tracks
 the work. Tagging **0.1.0a1** requires `task verify` to complete, coverage to
 reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
 **June 15, 2026**. Key activities include:

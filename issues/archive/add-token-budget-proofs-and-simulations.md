@@ -12,7 +12,7 @@ not match the specification.
 
 ## Dependencies
 
-- [improve-test-coverage-and-streamline-dependencies](improve-test-coverage-and-streamline-dependencies.md)
+- [improve-test-coverage-and-streamline-dependencies](../improve-test-coverage-and-streamline-dependencies.md)
 
 ## Acceptance Criteria
 - Provide mathematical proof or simulation demonstrating the algorithm's convergence and bounds.
@@ -20,4 +20,4 @@ not match the specification.
 - Update documentation in `docs/algorithms/token_budgeting.md` with derivation and assumptions.
 
 ## Status
-Open
+Archived
