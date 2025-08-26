@@ -3,6 +3,13 @@
 Autoresearch guarantees that repeated storage initialization yields the same
 schema and that eviction policies remain effective under concurrent access.
 
+## Schema bootstrapping
+
+`initialize_storage` runs setup and verifies that the core DuckDB tables
+exist. If a database starts empty—such as when using `:memory:`—the helper
+creates the `nodes`, `edges`, `embeddings`, and `metadata` tables so callers
+can assume the schema is present.
+
 ## Schema idempotency
 
 DuckDB tables are created with `CREATE TABLE IF NOT EXISTS`, making setup
