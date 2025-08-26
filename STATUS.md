@@ -1,22 +1,23 @@
 # Status
 
-As of **August 26, 2025**, running `scripts/setup.sh` provisions the development
-environment with Go Task and required extras. The VSS extension falls back to a
-stub when network access is unavailable, but `./.venv/bin/task` is available for
-checks.
+As of **August 26, 2025**, running `scripts/codex_setup.sh` provisions the
+development environment with Go Task and required extras. The VSS extension
+falls back to a stub when network access is unavailable, and `task` becomes
+available after adding `.venv/bin` to `PATH`.
 
 ## Lint, type checks, and spec tests
 ```text
-./.venv/bin/task check
+task check
 ```
-Result: passed
+Result: `flake8` and `mypy` pass, but unit tests fail.
 
 ## Unit tests
 ```text
-./.venv/bin/task check
+task check
 ```
-Result: fails with `StorageError: Failed to initialize schema version` during
-unit tests and halts before integration and behavior suites.
+Result: 39 failing unit tests, many raising
+`StorageError: Failed to initialize schema version`; integration and behavior
+suites do not run.
 
 ## Integration tests
 ```text
@@ -29,5 +30,5 @@ Behavior tests did not run; `task check` stops during unit phase.
 ```
 
 ## Coverage
-Coverage data was not generated; previous baseline remains at 67%, below the
-required 90% threshold.
+`task verify` reports total coverage at **14%**, below the required 90%
+threshold.
