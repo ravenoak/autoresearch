@@ -49,15 +49,13 @@ def test_score_eviction(storage_manager, monkeypatch):
     assert "high" in graph.nodes
 
 
-def test_lru_eviction_order(monkeypatch, tmp_path):
-    storage.teardown(remove_db=True)
-    db_file = tmp_path / "kg.duckdb"
+def test_lru_eviction_order(monkeypatch, duckdb_path):
     config = ConfigModel(ram_budget_mb=1)
     config.search.context_aware.enabled = False
     config.storage.rdf_backend = "memory"
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
-    storage.setup(str(db_file))
+    storage.setup(duckdb_path)
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
