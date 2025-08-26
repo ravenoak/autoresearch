@@ -23,13 +23,37 @@ def test_backup_create_error(monkeypatch):
     runner = CliRunner()
 
     def fail(**_):
-        raise BackupError("boom", context={"suggestion": "try"})
+        raise BackupError("boom", suggestion="try")
 
     monkeypatch.setattr("autoresearch.cli_backup.BackupManager.create_backup", fail)
     result = runner.invoke(backup_app, ["create", "--dir", "d"], catch_exceptions=False)
     assert result.exit_code == 1
     assert "boom" in result.stdout
     assert "try" in result.stdout
+
+
+def test_backup_create_missing_tables(monkeypatch):
+    runner = CliRunner()
+
+    def fail(**_):
+        raise BackupError("boom", missing_tables=["a", "b"])
+
+    monkeypatch.setattr("autoresearch.cli_backup.BackupManager.create_backup", fail)
+    result = runner.invoke(backup_app, ["create", "--dir", "d"], catch_exceptions=False)
+    assert result.exit_code == 1
+    assert "Missing required tables" in result.stdout
+    assert "a, b" in result.stdout
+
+
+def test_backup_create_success(monkeypatch):
+    runner = CliRunner()
+    info = DummyInfo(path="p", size=1, compressed=False)
+    monkeypatch.setattr(
+        "autoresearch.cli_backup.BackupManager.create_backup", lambda **_: info
+    )
+    result = runner.invoke(backup_app, ["create", "--dir", "d", "--no-compress"])
+    assert result.exit_code == 0
+    assert "Backup created successfully" in result.stdout
 
 
 def test_backup_restore_cancelled(monkeypatch):
@@ -59,6 +83,17 @@ def test_backup_list_no_backups(monkeypatch):
     assert "No backups found" in result.stdout
 
 
+def test_backup_list_success(monkeypatch):
+    runner = CliRunner()
+    monkeypatch.setattr(
+        "autoresearch.cli_backup.BackupManager.list_backups",
+        lambda *_: [DummyInfo()],
+    )
+    result = runner.invoke(backup_app, ["list", "--dir", "d"])
+    assert result.exit_code == 0
+    assert "Backups in d" in result.stdout
+
+
 def test_backup_recover_invalid_timestamp(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(backup_app, ["recover", "bad"])
@@ -70,7 +105,7 @@ def test_backup_recover_error(monkeypatch):
     runner = CliRunner()
 
     def fail(**_):
-        raise BackupError("oops", context={"suggestion": "s"})
+        raise BackupError("oops", suggestion="s")
 
     monkeypatch.setattr("autoresearch.cli_backup.BackupManager.restore_point_in_time", fail)
     monkeypatch.setattr("autoresearch.cli_backup.Prompt.ask", lambda *a, **k: "y")
