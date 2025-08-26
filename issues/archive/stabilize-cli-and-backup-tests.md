@@ -11,7 +11,7 @@ missing, raising `StorageError`.
 
 ## Dependencies
 
-- [resolve-storage-layer-test-failures](resolve-storage-layer-test-failures.md)
+- [resolve-storage-layer-test-failures](../resolve-storage-layer-test-failures.md)
 
 ## Acceptance Criteria
 - CLI help and option tests under `tests/unit/test_cli_*` and `tests/unit/test_main_*` pass.
@@ -20,4 +20,4 @@ missing, raising `StorageError`.
 - `task check` can run unit suite without CLI failures.
 
 ## Status
-Open
+Archived
