@@ -10,13 +10,23 @@ import pathlib
 import re
 
 SPEC_DIR = pathlib.Path(__file__).resolve().parent.parent / "docs" / "specs"
+EXTRA_SPECS = [
+    pathlib.Path(__file__).resolve().parent.parent / "docs" / "orchestrator_state_spec.md",
+]
+
+
+def iter_specs() -> list[pathlib.Path]:
+    yield from SPEC_DIR.glob("*.md")
+    for path in EXTRA_SPECS:
+        if path.exists():
+            yield path
 
 
 def main() -> int:
     root = SPEC_DIR.parent.parent
     missing: dict[pathlib.Path, list[str]] = {}
-    pattern = re.compile(r"\.\./\.\./tests/[\w/._-]+")
-    for path in SPEC_DIR.glob("*.md"):
+    pattern = re.compile(r"\.\./(?:\.\./)?tests/[\w/._-]+")
+    for path in iter_specs():
         if path.name == "README.md":
             continue
         text = path.read_text()
