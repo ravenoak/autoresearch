@@ -11,12 +11,22 @@ Autoresearch requires **Python 3.12 or newer**,
 Task to `.venv/bin` and updates activation scripts so the binary resolves.
 Manual installation instructions are below if needed.
 
-Redis is required only for tests or features that use the
-`.[distributed]` extra. When Redis is missing those tests are skipped and
-distributed features remain disabled.
+The Redis package installs with the `dev-minimal` extra. A running Redis
+server is required only for tests or features that use the
+`.[distributed]` extra; when the service is absent those tests are skipped
+and distributed features stay disabled.
 
 Optional extras enable additional capabilities and are installed on
 demand with `uv sync --extra <name>`.
+
+For a lean setup, sync only the minimal development and test extras:
+
+```bash
+uv sync --extra dev-minimal --extra test
+```
+
+This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
+dependencies.
 
 ## After cloning
 
@@ -41,15 +51,15 @@ uv sync --extra llm  # sentence-transformers and transformers
 ```
 
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and
-`test` extras (including packages such as `pytest_httpx`, `tomli_w`,
-`freezegun`, `hypothesis`, and `redis`), and exits if `task --version` fails.
+`test` extras (including packages such as `pytest_httpx`, `tomli_w`, and
+`redis`), and exits if `task --version` fails.
 
 After the script completes, confirm Go Task and the development packages are
 available:
 
 ```bash
 task --version
-uv pip show pytest_httpx tomli_w freezegun hypothesis
+uv pip show pytest_httpx tomli_w redis
 ```
 
 If you see errors like `task: command not found` or `uv: command not found`,
