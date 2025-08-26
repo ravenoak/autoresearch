@@ -16,16 +16,16 @@ tasks:
   check-env:
     cmds:
       - uv run python scripts/check_env.py
-      - >
-          uv run python -c "import pytest_httpx" 2>/dev/null ||
-          echo "Warning: pytest-httpx missing; install with 'task install' or 'uv sync --extra dev'."
-      - >
-          uv run python -c "import tomli_w" 2>/dev/null ||
-          echo "Warning: tomli-w missing; install with 'task install' or 'uv sync --extra dev'."
-      - >
-          uv run python -c "import redis" 2>/dev/null ||
-          echo "Warning: redis missing; install with 'task install' or 'uv sync --extra dev'."
-    desc: "Validate required tool versions"
+      - |
+          uv run python - <<'PY'
+          import importlib.util, sys
+          required = ["pytest_httpx", "tomli_w", "redis"]
+          missing = [m for m in required if importlib.util.find_spec(m) is None]
+          if missing:
+              pkg_list = ", ".join(missing)
+              sys.exit(f"Missing required test extras: {pkg_list}")
+          PY
+    desc: "Validate required tool versions and test extras"
   check:
     deps: [check-env]
     # Minimal validation for quick feedback. Skips slow tests and scenarios

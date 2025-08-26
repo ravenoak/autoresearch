@@ -36,6 +36,15 @@ uv sync --extra nlp  # spaCy and BERTopic
 uv sync --extra llm  # sentence-transformers and transformers
 ```
 
+For a minimal developer setup without Go Task run:
+
+```bash
+uv sync --extra dev-minimal --extra test
+```
+
+This installs only lightweight tooling while ensuring `pytest-httpx`,
+`tomli_w`, and `redis` are available for the test suite.
+
 `./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and `test`
 extras (including packages such as `pytest_httpx`, `tomli_w`, `freezegun`,
 `hypothesis`, and `redis`), and exits if `task --version` fails.
