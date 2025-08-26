@@ -273,12 +273,13 @@ def initialize_storage(request, tmp_path, cleanup_storage):
         if not hasattr(StorageManager, "initialize"):
             StorageManager.initialize = staticmethod(storage.initialize_storage)  # type: ignore[attr-defined]
         if not hasattr(duckdb.DuckDBPyConnection, "fetchone"):
+
             def _fetchone(self):
                 rows = self.fetchall()
                 return rows[0] if rows else None
 
             duckdb.DuckDBPyConnection.fetchone = _fetchone  # type: ignore[attr-defined]
-        StorageManager.initialize(str(tmp_path / "kg.duckdb"))
+        storage.initialize_storage(str(tmp_path / "kg.duckdb"))
     yield
 
 

@@ -153,3 +153,37 @@ def test_initialize_storage_in_memory(monkeypatch):
     backend = ctx.db_backend
     assert backend is not None
     assert called["flag"]
+
+
+def test_initialize_storage_persistent(monkeypatch, tmp_path):
+    """Regression test ensuring file-backed DuckDB creates missing tables."""
+
+    storage.teardown(remove_db=True)
+    db_file = tmp_path / "kg.duckdb"
+
+    config = ConfigModel()
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+    config.storage.vector_extension = False
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    monkeypatch.setattr(
+        storage.DuckDBStorageBackend, "_initialize_schema_version", lambda self: None
+    )
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_run_migrations", lambda self: None)
+
+    called = {"flag": False}
+    original_create = storage.DuckDBStorageBackend._create_tables
+
+    def wrapped_create(self, skip_migrations: bool = False) -> None:
+        called["flag"] = True
+        return original_create(self, skip_migrations)
+
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_create_tables", wrapped_create)
+
+    ctx = storage.initialize_storage(str(db_file))
+    backend = ctx.db_backend
+    assert backend is not None
+    assert called["flag"]

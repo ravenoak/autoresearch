@@ -162,6 +162,31 @@ def setup(
     st.context = ctx
 
 
+def ensure_tables(backend: DuckDBStorageBackend) -> None:
+    """Create required DuckDB tables if they do not yet exist.
+
+    Args:
+        backend: Initialized DuckDB storage backend.
+
+    Raises:
+        StorageError: If the schema cannot be inspected or tables cannot be
+            created.
+    """
+
+    conn = backend.get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT table_name FROM information_schema.tables " "WHERE table_schema = 'main'"
+        ).fetchall()
+    except Exception as exc:  # pragma: no cover - inspection rarely fails
+        raise StorageError("Failed to inspect DuckDB schema", cause=exc)
+
+    existing = {r[0] for r in rows}
+    required = {"nodes", "edges", "embeddings", "metadata"}
+    if not required.issubset(existing):
+        backend._create_tables(skip_migrations=True)
+
+
 def initialize_storage(
     db_path: str | None = None,
     context: StorageContext | None = None,
@@ -169,11 +194,10 @@ def initialize_storage(
 ) -> StorageContext:
     """Initialize storage and ensure DuckDB tables exist.
 
-    ``setup`` initializes connections and creates tables for persistent
-    databases. DuckDB's in-memory databases start empty on every
-    invocation, so this helper recreates the schema when the ``:memory:``
-    path is used. Tests previously relied on fixtures to perform this
-    step; doing it here keeps the behaviour consistent and self-contained.
+    ``setup`` initializes connections while this helper verifies that all
+    required tables (``nodes``, ``edges``, ``embeddings``, ``metadata``)
+    are present. If any are missing—such as when using an empty or
+    in-memory database—they are created automatically.
 
     Args:
         db_path: Optional path to the DuckDB database. ``:memory:`` creates
@@ -199,10 +223,7 @@ def initialize_storage(
     if backend is None:
         raise StorageError("DuckDB backend not initialized")
 
-    # In-memory databases do not persist tables; ensure the schema exists
-    in_memory = db_path == ":memory:" or backend._path == ":memory:"
-    if in_memory:
-        backend._create_tables(skip_migrations=True)
+    ensure_tables(backend)
 
     return ctx
 
