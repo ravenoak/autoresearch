@@ -4,11 +4,13 @@
 Version 0.1.0a1 will be the project's first public alpha. Running
 `scripts/setup.sh` now installs Go Task alongside development and test extras,
 allowing checks to run via `./.venv/bin/task`. `flake8` and `mypy` succeed, yet
-`./.venv/bin/task check` still reports numerous failures. Unit tests surface
-`StorageError: Failed to initialize schema version` and CLI help regressions,
-while integration and behavior suites abort early. Coverage remains at **67%**
-and TestPyPI uploads continue to fail with HTTP 403. Release notes and
-packaging instructions are still incomplete.
+`task check` reports dozens of unit test failures including
+`StorageError: Failed to initialize schema version` and CLI help regressions.
+Integration and behavior suites abort early, and several required packages
+(`pytest-bdd`, `freezegun`, `hypothesis`) still need manual installation.
+`task verify` exits with coverage at **14%**, far below the required 90%, and
+TestPyPI uploads continue to fail with HTTP 403. Release notes and packaging
+instructions are still incomplete.
 
 ## Milestone
 

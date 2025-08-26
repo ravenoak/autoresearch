@@ -1,11 +1,11 @@
 # Improve test coverage and streamline dependencies
 
 ## Context
-Current `uv sync --extra dev` installs development dependencies, but
-`task verify` cannot run because `task` is missing and manual test runs show
-39 failing unit tests, many raising `StorageError` when DuckDB tables are not
-initialized. The refreshed `baseline/coverage.xml` reports roughly sixty-seven
-percent coverage, still leaving significant modules untested.
+Current `uv sync --extra dev` installs development dependencies, but `task` is
+not bundled and manual test runs show 39 failing unit tests, many raising
+`StorageError` when DuckDB tables are not initialized. Even after installing
+missing packages (`pytest-bdd`, `freezegun`, `hypothesis`), `task verify` aborts
+with coverage at **14%**, leaving significant modules untested.
 
 ## Acceptance Criteria
 - `task install` completes without heavyweight GPU or ML dependencies by
