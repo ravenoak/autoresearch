@@ -32,12 +32,13 @@ task test:behavior     # behavior-driven tests
 task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
 task test:all          # entire suite including slow tests
+task verify           # lint, type checks, targeted tests with coverage
 task coverage          # full suite with coverage and regression checks
 ```
-
-Run `task coverage` before committing to execute the full suite with
-coverage and token regression checks. The command fails if line coverage
-drops below 90%. The threshold is controlled by the `COVERAGE_THRESHOLD`
+Run `task verify` before committing to ensure linting, type checks, and
+targeted tests meet the 90% coverage threshold. Use `task coverage` for the
+full suite with token regression checks. The threshold is controlled by the
+`COVERAGE_THRESHOLD`
 variable, set to `90` in the Taskfile and CI workflow. CI stores a baseline
 `coverage.xml` in `baseline/coverage.xml` and compares future runs against it to detect
 regressions. To perform the comparison locally, run:

@@ -8,11 +8,16 @@ vars:
 
 tasks:
   install:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
-      - uv sync --extra dev --extra test
+      - >
+          uv sync --extra dev-minimal --extra test{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
-    desc: "Initialize dev env with all tools and verify lint"
+    desc: |
+      Initialize dev env with minimal tools. Provide EXTRAS="nlp ui" to include
+      optional features
   check-env:
     cmds:
       - uv run python scripts/check_env.py

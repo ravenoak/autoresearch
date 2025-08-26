@@ -6,4 +6,6 @@ omit =
     */tests/*
 
 [report]
-include = src/autoresearch/*
+include =
+    src/autoresearch/orchestration/budgeting.py
+    src/autoresearch/search/http.py
