@@ -14,7 +14,8 @@
 - For provisioning issues within this evaluation, `scripts/codex_setup.sh`
   bootstraps the Codex environment. It is Codex-specific, non-generic, and
   must not be referenced outside AGENTS.md files or the script itself. Use
-  `scripts/setup.sh` for any other environment.
+  `scripts/setup.sh` for any other environment. It installs the project in
+  editable mode and records the DuckDB vector extension path in `.env.offline`.
 
 ## Testing
 - `task check` – run early for linting, type checks, and a fast test suite.

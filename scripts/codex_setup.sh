@@ -81,6 +81,7 @@ rm -rf /var/lib/apt/lists/*
 
 # Install minimal dev dependencies
 uv sync --extra dev-minimal
+uv pip install -e .
 
 # Install Go Task inside the virtual environment and expose it on PATH
 if ! retry 3 bash -c "curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin"; then
@@ -263,6 +264,15 @@ if [ -z "${VECTOR_EXTENSION_PATH:-}" ]; then
     fi
 else
     echo "VECTOR_EXTENSION_PATH already set to $VECTOR_EXTENSION_PATH"
+fi
+
+# Record vector extension path for offline tests
+OFFLINE_ENV=".env.offline"
+if grep -q '^VECTOR_EXTENSION_PATH=' "$OFFLINE_ENV" 2>/dev/null; then
+    sed -i.bak "s|^VECTOR_EXTENSION_PATH=.*|VECTOR_EXTENSION_PATH=$VECTOR_EXTENSION_PATH|" \
+        "$OFFLINE_ENV" && rm -f "$OFFLINE_ENV.bak"
+else
+    echo "VECTOR_EXTENSION_PATH=$VECTOR_EXTENSION_PATH" >>"$OFFLINE_ENV"
 fi
 
 # Validate required tool versions

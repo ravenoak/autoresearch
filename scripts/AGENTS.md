@@ -7,7 +7,9 @@ These instructions apply to files in the `scripts/` directory.
 - **Primary languages:** Bash and Python.
 - **Key outputs:** CLI tools and setup scripts.
 - `codex_setup.sh` bootstraps only the Codex evaluation environment and must
-  not be referenced outside AGENTS.md files or the script itself.
+  not be referenced outside AGENTS.md files or the script itself. It installs
+  the project in editable mode and updates `.env.offline` with the DuckDB
+  vector extension path.
 
 ## Conventions
 - Provide a clear CLI interface or usage comment at the top of each script.
