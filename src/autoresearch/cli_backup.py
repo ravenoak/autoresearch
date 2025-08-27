@@ -169,7 +169,7 @@ def backup_restore(
         with Progress() as progress:
             task = progress.add_task("[green]Restoring backup...", total=1)
             restored_paths = BackupManager.restore_backup(
-                backup_path=_validate_file(backup_path, console), target_dir=target_dir
+                backup_path=backup_path, target_dir=target_dir
             )
             progress.update(task, completed=1)
 
@@ -181,7 +181,13 @@ def backup_restore(
         )
 
     except BackupError as e:
-        _render_backup_error(console, "Error restoring backup", e)
+        message = str(e).lower()
+        if "not found" in message:
+            console.print(
+                f"[bold red]Invalid backup path:[/bold red] {backup_path} does not exist"
+            )
+        else:
+            _render_backup_error(console, "Error restoring backup", e)
         raise typer.Exit(code=1)
 
     except KeyboardInterrupt:

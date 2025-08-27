@@ -18,3 +18,13 @@ app = importlib.import_module("autoresearch.main").app
 
 This ensures storage calls are isolated and keeps CLI tests fast and
 deterministic.
+
+## Backup restore errors
+
+The `backup restore` command reports clearer failures when archives are
+missing or corrupted.
+
+- Missing paths show `Invalid backup path: <path> does not exist`.
+- Corrupted archives surface `Error restoring backup: Corrupted backup archive`.
+
+Use these messages when asserting restore behaviour in tests.
