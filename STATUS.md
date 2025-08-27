@@ -1,35 +1,32 @@
 # Status
 
-As of **August 26, 2025**, running `scripts/codex_setup.sh` provisions the
-development environment with Go Task and required extras. The VSS extension
-falls back to a stub when network access is unavailable, and `task` becomes
-available after adding `.venv/bin` to `PATH`.
+As of **August 27, 2025**, `scripts/setup.sh` installs dependencies and records
+the DuckDB VSS fallback. The current environment lacks the `task` command, so
+Taskfile recipes cannot run.
 
 ## Lint, type checks, and spec tests
 ```text
 task check
 ```
-Result: `flake8` and `mypy` pass, but unit tests fail.
+Result: command not found.
 
 ## Unit tests
 ```text
-task check
+uv sync --extra test && uv run pytest
 ```
-Result: 13 failing unit tests and 4 errors. Several
-`StorageError: Failed to create tables` errors persist, so integration and
-behavior suites do not run.
+Result: hangs in `redis.cluster` waiting for a Redis server. One test is
+skipped and four warnings appear before the run is interrupted.
 
 ## Integration tests
 ```text
-Integration tests did not run; `task check` stops during unit phase.
+Integration tests did not run; unit tests did not complete.
 ```
 
 ## Behavior tests
 ```text
-Behavior tests did not run; `task check` stops during unit phase.
+Behavior tests did not run; unit tests did not complete.
 ```
 
 ## Coverage
-`task verify` fails during collection with a circular import in the
-distributed executors. Coverage remains unavailable; the previous baseline was
-**14%**, below the required 90% threshold.
+`task verify` cannot run without `task`. Coverage remains unavailable; the
+previous baseline was **14%**, below the required 90% threshold.
