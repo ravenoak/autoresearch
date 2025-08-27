@@ -5,6 +5,7 @@ from autoresearch.cli_helpers import (
 )
 import typer
 import pytest
+from pathlib import Path
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -38,3 +39,9 @@ def test_handle_command_not_found_suggests_similar(capsys):
     output = capsys.readouterr().out
     assert "Did you mean" in output
     assert "search" in output
+
+
+def test_install_help_text_in_readme():
+    readme = Path(__file__).resolve().parents[2] / "README.md"
+    text = readme.read_text()
+    assert "dev-minimal` and `test` extras" in text

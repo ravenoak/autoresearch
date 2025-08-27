@@ -20,10 +20,10 @@ and distributed features stay disabled.
 Optional extras enable additional capabilities and are installed on
 demand with `uv sync --extra <name>`.
 
-For a lean setup, sync only the minimal development extras:
+For a lean setup, sync the minimal development and test extras:
 
 ```bash
-uv sync --extra dev-minimal
+uv sync --extra dev-minimal --extra test
 ```
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
@@ -32,17 +32,18 @@ dependencies.
 ## After cloning
 
 Run `task install` after cloning to bootstrap Go Task and the minimal
-development tools:
+development tools. This syncs the `dev-minimal` and `test` extras by
+default:
 
 ```bash
 task install
 ```
 
-Include extras only when required. Example:
+Include extras only when required. Examples:
 
 ```bash
-EXTRAS="test nlp" task install  # adds test and NLP packages
-uv sync --extra llm             # sentence-transformers and transformers
+EXTRAS="nlp" task install      # adds NLP packages
+uv sync --extra llm            # sentence-transformers and transformers
 ```
 
 Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go
@@ -279,6 +280,15 @@ installed by `task install`; enable them with `uv sync --extra <name>` or
 - `git` – local Git repository search support
 - `full` – installs most extras (nlp, ui, vss, distributed, analysis)
   but omits `parsers` and `git`
+
+Examples:
+
+```bash
+uv sync --extra nlp          # language processing
+uv sync --extra ui           # Streamlit interface
+uv sync --extra distributed  # Ray and Redis
+uv sync --extra llm          # LLM libraries
+```
 
 Install multiple extras separated by commas:
 
