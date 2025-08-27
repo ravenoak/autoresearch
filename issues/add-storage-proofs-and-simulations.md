@@ -9,7 +9,7 @@ simulations are needed to justify the storage design and prevent regressions.
 - 0.1.0a1 (2026-04-15)
 
 ## Dependencies
-- [resolve-storage-layer-test-failures](resolve-storage-layer-test-failures.md)
+- None
 
 ## Acceptance Criteria
 - Provide a proof or simulation demonstrating idempotent schema initialization.

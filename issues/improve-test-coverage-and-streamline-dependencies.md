@@ -1,16 +1,13 @@
 # Improve test coverage and streamline dependencies
 
 ## Context
-Current `uv sync --extra dev` installs development dependencies, but `task` is
-not bundled. After `uv pip install -e '.[test]'`, tests execute yet `task`
-remains missing. `uv run pytest` reports nine failing tests among 580 total,
-covering backup commands, DuckDB storage initialization, and DuckDB extension
-downloads. `task verify` still cannot run, so coverage remains unavailable;
-the previous baseline was **14%**.
+`task check` now completes successfully using the minimal extras, but `task
+verify` fails during collection because the `pdfminer.six` dependency is
+absent. This prevents targeted tests from running and keeps coverage at the
+previous **14%** baseline.
 
 ## Dependencies
 
-- [resolve-storage-layer-test-failures](resolve-storage-layer-test-failures.md)
 - [configure-redis-service-for-tests](configure-redis-service-for-tests.md)
 
 ## Acceptance Criteria

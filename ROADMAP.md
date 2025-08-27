@@ -28,16 +28,10 @@ before running tests.
     issues/add-storage-proofs-and-simulations.md)
   - [configure-redis-service-for-tests](
     issues/configure-redis-service-for-tests.md)
-  - [resolve-storage-layer-test-failures](
-    issues/resolve-storage-layer-test-failures.md)
 - 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI
   checks with all tests passing.
   - [improve-test-coverage-and-streamline-dependencies](
     issues/improve-test-coverage-and-streamline-dependencies.md)
-  - [repair-backup-command-tests](
-    issues/repair-backup-command-tests.md)
-  - [fix-duckdb-extension-download-error-handling](
-    issues/fix-duckdb-extension-download-error-handling.md)
   - [speed-up-task-check-and-reduce-dependency-footprint](
     issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
@@ -51,8 +45,6 @@ before running tests.
     issues/plan-a2a-mcp-behavior-tests.md)
 - 0.3.0 (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities.
-  - [resolve-distributed-circular-import](
-    issues/resolve-distributed-circular-import.md)
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
   and stable interfaces
   ([reach-stable-performance-and-interfaces](

@@ -53,8 +53,6 @@ For installation and usage instructions see the [README](../README.md).
   ../issues/add-storage-proofs-and-simulations.md)
 - [configure-redis-service-for-tests](
   ../issues/configure-redis-service-for-tests.md)
-- [resolve-storage-layer-test-failures](
-  ../issues/resolve-storage-layer-test-failures.md)
 
 ## Packaging Logs
 
