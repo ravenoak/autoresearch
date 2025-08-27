@@ -1,6 +1,6 @@
 # Status
 
-As of **August 27, 2025**, the environment includes the `task` CLI. Running
+As of **August 4, 2025**, the environment includes the `task` CLI. Running
 `task check` executes linting, type checks, spec tests, and the unit subset.
 The command reports **84 passed, 1 skipped, and 24 deselected** unit tests in
 roughly two and a half minutes.
@@ -13,9 +13,8 @@ errors.
 All unit tests in `tests/unit` now pass.
 
 ## Targeted tests
-`task verify` fails: `tests/targeted/test_http_session.py::test_set_and_close_http_session`
-raises an assertion error, and earlier runs reported `ModuleNotFoundError: No
-module named 'pdfminer'`.
+`task verify` fails during collection: targeted tests require missing
+dependencies `python-docx` and `pdfminer.six`.
 
 ## Integration tests
 ```text

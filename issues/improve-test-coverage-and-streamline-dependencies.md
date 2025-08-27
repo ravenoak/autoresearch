@@ -1,10 +1,10 @@
 # Improve test coverage and streamline dependencies
 
 ## Context
-`task check` now completes successfully using the minimal extras, but `task
-verify` fails during collection because the `pdfminer.six` dependency is
-absent. This prevents targeted tests from running and keeps coverage at the
-previous **14%** baseline.
+`task check` now completes successfully using the minimal extras, but
+`task verify` fails during collection because the `pdfminer.six` and
+`python-docx` dependencies are absent. This prevents targeted tests from
+running and keeps coverage at the previous **14%** baseline.
 
 ## Dependencies
 
