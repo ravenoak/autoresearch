@@ -12,6 +12,9 @@ from autoresearch import mcp_interface
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 
+# Apply common markers to all scenarios in this module.
+pytestmark = [pytest.mark.a2a_mcp, pytest.mark.requires_distributed]
+
 
 @pytest.fixture
 def mock_server() -> FastMCP:
@@ -87,23 +90,17 @@ def check_timeout(bdd_context: dict) -> None:
     assert "timeout" in bdd_context["error"].lower()
 
 
-@pytest.mark.a2a_mcp
-@pytest.mark.requires_distributed
 @scenario("../features/a2a_mcp_integration.feature", "Successful A2A MCP handshake")
 def test_a2a_mcp_success() -> None:
     pass
 
 
-@pytest.mark.a2a_mcp
-@pytest.mark.requires_distributed
 @scenario("../features/a2a_mcp_integration.feature", "MCP handshake timeout handling")
 def test_a2a_mcp_timeout() -> None:
     pass
 
 
-@pytest.mark.a2a_mcp
 @pytest.mark.error_recovery
-@pytest.mark.requires_distributed
 @scenario("../features/a2a_mcp_integration.feature", "Error recovery after handshake failure")
 def test_a2a_mcp_recovery() -> None:
     pass
