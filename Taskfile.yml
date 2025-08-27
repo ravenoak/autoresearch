@@ -26,8 +26,12 @@ tasks:
               fi
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
-      - >
-          uv sync --extra dev-minimal --extra test{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+      - |
+          extras="dev-minimal test"
+          if [ "$VERIFY_PARSERS" = "1" ]; then
+              extras="$extras parsers"
+          fi
+          uv sync $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
@@ -154,6 +158,10 @@ tasks:
     deps: [check-env]
     # Coverage-enabled check before committing.
     cmds:
+      - |
+          if [ "$VERIFY_PARSERS" = "1" ]; then
+              uv sync --extra dev-minimal --extra test --extra parsers
+          fi
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
