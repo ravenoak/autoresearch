@@ -9,7 +9,7 @@ from autoresearch.orchestration import metrics
 from autoresearch.storage import StorageManager
 
 
-def test_ram_eviction(storage_manager, monkeypatch):
+def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1)
@@ -26,7 +26,7 @@ def test_ram_eviction(storage_manager, monkeypatch):
     assert "c1" not in StorageManager.get_graph().nodes
 
 
-def test_score_eviction(storage_manager, monkeypatch):
+def test_score_eviction(ensure_duckdb_schema, monkeypatch):
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     config = ConfigModel(ram_budget_mb=1, graph_eviction_policy="score")
@@ -49,13 +49,12 @@ def test_score_eviction(storage_manager, monkeypatch):
     assert "high" in graph.nodes
 
 
-def test_lru_eviction_order(monkeypatch, duckdb_path):
+def test_lru_eviction_order(monkeypatch, ensure_duckdb_schema):
     config = ConfigModel(ram_budget_mb=1)
     config.search.context_aware.enabled = False
     config.storage.rdf_backend = "memory"
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
-    storage.setup(duckdb_path)
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
@@ -76,7 +75,7 @@ def test_lru_eviction_order(monkeypatch, duckdb_path):
     assert "c2" in graph.nodes
 
 
-def test_lru_eviction_sequence(storage_manager, monkeypatch):
+def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
     """Verify older nodes are evicted before newer ones with LRU policy."""
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
