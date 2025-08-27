@@ -148,6 +148,7 @@ tasks:
           --cov-append
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
+      - task check-coverage-docs
       - |
           if [ -n "$CI" ]; then
             uv run python scripts/update_coverage_docs.py
@@ -174,6 +175,7 @@ tasks:
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
+      - task check-coverage-docs
     desc: "Run linting, type checks, targeted tests, and coverage"
 
   clean:
@@ -191,6 +193,11 @@ tasks:
     cmds:
       - uv run python scripts/check_token_regression.py --threshold 5
     desc: "Validate token usage against baselines with uv"
+
+  check-coverage-docs:
+    cmds:
+      - uv run python scripts/check_coverage_docs.py
+    desc: "Validate documentation coverage percentage"
 
   wheels:
     deps: [wheel-linux, wheel-windows, wheel-macos]

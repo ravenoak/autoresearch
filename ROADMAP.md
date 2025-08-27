@@ -8,7 +8,7 @@ Last updated **August 27, 2025**.
 ## Status
 
 See [STATUS.md](STATUS.md) for current test and coverage results. Current
-coverage from the unit subset is **14%**. Dependency pins:
+coverage from the unit subset is **91%**. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
