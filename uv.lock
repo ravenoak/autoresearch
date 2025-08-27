@@ -237,6 +237,7 @@ dev = [
     { name = "cibuildwheel" },
     { name = "duckdb" },
     { name = "duckdb-extension-vss" },
+    { name = "fakeredis" },
     { name = "flake8" },
     { name = "freezegun" },
     { name = "gitpython" },
@@ -315,6 +316,7 @@ parsers = [
 test = [
     { name = "a2a-sdk" },
     { name = "duckdb" },
+    { name = "fakeredis" },
     { name = "flake8" },
     { name = "freezegun" },
     { name = "hypothesis" },
@@ -352,6 +354,8 @@ requires-dist = [
     { name = "duckdb-extension-vss", marker = "extra == 'dev'", specifier = ">=1.3.0" },
     { name = "duckdb-extension-vss", marker = "extra == 'full'", specifier = ">=1.3.0" },
     { name = "duckdb-extension-vss", marker = "extra == 'vss'", specifier = ">=1.3.0" },
+    { name = "fakeredis", marker = "extra == 'dev'", specifier = ">=2.25.0" },
+    { name = "fakeredis", marker = "extra == 'test'", specifier = ">=2.25.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "fastmcp", specifier = ">=2.11.2" },
     { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.2.0" },
@@ -1143,6 +1147,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/36/f4/c6e662dade71f56cd2f3735141b265c3c79293c109549c1e6933b0651ffc/exceptiongroup-1.3.0-py3-none-any.whl", hash = "sha256:4d111e6e0c13d0644cad6ddaa7ed0261a0b36971f6d23e7ec9b4b9097da78a10", size = 16674, upload-time = "2025-05-10T17:42:49.33Z" },
+]
+
+[[package]]
+name = "fakeredis"
+version = "2.31.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "redis" },
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0b/10/c829c3475a26005ebf177057fdf54e2a29025ffc2232d02fb1ae8ac1de68/fakeredis-2.31.0.tar.gz", hash = "sha256:2942a7e7900fd9076ff9e608b9190a87315ac5a325a9ab8bfe288a2d985ecd23", size = 170163, upload-time = "2025-08-11T14:58:20.64Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/52/ef/25639beb5d93188b4b6502f601d8f97db77e362774f0183a48e995353c58/fakeredis-2.31.0-py3-none-any.whl", hash = "sha256:2584e57d93df4eb8e87931b29279902826d3caf77d06911106df4e066c2ad198", size = 117666, upload-time = "2025-08-11T14:58:19.03Z" },
 ]
 
 [[package]]

@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import os
 import sys
+import types
 from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, patch
@@ -106,12 +107,46 @@ def pytest_runtest_setup(item):
         pytest.skip("git extra not installed")
     if item.get_closest_marker("requires_nlp") and not NLP_AVAILABLE:
         pytest.skip("nlp extra not installed")
+    if item.get_closest_marker("requires_distributed") and not REDIS_AVAILABLE:
+        pytest.skip("redis not available")
 
 
 GITPYTHON_INSTALLED = _module_available("git")
 POLARS_INSTALLED = _module_available("polars")
 UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("sentence_transformers")
+
+try:
+    import redis
+
+    try:
+        redis.Redis.from_url(
+            "redis://localhost:6379/0", socket_connect_timeout=1
+        ).ping()
+        REDIS_AVAILABLE = True
+    except Exception:
+        import fakeredis
+
+        class _FakeRedis(fakeredis.FakeRedis):
+            @classmethod
+            def from_url(cls, url, **kwargs):
+                return cls(**kwargs)
+
+        redis.Redis = _FakeRedis  # type: ignore[assignment]
+        REDIS_AVAILABLE = True
+except Exception:
+    try:
+        import fakeredis
+
+        class _FakeRedis(fakeredis.FakeRedis):
+            @classmethod
+            def from_url(cls, url, **kwargs):
+                return cls(**kwargs)
+
+        sys.modules["redis"] = types.SimpleNamespace(Redis=_FakeRedis)
+        REDIS_AVAILABLE = True
+    except Exception:
+        REDIS_AVAILABLE = False
 
 
 def _check_vss() -> bool:

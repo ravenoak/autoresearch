@@ -110,6 +110,7 @@ test = [
     "uvicorn >=0.35.0",
     "psutil >=7.0.0",
     "redis >=6.2",
+    "fakeredis >=2.25.0",
     "pytest-httpx >=0.35.0",
     "pytest-bdd >=8.1.0",
     "flake8 >=7.2.0",
@@ -166,6 +167,7 @@ dev = [
     "redis >=6.2",
     "duckdb >=1.0.0",
     "networkx >=3.3",
+    "fakeredis >=2.25.0",
 ]
 # Minimal dev dependencies for CI and lightweight setups
 dev-minimal = [
