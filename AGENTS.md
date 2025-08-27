@@ -16,6 +16,7 @@
   must not be referenced outside AGENTS.md files or the script itself. Use
   `scripts/setup.sh` for any other environment. It installs the project in
   editable mode and records the DuckDB vector extension path in `.env.offline`.
+  Ensure it finishes in under 15 minutes, with 10 minutes as a target.
 
 ## Testing
 - `task check` – run early for linting, type checks, and a fast test suite.
@@ -51,6 +52,7 @@
 - For extensive details, consult docs under `docs/` as required.
 
 ## Changelog
+- 2025-08-22: Added runtime goal for `scripts/codex_setup.sh`.
 - 2025-08-21: Clarified Codex-only scope for `scripts/codex_setup.sh` and
   restricted references to AGENTS files.
 - 2025-08-20: Restructured instructions, added dialectical reasoning and

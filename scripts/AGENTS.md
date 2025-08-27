@@ -9,7 +9,7 @@ These instructions apply to files in the `scripts/` directory.
 - `codex_setup.sh` bootstraps only the Codex evaluation environment and must
   not be referenced outside AGENTS.md files or the script itself. It installs
   the project in editable mode and updates `.env.offline` with the DuckDB
-  vector extension path.
+  vector extension path. Ensure it finishes in under 15 minutes, targeting 10.
 
 ## Conventions
 - Provide a clear CLI interface or usage comment at the top of each script.

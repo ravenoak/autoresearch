@@ -5,6 +5,22 @@
 # AGENTS.md system. For any other environment, use `./scripts/setup.sh`.
 set -euo pipefail
 
+START_TIME=$(date +%s)
+finish() {
+    local exit_code=$?
+    local end_time=$(date +%s)
+    local elapsed=$((end_time - START_TIME))
+    echo "codex_setup.sh finished in ${elapsed}s"
+    if [ "$elapsed" -gt 900 ]; then
+        echo "ERROR: setup exceeded 15-minute limit" >&2
+        exit_code=1
+    elif [ "$elapsed" -gt 600 ]; then
+        echo "WARNING: setup exceeded 10-minute target" >&2
+    fi
+    exit "$exit_code"
+}
+trap finish EXIT
+
 LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
