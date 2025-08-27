@@ -41,10 +41,32 @@ simultaneously. The [simulation][evict-sim] spawns threads that insert claims
 while memory usage is forced above the budget. After all threads finish the
 in-memory graph is empty, proving the policy is thread safe.
 
+## Proof sketches
+
+### Idempotent schema initialization
+
+1. `initialize_storage` wraps each table creation in `CREATE TABLE IF NOT
+   EXISTS`.
+2. Repeated setup runs `SHOW TABLES` and creates only the missing entries.
+3. Table definitions are deterministic, so every run yields the same schema.
+4. The [targeted test][schema-test] calls the helper twice on an in-memory
+   database and observes identical table lists.
+
+### RAM-budget eviction
+
+1. `_enforce_ram_budget` compares the measured usage `U` against the budget
+   `B`.
+2. When `U > B`, nodes are removed until usage falls below `B(1 -
+   safety_margin)`.
+3. Eviction occurs within a lock, so concurrent writers cannot race.
+4. The [simulation][evict-sim] forces `U` above `B`; after all threads finish
+   the graph is empty, proving the budget is upheld.
+
 ## DuckDB fallback benchmark
 
 The benchmark in [duckdb-bench] shows that persistence triggers eviction when
- the RAM budget is exceeded, ensuring deterministic resource bounds.
+the RAM budget is exceeded, ensuring deterministic resource bounds.
 
-[evict-sim]: ../../tests/integration/test_storage_eviction.py
+[evict-sim]: ../../scripts/storage_eviction_sim.py
 [duckdb-bench]: ../../tests/integration/test_storage_duckdb_fallback.py
+[schema-test]: ../../tests/targeted/test_storage_eviction.py
