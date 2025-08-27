@@ -25,6 +25,7 @@ def test_get_message_broker_invalid() -> None:
         get_message_broker("unknown")
 
 
+@pytest.mark.requires_distributed
 def test_redis_broker_requires_dependency(monkeypatch) -> None:
     monkeypatch.setitem(__import__("sys").modules, "redis", None)
     with pytest.raises(ModuleNotFoundError):

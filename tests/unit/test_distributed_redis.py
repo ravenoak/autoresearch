@@ -5,33 +5,20 @@ import pytest
 
 from autoresearch.distributed import get_message_broker
 
-
-class _FakeRedisClient:
-    def __init__(self) -> None:
-        self.entries: list[tuple[str, str]] = []
-
-    def rpush(self, name: str, value: str) -> None:
-        self.entries.append((name, value))
-
-    def blpop(self, names):
-        name = names[0]
-        return name, self.entries.pop(0)[1].encode()
-
-    def close(self) -> None:  # pragma: no cover - no side effects
-        pass
+pytestmark = pytest.mark.requires_distributed
 
 
-def test_get_message_broker_redis_roundtrip(monkeypatch):
+def test_get_message_broker_redis_roundtrip(monkeypatch, redis_client):
     """Round trip messages through the Redis broker."""
 
-    client = _FakeRedisClient()
-    dummy_module = types.SimpleNamespace(Redis=types.SimpleNamespace(from_url=lambda url: client))
+    dummy_module = types.SimpleNamespace(
+        Redis=types.SimpleNamespace(from_url=lambda url: redis_client)
+    )
     monkeypatch.setitem(sys.modules, "redis", dummy_module)
 
     broker = get_message_broker("redis")
     broker.publish({"a": 1})
-    assert client.entries[0][0] == "autoresearch"
-    assert client.entries[0][1] == '{"a": 1}'
+    assert redis_client.lrange("autoresearch", 0, -1)[0] == b'{"a": 1}'
     broker.shutdown()
 
 
