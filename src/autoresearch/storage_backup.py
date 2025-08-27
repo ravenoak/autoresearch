@@ -198,58 +198,63 @@ def _restore_backup(
             if not os.path.exists(backup_path):
                 raise BackupError(f"Backup file not found: {backup_path}")
 
-            with tarfile.open(backup_path, "r:gz") as tar:
-                # Extract DuckDB file
-                try:
-                    db_member = tar.getmember("db.duckdb")
-                    db_file = tar.extractfile(db_member)
-                    if db_file:
-                        with open(db_target_path, "wb") as f:
-                            f.write(db_file.read())
-                except KeyError:
-                    raise BackupError("DuckDB file not found in backup")
+            try:
+                with tarfile.open(backup_path, "r:gz") as tar:
+                    # Extract DuckDB file
+                    try:
+                        db_member = tar.getmember("db.duckdb")
+                        db_file = tar.extractfile(db_member)
+                        if db_file:
+                            with open(db_target_path, "wb") as f:
+                                f.write(db_file.read())
+                    except KeyError:
+                        raise BackupError("DuckDB file not found in backup")
 
-                # Extract RDF store
-                try:
-                    # Check if store.rdf is a file or directory in the archive
-                    rdf_members = [
-                        m for m in tar.getmembers() if m.name.startswith("store.rdf")
-                    ]
-                    if not rdf_members:
+                    # Extract RDF store
+                    try:
+                        # Check if store.rdf is a file or directory in the archive
+                        rdf_members = [
+                            m for m in tar.getmembers() if m.name.startswith("store.rdf")
+                        ]
+                        if not rdf_members:
+                            raise BackupError("RDF store not found in backup")
+
+                        if (
+                            len(rdf_members) == 1
+                            and rdf_members[0].name == "store.rdf"
+                            and not rdf_members[0].isdir()
+                        ):
+                            # It's a single file
+                            rdf_file = tar.extractfile(rdf_members[0])
+                            if rdf_file:
+                                with open(rdf_target_path, "wb") as f:
+                                    f.write(rdf_file.read())
+                        else:
+                            # It's a directory
+                            os.makedirs(rdf_target_path, exist_ok=True)
+                            for member in rdf_members:
+                                if member.name != "store.rdf":  # Skip the directory itself
+                                    # Extract to the target directory
+                                    member_path = os.path.join(
+                                        rdf_target_path,
+                                        os.path.relpath(member.name, "store.rdf"),
+                                    )
+                                    if member.isdir():
+                                        os.makedirs(member_path, exist_ok=True)
+                                    else:
+                                        member_file = tar.extractfile(member)
+                                        if member_file:
+                                            os.makedirs(
+                                                os.path.dirname(member_path), exist_ok=True
+                                            )
+                                            with open(member_path, "wb") as f:
+                                                f.write(member_file.read())
+                    except KeyError:
                         raise BackupError("RDF store not found in backup")
-
-                    if (
-                        len(rdf_members) == 1
-                        and rdf_members[0].name == "store.rdf"
-                        and not rdf_members[0].isdir()
-                    ):
-                        # It's a single file
-                        rdf_file = tar.extractfile(rdf_members[0])
-                        if rdf_file:
-                            with open(rdf_target_path, "wb") as f:
-                                f.write(rdf_file.read())
-                    else:
-                        # It's a directory
-                        os.makedirs(rdf_target_path, exist_ok=True)
-                        for member in rdf_members:
-                            if member.name != "store.rdf":  # Skip the directory itself
-                                # Extract to the target directory
-                                member_path = os.path.join(
-                                    rdf_target_path,
-                                    os.path.relpath(member.name, "store.rdf"),
-                                )
-                                if member.isdir():
-                                    os.makedirs(member_path, exist_ok=True)
-                                else:
-                                    member_file = tar.extractfile(member)
-                                    if member_file:
-                                        os.makedirs(
-                                            os.path.dirname(member_path), exist_ok=True
-                                        )
-                                        with open(member_path, "wb") as f:
-                                            f.write(member_file.read())
-                except KeyError:
-                    raise BackupError("RDF store not found in backup")
+            except tarfile.TarError as exc:
+                raise BackupError(
+                    "Corrupted backup archive", context={"suggestion": "Recreate the backup"}
+                ) from exc
 
         # Restore from uncompressed backup
         else:
@@ -281,9 +286,16 @@ def _restore_backup(
 
         return {"db_path": db_target_path, "rdf_path": rdf_target_path}
 
+    except BackupError:
+        raise
+    except tarfile.TarError as exc:
+        log.error(f"Restore failed: {exc}")
+        raise BackupError(
+            "Corrupted backup archive", context={"suggestion": "Recreate the backup"}
+        ) from exc
     except Exception as e:
         log.error(f"Restore failed: {e}")
-        raise BackupError(f"Failed to restore backup: {e}")
+        raise BackupError(f"Failed to restore backup: {e}") from e
 
 
 def _list_backups(backup_dir: str) -> List[BackupInfo]:
