@@ -52,6 +52,24 @@ overhead `O(P)`. A simple CPU-bound simulation showed average
 utilization rising from ~0% with one node to ~30% with two nodes and
 ~40% with four nodes, while memory stayed near 45–49 MB.
 
+## Formal Guarantees
+
+### Leader Election
+
+The coordinator selects the agent with the lowest identifier as the leader.
+Given `n` unique identifiers, the election terminates in `O(n)` comparisons
+and produces exactly one leader. The chosen identifier is guaranteed to
+belong to the original set, ensuring safety and determinism
+([distributed_coordination_sim.py](../../scripts/distributed_coordination_sim.py)).
+
+### Message Ordering
+
+`InMemoryBroker` relies on ``multiprocessing.Queue`` and therefore preserves
+first-in-first-out semantics. Messages are dequeued in the same order they
+are published, yielding a total order consistent with enqueue time under a
+single broker process
+([broker.py](../../src/autoresearch/distributed/broker.py)).
+
 ## Baseline
 
 Running `uv run scripts/simulate_distributed_coordination.py --workers 2`
