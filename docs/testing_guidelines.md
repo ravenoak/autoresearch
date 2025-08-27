@@ -20,12 +20,14 @@ Tests are organized into four categories:
 
 Two installation strategies support different workflows:
 
-- **Minimal:** `task check` triggers the `dev-minimal` profile, syncing only
-  the `dev-minimal` and `test` extras for linting and core tests. Add optional
-  features with `task install EXTRAS="nlp ui"` choosing from `analysis`,
-  `distributed`, `git`, `llm`, `minimal`, `nlp`, `parsers`, `ui`, and `vss`.
-- **Full:** `uv sync --extra dev --extra test` installs heavier optional
-  dependencies for integration scenarios.
+- **Minimal:** `task check` syncs only the `dev-minimal` and `test` extras for
+  linting and core tests. Add optional features with
+  `task install EXTRAS="nlp ui"` choosing from `analysis`, `distributed`,
+  `git`, `llm`, `minimal`, `nlp`, `parsers`, `ui`, and `vss`.
+- **Full:** `task verify` expects the `dev` and `test` extras plus any
+  targeted-test requirements such as `parsers` or `git`. Install them with
+  `uv sync --extra dev --extra test` and append extras as needed for
+  integration scenarios.
 
 Redis is an optional dependency but required for distributed tests. The
 integration suite skips those tests automatically when Redis is missing.
