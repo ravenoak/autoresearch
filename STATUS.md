@@ -1,19 +1,15 @@
 # Status
 
-As of **August 27, 2025**, running `scripts/codex_setup.sh` then
-`.venv/bin/task install` provisions dependencies and exposes the `task`
-command. `task check` executes linting and type checks, but nine unit tests
-fail and the run ends early. `task verify` aborts during collection because the
-`pdfminer` package is missing.
+As of **August 27, 2025**, the environment lacks the `task` CLI. After
+`uv sync --all-extras`, running `uv run pytest` exercises the suite with nine
+failing tests and 429 passing tests. Required packages, including
+`pdfminer.six`, are present.
 
 ## Lint, type checks, and spec tests
-```text
-task check
-```
-Result: lint and type checks passed; unit tests failed before completion.
+`task check` could not run because the `task` command is unavailable.
 
 ## Unit tests
-`task check` reported failures in the following tests:
+`uv run pytest` reported failures in the following tests:
 - `tests/unit/test_cli_backup_extra.py::test_backup_restore_error`
 - `tests/unit/test_download_duckdb_extensions.py::`
   `test_download_extension_network_fallback`
@@ -31,10 +27,7 @@ Result: lint and type checks passed; unit tests failed before completion.
 - `tests/unit/test_main_backup_commands.py::test_backup_restore_error`
 
 ## Targeted tests
-```text
-task verify
-```
-Result: collection errors (`ModuleNotFoundError: No module named 'pdfminer'`).
+`task verify` could not run because the `task` command is unavailable.
 
 ## Integration tests
 ```text

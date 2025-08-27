@@ -16,4 +16,4 @@ coverage reports remain incomplete.
 - Documentation mentions optional PDF support requirements.
 
 ## Status
-Open
+Archived
