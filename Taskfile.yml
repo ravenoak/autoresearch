@@ -127,6 +127,10 @@ tasks:
           --cov-append
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
+      - |
+          if [ -n "$CI" ]; then
+            uv run python scripts/update_coverage_docs.py
+          fi
     desc: "Run full test suite with coverage reporting"
 
   verify:
