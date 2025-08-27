@@ -1,10 +1,11 @@
 # Api
 
-FastAPI app aggregator for Autoresearch. See [API authentication
-algorithm](../algorithms/api_authentication.md) and
-[error paths](../algorithms/api_auth_error_paths.md) for credential handling
-details, and [API rate limiting
-model](../algorithms/api_rate_limiting.md) for load control guidance.
+FastAPI app aggregator for Autoresearch. See these algorithm references:
+
+- [API authentication](../algorithms/api_authentication.md)
+- [Error paths](../algorithms/api_auth_error_paths.md)
+- [API rate limiting](../algorithms/api_rate_limiting.md)
+- [API streaming](../algorithms/api_streaming.md)
 
 ## Authentication flow
 

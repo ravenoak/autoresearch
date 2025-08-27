@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 
+import httpx
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
@@ -35,6 +36,32 @@ def test_query_stream_param(monkeypatch, api_client):
 
 
 @pytest.mark.slow
+def test_long_running_stream(monkeypatch, api_client):
+    """Streaming should handle long running operations without timing out."""
+
+    def long_run_query(query, config, callbacks=None, **kwargs):
+        state = QueryState(query=query)
+        for i in range(3):
+            time.sleep(0.05)
+            if callbacks and "on_cycle_end" in callbacks:
+                callbacks["on_cycle_end"](i, state)
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(Orchestrator, "run_query", long_run_query)
+
+    start = time.perf_counter()
+    with api_client.stream("POST", "/query?stream=true", json={"query": "q"}) as resp:
+        assert resp.status_code == 200
+        chunks = [line for line in resp.iter_lines()]
+    duration = time.perf_counter() - start
+    assert len(chunks) == 4
+    assert duration >= 0.15
+
+
+@pytest.mark.slow
 def test_config_webhooks(monkeypatch, api_client, httpx_mock):
     """Configured webhooks should receive final results."""
 
@@ -59,6 +86,42 @@ def test_config_webhooks(monkeypatch, api_client, httpx_mock):
     assert str(req.url) == "http://hook"
     payload = json.loads(req.content.decode())
     assert payload["answer"] == "ok"
+
+
+@pytest.mark.slow
+def test_webhook_retry(monkeypatch, api_client, httpx_mock):
+    """Webhook failures should be retried once."""
+
+    attempts = {"count": 0}
+
+    def notify_with_retry(url, result, timeout):
+        for _ in range(2):
+            attempts["count"] += 1
+            try:
+                resp = httpx.post(url, json=result.model_dump(), timeout=timeout)
+                resp.raise_for_status()
+                return
+            except httpx.RequestError:
+                continue
+
+    cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Orchestrator,
+        "run_query",
+        lambda q, c, callbacks=None, **k: QueryResponse(
+            answer="ok", citations=[], reasoning=[], metrics={}
+        ),
+    )
+    monkeypatch.setattr("autoresearch.api.webhooks.notify_webhook", notify_with_retry)
+    httpx_mock.add_response(method="POST", url="http://hook", status_code=500)
+    httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
+
+    resp = api_client.post("/query", json={"query": "hi"})
+    assert resp.status_code == 200
+    assert attempts["count"] == 2
+    assert len(httpx_mock.get_requests()) == 2
 
 
 @pytest.mark.slow
