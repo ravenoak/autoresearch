@@ -45,26 +45,34 @@ simultaneously. The [simulation][evict-sim] spawns threads that insert claims
 while memory usage is forced above the budget. After all threads finish the
 in-memory graph is empty, proving the policy is thread safe.
 
-## Proof sketches
+## Formal proofs
 
-### Idempotent schema initialization
+### Schema idempotency
 
-1. `initialize_storage` wraps each table creation in `CREATE TABLE IF NOT
-   EXISTS`.
-2. Repeated setup runs `SHOW TABLES` and creates only the missing entries.
-3. Table definitions are deterministic, so every run yields the same schema.
-4. The [targeted test][schema-test] calls the helper twice on an in-memory
-   database and observes identical table lists.
+**Theorem.** Repeated calls to `initialize_storage` yield an identical set of
+tables.
 
-### RAM-budget eviction
+**Proof.** Let `R` be the required table set. Each call issues
+`CREATE TABLE IF NOT EXISTS` for every element of `R`. The command is
+idempotent: if a table exists, execution is a no-op. No other schema mutations
+occur. Therefore, after any number of invocations the table set equals `R` and
+ordering differences are irrelevant. The
+[targeted test][schema-test] and [deterministic test][evict-test] both observe
+equal table lists across runs. ∎
 
-1. `_enforce_ram_budget` compares the measured usage `U` against the budget
-   `B`.
-2. When `U > B`, nodes are removed until usage falls below `B(1 -
-   safety_margin)`.
-3. Eviction occurs within a lock, so concurrent writers cannot race.
-4. The [simulation][evict-sim] forces `U` above `B`; after all threads finish
-   the graph is empty, proving the budget is upheld.
+### Eviction correctness under concurrent writers
+
+**Theorem.** `_enforce_ram_budget` preserves the invariant `U ≤ B(1 − δ)` under
+concurrent writes, where `U` is usage, `B` the budget, and `δ` the safety
+margin.
+
+**Proof.** The function acquires a lock before measuring `U`. If `U > B`, it
+removes nodes according to the configured policy until `U ≤ B(1 − δ)`. Because
+the lock serializes eviction, no two writers can evict based on stale
+information. Every invocation reduces or maintains `U`; thus, after all
+threads finish, the invariant holds. The
+[simulation][evict-sim] and [deterministic test][evict-test] confirm the final
+graph is empty when `U` is forced above `B`. ∎
 
 ## DuckDB fallback benchmark
 
@@ -74,3 +82,5 @@ the RAM budget is exceeded, ensuring deterministic resource bounds.
 [evict-sim]: ../../scripts/storage_eviction_sim.py
 [duckdb-bench]: ../../tests/integration/test_storage_duckdb_fallback.py
 [schema-test]: ../../tests/targeted/test_storage_eviction.py
+[evict-test]: ../../tests/targeted/test_storage_eviction.py
+

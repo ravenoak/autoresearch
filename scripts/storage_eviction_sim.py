@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulate concurrent storage writes that trigger RAM-budget eviction.
+"""Simulate concurrent writers that stress `_enforce_ram_budget`.
 
 Usage:
     uv run python scripts/storage_eviction_sim.py --threads 5
@@ -37,7 +37,10 @@ def _run(threads: int) -> int:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
 
         def persist(idx: int) -> None:
-            StorageManager.persist_claim({"id": f"c{idx}", "type": "fact", "content": "c"})
+            StorageManager.persist_claim(
+                {"id": f"c{idx}", "type": "fact", "content": "c"}
+            )
+            StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
 
         threads_list = [Thread(target=persist, args=(i,)) for i in range(threads)]
         for t in threads_list:
