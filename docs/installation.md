@@ -44,7 +44,11 @@ Include extras only when required. Examples:
 ```bash
 EXTRAS="nlp" task install      # adds NLP packages
 uv sync --extra llm            # sentence-transformers and transformers
+VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 ```
+
+Set `VERIFY_PARSERS=1` when running `task verify` to sync the `parsers`
+extra for tests that require PDF or DOCX ingestion.
 
 Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go
 Task when missing, syncs the `dev` and `test` extras (including packages such
