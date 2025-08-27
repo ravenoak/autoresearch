@@ -73,6 +73,29 @@ sample dataset yields the following ranked scores:
 | 1  | 0.90  | 0.90 | 0.89     | 0.90        |
 | 2  | 0.12  | 0.00 | 0.00     | 0.60        |
 
+## Simulation
+
+Run the simulation script to compare heuristic scores with labeled data:
+
+```
+uv run scripts/simulate_source_credibility.py
+```
+
+The dataset contains three credible and three non‑credible sources. The
+resulting scores show clear separation:
+
+| URL                              | Label | Score |
+|----------------------------------|-------|-------|
+| https://en.wikipedia.org         | 1     | 0.90  |
+| https://nih.gov                  | 1     | 0.95  |
+| https://dept.university.edu      | 1     | 0.80  |
+| https://unknown.io               | 0     | 0.50  |
+| https://random.xyz               | 0     | 0.50  |
+| https://example.com              | 0     | 0.50  |
+
+Credible sources average ``0.88`` while non‑credible ones average ``0.50``,
+demonstrating monotonic behavior within the ``[0, 1]`` bounds.
+
 ## References
 
 - Moz. "Domain Authority."[^moz]
