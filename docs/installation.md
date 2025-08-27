@@ -27,7 +27,9 @@ uv sync --extra dev-minimal --extra test
 ```
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
-dependencies.
+dependencies. `task check` syncs only these extras so it runs quickly.
+Run `uv sync --extra dev --extra test` before `task verify` to install the
+full toolchain and any targeted-test dependencies.
 
 ## After cloning
 

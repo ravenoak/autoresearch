@@ -5,6 +5,10 @@ As of **August 4, 2025**, the environment includes the `task` CLI. Running
 The command reports **84 passed, 1 skipped, and 24 deselected** unit tests in
 roughly two and a half minutes.
 
+After constraining `task check` to sync only the `dev-minimal` and `test`
+extras, the run now finishes in about a minute and a half while avoiding NLP
+and LLM dependencies.
+
 ## Lint, type checks, and spec tests
 `task check` completes without failures. `flake8` and `mypy` pass without
 errors.
