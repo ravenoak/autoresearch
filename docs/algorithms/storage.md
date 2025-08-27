@@ -27,6 +27,13 @@ second = ctx.db_backend._conn.execute("show tables").fetchall()
 assert first == second
 ```
 
+## Deterministic setup and teardown
+
+`DuckDBStorageBackend.setup` now retains the database path, even for
+`:memory:`, and initializes the schema version with a single `fetchone` query.
+`close` always releases the connection and clears the path whether or not a
+pool is in use, ensuring each run starts from a clean slate.
+
 ## Concurrent eviction
 
 Eviction maintains the RAM budget even when multiple writers persist claims

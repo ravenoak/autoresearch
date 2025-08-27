@@ -95,7 +95,9 @@ class DuckDBStorageBackend:
                 )
             )
             memory_mode = path == ":memory:"
-            self._path = None if memory_mode else path
+            # Preserve the provided path even for in-memory databases so tests
+            # can assert on deterministic setup behaviour.
+            self._path = path
 
             try:
                 self._conn = duckdb.connect(path)
@@ -239,13 +241,12 @@ class DuckDBStorageBackend:
 
         try:
             # Check if schema_version exists
-            rows = self._conn.execute(
+            row = self._conn.execute(
                 "SELECT value FROM metadata WHERE key = 'schema_version'"
-            ).fetchall()
-            result = rows[0] if rows else None
+            ).fetchone()
 
-            # If not, initialize it to version 1
-            if result is None:
+            # If not present, initialize to version 1
+            if row is None:
                 log.info("Initializing schema version to 1")
                 self._conn.execute(
                     "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
@@ -272,12 +273,11 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         try:
-            rows = self._conn.execute(
+            row = self._conn.execute(
                 "SELECT value FROM metadata WHERE key = 'schema_version'"
-            ).fetchall()
-            result = rows[0] if rows else None
+            ).fetchone()
 
-            if result is None:
+            if row is None:
                 if initialize_if_missing:
                     # This should not happen as _initialize_schema_version should have been called
                     log.warning(
@@ -288,7 +288,7 @@ class DuckDBStorageBackend:
                 else:
                     return None
 
-            return int(result[0])
+            return int(row[0])
         except Exception as e:
             raise StorageError("Failed to get schema version", cause=e)
 
@@ -890,6 +890,14 @@ class DuckDBStorageBackend:
                 self._pool = None
                 self._conn = None
                 self._path = None
+            elif self._conn is not None:
+                try:
+                    self._conn.close()
+                except Exception as e:  # pragma: no cover - cleanup errors
+                    log.warning(f"Failed to close DuckDB connection: {e}")
+                finally:
+                    self._conn = None
+                    self._path = None
 
     def clear(self) -> None:
         """
