@@ -3,12 +3,13 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **August 26, 2025**.
+Last updated **August 27, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current test and coverage results. Current
-coverage from the unit subset is **14%**. Use Python 3.12+ with:
+coverage from the unit subset is **14%**. Dependency pins:
+`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -20,23 +21,38 @@ before running tests.
 ## Milestones
 
 - 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
-  feedback while aligning environment requirements
-  ([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)).
+  feedback while aligning environment requirements.
+  - [add-orchestration-proofs-and-tests](
+    issues/add-orchestration-proofs-and-tests.md)
+  - [add-storage-proofs-and-simulations](
+    issues/add-storage-proofs-and-simulations.md)
+  - [configure-redis-service-for-tests](
+    issues/configure-redis-service-for-tests.md)
+  - [resolve-storage-layer-test-failures](
+    issues/resolve-storage-layer-test-failures.md)
 - 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI
-  checks with all tests passing
-  ([finalize-first-public-preview-release](
-  issues/archive/finalize-first-public-preview-release.md)).
+  checks with all tests passing.
+  - [improve-test-coverage-and-streamline-dependencies](
+    issues/improve-test-coverage-and-streamline-dependencies.md)
+  - [repair-backup-command-tests](
+    issues/repair-backup-command-tests.md)
+  - [fix-duckdb-extension-download-error-handling](
+    issues/fix-duckdb-extension-download-error-handling.md)
+  - [speed-up-task-check-and-reduce-dependency-footprint](
+    issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   issues/deliver-bug-fixes-and-docs-update.md)).
 - 0.2.0 (2026-12-01, status: planned): API stabilization, configuration
-  hot-reload and improved search backends
-  ([stabilize-api-and-improve-search](
-  issues/stabilize-api-and-improve-search.md)).
+  hot-reload and improved search backends.
+  - [stabilize-api-and-improve-search](
+    issues/stabilize-api-and-improve-search.md)
+  - [plan-a2a-mcp-behavior-tests](
+    issues/plan-a2a-mcp-behavior-tests.md)
 - 0.3.0 (2027-03-01, status: planned): Distributed execution support and
-  monitoring utilities
-  ([support-distributed-execution-and-monitoring](
-  issues/archive/support-distributed-execution-and-monitoring.md)).
+  monitoring utilities.
+  - [resolve-distributed-circular-import](
+    issues/resolve-distributed-circular-import.md)
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
   and stable interfaces
   ([reach-stable-performance-and-interfaces](
@@ -80,9 +96,8 @@ activities include:
 - Verifying packaging metadata and TestPyPI uploads.
 
 Type checking and unit tests currently fail; see [STATUS.md](STATUS.md) for
-details. The release was originally planned for **July 20, 2025**, but the
-schedule slipped. The **0.1.0** milestone is now targeted for **July 1, 2026**
-while packaging tasks are resolved.
+details. The **0.1.0** milestone is targeted for **July 1, 2026** while
+packaging tasks are resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
 

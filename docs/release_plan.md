@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 26, 2025** and
+`2025-05-18`). This schedule was last updated on **August 27, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -24,33 +24,46 @@ Current test and coverage results are tracked in
 ## Milestones
 
 - **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
-  feedback
-  ([prepare-first-alpha-release](
-  ../issues/archive/prepare-first-alpha-release.md)).
+  feedback.
+  - [add-orchestration-proofs-and-tests](
+    ../issues/add-orchestration-proofs-and-tests.md)
+  - [add-storage-proofs-and-simulations](
+    ../issues/add-storage-proofs-and-simulations.md)
+  - [configure-redis-service-for-tests](
+    ../issues/configure-redis-service-for-tests.md)
+  - [resolve-storage-layer-test-failures](
+    ../issues/resolve-storage-layer-test-failures.md)
 - **0.1.0** (2026-07-01, status: released): Finalized packaging, docs and CI
-  checks with all tests passing
-  ([finalize-first-public-preview-release](
-  ../issues/archive/finalize-first-public-preview-release.md)).
+  checks with all tests passing.
+  - [improve-test-coverage-and-streamline-dependencies](
+    ../issues/improve-test-coverage-and-streamline-dependencies.md)
+  - [repair-backup-command-tests](
+    ../issues/repair-backup-command-tests.md)
+  - [fix-duckdb-extension-download-error-handling](
+    ../issues/fix-duckdb-extension-download-error-handling.md)
+  - [speed-up-task-check-and-reduce-dependency-footprint](
+    ../issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   ../issues/deliver-bug-fixes-and-docs-update.md)).
 - **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
-  hot-reload and improved search backends
-  ([stabilize-api-and-improve-search](
-  ../issues/stabilize-api-and-improve-search.md)).
+  hot-reload and improved search backends.
+  - [stabilize-api-and-improve-search](
+    ../issues/stabilize-api-and-improve-search.md)
+  - [plan-a2a-mcp-behavior-tests](
+    ../issues/plan-a2a-mcp-behavior-tests.md)
 - **0.3.0** (2027-03-01, status: planned): Distributed execution support and
-  monitoring utilities
-  ([support-distributed-execution-and-monitoring](
-  ../issues/archive/support-distributed-execution-and-monitoring.md)).
+  monitoring utilities.
+  - [resolve-distributed-circular-import](
+    ../issues/resolve-distributed-circular-import.md)
 - **1.0.0** (2027-06-01, status: planned): Full feature set, performance
   tuning and stable interfaces
   ([reach-stable-performance-and-interfaces](
   ../issues/reach-stable-performance-and-interfaces.md)).
 
-The project originally targeted **0.1.0** for **July 20, 2025**, but the
-schedule slipped. To gather early feedback, an alpha **0.1.0a1** release is
-now re-targeted for **June 15, 2026**. The final **0.1.0** milestone is set
-for **July 1, 2026** while packaging tasks are resolved.
+To gather early feedback, an alpha **0.1.0a1** release is targeted for
+**June 15, 2026**. The final **0.1.0** milestone is set for **July 1, 2026**
+while packaging tasks are resolved.
 
 ### Alpha release checklist
 

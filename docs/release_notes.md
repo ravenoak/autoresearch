@@ -4,7 +4,10 @@ Autoresearch is a local-first research assistant that coordinates multiple
 agents to produce evidence-backed answers and stores data on the user's
 machine.
 
-## 0.1.0-alpha.1
+## 0.1.0a1
+
+Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
+`slowapi==0.1.9`.
 
 ### Capabilities
 
@@ -41,6 +44,17 @@ machine.
   [DuckDB compatibility](duckdb_compatibility.md).
 
 For installation and usage instructions see the [README](../README.md).
+
+### Open issues
+
+- [add-orchestration-proofs-and-tests](
+  ../issues/add-orchestration-proofs-and-tests.md)
+- [add-storage-proofs-and-simulations](
+  ../issues/add-storage-proofs-and-simulations.md)
+- [configure-redis-service-for-tests](
+  ../issues/configure-redis-service-for-tests.md)
+- [resolve-storage-layer-test-failures](
+  ../issues/resolve-storage-layer-test-failures.md)
 
 ## Packaging Logs
 
