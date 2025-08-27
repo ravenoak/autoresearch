@@ -210,7 +210,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
             )
             return output_extension_dir
 
-        except duckdb.IOException as e:
+        except duckdb.DuckDBError as e:
             logger.warning(
                 "Network error downloading %s extension: %s. Attempting offline fallback.",
                 extension_name,

@@ -3,6 +3,10 @@
 Autoresearch guarantees that repeated storage initialization yields the same
 schema and that eviction policies remain effective under concurrent access.
 
+Autoresearch supports DuckDB versions 1.2.2 up to, but not including, 2.0.0.
+See [DuckDB and VSS Extension Compatibility](../duckdb_compatibility.md) for
+details.
+
 ## Schema bootstrapping
 
 `initialize_storage` runs setup and verifies that the core DuckDB tables
