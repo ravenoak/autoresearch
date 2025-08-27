@@ -16,4 +16,4 @@ errors consistently or storage initialization may be incomplete.
 - Documentation updated with backup usage and error behavior.
 
 ## Status
-Open
+Archived

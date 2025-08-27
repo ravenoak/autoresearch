@@ -1,7 +1,7 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 26, 2025**, see
+organized by phases from the code complete plan. As of **August 27, 2025**, see
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status. An **0.1.0-alpha.1** preview is re-targeted for **2026-06-15**, with the
 final **0.1.0** release targeted for **July 1, 2026**.
@@ -239,14 +239,13 @@ Full suite attempts:
 ./.venv/bin/task check
 ```
 
-Result: 13 failed, 425 passed, 3 skipped, 24 deselected, 1 xpassed, 30 warnings, 4 errors
+Result: 84 passed, 1 skipped, 24 deselected, 28 warnings
 
 ```
 ./.venv/bin/task verify
 ```
 
-Result: failed during collection with a circular import in distributed
-executors; coverage not generated
+Result: `tests/targeted/test_http_session.py::test_set_and_close_http_session` failed, and earlier runs reported `ModuleNotFoundError: No module named 'pdfminer'`; coverage not generated
 
 ### Performance Baselines
 

@@ -15,4 +15,4 @@ tests from running.
 - `task verify` collects tests without ImportError.
 
 ## Status
-Open
+Archived

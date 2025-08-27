@@ -16,4 +16,4 @@ raise `AttributeError`, preventing network-failure fallback logic from running.
 - Document supported DuckDB versions in `docs/algorithms/storage.md`.
 
 ## Status
-Open
+Archived
