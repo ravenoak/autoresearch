@@ -2,12 +2,11 @@
 
 ## Context
 Current `uv sync --extra dev` installs development dependencies, but `task` is
-not bundled. After `uv sync --extra test`, running `uv run pytest` hangs in
-`redis.cluster` awaiting a Redis server. Previous runs showed 13 failing unit
-tests and 4 errors, many raising `StorageError` when DuckDB tables were not
-initialized. Even after installing missing packages (`pytest-bdd`, `freezegun`,
-`hypothesis`), `task verify` fails during collection with a circular import,
-leaving coverage unavailable; the previous baseline was **14%**.
+not bundled. After `uv pip install -e '.[test]'`, tests execute yet `task`
+remains missing. `uv run pytest` reports nine failing tests among 580 total,
+covering backup commands, DuckDB storage initialization, and DuckDB extension
+downloads. `task verify` still cannot run, so coverage remains unavailable;
+the previous baseline was **14%**.
 
 ## Dependencies
 
