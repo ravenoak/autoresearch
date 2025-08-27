@@ -18,7 +18,7 @@ def test_touch_node_updates_lru(monkeypatch):
     assert list(storage.StorageManager.state.lru.keys()) == ["b", "a"]
 
 
-def test_clear_all(storage_manager, duckdb_path):
+def test_clear_all(ensure_duckdb_schema):
     with patch("autoresearch.storage.run_ontology_reasoner") as mock_reasoner:
         mock_reasoner.return_value = None
 

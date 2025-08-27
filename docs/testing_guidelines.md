@@ -148,6 +148,9 @@ Use fixtures for common setup and teardown to reduce code duplication:
 Common project fixtures live in `tests/conftest.py`. Use
 `example_autoresearch_toml` for a realistic `autoresearch.toml` and
 `example_env_file` for a sample `.env` with required variables.
+`ensure_duckdb_schema` invokes `StorageManager.setup` so tests that touch
+storage start with a fresh DuckDB database. The setup routine automatically
+creates any missing tables.
 
 Example:
 

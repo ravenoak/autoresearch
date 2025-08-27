@@ -217,6 +217,20 @@ def duckdb_path(tmp_path):
 
 
 @pytest.fixture
+def ensure_duckdb_schema(tmp_path, monkeypatch):
+    """Ensure StorageManager setup creates required DuckDB tables."""
+    db_file = tmp_path / "kg.duckdb"
+    StorageManager.teardown(remove_db=True)
+    monkeypatch.setattr(
+        storage.DuckDBStorageBackend, "_initialize_schema_version", lambda self: None
+    )
+    monkeypatch.setattr(storage.DuckDBStorageBackend, "_run_migrations", lambda self: None)
+    StorageManager.setup(str(db_file))
+    yield str(db_file)
+    StorageManager.teardown(remove_db=True)
+
+
+@pytest.fixture
 def storage_manager(duckdb_path):
     """Initialize storage using a prepared DuckDB path and clean up."""
     storage.initialize_storage(duckdb_path)
