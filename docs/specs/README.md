@@ -27,6 +27,7 @@ documented behaviour.
 | `src/autoresearch/config_utils.py` | [config-utils.md](config-utils.md) | `../../tests/unit/test_streamlit_app_edgecases.py<br>../../tests/unit/test_streamlit_utils.py` |
 | `src/autoresearch/config/` | [config.md](config.md) | `../../tests/unit/test_config_env_file.py<br>../../tests/unit/test_config_errors.py<br>../../tests/unit/test_config_loader_defaults.py` |
 | `src/autoresearch/distributed/` | [distributed.md](distributed.md) | `../../tests/unit/test_distributed.py<br>../../tests/unit/test_distributed_extra.py<br>../../tests/integration/test_distributed_agent_storage.py<br>../../tests/analysis/test_distributed_coordination.py` |
+| `src/autoresearch/error_recovery.py` | [error-recovery.md](error-recovery.md) | `../../tests/unit/test_error_recovery.py` |
 | `src/autoresearch/error_utils.py` | [error-utils.md](error-utils.md) | `../../tests/unit/test_error_utils_additional.py` |
 | `src/autoresearch/errors.py` | [errors.md](errors.md) | `../../tests/unit/test_config_errors.py<br>../../tests/unit/test_config_validation_errors.py<br>../../tests/unit/test_errors.py` |
 | `src/autoresearch/examples/` | [examples.md](examples.md) | `../../tests/unit/test_examples_package.py` |
