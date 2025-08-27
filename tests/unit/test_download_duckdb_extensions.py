@@ -6,6 +6,9 @@ from pathlib import Path
 
 import duckdb
 
+if not hasattr(duckdb, "DuckDBError"):
+    duckdb.DuckDBError = duckdb.Error  # type: ignore[attr-defined]
+
 spec = importlib.util.spec_from_file_location(
     "download_duckdb_extensions",
     Path(__file__).resolve().parents[2] / "scripts" / "download_duckdb_extensions.py",
@@ -22,7 +25,7 @@ class FailingConn:
         return None
 
     def install_extension(self, name):
-        raise duckdb.IOException("network failure")
+        raise duckdb.DuckDBError("network failure")
 
     def close(self):
         pass
@@ -74,6 +77,22 @@ def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
     caplog.set_level(logging.INFO)
     dde.main()
     assert "Extensions downloaded successfully" in caplog.text
+
+
+def test_download_extension_offline_without_duckdb(monkeypatch, tmp_path, caplog):
+    """Missing duckdb module uses offline copy."""
+    env_file = tmp_path / ".env.offline"
+    stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"
+    stub_path.parent.mkdir(parents=True, exist_ok=True)
+    stub_path.write_text("stub")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(dde, "duckdb", None)
+    caplog.set_level(logging.WARNING)
+    result = dde.download_extension("vss", tmp_path, "linux_amd64")
+    assert result == str(stub_path)
+    assert "duckdb package not available" in caplog.text
 
 
 def test_download_extension_fallback_path(monkeypatch, tmp_path):
