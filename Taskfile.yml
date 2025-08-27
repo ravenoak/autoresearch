@@ -11,6 +11,17 @@ tasks:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
+      - |
+          if ! command -v task >/dev/null 2>&1; then
+              echo "Go Task missing; installing into .venv/bin..."
+              mkdir -p .venv/bin
+              if ! curl -sSL https://taskfile.dev/install.sh \
+                  | sh -s -- -b .venv/bin; then
+                  echo "Failed to install Go Task. Run scripts/setup.sh." >&2
+                  exit 1
+              fi
+              export PATH="$(pwd)/.venv/bin:$PATH"
+          fi
       - >
           uv sync --extra dev-minimal{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
