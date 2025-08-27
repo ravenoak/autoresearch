@@ -2,24 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Dict, Callable, Any, Optional, TYPE_CHECKING
-import os
 import multiprocessing
-
-from queue import Queue
+import os
 from dataclasses import dataclass
+from queue import Queue
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
-from .. import storage, search
+from .. import search, storage
 from ..llm import pool as llm_pool
 from ..logging_utils import get_logger
-from .coordinator import (
-    StorageCoordinator,
-    ResultAggregator,
-    start_storage_coordinator,
-    start_result_aggregator,
-    publish_claim,
-)
 from .broker import BrokerType
+from .coordinator import (
+    ResultAggregator,
+    StorageCoordinator,
+    publish_claim,
+    start_result_aggregator,
+    start_storage_coordinator,
+)
 
 try:  # pragma: no cover - optional dependency
     import ray  # type: ignore
@@ -48,9 +47,10 @@ except Exception:  # pragma: no cover - missing or faulty install
     )  # type: ignore[assignment]
 
 from ..config.models import ConfigModel
-from ..orchestration.state import QueryState
-from ..orchestration.orchestrator import AgentFactory
+from ..interfaces import CallbackMap, QueryStateLike
 from ..models import QueryResponse
+from ..orchestration.orchestrator import AgentFactory
+from ..orchestration.state import QueryState
 
 log = get_logger(__name__)
 
@@ -61,7 +61,7 @@ if TYPE_CHECKING:  # pragma: no cover - used for type hints only
 @ray.remote
 def _execute_agent_remote(
     agent_name: str,
-    state: QueryState,
+    state: QueryStateLike,
     config: ConfigModel,
     result_queue: Queue | None = None,
     storage_queue: Queue | None = None,
@@ -78,6 +78,7 @@ def _execute_agent_remote(
         except Exception as e:
             log.warning("Failed to retrieve HTTP session", exc_info=e)
         from .. import search
+
         search.set_http_session(http_session)
     if llm_session is not None:
         try:
@@ -86,6 +87,7 @@ def _execute_agent_remote(
         except Exception as e:
             log.warning("Failed to retrieve LLM session", exc_info=e)
         from ..llm import pool as llm_pool
+
         llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(state, config)
@@ -97,7 +99,7 @@ def _execute_agent_remote(
 
 def _execute_agent_process(
     agent_name: str,
-    state: QueryState,
+    state: QueryStateLike,
     config: ConfigModel,
     result_queue: Queue | None = None,
     storage_queue: Queue | None = None,
@@ -124,7 +126,9 @@ class RayExecutor:
             cfg = config.distributed_config
             address = cfg.address
             num_cpus = cfg.num_cpus
-        ray.init(address=address, num_cpus=num_cpus, ignore_reinit_error=True, configure_logging=False)
+        ray.init(
+            address=address, num_cpus=num_cpus, ignore_reinit_error=True, configure_logging=False
+        )
 
         self.storage_coordinator: Optional[StorageCoordinator] = None
         self.broker: Optional[BrokerType] = None
@@ -140,7 +144,7 @@ class RayExecutor:
             storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
-    def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
+    def run_query(self, query: str, callbacks: CallbackMap | None = None) -> QueryResponse:
         """Run agents in parallel across processes."""
         callbacks = callbacks or {}
         state = QueryState(query=query, primus_index=getattr(self.config, "primus_start", 0))
@@ -218,7 +222,7 @@ class ProcessExecutor:
             storage.set_message_queue(self.broker.queue)
             self.result_aggregator, self.result_broker = start_result_aggregator(config)
 
-    def run_query(self, query: str, callbacks: Dict[str, Callable[..., None]] | None = None) -> QueryResponse:
+    def run_query(self, query: str, callbacks: CallbackMap | None = None) -> QueryResponse:
         callbacks = callbacks or {}
         state = QueryState(query=query, primus_index=getattr(self.config, "primus_start", 0))
         ctx = multiprocessing.get_context("spawn")
@@ -268,9 +272,7 @@ class ProcessExecutor:
             try:
                 self.result_broker.publish({"action": "stop"})
             except Exception as e:
-                log.warning(
-                    "Failed to publish stop to result broker", exc_info=e
-                )
+                log.warning("Failed to publish stop to result broker", exc_info=e)
             self.result_aggregator.join()
             try:
                 self.result_broker.shutdown()

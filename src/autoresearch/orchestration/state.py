@@ -1,20 +1,24 @@
-"""
-State management for the dialectical reasoning process.
-"""
+"""State management for the dialectical reasoning process."""
 
-from typing import List, Dict, Any, Optional
+import time
+from threading import RLock
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, PrivateAttr
 
 from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
-import time
-from threading import RLock
-from pydantic import BaseModel, Field, PrivateAttr
-
 from ..models import QueryResponse
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..interfaces import QueryStateLike  # noqa: F401
 
 
 class QueryState(BaseModel):
-    """State object passed between agents during dialectical cycles."""
+    """State object passed between agents during dialectical cycles.
+
+    Implements :class:`~autoresearch.interfaces.QueryStateLike`.
+    """
 
     query: str
     claims: List[Dict[str, Any]] = Field(default_factory=list)
