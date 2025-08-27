@@ -433,6 +433,8 @@ docker-compose up -d redis
 If no Redis server is running, tests fall back to `fakeredis`.
 `pytest -m requires_distributed` exits quickly when neither Redis nor
 `fakeredis` is available.
+The `redis_client` fixture provides a lightweight `fakeredis` instance or an
+in-memory stub so most tests run without external services.
 
 ## Required services and data
 

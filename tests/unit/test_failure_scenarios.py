@@ -67,6 +67,7 @@ def test_get_message_broker_invalid():
         distributed.get_message_broker("unknown")
 
 
+@pytest.mark.requires_distributed
 def test_redis_broker_init_failure(monkeypatch):
     class DummyRedis:
         @staticmethod

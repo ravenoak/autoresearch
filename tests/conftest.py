@@ -24,6 +24,7 @@ except Exception:  # pragma: no cover - fastapi optional in some environments
 pytest_plugins = [
     "tests.fixtures.config",
     "tests.fixtures.storage",
+    "tests.fixtures.redis",
     "pytest_httpx",
 ]
 
@@ -120,9 +121,7 @@ try:
     import redis
 
     try:
-        redis.Redis.from_url(
-            "redis://localhost:6379/0", socket_connect_timeout=1
-        ).ping()
+        redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
         REDIS_AVAILABLE = True
     except Exception:
         import fakeredis

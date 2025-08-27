@@ -23,6 +23,8 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
   `monkeypatch` to isolate side effects in tests.
 - Redis-backed scenarios use the `requires_distributed` marker and skip when
   no Redis server is available or the `.[distributed]` extra is missing.
+  A `redis_client` fixture backed by `fakeredis` or an in-memory stub allows
+  local testing without a running server.
 - Tests tagged `requires_vss` depend on the DuckDB VSS extension but fall back
   to a stub implementation when the `vss` extra is not installed.
 
