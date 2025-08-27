@@ -5,15 +5,15 @@ Feature: A2A MCP integration
   Background:
     Given a mock MCP server is available
 
-  Scenario: Successful A2A to MCP query
-    When I send an A2A MCP query "hello"
-    Then the MCP answer should be "42"
+  Scenario: Successful A2A MCP handshake
+    When I perform an A2A MCP handshake
+    Then the handshake result should be "42"
 
-  Scenario: MCP timeout handling
-    When the MCP query times out
+  Scenario: MCP handshake timeout handling
+    When the A2A MCP handshake times out
     Then the A2A interface should report a timeout
 
   @error_recovery
-  Scenario: Error recovery after MCP failure
-    When the MCP query fails once and then succeeds
-    Then the MCP answer should be "42"
+  Scenario: Error recovery after handshake failure
+    When the A2A MCP handshake fails once and then succeeds
+    Then the handshake result should be "42"
