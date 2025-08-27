@@ -1,29 +1,37 @@
 # Testing Guidelines for Autoresearch
 
-This document provides guidelines for writing tests in the Autoresearch project. Following these guidelines will ensure consistency, maintainability, and reliability of the test suite.
+This document provides guidelines for writing tests in the Autoresearch
+project. Following these guidelines will ensure consistency, maintainability,
+and reliability of the test suite.
 
 ## Test Organization
 
 Tests are organized into four categories:
 
 1. **Unit Tests** (`tests/unit/`): Test individual components in isolation
-2. **Integration Tests** (`tests/integration/`): Test interactions between components
+2. **Integration Tests** (`tests/integration/`): Test interactions between
+   components
 3. **Behavior Tests** (`tests/behavior/`): BDD-style tests using Gherkin syntax
-4. **Targeted Tests** (`tests/targeted/`): Temporary tests for specific issues. Run them manually and migrate to unit or integration suites once validated.
+4. **Targeted Tests** (`tests/targeted/`): Temporary tests for specific issues.
+   Run them manually and migrate to unit or integration suites once
+   validated.
 
 ## Running tests
 
 Two installation strategies support different workflows:
 
-- **Minimal:** `task install` syncs the `dev-minimal` and `test` extras for
-  linting and core tests.
+- **Minimal:** `task check` triggers the `dev-minimal` profile, syncing only
+  the `dev-minimal` and `test` extras for linting and core tests. Add optional
+  features with `task install EXTRAS="nlp ui"` choosing from `analysis`,
+  `distributed`, `git`, `llm`, `minimal`, `nlp`, `parsers`, `ui`, and `vss`.
 - **Full:** `uv sync --extra dev --extra test` installs heavier optional
   dependencies for integration scenarios.
 
 Redis is an optional dependency but required for distributed tests. The
 integration suite skips those tests automatically when Redis is missing.
 
-Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the project's virtual environment:
+Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the
+project's virtual environment:
 
 ```bash
 task test:unit         # unit tests
@@ -40,8 +48,8 @@ targeted tests meet the 90% coverage threshold. Use `task coverage` for the
 full suite with token regression checks. The threshold is controlled by the
 `COVERAGE_THRESHOLD`
 variable, set to `90` in the Taskfile and CI workflow. CI stores a baseline
-`coverage.xml` in `baseline/coverage.xml` and compares future runs against it to detect
-regressions. To perform the comparison locally, run:
+`coverage.xml` in `baseline/coverage.xml` and compares future runs against it
+to detect regressions. To perform the comparison locally, run:
 
 ```bash
 uv run python scripts/check_token_regression.py --coverage-current coverage.xml
@@ -79,8 +87,10 @@ using `coverage combine` before generating a report with `coverage html` or
 
 - Test files should be named `test_<module_name>.py`
 - For unit tests, the module name should match the module being tested
-- For integration tests, the module name should describe the interaction being tested
-- For behavior tests, step definition files should be named `<feature_name>_steps.py`
+- For integration tests, the module name should describe the interaction
+  being tested
+- For behavior tests, step definition files should be named
+  `<feature_name>_steps.py`
 
 ### Test Functions
 
@@ -117,7 +127,8 @@ def test_function_behavior():
 
 ## Docstrings
 
-Every test function should have a docstring that explains what it's testing. The docstring should:
+Every test function should have a docstring that explains what it's
+testing. The docstring should:
 
 1. Describe the expected behavior, not the implementation
 2. Be clear and concise
@@ -324,8 +335,12 @@ def test_persist_claim_valid_input(mock_graph):
             StorageManager.persist_claim(claim)
             
             # Verify
-            mock_graph.add_node.assert_called_once_with("claim1", confidence=0.8)
-            mock_graph.add_edge.assert_called_once_with("claim1", "claim2")
+              mock_graph.add_node.assert_called_once_with(
+                  "claim1", confidence=0.8
+              )
+              mock_graph.add_edge.assert_called_once_with(
+                  "claim1", "claim2"
+              )
 ```
 
 ## Behavior-Driven Tests
@@ -450,7 +465,8 @@ new values and update the corresponding baseline file. Token-based tests
 allow a small overage configurable via the ``TOKEN_USAGE_THRESHOLD``
 environment variable.
 
-1. Run the test with ``pytest tests/integration/test_token_usage_integration.py``.
+1. Run the test with
+   ``pytest tests/integration/test_token_usage_integration.py``.
 2. Inspect the assertion failure to see the updated token counts.
 3. Edit ``tests/integration/baselines/token_usage.json`` to match the new
    values and commit the change alongside your code.
@@ -460,4 +476,6 @@ intentional and reviewed.
 
 ## Conclusion
 
-Following these guidelines will ensure that the test suite is consistent, maintainable, and reliable. If you have any questions or suggestions, please open an issue or pull request.
+Following these guidelines will ensure that the test suite is consistent,
+maintainable, and reliable. If you have any questions or suggestions,
+please open an issue or pull request.
