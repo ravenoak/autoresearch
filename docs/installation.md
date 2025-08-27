@@ -6,10 +6,11 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Run
-`./scripts/setup.sh` before invoking any `task` commands; it installs Go
-Task to `.venv/bin` and updates activation scripts so the binary resolves.
-Manual installation instructions are below if needed.
+[**Go Task**](https://taskfile.dev/) for Taskfile commands.
+`task install` checks for Go Task and downloads it to `.venv/bin` when
+missing. Run `./scripts/setup.sh` for the full developer bootstrap or if the
+automatic download fails. Manual installation instructions are below if
+needed.
 
 The Redis package installs with the `dev` extra. A running Redis
 server is required only for tests or features that use the
@@ -30,14 +31,8 @@ dependencies.
 
 ## After cloning
 
-Run the setup script immediately after cloning:
-
-```bash
-./scripts/setup.sh  # full developer bootstrap
-```
-
-After the script completes you can use `task install` to provision the
-minimal development tools:
+Run `task install` after cloning to bootstrap Go Task and the minimal
+development tools:
 
 ```bash
 task install
@@ -50,9 +45,10 @@ EXTRAS="test nlp" task install  # adds test and NLP packages
 uv sync --extra llm             # sentence-transformers and transformers
 ```
 
-`./scripts/setup.sh` installs Go Task when missing, syncs the `dev` and
-`test` extras (including packages such as `pytest_httpx`, `tomli_w`, and
-`redis`), and exits if `task --version` fails.
+Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go
+Task when missing, syncs the `dev` and `test` extras (including packages such
+as `pytest_httpx`, `tomli_w`, and `redis`), and exits if `task --version`
+fails.
 
 After the script completes, confirm Go Task and the development packages are
 available:
