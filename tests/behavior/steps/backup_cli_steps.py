@@ -32,6 +32,10 @@ def run_backup_create(
     isolate_network,
     restore_environment,
 ):
+    monkeypatch.setattr(BackupManager, "list_backups", lambda d: [])
+    monkeypatch.setattr("autoresearch.storage.StorageManager.setup", lambda *a, **k: None)
+    monkeypatch.setattr("autoresearch.storage.setup", lambda *a, **k: None)
+
     def fake_create_backup(
         backup_dir,
         db_filename="kg.duckdb",
@@ -64,6 +68,8 @@ def run_backup_list(
     isolate_network,
     restore_environment,
 ):
+    monkeypatch.setattr("autoresearch.storage.StorageManager.setup", lambda *a, **k: None)
+    monkeypatch.setattr("autoresearch.storage.setup", lambda *a, **k: None)
     monkeypatch.setattr(
         BackupManager,
         "list_backups",
@@ -90,6 +96,8 @@ def run_backup_restore(
     isolate_network,
     restore_environment,
 ):
+    monkeypatch.setattr("autoresearch.storage.StorageManager.setup", lambda *a, **k: None)
+    monkeypatch.setattr("autoresearch.storage.setup", lambda *a, **k: None)
     monkeypatch.setattr(
         BackupManager,
         "restore_backup",
@@ -129,4 +137,10 @@ def test_backup_list():
 
 @scenario("../features/backup_cli.feature", "Restore backup")
 def test_backup_restore_scenario():
+    pass
+
+
+@scenario("../features/backup_roundtrip.feature", "Create then list backups")
+def test_backup_roundtrip():
+    """Create a backup and verify it appears in the listing."""
     pass
