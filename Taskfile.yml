@@ -23,13 +23,14 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - >
-          uv sync --extra dev-minimal{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+          uv sync --extra dev-minimal --extra test{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
       Initialize dev env with minimal tools.
-      Set EXTRAS="test nlp ui" to include optional features:
-      analysis, distributed, git, llm, minimal, nlp, parsers, ui, vss, test
+      Syncs dev-minimal and test extras by default.
+      Set EXTRAS="nlp ui" to include optional features:
+      analysis, distributed, git, llm, minimal, nlp, parsers, ui, vss
   check-env:
     cmds:
       - uv run python scripts/check_env.py

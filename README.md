@@ -96,8 +96,15 @@ Autoresearch exposes optional extras to enable additional features:
 - `git` – local Git repository search
 - `full` – installs `nlp`, `ui`, `vss`, `distributed`, and `analysis`
 
-Install extras with `uv sync --extra nlp` or
-`pip install "autoresearch[nlp]"`.
+Install extras with `uv sync --extra <name>` or
+`pip install "autoresearch[<name>]"`. Examples:
+
+```bash
+uv sync --extra nlp          # language processing
+uv sync --extra ui           # Streamlit interface
+uv sync --extra distributed  # Ray and Redis
+uv sync --extra llm          # LLM libraries
+```
 
 ## Building the documentation
 
