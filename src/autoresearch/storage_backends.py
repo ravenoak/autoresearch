@@ -56,7 +56,9 @@ class DuckDBStorageBackend:
         self._pool: Optional[Queue[DuckDBConnection]] = None
         self._max_connections: int = 1
 
-    def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
+    def setup(
+        self, db_path: Optional[str] = None, skip_migrations: bool = False
+    ) -> None:
         """
         Initialize the DuckDB connection and create required tables.
 
@@ -92,7 +94,8 @@ class DuckDBStorageBackend:
                     else os.getenv("DUCKDB_PATH", "kg.duckdb")
                 )
             )
-            self._path = path
+            memory_mode = path == ":memory:"
+            self._path = None if memory_mode else path
 
             try:
                 self._conn = duckdb.connect(path)
@@ -101,16 +104,20 @@ class DuckDBStorageBackend:
                 self._conn = None
                 raise StorageError("Failed to connect to DuckDB database", cause=e)
 
-            # Create connection pool
-            max_conn = getattr(cfg, "max_connections", 1)
-            try:
-                self._max_connections = int(max_conn)
-            except Exception:
+            # Create connection pool unless using an in-memory database
+            if memory_mode:
                 self._max_connections = 1
-            self._pool = Queue(maxsize=self._max_connections)
-            self._pool.put(self._conn)
-            for _ in range(self._max_connections - 1):
-                self._pool.put(duckdb.connect(path))
+                self._pool = None
+            else:
+                max_conn = getattr(cfg, "max_connections", 1)
+                try:
+                    self._max_connections = int(max_conn)
+                except Exception:
+                    self._max_connections = 1
+                self._pool = Queue(maxsize=self._max_connections)
+                self._pool.put(self._conn)
+                for _ in range(self._max_connections - 1):
+                    self._pool.put(duckdb.connect(path))
 
             # Load VSS extension if enabled
             if cfg.vector_extension:
@@ -134,11 +141,15 @@ class DuckDBStorageBackend:
                         if ext_path and "VECTOR_EXTENSION_PATH" not in os.environ:
                             os.environ["VECTOR_EXTENSION_PATH"] = ext_path
                             try:
-                                self._has_vss = VSSExtensionLoader.load_extension(self._conn)
+                                self._has_vss = VSSExtensionLoader.load_extension(
+                                    self._conn
+                                )
                                 if self._has_vss:
                                     log.info("VSS extension loaded from offline cache")
                                 else:
-                                    log.warning("VSS extension offline fallback unavailable")
+                                    log.warning(
+                                        "VSS extension offline fallback unavailable"
+                                    )
                             except (duckdb.Error, StorageError) as e:  # type: ignore[attr-defined]
                                 log.error(f"Offline VSS load failed: {e}")
                                 self._has_vss = False
@@ -146,7 +157,8 @@ class DuckDBStorageBackend:
 
                 if (
                     not self._has_vss
-                    and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
+                    and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower()
+                    == "true"
                     and os.getenv("PYTEST_CURRENT_TEST") is None
                 ):
                     raise StorageError("Failed to load VSS extension", cause=last_exc)
@@ -193,11 +205,14 @@ class DuckDBStorageBackend:
             # Create embeddings table with a fixed dimension for the embedding column
             # Using FLOAT[384] instead of DOUBLE[] to ensure compatibility with HNSW index
             self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS embeddings(" "node_id VARCHAR, embedding FLOAT[384])"
+                "CREATE TABLE IF NOT EXISTS embeddings("
+                "node_id VARCHAR, embedding FLOAT[384])"
             )
 
             # Create metadata table for schema versioning
-            self._conn.execute("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)")
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"
+            )
 
             # Initialize schema version if it doesn't exist
             self._initialize_schema_version()
@@ -224,9 +239,10 @@ class DuckDBStorageBackend:
 
         try:
             # Check if schema_version exists
-            result = self._conn.execute(
+            rows = self._conn.execute(
                 "SELECT value FROM metadata WHERE key = 'schema_version'"
-            ).fetchone()
+            ).fetchall()
+            result = rows[0] if rows else None
 
             # If not, initialize it to version 1
             if result is None:
@@ -256,14 +272,17 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         try:
-            result = self._conn.execute(
+            rows = self._conn.execute(
                 "SELECT value FROM metadata WHERE key = 'schema_version'"
-            ).fetchone()
+            ).fetchall()
+            result = rows[0] if rows else None
 
             if result is None:
                 if initialize_if_missing:
                     # This should not happen as _initialize_schema_version should have been called
-                    log.warning("Schema version not found in metadata table, initializing to 1")
+                    log.warning(
+                        "Schema version not found in metadata table, initializing to 1"
+                    )
                     self._initialize_schema_version()
                     return 1
                 else:
@@ -312,11 +331,15 @@ class DuckDBStorageBackend:
             current_version = self.get_schema_version()
             latest_version = 1  # Update this when adding new migrations
 
-            log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
+            log.info(
+                f"Current schema version: {current_version}, latest version: {latest_version}"
+            )
 
             # Run migrations sequentially
             if current_version is None or current_version < latest_version:
-                log.info(f"Running migrations from version {current_version} to {latest_version}")
+                log.info(
+                    f"Running migrations from version {current_version} to {latest_version}"
+                )
 
                 # Example migration pattern for future use:
                 # if current_version < 2:
@@ -371,8 +394,8 @@ class DuckDBStorageBackend:
                 metric = "l2sq"
 
             # Check if the embeddings table is empty
-            result = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()
-            count = result[0] if result else 0
+            rows = self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchall()
+            count = rows[0][0] if rows else 0
 
             if count == 0:
                 # If the table is empty, insert a dummy embedding to ensure the HNSW index can be created
@@ -414,7 +437,9 @@ class DuckDBStorageBackend:
                 # If we inserted a dummy embedding, remove it now
                 if count == 0:
                     try:
-                        self._conn.execute("DELETE FROM embeddings WHERE node_id = ?", [dummy_id])
+                        self._conn.execute(
+                            "DELETE FROM embeddings WHERE node_id = ?", [dummy_id]
+                        )
                         log.debug("Removed dummy embedding after HNSW index creation")
                     except Exception as e:
                         log.warning(f"Failed to remove dummy embedding: {e}")
@@ -428,7 +453,9 @@ class DuckDBStorageBackend:
                 "SELECT index_name FROM duckdb_indexes() WHERE table_name='embeddings'"
             ).fetchall()
             if not indexes:
-                log.warning("HNSW index creation appeared to succeed, but no index was found")
+                log.warning(
+                    "HNSW index creation appeared to succeed, but no index was found"
+                )
             else:
                 log.info(f"Verified index creation: {indexes}")
 
@@ -638,9 +665,13 @@ class DuckDBStorageBackend:
         try:
             # Set search parameters for better recall
             try:
-                ef_search = getattr(cfg.storage, "hnsw_ef_search", cfg.storage.vector_nprobe)
+                ef_search = getattr(
+                    cfg.storage, "hnsw_ef_search", cfg.storage.vector_nprobe
+                )
                 if getattr(cfg.storage, "hnsw_auto_tune", False):
-                    tuned = max(cfg.storage.hnsw_m * 2, cfg.storage.hnsw_ef_construction // 2)
+                    tuned = max(
+                        cfg.storage.hnsw_m * 2, cfg.storage.hnsw_ef_construction // 2
+                    )
                     if tuned > ef_search:
                         log.debug(f"Auto-tuned ef_search from {ef_search} to {tuned}")
                         ef_search = tuned
@@ -649,9 +680,13 @@ class DuckDBStorageBackend:
 
                 # Set additional optimization parameters if available in config
                 if hasattr(cfg, "vector_search_batch_size"):
-                    self._conn.execute(f"SET vss_search_batch_size={cfg.vector_search_batch_size}")
+                    self._conn.execute(
+                        f"SET vss_search_batch_size={cfg.vector_search_batch_size}"
+                    )
             except Exception as e:
-                log.debug(f"Failed to set search parameters: {e}, continuing with defaults")
+                log.debug(
+                    f"Failed to set search parameters: {e}, continuing with defaults"
+                )
 
             # Format query embedding as vector literal
             vector_literal = f"[{', '.join(str(x) for x in query_embedding)}]"
@@ -674,7 +709,8 @@ class DuckDBStorageBackend:
                     vector=vector_literal,
                     metric=(
                         cfg.storage.hnsw_metric
-                        if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric")
+                        if hasattr(cfg, "storage")
+                        and hasattr(cfg.storage, "hnsw_metric")
                         else "cosine"
                     ),
                 )
@@ -691,8 +727,8 @@ class DuckDBStorageBackend:
                 if similarity_threshold > 0:
                     similarity_condition = f"""
                         CASE
-                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (e.embedding <-> {vector_literal})
-                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (e.embedding <=> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric") else "cosine"}' = 'cosine' THEN 1 - (e.embedding <-> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric") else "cosine"}' = 'ip' THEN 1 - (e.embedding <=> {vector_literal})
                             ELSE 1 / (1 + (e.embedding <-> {vector_literal}))
                         END >= {similarity_threshold}
                     """
@@ -721,7 +757,8 @@ class DuckDBStorageBackend:
                     vector=vector_literal,
                     metric=(
                         cfg.storage.hnsw_metric
-                        if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric")
+                        if hasattr(cfg, "storage")
+                        and hasattr(cfg.storage, "hnsw_metric")
                         else "cosine"
                     ),
                 )
@@ -731,8 +768,8 @@ class DuckDBStorageBackend:
                 if similarity_threshold > 0:
                     similarity_condition = f"""
                         CASE
-                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'cosine' THEN 1 - (embedding <-> {vector_literal})
-                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, 'storage') and hasattr(cfg.storage, 'hnsw_metric') else 'cosine'}' = 'ip' THEN 1 - (embedding <=> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric") else "cosine"}' = 'cosine' THEN 1 - (embedding <-> {vector_literal})
+                            WHEN '{cfg.storage.hnsw_metric if hasattr(cfg, "storage") and hasattr(cfg.storage, "hnsw_metric") else "cosine"}' = 'ip' THEN 1 - (embedding <=> {vector_literal})
                             ELSE 1 / (1 + (embedding <-> {vector_literal}))
                         END >= {similarity_threshold}
                     """
@@ -748,12 +785,16 @@ class DuckDBStorageBackend:
             try:
                 # Set a query timeout if configured
                 if hasattr(cfg, "vector_search_timeout_ms"):
-                    self._conn.execute(f"SET query_timeout_ms={cfg.vector_search_timeout_ms}")
+                    self._conn.execute(
+                        f"SET query_timeout_ms={cfg.vector_search_timeout_ms}"
+                    )
 
                 # Execute the query
                 rows = self._conn.execute(sql).fetchall()
             except Exception as e:
-                log.warning(f"Vector search query failed, falling back to simpler query: {e}")
+                log.warning(
+                    f"Vector search query failed, falling back to simpler query: {e}"
+                )
                 # Fall back to a simpler query if the optimized one fails
                 simple_sql = f"SELECT node_id, embedding FROM embeddings ORDER BY embedding <-> {vector_literal} LIMIT {k}"
                 rows = self._conn.execute(simple_sql).fetchall()
@@ -780,7 +821,9 @@ class DuckDBStorageBackend:
 
             # Log performance metrics
             search_time = time.time() - start_time
-            log.debug(f"Vector search completed in {search_time:.4f}s with {len(results)} results")
+            log.debug(
+                f"Vector search completed in {search_time:.4f}s with {len(results)} results"
+            )
 
             return results
         except Exception as e:

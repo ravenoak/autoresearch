@@ -38,3 +38,10 @@ enforcement under concurrency [d1][t4][t5].
 [t3]: ../../tests/unit/test_storage_eviction.py
 [t4]: ../../tests/integration/test_storage_eviction.py
 [t5]: ../../tests/integration/test_storage_duckdb_fallback.py
+
+## Troubleshooting
+
+- **Missing tables after setup:** Run `initialize_storage()` to recreate the
+  schema. In-memory databases start empty, so the helper ensures the required
+  tables are present. Verify the DuckDB path is writable when using disk
+  storage.
