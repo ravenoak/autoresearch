@@ -34,6 +34,17 @@ on_success():
         failures = max(0, failures - 1)
 ```
 
+### Proof of breaker threshold
+
+- Start with failure count ``f = 0`` and state ``closed``.
+- After each critical error ``f`` increments by one.
+- After the third critical error ``f = 3`` so ``f >= threshold`` and the
+  state flips to ``open``.
+- No further attempts succeed until ``now - last_failure > cooldown``. At that
+  moment ``update_circuit_breaker`` sets the state to ``half-open``.
+- A subsequent success triggers ``handle_agent_success`` which resets
+  ``f = 0`` and returns the state to ``closed``.
+
 ## Parallel execution simulation
 
 1. Agent groups run in a thread pool with at most ``cpu_count - 1``
@@ -56,6 +67,15 @@ with ThreadPoolExecutor(max_workers):
 aggregate = Synthesizer.execute(state)
 return state.synthesize()
 ```
+
+### Proof of merging invariant
+
+- Each group emits exactly one claim ``c_i``.
+- ``as_completed`` may return groups in any order ``p``.
+- For every finished group ``collect_result`` appends ``c_i`` to the shared
+  state. Appending is order-independent for set membership.
+- The final state therefore contains the set ``{c_1, ..., c_n}`` regardless of
+  ``p``. Each claim appears once because no group is processed twice.
 
 These simulations confirm that three critical failures trip the breaker and
 that parallel merging preserves one claim per group regardless of scheduling

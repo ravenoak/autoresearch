@@ -40,6 +40,10 @@ and error handling while providing detailed logging and token counting.
   - [tests/unit/test_orchestrator_circuit_breaker_property.py][t6]
   - [tests/unit/test_orchestrator_parallel_property.py][t7]
   - [tests/targeted/test_orchestration_metrics.py][t8]
+  - [tests/behavior/features/circuit_breaker_recovery.feature][t9]
+  - [tests/behavior/features/parallel_group_merging.feature][t10]
+  - [tests/unit/test_orchestrator_breaker_state_transitions.py][t11]
+  - [tests/unit/test_orchestrator_parallel_deterministic.py][t12]
 
 [m1]: ../../src/autoresearch/orchestration/
 [d1]: ../../docs/algorithms/orchestration.md
@@ -51,3 +55,7 @@ and error handling while providing detailed logging and token counting.
 [t6]: ../../tests/unit/test_orchestrator_circuit_breaker_property.py
 [t7]: ../../tests/unit/test_orchestrator_parallel_property.py
 [t8]: ../../tests/targeted/test_orchestration_metrics.py
+[t9]: ../../tests/behavior/features/circuit_breaker_recovery.feature
+[t10]: ../../tests/behavior/features/parallel_group_merging.feature
+[t11]: ../../tests/unit/test_orchestrator_breaker_state_transitions.py
+[t12]: ../../tests/unit/test_orchestrator_parallel_deterministic.py
