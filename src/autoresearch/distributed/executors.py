@@ -6,7 +6,7 @@ import multiprocessing
 import os
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, cast
 
 from .. import search, storage
 from ..llm import pool as llm_pool
@@ -90,7 +90,7 @@ def _execute_agent_remote(
 
         llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
-    result = agent.execute(state, config)
+    result = agent.execute(cast(QueryState, state), config)
     msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
     if result_queue is not None:
         result_queue.put(msg)
@@ -108,7 +108,7 @@ def _execute_agent_process(
     if storage_queue is not None:
         storage.set_message_queue(storage_queue)
     agent = AgentFactory.get(agent_name)
-    result = agent.execute(state, config)
+    result = agent.execute(cast(QueryState, state), config)
     msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
     if result_queue is not None:
         result_queue.put(msg)

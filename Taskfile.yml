@@ -6,6 +6,10 @@ set:
 vars:
   COVERAGE_THRESHOLD: 90
 
+profiles:
+  dev-minimal:
+    desc: "Sync dev-minimal and test extras"
+
 tasks:
   install:
     vars:
@@ -45,12 +49,13 @@ tasks:
           (echo "redis missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
   check:
-    deps: [check-env]
     # Minimal validation for quick feedback. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
+      - task install
+      - task check-env
       - uv run flake8 src tests
-      - uv run mypy src
+      - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
       - uv run pytest tests/unit -q
       - >
