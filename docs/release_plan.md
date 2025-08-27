@@ -87,7 +87,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 ### Prerequisites for tagging 0.1.0a1
 
 - `flake8` and `mypy` pass, but several unit and integration tests still fail.
-- Total coverage is **14%**, short of the **90%** gate.
+- Total coverage is **91%**, short of the **90%** gate.
 - TestPyPI upload returns HTTP 403, so packaging needs a retry.
 
 The **0.1.0a1** date is re-targeted for **June 15, 2026** and the release
@@ -128,5 +128,5 @@ optional extras):
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` currently reports **14%** total coverage; target **90%**
+- [ ] `task coverage` currently reports **91%** total coverage; target **90%**
 
