@@ -10,7 +10,9 @@ None
 
 ## Acceptance Criteria
 - Script catches `duckdb.Error` instead of `duckdb.DuckDBError`.
-- Failing downloads fall back to the stub extension without stack traces.
+- Failed downloads retry and fall back to the stub extension without stack
+  traces.
+- Extension load is verified on Linux and macOS.
 - Unit test covers the error path.
 - `docs/algorithms/storage.md` notes the fallback behavior.
 
