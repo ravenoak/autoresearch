@@ -80,3 +80,16 @@ return state.synthesize()
 These simulations confirm that three critical failures trip the breaker and
 that parallel merging preserves one claim per group regardless of scheduling
 order.
+
+### Reference implementations
+
+- Unit test `tests/unit/orchestration/test_circuit_breaker_thresholds.py`
+  validates the breaker threshold and recovery sequence.
+- Unit test `tests/unit/orchestration/test_parallel_merge_invariant.py`
+  exercises the merging invariant under concurrent execution.
+
+### Assumptions
+
+- Each agent group contributes a unique claim string.
+- Results are merged into a dictionary keyed by joined group labels so
+  insertion order does not affect membership.
