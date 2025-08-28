@@ -15,6 +15,7 @@ any tests. The DuckDB extension bootstrap script also fails to catch
 ## Acceptance Criteria
 - `task check` and `task verify` retain required test packages after `uv sync`.
 - `scripts/check_env.py` completes without missing-module errors.
+- `dev-minimal` extra includes `pytest-bdd`, `freezegun`, and `hypothesis` so `scripts/check_env.py` passes.
 - Extension bootstrap catches `duckdb.Error` and ensures vector search support.
 - Regression tests cover dependency retention and bootstrap failure paths.
 
