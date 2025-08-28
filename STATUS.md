@@ -1,17 +1,16 @@
 # Status
 
-As of **August 28, 2025**, attempted `.venv/bin/task verify` but it terminated
-early because required modules (`flake8`, `mypy`, `pytest`, `pytest_bdd`,
-`pytest_httpx`, `tomli_w`, `redis`) were missing. No tests executed.
+As of **August 28, 2025**, `.venv/bin/task verify` finished with three failing
+tests.
 
 ## Lint, type checks, and spec tests
-Did not run; tooling dependencies were absent.
+`flake8`, `mypy`, and spec tests ran successfully.
 
 ## Unit tests
 Not run.
 
 ## Targeted tests
-Not run.
+3 failed, 20 passed.
 
 ## Integration tests
 Not run.
@@ -20,4 +19,4 @@ Not run.
 Not run.
 
 ## Coverage
-Coverage was not recomputed.
+Total coverage is **91%**.

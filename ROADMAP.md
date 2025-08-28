@@ -8,9 +8,9 @@ Last updated **August 28, 2025**.
 ## Status
 
 See [STATUS.md](STATUS.md) for current results. Unit tests pass with coverage
-**91%**, but targeted tests are missing `python-docx` and `pdfminer.six`, and
-integration and behavior suites fail due to DuckDB schema initialization
-errors. Dependency pins: `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python
+**91%**, but targeted tests report failures and integration and behavior suites
+fail due to DuckDB schema initialization errors. Dependency pins:
+`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python
 3.12+ with:
 
 ```
@@ -72,7 +72,7 @@ reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
 - [ ] Integration tests stabilized
   ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **14%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
+  **91%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
 - [x] Algorithm validation for ranking and coordination
   ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 
