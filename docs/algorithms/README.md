@@ -9,6 +9,7 @@
 - [Source Credibility](source_credibility.md)
 - [Validation](validation.md)
 - [Distributed Coordination](distributed_coordination.md)
+- [Orchestration Simulations](orchestration.md)
 - [Weight Tuning](weight_tuning.md)
 - [Config Hot Reload](config_hot_reload.md)
 - [Dialectical Agent Coordination](dialectical_coordination.md)
