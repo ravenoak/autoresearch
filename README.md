@@ -27,8 +27,14 @@ processing. Install them on demand with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
-tagged `requires_distributed`. When Redis is absent those scenarios are
-skipped.
+tagged `requires_distributed`. The test suite's `redis_client` fixture connects
+to a local server or starts a lightweight `fakeredis` instance. When neither
+service is available those scenarios are skipped. Run the distributed tests
+with:
+
+```bash
+uv run pytest -m requires_distributed -q
+```
 
 To bootstrap a Python 3.12+ environment with the lightweight development and test
 extras run:

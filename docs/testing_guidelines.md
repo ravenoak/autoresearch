@@ -422,21 +422,18 @@ Install the extra and run the marked scenarios directly:
 
 ```bash
 uv pip install -e '.[distributed]'
-pytest -m requires_distributed
+uv run pytest -m requires_distributed -q
 ```
 
-For local development, a Redis service is defined in `docker-compose.yml`.
-Start it with:
+The `redis_client` fixture connects to a local Redis server when available and
+falls back to a lightweight `fakeredis` instance. Tests tagged
+`requires_distributed` are skipped when neither service is running.
+
+For local development you can start a Redis container with:
 
 ```bash
 docker-compose up -d redis
 ```
-
-If no Redis server is running, tests fall back to `fakeredis`.
-`pytest -m requires_distributed` exits quickly when neither Redis nor
-`fakeredis` is available.
-The `redis_client` fixture provides a lightweight `fakeredis` instance or an
-in-memory stub so most tests run without external services.
 
 ## Required services and data
 
