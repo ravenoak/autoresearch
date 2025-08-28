@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update coverage numbers in project documentation.
+"""Update coverage numbers in STATUS.md and docs/release_plan.md.
 
 Usage:
     uv run python scripts/update_coverage_docs.py [--file coverage.xml]
@@ -17,9 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FILES = [
     ROOT / "STATUS.md",
-    ROOT / "ROADMAP.md",
     ROOT / "docs" / "release_plan.md",
-    ROOT / "CHANGELOG.md",
 ]
 
 PATTERNS = [

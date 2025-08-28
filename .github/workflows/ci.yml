@@ -6,9 +6,6 @@ name: CI
 on:
   workflow_dispatch:
 
-env:
-  COVERAGE_THRESHOLD: 90
-
 jobs:
   verify:
     runs-on: ${{ matrix.os }}
@@ -46,8 +43,7 @@ jobs:
       - name: Run task coverage
         run: uv run task coverage
       - name: Enforce coverage threshold
-        run: |
-          uv run coverage report --fail-under=${{ env.COVERAGE_THRESHOLD }}
+        run: uv run coverage report --fail-under=90
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

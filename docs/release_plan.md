@@ -77,9 +77,9 @@ while packaging tasks are resolved.
   (see
   [validate-ranking-algorithms-and-agent-coordination.md](
   ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md))
-- [ ] Confirm CHANGELOG.md, STATUS.md and this plan share the same coverage
-  details before tagging. CI runs `scripts/update_coverage_docs.py` after
-  `task coverage` to sync the value.
+- [ ] Confirm STATUS.md and this plan share the same coverage details before
+  tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
+  sync the value.
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
