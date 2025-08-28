@@ -4,8 +4,12 @@
 set -euo pipefail
 
 install_dev_test_extras() {
-    echo "Installing dev and test extras via uv sync --extra dev --extra test"
-    uv sync --extra dev --extra test
+    local extras="dev test"
+    if [ -n "${AR_EXTRAS:-}" ]; then
+        extras="$extras ${AR_EXTRAS}"
+    fi
+    echo "Installing extras via uv sync --extra ${extras// / --extra }"
+    uv sync $(for e in $extras; do printf -- '--extra %s ' "$e"; done)
     uv pip install -e .
 }
 

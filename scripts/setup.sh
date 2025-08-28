@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/setup.sh
+# Usage: AR_EXTRAS="nlp ui" ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
 # Create .venv, install or link Go Task to .venv/bin, and development/test
-# extras using uv. Ensure we are running with Python 3.12 or newer. Run
+# extras using uv. Optional extras are installed when AR_EXTRAS is set.
+# Ensure we are running with Python 3.12 or newer. Run
 # `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
 
@@ -58,7 +59,7 @@ if ! "$TASK_BIN" --version >/dev/null 2>&1; then
     exit 1
 fi
 
-# Install locked dependencies and development/test extras
+# Install locked dependencies, development/test extras, and AR_EXTRAS
 install_dev_test_extras
 
 # Verify dev and test extras are installed

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: AR_INSTALL_UI=1 AR_INSTALL_NLP=1 ./scripts/codex_setup.sh
+# Usage: AR_EXTRAS="ui nlp" ./scripts/codex_setup.sh
 # Codex-only environment bootstrap for this evaluation container; see AGENTS.md
 # for repository-wide guidelines. Do not use or document this script outside the
 # AGENTS.md system. For any other environment, use `./scripts/setup.sh`.
@@ -98,7 +98,7 @@ if ! retry 3 apt-get clean; then
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Install dev and test dependencies
+# Install dev and test dependencies plus AR_EXTRAS
 install_dev_test_extras
 ensure_venv_bin_on_path ".venv/bin"
 
@@ -113,14 +113,6 @@ command -v task >/dev/null 2>&1 || {
 }
 # Verify Task installation by printing its version
 task --version
-
-# Install optional extras on demand
-if [ "${AR_INSTALL_UI:-0}" -eq 1 ]; then
-    uv sync --extra ui
-fi
-if [ "${AR_INSTALL_NLP:-0}" -eq 1 ]; then
-    uv sync --extra nlp
-fi
 
 # Install pre-downloaded packages for offline use. Place wheel files in
 # $WHEELS_DIR and source archives in $ARCHIVES_DIR. See AGENTS.md for

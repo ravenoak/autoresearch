@@ -20,9 +20,8 @@ download fails. Manual installation instructions are below if needed.
 
 ## Setup scripts
 
-Use `scripts/setup.sh` for local development or any environment that is not the
-Codex evaluation container. The `scripts/codex_setup.sh` script configures that
-container and should not be used elsewhere.
+Use `scripts/setup.sh` for local development. Environment-specific helpers are
+documented in `AGENTS.md`.
 
 The Redis package installs with the `dev` extra. A running Redis server is
 required only for tests or features that use the `.[distributed]` extra. The
@@ -34,8 +33,9 @@ neither service is available. Run them explicitly with:
 uv run pytest -m requires_distributed -q
 ```
 
-Optional extras enable additional capabilities and are installed on
-demand with `uv sync --extra <name>`.
+Optional extras enable additional capabilities. Install them with
+`uv sync --extra <name>` or by setting `AR_EXTRAS` when running the setup
+script.
 
 For a lean setup, sync the minimal development and test extras:
 
@@ -64,6 +64,7 @@ Include extras only when required. Examples:
 EXTRAS="nlp" task install      # adds NLP packages
 uv sync --extra llm            # sentence-transformers and transformers
 VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
+AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
 
 Set `VERIFY_PARSERS=1` when running `task verify` to sync the `parsers`
@@ -291,18 +292,25 @@ extras explicitly with pip to enable additional features, e.g.
 
 Additional functionality is grouped into optional extras. These are not
 installed by `task install`; enable them with `uv sync --extra <name>` or
-`pip install "autoresearch[<name>]"`:
+`pip install "autoresearch[<name>]"`. `scripts/setup.sh` accepts extras via the
+`AR_EXTRAS` environment variable.
 
-- `nlp` – language processing via spaCy and BERTopic
-- `llm` – heavy dependencies like `sentence-transformers` and `transformers`
-- `parsers` – PDF and DOCX document ingestion
-- `ui` – the reference Streamlit interface
-- `vss` – DuckDB VSS extension for vector search
-- `distributed` – distributed processing with Ray and Redis
-- `analysis` – Polars-based data analysis utilities
-- `git` – local Git repository search support
-- `full` – installs most extras (nlp, ui, vss, distributed, analysis)
-  but omits `parsers` and `git`
+| Extra       | Setup command                     |
+|-------------|-----------------------------------|
+| minimal     | `uv sync --extra minimal`         |
+| nlp         | `uv sync --extra nlp`             |
+| ui          | `uv sync --extra ui`              |
+| vss         | `uv sync --extra vss`             |
+| parsers     | `uv sync --extra parsers`         |
+| git         | `uv sync --extra git`             |
+| distributed | `uv sync --extra distributed`     |
+| analysis    | `uv sync --extra analysis`        |
+| llm         | `uv sync --extra llm`             |
+| test        | `uv sync --extra test`            |
+| full        | `uv sync --extra full`            |
+| dev         | `uv sync --extra dev`             |
+| dev-minimal | `uv sync --extra dev-minimal`     |
+| build       | `uv sync --extra build`           |
 
 Examples:
 
