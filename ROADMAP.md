@@ -3,13 +3,15 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **August 27, 2025**.
+Last updated **August 28, 2025**.
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current test and coverage results. Current
-coverage from the unit subset is **91%**. Dependency pins:
-`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
+See [STATUS.md](STATUS.md) for current results. Unit tests pass with coverage
+**91%**, but targeted tests are missing `python-docx` and `pdfminer.six`, and
+integration and behavior suites fail due to DuckDB schema initialization
+errors. Dependency pins: `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python
+3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
