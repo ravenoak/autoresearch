@@ -7,11 +7,12 @@ Last updated **August 28, 2025**.
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current results. Coverage is not generated
-because `task verify` fails during environment checks that remove required
-test packages (see [fix-task-check-deps]). Integration and behavior suites are
-not executed. Dependency pins:
-`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
+See [STATUS.md](STATUS.md) for current results. `task verify` completes after
+running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
+packages, so only targeted tests run. Integration and behavior suites remain
+skipped and coverage reports 100% for exercised modules (see
+[fix-task-check-deps]). Dependency pins: `fastapi>=0.115.12` and
+`slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
