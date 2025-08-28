@@ -98,6 +98,7 @@ rm -rf /var/lib/apt/lists/*
 # Install minimal dev and test dependencies
 uv sync --extra dev-minimal --extra test
 uv pip install -e .
+uv pip install pytest pytest-bdd freezegun hypothesis
 
 # Install Go Task inside the virtual environment and expose it on PATH
 if ! retry 3 bash -c "curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin"; then

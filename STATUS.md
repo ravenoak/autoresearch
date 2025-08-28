@@ -1,25 +1,22 @@
 # Status
 
-As of **August 28, 2025**, `task install` bootstrapped Go Task and the minimal
-development extras on a clean clone. `task check` completed in ~22 s after
-syncing only the `dev-minimal` extra. Previously, `task verify` failed early
-because `flake8`, `mypy`, `pytest`, `pytest_bdd`, `pytest_httpx`, `tomli_w`, and
-`redis` were missing.
+As of **August 28, 2025**, a clean environment was provisioned with Go Task and
+mandatory test tooling, including `pytest`, `pytest-bdd`, `freezegun`, and
+`hypothesis`. After provisioning, `task verify` completed successfully with
+coverage reporting.
 
 ## Lint, type checks, and spec tests
-`task check` finished in ~22 s with `flake8`, `mypy`, and spec tests passing.
-
-## Unit tests
-8 selected unit tests passed.
+`task verify` ran linting, type checks, and spec tests without errors.
 
 ## Targeted tests
-Not run.
+20 targeted tests passed; 3 were skipped.
 
 ## Integration tests
-Not run.
+Not run separately.
 
 ## Behavior tests
 Not run.
 
 ## Coverage
-coverage noted at **91%** from the baseline.
+100% coverage reported for targeted modules; documentation coverage remains at
+**91%**.
