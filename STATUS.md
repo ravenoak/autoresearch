@@ -1,15 +1,14 @@
 # Status
 
-As of **August 28, 2025**, the local environment installs Go Task, but `task check`
-fails because `uv sync --extra dev-minimal` removes `pytest_bdd`, `freezegun`, and
-`hypothesis`. The subsequent `scripts/check_env.py` call reports these modules
-missing, causing `task check` and `task verify` to exit early without running
-tests. The extension bootstrap script still fails to catch `duckdb.Error`, leaving
-the vector search extension absent.
+As of **August 4, 2025**, running `scripts/codex_setup.sh` installs Go Task but
+leaves `.venv/bin` outside `PATH`. After exporting `PATH`, `task check` fails
+because `uv sync --extra dev-minimal` removes `pytest_bdd`, `freezegun`, and
+`hypothesis`. `scripts/check_env.py` reports these modules missing, so `task
+check` and `task verify` exit early without running tests. Extension bootstrap was
+not reached.
 
 ## Lint, type checks, and spec tests
-`uv run flake8 src tests` and `uv run mypy src` ran without errors.
-`uv run python scripts/check_spec_tests.py` produced no output, indicating success.
+Not run due to environment failures.
 
 ## Targeted tests
 Not run. `task verify` exits during environment checks.
