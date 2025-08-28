@@ -13,7 +13,7 @@ addressed in parallel while other feature issues progress.
 - [fix-duckdb-schema-initialization](fix-duckdb-schema-initialization.md)
 - [configure-redis-service-for-tests](configure-redis-service-for-tests.md)
 - [improve-test-coverage-and-streamline-dependencies](
-  improve-test-coverage-and-streamline-dependencies.md)
+  archive/improve-test-coverage-and-streamline-dependencies.md)
 - [plan-a2a-mcp-behavior-tests](plan-a2a-mcp-behavior-tests.md)
 - [speed-up-task-check-and-reduce-dependency-footprint](
   speed-up-task-check-and-reduce-dependency-footprint.md)

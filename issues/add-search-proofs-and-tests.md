@@ -6,7 +6,7 @@ utilities operate without proofs or simulations, leaving correctness and failure
 recovery unspecified.
 
 ## Dependencies
-- [improve-test-coverage-and-streamline-dependencies](improve-test-coverage-and-streamline-dependencies.md)
+- [improve-test-coverage-and-streamline-dependencies](archive/improve-test-coverage-and-streamline-dependencies.md)
 
 ## Acceptance Criteria
 - Provide proofs or simulations for ranking logic and HTTP session handling.
