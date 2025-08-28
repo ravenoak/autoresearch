@@ -18,6 +18,15 @@ utilities in `src/autoresearch/distributed` provide these primitives.
   run in constant time. With `P` worker processes and average service time
   `t_s`, throughput is bounded by `P / t_s` messages per second.
 
+## Broker Types
+
+- `InMemoryBroker` wraps a shared `multiprocessing.Queue` and offers
+  `O(1)` publish operations.
+- `RedisBroker` pushes JSON strings to a Redis list; network latency is the
+  dominant cost while each `rpush` is `O(1)` for message size `s`.
+- `RayBroker` uses `ray.util.queue.Queue` to fan messages across workers with
+  constant-time enqueue.
+
 ## Scheduling Complexity
 
 - `ProcessExecutor.run_query` dispatches each agent through a multiprocessing
@@ -60,7 +69,9 @@ The coordinator selects the agent with the lowest identifier as the leader.
 Given `n` unique identifiers, the election terminates in `O(n)` comparisons
 and produces exactly one leader. The chosen identifier is guaranteed to
 belong to the original set, ensuring safety and determinism
-([distributed_coordination_sim.py](../../scripts/distributed_coordination_sim.py)).
+([simulation script][dc-sim]).
+
+[dc-sim]: ../../scripts/distributed_coordination_sim.py
 
 ### Message Ordering
 
