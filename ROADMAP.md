@@ -31,12 +31,26 @@ before running tests.
     issues/add-storage-proofs-and-simulations.md)
   - [configure-redis-service-for-tests](
     issues/configure-redis-service-for-tests.md)
+  - [fix-duckdb-schema-initialization](
+    issues/fix-duckdb-schema-initialization.md)
+  - [fix-task-check-dependency-removal-and-extension-bootstrap](
+    issues/fix-task-check-dependency-removal-and-extension-bootstrap.md)
+  - [handle-duckdb-extension-download-errors](
+    issues/handle-duckdb-extension-download-errors.md)
+  - [ensure-task-cli-available-after-setup](
+    issues/ensure-task-cli-available-after-setup.md)
+  - [audit-setup-script-dependencies](
+    issues/audit-setup-script-dependencies.md)
+  - [add-behavior-driven-test-coverage](
+    issues/add-behavior-driven-test-coverage.md)
+  - [speed-up-task-check-and-reduce-dependency-footprint](
+    issues/speed-up-task-check-and-reduce-dependency-footprint.md)
+  - [resolve-release-blockers-for-alpha](
+    issues/resolve-release-blockers-for-alpha.md)
 - 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI
   checks with all tests passing.
   - [improve-test-coverage-and-streamline-dependencies](
     issues/archive/improve-test-coverage-and-streamline-dependencies.md)
-  - [speed-up-task-check-and-reduce-dependency-footprint](
-    issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   issues/deliver-bug-fixes-and-docs-update.md)).
