@@ -21,4 +21,4 @@ smaller tasks will ease review and coordination.
 - Validate with `uv run pytest tests/behavior -m a2a_mcp -q`.
 
 ## Status
-Open
+Archived

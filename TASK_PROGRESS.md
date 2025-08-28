@@ -92,7 +92,8 @@ These integration test issues are archived after stabilization.
   - [ ] Add more detailed assertions [add-more-detailed-assertions](issues/archive/add-more-detailed-assertions.md)
   - [ ] Implement better test isolation [implement-better-test-isolation](issues/archive/implement-better-test-isolation.md)
   - [ ] Create more comprehensive test contexts [create-more-comprehensive-test-contexts](issues/archive/create-more-comprehensive-test-contexts.md)
-- [ ] Plan A2A MCP behavior tests [plan-a2a-mcp-behavior-tests](issues/plan-a2a-mcp-behavior-tests.md)
+- [x] Plan A2A MCP behavior tests
+  [plan-a2a-mcp-behavior-tests](issues/archive/plan-a2a-mcp-behavior-tests.md)
 
 These behavior test issues remain open until the test suite passes.
 
