@@ -1,11 +1,11 @@
 # Status
 
-As of **August 28, 2025**, Go Task is installed locally, but `task check` fails because
-`uv sync --extra dev-minimal` removes `pytest_bdd`, `freezegun`, and `hypothesis`. Attempts
-to reinstall them are undone by `uv sync`, so `scripts/check_env.py` reports missing modules
-and `task verify` stops before running tests.
-The extension bootstrap script also fails to catch `duckdb.Error`, leaving the
-vector search extension absent.
+As of **August 28, 2025**, the local environment installs Go Task, but `task check`
+fails because `uv sync --extra dev-minimal` removes `pytest_bdd`, `freezegun`, and
+`hypothesis`. The subsequent `scripts/check_env.py` call reports these modules
+missing, causing `task check` and `task verify` to exit early without running
+tests. The extension bootstrap script still fails to catch `duckdb.Error`, leaving
+the vector search extension absent.
 
 ## Lint, type checks, and spec tests
 `uv run flake8 src tests` and `uv run mypy src` ran without errors.
