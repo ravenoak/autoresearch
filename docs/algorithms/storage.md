@@ -7,6 +7,13 @@ Autoresearch supports DuckDB versions 1.2.2 up to, but not including, 2.0.0.
 See [DuckDB and VSS Extension Compatibility](../duckdb_compatibility.md) for
 details.
 
+## Offline extension downloads
+
+`download_duckdb_extensions.py` retries network failures before copying a
+previously cached file referenced by `VECTOR_EXTENSION_PATH` in `.env.offline`.
+If no copy exists, a stub is created so tests can proceed without vector
+search.
+
 ## Schema bootstrapping
 
 `initialize_storage` runs setup and verifies that the core DuckDB tables

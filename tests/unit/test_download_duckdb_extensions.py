@@ -6,9 +6,6 @@ from pathlib import Path
 
 import duckdb
 
-if not hasattr(duckdb, "DuckDBError"):
-    duckdb.DuckDBError = duckdb.Error  # type: ignore[attr-defined]
-
 spec = importlib.util.spec_from_file_location(
     "download_duckdb_extensions",
     Path(__file__).resolve().parents[2] / "scripts" / "download_duckdb_extensions.py",
@@ -20,12 +17,14 @@ spec.loader.exec_module(dde)
 class FailingConn:
     def __init__(self, path):
         self.path = path
+        self.calls = 0
 
     def execute(self, *args, **kwargs):
         return None
 
     def install_extension(self, name):
-        raise duckdb.DuckDBError("network failure")
+        self.calls += 1
+        raise duckdb.Error("network failure")
 
     def close(self):
         pass
@@ -61,11 +60,14 @@ def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
     env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(duckdb, "connect", lambda path: FailingConn(path))
+    conn = FailingConn("path")
+    monkeypatch.setattr(duckdb, "connect", lambda path: conn)
     caplog.set_level(logging.WARNING)
     result = dde.download_extension("vss", tmp_path, "linux_amd64")
     assert result == str(stub_path)
+    assert conn.calls == 3
     assert os.environ["VECTOR_EXTENSION_PATH"] == str(stub_path)
+    assert "after 3 attempts" in caplog.text
     assert "Falling back to offline configuration" in caplog.text
 
     monkeypatch.setattr(

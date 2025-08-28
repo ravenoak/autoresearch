@@ -169,9 +169,32 @@ def download_extension(extension_name, output_dir, platform_name=None):
             logger.info(f"Setting extension directory to: {extension_dir_path}")
             conn.execute(f"SET extension_directory='{extension_dir_path}'")
 
-            # Install the extension using the Python API
-            logger.info(f"Downloading {extension_name} extension for {platform_name}...")
-            conn.install_extension(extension_name)
+            # Install the extension using the Python API with retries
+            for attempt in range(3):
+                try:
+                    logger.info(
+                        "Downloading %s extension for %s (attempt %d)...",
+                        extension_name,
+                        platform_name,
+                        attempt + 1,
+                    )
+                    conn.install_extension(extension_name)
+                    break
+                except duckdb.Error as e:
+                    logger.warning(
+                        "Attempt %d to download %s failed: %s",
+                        attempt + 1,
+                        extension_name,
+                        e,
+                    )
+                    if attempt == 2:
+                        logger.warning(
+                            "Network error downloading %s extension after %d attempts. "
+                            "Attempting offline fallback.",
+                            extension_name,
+                            attempt + 1,
+                        )
+                        return _offline_fallback(extension_name, output_extension_dir)
 
             # Verify the extension was installed
             result = conn.execute(
@@ -210,9 +233,9 @@ def download_extension(extension_name, output_dir, platform_name=None):
             )
             return output_extension_dir
 
-        except duckdb.DuckDBError as e:
+        except duckdb.Error as e:
             logger.warning(
-                "Network error downloading %s extension: %s. Attempting offline fallback.",
+                "DuckDB error downloading %s extension: %s. Attempting offline fallback.",
                 extension_name,
                 e,
             )
