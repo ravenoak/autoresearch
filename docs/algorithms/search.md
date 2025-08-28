@@ -12,6 +12,12 @@ proven monotonic: increasing any component increases the final
 relevance. Weight normalization ensures convergence as detailed in
 [relevance_ranking.md](relevance_ranking.md).
 
+## Query expansion convergence
+
+A simple simulation iteratively expands queries using stored entities.
+After an initial enrichment step, further expansions return the same
+string, indicating the process converges.
+
 ## HTTP session behavior
 
 All network requests share a pooled `requests.Session`. The session
