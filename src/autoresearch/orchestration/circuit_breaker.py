@@ -10,7 +10,7 @@ breaker for a given agent.
 from __future__ import annotations
 
 import time
-from typing import TypedDict
+from typing import Callable, List, TypedDict
 
 from ..logging_utils import get_logger
 
@@ -27,9 +27,16 @@ class CircuitBreakerState(TypedDict):
 class CircuitBreakerManager:
     """Manage circuit breaker state for multiple agents."""
 
-    def __init__(self, threshold: int = 3, cooldown: int = 30) -> None:
+    def __init__(
+        self,
+        threshold: int = 3,
+        cooldown: int = 30,
+        *,
+        time_func: Callable[[], float] | None = None,
+    ) -> None:
         self.threshold = threshold
         self.cooldown = cooldown
+        self.time_func = time_func or time.time
         self.circuit_breakers: dict[str, CircuitBreakerState] = {}
 
     # ------------------------------------------------------------------
@@ -54,7 +61,8 @@ class CircuitBreakerManager:
             }
 
         breaker = self.circuit_breakers[agent_name]
-        current_time = time.time()
+        current_time = self.time_func()
+        elapsed = current_time - breaker["last_failure_time"]
 
         if error_category in ["critical", "recoverable"]:
             breaker["failure_count"] += 1
@@ -76,18 +84,17 @@ class CircuitBreakerManager:
             breaker["failure_count"] += 0.5
             breaker["last_failure_time"] = current_time
 
-        if breaker["state"] == "open":
-            if current_time - breaker["last_failure_time"] > self.cooldown:
-                breaker["state"] = "half-open"
-                breaker["recovery_attempts"] += 1
-                log.info(
-                    f"Circuit breaker for agent {agent_name} is now HALF-OPEN, attempting recovery",
-                    extra={
-                        "agent": agent_name,
-                        "circuit_state": "half-open",
-                        "recovery_attempts": breaker["recovery_attempts"],
-                    },
-                )
+        if breaker["state"] == "open" and elapsed > self.cooldown:
+            breaker["state"] = "half-open"
+            breaker["recovery_attempts"] += 1
+            log.info(
+                f"Circuit breaker for agent {agent_name} is now HALF-OPEN, attempting recovery",
+                extra={
+                    "agent": agent_name,
+                    "circuit_state": "half-open",
+                    "recovery_attempts": breaker["recovery_attempts"],
+                },
+            )
 
     def handle_agent_success(self, agent_name: str) -> None:
         """Reset or downgrade the circuit breaker state on success."""
@@ -120,4 +127,54 @@ class CircuitBreakerManager:
         return self.circuit_breakers[agent_name].copy()
 
 
-__all__ = ["CircuitBreakerManager", "CircuitBreakerState"]
+def simulate_circuit_breaker(
+    events: List[str],
+    *,
+    threshold: int = 3,
+    cooldown: int = 30,
+) -> List[str]:
+    """Simulate breaker states for a sequence of events.
+
+    Args:
+        events: Ordered list of ``"critical"``, ``"recoverable"``, ``"transient"``,
+            ``"success"`` or ``"tick"`` events. ``"tick"`` advances time without
+            modifying breaker state and is useful for simulating cooldown
+            periods.
+        threshold: Failure count before opening the breaker.
+        cooldown: Steps to wait before half-open recovery.
+
+    Returns:
+        List of breaker states after each event.
+    """
+
+    time_steps = [0.0]
+
+    def now() -> float:
+        return time_steps[0]
+
+    mgr = CircuitBreakerManager(
+        threshold=threshold, cooldown=cooldown, time_func=now
+    )
+    states: List[str] = []
+
+    for event in events:
+        if event == "tick":
+            states.append(mgr.get_circuit_breaker_state("agent")["state"])
+            time_steps[0] += 1
+            continue
+
+        if event == "success":
+            mgr.handle_agent_success("agent")
+        else:
+            mgr.update_circuit_breaker("agent", event)
+        states.append(mgr.get_circuit_breaker_state("agent")["state"])
+        time_steps[0] += 1
+
+    return states
+
+
+__all__ = [
+    "CircuitBreakerManager",
+    "CircuitBreakerState",
+    "simulate_circuit_breaker",
+]

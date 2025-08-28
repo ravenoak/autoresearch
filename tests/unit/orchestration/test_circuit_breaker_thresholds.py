@@ -8,17 +8,15 @@ from __future__ import annotations
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 
 
-def test_circuit_breaker_threshold_and_recovery(monkeypatch) -> None:
+def test_circuit_breaker_threshold_and_recovery() -> None:
     """Three critical failures open the breaker and recovery closes it."""
-
-    mgr = CircuitBreakerManager(threshold=3, cooldown=1)
 
     times = [0.0]
 
     def fake_time() -> float:
         return times[0]
 
-    monkeypatch.setattr("time.time", fake_time)
+    mgr = CircuitBreakerManager(threshold=3, cooldown=1, time_func=fake_time)
 
     for _ in range(3):
         mgr.update_circuit_breaker("agent", "critical")

@@ -45,6 +45,18 @@ on_success():
 - A subsequent success triggers ``handle_agent_success`` which resets
   ``f = 0`` and returns the state to ``closed``.
 
+### Determinism and error recovery
+
+- The function ``simulate_circuit_breaker`` advances a fake clock one
+  step per event. ``tick`` events move time forward without mutating
+  state, allowing cooldown periods to be modelled deterministically.
+- Replaying the same event sequence yields identical state transitions
+  because the manager depends only on the ordered events and the clock
+  value.
+- After the breaker opens, a ``tick`` followed by any error event moves
+  the state to ``half-open`` once the cooldown passes. A final
+  successful event closes the breaker and resets counters.
+
 ## Parallel execution simulation
 
 1. Agent groups run in a thread pool with at most ``cpu_count - 1``
@@ -85,8 +97,12 @@ order.
 
 - Unit test `tests/unit/orchestration/test_circuit_breaker_thresholds.py`
   validates the breaker threshold and recovery sequence.
+- Unit test `tests/unit/orchestration/test_circuit_breaker_determinism.py`
+  demonstrates deterministic replay and cooldown recovery.
 - Unit test `tests/unit/orchestration/test_parallel_merge_invariant.py`
   exercises the merging invariant under concurrent execution.
+- Unit test `tests/unit/orchestration/test_parallel_execute.py`
+  covers mixed success, error, and timeout paths.
 
 ### Assumptions
 
