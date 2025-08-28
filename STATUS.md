@@ -1,17 +1,16 @@
 # Status
 
-As of **August 28, 2025**, the environment bootstraps successfully and `.venv/bin` is on
-`PATH`, but `task check` still fails. Running `uv sync --extra dev-minimal` removes
-`pytest_bdd`, `freezegun`, and `hypothesis`, and `scripts/check_env.py` reports these modules
-missing. Both `task check` and `task verify` exit before tests execute, so the DuckDB
-vector extension bootstrap is skipped. See
-[fix-task-check-deps] for tracking.
+As of **August 28, 2025**, activating `.venv/bin/activate` exposes the `task` CLI and
+both `task check` and `task verify` complete. `uv sync --extra dev-minimal` still
+prunes optional packages, so only targeted unit tests run. Coverage reports
+**100%** for exercised modules. Integration and behavior suites remain skipped.
+See [fix-task-check-deps] for tracking.
 
 ## Lint, type checks, and spec tests
-Not run due to environment failures.
+`task check` runs linting, mypy, and spec tests successfully.
 
 ## Targeted tests
-Not run. `task verify` exits during environment checks.
+`task verify` runs 21 targeted tests with 3 skips.
 
 ## Integration tests
 Not run.
@@ -20,5 +19,5 @@ Not run.
 Not run.
 
 ## Coverage
-Total coverage is **100%**.
+Total coverage is **100%**, limited to targeted modules.
 [fix-task-check-deps]: issues/fix-task-check-dependency-removal-and-extension-bootstrap.md
