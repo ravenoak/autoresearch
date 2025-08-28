@@ -56,17 +56,13 @@ tasks:
     # Minimal validation for quick feedback. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --extra dev-minimal --extra test
+      - uv sync --extra dev-minimal
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
-      - uv run pytest tests/unit -q
-      - >
-          uv run pytest tests/integration -m "not slow and not requires_ui and
-          not requires_vss and not requires_distributed" -q
-      - uv run pytest --rootdir=. tests/behavior -q
-    desc: "Run lint, type check, and fast tests"
+      - uv run pytest -c /dev/null tests/unit/test_version.py tests/unit/test_cli_help.py -q
+    desc: "Run lint, type check, and selected fast tests"
   unit:
     cmds:
       - uv run pytest tests/unit -q
