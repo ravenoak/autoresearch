@@ -17,6 +17,7 @@ addressed in parallel while other feature issues progress.
 - [plan-a2a-mcp-behavior-tests](plan-a2a-mcp-behavior-tests.md)
 - [speed-up-task-check-and-reduce-dependency-footprint](
   speed-up-task-check-and-reduce-dependency-footprint.md)
+- [document-task-cli-requirement](document-task-cli-requirement.md)
 
 ## Acceptance Criteria
 - `scripts/codex_setup.sh` installs and verifies `pytest`, `pytest-bdd`,
