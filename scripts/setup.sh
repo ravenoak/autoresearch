@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# Create .venv, install or link Go Task to .venv/bin, and development/test extras using uv.
-# Ensure we are running with Python 3.12 or newer.
-# Run `uv run python scripts/check_env.py` at the end to validate tool versions.
+# Create .venv, install or link Go Task to .venv/bin, and development/test
+# extras using uv. Ensure we are running with Python 3.12 or newer. Run
+# `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
+
+# Shared helpers
+source "$(dirname "$0")/setup_common.sh"
 
 # Abort if python3 is not available
 if ! command -v python3 >/dev/null 2>&1; then
@@ -37,7 +40,7 @@ EOF
 
 # Add virtual environment bin to PATH for subsequent commands
 VENV_BIN="$(pwd)/.venv/bin"
-export PATH="$VENV_BIN:$PATH"
+ensure_venv_bin_on_path "$VENV_BIN"
 
 # Ensure Go Task lives inside the virtual environment
 TASK_BIN="$VENV_BIN/task"
@@ -56,11 +59,7 @@ if ! "$TASK_BIN" --version >/dev/null 2>&1; then
 fi
 
 # Install locked dependencies and development/test extras
-echo "Installing development and test extras via uv sync --extra dev --extra test"
-uv sync --extra dev --extra test
-
-# Link the project in editable mode so tools are available
-uv pip install -e .
+install_dev_test_extras
 
 # Verify dev and test extras are installed
 for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do

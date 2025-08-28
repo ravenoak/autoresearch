@@ -18,6 +18,12 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 Run `./scripts/setup.sh` for the full developer bootstrap or if the automatic
 download fails. Manual installation instructions are below if needed.
 
+## Setup scripts
+
+Use `scripts/setup.sh` for local development or any environment that is not the
+Codex evaluation container. The `scripts/codex_setup.sh` script configures that
+container and should not be used elsewhere.
+
 The Redis package installs with the `dev` extra. A running Redis server is
 required only for tests or features that use the `.[distributed]` extra. The
 test suite includes a `redis_client` fixture that connects to a local server or
