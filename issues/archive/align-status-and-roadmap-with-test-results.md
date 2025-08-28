@@ -8,8 +8,8 @@ test runs. Recent attempts show `task check` and `task verify` fail when
 environment is fixed.
 
 ## Dependencies
-- [resolve-release-blockers-for-alpha](resolve-release-blockers-for-alpha.md)
-- [fix-task-check-dependency-removal-and-extension-bootstrap](fix-task-check-dependency-removal-and-extension-bootstrap.md)
+- [resolve-release-blockers-for-alpha](../resolve-release-blockers-for-alpha.md)
+- [fix-task-check-deps]
 
 ## Acceptance Criteria
 - `STATUS.md` reflects current `task check` and `task verify` results.
@@ -18,4 +18,5 @@ environment is fixed.
 - Outdated coverage metrics are removed.
 
 ## Status
-Open
+Archived
+[fix-task-check-deps]: ../fix-task-check-dependency-removal-and-extension-bootstrap.md

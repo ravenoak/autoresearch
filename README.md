@@ -78,7 +78,8 @@ workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current test results and **91%** coverage.
+See [STATUS.md](STATUS.md) for current test results; coverage is unavailable
+while checks fail.
 Task-level progress and test reconciliation live in
 [TASK_PROGRESS.md](TASK_PROGRESS.md).
 

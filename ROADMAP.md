@@ -9,8 +9,9 @@ Last updated **August 28, 2025**.
 
 See [STATUS.md](STATUS.md) for current results. Coverage is not generated
 because `task verify` fails during environment checks that remove required
-test packages. Integration and behavior suites are not executed. Dependency
-pins: `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
+test packages (see [fix-task-check-deps]). Integration and behavior suites are
+not executed. Dependency pins:
+`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -59,9 +60,9 @@ for the alpha release checklist.
 This pre-release will provide an early package for testing once packaging tasks
 are verified. Related issue
 ([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)) tracks
-the work. Tagging **0.1.0a1** requires `task verify` to complete, coverage to
-reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
-**June 15, 2026**. Key activities include:
+the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
+coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
+release is re-targeted for **June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated
@@ -70,13 +71,15 @@ reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
   ([packaging-fallback](issues/archive/verify-packaging-workflow-and-duckdb-fallback.md)).
 - [ ] Integration tests stabilized
   ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
-- [ ] Coverage gates target **90%** total coverage; current coverage is **100%**
+- [ ] Coverage gates target **90%** total coverage once tests run
     ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
 - [x] Algorithm validation for ranking and coordination
   ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
+
+[fix-task-check-deps]: issues/fix-task-check-dependency-removal-and-extension-bootstrap.md
 
 ## 0.1.0 – First public preview
 
