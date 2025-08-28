@@ -207,3 +207,6 @@ echo "Running mypy..."
 uv run mypy src
 
 echo "Setup complete! VSS extension downloaded and configured."
+
+# Final verification step
+task --version
