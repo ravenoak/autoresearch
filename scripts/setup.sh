@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
 # Full developer bootstrap; see docs/installation.md.
-# Create .venv, install Go Task to .venv/bin, and development/test extras using uv.
+# Create .venv, install or link Go Task to .venv/bin, and development/test extras using uv.
 # Ensure we are running with Python 3.12 or newer.
 # Run `uv run python scripts/check_env.py` at the end to validate tool versions.
 set -euo pipefail
@@ -41,7 +41,12 @@ export PATH="$VENV_BIN:$PATH"
 
 # Ensure Go Task lives inside the virtual environment
 TASK_BIN="$VENV_BIN/task"
-if [ ! -x "$TASK_BIN" ]; then
+if [ -x "$TASK_BIN" ]; then
+    echo "Using Go Task from $TASK_BIN"
+elif command -v task >/dev/null 2>&1; then
+    echo "Linking existing Go Task into $TASK_BIN..."
+    ln -sf "$(command -v task)" "$TASK_BIN"
+else
     echo "Go Task missing; installing into $VENV_BIN..."
     curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
 fi

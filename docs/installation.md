@@ -6,11 +6,17 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands.
-`task install` checks for Go Task and downloads it to `.venv/bin` when
-missing. Run `./scripts/setup.sh` for the full developer bootstrap or if the
-automatic download fails. Manual installation instructions are below if
-needed.
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
+manually when it is missing:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+# macOS: brew install go-task/tap/go-task
+```
+
+`task install` checks for Go Task and downloads it to `.venv/bin` when missing.
+Run `./scripts/setup.sh` for the full developer bootstrap or if the automatic
+download fails. Manual installation instructions are below if needed.
 
 The Redis package installs with the `dev` extra. A running Redis server is
 required only for tests or features that use the `.[distributed]` extra. The
@@ -109,7 +115,7 @@ but you can install it manually:
 brew install go-task/tap/go-task
 
 # Linux
-curl -sSL https://taskfile.dev/install.sh | sh
+curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 ```
 
 After installation, initialize the environment:
