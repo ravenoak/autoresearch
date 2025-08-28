@@ -12,10 +12,15 @@ missing. Run `./scripts/setup.sh` for the full developer bootstrap or if the
 automatic download fails. Manual installation instructions are below if
 needed.
 
-The Redis package installs with the `dev` extra. A running Redis
-server is required only for tests or features that use the
-`.[distributed]` extra; when the service is absent those tests are skipped
-and distributed features stay disabled.
+The Redis package installs with the `dev` extra. A running Redis server is
+required only for tests or features that use the `.[distributed]` extra. The
+test suite includes a `redis_client` fixture that connects to a local server or
+spins up a lightweight `fakeredis` instance. Distributed tests are skipped when
+neither service is available. Run them explicitly with:
+
+```bash
+uv run pytest -m requires_distributed -q
+```
 
 Optional extras enable additional capabilities and are installed on
 demand with `uv sync --extra <name>`.

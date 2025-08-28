@@ -2,7 +2,6 @@ import importlib
 import importlib.util
 import os
 import sys
-import types
 from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, patch
@@ -120,29 +119,12 @@ NLP_AVAILABLE = _module_available("sentence_transformers")
 try:
     import redis
 
-    try:
-        redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
-        REDIS_AVAILABLE = True
-    except Exception:
-        import fakeredis
-
-        class _FakeRedis(fakeredis.FakeRedis):
-            @classmethod
-            def from_url(cls, url, **kwargs):
-                return cls(**kwargs)
-
-        redis.Redis = _FakeRedis  # type: ignore[assignment]
-        REDIS_AVAILABLE = True
+    redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
+    REDIS_AVAILABLE = True
 except Exception:
     try:
-        import fakeredis
+        import fakeredis  # noqa: F401
 
-        class _FakeRedis(fakeredis.FakeRedis):
-            @classmethod
-            def from_url(cls, url, **kwargs):
-                return cls(**kwargs)
-
-        sys.modules["redis"] = types.SimpleNamespace(Redis=_FakeRedis)
         REDIS_AVAILABLE = True
     except Exception:
         REDIS_AVAILABLE = False

@@ -21,10 +21,10 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
 - Fixtures such as `example_autoresearch_toml` and `example_env_file` provide
   temporary configuration and environment data. Use `tmp_path` and
   `monkeypatch` to isolate side effects in tests.
-- Redis-backed scenarios use the `requires_distributed` marker and skip when
-  no Redis server is available or the `.[distributed]` extra is missing.
-  A `redis_client` fixture backed by `fakeredis` or an in-memory stub allows
-  local testing without a running server.
+- Redis-backed scenarios use the `requires_distributed` marker. The
+  `redis_client` fixture connects to a local server or spins up a
+  lightweight `fakeredis` instance. Tests skip when neither service is
+  available or the `.[distributed]` extra is missing.
 - Tests tagged `requires_vss` depend on the DuckDB VSS extension but fall back
   to a stub implementation when the `vss` extra is not installed.
 
