@@ -296,5 +296,17 @@ fi
 # Validate required tool versions
 uv run python scripts/check_env.py
 
+# Append .venv/bin to PATH for the current shell session
+ensure_venv_bin_on_path "$PWD/.venv/bin"
+
+# Document how to activate the environment in future sessions
+cat <<'EOF'
+To activate the virtual environment, run:
+  source .venv/bin/activate
+EOF
+
+# Final verification step
+task --version
+
 # Python environment configured via uv sync and optional extras
 
