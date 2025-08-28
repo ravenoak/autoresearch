@@ -29,6 +29,8 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 - Drafted preliminary release notes and validated README installation steps.
   [assemble-release-notes-readme]
+- Handle DuckDB API changes by using `fetchall` for schema version lookup to
+  prevent `AttributeError` during table creation.
 
 ### [0.1.0-alpha.1]
 - Verified source and wheel builds succeed; TestPyPI upload returned 403 and needs retry.
