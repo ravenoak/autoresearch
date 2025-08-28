@@ -20,6 +20,7 @@ issues progress.
 - [speed-up-task-check-and-reduce-dependency-footprint](
   speed-up-task-check-and-reduce-dependency-footprint.md)
 - [document-task-cli-requirement](document-task-cli-requirement.md)
+- [handle-duckdb-extension-download-errors](handle-duckdb-extension-download-errors.md)
 
 ## Acceptance Criteria
 - `scripts/codex_setup.sh` installs and verifies `pytest`, `pytest-bdd`,
