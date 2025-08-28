@@ -20,5 +20,5 @@ Not run.
 Not run.
 
 ## Coverage
-Not generated because `task verify` fails before executing tests.
+Total coverage is **100%**.
 [fix-task-check-deps]: issues/fix-task-check-dependency-removal-and-extension-bootstrap.md

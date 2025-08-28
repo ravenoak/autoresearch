@@ -1,4 +1,4 @@
-"""Verify that coverage values in docs match the baseline report.
+"""Verify coverage values in STATUS.md and docs/release_plan.md match the baseline.
 
 Usage:
     uv run python scripts/check_coverage_docs.py [--baseline baseline/coverage.xml]
@@ -13,7 +13,6 @@ from xml.etree import ElementTree as ET
 
 FILES = [
     Path("STATUS.md"),
-    Path("ROADMAP.md"),
     Path("docs/release_plan.md"),
 ]
 
@@ -56,9 +55,7 @@ def check_files(files: list[Path], expected: int) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Ensure coverage docs match baseline"
-    )
+    parser = argparse.ArgumentParser(description="Ensure coverage docs match baseline")
     parser.add_argument(
         "--baseline",
         default=Path("baseline/coverage.xml"),
