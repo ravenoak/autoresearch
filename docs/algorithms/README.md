@@ -21,3 +21,6 @@
 - [Resource Monitoring](resource_monitor.md)
 - [Monitor CLI](monitor_cli.md)
 - [Graph Visualization Pipeline](visualization.md)
+- [Search Cache](cache.md)
+- [CLI Helpers](cli_helpers.md)
+- [Interfaces](interfaces.md)
