@@ -38,6 +38,9 @@ second = ctx.db_backend._conn.execute("show tables").fetchall()
 assert first == second
 ```
 
+The [schema simulation][schema-sim] runs this routine multiple times and prints
+`schema stable` when every iteration yields the same table list.
+
 ## Deterministic setup and teardown
 
 `DuckDBStorageBackend.setup` now retains the database path, even for
@@ -53,10 +56,22 @@ simultaneously. The [simulation][evict-sim] spawns threads that insert claims
 while memory usage is forced above the budget. After all threads finish the
 in-memory graph is empty, proving the policy is thread safe.
 
+The [RAM budget simulation][ram-sim] persists claims sequentially while
+memory usage is mocked above the limit, leaving the in-memory graph empty.
+
 The [concurrency simulation][concurrency-sim] accepts thread and item counts to
 demonstrate enforcement under heavier contention. Integration
 [tests][concurrency-test] show that writers retain all claims when usage stays
 within the budget and trigger eviction once mocked memory exceeds the limit.
+
+## Concurrency and failure modes
+
+`DuckDBStorageBackend.setup` uses a lock so concurrent callers
+initialise the schema once. The unit test [backend-test] spawns
+threads that call `setup` simultaneously and confirms that
+`_create_tables` executes only once. The same module injects a fault
+into `_initialize_schema_version` and verifies that a
+`StorageError` surfaces to the caller.
 
 ## Formal proofs
 
@@ -99,3 +114,6 @@ the RAM budget is exceeded, ensuring deterministic resource bounds.
 [evict-test]: ../../tests/targeted/test_storage_eviction.py
 [concurrency-test]: ../../tests/integration/test_storage_concurrency.py
 
+[schema-sim]: ../../scripts/schema_idempotency_sim.py
+[ram-sim]: ../../scripts/ram_budget_enforcement_sim.py
+[backend-test]: ../../tests/unit/test_duckdb_storage_backend_concurrency.py
