@@ -137,3 +137,37 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 > **Note:** The CLI is the main entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).  
 > **Output must be readable and actionable for humans by default, and dialectically transparent in both human and machine contexts.**
 
+
+## 11. Specification coverage
+
+Track algorithm notes for top-level modules.
+
+- [ ] `__init__`
+- [ ] `__main__`
+- [ ] `a2a_interface`
+- [ ] `cache`
+- [ ] `cli_backup`
+- [ ] `cli_helpers`
+- [ ] `cli_utils`
+- [ ] `config_utils`
+- [ ] `data_analysis`
+- [x] `error_recovery` (docs/algorithms/error_recovery.md)
+- [ ] `error_utils`
+- [ ] `errors`
+- [ ] `extensions`
+- [ ] `interfaces`
+- [x] `kg_reasoning` (docs/algorithms/kg_reasoning.md)
+- [ ] `logging_utils`
+- [ ] `mcp_interface`
+- [ ] `models`
+- [ ] `output_format`
+- [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
+- [x] `storage` (docs/algorithms/storage.md)
+- [ ] `storage_backends`
+- [ ] `storage_backup`
+- [ ] `streamlit_app`
+- [x] `streamlit_ui` (docs/algorithms/streamlit_ui.md)
+- [ ] `synthesis`
+- [ ] `test_tools`
+- [ ] `tracing`
+- [x] `visualization` (docs/algorithms/visualization.md)
