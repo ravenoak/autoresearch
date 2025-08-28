@@ -1,25 +1,27 @@
 # Status
 
-As of **August 28, 2025**, the `task` CLI is installed and `task install` completes. `task check`
-ran linting and type checks, but `pytest tests/unit -q` hung and required manual interruption.
-Targeted, integration, and behavior suites were not rerun.
+As of **August 28, 2025**, the Go Task CLI is unavailable, so `task install`
+could not run. We invoked `uv run --extra test pytest`, which executed 84 unit
+tests before a manual interrupt with **956** remaining. Targeted, integration,
+and behavior suites were not exercised.
 
 ## Lint, type checks, and spec tests
-`flake8`, `mypy`, and `scripts/check_spec_tests.py` pass.
+Not run; blocked by missing `task` CLI.
 
 ## Unit tests
-`task check` hangs while running `pytest tests/unit -q`; the run was terminated after prolonged
-inactivity.
+`uv run --extra test pytest` reported 84 passed, 4 skipped, 122 deselected before
+interruption at `storage_backup.py`.
 
 ## Targeted tests
-`pytest tests/targeted` still fails during collection: modules `docx` and `pdfminer` are missing.
+Still fail during collection because `pdfminer.six` and `python-docx` are
+missing.
 
 ## Integration tests
-Storage initialization raises `AttributeError: 'DuckDBPyConnection' object has no attribute
-'fetchone'`, yielding **15 failed, 157 passed, 4 skipped, 93 deselected, 39 errors**.
+Not rerun; existing runs raise `AttributeError: 'DuckDBPyConnection' object has
+no attribute 'fetchone'` during schema initialization.
 
 ## Behavior tests
-Behavior scenarios trigger the same DuckDB initialization error and all fail.
+Not rerun; expected to fail with the same DuckDB initialization error.
 
 ## Coverage
-Coverage was not recomputed; unit subset coverage remains at **91%**.
+Coverage was not recomputed; prior unit subset coverage remains at **91%**.
