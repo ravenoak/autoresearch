@@ -25,6 +25,9 @@ LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
+# Shared helpers
+source "$(dirname "$0")/setup_common.sh"
+
 # Helper for retrying flaky network operations
 retry() {
     local -r max_attempts="$1"; shift
@@ -95,17 +98,15 @@ if ! retry 3 apt-get clean; then
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Install minimal dev and test dependencies
-uv sync --extra dev-minimal --extra test
-uv pip install -e .
-uv pip install pytest pytest-bdd freezegun hypothesis
+# Install dev and test dependencies
+install_dev_test_extras
+ensure_venv_bin_on_path ".venv/bin"
 
 # Install Go Task inside the virtual environment and expose it on PATH
 if ! retry 3 bash -c "curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin"; then
     echo 'task installation failed; see https://taskfile.dev/#/installation' >&2
     exit 1
 fi
-export PATH=".venv/bin:$PATH"
 command -v task >/dev/null 2>&1 || {
     echo 'task installation failed; not on PATH' >&2
     exit 1
