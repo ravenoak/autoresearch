@@ -17,4 +17,4 @@ contributors cannot run `task check` or `task verify`.
 - `task install` completes on a clean clone without manual intervention.
 
 ## Status
-Open
+Archived
