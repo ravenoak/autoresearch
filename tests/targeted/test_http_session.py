@@ -41,6 +41,8 @@ def test_get_http_session_creates_and_reuses(monkeypatch):
     assert first is second
     assert calls == [http.close_http_session]
 
+    http.close_http_session()
+
 
 def test_set_and_close_http_session(monkeypatch):
     """Injected session registers atexit and closes cleanly."""

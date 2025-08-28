@@ -58,7 +58,7 @@ uv sync --extra dev --extra test
 uv pip install -e .
 
 # Verify dev and test extras are installed
-for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do
+for pkg in pytest_httpx tomli_w freezegun hypothesis redis 'pdfminer-six' 'python-docx'; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "$pkg is required for tests but was not installed" >&2
         exit 1
@@ -185,7 +185,7 @@ for cmd in task flake8 mypy; do
         exit 1
     }
 done
-for pkg in pytest_httpx tomli_w redis; do
+for pkg in pytest_httpx tomli_w redis pdfminer docx; do
     python -c "import $pkg" >/dev/null 2>&1 || {
         echo "$pkg failed to import" >&2
         deactivate

@@ -70,7 +70,7 @@ while packaging tasks are resolved.
   ([stabilize-integration-tests.md](
   ../issues/archive/stabilize-integration-tests.md))
 - [ ] Coverage gates target **90%** total coverage; current coverage is
-  **14%** (see
+  **91%** (see
   [add-coverage-gates-and-regression-checks.md](
   ../issues/archive/add-coverage-gates-and-regression-checks.md))
 - [x] Validate ranking algorithms and agent coordination

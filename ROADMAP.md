@@ -71,8 +71,8 @@ reach **90%**, and a successful TestPyPI upload. The release is re-targeted for
   ([packaging-fallback](issues/archive/verify-packaging-workflow-and-duckdb-fallback.md)).
 - [ ] Integration tests stabilized
   ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
-- [ ] Coverage gates target **90%** total coverage; current coverage is
-  **14%** ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
+- [ ] Coverage gates target **90%** total coverage; current coverage is **91%**
+  ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
 - [x] Algorithm validation for ranking and coordination
   ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
 

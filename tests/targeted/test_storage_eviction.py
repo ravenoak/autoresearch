@@ -2,6 +2,8 @@
 
 from threading import Thread
 
+import pytest
+
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.storage import (
@@ -26,6 +28,7 @@ def test_initialize_storage_idempotent() -> None:
     StorageManager.context = StorageContext()
 
 
+@pytest.mark.requires_vss
 def test_ram_budget_eviction(tmp_path, monkeypatch) -> None:
     """Concurrent writers respect the configured RAM budget."""
     cfg = ConfigModel(
@@ -57,6 +60,7 @@ def test_ram_budget_eviction(tmp_path, monkeypatch) -> None:
     ConfigLoader()._config = None
 
 
+@pytest.mark.requires_vss
 def test_deterministic_eviction_across_runs(tmp_path, monkeypatch) -> None:
     """Eviction leaves a deterministic graph across runs."""
     cfg = ConfigModel(
