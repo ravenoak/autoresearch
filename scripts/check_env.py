@@ -35,6 +35,9 @@ REQUIREMENTS = {
     "pytest-httpx": "0.35.0",
     "tomli-w": "1.2.0",
     "redis": "6.2.0",
+    "pytest-bdd": "8.1.0",
+    "freezegun": "1.5.5",
+    "hypothesis": "6.138.3",
 }
 
 
@@ -125,6 +128,9 @@ def main() -> None:
         lambda: check_module("flake8"),
         lambda: check_module("mypy"),
         lambda: check_module("pytest"),
+        lambda: check_module("pytest_bdd", "pytest-bdd"),
+        lambda: check_module("freezegun"),
+        lambda: check_module("hypothesis"),
         lambda: check_module("pydantic"),
         lambda: check_module("pytest_httpx", "pytest-httpx"),
         lambda: check_module("tomli_w", "tomli-w"),
