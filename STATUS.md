@@ -1,11 +1,10 @@
 # Status
 
-As of **August 4, 2025**, running `scripts/codex_setup.sh` installs Go Task but
-leaves `.venv/bin` outside `PATH`. After exporting `PATH`, `task check` fails
-because `uv sync --extra dev-minimal` removes `pytest_bdd`, `freezegun`, and
-`hypothesis`. `scripts/check_env.py` reports these modules missing, so `task
-check` and `task verify` exit early without running tests. Extension bootstrap was
-not reached.
+As of **August 4, 2025**, the Codex environment's setup installs Go Task but leaves `.venv/bin`
+outside `PATH`. After exporting `PATH`, `task check` fails because `uv sync --extra dev-minimal`
+removes `pytest_bdd`, `freezegun`, and `hypothesis`. `scripts/check_env.py` reports these modules
+missing, so `task check` and `task verify` exit early without running tests. Extension bootstrap
+was not reached.
 
 ## Lint, type checks, and spec tests
 Not run due to environment failures.
