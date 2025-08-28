@@ -1,33 +1,26 @@
 # Status
 
-As of **August 4, 2025**, the environment includes the `task` CLI. Running
-`task check` executes linting, type checks, spec tests, and the unit subset.
-The command reports **84 passed, 1 skipped, and 29 deselected** unit tests.
-
-After constraining `task check` to sync only the `dev-minimal` and `test`
-extras, the run now finishes in about a minute and a half while avoiding NLP
-and LLM dependencies.
+As of **August 28, 2025**, the environment lacks the `task` CLI. Manual
+`uv` commands validate linting and type checks, but storage backend errors
+block full test execution.
 
 ## Lint, type checks, and spec tests
-`task check` completes without failures. `flake8` and `mypy` pass without
-errors.
+`flake8`, `mypy`, and `scripts/check_spec_tests.py` pass with no issues.
 
 ## Unit tests
-All unit tests in `tests/unit` now pass.
+`pytest tests/unit` reports **84 passed, 1 skipped, and 29 deselected**.
 
 ## Targeted tests
-`task verify` fails during collection: targeted tests require missing
-dependencies `python-docx` and `pdfminer.six`.
+`pytest tests/targeted` fails during collection: modules `docx` and
+`pdfminer` are missing.
 
 ## Integration tests
-```text
-Integration tests did not run; targeted tests failing.
-```
+Storage initialization raises `AttributeError: 'DuckDBPyConnection' object has
+no attribute 'fetchone'`, yielding **15 failed, 157 passed, 4 skipped, 93
+deselected, 39 errors**.
 
 ## Behavior tests
-```text
-Behavior tests did not run; targeted tests failing.
-```
+Behavior scenarios trigger the same DuckDB initialization error and all fail.
 
 ## Coverage
-coverage noted at **91%**, meeting the 90% threshold.
+Coverage was not recomputed; unit subset coverage remains at **91%**.
