@@ -34,9 +34,10 @@ assert first == second
 ## Deterministic setup and teardown
 
 `DuckDBStorageBackend.setup` now retains the database path, even for
-`:memory:`, and initializes the schema version with a single `fetchone` query.
-`close` always releases the connection and clears the path whether or not a
-pool is in use, ensuring each run starts from a clean slate.
+`:memory:`, and initializes the schema version by reading `fetchall` from a
+cursor. The change avoids `AttributeError` when `fetchone` is absent in newer
+DuckDB releases. `close` always releases the connection and clears the path
+whether or not a pool is in use, ensuring each run starts from a clean slate.
 
 ## Concurrent eviction
 
