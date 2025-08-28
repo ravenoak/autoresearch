@@ -30,15 +30,13 @@ A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. When Redis is absent those scenarios are
 skipped.
 
-To bootstrap a Python 3.12+ environment with the lightweight development and test
-extras run:
+### Quick checks vs. full tests
 
-```bash
-task install
-```
-
-This syncs the `dev-minimal` and `test` extras to install tools like
-`pytest-httpx`, `duckdb`, and `networkx` needed for local testing.
+- **Quick checks** – `task check` installs the lightweight `dev-minimal`
+  extra and runs linting, type checks, and a few fast unit tests.
+- **Full test runs** – install `dev-minimal` **and** `test` extras
+  (e.g., `task install` or `uv sync --extra dev-minimal --extra test`) before
+  running `task verify` or the full test suite.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
