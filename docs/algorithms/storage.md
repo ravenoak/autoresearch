@@ -45,6 +45,11 @@ simultaneously. The [simulation][evict-sim] spawns threads that insert claims
 while memory usage is forced above the budget. After all threads finish the
 in-memory graph is empty, proving the policy is thread safe.
 
+The [concurrency simulation][concurrency-sim] accepts thread and item counts to
+demonstrate enforcement under heavier contention. Integration
+[tests][concurrency-test] show that writers retain all claims when usage stays
+within the budget and trigger eviction once mocked memory exceeds the limit.
+
 ## Formal proofs
 
 ### Schema idempotency
@@ -80,7 +85,9 @@ The benchmark in [duckdb-bench] shows that persistence triggers eviction when
 the RAM budget is exceeded, ensuring deterministic resource bounds.
 
 [evict-sim]: ../../scripts/storage_eviction_sim.py
+[concurrency-sim]: ../../scripts/storage_concurrency_sim.py
 [duckdb-bench]: ../../tests/integration/test_storage_duckdb_fallback.py
 [schema-test]: ../../tests/targeted/test_storage_eviction.py
 [evict-test]: ../../tests/targeted/test_storage_eviction.py
+[concurrency-test]: ../../tests/integration/test_storage_concurrency.py
 
