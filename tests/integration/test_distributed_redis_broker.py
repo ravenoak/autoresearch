@@ -8,7 +8,11 @@ if importlib.util.find_spec("redis") is None:
     pytest.skip("redis not installed", allow_module_level=True)
 import redis
 
-pytestmark = [pytest.mark.slow, pytest.mark.requires_distributed]
+pytestmark = [
+    pytest.mark.slow,
+    pytest.mark.requires_distributed,
+    pytest.mark.redis,
+]
 
 
 def test_redis_broker_roundtrip(monkeypatch: pytest.MonkeyPatch, redis_client) -> None:

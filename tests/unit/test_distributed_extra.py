@@ -25,6 +25,7 @@ def test_get_message_broker_default():
 
 
 @pytest.mark.requires_distributed
+@pytest.mark.redis
 def test_redis_queue_roundtrip(redis_client):
     queue = RedisQueue(redis_client, "q")
     queue.put({"a": 1})
