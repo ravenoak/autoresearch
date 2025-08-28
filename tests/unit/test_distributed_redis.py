@@ -5,7 +5,7 @@ import pytest
 
 from autoresearch.distributed import get_message_broker
 
-pytestmark = pytest.mark.requires_distributed
+pytestmark = [pytest.mark.requires_distributed, pytest.mark.redis]
 
 
 def test_get_message_broker_redis_roundtrip(monkeypatch, redis_client):
