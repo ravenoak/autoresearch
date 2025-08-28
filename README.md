@@ -46,6 +46,11 @@ task install
 This syncs the `dev-minimal` and `test` extras to install tools like
 `pytest-httpx`, `duckdb`, and `networkx` needed for local testing.
 
+Run `task check` for linting and a fast subset of unit tests; it syncs only the
+`dev-minimal` extra. For the full suite, including integration and behavior
+tests, run `task verify` after syncing the `test` extra (the default behavior of
+`task install`).
+
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
 
