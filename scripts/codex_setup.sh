@@ -95,8 +95,8 @@ if ! retry 3 apt-get clean; then
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Install minimal dev dependencies
-uv sync --extra dev-minimal
+# Install minimal dev and test dependencies
+uv sync --extra dev-minimal --extra test
 uv pip install -e .
 
 # Install Go Task inside the virtual environment and expose it on PATH
