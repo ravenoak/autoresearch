@@ -13,3 +13,9 @@ Feature: User workflows
     Given the Autoresearch application is running
     When I run `autoresearch search --backend missing "workflow test"`
     Then the CLI should report an error
+
+  @requires_ui
+  Scenario: Streamlit interface displays results
+    Given the Streamlit application is running
+    When I run a query in the Streamlit interface
+    Then the results should be displayed in a tabbed interface
