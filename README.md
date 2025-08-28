@@ -22,6 +22,13 @@ Autoresearch requires **Python 3.12+**,
 [docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
 details.
 
+Install Go Task manually if needed:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+# macOS: brew install go-task/tap/go-task
+```
+
 Optional extras provide features such as NLP, a UI, or distributed
 processing. Install them on demand with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`.
