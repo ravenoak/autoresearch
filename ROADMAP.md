@@ -7,10 +7,10 @@ Last updated **August 28, 2025**.
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current results. The current coverage is **100%**,
-but integration and behavior suites fail due to DuckDB schema initialization
-errors. Dependency pins: `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python
-3.12+ with:
+See [STATUS.md](STATUS.md) for current results. Coverage is not generated
+because `task verify` fails during environment checks that remove required
+test packages. Integration and behavior suites are not executed. Dependency
+pins: `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
