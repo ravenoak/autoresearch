@@ -5,6 +5,7 @@ import threading
 from typing import Optional
 
 import requests
+from urllib3.util.retry import Retry
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
@@ -34,8 +35,16 @@ def get_http_session() -> requests.Session:
             cfg = get_config()
             size = getattr(cfg.search, "http_pool_size", 10)
             session = requests.Session()
+            retries = Retry(
+                total=3,
+                backoff_factor=0.2,
+                status_forcelist=[500, 502, 503, 504],
+                allowed_methods=["GET", "POST"],
+            )
             adapter = requests.adapters.HTTPAdapter(
-                pool_connections=size, pool_maxsize=size
+                pool_connections=size,
+                pool_maxsize=size,
+                max_retries=retries,
             )
             session.mount("http://", adapter)
             session.mount("https://", adapter)
