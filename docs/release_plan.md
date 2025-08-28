@@ -34,7 +34,7 @@ Current test and coverage results are tracked in
 - **0.1.0** (2026-07-01, status: released): Finalized packaging, docs and CI
   checks with all tests passing.
   - [improve-test-coverage-and-streamline-dependencies](
-    ../issues/improve-test-coverage-and-streamline-dependencies.md)
+    ../issues/archive/improve-test-coverage-and-streamline-dependencies.md)
   - [speed-up-task-check-and-reduce-dependency-footprint](
     ../issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
@@ -69,8 +69,8 @@ while packaging tasks are resolved.
 - [ ] Integration test suite passes
   ([stabilize-integration-tests.md](
   ../issues/archive/stabilize-integration-tests.md))
-- [ ] Coverage gates target **90%** total coverage; current coverage is
-  **14%** (see
+- [ ] Coverage gates target **90%** total coverage; current coverage is **91%**
+  (see
   [add-coverage-gates-and-regression-checks.md](
   ../issues/archive/add-coverage-gates-and-regression-checks.md))
 - [x] Validate ranking algorithms and agent coordination
@@ -129,4 +129,6 @@ optional extras):
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` currently reports **91%** total coverage; target **90%**
+- [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
+  syncs docs with `baseline/coverage.xml`
 

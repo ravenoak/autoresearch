@@ -60,8 +60,8 @@ workflow is detailed in [docs/releasing.md](docs/releasing.md).
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current test and coverage results. Task-level
-progress and test reconciliation live in
+See [STATUS.md](STATUS.md) for current test results and **91%** coverage.
+Task-level progress and test reconciliation live in
 [TASK_PROGRESS.md](TASK_PROGRESS.md).
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist) for the

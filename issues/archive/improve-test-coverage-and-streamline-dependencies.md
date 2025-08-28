@@ -20,4 +20,4 @@ default.
 percent.
 
 ## Status
-Open
+Archived

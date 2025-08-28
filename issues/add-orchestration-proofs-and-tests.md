@@ -10,7 +10,7 @@ resource guarantees unspecified.
 - 0.1.0a1 (2026-04-15)
 
 ## Dependencies
-- [improve-test-coverage-and-streamline-dependencies](improve-test-coverage-and-streamline-dependencies.md)
+- [improve-test-coverage-and-streamline-dependencies](archive/improve-test-coverage-and-streamline-dependencies.md)
 
 ## Acceptance Criteria
 - Provide proofs or simulations demonstrating deterministic circuit breaker

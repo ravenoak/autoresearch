@@ -8,7 +8,7 @@ requiring manual interruption.
 
 ## Dependencies
 - [improve-test-coverage-and-streamline-dependencies](
-  improve-test-coverage-and-streamline-dependencies.md)
+  archive/improve-test-coverage-and-streamline-dependencies.md)
 
 ## Acceptance Criteria
 - Minimal install path avoids GPU and ML dependencies for `task check`.
