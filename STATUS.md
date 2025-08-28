@@ -1,20 +1,19 @@
 # Status
 
-As of **August 28, 2025**, `scripts/setup.sh` installed the Go Task CLI and
-development environment. Running `task check` executed linting, type checks, and
-spec tests. Unit tests completed (84 passed, 1 skipped, 29 deselected) before a
-manual interrupt prior to integration tests. Targeted and behavior suites were
-not exercised.
+As of **August 28, 2025**, `task clean` followed by `task install` rebuilt the
+development environment and confirmed the Go Task CLI. `task check` was
+attempted but hung during unit tests. `VERIFY_PARSERS=1 task verify` ran
+targeted tests and reported failures.
 
 ## Lint, type checks, and spec tests
 Completed via `task check`.
 
 ## Unit tests
-84 passed, 1 skipped, 29 deselected before interruption.
+`task check` hung after starting unit tests; results are inconclusive.
 
 ## Targeted tests
-`task verify` fails during collection because `pdfminer.six` and `python-docx`
-are missing.
+`VERIFY_PARSERS=1 task verify` completed collection but failed 3 targeted
+tests.
 
 ## Integration tests
 Not run; `task check` interrupted before execution.

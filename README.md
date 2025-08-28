@@ -16,11 +16,17 @@ For orchestrator state transitions and API contracts see
 
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
-[Go Task](https://taskfile.dev/). Running `task install` automatically downloads
-`task` to `.venv/bin` when it's missing; the same check occurs in
-`./scripts/setup.sh` during a full developer bootstrap. See
-[docs/installation.md#after-cloning](docs/installation.md#after-cloning) for
-details.
+[Go Task](https://taskfile.dev/). Running `task install` automatically
+downloads `task` to `.venv/bin` when it's missing; the same check occurs in
+`./scripts/setup.sh` during a full developer bootstrap. To install Go Task
+manually use:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh
+```
+
+See [docs/installation.md#after-cloning](docs/installation.md#after-cloning)
+for details.
 
 Optional extras provide features such as NLP, a UI, or distributed
 processing. Install them on demand with `uv sync --extra <name>` or

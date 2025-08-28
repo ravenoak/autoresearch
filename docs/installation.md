@@ -9,8 +9,13 @@ Autoresearch requires **Python 3.12 or newer**,
 [**Go Task**](https://taskfile.dev/) for Taskfile commands.
 `task install` checks for Go Task and downloads it to `.venv/bin` when
 missing. Run `./scripts/setup.sh` for the full developer bootstrap or if the
-automatic download fails. Manual installation instructions are below if
-needed.
+automatic download fails. Install Go Task manually with:
+
+```bash
+curl -sSL https://taskfile.dev/install.sh | sh
+```
+
+Manual installation instructions appear below if needed.
 
 The Redis package installs with the `dev` extra. A running Redis
 server is required only for tests or features that use the

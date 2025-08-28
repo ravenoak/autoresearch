@@ -39,9 +39,15 @@ EOF
 VENV_BIN="$(pwd)/.venv/bin"
 export PATH="$VENV_BIN:$PATH"
 
-# Ensure Go Task lives inside the virtual environment
+# Ensure Go Task lives inside the virtual environment. Prefer an existing
+# binary from PATH to avoid redundant downloads.
 TASK_BIN="$VENV_BIN/task"
-if [ ! -x "$TASK_BIN" ]; then
+if [ -x "$TASK_BIN" ]; then
+    echo "Using Go Task from $TASK_BIN"
+elif command -v task >/dev/null 2>&1; then
+    echo "Copying system Go Task into $TASK_BIN"
+    cp "$(command -v task)" "$TASK_BIN"
+else
     echo "Go Task missing; installing into $VENV_BIN..."
     curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
 fi
