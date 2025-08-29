@@ -164,8 +164,8 @@ Track algorithm notes for top-level modules.
 - [x] `output_format` (docs/algorithms/output_format.md)
 - [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
 - [x] `storage` (docs/algorithms/storage.md)
-- [ ] `storage_backends`
-- [ ] `storage_backup`
+- [x] `storage_backends` (docs/algorithms/storage_backends.md)
+- [x] `storage_backup` (docs/algorithms/storage_backup.md)
 - [ ] `streamlit_app`
 - [x] `streamlit_ui` (docs/algorithms/streamlit_ui.md)
 - [ ] `synthesis`
