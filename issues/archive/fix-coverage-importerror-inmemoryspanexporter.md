@@ -14,4 +14,4 @@ full coverage run and forces documentation to record 0% coverage.
 - Issue is archived after coverage succeeds.
 
 ## Status
-Open
+Archived
