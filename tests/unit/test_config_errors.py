@@ -1,9 +1,18 @@
-import pytest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
 from autoresearch.errors import ConfigError  # noqa: E402
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 def test_load_config_file_error(tmp_path, monkeypatch):
@@ -45,9 +54,7 @@ def test_watch_config_files_error(tmp_path, monkeypatch):
     loader = ConfigLoader.new_for_tests()
 
     # Mock the watch function to raise an exception and ensure it's reported
-    with patch(
-        "autoresearch.config.loader.watch", side_effect=ValueError("Watch error")
-    ):
+    with patch("autoresearch.config.loader.watch", side_effect=ValueError("Watch error")):
         with pytest.raises(ConfigError, match="Error in config watcher"):
             loader._watch_config_files()
 
@@ -68,9 +75,7 @@ def test_watch_config_reload_error(tmp_path, monkeypatch):
 
     # Mock load_config to raise an exception
     with patch("autoresearch.config.loader.watch", mock_watch):
-        with patch.object(
-            loader, "load_config", side_effect=ValueError("Reload error")
-        ):
+        with patch.object(loader, "load_config", side_effect=ValueError("Reload error")):
             with pytest.raises(ConfigError, match="Error in config watcher"):
                 loader._watch_config_files()
 
@@ -81,8 +86,6 @@ def test_reset_instance_error():
     # Create a temporary instance and simulate failure stopping its watcher
     with ConfigLoader.temporary_instance() as loader:
         ConfigLoader._instance = loader
-        with patch.object(
-            loader, "stop_watching", side_effect=ValueError("Stop error")
-        ):
+        with patch.object(loader, "stop_watching", side_effect=ValueError("Stop error")):
             with pytest.raises(ConfigError, match="Error stopping config watcher"):
                 ConfigLoader.reset_instance()

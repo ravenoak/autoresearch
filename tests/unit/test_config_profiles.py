@@ -4,14 +4,22 @@ This module contains tests for the configuration profiles feature, which allows
 users to define and switch between different configuration profiles.
 """
 
-import pytest
-from unittest.mock import patch, mock_open
-
-import time  # noqa: E402
 import stat  # noqa: E402
+import time  # noqa: E402
+from pathlib import Path
+from unittest.mock import mock_open, patch
+
+import pytest
 
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.errors import ConfigError  # noqa: E402
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 # Mock for Path.stat() that returns an object with st_mtime and st_mode
@@ -132,9 +140,7 @@ def test_config_profiles_invalid():
                     # Check that the error message is helpful
                     assert "Invalid profile" in str(excinfo.value)
                     assert "nonexistent" in str(excinfo.value)
-                    assert "offline" in str(
-                        excinfo.value
-                    )  # Should suggest valid profiles
+                    assert "offline" in str(excinfo.value)  # Should suggest valid profiles
 
 
 def test_config_profiles_merge():

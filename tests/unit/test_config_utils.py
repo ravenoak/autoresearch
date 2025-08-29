@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
+from autoresearch import config_utils
 from autoresearch.config_utils import apply_preset, validate_config
 from autoresearch.errors import ConfigError
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
+
+
+def test_module_docstring_mentions_spec() -> None:
+    """Module docstring should reference the specification."""
+    assert "docs/algorithms/config_utils.md" in (config_utils.__doc__ or "")
 
 
 def test_apply_preset_returns_configuration() -> None:
