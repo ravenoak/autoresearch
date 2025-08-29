@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp ui" ./scripts/setup_macos.sh
-# macOS-specific environment bootstrap; installs dependencies via Homebrew and
-# delegates to the universal setup script.
+# macOS-specific environment setup; installs dependencies via Homebrew.
+# The universal setup is invoked by setup.sh after this script completes.
 set -euo pipefail
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
@@ -18,6 +18,4 @@ if command -v brew >/dev/null 2>&1; then
 else
     echo "Homebrew is required to install dependencies. Install from https://brew.sh/" >&2
 fi
-
-AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_universal.sh" "$@"
 

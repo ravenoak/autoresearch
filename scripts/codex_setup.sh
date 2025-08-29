@@ -27,11 +27,16 @@ LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "This script is intended for the Codex Linux environment." >&2
+    exit 1
+fi
+
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/setup_common.sh"
 
-# Delegate platform setup to the Linux installer
-AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_linux.sh"
+# Run platform detection and universal setup
+AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup.sh" "$@"
 
 # Codex-specific offline model preparation
 if uv pip show sentence-transformers >/dev/null 2>&1; then
