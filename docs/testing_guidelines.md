@@ -425,18 +425,16 @@ uv pip install -e '.[distributed]'
 uv run pytest -m requires_distributed -q
 ```
 
-The `redis_client` fixture connects to a local Redis server when available and
-falls back to an in-memory `fakeredis` instance when the service is absent.
-Install `fakeredis` if you do not have a server running:
+`tests/conftest.py` starts a lightweight Redis service using `fakeredis` when a
+real server is not reachable. The `redis_client` fixture connects to this
+service so distributed tests run without external infrastructure. Install
+`fakeredis` if you do not have a server running. Tests marked
+`requires_distributed` are skipped when neither a real Redis server nor
+`fakeredis` is available. For local development you can start a Redis container
+with:
 
 ```bash
 uv pip install fakeredis
-```
-
-Tests tagged `requires_distributed` are skipped when neither backend is
-available. For local development you can start a Redis container with:
-
-```bash
 docker-compose up -d redis
 ```
 
