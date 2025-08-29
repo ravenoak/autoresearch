@@ -59,3 +59,7 @@ The global session is stored in `_http_session`. When
 call to `get_http_session` detects the `None` value, constructs a fresh
 session, and registers a cleanup hook. Therefore the system recovers
 from session closure or transient failures without leaking resources.
+
+## References
+- [spec](../specs/search.md)
+- [`hybrid_search.feature`](../../tests/behavior/features/hybrid_search.feature)
