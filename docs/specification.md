@@ -162,6 +162,7 @@ Track algorithm notes for top-level modules.
 - [x] `mcp_interface` (docs/algorithms/mcp_interface.md)
 - [x] `models` (docs/algorithms/models.md)
 - [x] `output_format` (docs/algorithms/output_format.md)
+- [x] `redis_distributed_workflows` (docs/algorithms/distributed_workflows.md)
 - [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
 - [x] `storage` (docs/algorithms/storage.md)
 - [x] `storage_backends` (docs/algorithms/storage_backends.md)

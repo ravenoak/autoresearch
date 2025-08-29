@@ -15,6 +15,7 @@ Feature: Message broker selection
     When I obtain a message broker instance
     Then a message broker error should be raised
 
+  # Spec: docs/algorithms/distributed_workflows.md - Redis broker detection
   @requires_distributed @redis
   Scenario: Redis broker detection
     Given the message broker name "redis"

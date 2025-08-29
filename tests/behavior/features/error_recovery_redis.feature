@@ -1,5 +1,6 @@
 @behavior @error_recovery @requires_distributed @redis
 Feature: Redis error recovery
+  # Spec: docs/algorithms/distributed_workflows.md - Handle connection failure
   Scenario: Connection failure triggers recovery
     Given a Redis client that fails to connect
     When I attempt a Redis operation
