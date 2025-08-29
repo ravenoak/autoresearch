@@ -153,22 +153,12 @@ if [ -z "$VSS_EXTENSION" ]; then
     : > "$VSS_EXTENSION"
 fi
 
-# Set up .env file with vector_extension_path if it doesn't exist
-if [ ! -f .env ]; then
-    echo "Creating .env file with vector_extension_path..."
-    echo "VECTOR_EXTENSION_PATH=$VSS_EXTENSION" > .env
-fi
+# Record the vector extension path for offline use
+record_vector_extension_path "$VSS_EXTENSION"
 
-# Check if vector_extension_path is already in .env, add it if not
-if ! grep -q "VECTOR_EXTENSION_PATH" .env; then
-    echo "Adding VECTOR_EXTENSION_PATH to .env..."
-    echo "VECTOR_EXTENSION_PATH=$VSS_EXTENSION" >> .env
-fi
-
-# Update existing VECTOR_EXTENSION_PATH in .env if it exists
-if grep -q "VECTOR_EXTENSION_PATH" .env; then
-    echo "Updating VECTOR_EXTENSION_PATH in .env..."
-    sed -i.bak "s|VECTOR_EXTENSION_PATH=.*|VECTOR_EXTENSION_PATH=$VSS_EXTENSION|" .env && rm -f .env.bak
+# Ensure duckdb-extension-vss Python package is installed
+if ! uv pip show duckdb-extension-vss >/dev/null 2>&1; then
+    uv pip install duckdb-extension-vss >/dev/null
 fi
 
 # Make smoke test script executable

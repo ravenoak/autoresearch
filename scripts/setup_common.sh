@@ -20,3 +20,18 @@ ensure_venv_bin_on_path() {
         *) export PATH="$venv_bin:$PATH" ;;
     esac
 }
+
+record_vector_extension_path() {
+    local path="$1"
+    for env_file in .env .env.offline; do
+        if [ ! -f "$env_file" ]; then
+            echo "VECTOR_EXTENSION_PATH=$path" >"$env_file"
+        elif grep -q "VECTOR_EXTENSION_PATH" "$env_file"; then
+            sed -i.bak \
+                "s|VECTOR_EXTENSION_PATH=.*|VECTOR_EXTENSION_PATH=$path|" \
+                "$env_file" && rm -f "$env_file.bak"
+        else
+            echo "VECTOR_EXTENSION_PATH=$path" >>"$env_file"
+        fi
+    done
+}
