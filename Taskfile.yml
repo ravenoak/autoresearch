@@ -27,7 +27,7 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test"
+          extras="dev-minimal test ui vss"
           if [ "$VERIFY_PARSERS" = "1" ]; then
               extras="$extras parsers"
           fi
@@ -36,8 +36,8 @@ tasks:
       - uv run flake8 src tests
     desc: |
       Initialize dev env with minimal tools.
-      Syncs dev-minimal and test extras by default.
-      Set EXTRAS="nlp ui" to include optional features:
+      Syncs dev-minimal, test, ui, and vss extras by default.
+      Set EXTRAS="nlp" to include optional features:
       analysis, distributed, git, llm, minimal, nlp, parsers, ui, vss
   check-env:
     cmds:

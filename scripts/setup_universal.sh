@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: AR_EXTRAS="nlp ui" ./scripts/setup_universal.sh
+# Usage: AR_EXTRAS="nlp" ./scripts/setup_universal.sh
 # Core environment bootstrap used by platform-specific setup scripts.
 # Creates .venv, installs or links Go Task to .venv/bin, and development/test
 # extras using uv. Optional extras are installed when AR_EXTRAS is set.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: AR_EXTRAS="nlp ui" ./scripts/setup.sh
+# Usage: AR_EXTRAS="nlp" ./scripts/setup.sh
 # Detects the host platform, runs platform-specific setup, then universal setup.
 set -euo pipefail
 
@@ -16,5 +16,5 @@ case "$(uname -s)" in
         ;;
 esac
 
-AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_universal.sh" "$@"
+AR_EXTRAS="${AR_EXTRAS:-ui vss}" "$SCRIPT_DIR/setup_universal.sh" "$@"
 
