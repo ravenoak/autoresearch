@@ -12,11 +12,28 @@ proven monotonic: increasing any component increases the final
 relevance. Weight normalization ensures convergence as detailed in
 [relevance_ranking.md](relevance_ranking.md).
 
+## Ranking convergence
+
+The
+[ranking_convergence.py](../../src/autoresearch/search/ranking_convergence.py)
+simulation ranks sample documents multiple times. The ordering stabilizes
+after the first pass, demonstrating convergence of the weighted relevance
+formula.
+
 ## Query expansion convergence
 
 A simple simulation iteratively expands queries using stored entities.
 After an initial enrichment step, further expansions return the same
 string, indicating the process converges.
+
+## Retry algorithm
+
+`get_http_session` configures a pooled session with a
+[Retry](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.retry.Retry)
+strategy using three attempts and exponential backoff. The
+[simulate_rate_limit.py](../../src/autoresearch/search/simulate_rate_limit.py)
+tool models backoff delays of 0.2, 0.4, and 0.8 seconds for successive
+retries, illustrating graceful handling of transient server errors.
 
 ## HTTP session behavior
 
