@@ -28,7 +28,6 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
 source "$(dirname "$0")/setup_common.sh"
-ensure_uv
 
 # Install system packages
 export DEBIAN_FRONTEND=noninteractive
@@ -42,7 +41,7 @@ retry 3 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 # Delegate remaining setup to the universal script
-AR_EXTRAS="${AR_EXTRAS:-}" ./scripts/setup.sh
+AR_EXTRAS="${AR_EXTRAS:-}" ./scripts/setup_universal.sh
 
 # Codex-specific offline model preparation
 if uv pip show sentence-transformers >/dev/null 2>&1; then
