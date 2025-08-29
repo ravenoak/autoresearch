@@ -23,6 +23,12 @@ These instructions apply to files in the `tests/` directory.
   `.[git]` extra.
 - Use `requires_distributed` for tests that depend on Redis or Ray; pair with
   the `.[distributed]` extra.
+- Use `requires_analysis` for tests needing data analysis libraries; pair with
+  the `.[analysis]` extra.
+- Use `requires_llm` for tests requiring heavy LLM dependencies; pair with the
+  `.[llm]` extra.
+- Use `requires_parsers` for tests needing document parsing utilities; pair
+  with the `.[parsers]` extra.
 - Use `error_recovery` for behavior tests verifying recovery paths.
 - Use `reasoning_modes` for behavior tests exploring reasoning strategies.
 - Use `user_workflows` for end-to-end user scenarios.
