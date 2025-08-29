@@ -1,4 +1,4 @@
-@behavior @error_recovery
+@behavior @error_recovery @slow
 # Feature covers reasoning modes: direct, chain-of-thought, dialectical, unsupported
 # Recovery paths: retry_with_backoff, fail_gracefully, fallback_agent
 Feature: Error Recovery
