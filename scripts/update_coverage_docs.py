@@ -16,7 +16,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FILES = [
+    ROOT / "CHANGELOG.md",
     ROOT / "STATUS.md",
+    ROOT / "ROADMAP.md",
     ROOT / "docs" / "release_plan.md",
 ]
 
