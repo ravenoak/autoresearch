@@ -293,6 +293,7 @@ uv run python scripts/check_env.py
 
 # Append .venv/bin to PATH for the current shell session
 ensure_venv_bin_on_path "$PWD/.venv/bin"
+echo ".venv/bin appended to PATH for this session"
 
 # Document how to activate the environment in future sessions
 cat <<'EOF'

@@ -212,5 +212,11 @@ uv run mypy src
 
 echo "Setup complete! VSS extension downloaded and configured."
 
+# Document how to activate the environment in future sessions
+cat <<'EOF'
+To activate the virtual environment, run:
+  source .venv/bin/activate
+EOF
+
 # Final verification step
 task --version
