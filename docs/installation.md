@@ -20,16 +20,18 @@ download fails. Manual installation instructions are below if needed.
 
 ## Setup scripts
 
-Use `scripts/setup.sh` for local development. Environment-specific helpers are
-documented in `AGENTS.md`.
+Both setup helpers call `install_dev_test_extras` so the `dev` and `test`
+extras from `pyproject.toml` install identically. Set `AR_EXTRAS` to include
+additional groups.
 
-`scripts/codex_setup.sh` provisions the evaluation container. It installs
-system packages with `apt`, preloads models for offline tests, and logs the
-total runtime. Both scripts call `install_dev_test_extras` so the `dev` and
-`test` extras from `pyproject.toml` are installed identically. Set `AR_EXTRAS`
-to include additional groups.
+- `scripts/setup.sh` bootstraps local development. It verifies core test
+  packages such as `pytest`, `pytest-bdd`, `freezegun`, and `hypothesis` and
+  expects system dependencies to be preinstalled.
+- `scripts/codex_setup.sh` prepares the Codex evaluation container. It installs
+  the same core test packages, provisions OS libraries with `apt`, preloads
+  models for offline tests, and logs its runtime.
 
-Both setup helpers add `.venv/bin` to `PATH`, run `task --version` to validate
+Both scripts append `.venv/bin` to `PATH`, run `task --version` to validate
 the CLI, and remind you to activate the environment in new shells with:
 
 ```bash
