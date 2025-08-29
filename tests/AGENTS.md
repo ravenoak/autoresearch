@@ -23,8 +23,9 @@ These instructions apply to files in the `tests/` directory.
   `.[git]` extra.
 - Use `requires_distributed` for tests that depend on Redis or Ray; pair with
   the `.[distributed]` extra.
-- Use `error_recovery`, `reasoning_modes`, and `user_workflows` markers to
-  categorize behavior scenarios.
+- Use `error_recovery` for behavior tests verifying recovery paths.
+- Use `reasoning_modes` for behavior tests exploring reasoning strategies.
+- Use `user_workflows` for end-to-end user scenarios.
 - Register any new markers in `pytest.ini`.
 - Include extras corresponding to any other markers as needed.
 - Scenarios tagged `error_recovery` or `reasoning_modes` run with the base
