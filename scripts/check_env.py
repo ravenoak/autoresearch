@@ -34,7 +34,7 @@ BASE_REQUIREMENTS = {
     "uv": "0.7.0",
 }
 
-EXTRAS_TO_CHECK = ["dev", "test"]
+EXTRAS_TO_CHECK = ["dev", "test", "ui", "vss"]
 
 
 def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
