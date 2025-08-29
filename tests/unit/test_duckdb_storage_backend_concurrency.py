@@ -54,3 +54,27 @@ def test_initialize_schema_version_failure(tmp_path) -> None:
         ):
             with pytest.raises(StorageError):
                 backend.setup(db_path=str(tmp_path / "db.duckdb"))
+
+
+def test_persist_claims_concurrent(tmp_path) -> None:
+    """Concurrent ``persist_claim`` calls remain thread safe."""
+
+    backend = DuckDBStorageBackend()
+    db_file = tmp_path / "claims.duckdb"
+
+    with patch("autoresearch.storage_backends.duckdb.connect", return_value=MagicMock()):
+        backend.setup(db_path=str(db_file))
+        assert backend._conn is not None
+
+        def store(idx: int) -> None:
+            backend.persist_claim({"id": f"c{idx}"})
+
+        threads = [threading.Thread(target=store, args=(i,)) for i in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert backend._conn.execute.call_count >= 5
+
+    backend.close()

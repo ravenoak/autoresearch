@@ -15,6 +15,7 @@ def reset_config_loader():
     with patch("autoresearch.storage_backends.ConfigLoader") as mock_loader:
         mock_cfg = MagicMock()
         mock_cfg.storage.duckdb.path = "kg.duckdb"
+        mock_cfg.storage.vector_extension = False
         mock_loader.return_value.config = mock_cfg
         yield
     ConfigLoader.reset_instance()
@@ -112,6 +113,18 @@ class TestDuckDBStorageBackend:
         assert backend._conn is None
 
     @patch("autoresearch.storage_backends.duckdb.connect")
+    def test_setup_table_creation_failure(self, mock_connect):
+        """Errors during table creation raise ``StorageError``."""
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = Exception("boom")
+        mock_connect.return_value = mock_conn
+
+        backend = DuckDBStorageBackend()
+        with pytest.raises(StorageError):
+            backend.setup(db_path=":memory:")
+
+    @patch("autoresearch.storage_backends.duckdb.connect")
     def test_create_tables(self, mock_connect):
         """Test creating tables."""
         # Mock the connection
@@ -144,9 +157,9 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the fetchone method to return None (no version)
+        # Mock the fetchall method to return an empty list (no version)
         mock_result = MagicMock()
-        mock_result.fetchone.return_value = None
+        mock_result.fetchall.return_value = []
         mock_conn.execute.return_value = mock_result
 
         # Setup the backend
@@ -170,9 +183,9 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the fetchone method to return a schema version
+        # Mock the fetchall method to return a schema version
         mock_result = MagicMock()
-        mock_result.fetchone.return_value = ["2"]
+        mock_result.fetchall.return_value = [["2"]]
         mock_conn.execute.return_value = mock_result
 
         # Setup the backend
@@ -197,9 +210,9 @@ class TestDuckDBStorageBackend:
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the fetchone method to return None (no version)
+        # Mock the fetchall method to return an empty list (no version)
         mock_result = MagicMock()
-        mock_result.fetchone.return_value = None
+        mock_result.fetchall.return_value = []
         mock_conn.execute.return_value = mock_result
 
         # Setup the backend
@@ -269,13 +282,17 @@ class TestDuckDBStorageBackend:
         # Mock the execute method to not raise an exception
         mock_conn.execute.return_value = MagicMock()
 
-        # Setup the backend
         backend = DuckDBStorageBackend()
         with patch(
-            "autoresearch.extensions.VSSExtensionLoader.load_extension",
-            return_value=True,
+            "autoresearch.storage_backends.ConfigLoader",
+            **{"return_value.config.storage.vector_extension": True,
+               "return_value.config.storage.duckdb.path": ":memory:"},
         ):
-            backend.setup(db_path=":memory:")
+            with patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                return_value=True,
+            ):
+                backend.setup(db_path=":memory:")
 
         # Check if VSS is available
         has_vss = backend.has_vss()

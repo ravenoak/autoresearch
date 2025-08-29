@@ -39,8 +39,9 @@ assert first == second
 ```
 
 The [schema simulation][schema-sim] runs this routine against an in-memory
-database and reports `schema stable across 2 runs`, confirming the table list
-remains unchanged.
+database. Executing
+`uv run python scripts/schema_idempotency_sim.py --runs 2` prints
+`schema stable across 2 runs`, confirming the table list remains unchanged.
 
 ## Deterministic setup and teardown
 
@@ -54,8 +55,9 @@ whether or not a pool is in use, ensuring each run starts from a clean slate.
 
 Eviction maintains the RAM budget even when multiple writers persist claims
 simultaneously. The [simulation][evict-sim] forces usage to 1000 MB and, after
-five insertions under an LRU policy, finishes with `nodes remaining after
-eviction: 0`, proving the policy is thread safe.
+five insertions under an LRU policy. Running
+`uv run python scripts/storage_eviction_sim.py --threads 5` finishes with
+`nodes remaining after eviction: 0`, proving the policy is thread safe.
 
 The [RAM budget simulation][ram-sim] persists claims sequentially while
 memory usage is mocked above the limit, leaving the in-memory graph empty.
@@ -87,7 +89,9 @@ idempotent: if a table exists, execution is a no-op. No other schema mutations
 occur. Therefore, after any number of invocations the table set equals `R` and
 ordering differences are irrelevant. The
 [targeted test][schema-test] and [deterministic test][evict-test] both observe
-equal table lists across runs. ∎
+equal table lists across runs. Running
+`uv run python scripts/schema_idempotency_sim.py --runs 2` yields
+`schema stable across 2 runs`, empirically validating the theorem. ∎
 
 ### Eviction correctness under concurrent writers
 
@@ -101,7 +105,9 @@ the lock serializes eviction, no two writers can evict based on stale
 information. Every invocation reduces or maintains `U`; thus, after all
 threads finish, the invariant holds. The
 [simulation][evict-sim] and [deterministic test][evict-test] confirm the final
-graph is empty when `U` is forced above `B`. ∎
+graph is empty when `U` is forced above `B`. Executing
+`uv run python scripts/storage_eviction_sim.py --threads 5` prints
+`nodes remaining after eviction: 0`, illustrating the invariant. ∎
 
 ## DuckDB fallback benchmark
 
