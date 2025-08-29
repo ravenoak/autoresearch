@@ -1,3 +1,4 @@
+import pytest
 from pytest_bdd import given, scenario, then, when
 
 
@@ -26,6 +27,7 @@ def handle_redis_error(bdd_context) -> None:
     assert bdd_context.get("redis_error") is not None
 
 
+@pytest.mark.requires_distributed
 @scenario(
     "../features/error_recovery_redis.feature",
     "Connection failure triggers recovery",

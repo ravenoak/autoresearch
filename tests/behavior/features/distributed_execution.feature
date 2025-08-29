@@ -1,3 +1,4 @@
+@behavior @requires_distributed
 Feature: Distributed Execution
   As a developer
   I want to run queries across multiple processes
@@ -5,6 +6,8 @@ Feature: Distributed Execution
 
   Background:
     Given mock agents that persist claims
+
+  # Spec: docs/algorithms/distributed_workflows.md - distributed coordination
 
   Scenario: Run distributed query with Ray executor
     Given a distributed configuration using Ray
