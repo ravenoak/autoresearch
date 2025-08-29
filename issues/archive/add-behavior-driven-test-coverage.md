@@ -19,4 +19,4 @@ as `[ui]`, `[vss]`, and `[distributed]` cannot gate execution reliably.
 - `tests/AGENTS.md` documents available markers.
 
 ## Status
-Open
+Archived

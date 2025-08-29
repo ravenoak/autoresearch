@@ -20,4 +20,4 @@ reachable, allowing distributed tests to run without external services.
 - `uv run pytest -m requires_distributed -q` exits without hanging.
 
 ## Status
-Open
+Archived

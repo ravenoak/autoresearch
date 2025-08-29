@@ -18,4 +18,4 @@ simulations are needed to justify the storage design and prevent regressions.
 - Document assumptions and results in `docs/algorithms/storage.md`.
 
 ## Status
-Open
+Archived

@@ -20,4 +20,4 @@ resource guarantees unspecified.
 - Document reasoning and assumptions in `docs/algorithms/orchestration.md`.
 
 ## Status
-Open
+Archived
