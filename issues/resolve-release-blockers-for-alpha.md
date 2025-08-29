@@ -1,19 +1,17 @@
 # Resolve release blockers for alpha
 
 ## Context
-`task check` fails because `uv sync --extra dev-minimal` removes required test
-packages, causing `scripts/check_env.py` to report missing modules. The Codex
-setup script still does not provision `pytest`, `pytest-bdd`, `freezegun`, and
-`hypothesis` by default, and `task` is unavailable until `.venv/bin/activate`
-is sourced. `task verify` halts when `check_coverage_docs.py` detects coverage
-values in `STATUS.md` that differ from the run. These gaps block tagging
-**0.1.0a1** and can be addressed in parallel while other feature issues
-progress.
+`task check` and `task verify` now pass after dependency retention and coverage
+validation were addressed. The Codex setup script still needs to ensure `pytest`,
+`pytest-bdd`, `freezegun`, and `hypothesis` install automatically, and
+`.venv/bin/activate` must expose `task` without manual steps. Integration and
+behavior suites remain largely untested. These gaps block tagging **0.1.0a1**
+and can be addressed in parallel while other feature issues progress.
 
 ## Dependencies
 - [add-orchestration-proofs-and-tests](add-orchestration-proofs-and-tests.md)
 - [add-storage-proofs-and-simulations](add-storage-proofs-and-simulations.md)
-- [fix-duckdb-schema-initialization](fix-duckdb-schema-initialization.md)
+- [fix-duckdb-schema-initialization](archive/fix-duckdb-schema-initialization.md)
 - [configure-redis-service-for-tests](configure-redis-service-for-tests.md)
 - [improve-test-coverage-and-streamline-dependencies](
   archive/improve-test-coverage-and-streamline-dependencies.md)
@@ -21,7 +19,7 @@ progress.
 - [speed-up-task-check-and-reduce-dependency-footprint](
   speed-up-task-check-and-reduce-dependency-footprint.md)
 - [document-task-cli-requirement](archive/document-task-cli-requirement.md)
-- [handle-duckdb-extension-download-errors](handle-duckdb-extension-download-errors.md)
+- [handle-duckdb-extension-download-errors](archive/handle-duckdb-extension-download-errors.md)
 
 ## Acceptance Criteria
 - `scripts/codex_setup.sh` installs and verifies `pytest`, `pytest-bdd`,
