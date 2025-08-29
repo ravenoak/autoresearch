@@ -116,18 +116,37 @@ POLARS_INSTALLED = _module_available("polars")
 UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("sentence_transformers")
 
+# Provide a lightweight Redis service for distributed tests.
+_fakeredis_server = None
+_redis_factory: Callable[[], object] | None = None
 try:
     import redis
 
     redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
     REDIS_AVAILABLE = True
+    _redis_factory = lambda: redis.Redis.from_url("redis://localhost:6379/0")
 except Exception:
     try:
-        import fakeredis  # noqa: F401
+        import fakeredis
 
+        _fakeredis_server = fakeredis.FakeServer()
         REDIS_AVAILABLE = True
+        _redis_factory = lambda: fakeredis.FakeStrictRedis(server=_fakeredis_server)
     except Exception:
         REDIS_AVAILABLE = False
+
+
+@pytest.fixture(scope="session")
+def redis_service():
+    """Yield a Redis client backed by a lightweight service."""
+    if not REDIS_AVAILABLE or _redis_factory is None:
+        pytest.skip("redis not available")
+    client = _redis_factory()
+    yield client
+    try:
+        client.close()
+    except Exception:
+        pass
 
 
 def _check_vss() -> bool:
