@@ -29,8 +29,8 @@ total runtime. Both scripts call `install_dev_test_extras` so the `dev` and
 `test` extras from `pyproject.toml` are installed identically. Set `AR_EXTRAS`
 to include additional groups.
 
-Both setup helpers add `.venv/bin` to `PATH` so `task --version` works right
-away. Activate the environment in a new shell with:
+Both setup helpers add `.venv/bin` to `PATH`, run `task --version` to validate
+the CLI, and remind you to activate the environment in new shells with:
 
 ```bash
 source .venv/bin/activate
@@ -88,8 +88,8 @@ Task when missing, syncs the `dev` and `test` extras (including packages such
 as `pytest_httpx`, `tomli_w`, and `redis`), and exits if `task --version`
 fails.
 
-After the script completes, confirm Go Task and the development packages are
-available:
+The setup script verifies Go Task with `task --version`. You can manually
+confirm the CLI and development packages are available:
 
 ```bash
 task --version
