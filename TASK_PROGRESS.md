@@ -228,7 +228,7 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Running a focused subset of tests with coverage produced **14%** line coverage
+Running a focused subset of tests with coverage produced **32%** line coverage
 across targeted modules. Full `task coverage` was attempted but could not
 complete in this environment.
 
@@ -246,7 +246,7 @@ Result: 84 passed, 1 skipped, 24 deselected, 28 warnings
 ./.venv/bin/task verify
 ```
 
-Result: `tests/targeted/test_http_session.py::test_set_and_close_http_session` failed, and earlier runs reported `ModuleNotFoundError: No module named 'pdfminer'`; coverage not generated
+Result: `tests/targeted/test_http_session.py::test_set_and_close_http_session` failed, and earlier runs reported `ModuleNotFoundError: No module named 'pdfminer'`.
 
 ### Performance Baselines
 
