@@ -9,7 +9,7 @@ any tests. The DuckDB extension bootstrap script also fails to catch
 `duckdb.Error`, leaving the vector search extension absent.
 
 ## Dependencies
-- [synchronize-codex-and-generic-setup-scripts](synchronize-codex-and-generic-setup-scripts.md)
+- [synchronize-codex-and-generic-setup-scripts](../synchronize-codex-and-generic-setup-scripts.md)
 - [handle-duckdb-extension-download-errors](handle-duckdb-extension-download-errors.md)
 
 ## Acceptance Criteria
@@ -20,4 +20,4 @@ any tests. The DuckDB extension bootstrap script also fails to catch
 - Regression tests cover dependency retention and bootstrap failure paths.
 
 ## Status
-Open
+Archived

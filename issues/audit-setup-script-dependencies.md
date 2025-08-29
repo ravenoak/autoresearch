@@ -8,8 +8,7 @@ DuckDB extension paths.
 
 ## Dependencies
 - [synchronize-codex-and-generic-setup-scripts](synchronize-codex-and-generic-setup-scripts.md)
-- [fix-task-check-dependency-removal-and-extension-bootstrap](
-  fix-task-check-dependency-removal-and-extension-bootstrap.md)
+- [fix-task-check-dependency-removal-and-extension-bootstrap](archive/fix-task-check-dependency-removal-and-extension-bootstrap.md)
 
 ## Acceptance Criteria
 - Enumerate all extras and optional dependencies in `pyproject.toml`.
