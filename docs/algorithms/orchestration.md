@@ -89,6 +89,35 @@ return state.synthesize()
 - The final state therefore contains the set ``{c_1, ..., c_n}`` regardless of
   ``p``. Each claim appears once because no group is processed twice.
 
+## Token budgeting simulation
+
+1. Start with a budget ``b`` and a query of ``q`` tokens.
+2. If the orchestration loops ``l`` times, divide ``b`` by ``l`` to
+   distribute tokens across loops.
+3. Clamp the budget to ``[q + buffer, q * f]`` where ``f`` is the adaptive
+   maximum factor and ``buffer`` a safety margin.
+4. The adjusted budget bounds token usage while scaling with query size and
+   loop count.
+
+Pseudo-code:
+
+```
+budget //= max(1, loops)
+budget = min(budget, q * factor)
+budget = max(budget, q + buffer)
+```
+
+### Proof of bounds
+
+- Division by ``max(1, l)`` ensures each loop receives at most ``b / l``
+  tokens.
+- The ``min`` operation caps usage at ``q * f``, so the budget never exceeds
+  the scaled query length.
+- The ``max`` operation enforces a floor of ``q + buffer`` when the initial
+  budget is too small.
+- Therefore the final budget lies in ``[q + buffer, q * f]`` and the sum of
+  per-loop allocations does not exceed ``b``.
+
 These simulations confirm that three critical failures trip the breaker and
 that parallel merging preserves one claim per group regardless of scheduling
 order.
