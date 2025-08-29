@@ -1,3 +1,9 @@
+"""Graph output tests.
+
+Spec reference: `docs/specification.md` and
+`docs/algorithms/output_format.md`.
+"""
+
 from autoresearch.output_format import OutputFormatter
 from autoresearch.models import QueryResponse
 

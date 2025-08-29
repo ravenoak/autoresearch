@@ -1,3 +1,9 @@
+"""Custom template tests referencing documentation.
+
+See `docs/specification.md` and
+`docs/algorithms/output_format.md`.
+"""
+
 from autoresearch.output_format import FormatTemplate, TemplateRegistry
 from autoresearch.models import QueryResponse
 

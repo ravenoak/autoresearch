@@ -161,7 +161,7 @@ Track algorithm notes for top-level modules.
 - [ ] `logging_utils`
 - [ ] `mcp_interface`
 - [ ] `models`
-- [ ] `output_format`
+- [x] `output_format` (docs/algorithms/output_format.md)
 - [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
 - [x] `storage` (docs/algorithms/storage.md)
 - [ ] `storage_backends`

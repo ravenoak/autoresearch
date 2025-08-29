@@ -1,3 +1,9 @@
+"""Output formatting tests.
+
+Refer to `docs/specification.md` and
+`docs/algorithms/output_format.md` for design details.
+"""
+
 import json
 import tempfile
 import logging
