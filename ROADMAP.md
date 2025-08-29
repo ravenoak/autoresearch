@@ -45,6 +45,8 @@ before running tests.
     issues/add-behavior-driven-test-coverage.md)
   - [speed-up-task-check-and-reduce-dependency-footprint](
     issues/speed-up-task-check-and-reduce-dependency-footprint.md)
+  - [fix-task-verify-package-metadata-errors](
+    issues/fix-task-verify-package-metadata-errors.md)
   - [resolve-release-blockers-for-alpha](
     issues/resolve-release-blockers-for-alpha.md)
 - 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI

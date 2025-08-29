@@ -1,8 +1,8 @@
 # Status
 
-As of **August 29, 2025**, `task check` and `task verify` complete in the
-current environment. Integration and behavior suites remain untested. See
-[speed-up-task-check] for dependency footprint concerns and
+As of **August 29, 2025**, `task check` succeeds but `task verify` fails with
+missing package metadata. Integration and behavior suites remain untested.
+See [speed-up-task-check] for dependency footprint concerns and
 [add-behavior-driven-test-coverage](issues/add-behavior-driven-test-coverage.md)
 for behavior tests.
 

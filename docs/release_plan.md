@@ -31,6 +31,8 @@ Current test and coverage results are tracked in
     ../issues/add-storage-proofs-and-simulations.md)
   - [configure-redis-service-for-tests](
     ../issues/configure-redis-service-for-tests.md)
+  - [fix-task-verify-package-metadata-errors](
+    ../issues/fix-task-verify-package-metadata-errors.md)
 - **0.1.0** (2026-07-01, status: released): Finalized packaging, docs and CI
   checks with all tests passing.
   - [improve-test-coverage-and-streamline-dependencies](
