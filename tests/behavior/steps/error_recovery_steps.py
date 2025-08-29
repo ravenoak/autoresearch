@@ -15,6 +15,7 @@ from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
 from autoresearch.storage import StorageManager
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
+pytestmark = pytest.mark.requires_git
 
 
 def _assert_error_schema(errors: list[dict]) -> None:

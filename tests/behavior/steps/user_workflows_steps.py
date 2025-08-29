@@ -1,3 +1,4 @@
+import pytest
 from pytest_bdd import scenario
 
 pytest_plugins = [
@@ -6,11 +7,13 @@ pytest_plugins = [
 ]
 
 
+@pytest.mark.requires_git
 @scenario("../features/user_workflows.feature", "CLI search completes successfully")
 def test_cli_workflow(bdd_context):
     assert bdd_context["result"].exit_code == 0
 
 
+@pytest.mark.requires_git
 @scenario(
     "../features/user_workflows.feature",
     "CLI search with invalid backend reports error",
@@ -19,6 +22,7 @@ def test_cli_workflow_invalid_backend(bdd_context):
     assert bdd_context["result"].exit_code != 0
 
 
+@pytest.mark.requires_ui
 @scenario(
     "../features/user_workflows.feature",
     "Streamlit interface displays results",
