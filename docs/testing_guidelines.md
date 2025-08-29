@@ -1,8 +1,8 @@
-# Testing Guidelines for Autoresearch
+# Testing guidelines
 
-This document provides guidelines for writing tests in the Autoresearch
-project. Following these guidelines will ensure consistency, maintainability,
-and reliability of the test suite.
+This document provides guidelines for writing tests in the Autoresearch project.
+Following these guidelines will ensure consistency, maintainability, and
+reliability of the test suite.
 
 ## Test Organization
 
@@ -31,8 +31,10 @@ Two installation strategies support different workflows:
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
 
-Redis is an optional dependency but required for distributed tests. The
-integration suite skips those tests automatically when Redis is missing.
+Redis is an optional dependency, but tests that interact with it are marked
+`requires_distributed`. A lightweight `fakeredis` instance starts automatically
+when a real server is unreachable so distributed tests run without external
+infrastructure.
 
 Use [Go Task](https://taskfile.dev/#/) to run specific suites inside the
 project's virtual environment:

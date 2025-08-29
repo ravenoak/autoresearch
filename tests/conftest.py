@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+import contextlib
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
@@ -117,27 +118,35 @@ UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("sentence_transformers")
 
 # Provide a lightweight Redis service for distributed tests.
+REDIS_URL = "redis://localhost:6379/0"
 _fakeredis_server = None
 _redis_factory: Callable[[], object] | None = None
-try:
-    import redis
+REDIS_AVAILABLE = False
 
-    redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
-    REDIS_AVAILABLE = True
-    _redis_factory = lambda: redis.Redis.from_url(  # noqa: E731
-        "redis://localhost:6379/0"
-    )
-except Exception:
+
+def _init_redis() -> None:
+    """Configure Redis client factory, falling back to fakeredis."""
+    global REDIS_AVAILABLE, _redis_factory, _fakeredis_server
     try:
-        import fakeredis
+        import redis
 
-        _fakeredis_server = fakeredis.FakeServer()
+        redis.Redis.from_url(REDIS_URL, socket_connect_timeout=1).ping()
+        _redis_factory = lambda: redis.Redis.from_url(REDIS_URL)  # noqa: E731
         REDIS_AVAILABLE = True
-        _redis_factory = lambda: fakeredis.FakeStrictRedis(  # noqa: E731
-            server=_fakeredis_server
-        )
     except Exception:
-        REDIS_AVAILABLE = False
+        try:
+            import fakeredis
+
+            _fakeredis_server = fakeredis.FakeServer()
+            _redis_factory = lambda: fakeredis.FakeStrictRedis(  # noqa: E731
+                server=_fakeredis_server
+            )
+            REDIS_AVAILABLE = True
+        except Exception:
+            REDIS_AVAILABLE = False
+
+
+_init_redis()
 
 
 @pytest.fixture(scope="session")
@@ -146,11 +155,12 @@ def redis_service():
     if not REDIS_AVAILABLE or _redis_factory is None:
         pytest.skip("redis not available")
     client = _redis_factory()
-    yield client
     try:
-        client.close()
-    except Exception:
-        pass
+        yield client
+    finally:
+        with contextlib.suppress(Exception):
+            client.flushdb()
+            client.close()
 
 
 def _check_vss() -> bool:
