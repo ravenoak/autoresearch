@@ -17,10 +17,10 @@ progress.
 - [configure-redis-service-for-tests](configure-redis-service-for-tests.md)
 - [improve-test-coverage-and-streamline-dependencies](
   archive/improve-test-coverage-and-streamline-dependencies.md)
-- [plan-a2a-mcp-behavior-tests](plan-a2a-mcp-behavior-tests.md)
+- [plan-a2a-mcp-behavior-tests](archive/plan-a2a-mcp-behavior-tests.md)
 - [speed-up-task-check-and-reduce-dependency-footprint](
   speed-up-task-check-and-reduce-dependency-footprint.md)
-- [document-task-cli-requirement](document-task-cli-requirement.md)
+- [document-task-cli-requirement](archive/document-task-cli-requirement.md)
 - [handle-duckdb-extension-download-errors](handle-duckdb-extension-download-errors.md)
 
 ## Acceptance Criteria
