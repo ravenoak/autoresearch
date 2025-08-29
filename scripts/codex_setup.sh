@@ -27,21 +27,11 @@ LOG_FILE="codex_setup.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
-source "$(dirname "$0")/setup_common.sh"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/setup_common.sh"
 
-# Install system packages
-export DEBIAN_FRONTEND=noninteractive
-retry 3 apt-get update
-retry 3 apt-get install -y \
-    build-essential python3-dev python3-venv cmake pkg-config git \
-    libssl-dev libffi-dev libxml2-dev libargon2-dev libblas-dev \
-    liblapack-dev libopenblas-dev liblmdb-dev libz3-dev \
-    libcurl4-openssl-dev
-retry 3 apt-get clean
-rm -rf /var/lib/apt/lists/*
-
-# Delegate remaining setup to the universal script
-AR_EXTRAS="${AR_EXTRAS:-}" ./scripts/setup_universal.sh
+# Delegate platform setup to the Linux installer
+AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_linux.sh"
 
 # Codex-specific offline model preparation
 if uv pip show sentence-transformers >/dev/null 2>&1; then
