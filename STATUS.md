@@ -1,7 +1,8 @@
 # Status
 
 As of **August 29, 2025**, `task check` succeeds but `task verify` fails with
-missing package metadata. Integration and behavior suites remain untested.
+missing package metadata. Integration and behavior suites remain untested. The
+0.1.0 milestone is planned and unreleased.
 See [speed-up-task-check] for dependency footprint concerns and
 [add-behavior-driven-test-coverage](issues/add-behavior-driven-test-coverage.md)
 for behavior tests.
@@ -19,5 +20,5 @@ Not run.
 Not run.
 
 ## Coverage
-Total coverage is **32%**.
+Total coverage is **100%**.
 [speed-up-task-check]: issues/speed-up-task-check-and-reduce-dependency-footprint.md

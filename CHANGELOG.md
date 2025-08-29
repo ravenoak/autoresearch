@@ -10,9 +10,8 @@ Reference issues by slugged filename (for example,
   available.
     [align-environment-with-requirements]
  - Update release plan with revised milestone schedule; 0.1.0a1 marked in
-   progress and coverage noted at **91%**.
- - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 91% coverage and
-   TestPyPI 403).
+   progress and coverage noted at **100%**.
+ - Summarize blockers before tagging 0.1.0a1 (mypy stalls and TestPyPI 403).
   - Add rich configuration context fixtures with sample data for tests.
     [create-more-comprehensive-test-contexts]
 - Optimize mypy configuration to skip site packages, preventing hangs during

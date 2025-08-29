@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Update coverage numbers in STATUS.md and docs/release_plan.md.
+"""Update coverage numbers in core documentation files.
+
+The script writes a single percentage into:
+
+- `STATUS.md`
+- `CHANGELOG.md`
+- `ROADMAP.md`
+- `docs/release_plan.md`
 
 Usage:
     uv run python scripts/update_coverage_docs.py [--file coverage.xml]
@@ -18,15 +25,21 @@ ROOT = Path(__file__).resolve().parent.parent
 FILES = [
     ROOT / "STATUS.md",
     ROOT / "docs" / "release_plan.md",
+    ROOT / "CHANGELOG.md",
+    ROOT / "ROADMAP.md",
 ]
 
 PATTERNS = [
-    re.compile(r"(previous baseline was )\*\*\d+%\*\*"),
-    re.compile(r"(coverage from the unit subset is )\*\*\d+%\*\*"),
-    re.compile(r"(current coverage is )\*\*\d+%\*\*"),
-    re.compile(r"(Total coverage is )\*\*\d+%\*\*"),
-    re.compile(r"(currently reports )\*\*\d+%\*\*"),
-    re.compile(r"(coverage noted at )\*\*\d+%\*\*"),
+    re.compile(r"(previous baseline was )\*\*\d+%\*\*", re.IGNORECASE),
+    re.compile(
+        r"(coverage from the unit subset is )\*\*\d+%\*\*",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(current coverage is )\*\*\d+%\*\*", re.IGNORECASE),
+    re.compile(r"(Total coverage is )\*\*\d+%\*\*", re.IGNORECASE),
+    re.compile(r"(currently reports )\*\*\d+%\*\*", re.IGNORECASE),
+    re.compile(r"(coverage noted at )\*\*\d+%\*\*", re.IGNORECASE),
+    re.compile(r"(`?STATUS.md`? lists )\*\*\d+%\*\*", re.IGNORECASE),
 ]
 
 COVERAGE_WORD = re.compile(r"\b\d+% coverage\b")

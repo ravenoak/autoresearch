@@ -10,7 +10,7 @@ Last updated **August 28, 2025**.
 See [STATUS.md](STATUS.md) for current results. `task verify` completes after
 running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
 packages, so only targeted tests run. Integration and behavior suites remain
-skipped and coverage reports 100% for exercised modules (see
+skipped and reports **100%** coverage for exercised modules (see
 [fix-task-check-deps]). Dependency pins: `fastapi>=0.115.12` and
 `slowapi==0.1.9`. Use Python 3.12+ with:
 
@@ -49,7 +49,7 @@ before running tests.
     issues/fix-task-verify-package-metadata-errors.md)
   - [resolve-release-blockers-for-alpha](
     issues/resolve-release-blockers-for-alpha.md)
-- 0.1.0 (2026-07-01, status: released): Finalized packaging, docs and CI
+- 0.1.0 (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
   - [improve-test-coverage-and-streamline-dependencies](
     issues/archive/improve-test-coverage-and-streamline-dependencies.md)
