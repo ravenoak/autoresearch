@@ -3,6 +3,29 @@
 # Shared helpers for environment setup scripts.
 set -euo pipefail
 
+retry() {
+    local -r max_attempts="$1"; shift
+    local attempt=1
+    until "$@"; do
+        if (( attempt == max_attempts )); then
+            echo "Command failed after $attempt attempts: $*" >&2
+            return 1
+        fi
+        echo "Attempt $attempt failed: $*. Retrying..." >&2
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+}
+
+ensure_uv() {
+    if ! command -v uv >/dev/null 2>&1; then
+        curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --quiet
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    command -v uv >/dev/null 2>&1 \
+        || { echo "uv is required but missing" >&2; return 1; }
+}
+
 install_dev_test_extras() {
     local extras="dev test"
     if [ -n "${AR_EXTRAS:-}" ]; then
