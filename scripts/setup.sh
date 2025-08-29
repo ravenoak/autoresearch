@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Usage: AR_EXTRAS="nlp ui" ./scripts/setup.sh
-# Detects the host platform, runs platform-specific setup, then universal setup.
+# Usage: ./scripts/setup.sh
+# Bootstraps Autoresearch by installing uv, Go Task, and extras for unit,
+# integration, and behavior tests. Override extras via AR_EXTRAS.
 set -euo pipefail
+
+DEFAULT_EXTRAS="nlp ui vss parsers git distributed analysis llm"
+AR_EXTRAS="${AR_EXTRAS:-$DEFAULT_EXTRAS}"
 
 SCRIPT_DIR="$(dirname "$0")"
 case "$(uname -s)" in
@@ -16,5 +20,5 @@ case "$(uname -s)" in
         ;;
 esac
 
-AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_universal.sh" "$@"
+AR_EXTRAS="$AR_EXTRAS" "$SCRIPT_DIR/setup_universal.sh" "$@"
 

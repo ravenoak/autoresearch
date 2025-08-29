@@ -4,6 +4,13 @@ This guide is the canonical bootstrap reference for Autoresearch. It covers
 the minimal developer workflow and links to helper scripts for specific
 environments.
 
+For a one-step bootstrap that installs uv, Go Task, and all extras needed for
+unit, integration, and behavior tests, run:
+
+```bash
+./scripts/setup.sh
+```
+
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
 [**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
