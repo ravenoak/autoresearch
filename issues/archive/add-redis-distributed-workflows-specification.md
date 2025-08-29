@@ -12,4 +12,4 @@ Redis-backed distributed workflows lack a formal specification detailing coordin
 - Behavior scenarios reference the specification when exercising distributed workflows.
 
 ## Status
-Open
+Archived

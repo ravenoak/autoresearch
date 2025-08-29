@@ -1,6 +1,8 @@
 # Synchronize Codex and generic setup scripts
 
 ## Context
+This ticket consolidates tasks from [audit-setup-script-dependencies](audit-setup-script-dependencies.md).
+
 `scripts/codex_setup.sh` installs development dependencies for Codex, while
 `scripts/setup.sh` targets generic environments. Both call
 `install_dev_test_extras` so the `dev` and `test` groups from
@@ -27,4 +29,4 @@ clones.
 - Setup scripts finish within ten minutes.
 
 ## Status
-Open
+Archived

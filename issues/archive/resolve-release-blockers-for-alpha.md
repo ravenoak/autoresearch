@@ -33,4 +33,4 @@ and can be addressed in parallel while other feature issues progress.
 - Release notes describe remaining known limitations before tagging **0.1.0a1**.
 
 ## Status
-Open
+Archived

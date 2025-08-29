@@ -20,4 +20,4 @@ for quick smoke validation.
 - CI workflow exercises the full suite only via manual trigger.
 
 ## Status
-Open
+Archived

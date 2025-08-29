@@ -15,4 +15,4 @@ recovery unspecified.
 - Document reasoning and assumptions in `docs/algorithms/search.md`.
 
 ## Status
-Open
+Archived
