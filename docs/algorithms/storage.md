@@ -38,8 +38,9 @@ second = ctx.db_backend._conn.execute("show tables").fetchall()
 assert first == second
 ```
 
-The [schema simulation][schema-sim] runs this routine multiple times and prints
-`schema stable` when every iteration yields the same table list.
+The [schema simulation][schema-sim] runs this routine against an in-memory
+database and reports `schema stable across 2 runs`, confirming the table list
+remains unchanged.
 
 ## Deterministic setup and teardown
 
@@ -52,9 +53,9 @@ whether or not a pool is in use, ensuring each run starts from a clean slate.
 ## Concurrent eviction
 
 Eviction maintains the RAM budget even when multiple writers persist claims
-simultaneously. The [simulation][evict-sim] spawns threads that insert claims
-while memory usage is forced above the budget. After all threads finish the
-in-memory graph is empty, proving the policy is thread safe.
+simultaneously. The [simulation][evict-sim] forces usage to 1000 MB and, after
+five insertions under an LRU policy, finishes with `nodes remaining after
+eviction: 0`, proving the policy is thread safe.
 
 The [RAM budget simulation][ram-sim] persists claims sequentially while
 memory usage is mocked above the limit, leaving the in-memory graph empty.
