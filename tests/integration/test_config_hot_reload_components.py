@@ -3,7 +3,6 @@ import tomli_w
 import tomllib
 from contextlib import contextmanager
 
-import git
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
@@ -12,6 +11,8 @@ from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 from tests.conftest import GITPYTHON_INSTALLED
+
+git = pytest.importorskip("git", reason="git extra not installed")
 
 pytestmark = [
     pytest.mark.integration,

@@ -152,13 +152,18 @@ tasks:
     desc: "Run full test suite with coverage reporting"
 
   verify:
-    deps: [check-env]
     # Coverage-enabled check before committing.
     cmds:
       - |
-          if [ "$VERIFY_PARSERS" = "1" ]; then
-              uv sync --extra dev-minimal --extra test --extra parsers
-          fi
+          uv sync \
+            --extra dev-minimal \
+            --extra dev \
+            --extra test \
+            --extra full \
+            --extra parsers \
+            --extra git \
+            --extra llm
+      - task check-env
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py

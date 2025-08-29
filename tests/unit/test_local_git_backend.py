@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-import git
 import pytest
 
 from autoresearch.config.models import ConfigModel
@@ -12,6 +11,7 @@ from autoresearch.storage import StorageManager
 
 @pytest.mark.requires_git
 def test_local_git_backend_searches_repo(tmp_path, monkeypatch):
+    git = pytest.importorskip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
     file_path = repo_path / "file.txt"
@@ -34,7 +34,9 @@ def test_local_git_backend_searches_repo(tmp_path, monkeypatch):
                 class Cur:
                     def fetchall(self_inner):
                         return []
+
                 return Cur()
+
         yield DummyConn()
 
     monkeypatch.setattr(StorageManager, "connection", staticmethod(dummy_connection))

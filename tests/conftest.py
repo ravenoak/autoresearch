@@ -107,6 +107,12 @@ def pytest_runtest_setup(item):
         pytest.skip("vss extra not installed")
     if item.get_closest_marker("requires_git") and not GITPYTHON_INSTALLED:
         pytest.skip("git extra not installed")
+    if item.get_closest_marker("requires_analysis") and not POLARS_INSTALLED:
+        pytest.skip("analysis extra not installed")
+    if item.get_closest_marker("requires_llm") and not LLM_AVAILABLE:
+        pytest.skip("llm extra not installed")
+    if item.get_closest_marker("requires_parsers") and not PARSERS_AVAILABLE:
+        pytest.skip("parsers extra not installed")
     if item.get_closest_marker("requires_nlp") and not NLP_AVAILABLE:
         pytest.skip("nlp extra not installed")
     if item.get_closest_marker("requires_distributed") and not REDIS_AVAILABLE:
@@ -115,6 +121,8 @@ def pytest_runtest_setup(item):
 
 GITPYTHON_INSTALLED = _module_available("git")
 POLARS_INSTALLED = _module_available("polars")
+PARSERS_AVAILABLE = _module_available("pdfminer")
+LLM_AVAILABLE = _module_available("transformers")
 UI_AVAILABLE = _module_available("streamlit")
 NLP_AVAILABLE = _module_available("sentence_transformers")
 

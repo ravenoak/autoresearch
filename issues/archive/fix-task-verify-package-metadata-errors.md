@@ -16,4 +16,4 @@ None.
 - Document the required extras in `docs/installation.md` if steps change.
 
 ## Status
-Open
+Archived

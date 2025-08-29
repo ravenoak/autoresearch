@@ -60,8 +60,9 @@ uv sync --extra dev-minimal --extra test
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
 dependencies. `task check` syncs only these extras so it runs quickly.
-Run `uv sync --extra dev --extra test` before `task verify` to install the
-full toolchain and any targeted-test dependencies.
+`task verify` automatically syncs the `dev-minimal`, `test`, `full`,
+`parsers`, `git`, and `llm` extras so packages such as GitPython, spaCy,
+and transformers are available for tests.
 
 ## After cloning
 
@@ -82,8 +83,8 @@ VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
 
-Set `VERIFY_PARSERS=1` when running `task verify` to sync the `parsers`
-extra for tests that require PDF or DOCX ingestion.
+`task verify` always includes the `parsers` extra, so no additional flags are
+required for PDF or DOCX tests.
 
 Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go
 Task when missing, syncs the `dev` and `test` extras (including packages such

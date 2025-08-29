@@ -71,7 +71,7 @@ while packaging tasks are resolved.
 - [ ] Integration test suite passes
   ([stabilize-integration-tests.md](
   ../issues/archive/stabilize-integration-tests.md))
-- [ ] Coverage gates target **90%** total coverage; current coverage is **32%**
+- [ ] Coverage gates target **90%** total coverage; current coverage is **100%**
   and `STATUS.md` lists **32%** (see
   [add-coverage-gates-and-regression-checks.md](
   ../issues/archive/add-coverage-gates-and-regression-checks.md))

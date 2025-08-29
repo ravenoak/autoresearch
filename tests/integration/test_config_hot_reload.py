@@ -2,7 +2,6 @@ import time
 import tomllib
 from contextlib import contextmanager
 
-import git
 import pytest
 import tomli_w
 
@@ -10,6 +9,8 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
 from tests.conftest import GITPYTHON_INSTALLED
+
+git = pytest.importorskip("git", reason="git extra not installed")
 
 Orchestrator = orch_mod.Orchestrator
 AgentFactory = orch_mod.AgentFactory
@@ -45,9 +46,7 @@ def make_agent(name, calls, stored):
 
         def execute(self, state, config, **kwargs):
             Search.external_lookup("q", max_results=1)
-            StorageManager.persist_claim(
-                {"id": self.name, "type": "fact", "content": self.name}
-            )
+            StorageManager.persist_claim({"id": self.name, "type": "fact", "content": self.name})
             calls.append(self.name)
             state.update(
                 {
@@ -106,9 +105,7 @@ def test_config_hot_reload(example_autoresearch_toml, monkeypatch):
 
     monkeypatch.setitem(Search.backends, "b1", backend1)
     monkeypatch.setitem(Search.backends, "b2", backend2)
-    monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: stored.append(claim["id"])
-    )
+    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
     monkeypatch.setattr(
         AgentFactory,
         "get",

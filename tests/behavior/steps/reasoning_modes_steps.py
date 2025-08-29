@@ -1,4 +1,3 @@
-import pytest
 from pytest_bdd import scenarios, when, then, parsers
 
 from autoresearch.orchestration import ReasoningMode
