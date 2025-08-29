@@ -124,14 +124,18 @@ try:
 
     redis.Redis.from_url("redis://localhost:6379/0", socket_connect_timeout=1).ping()
     REDIS_AVAILABLE = True
-    _redis_factory = lambda: redis.Redis.from_url("redis://localhost:6379/0")
+    _redis_factory = lambda: redis.Redis.from_url(  # noqa: E731
+        "redis://localhost:6379/0"
+    )
 except Exception:
     try:
         import fakeredis
 
         _fakeredis_server = fakeredis.FakeServer()
         REDIS_AVAILABLE = True
-        _redis_factory = lambda: fakeredis.FakeStrictRedis(server=_fakeredis_server)
+        _redis_factory = lambda: fakeredis.FakeStrictRedis(  # noqa: E731
+            server=_fakeredis_server
+        )
     except Exception:
         REDIS_AVAILABLE = False
 
