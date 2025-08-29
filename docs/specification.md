@@ -170,5 +170,5 @@ Track algorithm notes for top-level modules.
 - [x] `streamlit_ui` (docs/algorithms/streamlit_ui.md)
 - [ ] `synthesis`
 - [ ] `test_tools`
-- [ ] `tracing`
+- [x] `tracing` (docs/algorithms/tracing.md)
 - [x] `visualization` (docs/algorithms/visualization.md)
