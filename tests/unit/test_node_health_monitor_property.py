@@ -3,6 +3,7 @@ import importlib.util
 
 from hypothesis import given, strategies as st
 from prometheus_client import CollectorRegistry
+import pytest
 
 spec = importlib.util.spec_from_file_location(
     "node_health",
@@ -11,6 +12,9 @@ spec = importlib.util.spec_from_file_location(
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)  # type: ignore[union-attr]
 NodeHealthMonitor = module.NodeHealthMonitor  # type: ignore[attr-defined]
+
+
+pytestmark = [pytest.mark.requires_distributed, pytest.mark.redis]
 
 
 @given(redis_up=st.booleans(), ray_up=st.booleans())
