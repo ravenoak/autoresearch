@@ -1,3 +1,8 @@
+"""Docstring coverage tests for data models.
+
+See docs/specs/models.md for specification details.
+"""
+
 from autoresearch.models import QueryResponse
 
 

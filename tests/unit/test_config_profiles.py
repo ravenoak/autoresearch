@@ -2,6 +2,8 @@
 
 This module contains tests for the configuration profiles feature, which allows
 users to define and switch between different configuration profiles.
+
+See docs/specs/config-utils.md for specification details.
 """
 
 import pytest

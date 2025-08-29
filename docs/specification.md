@@ -149,7 +149,7 @@ Track algorithm notes for top-level modules.
 - [ ] `cli_backup`
 - [x] `cli_helpers` (docs/algorithms/cli_helpers.md)
 - [ ] `cli_utils`
-- [ ] `config_utils`
+- [x] `config_utils` (docs/algorithms/config_utils.md)
 - [ ] `data_analysis`
 - [x] `distributed_coordination` (docs/algorithms/distributed_coordination.md)
 - [x] `error_recovery` (docs/algorithms/error_recovery.md)
@@ -160,7 +160,7 @@ Track algorithm notes for top-level modules.
 - [x] `kg_reasoning` (docs/algorithms/kg_reasoning.md)
 - [ ] `logging_utils`
 - [ ] `mcp_interface`
-- [ ] `models`
+- [x] `models` (docs/algorithms/models.md)
 - [ ] `output_format`
 - [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
 - [x] `storage` (docs/algorithms/storage.md)

@@ -24,3 +24,5 @@
 - [Search Cache](cache.md)
 - [CLI Helpers](cli_helpers.md)
 - [Interfaces](interfaces.md)
+- [Config Utils](config_utils.md)
+- [Models](models.md)

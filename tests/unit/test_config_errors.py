@@ -1,3 +1,8 @@
+"""Tests error handling in configuration utilities.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import pytest
 from unittest.mock import MagicMock, patch
 

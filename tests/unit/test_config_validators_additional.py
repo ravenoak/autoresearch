@@ -1,3 +1,8 @@
+"""Additional validator tests for configuration models.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import pytest
 
 from autoresearch.config.models import ConfigModel

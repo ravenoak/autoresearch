@@ -1,3 +1,8 @@
+"""Ensure configuration watchers clean up threads.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import threading
 import time
 import pytest

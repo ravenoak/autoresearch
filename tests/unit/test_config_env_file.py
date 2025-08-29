@@ -1,3 +1,8 @@
+"""Tests for env file parsing.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 from autoresearch.config.loader import ConfigLoader
 
 

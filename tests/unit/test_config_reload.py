@@ -1,3 +1,8 @@
+"""Tests for configuration hot reload.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import threading
 import tomli_w
 from autoresearch.config.loader import ConfigLoader

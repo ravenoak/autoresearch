@@ -1,3 +1,8 @@
+"""Tests validation errors for configuration models.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import pytest
 
 from autoresearch.config.loader import ConfigLoader

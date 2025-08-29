@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+"""Tests configuration defaults and validation.
+
+See docs/specs/config-utils.md for specification details.
+"""
+
 import pytest
 
 from autoresearch.config.loader import ConfigLoader

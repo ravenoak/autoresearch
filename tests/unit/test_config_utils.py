@@ -1,4 +1,7 @@
-"""Unit tests for :mod:`autoresearch.config_utils`."""
+"""Unit tests for :mod:`autoresearch.config_utils`.
+
+See docs/specs/config-utils.md for specification details.
+"""
 
 from __future__ import annotations
 
