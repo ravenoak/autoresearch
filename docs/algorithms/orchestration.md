@@ -14,6 +14,13 @@ execution.
 4. After the cooldown passes, the breaker moves to half-open. The next
    success closes it and resets counters.
 
+Formally, the breaker is a deterministic finite state machine with
+states ``S = {closed, open, half-open}`` and transition function
+``\delta(s, e, t)``.  The function examines the current state ``s``, the
+incoming event ``e``, and the clock ``t``.  Because ``\delta`` is pure
+and the time steps are explicit, applying the same event sequence always
+produces the same state trajectory.
+
 Pseudo-code:
 
 ```
@@ -66,6 +73,13 @@ on_success():
 3. Completed group results update a shared query state in the order they
    finish.
 4. A synthesizer aggregates the state into a final response.
+
+Let ``C_i`` denote the claim set returned by group ``i``.  The update
+step computes ``U := U \cup C_i`` for each finished group.  Set union is
+associative and commutative, so the order in which groups finish does
+not affect the final ``U``.  Determinism therefore follows from the
+functional nature of ``collect_result`` and the absence of shared mutable
+state outside ``U``.
 
 Pseudo-code:
 
@@ -132,6 +146,8 @@ order.
   exercises the merging invariant under concurrent execution.
 - Unit test `tests/unit/orchestration/test_parallel_execute.py`
   covers mixed success, error, and timeout paths.
+- Script `scripts/orchestration_sim.py` replays both simulations to
+  demonstrate deterministic behavior.
 
 ### Assumptions
 

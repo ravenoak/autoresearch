@@ -1,55 +1,55 @@
-"""Simulate circuit breaker and parallel result merging.
+#!/usr/bin/env python3
+"""Run orchestration simulations to illustrate deterministic behavior.
 
 Usage:
-    uv run python scripts/orchestration_sim.py
+    uv run python scripts/orchestration_sim.py circuit
+    uv run python scripts/orchestration_sim.py parallel
 """
 
 from __future__ import annotations
 
+import argparse
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, List
 
-from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
-
-
-def simulate_circuit_breaker() -> None:
-    """Show threshold trip and recovery."""
-
-    mgr = CircuitBreakerManager(threshold=3, cooldown=1)
-    for _ in range(3):
-        mgr.update_circuit_breaker("agent", "critical")
-    print("After failures:", mgr.get_circuit_breaker_state("agent"))
-    time.sleep(1.1)
-    mgr.circuit_breakers["agent"]["state"] = "half-open"
-    mgr.handle_agent_success("agent")
-    print("After recovery:", mgr.get_circuit_breaker_state("agent"))
+from autoresearch.orchestration.circuit_breaker import simulate_circuit_breaker
 
 
-def simulate_parallel_merge() -> None:
-    """Run dummy groups in parallel and merge results."""
+def circuit_breaker_sim() -> List[str]:
+    """Return breaker states for a deterministic event sequence."""
 
-    groups = [["a1"], ["b1", "b2"], ["c1"]]
+    events = ["critical", "critical", "critical", "tick", "success"]
+    return simulate_circuit_breaker(events, threshold=3, cooldown=1)
 
-    def run_group(group: list[str]) -> str:
-        time.sleep(0.05 * len(group))
-        return " ".join(group)
 
-    results: list[tuple[list[str], str]] = []
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {executor.submit(run_group, g): g for g in groups}
+def parallel_execution_sim() -> Dict[str, str]:
+    """Run a deterministic parallel aggregation example."""
+
+    groups = ["A", "B", "C"]
+
+    def run(name: str) -> str:
+        time.sleep(0.01 * (ord(name) - ord("A")))
+        return f"claim-{name}"
+
+    results: Dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=len(groups)) as executor:
+        futures = {executor.submit(run, g): g for g in groups}
         for fut in as_completed(futures):
-            grp = futures[fut]
-            results.append((grp, fut.result()))
-
-    merged = {" ".join(grp): res for grp, res in results}
-    print("Merged:", merged)
+            group_name = futures[fut]
+            results[group_name] = fut.result()
+    return results
 
 
 def main() -> None:
-    """Run both simulations."""
+    parser = argparse.ArgumentParser(description="Orchestration simulations.")
+    parser.add_argument("mode", choices=["circuit", "parallel"], help="simulation to run")
+    args = parser.parse_args()
 
-    simulate_circuit_breaker()
-    simulate_parallel_merge()
+    if args.mode == "circuit":
+        print(circuit_breaker_sim())
+    else:
+        print(parallel_execution_sim())
 
 
 if __name__ == "__main__":
