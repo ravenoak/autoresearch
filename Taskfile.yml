@@ -56,8 +56,7 @@ tasks:
     # Minimal validation for quick feedback. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --extra dev-minimal --extra test
-      - task check-env
+      - uv sync --extra dev-minimal
       - uv run flake8 src tests
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
