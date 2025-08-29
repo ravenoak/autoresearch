@@ -23,6 +23,12 @@ download fails. Manual installation instructions are below if needed.
 Use `scripts/setup.sh` for local development. Environment-specific helpers are
 documented in `AGENTS.md`.
 
+`scripts/codex_setup.sh` provisions the evaluation container. It installs
+system packages with `apt`, preloads models for offline tests, and logs the
+total runtime. Both scripts call `install_dev_test_extras` so the `dev` and
+`test` extras from `pyproject.toml` are installed identically. Set `AR_EXTRAS`
+to include additional groups.
+
 Both setup helpers add `.venv/bin` to `PATH` so `task --version` works right
 away. Activate the environment in a new shell with:
 
@@ -301,6 +307,10 @@ Additional functionality is grouped into optional extras. These are not
 installed by `task install`; enable them with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. `scripts/setup.sh` accepts extras via the
 `AR_EXTRAS` environment variable.
+
+`pyproject.toml` defines these groups: minimal, nlp, ui, vss, parsers, git,
+distributed, analysis, llm, test, full, dev, dev-minimal, and build. The table
+below summarizes their purpose and usage.
 
 | Extra | Purpose | Setup command |
 |------|---------|---------------|
