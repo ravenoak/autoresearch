@@ -11,4 +11,4 @@ None
 - `docs/specification.md` checklist marks `kg_reasoning` as covered.
 
 ## Status
-Open
+Archived
