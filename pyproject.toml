@@ -58,6 +58,7 @@ include-package-data = true
 [tool.setuptools.package-data]
 "autoresearch.examples" = ["autoresearch.toml", ".env.example"]
 [project.optional-dependencies]
+# Keep versions in sync with scripts/check_env.py
 # Minimal install: only core embedding model support
 minimal = [
     "sentence-transformers >=2.7.0"

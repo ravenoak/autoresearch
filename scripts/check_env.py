@@ -3,6 +3,8 @@
 
 Usage:
     uv run python scripts/check_env.py
+
+Versions for optional extras are loaded from ``pyproject.toml``.
 """
 from __future__ import annotations
 
@@ -11,6 +13,7 @@ import importlib
 import re
 import subprocess
 import sys
+import tomllib
 from dataclasses import dataclass
 from importlib import metadata
 
@@ -21,24 +24,53 @@ if sys.version_info < (3, 12):
 
 try:  # pragma: no cover - packaging is required
     from packaging.version import Version
+    from packaging.requirements import Requirement
 except ModuleNotFoundError as exc:  # pragma: no cover
     raise SystemExit("packaging library is required") from exc
 
-REQUIREMENTS = {
+BASE_REQUIREMENTS = {
     "python": "3.12.0",
     "task": "3.0.0",
     "uv": "0.7.0",
-    "flake8": "7.2.0",
-    "mypy": "1.10.0",
-    "pytest": "8.3.5",
-    "pydantic": "2.0.0",
-    "pytest-httpx": "0.35.0",
-    "tomli-w": "1.2.0",
-    "redis": "6.2.0",
-    "pytest-bdd": "8.1.0",
-    "freezegun": "1.5.5",
-    "hypothesis": "6.138.3",
 }
+
+# Packages checked from optional extras in pyproject.toml
+EXTRA_PACKAGES = {
+    "flake8": "dev",
+    "mypy": "dev",
+    "pytest": "dev",
+    "pydantic": "dev",
+    "pytest-httpx": "test",
+    "tomli-w": "dev-minimal",
+    "redis": "dev-minimal",
+    "pytest-bdd": "test",
+    "freezegun": "test",
+    "hypothesis": "test",
+}
+
+
+def load_extra_requirements() -> dict[str, str]:
+    """Return versions for packages in EXTRA_PACKAGES from pyproject extras."""
+
+    with open("pyproject.toml", "rb") as fh:
+        data = tomllib.load(fh)
+    extras = data.get("project", {}).get("optional-dependencies", {})
+    reqs: dict[str, str] = {}
+    for pkg, extra in EXTRA_PACKAGES.items():
+        for spec in extras.get(extra, []):
+            req = Requirement(spec)
+            if req.name == pkg:
+                ver = next(
+                    (s.version for s in req.specifier if s.operator in (">=", "==")),
+                    None,
+                )
+                if ver:
+                    reqs[pkg] = ver
+                break
+    return reqs
+
+
+REQUIREMENTS = {**BASE_REQUIREMENTS, **load_extra_requirements()}
 
 
 @dataclass
@@ -117,25 +149,31 @@ def check_module(module: str, package: str | None = None) -> CheckResult:
     return CheckResult(pkg, current, required)
 
 
+MODULE_MAP = {
+    "flake8": "flake8",
+    "mypy": "mypy",
+    "pytest": "pytest",
+    "pydantic": "pydantic",
+    "pytest-httpx": "pytest_httpx",
+    "tomli-w": "tomli_w",
+    "redis": "redis",
+    "pytest-bdd": "pytest_bdd",
+    "freezegun": "freezegun",
+    "hypothesis": "hypothesis",
+}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
 
-    checks = [check_python, check_task]
+    extras = ", ".join(sorted(set(EXTRA_PACKAGES.values())))
+    print(f"Verifying extras: {extras}")
 
-    checks += [
-        check_uv,
-        lambda: check_module("flake8"),
-        lambda: check_module("mypy"),
-        lambda: check_module("pytest"),
-        lambda: check_module("pytest_bdd", "pytest-bdd"),
-        lambda: check_module("freezegun"),
-        lambda: check_module("hypothesis"),
-        lambda: check_module("pydantic"),
-        lambda: check_module("pytest_httpx", "pytest-httpx"),
-        lambda: check_module("tomli_w", "tomli-w"),
-        lambda: check_module("redis"),
-    ]
+    checks = [check_python, check_task, check_uv]
+
+    for pkg, module in MODULE_MAP.items():
+        checks.append(lambda module=module, pkg=pkg: check_module(module, pkg))
 
     errors: list[str] = []
     for check in checks:
