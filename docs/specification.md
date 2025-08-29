@@ -144,7 +144,7 @@ Track algorithm notes for top-level modules.
 
 - [ ] `__init__`
 - [ ] `__main__`
-- [ ] `a2a_interface`
+- [x] `a2a_interface` (docs/algorithms/a2a_interface.md)
 - [x] `cache` (docs/algorithms/cache.md)
 - [ ] `cli_backup`
 - [x] `cli_helpers` (docs/algorithms/cli_helpers.md)
@@ -159,7 +159,7 @@ Track algorithm notes for top-level modules.
 - [x] `interfaces` (docs/algorithms/interfaces.md)
 - [x] `kg_reasoning` (docs/algorithms/kg_reasoning.md)
 - [ ] `logging_utils`
-- [ ] `mcp_interface`
+- [x] `mcp_interface` (docs/algorithms/mcp_interface.md)
 - [ ] `models`
 - [ ] `output_format`
 - [x] `resource_monitor` (docs/algorithms/resource_monitor.md)
