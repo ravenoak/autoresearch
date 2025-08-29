@@ -34,43 +34,30 @@ BASE_REQUIREMENTS = {
     "uv": "0.7.0",
 }
 
-# Packages checked from optional extras in pyproject.toml
-EXTRA_PACKAGES = {
-    "flake8": "dev",
-    "mypy": "dev",
-    "pytest": "dev",
-    "pydantic": "dev",
-    "pytest-httpx": "test",
-    "tomli-w": "dev-minimal",
-    "redis": "dev-minimal",
-    "pytest-bdd": "test",
-    "freezegun": "test",
-    "hypothesis": "test",
-}
+EXTRAS_TO_CHECK = ["dev", "test"]
 
 
-def load_extra_requirements() -> dict[str, str]:
-    """Return versions for packages in EXTRA_PACKAGES from pyproject extras."""
+def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
+    """Return versions for packages from specified extras in pyproject."""
 
     with open("pyproject.toml", "rb") as fh:
         data = tomllib.load(fh)
     extras = data.get("project", {}).get("optional-dependencies", {})
     reqs: dict[str, str] = {}
-    for pkg, extra in EXTRA_PACKAGES.items():
+    for extra in extras_to_check:
         for spec in extras.get(extra, []):
             req = Requirement(spec)
-            if req.name == pkg:
-                ver = next(
-                    (s.version for s in req.specifier if s.operator in (">=", "==")),
-                    None,
-                )
-                if ver:
-                    reqs[pkg] = ver
-                break
+            ver = next(
+                (s.version for s in req.specifier if s.operator in (">=", "==")),
+                None,
+            )
+            if ver:
+                reqs[req.name] = ver
     return reqs
 
 
-REQUIREMENTS = {**BASE_REQUIREMENTS, **load_extra_requirements()}
+EXTRA_REQUIREMENTS = load_extra_requirements(EXTRAS_TO_CHECK)
+REQUIREMENTS = {**BASE_REQUIREMENTS, **EXTRA_REQUIREMENTS}
 
 
 @dataclass
@@ -141,39 +128,29 @@ def check_uv() -> CheckResult:
     return CheckResult("uv", current, REQUIREMENTS["uv"])
 
 
-def check_module(module: str, package: str | None = None) -> CheckResult:
-    importlib.import_module(module)
-    pkg = package or module
+def check_package(pkg: str) -> CheckResult:
+    module = pkg.replace("-", "_")
+    try:
+        importlib.import_module(module)
+    except ModuleNotFoundError:
+        # Some packages (e.g. duckdb-extension-vss) provide no importable module
+        pass
     current = metadata.version(pkg)
     required = REQUIREMENTS[pkg]
     return CheckResult(pkg, current, required)
-
-
-MODULE_MAP = {
-    "flake8": "flake8",
-    "mypy": "mypy",
-    "pytest": "pytest",
-    "pydantic": "pydantic",
-    "pytest-httpx": "pytest_httpx",
-    "tomli-w": "tomli_w",
-    "redis": "redis",
-    "pytest-bdd": "pytest_bdd",
-    "freezegun": "freezegun",
-    "hypothesis": "hypothesis",
-}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
 
-    extras = ", ".join(sorted(set(EXTRA_PACKAGES.values())))
+    extras = ", ".join(sorted(EXTRAS_TO_CHECK))
     print(f"Verifying extras: {extras}")
 
     checks = [check_python, check_task, check_uv]
 
-    for pkg, module in MODULE_MAP.items():
-        checks.append(lambda module=module, pkg=pkg: check_module(module, pkg))
+    for pkg in sorted(EXTRA_REQUIREMENTS):
+        checks.append(lambda pkg=pkg: check_package(pkg))
 
     errors: list[str] = []
     for check in checks:
