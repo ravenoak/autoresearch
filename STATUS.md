@@ -19,5 +19,5 @@ Not run.
 Not run.
 
 ## Coverage
-Total coverage is **100%**.
+Total coverage is **0%**.
 [speed-up-task-check]: issues/speed-up-task-check-and-reduce-dependency-footprint.md
