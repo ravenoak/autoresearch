@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp ui" ./scripts/setup_linux.sh
-# Linux-specific environment bootstrap; installs OS packages when possible and
-# delegates to the universal setup script.
+# Linux-specific environment setup; installs OS packages when possible.
+# The universal setup is invoked by setup.sh after this script completes.
 set -euo pipefail
 
 if [[ "$(uname -s)" != "Linux" ]]; then
@@ -29,6 +29,4 @@ if command -v apt-get >/dev/null 2>&1; then
 else
     echo "apt-get not found; please install required packages manually." >&2
 fi
-
-AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup_universal.sh" "$@"
 
