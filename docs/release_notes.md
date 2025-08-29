@@ -42,6 +42,8 @@ Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
   [installation](installation.md).
 - VSS search and some tests require network access; see
   [DuckDB compatibility](duckdb_compatibility.md).
+- `task coverage` fails with an ImportError (`InMemorySpanExporter`), so
+  coverage is treated as 0%.
 
 For installation and usage instructions see the [README](../README.md).
 
@@ -75,7 +77,8 @@ Successfully built autoresearch-0.1.0a1.tar.gz and autoresearch-0.1.0a1-py3-none
 
 ### Test Publishing
 
-Dry-run upload using ``scripts/publish_dev.py --dry-run --repository testpypi``:
+Dry-run upload using ``scripts/publish_dev.py --dry-run --repository testpypi``
+on 2025-08-29 produced:
 
 ```text
 * Creating isolated environment: venv+pip...
@@ -92,3 +95,4 @@ Dry-run upload using ``scripts/publish_dev.py --dry-run --repository testpypi``:
 Successfully built autoresearch-0.1.0a1.tar.gz and autoresearch-0.1.0a1-py3-none-any.whl
 Dry run selected; skipping upload
 ```
+The build completed and, as expected for a dry run, the upload was skipped.
