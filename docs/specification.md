@@ -153,12 +153,12 @@ Track algorithm notes for top-level modules.
 - [ ] `data_analysis`
 - [x] `distributed_coordination` (docs/algorithms/distributed_coordination.md)
 - [x] `error_recovery` (docs/algorithms/error_recovery.md)
-- [ ] `error_utils`
+- [x] `error_utils` (docs/algorithms/error_utils.md)
 - [ ] `errors`
 - [ ] `extensions`
 - [x] `interfaces` (docs/algorithms/interfaces.md)
 - [x] `kg_reasoning` (docs/algorithms/kg_reasoning.md)
-- [ ] `logging_utils`
+- [x] `logging_utils` (docs/algorithms/logging_utils.md)
 - [ ] `mcp_interface`
 - [ ] `models`
 - [x] `output_format` (docs/algorithms/output_format.md)

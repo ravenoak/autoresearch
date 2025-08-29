@@ -45,6 +45,18 @@ def test_formatters():
     assert a2a["status"] == "error"
 
 
+def test_timeout_sets_warning():
+    exc = TimeoutError("late", timeout=3)
+    info = get_error_info(exc)
+    assert info.severity == ErrorSeverity.WARNING
+
+
+def test_redacted_context_preserved():
+    exc = LLMError("bad key", api_key="[REDACTED]")
+    info = get_error_info(exc)
+    assert info.context["api_key"] == "[REDACTED]"
+
+
 @pytest.mark.parametrize(
     "exc, substr",
     [
