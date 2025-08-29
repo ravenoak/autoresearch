@@ -4,7 +4,6 @@ from pytest_bdd import scenarios, when, then, parsers
 from autoresearch.orchestration import ReasoningMode
 
 pytest_plugins = ["tests.behavior.steps.common_steps"]
-pytestmark = pytest.mark.requires_nlp
 
 scenarios("../features/reasoning_modes.feature")
 

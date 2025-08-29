@@ -1,4 +1,4 @@
-@behavior @reasoning_modes @requires_nlp
+@behavior @reasoning_modes
 Feature: Basic reasoning modes
   As a developer
   I want to capture selected reasoning modes
