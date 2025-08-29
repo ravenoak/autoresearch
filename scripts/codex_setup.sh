@@ -28,27 +28,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 set -x
 
 source "$(dirname "$0")/setup_common.sh"
-
-retry() {
-    local -r max_attempts="$1"; shift
-    local attempt=1
-    until "$@"; do
-        if (( attempt == max_attempts )); then
-            echo "Command failed after $attempt attempts: $*" >&2
-            return 1
-        fi
-        echo "Attempt $attempt failed: $*. Retrying..." >&2
-        attempt=$((attempt + 1))
-        sleep 2
-    done
-}
-
-# Ensure uv is installed
-if ! command -v uv >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --quiet
-    export PATH="$HOME/.local/bin:$PATH"
-fi
-command -v uv >/dev/null 2>&1 || { echo "uv is required but missing" >&2; exit 1; }
+ensure_uv
 
 # Install system packages
 export DEBIAN_FRONTEND=noninteractive
@@ -78,18 +58,6 @@ fi
 uv run python -c "import owlrl" \
     || { echo 'Failed to pre-load ontology reasoner.' >&2; exit 1; }
 
-# Cache DuckDB extensions for offline use
-retry 3 uv run python scripts/download_duckdb_extensions.py \
-    --output-dir ./extensions || \
-    echo 'DuckDB extension download failed; continuing.'
-
 ensure_venv_bin_on_path "$PWD/.venv/bin"
 echo ".venv/bin appended to PATH for this session"
-
-cat <<'EOF'
-To activate the virtual environment, run:
-  source .venv/bin/activate
-EOF
-
-task --version
 
