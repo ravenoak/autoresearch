@@ -17,4 +17,4 @@ None
 - `docs/algorithms/storage.md` notes the fallback behavior.
 
 ## Status
-Open
+Archived
