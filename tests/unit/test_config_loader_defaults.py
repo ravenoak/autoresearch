@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 def test_invalid_env_falls_back_to_defaults(monkeypatch: pytest.MonkeyPatch) -> None:

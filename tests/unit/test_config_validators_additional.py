@@ -1,8 +1,17 @@
+from pathlib import Path
+
 import pytest
 
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration import ReasoningMode
 from autoresearch.errors import ConfigError
+from autoresearch.orchestration import ReasoningMode
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 @pytest.mark.parametrize(

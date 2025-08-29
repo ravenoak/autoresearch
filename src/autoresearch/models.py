@@ -1,8 +1,12 @@
 """
-This module provides data models for Autoresearch.
+Data models for Autoresearch.
 
-It contains Pydantic models that define the structure of data used throughout the application,
-particularly for query requests, responses, and related data structures.
+See ``docs/algorithms/models.md`` for validation, hot reload, and schema
+guarantees.
+
+It contains Pydantic models that define the structure of data used throughout
+the application, particularly for query requests, responses, and related data
+structures.
 """
 
 from enum import Enum

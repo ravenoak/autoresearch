@@ -1,8 +1,17 @@
+from pathlib import Path
+
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.config.models import ConfigModel, StorageConfig, SearchConfig
+from autoresearch.config.models import ConfigModel, SearchConfig, StorageConfig
 from autoresearch.errors import ConfigError
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 def test_invalid_rdf_backend():

@@ -1,14 +1,19 @@
-"""Configuration helper utilities for the Streamlit app."""
+"""Configuration helper utilities for the Streamlit app.
+
+See ``docs/algorithms/config_utils.md`` for validation, hot reload, and schema
+guarantees.
+"""
+
 from __future__ import annotations
 
-from typing import Any, Dict
 import tomllib
+from typing import Any, Dict
 
 import streamlit as st
 
-from .orchestration import ReasoningMode
 from .config.loader import ConfigLoader
 from .errors import ConfigError
+from .orchestration import ReasoningMode
 
 
 def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
@@ -24,8 +29,9 @@ def save_config_to_toml(config_dict: Dict[str, Any]) -> bool:
     bool
         ``True`` on success.
     """
-    import tomli_w
     from pathlib import Path
+
+    import tomli_w
 
     config_path = Path.cwd() / "autoresearch.toml"
 

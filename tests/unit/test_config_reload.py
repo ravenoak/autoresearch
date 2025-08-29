@@ -1,6 +1,16 @@
 import threading
+from pathlib import Path
+
 import tomli_w
+
 from autoresearch.config.loader import ConfigLoader
+
+SPEC_PATH = Path(__file__).resolve().parents[2] / "docs/algorithms/config_utils.md"
+
+
+def test_config_spec_exists() -> None:
+    """Configuration specification document must exist."""
+    assert SPEC_PATH.is_file()
 
 
 def test_config_reload_on_change(example_autoresearch_toml):
