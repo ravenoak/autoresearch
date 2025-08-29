@@ -1,3 +1,9 @@
+"""Property tests for output formatter.
+
+See `docs/specification.md` and
+`docs/algorithms/output_format.md`.
+"""
+
 import json
 from hypothesis import given, strategies as st, settings, HealthCheck
 from autoresearch.output_format import OutputFormatter

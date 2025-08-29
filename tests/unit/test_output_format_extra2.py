@@ -1,4 +1,11 @@
+"""Template fallback tests referencing specification.
+
+See `docs/specification.md` and
+`docs/algorithms/output_format.md`.
+"""
+
 import logging
+
 from autoresearch.output_format import FormatTemplate, OutputFormatter, TemplateRegistry
 from autoresearch.models import QueryResponse
 
