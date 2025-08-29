@@ -217,7 +217,10 @@ markers = [
     "requires_vss: tests that depend on the vss extra",
     "requires_git: tests that depend on the git extra",
     "requires_nlp: tests needing NLP resources",
-    "requires_distributed: tests that depend on the distributed extra"
+    "requires_distributed: tests that depend on the distributed extra",
+    "error_recovery: behavior tests verifying recovery paths",
+    "reasoning_modes: behavior tests for reasoning strategies",
+    "user_workflows: end-to-end user scenarios"
 ]
 
 [tool.mypy]
