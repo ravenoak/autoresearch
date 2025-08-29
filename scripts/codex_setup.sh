@@ -3,6 +3,8 @@
 # Codex-only environment bootstrap for this evaluation container; see AGENTS.md
 # for repository-wide guidelines. Do not use or document this script outside the
 # AGENTS.md system. For any other environment, use `./scripts/setup.sh`.
+# Installs the project in editable mode with development and test extras. Use
+# `AR_EXTRAS` to specify additional optional extras.
 set -euo pipefail
 
 START_TIME=$(date +%s)
