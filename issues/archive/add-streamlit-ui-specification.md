@@ -11,4 +11,4 @@ None
 - `docs/specification.md` checklist marks `streamlit_ui` as covered.
 
 ## Status
-Open
+Archived
