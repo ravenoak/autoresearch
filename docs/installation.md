@@ -295,22 +295,22 @@ installed by `task install`; enable them with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. `scripts/setup.sh` accepts extras via the
 `AR_EXTRAS` environment variable.
 
-| Extra       | Setup command                     |
-|-------------|-----------------------------------|
-| minimal     | `uv sync --extra minimal`         |
-| nlp         | `uv sync --extra nlp`             |
-| ui          | `uv sync --extra ui`              |
-| vss         | `uv sync --extra vss`             |
-| parsers     | `uv sync --extra parsers`         |
-| git         | `uv sync --extra git`             |
-| distributed | `uv sync --extra distributed`     |
-| analysis    | `uv sync --extra analysis`        |
-| llm         | `uv sync --extra llm`             |
-| test        | `uv sync --extra test`            |
-| full        | `uv sync --extra full`            |
-| dev         | `uv sync --extra dev`             |
-| dev-minimal | `uv sync --extra dev-minimal`     |
-| build       | `uv sync --extra build`           |
+| Extra | Purpose | Setup command |
+|------|---------|---------------|
+| minimal | core embedding model support | `uv sync --extra minimal` |
+| nlp | topic modeling and transformers | `uv sync --extra nlp` |
+| ui | Streamlit interface | `uv sync --extra ui` |
+| vss | DuckDB vector search extension | `uv sync --extra vss` |
+| parsers | PDF and DOCX ingestion | `uv sync --extra parsers` |
+| git | local Git repository search | `uv sync --extra git` |
+| distributed | Ray and Redis for scaling | `uv sync --extra distributed` |
+| analysis | data analysis via Polars | `uv sync --extra analysis` |
+| llm | heavy LLM dependencies | `uv sync --extra llm` |
+| test | packages needed only for tests | `uv sync --extra test` |
+| full | all optional features | `uv sync --extra full` |
+| dev | developer tools | `uv sync --extra dev` |
+| dev-minimal | minimal developer toolchain | `uv sync --extra dev-minimal` |
+| build | packaging utilities | `uv sync --extra build` |
 
 Examples:
 
