@@ -16,4 +16,4 @@ table creation.
 - Document the fix in `docs/algorithms/storage.md`.
 
 ## Status
-Open
+Archived
