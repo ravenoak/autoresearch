@@ -15,5 +15,11 @@ None.
 - Update `docs/algorithms/` with summaries of any new proofs or simulations.
 - Reference follow-up tickets for modules that still require formal validation.
 
+## Findings
+- Cache, distributed coordination, and search now include proofs or simulations
+  and link to specs and tests.
+- Remaining modules without validation are listed in
+  `docs/algorithms/README.md` under *Pending*.
+
 ## Status
 Open

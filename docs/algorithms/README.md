@@ -26,3 +26,38 @@
 - [Search Cache](cache.md)
 - [CLI Helpers](cli_helpers.md)
 - [Interfaces](interfaces.md)
+
+## Proof and Simulation Coverage
+
+### Completed
+- Cache – simulation verifies linear eviction cost and correctness.
+- Distributed coordination – leader election proof and performance simulation.
+- Search – monotonic ranking proof and convergence simulation.
+
+### Pending
+- a2a_interface
+- api_rate_limiting
+- api_streaming
+- bm25
+- cli_backup
+- cli_helpers
+- cli_utils
+- config_hot_reload
+- config_utils
+- distributed_workflows
+- error_utils
+- errors
+- extensions
+- interfaces
+- mcp_interface
+- models
+- ontology_reasoning
+- output_format
+- resource_monitor
+- search_ranking
+- semantic_similarity
+- streamlit_app
+- synthesis
+- test_tools
+- tracing
+- visualization

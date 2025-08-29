@@ -21,8 +21,16 @@ file so repeated queries avoid duplicate work.
   after retrieval.
 - `clear` drops all tables, guaranteeing subsequent reads see an empty cache.
 
+## Simulation
+[`simulate_cache_eviction.py`](../../scripts/simulate_cache_eviction.py)
+evicts the oldest entries until the TinyDB stays under a fixed size. The run
+time grows linearly with the number of records, empirically confirming the
+`O(n)` bounds above.
+
 ## References
 - [`cache.py`](../../src/autoresearch/cache.py)
+- [spec](../specs/cache.md)
+- [`test_cache.py`](../../tests/unit/test_cache.py)
 - [`simulate_cache_eviction.py`][cache-sim]
 
 [cache-sim]: ../../scripts/simulate_cache_eviction.py

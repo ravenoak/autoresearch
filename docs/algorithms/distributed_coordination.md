@@ -108,3 +108,7 @@ A plot of these metrics is shown below.
 ![CPU and memory scaling](../diagrams/distributed_coordination_performance.svg)
 
 [dc-analysis]: ../../tests/analysis/distributed_coordination_analysis.py
+
+## References
+- [spec](../specs/distributed.md)
+- [`test_distributed_coordination.py`](../../tests/analysis/test_distributed_coordination.py)
