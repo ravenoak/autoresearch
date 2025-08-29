@@ -102,6 +102,9 @@ rm -rf /var/lib/apt/lists/*
 install_dev_test_extras
 ensure_venv_bin_on_path ".venv/bin"
 
+# Ensure core test packages are installed
+uv pip install pytest pytest-bdd freezegun hypothesis >/dev/null
+
 # Install Go Task inside the virtual environment and expose it on PATH
 if ! retry 3 bash -c "curl -sL https://taskfile.dev/install.sh | sh -s -- -b ./.venv/bin"; then
     echo 'task installation failed; see https://taskfile.dev/#/installation' >&2
@@ -182,7 +185,7 @@ PY
 
 # Confirm key packages import successfully
 python - <<'PY'
-import freezegun, tomli_w, hypothesis, pytest_cov, pytest_bdd
+import freezegun, tomli_w, hypothesis, pytest, pytest_cov, pytest_bdd
 PY
 deactivate
 

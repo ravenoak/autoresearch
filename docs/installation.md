@@ -23,6 +23,13 @@ download fails. Manual installation instructions are below if needed.
 Use `scripts/setup.sh` for local development. Environment-specific helpers are
 documented in `AGENTS.md`.
 
+Both setup helpers add `.venv/bin` to `PATH` so `task --version` works right
+away. Activate the environment in a new shell with:
+
+```bash
+source .venv/bin/activate
+```
+
 The Redis package installs with the `dev` extra. A running Redis server is
 required only for tests or features that use the `.[distributed]` extra. The
 test suite includes a `redis_client` fixture that connects to a local server or

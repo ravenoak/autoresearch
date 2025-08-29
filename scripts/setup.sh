@@ -62,8 +62,11 @@ fi
 # Install locked dependencies, development/test extras, and AR_EXTRAS
 install_dev_test_extras
 
+# Ensure core test packages are installed
+uv pip install pytest pytest-bdd freezegun hypothesis >/dev/null
+
 # Verify dev and test extras are installed
-for pkg in pytest_httpx tomli_w freezegun hypothesis redis; do
+for pkg in pytest pytest-bdd pytest_httpx tomli_w freezegun hypothesis redis; do
     if ! uv pip show "$pkg" >/dev/null 2>&1; then
         echo "$pkg is required for tests but was not installed" >&2
         exit 1
