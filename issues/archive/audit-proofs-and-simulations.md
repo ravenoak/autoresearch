@@ -22,4 +22,5 @@ None.
   `docs/algorithms/README.md` under *Pending*.
 
 ## Status
-Open
+Archived
+
