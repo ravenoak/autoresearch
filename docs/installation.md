@@ -6,8 +6,15 @@ environments.
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
-manually when it is missing:
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Run the following
+one-step bootstrap to install them along with all extras needed for unit,
+integration, and behavior tests:
+
+```bash
+./scripts/setup.sh
+```
+
+The helper downloads Go Task when missing. If you prefer manual installation:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
@@ -15,8 +22,7 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 ```
 
 `task install` checks for Go Task and downloads it to `.venv/bin` when missing.
-Run `./scripts/setup.sh` for the full developer bootstrap or if the automatic
-download fails. Manual installation instructions are below if needed.
+Manual instructions are below if the setup script fails.
 
 ## Setup scripts
 
