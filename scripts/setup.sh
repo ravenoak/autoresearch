@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Usage: AR_EXTRAS="nlp" ./scripts/setup.sh
-# Detects the host platform, runs platform-specific setup, then universal setup.
+# Usage: ./scripts/setup.sh
+# Detects the host platform, ensures uv and Go Task are installed, and installs
+# all extras required for unit, integration, and behavior tests.
 set -euo pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
@@ -16,5 +17,6 @@ case "$(uname -s)" in
         ;;
 esac
 
-AR_EXTRAS="${AR_EXTRAS:-ui vss}" "$SCRIPT_DIR/setup_universal.sh" "$@"
+AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
+    "$SCRIPT_DIR/setup_universal.sh" "$@"
 
