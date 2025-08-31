@@ -29,7 +29,7 @@ install_test_extras() {
     if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
         VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
     else
-        echo "duckdb extension download failed; falling back to stub" >&2
+        echo "Warning: duckdb extension download failed; falling back to stub" >&2
     fi
     VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
     if [ ! -f "$VSS_EXTENSION" ]; then
@@ -57,10 +57,7 @@ if [ -s "$VSS_EXTENSION" ]; then
     uv run python scripts/smoke_test.py \
         || echo "Smoke test failed; environment may be incomplete" >&2
 else
-    echo "Running smoke test with stubbed extension..."
-    PYTHONPATH="tests/stubs:${PYTHONPATH:-}" \
-        uv run python scripts/smoke_test.py \
-        || echo "Smoke test failed; environment may be incomplete" >&2
+    echo "Extension stub detected; skipping smoke test."
 fi
 
 # Ensure Go Task resides in the virtual environment so subsequent Taskfile
@@ -74,7 +71,8 @@ if [ ! -x "$TASK_BIN" ]; then
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || true
+        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" \
+            || echo "Warning: failed to download Go Task; continuing without it" >&2
     fi
 fi
 "$TASK_BIN" --version >/dev/null 2>&1 \

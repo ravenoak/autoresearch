@@ -71,10 +71,9 @@ easier.
 
 This will download the appropriate VSS extension for the specified platform and
 store it in the specified directory. If the download fails, the script logs a
-warning and exits so the application can continue without the extension. The
-setup script then creates a placeholder file and skips the smoke test so
-installation finishes with vector search disabled. The script will output the
-exact path to use in your configuration file.
+warning and continues without the extension. The setup script then creates a
+placeholder file and skips the smoke test so installation finishes with vector
+search disabled. It prints the path to use in your configuration file.
 
 ### Configuration for Offline Use
 
