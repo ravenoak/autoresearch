@@ -31,6 +31,12 @@ def has_git() -> bool:
 
 
 @pytest.fixture
+def has_distributed() -> bool:
+    """Return True if distributed extras are installed."""
+    return _module_available("ray")
+
+
+@pytest.fixture
 def has_analysis() -> bool:
     """Return True if analysis extras are installed."""
     return _module_available("polars")
