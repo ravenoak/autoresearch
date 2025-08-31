@@ -1,12 +1,12 @@
 # Status
 
-As of **September 15, 2025**, the environment installs the Go Task CLI and
-optional extras. `task check` passes, but `task verify` stalled during the
-coverage step after syncing all extras. The run exited after a manual
-interrupt, leaving coverage data unreported. When DuckDB extensions cannot be
-downloaded, setup logs a warning and skips the smoke test, falling back to a
-stub; see `docs/duckdb_compatibility.md` for details. Dependency pins for
-`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
+As of **August 31, 2025**, the evaluation environment lacked the Go Task CLI.
+Dependencies were installed with `uv sync`, but `task check` could not run and
+`uv run pytest tests/unit` was interrupted after the first test, leaving overall
+test and coverage status unknown. When DuckDB extensions cannot be downloaded,
+setup logs a warning and skips the smoke test, falling back to a stub; see
+`docs/duckdb_compatibility.md` for details. Dependency pins for `fastapi`
+(>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
@@ -28,17 +28,18 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-Passed via `task check`.
+Not run: missing `task` CLI prevented `task check`.
 
 ## Targeted tests
-Fail: `test_message_processing_is_idempotent` exceeded its Hypothesis deadline.
+Partial: `uv run pytest tests/unit` collected 805 tests; the first passed, but
+the run was interrupted before `test_message_processing_is_idempotent` could
+complete.
 
 ## Integration tests
 Not executed.
 
 ## Behavior tests
-Fail: missing step definitions in 19 scenarios; suite not executed in latest run.
+Not executed.
 
 ## Coverage
-Not reported: coverage run stalled and was interrupted; previous targeted
-modules were **100%** (57/57 lines).
+Not reported: test run interruption prevented coverage generation.
