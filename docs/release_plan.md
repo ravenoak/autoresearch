@@ -18,8 +18,11 @@ defined in `autoresearch.__version__`. Phase 3
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
-Current test and coverage results are tracked in
-[../STATUS.md](../STATUS.md).
+`flake8` and `mypy` pass, targeted tests succeed, and integration tests are
+skipped. Behavior-driven scenarios fail: 19 steps lack definitions. Coverage
+is **100%** (57/57 lines) for targeted modules. Outstanding coverage gaps are
+tracked in [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current
+test and coverage results are tracked in [../STATUS.md](../STATUS.md).
 
 ## Milestones
 
@@ -137,3 +140,4 @@ skips GPU-only packages unless `EXTRAS="gpu"` is set:
 - [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
   syncs docs with `baseline/coverage.xml`
 
+[coverage-gap-issue]: ../issues/resolve-pre-alpha-release-blockers.md
