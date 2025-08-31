@@ -18,11 +18,14 @@ defined in `autoresearch.__version__`. Phase 3
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
-`flake8` and `mypy` pass, targeted tests succeed, and integration tests are
-skipped. Behavior-driven scenarios fail: 19 steps lack definitions. Coverage
-is **100%** (57/57 lines) for targeted modules. Outstanding coverage gaps are
-tracked in [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current
-test and coverage results are tracked in [../STATUS.md](../STATUS.md).
+`flake8` and `mypy` pass, but `task verify` fails:
+`tests/unit/distributed/test_coordination_properties.py::`
+`test_message_processing_is_idempotent` exceeds its Hypothesis deadline and 19
+behavior scenarios lack definitions.
+Coverage was not generated; targeted modules remain at **100%** (57/57 lines).
+Outstanding gaps are tracked in
+[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
+are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
 

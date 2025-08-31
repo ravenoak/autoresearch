@@ -7,6 +7,9 @@ behavior, and feature-specific suites that rely on optional extras such as
 regressions may slip into optional modules and overall coverage stays far below
 the 90% project goal.
 
+The **August 31, 2025** coverage run failed during unit tests, so suites using
+optional extras never executed.
+
 ## Dependencies
 - [address-task-verify-dependency-builds](address-task-verify-dependency-builds.md)
 

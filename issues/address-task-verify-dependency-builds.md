@@ -6,6 +6,10 @@ hdbscan and CUDA packages. Recent runs finish by pulling pre-built wheels, but
 GPU libraries are still installed, inflating setup time and size. Further work is
 needed to keep the default workflow lightweight for the 0.1.0a1 release.
 
+The **August 31, 2025** `task verify` run pulled pre-built GPU wheels but still
+installed them, and the task failed later due to a unit-test deadline rather than
+build steps.
+
 ## Dependencies
 
 None.
