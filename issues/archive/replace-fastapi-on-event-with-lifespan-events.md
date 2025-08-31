@@ -14,4 +14,4 @@ None.
 - `task check` runs without FastAPI deprecation warnings.
 
 ## Status
-Open
+Archived
