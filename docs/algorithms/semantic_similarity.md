@@ -20,3 +20,10 @@ This scaling allows combination with other non-negative metrics.
 - Nils Reimers and Iryna Gurevych. "Sentence-BERT: Sentence Embeddings using
   Siamese BERT-Networks." 2019.
   [https://arxiv.org/abs/1908.10084](https://arxiv.org/abs/1908.10084)
+
+## Simulation
+
+Automated tests confirm semantic similarity behavior.
+
+- [Spec](../specs/search.md)
+- [Tests](../../tests/integration/test_relevance_ranking_integration.py)

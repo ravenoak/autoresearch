@@ -12,3 +12,10 @@ Manage DuckDB extensions, especially the VSS module.
 ## References
 - [`extensions.py`](../../src/autoresearch/extensions.py)
 - [../specs/extensions.md](../specs/extensions.md)
+
+## Simulation
+
+Automated tests confirm extensions behavior.
+
+- [Spec](../specs/extensions.md)
+- [Tests](../../tests/integration/test_vector_search_params.py)

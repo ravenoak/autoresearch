@@ -24,3 +24,10 @@ redaction.
 ## References
 
 - [`error_utils.py`](../../src/autoresearch/error_utils.py)
+
+## Simulation
+
+Automated tests confirm error utils behavior.
+
+- [Spec](../specs/error-utils.md)
+- [Tests](../../tests/unit/test_error_utils_additional.py)

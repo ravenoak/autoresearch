@@ -21,3 +21,10 @@ calls.
 
 - [`mcp_interface.py`](../../src/autoresearch/mcp_interface.py)
 - [`test_a2a_mcp_handshake.py`](../../tests/unit/test_a2a_mcp_handshake.py)
+
+## Simulation
+
+Automated tests confirm mcp interface behavior.
+
+- [Spec](../specs/mcp-interface.md)
+- [Tests](../../tests/unit/test_mcp_interface.py)

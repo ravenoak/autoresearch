@@ -10,3 +10,10 @@ Experimental web interface for Autoresearch.
 ## References
 - [`streamlit_app.py`](../../src/autoresearch/streamlit_app.py)
 - [../specs/streamlit-app.md](../specs/streamlit-app.md)
+
+## Simulation
+
+Automated tests confirm streamlit app behavior.
+
+- [Spec](../specs/streamlit-app.md)
+- [Tests](../../tests/integration/test_streamlit_gui.py)

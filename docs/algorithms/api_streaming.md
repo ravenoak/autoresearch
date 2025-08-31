@@ -21,3 +21,9 @@ state to the client, then posts the final response to any configured webhooks.
   result is queued, a `None` sentinel signals completion and the response
   closes promptly.
 
+## Simulation
+
+Automated tests confirm api streaming behavior.
+
+- [Spec](../specs/api.md)
+- [Tests](../../tests/behavior/steps/api_streaming_steps.py)

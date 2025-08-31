@@ -8,3 +8,10 @@ Autoresearch uses configuration utilities to manage runtime settings.
   `ConfigModel` schema, preventing invalid keys.
 
 See also: [../specs/config-utils.md](../specs/config-utils.md).
+
+## Simulation
+
+Automated tests confirm config utils behavior.
+
+- [Spec](../specs/config-utils.md)
+- [Tests](../../tests/unit/test_config_reload.py)

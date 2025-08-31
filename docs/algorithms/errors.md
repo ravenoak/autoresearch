@@ -18,3 +18,10 @@ Unified error hierarchy with context-rich messages.
 ## References
 - [`errors.py`](../../src/autoresearch/errors.py)
 - [../specs/errors.md](../specs/errors.md)
+
+## Simulation
+
+Automated tests confirm errors behavior.
+
+- [Spec](../specs/errors.md)
+- [Tests](../../tests/unit/test_config_validation_errors.py)

@@ -47,3 +47,10 @@ Rendering remains interactive for graphs under 200 nodes on typical hardware.
   force-directed placement." *Software: Practice and Experience*, 1991.
   <https://doi.org/10.1002/spe.4380211102>
 - NetworkX documentation. <https://networkx.org/>
+
+## Simulation
+
+Automated tests confirm visualization behavior.
+
+- [Spec](../specs/visualization.md)
+- [Tests](../../tests/unit/test_visualization.py)

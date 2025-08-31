@@ -54,3 +54,10 @@ Property-based tests
 [tests/unit/test_property_api_rate_limit_bounds.py](../../tests/unit/test_property_api_rate_limit_bounds.py)
 generate random request patterns to confirm that a client never exceeds its
 configured bound.
+
+## Simulation
+
+Automated tests confirm api rate limiting behavior.
+
+- [Spec](../specs/api.md)
+- [Tests](../../tests/unit/test_property_api_rate_limit_bounds.py)

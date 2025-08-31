@@ -7,3 +7,10 @@ Autoresearch defines Pydantic data models for requests and responses.
 - Schema guarantees: exportable JSON schema documents the public interface.
 
 See also: [../specs/models.md](../specs/models.md).
+
+## Simulation
+
+Automated tests confirm models behavior.
+
+- [Spec](../specs/models.md)
+- [Tests](../../tests/integration/test_simple_orchestration.py)

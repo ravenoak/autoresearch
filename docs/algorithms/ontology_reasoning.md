@@ -65,3 +65,10 @@ Reasoning time vs triple count:
 
 [^owlrl]: https://rdflib.github.io/OWL-RL/
 [^rdfs]: https://www.w3.org/TR/rdf11-mt/
+
+## Simulation
+
+Automated tests confirm ontology reasoning behavior.
+
+- [Spec](../specs/kg-reasoning.md)
+- [Tests](../../tests/integration/test_ontology_reasoning.py)

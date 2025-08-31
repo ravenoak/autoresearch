@@ -22,3 +22,10 @@ consumers. It validates `QueryResponse` data and renders multiple formats.
 ## References
 - [`output_format.py`](../../src/autoresearch/output_format.py)
 - [`test_output_format.py`](../../tests/unit/test_output_format.py)
+
+## Simulation
+
+Automated tests confirm output format behavior.
+
+- [Spec](../specs/output-format.md)
+- [Tests](../../tests/unit/test_formattemplate_property.py)

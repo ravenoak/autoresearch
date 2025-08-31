@@ -15,3 +15,10 @@ Formatting helpers for command line output and queries.
 ## References
 - [`cli_utils.py`](../../src/autoresearch/cli_utils.py)
 - [../specs/cli-utils.md](../specs/cli-utils.md)
+
+## Simulation
+
+Automated tests confirm cli utils behavior.
+
+- [Spec](../specs/cli-utils.md)
+- [Tests](../../tests/unit/test_cli_utils_extra.py)

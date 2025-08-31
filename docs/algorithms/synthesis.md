@@ -13,3 +13,10 @@ Functions that craft answers and rationales from claims.
 ## References
 - [`synthesis.py`](../../src/autoresearch/synthesis.py)
 - [../specs/synthesis.md](../specs/synthesis.md)
+
+## Simulation
+
+Automated tests confirm synthesis behavior.
+
+- [Spec](../specs/synthesis.md)
+- [Tests](../../tests/behavior/features/synthesis.feature)

@@ -16,3 +16,10 @@ Typer commands for managing storage backups.
 ## References
 - [`cli_backup.py`](../../src/autoresearch/cli_backup.py)
 - [../specs/cli-backup.md](../specs/cli-backup.md)
+
+## Simulation
+
+Automated tests confirm cli backup behavior.
+
+- [Spec](../specs/cli-backup.md)
+- [Tests](../../tests/targeted/test_cli_backup_validation.py)

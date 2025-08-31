@@ -29,3 +29,10 @@ when work crosses process or network boundaries.
   dropped after the retry buffer fills.
 - Context loss: forgetting to propagate context across async or thread
   boundaries breaks span linkage and produces orphaned traces.
+
+## Simulation
+
+Automated tests confirm tracing behavior.
+
+- [Spec](../specs/tracing.md)
+- [Tests](../../tests/behavior/features/tracing.feature)

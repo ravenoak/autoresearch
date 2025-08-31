@@ -20,3 +20,10 @@ orchestrator.
 
 - [`a2a_interface.py`](../../src/autoresearch/a2a_interface.py)
 - [`test_a2a_mcp_handshake.py`](../../tests/unit/test_a2a_mcp_handshake.py)
+
+## Simulation
+
+Automated tests confirm a2a interface behavior.
+
+- [Spec](../specs/a2a-interface.md)
+- [Tests](../../tests/integration/test_a2a_interface.py)

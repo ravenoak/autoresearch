@@ -11,3 +11,10 @@ Shared typing helpers describe contracts between orchestration components.
 
 ## References
 - [`interfaces.py`](../../src/autoresearch/interfaces.py)
+
+## Simulation
+
+Automated tests confirm interfaces behavior.
+
+- [Spec](../specs/agents.md)
+- [Tests](../../tests/behavior/features/query_interface.feature)

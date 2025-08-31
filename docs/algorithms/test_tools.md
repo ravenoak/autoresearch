@@ -14,3 +14,10 @@ Helpers for exercising A2A and MCP endpoints.
 ## References
 - [`test_tools.py`](../../src/autoresearch/test_tools.py)
 - [../specs/test-tools.md](../specs/test-tools.md)
+
+## Simulation
+
+Automated tests confirm test tools behavior.
+
+- [Spec](../specs/test-tools.md)
+- [Tests](../../tests/unit/test_test_tools.py)

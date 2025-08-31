@@ -22,3 +22,10 @@ Utility functions in `cli_helpers` keep the command interface friendly.
 
 ## References
 - [`cli_helpers.py`](../../src/autoresearch/cli_helpers.py)
+
+## Simulation
+
+Automated tests confirm cli helpers behavior.
+
+- [Spec](../specs/cli-helpers.md)
+- [Tests](../../tests/unit/test_cli_helpers.py)
