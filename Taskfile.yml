@@ -151,6 +151,8 @@ tasks:
     desc: "Run full test suite with coverage reporting"
 
   verify:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     # Coverage-enabled check before committing.
     cmds:
       - |
@@ -164,8 +166,7 @@ tasks:
             --extra git \
             --extra distributed \
             --extra analysis \
-            --extra llm \
-            --extra parsers
+            --extra parsers{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src
@@ -181,7 +182,9 @@ tasks:
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
-    desc: "Run linting, type checks, targeted tests, and coverage"
+    desc: |
+      Run linting, type checks, targeted tests, and coverage.
+      Set EXTRAS="llm" to include optional GPU packages.
 
   clean:
     cmds:

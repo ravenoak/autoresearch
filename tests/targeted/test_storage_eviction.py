@@ -2,11 +2,6 @@
 
 from threading import Thread
 
-from pathlib import Path  # noqa: E402
-import sys  # noqa: E402
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tests"))  # noqa: E402
-import stubs  # noqa: F401,E402
 import pytest  # noqa: E402
 pytestmark = pytest.mark.skip("requires storage extras")
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
