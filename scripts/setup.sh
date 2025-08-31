@@ -17,20 +17,32 @@ case "$(uname -s)" in
         ;;
 esac
 
-AR_SKIP_SMOKE_TEST=1 \
-AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
-    "$SCRIPT_DIR/setup_universal.sh" "$@" || {
-        echo "setup_universal.sh failed; installing test extras without Go Task..."
-        uv pip install -e ".[test]"
-        # Mirror DuckDB vector extension setup from setup_universal.sh
-        source "$SCRIPT_DIR/setup_common.sh"
-        mkdir -p extensions
-        if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
-            VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
-        fi
-        VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
-        record_vector_extension_path "$VSS_EXTENSION"
-    }
+install_test_extras() {
+    # Install test dependencies when Go Task is unavailable so pytest can run.
+    source "$SCRIPT_DIR/setup_common.sh"
+    ensure_uv
+    uv venv
+    ensure_venv_bin_on_path "$(pwd)/.venv/bin"
+    uv pip install -e ".[test]"
+    mkdir -p extensions
+    if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
+        VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+    fi
+    VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
+    record_vector_extension_path "$VSS_EXTENSION"
+}
+
+if ! command -v task >/dev/null 2>&1; then
+    echo "Go Task not found; installing test extras..."
+    install_test_extras
+else
+    AR_SKIP_SMOKE_TEST=1 \
+    AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
+        "$SCRIPT_DIR/setup_universal.sh" "$@" || {
+            echo "setup_universal.sh failed; installing test extras without Go Task..."
+            install_test_extras
+        }
+fi
 
 # Run smoke test only when a real extension is present
 # Network failures produce a stub so the environment can still install.
