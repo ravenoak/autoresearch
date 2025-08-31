@@ -27,15 +27,16 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
-          uv sync $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+          extras="dev-minimal test nlp ui vss git distributed analysis parsers"
+          uv sync --python-platform x86_64-manylinux_2_28 \
+              $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
       Initialize dev env with all extras.
       Syncs dev-minimal, test, nlp, ui, vss, git, distributed,
-      analysis, llm, and parsers extras by default.
-      Set EXTRAS="gpu" to include optional features such as gpu or minimal.
+      analysis and parsers extras by default.
+      Set EXTRAS="gpu" to include optional GPU packages.
   check-env:
     cmds:
       - uv run python scripts/check_env.py
@@ -54,7 +55,7 @@ tasks:
     # exercises version and CLI smoke tests. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --extra dev-minimal
+      - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
@@ -142,11 +143,16 @@ tasks:
             --extra git \
             --extra distributed \
             --extra analysis \
-            --extra llm \
             --extra parsers
-      - uv run pytest tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
-      - uv run pytest tests/integration -m 'not slow' --cov=src --cov-report=term-missing --cov-append
-      - uv run pytest tests/behavior -m 'not slow' --cov=src --cov-report=xml --cov-report=term-missing --cov-append
+      - >
+          uv run pytest tests/unit -m 'not slow' \
+          --cov=src --cov-report=term-missing --cov-append
+      - >
+          uv run pytest tests/integration -m 'not slow' \
+          --cov=src --cov-report=term-missing --cov-append
+      - >
+          uv run pytest tests/behavior -m 'not slow' \
+          --cov=src --cov-report=xml --cov-report=term-missing --cov-append
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
@@ -173,7 +179,6 @@ tasks:
             --extra git \
             --extra distributed \
             --extra analysis \
-            --extra llm \
             --extra parsers{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - task check-env
       - uv run flake8 src tests
