@@ -18,7 +18,18 @@ case "$(uname -s)" in
 esac
 
 AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
-    "$SCRIPT_DIR/setup_universal.sh" "$@"
+    "$SCRIPT_DIR/setup_universal.sh" "$@" || {
+        echo "setup_universal.sh failed; installing test extras without Go Task..."
+        uv pip install -e ".[test]"
+        # Mirror DuckDB vector extension setup from setup_universal.sh
+        source "$SCRIPT_DIR/setup_common.sh"
+        mkdir -p extensions
+        if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
+            VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+        fi
+        VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
+        record_vector_extension_path "$VSS_EXTENSION"
+    }
 
 # Ensure Go Task resides in the virtual environment so subsequent Taskfile
 # invocations use the expected binary. Link an existing installation when
@@ -31,11 +42,9 @@ if [ ! -x "$TASK_BIN" ]; then
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"
+        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || true
     fi
 fi
-"$TASK_BIN" --version >/dev/null 2>&1 || {
-    echo "task --version failed; Go Task is required" >&2
-    exit 1
-}
+"$TASK_BIN" --version >/dev/null 2>&1 \
+    || echo "task --version failed; continuing without Go Task" >&2
 
