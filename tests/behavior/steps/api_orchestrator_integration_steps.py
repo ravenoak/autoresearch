@@ -67,9 +67,7 @@ def test_api_handles_errors():
     pass
 
 
-@scenario(
-    "../features/api_orchestrator_integration.feature", "API respects query parameters"
-)
+@scenario("../features/api_orchestrator_integration.feature", "API respects query parameters")
 def test_api_respects_parameters():
     """Test that the API respects query parameters."""
     pass
@@ -116,7 +114,7 @@ def test_api_config_crud():
 def api_server_running(test_context, api_client, monkeypatch):
     """Set up a running API server for testing with permissive permissions."""
     cfg = ConfigModel(api=APIConfig())
-    cfg.api.role_permissions["anonymous"].append("capabilities")
+    cfg.api.role_permissions["anonymous"].extend(["capabilities", "config"])
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     test_context["client"] = api_client
 
@@ -143,18 +141,16 @@ def orchestrator_receives_query(test_context):
     mock_orchestrator = test_context["mock_orchestrator"]
     mock_orchestrator.run_query.assert_called_once()
     args, kwargs = mock_orchestrator.run_query.call_args
-    assert args[0] == test_context["query"], (
-        f"Expected query '{test_context['query']}', got '{args[0]}'"
-    )
+    assert (
+        args[0] == test_context["query"]
+    ), f"Expected query '{test_context['query']}', got '{args[0]}'"
 
 
 @then("the API should return the orchestrator's response")
 def api_returns_orchestrator_response(test_context):
     """Verify that the API returns the orchestrator's response."""
     response = test_context["response"]
-    assert response.status_code == 200, (
-        f"Expected status code 200, got {response.status_code}"
-    )
+    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
 
     # The response should match what the orchestrator returned
     query = test_context["query"]
@@ -219,9 +215,7 @@ def api_returns_error_response(test_context):
         # Error information in the response body
         data = response.json()
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], (
-            f"Answer does not indicate an error: {data['answer']}"
-        )
+        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
 
 
 @then("the error response should include a helpful message")
@@ -236,12 +230,8 @@ def error_response_includes_message(test_context):
         assert data["detail"], "Error detail is empty"
     else:
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], (
-            f"Answer does not indicate an error: {data['answer']}"
-        )
-        assert len(data["answer"]) > 7, (
-            "Error message is too short"
-        )  # "Error: " is 7 characters
+        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
+        assert len(data["answer"]) > 7, "Error message is too short"  # "Error: " is 7 characters
 
 
 @then("the error should be logged")
@@ -259,9 +249,7 @@ def error_is_logged(test_context, monkeypatch, caplog):
         assert True, "API returned an error status code"
     else:
         assert "answer" in data, "Response does not contain an answer field"
-        assert "Error:" in data["answer"], (
-            f"Answer does not indicate an error: {data['answer']}"
-        )
+        assert "Error:" in data["answer"], f"Answer does not indicate an error: {data['answer']}"
 
 
 # Scenario: API respects query parameters
@@ -321,9 +309,7 @@ def send_concurrent_queries(test_context):
     # Use ThreadPoolExecutor to send concurrent requests
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [
-            executor.submit(
-                test_context["client"].post, "/query", json={"query": query}
-            )
+            executor.submit(test_context["client"].post, "/query", json={"query": query})
             for query in queries
         ]
         responses = [future.result() for future in futures]
@@ -336,12 +322,8 @@ def send_concurrent_queries(test_context):
 def all_queries_processed(test_context):
     """Verify that all queries were processed."""
     responses = test_context["concurrent_responses"]
-    assert len(responses) == len(test_context["queries"]), (
-        "Not all queries were processed"
-    )
-    assert all(response.status_code == 200 for response in responses), (
-        "Some queries failed"
-    )
+    assert len(responses) == len(test_context["queries"]), "Not all queries were processed"
+    assert all(response.status_code == 200 for response in responses), "Some queries failed"
 
 
 @then("each response should be correct for its query")
@@ -351,9 +333,7 @@ def responses_match_queries(test_context):
     for query, response in zip(test_context["queries"], responses):
         data = response.json()
         assert data.get("answer") == query
-        assert data.get("citations") == [
-            {"text": "Test citation", "url": "https://example.com"}
-        ]
+        assert data.get("citations") == [{"text": "Test citation", "url": "https://example.com"}]
         assert data.get("reasoning") == [
             "Test reasoning step 1",
             "Test reasoning step 2",

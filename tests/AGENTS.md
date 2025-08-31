@@ -9,7 +9,7 @@ These instructions apply to files in the `tests/` directory.
 
 ## Setup
 - Install base development dependencies with `task install` (uses `uv`).
-- When invoking `pytest` directly, prefix commands with `uv run`.
+- When invoking `pytest` directly, prefix commands with `uv run --extra test` to include test extras.
 - The behavior suite runs as part of `task verify` and `task coverage`.
 
 ## Conventions
