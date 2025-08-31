@@ -1,21 +1,20 @@
 # Status
 
-As of **August 31, 2025**, `task check` and `task verify` cannot run because the
-`task` CLI is missing. Invoking `uv run pytest -q` fails with
-`ModuleNotFoundError: No module named 'pytest_bdd'`, so behavior and integration
-tests remain unexecuted and coverage is not reported.
+As of **August 31, 2025**, the environment now installs the Go Task CLI and
+optional extras. `task check` passes, but `task verify` fails: 19
+behavior-driven tests lack step definitions, so coverage is not reported.
 
 ## Lint, type checks, and spec tests
-Not run.
+Passed via `task check`.
 
 ## Targeted tests
-Not run.
+Passed during `task verify`.
 
 ## Integration tests
 Not executed.
 
 ## Behavior tests
-Cannot run: `pytest_bdd` module missing.
+Fail: missing step definitions in 19 scenarios.
 
 ## Coverage
-Unavailable while tests fail before collection.
+Unavailable while behavior tests fail.
