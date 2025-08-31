@@ -1,6 +1,8 @@
 from pathlib import Path
 from datetime import datetime
-from pytest_bdd import scenario, given, when, then, parsers
+
+import pytest
+from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.main import app as cli_app
 from autoresearch.config.loader import ConfigLoader
@@ -8,11 +10,16 @@ from autoresearch.storage_backup import BackupManager, BackupInfo
 from .common_steps import assert_cli_success
 
 
-@given("a temporary work directory", target_fixture="work_dir")
+@pytest.fixture
 def work_dir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     ConfigLoader.reset_instance()
     return tmp_path
+
+
+@given("a temporary work directory", target_fixture="work_dir")
+def given_work_dir(work_dir):
+    return work_dir
 
 
 @given(parsers.parse('a dummy backup file "{path}"'))
@@ -23,7 +30,7 @@ def dummy_backup_file(work_dir, path):
     return file_path
 
 
-@when(parsers.parse('I run `autoresearch config backup create --dir {dir}`'))
+@when(parsers.parse("I run `autoresearch config backup create --dir {dir}`"))
 def run_backup_create(
     dir,
     cli_runner,
@@ -59,7 +66,7 @@ def run_backup_create(
     bdd_context["backup_dir"] = Path(dir)
 
 
-@when(parsers.parse('I run `autoresearch config backup list --dir {dir}`'))
+@when(parsers.parse("I run `autoresearch config backup list --dir {dir}`"))
 def run_backup_list(
     dir,
     cli_runner,
@@ -86,7 +93,7 @@ def run_backup_list(
     bdd_context["result"] = result
 
 
-@when(parsers.parse('I run `autoresearch config backup restore {path} --dir {dir} --force`'))
+@when(parsers.parse("I run `autoresearch config backup restore {path} --dir {dir} --force`"))
 def run_backup_restore(
     path,
     dir,
