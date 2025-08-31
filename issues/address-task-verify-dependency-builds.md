@@ -1,9 +1,10 @@
 # Address task verify dependency builds
 
 ## Context
-`task verify` stalls when building heavy dependencies such as hdbscan and CUDA
-packages during `scripts/setup.sh`. This prevents the full test suite from
-running and delays the 0.1.0a1 release.
+`task verify` previously stalled while compiling heavy dependencies such as
+hdbscan and CUDA packages. Recent runs finish by pulling pre-built wheels, but
+GPU libraries are still installed, inflating setup time and size. Further work is
+needed to keep the default workflow lightweight for the 0.1.0a1 release.
 
 ## Dependencies
 
