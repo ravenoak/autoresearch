@@ -6,10 +6,16 @@ from __future__ import annotations
 import time
 
 import pytest
-from pytest_bdd import scenario, then, when
+from pytest_bdd import given, scenario, then, when
 
 from .common_steps import cli_app
 from . import common_steps  # noqa: F401
+
+
+@given("the application is running")
+def _app_running():
+    """Provide a no-op background step for CLI scenarios."""
+    return
 
 
 @when("I run `autoresearch monitor`")
