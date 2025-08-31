@@ -11,6 +11,11 @@ The **August 31, 2025** `task verify` attempt failed early with
 `test_message_processing_is_idempotent` raising a Hypothesis deadline error, so
 coverage data was not generated.
 
+On **September 15, 2025**, another `task verify` run required manually adding
+`.venv/bin` to `PATH` so nested tasks could execute. The coverage step stalled
+and the task exited after a manual interrupt, leaving coverage results
+unreported.
+
 ## Dependencies
 - [fix-task-verify-package-metadata-errors](fix-task-verify-package-metadata-errors.md)
 - [address-task-verify-dependency-builds](address-task-verify-dependency-builds.md)

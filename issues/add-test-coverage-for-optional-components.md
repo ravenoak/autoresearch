@@ -10,6 +10,9 @@ the 90% project goal.
 The **August 31, 2025** coverage run failed during unit tests, so suites using
 optional extras never executed.
 
+On **September 15, 2025**, `task verify` stalled during the coverage step after
+syncing all extras, preventing optional-component tests from running.
+
 ## Dependencies
 - [address-task-verify-dependency-builds](address-task-verify-dependency-builds.md)
 
