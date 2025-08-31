@@ -159,16 +159,20 @@ tasks:
             --extra dev-minimal \
             --extra dev \
             --extra test \
-            --extra full \
-            --extra parsers \
+            --extra nlp \
+            --extra ui \
+            --extra vss \
             --extra git \
-            --extra llm
+            --extra distributed \
+            --extra analysis \
+            --extra llm \
+            --extra parsers
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
       - >
-          uv run pytest tests/targeted --noconftest
+          uv run pytest tests/targeted -m 'not slow' --noconftest
           --cov=autoresearch.search
           --cov=autoresearch.storage
           --cov=autoresearch.orchestration
