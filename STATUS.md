@@ -23,8 +23,9 @@ uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
 ```
 
-This installs the `[test]` extras and records the DuckDB VSS extension path so
-`uv run pytest` works without `task`.
+This installs the `[test]` extras and uses
+`scripts/download_duckdb_extensions.py` to record the DuckDB VSS extension path
+so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
 Passed via `task check`.
