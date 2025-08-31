@@ -1,7 +1,12 @@
 from types import SimpleNamespace
 from contextlib import contextmanager
 
+import pytest
+
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
+
+
+pytestmark = pytest.mark.requires_llm
 
 
 class DummyAgent:

@@ -13,7 +13,7 @@ from autoresearch.config.loader import ConfigLoader
 # Allow tokens to exceed the baseline by this many tokens before failing
 THRESHOLD = int(os.getenv("TOKEN_USAGE_THRESHOLD", "0"))
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.requires_llm]
 
 BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_usage.json"
 
