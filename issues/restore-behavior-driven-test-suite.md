@@ -1,13 +1,14 @@
 # Restore behavior-driven test suite
 
 ## Context
-Recent runs of `task verify` report 19 failing scenarios across
-`api_batch_query_steps.py`, `api_async_query_steps.py`,
-`search_cli_steps.py`, `monitor_cli_steps.py`, and
-`query_interface_steps.py`. While `pytest-bdd` is installed, many step
-definitions are missing so the behavior suite aborts before coverage is
-recorded. Without passing BDD tests, critical user workflows, reasoning
-modes, and error recovery paths remain unverified.
+Running `uv run pytest` currently fails with
+`ModuleNotFoundError: No module named 'pytest_bdd'`. After installing this
+plugin, `task verify` reports 19 failing scenarios across
+`api_batch_query_steps.py`, `api_async_query_steps.py`, `search_cli_steps.py`,
+`monitor_cli_steps.py`, and `query_interface_steps.py`. Many step definitions
+are missing so the behavior suite aborts before coverage is recorded.
+Without passing BDD tests, critical user workflows, reasoning modes, and
+error recovery paths remain unverified.
 
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
