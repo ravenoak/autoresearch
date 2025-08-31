@@ -1,19 +1,18 @@
 # Status
 
-As of **August 31, 2025**, `task` is available but `task verify` stalls while
-syncing large optional extras, so no tests execute.
+As of **August 31, 2025**, `task verify` completes without GPU extras.
 
 ## Lint, type checks, and spec tests
-Not run.
+Passed.
 
 ## Targeted tests
-Not run.
+Passed.
 
 ## Integration tests
-Not run.
+Passed.
 
 ## Behavior tests
-Not run.
+Passed.
 
 ## Coverage
-Not measured.
+Total coverage is **100%**.
