@@ -1,0 +1,2 @@
+# Ignore downloaded wheel files
+*.whl

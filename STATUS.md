@@ -8,6 +8,10 @@ optional extras. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
 setup falls back to a stub yet still runs the environment smoke test; see
 `docs/duckdb_compatibility.md` for details.
 
+References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
+`task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
+features are required.
+
 ## Bootstrapping without Go Task
 
 If the Go Task CLI cannot be installed, set up the environment with:
