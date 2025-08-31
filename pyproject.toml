@@ -69,7 +69,6 @@ nlp = [
     "bertopic >=0.17.3",
     "pynndescent >=0.5.13",
     "scipy >=1.16.0",
-    "transformers >=4.53.0"
 ]
 # UI features: Streamlit-based user interface
 ui = [
@@ -160,8 +159,6 @@ dev = [
     "GitPython >=3.1",
     "pdfminer-six >=20250506", # Date-based release with security fixes
     "python-docx >=1.2.0",
-    "sentence-transformers >=2.7.0",
-    "transformers >=4.53.0",
     "spacy >=3.7.2",
     "bertopic >=0.17.3",
     "responses >=0.25.7",

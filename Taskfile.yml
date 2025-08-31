@@ -155,14 +155,11 @@ tasks:
     # Coverage-enabled check before committing.
     cmds:
       - |
-          uv sync \
-            --extra dev-minimal \
-            --extra dev \
-            --extra test \
-            --extra full \
-            --extra parsers \
-            --extra git \
-            --extra llm
+          extras="dev-minimal dev test full parsers git"
+          if [ "$VERIFY_LLM" = "1" ]; then
+              extras="$extras llm"
+          fi
+          uv sync $(printf ' --extra %s' $extras)
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src
