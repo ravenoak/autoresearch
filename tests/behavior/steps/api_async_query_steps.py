@@ -171,6 +171,7 @@ def test_async_query_cancellation() -> None:
     "Async query timeout triggers retry with backoff",
 )
 def test_async_query_timeout_recovery() -> None:
+    """Async query timeout triggers a retry."""
     return
 
 
@@ -179,6 +180,7 @@ def test_async_query_timeout_recovery() -> None:
     "Async query agent crash fails gracefully",
 )
 def test_async_query_agent_failure() -> None:
+    """Agent crash results in graceful failure."""
     return
 
 
@@ -187,6 +189,7 @@ def test_async_query_agent_failure() -> None:
     "Async query uses fallback agent after failure",
 )
 def test_async_query_fallback_agent() -> None:
+    """Fallback agent handles async query after failure."""
     return
 
 

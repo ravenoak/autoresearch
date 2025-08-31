@@ -37,9 +37,11 @@ def cli_error(bdd_context):
 
 @scenario('../features/search_cli.feature', 'Run a basic search query')
 def test_search_direct():
-    pass
+    """Scenario: Run a basic search query."""
+    return
 
 
 @scenario('../features/search_cli.feature', 'Missing query argument')
 def test_search_missing():
-    pass
+    """Scenario: Missing query argument produces an error."""
+    return

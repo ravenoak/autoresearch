@@ -1,6 +1,6 @@
 # flake8: noqa
 import json
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import given, scenario, when, then, parsers
 
 from .common_steps import (
     app_running,
@@ -9,6 +9,12 @@ from .common_steps import (
     cli_app,
 )
 from . import common_steps  # noqa: F401
+
+
+@given("the Autoresearch application is running")
+def _app_running():
+    """Background step placeholder for feature scenarios."""
+    return
 
 
 @when(parsers.parse('I run `autoresearch search "{query}"` in a terminal'))
