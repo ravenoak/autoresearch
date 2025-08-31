@@ -31,12 +31,14 @@ tasks:
           if [ "$VERIFY_PARSERS" = "1" ]; then
               extras="$extras parsers"
           fi
-          uv sync $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+          UV_TORCH_BACKEND=cpu \
+            uv sync $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
       Initialize dev env with minimal tools.
       Syncs dev-minimal, test, ui, and vss extras by default.
+      GPU packages are skipped unless EXTRAS includes "gpu".
       Set EXTRAS="nlp" to include optional features:
       analysis, distributed, git, gpu, llm, minimal, nlp, parsers, ui, vss
   check-env:
@@ -57,7 +59,7 @@ tasks:
     # exercises version and CLI smoke tests. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --extra dev-minimal
+      - UV_TORCH_BACKEND=cpu uv sync --extra dev-minimal
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
@@ -165,6 +167,7 @@ tasks:
     # Coverage-enabled check before committing.
     cmds:
       - |
+          UV_TORCH_BACKEND=cpu \
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             --extra dev-minimal \

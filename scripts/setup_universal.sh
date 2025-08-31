@@ -18,6 +18,8 @@ fi
 
 ensure_uv
 
+# Prefer pre-built wheels and CPU-only torch backend
+
 PYTHON_BIN=$(command -v python3)
 PYTHON_VERSION=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
 if ! python3 - <<'EOF' >/dev/null 2>&1

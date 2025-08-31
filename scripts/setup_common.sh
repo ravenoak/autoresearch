@@ -32,7 +32,8 @@ install_dev_test_extras() {
         extras="$extras ${AR_EXTRAS}"
     fi
     echo "Installing extras via uv sync --extra ${extras// / --extra }"
-    uv sync $(for e in $extras; do printf -- '--extra %s ' "$e"; done)
+    UV_TORCH_BACKEND=cpu \
+        uv sync $(for e in $extras; do printf -- '--extra %s ' "$e"; done)
     uv pip install -e .
 }
 
