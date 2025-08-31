@@ -1,25 +1,20 @@
 # Status
 
-As of **August 30, 2025**, `task check` and `task verify` complete. `task verify`
-installs CUDA wheels and runs only the targeted suite, so integration and
-behavior tests remain unexecuted. See
-[address-task-verify-dependency-builds](issues/address-task-verify-dependency-builds.md)
-for dependency optimizations and
-[add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
-for coverage gaps.
+As of **August 31, 2025**, `task check` and `task verify` are blocked by a missing
+`task` command. A direct `uv run pytest` attempt fails with
+`ModuleNotFoundError: pytest_bdd`, so no tests execute.
 
 ## Lint, type checks, and spec tests
-Ran via `task verify`.
+Not run.
 
 ## Targeted tests
-Ran via `task verify` (21 passed).
+Not run.
 
 ## Integration tests
 Not run.
 
 ## Behavior tests
-Not run; a smoke run reported failing scenarios.
+Not run.
 
 ## Coverage
-Total coverage is **100%** across 57 statements in targeted modules.
-
+Not measured.
