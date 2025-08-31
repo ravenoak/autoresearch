@@ -6,6 +6,20 @@ behavior-driven tests lack step definitions, so coverage is not reported.
 If DuckDB extensions cannot be downloaded, setup falls back to a stub and
 skips smoke tests; see `docs/duckdb_compatibility.md` for details.
 
+## Bootstrapping without Go Task
+
+If the Go Task CLI cannot be installed, set up the environment with:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[test]"
+uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+```
+
+This installs the `[test]` extras and records the DuckDB VSS extension path so
+`uv run pytest` works without `task`.
+
 ## Lint, type checks, and spec tests
 Passed via `task check`.
 

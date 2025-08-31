@@ -52,6 +52,20 @@ task install
 This syncs the `dev-minimal` and `test` extras to install tools like
 `pytest-httpx`, `duckdb`, and `networkx` needed for local testing.
 
+### Bootstrapping without Go Task
+
+If the Go Task CLI is unavailable, install the test extras manually:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[test]"
+uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+```
+
+This mirrors the DuckDB setup performed by `scripts/setup.sh` and lets
+`uv run pytest` succeed without `task`.
+
 Run `task check` for linting, type checks, and quick smoke tests. It syncs only
 the `dev-minimal` extra and exercises a small unit subset (`test_version` and
 `test_cli_help`) for fast feedback. For the full suite, including integration
