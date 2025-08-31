@@ -12,6 +12,9 @@ missing so the behavior suite aborts before coverage is recorded. Without
 passing BDD tests, critical user workflows, reasoning modes, and error
 recovery paths remain unverified.
 
+On **August 31, 2025**, `task coverage` stopped during unit tests and never
+reached the behavior suite, so the step-definition gaps persist.
+
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
 
