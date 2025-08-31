@@ -1,6 +1,7 @@
 # Status
 
-As of **August 31, 2025**, `task verify` completes without GPU extras.
+As of **August 31, 2025**, `task check` passes but `task verify` fails with
+19 behavior test failures and coverage is not reported.
 
 ## Lint, type checks, and spec tests
 Passed.
@@ -9,10 +10,10 @@ Passed.
 Passed.
 
 ## Integration tests
-Passed.
+Not executed.
 
 ## Behavior tests
-Passed.
+19 failures from missing step definitions and API query scenarios.
 
 ## Coverage
-Total coverage is **100%**.
+Unavailable while `task verify` fails.
