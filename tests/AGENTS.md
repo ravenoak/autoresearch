@@ -30,6 +30,8 @@ These instructions apply to files in the `tests/` directory.
   `.[llm]` extra.
 - Use `requires_parsers` for tests needing document parsing utilities; pair
   with the `.[parsers]` extra.
+- Use `redis` for tests interacting with Redis; pair with `requires_distributed`.
+- Use `a2a_mcp` for MCP integration; pair with `requires_distributed`.
 - Use `error_recovery` for behavior tests verifying recovery paths.
 - Use `reasoning_modes` for behavior tests exploring reasoning strategies.
 - Use `user_workflows` for end-to-end user scenarios.
