@@ -27,18 +27,15 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test ui vss"
-          if [ "$VERIFY_PARSERS" = "1" ]; then
-              extras="$extras parsers"
-          fi
+          extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
           uv sync $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
-      Initialize dev env with minimal tools.
-      Syncs dev-minimal, test, ui, and vss extras by default.
-      Set EXTRAS="nlp" to include optional features:
-      analysis, distributed, git, gpu, llm, minimal, nlp, parsers, ui, vss
+      Initialize dev env with all extras.
+      Syncs dev-minimal, test, nlp, ui, vss, git, distributed,
+      analysis, llm, and parsers extras by default.
+      Set EXTRAS="gpu" to include optional features such as gpu or minimal.
   check-env:
     cmds:
       - uv run python scripts/check_env.py
