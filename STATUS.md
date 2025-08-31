@@ -5,7 +5,7 @@ optional extras. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
 (==0.1.9) remain in place. `task check` passes, but `task verify` fails:
 19 behavior-driven tests lack step definitions, so coverage only reflects the
 57 statements in targeted modules. When DuckDB extensions cannot be downloaded,
-setup falls back to a stub yet still runs the environment smoke test; see
+setup now logs a warning and skips the smoke test, falling back to a stub; see
 `docs/duckdb_compatibility.md` for details.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
