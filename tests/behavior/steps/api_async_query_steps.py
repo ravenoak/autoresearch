@@ -15,6 +15,7 @@ from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.errors import AgentError, TimeoutError
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from . import common_steps  # noqa: F401
 
 from .error_recovery_steps import (  # noqa: F401
     assert_error_category,

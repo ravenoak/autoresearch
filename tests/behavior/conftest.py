@@ -30,14 +30,14 @@ from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 
-pytest_plugins = ("pytest_bdd",)
+# Load step implementations alongside pytest-bdd so their fixtures are available
+pytest_plugins = ("pytest_bdd", "tests.behavior.steps")
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Load step modules and configure feature base directory."""
+    """Configure base directory for feature files."""
     config.option.bdd_features_base_dir = str(FEATURES_DIR)
-    config.pluginmanager.import_plugin("tests.behavior.steps")
 
 
 @pytest.fixture

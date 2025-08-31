@@ -8,6 +8,7 @@ from pytest_bdd import scenario, given, when, then
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
+from . import common_steps  # noqa: F401
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.models import QueryResponse
 
@@ -57,13 +58,13 @@ def submit_batch_mixed_modes(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(query: str, config: ConfigModel, *_, **__) -> QueryResponse:
+    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
         resp = dummy_query_response.model_copy(deep=True)
         resp.answer = query
         mode = getattr(config, "reasoning_mode", None)
         if mode is not None:
             resp.metrics["mode"] = getattr(mode, "value", mode)
-        return resp
+        return resp.model_dump()
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
@@ -119,12 +120,12 @@ def submit_paginated_with_failure(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(query: str, config: ConfigModel, *_, **__) -> QueryResponse:
+    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
         if query == "q3":
             raise ValueError("boom")
         resp = dummy_query_response.model_copy(deep=True)
         resp.answer = query
-        return resp
+        return resp.model_dump()
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
@@ -175,12 +176,12 @@ def submit_batch_error_recovery(
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def run_query(query: str, config: ConfigModel, *_, **__) -> QueryResponse:
+    def run_query(self, query: str, config: ConfigModel, *_, **__) -> dict:
         if query == "bad":
             raise RuntimeError("fail")
         resp = dummy_query_response.model_copy(deep=True)
         resp.answer = query
-        return resp
+        return resp.model_dump()
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
 
