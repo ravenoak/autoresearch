@@ -67,9 +67,9 @@ uv sync --extra dev-minimal --extra test
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
 dependencies. `task check` syncs only these extras so it runs quickly.
-`task verify` automatically syncs the `dev-minimal`, `test`, `full`,
-`parsers`, `git`, and `llm` extras so packages such as GitPython, spaCy,
-and transformers are available for tests.
+`task verify` syncs the `dev-minimal`, `dev`, `test`, `nlp`, `ui`, `vss`,
+`git`, `distributed`, `analysis`, and `parsers` extras. Set
+`EXTRAS="gpu"` to install GPU-only packages.
 
 ## After cloning
 
@@ -85,7 +85,8 @@ Include extras only when required. Examples:
 
 ```bash
 EXTRAS="nlp" task install      # adds NLP packages
-uv sync --extra llm            # sentence-transformers and transformers
+uv sync --extra llm            # LLM libraries
+uv sync --extra gpu            # BERTopic and lmstudio
 VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
@@ -319,20 +320,21 @@ installed by `task install`; enable them with `uv sync --extra <name>` or
 `AR_EXTRAS` environment variable.
 
 `pyproject.toml` defines these groups: minimal, nlp, ui, vss, parsers, git,
-distributed, analysis, llm, test, full, dev, dev-minimal, and build. The table
-below summarizes their purpose and usage.
+distributed, analysis, gpu, llm, test, full, dev, dev-minimal, and build. The
+table below summarizes their purpose and usage.
 
 | Extra | Purpose | Setup command |
 |------|---------|---------------|
 | minimal | core embedding model support | `uv sync --extra minimal` |
-| nlp | topic modeling and transformers | `uv sync --extra nlp` |
+| nlp | spaCy processing | `uv sync --extra nlp` |
 | ui | Streamlit interface | `uv sync --extra ui` |
 | vss | DuckDB vector search extension | `uv sync --extra vss` |
 | parsers | PDF and DOCX ingestion | `uv sync --extra parsers` |
 | git | local Git repository search | `uv sync --extra git` |
 | distributed | Ray and Redis for scaling | `uv sync --extra distributed` |
 | analysis | data analysis via Polars | `uv sync --extra analysis` |
-| llm | heavy LLM dependencies | `uv sync --extra llm` |
+| gpu | GPU-only packages | `uv sync --extra gpu` |
+| llm | LLM libraries | `uv sync --extra llm` |
 | test | packages needed only for tests | `uv sync --extra test` |
 | full | all optional features | `uv sync --extra full` |
 | dev | developer tools | `uv sync --extra dev` |
@@ -346,6 +348,7 @@ uv sync --extra nlp          # language processing
 uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
 uv sync --extra llm          # LLM libraries
+uv sync --extra gpu          # BERTopic and lmstudio
 ```
 
 Install multiple extras separated by commas:
@@ -381,7 +384,7 @@ version notes.
 If you installed Autoresearch before ``0.1.0`` simply upgrade the base
 package and reinstall any extras you require:
 ```bash
-pip install -U "autoresearch[full,llm]"
+pip install -U "autoresearch[full,gpu]"
 ```
 
 ## Troubleshooting optional package builds

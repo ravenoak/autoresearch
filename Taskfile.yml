@@ -38,7 +38,7 @@ tasks:
       Initialize dev env with minimal tools.
       Syncs dev-minimal, test, ui, and vss extras by default.
       Set EXTRAS="nlp" to include optional features:
-      analysis, distributed, git, llm, minimal, nlp, parsers, ui, vss
+      analysis, distributed, git, gpu, llm, minimal, nlp, parsers, ui, vss
   check-env:
     cmds:
       - uv run python scripts/check_env.py
@@ -157,6 +157,7 @@ tasks:
     cmds:
       - |
           uv sync \
+            --python-platform x86_64-manylinux_2_28 \
             --extra dev-minimal \
             --extra dev \
             --extra test \
@@ -184,7 +185,7 @@ tasks:
       - task check-coverage-docs
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Set EXTRAS="llm" to include optional GPU packages.
+      Set EXTRAS="gpu" to include optional GPU packages.
 
   clean:
     cmds:
