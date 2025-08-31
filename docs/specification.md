@@ -150,7 +150,7 @@ Track algorithm notes for top-level modules.
 - [x] `cli_helpers` (docs/algorithms/cli_helpers.md)
 - [x] `cli_utils` (docs/algorithms/cli_utils.md)
 - [x] `config_utils` (docs/algorithms/config_utils.md)
-- [ ] `data_analysis`
+- [x] `data_analysis` (docs/algorithms/data_analysis.md)
 - [x] `distributed_coordination` (docs/algorithms/distributed_coordination.md)
 - [x] `error_recovery` (docs/algorithms/error_recovery.md)
 - [x] `error_utils` (docs/algorithms/error_utils.md)
