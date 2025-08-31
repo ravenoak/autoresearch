@@ -6,7 +6,7 @@ the development `[test]` extra is not installed when the `task` CLI is unavailab
 lack guidance for installing these dependencies manually.
 
 ## Dependencies
-- [restore-task-cli-availability](restore-task-cli-availability.md)
+- [restore-task-cli-availability](archive/restore-task-cli-availability.md)
 
 ## Acceptance Criteria
 - Document manual installation steps for `[test]` extras in `README.md` or `STATUS.md`.
