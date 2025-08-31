@@ -2,11 +2,16 @@ import autoresearch.search as search
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
+import pytest
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.llm import pool as llm_pool
 from autoresearch.storage import StorageManager
 import autoresearch.storage as storage
 from autoresearch.config.loader import ConfigLoader
+
+
+pytestmark = pytest.mark.requires_llm
 
 
 def test_search_session_reuse_and_cleanup(monkeypatch):
