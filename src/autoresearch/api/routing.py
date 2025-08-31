@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager
 from typing import Any, List, Optional, cast
 from uuid import uuid4
 
@@ -380,21 +381,42 @@ def create_app(
     limiter: Limiter | None = None,
 ) -> FastAPI:
     """Application factory for creating isolated FastAPI instances."""
+    loader = config_loader or ConfigLoader()
+    limiter = limiter or Limiter(key_func=get_remote_address)
+    if request_logger is None:
+        request_logger = create_request_logger()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        StorageManager.setup()
+        watch_ctx = loader.watching()
+        watch_ctx.__enter__()
+        app.state.watch_ctx = watch_ctx
+        try:
+            yield
+        finally:
+            try:
+                ctx = getattr(app.state, "watch_ctx", None)
+                if ctx is not None:
+                    ctx.__exit__(None, None, None)
+                    app.state.watch_ctx = None
+            finally:
+                loader.stop_watching()
+
     app = FastAPI(
         title="Autoresearch API",
         description="API for interacting with the Autoresearch system",
         version="1.0.0",
         docs_url=None,
         redoc_url=None,
+        lifespan=lifespan,
     )
     app.add_middleware(AuthMiddleware)
 
-    limiter = limiter or Limiter(key_func=get_remote_address)
     app.state.limiter = limiter
-
-    if request_logger is None:
-        request_logger = create_request_logger()
     app.state.request_logger = request_logger
+    app.state.config_loader = loader
+    app.state.async_tasks = {}
 
     if SLOWAPI_STUB:
         app.add_middleware(
@@ -408,27 +430,6 @@ def create_app(
             request_logger=request_logger,
             limiter=limiter,
         )
-
-    loader = config_loader or ConfigLoader()
-    app.state.config_loader = loader
-    app.state.async_tasks = {}
-
-    @app.on_event("startup")
-    def _startup() -> None:
-        StorageManager.setup()
-        watch_ctx = loader.watching()
-        watch_ctx.__enter__()
-        app.state.watch_ctx = watch_ctx
-
-    @app.on_event("shutdown")
-    def _stop_config_watcher() -> None:
-        try:
-            watch_ctx = getattr(app.state, "watch_ctx", None)
-            if watch_ctx is not None:
-                watch_ctx.__exit__(None, None, None)
-                app.state.watch_ctx = None
-        finally:
-            loader.stop_watching()
 
     app.include_router(router)
     app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
