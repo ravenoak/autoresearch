@@ -1,15 +1,16 @@
 # Resolve pre-alpha release blockers
 
 ## Context
-The project targets its first public alpha (0.1.0a1) but currently lacks a
-passing full test suite and comprehensive release preparation. After running
-`scripts/setup.sh`, `task verify` stalls while compiling heavy dependencies and
-still reports missing package metadata. Behavior-driven scenarios remain
-unexecuted, and coverage sits around 32%.
+The project targets its first public alpha (0.1.0a1) but still lacks a
+comprehensive release-ready test suite. `task verify` now completes using
+pre-built CUDA wheels yet exercises only a small targeted set of tests.
+Behavior-driven scenarios continue to fail and coverage reflects just the
+57 statements in those targeted modules.
 
 ## Dependencies
 - [fix-task-verify-package-metadata-errors](fix-task-verify-package-metadata-errors.md)
 - [address-task-verify-dependency-builds](address-task-verify-dependency-builds.md)
+- [restore-behavior-driven-test-suite](restore-behavior-driven-test-suite.md)
 
 ## Acceptance Criteria
 - `task verify` completes without missing-package errors.
