@@ -68,8 +68,9 @@ uv sync --extra dev-minimal --extra test
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
 dependencies. `task check` syncs only these extras so it runs quickly.
 `task verify` syncs the `dev-minimal`, `dev`, `test`, `nlp`, `ui`, `vss`,
-`git`, `distributed`, `analysis`, and `parsers` extras. Set
-`EXTRAS="gpu"` to install GPU-only packages.
+`git`, `distributed`, `analysis`, and `parsers` extras. It skips GPU
+dependencies so the full run completes in under 15 minutes on a clean
+machine. Set `EXTRAS="gpu"` to install GPU-only packages.
 
 ## After cloning
 
@@ -356,6 +357,25 @@ Install multiple extras separated by commas:
 ```bash
 pip install "autoresearch[minimal,nlp,parsers,git]"
 ```
+
+### Pre-built GPU wheels
+
+The `gpu` extra pulls packages that are expensive to build. Pre-built wheels
+are available for offline installs:
+
+| Package | Wheel |
+|--------|-------|
+| bertopic 0.17.3 | [bertopic-0.17.3.whl][bertopic_wheel] |
+| pynndescent 0.5.13 | [pynndescent-0.5.13.whl][pynndescent_wheel] |
+| scipy 1.16.1 | [scipy-1.16.1-cp312-manylinux_x86_64.whl][scipy_wheel] |
+| lmstudio 1.5.0 | [lmstudio-1.5.0.whl][lmstudio_wheel] |
+
+Place these files in `WHEELS_DIR` to install without network access.
+
+[bertopic_wheel]: https://pypi.org/project/bertopic/0.17.3/#files
+[pynndescent_wheel]: https://pypi.org/project/pynndescent/0.5.13/#files
+[scipy_wheel]: https://pypi.org/project/scipy/1.16.1/#files
+[lmstudio_wheel]: https://pypi.org/project/lmstudio/1.5.0/#files
 
 ## Upgrading
 

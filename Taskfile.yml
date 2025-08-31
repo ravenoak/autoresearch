@@ -168,18 +168,10 @@ tasks:
     # Coverage-enabled check before committing.
     cmds:
       - |
+          extras="dev-minimal dev test nlp ui vss git distributed analysis parsers"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
-            --extra dev-minimal \
-            --extra dev \
-            --extra test \
-            --extra nlp \
-            --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra parsers{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+            $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src
