@@ -30,6 +30,15 @@ def test_git_extra(has_git) -> None:
     assert hasattr(git, "__version__")
 
 
+@pytest.mark.requires_distributed
+def test_distributed_extra(has_distributed) -> None:
+    if not has_distributed:
+        pytest.skip("distributed extra not installed")
+    import ray
+
+    assert hasattr(ray, "__version__")
+
+
 @pytest.mark.requires_analysis
 def test_analysis_extra(has_analysis) -> None:
     if not has_analysis:

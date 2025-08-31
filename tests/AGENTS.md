@@ -44,6 +44,17 @@ These instructions apply to files in the `tests/` directory.
 - Prefer fixtures like `tmp_path` and `monkeypatch` to isolate side effects.
 - Run `task clean` if tests generate build artifacts.
 
+## Coverage Expectations
+- `[nlp]`: cover spaCy-powered NLP paths.
+- `[ui]`: exercise Streamlit-based interfaces.
+- `[vss]`: exercise DuckDB VSS extension hooks.
+- `[git]`: cover Git-backed search utilities.
+- `[distributed]`: exercise Redis or Ray orchestration helpers.
+- `[analysis]`: cover Polars-powered analytics modules.
+- `[llm]`: exercise transformer and DSPy integrations.
+- `[parsers]`: cover document parsing helpers such as PDF and DOCX.
+- When all extras are installed, `task coverage` must report ≥90% overall.
+
 ## Reasoning and Continuous Improvement
 - Challenge assumptions about coverage and edge cases when writing tests.
 - Capture notable testing strategies in commits and update this file as new
