@@ -24,3 +24,10 @@ DuckDB scores.
   https://www.mir2ed.org
 - D. Knuth. *The Art of Computer Programming, Volume 3: Sorting and
   Searching*. https://www-cs-faculty.stanford.edu/~knuth/taocp.html
+
+## Simulation
+
+Automated tests confirm search ranking behavior.
+
+- [Spec](../specs/search.md)
+- [Tests](../../tests/integration/test_search_ranking_convergence.py)

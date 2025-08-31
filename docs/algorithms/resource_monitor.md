@@ -52,3 +52,9 @@ Typical metrics include:
 [Prometheus Metrics Overview]: https://prometheus.io/docs/concepts/metric_types/
 [tests/integration/test_monitor_metrics.py]: ../../tests/integration/test_monitor_metrics.py
 
+## Simulation
+
+Automated tests confirm resource monitor behavior.
+
+- [Spec](../specs/resource-monitor.md)
+- [Tests](../../tests/unit/test_resource_monitor_gpu.py)

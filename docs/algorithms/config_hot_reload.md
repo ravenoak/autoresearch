@@ -36,3 +36,10 @@ See [simulate_config_reload.py](../../scripts/simulate_config_reload.py).
 - Partial writes can surface invalid configuration snapshots.
 - Race conditions may arise when multiple writers update the source.
 - Fallback logic is needed when reload validation fails.
+
+## Simulation
+
+Automated tests confirm config hot reload behavior.
+
+- [Spec](../specs/config.md)
+- [Tests](../../tests/integration/test_config_hot_reload_components.py)

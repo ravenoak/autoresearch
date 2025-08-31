@@ -39,3 +39,10 @@ discussion that introduced this specification.
 
 [spec]: ../specs/distributed.md#acceptance-criteria
 [issue]: ../../issues/add-redis-distributed-workflows-specification.md
+
+## Simulation
+
+Automated tests confirm distributed workflows behavior.
+
+- [Spec](../specs/distributed.md)
+- [Tests](../../tests/behavior/features/distributed_execution.feature)
