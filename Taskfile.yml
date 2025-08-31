@@ -132,6 +132,8 @@ tasks:
     desc: "Run performance benchmark tests with uv"
 
   coverage:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
       - |
           uv sync \
@@ -139,12 +141,7 @@ tasks:
             --extra test \
             --extra nlp \
             --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra parsers \
-            --extra llm
+            --extra vss{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - >
           uv run pytest tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
       - >
@@ -160,7 +157,9 @@ tasks:
           if [ -n "$CI" ]; then
             uv run python scripts/update_coverage_docs.py
           fi
-    desc: "Run full test suite with coverage reporting"
+    desc: |
+      Run full test suite with coverage reporting.
+      Set EXTRAS="gpu" to include optional GPU packages.
 
   verify:
     vars:
@@ -175,17 +174,12 @@ tasks:
             --extra test \
             --extra nlp \
             --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra parsers \
-            --extra llm{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
+            --extra vss{{if .EXTRAS}} --extra {{.EXTRAS}}{{end}}
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
-      - task coverage
+      - task coverage{{if .EXTRAS}} EXTRAS={{.EXTRAS}}{{end}}
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5

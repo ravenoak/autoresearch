@@ -357,6 +357,20 @@ Install multiple extras separated by commas:
 pip install "autoresearch[minimal,nlp,parsers,git]"
 ```
 
+### Lightweight verification
+
+`task verify` skips GPU-only dependencies so the test suite runs with
+CPU-bound libraries. To include GPU packages such as `bertopic` and
+`lmstudio`, set `EXTRAS=gpu`:
+
+```bash
+EXTRAS=gpu task verify
+```
+
+References to pre-built wheels for these packages live under
+[`wheels/gpu`](../wheels/gpu/README.md). Place the appropriate files in that
+directory to avoid source builds.
+
 ## Upgrading
 
 To upgrade an existing installation run:
