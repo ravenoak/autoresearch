@@ -1,6 +1,7 @@
 from pytest_bdd import scenario, when, then
 from autoresearch.main import app as cli_app
 from autoresearch.orchestration.orchestrator import Orchestrator
+from . import common_steps  # noqa: F401
 
 
 @when('I run `autoresearch search "What is artificial intelligence?" --reasoning-mode direct`')

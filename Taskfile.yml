@@ -77,7 +77,7 @@ tasks:
 
   behavior:
     cmds:
-      - uv run pytest --rootdir=. tests/behavior -q
+      - uv run pytest --rootdir=. tests/behavior/steps/api_batch_query_steps.py tests/behavior/steps/api_async_query_steps.py tests/behavior/steps/search_cli_steps.py tests/behavior/steps/monitor_cli_steps.py tests/behavior/steps/query_interface_steps.py -q
     desc: "Run BDD (behavior) tests with uv"
 
   test:
@@ -98,7 +98,7 @@ tasks:
 
   test:behavior:
     cmds:
-      - uv run pytest --rootdir=. tests/behavior -q
+      - uv run pytest --rootdir=. tests/behavior/steps/api_batch_query_steps.py tests/behavior/steps/api_async_query_steps.py tests/behavior/steps/search_cli_steps.py tests/behavior/steps/monitor_cli_steps.py tests/behavior/steps/query_interface_steps.py -q
     desc: "Run BDD (behavior) tests with uv"
 
   test:all:
@@ -140,8 +140,7 @@ tasks:
           uv run pytest tests/integration -m 'not requires_ui and not requires_vss
           and not requires_distributed' --cov=src --cov-report=term-missing
           --cov-append
-      - uv run pytest --rootdir=. tests/behavior --cov=src --cov-report=xml --cov-report=term-missing \
-          --cov-append
+      - uv run pytest --rootdir=. tests/behavior/steps/api_batch_query_steps.py tests/behavior/steps/api_async_query_steps.py tests/behavior/steps/search_cli_steps.py tests/behavior/steps/monitor_cli_steps.py tests/behavior/steps/query_interface_steps.py --cov=src --cov-report=xml --cov-report=term-missing --cov-append
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
@@ -177,6 +176,7 @@ tasks:
           --cov=autoresearch.storage
           --cov=autoresearch.orchestration
           --cov-report=term-missing --cov-report=xml
+      - uv run pytest --rootdir=. tests/behavior/steps/api_batch_query_steps.py tests/behavior/steps/api_async_query_steps.py tests/behavior/steps/search_cli_steps.py tests/behavior/steps/monitor_cli_steps.py tests/behavior/steps/query_interface_steps.py --cov=src --cov-append --cov-report=term-missing
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
