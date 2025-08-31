@@ -124,8 +124,9 @@ Each milestone may include additional patch releases for critical fixes.
 
 ## CI Checklist
 
-Before tagging **0.1.0**, ensure the following checks pass (after installing
-optional extras):
+Before tagging **0.1.0**, ensure the following checks pass. `task verify`
+syncs with `--python-platform x86_64-manylinux_2_28` to prefer wheels and
+skips GPU-only packages unless `EXTRAS="gpu"` is set:
 
 - [ ] `uv run flake8 src tests`
 - [ ] `uv run mypy src`
