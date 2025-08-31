@@ -14,7 +14,8 @@ integration, and behavior tests:
 ./scripts/setup.sh
 ```
 
-The helper downloads Go Task when missing. If you prefer manual installation:
+The helper downloads Go Task into `.venv/bin` when missing. If you prefer
+manual installation:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
@@ -92,10 +93,10 @@ AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 `task verify` always includes the `parsers` extra, so no additional flags are
 required for PDF or DOCX tests.
 
-Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go
-Task when missing, syncs the `dev` and `test` extras (including packages such
-as `pytest_httpx`, `tomli_w`, and `redis`), and exits if `task --version`
-fails.
+Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go Task
+into `.venv/bin` when missing, syncs the `dev` and `test` extras (including
+packages such as `pytest_httpx`, `tomli_w`, and `redis`), and exits if
+`task --version` fails.
 
 The setup script verifies Go Task with `task --version`. You can manually
 confirm the CLI and development packages are available:
