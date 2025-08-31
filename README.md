@@ -51,10 +51,12 @@ task install
 
 This syncs the `dev-minimal` and `test` extras to install tools like
 `pytest-httpx`, `duckdb`, and `networkx` needed for local testing. To install
-the `[test]` extras directly without Go Task, run:
+the `[test]` extras directly without Go Task and download the DuckDB VSS
+extension, run:
 
 ```bash
 uv pip install -e ".[test]"
+uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
 ```
 
 ### Bootstrapping without Go Task
