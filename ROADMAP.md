@@ -60,6 +60,12 @@ before running tests.
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
     issues/stabilize-api-and-improve-search.md)
+    - [streaming-webhook-refinements](
+      issues/streaming-webhook-refinements.md)
+    - [configuration-hot-reload-tests](
+      issues/configuration-hot-reload-tests.md)
+    - [hybrid-search-ranking-benchmarks](
+      issues/hybrid-search-ranking-benchmarks.md)
   - [plan-a2a-mcp-behavior-tests](
     issues/plan-a2a-mcp-behavior-tests.md)
 - 0.3.0 (2027-03-01, status: planned): Distributed execution support and
