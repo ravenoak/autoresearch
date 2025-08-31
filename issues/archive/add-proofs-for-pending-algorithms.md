@@ -14,4 +14,4 @@ leaving their correctness claims unverified.
 - Link new proofs or simulations to relevant specs and tests.
 
 ## Status
-Open
+Archived
