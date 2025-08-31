@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/setup.sh
+# Set AR_SKIP_GPU=0 to include GPU-only dependencies.
 # Detects the host platform, ensures uv and Go Task are installed, and installs
 # all extras required for unit, integration, and behavior tests.
 set -euo pipefail
@@ -43,7 +44,7 @@ if ! command -v task >/dev/null 2>&1; then
     install_test_extras
 else
     AR_SKIP_SMOKE_TEST=1 \
-    AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
+    AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis}" \
         "$SCRIPT_DIR/setup_universal.sh" "$@" || {
             echo "setup_universal.sh failed; installing test extras without Go Task..."
             install_test_extras
