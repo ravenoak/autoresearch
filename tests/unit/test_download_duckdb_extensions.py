@@ -81,6 +81,20 @@ def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
     assert "Extensions downloaded successfully" in caplog.text
 
 
+def test_download_extension_creates_stub_when_offline(monkeypatch, tmp_path, caplog):
+    """Network failure without offline path creates stub."""
+    monkeypatch.chdir(tmp_path)
+    conn = FailingConn("path")
+    monkeypatch.setattr(duckdb, "connect", lambda path: conn)
+    caplog.set_level(logging.WARNING)
+    result = dde.download_extension("vss", tmp_path, "linux_amd64")
+    stub = tmp_path / "extensions" / "vss" / "vss.duckdb_extension"
+    assert result == str(stub)
+    assert stub.exists()
+    assert stub.stat().st_size == 0
+    assert "created stub" in caplog.text
+
+
 def test_download_extension_offline_without_duckdb(monkeypatch, tmp_path, caplog):
     """Missing duckdb module uses offline copy."""
     env_file = tmp_path / ".env.offline"

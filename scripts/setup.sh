@@ -17,8 +17,19 @@ case "$(uname -s)" in
         ;;
 esac
 
+AR_SKIP_SMOKE_TEST=1 \
 AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis llm}" \
     "$SCRIPT_DIR/setup_universal.sh" "$@"
+
+# Run smoke test only when a real extension is present
+# Network failures produce a stub so the environment can still install.
+VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+if [ -n "$VSS_EXTENSION" ] && [ -s "$VSS_EXTENSION" ]; then
+    echo "Running smoke test to verify environment..."
+    uv run python scripts/smoke_test.py
+else
+    echo "Skipping smoke test; using offline stub."
+fi
 
 # Ensure Go Task resides in the virtual environment so subsequent Taskfile
 # invocations use the expected binary. Link an existing installation when

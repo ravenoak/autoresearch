@@ -166,9 +166,13 @@ fi
 # Make smoke test script executable
 chmod +x scripts/smoke_test.py
 
-# Run smoke test to verify environment
-echo "Running smoke test to verify environment..."
-uv run python scripts/smoke_test.py
+# Run smoke test unless explicitly skipped
+if [ "${AR_SKIP_SMOKE_TEST:-0}" != "1" ]; then
+    echo "Running smoke test to verify environment..."
+    uv run python scripts/smoke_test.py
+else
+    echo "Skipping smoke test."
+fi
 
 # Verify required CLI tools and extras resolve inside the virtual environment
 source .venv/bin/activate
