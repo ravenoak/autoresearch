@@ -3,12 +3,14 @@
 ## Context
 Running `uv run pytest` currently fails with
 `ModuleNotFoundError: No module named 'pytest_bdd'`. After installing this
-plugin, `task verify` reports 19 failing scenarios across
-`api_batch_query_steps.py`, `api_async_query_steps.py`, `search_cli_steps.py`,
-`monitor_cli_steps.py`, and `query_interface_steps.py`. Many step definitions
-are missing so the behavior suite aborts before coverage is recorded.
-Without passing BDD tests, critical user workflows, reasoning modes, and
-error recovery paths remain unverified.
+plugin, `task verify` reports 42 failing scenarios across
+`error_recovery_workflow_steps.py`, `first_run_steps.py`, `gui_cli_steps.py`,
+`hybrid_search_steps.py`, `interactive_monitor_steps.py`,
+`interface_test_cli_steps.py`, `mcp_interface_steps.py`,
+`orchestration_system_steps.py`, and others. Many step definitions are
+missing so the behavior suite aborts before coverage is recorded. Without
+passing BDD tests, critical user workflows, reasoning modes, and error
+recovery paths remain unverified.
 
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
