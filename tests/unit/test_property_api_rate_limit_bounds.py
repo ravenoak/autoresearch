@@ -13,6 +13,10 @@ from autoresearch.config.models import APIConfig, ConfigModel
 
 @given(limit=st.integers(min_value=1, max_value=5), requests=st.integers(min_value=0, max_value=10))
 def test_rate_limit_bounds(limit: int, requests: int) -> None:
+    """Client never exceeds the configured request limit.
+
+    See docs/algorithms/api_rate_limiting.md for proof.
+    """
     with ConfigLoader.temporary_instance() as loader:
         loader._config = ConfigModel(api=APIConfig(rate_limit=limit))
         app = FastAPI()

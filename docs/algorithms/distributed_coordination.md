@@ -81,6 +81,15 @@ are published, yielding a total order consistent with enqueue time under a
 single broker process
 ([broker.py](../../src/autoresearch/distributed/broker.py)).
 
+### Convergence
+
+Repeated leader elections over permutations of identifiers always pick the
+same leader. Shuffling does not change the outcome because the algorithm
+chooses the global minimum in each round. Property-based tests
+([`test_coordination_properties.py`]
+(../../tests/unit/distributed/test_coordination_properties.py)) exercise random
+shuffles to demonstrate this fixed point behavior.
+
 ## Baseline
 
 Running `uv run scripts/simulate_distributed_coordination.py --workers 2`
@@ -112,3 +121,4 @@ A plot of these metrics is shown below.
 ## References
 - [spec](../specs/distributed.md)
 - [`test_distributed_coordination.py`](../../tests/analysis/test_distributed_coordination.py)
+- [`test_coordination_properties.py`](../../tests/unit/distributed/test_coordination_properties.py)

@@ -55,9 +55,24 @@ Property-based tests
 generate random request patterns to confirm that a client never exceeds its
 configured bound.
 
+## Convergence
+
+With no traffic the bucket refills linearly and approaches the capacity
+``C``:
+
+\[
+b(t) = \min(C, b_0 + R t)
+\]
+
+where ``b_0`` is the starting token count. The state monotonically increases
+until `b(t) = C`, proving convergence. Property-based tests
+([`test_property_api_rate_limit_bounds.py`]
+(../../tests/unit/test_property_api_rate_limit_bounds.py)) simulate random
+request bursts and confirm that the bucket never grows beyond its limit.
+
 ## Simulation
 
 Automated tests confirm api rate limiting behavior.
 
-- [Spec](../specs/api.md)
+- [Spec](../specs/api_rate_limiting.md)
 - [Tests](../../tests/unit/test_property_api_rate_limit_bounds.py)
