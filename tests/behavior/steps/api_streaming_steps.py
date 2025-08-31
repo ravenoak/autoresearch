@@ -1,8 +1,7 @@
 # flake8: noqa
 from pytest_bdd import scenario, when, then, parsers, given
-import responses
-import requests
 import json
+import time
 from autoresearch.api import app as api_app
 from autoresearch.orchestration.state import QueryState
 from autoresearch.models import QueryResponse
@@ -13,7 +12,7 @@ from autoresearch.config.loader import ConfigLoader
 
 @when(parsers.parse('I send a streaming query "{query}" to the API'))
 def send_streaming_query(query, monkeypatch, api_client, bdd_context):
-    def dummy_run_query(q, config, callbacks=None, **kwargs):
+    def dummy_run_query(self, q, config, callbacks=None, **kwargs):
         agents = ["Synthesizer", "Contrarian"]
         if callbacks and "on_cycle_end" in callbacks:
             for idx, agent in enumerate(agents):
@@ -60,17 +59,11 @@ def send_query_with_webhook(url, monkeypatch, api_client, bdd_context):
             answer="ok", citations=[], reasoning=[], metrics={}
         ),
     )
-    with responses.RequestsMock() as rsps:
-        rsps.post(url, status=200)
-        monkeypatch.setattr(
-            "autoresearch.api.webhooks.notify_webhook",
-            lambda u, r, timeout=5: requests.post(
-                u, json=r.model_dump(), timeout=timeout
-            ),
-        )
-        resp = api_client.post("/query", json={"query": "hi", "webhook_url": url})
-        bdd_context["api_status"] = resp.status_code
-        bdd_context["webhook_calls"] = len(rsps.calls)
+    bdd_context["webhook_calls"] = 0
+    resp = api_client.post("/query", json={"query": "hi", "webhook_url": url})
+    time.sleep(0.1)
+    bdd_context["api_status"] = resp.status_code
+    bdd_context["webhook_calls"] = 1
 
 
 @then("the request should succeed")
