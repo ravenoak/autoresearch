@@ -2,7 +2,9 @@
 # Usage: ./scripts/setup.sh
 # Set AR_SKIP_GPU=0 to include GPU-only dependencies.
 # Detects the host platform, ensures uv and Go Task are installed, and installs
-# all extras required for unit, integration, and behavior tests.
+# all extras required for unit, integration, and behavior tests. If automatic
+# Go Task installation fails, install it manually from:
+# https://taskfile.dev/installation/
 set -euo pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
@@ -74,9 +76,12 @@ if [ ! -x "$TASK_BIN" ]; then
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" \
-            || echo "Warning: failed to download Go Task; continuing without it" >&2
+        if ! curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN"; then
+            echo "Warning: failed to download Go Task; install manually:" \
+                "https://taskfile.dev/installation/" >&2
+        fi
     fi
 fi
-task --version || echo "task --version failed; continuing without Go Task" >&2
+task --version || echo "task --version failed; install from" \
+    "https://taskfile.dev/installation/" >&2
 

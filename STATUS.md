@@ -1,8 +1,8 @@
 # Status
 
-As of **September 1, 2025**, the environment lacks the Go Task CLI and
-`uv run pytest` fails with
-`ModuleNotFoundError: No module named 'pytest_bdd'`. The earlier
+As of **September 1, 2025**, the Go Task CLI is available and `task check`
+passes in a clean environment. `task verify` still fails during the coverage
+step, consistent with the open coverage-hang issue. The earlier
 `test_backup_manager` stall remains resolved: the unit test completes
 immediately using an event-based backup trigger. DuckDB extension downloads
 still fall back to a stub if the network is unavailable; a real extension
@@ -13,36 +13,20 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
 features are required.
 
-## Bootstrapping without Go Task
-
-If the Go Task CLI cannot be installed, set up the environment with:
-
-```bash
-uv venv
-source .venv/bin/activate
-uv pip install -e ".[test]"
-uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
-```
-
-This installs the `[test]` extras and uses
-`scripts/download_duckdb_extensions.py` to record the DuckDB VSS extension path
-so `uv run pytest` works without `task`.
-
 ## Lint, type checks, and spec tests
-Not run: missing Task CLI prevents `task check`.
+Passed: `task check`.
 
 ## Targeted tests
-Failed: `uv run pytest` aborts before running tests due to missing
-`pytest_bdd`.
+Failed: `task verify` aborts during coverage.
 
 ## Integration tests
-Not executed.
+Not executed: `task verify` aborts during coverage.
 
 ## Behavior tests
-Not executed.
+Not executed: `task verify` aborts during coverage.
 
 ## Coverage
-Coverage reports 100% (57/57 lines) for targeted modules.
+Unavailable: `task verify` aborts during coverage.
 
 ## Open issues
 - [restore-task-cli-availability](
