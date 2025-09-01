@@ -141,7 +141,7 @@ tasks:
             --extra test \
             --extra nlp \
             --extra ui \
-            --extra vss{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}
+            --extra vss{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - >
           uv run pytest tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
       - >
@@ -174,7 +174,7 @@ tasks:
             --extra test \
             --extra nlp \
             --extra ui \
-            --extra vss{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}
+            --extra vss{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - task check-env
       - uv run flake8 src tests
       - uv run mypy src

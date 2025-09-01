@@ -104,6 +104,9 @@ VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
 
+`./scripts/setup.sh` skips GPU-only packages to keep installs fast. Set
+`AR_SKIP_GPU=0` if you need those dependencies.
+
 `task verify` always includes the `parsers` extra, so no additional flags are
 required for PDF or DOCX tests.
 

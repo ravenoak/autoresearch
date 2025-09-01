@@ -3,6 +3,8 @@
 # Shared helpers for environment setup scripts.
 set -euo pipefail
 
+: "${AR_SKIP_GPU:=1}"  # Skip GPU-only dependencies unless AR_SKIP_GPU=0
+
 retry() {
     local -r max_attempts="$1"; shift
     local attempt=1
@@ -31,7 +33,8 @@ install_dev_test_extras() {
     if [ -n "${AR_EXTRAS:-}" ]; then
         extras="$extras ${AR_EXTRAS}"
     fi
-    if [ "${AR_SKIP_GPU:-1}" = "1" ]; then
+    # Skip GPU-only extras by default to speed up installs.
+    if [ "$AR_SKIP_GPU" = "1" ]; then
         extras=$(printf '%s\n' $extras | grep -v '^gpu$' | xargs)
     fi
     echo "Installing extras via uv sync --python-platform x86_64-manylinux_2_28 " \\

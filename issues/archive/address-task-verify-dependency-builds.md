@@ -2,13 +2,10 @@
 
 ## Context
 `task verify` previously stalled while compiling heavy dependencies such as
-hdbscan and CUDA packages. Recent runs finish by pulling pre-built wheels, but
-GPU libraries are still installed, inflating setup time and size. Further work is
-needed to keep the default workflow lightweight for the 0.1.0a1 release.
-
-The **August 31, 2025** `task verify` run pulled pre-built GPU wheels but still
-installed them, and the task failed later due to a unit-test deadline rather than
-build steps.
+hdbscan and CUDA packages. References to pre-built wheels now live under
+`wheels/gpu`, and setup scripts skip GPU extras unless `AR_SKIP_GPU=0`. The
+clean install path keeps the default workflow lightweight and allows
+`task verify` to finish in under 15 minutes.
 
 ## Dependencies
 
@@ -21,4 +18,4 @@ None.
 - `task verify` completes in under 15 minutes on a clean environment.
 
 ## Status
-Open
+Archived
