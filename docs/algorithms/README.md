@@ -16,6 +16,7 @@
 - [Dialectical Agent Coordination](dialectical_coordination.md)
 - [Token Budget Adaptation](token_budgeting.md)
 - [Relevance Ranking](relevance_ranking.md)
+- [Ranking Formula](ranking_formula.md)
 - [Error Recovery via Exponential Backoff](error_recovery.md)
 - [Cache Eviction Strategy](cache_eviction.md)
 - [Storage Eviction](storage_eviction.md)
@@ -33,6 +34,7 @@
 - Cache – simulation verifies linear eviction cost and correctness.
 - Distributed coordination – leader election proof and performance simulation.
 - Search – monotonic ranking proof and convergence simulation.
+- ranking_formula – simulation compares ranking across noisy datasets.
 - a2a_interface – simulation verifies agent messaging.
 - api_rate_limiting – simulation tests request throttling.
 - api_streaming – simulation exercises API streaming.
