@@ -21,9 +21,21 @@ state to the client, then posts the final response to any configured webhooks.
   result is queued, a `None` sentinel signals completion and the response
   closes promptly.
 
+## Proof sketch
+
+Assume each webhook attempt succeeds independently with probability `p` within
+the configured timeout. With at most `r` retries, the probability of at least
+one success is `1 - (1 - p)^{r+1}`. This lower bounds connection reliability
+and shows diminishing returns as `r` grows. Expected delivery attempts are
+bounded by the geometric series `<= (1 - (1 - p)^{r+1}) / p`.
+
+The [simulation script](../../scripts/streaming_webhook_sim.py) models these
+retries and validates the bound empirically.
+
 ## Simulation
 
 Automated tests confirm api streaming behavior.
 
 - [Spec](../specs/api.md)
 - [Tests](../../tests/behavior/steps/api_streaming_steps.py)
+- [Simulation script](../../scripts/streaming_webhook_sim.py)
