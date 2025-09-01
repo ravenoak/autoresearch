@@ -138,7 +138,7 @@ def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
 
     script = (
         'VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" '
-        '-size +0c | head -n 1)\n'
+        "-size +0c | head -n 1)\n"
         'if [ -n "$VSS_EXTENSION" ]; then echo run; else echo skip; fi\n'
     )
     completed = subprocess.run(
@@ -149,4 +149,3 @@ def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
         check=True,
     )
     assert completed.stdout.strip() == "skip"
-
