@@ -35,6 +35,7 @@ These instructions apply to files in the `tests/` directory.
 - Use `error_recovery` for behavior tests verifying recovery paths.
 - Use `reasoning_modes` for behavior tests exploring reasoning strategies.
 - Use `user_workflows` for end-to-end user scenarios.
+- Use `pending` for placeholder behavior tests; runs with the base `.[test]` extra.
 - Combine these markers with `requires_*` markers when scenarios need optional
   extras, e.g. tag Streamlit flows with `requires_ui`.
 - Implement steps with existing fixtures such as `bdd_context` or `cli_runner`.
