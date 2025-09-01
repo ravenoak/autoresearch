@@ -1,7 +1,9 @@
 # Status
 
-As of **September 1, 2025**, the environment includes the Go Task CLI and the
-`test_backup_manager` stall has been resolved. The unit test now completes
+As of **September 1, 2025**, the environment lacks the Go Task CLI and
+`uv run pytest` fails with
+`ModuleNotFoundError: No module named 'pytest_bdd'`. The earlier
+`test_backup_manager` stall remains resolved: the unit test completes
 immediately using an event-based backup trigger. DuckDB extension downloads
 still fall back to a stub if the network is unavailable; a real extension
 triggers the smoke test to confirm vector search. Dependency pins for
@@ -27,11 +29,11 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-Not run: `task check` was skipped to conserve time.
+Not run: missing Task CLI prevents `task check`.
 
 ## Targeted tests
-Partial: `test_backup_scheduler_start_stop` now passes; full suite not
-executed due to time limits.
+Failed: `uv run pytest` aborts before running tests due to missing
+`pytest_bdd`.
 
 ## Integration tests
 Not executed.
@@ -43,5 +45,23 @@ Not executed.
 Coverage reports 100% (57/57 lines) for targeted modules.
 
 ## Open issues
+- [restore-task-cli-availability](
+  issues/restore-task-cli-availability.md)
+- [restore-behavior-driven-test-suite](
+  issues/restore-behavior-driven-test-suite.md)
+- [add-test-coverage-for-optional-components](
+  issues/add-test-coverage-for-optional-components.md)
+- [address-task-verify-dependency-builds](
+  issues/address-task-verify-dependency-builds.md)
 - [fix-task-verify-package-metadata-errors](
   issues/fix-task-verify-package-metadata-errors.md)
+- [fix-task-verify-coverage-hang](
+  issues/fix-task-verify-coverage-hang.md)
+- [fix-idempotent-message-processing-deadline](
+  issues/fix-idempotent-message-processing-deadline.md)
+- [resolve-pre-alpha-release-blockers](
+  issues/resolve-pre-alpha-release-blockers.md)
+- [add-ranking-algorithm-proofs-and-simulations](
+  issues/add-ranking-algorithm-proofs-and-simulations.md)
+- [simulate-distributed-orchestrator-performance](
+  issues/simulate-distributed-orchestrator-performance.md)
