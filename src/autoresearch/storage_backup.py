@@ -509,6 +509,12 @@ class BackupScheduler:
             self._running = False
             if self._timer:
                 self._timer.cancel()
+                # Joining ensures the timer thread has finished executing and
+                # prevents lingering non-daemon threads from stalling test
+                # shutdown. A short timeout avoids hanging if the thread fails
+                # to terminate promptly.
+                if hasattr(self._timer, "join"):
+                    self._timer.join(timeout=1)
                 self._timer = None
             log.info("Stopped scheduled backups")
 

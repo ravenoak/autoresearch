@@ -371,7 +371,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Close storage connections and optionally remove database files."""
         st = state or StorageManager.state
         ctx = context or st.context
-        if _delegate and _delegate is not StorageManager:
+        if _delegate and getattr(_delegate, "teardown", None) is not StorageManager.teardown:
             _delegate.teardown(remove_db, ctx, st)  # type: ignore[attr-defined]
             return
         StorageManager.state = st
