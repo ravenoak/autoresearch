@@ -142,6 +142,7 @@ tasks:
             --extra nlp \
             --extra ui \
             --extra vss{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}
+      - uv run coverage erase
       - >
           uv run pytest tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
       - >
