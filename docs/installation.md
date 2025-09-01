@@ -14,6 +14,19 @@ integration, and behavior tests:
 ./scripts/setup.sh
 ```
 
+After bootstrapping, `.venv/bin` is added to `PATH` and `task --version`
+should report the installed CLI:
+
+```bash
+task --version
+```
+
+Activate the virtual environment in new shells to restore the path:
+
+```bash
+source .venv/bin/activate
+```
+
 The helper downloads Go Task into `.venv/bin` when missing. If you prefer
 manual installation:
 

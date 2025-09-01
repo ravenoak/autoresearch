@@ -6,6 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/setup_common.sh"
 case "$(uname -s)" in
     Linux*)
         "$SCRIPT_DIR/setup_linux.sh" "$@"
@@ -20,7 +21,6 @@ esac
 
 install_test_extras() {
     # Install test dependencies when Go Task is unavailable so pytest can run.
-    source "$SCRIPT_DIR/setup_common.sh"
     ensure_uv
     uv venv
     ensure_venv_bin_on_path "$(pwd)/.venv/bin"
@@ -64,6 +64,7 @@ fi
 # invocations use the expected binary. Link an existing installation when
 # possible; otherwise download it.
 VENV_BIN="$(pwd)/.venv/bin"
+ensure_venv_bin_on_path "$VENV_BIN"
 TASK_BIN="$VENV_BIN/task"
 if [ ! -x "$TASK_BIN" ]; then
     echo "Installing Go Task into $VENV_BIN..."
@@ -75,6 +76,5 @@ if [ ! -x "$TASK_BIN" ]; then
             || echo "Warning: failed to download Go Task; continuing without it" >&2
     fi
 fi
-"$TASK_BIN" --version >/dev/null 2>&1 \
-    || echo "task --version failed; continuing without Go Task" >&2
+task --version || echo "task --version failed; continuing without Go Task" >&2
 

@@ -30,3 +30,6 @@ else
     echo "apt-get not found; please install required packages manually." >&2
 fi
 
+# Ensure the virtual environment's bin directory is available to later steps.
+ensure_venv_bin_on_path "$(pwd)/.venv/bin"
+
