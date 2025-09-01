@@ -1,6 +1,7 @@
 import importlib.util
 import logging
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -123,3 +124,29 @@ def test_download_extension_fallback_path(monkeypatch, tmp_path):
     ext_dir = Path(tmp_path) / "extensions" / "vss"
     files = list(ext_dir.glob("*.duckdb_extension"))
     assert files, "extension file was not copied"
+
+
+def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
+    """Setup logic skips the smoke test when only a stub extension exists."""
+
+    monkeypatch.chdir(tmp_path)
+    conn = FailingConn("path")
+    monkeypatch.setattr(duckdb, "connect", lambda path: conn)
+    result = dde.download_extension("vss", tmp_path, "linux_amd64")
+    stub = Path(result)
+    assert stub.exists() and stub.stat().st_size == 0
+
+    script = (
+        'VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" '
+        '-size +0c | head -n 1)\n'
+        'if [ -n "$VSS_EXTENSION" ]; then echo run; else echo skip; fi\n'
+    )
+    completed = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert completed.stdout.strip() == "skip"
+

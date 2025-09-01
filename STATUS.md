@@ -4,7 +4,8 @@ As of **August 31, 2025**, the evaluation environment lacked the Go Task CLI.
 Dependencies were installed with `uv sync`, but `task check` could not run and
 `uv run pytest tests/unit` was interrupted after the first test, leaving overall
 test and coverage status unknown. When DuckDB extensions cannot be downloaded,
-setup logs a warning and skips the smoke test, falling back to a stub; see
+setup logs a warning, writes a zero-byte stub, and skips the smoke test. A real
+extension triggers the smoke test to confirm vector search; see
 `docs/duckdb_compatibility.md` for details. Dependency pins for `fastapi`
 (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
