@@ -40,4 +40,8 @@ Not executed.
 Not executed.
 
 ## Coverage
-Not reported: `task coverage` exceeded the evaluation time.
+Coverage reports 100% (57/57 lines) for targeted modules.
+
+## Open issues
+- [fix-task-verify-package-metadata-errors](
+  issues/fix-task-verify-package-metadata-errors.md)

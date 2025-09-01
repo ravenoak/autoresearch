@@ -22,7 +22,10 @@ confirmed in `pyproject.toml` and [installation.md](installation.md).
 `tests/unit/distributed/test_coordination_properties.py::`
 `test_message_processing_is_idempotent` exceeds its Hypothesis deadline and 19
 behavior scenarios lack definitions.
-Coverage was not generated; targeted modules remain at **100%** (57/57 lines).
+Coverage reports **100%** (57/57 lines) for targeted modules. One open issue
+remains:
+[fix-task-verify-package-metadata-errors](
+../issues/fix-task-verify-package-metadata-errors.md).
 Outstanding gaps are tracked in
 [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
 are mirrored in [../STATUS.md](../STATUS.md).
@@ -31,20 +34,10 @@ are mirrored in [../STATUS.md](../STATUS.md).
 
 - **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
   feedback.
-  - [add-orchestration-proofs-and-tests](
-    ../issues/add-orchestration-proofs-and-tests.md)
-  - [add-storage-proofs-and-simulations](
-    ../issues/add-storage-proofs-and-simulations.md)
-  - [configure-redis-service-for-tests](
-    ../issues/configure-redis-service-for-tests.md)
   - [fix-task-verify-package-metadata-errors](
     ../issues/fix-task-verify-package-metadata-errors.md)
 - **0.1.0** (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-  - [improve-test-coverage-and-streamline-dependencies](
-    ../issues/archive/improve-test-coverage-and-streamline-dependencies.md)
-  - [speed-up-task-check-and-reduce-dependency-footprint](
-    ../issues/speed-up-task-check-and-reduce-dependency-footprint.md)
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   ../issues/deliver-bug-fixes-and-docs-update.md)).
@@ -73,24 +66,6 @@ while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [x] Environment bootstrap documented and installation instructions
-  consolidated
-  ([document-environment-bootstrap.md](
-  ../issues/archive/document-environment-bootstrap.md))
-- [x] Packaging verification with DuckDB fallback
-  ([verify-packaging-workflow-and-duckdb-fallback.md](
-  ../issues/archive/verify-packaging-workflow-and-duckdb-fallback.md))
-- [ ] Integration test suite passes
-  ([stabilize-integration-tests.md](
-  ../issues/archive/stabilize-integration-tests.md))
-- [ ] Coverage gates target **90%** total coverage; current coverage is **100%**
-  (see
-  [add-coverage-gates-and-regression-checks.md](
-  ../issues/archive/add-coverage-gates-and-regression-checks.md))
-- [x] Validate ranking algorithms and agent coordination
-  (see
-  [validate-ranking-algorithms-and-agent-coordination.md](
-  ../issues/archive/validate-ranking-algorithms-and-agent-coordination.md))
 - [ ] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.

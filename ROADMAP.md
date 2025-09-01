@@ -25,34 +25,10 @@ before running tests.
 
 - 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements.
-  - [add-orchestration-proofs-and-tests](
-    issues/add-orchestration-proofs-and-tests.md)
-  - [add-storage-proofs-and-simulations](
-    issues/add-storage-proofs-and-simulations.md)
-  - [configure-redis-service-for-tests](
-    issues/configure-redis-service-for-tests.md)
-  - [fix-duckdb-schema-initialization](
-    issues/fix-duckdb-schema-initialization.md)
-  - [fix-task-check-dependency-removal-and-extension-bootstrap](
-    issues/fix-task-check-dependency-removal-and-extension-bootstrap.md)
-  - [handle-duckdb-extension-download-errors](
-    issues/handle-duckdb-extension-download-errors.md)
-  - [ensure-task-cli-available-after-setup](
-    issues/ensure-task-cli-available-after-setup.md)
-  - [audit-setup-script-dependencies](
-    issues/audit-setup-script-dependencies.md)
-  - [add-behavior-driven-test-coverage](
-    issues/add-behavior-driven-test-coverage.md)
-  - [speed-up-task-check-and-reduce-dependency-footprint](
-    issues/speed-up-task-check-and-reduce-dependency-footprint.md)
   - [fix-task-verify-package-metadata-errors](
     issues/fix-task-verify-package-metadata-errors.md)
-  - [resolve-release-blockers-for-alpha](
-    issues/resolve-release-blockers-for-alpha.md)
 - 0.1.0 (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-  - [improve-test-coverage-and-streamline-dependencies](
-    issues/archive/improve-test-coverage-and-streamline-dependencies.md)
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   issues/deliver-bug-fixes-and-docs-update.md)).
@@ -88,16 +64,11 @@ coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
 release is re-targeted for **June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
-  consolidated
-  ([environment-bootstrap](issues/archive/document-environment-bootstrap.md)).
-- [x] Packaging verification with DuckDB fallback
-  ([packaging-fallback](issues/archive/verify-packaging-workflow-and-duckdb-fallback.md)).
-- [ ] Integration tests stabilized
-  ([stabilize-integration-tests](issues/archive/stabilize-integration-tests.md)).
-- [ ] Coverage gates target **90%** total coverage once tests run
-    ([coverage-gates](issues/archive/add-coverage-gates-and-regression-checks.md)).
-- [x] Algorithm validation for ranking and coordination
-  ([ranking](issues/archive/validate-ranking-algorithms-and-agent-coordination.md)).
+  consolidated.
+- [x] Packaging verification with DuckDB fallback.
+- [ ] Integration tests stabilized.
+- [ ] Coverage gates target **90%** total coverage once tests run.
+- [x] Algorithm validation for ranking and coordination.
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
