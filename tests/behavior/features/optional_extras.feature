@@ -7,10 +7,25 @@ Feature: Optional extras availability
     Given the optional module "spacy" can be imported
     Then the module exposes attribute "__version__"
 
+  @requires_ui
+  Scenario: UI extra modules are importable
+    Given the optional module "streamlit" can be imported
+    Then the module exposes attribute "__version__"
+
+  @requires_vss
+  Scenario: VSS extra modules are importable
+    Given the optional module "duckdb_extension_vss" can be imported
+    Then the module exposes attribute "__file__"
+
   @requires_git
   Scenario: Git extra modules are importable
     Given the optional module "git" can be imported
     Then the module exposes attribute "Repo"
+
+  @requires_distributed
+  Scenario: Distributed extra modules are importable
+    Given the optional module "ray" can be imported
+    Then the module exposes attribute "__version__"
 
   @requires_analysis
   Scenario: Analysis extra modules are importable
