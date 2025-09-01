@@ -19,3 +19,6 @@ else
     echo "Homebrew is required to install dependencies. Install from https://brew.sh/" >&2
 fi
 
+# Ensure the virtual environment's bin directory is available to later steps.
+ensure_venv_bin_on_path "$(pwd)/.venv/bin"
+

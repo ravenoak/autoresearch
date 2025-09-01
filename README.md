@@ -19,7 +19,13 @@ Autoresearch requires **Python 3.12+**,
 [Go Task](https://taskfile.dev/). Both `task install` and
 `./scripts/setup.sh` automatically place `task` in `.venv/bin` when it's
 missing. See [docs/installation.md#after-cloning](docs/installation.md#after-cloning)
-for details.
+for details. Ensure `.venv/bin` is on your `PATH` so the bundled `task`
+binary resolves:
+
+```bash
+export PATH="$(pwd)/.venv/bin:$PATH"
+task --version
+```
 
 Install Go Task manually if needed:
 

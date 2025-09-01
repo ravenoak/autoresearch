@@ -34,7 +34,7 @@ install_dev_test_extras() {
     if [ "${AR_SKIP_GPU:-1}" = "1" ]; then
         extras=$(printf '%s\n' $extras | grep -v '^gpu$' | xargs)
     fi
-    echo "Installing extras via uv sync --python-platform x86_64-manylinux_2_28 \"
+    echo "Installing extras via uv sync --python-platform x86_64-manylinux_2_28 " \\
         "--extra ${extras// / --extra }"
     uv sync --python-platform x86_64-manylinux_2_28 \
         $(for e in $extras; do printf -- '--extra %s ' "$e"; done)
