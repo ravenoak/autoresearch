@@ -1,13 +1,12 @@
 # Status
 
-As of **September 1, 2025**, the environment lacks the Go Task CLI and
-`uv run pytest` fails with
-`ModuleNotFoundError: No module named 'pytest_bdd'`. The earlier
-`test_backup_manager` stall remains resolved: the unit test completes
-immediately using an event-based backup trigger. DuckDB extension downloads
-still fall back to a stub if the network is unavailable; a real extension
-triggers the smoke test to confirm vector search. Dependency pins for
-`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
+As of **September 1, 2025**, `task verify` previously stalled during the
+coverage phase. Adding `uv run coverage erase` at the start of the coverage
+task clears stale data so reports finish automatically. The Go Task CLI and
+required plugins are installed. DuckDB extension downloads still fall back to a
+stub if the network is unavailable; a real extension triggers the smoke test to
+confirm vector search. Dependency pins for `fastapi` (>=0.115.12) and
+`slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
@@ -29,11 +28,10 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-Not run: missing Task CLI prevents `task check`.
+`uv run task check` executes flake8, mypy, and spec tests; all pass.
 
 ## Targeted tests
-Failed: `uv run pytest` aborts before running tests due to missing
-`pytest_bdd`.
+The minimal unit subset used by `task check` passes (8 tests).
 
 ## Integration tests
 Not executed.
@@ -42,7 +40,7 @@ Not executed.
 Not executed.
 
 ## Coverage
-Coverage reports 100% (57/57 lines) for targeted modules.
+Targeted modules report **100%** line coverage (57/57 lines).
 
 ## Open issues
 - [restore-task-cli-availability](
@@ -55,8 +53,6 @@ Coverage reports 100% (57/57 lines) for targeted modules.
   issues/address-task-verify-dependency-builds.md)
 - [fix-task-verify-package-metadata-errors](
   issues/fix-task-verify-package-metadata-errors.md)
-- [fix-task-verify-coverage-hang](
-  issues/fix-task-verify-coverage-hang.md)
 - [fix-idempotent-message-processing-deadline](
   issues/fix-idempotent-message-processing-deadline.md)
 - [resolve-pre-alpha-release-blockers](
