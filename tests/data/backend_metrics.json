@@ -1,0 +1,12 @@
+{
+  "tests/integration/test_backend_metrics_benchmark.py::test_backend_metrics::bm25": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "latency": 0.001678135
+  },
+  "tests/integration/test_backend_metrics_benchmark.py::test_backend_metrics::semantic": {
+    "precision": 0.5,
+    "recall": 1.0,
+    "latency": 0.001609288
+  }
+}

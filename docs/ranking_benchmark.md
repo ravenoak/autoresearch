@@ -18,3 +18,14 @@ NDCG varies when the credibility weight is fixed at 0.2 and the semantic
 weight is swept from 0.1 to 0.8.
 
 ![NDCG vs semantic weight](images/ranking_weight_ndcg.svg)
+
+## Backend Metrics
+
+Precision, recall, and average latency were measured on the shared dataset
+`tests/data/backend_benchmark.csv` using a 0.5 score threshold and 1,000
+iterations for timing.
+
+| Backend  | Precision | Recall | Latency (ms) |
+|----------|-----------|--------|--------------|
+| bm25     | 1.00      | 1.00   | 1.68         |
+| semantic | 0.50      | 1.00   | 1.61         |
