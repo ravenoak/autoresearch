@@ -149,4 +149,3 @@ def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
         check=True,
     )
     assert completed.stdout.strip() == "skip"
-

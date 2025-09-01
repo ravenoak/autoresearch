@@ -1,13 +1,11 @@
 # Status
 
-As of **August 31, 2025**, the evaluation environment lacked the Go Task CLI.
-Dependencies were installed with `uv sync`, but `task check` could not run and
-`uv run pytest tests/unit` was interrupted after the first test, leaving overall
-test and coverage status unknown. When DuckDB extensions cannot be downloaded,
-setup logs a warning, writes a zero-byte stub, and skips the smoke test. A real
-extension triggers the smoke test to confirm vector search; see
-`docs/duckdb_compatibility.md` for details. Dependency pins for `fastapi`
-(>=0.115.12) and `slowapi` (==0.1.9) remain in place.
+As of **September 1, 2025**, the environment includes the Go Task CLI and the
+`test_backup_manager` stall has been resolved. The unit test now completes
+immediately using an event-based backup trigger. DuckDB extension downloads
+still fall back to a stub if the network is unavailable; a real extension
+triggers the smoke test to confirm vector search. Dependency pins for
+`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
@@ -29,12 +27,11 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-Not run: missing `task` CLI prevented `task check`.
+Not run: `task check` was skipped to conserve time.
 
 ## Targeted tests
-Partial: `uv run pytest tests/unit` collected 805 tests; the first passed, but
-the run was interrupted before `test_message_processing_is_idempotent` could
-complete.
+Partial: `test_backup_scheduler_start_stop` now passes; full suite not
+executed due to time limits.
 
 ## Integration tests
 Not executed.
@@ -43,4 +40,4 @@ Not executed.
 Not executed.
 
 ## Coverage
-Not reported: test run interruption prevented coverage generation.
+Not reported: `task coverage` exceeded the evaluation time.

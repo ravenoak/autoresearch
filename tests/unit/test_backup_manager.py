@@ -1,6 +1,7 @@
 """Tests for storage backup creation, restore, and scheduling."""
 
 from pathlib import Path
+from threading import Event
 
 from autoresearch.storage_backup import BackupManager
 
@@ -39,29 +40,15 @@ def test_backup_scheduler_start_stop(monkeypatch, tmp_path):
     rdf = tmp_path / "store.rdf"
     db.write_text("db")
     rdf.write_text("rdf")
-    called = {}
+    event = Event()
 
     def fake_backup(**kwargs):
-        called["invoked"] = True
+        event.set()
         return None
 
-    monkeypatch.setattr(
-        "autoresearch.storage_backup._create_backup", fake_backup
-    )
+    monkeypatch.setattr("autoresearch.storage_backup._create_backup", fake_backup)
 
-    class DummyTimer:
-        def __init__(self, interval, func):
-            self.func = func
-
-        def start(self):
-            self.func()
-
-        def cancel(self):
-            pass
-        daemon = True
-
-    monkeypatch.setattr("autoresearch.storage_backup.threading.Timer", DummyTimer)
     scheduler = BackupManager.get_scheduler()
     scheduler.schedule(str(tmp_path / "b"), str(db), str(rdf), interval_hours=1)
-    assert called.get("invoked")
+    assert event.wait(0.1)
     scheduler.stop()
