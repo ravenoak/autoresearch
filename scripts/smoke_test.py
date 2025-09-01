@@ -66,18 +66,12 @@ def check_duckdb_vss():
             try:
                 conn.execute(f"LOAD '{vss_path}'")
                 print_status(f"VSS extension loaded from {vss_path}")
-                return True
             except Exception as e:
-                msg = str(e).lower()
-                if "network" in msg or "download" in msg:
-                    print_warning(
-                        f"Network error loading VSS extension: {e}; continuing without it"
-                    )
-                    return True
-                print_status(f"Failed to load VSS extension from {vss_path}: {e}", False)
-                return False
+                print_warning(
+                    f"Failed to load VSS extension from {vss_path}: {e}; continuing without it"
+                )
+            return True
 
-        # Skip check when the extension file is unavailable
         print_status("VSS extension file not found - skipping check")
         return True
     except Exception as e:

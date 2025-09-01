@@ -8,15 +8,15 @@ set -euo pipefail
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/setup_common.sh"
 case "$(uname -s)" in
-    Linux*)
-        "$SCRIPT_DIR/setup_linux.sh" "$@"
-        ;;
-    Darwin*)
-        "$SCRIPT_DIR/setup_macos.sh" "$@"
-        ;;
-    *)
-        echo "Unsupported platform; skipping platform-specific setup." >&2
-        ;;
+Linux*)
+    "$SCRIPT_DIR/setup_linux.sh" "$@"
+    ;;
+Darwin*)
+    "$SCRIPT_DIR/setup_macos.sh" "$@"
+    ;;
+*)
+    echo "Unsupported platform; skipping platform-specific setup." >&2
+    ;;
 esac
 
 install_test_extras() {
@@ -45,22 +45,22 @@ if ! command -v task >/dev/null 2>&1; then
     install_test_extras
 else
     AR_SKIP_SMOKE_TEST=1 \
-    AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis}" \
+        AR_EXTRAS="${AR_EXTRAS:-nlp ui vss parsers git distributed analysis}" \
         "$SCRIPT_DIR/setup_universal.sh" "$@" || {
-            echo "setup_universal.sh failed; installing test extras without Go Task..."
-            install_test_extras
-        }
+        echo "setup_universal.sh failed; installing test extras without Go Task..."
+        install_test_extras
+    }
 fi
 
-# Only run the smoke test when a real extension file is present.
+# Run the smoke test even when the VSS extension is missing; a stub will be used.
 VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
 if [ -n "$VSS_EXTENSION" ]; then
     echo "Running smoke test to verify environment..."
-    uv run python scripts/smoke_test.py \
-        || echo "Smoke test failed; environment may be incomplete" >&2
 else
-    echo "Extension stub detected; skipping smoke test."
+    echo "VSS extension not found; running smoke test with stub..."
 fi
+uv run python scripts/smoke_test.py ||
+    echo "Smoke test failed; environment may be incomplete" >&2
 
 # Ensure Go Task resides in the virtual environment so subsequent Taskfile
 # invocations use the expected binary. Link an existing installation when
@@ -74,9 +74,8 @@ if [ ! -x "$TASK_BIN" ]; then
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" \
-            || echo "Warning: failed to download Go Task; continuing without it" >&2
+        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" ||
+            echo "Warning: failed to download Go Task; continuing without it" >&2
     fi
 fi
 task --version || echo "task --version failed; continuing without Go Task" >&2
-
