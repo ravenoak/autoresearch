@@ -21,6 +21,20 @@ If validation fails, the previous configuration remains active. The atomic
 rename prevents partial writes from replacing the live file, so a failed
 swap leaves the system operating with the last valid snapshot.
 
+## Invariants
+
+- The active configuration always matches the last successfully validated
+  snapshot.
+- Failed validations keep the previous configuration active.
+- Each active configuration satisfies the validator predicates.
+
+## Convergence
+
+Assume updates stop at time ``T``. The watcher observes the last write within
+``t_p``. Validation completes in ``t_v`` and the atomic swap finishes in
+``t_io``. By ``T + t_p + t_v + t_io`` the active state equals the final valid
+snapshot and remains fixed, establishing convergence after reload.
+
 ## Empirical Results
 
 Running ``uv run``
