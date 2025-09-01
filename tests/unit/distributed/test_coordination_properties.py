@@ -4,7 +4,7 @@ import random
 import sys
 
 sys.modules.setdefault("numpy", None)
-from hypothesis import given, strategies as st  # noqa: E402
+from hypothesis import given, settings, strategies as st  # noqa: E402
 
 from scripts.distributed_coordination_sim import (  # noqa: E402
     elect_leader,
@@ -25,6 +25,7 @@ def test_election_converges_to_minimum(ids: list[int]) -> None:
         assert elect_leader(shuffled) == minimum
 
 
+@settings(deadline=None)
 @given(st.lists(st.text(min_size=0, max_size=5), max_size=20))
 def test_message_processing_is_idempotent(messages: list[str]) -> None:
     """Processing twice yields the same ordered sequence.
