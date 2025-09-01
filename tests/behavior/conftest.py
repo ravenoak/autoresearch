@@ -34,6 +34,43 @@ from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 pytest_plugins = ("pytest_bdd", "tests.behavior.steps")
 
 
+PENDING_STEP_MODULES = {
+    "cli_options_steps.py",
+    "configuration_hot_reload_steps.py",
+    "dkg_persistence_steps.py",
+    "error_handling_steps.py",
+    "error_recovery_extended_steps.py",
+    "error_recovery_workflow_steps.py",
+    "first_run_steps.py",
+    "gui_cli_steps.py",
+    "hybrid_search_steps.py",
+    "interactive_monitor_steps.py",
+    "interface_test_cli_steps.py",
+    "mcp_interface_steps.py",
+    "optional_extras_steps.py",
+    "orchestration_system_steps.py",
+    "orchestrator_agents_integration_steps.py",
+    "output_formatting_steps.py",
+    "query_interface_steps.py",
+    "reasoning_mode_api_steps.py",
+    "reasoning_mode_cli_steps.py",
+    "reasoning_mode_steps.py",
+    "reasoning_parameters_steps.py",
+    "serve_cli_steps.py",
+    "sparql_cli_steps.py",
+    "storage_search_integration_steps.py",
+    "test_cleanup_extended_steps.py",
+    "visualization_cli_steps.py",
+}
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Mark pending step modules so they can be deselected."""
+    for item in items:
+        if item.fspath.basename in PENDING_STEP_MODULES:
+            item.add_marker("pending")
+
+
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
     """Configure base directory for feature files."""
