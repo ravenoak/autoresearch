@@ -27,7 +27,8 @@ install_test_extras() {
     uv pip install -e ".[test]"
     mkdir -p extensions
     if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
-        VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
+        # Ignore stub files by selecting only non-empty extensions.
+        VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
     else
         echo "Warning: duckdb extension download failed; falling back to stub" >&2
     fi
@@ -51,8 +52,9 @@ else
         }
 fi
 
-VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" | head -n 1)
-if [ -s "$VSS_EXTENSION" ]; then
+# Only run the smoke test when a real extension file is present.
+VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
+if [ -n "$VSS_EXTENSION" ]; then
     echo "Running smoke test to verify environment..."
     uv run python scripts/smoke_test.py \
         || echo "Smoke test failed; environment may be incomplete" >&2
