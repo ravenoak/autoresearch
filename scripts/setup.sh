@@ -33,11 +33,15 @@ install_test_extras() {
         echo "Warning: duckdb extension download failed; falling back to stub" >&2
     fi
     VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
-    if [ ! -f "$VSS_EXTENSION" ]; then
+    if [ ! -s "$VSS_EXTENSION" ]; then
+        echo "Warning: VSS extension not found; creating stub at $VSS_EXTENSION" >&2
         mkdir -p "$(dirname "$VSS_EXTENSION")"
         : >"$VSS_EXTENSION"
+    else
+        if ! record_vector_extension_path "$VSS_EXTENSION"; then
+            echo "Warning: failed to record VSS extension path; continuing" >&2
+        fi
     fi
-    record_vector_extension_path "$VSS_EXTENSION"
 }
 
 if ! command -v task >/dev/null 2>&1; then
@@ -53,13 +57,13 @@ else
 fi
 
 # Only run the smoke test when a real extension file is present.
-VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
+VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1 || true)
 if [ -n "$VSS_EXTENSION" ]; then
     echo "Running smoke test to verify environment..."
     uv run python scripts/smoke_test.py \
         || echo "Smoke test failed; environment may be incomplete" >&2
 else
-    echo "Extension stub detected; skipping smoke test."
+    echo "No VSS extension found; skipping smoke test."
 fi
 
 # Ensure Go Task resides in the virtual environment so subsequent Taskfile

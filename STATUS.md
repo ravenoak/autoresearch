@@ -6,7 +6,9 @@ As of **September 1, 2025**, the environment lacks the Go Task CLI and
 `test_backup_manager` stall remains resolved: the unit test completes
 immediately using an event-based backup trigger. DuckDB extension downloads
 still fall back to a stub if the network is unavailable; a real extension
-triggers the smoke test to confirm vector search. Dependency pins for
+triggers the smoke test to confirm vector search. When no extension is found,
+`scripts/setup.sh` logs a warning and continues so smoke tests pass offline.
+Dependency pins for
 `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
