@@ -10,9 +10,9 @@ Last updated **August 28, 2025**.
 See [STATUS.md](STATUS.md) for current results. `task verify` completes after
 running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
 packages, so only targeted tests run. Integration and behavior suites remain
-skipped and coverage currently reports **100%** coverage for exercised modules
-(see [fix-task-check-deps]). Dependency pins: `fastapi>=0.115.12` and
-`slowapi==0.1.9`. Use Python 3.12+ with:
+skipped and coverage currently reports **100%** line coverage (57/57 lines) for
+exercised modules (see [fix-task-check-deps]). Dependency pins:
+`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
@@ -63,15 +63,49 @@ the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
 coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
 release is re-targeted for **June 15, 2026**. Key activities include:
 
-- [x] Environment bootstrap documented and installation instructions
-  consolidated.
-- [x] Packaging verification with DuckDB fallback.
-- [ ] Integration tests stabilized.
-- [ ] Coverage gates target **90%** total coverage once tests run.
-- [x] Algorithm validation for ranking and coordination.
+- [ ] Environment bootstrap documented and installation instructions
+  consolidated ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
+- [ ] Packaging verification with DuckDB fallback
+  ([address-task-verify-dependency-builds](issues/address-task-verify-dependency-builds.md),
+  [fix-task-verify-package-metadata-errors](issues/fix-task-verify-package-metadata-errors.md)).
+- [ ] Integration tests stabilized
+  ([restore-behavior-driven-test-suite](
+  issues/restore-behavior-driven-test-suite.md),
+  [fix-idempotent-message-processing-deadline](
+  issues/fix-idempotent-message-processing-deadline.md)).
+- [ ] Coverage gates target **90%** total coverage once tests run
+  ([add-test-coverage-for-optional-components](
+  issues/add-test-coverage-for-optional-components.md),
+  [resolve-pre-alpha-release-blockers](
+  issues/resolve-pre-alpha-release-blockers.md)).
+- [ ] Algorithm validation for ranking and coordination
+  ([add-ranking-algorithm-proofs-and-simulations](
+  issues/add-ranking-algorithm-proofs-and-simulations.md),
+  [simulate-distributed-orchestrator-performance](
+  issues/simulate-distributed-orchestrator-performance.md)).
 
-These steps proceed in sequence: environment bootstrap → packaging
-verification → integration tests → coverage gates → algorithm validation.
+These steps proceed in sequence:
+
+1. Environment bootstrap –
+   [restore-task-cli-availability](issues/restore-task-cli-availability.md)
+2. Packaging verification –
+   [address-task-verify-dependency-builds](issues/address-task-verify-dependency-builds.md),
+   [fix-task-verify-package-metadata-errors](issues/fix-task-verify-package-metadata-errors.md)
+3. Integration tests –
+   [restore-behavior-driven-test-suite](
+   issues/restore-behavior-driven-test-suite.md),
+   [fix-idempotent-message-processing-deadline](
+   issues/fix-idempotent-message-processing-deadline.md)
+4. Coverage gates –
+   [add-test-coverage-for-optional-components](
+   issues/add-test-coverage-for-optional-components.md),
+   [resolve-pre-alpha-release-blockers](
+   issues/resolve-pre-alpha-release-blockers.md)
+5. Algorithm validation –
+   [add-ranking-algorithm-proofs-and-simulations](
+   issues/add-ranking-algorithm-proofs-and-simulations.md),
+   [simulate-distributed-orchestrator-performance](
+   issues/simulate-distributed-orchestrator-performance.md)
 
 [fix-task-check-deps]: issues/fix-task-check-dependency-removal-and-extension-bootstrap.md
 

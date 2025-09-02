@@ -22,10 +22,25 @@ confirmed in `pyproject.toml` and [installation.md](installation.md).
 `tests/unit/distributed/test_coordination_properties.py::`
 `test_message_processing_is_idempotent` exceeds its Hypothesis deadline and 19
 behavior scenarios lack definitions.
-Coverage reports **100%** (57/57 lines) for targeted modules. One open issue
-remains:
-[fix-task-verify-package-metadata-errors](
-../issues/fix-task-verify-package-metadata-errors.md).
+Coverage reports **100%** line coverage (57/57 lines) for targeted modules.
+Open issues include:
+- [restore-task-cli-availability](../issues/restore-task-cli-availability.md)
+- [restore-behavior-driven-test-suite](
+  ../issues/restore-behavior-driven-test-suite.md)
+- [add-test-coverage-for-optional-components](
+  ../issues/add-test-coverage-for-optional-components.md)
+- [address-task-verify-dependency-builds](
+  ../issues/address-task-verify-dependency-builds.md)
+- [fix-task-verify-package-metadata-errors](
+  ../issues/fix-task-verify-package-metadata-errors.md)
+- [fix-idempotent-message-processing-deadline](
+  ../issues/fix-idempotent-message-processing-deadline.md)
+- [resolve-pre-alpha-release-blockers](
+  ../issues/resolve-pre-alpha-release-blockers.md)
+- [add-ranking-algorithm-proofs-and-simulations](
+  ../issues/add-ranking-algorithm-proofs-and-simulations.md)
+- [simulate-distributed-orchestrator-performance](
+  ../issues/simulate-distributed-orchestrator-performance.md)
 Outstanding gaps are tracked in
 [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
 are mirrored in [../STATUS.md](../STATUS.md).
@@ -66,12 +81,52 @@ while packaging tasks are resolved.
 
 ### Alpha release checklist
 
+- [ ] [restore-task-cli-availability](
+      ../issues/restore-task-cli-availability.md)
+- [ ] [restore-behavior-driven-test-suite](
+      ../issues/restore-behavior-driven-test-suite.md)
+- [ ] [add-test-coverage-for-optional-components](
+      ../issues/add-test-coverage-for-optional-components.md)
+- [ ] [address-task-verify-dependency-builds](
+      ../issues/address-task-verify-dependency-builds.md)
+- [ ] [fix-task-verify-package-metadata-errors](
+      ../issues/fix-task-verify-package-metadata-errors.md)
+- [ ] [fix-idempotent-message-processing-deadline](
+      ../issues/fix-idempotent-message-processing-deadline.md)
+- [ ] [resolve-pre-alpha-release-blockers](
+      ../issues/resolve-pre-alpha-release-blockers.md)
+- [ ] [add-ranking-algorithm-proofs-and-simulations](
+      ../issues/add-ranking-algorithm-proofs-and-simulations.md)
+- [ ] [simulate-distributed-orchestrator-performance](
+      ../issues/simulate-distributed-orchestrator-performance.md)
 - [ ] Confirm STATUS.md and this plan share the same coverage details before
-  tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
-  sync the value.
+      tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage`
+      to sync the value.
 
-These tasks completed in order: environment bootstrap → packaging verification
-→ integration tests → coverage gates → algorithm validation.
+These tasks depend on the following open issues:
+
+1. Environment bootstrap –
+   [restore-task-cli-availability](../issues/restore-task-cli-availability.md)
+2. Packaging verification –
+   [address-task-verify-dependency-builds](
+   ../issues/address-task-verify-dependency-builds.md),
+   [fix-task-verify-package-metadata-errors](
+   ../issues/fix-task-verify-package-metadata-errors.md)
+3. Integration tests –
+   [restore-behavior-driven-test-suite](
+   ../issues/restore-behavior-driven-test-suite.md),
+   [fix-idempotent-message-processing-deadline](
+   ../issues/fix-idempotent-message-processing-deadline.md)
+4. Coverage gates –
+   [add-test-coverage-for-optional-components](
+   ../issues/add-test-coverage-for-optional-components.md),
+   [resolve-pre-alpha-release-blockers](
+   ../issues/resolve-pre-alpha-release-blockers.md)
+5. Algorithm validation –
+   [add-ranking-algorithm-proofs-and-simulations](
+   ../issues/add-ranking-algorithm-proofs-and-simulations.md),
+   [simulate-distributed-orchestrator-performance](
+   ../issues/simulate-distributed-orchestrator-performance.md)
 
 ### Prerequisites for tagging 0.1.0a1
 
