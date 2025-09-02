@@ -8,6 +8,8 @@ strategies in `tests/unit/distributed/test_coordination_properties.py`.
 Coverage reports are generated. Dependency pins for `fastapi` (>=0.115.12) and
 `slowapi` (==0.1.9) remain in place.
 
+The evaluation setup makes Task CLI version 3.44.1 available (`task --version`).
+
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
 features are required. Setup helpers and Taskfile commands consult this
