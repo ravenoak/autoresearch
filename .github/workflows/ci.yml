@@ -32,6 +32,8 @@ jobs:
         run: |
           curl -sL https://taskfile.dev/install.sh | sh -s -- -b ~/.local/bin
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Confirm Go Task installation
+        run: task --version
       - name: Validate tool versions
         run: uv run python scripts/check_env.py
       - name: Run task check
