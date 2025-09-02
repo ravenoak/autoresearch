@@ -54,10 +54,11 @@ whether or not a pool is in use, ensuring each run starts from a clean slate.
 ## Concurrent eviction
 
 Eviction maintains the RAM budget even when multiple writers persist claims
-simultaneously. The [simulation][evict-sim] forces usage to 1000 MB and, after
-five insertions under an LRU policy. Running
-`uv run python scripts/storage_eviction_sim.py --threads 5` finishes with
-`nodes remaining after eviction: 0`, proving the policy is thread safe.
+simultaneously. The [simulation][evict-sim] forces usage to 1000 MB and
+accepts thread count, item count, and policy to stress eviction. Running
+`uv run python scripts/storage_eviction_sim.py --threads 5 --items 5` with
+policy `lru` finishes with `nodes remaining after eviction: 0`, proving the
+policy is thread safe.
 
 The [RAM budget simulation][ram-sim] persists claims sequentially while
 memory usage is mocked above the limit, leaving the in-memory graph empty.
@@ -95,18 +96,21 @@ equal table lists across runs. Running
 
 ### Eviction correctness under concurrent writers
 
-**Theorem.** `_enforce_ram_budget` preserves the invariant `U ≤ B(1 − δ)` under
-concurrent writes, where `U` is usage, `B` the budget, and `δ` the safety
-margin.
+**Theorem.** `_enforce_ram_budget` preserves the invariant
+`U ≤ B(1 − δ)` under concurrent writes, where `U` is usage,
+`B` the budget, and `δ` the safety margin.
 
-**Proof.** The function acquires a lock before measuring `U`. If `U > B`, it
-removes nodes according to the configured policy until `U ≤ B(1 − δ)`. Because
-the lock serializes eviction, no two writers can evict based on stale
-information. Every invocation reduces or maintains `U`; thus, after all
-threads finish, the invariant holds. The
-[simulation][evict-sim] and [deterministic test][evict-test] confirm the final
-graph is empty when `U` is forced above `B`. Executing
-`uv run python scripts/storage_eviction_sim.py --threads 5` prints
+**Proof.** The function acquires a lock and reads `U₀` and target
+`T = B(1 − δ)`. The loop executes only when `Uᵢ > T`. Each iteration
+removes at least one node with positive size `sᵢ`, yielding
+`Uᵢ₊₁ = Uᵢ − sᵢ` and `Uᵢ₊₁ < Uᵢ`. The sequence `(Uᵢ)` is
+strictly decreasing and bounded below by `0`, so by induction there
+exists `k` with `Uₖ ≤ T`. Upon exit, all threads see `Uₖ ≤ B` and
+either return immediately or repeat the argument, ensuring the
+invariant after every call. The [simulation][evict-sim] and
+[deterministic test][evict-test] confirm the final graph is empty when `U` is
+forced above `B`. Running
+`uv run python scripts/storage_eviction_sim.py --threads 5 --items 5` prints
 `nodes remaining after eviction: 0`, illustrating the invariant. ∎
 
 ## DuckDB fallback benchmark

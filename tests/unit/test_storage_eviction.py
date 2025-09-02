@@ -1,7 +1,7 @@
 from collections import OrderedDict, deque
 from unittest.mock import MagicMock, patch
 
-from hypothesis import given, strategies as st
+from hypothesis import assume, given, strategies as st
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import EVICTION_COUNTER
@@ -52,6 +52,78 @@ def test_lru_eviction_property(capacity, ops):
         if len(mirror) > capacity:
             expected, _ = mirror.popitem(last=False)
             assert evicted[-1] == expected
+
+
+@given(
+    budget=st.integers(min_value=1, max_value=100),
+    usage=st.integers(min_value=0, max_value=100),
+)
+def test_enforce_ram_budget_under_budget_property(budget, usage):
+    """No eviction when usage does not exceed the budget."""
+    assume(usage <= budget)
+    mock_graph = MagicMock()
+    with patch.object(StorageManager.context, "graph", mock_graph):
+        with patch(
+            "autoresearch.storage.StorageManager._current_ram_mb",
+            return_value=usage,
+        ):
+            with patch(
+                "autoresearch.config.loader.ConfigLoader.config",
+                new=MagicMock(graph_eviction_policy="lru"),
+            ):
+                StorageManager._enforce_ram_budget(budget)
+    mock_graph.remove_node.assert_not_called()
+
+
+@given(
+    budget=st.integers(min_value=1, max_value=50),
+    safety=st.floats(min_value=0, max_value=0.5),
+    reductions=st.lists(st.integers(min_value=1, max_value=20), min_size=1, max_size=5),
+)
+def test_enforce_ram_budget_reduces_usage_property(budget, safety, reductions):
+    """Eviction reduces usage to the safety margin target."""
+    start = budget + sum(reductions) + 1
+    usage_sequence = [start]
+    current = start
+    for r in reductions:
+        current -= r
+        usage_sequence.append(current)
+    target = budget * (1 - safety)
+    assume(usage_sequence[-1] <= target)
+    assume(all(u > target for u in usage_sequence[:-1]))
+
+    nodes = {f"n{i}": {} for i in range(len(reductions))}
+    mock_graph = MagicMock()
+    mock_graph.nodes = nodes
+    mock_graph.has_node.side_effect = lambda n, nodes=nodes: n in nodes
+
+    def remove_node(n: str) -> None:
+        nodes.pop(n, None)
+
+    mock_graph.remove_node.side_effect = remove_node
+
+    mock_lru = OrderedDict((n, i) for i, n in enumerate(nodes))
+    ram_mock = MagicMock(side_effect=usage_sequence + [usage_sequence[-1]])
+    cfg = MagicMock(
+        graph_eviction_policy="lru",
+        eviction_batch_size=1,
+        eviction_safety_margin=safety,
+    )
+
+    with patch.object(StorageManager.context, "graph", mock_graph):
+        with patch.object(StorageManager.state, "lru", mock_lru):
+            with patch(
+                "autoresearch.storage.StorageManager._current_ram_mb",
+                ram_mock,
+            ):
+                with patch(
+                    "autoresearch.config.loader.ConfigLoader.config",
+                    new=cfg,
+                ):
+                    StorageManager._enforce_ram_budget(budget)
+
+    assert mock_graph.remove_node.call_count == len(reductions)
+    assert ram_mock.call_count == len(usage_sequence) + 1
 
 
 def test_pop_lru():
