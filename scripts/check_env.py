@@ -140,6 +140,18 @@ def check_package(pkg: str) -> CheckResult:
     return CheckResult(pkg, current, required)
 
 
+def check_pytest_bdd() -> CheckResult:
+    """Ensure pytest-bdd is installed and importable."""
+
+    try:
+        import pytest_bdd  # noqa: F401
+    except ModuleNotFoundError as exc:  # pragma: no cover - failure path
+        raise VersionError("pytest-bdd import failed; run 'task install'.") from exc
+    current = metadata.version("pytest-bdd")
+    required = REQUIREMENTS["pytest-bdd"]
+    return CheckResult("pytest-bdd", current, required)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
@@ -150,6 +162,9 @@ def main() -> None:
     checks = [check_python, check_task, check_uv]
 
     for pkg in sorted(EXTRA_REQUIREMENTS):
+        if pkg == "pytest-bdd":
+            checks.append(check_pytest_bdd)
+            continue
         checks.append(lambda pkg=pkg: check_package(pkg))
 
     errors: list[str] = []

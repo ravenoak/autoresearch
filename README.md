@@ -76,14 +76,15 @@ uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
 ```
 
-This mirrors the DuckDB setup performed by `scripts/setup.sh` and lets
-`uv run pytest` succeed without `task`.
+The `[test]` extra installs dependencies like `pytest-bdd`, which `task check`
+expects for quick smoke tests. This mirrors the DuckDB setup performed by
+`scripts/setup.sh` and lets `uv run pytest` succeed without `task`.
 
-Run `task check` for linting, type checks, and quick smoke tests. It syncs only
-the `dev-minimal` extra and exercises a small unit subset (`test_version` and
-`test_cli_help`) for fast feedback. For the full suite, including integration
-and behavior tests, run `task verify` after syncing the `test` extra (the
-default behavior of `task install`).
+Run `task check` for linting, type checks, and quick smoke tests. It syncs the
+`dev-minimal` and `test` extras and exercises a small unit subset (`test_version`
+and `test_cli_help`) for fast feedback. For the full suite, including
+integration and behavior tests, run `task verify` after syncing the `test` extra
+(the default behavior of `task install`).
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
