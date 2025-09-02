@@ -147,8 +147,7 @@ tasks:
             --extra git \
             --extra distributed \
             --extra analysis \
-            --extra parsers \
-            --extra llm{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
+            --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - uv run coverage erase
       - >

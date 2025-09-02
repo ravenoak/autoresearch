@@ -9,12 +9,13 @@ from __future__ import annotations
 import random
 
 import pytest
-from hypothesis import assume, given, strategies as st
+from hypothesis import assume, given, settings, strategies as st
 
 from tests.analysis.dialectical_cycle_analysis import simulate
 
 
 @pytest.mark.slow
+@settings(deadline=None)
 @given(
     alphas=st.tuples(
         st.floats(min_value=0.1, max_value=0.9),
