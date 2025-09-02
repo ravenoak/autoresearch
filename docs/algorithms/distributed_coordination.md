@@ -131,6 +131,23 @@ where `P_0` is the probability that the system is empty. The simulation also
 approximates memory consumption with `M = tasks \times m`, where `m` is memory
 per task.
 
+### Scheduling Benchmark
+
+The micro-benchmark dispatches `N` I/O-bound tasks through `P` worker threads
+and reports throughput and resource usage. Throughput is
+
+`T = N / t`
+
+where `t` is the elapsed wall-clock time. CPU time and memory use follow:
+
+```py
+cpu = end.ru_utime - start.ru_utime
+mem_kb = end.ru_maxrss - start.ru_maxrss
+```
+
+Increasing `P` raises `T` until coordination overhead dominates, guiding
+worker tuning.
+
 ## References
 
 - [spec](../specs/distributed.md)
