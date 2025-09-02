@@ -1,8 +1,10 @@
 # Status
 
-As of **September 1, 2025**, `scripts/setup.sh` reports Go Task `3.44.1` and
-`uv run task check` completes successfully. `uv run task verify` now finishes in
-under fifteen minutes on a clean environment. DuckDB extension downloads still
+As of **September 2, 2025**, `task` must be installed manually. After adding
+`.venv/bin` to the `PATH`, `task --version` reports `3.44.1` and `task check`
+completes successfully. `task verify` currently stalls during the coverage
+phase and raises a `KeyError` from `tmp_path` after roughly 26% of the test
+suite, leaving coverage reports incomplete. DuckDB extension downloads still
 fall back to a stub if the network is unavailable. The setup script treats a
 missing extension as non-fatal and runs the smoke test against the stub to
 verify basic functionality. Dependency pins for `fastapi` (>=0.115.12) and
@@ -35,13 +37,13 @@ so `uv run pytest` works without `task`.
 The minimal unit subset used by `task check` passes (8 tests).
 
 ## Integration tests
-Not executed.
+`task verify` halts before these tests run.
 
 ## Behavior tests
-Suite passes with `uv run pytest tests/behavior -q`.
+Not executed in the current run.
 
 ## Coverage
-Targeted modules report **100%** line coverage (57/57 lines).
+Coverage data was not generated because `task verify` failed.
 
 ## Open issues
 - [add-ranking-algorithm-proofs-and-simulations](
