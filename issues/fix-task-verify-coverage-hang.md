@@ -2,9 +2,10 @@
 
 ## Context
 Recent attempts to run `task verify` stall during the coverage phase after
-syncing all extras, requiring manual interruption and leaving coverage reports
-incomplete. This prevents the project from assessing overall test health before
-the 0.1.0a1 release.
+syncing all extras. The run stops after roughly 26% of the unit suite and
+raises a `KeyError` from the `tmp_path` fixture, requiring manual
+interruption and leaving coverage reports incomplete. This prevents the
+project from assessing overall test health before the 0.1.0a1 release.
 
 ## Dependencies
 None.
