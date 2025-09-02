@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import AsyncGenerator
 
 from fastapi.responses import StreamingResponse
 
@@ -14,8 +15,17 @@ from .deps import create_orchestrator
 from .webhooks import notify_webhook
 
 
+# Interval between heartbeat messages to keep connections alive, in seconds.
+KEEPALIVE_INTERVAL = 15
+
+
 async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
-    """Stream incremental query results as JSON lines."""
+    """Stream incremental query results as JSON lines.
+
+    A blank line is sent every ``KEEPALIVE_INTERVAL`` seconds to prevent
+    intermediaries from closing idle connections. Consumers should ignore
+    empty lines.
+    """
     config = get_config()
 
     if request.reasoning_mode is not None:
@@ -60,9 +70,14 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
 
     asyncio.get_running_loop().run_in_executor(None, run)
 
-    async def generator():
+    async def generator() -> AsyncGenerator[str, None]:
         while True:
-            item = await queue.get()
+            try:
+                item = await asyncio.wait_for(queue.get(), timeout=KEEPALIVE_INTERVAL)
+            except asyncio.TimeoutError:
+                # Emit a heartbeat to keep the connection alive.
+                yield "\n"
+                continue
             if item is None:
                 break
             yield item + "\n"
