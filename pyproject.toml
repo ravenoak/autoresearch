@@ -99,11 +99,10 @@ distributed = [
 analysis = [
     "polars >=1.31.0"
 ]
-# Heavy LLM dependencies
+# CPU-friendly LLM dependencies
 llm = [
     "dspy-ai >=2.6.27",
-    "sentence-transformers >=2.7.0",
-    "transformers >=4.53.0"
+    "fastembed >=0.3.2"
 ]
 # Dependencies needed only for running tests
 test = [

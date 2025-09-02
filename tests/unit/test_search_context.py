@@ -8,7 +8,7 @@ pytestmark = pytest.mark.requires_nlp
 
 
 def test_optional_dependencies_not_imported_on_module_load(monkeypatch):
-    for name in ("spacy", "bertopic", "sentence_transformers"):
+    for name in ("spacy", "bertopic", "fastembed"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))
     assert not module.SPACY_AVAILABLE
@@ -16,7 +16,7 @@ def test_optional_dependencies_not_imported_on_module_load(monkeypatch):
     assert not module.SENTENCE_TRANSFORMERS_AVAILABLE
     assert "spacy" not in sys.modules
     assert "bertopic" not in sys.modules
-    assert "sentence_transformers" not in sys.modules
+    assert "fastembed" not in sys.modules
 
 
 def test_spacy_loaded_when_needed(monkeypatch):
@@ -39,7 +39,7 @@ def test_spacy_loaded_when_needed(monkeypatch):
 
 
 def test_topic_model_imports_when_built(monkeypatch):
-    for name in ("spacy", "spacy.cli", "bertopic", "sentence_transformers"):
+    for name in ("spacy", "spacy.cli", "bertopic", "fastembed"):
         monkeypatch.delitem(sys.modules, name, raising=False)
     module = importlib.reload(importlib.import_module("autoresearch.search.context"))
     monkeypatch.setattr(module.SearchContext, "_initialize_nlp", lambda self: None)
@@ -53,13 +53,13 @@ def test_topic_model_imports_when_built(monkeypatch):
     dummy_bertopic.BERTopic = DummyBERTopic
     monkeypatch.setitem(sys.modules, "bertopic", dummy_bertopic)
 
-    dummy_st = types.ModuleType("sentence_transformers")
+    dummy_st = types.ModuleType("fastembed")
 
     class DummySentenceTransformer:
         pass
 
-    dummy_st.SentenceTransformer = DummySentenceTransformer
-    monkeypatch.setitem(sys.modules, "sentence_transformers", dummy_st)
+    dummy_st.TextEmbedding = DummySentenceTransformer
+    monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
     ctx = module.SearchContext.new_for_tests()
     ctx.search_history = [

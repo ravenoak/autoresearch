@@ -104,7 +104,7 @@ SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
 def _try_import_sentence_transformers() -> bool:
-    """Lazily import SentenceTransformer when needed."""
+    """Lazily import a lightweight embedding model when available."""
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
     if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
         return SENTENCE_TRANSFORMERS_AVAILABLE
@@ -112,7 +112,7 @@ def _try_import_sentence_transformers() -> bool:
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
     try:  # pragma: no cover - optional dependency
-        from sentence_transformers import SentenceTransformer as ST
+        from fastembed import TextEmbedding as ST
 
         SentenceTransformer = ST
         SENTENCE_TRANSFORMERS_AVAILABLE = True
@@ -123,7 +123,7 @@ def _try_import_sentence_transformers() -> bool:
 
 
 if TYPE_CHECKING:  # pragma: no cover - for type checking only
-    from sentence_transformers import SentenceTransformer as SentenceTransformerType
+    from fastembed import TextEmbedding as SentenceTransformerType
 else:  # pragma: no cover - runtime fallback
     SentenceTransformerType = Any
 
@@ -252,25 +252,20 @@ class Search:
 
     @hybridmethod
     def get_sentence_transformer(self) -> Optional[SentenceTransformerType]:
-        """Get or initialize the sentence transformer model.
-
-        Returns:
-            SentenceTransformer: The sentence transformer model, or None if not available
-        """
+        """Get or initialize the fastembed model."""
         if not _try_import_sentence_transformers():
             log.warning(
-                "sentence-transformers package is not installed. Semantic similarity scoring will be disabled.",
+                "fastembed package is not installed. Semantic similarity scoring will be disabled.",
             )
             return None
 
         if self._sentence_transformer is None:
             try:
-                # Use a small, fast model for semantic similarity
                 assert SentenceTransformer is not None
-                self._sentence_transformer = SentenceTransformer("all-MiniLM-L6-v2")
-                log.info("Initialized sentence transformer model")
+                self._sentence_transformer = SentenceTransformer()
+                log.info("Initialized fastembed model")
             except Exception as e:
-                log.warning(f"Failed to initialize sentence transformer model: {e}")
+                log.warning(f"Failed to initialize fastembed model: {e}")
                 return None
 
         return self._sentence_transformer
@@ -379,7 +374,9 @@ class Search:
             if query_embedding is None:
                 # Encode the query
                 assert model is not None
-                query_embedding = np.array(model.encode(query), dtype=float)
+                query_embedding = np.array(
+                    list(model.embed([query]))[0], dtype=float
+                )
 
             # Encode the documents
             similarities: List[Optional[float]] = []
@@ -409,10 +406,11 @@ class Search:
 
             if to_encode:
                 assert model is not None
-                doc_embeddings = model.encode(to_encode)
+                doc_embeddings = list(model.embed(to_encode))
                 for emb, index in zip(doc_embeddings, encode_map):
-                    sim = np.dot(query_embedding, emb) / (
-                        np.linalg.norm(query_embedding) * np.linalg.norm(emb)
+                    emb_arr = np.array(emb, dtype=float)
+                    sim = np.dot(query_embedding, emb_arr) / (
+                        np.linalg.norm(query_embedding) * np.linalg.norm(emb_arr)
                     )
                     similarities[index] = (sim + 1) / 2
 
@@ -447,7 +445,7 @@ class Search:
             return
 
         try:
-            doc_embeddings = model.encode(texts)
+            doc_embeddings = list(model.embed(texts))
             for emb, index in zip(doc_embeddings, indices):
                 if hasattr(emb, "tolist"):
                     documents[index]["embedding"] = emb.tolist()
@@ -455,7 +453,11 @@ class Search:
                     documents[index]["embedding"] = list(emb)
                 if query_embedding is not None:
                     q = np.array(query_embedding, dtype=float)
-                    sim = float(np.dot(q, emb) / (np.linalg.norm(q) * np.linalg.norm(emb)))
+                    emb_arr = np.array(emb, dtype=float)
+                    sim = float(
+                        np.dot(q, emb_arr)
+                        / (np.linalg.norm(q) * np.linalg.norm(emb_arr))
+                    )
                     documents[index]["similarity"] = (sim + 1) / 2
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
@@ -948,7 +950,7 @@ class Search:
             try:
                 model = self.get_sentence_transformer()
                 if model is not None:
-                    query_embedding = model.encode(search_query)
+                    query_embedding = list(model.embed([search_query]))[0]
                     if hasattr(query_embedding, "tolist"):
                         query_embedding = query_embedding.tolist()
             except Exception as exc:  # pragma: no cover - optional failure

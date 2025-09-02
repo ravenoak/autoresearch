@@ -13,8 +13,8 @@ sys.modules.setdefault(
 )
 sys.modules.setdefault("bertopic", types.SimpleNamespace())
 sys.modules.setdefault(
-    "sentence_transformers",
-    types.SimpleNamespace(SentenceTransformer=lambda *_: None),
+    "fastembed",
+    types.SimpleNamespace(TextEmbedding=lambda *_: None),
 )
 
 from autoresearch.search import (  # noqa: E402

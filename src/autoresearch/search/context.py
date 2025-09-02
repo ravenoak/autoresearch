@@ -57,14 +57,14 @@ def _try_import_bertopic() -> bool:
 
 
 def _try_import_sentence_transformers() -> bool:
-    """Attempt to import SentenceTransformer and set availability flag."""
+    """Attempt to import a lightweight embedding model."""
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
     if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
         return SENTENCE_TRANSFORMERS_AVAILABLE
     if not get_config().search.context_aware.enabled:
         return False
     try:  # pragma: no cover - optional dependency
-        from sentence_transformers import SentenceTransformer as ST  # type: ignore
+        from fastembed import TextEmbedding as ST  # type: ignore
 
         SentenceTransformer = ST
         SENTENCE_TRANSFORMERS_AVAILABLE = True

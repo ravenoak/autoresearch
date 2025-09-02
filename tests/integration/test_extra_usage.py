@@ -63,9 +63,8 @@ def test_docx_roundtrip(tmp_path) -> None:
 
 
 @pytest.mark.requires_llm
-def test_transformers_config() -> None:
-    pytest.importorskip("transformers")
-    from transformers import BertConfig
+def test_dspy_available() -> None:
+    pytest.importorskip("dspy")
+    import dspy
 
-    cfg = BertConfig()
-    assert cfg.hidden_size == 768
+    assert hasattr(dspy, "__version__")

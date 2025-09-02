@@ -8,6 +8,10 @@ strategies in `tests/unit/distributed/test_coordination_properties.py`.
 Coverage reports are generated. Dependency pins for `fastapi` (>=0.115.12) and
 `slowapi` (==0.1.9) remain in place.
 
+The `[llm]` extra now installs CPU-friendly libraries (`fastembed`,
+`dspy-ai`) to avoid CUDA-heavy downloads. `task verify`
+`EXTRAS="llm"` succeeds with these lighter dependencies.
+
 The evaluation setup makes Task CLI version 3.44.1 available (`task --version`).
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
@@ -64,8 +68,6 @@ Not executed.
   issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](
   issues/reach-stable-performance-and-interfaces.md)
-- [resolve-llm-extra-installation-failure](
-  issues/resolve-llm-extra-installation-failure.md)
 - [simulate-distributed-orchestrator-performance](
   issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](
