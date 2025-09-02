@@ -13,5 +13,5 @@ so long-running tasks maintain connections and deliver results reliably.
 - End-to-end tests cover streaming errors and webhook callbacks.
 
 ## Status
-Open
+Archived
 

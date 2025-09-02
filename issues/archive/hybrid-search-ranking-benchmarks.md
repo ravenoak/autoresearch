@@ -14,5 +14,5 @@ datasets will guard against regressions and surface performance gaps.
 - Regression threshold alerts trigger if metrics degrade.
 
 ## Status
-Open
+Archived
 
