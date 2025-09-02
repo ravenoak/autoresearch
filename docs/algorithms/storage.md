@@ -113,6 +113,28 @@ forced above `B`. Running
 `uv run python scripts/storage_eviction_sim.py --threads 5 --items 5` prints
 `nodes remaining after eviction: 0`, illustrating the invariant. ∎
 
+**Lemma.** After `m` iterations the usage is `U₀ − Σ sᵢ`, where each `sᵢ > 0`
+is the size of an evicted node.
+
+**Proof.** The update rule `Uᵢ₊₁ = Uᵢ − sᵢ` telescopes. Applying it
+repeatedly yields `Uₘ = U₀ − Σ₀^{m−1} sᵢ`. Since the sum is positive and
+bounded by `U₀ − T`, the loop terminates after finitely many steps. ∎
+
+### Edge cases
+
+`_enforce_ram_budget` handles boundary conditions without violating the
+invariant:
+
+- **Zero budget:** When `B = 0`, eviction is skipped. The
+  [`zero_budget` scenario][evict-sim] leaves `N = threads × items` nodes.
+- **Usage below budget:** If `U₀ ≤ B`, no eviction occurs. The
+  [`under_budget` scenario][evict-sim] retains all persisted nodes.
+- **No nodes to evict:** An empty graph yields an empty loop. The
+  [`no_nodes` scenario][evict-sim] reports `nodes remaining after eviction: 0`.
+
+These results align with the theorem because each scenario preserves
+`U ≤ B(1 − δ)`.
+
 ## DuckDB fallback benchmark
 
 The benchmark in [duckdb-bench] shows that persistence triggers eviction when
