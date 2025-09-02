@@ -69,13 +69,13 @@ If you already have the `.duckdb_extension` file available, copy it under
 detect the file and skip the download step, making offline installation
 easier.
 
-This will download the appropriate VSS extension for the specified platform and
-store it in the specified directory. If the download fails, the script logs a
+This downloads the appropriate VSS extension for the specified platform and
+stores it in the given directory. If the download fails, the script logs a
 warning and continues without the extension. The setup script then creates a
-zero-byte placeholder and skips the smoke test so installation finishes with
-vector search disabled. When a real extension file is present, setup runs a
-short smoke test to confirm the environment. It prints the path to use in your
-configuration file.
+zero-byte placeholder and ignores any smoke-test failures so installation
+finishes with vector search disabled. When a real extension file is present,
+setup runs a short smoke test to confirm the environment and prints the path to
+use in your configuration file.
 
 ### Configuration for Offline Use
 

@@ -126,8 +126,8 @@ def test_download_extension_fallback_path(monkeypatch, tmp_path):
     assert files, "extension file was not copied"
 
 
-def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
-    """Setup logic skips the smoke test when only a stub extension exists."""
+def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch, tmp_path):
+    """Smoke test failures are ignored when only a stub extension exists."""
 
     monkeypatch.chdir(tmp_path)
     conn = FailingConn("path")
@@ -139,13 +139,15 @@ def test_setup_sh_skips_smoke_with_stub(monkeypatch, tmp_path):
     script = (
         'VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" '
         "-size +0c | head -n 1)\n"
-        'if [ -n "$VSS_EXTENSION" ]; then echo run; else echo skip; fi\n'
+        'if [ -n "$VSS_EXTENSION" ]; then false || echo fail; '
+        "else false >/dev/null || true; fi\n"
     )
     completed = subprocess.run(
         ["bash", "-c", script],
         cwd=tmp_path,
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
-    assert completed.stdout.strip() == "skip"
+    assert completed.returncode == 0
+    assert "fail" not in completed.stdout

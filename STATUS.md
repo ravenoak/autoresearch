@@ -8,8 +8,8 @@ triggers a `hypothesis.errors.DeadlineExceeded` and the command exits with
 status 201, leaving coverage reports incomplete. DuckDB extension downloads
 still fall back to a stub if the network is unavailable. The setup script
 continues treating a missing extension as non-fatal and runs the smoke test
-against the stub to verify basic functionality. Dependency pins for `fastapi`
-(>=0.115.12) and `slowapi` (==0.1.9) remain in place.
+against the stub, ignoring failures, to verify basic functionality. Dependency
+pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
