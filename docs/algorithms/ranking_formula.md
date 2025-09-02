@@ -12,6 +12,15 @@ the final score is a convex combination and also resides in :math:`[0, 1]`.
 Increasing any component score strictly increases the final relevance score.
 This property ensures consistent ranking across repeated evaluations.
 
+## Proof sketch from information retrieval theory
+
+The probability ranking principle (PRP) states that ordering documents by
+their probability of relevance yields optimal retrieval. BM25, semantic
+similarity, and source credibility each approximate this probability from
+distinct evidence sources. Their non-negative weights form a convex mixture, so
+the combined score preserves the ordering mandated by the PRP and remains a
+consistent relevance estimator.
+
 ## Simulation across datasets
 
 Synthetic datasets with differing noise levels confirm that noisier data
@@ -26,3 +35,5 @@ cumulative gain (NDCG) for datasets with noise parameters `0.0` and `0.3`.
   https://www.mir2ed.org
 - D. Knuth. *The Art of Computer Programming, Volume 3: Sorting and
   Searching*. https://www-cs-faculty.stanford.edu/~knuth/taocp.html
+- S. E. Robertson. "The Probability Ranking Principle in IR." *Journal of
+  Documentation*, 1977. https://doi.org/10.1108/eb026648
