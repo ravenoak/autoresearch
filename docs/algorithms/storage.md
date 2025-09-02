@@ -56,9 +56,9 @@ whether or not a pool is in use, ensuring each run starts from a clean slate.
 Eviction maintains the RAM budget even when multiple writers persist claims
 simultaneously. The [simulation][evict-sim] forces usage to 1000 MB and
 accepts thread count, item count, and policy to stress eviction. Running
-`uv run python scripts/storage_eviction_sim.py --threads 5 --items 5` with
-policy `lru` finishes with `nodes remaining after eviction: 0`, proving the
-policy is thread safe.
+`uv run python scripts/storage_eviction_sim.py --scenario race` adds a
+dedicated eviction thread. With policy `lru`, both normal and race modes finish
+with `nodes remaining after eviction: 0`, proving the policy is thread safe.
 
 The [RAM budget simulation][ram-sim] persists claims sequentially while
 memory usage is mocked above the limit, leaving the in-memory graph empty.
@@ -119,6 +119,17 @@ is the size of an evicted node.
 **Proof.** The update rule `Uᵢ₊₁ = Uᵢ − sᵢ` telescopes. Applying it
 repeatedly yields `Uₘ = U₀ − Σ₀^{m−1} sᵢ`. Since the sum is positive and
 bounded by `U₀ − T`, the loop terminates after finitely many steps. ∎
+
+### Concurrent enforcement races
+
+**Theorem.** Concurrent calls to `_enforce_ram_budget` by independent threads
+maintain `U ≤ B(1 − δ)`.
+
+**Proof.** The function uses a global lock, so calls serialize. Each thread
+sees a state satisfying the previous theorem and leaves the invariant intact.
+The `race` scenario in [storage_eviction_sim.py][evict-sim] spawns a
+dedicated enforcer thread while writers persist data. The simulation ends
+with zero nodes, confirming the argument. ∎
 
 ### Edge cases
 
