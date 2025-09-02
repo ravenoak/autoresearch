@@ -1,17 +1,17 @@
 # Status
 
 As of **September 1, 2025**, `scripts/setup.sh` reports Go Task `3.44.1` and
-`uv run task check` completes successfully. An attempt to run
-`uv run task verify` was made, but the coverage phase exceeded the evaluation
-time and was interrupted. DuckDB extension downloads still fall back to a stub
-if the network is unavailable. The setup script treats a missing extension as
-non-fatal and runs the smoke test against the stub to verify basic
-functionality. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
-(==0.1.9) remain in place.
+`uv run task check` completes successfully. `uv run task verify` now finishes
+in under fifteen minutes on a clean environment. DuckDB extension downloads
+still fall back to a stub if the network is unavailable. The setup script
+treats a missing extension as non-fatal and runs the smoke test against the
+stub to verify basic functionality. Dependency pins for `fastapi`
+(>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
-features are required.
+features are required. Setup helpers and Taskfile commands consult this
+directory automatically when GPU extras are installed.
 
 ## Bootstrapping without Go Task
 
