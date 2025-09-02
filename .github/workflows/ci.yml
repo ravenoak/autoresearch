@@ -52,6 +52,20 @@ jobs:
             --extra llm
       - name: Run task verify
         run: uv run task verify
+      - name: Sync extras for coverage
+        run: |
+          uv sync \
+            --extra dev-minimal \
+            --extra dev \
+            --extra test \
+            --extra nlp \
+            --extra ui \
+            --extra vss \
+            --extra git \
+            --extra distributed \
+            --extra analysis \
+            --extra parsers \
+            --extra llm
       - name: Run task coverage
         run: uv run task coverage
       - name: Enforce coverage threshold

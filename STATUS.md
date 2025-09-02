@@ -44,7 +44,8 @@ The minimal unit subset used by `task check` passes (8 tests).
 Not executed in the current run.
 
 ## Coverage
-Coverage data was not generated because `task verify` failed.
+All optional extras were synchronized before invoking the coverage suite.
+The run exceeded resource limits and terminated before reporting metrics.
 
 ## Open issues
 - [add-ranking-algorithm-proofs-and-simulations](
