@@ -30,8 +30,7 @@ results are mirrored in [../STATUS.md](../STATUS.md).
 - **0.1.0** (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update](
-  ../issues/deliver-bug-fixes-and-docs-update.md)).
+  ([deliver-bug-fixes-and-docs-update](../issues/archive/deliver-bug-fixes-and-docs-update.md)).
 - **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
@@ -60,8 +59,8 @@ while packaging tasks are resolved.
 - [ ] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
-- [ ] Ensure Task CLI available ([restore-task-cli-availability](
-  ../issues/restore-task-cli-availability.md)).
+- [x] Ensure Task CLI available ([restore-task-cli-availability](
+  ../issues/archive/restore-task-cli-availability.md)).
 - [ ] Resolve coverage hang ([fix-task-verify-coverage-hang](
   ../issues/fix-task-verify-coverage-hang.md)).
 

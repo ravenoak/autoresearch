@@ -19,4 +19,4 @@ now packaged and targeted tests confirm baseline coverage at 67%.
 - Ensure tests and coverage remain stable.
 
 ## Status
-Open
+Archived
