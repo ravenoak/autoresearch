@@ -1,12 +1,12 @@
 {
-  "tests/integration/test_backend_metrics_benchmark.py::test_backend_metrics::bm25": {
+  "tests/benchmark/test_hybrid_ranking.py::test_hybrid_ranking[bm25]::bm25": {
+    "latency": 1.8649010255860453e-06,
     "precision": 1.0,
-    "recall": 1.0,
-    "latency": 0.001678135
+    "recall": 1.0
   },
-  "tests/integration/test_backend_metrics_benchmark.py::test_backend_metrics::semantic": {
+  "tests/benchmark/test_hybrid_ranking.py::test_hybrid_ranking[semantic]::semantic": {
+    "latency": 1.9785414443721848e-06,
     "precision": 0.5,
-    "recall": 1.0,
-    "latency": 0.001609288
+    "recall": 1.0
   }
 }
