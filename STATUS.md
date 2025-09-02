@@ -1,6 +1,6 @@
 # Status
 
-As of **September 24, 2025**, `task` must be installed manually. After adding
+As of **September 2, 2025**, `task` must be installed manually. After adding
 `.venv/bin` to the `PATH`, `task --version` reports `3.44.1` and `task check`
 completes successfully. `task verify` still stalls during the coverage phase:
 `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
