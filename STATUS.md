@@ -1,18 +1,11 @@
 # Status
 
-As of **September 2, 2025**, `scripts/setup.sh` installs `task` automatically
-and adds `.venv/bin` to the `PATH`. After running the script, `task --version`
-reports `3.44.1` and `task check` completes successfully. A prior stall in
-`tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
-was resolved by reducing the Hypothesis workload and disabling the deadline.
-`task verify` previously stalled when downloading heavy `llm` dependencies.
-Coverage now omits the `llm` extra and uses stub detection for optional
-modules, allowing verification to proceed without large downloads. DuckDB
-extension downloads still fall back to a stub if the network is unavailable.
-The setup script continues treating a missing extension as non-fatal and runs
-the smoke test against the stub, ignoring failures, to verify basic
-functionality. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
-(==0.1.9) remain in place.
+As of **September 2, 2025**, attempts to install all extras (`nlp`, `ui`, `vss`,
+`git`, `distributed`, `analysis`, `llm`, and `parsers`) triggered large CUDA
+downloads such as `torch` and NVIDIA libraries. The install was terminated and
+the Go Task CLI is absent, so `task check` and `task verify` cannot run.
+Coverage could not be collected. Dependency pins for `fastapi` (>=0.115.12) and
+`slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
@@ -35,22 +28,20 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-`uv run task check` (requires Go Task) executes flake8, mypy, and spec tests;
-the last recorded run passed.
+`task check` was not executed because the Go Task CLI is unavailable.
 
 ## Targeted tests
-After installing the `[test]` extras, `uv run pytest --maxfail=1` reports
-68 passed, 5 skipped, and 112 deselected tests.
+Not executed.
 
 ## Integration tests
-`task verify` halts before these tests run.
+Not executed.
 
 ## Behavior tests
-Not executed in the current run.
+Not executed.
 
 ## Coverage
-All optional extras were synchronized before invoking the coverage suite.
-The run exceeded resource limits and terminated before reporting metrics.
+Coverage was not generated; `task verify` could not run without the Task CLI
+and completed extras.
 
 ## Open issues
 - [add-ranking-algorithm-proofs-and-simulations](
