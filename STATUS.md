@@ -1,12 +1,12 @@
 # Status
 
 As of **September 2, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes, and `task verify` now completes
-after removing a trailing blank line in
-`tests/integration/test_storage_eviction_sim.py` and constraining Hypothesis
-strategies in `tests/unit/distributed/test_coordination_properties.py`.
-Coverage reports are generated. Dependency pins for `fastapi` (>=0.115.12) and
-`slowapi` (==0.1.9) remain in place.
+syncs optional extras. `task check` passes, but `task verify` still hangs
+during the coverage phase despite the earlier fixes to
+`tests/integration/test_storage_eviction_sim.py` and
+`tests/unit/distributed/test_coordination_properties.py`. The command requires
+manual interruption and produces no coverage report. Dependency pins for
+`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 The `[llm]` extra now installs CPU-friendly libraries (`fastembed`,
 `dspy-ai`) to avoid CUDA-heavy downloads. `task verify`
@@ -55,7 +55,8 @@ Not executed.
 Not executed.
 
 ## Coverage
-`task verify` succeeded, producing HTML coverage under `htmlcov/`.
+`task verify` currently hangs during the coverage phase, so no coverage report
+is generated.
 
 ## Open issues
 - [add-storage-eviction-proofs-and-simulations](

@@ -9,6 +9,10 @@ still required manual interruption and exited with status 201 after
 triggered a `hypothesis.errors.DeadlineExceeded`. This prevents the project
 from assessing overall test health before the 0.1.0a1 release.
 
+On September 2, 2025, another run of `uv run task verify` hung during the
+coverage task. The process produced no further output for several minutes and
+was manually interrupted, leaving coverage reports incomplete.
+
 ## Dependencies
 - [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
 
