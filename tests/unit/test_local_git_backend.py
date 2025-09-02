@@ -8,10 +8,13 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import _local_git_backend
 from autoresearch.storage import StorageManager
 
+git = pytest.importorskip("git", reason="git extra not installed")
+if getattr(git, "Repo", object) is object:
+    pytest.skip("git extra not installed", allow_module_level=True)
+
 
 @pytest.mark.requires_git
 def test_local_git_backend_searches_repo(tmp_path, monkeypatch):
-    git = pytest.importorskip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
     file_path = repo_path / "file.txt"
