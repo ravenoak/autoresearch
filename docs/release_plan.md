@@ -42,10 +42,10 @@ results are mirrored in [../STATUS.md](../STATUS.md).
       ../issues/configuration-hot-reload-tests.md)
     - [hybrid-search-ranking-benchmarks](
       ../issues/hybrid-search-ranking-benchmarks.md)
-  - [plan-a2a-mcp-behavior-tests](
-    ../issues/plan-a2a-mcp-behavior-tests.md)
 - **0.3.0** (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities.
+  - [simulate-distributed-orchestrator-performance](
+    ../issues/simulate-distributed-orchestrator-performance.md)
 - **1.0.0** (2027-06-01, status: planned): Full feature set, performance
   tuning and stable interfaces
   ([reach-stable-performance-and-interfaces](
@@ -60,6 +60,10 @@ while packaging tasks are resolved.
 - [ ] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
+- [ ] Ensure Task CLI available ([restore-task-cli-availability](
+  ../issues/restore-task-cli-availability.md)).
+- [ ] Resolve coverage hang ([fix-task-verify-coverage-hang](
+  ../issues/fix-task-verify-coverage-hang.md)).
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
