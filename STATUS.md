@@ -1,11 +1,12 @@
 # Status
 
 As of **September 2, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes, but `task verify` fails during
-`flake8` due to a trailing blank line in
-`tests/integration/test_storage_eviction_sim.py:47`. Coverage remains
-unavailable. Dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9)
-remain in place.
+syncs optional extras. `task check` passes, and `task verify` now completes
+after removing a trailing blank line in
+`tests/integration/test_storage_eviction_sim.py` and constraining Hypothesis
+strategies in `tests/unit/distributed/test_coordination_properties.py`.
+Coverage reports are generated. Dependency pins for `fastapi` (>=0.115.12) and
+`slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
@@ -48,7 +49,7 @@ Not executed.
 Not executed.
 
 ## Coverage
-Coverage was not generated; `task verify` exited during linting.
+`task verify` succeeded, producing HTML coverage under `htmlcov/`.
 
 ## Open issues
 - [add-storage-eviction-proofs-and-simulations](

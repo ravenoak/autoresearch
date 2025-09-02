@@ -44,4 +44,3 @@ def test_no_nodes_scenario() -> None:
 
     remaining = sim._run(threads=2, items=2, policy="lru", scenario="no_nodes")
     assert remaining == 0
-
