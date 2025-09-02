@@ -27,6 +27,13 @@ This installs the `[test]` extras and uses
 `scripts/download_duckdb_extensions.py` to record the DuckDB VSS extension path
 so `uv run pytest` works without `task`.
 
+## Offline DuckDB extension
+
+`scripts/setup.sh` now continues when the VSS extension download fails. It
+records a zero-byte stub at `extensions/vss/vss.duckdb_extension` and proceeds
+with smoke tests, allowing offline environments to initialize without vector
+search.
+
 ## Lint, type checks, and spec tests
 `task check` was not executed because the Go Task CLI is unavailable.
 
