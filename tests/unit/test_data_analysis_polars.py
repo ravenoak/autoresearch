@@ -1,0 +1,14 @@
+import pytest
+
+from autoresearch.data_analysis import metrics_dataframe
+
+
+@pytest.mark.requires_analysis
+def test_metrics_dataframe_summary() -> None:
+    pl = pytest.importorskip("polars")
+    from polars.testing import assert_frame_equal
+
+    metrics = {"agent_timings": {"A": [1.0, 2.0], "B": [3.0, 5.0]}}
+    df = metrics_dataframe(metrics, polars_enabled=True).sort("agent")
+    expected = pl.DataFrame({"agent": ["A", "B"], "avg_time": [1.5, 4.0], "count": [2, 2]})
+    assert_frame_equal(df, expected)
