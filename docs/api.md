@@ -80,7 +80,9 @@ curl -X POST 'http://localhost:8000/query?stream=true' \
 ### `POST /query/stream`
 
 Stream incremental responses as each reasoning cycle completes. The endpoint
-returns newline-delimited JSON objects.
+returns newline-delimited JSON objects. To keep connections open during long
+operations, a blank line is sent every 15 seconds when no data is
+available. Clients should ignore empty lines.
 
 ```bash
 curl -X POST http://localhost:8000/query/stream \
@@ -113,8 +115,10 @@ curl -X POST http://localhost:8000/query \
   -d '{"query": "hi", "webhook_url": "http://localhost:9000/hook"}'
 ```
 
-Additionally, any URLs listed under `[api].webhooks` in `autoresearch.toml`
-receive the same payload after each query completes.
+Additionally, any URLs listed under `[api].webhooks` in
+`autoresearch.toml` receive the same payload after each query completes.
+Delivery is retried up to three times with exponential backoff. Failures are
+logged and do not affect the main response.
 
 ### `GET /metrics`
 
