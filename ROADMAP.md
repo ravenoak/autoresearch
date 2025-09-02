@@ -27,9 +27,7 @@ before running tests.
   feedback while aligning environment requirements.
 - 0.1.0 (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update](
-  issues/deliver-bug-fixes-and-docs-update.md)).
+- 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates.
 - 0.2.0 (2026-12-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
@@ -63,8 +61,8 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
-- [ ] Task CLI availability restored
-  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
+- [x] Task CLI availability restored
+  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [ ] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/improve-duckdb-extension-fallback.md)).

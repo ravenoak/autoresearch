@@ -1,9 +1,9 @@
 # Restore task cli availability
 
 ## Context
-The current environment lacks the `task` command, preventing `task check` and
-`task verify` from running. This regression blocks linting and tests,
-contradicting previous setup expectations.
+The environment originally lacked the `task` command, preventing `task check`
+and `task verify` from running. Setup now installs Go Task so both commands can
+execute.
 
 ## Dependencies
 None.
@@ -14,4 +14,4 @@ None.
 - `task check` and `task verify` run successfully in a clean environment.
 
 ## Status
-Open
+Archived

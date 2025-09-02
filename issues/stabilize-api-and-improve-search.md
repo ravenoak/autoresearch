@@ -11,7 +11,7 @@ discrete sub-issues that refine streaming, configuration and search behavior.
 
 ## Dependencies
 
-- [deliver-bug-fixes-and-docs-update](deliver-bug-fixes-and-docs-update.md)
+- [deliver-bug-fixes-and-docs-update](archive/deliver-bug-fixes-and-docs-update.md)
 
 ## Acceptance Criteria
 - [streaming-webhook-refinements](streaming-webhook-refinements.md) completed.
