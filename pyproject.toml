@@ -99,8 +99,12 @@ distributed = [
 analysis = [
     "polars >=1.31.0"
 ]
-# Heavy LLM dependencies
+# CPU-friendly LLM dependencies
 llm = [
+    "ctransformers >=0.2.27"
+]
+# CUDA-heavy LLM dependencies
+llm-gpu = [
     "dspy-ai >=2.6.27",
     "sentence-transformers >=2.7.0",
     "transformers >=4.53.0"

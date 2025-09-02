@@ -8,6 +8,10 @@ strategies in `tests/unit/distributed/test_coordination_properties.py`.
 Coverage reports are generated. Dependency pins for `fastapi` (>=0.115.12) and
 `slowapi` (==0.1.9) remain in place.
 
+The `llm` extra now installs only CPU-friendly packages. CUDA-heavy libraries
+such as `dspy-ai`, `sentence-transformers`, and `transformers` moved to the
+`llm-gpu` group to reduce install size.
+
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
 features are required. Setup helpers and Taskfile commands consult this

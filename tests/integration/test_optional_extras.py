@@ -4,7 +4,6 @@ import pytest
 
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
-from autoresearch.search.context import _try_import_sentence_transformers
 from autoresearch.search.core import _local_file_backend
 
 
@@ -46,8 +45,9 @@ def test_metrics_dataframe_polars() -> None:
 
 
 @pytest.mark.requires_llm
-def test_sentence_transformers_import() -> None:
-    assert _try_import_sentence_transformers() is True
+def test_ctransformers_import() -> None:
+    ctf = pytest.importorskip("ctransformers")
+    assert hasattr(ctf, "__version__")
 
 
 @pytest.mark.requires_parsers

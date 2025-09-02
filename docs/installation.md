@@ -98,7 +98,8 @@ Include extras only when required. Examples:
 
 ```bash
 EXTRAS="nlp" task install      # adds NLP packages
-uv sync --extra llm            # LLM libraries
+uv sync --extra llm            # CPU LLM libraries
+uv sync --extra llm-gpu        # CUDA LLM libraries
 uv sync --extra gpu            # BERTopic and lmstudio
 VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
@@ -333,7 +334,8 @@ installed by `task install`; enable them with `uv sync --extra <name>` or
 `AR_EXTRAS` environment variable.
 
 `pyproject.toml` defines these groups: minimal, nlp, ui, vss, parsers, git,
-distributed, analysis, gpu, llm, test, full, dev, dev-minimal, and build. The
+distributed, analysis, gpu, llm, llm-gpu, test, full, dev, dev-minimal, and
+build. The
 table below summarizes their purpose and usage.
 
 | Extra | Purpose | Setup command |
@@ -347,7 +349,8 @@ table below summarizes their purpose and usage.
 | distributed | Ray and Redis for scaling | `uv sync --extra distributed` |
 | analysis | data analysis via Polars | `uv sync --extra analysis` |
 | gpu | GPU-only packages | `uv sync --extra gpu` |
-| llm | LLM libraries | `uv sync --extra llm` |
+| llm | CPU LLM libraries | `uv sync --extra llm` |
+| llm-gpu | CUDA LLM libraries | `uv sync --extra llm-gpu` |
 | test | packages needed only for tests | `uv sync --extra test` |
 | full | all optional features | `uv sync --extra full` |
 | dev | developer tools | `uv sync --extra dev` |
@@ -360,7 +363,8 @@ Examples:
 uv sync --extra nlp          # language processing
 uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
-uv sync --extra llm          # LLM libraries
+uv sync --extra llm          # CPU LLM libraries
+uv sync --extra llm-gpu      # CUDA LLM libraries
 uv sync --extra gpu          # BERTopic and lmstudio
 ```
 

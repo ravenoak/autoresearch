@@ -295,6 +295,9 @@ gpu = [
     { name = "scipy" },
 ]
 llm = [
+    { name = "ctransformers" },
+]
+llm-gpu = [
     { name = "dspy-ai" },
     { name = "sentence-transformers" },
     { name = "transformers" },
@@ -343,7 +346,8 @@ requires-dist = [
     { name = "bertopic", marker = "extra == 'gpu'", specifier = ">=0.17.3" },
     { name = "build", marker = "extra == 'build'", specifier = ">=1.2.2" },
     { name = "cibuildwheel", marker = "extra == 'dev'", specifier = ">=3.0.1" },
-    { name = "dspy-ai", marker = "extra == 'llm'", specifier = ">=2.6.27" },
+    { name = "ctransformers", marker = "extra == 'llm'", specifier = ">=0.2.27" },
+    { name = "dspy-ai", marker = "extra == 'llm-gpu'", specifier = ">=2.6.27" },
     { name = "duckdb", specifier = ">=1.3.0" },
     { name = "duckdb", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "duckdb", marker = "extra == 'test'", specifier = ">=1.0.0" },
@@ -425,7 +429,7 @@ requires-dist = [
     { name = "responses", marker = "extra == 'test'", specifier = ">=0.25.7" },
     { name = "rich", specifier = ">=14.1.0" },
     { name = "scipy", marker = "extra == 'gpu'", specifier = ">=1.16.0" },
-    { name = "sentence-transformers", marker = "extra == 'llm'", specifier = ">=2.7.0" },
+    { name = "sentence-transformers", marker = "extra == 'llm-gpu'", specifier = ">=2.7.0" },
     { name = "sentence-transformers", marker = "extra == 'minimal'", specifier = ">=2.7.0" },
     { name = "setuptools", specifier = ">=80.9.0" },
     { name = "slowapi", specifier = "==0.1.9" },
@@ -441,7 +445,7 @@ requires-dist = [
     { name = "tomli-w", marker = "extra == 'dev'", specifier = ">=1.2.0" },
     { name = "tomli-w", marker = "extra == 'dev-minimal'", specifier = ">=1.2.0" },
     { name = "tomli-w", marker = "extra == 'test'", specifier = ">=1.2.0" },
-    { name = "transformers", marker = "extra == 'llm'", specifier = ">=4.53.0" },
+    { name = "transformers", marker = "extra == 'llm-gpu'", specifier = ">=4.53.0" },
     { name = "twine", marker = "extra == 'build'", specifier = ">=6.0.1" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "typer", marker = "extra == 'dev'", specifier = ">=0.16.0" },
@@ -453,7 +457,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'test'", specifier = ">=0.35.0" },
     { name = "watchfiles", specifier = ">=1.1.0" },
 ]
-provides-extras = ["minimal", "nlp", "gpu", "ui", "vss", "parsers", "git", "distributed", "analysis", "llm", "test", "full", "dev", "dev-minimal", "build"]
+provides-extras = ["minimal", "nlp", "gpu", "ui", "vss", "parsers", "git", "distributed", "analysis", "llm", "llm-gpu", "test", "full", "dev", "dev-minimal", "build"]
 
 [[package]]
 name = "backoff"
@@ -906,6 +910,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/82/27/092d311af22095d288f4db89fcaebadfb2f28944f3d790a4cf51fe5ddaeb/cryptography-45.0.6-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:5b64e668fc3528e77efa51ca70fadcd6610e8ab231e3e06ae2bab3b31c2b8ed9", size = 4554815, upload-time = "2025-08-05T23:59:00.283Z" },
     { url = "https://files.pythonhosted.org/packages/7e/01/aa2f4940262d588a8fdf4edabe4cda45854d00ebc6eaac12568b3a491a16/cryptography-45.0.6-cp37-abi3-win32.whl", hash = "sha256:780c40fb751c7d2b0c6786ceee6b6f871e86e8718a8ff4bc35073ac353c7cd02", size = 2912147, upload-time = "2025-08-05T23:59:01.716Z" },
     { url = "https://files.pythonhosted.org/packages/0a/bc/16e0276078c2de3ceef6b5a34b965f4436215efac45313df90d55f0ba2d2/cryptography-45.0.6-cp37-abi3-win_amd64.whl", hash = "sha256:20d15aed3ee522faac1a39fbfdfee25d17b1284bafd808e1640a74846d7c4d1b", size = 3390459, upload-time = "2025-08-05T23:59:03.358Z" },
+]
+
+[[package]]
+name = "ctransformers"
+version = "0.2.27"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "py-cpuinfo" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/5e/6ed7eaf8f54b5b078e2a609e90369c6999e67f915b9c1927c0d686c494f9/ctransformers-0.2.27.tar.gz", hash = "sha256:25653d4be8a5ed4e2d3756544c1e9881bf95404be5371c3ed506a256c28663d5", size = 376065, upload-time = "2023-09-10T15:19:14.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/50/0b608e2abee4fc695b4e7ff5f569f5d32faf84a49e322034716fa157d1cf/ctransformers-0.2.27-py3-none-any.whl", hash = "sha256:6a3ba47556471850d95fdbc59299a82ab91c9dc8b40201c5e7e82d71360772d9", size = 9853506, upload-time = "2023-09-10T15:18:58.741Z" },
 ]
 
 [[package]]
@@ -3540,6 +3557,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/a2/709e0fe2f093556c17fbafda93ac032257242cabcc7ff3369e2cb76a97aa/psutil-7.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993", size = 279544, upload-time = "2025-02-13T21:54:24.68Z" },
     { url = "https://files.pythonhosted.org/packages/50/e6/eecf58810b9d12e6427369784efe814a1eec0f492084ce8eb8f4d89d6d61/psutil-7.0.0-cp37-abi3-win32.whl", hash = "sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99", size = 241053, upload-time = "2025-02-13T21:54:34.31Z" },
     { url = "https://files.pythonhosted.org/packages/50/1b/6921afe68c74868b4c9fa424dad3be35b095e16687989ebbb50ce4fceb7c/psutil-7.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:4cf3d4eb1aa9b348dec30105c55cd9b7d4629285735a102beb4441e38db90553", size = 244885, upload-time = "2025-02-13T21:54:37.486Z" },
+]
+
+[[package]]
+name = "py-cpuinfo"
+version = "9.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690", size = 104716, upload-time = "2022-10-25T20:38:06.303Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/a9/023730ba63db1e494a271cb018dcd361bd2c917ba7004c3e49d5daf795a2/py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5", size = 22335, upload-time = "2022-10-25T20:38:27.636Z" },
 ]
 
 [[package]]
