@@ -74,8 +74,10 @@ if [ ! -x "$TASK_BIN" ]; then
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" ||
-            echo "Warning: failed to download Go Task; continuing without it" >&2
+        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
+            echo "Warning: failed to download Go Task; install manually from" \
+                " https://taskfile.dev/installation/ and re-run setup" >&2
+        }
     fi
 fi
 task --version || echo "task --version failed; continuing without Go Task" >&2
