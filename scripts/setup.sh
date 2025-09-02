@@ -7,6 +7,25 @@ set -euo pipefail
 
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/setup_common.sh"
+
+VENV_BIN="$(pwd)/.venv/bin"
+TASK_BIN="$VENV_BIN/task"
+ensure_venv_bin_on_path "$VENV_BIN"
+export PATH="$VENV_BIN:$PATH"
+
+if [ ! -x "$TASK_BIN" ]; then
+    echo "Installing Go Task into $VENV_BIN..."
+    mkdir -p "$VENV_BIN"
+    if command -v task >/dev/null 2>&1; then
+        ln -sf "$(command -v task)" "$TASK_BIN"
+    else
+        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
+            echo "Warning: failed to download Go Task; install manually from" \
+                " https://taskfile.dev/installation/ and re-run setup" >&2
+        }
+    fi
+fi
+
 case "$(uname -s)" in
 Linux*)
     "$SCRIPT_DIR/setup_linux.sh" "$@"
@@ -40,7 +59,7 @@ install_test_extras() {
     record_vector_extension_path "$VSS_EXTENSION"
 }
 
-if ! command -v task >/dev/null 2>&1; then
+if [ ! -x "$TASK_BIN" ]; then
     echo "Go Task not found; installing test extras..."
     install_test_extras
 else
@@ -62,22 +81,4 @@ fi
 uv run python scripts/smoke_test.py ||
     echo "Smoke test failed; environment may be incomplete" >&2
 
-# Ensure Go Task resides in the virtual environment so subsequent Taskfile
-# invocations use the expected binary. Link an existing installation when
-# possible; otherwise download it.
-VENV_BIN="$(pwd)/.venv/bin"
-ensure_venv_bin_on_path "$VENV_BIN"
-TASK_BIN="$VENV_BIN/task"
-if [ ! -x "$TASK_BIN" ]; then
-    echo "Installing Go Task into $VENV_BIN..."
-    mkdir -p "$VENV_BIN"
-    if command -v task >/dev/null 2>&1; then
-        ln -sf "$(command -v task)" "$TASK_BIN"
-    else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
-            echo "Warning: failed to download Go Task; install manually from" \
-                " https://taskfile.dev/installation/ and re-run setup" >&2
-        }
-    fi
-fi
 task --version || echo "task --version failed; continuing without Go Task" >&2
