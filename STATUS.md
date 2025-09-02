@@ -44,13 +44,29 @@ Suite passes with `uv run pytest tests/behavior -q`.
 Targeted modules report **100%** line coverage (57/57 lines).
 
 ## Open issues
-- [restore-task-cli-availability](
-  issues/restore-task-cli-availability.md)
-- [add-test-coverage-for-optional-components](
-  issues/add-test-coverage-for-optional-components.md)
-- [fix-idempotent-message-processing-deadline](
-  issues/fix-idempotent-message-processing-deadline.md)
 - [add-ranking-algorithm-proofs-and-simulations](
   issues/add-ranking-algorithm-proofs-and-simulations.md)
+- [add-test-coverage-for-optional-components](
+  issues/add-test-coverage-for-optional-components.md)
+- [configuration-hot-reload-tests](
+  issues/configuration-hot-reload-tests.md)
+- [deliver-bug-fixes-and-docs-update](
+  issues/deliver-bug-fixes-and-docs-update.md)
+- [fix-idempotent-message-processing-deadline](
+  issues/fix-idempotent-message-processing-deadline.md)
+- [fix-task-verify-coverage-hang](
+  issues/fix-task-verify-coverage-hang.md)
+- [hybrid-search-ranking-benchmarks](
+  issues/hybrid-search-ranking-benchmarks.md)
+- [improve-duckdb-extension-fallback](
+  issues/improve-duckdb-extension-fallback.md)
+- [reach-stable-performance-and-interfaces](
+  issues/reach-stable-performance-and-interfaces.md)
+- [restore-task-cli-availability](
+  issues/restore-task-cli-availability.md)
 - [simulate-distributed-orchestrator-performance](
   issues/simulate-distributed-orchestrator-performance.md)
+- [stabilize-api-and-improve-search](
+  issues/stabilize-api-and-improve-search.md)
+- [streaming-webhook-refinements](
+  issues/streaming-webhook-refinements.md)

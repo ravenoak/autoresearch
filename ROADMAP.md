@@ -10,7 +10,7 @@ Last updated **August 28, 2025**.
 See [STATUS.md](STATUS.md) for current results. `task verify` completes after
 running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
 packages, so only targeted tests run. Integration and behavior suites remain
-skipped and coverage currently reports **100%** coverage for exercised modules
+skipped and targeted modules report **100%** coverage (57/57 lines)
 (see [fix-task-check-deps]). Dependency pins: `fastapi>=0.115.12` and
 `slowapi==0.1.9`. Use Python 3.12+ with:
 
@@ -40,10 +40,10 @@ before running tests.
       issues/configuration-hot-reload-tests.md)
     - [hybrid-search-ranking-benchmarks](
       issues/hybrid-search-ranking-benchmarks.md)
-  - [plan-a2a-mcp-behavior-tests](
-    issues/plan-a2a-mcp-behavior-tests.md)
 - 0.3.0 (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities.
+  - [simulate-distributed-orchestrator-performance](
+    issues/simulate-distributed-orchestrator-performance.md)
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
   and stable interfaces
   ([reach-stable-performance-and-interfaces](
@@ -63,10 +63,20 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
+- [ ] Task CLI availability restored
+  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
+- [ ] Improve DuckDB extension fallback
+  ([improve-duckdb-extension-fallback](issues/improve-duckdb-extension-fallback.md)).
 - [ ] Integration tests stabilized.
-- [ ] Coverage gates target **90%** total coverage once tests run.
-- [x] Algorithm validation for ranking and coordination.
+- [ ] Coverage gates target **90%** total coverage once tests run
+  ([add-test-coverage-for-optional-components](
+  issues/add-test-coverage-for-optional-components.md);
+  [fix-task-verify-coverage-hang](
+  issues/fix-task-verify-coverage-hang.md)).
+- [x] Algorithm validation for ranking and coordination
+  ([add-ranking-algorithm-proofs-and-simulations](
+  issues/add-ranking-algorithm-proofs-and-simulations.md)).
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
