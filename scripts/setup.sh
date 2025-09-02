@@ -52,14 +52,16 @@ install_test_extras() {
     ensure_venv_bin_on_path "$(pwd)/.venv/bin"
     uv pip install -e ".[test]"
     mkdir -p extensions
-    if uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
-        # Ignore stub files by selecting only non-empty extensions.
-        VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
-    else
-        echo "Warning: duckdb extension download failed; falling back to stub" >&2
+    if ! uv run "$SCRIPT_DIR/download_duckdb_extensions.py" --output-dir ./extensions; then
+        echo "Warning: duckdb extension download failed; using stub" >&2
     fi
-    VSS_EXTENSION="${VSS_EXTENSION:-./extensions/vss/vss.duckdb_extension}"
-    if [ ! -f "$VSS_EXTENSION" ]; then
+    # Ignore stub files by selecting only non-empty extensions and create a
+    # zero-byte placeholder when none are available. This allows offline setup
+    # to proceed while still recording a valid path for DuckDB.
+    VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" \
+        -size +0c | head -n 1)
+    if [ -z "$VSS_EXTENSION" ]; then
+        VSS_EXTENSION="./extensions/vss/vss.duckdb_extension"
         mkdir -p "$(dirname "$VSS_EXTENSION")"
         : >"$VSS_EXTENSION"
     fi

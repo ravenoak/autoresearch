@@ -7,12 +7,11 @@ reports `3.44.1` and `task check` completes successfully. A prior stall in
 was resolved by reducing the Hypothesis workload and disabling the deadline.
 `task verify` previously stalled when downloading heavy `llm` dependencies.
 Coverage now omits the `llm` extra and uses stub detection for optional
-modules, allowing verification to proceed without large downloads. DuckDB
-extension downloads still fall back to a stub if the network is unavailable.
-The setup script continues treating a missing extension as non-fatal and runs
-the smoke test against the stub, ignoring failures, to verify basic
-functionality. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
-(==0.1.9) remain in place.
+modules, allowing verification to proceed without large downloads. When the
+DuckDB vector extension fails to download, `scripts/setup.sh` now creates a
+zero-byte stub and continues. The smoke test runs against this stub so basic
+functionality can be verified even offline. Dependency pins for `fastapi`
+(>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 `task verify` skips these dependencies by default; set `EXTRAS=gpu` when GPU
