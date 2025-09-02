@@ -19,9 +19,10 @@ defined in `autoresearch.__version__`. Phase 3
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
 `flake8` and `mypy` pass. Coverage reports **100%** (57/57 lines) for
-targeted modules. Outstanding gaps are tracked in
-[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test
-results are mirrored in [../STATUS.md](../STATUS.md).
+targeted modules, but recent runs of `task verify` hang during the coverage
+step, so current values remain unconfirmed. Outstanding gaps are tracked in
+[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
+are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
 
