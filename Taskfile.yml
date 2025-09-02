@@ -53,11 +53,11 @@ tasks:
           (echo "redis missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
   check:
-    # Minimal validation for quick feedback. Syncs only dev-minimal extras and
-    # exercises version and CLI smoke tests. Skips slow tests and scenarios
+    # Minimal validation for quick feedback. Syncs dev-minimal and test extras
+    # and exercises version and CLI smoke tests. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal
+      - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal --extra test
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
