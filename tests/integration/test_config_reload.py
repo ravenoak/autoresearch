@@ -1,5 +1,4 @@
 import os
-import time
 import tomli_w
 
 import pytest
