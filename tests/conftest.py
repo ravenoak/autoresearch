@@ -92,8 +92,10 @@ def reset_limiter_state() -> None:
 
 
 def _module_available(name: str) -> bool:
-    """Return True if a module can be imported from the real environment."""
+    """Return True if a module is installed or provided via stubs."""
     try:
+        if name in sys.modules:
+            return True
         spec = importlib.util.find_spec(name)
     except Exception:
         return False
