@@ -2,7 +2,14 @@
 """Simulate concurrent writers that stress `_enforce_ram_budget`.
 
 Usage:
-    uv run python scripts/storage_eviction_sim.py --threads 5 --items 5 --policy lru
+    uv run python scripts/storage_eviction_sim.py --threads 5 --items 5 \
+        --policy lru --scenario normal
+
+Scenarios:
+    normal       concurrent writers with usage above the budget
+    zero_budget  budget set to zero disables eviction
+    under_budget memory usage below the budget keeps all nodes
+    no_nodes     enforce budget when the graph is empty
 """
 
 from __future__ import annotations
@@ -15,12 +22,12 @@ from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.storage import StorageContext, StorageManager, StorageState
 
 
-def _run(threads: int, items: int, policy: str) -> int:
+def _run(threads: int, items: int, policy: str, scenario: str) -> int:
     """Persist claims concurrently and return remaining node count."""
 
     cfg = ConfigModel(
         storage=StorageConfig(duckdb_path=":memory:"),
-        ram_budget_mb=1,
+        ram_budget_mb=0 if scenario == "zero_budget" else 1,
         graph_eviction_policy=policy,
     )
     loader = ConfigLoader.new_for_tests()
@@ -32,20 +39,28 @@ def _run(threads: int, items: int, policy: str) -> int:
     StorageManager.context = ctx
 
     original = StorageManager._current_ram_mb
-    StorageManager._current_ram_mb = staticmethod(lambda: 1000)
+    current = 0 if scenario == "under_budget" else 1000
+    StorageManager._current_ram_mb = staticmethod(lambda: current)
     try:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
 
         def persist(idx: int) -> None:
             for j in range(items):
-                StorageManager.persist_claim({"id": f"c{idx}-{j}", "type": "fact", "content": "c"})
+                StorageManager.persist_claim({
+                    "id": f"c{idx}-{j}",
+                    "type": "fact",
+                    "content": "c",
+                })
                 StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
 
-        threads_list = [Thread(target=persist, args=(i,)) for i in range(threads)]
-        for t in threads_list:
-            t.start()
-        for t in threads_list:
-            t.join()
+        if scenario == "no_nodes":
+            StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
+        else:
+            threads_list = [Thread(target=persist, args=(i,)) for i in range(threads)]
+            for t in threads_list:
+                t.start()
+            for t in threads_list:
+                t.join()
 
         remaining = StorageManager.get_graph().number_of_nodes()
     finally:
@@ -59,15 +74,19 @@ def _run(threads: int, items: int, policy: str) -> int:
 
 
 VALID_POLICIES = {"lru", "score", "hybrid", "adaptive", "priority"}
+SCENARIOS = {"normal", "zero_budget", "under_budget", "no_nodes"}
 
 
-def main(threads: int, items: int, policy: str) -> None:
+def main(threads: int, items: int, policy: str, scenario: str) -> None:
     if threads <= 0 or items <= 0:
         raise SystemExit("threads and items must be positive")
     if policy not in VALID_POLICIES:
         allowed = ", ".join(sorted(VALID_POLICIES))
         raise SystemExit(f"policy must be one of: {allowed}")
-    remaining = _run(threads, items, policy)
+    if scenario not in SCENARIOS:
+        allowed = ", ".join(sorted(SCENARIOS))
+        raise SystemExit(f"scenario must be one of: {allowed}")
+    remaining = _run(threads, items, policy, scenario)
     print(f"nodes remaining after eviction: {remaining}")
 
 
@@ -81,5 +100,11 @@ if __name__ == "__main__":
         default="lru",
         help="eviction policy",
     )
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="normal",
+        help="simulation scenario",
+    )
     args = parser.parse_args()
-    main(args.threads, args.items, args.policy.lower())
+    main(args.threads, args.items, args.policy.lower(), args.scenario.lower())
