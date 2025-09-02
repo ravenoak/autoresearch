@@ -1,43 +1,68 @@
 import os
-import tomllib
+import time
 import tomli_w
 
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError
 
 pytestmark = [pytest.mark.integration, pytest.mark.error_recovery]
 
 
-def test_atomic_swap_and_invalid_config(tmp_path, monkeypatch):
+def test_atomic_swap_and_invalid_config(tmp_path, caplog):
     cfg = tmp_path / "cfg.toml"
-    cfg.write_text(tomli_w.dumps({"agents": ["A"], "loops": 1, "search": {"backends": []}}))
+    cfg.write_text(
+        tomli_w.dumps(
+            {"core": {"agents": ["A"], "loops": 1}, "search": {"backends": []}}
+        )
+    )
     loader = ConfigLoader.new_for_tests(search_paths=[cfg])
 
-    def fake_load(self):
-        try:
-            data = tomllib.loads(cfg.read_text())
-        except tomllib.TOMLDecodeError as exc:  # pragma: no cover - via ConfigError
-            raise ConfigError("invalid config") from exc
-        model = ConfigModel.from_dict(data)
-        self._config = model
-        return model
-
-    monkeypatch.setattr(ConfigLoader, "load_config", fake_load, raising=False)
-
     first = loader.load_config()
-    assert first.agents == ["A"]
+    loader._config = first
+    assert loader.config.agents == ["A"]
 
     tmp = tmp_path / "tmp.toml"
-    tmp.write_text(tomli_w.dumps({"agents": ["B"], "loops": 1, "search": {"backends": []}}))
+    tmp.write_text(
+        tomli_w.dumps(
+            {"core": {"agents": ["B"], "loops": 1}, "search": {"backends": []}}
+        )
+    )
     os.replace(tmp, cfg)
     updated = loader.load_config()
-    assert updated.agents == ["B"]
-
-    cfg.write_text("agents = [")
-    with pytest.raises(ConfigError):
-        loader.load_config()
+    loader._config = updated
     assert loader.config.agents == ["B"]
+
+    cfg.write_text("core = { agents = [")
+    with caplog.at_level("ERROR"):
+        with pytest.raises(ConfigError):
+            loader.load_config()
+    assert "Error loading config file" in caplog.text
+    assert loader.config.agents == ["B"]
+    ConfigLoader.reset_instance()
+
+
+def test_live_reload_without_restart(tmp_path):
+    cfg = tmp_path / "cfg.toml"
+    cfg.write_text(
+        tomli_w.dumps(
+            {"core": {"agents": ["A"], "loops": 1}, "search": {"backends": []}}
+        )
+    )
+    loader = ConfigLoader.new_for_tests(search_paths=[cfg])
+
+    first = loader.load_config()
+    loader._config = first
+    assert loader.config.agents == ["A"]
+
+    cfg.write_text(
+        tomli_w.dumps(
+            {"core": {"agents": ["B"], "loops": 1}, "search": {"backends": []}}
+        )
+    )
+    updated = loader.load_config()
+    loader._config = updated
+    assert loader.config.agents == ["B"]
+    assert ConfigLoader() is loader
     ConfigLoader.reset_instance()
