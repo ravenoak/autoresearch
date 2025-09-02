@@ -1,5 +1,4 @@
-"""
-Data models for Autoresearch.
+"""This module provides data models for Autoresearch.
 
 See ``docs/algorithms/models.md`` for validation, hot reload, and schema
 guarantees.
