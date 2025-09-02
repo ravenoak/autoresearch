@@ -10,7 +10,7 @@ triggered a `hypothesis.errors.DeadlineExceeded`. This prevents the project
 from assessing overall test health before the 0.1.0a1 release.
 
 ## Dependencies
-- [fix-idempotent-message-processing-deadline](fix-idempotent-message-processing-deadline.md)
+- [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
 
 ## Acceptance Criteria
 - Identify the cause of the coverage hang during `task verify`.
