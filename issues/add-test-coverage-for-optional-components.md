@@ -14,7 +14,7 @@ On **September 15, 2025**, `task verify` stalled during the coverage step after
 syncing all extras, preventing optional-component tests from running.
 
 ## Dependencies
-- [address-task-verify-dependency-builds](address-task-verify-dependency-builds.md)
+- [address-task-verify-dependency-builds](archive/address-task-verify-dependency-builds.md)
 
 ## Acceptance Criteria
 - Enable running tests that require each optional extra (`[nlp]`, `[ui]`,
