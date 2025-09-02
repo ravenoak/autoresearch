@@ -32,8 +32,9 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Handle DuckDB API changes by using `fetchall` for schema version lookup to
   prevent `AttributeError` during table creation.
 
-### [0.1.0-alpha.1]
-- Verified source and wheel builds succeed; TestPyPI upload returned 403 and needs retry.
+### 0.1.0a1 – Unreleased
+- Verified source and wheel builds succeed; TestPyPI upload returned 403 and
+  needs retry.
 - See [release notes](docs/release_notes/v0.1.0a1.md) for features and gaps.
 
 ### Preliminary release notes

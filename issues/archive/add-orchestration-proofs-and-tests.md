@@ -7,7 +7,7 @@ show many orchestration modules at **0%** coverage, leaving behavior and
 resource guarantees unspecified.
 
 ## Milestone
-- 0.1.0a1 (2026-04-15)
+- 0.1.0a1 (2026-06-15)
 
 ## Dependencies
 - [improve-test-coverage-and-streamline-dependencies](archive/improve-test-coverage-and-streamline-dependencies.md)

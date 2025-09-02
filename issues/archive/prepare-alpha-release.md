@@ -9,7 +9,7 @@ verification, so a consolidated plan is needed to coordinate these efforts.
 
 ## Milestone
 
-- 0.1.0a1 (2026-03-01)
+- 0.1.0a1 (2026-06-15)
 
 ## Acceptance Criteria
 - Record the following PR-sized tasks with linked issues and dependency notes:
