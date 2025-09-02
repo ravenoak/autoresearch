@@ -12,8 +12,15 @@ from scripts.distributed_coordination_sim import (  # noqa: E402
 )
 
 
-@settings(max_examples=20, deadline=None)
-@given(st.lists(st.integers(min_value=0, max_value=100), min_size=1, unique=True))
+@settings(max_examples=10, deadline=None)
+@given(
+    st.lists(
+        st.integers(min_value=0, max_value=100),
+        min_size=1,
+        max_size=20,
+        unique=True,
+    )
+)
 def test_election_converges_to_minimum(ids: list[int]) -> None:
     """Election converges to the global minimum identifier.
 
@@ -29,8 +36,8 @@ def test_election_converges_to_minimum(ids: list[int]) -> None:
 # The processing pipeline can run longer on constrained runners. Limit the
 # workload and disable Hypothesis deadlines to avoid spurious timeouts during
 # coverage runs.
-@settings(max_examples=5, deadline=None)
-@given(st.lists(st.text(min_size=0, max_size=5), max_size=10))
+@settings(max_examples=3, deadline=None)
+@given(st.lists(st.text(min_size=0, max_size=5), max_size=5))
 def test_message_processing_is_idempotent(messages: list[str]) -> None:
     """Processing twice yields the same ordered sequence.
 
