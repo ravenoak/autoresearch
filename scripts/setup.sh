@@ -78,16 +78,12 @@ else
     }
 fi
 
-# Run the smoke test even when the VSS extension is missing. Ignore failures
-# when only the zero-byte stub exists so offline setups do not halt.
-VSS_EXTENSION=$(find ./extensions -name "vss*.duckdb_extension" -size +0c | head -n 1)
-if [ -n "$VSS_EXTENSION" ]; then
-    echo "Running smoke test to verify environment..."
-    uv run python scripts/smoke_test.py || \
-        echo "Smoke test failed; environment may be incomplete" >&2
-else
-    echo "VSS extension not found; running smoke test with stub..."
-    uv run python scripts/smoke_test.py >/dev/null || true
+# Run the smoke test even if the VSS extension is missing; the script
+# handles the zero-byte stub and prints warnings when vector search is
+# unavailable.
+echo "Running smoke test to verify environment..."
+if ! uv run python scripts/smoke_test.py; then
+    echo "Smoke test failed; environment may be incomplete" >&2
 fi
 
 task --version || echo "task --version failed; continuing without Go Task" >&2
