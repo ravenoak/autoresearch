@@ -124,9 +124,9 @@ def pytest_runtest_setup(item):
 GITPYTHON_INSTALLED = _module_available("git")
 POLARS_INSTALLED = _module_available("polars")
 PARSERS_AVAILABLE = _module_available("pdfminer")
-LLM_AVAILABLE = _module_available("transformers")
+LLM_AVAILABLE = _module_available("fastembed")
 UI_AVAILABLE = _module_available("streamlit")
-NLP_AVAILABLE = _module_available("sentence_transformers")
+NLP_AVAILABLE = _module_available("spacy")
 
 # Provide a lightweight Redis service for distributed tests.
 REDIS_URL = "redis://localhost:6379/0"
@@ -630,7 +630,7 @@ def realistic_claim_batch(claim_factory):
 @pytest.fixture
 def sample_eval_data():
     """Load the sample evaluation CSV for search weight tests."""
-    pytest.importorskip("sentence_transformers")
+    pytest.importorskip("fastembed")
     from autoresearch.search import Search
 
     path = Path(__file__).resolve().parent / "data" / "eval" / "sample_eval.csv"

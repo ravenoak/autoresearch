@@ -46,7 +46,7 @@ def test_metrics_dataframe_polars() -> None:
 
 
 @pytest.mark.requires_llm
-def test_sentence_transformers_import() -> None:
+def test_fastembed_import() -> None:
     assert _try_import_sentence_transformers() is True
 
 

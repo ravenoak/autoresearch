@@ -19,7 +19,7 @@ Feature: Optional extras availability
 
   @requires_llm
   Scenario: LLM extra modules are importable
-    Given the optional module "transformers" can be imported
+    Given the optional module "fastembed" can be imported
     Then the module exposes attribute "__version__"
 
   @requires_parsers

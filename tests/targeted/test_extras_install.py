@@ -67,14 +67,11 @@ def test_analysis_extra_imports() -> None:
 
 @pytest.mark.requires_llm
 def test_llm_extra_imports() -> None:
-    transformers = pytest.importorskip("transformers")
-    sentence_transformers = pytest.importorskip("sentence_transformers")
+    fastembed = pytest.importorskip("fastembed")
+    dspy = pytest.importorskip("dspy")
 
-    assert transformers.AutoTokenizer.__name__ == "AutoTokenizer"
-    assert (
-        sentence_transformers.SentenceTransformer.__name__
-        == "SentenceTransformer"
-    )
+    assert hasattr(fastembed, "TextEmbedding")
+    assert hasattr(dspy, "__version__")
 
 
 @pytest.mark.requires_parsers

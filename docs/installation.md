@@ -98,7 +98,7 @@ Include extras only when required. Examples:
 
 ```bash
 EXTRAS="nlp" task install      # adds NLP packages
-uv sync --extra llm            # LLM libraries
+uv sync --extra llm            # CPU LLM libraries
 uv sync --extra gpu            # BERTopic and lmstudio
 VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
@@ -347,12 +347,15 @@ table below summarizes their purpose and usage.
 | distributed | Ray and Redis for scaling | `uv sync --extra distributed` |
 | analysis | data analysis via Polars | `uv sync --extra analysis` |
 | gpu | GPU-only packages | `uv sync --extra gpu` |
-| llm | LLM libraries | `uv sync --extra llm` |
+| llm | CPU LLM libraries | `uv sync --extra llm` |
 | test | packages needed only for tests | `uv sync --extra test` |
 | full | all optional features | `uv sync --extra full` |
 | dev | developer tools | `uv sync --extra dev` |
 | dev-minimal | minimal developer toolchain | `uv sync --extra dev-minimal` |
 | build | packaging utilities | `uv sync --extra build` |
+
+The `llm` extra installs CPU-friendly libraries such as `fastembed` and
+`dspy-ai`. GPU-focused transformer stacks are no longer included.
 
 Examples:
 
@@ -360,7 +363,7 @@ Examples:
 uv sync --extra nlp          # language processing
 uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
-uv sync --extra llm          # LLM libraries
+uv sync --extra llm          # CPU LLM libraries
 uv sync --extra gpu          # BERTopic and lmstudio
 ```
 

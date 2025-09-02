@@ -51,7 +51,7 @@ def has_nlp() -> bool:
 @pytest.fixture
 def has_llm() -> bool:
     """Return True if LLM extras are installed."""
-    return _module_available("transformers")
+    return _module_available("fastembed")
 
 
 @pytest.fixture
