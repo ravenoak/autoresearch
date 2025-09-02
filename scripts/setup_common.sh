@@ -34,12 +34,18 @@ install_dev_test_extras() {
     if [ "${AR_SKIP_GPU:-1}" = "1" ]; then
         extras=$(printf '%s\n' $extras | grep -v '^gpu$' | xargs)
     fi
-    echo "Installing extras via uv sync --python-platform x86_64-manylinux_2_28 " \\
-        "--extra ${extras// / --extra }"
-    uv sync --python-platform x86_64-manylinux_2_28 \
+    local find_links=""
+    if printf '%s\n' $extras | grep -q '^gpu$' && [ -d wheels/gpu ]; then
+        # Use local wheels to avoid slow source builds for GPU dependencies.
+        find_links="--find-links wheels/gpu"
+    fi
+    echo "Installing extras via uv sync --python-platform x86_64-manylinux_2_28" \
+        "$find_links --extra ${extras// / --extra }"
+    uv sync --python-platform x86_64-manylinux_2_28 $find_links \
         $(for e in $extras; do printf -- '--extra %s ' "$e"; done)
     uv pip install -e .
 }
+
 
 ensure_venv_bin_on_path() {
     local venv_bin="${1:-.venv/bin}"
