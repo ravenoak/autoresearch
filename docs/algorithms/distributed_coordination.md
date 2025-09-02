@@ -118,7 +118,24 @@ A plot of these metrics is shown below.
 
 [dc-analysis]: ../../tests/analysis/distributed_coordination_analysis.py
 
+## Orchestrator Performance Model
+
+[`orchestrator_perf_sim.py`](../../scripts/orchestrator_perf_sim.py) models
+the orchestrator as an M/M/c queue with `c` workers. For arrival rate `\lambda`
+and service rate `\mu`, utilization is `\rho = \lambda / (c \mu)` when
+`\rho < 1`. The expected queue length follows
+
+`L_q = P_0 (\lambda / \mu)^c \rho / (c! (1 - \rho)^2)`
+
+where `P_0` is the probability that the system is empty. The simulation also
+approximates memory consumption with `M = tasks \times m`, where `m` is memory
+per task.
+
 ## References
+
 - [spec](../specs/distributed.md)
-- [`test_distributed_coordination.py`](../../tests/analysis/test_distributed_coordination.py)
-- [`test_coordination_properties.py`](../../tests/unit/distributed/test_coordination_properties.py)
+- [`test_distributed_coordination.py`][coord-test]
+- [`test_coordination_properties.py`][properties-test]
+
+[coord-test]: ../../tests/analysis/test_distributed_coordination.py
+[properties-test]: ../../tests/unit/distributed/test_coordination_properties.py
