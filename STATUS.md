@@ -1,7 +1,7 @@
 # Status
 
-As of **September 2, 2025**, `task` must be installed manually. After adding
-`.venv/bin` to the `PATH`, `task --version` reports `3.44.1` and `task check`
+As of **September 2, 2025**, `scripts/setup.sh` installs the Go Task CLI and
+adds `.venv/bin` to `PATH`. `task --version` reports `3.44.1`, and `task check`
 completes successfully. The previous stall in
 `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
 has been addressed by reducing the Hypothesis workload and disabling the
@@ -18,9 +18,9 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 features are required. Setup helpers and Taskfile commands consult this
 directory automatically when GPU extras are installed.
 
-## Bootstrapping without Go Task
+## Bootstrapping without Go Task (fallback)
 
-If the Go Task CLI cannot be installed, set up the environment with:
+If automated installation fails, set up the environment manually with:
 
 ```bash
 uv venv
