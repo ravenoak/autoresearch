@@ -64,8 +64,8 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 - [x] Task CLI availability restored
   ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
-- [ ] Improve DuckDB extension fallback
-  ([improve-duckdb-extension-fallback](issues/improve-duckdb-extension-fallback.md)).
+- [x] Improve DuckDB extension fallback
+  ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
 - [ ] Integration tests stabilized.
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](

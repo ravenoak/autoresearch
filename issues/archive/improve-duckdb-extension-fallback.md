@@ -15,4 +15,4 @@ None.
 - Document offline extension fallback behavior in `STATUS.md` or docs.
 
 ## Status
-Open
+Archived

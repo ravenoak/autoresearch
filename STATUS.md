@@ -57,8 +57,6 @@ Coverage was not generated; `task verify` exited during linting.
   issues/add-test-coverage-for-optional-components.md)
 - [fix-task-verify-coverage-hang](
   issues/fix-task-verify-coverage-hang.md)
-- [improve-duckdb-extension-fallback](
-  issues/improve-duckdb-extension-fallback.md)
 - [prepare-v0-1-0a1-release](
   issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](
