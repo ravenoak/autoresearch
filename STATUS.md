@@ -34,10 +34,12 @@ This installs the `[test]` extras and uses
 so `uv run pytest` works without `task`.
 
 ## Lint, type checks, and spec tests
-`uv run task check` executes flake8, mypy, and spec tests; all pass.
+`uv run task check` (requires Go Task) executes flake8, mypy, and spec tests;
+the last recorded run passed.
 
 ## Targeted tests
-The minimal unit subset used by `task check` passes (8 tests).
+After installing the `[test]` extras, `uv run pytest --maxfail=1` reports
+68 passed, 5 skipped, and 112 deselected tests.
 
 ## Integration tests
 `task verify` halts before these tests run.
@@ -56,16 +58,10 @@ The run exceeded resource limits and terminated before reporting metrics.
   issues/add-storage-eviction-proofs-and-simulations.md)
 - [add-test-coverage-for-optional-components](
   issues/add-test-coverage-for-optional-components.md)
-- [configuration-hot-reload-tests](
-  issues/configuration-hot-reload-tests.md)
 - [deliver-bug-fixes-and-docs-update](
   issues/deliver-bug-fixes-and-docs-update.md)
-- [fix-idempotent-message-processing-deadline](
-  issues/fix-idempotent-message-processing-deadline.md)
 - [fix-task-verify-coverage-hang](
   issues/fix-task-verify-coverage-hang.md)
-- [hybrid-search-ranking-benchmarks](
-  issues/hybrid-search-ranking-benchmarks.md)
 - [improve-duckdb-extension-fallback](
   issues/improve-duckdb-extension-fallback.md)
 - [reach-stable-performance-and-interfaces](
@@ -76,5 +72,3 @@ The run exceeded resource limits and terminated before reporting metrics.
   issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](
   issues/stabilize-api-and-improve-search.md)
-- [streaming-webhook-refinements](
-  issues/streaming-webhook-refinements.md)
