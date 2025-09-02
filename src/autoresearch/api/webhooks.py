@@ -32,4 +32,3 @@ def notify_webhook(
             log.warning("Webhook request to %s failed on attempt %s: %s", url, attempt + 1, exc)
             if attempt < retries - 1:
                 time.sleep(backoff * 2**attempt)
-

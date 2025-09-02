@@ -55,4 +55,3 @@ def test_webhook_retries(monkeypatch, api_client, httpx_mock):
     resp = api_client.post("/query", json={"query": "hi"})
     assert resp.status_code == 200
     assert len(httpx_mock.get_requests()) == 2
-
