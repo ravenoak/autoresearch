@@ -1,0 +1,8 @@
+{
+  "tests/integration/test_search_regression.py::test_search_results_stable": [
+    {
+      "title": "example",
+      "url": "https://example.com"
+    }
+  ]
+}

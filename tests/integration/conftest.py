@@ -8,6 +8,7 @@ from autoresearch.api import app as api_app
 
 BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "token_baselines.json"
 METRIC_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "backend_metrics.json"
+SEARCH_BASELINE_FILE = Path(__file__).resolve().parents[1] / "data" / "search_baselines.json"
 
 
 @pytest.fixture
@@ -32,9 +33,9 @@ def token_baseline(request):
                     measured = counts.get(direction, 0)
                     expected = base_counts.get(direction, 0)
                     delta = abs(measured - expected)
-                    assert delta <= tolerance, (
-                        f"{test_id} {agent} {direction} delta {delta} exceeds tolerance {tolerance}"
-                    )
+                    assert (
+                        delta <= tolerance
+                    ), f"{test_id} {agent} {direction} delta {delta} exceeds tolerance {tolerance}"
         data[test_id] = tokens
         BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
@@ -52,11 +53,7 @@ def metrics_baseline(request):
         latency: float,
         tolerance: float = 0.05,
     ) -> None:
-        data = (
-            json.loads(METRIC_BASELINE_FILE.read_text())
-            if METRIC_BASELINE_FILE.exists()
-            else {}
-        )
+        data = json.loads(METRIC_BASELINE_FILE.read_text()) if METRIC_BASELINE_FILE.exists() else {}
         key = f"{request.node.nodeid}::{backend}"
         baseline = data.get(key)
         if baseline is not None:
@@ -69,5 +66,22 @@ def metrics_baseline(request):
             "latency": latency,
         }
         METRIC_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
+
+    return _check
+
+
+@pytest.fixture
+def search_baseline(request):
+    """Record and compare search results across test runs."""
+
+    def _check(results):
+        data = json.loads(SEARCH_BASELINE_FILE.read_text()) if SEARCH_BASELINE_FILE.exists() else {}
+        key = request.node.nodeid
+        current = [{"title": r["title"], "url": r["url"]} for r in results]
+        baseline = data.get(key)
+        if baseline is not None:
+            assert current == baseline
+        data[key] = current
+        SEARCH_BASELINE_FILE.write_text(json.dumps(data, indent=2, sort_keys=True))
 
     return _check

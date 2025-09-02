@@ -15,5 +15,5 @@ without service restarts and failure scenarios should produce clear logs.
 - Documentation updated with reload sequence diagrams.
 
 ## Status
-Open
+Archived
 
