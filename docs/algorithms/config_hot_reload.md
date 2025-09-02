@@ -21,6 +21,27 @@ If validation fails, the previous configuration remains active. The atomic
 rename prevents partial writes from replacing the live file, so a failed
 swap leaves the system operating with the last valid snapshot.
 
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant W as Watcher
+    participant L as ConfigLoader
+    participant V as Validator
+    participant A as Application
+    W->>L: detect change
+    L->>V: parse and validate
+    alt valid
+        V-->>L: ConfigModel
+        L->>L: swap active config
+        L->>A: notify observers
+    else invalid
+        V-->>L: error
+        L->>A: log error
+        L->>L: keep previous config
+    end
+```
+
 ## Invariants
 
 - The active configuration always matches the last successfully validated
