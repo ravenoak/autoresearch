@@ -142,8 +142,8 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 
 Track algorithm notes for top-level modules.
 
-- [ ] `__init__`
-- [ ] `__main__`
+- [x] `__init__` (docs/algorithms/__init__.md)
+- [x] `__main__` (docs/algorithms/__main__.md)
 - [x] `a2a_interface` (docs/algorithms/a2a_interface.md)
 - [x] `cache` (docs/algorithms/cache.md)
 - [x] `cli_backup` (docs/algorithms/cli_backup.md)
