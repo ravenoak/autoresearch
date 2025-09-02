@@ -1,48 +1,17 @@
 #!/usr/bin/env python3
-"""Simulate orchestrator queue metrics.
+"""Simulate orchestrator queue metrics and run a scheduling benchmark.
 
 Usage:
     uv run scripts/orchestrator_perf_sim.py --workers 2 --arrival-rate 3 \
-        --service-rate 5 --tasks 50 --mem-per-task 0.5
+        --service-rate 5 --tasks 50 --mem-per-task 0.5 --benchmark
 """
 from __future__ import annotations
 
 import argparse
 import json
-import math
 from typing import Dict
 
-
-def queue_metrics(workers: int, arrival_rate: float, service_rate: float) -> Dict[str, float]:
-    """Return utilization and average queue length for an M/M/c queue."""
-    if workers <= 0:
-        raise ValueError("workers must be positive")
-    if arrival_rate <= 0 or service_rate <= 0:
-        raise ValueError("rates must be positive")
-
-    rho = arrival_rate / (workers * service_rate)
-    if rho >= 1:
-        raise ValueError("system is unstable; utilization >= 1")
-
-    ratio = arrival_rate / service_rate
-    sum_terms = sum((ratio**n) / math.factorial(n) for n in range(workers))
-    last = (ratio**workers) / (math.factorial(workers) * (1 - rho))
-    p0 = 1 / (sum_terms + last)
-    lq = (p0 * (ratio**workers) * rho) / (math.factorial(workers) * (1 - rho) ** 2)
-    return {"utilization": rho, "avg_queue_length": lq}
-
-
-def simulate(
-    workers: int,
-    arrival_rate: float,
-    service_rate: float,
-    tasks: int,
-    mem_per_task: float,
-) -> Dict[str, float]:
-    """Combine queue metrics with a simple memory model."""
-    metrics = queue_metrics(workers, arrival_rate, service_rate)
-    metrics["expected_memory"] = tasks * mem_per_task
-    return metrics
+from autoresearch.orchestrator_perf import benchmark_scheduler, simulate
 
 
 def main() -> None:
@@ -67,10 +36,18 @@ def main() -> None:
         default=1.0,
         help="Memory per task in MB",
     )
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Run micro-benchmark for scheduling throughput",
+    )
     args = parser.parse_args()
-    metrics = simulate(
+
+    metrics: Dict[str, float] = simulate(
         args.workers, args.arrival_rate, args.service_rate, args.tasks, args.mem_per_task
     )
+    if args.benchmark:
+        metrics.update(benchmark_scheduler(args.workers, args.tasks))
     print(json.dumps(metrics))
 
 
