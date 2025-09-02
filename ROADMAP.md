@@ -25,8 +25,6 @@ before running tests.
 
 - 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements.
-  - [fix-task-verify-package-metadata-errors](
-    issues/fix-task-verify-package-metadata-errors.md)
 - 0.1.0 (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates

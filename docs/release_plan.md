@@ -18,24 +18,15 @@ defined in `autoresearch.__version__`. Phase 3
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
-`flake8` and `mypy` pass, but `task verify` fails:
-`tests/unit/distributed/test_coordination_properties.py::`
-`test_message_processing_is_idempotent` exceeds its Hypothesis deadline and 19
-behavior scenarios lack definitions.
-Coverage reports **100%** (57/57 lines) for targeted modules. One open issue
-remains:
-[fix-task-verify-package-metadata-errors](
-../issues/fix-task-verify-package-metadata-errors.md).
-Outstanding gaps are tracked in
-[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
-are mirrored in [../STATUS.md](../STATUS.md).
+`flake8` and `mypy` pass. Coverage reports **100%** (57/57 lines) for
+targeted modules. Outstanding gaps are tracked in
+[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test
+results are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
 
 - **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
   feedback.
-  - [fix-task-verify-package-metadata-errors](
-    ../issues/fix-task-verify-package-metadata-errors.md)
 - **0.1.0** (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
@@ -124,4 +115,4 @@ skips GPU-only packages unless `EXTRAS="gpu"` is set:
 - [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
   syncs docs with `baseline/coverage.xml`
 
-[coverage-gap-issue]: ../issues/resolve-pre-alpha-release-blockers.md
+[coverage-gap-issue]: ../issues/archive/resolve-pre-alpha-release-blockers.md
