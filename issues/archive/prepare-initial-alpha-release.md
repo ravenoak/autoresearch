@@ -8,7 +8,7 @@ validated and workflows confirmed to remain dispatch-only.
 
 ## Milestone
 
-- 0.1.0a1 (2026-03-01)
+- 0.1.0a1 (2026-06-15)
 
 ## Dependencies
 

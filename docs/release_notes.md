@@ -4,7 +4,7 @@ Autoresearch is a local-first research assistant that coordinates multiple
 agents to produce evidence-backed answers and stores data on the user's
 machine.
 
-## 0.1.0a1
+## 0.1.0a1 (unreleased)
 
 Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
 `slowapi==0.1.9`.

@@ -6,7 +6,7 @@ and eviction logic can fail without clear guarantees. Rigorous reasoning and
 simulations are needed to justify the storage design and prevent regressions.
 
 ## Milestone
-- 0.1.0a1 (2026-04-15)
+- 0.1.0a1 (2026-06-15)
 
 ## Dependencies
 - None

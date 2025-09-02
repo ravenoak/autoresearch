@@ -8,7 +8,7 @@ not match the specification.
 
 ## Milestone
 
-- 0.1.0a1 (2026-04-15)
+- 0.1.0a1 (2026-06-15)
 
 ## Dependencies
 
