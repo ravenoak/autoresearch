@@ -2,7 +2,7 @@
 """Simulate concurrent writers that stress `_enforce_ram_budget`.
 
 Usage:
-    uv run python scripts/storage_eviction_sim.py --threads 5 --items 5 \
+    uv run python scripts/storage_eviction_sim.py --threads 5 --items 5
         --policy lru --scenario normal
 
 Scenarios:
@@ -10,19 +10,21 @@ Scenarios:
     zero_budget  budget set to zero disables eviction
     under_budget memory usage below the budget keeps all nodes
     no_nodes     enforce budget when the graph is empty
+    race         dedicated eviction thread runs alongside writers
 """
 
 from __future__ import annotations
 
 import argparse
-from threading import Thread
+import time
+from threading import Event, Thread
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.storage import StorageContext, StorageManager, StorageState
 
 
-def _run(threads: int, items: int, policy: str, scenario: str) -> int:
+def _run(threads: int, items: int, policy: str, scenario: str, jitter: float) -> int:
     """Persist claims concurrently and return remaining node count."""
 
     cfg = ConfigModel(
@@ -41,26 +43,43 @@ def _run(threads: int, items: int, policy: str, scenario: str) -> int:
     original = StorageManager._current_ram_mb
     current = 0 if scenario == "under_budget" else 1000
     StorageManager._current_ram_mb = staticmethod(lambda: current)
+    stop = Event()
+
     try:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
 
         def persist(idx: int) -> None:
             for j in range(items):
-                StorageManager.persist_claim({
-                    "id": f"c{idx}-{j}",
-                    "type": "fact",
-                    "content": "c",
-                })
+                StorageManager.persist_claim(
+                    {
+                        "id": f"c{idx}-{j}",
+                        "type": "fact",
+                        "content": "c",
+                    }
+                )
                 StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
+                if jitter:
+                    time.sleep(jitter)
+
+        def enforce() -> None:
+            while not stop.is_set():
+                StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
+                time.sleep(jitter or 0.001)
 
         if scenario == "no_nodes":
             StorageManager._enforce_ram_budget(cfg.ram_budget_mb)
         else:
             threads_list = [Thread(target=persist, args=(i,)) for i in range(threads)]
+            evictor = Thread(target=enforce) if scenario == "race" else None
+            if evictor:
+                evictor.start()
             for t in threads_list:
                 t.start()
             for t in threads_list:
                 t.join()
+            if evictor:
+                stop.set()
+                evictor.join()
 
         remaining = StorageManager.get_graph().number_of_nodes()
     finally:
@@ -74,10 +93,10 @@ def _run(threads: int, items: int, policy: str, scenario: str) -> int:
 
 
 VALID_POLICIES = {"lru", "score", "hybrid", "adaptive", "priority"}
-SCENARIOS = {"normal", "zero_budget", "under_budget", "no_nodes"}
+SCENARIOS = {"normal", "zero_budget", "under_budget", "no_nodes", "race"}
 
 
-def main(threads: int, items: int, policy: str, scenario: str) -> None:
+def main(threads: int, items: int, policy: str, scenario: str, jitter: float) -> None:
     if threads <= 0 or items <= 0:
         raise SystemExit("threads and items must be positive")
     if policy not in VALID_POLICIES:
@@ -86,7 +105,9 @@ def main(threads: int, items: int, policy: str, scenario: str) -> None:
     if scenario not in SCENARIOS:
         allowed = ", ".join(sorted(SCENARIOS))
         raise SystemExit(f"scenario must be one of: {allowed}")
-    remaining = _run(threads, items, policy, scenario)
+    if jitter < 0:
+        raise SystemExit("jitter must be non-negative")
+    remaining = _run(threads, items, policy, scenario, jitter)
     print(f"nodes remaining after eviction: {remaining}")
 
 
@@ -106,5 +127,11 @@ if __name__ == "__main__":
         default="normal",
         help="simulation scenario",
     )
+    parser.add_argument(
+        "--jitter",
+        type=float,
+        default=0.0,
+        help="sleep between writes to model contention",
+    )
     args = parser.parse_args()
-    main(args.threads, args.items, args.policy.lower(), args.scenario.lower())
+    main(args.threads, args.items, args.policy.lower(), args.scenario.lower(), args.jitter)
