@@ -13,17 +13,24 @@ TASK_BIN="$VENV_BIN/task"
 ensure_venv_bin_on_path "$VENV_BIN"
 export PATH="$VENV_BIN:$PATH"
 
-if [ ! -x "$TASK_BIN" ]; then
+install_go_task() {
     echo "Installing Go Task into $VENV_BIN..."
-    mkdir -p "$VENV_BIN"
+    ensure_uv
+    uv venv
+    ensure_venv_bin_on_path "$VENV_BIN"
     if command -v task >/dev/null 2>&1; then
         ln -sf "$(command -v task)" "$TASK_BIN"
     else
         curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
             echo "Warning: failed to download Go Task; install manually from" \
                 " https://taskfile.dev/installation/ and re-run setup" >&2
+            return
         }
     fi
+}
+
+if [ ! -x "$TASK_BIN" ]; then
+    install_go_task
 fi
 
 case "$(uname -s)" in
