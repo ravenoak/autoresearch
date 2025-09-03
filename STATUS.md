@@ -1,5 +1,14 @@
 # Status
 
+## September 4, 2025
+
+- `uv run task check EXTRAS="nlp ui vss git distributed analysis llm parsers"`
+  fails in `scripts/check_env.py` because package metadata for `cibuildwheel`
+  and several `types-*` packages is missing.
+- `uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"`
+  fails during `tests/unit/test_core_modules_additional.py::test_storage_setup_teardown`
+  with `KeyError: 'kuzu'`, so coverage is not generated.
+
 ## September 3, 2025
 
 - `task verify` reproduced hangs when multiprocessing-based distributed tests
@@ -91,31 +100,20 @@ Not executed.
 Not executed.
 
 ## Coverage
-Running `pytest tests/unit -q` manually completed with 479 passed, 4 skipped, 22 deselected, and 1
-xpassed.
-Targeted coverage for `tests/unit/distributed/test_coordination_properties.py`
-completed, reporting **32%** combined coverage for
-`src/autoresearch/orchestration/budgeting.py` and
-`src/autoresearch/search/http.py`.
-
-`task verify` was updated to install all extras and run marked tests. An
-attempt to execute the full suite with coverage failed due to a `Taskfile.yml`
-parsing error, so overall coverage could not be determined.
+`uv run task verify` failed in
+`tests/unit/test_core_modules_additional.py::test_storage_setup_teardown`
+with `KeyError: 'kuzu'`, reporting 1 failed, 212 passed, 22 deselected, and 3
+warnings. Coverage data was not produced.
 
 ## Open issues
-- [add-storage-eviction-proofs-and-simulations](
-  issues/add-storage-eviction-proofs-and-simulations.md)
-- [add-test-coverage-for-optional-components](
-  issues/add-test-coverage-for-optional-components.md)
-- [fix-task-verify-coverage-hang](
-  issues/fix-task-verify-coverage-hang.md)
-- [prepare-v0-1-0a1-release](
-  issues/prepare-v0-1-0a1-release.md)
-- [reach-stable-performance-and-interfaces](
-  issues/reach-stable-performance-and-interfaces.md)
-- [simulate-distributed-orchestrator-performance](
-  issues/simulate-distributed-orchestrator-performance.md)
-- [stabilize-api-and-improve-search](
-  issues/stabilize-api-and-improve-search.md)
-- [formalize-spec-driven-development-standards](
-  issues/formalize-spec-driven-development-standards.md)
+- [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
+  - [ensure-go-task-cli-availability](issues/ensure-go-task-cli-availability.md)
+  - [fix-task-verify-coverage-hang](issues/fix-task-verify-coverage-hang.md)
+  - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
+  - [formalize-spec-driven-development-standards](issues/formalize-spec-driven-development-standards.md)
+- [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
+  - [containerize-and-package](issues/containerize-and-package.md)
+  - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
+  - [tune-system-performance](issues/tune-system-performance.md)
+- [simulate-distributed-orchestrator-performance](issues/simulate-distributed-orchestrator-performance.md)
+- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
