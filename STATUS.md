@@ -18,6 +18,11 @@ test extras only, the fixed `tests/unit/distributed/test_coordination_properties
 without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
 (==0.1.9) remain in place.
 
+Run `scripts/setup.sh` or `task install` before executing tests. These
+commands bootstrap Go Task and install the `dev` and `test` extras so
+plugins like `pytest-bdd` are available. Skipping them often leads to test
+collection failures.
+
 Attempting `uv run task verify` previously failed with
 `yaml: line 190: did not find expected '-' indicator` when parsing the
 Taskfile. A mis-indented `cmds` block left the `verify` task without commands
@@ -42,10 +47,10 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 features are required. Setup helpers and Taskfile commands consult this
 directory automatically when GPU extras are installed.
 
-Running without first executing `scripts/setup.sh` leaves the Go Task CLI
-unavailable. `uv run task check` then fails with `command not found: task`, and
-`uv run pytest tests/unit/test_version.py -q` raises
-`ImportError: No module named 'pytest_bdd'`.
+Running tests without first executing `scripts/setup.sh` or `task install`
+leaves the Go Task CLI unavailable. `uv run task check` then fails with
+`command not found: task`, and `uv run pytest tests/unit/test_version.py -q`
+raises `ImportError: No module named 'pytest_bdd'`.
 
 Install the test extras with `uv pip install -e ".[test]"` before invoking
 `pytest` directly to avoid this error.

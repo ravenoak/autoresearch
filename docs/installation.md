@@ -109,7 +109,8 @@ dependencies. `task check` syncs only these extras so it runs quickly.
 
 Run `task install` after cloning to bootstrap Go Task and the minimal
 development tools. This syncs the `dev-minimal` and `test` extras by
-default:
+default and should be executed before any tests. Missing extras such as
+`pytest-bdd` cause `pytest` to fail during collection:
 
 ```bash
 task install
@@ -130,8 +131,8 @@ required for PDF or DOCX tests.
 
 Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go Task
 into `.venv/bin` when missing, syncs the `dev` and `test` extras (including
-packages such as `pytest_httpx`, `tomli_w`, and `redis`), and exits if
-`task --version` fails.
+packages such as `pytest_httpx`, `tomli_w`, `pytest-bdd`, and `redis`), and
+exits if `task --version` fails.
 
 The setup script verifies Go Task with `task --version`. You can manually
 confirm the CLI and development packages are available:
@@ -150,6 +151,22 @@ uv run python scripts/check_env.py
 ```
 
 The script reports missing tools and version mismatches.
+
+### Without Go Task
+
+If the Go Task CLI cannot be installed, create the environment manually and
+run tests with `uv`:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[test]"
+uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+uv run pytest tests/unit/test_version.py -q
+```
+
+This workflow installs the `[test]` extras and records the DuckDB vector
+extension path without using `task`.
 
 ### API authentication
 
