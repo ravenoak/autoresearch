@@ -65,3 +65,8 @@
 
 ### Pending
 - None
+
+## Contribution Notes
+
+- Add a "Related Issues" section to each algorithm document linking to
+  relevant planning tickets under `../../issues/`.

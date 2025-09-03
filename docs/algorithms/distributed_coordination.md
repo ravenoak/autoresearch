@@ -173,3 +173,9 @@ worker tuning.
 
 [coord-test]: ../../tests/analysis/test_distributed_coordination.py
 [properties-test]: ../../tests/unit/distributed/test_coordination_properties.py
+
+## Related Issues
+
+- [add-distributed-coordination-proofs-and-benchmarks][dc-issue]
+
+[dc-issue]: ../../issues/archive/add-distributed-coordination-proofs-and-benchmarks.md
