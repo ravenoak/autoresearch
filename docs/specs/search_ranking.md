@@ -26,9 +26,10 @@ is stable, proving deterministic rankings for equal scores.
 
 ## Traceability
 
-- [src/autoresearch/search/ranking_convergence.py][m1]
-- [tests/behavior/features/search_cli.feature][t1]
-- [tests/behavior/features/hybrid_search.feature][t2]
+- Code: [src/autoresearch/search/ranking_convergence.py][m1]
+- Tests:
+  - [tests/behavior/features/search_cli.feature][t1]
+  - [tests/behavior/features/hybrid_search.feature][t2]
 
 [m1]: ../../src/autoresearch/search/ranking_convergence.py
 [t1]: ../../tests/behavior/features/search_cli.feature

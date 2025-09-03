@@ -1,0 +1,8 @@
+repos:
+- repo: local
+  hooks:
+  - id: spec-update
+    name: Require spec updates for code changes
+    entry: uv run python scripts/check_spec_updated.py
+    language: system
+    pass_filenames: false
