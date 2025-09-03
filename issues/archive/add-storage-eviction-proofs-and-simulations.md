@@ -18,4 +18,4 @@ None.
 - Add tests verifying simulation and implementation remain aligned.
 
 ## Status
-Open
+Archived
