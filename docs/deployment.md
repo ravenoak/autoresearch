@@ -26,23 +26,31 @@ On a dedicated server you can run the API in the background using a process mana
 
 ## Containerized Deployment (Docker)
 
-Autoresearch can also be containerized. A production `Dockerfile` is included:
+Autoresearch can also be containerized. Multi-stage Dockerfiles live under
+`docker/` for Linux, macOS, and Windows images:
 
 ```Dockerfile
-FROM python:3.12-slim
+# docker/Dockerfile (excerpt)
+FROM python:3.12-slim AS linux
 WORKDIR /app
+COPY uv.lock pyproject.toml /app/
+RUN pip install --no-cache-dir uv \
+    && uv pip sync uv.lock
 COPY . /app
-RUN pip install uv \
-    && uv pip install -e '.[full,parsers,git,llm,dev]'
-EXPOSE 8000
-CMD ["uvicorn", "autoresearch.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-Build and run the image:
+Build all images with Go Task:
 
 ```bash
-docker build -t autoresearch .
-docker run -p 8000:8000 autoresearch
+task docker-build
+```
+
+To build a single target use one of:
+
+```bash
+task docker-build:linux
+task docker-build:macos
+task docker-build:windows
 ```
 
 ### Using docker-compose
