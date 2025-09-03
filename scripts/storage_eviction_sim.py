@@ -10,8 +10,10 @@ Scenarios:
     zero_budget      budget set to zero disables eviction
     negative_budget  negative budget disables eviction
     under_budget     memory usage below the budget keeps all nodes
+    exact_budget     usage equals the budget and eviction is skipped
     no_nodes         enforce budget when the graph is empty
     race             dedicated eviction threads run alongside writers
+    burst            writers omit enforcement; separate evictors run
 """
 
 from __future__ import annotations
@@ -49,7 +51,11 @@ def _run(
     StorageManager.context = ctx
 
     original = StorageManager._current_ram_mb
-    current = 0 if scenario == "under_budget" else 1000
+    current = (
+        0
+        if scenario == "under_budget"
+        else cfg.ram_budget_mb if scenario == "exact_budget" else 1000
+    )
     StorageManager._current_ram_mb = staticmethod(lambda: current)
     stop = Event()
 
@@ -67,7 +73,8 @@ def _run(
                         "content": "c",
                     }
                 )
-                StorageManager._enforce_ram_budget(enforce_budget)
+                if scenario != "burst":
+                    StorageManager._enforce_ram_budget(enforce_budget)
                 if jitter:
                     time.sleep(jitter)
 
@@ -81,7 +88,7 @@ def _run(
         else:
             threads_list = [Thread(target=persist, args=(i,)) for i in range(threads)]
             evictor_threads = [Thread(target=enforce) for _ in range(evictors)]
-            if scenario == "race" and not evictor_threads:
+            if scenario in {"race", "burst"} and not evictor_threads:
                 evictor_threads = [Thread(target=enforce)]
             for ev in evictor_threads:
                 ev.start()
@@ -92,6 +99,8 @@ def _run(
             for ev in evictor_threads:
                 stop.set()
                 ev.join()
+            if scenario == "burst":
+                StorageManager._enforce_ram_budget(enforce_budget)
 
         remaining = StorageManager.get_graph().number_of_nodes()
     finally:
@@ -110,8 +119,10 @@ SCENARIOS = {
     "zero_budget",
     "negative_budget",
     "under_budget",
+    "exact_budget",
     "no_nodes",
     "race",
+    "burst",
 }
 
 
