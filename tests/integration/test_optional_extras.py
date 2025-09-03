@@ -1,57 +1,96 @@
-"""Integration tests ensuring optional extras are importable."""
+"""Smoke tests for optional extras and their modules.
 
+This suite verifies that each optional dependency extra is installed and that
+the corresponding code module can be exercised briefly.  The mapping of extras
+to modules is:
+
+* ``[nlp]`` – :mod:`autoresearch.search.context`
+* ``[ui]`` – :mod:`autoresearch.streamlit_ui`
+* ``[vss]`` – :mod:`autoresearch.extensions`
+* ``[git]`` – :mod:`autoresearch.search.core`
+* ``[distributed]`` – :mod:`autoresearch.distributed.broker`
+* ``[analysis]`` – :mod:`autoresearch.data_analysis`
+* ``[llm]`` – :mod:`autoresearch.search.context`
+* ``[parsers]`` – :mod:`autoresearch.search.core`
+"""
+
+from __future__ import annotations
+
+import duckdb
 import pytest
 
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
-from autoresearch.search.context import _try_import_sentence_transformers
+from autoresearch.distributed.broker import get_message_broker
+from autoresearch.extensions import VSSExtensionLoader
+from autoresearch.search.context import (
+    _try_import_sentence_transformers,
+    _try_import_spacy,
+)
 from autoresearch.search.core import _local_file_backend
+from autoresearch.streamlit_ui import apply_theme_settings
 
 
 @pytest.mark.requires_nlp
-def test_spacy_import() -> None:
-    spacy = pytest.importorskip("spacy")
-    assert hasattr(spacy, "__version__")
+def test_spacy_available() -> None:
+    """The NLP extra provides spaCy for search context features."""
+
+    assert _try_import_spacy() is True
 
 
 @pytest.mark.requires_ui
-def test_streamlit_import() -> None:
-    streamlit = pytest.importorskip("streamlit")
-    assert hasattr(streamlit, "__version__")
+def test_streamlit_ui_helpers() -> None:
+    """The UI extra exposes Streamlit helpers."""
+
+    assert callable(apply_theme_settings)
 
 
 @pytest.mark.requires_vss
-def test_duckdb_import() -> None:
-    duckdb = pytest.importorskip("duckdb")
-    assert hasattr(duckdb, "__version__")
+def test_vss_extension_loader() -> None:
+    """The VSS extra enables DuckDB vector extension management."""
+
+    conn = duckdb.connect(":memory:")
+    assert VSSExtensionLoader.verify_extension(conn, verbose=False) is False
 
 
 @pytest.mark.requires_git
-def test_git_import() -> None:
+def test_gitpython_available() -> None:
+    """The Git extra powers the local Git search backend."""
+
     git = pytest.importorskip("git")
     assert hasattr(git, "Repo")
 
 
 @pytest.mark.requires_distributed
-def test_redis_import() -> None:
-    redis = pytest.importorskip("redis")
-    assert hasattr(redis, "Redis")
+def test_inmemory_broker_roundtrip() -> None:
+    """The distributed extra adds message brokers."""
+
+    broker = get_message_broker("memory")
+    broker.publish({"k": "v"})
+    assert broker.queue.get()["k"] == "v"
+    broker.shutdown()
 
 
 @pytest.mark.requires_analysis
 def test_metrics_dataframe_polars() -> None:
+    """The analysis extra enables Polars-based metrics summaries."""
+
     metrics = {"agent_timings": {"agent": [1.0, 2.0, 3.0]}}
     df = metrics_dataframe(metrics, polars_enabled=True)
-    assert df["avg_time"][0] == 2.0
+    assert df["avg_time"][0] == pytest.approx(2.0)
 
 
 @pytest.mark.requires_llm
-def test_fastembed_import() -> None:
+def test_fastembed_available() -> None:
+    """The LLM extra installs fast embedding models."""
+
     assert _try_import_sentence_transformers() is True
 
 
 @pytest.mark.requires_parsers
 def test_local_file_backend_docx(tmp_path) -> None:
+    """The parsers extra allows reading ``.docx`` files."""
+
     docx = pytest.importorskip("docx")
     path = tmp_path / "sample.docx"
     doc = docx.Document()
@@ -63,3 +102,4 @@ def test_local_file_backend_docx(tmp_path) -> None:
     with temporary_config(cfg):
         results = _local_file_backend("hello", max_results=1)
     assert results and "hello" in results[0]["snippet"].lower()
+

@@ -5,6 +5,7 @@ set:
 
 vars:
   COVERAGE_THRESHOLD: 90
+  ALL_EXTRAS: "nlp ui vss git distributed analysis parsers llm"
 
 profiles:
   dev-minimal:
@@ -186,8 +187,7 @@ tasks:
   verify:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
-    # Coverage-enabled check before committing.
-    cmds:
+  cmds:
       - |
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
