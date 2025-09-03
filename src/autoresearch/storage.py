@@ -503,6 +503,16 @@ class StorageManager(metaclass=StorageManagerMeta):
             Evicted nodes are removed from the in-memory graph but remain in the
             DuckDB and RDF stores. This allows for persistent storage while
             controlling memory usage.
+
+        Proof Sketch:
+            Let ``U_0`` denote the initial RAM usage and ``T = B(1 - δ)`` the
+            target bound, where ``B`` is the budget and ``δ`` the safety
+            margin. Each iteration evicts a node consuming ``s_i > 0`` MB so the
+            sequence ``U_{i+1} = U_i - s_i`` is strictly decreasing and bounded
+            below by ``T``. Consequently there exists ``k`` such that
+            ``U_k ≤ T`` and the loop halts after at most
+            ``⌈(U_0 - T) / s_{ min}⌉`` iterations, yielding memory
+            usage within the budget.
         """
         if budget_mb <= 0:
             return

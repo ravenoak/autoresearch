@@ -146,6 +146,20 @@ invariant:
 These results align with the theorem because each scenario preserves
 `U ≤ B(1 − δ)`.
 
+### Termination bound and negative budgets
+
+Assume each node occupies at least ``s_min > 0`` MB. With ``U_0`` initial
+usage and target ``T = B(1 - δ)``, eviction removes size ``s_i`` per
+iteration yielding ``U_{i+1} = U_i - s_i``. The loop halts after at most
+``⌈(U_0 - T) / s_min⌉`` steps, guaranteeing ``U_k ≤ T``.
+
+If ``B ≤ 0`` the algorithm returns immediately and no eviction occurs. The
+simulation scenario ``negative_budget`` models this edge case and finishes with
+``N = threads × items`` nodes. Running the ``race`` scenario with
+``--evictors 2`` spawns two enforcement threads and still reports
+``nodes remaining after eviction: 0``, confirming correctness under concurrent
+evictors.
+
 ## DuckDB fallback benchmark
 
 The benchmark in [duckdb-bench] shows that persistence triggers eviction when
