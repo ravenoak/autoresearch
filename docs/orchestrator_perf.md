@@ -39,3 +39,24 @@ Running `scripts/distributed_orchestrator_sim.py` with 100 tasks and
 
 Latency falls as more workers handle requests while throughput plateaus
 because coordination overhead offsets parallel gains.
+
+## Distributed orchestrator benchmark
+
+The `scripts/distributed_orchestrator_perf_benchmark.py` script sweeps worker
+counts and records average latency, throughput, and memory usage. Throughput is
+computed as:
+
+```
+throughput = tasks / duration
+```
+
+Running the benchmark with 100 tasks and a 5 ms network delay yields:
+
+| workers | avg latency (s) | throughput (tasks/s) | memory (MB) |
+| ------- | --------------- | -------------------- | ----------- |
+| 1       | 0.316           | 153.36               | 45.47       |
+| 2       | 0.176           | 247.45               | 45.72       |
+| 4       | 0.103           | 317.79               | 45.72       |
+
+Latency decreases with more workers while memory remains stable and throughput
+benefits taper beyond two workers.
