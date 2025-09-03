@@ -1,11 +1,12 @@
 # Status
 
 As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes, but `task verify` continues to fail
-during the coverage phase. The latest run triggered a `KeyError` from the
-`tmp_path` fixture after several minutes, and coverage reports were not
-generated. Dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9)
-remain in place.
+syncs optional extras. `task check` passes. A full
+`uv run --all-extras task verify` attempt began downloading large GPU
+dependencies and was aborted. With test extras only, the fixed
+`tests/unit/distributed/test_coordination_properties.py` now runs without the
+previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and
+`slowapi` (==0.1.9) remain in place.
 
 The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
 to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these
@@ -54,8 +55,10 @@ Not executed.
 Not executed.
 
 ## Coverage
-`task verify` currently hangs during the coverage phase, so no coverage report
-is generated.
+Targeted coverage for `tests/unit/distributed/test_coordination_properties.py`
+completed, reporting **32%** combined coverage for
+`src/autoresearch/orchestration/budgeting.py` and
+`src/autoresearch/search/http.py`.
 
 ## Open issues
 - [add-storage-eviction-proofs-and-simulations](
