@@ -1,6 +1,8 @@
 # Specification Template
 
-Use this template to describe a module's behavior and rationale.
+Use this template to describe a module's behavior and rationale. Each spec
+must include algorithms, invariants, a proof sketch, simulation expectations,
+and traceability to code and tests.
 
 ## Overview
 
@@ -8,7 +10,7 @@ Summarize the module's purpose, scope, and key interactions.
 
 ## Algorithms
 
-- Outline core algorithms and data flows.
+- Detail core algorithms and data flows.
 - Highlight assumptions and decision points.
 
 ## Invariants
