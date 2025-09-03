@@ -136,14 +136,15 @@ upgrade instructions.
 Autoresearch exposes optional extras to enable additional features:
 
 - `nlp` – language processing via spaCy and BERTopic
-- `llm` – heavy LLM libraries like `sentence-transformers`
-- `parsers` – PDF and DOCX document ingestion
 - `ui` – reference Streamlit interface
 - `vss` – DuckDB VSS extension for vector search
+- `git` – local Git repository search
 - `distributed` – Ray and Redis for distributed processing
 - `analysis` – Polars-based data analysis utilities
-- `git` – local Git repository search
-- `full` – installs `nlp`, `ui`, `vss`, `distributed`, and `analysis`
+- `llm` – heavy LLM libraries like `sentence-transformers`
+- `parsers` – PDF and DOCX document ingestion
+- `full` – installs `nlp`, `ui`, `vss`, `git`, `distributed`,
+  `analysis`, `llm`, and `parsers`
 
 Install extras with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. Examples:

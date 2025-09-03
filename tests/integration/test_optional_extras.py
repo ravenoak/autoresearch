@@ -27,7 +27,7 @@ from autoresearch.search.context import (
     _try_import_sentence_transformers,
     _try_import_spacy,
 )
-from autoresearch.search.core import _local_file_backend
+from autoresearch.search.core import _local_file_backend, _local_git_backend
 from autoresearch.streamlit_ui import apply_theme_settings
 
 
@@ -54,11 +54,23 @@ def test_vss_extension_loader() -> None:
 
 
 @pytest.mark.requires_git
-def test_gitpython_available() -> None:
+def test_local_git_backend(tmp_path) -> None:
     """The Git extra powers the local Git search backend."""
 
     git = pytest.importorskip("git")
-    assert hasattr(git, "Repo")
+    repo = git.Repo.init(tmp_path)
+    path = tmp_path / "sample.txt"
+    path.write_text("hello world")
+    repo.index.add([str(path)])
+    repo.index.commit("init")
+
+    cfg = get_config()
+    cfg.search.local_git.repo_path = str(tmp_path)
+    cfg.search.local_git.branches = []
+    cfg.search.local_file.file_types = ["txt"]
+    with temporary_config(cfg):
+        results = _local_git_backend("hello", max_results=1)
+    assert results and "hello" in results[0]["snippet"].lower()
 
 
 @pytest.mark.requires_distributed
