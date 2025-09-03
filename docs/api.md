@@ -55,7 +55,8 @@ curl -X POST http://localhost:8000/query \
 ```
 
 Pass `stream=true` as a query parameter to receive incremental updates instead
-of a single response:
+of a single response. When no data is available a blank heartbeat line keeps
+the connection open:
 
 ```bash
 curl -X POST 'http://localhost:8000/query?stream=true' \
@@ -117,8 +118,9 @@ curl -X POST http://localhost:8000/query \
 
 Additionally, any URLs listed under `[api].webhooks` in
 `autoresearch.toml` receive the same payload after each query completes.
-Delivery is retried up to three times with exponential backoff. Failures are
-logged and do not affect the main response.
+Delivery is retried up to three times with exponential backoff for both
+network errors and non-2xx responses. After the final attempt a failure is
+logged, but the main response is unaffected.
 
 ### `GET /metrics`
 

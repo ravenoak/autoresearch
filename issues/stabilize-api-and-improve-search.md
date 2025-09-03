@@ -14,9 +14,9 @@ discrete sub-issues that refine streaming, configuration and search behavior.
 - [deliver-bug-fixes-and-docs-update](archive/deliver-bug-fixes-and-docs-update.md)
 
 ## Acceptance Criteria
-- [streaming-webhook-refinements](streaming-webhook-refinements.md) completed.
-- [configuration-hot-reload-tests](configuration-hot-reload-tests.md) completed.
-- [hybrid-search-ranking-benchmarks](hybrid-search-ranking-benchmarks.md) completed.
+- [streaming-webhook-refinements](archive/streaming-webhook-refinements.md) completed.
+- [configuration-hot-reload-tests](archive/configuration-hot-reload-tests.md) completed.
+- [hybrid-search-ranking-benchmarks](archive/hybrid-search-ranking-benchmarks.md) completed.
 
 ## Status
 Open
