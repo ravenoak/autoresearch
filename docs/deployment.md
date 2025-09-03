@@ -117,11 +117,27 @@ lost during shutdown.
 
 ## Deployment Checks
 
-After starting the service, run the deployment script to validate configuration and perform a health check:
+After starting the service, run the deployment script to validate configuration
+and perform a health check:
 
 ```bash
-python scripts/deploy.py
+uv run python scripts/deploy.py
 ```
+
+The script ensures required settings such as API keys are present. It examines
+the active configuration and exits with an error listing any missing variables.
+Provide the missing values in your `.env` file or disable the related feature in
+`autoresearch.toml`.
+
+Set `AUTORESEARCH_HEALTHCHECK_URL` to change the endpoint or leave it empty to
+skip the check. Example:
+
+```bash
+AUTORESEARCH_HEALTHCHECK_URL="" uv run python scripts/deploy.py
+```
+
+If validation fails, confirm that the environment variables are spelled
+correctly and that the active profile includes the expected backends.
 
 To publish a development build to the TestPyPI repository run:
 
