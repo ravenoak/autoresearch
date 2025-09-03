@@ -1,9 +1,8 @@
 # Status
 
 As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and syncs optional extras.
-Yet `task check` fails with `error: unexpected argument '-' found` because `Taskfile.yml` combines
-`uv sync` and `task check-env` in one line. After adding `.venv/bin` to `PATH`, running `flake8`,
-`mypy`, `scripts/check_spec_tests.py`, and targeted `pytest` manually succeeded. A full `uv run
+Separating `uv sync` from `task check-env` in `Taskfile.yml` lets `task check` run `flake8`, `mypy`,
+`scripts/check_spec_tests.py`, and targeted `pytest` in a fresh environment. A full `uv run
 --all-extras task verify` attempt began downloading large GPU dependencies and was aborted. With
 test extras only, the fixed `tests/unit/distributed/test_coordination_properties.py` now runs
 without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
@@ -64,11 +63,11 @@ with smoke tests, allowing offline environments to initialize without vector
 search.
 
 ## Lint, type checks, and spec tests
-Manual runs of `flake8`, `mypy`, and `scripts/check_spec_tests.py` succeeded because `task check`
-fails to execute.
+`task check` runs `flake8`, `mypy`, and `scripts/check_spec_tests.py` after syncing `dev` and `test`
+extras.
 
 ## Targeted tests
-`tests/unit/test_version.py` and `tests/unit/test_cli_help.py` passed when invoked manually.
+`task check` runs `tests/unit/test_version.py` and `tests/unit/test_cli_help.py`; both pass.
 
 ## Integration tests
 Not executed.
@@ -89,7 +88,6 @@ attempt to execute the full suite with coverage failed due to a `Taskfile.yml`
 parsing error, so overall coverage could not be determined.
 
 ## Open issues
-- [fix-task-check-command-block](issues/fix-task-check-command-block.md)
 - [add-storage-eviction-proofs-and-simulations](
   issues/add-storage-eviction-proofs-and-simulations.md)
 - [add-test-coverage-for-optional-components](
