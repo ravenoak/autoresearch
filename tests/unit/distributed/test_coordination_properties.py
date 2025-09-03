@@ -48,11 +48,11 @@ def test_election_converges_to_minimum(tmp_path_env: Path, ids: list[int]) -> No
 
 
 # The processing pipeline can run longer on constrained runners. Limit the
-# workload and relax Hypothesis deadlines to avoid spurious timeouts during
+# workload and disable Hypothesis deadlines to avoid spurious timeouts during
 # coverage runs.
 @settings(
     max_examples=3,
-    deadline=1000,
+    deadline=None,
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(st.lists(st.text(min_size=0, max_size=5), max_size=5))

@@ -9,6 +9,11 @@ dependencies and was aborted. With test extras only, the fixed
 previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and
 `slowapi` (==0.1.9) remain in place.
 
+Attempting `uv run task verify` currently fails with
+`yaml: line 190: did not find expected '-' indicator` when parsing the
+Taskfile. The underlying test file now disables Hypothesis deadlines to avoid
+spurious timeouts during coverage runs.
+
 The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
 to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these
 lighter dependencies.
