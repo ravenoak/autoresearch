@@ -90,8 +90,6 @@ parsing error, so overall coverage could not be determined.
   issues/add-test-coverage-for-optional-components.md)
 - [fix-task-verify-coverage-hang](
   issues/fix-task-verify-coverage-hang.md)
-- [clarify-test-extras-installation-without-go-task](
-  issues/clarify-test-extras-installation-without-go-task.md)
 - [prepare-v0-1-0a1-release](
   issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](
@@ -100,3 +98,5 @@ parsing error, so overall coverage could not be determined.
   issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](
   issues/stabilize-api-and-improve-search.md)
+- [formalize-spec-driven-development-standards](
+  issues/formalize-spec-driven-development-standards.md)

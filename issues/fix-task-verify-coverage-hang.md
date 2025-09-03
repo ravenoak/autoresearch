@@ -21,6 +21,8 @@ In a fresh environment without the Go Task CLI, running
 `uv run pytest tests/unit/test_version.py -q` raised
 `ImportError: No module named 'pytest_bdd'`, showing the `[test]` extras were
 missing and coverage could not start.
+Invoking `uv run task check` on the same system failed with
+`error: Failed to spawn: 'task'`, confirming the Go Task CLI was absent.
 
 ## Dependencies
 - [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)

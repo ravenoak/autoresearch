@@ -10,6 +10,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [resolve-llm-extra-installation-failure](archive/resolve-llm-extra-installation-failure.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
 - [add-storage-eviction-proofs-and-simulations](add-storage-eviction-proofs-and-simulations.md)
+- [formalize-spec-driven-development-standards](formalize-spec-driven-development-standards.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
