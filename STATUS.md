@@ -1,13 +1,17 @@
 # Status
 
-As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and syncs optional extras.
-Yet `task check` fails with `error: unexpected argument '-' found` because `Taskfile.yml` combines
-`uv sync` and `task check-env` in one line. After adding `.venv/bin` to `PATH`, running `flake8`,
-`mypy`, `scripts/check_spec_tests.py`, and targeted `pytest` manually succeeded. A full `uv run
---all-extras task verify` attempt began downloading large GPU dependencies and was aborted. With
-test extras only, the fixed `tests/unit/distributed/test_coordination_properties.py` now runs
-without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
-(==0.1.9) remain in place.
+As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and
+syncs optional extras. Run this script or `task install` before any tests;
+skipping it leaves packages like `pytest-bdd` missing and causes `pytest`
+collection failures. Yet `task check` fails with `error: unexpected argument
+'-' found` because `Taskfile.yml` combines `uv sync` and `task check-env` in
+one line. After adding `.venv/bin` to `PATH`, running `flake8`, `mypy`,
+`scripts/check_spec_tests.py`, and targeted `pytest` manually succeeded. A
+full `uv run --all-extras task verify` attempt began downloading large GPU
+dependencies and was aborted. With test extras only, the fixed
+`tests/unit/distributed/test_coordination_properties.py` now runs without the
+previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and
+`slowapi` (==0.1.9) remain in place.
 
 Attempting `uv run task verify` previously failed with
 `yaml: line 190: did not find expected '-' indicator` when parsing the
@@ -33,10 +37,10 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 features are required. Setup helpers and Taskfile commands consult this
 directory automatically when GPU extras are installed.
 
-Running without first executing `scripts/setup.sh` leaves the Go Task CLI
-unavailable. `uv run task check` then fails with `command not found: task`, and
-`uv run pytest tests/unit/test_version.py -q` raises
-`ImportError: No module named 'pytest_bdd'`.
+Running tests without first executing `scripts/setup.sh` or `task install`
+leaves the Go Task CLI unavailable. `uv run task check` then fails with
+`command not found: task`, and `uv run pytest tests/unit/test_version.py -q`
+raises `ImportError: No module named 'pytest_bdd'`.
 
 Install the test extras with `uv pip install -e ".[test]"` before invoking
 `pytest` directly to avoid this error.
@@ -53,8 +57,8 @@ uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
 uv run pytest tests/unit/test_version.py -q
 ```
 
-This installs the `[test]` extras, records the DuckDB VSS extension path, and
-lets `uv run pytest` succeed without `task`.
+This installs the `[test]` extras, including `pytest-bdd`, records the DuckDB
+VSS extension path, and lets `uv run pytest` succeed without `task`.
 
 ## Offline DuckDB extension
 

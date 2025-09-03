@@ -16,6 +16,10 @@ integration, and behavior tests:
 ./scripts/setup.sh
 ```
 
+Run this script or `task install` before any test commands. Missing extras
+such as `pytest-bdd` cause `pytest` to fail during collection when the
+environment is not initialized.
+
 After bootstrapping, `.venv/bin` is added to `PATH` and `task --version`
 should report the installed CLI:
 
@@ -39,6 +43,21 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 
 `task install` checks for Go Task and downloads it to `.venv/bin` when missing.
 Manual instructions are below if the setup script fails.
+
+### Bootstrapping without Go Task
+
+If Go Task is unavailable, create a virtual environment and install the
+`[test]` extras manually:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[test]"
+uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+```
+
+This installs packages like `pytest-bdd` so `pytest` collects the suite even
+without the Task CLI. Run tests with `uv run pytest`.
 
 ## Version checks and troubleshooting
 
