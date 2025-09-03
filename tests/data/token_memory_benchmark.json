@@ -1,0 +1,10 @@
+{
+  "tests/benchmark/test_token_memory.py::test_token_memory_baseline": {
+    "duration_seconds": 0.004791448000105447,
+    "memory_delta_mb": 0.0,
+    "tokens": {
+      "in": 2,
+      "out": 7
+    }
+  }
+}
