@@ -5,7 +5,7 @@ set:
 
 vars:
   COVERAGE_THRESHOLD: 90
-  ALL_EXTRAS: "nlp ui vss git distributed analysis parsers llm"
+  ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers"
 
 profiles:
   dev-minimal:
@@ -28,7 +28,7 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test nlp ui vss git distributed analysis parsers llm"
+          extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
           uv sync --python-platform x86_64-manylinux_2_28 \
               $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}} \
               {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
@@ -37,7 +37,7 @@ tasks:
     desc: |
       Initialize dev env with all extras.
       Syncs dev-minimal, test, nlp, ui, vss, git, distributed,
-      analysis and parsers extras by default.
+      analysis, llm, and parsers extras by default.
       Set EXTRAS="gpu" to include optional GPU packages.
       Place matching wheels in wheels/gpu to avoid source builds.
   check-env:
