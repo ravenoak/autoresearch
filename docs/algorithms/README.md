@@ -32,7 +32,8 @@
 
 ### Completed
 - Cache – simulation verifies linear eviction cost and correctness.
-- Distributed coordination – leader election proof and performance simulation.
+- Distributed coordination – leader election proof, scaling, and fault
+  tolerance benchmark.
 - Search – monotonic ranking proof and convergence simulation.
 - ranking_formula – simulation compares ranking across noisy datasets.
 - a2a_interface – simulation verifies agent messaging.

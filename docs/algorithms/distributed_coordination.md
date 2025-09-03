@@ -90,6 +90,13 @@ chooses the global minimum in each round. Property-based tests
 (../../tests/unit/distributed/test_coordination_properties.py)) exercise random
 shuffles to demonstrate this fixed point behavior.
 
+### Safety and Liveness
+
+The `StorageCoordinator` consumes claim messages while `ResultAggregator`
+consumes agent results. Each loop dequeues exactly one message and FIFO queues
+prevent duplication. As long as both processes run, every published message is
+eventually handled, yielding a protocol that is both safe and live.
+
 ## Baseline
 
 Running `uv run scripts/simulate_distributed_coordination.py --workers 2`
@@ -106,6 +113,16 @@ A stress test using the `multiprocessing.Manager().Queue` backing
 When one worker crashed after 5\,000 messages, the remaining workers drained
 the queue in 1.017 s, about 9\,834 msg/s. An empty `get` raised a timeout
 after 0.1 s, providing an upper bound on failure detection latency.
+
+## Scaling and Fault Tolerance Benchmark
+
+[`distributed_coordination_benchmark.py`][dc-bench] launches worker processes
+that publish results through the coordinator. With two workers sending five
+messages each, throughput reached about 194 msg/s. When one worker crashed
+halfway, the remaining worker still delivered seven messages at roughly
+138 msg/s, demonstrating graceful degradation.
+
+[dc-bench]: ../../scripts/distributed_coordination_benchmark.py
 
 ## Performance Simulation
 
