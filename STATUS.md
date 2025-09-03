@@ -30,6 +30,9 @@ unavailable. `uv run task check` then fails with `command not found: task`, and
 `uv run pytest tests/unit/test_version.py -q` raises
 `ImportError: No module named 'pytest_bdd'`.
 
+Install the test extras with `uv pip install -e ".[test]"` before invoking
+`pytest` directly to avoid this error.
+
 ## Bootstrapping without Go Task
 
 If the Go Task CLI cannot be installed, set up the environment with:
@@ -39,11 +42,11 @@ uv venv
 source .venv/bin/activate
 uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+uv run pytest tests/unit/test_version.py -q
 ```
 
-This installs the `[test]` extras and uses
-`scripts/download_duckdb_extensions.py` to record the DuckDB VSS extension path
-so `uv run pytest` works without `task`.
+This installs the `[test]` extras, records the DuckDB VSS extension path, and
+lets `uv run pytest` succeed without `task`.
 
 ## Offline DuckDB extension
 

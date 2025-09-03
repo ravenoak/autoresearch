@@ -74,11 +74,13 @@ uv venv
 source .venv/bin/activate
 uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
+uv run pytest tests/unit/test_version.py -q
 ```
 
 The `[test]` extra installs dependencies like `pytest-bdd`, which `task check`
-expects for quick smoke tests. This mirrors the DuckDB setup performed by
-`scripts/setup.sh` and lets `uv run pytest` succeed without `task`.
+expects for quick smoke tests. Install it before `pytest` to mirror the DuckDB
+setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
+`task`.
 
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset (`test_version`
