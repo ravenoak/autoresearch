@@ -147,6 +147,7 @@ tasks:
             --extra git \
             --extra distributed \
             --extra analysis \
+            --extra llm \
             --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - uv run coverage erase
@@ -188,7 +189,12 @@ tasks:
             --extra test \
             --extra nlp \
             --extra ui \
-            --extra vss{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
+            --extra vss \
+            --extra git \
+            --extra distributed \
+            --extra analysis \
+            --extra llm \
+            --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - task check-env
       - uv run flake8 src tests

@@ -3,6 +3,8 @@ import pytest
 from autoresearch.data_analysis import metrics_dataframe
 from autoresearch.storage_backends import KuzuStorageBackend
 
+pytestmark = pytest.mark.requires_analysis
+
 pytest.importorskip("polars")
 
 

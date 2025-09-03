@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.requires_parsers
+
 # Skip if optional parsers are unavailable
 pytest.importorskip("docx")
 pytest.importorskip("pdfminer.high_level")
