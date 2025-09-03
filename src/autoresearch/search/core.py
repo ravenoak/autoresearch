@@ -173,6 +173,9 @@ DOMAIN_AUTHORITY_SCORES: Tuple[DomainAuthorityScore, ...] = (
     DomainAuthorityScore("gov", 0.85),  # Government domains
 )
 
+# Precompute a mapping for fast lookup in credibility scoring
+DOMAIN_AUTHORITY_MAP: Dict[str, float] = {da.domain: da.score for da in DOMAIN_AUTHORITY_SCORES}
+
 
 class Search:
     """Provides utilities for search query generation and external lookups."""
@@ -374,9 +377,7 @@ class Search:
             if query_embedding is None:
                 # Encode the query
                 assert model is not None
-                query_embedding = np.array(
-                    list(model.embed([query]))[0], dtype=float
-                )
+                query_embedding = np.array(list(model.embed([query]))[0], dtype=float)
 
             # Encode the documents
             similarities: List[Optional[float]] = []
@@ -454,10 +455,7 @@ class Search:
                 if query_embedding is not None:
                     q = np.array(query_embedding, dtype=float)
                     emb_arr = np.array(emb, dtype=float)
-                    sim = float(
-                        np.dot(q, emb_arr)
-                        / (np.linalg.norm(q) * np.linalg.norm(emb_arr))
-                    )
+                    sim = float(np.dot(q, emb_arr) / (np.linalg.norm(q) * np.linalg.norm(emb_arr)))
                     documents[index]["similarity"] = (sim + 1) / 2
         except Exception as e:  # pragma: no cover - unexpected
             log.warning(f"Failed to add embeddings: {e}")
@@ -479,7 +477,7 @@ class Search:
         # and citation metrics in a production environment
 
         # Domain authority scores for common domains (simplified example)
-        domain_authority = {da.domain: da.score for da in DOMAIN_AUTHORITY_SCORES}
+        domain_authority = DOMAIN_AUTHORITY_MAP
 
         scores = []
         for doc in documents:

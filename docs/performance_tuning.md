@@ -14,3 +14,15 @@ To keep regressions in check:
 
 These measurements are enforced in `tests/benchmark/test_token_memory.py`. Update
 the baseline file when deliberate tuning changes expected resource usage.
+
+## Micro-benchmarks
+
+Targeted profiling highlighted hotspots in orchestrator, search, and storage.
+Small optimizations yielded incremental gains:
+
+- `Orchestrator._parse_config` 1000×: 0.008246 s → 0.008115 s
+- `Search.assess_source_credibility` 200×: 0.026464 s → 0.025423 s
+- `StorageManager.persist_claim` 5×: 14.746 s → 14.576 s
+
+Re-run these micro-benchmarks after substantial changes using similar workloads
+to ensure performance remains within expected bounds.
