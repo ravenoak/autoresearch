@@ -1,16 +1,15 @@
 # Status
 
-As of **September 2, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes, but `task verify` still hangs
-during the coverage phase despite the earlier fixes to
-`tests/integration/test_storage_eviction_sim.py` and
-`tests/unit/distributed/test_coordination_properties.py`. The command requires
-manual interruption and produces no coverage report. Dependency pins for
-`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
+As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and
+syncs optional extras. `task check` passes, but `task verify` continues to fail
+during the coverage phase. The latest run triggered a `KeyError` from the
+`tmp_path` fixture after several minutes, and coverage reports were not
+generated. Dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9)
+remain in place.
 
-The `[llm]` extra now installs CPU-friendly libraries (`fastembed`,
-`dspy-ai`) to avoid CUDA-heavy downloads. `task verify`
-`EXTRAS="llm"` succeeds with these lighter dependencies.
+The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
+to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these
+lighter dependencies.
 
 The evaluation setup makes Task CLI version 3.44.1 available (`task --version`).
 
@@ -73,3 +72,5 @@ is generated.
   issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](
   issues/stabilize-api-and-improve-search.md)
+- [add-distributed-coordination-proofs-and-benchmarks](
+  issues/add-distributed-coordination-proofs-and-benchmarks.md)

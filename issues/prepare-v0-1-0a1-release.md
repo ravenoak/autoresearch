@@ -7,7 +7,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 
 ## Dependencies
 - [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
-- [resolve-llm-extra-installation-failure](resolve-llm-extra-installation-failure.md)
+- [resolve-llm-extra-installation-failure](archive/resolve-llm-extra-installation-failure.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
 - [add-storage-eviction-proofs-and-simulations](add-storage-eviction-proofs-and-simulations.md)
 

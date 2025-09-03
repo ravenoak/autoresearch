@@ -8,7 +8,7 @@ completion, leaving the environment without required packages. Without the
 targets.
 
 ## Dependencies
-- [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
+- [fix-task-verify-coverage-hang](../fix-task-verify-coverage-hang.md)
 
 ## Acceptance Criteria
 - Reduce the size or resource demands of the `[llm]` extra or provide
@@ -18,4 +18,4 @@ targets.
 - Record the resolution in `STATUS.md`.
 
 ## Status
-Open
+Archived
