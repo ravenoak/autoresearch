@@ -6,6 +6,7 @@ should work offline, optional extras must install, and core algorithms require
 initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 
 ## Dependencies
+- [ensure-go-task-cli-availability](ensure-go-task-cli-availability.md)
 - [fix-task-check-command-block](fix-task-check-command-block.md)
 - [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
