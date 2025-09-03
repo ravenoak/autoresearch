@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 import sys
+import multiprocessing
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,12 @@ from scripts.distributed_coordination_sim import (  # noqa: E402
 )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def set_spawn_start_method() -> None:
+    """Use spawn to avoid fork-related deadlocks in multiprocessing."""
+    multiprocessing.set_start_method("spawn", force=True)
+
+
 @pytest.fixture
 def tmp_path_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Ensure multiprocessing uses the per-test temp directory."""
@@ -24,7 +31,7 @@ def tmp_path_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @settings(
     max_examples=10,
-    deadline=None,
+    deadline=1000,
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(
@@ -48,11 +55,11 @@ def test_election_converges_to_minimum(tmp_path_env: Path, ids: list[int]) -> No
 
 
 # The processing pipeline can run longer on constrained runners. Limit the
-# workload and disable Hypothesis deadlines to avoid spurious timeouts during
+# workload and apply a generous Hypothesis deadline to prevent hangs during
 # coverage runs.
 @settings(
     max_examples=3,
-    deadline=None,
+    deadline=1000,
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(st.lists(st.text(min_size=0, max_size=5), max_size=5))

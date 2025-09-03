@@ -201,7 +201,9 @@ tasks:
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
-      - task coverage{{if .EXTRAS}} EXTRAS="{{.EXTRAS}}"{{end}}
+      - task: coverage
+        vars:
+          EXTRAS: "{{.EXTRAS}}"
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
       - uv run python scripts/check_token_regression.py --threshold 5
