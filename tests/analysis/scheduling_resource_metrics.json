@@ -1,0 +1,23 @@
+{
+  "1": {
+    "utilization": 0.6,
+    "avg_queue_length": 0.8999999999999998,
+    "throughput": 491.87682153043994,
+    "mem_kb": 0,
+    "expected_memory": 250.0
+  },
+  "2": {
+    "utilization": 0.3,
+    "avg_queue_length": 0.05934065934065934,
+    "throughput": 1027.3043103486314,
+    "mem_kb": 208,
+    "expected_memory": 250.0
+  },
+  "4": {
+    "utilization": 0.15,
+    "avg_queue_length": 0.0006151976607298826,
+    "throughput": 1481.5581274274462,
+    "mem_kb": 5120,
+    "expected_memory": 250.0
+  }
+}

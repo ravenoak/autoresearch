@@ -68,15 +68,17 @@ def simulate(
     return metrics
 
 
-def benchmark_scheduler(workers: int, tasks: int) -> Dict[str, float]:
+def benchmark_scheduler(workers: int, tasks: int, mem_per_task: float = 0.0) -> Dict[str, float]:
     """Measure scheduling throughput and resource usage.
 
-    Each task sleeps briefly to mimic an I/O-bound workload that releases the
-    GIL, allowing throughput to scale with the number of workers.
+    Each task allocates memory and sleeps briefly to mimic an I/O-bound workload
+    that releases the GIL, allowing throughput to scale with the number of
+    workers.
 
     Args:
         workers: Number of worker threads to schedule tasks.
         tasks: Total number of tasks to dispatch.
+        mem_per_task: Megabytes of memory to allocate per task.
 
     Returns:
         Dictionary with observed throughput in tasks/s, CPU time, and memory
@@ -94,7 +96,9 @@ def benchmark_scheduler(workers: int, tasks: int) -> Dict[str, float]:
     start = time.perf_counter()
 
     def _workload(_: int) -> None:
+        buf = bytearray(int(mem_per_task * 1024 * 1024))
         time.sleep(0.001)
+        del buf
 
     with ThreadPoolExecutor(max_workers=workers) as exe:
         list(exe.map(_workload, range(tasks)))
