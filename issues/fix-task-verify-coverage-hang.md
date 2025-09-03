@@ -30,6 +30,10 @@ Exporting `.venv/bin` to `PATH` and executing `flake8`, `mypy`,
 tests/unit/test_cli_help.py -q` succeeded, indicating the hang stems from the Taskfile layout
 rather than test failures.
 
+On September 5, 2025, running `task verify` after installing all extras produced no output
+for several minutes during coverage.
+The process was interrupted manually, exiting with status 2.
+
 ## Dependencies
 None.
 

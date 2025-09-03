@@ -1,5 +1,14 @@
 # Status
 
+## September 5, 2025
+
+- Installing Go Task with the upstream script placed the binary under `.venv/bin`.
+  `task check` then failed with "No package metadata was found for GitPython" and
+  similar messages for `cibuildwheel`, `duckdb-extension-vss`, `spacy`, and
+  several `types-*` stubs.
+- `task verify` synced all extras and began unit tests but produced no output
+  during coverage. The run was interrupted manually, leaving no report.
+
 ## September 4, 2025
 
 - `uv run task check EXTRAS="nlp ui vss git distributed analysis llm parsers"`
@@ -109,11 +118,15 @@ warnings. Coverage data was not produced.
 - [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
   - [ensure-go-task-cli-availability](issues/ensure-go-task-cli-availability.md)
   - [fix-task-verify-coverage-hang](issues/fix-task-verify-coverage-hang.md)
-  - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
-  - [formalize-spec-driven-development-standards](issues/formalize-spec-driven-development-standards.md)
+  - [fix-check-env-package-metadata-errors](issues/fix-check-env-package-metadata-errors.md)
+  - [add-test-coverage-for-optional-components]
+    (issues/add-test-coverage-for-optional-components.md)
+  - [formalize-spec-driven-development-standards]
+    (issues/formalize-spec-driven-development-standards.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
   - [tune-system-performance](issues/tune-system-performance.md)
-- [simulate-distributed-orchestrator-performance](issues/simulate-distributed-orchestrator-performance.md)
+- [simulate-distributed-orchestrator-performance]
+  (issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
