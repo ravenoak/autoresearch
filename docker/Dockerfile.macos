@@ -1,0 +1,9 @@
+# syntax=docker/dockerfile:1
+FROM ghcr.io/cirruslabs/macos-runner:sonoma
+
+WORKDIR /workspace
+COPY . .
+RUN /bin/bash -lc "brew update && brew install python@3.12" \
+    && pip3 install --no-cache-dir uv \
+    && uv pip install '.[build]'
+CMD ["/bin/bash"]

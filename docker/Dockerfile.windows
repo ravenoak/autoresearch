@@ -1,0 +1,9 @@
+# escape=`
+FROM mcr.microsoft.com/windows/python:3.12
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
+WORKDIR C:/workspace
+COPY . .
+RUN pip install --no-cache-dir uv; `
+    uv pip install '.[build]'
+CMD ["powershell"]
