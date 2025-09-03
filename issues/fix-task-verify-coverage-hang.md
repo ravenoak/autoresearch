@@ -17,6 +17,11 @@ On September 3, 2025, `task verify` again failed during coverage, raising a
 `KeyError` from the `tmp_path` fixture before any report was generated. The
 command required manual interruption.
 
+In a fresh environment without the Go Task CLI, running
+`uv run pytest tests/unit/test_version.py -q` raised
+`ImportError: No module named 'pytest_bdd'`, showing the `[test]` extras were
+missing and coverage could not start.
+
 ## Dependencies
 - [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
 

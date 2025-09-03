@@ -20,6 +20,11 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 features are required. Setup helpers and Taskfile commands consult this
 directory automatically when GPU extras are installed.
 
+Running without first executing `scripts/setup.sh` leaves the Go Task CLI
+unavailable. `uv run task check` then fails with `command not found: task`, and
+`uv run pytest tests/unit/test_version.py -q` raises
+`ImportError: No module named 'pytest_bdd'`.
+
 ## Bootstrapping without Go Task
 
 If the Go Task CLI cannot be installed, set up the environment with:
@@ -73,6 +78,8 @@ integration tests and did not produce a final report.
   issues/add-test-coverage-for-optional-components.md)
 - [fix-task-verify-coverage-hang](
   issues/fix-task-verify-coverage-hang.md)
+- [clarify-test-extras-installation-without-go-task](
+  issues/clarify-test-extras-installation-without-go-task.md)
 - [prepare-v0-1-0a1-release](
   issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](
@@ -81,5 +88,3 @@ integration tests and did not produce a final report.
   issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](
   issues/stabilize-api-and-improve-search.md)
-- [add-distributed-coordination-proofs-and-benchmarks](
-  issues/add-distributed-coordination-proofs-and-benchmarks.md)
