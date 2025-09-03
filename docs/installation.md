@@ -38,6 +38,25 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 `task install` checks for Go Task and downloads it to `.venv/bin` when missing.
 Manual instructions are below if the setup script fails.
 
+## Version checks and troubleshooting
+
+Run `task check-env` to confirm expected tool versions and optional extras.
+Minimum versions:
+
+- Python 3.12.0
+- Go Task 3.0.0
+- uv 0.7.0
+
+Example:
+
+```bash
+task check-env
+EXTRAS="ui vss" task check-env  # verify optional extras
+```
+
+If a tool or package is missing, rerun `task install` or sync extras with
+`uv sync --extra <name>`.
+
 ## Setup scripts
 
 Both setup helpers call `install_dev_test_extras` so the `dev` and `test`

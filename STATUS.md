@@ -1,7 +1,8 @@
 # Status
 
 As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes. A full
+syncs optional extras. `task check` now invokes `scripts/check_env.py` and
+passes. A full
 `uv run --all-extras task verify` attempt began downloading large GPU
 dependencies and was aborted. With test extras only, the fixed
 `tests/unit/distributed/test_coordination_properties.py` now runs without the
@@ -42,7 +43,8 @@ with smoke tests, allowing offline environments to initialize without vector
 search.
 
 ## Lint, type checks, and spec tests
-`task check` completed successfully.
+`task check` runs `scripts/check_env.py` to validate tool versions.
+Set `EXTRAS` to verify optional extras. The command completed successfully.
 
 ## Targeted tests
 `tests/unit/test_version.py` and `tests/unit/test_cli_help.py` passed under
