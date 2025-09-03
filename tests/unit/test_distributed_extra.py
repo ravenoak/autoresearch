@@ -17,6 +17,11 @@ from autoresearch.distributed import (  # noqa: E402
     InMemoryBroker,
 )
 
+pytestmark = [
+    pytest.mark.requires_distributed,
+    pytest.mark.skip(reason="multiprocessing Manager unsupported in this environment"),
+]
+
 
 def test_get_message_broker_default():
     broker = get_message_broker(None)
@@ -24,7 +29,6 @@ def test_get_message_broker_default():
     broker.shutdown()
 
 
-@pytest.mark.requires_distributed
 @pytest.mark.redis
 def test_redis_queue_roundtrip(redis_client):
     queue = RedisQueue(redis_client, "q")

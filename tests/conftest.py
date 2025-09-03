@@ -345,9 +345,10 @@ def reset_orchestration_metrics():
 @pytest.fixture(autouse=True)
 def cleanup_storage():
     """Remove any persistent storage state between tests."""
-    StorageManager.teardown(remove_db=True)
+    # Use module-level teardown to avoid delegate recursion
+    storage.teardown(remove_db=True)
     yield
-    StorageManager.teardown(remove_db=True)
+    storage.teardown(remove_db=True)
 
 
 @pytest.fixture(autouse=True)
