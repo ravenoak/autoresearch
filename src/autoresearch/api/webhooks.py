@@ -28,7 +28,14 @@ def notify_webhook(
             resp = httpx.post(url, json=result.model_dump(), timeout=timeout)
             resp.raise_for_status()
             return
-        except httpx.RequestError as exc:
-            log.warning("Webhook request to %s failed on attempt %s: %s", url, attempt + 1, exc)
+        except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+            log.warning(
+                "Webhook request to %s failed on attempt %s: %s",
+                url,
+                attempt + 1,
+                exc,
+            )
             if attempt < retries - 1:
                 time.sleep(backoff * 2**attempt)
+
+    log.error("Webhook delivery to %s failed after %s attempts", url, retries)
