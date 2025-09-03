@@ -18,6 +18,10 @@ The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
 to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these
 lighter dependencies.
 
+`scripts/scheduling_resource_benchmark.py` evaluates worker scaling and
+resource usage for the orchestrator. Formulas and tuning guidance live in
+`docs/orchestrator_perf.md`.
+
 The evaluation setup makes Task CLI version 3.44.1 available (`task --version`).
 
 References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
