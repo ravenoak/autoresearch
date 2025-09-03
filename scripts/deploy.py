@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 """Simple deployment helper.
 
-This script validates configuration and performs a basic health check of a running
-Autoresearch server. It should be executed after starting the service to ensure
-all environment variables are loaded correctly and the API is responsive.
+Usage:
+    uv run python scripts/deploy.py
+
+This script validates configuration and performs a basic health check of a
+running Autoresearch server. It should be executed after starting the service
+to ensure all required settings exist and the API is responsive. Set
+``AUTORESEARCH_HEALTHCHECK_URL`` to override the health endpoint or leave it
+empty to skip the check.
 """
 from __future__ import annotations
 
@@ -14,23 +19,52 @@ from typing import Sequence
 import httpx
 from dotenv import load_dotenv
 
-from autoresearch.config.loader import get_config
+from autoresearch.config.loader import ConfigLoader, get_config
 from autoresearch.errors import ConfigError
 
 
+REQUIRED_ENV = {
+    "SERPER_API_KEY": lambda cfg: "serper" in cfg.search.backends,
+    "BRAVE_SEARCH_API_KEY": lambda cfg: "brave" in cfg.search.backends,
+    "OPENAI_API_KEY": lambda cfg: "openai" in cfg.llm_backend.lower(),
+    "OPENROUTER_API_KEY": lambda cfg: "openrouter" in cfg.llm_backend.lower(),
+}
+
+
+def _check_required_settings() -> list[str]:
+    """Return missing environment variables based on the active config."""
+    loader = ConfigLoader()
+    profile = os.getenv("AUTORESEARCH_ACTIVE_PROFILE")
+    if profile:
+        loader.set_active_profile(profile)
+    cfg = loader.config
+    missing: list[str] = []
+    for name, predicate in REQUIRED_ENV.items():
+        if predicate(cfg) and not os.getenv(name):
+            missing.append(name)
+    return missing
+
+
 def validate_config() -> None:
-    """Load and validate the Autoresearch configuration."""
+    """Load configuration and ensure required settings exist."""
     load_dotenv()
     try:
-        get_config()
+        _missing = _check_required_settings()
     except ConfigError as exc:
         print(f"Configuration error: {exc}")
+        sys.exit(1)
+    if _missing:
+        print("Missing required settings: " + ", ".join(_missing))
         sys.exit(1)
     print("Configuration valid")
 
 
-def health_check(url: str = "http://localhost:8000/metrics") -> None:
+def health_check(url: str | None = None) -> None:
     """Check that the API responds successfully."""
+    url = url or os.getenv("AUTORESEARCH_HEALTHCHECK_URL", "http://localhost:8000/metrics")
+    if not url:
+        print("Health check skipped")
+        return
     try:
         response = httpx.get(url, timeout=5)
     except Exception as exc:  # pragma: no cover - runtime check
