@@ -84,6 +84,12 @@ task wheels  # builds wheels for Linux, Windows and macOS
 
 The wheels will be placed under the `dist/` directory.
 
+Both `scripts/package.sh` and `scripts/package.ps1` validate that a
+configuration file exists before building. Override the default
+`pyproject.toml` path by setting `AUTORESEARCH_BUILD_CONFIG`. The scripts also
+confirm that the `uv` command is available and exit with an error if it is
+missing.
+
 ## Distributed Deployment
 
 For large-scale workloads you can run Autoresearch on a Ray cluster.  Set
@@ -128,6 +134,9 @@ The script ensures required settings such as API keys are present. It examines
 the active configuration and exits with an error listing any missing variables.
 Provide the missing values in your `.env` file or disable the related feature in
 `autoresearch.toml`.
+
+Set `AUTORESEARCH_CONFIG_FILE` to point to a custom configuration file. The
+deployment script verifies that the file exists before loading settings.
 
 Set `AUTORESEARCH_HEALTHCHECK_URL` to change the endpoint or leave it empty to
 skip the check. Example:
