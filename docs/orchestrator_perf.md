@@ -1,34 +1,22 @@
-# Orchestrator Performance
+# Orchestrator performance
 
-Efficient orchestration depends on balancing scheduling throughput with
-resource limits. The distributed simulation models message handling across
-worker processes and records CPU and memory use.
+The scheduling benchmark models an M/M/c queue where tasks arrive at rate
+$\lambda$ and each of $c$ workers serves tasks at rate $\mu$. Utilization is
+$\rho = \lambda / (c\mu)$ and requires $\rho < 1$ for stability. The average
+queue length $L_q$ follows:
 
-## Methodology
+$$L_q = \frac{(\lambda/\mu)^c \rho}{c! (1-\rho)^2} P_0,$$
 
-- Workers square integers to mimic message processing.
-- `messages` defines items sent per loop and `loops` controls repetition.
-- `ResourceMonitor` samples CPU and memory every 50 ms.
-- Metrics include total messages processed, elapsed time, throughput, CPU
-  percentage, and memory footprint.
+where
 
-## Formulas
+$$P_0 = \Bigg[ \sum_{n=0}^{c-1} \frac{(\lambda/\mu)^n}{n!} +
+\frac{(\lambda/\mu)^c}{c! (1-\rho)} \Bigg]^{-1}.$$
 
-- **Throughput:** `throughput = total_messages / duration_seconds`
-- **CPU usage:** mean process CPU percent reported by the monitor.
-- **Memory usage:** maximum resident set size in megabytes.
+Expected memory consumption is `tasks * mem_per_task`. The
+`scripts/scheduling_resource_benchmark.py` script iterates over worker counts
+and reports utilization, queue length, expected memory, and observed throughput.
+Each run dispatches brief sleep calls to mimic I/O-bound workloads so that
+throughput scales with available workers.
 
-## Assumptions
-
-- Messages are CPU bound and split across processes, enabling near-linear
-  scaling as worker count increases.
-- Sampling uses a short 50 ms interval to minimize monitoring overhead.
-- GPU statistics are optional and may report zeros when unavailable.
-
-## Tuning Guidance
-
-- Increase `--workers` until CPU utilization approaches the number of cores.
-  Extra workers beyond that point show diminishing throughput gains.
-- Adjust `--messages` and `--loops` so total work amortizes startup costs.
-- Watch memory usage when messages hold significant state; the monitor reports
-  megabytes consumed by the parent process.
+Tests validate that higher worker counts increase throughput and that memory
+scales linearly with the number of tasks, guiding tuning decisions.
