@@ -1,15 +1,20 @@
-"""Stub for :mod:`pdfminer.high_level` used by search module."""
+"""Stub for the :mod:`pdfminer` package."""
+
+from __future__ import annotations
 
 import sys
-import types
+from types import ModuleType
 
-import pytest
 
-if "pdfminer.high_level" not in sys.modules:
-    pm_stub = types.ModuleType("pdfminer.high_level")
+if "pdfminer" not in sys.modules:
+    high_level = ModuleType("pdfminer.high_level")
 
-    def _missing(*args, **kwargs):
-        pytest.skip("pdfminer.six not installed")
+    def extract_text(*args, **kwargs):
+        return ""
 
-    pm_stub.extract_text = _missing
-    sys.modules["pdfminer.high_level"] = pm_stub
+    high_level.extract_text = extract_text
+    module = ModuleType("pdfminer")
+    module.high_level = high_level
+    module.__version__ = "0.0"
+    sys.modules["pdfminer"] = module
+    sys.modules["pdfminer.high_level"] = high_level

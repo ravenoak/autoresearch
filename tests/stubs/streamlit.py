@@ -1,5 +1,6 @@
 """Stub for :mod:`streamlit` to avoid heavy UI dependency."""
 
+import importlib.util
 import sys
 import types
 
@@ -29,4 +30,6 @@ if "streamlit" not in sys.modules:
         __enter__=lambda s: None,
         __exit__=lambda s, e, t, b: None,
     )
+    st_stub.__version__ = "0.0"
+    st_stub.__spec__ = importlib.util.spec_from_loader("streamlit", loader=None)
     sys.modules["streamlit"] = st_stub
