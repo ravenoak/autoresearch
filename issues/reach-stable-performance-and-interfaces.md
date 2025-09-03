@@ -13,11 +13,6 @@ stable interfaces and tuned performance.
 - [containerize-and-package](containerize-and-package.md)
 - [validate-deployment-configurations](validate-deployment-configurations.md)
 - [tune-system-performance](tune-system-performance.md)
-- [support-distributed-execution-and-monitoring][sdem]
-- [formalize-algorithm-proofs-for-research-modules][fap]
-
-[sdem]: archive/support-distributed-execution-and-monitoring.md
-[fap]: archive/formalize-algorithm-proofs-for-research-modules.md
 
 ## Acceptance Criteria
 - Containerization and packaging succeed across Windows, macOS and Linux.

@@ -31,7 +31,7 @@ tests/unit/test_cli_help.py -q` succeeded, indicating the hang stems from the Ta
 rather than test failures.
 
 ## Dependencies
-- [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
+None.
 
 ## Acceptance Criteria
 - Identify the cause of the coverage hang during `task verify`.

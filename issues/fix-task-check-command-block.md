@@ -6,7 +6,7 @@ Running `task check` fails with `error: unexpected argument '-' found` because
 argument reaches `uv sync`, so lint and tests never run.
 
 ## Dependencies
-- [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
+None.
 
 ## Acceptance Criteria
 - Separate `uv sync` and `task check-env` into distinct commands in `Taskfile.yml`.
