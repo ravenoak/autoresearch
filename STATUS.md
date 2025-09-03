@@ -60,6 +60,10 @@ completed, reporting **32%** combined coverage for
 `src/autoresearch/orchestration/budgeting.py` and
 `src/autoresearch/search/http.py`.
 
+`task verify` was updated to install all extras and run marked tests. An
+attempt to execute the full suite with coverage encountered failing
+integration tests and did not produce a final report.
+
 ## Open issues
 - [add-storage-eviction-proofs-and-simulations](
   issues/add-storage-eviction-proofs-and-simulations.md)
