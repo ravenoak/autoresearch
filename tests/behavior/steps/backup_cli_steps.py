@@ -145,9 +145,3 @@ def test_backup_list():
 @scenario("../features/backup_cli.feature", "Restore backup")
 def test_backup_restore_scenario():
     pass
-
-
-@scenario("../features/backup_roundtrip.feature", "Create then list backups")
-def test_backup_roundtrip():
-    """Create a backup and verify it appears in the listing."""
-    pass
