@@ -102,4 +102,3 @@ def test_local_file_backend_docx(tmp_path) -> None:
     with temporary_config(cfg):
         results = _local_file_backend("hello", max_results=1)
     assert results and "hello" in results[0]["snippet"].lower()
-

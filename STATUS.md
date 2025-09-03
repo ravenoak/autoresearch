@@ -9,10 +9,14 @@ dependencies and was aborted. With test extras only, the fixed
 previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and
 `slowapi` (==0.1.9) remain in place.
 
-Attempting `uv run task verify` currently fails with
+Attempting `uv run task verify` previously failed with
 `yaml: line 190: did not find expected '-' indicator` when parsing the
-Taskfile. The underlying test file now disables Hypothesis deadlines to avoid
-spurious timeouts during coverage runs.
+Taskfile. A mis-indented `cmds` block left the `verify` task without commands
+and embedded `task check-env` inside the preceding `uv sync` heredoc. Indenting
+`cmds` under `verify` and separating the `task check-env` invocation restored
+the task structure. After removing a trailing blank line in
+`tests/integration/test_optional_extras.py`, `task verify` executes fully and
+emits coverage data without hanging.
 
 The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
 to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these

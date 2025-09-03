@@ -187,7 +187,7 @@ tasks:
   verify:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
-  cmds:
+    cmds:
       - |
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
@@ -203,7 +203,7 @@ tasks:
             --extra llm \
             --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
-        - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+      - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
