@@ -257,3 +257,22 @@ tasks:
       - uv run cibuildwheel --platform macos --output-dir dist/macos
     desc: "Build macOS wheel with uv"
 
+
+  docker-build:
+    deps: [docker-build:linux, docker-build:macos, docker-build:windows]
+    desc: "Build Docker images for all platforms"
+
+  docker-build:linux:
+    cmds:
+      - docker buildx build --platform linux/amd64 -f docker/Dockerfile --target linux -t autoresearch:linux .
+    desc: "Build Linux container image"
+
+  docker-build:macos:
+    cmds:
+      - docker buildx build --platform linux/arm64 -f docker/Dockerfile --target macos -t autoresearch:macos .
+    desc: "Build macOS container image"
+
+  docker-build:windows:
+    cmds:
+      - docker buildx build --platform windows/amd64 -f docker/Dockerfile --target windows -t autoresearch:windows .
+    desc: "Build Windows container image"
