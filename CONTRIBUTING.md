@@ -271,6 +271,11 @@ Good documentation is crucial for the project. Please follow these guidelines:
 - Update or create documentation in the `docs/` directory as needed
 - Use clear, concise language and provide examples where appropriate
 
+### Specification workflow
+- Draft specs for new modules in `docs/specs/` using the template in
+  [docs/specs/README.md](docs/specs/README.md).
+- Capture algorithms, invariants, proofs, and traceability links.
+
 ## Community
 
 - Join the discussion in [GitHub Discussions](https://github.com/ravenoak/autoresearch/discussions)

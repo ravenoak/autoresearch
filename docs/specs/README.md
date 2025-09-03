@@ -54,6 +54,26 @@ documented behaviour.
 - When adding new behaviour or features, create or update a feature file
   and link to it from the relevant spec.
 
+## Spec template
+
+Start new specs with the following structure:
+
+```markdown
+# Module name
+
+## Overview
+Brief summary of responsibilities and interfaces.
+
+## Algorithms
+Explain key algorithms and decision logic.
+
+## Invariants
+List conditions maintained across operations.
+
+## Proofs
+Reasoning or links showing the invariants hold.
+```
+
 ## Extending specs
 
 1. Create a new spec file in this directory named after the module.
