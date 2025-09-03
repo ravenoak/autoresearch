@@ -23,12 +23,23 @@ from autoresearch.config.loader import ConfigLoader, get_config
 from autoresearch.errors import ConfigError
 
 
+CONFIG_FILE_ENV = "AUTORESEARCH_CONFIG_FILE"
+
 REQUIRED_ENV = {
     "SERPER_API_KEY": lambda cfg: "serper" in cfg.search.backends,
     "BRAVE_SEARCH_API_KEY": lambda cfg: "brave" in cfg.search.backends,
     "OPENAI_API_KEY": lambda cfg: "openai" in cfg.llm_backend.lower(),
     "OPENROUTER_API_KEY": lambda cfg: "openrouter" in cfg.llm_backend.lower(),
 }
+
+
+def _ensure_config_file() -> str:
+    """Return path to configuration file, exiting if it does not exist."""
+    path = os.getenv(CONFIG_FILE_ENV, "autoresearch.toml")
+    if not os.path.exists(path):
+        print(f"Configuration file '{path}' not found")
+        sys.exit(1)
+    return path
 
 
 def _check_required_settings() -> list[str]:
@@ -48,6 +59,7 @@ def _check_required_settings() -> list[str]:
 def validate_config() -> None:
     """Load configuration and ensure required settings exist."""
     load_dotenv()
+    _ensure_config_file()
     try:
         _missing = _check_required_settings()
     except ConfigError as exc:
