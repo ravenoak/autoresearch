@@ -65,7 +65,7 @@ tasks:
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
       - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal --extra test{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
-        - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+      - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
