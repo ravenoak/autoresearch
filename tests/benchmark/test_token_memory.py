@@ -12,7 +12,7 @@ sys.modules.setdefault("docx", types.SimpleNamespace(Document=object))
 sys.modules.setdefault("pdfminer", types.SimpleNamespace(high_level=pdf_ns))
 sys.modules.setdefault("pdfminer.high_level", pdf_ns)
 
-from scripts.benchmark_token_memory import run_benchmark
+from scripts.benchmark_token_memory import run_benchmark  # noqa: E402
 
 pytestmark = [pytest.mark.slow]
 
