@@ -7,7 +7,7 @@ behavior and failure modes remain uncertain, limiting confidence in distributed
 execution.
 
 ## Dependencies
-- [simulate-distributed-orchestrator-performance](simulate-distributed-orchestrator-performance.md)
+- [simulate-distributed-orchestrator-performance](../simulate-distributed-orchestrator-performance.md)
 
 ## Acceptance Criteria
 - Provide a mathematical proof or formal argument for the coordination
@@ -18,4 +18,9 @@ execution.
 - Add tests exercising the proof and simulation paths.
 
 ## Status
-Open
+Archived
+
+## References
+- [docs/algorithms/distributed_coordination.md](../../docs/algorithms/distributed_coordination.md)
+- [tests/analysis/test_distributed_coordination.py](../../tests/analysis/test_distributed_coordination.py)
+- [tests/unit/distributed/test_coordination_properties.py](../../tests/unit/distributed/test_coordination_properties.py)
