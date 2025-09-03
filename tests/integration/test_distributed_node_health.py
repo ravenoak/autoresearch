@@ -1,4 +1,3 @@
-import importlib.util
 import sys
 import types
 from pathlib import Path
@@ -6,8 +5,7 @@ from pathlib import Path
 import pytest
 from prometheus_client import CollectorRegistry
 
-if importlib.util.find_spec("redis") is None:
-    pytest.skip("redis not installed", allow_module_level=True)
+pytest.importorskip("redis")
 
 package = types.ModuleType("autoresearch.monitor")
 package.__path__ = [str(Path(__file__).resolve().parents[2] / "src" / "autoresearch" / "monitor")]

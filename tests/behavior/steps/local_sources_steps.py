@@ -5,19 +5,12 @@ from pytest_bdd import scenario, given, when, then, parsers
 from .common_steps import app_running, app_running_with_default, application_running
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
-from pdfminer.high_level import extract_text
-from docx import Document
 import pytest
-import importlib.util
 
-try:
-    _spec = importlib.util.find_spec("git")
-    _git_available = bool(_spec and _spec.origin)
-except Exception:
-    _git_available = False
-
-if not _git_available:
-    pytest.skip("GitPython not installed", allow_module_level=True)
+pdfminer = pytest.importorskip("pdfminer.high_level")
+extract_text = pdfminer.extract_text
+docx = pytest.importorskip("docx")
+Document = docx.Document
 
 
 @given("a directory with text files")

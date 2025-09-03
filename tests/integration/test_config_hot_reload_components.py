@@ -10,15 +10,12 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
-from tests.conftest import GITPYTHON_INSTALLED
-
 git = pytest.importorskip("git", reason="git extra not installed")
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.slow,
     pytest.mark.requires_git,
-    pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
 ]
 
 

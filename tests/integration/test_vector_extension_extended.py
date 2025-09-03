@@ -9,25 +9,12 @@ and error handling in vector search.
 import pytest
 import logging
 from unittest.mock import patch
-import duckdb  # noqa: E402
-from autoresearch.extensions import VSSExtensionLoader  # noqa: E402
 from autoresearch.storage import StorageManager  # noqa: E402
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import StorageError  # noqa: E402
 
-try:
-    _tmp_conn = duckdb.connect(database=":memory:")
-    VSS_AVAILABLE = VSSExtensionLoader.verify_extension(_tmp_conn, verbose=False)
-    _tmp_conn.close()
-except Exception:
-    VSS_AVAILABLE = False
-
-pytestmark = [
-    pytest.mark.slow,
-    pytest.mark.requires_vss,
-    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
-]
+pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 logger = logging.getLogger(__name__)
 

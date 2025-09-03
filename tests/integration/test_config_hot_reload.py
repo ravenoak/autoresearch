@@ -8,8 +8,6 @@ import tomli_w
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
-from tests.conftest import GITPYTHON_INSTALLED
-
 git = pytest.importorskip("git", reason="git extra not installed")
 
 Orchestrator = orch_mod.Orchestrator
@@ -32,7 +30,6 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.slow,
     pytest.mark.requires_git,
-    pytest.mark.skipif(not GITPYTHON_INSTALLED, reason="GitPython not installed"),
 ]
 
 

@@ -9,12 +9,7 @@ from autoresearch.search import Search
 from autoresearch.storage import StorageManager
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from tests.conftest import VSS_AVAILABLE
-
-pytestmark = [
-    pytest.mark.requires_vss,
-    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
-]
+pytestmark = [pytest.mark.requires_vss]
 
 
 @pytest.fixture(autouse=True)

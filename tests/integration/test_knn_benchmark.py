@@ -3,23 +3,10 @@ import time
 import numpy as np
 import pytest
 from autoresearch.storage import StorageManager
-import duckdb
-from autoresearch.extensions import VSSExtensionLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
 
-try:
-    _tmp_conn = duckdb.connect(database=":memory:")
-    VSS_AVAILABLE = VSSExtensionLoader.verify_extension(_tmp_conn, verbose=False)
-    _tmp_conn.close()
-except Exception:
-    VSS_AVAILABLE = False
-
-pytestmark = [
-    pytest.mark.slow,
-    pytest.mark.requires_vss,
-    pytest.mark.skipif(not VSS_AVAILABLE, reason="VSS extension not available"),
-]
+pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
 
 
 def test_knn_latency_benchmark(tmp_path, monkeypatch):

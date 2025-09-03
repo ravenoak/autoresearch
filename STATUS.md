@@ -1,11 +1,9 @@
 # Status
 
-As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and
-syncs optional extras. `task check` passes, but `task verify` continues to fail
-during the coverage phase. The latest run triggered a `KeyError` from the
-`tmp_path` fixture after several minutes, and coverage reports were not
-generated. Dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9)
-remain in place.
+As of **March 1, 2026**, tests for all extras run, but `task verify` still
+fails. `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command`
+returned exit code 130, preventing coverage generation. Dependency pins for
+`fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
 
 The `[llm]` extra now installs CPU-friendly libraries (`fastembed`, `dspy-ai`)
 to avoid CUDA-heavy downloads. `task verify EXTRAS="llm"` succeeds with these
