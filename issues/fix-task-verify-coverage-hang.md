@@ -24,6 +24,12 @@ missing and coverage could not start.
 Invoking `uv run task check` on the same system failed with
 `error: Failed to spawn: 'task'`, confirming the Go Task CLI was absent.
 
+On September 3, 2025, running `task check` produced `error: unexpected argument '-' found`.
+Exporting `.venv/bin` to `PATH` and executing `flake8`, `mypy`,
+`scripts/check_spec_tests.py`, and `pytest -c /dev/null tests/unit/test_version.py
+tests/unit/test_cli_help.py -q` succeeded, indicating the hang stems from the Taskfile layout
+rather than test failures.
+
 ## Dependencies
 - [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
 
