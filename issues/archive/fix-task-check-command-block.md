@@ -13,4 +13,4 @@ None.
 - `task check` runs flake8, mypy, spec tests, and targeted unit tests.
 
 ## Status
-Open
+Archived
