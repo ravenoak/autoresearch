@@ -4,7 +4,8 @@ This guide is the canonical bootstrap reference for Autoresearch. It covers
 the minimal developer workflow and links to helper scripts for specific
 environments.
 
-For test conventions and workflows see [testing guidelines](testing_guidelines.md).
+For test conventions and workflows see
+[testing guidelines](testing_guidelines.md).
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
@@ -29,16 +30,17 @@ Activate the virtual environment in new shells to restore the path:
 source .venv/bin/activate
 ```
 
-The helper downloads Go Task into `.venv/bin` when missing. If you prefer
-manual installation:
+Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. It
+places the `task` binary in `.venv/bin` and adds the directory to `PATH`. If
+the script fails or you want a system-wide binary, install manually:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 # macOS: brew install go-task/tap/go-task
 ```
 
-`task install` checks for Go Task and downloads it to `.venv/bin` when missing.
-Manual instructions are below if the setup script fails.
+`task install` also checks for Go Task and downloads it to `.venv/bin` when
+missing.
 
 ## Version checks and troubleshooting
 
@@ -59,21 +61,15 @@ EXTRAS="ui vss" task check-env  # verify optional extras
 If a tool or package is missing, rerun `task install` or sync extras with
 `uv sync --extra <name>`.
 
-## Setup scripts
+## Setup script
 
-Both setup helpers call `install_dev_test_extras` so the `dev` and `test`
-extras from `pyproject.toml` install identically. Set `AR_EXTRAS` to include
-additional groups.
+`scripts/setup.sh` bootstraps local development. It ensures Go Task is
+available, verifies core test packages such as `pytest`, `pytest-bdd`,
+`freezegun`, and `hypothesis`, and expects system dependencies to be
+preinstalled. Set `AR_EXTRAS` to include additional groups.
 
-- `scripts/setup.sh` bootstraps local development. It verifies core test
-  packages such as `pytest`, `pytest-bdd`, `freezegun`, and `hypothesis` and
-  expects system dependencies to be preinstalled.
-- `scripts/codex_setup.sh` prepares the Codex evaluation container. It installs
-  the same core test packages, provisions OS libraries with `apt`, preloads
-  models for offline tests, and logs its runtime.
-
-Both scripts append `.venv/bin` to `PATH`, run `task --version` to validate
-the CLI, and remind you to activate the environment in new shells with:
+The script appends `.venv/bin` to `PATH`, runs `task --version` to validate
+the CLI, and reminds you to activate the environment in new shells with:
 
 ```bash
 source .venv/bin/activate
