@@ -9,3 +9,7 @@ def test_storage_eviction_sim() -> None:
     assert results["race"] == 0
     assert results["zero_budget"] == 9
     assert results["negative_budget"] == 9
+    assert results["under_budget"] == 9
+    assert results["no_nodes"] == 0
+    assert results["exact_budget"] == 9
+    assert results["burst"] == 0

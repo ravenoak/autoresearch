@@ -23,6 +23,29 @@ Given a budget `B` megabytes and current usage `U`, the algorithm:
 The routine runs in `O(k)` time where `k` is the number of evicted nodes.
 Removal touches only the NetworkX graph; DuckDB and RDF records persist.
 
+## Correctness
+
+Let `B` be the budget and `δ` the safety margin. Denote usage by `U`. When
+`_enforce_ram_budget` runs, it acquires a lock, reads `U₀`, and sets the
+target `T = B(1 - δ)`. If `U₀ \leq B` the function returns. Otherwise each
+iteration removes a node of size `sᵢ > 0` and updates
+`Uᵢ₊₁ = Uᵢ - sᵢ`. The sequence `(Uᵢ)` is strictly decreasing and bounded
+below by `0`, so after at most `⌈(U₀ - T) / s_min⌉` steps we obtain
+`Uₖ \leq T`. Thus the invariant `U \leq B(1 - δ)` holds on exit.
+
+**Concurrency.** Calls are serialized by a global lock. Independent threads
+therefore observe a state satisfying the invariant and leave it intact.
+
+**Boundary cases.**
+
+- **Zero or negative budget:** If `B \leq 0` the function returns immediately.
+- **Usage at or below budget:** When `U₀ \leq B` no nodes are evicted.
+- **Empty graph:** The loop exits with no effect when there are no nodes to
+  remove.
+
+These arguments assume each node consumes at least `s_min > 0` MB, so the
+termination bound above is finite.
+
 ## DuckDB Initialization
 
 Use `initialize_storage()` when the DuckDB path is `:memory:`. In-memory
@@ -34,7 +57,11 @@ evaluated.
 
 Simulation tests [analysis-test]
 and property checks [unit-test]
-exercise access patterns and confirm deterministic eviction.
+exercise access patterns and confirm deterministic eviction. The
+simulation script [sim-script] models concurrent writers, dedicated
+evictors, and edge cases such as zero, negative, exact, or under-budget
+usage.
 
 [analysis-test]: ../../tests/analysis/test_storage_eviction.py
 [unit-test]: ../../tests/unit/test_storage_eviction.py
+[sim-script]: ../../scripts/storage_eviction_sim.py
