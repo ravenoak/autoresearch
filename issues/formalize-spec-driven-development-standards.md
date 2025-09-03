@@ -8,7 +8,6 @@ spec-driven, domain-driven, and test-driven guidelines will align
 implementation and aid verification.
 
 ## Dependencies
-- [add-storage-eviction-proofs-and-simulations](add-storage-eviction-proofs-and-simulations.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
 
 ## Acceptance Criteria

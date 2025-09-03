@@ -8,9 +8,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 ## Dependencies
 - [fix-task-check-command-block](fix-task-check-command-block.md)
 - [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
-- [resolve-llm-extra-installation-failure](archive/resolve-llm-extra-installation-failure.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
-- [add-storage-eviction-proofs-and-simulations](add-storage-eviction-proofs-and-simulations.md)
 - [formalize-spec-driven-development-standards](formalize-spec-driven-development-standards.md)
 
 ## Acceptance Criteria

@@ -10,8 +10,7 @@ discrete sub-issues that refine streaming, configuration and search behavior.
 - 0.2.0 (2026-12-01)
 
 ## Dependencies
-
-- [deliver-bug-fixes-and-docs-update](archive/deliver-bug-fixes-and-docs-update.md)
+None.
 
 ## Acceptance Criteria
 - [streaming-webhook-refinements](archive/streaming-webhook-refinements.md) completed.
