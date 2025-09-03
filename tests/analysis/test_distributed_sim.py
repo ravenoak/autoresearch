@@ -1,6 +1,7 @@
 """Validate message throughput scaling for the distributed simulation."""
 
 from tests.analysis.distributed_sim_analysis import run
+from scripts import distributed_orchestrator_sim
 
 
 def test_message_throughput_scales() -> None:
@@ -9,4 +10,15 @@ def test_message_throughput_scales() -> None:
     throughputs = [metrics[w]["throughput"] for w in (1, 2, 4)]
     assert throughputs[1] > throughputs[0]
     assert throughputs[2] > throughputs[1]
+    assert all(m["memory_mb"] > 0 for m in metrics.values())
+
+
+def test_scheduling_latency_scales() -> None:
+    metrics = {
+        w: distributed_orchestrator_sim.run_simulation(workers=w, tasks=20, network_latency=0.001)
+        for w in (1, 2, 4)
+    }
+    latencies = [metrics[w]["avg_latency_s"] for w in (1, 2, 4)]
+    assert latencies[1] < latencies[0]
+    assert latencies[2] < latencies[0]
     assert all(m["memory_mb"] > 0 for m in metrics.values())

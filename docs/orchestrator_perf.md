@@ -20,3 +20,22 @@ throughput scales with available workers.
 
 Tests validate that higher worker counts increase throughput and that memory
 scales linearly with the number of tasks, guiding tuning decisions.
+
+## Distributed scheduling latency
+
+When tasks incur a network delay \(d\) before execution, the expected
+completion time per task with \(c\) workers each serving at rate \(\mu\) is
+
+$$T = d + \frac{1}{c\mu}.$$
+
+Running `scripts/distributed_orchestrator_sim.py` with 100 tasks and
+\(d = 5\,\text{ms}\) yields:
+
+| workers | avg latency (s) | throughput (tasks/s) |
+| ------- | --------------- | -------------------- |
+| 1       | 0.585           | 78.54                |
+| 2       | 0.364           | 138.67               |
+| 4       | 0.313           | 135.87               |
+
+Latency falls as more workers handle requests while throughput plateaus
+because coordination overhead offsets parallel gains.
