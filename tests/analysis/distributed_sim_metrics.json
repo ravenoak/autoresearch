@@ -1,0 +1,17 @@
+{
+  "1": {
+    "throughput": 155.81923179308106,
+    "cpu_percent": 22.2,
+    "memory_mb": 126.703125
+  },
+  "2": {
+    "throughput": 197.1418029703611,
+    "cpu_percent": 23.0,
+    "memory_mb": 127.078125
+  },
+  "4": {
+    "throughput": 1361.5581060975444,
+    "cpu_percent": 19.8,
+    "memory_mb": 127.078125
+  }
+}
