@@ -3,8 +3,9 @@
 # Codex-only environment bootstrap for this evaluation container; see AGENTS.md
 # for repository-wide guidelines. Do not use or document this script outside the
 # AGENTS.md system. For any other environment, use ./scripts/setup.sh.
-# Installs the project in editable mode with development and test extras. Use
-# AR_EXTRAS to specify optional extras.
+# Installs the project in editable mode with development and test extras. It
+# invokes bootstrap.sh to install Go Task when missing. Use AR_EXTRAS to
+# specify optional extras.
 set -euo pipefail
 
 START_TIME=$(date +%s)
@@ -34,6 +35,9 @@ fi
 
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/setup_common.sh"
+
+# Ensure Go Task is available before platform-specific setup
+"$SCRIPT_DIR/bootstrap.sh"
 
 # Run platform detection and universal setup
 AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup.sh" "$@"
