@@ -18,4 +18,4 @@ None.
 - Link the documentation from `STATUS.md` or setup instructions.
 
 ## Status
-Open
+Archived
