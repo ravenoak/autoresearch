@@ -151,11 +151,20 @@ per task.
 ### Scheduling Benchmark
 
 The micro-benchmark dispatches `N` I/O-bound tasks through `P` worker threads
-and reports throughput and resource usage. Throughput is
+and allocates `m` MB per task to model memory pressure. Throughput is
 
 `T = N / t`
 
-where `t` is the elapsed wall-clock time. CPU time and memory use follow:
+where `t` is the elapsed wall-clock time. Peak memory is approximately
+
+`P m`
+
+because only `P` tasks run concurrently, while the simulation assumes total
+usage of
+
+`M = N m`
+
+for `N` outstanding tasks. CPU time and memory readings follow:
 
 ```py
 cpu = end.ru_utime - start.ru_utime
