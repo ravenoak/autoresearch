@@ -4,6 +4,8 @@ This guide is the canonical bootstrap reference for Autoresearch. It covers
 the minimal developer workflow and links to helper scripts for specific
 environments.
 
+For test conventions and workflows see [testing guidelines](testing_guidelines.md).
+
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
 [**Go Task**](https://taskfile.dev/) for Taskfile commands. Run the following

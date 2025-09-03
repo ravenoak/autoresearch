@@ -4,6 +4,8 @@ This document provides guidelines for writing tests in the Autoresearch project.
 Following these guidelines will ensure consistency, maintainability, and
 reliability of the test suite.
 
+For environment setup instructions see [installation](installation.md).
+
 ## Test Organization
 
 Tests are organized into four categories:
@@ -30,6 +32,16 @@ Two installation strategies support different workflows:
 
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
+
+If the `task` CLI is unavailable, install the test extras before invoking
+`pytest` directly:
+
+```bash
+uv pip install -e ".[test]"
+uv run pytest -q
+```
+
+This ensures required plugins like `pytest-bdd` are installed.
 
 Redis is an optional dependency, but tests that interact with it are marked
 `requires_distributed`. A lightweight `fakeredis` instance starts automatically
