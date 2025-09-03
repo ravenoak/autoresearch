@@ -3,7 +3,7 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **August 28, 2025**.
+Last updated **September 3, 2025**.
 
 ## Status
 
@@ -45,9 +45,13 @@ before running tests.
   - [simulate-distributed-orchestrator-performance](
     issues/simulate-distributed-orchestrator-performance.md)
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
-  and stable interfaces
-  ([reach-stable-performance-and-interfaces](
-  issues/reach-stable-performance-and-interfaces.md)).
+  and stable interfaces.
+  - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
+    - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
+    - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
+      (2027-01-15, depends on containerization)
+    - [tune-system-performance](issues/tune-system-performance.md)
+      (2027-04-01, depends on deployment validation)
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
@@ -140,9 +144,11 @@ Key features planned for this release include:
 
 The 1.0.0 milestone aims for a polished, production-ready system:
 
-- Complete packaging for all platforms with containerization support
-  (CODE_COMPLETE_PLAN lines 168-176; TASK_PROGRESS lines 194-204).
-- Provide deployment scripts and configuration validation
-  (CODE_COMPLETE_PLAN lines 178-186; TASK_PROGRESS lines 206-216).
-- Optimize performance across all components and finalize documentation.
+- [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
+- [validate-deployment-configurations](issues/validate-deployment-configurations.md)
+  (2027-01-15, depends on containerization)
+- [tune-system-performance](issues/tune-system-performance.md)
+  (2027-04-01, depends on deployment validation)
+
+These tasks proceed sequentially: containerization → deployment validation → performance tuning.
 
