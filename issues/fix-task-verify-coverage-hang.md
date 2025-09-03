@@ -13,6 +13,10 @@ On September 2, 2025, another run of `uv run task verify` hung during the
 coverage task. The process produced no further output for several minutes and
 was manually interrupted, leaving coverage reports incomplete.
 
+On September 3, 2025, `task verify` again failed during coverage, raising a
+`KeyError` from the `tmp_path` fixture before any report was generated. The
+command required manual interruption.
+
 ## Dependencies
 - [fix-idempotent-message-processing-deadline](archive/fix-idempotent-message-processing-deadline.md)
 
