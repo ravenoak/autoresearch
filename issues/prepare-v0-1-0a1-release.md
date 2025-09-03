@@ -6,6 +6,7 @@ should work offline, optional extras must install, and core algorithms require
 initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 
 ## Dependencies
+- [fix-task-check-command-block](fix-task-check-command-block.md)
 - [fix-task-verify-coverage-hang](fix-task-verify-coverage-hang.md)
 - [resolve-llm-extra-installation-failure](archive/resolve-llm-extra-installation-failure.md)
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
