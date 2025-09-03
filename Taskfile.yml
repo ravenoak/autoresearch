@@ -40,6 +40,10 @@ tasks:
       Set EXTRAS="gpu" to include optional GPU packages.
       Place matching wheels in wheels/gpu to avoid source builds.
   check-env:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+    env:
+      EXTRAS: "{{.EXTRAS}}"
     cmds:
       - uv run python scripts/check_env.py
       - >
@@ -53,11 +57,14 @@ tasks:
           (echo "redis missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
   check:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     # Minimal validation for quick feedback. Syncs dev-minimal and test extras
     # and exercises version and CLI smoke tests. Skips slow tests and scenarios
     # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
-      - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal --extra test
+      - uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal --extra test{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
+        - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - uv run python scripts/check_spec_tests.py
@@ -196,7 +203,7 @@ tasks:
             --extra llm \
             --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
-      - task check-env
+        - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py

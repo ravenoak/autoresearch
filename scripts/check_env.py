@@ -4,12 +4,14 @@
 Usage:
     uv run python scripts/check_env.py
 
-Versions for optional extras are loaded from ``pyproject.toml``.
+Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
+can be specified via the ``EXTRAS`` environment variable.
 """
 from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import re
 import subprocess
 import sys
@@ -34,7 +36,14 @@ BASE_REQUIREMENTS = {
     "uv": "0.7.0",
 }
 
-EXTRAS_TO_CHECK = ["dev", "test", "ui", "vss"]
+BASE_EXTRAS = ["dev-minimal", "test"]
+
+
+def extras_to_check() -> list[str]:
+    """Return extras from ``EXTRAS`` env var in addition to base extras."""
+
+    env_extras = os.environ.get("EXTRAS", "").split()
+    return sorted(set(BASE_EXTRAS + env_extras))
 
 
 def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
@@ -56,7 +65,7 @@ def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
     return reqs
 
 
-EXTRA_REQUIREMENTS = load_extra_requirements(EXTRAS_TO_CHECK)
+EXTRA_REQUIREMENTS = load_extra_requirements(extras_to_check())
 REQUIREMENTS = {**BASE_REQUIREMENTS, **EXTRA_REQUIREMENTS}
 
 
@@ -156,7 +165,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
 
-    extras = ", ".join(sorted(EXTRAS_TO_CHECK))
+    extras = ", ".join(extras_to_check())
     print(f"Verifying extras: {extras}")
 
     checks = [check_python, check_task, check_uv]
