@@ -149,15 +149,9 @@ tasks:
           uv sync \
             --extra dev-minimal \
             --extra test \
-            --extra nlp \
-            --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra llm \
-            --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
-            {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+            {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
+            {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}}--extra {{.}} \
+            {{end}}{{end}}{{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - uv run coverage erase
       - >
           uv run pytest tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
