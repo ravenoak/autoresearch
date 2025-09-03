@@ -56,10 +56,10 @@ class Orchestrator:
             "agents",
             ["Synthesizer", "Contrarian", "FactChecker"],
         )
-        primus_index = 0 if not hasattr(config, "primus_start") else config.primus_start
-        loops = config.loops if hasattr(config, "loops") else 2
+        primus_index = getattr(config, "primus_start", 0)
+        loops = getattr(config, "loops", 2)
         mode = getattr(config, "reasoning_mode", ReasoningMode.DIALECTICAL)
-        max_errors = config.max_errors if hasattr(config, "max_errors") else 3
+        max_errors = getattr(config, "max_errors", 3)
         cb_threshold = getattr(config, "circuit_breaker_threshold", 3)
         cb_cooldown = getattr(config, "circuit_breaker_cooldown", 30)
         retry_attempts = getattr(config, "retry_attempts", 1)
@@ -67,21 +67,19 @@ class Orchestrator:
         enable_messages = getattr(config, "enable_agent_messages", False)
         coalitions = getattr(config, "coalitions", {})
         for cname, members in coalitions.items():
-            AgentRegistry.create_coalition(cname, members)
+            if AgentRegistry.get_coalition_obj(cname) is None:
+                AgentRegistry.create_coalition(cname, members)
         enable_feedback = getattr(config, "enable_feedback", False)
 
-        agent_groups: List[List[str]] = []
         if mode == ReasoningMode.DIRECT:
             agents = ["Synthesizer"]
             loops = 1
-            agent_groups = [["Synthesizer"]]
+            agent_groups: List[List[str]] = [["Synthesizer"]]
         else:
-            for a in agents:
-                coalition = AgentRegistry.get_coalition_obj(a)
-                if coalition:
-                    agent_groups.append(coalition.members)
-                else:
-                    agent_groups.append([a])
+            agent_groups = [
+                coalition.members if (coalition := AgentRegistry.get_coalition_obj(a)) else [a]
+                for a in agents
+            ]
 
         return {
             "agents": agents,

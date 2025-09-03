@@ -81,6 +81,19 @@ _delegate: type["StorageManager"] | None = None
 # Optional queue for distributed persistence
 _message_queue: Any | None = None
 
+_cached_config: StorageConfig | None = None
+
+
+def _get_config() -> StorageConfig:
+    """Return cached storage configuration."""
+    global _cached_config
+    if _cached_config is None:
+        try:
+            _cached_config = ConfigLoader().config.storage
+        except ConfigError:
+            _cached_config = StorageConfig()
+    return _cached_config
+
 
 def set_message_queue(queue: Any | None) -> None:
     """Configure a message queue for distributed persistence."""
@@ -114,10 +127,7 @@ def setup(
             return
 
         ctx.graph = nx.DiGraph()
-        try:
-            cfg = ConfigLoader().config.storage
-        except ConfigError:
-            cfg = StorageConfig()
+        cfg = _get_config()
 
         # Initialize DuckDB backend with graceful fallback when VSS is missing
         ctx.db_backend = DuckDBStorageBackend()
