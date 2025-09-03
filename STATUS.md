@@ -1,6 +1,6 @@
 # Status
 
-As of **March 1, 2026**, tests for all extras run, but `task verify` still
+As of **September 3, 2025**, tests for all extras run, but `task verify` still
 fails. `tests/unit/test_main_monitor_commands.py::test_serve_a2a_command`
 returned exit code 130, preventing coverage generation. Dependency pins for
 `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain in place.
