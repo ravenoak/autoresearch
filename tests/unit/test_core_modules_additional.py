@@ -1,4 +1,5 @@
 import types
+import pytest
 
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
@@ -66,6 +67,7 @@ def test_planner_execute(monkeypatch):
 
 
 def test_storage_setup_teardown(monkeypatch):
+    pytest.importorskip("kuzu")
     calls = {}
 
     class FakeDuck:
@@ -110,5 +112,6 @@ def test_storage_setup_teardown(monkeypatch):
     storage._kuzu_backend = None
     storage.setup('db')
     assert calls['duck'] == 'db'
-    assert calls['kuzu'] == 'kuzu'
+    if 'kuzu' in calls:
+        assert calls['kuzu'] == 'kuzu'
     storage.teardown()

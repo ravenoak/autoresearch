@@ -188,14 +188,8 @@ tasks:
             --extra dev-minimal \
             --extra dev \
             --extra test \
-            --extra nlp \
-            --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra llm \
-            --extra parsers{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
+            {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
+            {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src tests
