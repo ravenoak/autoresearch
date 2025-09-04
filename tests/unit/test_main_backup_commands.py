@@ -115,6 +115,7 @@ def test_backup_restore_invalid_path(tmp_path):
     assert "Invalid backup path" in result.stdout
 
 
+@pytest.mark.slow
 @patch("autoresearch.cli_backup.BackupManager")
 def test_backup_schedule_command(mock_manager):
     """Test the backup schedule command."""
@@ -144,6 +145,7 @@ def test_backup_schedule_command(mock_manager):
     assert "Scheduled automatic backups" in result.stdout
 
 
+@pytest.mark.slow
 @patch("autoresearch.cli_backup.BackupManager")
 def test_backup_schedule_command_keyboard_interrupt(mock_manager, monkeypatch):
     """Test stopping the backup schedule with Ctrl+C."""
