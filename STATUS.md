@@ -126,12 +126,6 @@ warnings. Coverage data was not produced.
 
 ## Open issues
 - [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
-  - [fix-task-verify-coverage-hang](issues/fix-task-verify-coverage-hang.md)
-  - [fix-check-env-package-metadata-errors](issues/fix-check-env-package-metadata-errors.md)
-  - [add-test-coverage-for-optional-components]
-    (issues/add-test-coverage-for-optional-components.md)
-  - [formalize-spec-driven-development-standards]
-    (issues/formalize-spec-driven-development-standards.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)

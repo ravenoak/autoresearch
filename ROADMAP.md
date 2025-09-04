@@ -75,9 +75,9 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 - [ ] Integration tests stabilized.
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](
-  issues/add-test-coverage-for-optional-components.md);
+  issues/archive/add-test-coverage-for-optional-components.md);
   [fix-task-verify-coverage-hang](
-  issues/fix-task-verify-coverage-hang.md)).
+  issues/archive/fix-task-verify-coverage-hang.md)).
 - [x] Algorithm validation for ranking and coordination
   ([add-ranking-algorithm-proofs-and-simulations](
   issues/add-ranking-algorithm-proofs-and-simulations.md)).
