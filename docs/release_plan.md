@@ -19,8 +19,8 @@ defined in `autoresearch.__version__`. Phase 3
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
 `flake8` and `mypy` pass. Coverage reports **100%** (57/57 lines) for
-targeted modules, but recent runs of `task verify` hang during the coverage
-step, so current values remain unconfirmed. Outstanding gaps are tracked in
+targeted modules. Instrumentation and skipping slow tests resolved earlier
+`task verify` coverage hangs. Outstanding gaps are tracked in
 [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
 are mirrored in [../STATUS.md](../STATUS.md).
 
@@ -31,7 +31,8 @@ are mirrored in [../STATUS.md](../STATUS.md).
 - **0.1.0** (2026-07-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
 - **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update](../issues/archive/deliver-bug-fixes-and-docs-update.md)).
+  ([deliver-bug-fixes-and-docs-update](
+  ../issues/archive/deliver-bug-fixes-and-docs-update.md)).
 - **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
@@ -62,8 +63,8 @@ while packaging tasks are resolved.
   sync the value.
 - [x] Ensure Task CLI available ([restore-task-cli-availability](
   ../issues/archive/restore-task-cli-availability.md)).
-- [ ] Resolve coverage hang ([fix-task-verify-coverage-hang](
-  ../issues/fix-task-verify-coverage-hang.md)).
+- [x] Resolve coverage hang ([fix-task-verify-coverage-hang](
+  ../issues/archive/fix-task-verify-coverage-hang.md)).
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
