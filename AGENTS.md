@@ -9,6 +9,8 @@
 ## Setup
 - Run `task install` to initialize the Python 3.12+ environment and install
   hooks or dependencies.
+- This syncs the `dev-minimal` and `test` extras; set `EXTRAS` to include
+  additional optional dependencies.
 - Use **uv** for package management; prefix standalone Python commands with
   `uv run`.
 - For provisioning issues within this evaluation, `scripts/codex_setup.sh`

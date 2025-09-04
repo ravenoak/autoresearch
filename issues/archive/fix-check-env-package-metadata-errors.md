@@ -17,4 +17,4 @@ None.
 - Document any required extras or fallback behavior in `STATUS.md`.
 
 ## Status
-Open
+Archived

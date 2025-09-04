@@ -1,5 +1,10 @@
 # Status
 
+## September 6, 2025
+
+- `scripts/check_env.py` now warns when package metadata is missing instead of
+  failing, allowing `task check` to proceed in minimal environments.
+
 ## September 5, 2025
 
 - Installing Go Task with the upstream script placed the binary under `.venv/bin`.
