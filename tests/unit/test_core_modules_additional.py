@@ -78,37 +78,27 @@ def test_storage_setup_teardown(monkeypatch):
         def get_connection(self):
             return self.conn
 
-    class FakeKuzu:
-        def __init__(self):
-            self.conn = object()
-
-        def setup(self, path):
-            calls['kuzu'] = path
-
-        def get_connection(self):
-            return self.conn
-
     class FakeGraph:
         def __init__(self, *a, **k):
             pass
 
         def open(self, *a, **k):
             pass
+
     cfg = MagicMock()
-    cfg.storage.use_kuzu = True
-    cfg.storage.kuzu_path = 'kuzu'
-    cfg.storage.rdf_backend = 'memory'
-    cfg.storage.duckdb_path = 'db.duckdb'
-    cfg.storage.vector_extension = False
+    cfg.use_kuzu = False
+    cfg.rdf_backend = 'memory'
+    cfg.duckdb_path = 'db.duckdb'
+    cfg.vector_extension = False
     monkeypatch.setattr(ConfigLoader, 'load_config', lambda self: cfg)
     ConfigLoader()._config = None
     monkeypatch.setattr('autoresearch.storage.DuckDBStorageBackend', lambda: FakeDuck())
-    monkeypatch.setattr('autoresearch.storage.KuzuStorageBackend', lambda: FakeKuzu())
-    monkeypatch.setattr('autoresearch.storage.rdflib', types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph()))
+    monkeypatch.setattr(
+        'autoresearch.storage.rdflib', types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph())
+    )
     from autoresearch import storage
     storage.StorageManager.context.db_backend = None
     storage._kuzu_backend = None
     storage.setup('db')
     assert calls['duck'] == 'db'
-    assert calls['kuzu'] == 'kuzu'
     storage.teardown()
