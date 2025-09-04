@@ -275,15 +275,24 @@ tasks:
 
   docker-build:linux:
     cmds:
-      - docker buildx build --platform linux/amd64 -f docker/Dockerfile.linux -t autoresearch:linux .
+      - |
+          docker buildx build --load --platform linux/amd64 \
+            -f docker/Dockerfile.linux \
+            -t autoresearch:linux .
     desc: "Build Linux container image"
 
   docker-build:macos:
     cmds:
-      - docker buildx build --platform linux/arm64 -f docker/Dockerfile.macos -t autoresearch:macos-arm .
+      - |
+          docker buildx build --load --platform linux/arm64 \
+            -f docker/Dockerfile.macos \
+            -t autoresearch:macos-arm .
     desc: "Build macOS ARM container image"
 
   docker-build:windows:
     cmds:
-      - docker buildx build --platform windows/amd64 -f docker/Dockerfile.windows -t autoresearch:windows .
+      - |
+          docker buildx build --load --platform windows/amd64 \
+            -f docker/Dockerfile.windows \
+            -t autoresearch:windows .
     desc: "Build Windows container image"
