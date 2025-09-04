@@ -1,34 +1,23 @@
 #!/usr/bin/env python3
-"""Simulate scheduling latency and resource consumption for a distributed
-orchestrator.
+"""Simulate distributed scheduling latency using an M/M/c queue model.
 
 Usage:
     uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 100 \\
         --network-latency 0.005 --task-time 0.01
 
-The simulation dispatches tasks to worker processes and records average
-end-to-end latency alongside CPU and memory usage. Each task incurs a
-configurable dispatch delay (``network_latency``) and execution time
-(``task_time``) to model network and compute costs separately.
+The simulation applies queueing theory to estimate average latency and
+throughput for a distributed orchestrator. Each task experiences a network
+dispatch delay (``network_latency``) before reaching one of ``workers``
+identical servers that process tasks in ``task_time`` seconds. The model
+assumes Poisson arrivals and exponential service times as described in
+``docs/orchestrator_perf.md``.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import time
-from concurrent.futures import ProcessPoolExecutor
-from statistics import mean
-
-from autoresearch import resource_monitor as rm
-from autoresearch.resource_monitor import ResourceMonitor
-
-
-def _task(duration: float) -> float:
-    """Sleep for ``duration`` seconds and return completion time."""
-
-    time.sleep(duration)
-    return time.perf_counter()
+import math
 
 
 def run_simulation(
@@ -37,53 +26,41 @@ def run_simulation(
     network_latency: float = 0.005,
     task_time: float = 0.005,
 ) -> dict[str, float]:
-    """Dispatch tasks and measure scheduling latency and resource usage.
+    """Return queue-based latency and throughput estimates.
 
     Args:
         workers: Number of worker processes.
-        tasks: Total tasks to schedule.
-        network_latency: Simulated dispatch latency per task in seconds.
-        task_time: Simulated compute time per task in seconds.
+        tasks: Total tasks to schedule (unused but kept for parity with benchmarks).
+        network_latency: Network dispatch delay per task in seconds.
+        task_time: Service time per task in seconds.
 
     Returns:
-        Dictionary with average latency, throughput, CPU percentage, and memory
-        usage in megabytes.
+        Dictionary with average latency, throughput, and placeholder CPU and
+        memory metrics (always ``0``).
     """
 
-    if workers <= 0 or tasks <= 0 or network_latency < 0 or task_time < 0:
-        raise SystemExit("workers and tasks must be positive; latency and task_time must be >= 0")
+    if workers <= 0 or tasks <= 0 or network_latency <= 0 or task_time <= 0:
+        raise SystemExit("workers, tasks, latency, and task_time must be > 0")
 
-    original_gpu = rm._get_gpu_stats
-    rm._get_gpu_stats = lambda: (0.0, 0.0)
-    monitor = ResourceMonitor(interval=0.05)
-    monitor.start()
-    start = time.perf_counter()
-    try:
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            starts: list[float] = []
-            futures = []
-            for _ in range(tasks):
-                dispatch_start = time.perf_counter()
-                # Model network latency before submitting the task to the worker.
-                time.sleep(network_latency)
-                starts.append(dispatch_start)
-                futures.append(executor.submit(_task, task_time))
-            completions = [f.result() for f in futures]
-    finally:
-        duration = time.perf_counter() - start
-        monitor.stop()
-        rm._get_gpu_stats = original_gpu
+    arrival_rate = 1.0 / network_latency
+    service_rate = 1.0 / task_time
+    rho = arrival_rate / (workers * service_rate)
+    if rho >= 1:
+        raise SystemExit("system is unstable; arrival rate must be < workers * service_rate")
 
-    latencies = [c - s for s, c in zip(starts, completions)]
-    avg_latency = mean(latencies) if latencies else 0.0
-    throughput = tasks / duration if duration > 0 else float("inf")
-    cpu = float(monitor.cpu_gauge._value.get())
-    mem = float(monitor.mem_gauge._value.get())
+    ratio = arrival_rate / service_rate
+    sum_terms = sum((ratio**n) / math.factorial(n) for n in range(workers))
+    last = (ratio**workers) / (math.factorial(workers) * (1 - rho))
+    p0 = 1 / (sum_terms + last)
+    lq = (p0 * (ratio**workers) * rho) / (math.factorial(workers) * (1 - rho) ** 2)
+    wq = lq / arrival_rate
+    avg_latency = network_latency + wq + task_time
+    throughput = arrival_rate
     return {
         "avg_latency_s": avg_latency,
         "throughput": throughput,
-        "cpu_percent": cpu,
-        "memory_mb": mem,
+        "cpu_percent": 0.0,
+        "memory_mb": 0.0,
     }
 
 
