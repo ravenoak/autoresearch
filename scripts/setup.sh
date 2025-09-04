@@ -60,6 +60,9 @@ install_test_extras() {
         mkdir -p "$(dirname "$VSS_EXTENSION")"
         : >"$VSS_EXTENSION"
     fi
+    if [ ! -s "$VSS_EXTENSION" ]; then
+        echo "Using stub VSS extension at $VSS_EXTENSION" >&2
+    fi
     record_vector_extension_path "$VSS_EXTENSION"
 }
 
