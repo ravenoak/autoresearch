@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# macOS (ARM) container image with build extras for Autoresearch
 FROM ghcr.io/cirruslabs/macos-runner:sonoma
 
 WORKDIR /workspace

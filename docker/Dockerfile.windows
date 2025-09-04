@@ -1,4 +1,5 @@
 # escape=`
+# Windows container image with build extras for Autoresearch
 FROM mcr.microsoft.com/windows/python:3.12
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]

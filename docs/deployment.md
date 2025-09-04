@@ -26,17 +26,13 @@ On a dedicated server you can run the API in the background using a process mana
 
 ## Containerized Deployment (Docker)
 
-Autoresearch can also be containerized. Multi-stage Dockerfiles live under
-`docker/` for Linux, macOS, and Windows images:
+Autoresearch can also be containerized. Platform-specific Dockerfiles live
+under `docker/` for Linux, macOS (ARM), and Windows images:
 
-```Dockerfile
-# docker/Dockerfile (excerpt)
-FROM python:3.12-slim AS linux
-WORKDIR /app
-COPY uv.lock pyproject.toml /app/
-RUN pip install --no-cache-dir uv \
-    && uv pip sync uv.lock
-COPY . /app
+```
+docker/Dockerfile.linux
+docker/Dockerfile.macos
+docker/Dockerfile.windows
 ```
 
 Build all images with Go Task:

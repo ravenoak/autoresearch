@@ -16,4 +16,4 @@ None.
 - Document container usage and maintenance workflows.
 
 ## Status
-Open
+Archived
