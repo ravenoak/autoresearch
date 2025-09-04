@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Simulate scheduling latency and resource consumption for a distributed orchestrator.
+"""Simulate scheduling latency and resource consumption for a distributed
+orchestrator.
 
 Usage:
     uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 100 \\
-        --network-latency 0.005
+        --network-latency 0.005 --task-time 0.01
 
 The simulation dispatches tasks to worker processes and records average
-end-to-end latency alongside CPU and memory usage.
+end-to-end latency alongside CPU and memory usage. Each task incurs a
+configurable dispatch delay (``network_latency``) and execution time
+(``task_time``) to model network and compute costs separately.
 """
 
 from __future__ import annotations
@@ -21,28 +24,34 @@ from autoresearch import resource_monitor as rm
 from autoresearch.resource_monitor import ResourceMonitor
 
 
-def _task(latency: float) -> float:
-    """Sleep for ``latency`` seconds and return completion time."""
+def _task(duration: float) -> float:
+    """Sleep for ``duration`` seconds and return completion time."""
 
-    time.sleep(latency)
+    time.sleep(duration)
     return time.perf_counter()
 
 
-def run_simulation(workers: int, tasks: int, network_latency: float = 0.005) -> dict[str, float]:
+def run_simulation(
+    workers: int,
+    tasks: int,
+    network_latency: float = 0.005,
+    task_time: float = 0.005,
+) -> dict[str, float]:
     """Dispatch tasks and measure scheduling latency and resource usage.
 
     Args:
         workers: Number of worker processes.
         tasks: Total tasks to schedule.
         network_latency: Simulated dispatch latency per task in seconds.
+        task_time: Simulated compute time per task in seconds.
 
     Returns:
         Dictionary with average latency, throughput, CPU percentage, and memory
         usage in megabytes.
     """
 
-    if workers <= 0 or tasks <= 0 or network_latency < 0:
-        raise SystemExit("workers and tasks must be positive; latency must be >= 0")
+    if workers <= 0 or tasks <= 0 or network_latency < 0 or task_time < 0:
+        raise SystemExit("workers and tasks must be positive; latency and task_time must be >= 0")
 
     original_gpu = rm._get_gpu_stats
     rm._get_gpu_stats = lambda: (0.0, 0.0)
@@ -54,8 +63,11 @@ def run_simulation(workers: int, tasks: int, network_latency: float = 0.005) -> 
             starts: list[float] = []
             futures = []
             for _ in range(tasks):
-                starts.append(time.perf_counter())
-                futures.append(executor.submit(_task, network_latency))
+                dispatch_start = time.perf_counter()
+                # Model network latency before submitting the task to the worker.
+                time.sleep(network_latency)
+                starts.append(dispatch_start)
+                futures.append(executor.submit(_task, task_time))
             completions = [f.result() for f in futures]
     finally:
         duration = time.perf_counter() - start
@@ -75,10 +87,12 @@ def run_simulation(workers: int, tasks: int, network_latency: float = 0.005) -> 
     }
 
 
-def main(workers: int, tasks: int, network_latency: float) -> dict[str, float]:
+def main(workers: int, tasks: int, network_latency: float, task_time: float) -> dict[str, float]:
     """Run the simulation and print summary metrics."""
 
-    metrics = run_simulation(workers=workers, tasks=tasks, network_latency=network_latency)
+    metrics = run_simulation(
+        workers=workers, tasks=tasks, network_latency=network_latency, task_time=task_time
+    )
     print(
         json.dumps(
             {
@@ -102,5 +116,11 @@ if __name__ == "__main__":
         default=0.005,
         help="simulated dispatch latency per task (s)",
     )
+    parser.add_argument(
+        "--task-time",
+        type=float,
+        default=0.005,
+        help="simulated compute time per task (s)",
+    )
     args = parser.parse_args()
-    main(args.workers, args.tasks, args.network_latency)
+    main(args.workers, args.tasks, args.network_latency, args.task_time)
