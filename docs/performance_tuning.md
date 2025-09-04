@@ -26,3 +26,18 @@ Small optimizations yielded incremental gains:
 
 Re-run these micro-benchmarks after substantial changes using similar workloads
 to ensure performance remains within expected bounds.
+
+## Critical path benchmarks
+
+Run `task benchmark:critical` to exercise orchestration, search, and storage
+simulations.
+
+- `orchestrator_perf_sim`: 2 workers handling 50 tasks reached 1622 tasks/s
+  throughput, ~3% faster than prior runs.
+- `ranking_sim`: combined ranking averaged NDCG 0.977 on synthetic data, up from
+  ~0.970 when using single signals.
+- `storage_concurrency_sim`: 5 threads × 10 items left 0 nodes after eviction,
+  improving from the earlier 2-node residue.
+
+These results guide ongoing tuning of the orchestrator, search, and storage
+components.

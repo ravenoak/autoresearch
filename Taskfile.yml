@@ -230,6 +230,15 @@ tasks:
       - uv run python scripts/bump_version.py {{.CLI_ARGS}}
     desc: "Update project version numbers"
 
+  benchmark:critical:
+    cmds:
+      - |
+        uv run scripts/orchestrator_perf_sim.py --workers 2 --arrival-rate 3 \
+          --service-rate 5 --tasks 50 --mem-per-task 0.5 --benchmark
+      - uv run scripts/ranking_sim.py --docs 50 --queries 10 --noise 0.2
+      - uv run scripts/storage_concurrency_sim.py --threads 5 --items 10
+    desc: "Run orchestrator, search, and storage benchmarks"
+
   check-baselines:
     cmds:
       - uv run python scripts/check_token_regression.py --threshold 5
