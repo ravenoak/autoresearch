@@ -19,4 +19,4 @@ None.
 - Update setup documentation to mention the bootstrap process.
 
 ## Status
-Open
+Archived

@@ -16,17 +16,17 @@ For orchestrator state transitions and API contracts see
 
 Autoresearch requires **Python 3.12+**,
 [uv](https://github.com/astral-sh/uv), and
-[Go Task](https://taskfile.dev/). Run `./scripts/bootstrap.sh` to place
-Go Task in `.venv/bin` when it's missing and ensure the directory is on
-your `PATH`:
+[Go Task](https://taskfile.dev/). Run `./scripts/setup.sh` to download
+Go Task into `.venv/bin` when it's missing. Append the directory to your
+`PATH`:
 
 ```bash
-./scripts/bootstrap.sh
+./scripts/setup.sh
 export PATH="$(pwd)/.venv/bin:$PATH"
 task --version
 ```
 
-Install Go Task manually if the bootstrap script fails:
+Install Go Task manually if the setup script fails:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin

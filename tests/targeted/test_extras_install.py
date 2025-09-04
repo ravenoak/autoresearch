@@ -1,3 +1,7 @@
+import os
+import subprocess
+from pathlib import Path
+
 import duckdb
 import pytest
 
@@ -75,3 +79,11 @@ def test_parsers_extra_imports(tmp_path) -> None:
     docx.Document().save(path)
     doc = docx.Document(path)
     assert len(doc.paragraphs) == 0
+
+
+@pytest.mark.slow
+def test_task_check_runs_after_setup() -> None:
+    project_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["PATH"] = f"{project_root / '.venv' / 'bin'}:{env['PATH']}"
+    subprocess.run(["task", "check", "EXTRAS=dev"], cwd=project_root, env=env, check=True)

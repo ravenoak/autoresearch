@@ -38,8 +38,10 @@ without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.1
 
 Run `scripts/setup.sh` or `task install` before executing tests. These
 commands bootstrap Go Task and install the `dev` and `test` extras so
-plugins like `pytest-bdd` are available. Skipping them often leads to test
-collection failures.
+plugins like `pytest-bdd` are available. The setup script downloads Go Task
+into `.venv/bin`; prepend the directory to `PATH` with
+`export PATH="$(pwd)/.venv/bin:$PATH"` before calling `task`. Skipping the
+initial setup often leads to test collection failures.
 
 Attempting `uv run task verify` previously failed with
 `yaml: line 190: did not find expected '-' indicator` when parsing the
@@ -116,7 +118,6 @@ warnings. Coverage data was not produced.
 
 ## Open issues
 - [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
-  - [ensure-go-task-cli-availability](issues/ensure-go-task-cli-availability.md)
   - [fix-task-verify-coverage-hang](issues/fix-task-verify-coverage-hang.md)
   - [fix-check-env-package-metadata-errors](issues/fix-check-env-package-metadata-errors.md)
   - [add-test-coverage-for-optional-components]

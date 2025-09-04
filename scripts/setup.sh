@@ -10,28 +10,25 @@ source "$SCRIPT_DIR/setup_common.sh"
 
 VENV_BIN="$(pwd)/.venv/bin"
 TASK_BIN="$VENV_BIN/task"
-ensure_venv_bin_on_path "$VENV_BIN"
-export PATH="$VENV_BIN:$PATH"
 
 install_go_task() {
     echo "Installing Go Task into $VENV_BIN..."
     ensure_uv
     uv venv
-    ensure_venv_bin_on_path "$VENV_BIN"
-    if command -v task >/dev/null 2>&1; then
-        ln -sf "$(command -v task)" "$TASK_BIN"
-    else
-        curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
-            echo "Warning: failed to download Go Task; install manually from" \
-                " https://taskfile.dev/installation/ and re-run setup" >&2
-            return
-        }
-    fi
+    mkdir -p "$VENV_BIN"
+    curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$VENV_BIN" || {
+        echo "Warning: failed to download Go Task; install manually from" \
+            " https://taskfile.dev/installation/ and re-run setup" >&2
+        return
+    }
 }
 
 if [ ! -x "$TASK_BIN" ]; then
     install_go_task
 fi
+
+ensure_venv_bin_on_path "$VENV_BIN"
+export PATH="$VENV_BIN:$PATH"
 
 case "$(uname -s)" in
 Linux*)
