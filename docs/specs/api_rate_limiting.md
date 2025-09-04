@@ -1,17 +1,28 @@
 # API Rate Limiting
 
+## Overview
+
 Token bucket limits API requests per client. See [algorithm][alg] for proof and
 convergence details.
 
-[alg]: ../algorithms/api_rate_limiting.md
+## Algorithms
 
-## Acceptance Criteria
+- Implement core behaviors described above.
 
-- Each client makes no more than its configured number of requests per second.
-- Buckets refill at the sustained rate and never exceed capacity.
-- Excess requests receive **429 Too Many Requests**.
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/api/middleware.py][m1]
@@ -20,3 +31,5 @@ convergence details.
 
 [m1]: ../../src/autoresearch/api/middleware.py
 [t1]: ../../tests/unit/test_property_api_rate_limit_bounds.py
+
+[alg]: ../algorithms/api_rate_limiting.md

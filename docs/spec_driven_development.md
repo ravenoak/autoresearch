@@ -4,7 +4,8 @@ This guide outlines how to write and maintain module specifications.
 
 ## Workflow
 
-1. Copy `spec_template.md` into `docs/specs/`.
+1. Copy [`spec_template.md`](spec_template.md), the canonical template, into
+   `docs/specs/`.
 2. Fill every section: overview, algorithms, invariants, proof sketch,
    simulation expectations, and traceability.
 3. Link to implementation modules and tests using relative paths.

@@ -1,19 +1,29 @@
 # Search Module Specification
 
-The search package (`src/autoresearch/search/`) handles retrieving
-information from local files, storage backends and vector indexes. It
-supports keyword, vector and hybrid queries and exposes a CLI entry
-point.
+## Overview
 
-## Key behaviors
+The search package (`src/autoresearch/search/`) handles retrieving information
+from local files, storage backends and vector indexes. It supports keyword,
+vector and hybrid queries and exposes a CLI entry point.
 
-- Execute search queries via the `autoresearch search` CLI.
-- Combine keyword and vector retrieval for hybrid search results.
-- Integrate with the storage subsystem, respecting eviction policies.
-- Query local directories, document formats and Git repositories.
-- Maintain responsive vector search performance.
+## Algorithms
+
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/search/][m1]

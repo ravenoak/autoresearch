@@ -1,16 +1,29 @@
 # Cache Module Specification
 
-The cache module (`src/autoresearch/cache.py`) wraps a TinyDB database
-for storing and retrieving search results keyed by query and backend.
-It exposes a `SearchCache` class and a functional wrapper API.
+## Overview
 
-## Key behaviors
+The cache module (`src/autoresearch/cache.py`) wraps a TinyDB database for
+storing and retrieving search results keyed by query and backend. It exposes a
+`SearchCache` class and a functional wrapper API.
 
-- Store search results for a query and backend pair.
-- Retrieve cached results for subsequent queries.
-- Clear or teardown the cache, optionally removing the database file.
+## Algorithms
+
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/cache.py][m1]
