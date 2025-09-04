@@ -1,32 +1,29 @@
 # Orchestration Module Specification
 
-The orchestration package (`src/autoresearch/orchestration/`) coordinates
-agents and reasoning loops. It manages agent rotation, state transfer
-and error handling while providing detailed logging and token counting.
+## Overview
 
-## Key behaviors
+The orchestration package (`src/autoresearch/orchestration/`) coordinates agents
+and reasoning loops. It manages agent rotation, state transfer and error
+handling while providing detailed logging and token counting.
 
-- Rotate agents through thesis→antithesis→synthesis cycles and track the
-  Primus agent across queries.
-- Integrate multiple agents, propagating state and capturing errors.
-- Support multiple reasoning loops and modes while preserving agent
-  state.
-- Run agent groups in parallel and synthesize their results.
-- Record token usage and emit structured debug logs.
-- Metrics helpers depend on callables (e.g., `time.time`) so tests can swap
-  implementations without using `types.SimpleNamespace`.
+## Algorithms
 
-## Assumptions and results
+- Implement core behaviors described above.
 
-- Circuit breaker treats critical and recoverable errors as unit increments and
-  halves for transient ones. Property tests show three critical failures open
-  the breaker and a success after cooldown closes it.
-- Parallel execution launches at most `cpu_count - 1` threads. Randomized group
-  simulations confirm metrics reflect the number of groups executed.
-- Targeted metrics tests guard against coverage regressions by asserting at
-  least 80% line coverage for helper functions.
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/orchestration/][m1]

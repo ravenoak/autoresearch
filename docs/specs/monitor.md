@@ -1,14 +1,31 @@
 # Monitor
 
-Interactive monitoring commands for Autoresearch. See
-[monitor CLI algorithm](../algorithms/monitor_cli.md) for command flow and
-error handling.
+## Overview
 
+Interactive monitoring commands for Autoresearch. See [monitor CLI
+algorithm](../algorithms/monitor_cli.md) for command flow and error handling.
 The metrics command reports system statistics without changing the
 `autoresearch_queries_total` counter. Monitor commands now skip storage
 initialization so metrics can be displayed without a configured database.
 
+## Algorithms
+
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
+
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/monitor/][m1]

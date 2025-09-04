@@ -1,8 +1,9 @@
 # Specification Template
 
-Use this template to describe a module's behavior and rationale. Each spec
-must include algorithms, invariants, a proof sketch, simulation expectations,
-and traceability to code and tests.
+This document is the canonical template for module specifications. Copy this
+file into `docs/specs/` when defining a new spec. Each specification must
+include algorithms, invariants, a proof sketch, simulation expectations, and
+traceability to code and tests.
 
 ## Overview
 
@@ -20,7 +21,7 @@ Summarize the module's purpose, scope, and key interactions.
 
 ## Proof Sketch
 
-Justify why the algorithms uphold the invariants. Focus on reasoning rather
+Explain why the algorithms uphold the invariants. Focus on reasoning rather
 than formal proofs.
 
 ## Simulation Expectations

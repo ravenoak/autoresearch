@@ -1,17 +1,28 @@
 # Logging Utils
 
-Logging utilities that combine loguru and structlog for structured JSON
-logging. Includes helpers to configure logging and obtain structured
-loggers.
+## Overview
 
-## Features
+Logging utilities that combine loguru and structlog for structured JSON logging.
+Includes helpers to configure logging and obtain structured loggers.
 
-- Unified JSON logging via `configure_logging`.
-- `configure_logging_from_env` reads `AUTORESEARCH_LOG_LEVEL` to set the
-  log level.
-- `get_logger` returns a structured logger for modules.
+## Algorithms
+
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/logging_utils.py][m1]

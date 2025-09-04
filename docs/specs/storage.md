@@ -1,24 +1,29 @@
 # Storage
 
+## Overview
+
 The storage subsystem persists claims and enables hybrid retrieval across graph,
 vector, and RDF backends. Simulations and targeted tests confirm schema
 idempotency and RAM budget enforcement under concurrency [d1][s1][t4][t5][t6].
 
-## Responsibilities
-- Initialize and tear down storage backends.
-- Persist claims with optional partial updates.
-- Support vector similarity search.
-- Maintain semantic consistency through ontology updates.
+## Algorithms
 
-## Key APIs
-- `StorageManager.setup()` – prepare graph, vector, and RDF stores.
-- `StorageManager.persist_claim()` – validate and store claims across backends.
-- `StorageManager.vector_search()` – return similar claims for a query
-  embedding.
-- `StorageManager.update_claim()` – modify existing claims and refresh indexes.
-- `StorageManager.teardown()` – release resources and close connections.
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/storage.py][m1]

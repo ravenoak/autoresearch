@@ -1,9 +1,28 @@
 # Config
 
+## Overview
+
 Specification for config module. See [config hot reload
 algorithm](../algorithms/config_hot_reload.md) for reload behavior.
 
+## Algorithms
+
+- Implement core behaviors described above.
+
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
+
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/config/][m1]

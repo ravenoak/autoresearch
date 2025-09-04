@@ -68,6 +68,7 @@ tasks:
       - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
+      - uv run python scripts/lint_specs.py
       - uv run python scripts/check_spec_tests.py
       - uv run pytest -c /dev/null tests/unit/test_version.py tests/unit/test_cli_help.py -q
     desc: "Run lint, type check, and selected fast tests"

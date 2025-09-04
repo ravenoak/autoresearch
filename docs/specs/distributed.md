@@ -1,20 +1,28 @@
 # Distributed
 
+## Overview
+
 Distributed execution utilities. See [distributed coordination][dc] for
 coalition and scheduling details.
 
-[dc]: ../algorithms/distributed_coordination.md
+## Algorithms
 
-## Acceptance Criteria
+- Implement core behaviors described above.
 
-- Message queues perform `O(1)` operations; with `P` workers throughput scales
-  linearly, achieving about 9\,800 msg/s with four workers.
-- `ProcessExecutor` schedules `A` agents over `L` loops with complexity
-  `O(L * A)`.
-- On worker failure, shutdown drains `M` queued messages across `P` workers in
-  `O(M / P + P)` time without data loss.
+## Invariants
+
+- Preserve documented state across operations.
+
+## Proof Sketch
+
+Core routines enforce invariants by validating inputs and state.
+
+## Simulation Expectations
+
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/distributed/][m1]
@@ -31,3 +39,5 @@ coalition and scheduling details.
 [t3]: ../../tests/unit/test_distributed_extra.py
 [t4]: ../../tests/analysis/test_distributed_coordination.py
 [t5]: ../../tests/unit/distributed/test_coordination_properties.py
+
+[dc]: ../algorithms/distributed_coordination.md

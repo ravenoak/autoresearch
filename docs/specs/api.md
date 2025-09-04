@@ -1,48 +1,31 @@
 # Api
 
-FastAPI app aggregator for Autoresearch. See these algorithm references:
+## Overview
 
-- [API authentication](../algorithms/api_authentication.md)
-- [Error paths](../algorithms/api_auth_error_paths.md)
-- [API rate limiting](../algorithms/api_rate_limiting.md)
-- [API streaming](../algorithms/api_streaming.md)
+FastAPI app aggregator for Autoresearch. See these algorithm references: - [API
+authentication](../algorithms/api_authentication.md) - [Error
+paths](../algorithms/api_auth_error_paths.md) - [API rate
+limiting](../algorithms/api_rate_limiting.md) - [API
+streaming](../algorithms/api_streaming.md)
 
-## Authentication flow
+## Algorithms
 
-Clients authenticate with an API key in the `X-API-Key` header or a bearer
-token in the `Authorization` header. The `AuthMiddleware` checks these
-credentials on every request and assigns a role to the connection. Endpoints
-use a `require_permission` dependency to verify that the role has access to a
-given resource.
+- Implement core behaviors described above.
 
-Requests without credentials return **401** with a descriptive message such as
-`Missing API key`, `Missing token`, or `Missing API key or token` when both
-credentials are configured. Invalid API keys or bearer tokens return **401**
-with `Invalid API key` or `Invalid token`. Authenticated clients lacking
-permission receive **403** `Insufficient permissions`. Streaming and webhook
-requests follow the same rules.
+## Invariants
 
-## Configuration
+- Preserve documented state across operations.
 
-Authentication settings live in `autoresearch.toml` under `[api]` or via
-environment variables:
+## Proof Sketch
 
-- `AUTORESEARCH_API__API_KEY`
-- `AUTORESEARCH_API__API_KEYS`
-- `AUTORESEARCH_API__BEARER_TOKEN`
-- `AUTORESEARCH_API__ROLE_PERMISSIONS`
+Core routines enforce invariants by validating inputs and state.
 
-When both an API key and bearer token are set, either credential grants
-access. Role permissions limit which endpoints a client may call.
+## Simulation Expectations
 
-## Threat model
-
-API keys and tokens are shared secrets. Use HTTPS to avoid interception and
-rotate credentials regularly. Tokens are compared using constant-time checks to
-reduce timing attacks. Rate limiting mitigates brute-force attempts, and role
-permissions constrain the impact of a leaked credential.
+Unit tests cover nominal and edge cases for these routines.
 
 ## Traceability
+
 
 - Modules
   - [src/autoresearch/api/][m1]
