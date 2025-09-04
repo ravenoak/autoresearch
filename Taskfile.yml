@@ -146,6 +146,7 @@ tasks:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
+      - echo "[coverage] syncing dependencies"
       - |
           uv sync \
             --extra dev-minimal \
@@ -153,25 +154,35 @@ tasks:
             {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
             {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}}--extra {{.}} \
             {{end}}{{end}}{{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+      - echo "[coverage] erasing previous data"
       - uv run coverage erase
-      - >
-          uv run pytest -x tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
-      - >
-          uv run pytest -x tests/integration -m 'not slow' --cov=src \
-          --cov-report=term-missing --cov-append
-      - >
-          uv run pytest -x tests/targeted -m 'not slow' --noconftest \
-          --cov=autoresearch.search --cov=autoresearch.storage \
-          --cov=autoresearch.orchestration --cov-report=term-missing \
-          --cov-report=xml --cov-append
-      - >
-          uv run pytest -x tests/behavior -m 'not slow' --cov=src \
-          --cov-report=xml --cov-report=term-missing --cov-append
+      - echo "[coverage] running unit tests"
+      - |
+          uv run pytest -vv --maxfail=1 --durations=10 -x tests/unit -m 'not slow' \
+            --cov=src --cov-report=term-missing --cov-append
+      - echo "[coverage] running integration tests"
+      - |
+          uv run pytest -vv --maxfail=1 --durations=10 -x tests/integration -m 'not slow' \
+            --cov=src --cov-report=term-missing --cov-append
+      - echo "[coverage] running targeted tests"
+      - |
+          uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted -m 'not slow' \
+            --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
+            --cov=autoresearch.orchestration --cov-report=term-missing \
+            --cov-report=xml --cov-append
+      - echo "[coverage] running behavior tests"
+      - |
+          uv run pytest -vv --maxfail=1 --durations=10 -x tests/behavior -m 'not slow' \
+            --cov=src --cov-report=xml --cov-report=term-missing --cov-append
+      - echo "[coverage] generating report"
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
+      - echo "[coverage] checking token regression"
       - uv run python scripts/check_token_regression.py --threshold 5
+      - echo "[coverage] validating docs"
       - task check-coverage-docs
       - |
           if [ -n "$CI" ]; then
+            echo "[coverage] updating coverage docs"
             uv run python scripts/update_coverage_docs.py
           fi
     desc: |

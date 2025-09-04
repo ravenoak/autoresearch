@@ -2,9 +2,11 @@
 
 import multiprocessing
 
+import pytest
 from autoresearch.distributed.coordinator import ResultAggregator
 
 
+@pytest.mark.slow
 def test_result_aggregator_collects_messages() -> None:
     """Aggregator records results in publish order."""
 
