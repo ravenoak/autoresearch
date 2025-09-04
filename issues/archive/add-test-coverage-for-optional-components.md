@@ -24,4 +24,4 @@ None.
 - Line coverage reaches at least 90% when all extras are installed.
 
 ## Status
-Open
+Archived

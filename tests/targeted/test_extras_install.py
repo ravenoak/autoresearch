@@ -8,6 +8,7 @@ import pytest
 
 @pytest.mark.requires_nlp
 def test_nlp_extra_imports() -> None:
+    """Smoke test imports from the nlp extra."""
     spacy = pytest.importorskip("spacy")
     bertopic = pytest.importorskip("bertopic")
     nlp = spacy.blank("en")
@@ -17,6 +18,7 @@ def test_nlp_extra_imports() -> None:
 
 @pytest.mark.requires_ui
 def test_ui_extra_imports() -> None:
+    """Smoke test imports from the ui extra."""
     st = pytest.importorskip("streamlit")
 
     assert hasattr(st, "__version__")
@@ -24,6 +26,7 @@ def test_ui_extra_imports() -> None:
 
 @pytest.mark.requires_vss
 def test_vss_extra_imports() -> None:
+    """Smoke test imports from the vss extra."""
     vss = pytest.importorskip("duckdb_extension_vss")
     con = duckdb.connect()
     try:
@@ -35,6 +38,7 @@ def test_vss_extra_imports() -> None:
 
 @pytest.mark.requires_git
 def test_git_extra_imports(tmp_path) -> None:
+    """Smoke test imports from the git extra."""
     git = pytest.importorskip("git")
 
     repo = git.Repo.init(tmp_path)
@@ -43,6 +47,7 @@ def test_git_extra_imports(tmp_path) -> None:
 
 @pytest.mark.requires_distributed
 def test_distributed_extra_imports() -> None:
+    """Smoke test imports from the distributed extra."""
     ray = pytest.importorskip("ray")
     redis = pytest.importorskip("redis")
     ray.init(num_cpus=1, local_mode=True, ignore_reinit_error=True)
@@ -56,6 +61,7 @@ def test_distributed_extra_imports() -> None:
 
 @pytest.mark.requires_analysis
 def test_analysis_extra_imports() -> None:
+    """Smoke test imports from the analysis extra."""
     pl = pytest.importorskip("polars")
 
     df = pl.DataFrame({"a": [1, 2]})
@@ -64,6 +70,7 @@ def test_analysis_extra_imports() -> None:
 
 @pytest.mark.requires_llm
 def test_llm_extra_imports() -> None:
+    """Smoke test imports from the llm extra."""
     fastembed = pytest.importorskip("fastembed")
     dspy = pytest.importorskip("dspy")
 
@@ -73,6 +80,7 @@ def test_llm_extra_imports() -> None:
 
 @pytest.mark.requires_parsers
 def test_parsers_extra_imports(tmp_path) -> None:
+    """Smoke test imports from the parsers extra."""
     docx = pytest.importorskip("docx")
 
     path = tmp_path / "test.docx"
@@ -83,6 +91,7 @@ def test_parsers_extra_imports(tmp_path) -> None:
 
 @pytest.mark.slow
 def test_task_check_runs_after_setup() -> None:
+    """Ensure task check runs from a fresh setup."""
     project_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
     env["PATH"] = f"{project_root / '.venv' / 'bin'}:{env['PATH']}"
