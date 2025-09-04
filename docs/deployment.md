@@ -125,14 +125,16 @@ Confirm required settings before starting services.
   `production`.
 - Set `CONFIG_DIR` to the directory containing deployment files.
 - Ensure `deploy.yml` and `.env` exist in `CONFIG_DIR`.
+- Include required entries such as `version` in `deploy.yml` and `KEY` in
+  `.env`.
 - Run the validation script:
 
 ```bash
 DEPLOY_ENV=production CONFIG_DIR=config uv run scripts/validate_deploy.py
 ```
 
-If any variable or file is missing, the script exits with a non-zero status
-and lists the missing items.
+If any variable, file, or key is missing, the script exits with a non-zero
+status and lists the missing items.
 
 ## Deployment Checks
 

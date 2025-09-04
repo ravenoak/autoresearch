@@ -13,6 +13,8 @@ Reliable deployment requires validated scripts and configuration checks to preve
 - Deliver deployment scripts with automated configuration validation.
 - Test scripts across supported environments.
 - Document deployment procedures and configuration options.
+- Include [scripts/validate_deploy.py](../scripts/validate_deploy.py) for
+  preflight checks.
 
 ## Status
 Open
