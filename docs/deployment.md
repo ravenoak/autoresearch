@@ -117,6 +117,23 @@ the executor's `shutdown()` method or a graceful termination signal to stop the
 coordinator. Queues are drained and closed automatically so no messages are
 lost during shutdown.
 
+## Configuration Validation
+
+Confirm required settings before starting services.
+
+- Set `DEPLOY_ENV` to the target environment such as `staging` or
+  `production`.
+- Set `CONFIG_DIR` to the directory containing deployment files.
+- Ensure `deploy.yml` and `.env` exist in `CONFIG_DIR`.
+- Run the validation script:
+
+```bash
+DEPLOY_ENV=production CONFIG_DIR=config uv run scripts/validate_deploy.py
+```
+
+If any variable or file is missing, the script exits with a non-zero status
+and lists the missing items.
+
 ## Deployment Checks
 
 After starting the service, run the deployment script to validate configuration

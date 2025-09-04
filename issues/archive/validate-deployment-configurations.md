@@ -15,4 +15,4 @@ Reliable deployment requires validated scripts and configuration checks to preve
 - Document deployment procedures and configuration options.
 
 ## Status
-Open
+Archived
