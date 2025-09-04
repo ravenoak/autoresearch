@@ -21,13 +21,14 @@ if it's enabled in the configuration.
 
 from __future__ import annotations
 
+import importlib
 import os
 import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from threading import RLock
-from typing import Any, ClassVar, Iterator, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, cast
 
 import networkx as nx
 import rdflib
@@ -37,7 +38,18 @@ from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
-from .storage_backends import DuckDBStorageBackend, KuzuStorageBackend
+from .storage_backends import DuckDBStorageBackend
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .storage_backends import KuzuStorageBackend
+
+try:  # pragma: no cover - optional dependency
+    KuzuBackend = getattr(
+        importlib.import_module("autoresearch.storage_backends"),
+        "KuzuStorageBackend",
+    )
+except Exception:  # noqa: BLE001
+    KuzuBackend = None
 
 # Use "Any" for DuckDB connections due to incomplete upstream type hints.
 DuckDBConnection = Any
@@ -73,7 +85,7 @@ class StorageState:
 
 
 _default_state = StorageState()
-_kuzu_backend: Optional[KuzuStorageBackend] = None
+_kuzu_backend: KuzuStorageBackend | None = None
 log = get_logger(__name__)
 
 # Optional injection point for tests
@@ -140,9 +152,13 @@ def setup(
             ctx.db_backend.setup(db_path)
 
         # Initialize Kuzu backend when enabled
-        if cfg.use_kuzu:
-            _kuzu_backend = KuzuStorageBackend()
-            _kuzu_backend.setup(cfg.kuzu_path)
+        if getattr(cfg, "use_kuzu", False):
+            if KuzuBackend is None:
+                log.warning("Kuzu backend requested but not available")
+            else:
+                _kuzu_backend = KuzuBackend()
+                kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
+                _kuzu_backend.setup(kuzu_path)
 
         # Initialize RDF store
         if cfg.rdf_backend == "memory":

@@ -1,12 +1,12 @@
 import types
+from unittest.mock import MagicMock
 
+from autoresearch.agents.specialized.planner import PlannerAgent
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.reasoning import ReasoningMode
-from autoresearch.config.loader import ConfigLoader
-from unittest.mock import MagicMock
-from autoresearch.search import Search
-from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.orchestration.state import QueryState
+from autoresearch.search import Search
 
 
 def test_orchestrator_parse_config_basic():
@@ -73,7 +73,7 @@ def test_storage_setup_teardown(monkeypatch):
             self.conn = object()
 
         def setup(self, path):
-            calls['duck'] = path
+            calls["duck"] = path
 
         def get_connection(self):
             return self.conn
@@ -87,18 +87,65 @@ def test_storage_setup_teardown(monkeypatch):
 
     cfg = MagicMock()
     cfg.use_kuzu = False
-    cfg.rdf_backend = 'memory'
-    cfg.duckdb_path = 'db.duckdb'
+    cfg.rdf_backend = "memory"
+    cfg.duckdb_path = "db.duckdb"
     cfg.vector_extension = False
-    monkeypatch.setattr(ConfigLoader, 'load_config', lambda self: cfg)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
-    monkeypatch.setattr('autoresearch.storage.DuckDBStorageBackend', lambda: FakeDuck())
+    monkeypatch.setattr("autoresearch.storage.DuckDBStorageBackend", lambda: FakeDuck())
     monkeypatch.setattr(
-        'autoresearch.storage.rdflib', types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph())
+        "autoresearch.storage.rdflib", types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph())
     )
     from autoresearch import storage
+
     storage.StorageManager.context.db_backend = None
     storage._kuzu_backend = None
-    storage.setup('db')
-    assert calls['duck'] == 'db'
+    storage.setup("db")
+    assert calls["duck"] == "db"
+    storage.teardown()
+
+
+def test_storage_setup_without_kuzu(monkeypatch):
+    calls = {}
+
+    class FakeDuck:
+        def __init__(self):
+            self.conn = object()
+
+        def setup(self, path):  # noqa: D401 - trivial
+            calls["duck"] = path
+
+        def get_connection(self):  # noqa: D401 - trivial
+            return self.conn
+
+    class FakeGraph:
+        def __init__(self, *a, **k):  # noqa: D401 - test stub
+            pass
+
+        def open(self, *a, **k):  # noqa: D401 - test stub
+            pass
+
+    cfg_storage = types.SimpleNamespace(
+        use_kuzu=False,
+        rdf_backend="memory",
+        duckdb_path="db.duckdb",
+        vector_extension=False,
+    )
+    cfg_model = types.SimpleNamespace(storage=cfg_storage)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg_model)
+    ConfigLoader()._config = None
+    monkeypatch.setattr("autoresearch.storage.DuckDBStorageBackend", lambda: FakeDuck())
+    monkeypatch.setattr(
+        "autoresearch.storage.rdflib", types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph())
+    )
+    monkeypatch.setattr(
+        "autoresearch.storage.KuzuBackend",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("Kuzu backend used")),
+    )
+    from autoresearch import storage
+
+    storage.StorageManager.context.db_backend = None
+    storage._kuzu_backend = None
+    storage.setup("db")
+    assert calls["duck"] == "db"
     storage.teardown()
