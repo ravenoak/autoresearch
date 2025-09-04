@@ -151,3 +151,19 @@ def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch, tmp_path):
     )
     assert completed.returncode == 0
     assert "fail" not in completed.stdout
+
+
+def test_load_offline_env_sets_vector_extension_path(monkeypatch, tmp_path, caplog):
+    """Documentation example for VECTOR_EXTENSION_PATH is honored."""
+    env_file = tmp_path / ".env.offline"
+    stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"
+    stub_path.parent.mkdir(parents=True, exist_ok=True)
+    stub_path.write_text("stub")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
+
+    monkeypatch.chdir(tmp_path)
+    caplog.set_level(logging.INFO)
+    vars_loaded = dde.load_offline_env()
+    assert vars_loaded["VECTOR_EXTENSION_PATH"] == str(stub_path)
+    assert os.environ["VECTOR_EXTENSION_PATH"] == str(stub_path)
+    assert "Loaded offline configuration" in caplog.text
