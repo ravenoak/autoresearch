@@ -34,6 +34,19 @@ On September 5, 2025, running `task verify` after installing all extras produced
 for several minutes during coverage.
 The process was interrupted manually, exiting with status 2.
 
+## Findings
+- Coverage stalled without clear progress indicators.
+- Hypothesis deadlines in
+  `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+  caused intermittent timeouts.
+
+## Resolution
+- The `coverage` task now logs each phase and verifies completion via
+  `scripts/verify_coverage_log.py`.
+- The Hypothesis deadline is disabled in the idempotent message processing test
+  to prevent spurious `DeadlineExceeded` errors.
+- Coverage runs with all extras now complete and generate reports.
+
 ## Dependencies
 None.
 
@@ -44,4 +57,4 @@ None.
 - Document any new requirements or limitations in `STATUS.md`.
 
 ## Status
-Open
+Archived

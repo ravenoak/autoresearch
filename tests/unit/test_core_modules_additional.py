@@ -96,6 +96,7 @@ def test_storage_setup_teardown(monkeypatch):
             pass
     cfg = MagicMock()
     cfg.storage.use_kuzu = True
+    cfg.use_kuzu = True
     cfg.storage.kuzu_path = 'kuzu'
     cfg.storage.rdf_backend = 'memory'
     cfg.storage.duckdb_path = 'db.duckdb'

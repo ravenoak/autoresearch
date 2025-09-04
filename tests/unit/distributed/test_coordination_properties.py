@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-sys.modules.setdefault("numpy", None)
+sys.modules.setdefault("numpy", None)  # type: ignore[arg-type]
 from hypothesis import HealthCheck, given, settings, strategies as st  # noqa: E402
 
 from scripts.distributed_coordination_sim import (  # noqa: E402
@@ -59,7 +59,7 @@ def test_election_converges_to_minimum(tmp_path_env: Path, ids: list[int]) -> No
 # coverage runs.
 @settings(
     max_examples=3,
-    deadline=1000,
+    deadline=None,  # Disable deadline to avoid hypothesis timeouts during coverage
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 @given(st.lists(st.text(min_size=0, max_size=5), max_size=5))

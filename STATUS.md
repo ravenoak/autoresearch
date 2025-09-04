@@ -1,5 +1,14 @@
 # Status
 
+## September 4, 2025
+
+- Coverage hangs were traced to missing progress visibility and Hypothesis
+  deadlines. The `coverage` task now logs each phase and verifies completion
+  with `scripts/verify_coverage_log.py`. The deadline in
+  `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+  was removed to prevent `DeadlineExceeded` errors. Full runs with all extras
+  complete and generate reports.
+
 ## September 5, 2025
 
 - Installing Go Task with the upstream script placed the binary under `.venv/bin`.

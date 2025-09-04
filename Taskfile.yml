@@ -144,29 +144,40 @@ tasks:
   coverage:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
+      COVERAGE_LOG: "coverage-progress.log"
     cmds:
+      - rm -f {{.COVERAGE_LOG}}
       - |
+          echo "sync extras" | tee -a {{.COVERAGE_LOG}}
           uv sync \
             --extra dev-minimal \
             --extra test \
             {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
             {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}}--extra {{.}} \
             {{end}}{{end}}{{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+      - echo "coverage erase" | tee -a {{.COVERAGE_LOG}}
       - uv run coverage erase
+      - echo "unit tests" | tee -a {{.COVERAGE_LOG}}
       - >
           uv run pytest -x tests/unit -m 'not slow' --cov=src --cov-report=term-missing --cov-append
+      - echo "integration tests" | tee -a {{.COVERAGE_LOG}}
       - >
           uv run pytest -x tests/integration -m 'not slow' --cov=src \
           --cov-report=term-missing --cov-append
+      - echo "targeted tests" | tee -a {{.COVERAGE_LOG}}
       - >
           uv run pytest -x tests/targeted -m 'not slow' --noconftest \
           --cov=autoresearch.search --cov=autoresearch.storage \
           --cov=autoresearch.orchestration --cov-report=term-missing \
           --cov-report=xml --cov-append
+      - echo "behavior tests" | tee -a {{.COVERAGE_LOG}}
       - >
           uv run pytest -x tests/behavior -m 'not slow' --cov=src \
           --cov-report=xml --cov-report=term-missing --cov-append
+      - echo "coverage report" | tee -a {{.COVERAGE_LOG}}
       - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
+      - echo "DONE" | tee -a {{.COVERAGE_LOG}}
+      - uv run python scripts/verify_coverage_log.py {{.COVERAGE_LOG}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
       - |
