@@ -9,20 +9,19 @@ For test conventions and workflows see
 
 Autoresearch requires **Python 3.12 or newer**,
 [**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Run the following
-one-step bootstrap to install them along with all extras needed for unit,
-integration, and behavior tests:
+[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
+with your package manager or `scripts/bootstrap.sh`. Then verify the setup and
+sync minimal dependencies:
 
 ```bash
 ./scripts/setup.sh
+export PATH="$(pwd)/.venv/bin:$PATH"
+task check
 ```
 
-After bootstrapping, `.venv/bin` is added to `PATH` and `task --version`
-should report the installed CLI:
-
-```bash
-task --version
-```
+The script checks the Python version, confirms Go Task is available, and syncs
+the `dev-minimal` and `test` extras. It exits with an error if Go Task is
+missing or the dependency sync fails.
 
 Activate the virtual environment in new shells to restore the path:
 
@@ -31,8 +30,8 @@ source .venv/bin/activate
 ```
 
 Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. It
-places the `task` binary in `.venv/bin` and adds the directory to `PATH`. If
-the script fails or you want a system-wide binary, install manually:
+places the `task` binary in `.venv/bin` and requires adding that directory to
+`PATH`. If the script fails or you want a system-wide binary, install manually:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
@@ -63,15 +62,15 @@ If a tool or package is missing, rerun `task install` or sync extras with
 
 ## Setup script
 
-`scripts/setup.sh` bootstraps local development. It ensures Go Task is
-available, verifies core test packages such as `pytest`, `pytest-bdd`,
-`freezegun`, and `hypothesis`, and expects system dependencies to be
-preinstalled. Set `AR_EXTRAS` to include additional groups.
+`scripts/setup.sh` bootstraps local development. It verifies Python 3.12+,
+checks for Go Task, ensures `uv` is installed, and syncs the `dev-minimal` and
+`test` extras. Set `AR_EXTRAS` to include additional groups.
 
-The script appends `.venv/bin` to `PATH`, runs `task --version` to validate
-the CLI, and reminds you to activate the environment in new shells with:
+The script does not modify `PATH`; add `.venv/bin` manually and activate the
+environment in new shells:
 
 ```bash
+export PATH="$(pwd)/.venv/bin:$PATH"
 source .venv/bin/activate
 ```
 
@@ -125,13 +124,11 @@ AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 `task verify` always includes the `parsers` extra, so no additional flags are
 required for PDF or DOCX tests.
 
-Use `./scripts/setup.sh` for the full developer bootstrap. It installs Go Task
-into `.venv/bin` when missing, syncs the `dev` and `test` extras (including
-packages such as `pytest_httpx`, `tomli_w`, `pytest-bdd`, and `redis`), and
-exits if `task --version` fails.
+Use `./scripts/setup.sh` for the full developer bootstrap. It syncs the `dev`
+and `test` extras (including packages such as `pytest_httpx`, `tomli_w`,
+`pytest-bdd`, and `redis`) and verifies Go Task is installed.
 
-The setup script verifies Go Task with `task --version`. You can manually
-confirm the CLI and development packages are available:
+You can manually confirm the CLI and development packages are available:
 
 ```bash
 task --version
