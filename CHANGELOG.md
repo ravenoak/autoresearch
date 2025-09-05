@@ -20,11 +20,12 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Document virtual environment best practices in the developer guide.
  - Synchronize release documentation across project files.
     [update-release-documentation]
- - Fix BM25 search scoring method signature.
- - Correct search backend registration and reset logic.
- - Pin Python version and expand setup checks to prevent environment drift.
+- Fix BM25 search scoring method signature.
+- Correct search backend registration and reset logic.
+- Pin Python version and expand setup checks to prevent environment drift.
     [align-environment-with-requirements]
- - Enable Pydantic plugin for static type analysis.
+- Enable Pydantic plugin for static type analysis.
+- Harden storage against concurrency and initialization edge cases.
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 - Drafted preliminary release notes and validated README installation steps.

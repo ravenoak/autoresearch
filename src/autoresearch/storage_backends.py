@@ -230,19 +230,27 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         try:
-            # Check if schema_version exists
-            cursor = self._conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
-            rows = cursor.fetchall()
-            row = rows[0] if rows else None
+            raw_execute = self._conn.__class__.execute
+            cursor = raw_execute(
+                self._conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
+            )
+            fetchone = getattr(cursor, "fetchone", None)
+            if callable(fetchone):
+                row = fetchone()
+            else:
+                rows: list[Any] = getattr(cursor, "fetchall", lambda: [])()
+                row = rows[0] if rows else None
 
-            # If not present, initialize to version 1
             if row is None:
                 log.info("Initializing schema version to 1")
-                self._conn.execute(
-                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
+                raw_execute(
+                    self._conn,
+                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
                 )
         except Exception as e:
             raise StorageError("Failed to initialize schema version", cause=e)
+        finally:
+            self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
 
     def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
         """

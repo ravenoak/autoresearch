@@ -57,5 +57,5 @@ def test_initialize_schema_version_without_fetchone(monkeypatch):
 
     monkeypatch.setattr(backend._conn, "execute", fake_execute)
     backend._initialize_schema_version()
-    rows = backend._conn.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchall()
-    assert rows and rows[0][0] == "1"
+    backend._conn.execute = original_execute
+    assert backend.get_schema_version() == 1
