@@ -14,19 +14,21 @@ For orchestrator state transitions and API contracts see
 
 ## Prerequisites
 
-Autoresearch requires **Python 3.12+**,
-[uv](https://github.com/astral-sh/uv), and
-[Go Task](https://taskfile.dev/). Run `./scripts/setup.sh` to download
-Go Task into `.venv/bin` when it's missing. Append the directory to your
-`PATH`:
+Autoresearch requires **Python 3.12+**, [uv](https://github.com/astral-sh/uv),
+and [Go Task](https://taskfile.dev/). Install Go Task via your package manager
+or the upstream script. The minimal bootstrap is:
 
 ```bash
 ./scripts/setup.sh
 export PATH="$(pwd)/.venv/bin:$PATH"
-task --version
+task check
 ```
 
-Install Go Task manually if the setup script fails:
+`scripts/setup.sh` verifies the Python version, ensures `uv` is available, and
+syncs the `dev-minimal` and `test` extras. It exits with an error if Go Task is
+missing or the dependency sync fails.
+
+Install Go Task manually if it is not on `PATH`:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
