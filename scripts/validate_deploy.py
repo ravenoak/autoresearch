@@ -64,6 +64,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 1
     config_dir = Path(os.environ["CONFIG_DIR"])
+    if not config_dir.is_dir():
+        print(f"CONFIG_DIR not found: {config_dir}", file=sys.stderr)
+        return 1
+
     missing_files = _missing_files(config_dir)
     if missing_files:
         missing = ", ".join(str(p) for p in missing_files)
