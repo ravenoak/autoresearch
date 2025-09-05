@@ -70,6 +70,33 @@ Launch with:
 docker compose up --build
 ```
 
+### Building and pushing images
+
+Use Docker Buildx to build and push per-platform images from the top-level
+Dockerfile:
+
+```bash
+# Linux (x86_64)
+docker buildx build --platform linux/amd64 \
+  -t youruser/autoresearch:linux --push .
+
+# macOS (ARM64)
+docker buildx build --platform linux/arm64 \
+  -t youruser/autoresearch:macos --push .
+
+# Windows
+docker buildx build --platform windows/amd64 \
+  --build-arg BASE_IMAGE=python:3.12-windowsservercore \
+  -t youruser/autoresearch:windows --push .
+```
+
+Test an image locally before pushing:
+
+```bash
+docker buildx build --platform linux/amd64 -t autoresearch:test --load .
+docker run --rm -p 8000:8000 autoresearch:test
+```
+
 ## Building Wheels for Distribution
 
 Platform-specific wheels can be generated using Go Task:

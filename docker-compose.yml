@@ -1,7 +1,11 @@
 version: '3.8'
 services:
   autoresearch:
-    build: .
+    build:
+      context: .
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-python:3.12-slim}
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     ports:
       - "8000:8000"
     env_file:
