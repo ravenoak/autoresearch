@@ -12,6 +12,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [add-test-coverage-for-optional-components](archive/add-test-coverage-for-optional-components.md)
 - [formalize-spec-driven-development-standards]
   (archive/formalize-spec-driven-development-standards.md)
+- [fix-streaming-webhook-test-style](fix-streaming-webhook-test-style.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
