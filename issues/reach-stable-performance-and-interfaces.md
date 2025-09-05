@@ -12,7 +12,7 @@ stable interfaces and tuned performance.
 
 - [containerize-and-package](containerize-and-package.md)
 - [validate-deployment-configurations](validate-deployment-configurations.md)
-- [tune-system-performance](tune-system-performance.md)
+- [tune-system-performance](archive/tune-system-performance.md) completed.
 
 ## Acceptance Criteria
 - Containerization and packaging succeed across Windows, macOS and Linux.
