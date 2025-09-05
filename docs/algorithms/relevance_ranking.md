@@ -5,7 +5,9 @@ Autoresearch orders search results by a weighted score
 \(b\), \(m\), and \(c\) are BM25, semantic similarity, and source
 credibility scores. The non‑negative weights satisfy \(w_b + w_s + w_c = 1\).
 
-## Proof of score bounds
+## Correctness
+
+### Score bounds
 
 Each component score lies in :math:`[0, 1]` and the weights form a convex
 combination. Therefore the final score :math:`s(d)` also lies in
@@ -16,13 +18,13 @@ the list sorted by \(s\). Because the scores are fixed, applying \(T\)
 again leaves the order unchanged: \(T(T(R)) = T(R)\). Thus repeated ranking
 converges in one step to a fixed point.
 
-## Convergence rate
+### Convergence rate
 
 Idempotence implies zero inversions after the first pass. Any initial order
 has at most \(n(n-1)/2\) inversions for \(n\) results. After sorting once,
 all inversions vanish, giving geometric decay with ratio \(0\).
 
-## Monotonic improvement
+### Monotonic improvement
 
 Let :math:`R_t` be the ranking after :math:`t` iterations and let
 :math:`I(R_t)` count inversions relative to the final order
@@ -32,6 +34,11 @@ Let :math:`R_t` be the ranking after :math:`t` iterations and let
 Since :math:`I(R_1) = 0`, the sequence :math:`I(R_t)` decreases monotonically
 to zero. This derivation uses the inversion count formula
 :math:`I(R) = |\{(i, j) : i < j, R_i \succ R_j\}|`.
+
+## Complexity
+
+Sorting `n` results by score uses `O(n log n)` time and `O(1)` extra space
+when performed in place.
 
 ## Simulation
 
