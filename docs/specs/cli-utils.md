@@ -14,7 +14,7 @@ CLI utilities for consistent formatting and accessibility.
 - Output formatting preserves ANSI codes and width constraints.
 - Help text lists commands in alphabetical order.
 
-## Proof Steps
+## Proof Sketch
 
 1. Parse an empty argument list and record resolved defaults.
 2. Override options to confirm user input supersedes defaults.

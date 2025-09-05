@@ -18,6 +18,12 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 - Heartbeats occur at least once per connection.
 - The ``END`` sentinel terminates the stream.
 
+## Proof Sketch
+
+1. Stream three deterministic messages and verify they arrive in order.
+2. Confirm a heartbeat line appears within fifteen seconds of each chunk.
+3. Close the stream and check that the final chunk equals ``END``.
+
 ## Proof Steps
 
 1. Produce a finite chunk list.

@@ -13,10 +13,21 @@ The weights \(w_b\), \(w_s\), and \(w_c\) are non-negative and must sum to
 1.0. `semantic_similarity_weight` applies to the average of the embedding and
 DuckDB scores.
 
-## Properties
+## Correctness
 
-- Increasing any component score strictly increases the final relevance score.
-- Adjusting the weights shifts the ranking to emphasize different signals.
+The final score is a convex combination of component scores, each bounded by
+\([0, 1]\). For any document \(d\), the partial derivative with respect to a
+component, e.g. \(b(d)\), equals its weight \(w_b \ge 0\). Therefore increasing
+any component score strictly increases \(s(d)\). The ordering is thus
+monotonic with respect to each signal, and weight normalization preserves the
+total order across reruns.
+
+## Complexity
+
+Let \(n\) be the number of documents and \(k\) the number of component scores
+available. Computing each score is \(O(k n)\). The final combination is a
+linear pass over the scores, giving an overall complexity of \(O(k n)\) per
+query.
 
 ## References
 
