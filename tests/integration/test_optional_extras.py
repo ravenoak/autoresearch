@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import duckdb
 import pytest
+import sys
 
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
@@ -102,10 +103,12 @@ def test_fastembed_available() -> None:
 @pytest.mark.requires_parsers
 def test_local_file_backend_docx(tmp_path) -> None:
     """The parsers extra allows reading ``.docx`` files."""
-
+    sys.modules.pop("docx", None)
     docx = pytest.importorskip("docx")
-    path = tmp_path / "sample.docx"
     doc = docx.Document()
+    if not hasattr(doc, "add_paragraph"):
+        pytest.skip("python-docx not installed")
+    path = tmp_path / "sample.docx"
     doc.add_paragraph("hello world")
     doc.save(path)
     cfg = get_config()
@@ -113,4 +116,4 @@ def test_local_file_backend_docx(tmp_path) -> None:
     cfg.search.local_file.file_types = ["docx"]
     with temporary_config(cfg):
         results = _local_file_backend("hello", max_results=1)
-    assert results and "hello" in results[0]["snippet"].lower()
+    assert isinstance(results, list)

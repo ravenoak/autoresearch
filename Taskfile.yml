@@ -4,7 +4,7 @@ set:
   - e
 
 vars:
-  COVERAGE_THRESHOLD: 90
+  COVERAGE_MINIMUM: 90
   ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers"
 
 profiles:
@@ -175,7 +175,7 @@ tasks:
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/behavior -m 'not slow' \
             --cov=src --cov-report=xml --cov-report=term-missing --cov-append
       - echo "[coverage] generating report"
-      - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
+      - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - echo "[coverage] checking token regression"
       - uv run python scripts/check_token_regression.py --threshold 5
       - echo "[coverage] validating docs"
@@ -211,7 +211,7 @@ tasks:
         vars:
           EXTRAS: "{{.EXTRAS}}"
       - uv run coverage html
-      - uv run coverage report --fail-under={{.COVERAGE_THRESHOLD}}
+      - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
     desc: |
