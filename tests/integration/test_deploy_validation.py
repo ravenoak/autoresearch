@@ -122,3 +122,25 @@ def test_validate_deploy_missing_file(tmp_path: Path) -> None:
     result = _run_validate(env)
     assert result.returncode != 0
     assert "deploy.yml" in result.stderr
+
+
+def test_validate_deploy_yaml_schema_error(tmp_path: Path) -> None:
+    (tmp_path / "deploy.yml").write_text("version: []\n")
+    (tmp_path / ".env").write_text("KEY=value\n")
+    env = os.environ.copy()
+    env["DEPLOY_ENV"] = "production"
+    env["CONFIG_DIR"] = str(tmp_path)
+    result = _run_validate(env)
+    assert result.returncode != 0
+    assert "deploy.yml" in result.stderr
+
+
+def test_validate_deploy_env_schema_error(tmp_path: Path) -> None:
+    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    (tmp_path / ".env").write_text("KEY=\n")
+    env = os.environ.copy()
+    env["DEPLOY_ENV"] = "production"
+    env["CONFIG_DIR"] = str(tmp_path)
+    result = _run_validate(env)
+    assert result.returncode != 0
+    assert ".env" in result.stderr
