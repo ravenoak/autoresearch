@@ -44,6 +44,8 @@ import shutil
 import logging
 from pathlib import Path
 from dotenv import dotenv_values
+import socket
+from urllib.error import URLError
 
 try:
     import duckdb
@@ -135,6 +137,15 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     return dst
 
 
+def _is_network_failure(error: Exception) -> bool:
+    """Heuristically detect network-related failures."""
+    if isinstance(error, (OSError, URLError, socket.gaierror)):
+        return True
+    message = str(error).lower()
+    keywords = ["network", "http", "connection", "name resolution", "timeout"]
+    return any(keyword in message for keyword in keywords)
+
+
 def download_extension(extension_name, output_dir, platform_name=None):
     """
     Download a DuckDB extension to the specified directory.
@@ -150,8 +161,11 @@ def download_extension(extension_name, output_dir, platform_name=None):
     if platform_name is None:
         platform_name = detect_platform()
 
-    # Create the output directory structure
-    output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
+    # Create the output directory structure. Extensions are stored under
+    # ``<output_dir>/<extension_name>`` so tooling can reference a stable path
+    # like ``extensions/vss/vss.duckdb_extension`` when network access is
+    # unavailable.
+    output_extension_dir = os.path.join(output_dir, extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
 
     if duckdb is None:
@@ -165,7 +179,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
 
         try:
             # Set the extension directory to our output directory
-            extension_dir_path = os.path.join(output_dir, "extensions")
+            extension_dir_path = output_dir
             logger.info(f"Setting extension directory to: {extension_dir_path}")
             conn.execute(f"SET extension_directory='{extension_dir_path}'")
 
@@ -187,7 +201,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
                         extension_name,
                         e,
                     )
-                    if attempt == 2:
+                    if attempt == 2 or _is_network_failure(e):
                         logger.warning(
                             "Network error downloading %s extension after %d attempts. "
                             "Attempting offline fallback.",
@@ -204,25 +218,17 @@ def download_extension(extension_name, output_dir, platform_name=None):
                 logger.error(f"Failed to install {extension_name} extension.")
                 return None
 
-            # Find the extension files
+            # Find and normalize the extension files
             extension_files = []
-            for root, _, files in os.walk(output_extension_dir):
+            for root, _, files in os.walk(output_dir):
                 for file in files:
-                    if file.endswith(".duckdb_extension"):
-                        extension_files.append(os.path.join(root, file))
-
-            if not extension_files:
-                # If no files found in output directory, check the default DuckDB extension directory
-                default_ext_dir = os.path.join(temp_dir, ".duckdb", "extensions", platform_name)
-                if os.path.exists(default_ext_dir):
-                    for root, _, files in os.walk(default_ext_dir):
-                        for file in files:
-                            if extension_name in file and file.endswith(".duckdb_extension"):
-                                src_path = os.path.join(root, file)
-                                dst_path = os.path.join(output_extension_dir, file)
-                                shutil.copy2(src_path, dst_path)
-                                extension_files.append(dst_path)
-                                logger.info(f"Copied {file} to {output_extension_dir}")
+                    if extension_name in file and file.endswith(".duckdb_extension"):
+                        src_path = os.path.join(root, file)
+                        dst_path = os.path.join(output_extension_dir, file)
+                        if src_path != dst_path:
+                            shutil.copy2(src_path, dst_path)
+                            logger.info("Copied %s to %s", file, output_extension_dir)
+                        extension_files.append(dst_path)
 
             if not extension_files:
                 logger.error(f"No {extension_name} extension files found")
