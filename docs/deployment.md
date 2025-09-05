@@ -123,7 +123,7 @@ Confirm required settings before starting services.
 
 - Set `DEPLOY_ENV` to the target environment such as `staging` or
   `production`.
-- Set `CONFIG_DIR` to the directory containing deployment files.
+- Set `CONFIG_DIR` to the directory containing deployment files; it must exist.
 - Ensure `deploy.yml` and `.env` exist in `CONFIG_DIR`.
 - Include required entries such as `version` in `deploy.yml` and `KEY` in
   `.env`.
