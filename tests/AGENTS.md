@@ -30,6 +30,8 @@ These instructions apply to files in the `tests/` directory.
   `.[llm]` extra.
 - Use `requires_parsers` for tests needing document parsing utilities; pair
   with the `.[parsers]` extra.
+- Use `requires_gpu` for tests needing GPU dependencies; pair with the
+  `.[gpu]` extra.
 - Use `redis` for tests interacting with Redis; pair with `requires_distributed`.
 - Use `a2a_mcp` for MCP integration; pair with `requires_distributed`.
 - Use `error_recovery` for behavior tests verifying recovery paths.
@@ -59,6 +61,7 @@ These instructions apply to files in the `tests/` directory.
 - `[analysis]`: cover Polars-powered analytics modules.
 - `[llm]`: exercise transformer and DSPy integrations.
 - `[parsers]`: cover document parsing helpers such as PDF and DOCX.
+- `[gpu]`: cover GPU-accelerated modules such as BERTopic.
 - When all extras are installed, `task coverage` must report ≥90% overall.
 
 ## Reasoning and Continuous Improvement
