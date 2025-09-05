@@ -5,10 +5,10 @@ Cross-platform distribution requires reproducible containers and packaging,
 ensuring consistency across environments.
 
 ## Milestone
-2026-09-01
+- 2026-09-01
 
 ## Dependencies
-None.
+None
 
 ## Acceptance Criteria
 - Provide Docker and OCI-compatible images for supported platforms.
