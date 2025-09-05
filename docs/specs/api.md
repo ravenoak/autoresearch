@@ -22,9 +22,11 @@ Core routines enforce invariants by validating inputs and state.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
-Streaming scenarios post intermediate cycle results to configured webhooks
-alongside final responses.
+Unit tests cover nominal and edge cases for these routines. Streaming
+endpoints send heartbeat lines every 15 seconds to keep connections open
+and retry webhook deliveries up to three times with exponential backoff.
+Streaming scenarios post intermediate cycle results to configured
+webhooks alongside final responses.
 
 ## Traceability
 

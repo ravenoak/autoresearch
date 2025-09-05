@@ -23,7 +23,10 @@ is stable, proving deterministic rankings for equal scores.
 
 - Compare ranking outputs for varied relevance and recency balances.
 - Stress test with duplicate items to confirm stability.
-- Benchmark precision, recall, and latency across backends.
+- Benchmark precision, recall, and latency across backends with shared
+  datasets. Results appear in [docs/ranking_benchmark.md][d1], and
+  regression thresholds flag precision or recall drops over five
+  percentage points or latency increases above five percent.
 
 ## Traceability
 
@@ -32,8 +35,10 @@ is stable, proving deterministic rankings for equal scores.
   - [tests/behavior/features/search_cli.feature][t1]
   - [tests/behavior/features/hybrid_search.feature][t2]
   - [tests/benchmark/test_hybrid_ranking.py][t3]
+  - [docs/ranking_benchmark.md][d1]
 
 [m1]: ../../src/autoresearch/search/ranking_convergence.py
 [t1]: ../../tests/behavior/features/search_cli.feature
 [t2]: ../../tests/behavior/features/hybrid_search.feature
 [t3]: ../../tests/benchmark/test_hybrid_ranking.py
+[d1]: ../ranking_benchmark.md
