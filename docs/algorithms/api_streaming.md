@@ -13,6 +13,28 @@ state to the client, then posts the final response to any configured webhooks.
   client stops reading, results accumulate in memory. Consumers should read from
   the stream to apply back-pressure and avoid unbounded growth.
 
+## Queue growth model
+
+The [API spec](../specs/api.md) notes that streaming posts intermediate
+results while preserving invariants. With a stalled client, the producer keeps
+enqueuing items. Let `\lambda` denote the production rate in messages per
+second, `s` the average message size in bytes, and `t` the stall duration in
+seconds. The queue length and memory use grow linearly:
+
+- `q(t) = \lambda t`
+- `m(t) = \lambda s t`
+
+The [queue growth simulation](../../scripts/queue_growth_sim.py) validates this
+model.
+
+Example:
+
+```
+uv run scripts/queue_growth_sim.py --rate 5 --size 1024 --stall 10
+queue length: 50 items
+approx memory: 51200 bytes
+```
+
 ## Timeout guarantees
 
 - Webhook deliveries call `httpx.post` with the `api.webhook_timeout` value.
@@ -39,3 +61,4 @@ Automated tests confirm api streaming behavior.
 - [Spec](../specs/api.md)
 - [Tests](../../tests/behavior/steps/api_streaming_steps.py)
 - [Simulation script](../../scripts/streaming_webhook_sim.py)
+- [Queue growth simulation](../../scripts/queue_growth_sim.py)

@@ -71,8 +71,6 @@ def test_stream_webhook_partial(monkeypatch, api_client):
     assert calls == ["partial-0", "partial-1", "final"]
 
 
-
-
 @pytest.mark.slow
 def test_streaming_error_triggers_webhook(monkeypatch, httpx_mock):
     """Errors in streaming queries should still trigger webhook delivery."""
