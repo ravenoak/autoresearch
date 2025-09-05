@@ -15,6 +15,9 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [fix-streaming-webhook-test-style](archive/fix-streaming-webhook-test-style.md)
 - [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
 - [resolve-api-and-search-integration-test-failures](resolve-api-and-search-integration-test-failures.md)
+- [add-proof-sketches-to-core-specs](add-proof-sketches-to-core-specs.md)
+- [fix-duckdb-storage-table-creation-failure](fix-duckdb-storage-table-creation-failure.md)
+- [resolve-package-metadata-warnings](resolve-package-metadata-warnings.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
