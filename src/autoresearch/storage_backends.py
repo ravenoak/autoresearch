@@ -13,7 +13,7 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Queue
-from threading import Lock
+from threading import Lock, RLock
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 from dotenv import dotenv_values
@@ -51,7 +51,7 @@ class DuckDBStorageBackend:
         """Initialize the DuckDB storage backend."""
         self._conn: Optional[DuckDBConnection] = None
         self._path: Optional[str] = None
-        self._lock = Lock()
+        self._lock = RLock()
         self._has_vss: bool = False
         self._pool: Optional[Queue[DuckDBConnection]] = None
         self._max_connections: int = 1
@@ -185,36 +185,40 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
-        try:
-            # Create core tables
-            self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS nodes("
-                "id VARCHAR, type VARCHAR, content VARCHAR, "
-                "conf DOUBLE, ts TIMESTAMP)"
-            )
-            self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS edges("
-                "src VARCHAR, dst VARCHAR, rel VARCHAR, "
-                "w DOUBLE)"
-            )
-            # Create embeddings table with a fixed dimension for the embedding column
-            # Using FLOAT[384] instead of DOUBLE[] to ensure compatibility with HNSW index
-            self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS embeddings(" "node_id VARCHAR, embedding FLOAT[384])"
-            )
+        with self._lock:
+            try:
+                # Create core tables
+                self._conn.execute(
+                    "CREATE TABLE IF NOT EXISTS nodes("
+                    "id VARCHAR, type VARCHAR, content VARCHAR, "
+                    "conf DOUBLE, ts TIMESTAMP)"
+                )
+                self._conn.execute(
+                    "CREATE TABLE IF NOT EXISTS edges("
+                    "src VARCHAR, dst VARCHAR, rel VARCHAR, "
+                    "w DOUBLE)"
+                )
+                # Create embeddings table with a fixed dimension for the embedding column
+                # Using FLOAT[384] instead of DOUBLE[] to ensure compatibility with HNSW index
+                self._conn.execute(
+                    "CREATE TABLE IF NOT EXISTS embeddings("
+                    "node_id VARCHAR, embedding FLOAT[384])"
+                )
 
-            # Create metadata table for schema versioning
-            self._conn.execute("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)")
+                # Create metadata table for schema versioning
+                self._conn.execute(
+                    "CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"
+                )
 
-            # Initialize schema version if it doesn't exist
-            self._initialize_schema_version()
+                # Initialize schema version if it doesn't exist
+                self._initialize_schema_version()
 
-            # Run migrations if needed and not skipped
-            if not skip_migrations:
-                self._run_migrations()
+                # Run migrations if needed and not skipped
+                if not skip_migrations:
+                    self._run_migrations()
 
-        except Exception as e:
-            raise StorageError("Failed to create tables", cause=e)
+            except Exception as e:
+                raise StorageError("Failed to create tables", cause=e)
 
     def _initialize_schema_version(self) -> None:
         """
@@ -229,28 +233,29 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
-        try:
-            raw_execute = self._conn.__class__.execute
-            cursor = raw_execute(
-                self._conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
-            )
-            fetchone = getattr(cursor, "fetchone", None)
-            if callable(fetchone):
-                row = fetchone()
-            else:
-                rows: list[Any] = getattr(cursor, "fetchall", lambda: [])()
-                row = rows[0] if rows else None
-
-            if row is None:
-                log.info("Initializing schema version to 1")
-                raw_execute(
-                    self._conn,
-                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
+        with self._lock:
+            try:
+                raw_execute = self._conn.__class__.execute
+                cursor = raw_execute(
+                    self._conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
                 )
-        except Exception as e:
-            raise StorageError("Failed to initialize schema version", cause=e)
-        finally:
-            self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
+                fetchone = getattr(cursor, "fetchone", None)
+                if callable(fetchone):
+                    row = fetchone()
+                else:
+                    rows: list[Any] = getattr(cursor, "fetchall", lambda: [])()
+                    row = rows[0] if rows else None
+
+                if row is None:
+                    log.info("Initializing schema version to 1")
+                    raw_execute(
+                        self._conn,
+                        "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
+                    )
+            except Exception as e:
+                raise StorageError("Failed to initialize schema version", cause=e)
+            finally:
+                self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
 
     def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
         """
@@ -270,23 +275,26 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
-        try:
-            cursor = self._conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
-            rows = cursor.fetchall()
-            row = rows[0] if rows else None
+        with self._lock:
+            try:
+                cursor = self._conn.execute(
+                    "SELECT value FROM metadata WHERE key = 'schema_version'"
+                )
+                rows = cursor.fetchall()
+                row = rows[0] if rows else None
 
-            if row is None:
-                if initialize_if_missing:
-                    # This should not happen as _initialize_schema_version should have been called
-                    log.warning("Schema version not found in metadata table, initializing to 1")
-                    self._initialize_schema_version()
-                    return 1
-                else:
-                    return None
+                if row is None:
+                    if initialize_if_missing:
+                        # This should not happen as _initialize_schema_version should have been called
+                        log.warning("Schema version not found in metadata table, initializing to 1")
+                        self._initialize_schema_version()
+                        return 1
+                    else:
+                        return None
 
-            return int(row[0])
-        except Exception as e:
-            raise StorageError("Failed to get schema version", cause=e)
+                return int(row[0])
+            except Exception as e:
+                raise StorageError("Failed to get schema version", cause=e)
 
     def update_schema_version(self, version: int) -> None:
         """
@@ -301,14 +309,15 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
-        try:
-            self._conn.execute(
-                "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
-                [str(version)],
-            )
-            log.info(f"Updated schema version to {version}")
-        except Exception as e:
-            raise StorageError(f"Failed to update schema version to {version}", cause=e)
+        with self._lock:
+            try:
+                self._conn.execute(
+                    "UPDATE metadata SET value = ? WHERE key = 'schema_version'",
+                    [str(version)],
+                )
+                log.info(f"Updated schema version to {version}")
+            except Exception as e:
+                raise StorageError(f"Failed to update schema version to {version}", cause=e)
 
     def _run_migrations(self) -> None:
         """
@@ -323,26 +332,31 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
-        try:
-            current_version = self.get_schema_version()
-            latest_version = 1  # Update this when adding new migrations
+        with self._lock:
+            try:
+                current_version = self.get_schema_version()
+                latest_version = 1  # Update this when adding new migrations
 
-            log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
+                log.info(
+                    f"Current schema version: {current_version}, latest version: {latest_version}"
+                )
 
-            # Run migrations sequentially
-            if current_version is None or current_version < latest_version:
-                log.info(f"Running migrations from version {current_version} to {latest_version}")
+                # Run migrations sequentially
+                if current_version is None or current_version < latest_version:
+                    log.info(
+                        f"Running migrations from version {current_version} to {latest_version}"
+                    )
 
-                # Example migration pattern for future use:
-                # if current_version < 2:
-                #     self._migrate_to_v2()
-                #     current_version = 2
+                    # Example migration pattern for future use:
+                    # if current_version < 2:
+                    #     self._migrate_to_v2()
+                    #     current_version = 2
 
-                # Update schema version to latest
-                self.update_schema_version(latest_version)
+                    # Update schema version to latest
+                    self.update_schema_version(latest_version)
 
-        except Exception as e:
-            raise StorageError("Failed to run migrations", cause=e)
+            except Exception as e:
+                raise StorageError("Failed to run migrations", cause=e)
 
     def create_hnsw_index(self) -> None:
         """

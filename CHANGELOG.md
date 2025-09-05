@@ -26,6 +26,8 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
     [align-environment-with-requirements]
 - Enable Pydantic plugin for static type analysis.
 - Harden storage against concurrency and initialization edge cases.
+- Track storage module coverage: `storage.py` **52%** and
+  `storage_backends.py` **47%** after thread-safety fixes.
 - Document final release workflow and TestPyPI publishing steps.
 - Clarified directory scopes and noted missing instructions for `src/`, `scripts/`, and `examples/`.
 - Drafted preliminary release notes and validated README installation steps.

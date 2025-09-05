@@ -241,26 +241,27 @@ def initialize_storage(
     """
 
     st = state or _default_state
-    ctx = context or st.context
+    with st.lock:
+        ctx = context or st.context
 
-    # Run regular setup
-    setup(db_path, ctx, st)
+        # Run regular setup
+        setup(db_path, ctx, st)
 
-    backend = ctx.db_backend
-    if backend is None:
-        raise StorageError("DuckDB backend not initialized")
+        backend = ctx.db_backend
+        if backend is None:
+            raise StorageError("DuckDB backend not initialized")
 
-    conn = backend.get_connection()
-    try:
-        tables = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
-    except Exception:  # pragma: no cover - show tables should not fail
-        tables = set()
+        conn = backend.get_connection()
+        try:
+            tables = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
+        except Exception:  # pragma: no cover - show tables should not fail
+            tables = set()
 
-    required = {"nodes", "edges", "embeddings", "metadata"}
-    if not required.issubset(tables):
-        backend._create_tables(skip_migrations=True)
+        required = {"nodes", "edges", "embeddings", "metadata"}
+        if not required.issubset(tables):
+            backend._create_tables(skip_migrations=True)
 
-    return ctx
+        return ctx
 
 
 def teardown(
@@ -861,19 +862,20 @@ class StorageManager(metaclass=StorageManagerMeta):
         attrs = dict(claim.get("attributes", {}))
         if "confidence" in claim:
             attrs["confidence"] = claim["confidence"]
-        assert StorageManager.context.graph is not None
-        StorageManager.context.graph.add_node(claim["id"], **attrs)
-        # Increment the counter and store it to maintain deterministic ordering
         state = StorageManager.state
-        state.lru_counter += 1
-        state.lru[claim["id"]] = state.lru_counter
-        for rel in claim.get("relations", []):
+        with state.lock:
             assert StorageManager.context.graph is not None
-            StorageManager.context.graph.add_edge(
-                rel["src"],
-                rel["dst"],
-                **rel.get("attributes", {}),
-            )
+            StorageManager.context.graph.add_node(claim["id"], **attrs)
+            # Increment the counter and store it to maintain deterministic ordering
+            state.lru_counter += 1
+            state.lru[claim["id"]] = state.lru_counter
+            for rel in claim.get("relations", []):
+                assert StorageManager.context.graph is not None
+                StorageManager.context.graph.add_edge(
+                    rel["src"],
+                    rel["dst"],
+                    **rel.get("attributes", {}),
+                )
 
     @staticmethod
     def _persist_to_duckdb(claim: dict[str, Any]) -> None:
