@@ -1,19 +1,19 @@
 # Status
 
-## September 7, 2025
+## September 5, 2025
 
 - Added targeted integration and behavior tests for each optional extra,
   including GPU support.
-- Coverage per extra (all reported 32% due to skipped dependencies):
-  - `nlp`: 32%
-  - `ui`: 32%
-  - `vss`: 32%
-  - `git`: 32%
-  - `distributed`: 32%
-  - `analysis`: 32%
-  - `llm`: 32%
-  - `parsers`: 32%
-  - `gpu`: 32%
+- Coverage per extra (baseline 32 % with optional tests skipped):
+  - `nlp`: 32 %
+  - `ui`: 32 %
+  - `vss`: 32 %
+  - `git`: 32 %
+  - `distributed`: 32 %
+  - `analysis`: 32 %
+  - `llm`: 32 %
+  - `parsers`: 32 %
+  - `gpu`: 32 %
 
 ## September 6, 2025
 
