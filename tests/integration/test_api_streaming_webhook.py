@@ -59,7 +59,7 @@ def test_stream_webhook_partial(monkeypatch, api_client):
         return QueryResponse(answer="final", citations=[], reasoning=[], metrics={})
 
     monkeypatch.setattr(Orchestrator, "run_query", run_query)
-    monkeypatch.setattr("autoresearch.api.streaming.notify_webhook", fake_notify)
+    monkeypatch.setattr("autoresearch.api.webhooks.notify_webhook", fake_notify)
 
     with api_client.stream(
         "POST", "/query?stream=true", json={"query": "q", "webhook_url": "http://hook"}
