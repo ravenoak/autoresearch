@@ -1,31 +1,35 @@
 # Container Usage
 
-Autoresearch provides Dockerfiles under `docker/` for Linux, macOS, and
-Windows. Images include the project's build extras and are tagged by platform.
+Autoresearch ships Dockerfiles for Linux, macOS, and Windows. Each image
+installs project extras via a build argument.
 
 ## Build
 
-Use the Taskfile to build all images via `docker buildx`:
+- Use the `EXTRAS` argument to specify optional dependencies, defaulting to
+  `full`.
+- Replace `podman` with your container engine.
 
 ```bash
-task docker-build
+podman build -f docker/Dockerfile.linux --build-arg EXTRAS=minimal \
+    -t autoresearch-linux .
 ```
 
-Each platform can be built on its own:
-
-```bash
-task docker-build:linux
-task docker-build:macos
-task docker-build:windows
-```
+Repeat with the macOS and Windows Dockerfiles on their respective hosts.
 
 ## Run
 
-Mount your workspace and start a shell inside the container:
+Execute the CLI inside a container to confirm the installation:
 
 ```bash
-docker run --rm -it -v "$PWD:/workspace" autoresearch:linux bash
+podman run --rm autoresearch-linux autoresearch --help
 ```
 
-Replace `autoresearch:linux` with the desired tag. For packaging steps, see
-[docker/README.md](../docker/README.md).
+## Release
+
+The `scripts/release_images.sh` script builds and pushes all images:
+
+```bash
+bash scripts/release_images.sh ghcr.io/OWNER latest
+```
+
+Set `CONTAINER_ENGINE` to `podman` when Docker is unavailable.

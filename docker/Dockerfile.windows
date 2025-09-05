@@ -1,10 +1,11 @@
 # escape=`
-# Windows container image with build extras for Autoresearch
+# Windows container image with project extras for Autoresearch
 FROM mcr.microsoft.com/windows/python:3.12
 
+ARG EXTRAS=full
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 WORKDIR C:/workspace
 COPY . .
 RUN pip install --no-cache-dir uv; `
-    uv pip install '.[build]'
+    uv pip install ".[$env:EXTRAS]"
 CMD ["powershell"]
