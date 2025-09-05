@@ -50,7 +50,7 @@ before running tests.
     - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
     - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
       (2027-01-15, depends on containerization)
-    - [tune-system-performance](issues/tune-system-performance.md)
+    - [tune-system-performance](issues/archive/tune-system-performance.md)
       (2027-04-01, depends on deployment validation)
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
@@ -147,7 +147,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
 - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
   (2027-01-15, depends on containerization)
-- [tune-system-performance](issues/tune-system-performance.md)
+- [tune-system-performance](issues/archive/tune-system-performance.md)
   (2027-04-01, depends on deployment validation)
 
 These tasks proceed sequentially: containerization → deployment validation → performance tuning.

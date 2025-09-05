@@ -12,7 +12,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [add-test-coverage-for-optional-components](archive/add-test-coverage-for-optional-components.md)
 - [formalize-spec-driven-development-standards]
   (archive/formalize-spec-driven-development-standards.md)
-- [fix-streaming-webhook-test-style](fix-streaming-webhook-test-style.md)
+- [fix-streaming-webhook-test-style](archive/fix-streaming-webhook-test-style.md)
 - [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
 - [resolve-api-and-search-integration-test-failures](resolve-api-and-search-integration-test-failures.md)
 

@@ -11,4 +11,4 @@ None.
 - `task verify` completes the flake8 stage without errors.
 
 ## Status
-Open
+Archived
