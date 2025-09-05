@@ -1,18 +1,19 @@
-# Benchmark scheduler under queue saturation
+# Benchmark scheduler queue saturation
 
 ## Context
-Simulations show latency spikes when task arrivals near total service capacity.
-We need real-world benchmarks to validate mitigation strategies.
+Recent benchmarking near service capacity revealed sustained queue growth even
+as workers scaled. Potential mitigation includes expanding worker pools,
+throttling arrivals, applying queue limits with backpressure, and implementing
+adaptive load shedding.
 
 ## Dependencies
-[simulate-distributed-orchestrator-performance][orchestrator-bench]
+- None
 
 ## Acceptance Criteria
-- Benchmark scheduler with arrival rates approaching total service capacity.
-- Record latency and throughput for at least three worker counts.
-- Propose mitigation strategies for identified bottlenecks.
+- Mitigation strategies are documented and reviewed.
+- Benchmark findings in
+  [docs/orchestrator_perf.md](../docs/orchestrator_perf.md) inform follow-up
+  tasks.
 
 ## Status
 Open
-
-[orchestrator-bench]: simulate-distributed-orchestrator-performance.md
