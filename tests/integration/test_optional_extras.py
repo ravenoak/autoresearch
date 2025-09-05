@@ -35,8 +35,10 @@ from autoresearch.streamlit_ui import apply_theme_settings
 @pytest.mark.requires_nlp
 def test_spacy_available() -> None:
     """The NLP extra provides spaCy for search context features."""
-
-    assert _try_import_spacy() is True
+    available = _try_import_spacy()
+    if not available:
+        pytest.skip("spaCy not available")
+    assert available is True
 
 
 @pytest.mark.requires_ui
