@@ -152,13 +152,13 @@ def setup(
             ctx.db_backend.setup(db_path)
 
         # Initialize Kuzu backend when enabled
-        if getattr(cfg, "use_kuzu", False):
-            if KuzuBackend is None:
-                log.warning("Kuzu backend requested but not available")
-            else:
-                _kuzu_backend = KuzuBackend()
-                kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
-                _kuzu_backend.setup(kuzu_path)
+        use_kuzu = getattr(cfg, "use_kuzu", False)
+        if use_kuzu and KuzuBackend is None:
+            log.warning("Kuzu backend requested but not available")
+        elif use_kuzu:
+            _kuzu_backend = KuzuBackend()
+            kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
+            _kuzu_backend.setup(kuzu_path)
 
         # Initialize RDF store
         if cfg.rdf_backend == "memory":
