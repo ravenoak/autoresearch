@@ -74,3 +74,38 @@ Running the benchmark with 50 tasks and a 5 ms network delay yields:
 
 Latency decreases with more workers while memory remains stable and throughput
 benefits taper beyond two workers.
+
+## Multi-process orchestrator simulation
+
+The [distributed orchestrator performance spec](algorithms/distributed_perf.md)
+models tasks arriving every $d$ seconds so the arrival rate is $\lambda = 1/d$.
+Each of $c$ workers processes a task in $s$ seconds ($\mu = 1/s$) and the
+system remains stable only when $\rho = \lambda / (c\mu) < 1$.
+
+The queueing results are:
+
+$$P_0 = \Bigg[ \sum_{n=0}^{c-1} \frac{(\lambda/\mu)^n}{n!} +
+\frac{(\lambda/\mu)^c}{c! (1-\rho)} \Bigg]^{-1},$$
+
+$$L_q = \frac{(\lambda/\mu)^c \rho}{c! (1-\rho)^2} P_0,$$
+
+$$T = d + \frac{L_q}{\lambda} + s.$$
+
+The `scripts/multiprocess_orchestrator_sim.py` script compares these
+predictions with observed metrics. Running 50 tasks with $d = 10\,\text{ms}$ and
+$s = 5\,\text{ms}$ yielded:
+
+| workers | pred latency (s) | obs latency (s) |
+| ------- | ---------------- | --------------- |
+| 1       | 0.020            | 0.0167          |
+| 2       | 0.0153           | 0.0094          |
+| 4       | 0.0150           | 0.0059          |
+
+| workers | pred thrpt (tasks/s) | obs thrpt (tasks/s) |
+| ------- | -------------------- | ------------------- |
+| 1       | 100.00               | 59.75               |
+| 2       | 100.00               | 105.88              |
+| 4       | 100.00               | 169.13              |
+
+Latency drops with additional workers while throughput approaches the arrival
+rate once parallelism overcomes coordination costs.

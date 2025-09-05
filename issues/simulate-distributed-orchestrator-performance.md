@@ -12,7 +12,13 @@ None.
 - Provide simulations that model distributed orchestrator throughput and
   latency.
 - Document assumptions and formulas supporting the simulations.
-- Outline follow-up benchmarks or tooling based on results.
+- Outline follow-up benchmarks or tooling based on results. Reference
+  [multiprocess orchestrator sim][sim] and
+  [distributed orchestrator benchmark][bench]
+
+[sim]: ../scripts/multiprocess_orchestrator_sim.py
+[bench]: ../scripts/distributed_orchestrator_perf_benchmark.py
+
 
 ## Status
 Open
