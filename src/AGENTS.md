@@ -18,6 +18,7 @@ These instructions apply to files in the `src/` directory.
   modules, including `Args`, `Returns`, and `Raises` when applicable.
 - Use explicit type hints for function signatures and critical variables.
 - When invoking tools directly, prefix them with `uv run`.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Challenge algorithmic choices and document trade-offs in comments.

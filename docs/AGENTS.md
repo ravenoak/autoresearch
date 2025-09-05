@@ -22,6 +22,7 @@ These instructions apply to files in the `docs/` directory.
 - Wrap lines at 80 characters.
 - Use `-` for unordered lists and leave a blank line around headings.
 - Avoid committing binary assets; prefer SVG or text-based diagrams.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Question assumptions, compare sources, and clarify rationale in prose.

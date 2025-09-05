@@ -15,6 +15,7 @@ These instructions apply to files in the `extensions/` directory.
 - Follow repository coding conventions and organize imports with `isort`'s
   default profile.
 - Use `uv run` when invoking Python modules or scripts directly.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Document compatibility assumptions and revisit as dependencies evolve.

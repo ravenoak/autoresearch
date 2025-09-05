@@ -19,6 +19,7 @@ These instructions apply to files in the `scripts/` directory.
 - Do not require elevated privileges or modify user system settings.
 - Use POSIX-compliant shell features or portable Python constructs.
 - Test on Linux and macOS; avoid hard-coded paths and file extensions.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Explain nontrivial logic with inline comments referencing design choices.
