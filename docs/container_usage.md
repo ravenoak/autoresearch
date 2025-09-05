@@ -1,7 +1,8 @@
 # Container Usage
 
 Autoresearch ships Dockerfiles for Linux, macOS, and Windows. Each image
-installs project extras via a build argument.
+installs project extras via a build argument and starts the `autoresearch`
+CLI.
 
 ## Build
 
@@ -10,18 +11,26 @@ installs project extras via a build argument.
 - Replace `podman` with your container engine.
 
 ```bash
+bash docker/build_images.sh
+```
+
+The script builds Linux, macOS, and Windows images. Pass an argument to
+override `EXTRAS`.
+
+```bash
 podman build -f docker/Dockerfile.linux --build-arg EXTRAS=minimal \
     -t autoresearch-linux .
 ```
 
-Repeat with the macOS and Windows Dockerfiles on their respective hosts.
+Repeat manual builds with the macOS and Windows Dockerfiles on their
+respective hosts when a native build is required.
 
 ## Run
 
-Execute the CLI inside a container to confirm the installation:
+Images run the CLI automatically. Pass additional flags to invoke commands:
 
 ```bash
-podman run --rm autoresearch-linux autoresearch --help
+podman run --rm autoresearch-linux --version
 ```
 
 ## Release

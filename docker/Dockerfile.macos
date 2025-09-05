@@ -8,4 +8,5 @@ COPY . .
 RUN /bin/bash -lc "brew update && brew install python@3.12" \
     && pip3 install --no-cache-dir uv \
     && uv pip install ".[${EXTRAS}]"
-CMD ["/bin/bash"]
+ENTRYPOINT ["autoresearch"]
+CMD ["--help"]
