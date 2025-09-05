@@ -41,3 +41,8 @@ Feature: Optional extras availability
   Scenario: Parsers extra modules are importable
     Given the optional module "docx" can be imported
     Then the module exposes attribute "Document"
+
+  @requires_gpu
+  Scenario: GPU extra modules are importable
+    Given the optional module "bertopic" can be imported
+    Then the module exposes attribute "__version__"
