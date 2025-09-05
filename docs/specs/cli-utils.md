@@ -10,11 +10,15 @@ CLI utilities for consistent formatting and accessibility.
 
 ## Invariants
 
-- Preserve documented state across operations.
+- CLI options resolve to deterministic defaults when unspecified.
+- Output formatting preserves ANSI codes and width constraints.
+- Help text lists commands in alphabetical order.
 
-## Proof Sketch
+## Proof Steps
 
-Core routines enforce invariants by validating inputs and state.
+1. Parse an empty argument list and record resolved defaults.
+2. Override options to confirm user input supersedes defaults.
+3. Inspect help output and verify alphabetical ordering.
 
 ## Simulation Expectations
 
