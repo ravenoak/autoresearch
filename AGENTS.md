@@ -33,6 +33,7 @@
 - Format with **black** and ensure **flake8** passes.
 - Keep lines ≤ 100 characters and include docstrings for public APIs.
 - Additional style guidance lives in `CONTRIBUTING.md` (load only if needed).
+- Avoid committing binary artifacts; prefer text formats or generate files during tests.
 
 ## Reasoning and Continuous Improvement
 - Use dialectical and Socratic reasoning: state assumptions, question them,

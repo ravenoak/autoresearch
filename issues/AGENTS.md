@@ -14,6 +14,7 @@ These instructions apply to files in the `issues/` directory.
 - Open tickets stay in this directory. Move completed ones to `archive/` with
   `Status` set to `Archived` and do not rename them.
 - Keep this file current as issue tooling evolves.
+- Do not attach binary files; link to external references instead.
 
 ## Reasoning and Continuous Improvement
 - Revisit issue templates as project needs change.
