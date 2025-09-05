@@ -5,12 +5,12 @@ Usage:
     uv run python scripts/check_env.py
 
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
-can be specified via the ``EXTRAS`` environment variable.
+can be specified via the ``EXTRAS`` environment variable. Missing packages
+raise errors to ensure the requested extras are installed.
 """
 from __future__ import annotations
 
 import argparse
-import importlib
 import os
 import re
 import subprocess
@@ -137,18 +137,14 @@ def check_uv() -> CheckResult:
     return CheckResult("uv", current, REQUIREMENTS["uv"])
 
 
-def check_package(pkg: str) -> CheckResult | None:
-    module = pkg.replace("-", "_")
-    try:
-        importlib.import_module(module)
-    except ModuleNotFoundError:
-        # Some packages (e.g. duckdb-extension-vss) provide no importable module
-        pass
+def check_package(pkg: str) -> CheckResult:
+    """Require that ``pkg`` is installed via ``importlib.metadata``."""
+
     try:
         current = metadata.version(pkg)
-    except metadata.PackageNotFoundError:
-        print(f"WARNING: package metadata not found for {pkg}", file=sys.stderr)
-        return None
+    except metadata.PackageNotFoundError as exc:
+        hint = f"{pkg} is not installed; run 'uv sync' with the needed extras"
+        raise VersionError(hint) from exc
     required = REQUIREMENTS[pkg]
     return CheckResult(pkg, current, required)
 
@@ -184,8 +180,6 @@ def main() -> None:
     for check in checks:
         try:
             result = check()
-            if result is None:
-                continue
             if result.ok():
                 print(f"{result.name} {result.current}")
             else:
