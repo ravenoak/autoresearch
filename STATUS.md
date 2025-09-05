@@ -2,6 +2,15 @@
 
 ## September 5, 2025
 
+- `scripts/check_env.py` now enforces presence of packages listed in the
+  `dev-minimal` and `test` extras using `importlib.metadata`. Run
+  `task install` or `uv sync --extra dev-minimal --extra test` before
+  invoking the script to avoid missing dependency errors.
+- Added `black` to development extras so formatting tools are available by
+  default.
+
+## September 5, 2025
+
 - Added targeted integration and behavior tests for each optional extra,
   including GPU support.
 - Coverage per extra (baseline 32 % with optional tests skipped):
