@@ -10,6 +10,9 @@
 
 ## September 5, 2025
 
+- Go Task CLI remains unavailable; `task` command not found.
+- `uv run pytest` reports 57 failed, 1037 passed tests, 27 skipped, 120 deselected, 9 xfailed, 4 xpassed, and 1 error.
+
 - Installing Go Task with the upstream script placed the binary under `.venv/bin`.
   `task check` then failed with "No package metadata was found for GitPython" and
   similar messages for `cibuildwheel`, `duckdb-extension-vss`, `spacy`, and
