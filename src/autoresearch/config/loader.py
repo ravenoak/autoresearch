@@ -118,8 +118,7 @@ class ConfigLoader:
         if getattr(self, "_initialized", False):  # pragma: no cover - defensive
             return
         self.search_paths: List[Path] = [
-            Path(p)
-            for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
+            Path(p) for p in (search_paths or ["autoresearch.toml", "config/autoresearch.toml"])
         ]
         self.env_path: Path = Path(env_path) if env_path else Path(".env")
         self.watch_paths: List[str] = [str(p) for p in self.search_paths]
@@ -146,9 +145,7 @@ class ConfigLoader:
     def load_config(self) -> ConfigModel:
         raw_env: Dict[str, str] = {}
         if self.env_path.exists():
-            raw_env.update(
-                {k: v for k, v in dotenv_values(self.env_path).items() if v is not None}
-            )
+            raw_env.update({k: v for k, v in dotenv_values(self.env_path).items() if v is not None})
 
         for key, value in os.environ.items():
             if key.startswith("AUTORESEARCH_"):
@@ -204,9 +201,7 @@ class ConfigLoader:
             "hnsw_m": duckdb_cfg.get("hnsw_m", 16),
             "hnsw_ef_construction": duckdb_cfg.get("hnsw_ef_construction", 200),
             "hnsw_metric": duckdb_cfg.get("hnsw_metric", "l2"),
-            "hnsw_ef_search": duckdb_cfg.get(
-                "hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)
-            ),
+            "hnsw_ef_search": duckdb_cfg.get("hnsw_ef_search", duckdb_cfg.get("vector_nprobe", 10)),
             "hnsw_auto_tune": duckdb_cfg.get("hnsw_auto_tune", True),
             "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
             "vector_search_batch_size": duckdb_cfg.get("vector_search_batch_size"),
@@ -227,9 +222,7 @@ class ConfigLoader:
             core_settings["distributed"] = bool(distributed_cfg.get("enabled", False))
 
         agent_cfg = raw.get("agent", {})
-        enabled_agents = [
-            name for name, a in agent_cfg.items() if a.get("enabled", True)
-        ]
+        enabled_agents = [name for name, a in agent_cfg.items() if a.get("enabled", True)]
         if enabled_agents:
             core_settings["agents"] = enabled_agents
 
@@ -255,17 +248,13 @@ class ConfigLoader:
                         valid_settings[field] = value
                 return model_cls(**valid_settings)
 
-        core_settings["storage"] = _safe_model(
-            StorageConfig, storage_settings, "storage"
-        )
+        core_settings["storage"] = _safe_model(StorageConfig, storage_settings, "storage")
         core_settings["api"] = _safe_model(APIConfig, api_cfg, "api")
         core_settings["distributed_config"] = _safe_model(
             DistributedConfig, distributed_cfg, "distributed"
         )
         core_settings["user_preferences"] = user_pref_cfg
-        core_settings["analysis"] = _safe_model(
-            AnalysisConfig, analysis_cfg, "analysis"
-        )
+        core_settings["analysis"] = _safe_model(AnalysisConfig, analysis_cfg, "analysis")
         core_settings["agent_config"] = agent_config_dict
 
         self._profiles = raw.get("profiles", {})
@@ -308,9 +297,7 @@ class ConfigLoader:
                     "Error in config observer", observer=str(observer), cause=e
                 ) from e
 
-    def watch_changes(
-        self, callback: Optional[Callable[[ConfigModel], None]] = None
-    ) -> None:
+    def watch_changes(self, callback: Optional[Callable[[ConfigModel], None]] = None) -> None:
         if callback:
             self.register_observer(callback)
         if self._watch_thread and self._watch_thread.is_alive():
@@ -338,9 +325,7 @@ class ConfigLoader:
             atexit.register(self.stop_watching)
             self._atexit_registered = True
         self._watch_thread.start()
-        logger.info(
-            f"Started config watcher for paths: {[str(p) for p in target_files]}"
-        )
+        logger.info(f"Started config watcher for paths: {[str(p) for p in target_files]}")
 
     def stop_watching(self) -> None:
         if self._watch_thread and self._watch_thread.is_alive():
@@ -356,9 +341,7 @@ class ConfigLoader:
             self._config = None
 
     @contextmanager
-    def watching(
-        self, callback: Optional[Callable[[ConfigModel], None]] = None
-    ) -> Iterator[None]:
+    def watching(self, callback: Optional[Callable[[ConfigModel], None]] = None) -> Iterator[None]:
         self.watch_changes(callback)
         try:
             yield
@@ -377,13 +360,12 @@ class ConfigLoader:
             directories = {p.resolve().parent for p in watch_targets}
             target_files = {p.resolve() for p in watch_targets}
         try:
-            for changes in watch(
-                *(str(d) for d in directories), stop_event=self._stop_event
-            ):
+            for changes in watch(*(str(d) for d in directories), stop_event=self._stop_event):
                 for change in changes:
                     file_path = Path(change[1]).resolve()
                     if file_path in target_files:
                         if not file_path.exists():
+                            logger.error("Config file missing: %s", file_path)
                             continue
                         try:
                             new_config = self.load_config()

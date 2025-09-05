@@ -1,3 +1,4 @@
+import logging
 import time
 import tomli_w
 import tomllib
@@ -296,3 +297,18 @@ def test_config_reload_failure_keeps_previous(example_autoresearch_toml, monkeyp
 
     assert events == [["AgentA"]]
     assert loader.config.agents == ["AgentA"]
+
+
+def test_missing_config_file_logs_error(tmp_path, monkeypatch, caplog):
+    cfg_file = tmp_path / "autoresearch.toml"
+    loader = ConfigLoader.new_for_tests(search_paths=[cfg_file])
+
+    def fake_watch(*args, **kwargs):
+        yield {("deleted", str(cfg_file))}
+
+    monkeypatch.setattr("autoresearch.config.loader.watch", fake_watch)
+
+    with caplog.at_level(logging.ERROR, logger="autoresearch.config.loader"):
+        loader._watch_config_files({cfg_file.parent.resolve()}, {cfg_file.resolve()})
+
+    assert any("Config file missing" in r.getMessage() for r in caplog.records)
