@@ -74,6 +74,30 @@ def config_unchanged(modify_config_invalid: ConfigModel):
     assert cfg_after == modify_config_invalid
 
 
+@when(
+    parsers.parse('I modify "{file}" to set loops to {count:d}'),
+    target_fixture="modify_config_loops",
+)
+def modify_config_loops(file, count, tmp_path):
+    """Change loop count in the configuration file and trigger reload."""
+    ConfigLoader.reset_instance()
+    loader = ConfigLoader()
+    cfg = {"core": {"backend": "lmstudio", "loops": count}}
+    import tomli_w
+
+    with loader.watching(lambda cfg: None):
+        with open(file, "w") as f:
+            f.write(tomli_w.dumps(cfg))
+        new_cfg = loader.load_config()
+    return new_cfg
+
+
+@then(parsers.parse("the loop count should be {count:d}"))
+def check_loop_count(modify_config_loops: ConfigModel, count: int):
+    """Verify that hot reload applied the new loop count."""
+    assert modify_config_loops.loops == count
+
+
 @when("I start the application", target_fixture="start_application")
 def start_application():
     ConfigLoader.reset_instance()
@@ -111,4 +135,13 @@ def test_hot_reload_config():
     "Ignore invalid configuration changes",
 )
 def test_ignore_invalid_config():
+    pass
+
+
+@scenario(
+    "../features/configuration_hot_reload.feature",
+    "Hot-reload updates loop count",
+)
+def test_hot_reload_loops():
+    """Scenario: changing loop count triggers a reload."""
     pass

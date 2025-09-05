@@ -38,7 +38,7 @@ def compute_metrics(rows: List[Dict[str, str]]) -> tuple[float, float]:
 pytestmark = [pytest.mark.slow]
 
 
-@pytest.mark.parametrize("backend", ["bm25", "semantic"])
+@pytest.mark.parametrize("backend", ["bm25", "semantic", "hybrid"])
 def test_hybrid_ranking(backend: str, benchmark, metrics_baseline) -> None:
     """Record metrics for each backend and check against baselines."""
     rows = load_data()

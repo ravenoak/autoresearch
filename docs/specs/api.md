@@ -23,6 +23,8 @@ Core routines enforce invariants by validating inputs and state.
 ## Simulation Expectations
 
 Unit tests cover nominal and edge cases for these routines.
+Streaming scenarios post intermediate cycle results to configured webhooks
+alongside final responses.
 
 ## Traceability
 
@@ -38,6 +40,7 @@ Unit tests cover nominal and edge cases for these routines.
     - [tests/integration/test_api_auth.py][t6]
     - [tests/integration/test_api_auth_middleware.py][t7]
     - [tests/integration/test_api_streaming.py][t8]
+    - [tests/integration/test_api_streaming_webhook.py][t10]
     - [tests/integration/test_api_docs.py][t9]
 
 [m1]: ../../src/autoresearch/api/
@@ -49,4 +52,5 @@ Unit tests cover nominal and edge cases for these routines.
 [t6]: ../../tests/integration/test_api_auth.py
 [t7]: ../../tests/integration/test_api_auth_middleware.py
 [t8]: ../../tests/integration/test_api_streaming.py
+[t10]: ../../tests/integration/test_api_streaming_webhook.py
 [t9]: ../../tests/integration/test_api_docs.py

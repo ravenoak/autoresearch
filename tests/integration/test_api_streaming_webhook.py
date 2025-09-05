@@ -21,7 +21,7 @@ def test_stream_emits_keepalive(monkeypatch, api_client):
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
-    def long_query(query, config, callbacks=None, **kwargs):
+    def long_query(self, query, config, callbacks=None, **kwargs):
         time.sleep(0.2)
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
@@ -37,27 +37,40 @@ def test_stream_emits_keepalive(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_webhook_retries(monkeypatch, api_client, httpx_mock):
-    """Webhook delivery should be retried on failure."""
+def test_stream_webhook_partial(monkeypatch, api_client):
+    """Streaming should POST each partial result to the webhook."""
 
-    cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
+    cfg = ConfigModel(api=APIConfig(webhook_timeout=1))
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    api_client.app.state.config_loader._config = cfg
-    monkeypatch.setattr(
-        Orchestrator,
-        "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(
-            answer="ok", citations=[], reasoning=[], metrics={}
-        ),
-    )
 
-    httpx_mock.add_response(method="POST", url="http://hook", status_code=500)
-    httpx_mock.add_response(method="POST", url="http://hook", status_code=200)
+    calls = []
 
-    resp = api_client.post("/query", json={"query": "hi"})
-    assert resp.status_code == 200
-    assert len(httpx_mock.get_requests()) == 2
+    def fake_notify(url, result, timeout, retries=3, backoff=0.5):  # noqa: D401
+        calls.append(result.answer)
+
+    def run_query(self, query, config, callbacks=None, **kwargs):
+        from autoresearch.orchestration.state import QueryState
+
+        state = QueryState(query=query)
+        for i in range(2):
+            state.results["final_answer"] = f"partial-{i}"
+            if callbacks and "on_cycle_end" in callbacks:
+                callbacks["on_cycle_end"](i, state)
+        return QueryResponse(answer="final", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", run_query)
+    monkeypatch.setattr("autoresearch.api.streaming.notify_webhook", fake_notify)
+
+    with api_client.stream(
+        "POST", "/query?stream=true", json={"query": "q", "webhook_url": "http://hook"}
+    ) as resp:
+        assert resp.status_code == 200
+        [line for line in resp.iter_lines()]
+
+    assert calls == ["partial-0", "partial-1", "final"]
+
+
 
 
 @pytest.mark.slow

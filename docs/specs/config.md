@@ -19,7 +19,9 @@ Core routines enforce invariants by validating inputs and state.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+Unit and behavior tests cover nominal and edge cases for these routines.
+Hot-reload scenarios update agent rosters and loop counts while ignoring
+invalid changes.
 
 ## Traceability
 
@@ -30,8 +32,10 @@ Unit tests cover nominal and edge cases for these routines.
   - [tests/unit/test_config_env_file.py][t1]
   - [tests/unit/test_config_errors.py][t2]
   - [tests/unit/test_config_loader_defaults.py][t3]
+  - [tests/behavior/features/configuration_hot_reload.feature][t4]
 
 [m1]: ../../src/autoresearch/config/
 [t1]: ../../tests/unit/test_config_env_file.py
 [t2]: ../../tests/unit/test_config_errors.py
 [t3]: ../../tests/unit/test_config_loader_defaults.py
+[t4]: ../../tests/behavior/features/configuration_hot_reload.feature
