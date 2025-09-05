@@ -1,4 +1,4 @@
-# Cli Utils
+# CLI Utils
 
 ## Overview
 
@@ -14,15 +14,17 @@ CLI utilities for consistent formatting and accessibility.
 - Output formatting preserves ANSI codes and width constraints.
 - Help text lists commands in alphabetical order.
 
-## Proof Steps
+## Proof Sketch
 
-1. Parse an empty argument list and record resolved defaults.
-2. Override options to confirm user input supersedes defaults.
-3. Inspect help output and verify alphabetical ordering.
+The parser resolves defaults for empty input, accepts user overrides, and
+outputs alphabetical help text. The simulation in
+[tests/unit/test_cli_utils_extra.py][t1] exercises these paths and
+confirms all invariants.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+Unit tests simulate argument parsing and help output for nominal and edge
+cases.
 
 ## Traceability
 
