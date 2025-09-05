@@ -38,7 +38,7 @@ from .utils import (
     RequestLogger,
     create_request_logger,
 )
-from .webhooks import notify_webhook
+from . import webhooks
 
 router = APIRouter()
 
@@ -136,9 +136,9 @@ async def query_endpoint(
             )
             timeout = getattr(config.api, "webhook_timeout", 5)
             if request.webhook_url:
-                notify_webhook(request.webhook_url, error_resp, timeout)
+                webhooks.notify_webhook(request.webhook_url, error_resp, timeout)
             for url in getattr(config.api, "webhooks", []):
-                notify_webhook(url, error_resp, timeout)
+                webhooks.notify_webhook(url, error_resp, timeout)
             return error_resp
     try:
         validated = (
@@ -165,15 +165,15 @@ async def query_endpoint(
         )
         timeout = getattr(config.api, "webhook_timeout", 5)
         if request.webhook_url:
-            notify_webhook(request.webhook_url, error_resp, timeout)
+            webhooks.notify_webhook(request.webhook_url, error_resp, timeout)
         for url in getattr(config.api, "webhooks", []):
-            notify_webhook(url, error_resp, timeout)
+            webhooks.notify_webhook(url, error_resp, timeout)
         return error_resp
     timeout = getattr(config.api, "webhook_timeout", 5)
     if request.webhook_url:
-        notify_webhook(request.webhook_url, validated, timeout)
+        webhooks.notify_webhook(request.webhook_url, validated, timeout)
     for url in getattr(config.api, "webhooks", []):
-        notify_webhook(url, validated, timeout)
+        webhooks.notify_webhook(url, validated, timeout)
     return validated
 
 
