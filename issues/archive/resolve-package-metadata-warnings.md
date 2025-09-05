@@ -13,4 +13,4 @@ None.
 - Document any required extras or steps in `STATUS.md`.
 
 ## Status
-Open
+Archived

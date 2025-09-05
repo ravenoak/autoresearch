@@ -14,4 +14,4 @@ None.
 - The changelog records the fix.
 
 ## Status
-Open
+Archived
