@@ -47,6 +47,7 @@ These instructions apply to files in the `tests/` directory.
 - Remove temporary files such as `kg.duckdb` and `rdf_store`.
 - Prefer fixtures like `tmp_path` and `monkeypatch` to isolate side effects.
 - Run `task clean` if tests generate build artifacts.
+- Avoid committing binary artifacts; keep test outputs ephemeral.
 
 ## Coverage Expectations
 - `[nlp]`: cover spaCy-powered NLP paths.
