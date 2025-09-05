@@ -5,7 +5,7 @@ Usage:
     uv run scripts/validate_deploy.py
 
 This script verifies that required environment variables and configuration
-files exist before deployment.
+files exist and conform to their schemas before deployment.
 """
 from __future__ import annotations
 
@@ -15,11 +15,28 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import yaml
+from jsonschema import Draft7Validator
 
 REQUIRED_ENV_VARS = ("DEPLOY_ENV", "CONFIG_DIR")
 REQUIRED_FILES = ("deploy.yml", ".env")
-REQUIRED_YAML_KEYS = ("version",)
-REQUIRED_ENV_FILE_KEYS = ("KEY",)
+
+DEPLOY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "version": {"type": ["integer", "string"]},
+        "services": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+    },
+    "required": ["version"],
+}
+
+ENV_SCHEMA = {
+    "type": "object",
+    "properties": {"KEY": {"type": "string", "minLength": 1}},
+    "required": ["KEY"],
+}
 
 
 def _missing_env() -> list[str]:
@@ -50,9 +67,10 @@ def _load_env_file(path: Path) -> Mapping[str, str]:
     return data
 
 
-def _missing_keys(data: Mapping[str, Any], required: Sequence[str]) -> list[str]:
-    """Return missing keys from ``data``."""
-    return [key for key in required if key not in data]
+def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:
+    """Return validation errors for ``data`` against ``schema``."""
+    validator = Draft7Validator(schema)
+    return [error.message for error in validator.iter_errors(data)]
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -74,16 +92,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Missing configuration files: {missing}", file=sys.stderr)
         return 1
     yaml_data = _load_yaml(config_dir / "deploy.yml")
-    missing_yaml = _missing_keys(yaml_data, REQUIRED_YAML_KEYS)
-    if missing_yaml:
-        missing = ", ".join(missing_yaml)
-        print(f"Missing keys in deploy.yml: {missing}", file=sys.stderr)
+    yaml_errors = _schema_errors(yaml_data, DEPLOY_SCHEMA)
+    if yaml_errors:
+        errors = "; ".join(yaml_errors)
+        print(f"Schema errors in deploy.yml: {errors}", file=sys.stderr)
         return 1
     env_data = _load_env_file(config_dir / ".env")
-    missing_env_file = _missing_keys(env_data, REQUIRED_ENV_FILE_KEYS)
-    if missing_env_file:
-        missing = ", ".join(missing_env_file)
-        print(f"Missing keys in .env: {missing}", file=sys.stderr)
+    env_errors = _schema_errors(env_data, ENV_SCHEMA)
+    if env_errors:
+        errors = "; ".join(env_errors)
+        print(f"Schema errors in .env: {errors}", file=sys.stderr)
         return 1
     print("Deployment configuration validated.")
     return 0

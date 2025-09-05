@@ -163,6 +163,19 @@ DEPLOY_ENV=production CONFIG_DIR=config uv run scripts/validate_deploy.py
 If any variable, file, or key is missing, the script exits with a non-zero
 status and lists the missing items.
 
+The validator also checks the schemas for both files and reports any
+violations. For example, `version` must be a string or integer and `KEY` cannot
+be empty.
+
+### Environment Matrix
+
+The matrix below summarizes common environment configurations:
+
+| DEPLOY_ENV | CONFIG_DIR         |
+|------------|-------------------|
+| `staging`  | `config/staging`   |
+| `production` | `config/production` |
+
 ## Deployment Checks
 
 After starting the service, run the deployment script to validate configuration
