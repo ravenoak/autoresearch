@@ -15,6 +15,11 @@ algorithm](../algorithms/config_hot_reload.md) for reload behavior.
 - Reloads are atomic; readers never observe partially written state.
 - Unknown or malformed fields leave prior values unchanged.
 
+## Proof Sketch
+
+Reload simulations show configuration updates occur atomically and preserve
+prior values.
+
 ## Proof Steps
 
 1. Write baseline configuration and capture active state.

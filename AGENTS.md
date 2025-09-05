@@ -34,6 +34,7 @@
 - Keep lines ≤ 100 characters and include docstrings for public APIs.
 - Additional style guidance lives in `CONTRIBUTING.md` (load only if needed).
 - Avoid committing binary artifacts; prefer text formats or generate files during tests.
+- Use system time when recording dates.
 
 ## Reasoning and Continuous Improvement
 - Use dialectical and Socratic reasoning: state assumptions, question them,
@@ -55,6 +56,7 @@
 - For extensive details, consult docs under `docs/` as required.
 
 ## Changelog
+- 2025-09-05: Emphasized using system time when recording dates.
 - 2025-08-22: Added runtime goal for `scripts/codex_setup.sh`.
 - 2025-08-21: Clarified Codex-only scope for `scripts/codex_setup.sh` and
   restricted references to AGENTS files.

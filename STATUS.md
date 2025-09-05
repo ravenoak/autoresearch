@@ -1,15 +1,15 @@
 # Status
 
-## September 6, 2025
+## September 5, 2025
 
+- `scripts/check_env.py` now fails when package metadata is missing and
+  requires the `dev-minimal` and `test` extras. Set `EXTRAS` to install
+  additional optional dependencies.
 - `scripts/check_env.py` now warns when package metadata is missing instead of
   failing, allowing `task check` to proceed in minimal environments.
 - Instrumented `task coverage` to log progress and marked hanging backup
   scheduling tests as `slow`. Flaky property tests are `xfail`ed, letting the
   coverage task finish the unit suite.
-
-## September 5, 2025
-
 - Go Task CLI remains unavailable; `task` command not found.
 - `uv run pytest` reports 57 failed, 1037 passed tests, 27 skipped, 120 deselected, 9 xfailed, 4 xpassed, and 1 error.
 

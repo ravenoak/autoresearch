@@ -18,6 +18,11 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 - Heartbeats occur at least once per connection.
 - The ``END`` sentinel terminates the stream.
 
+## Proof Sketch
+
+Basic checks assert streamed chunks remain ordered and emit periodic
+heartbeats.
+
 ## Proof Steps
 
 1. Produce a finite chunk list.
