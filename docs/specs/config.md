@@ -15,20 +15,18 @@ algorithm](../algorithms/config_hot_reload.md) for reload behavior.
 - Reloads are atomic; readers never observe partially written state.
 - Unknown or malformed fields leave prior values unchanged.
 
-## Proof Steps
+## Proof Sketch
 
-1. Write baseline configuration and capture active state.
-2. Modify the file and trigger a reload.
-3. Compare active state to modified file; ensure unmodified fields persist.
-4. Confirm metrics in [config_hot_reload_metrics.json][r1] report success.
+Reloading a modified file updates ``state.active`` atomically while preserving
+unchanged fields. Tests exercise reload paths, and the simulation
+increments a value from 1 to 2, recording metrics in
+[config_hot_reload_metrics.json][r1] to verify success and fallback
+behavior when files disappear.
 
 ## Simulation Expectations
 
-Unit and behavior tests cover nominal and edge cases for these routines.
-The hot-reload simulation validates these invariants by updating a config
-value from 1 to 2 and recording metrics in [config_hot_reload_metrics.json][r1].
-The watcher logs an error and keeps the previous configuration active when a
-source file is removed.
+The hot-reload simulation updates a value from 1 to 2 and records metrics in
+[config_hot_reload_metrics.json][r1].
 
 ## Traceability
 
