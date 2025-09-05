@@ -410,7 +410,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             return _delegate.setup(db_path, ctx)
         StorageManager.state = st
         StorageManager.context = ctx
-        setup(db_path, ctx, st)
+        initialize_storage(db_path, context=ctx, state=st)
         return ctx
 
     @staticmethod
@@ -817,7 +817,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             or StorageManager.context.rdf_store is None
         ):
             try:
-                setup(context=StorageManager.context, state=StorageManager.state)
+                initialize_storage(context=StorageManager.context, state=StorageManager.state)
             except Exception as e:
                 raise StorageError("Failed to initialize storage components", cause=e)
 
