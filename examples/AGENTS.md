@@ -13,6 +13,7 @@ These instructions apply to files in the `examples/` directory.
 - Assume sample data is covered by the project's AGPL-3.0 license unless noted.
 - Document third-party assets with their original licenses and required
   attribution.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Explain the problem each example addresses and alternative approaches in

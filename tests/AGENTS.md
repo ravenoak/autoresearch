@@ -48,6 +48,7 @@ These instructions apply to files in the `tests/` directory.
 - Prefer fixtures like `tmp_path` and `monkeypatch` to isolate side effects.
 - Run `task clean` if tests generate build artifacts.
 - Avoid committing binary artifacts; keep test outputs ephemeral.
+- When applying the current date, derive it from the system time.
 
 ## Coverage Expectations
 - `[nlp]`: cover spaCy-powered NLP paths.

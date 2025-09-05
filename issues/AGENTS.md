@@ -15,6 +15,7 @@ These instructions apply to files in the `issues/` directory.
   `Status` set to `Archived` and do not rename them.
 - Keep this file current as issue tooling evolves.
 - Do not attach binary files; link to external references instead.
+- When applying the current date, derive it from the system time.
 
 ## Reasoning and Continuous Improvement
 - Revisit issue templates as project needs change.
