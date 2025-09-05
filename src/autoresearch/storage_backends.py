@@ -499,13 +499,12 @@ class DuckDBStorageBackend:
         Raises:
             StorageError: If the claim cannot be persisted.
         """
-        if self._conn is None:
+        if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
-        with self._lock:
+        with self.connection() as conn, self._lock:
             try:
-                # Insert node row
-                self._conn.execute(
+                conn.execute(
                     "INSERT INTO nodes VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
                     [
                         claim["id"],
@@ -515,9 +514,8 @@ class DuckDBStorageBackend:
                     ],
                 )
 
-                # Insert edges
                 for rel in claim.get("relations", []):
-                    self._conn.execute(
+                    conn.execute(
                         "INSERT INTO edges VALUES (?, ?, ?, ?)",
                         [
                             rel["src"],
@@ -527,10 +525,9 @@ class DuckDBStorageBackend:
                         ],
                     )
 
-                # Insert embedding
                 embedding = claim.get("embedding")
                 if embedding is not None:
-                    self._conn.execute(
+                    conn.execute(
                         "INSERT INTO embeddings VALUES (?, ?)",
                         [claim["id"], embedding],
                     )
@@ -549,14 +546,13 @@ class DuckDBStorageBackend:
             If ``True`` only the supplied fields are updated, otherwise the
             existing rows are fully replaced.
         """
-        if self._conn is None:
+        if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
 
-        with self._lock:
+        with self.connection() as conn, self._lock:
             try:
                 if not partial_update:
-                    # Replace node row completely
-                    self._conn.execute(
+                    conn.execute(
                         "UPDATE nodes SET type=?, content=?, conf=?, ts=CURRENT_TIMESTAMP WHERE id=?",
                         [
                             claim.get("type", ""),
@@ -567,29 +563,28 @@ class DuckDBStorageBackend:
                     )
                 else:
                     if "type" in claim:
-                        self._conn.execute(
+                        conn.execute(
                             "UPDATE nodes SET type=? WHERE id=?",
                             [claim["type"], claim["id"]],
                         )
                     if "content" in claim:
-                        self._conn.execute(
+                        conn.execute(
                             "UPDATE nodes SET content=? WHERE id=?",
                             [claim["content"], claim["id"]],
                         )
                     if "confidence" in claim:
-                        self._conn.execute(
+                        conn.execute(
                             "UPDATE nodes SET conf=? WHERE id=?",
                             [claim["confidence"], claim["id"]],
                         )
 
-                # Replace edges and embeddings if provided
                 if "relations" in claim:
-                    self._conn.execute(
+                    conn.execute(
                         "DELETE FROM edges WHERE src=? OR dst=?",
                         [claim["id"], claim["id"]],
                     )
                     for rel in claim.get("relations", []):
-                        self._conn.execute(
+                        conn.execute(
                             "INSERT INTO edges VALUES (?, ?, ?, ?)",
                             [
                                 rel["src"],
@@ -600,13 +595,13 @@ class DuckDBStorageBackend:
                         )
 
                 if "embedding" in claim:
-                    self._conn.execute(
+                    conn.execute(
                         "DELETE FROM embeddings WHERE node_id=?",
                         [claim["id"]],
                     )
                     embedding = claim.get("embedding")
                     if embedding is not None:
-                        self._conn.execute(
+                        conn.execute(
                             "INSERT INTO embeddings VALUES (?, ?)",
                             [claim["id"], embedding],
                         )
