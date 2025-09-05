@@ -553,22 +553,26 @@ class Search:
         cfg = get_config()
         search_cfg = cfg.search
 
-        weights_sum = (
-            search_cfg.bm25_weight
-            + search_cfg.semantic_similarity_weight
-            + search_cfg.source_credibility_weight
-        )
+        weights = {
+            "bm25_weight": search_cfg.bm25_weight,
+            "semantic_similarity_weight": search_cfg.semantic_similarity_weight,
+            "source_credibility_weight": search_cfg.source_credibility_weight,
+        }
+        weights_sum = sum(weights.values())
 
         if abs(weights_sum - 1.0) > 0.001:
             raise ConfigError(
                 "Relevance ranking weights must sum to 1.0",
                 current_sum=weights_sum,
-                weights={
-                    "semantic_similarity_weight": search_cfg.semantic_similarity_weight,
-                    "bm25_weight": search_cfg.bm25_weight,
-                    "source_credibility_weight": search_cfg.source_credibility_weight,
-                },
+                weights=weights,
                 suggestion="Adjust the weights so they sum to 1.0",
+            )
+
+        if any(value < 0 for value in weights.values()):
+            raise ConfigError(
+                "Relevance ranking weights must be non-negative",
+                weights=weights,
+                suggestion="Set negative weights to zero or a positive value",
             )
 
         # Calculate scores using different algorithms
