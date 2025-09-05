@@ -85,19 +85,26 @@ def test_storage_setup_teardown(monkeypatch):
         def open(self, *a, **k):
             pass
 
-    cfg = MagicMock()
-    cfg.use_kuzu = False
-    cfg.rdf_backend = "memory"
-    cfg.duckdb_path = "db.duckdb"
-    cfg.vector_extension = False
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    cfg_storage = types.SimpleNamespace(
+        use_kuzu=False,
+        rdf_backend="memory",
+        duckdb_path="db.duckdb",
+        vector_extension=False,
+    )
+    cfg_model = types.SimpleNamespace(storage=cfg_storage)
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg_model)
     ConfigLoader()._config = None
     monkeypatch.setattr("autoresearch.storage.DuckDBStorageBackend", lambda: FakeDuck())
     monkeypatch.setattr(
         "autoresearch.storage.rdflib", types.SimpleNamespace(Graph=lambda *a, **k: FakeGraph())
     )
+    monkeypatch.setattr(
+        "autoresearch.storage.KuzuBackend",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("Kuzu backend used")),
+    )
     from autoresearch import storage
 
+    storage._cached_config = None
     storage.StorageManager.context.db_backend = None
     storage._kuzu_backend = None
     storage.setup("db")
@@ -144,6 +151,7 @@ def test_storage_setup_without_kuzu(monkeypatch):
     )
     from autoresearch import storage
 
+    storage._cached_config = None
     storage.StorageManager.context.db_backend = None
     storage._kuzu_backend = None
     storage.setup("db")
