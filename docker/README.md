@@ -1,14 +1,20 @@
 # Container Images
 
 This directory provides Dockerfiles for building OCI images of Autoresearch with
-packaging extras installed. Images exist for Linux, macOS, and Windows.
+project extras installed. Images exist for Linux, macOS, and Windows.
 
 ## Build
 
+Use the `EXTRAS` build argument to select optional dependencies; it defaults to
+`full`.
+
 ```bash
-docker build -f docker/Dockerfile.linux -t autoresearch-linux .
-docker build -f docker/Dockerfile.macos -t autoresearch-macos .
-docker build -f docker/Dockerfile.windows -t autoresearch-windows .
+docker build -f docker/Dockerfile.linux --build-arg EXTRAS=minimal \
+    -t autoresearch-linux .
+docker build -f docker/Dockerfile.macos --build-arg EXTRAS=minimal \
+    -t autoresearch-macos .
+docker build -f docker/Dockerfile.windows --build-arg EXTRAS=minimal \
+    -t autoresearch-windows .
 ```
 
 ## Publish
@@ -21,6 +27,11 @@ docker push <registry>/autoresearch:linux
 ```
 
 Repeat for the macOS and Windows tags.
+
+## Release
+
+The `scripts/release_images.sh` script builds and pushes all images in one
+step.
 
 ## Packaging
 

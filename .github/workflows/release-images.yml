@@ -1,0 +1,19 @@
+name: Release Images
+
+# This workflow is manually triggered only.
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push images
+        run: bash scripts/release_images.sh ghcr.io/${{ github.repository_owner }} latest
