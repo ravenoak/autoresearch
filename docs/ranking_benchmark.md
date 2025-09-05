@@ -5,8 +5,9 @@ performance for hybrid ranking across search backends.
 
 | Backend | Precision | Recall | Latency (ms) |
 |---------|-----------|--------|--------------|
-| bm25    | 1.00      | 1.00   | 0.0019       |
-| semantic| 0.50      | 1.00   | 0.0020       |
+| bm25    | 1.00      | 1.00   | 0.0018       |
+| semantic| 0.50      | 1.00   | 0.0019       |
+| hybrid  | 0.75      | 1.00   | 0.0023       |
 
 Regression thresholds:
 

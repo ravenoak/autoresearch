@@ -21,3 +21,8 @@ Feature: Configuration & Hot Reload
     Given the application is running
     When I modify "autoresearch.toml" with invalid content
     Then the orchestrator should keep the previous configuration
+
+  Scenario: Hot-reload updates loop count
+    Given the application is running
+    When I modify "autoresearch.toml" to set loops to 3
+    Then the loop count should be 3

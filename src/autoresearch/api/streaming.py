@@ -36,9 +36,18 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
         config.llm_backend = request.llm_backend
 
     queue: asyncio.Queue[str | None] = asyncio.Queue()
+    timeout = getattr(config.api, "webhook_timeout", 5)
+
+    def send_webhooks(response: QueryResponse) -> None:
+        if request.webhook_url:
+            notify_webhook(request.webhook_url, response, timeout)
+        for url in getattr(config.api, "webhooks", []):
+            notify_webhook(url, response, timeout)
 
     def on_cycle_end(loop_idx: int, state) -> None:
-        queue.put_nowait(state.synthesize().model_dump_json())
+        partial = state.synthesize()
+        queue.put_nowait(partial.model_dump_json())
+        send_webhooks(partial)
 
     def run() -> None:
         try:
@@ -61,12 +70,8 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
                 metrics={"error": error_info.message, "error_details": error_data},
             )
         queue.put_nowait(result.model_dump_json())
-        timeout = getattr(config.api, "webhook_timeout", 5)
-        if request.webhook_url:
-            notify_webhook(request.webhook_url, result, timeout)
-        for url in getattr(config.api, "webhooks", []):
-            notify_webhook(url, result, timeout)
         queue.put_nowait(None)
+        send_webhooks(result)
 
     asyncio.get_running_loop().run_in_executor(None, run)
 

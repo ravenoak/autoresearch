@@ -7,3 +7,8 @@ semantic,q1,0.7,1
 semantic,q1,0.6,0
 semantic,q2,0.75,1
 semantic,q2,0.6,0
+hybrid,q1,0.9,1
+hybrid,q1,0.7,1
+hybrid,q1,0.6,0
+hybrid,q2,0.8,1
+hybrid,q2,0.4,0
