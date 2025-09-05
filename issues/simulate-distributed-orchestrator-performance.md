@@ -13,6 +13,10 @@ None.
   latency.
 - Document assumptions and formulas supporting the simulations.
 - Outline follow-up benchmarks or tooling based on results.
+- Link to [scripts/distributed_perf_sim.py](../scripts/distributed_perf_sim.py)
+  and
+  [scripts/distributed_orchestrator_perf_benchmark.py](../scripts/distributed_orchestrator_perf_benchmark.py)
+  for further analysis.
 
 ## Status
 Open
