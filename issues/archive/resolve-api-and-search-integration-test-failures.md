@@ -13,4 +13,4 @@ None.
 - `task verify` completes with no API or search test failures.
 
 ## Status
-Open
+Archived

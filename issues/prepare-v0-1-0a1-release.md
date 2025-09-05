@@ -13,11 +13,11 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [formalize-spec-driven-development-standards]
   (archive/formalize-spec-driven-development-standards.md)
 - [fix-streaming-webhook-test-style](archive/fix-streaming-webhook-test-style.md)
-- [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
-- [resolve-api-and-search-integration-test-failures](resolve-api-and-search-integration-test-failures.md)
-- [add-proof-sketches-to-core-specs](add-proof-sketches-to-core-specs.md)
-- [fix-duckdb-storage-table-creation-failure](fix-duckdb-storage-table-creation-failure.md)
-- [resolve-package-metadata-warnings](resolve-package-metadata-warnings.md)
+- [fix-storage-integration-test-failures](archive/fix-storage-integration-test-failures.md)
+- [resolve-api-and-search-integration-test-failures](archive/resolve-api-and-search-integration-test-failures.md)
+- [add-proof-sketches-to-core-specs](archive/add-proof-sketches-to-core-specs.md)
+- [fix-duckdb-storage-table-creation-failure](archive/fix-duckdb-storage-table-creation-failure.md)
+- [resolve-package-metadata-warnings](archive/resolve-package-metadata-warnings.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
