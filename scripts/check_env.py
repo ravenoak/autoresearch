@@ -27,13 +27,13 @@ if sys.version_info < (3, 12):
 try:  # pragma: no cover - packaging is required
     from packaging.version import Version
     from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
 except ModuleNotFoundError as exc:  # pragma: no cover
     raise SystemExit("packaging library is required") from exc
-
 BASE_REQUIREMENTS = {
-    "python": "3.12.0",
-    "task": "3.0.0",
-    "uv": "0.7.0",
+    "python": ">=3.12.0",
+    "task": ">=3.0.0",
+    "uv": ">=0.7.0",
 }
 
 BASE_EXTRAS = ["dev-minimal", "test"]
@@ -47,7 +47,7 @@ def extras_to_check() -> list[str]:
 
 
 def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
-    """Return versions for packages from specified extras in pyproject."""
+    """Return specifiers for packages from specified extras in pyproject."""
 
     with open("pyproject.toml", "rb") as fh:
         data = tomllib.load(fh)
@@ -56,12 +56,12 @@ def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
     for extra in extras_to_check:
         for spec in extras.get(extra, []):
             req = Requirement(spec)
-            ver = next(
-                (s.version for s in req.specifier if s.operator in (">=", "==")),
+            op_spec = next(
+                (str(s) for s in req.specifier if s.operator in (">=", "==")),
                 None,
             )
-            if ver:
-                reqs[req.name] = ver
+            if op_spec:
+                reqs[req.name] = op_spec
     return reqs
 
 
@@ -76,7 +76,7 @@ class CheckResult:
     required: str
 
     def ok(self) -> bool:
-        return Version(self.current) >= Version(self.required)
+        return Version(self.current) in SpecifierSet(self.required)
 
 
 class VersionError(RuntimeError):
@@ -99,13 +99,13 @@ def check_task() -> CheckResult:
         )
     except FileNotFoundError as exc:
         hint = (
-            f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
+            f"Go Task {required} is required. Install it from https://taskfile.dev/ "
             "or run scripts/setup.sh"
         )
         raise VersionError(hint) from exc
     if proc.returncode != 0:
         hint = (
-            f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
+            f"Go Task {required} is required. Install it from https://taskfile.dev/ "
             "or run scripts/setup.sh"
         )
         raise VersionError(hint)
@@ -113,16 +113,11 @@ def check_task() -> CheckResult:
     if not match:
         raise VersionError("Could not determine Go Task version")
     current = match.group(1)
-    if Version(current) < Version(required):
-        hint = (
-            f"Go Task {current} found, but {required}+ is required. Install it from "
-            "https://taskfile.dev/ or run scripts/setup.sh"
-        )
-        raise VersionError(hint)
     return CheckResult("Go Task", current, required)
 
 
 def check_uv() -> CheckResult:
+    required = REQUIREMENTS["uv"]
     try:
         proc = subprocess.run(["uv", "--version"], capture_output=True, text=True, check=False)
     except FileNotFoundError as exc:
@@ -134,7 +129,7 @@ def check_uv() -> CheckResult:
     if not match:
         raise VersionError("Could not determine uv version")
     current = match.group(1)
-    return CheckResult("uv", current, REQUIREMENTS["uv"])
+    return CheckResult("uv", current, required)
 
 
 def check_package(pkg: str) -> CheckResult:
@@ -183,7 +178,9 @@ def main() -> None:
             if result.ok():
                 print(f"{result.name} {result.current}")
             else:
-                errors.append(f"{result.name} {result.current} < required {result.required}")
+                errors.append(
+                    f"{result.name} {result.current} does not satisfy {result.required}"
+                )
         except Exception as exc:  # pragma: no cover - failure paths
             errors.append(str(exc))
 

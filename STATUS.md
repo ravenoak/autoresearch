@@ -1,12 +1,13 @@
 # Status
 
-## September 7, 2025
+## September 5, 2025
 
 - `scripts/check_env.py` now fails when packages for requested extras are missing,
   using `importlib.metadata`.
 - Added `packaging` to the `dev-minimal` and `test` extras so `task check` succeeds
   without warnings. Set the `EXTRAS` environment variable when additional feature
   groups are required.
+- Extra requirements now honor exact version pins via `SpecifierSet` comparisons.
 
 ## September 6, 2025
 
