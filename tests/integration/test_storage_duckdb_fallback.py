@@ -2,6 +2,8 @@ import pytest
 from autoresearch.storage import StorageContext, StorageManager, StorageState
 from autoresearch.config import ConfigLoader
 
+pytest.importorskip("pytest_benchmark")
+
 
 def test_duckdb_vss_fallback(tmp_path, monkeypatch):
     """Storage operates without VSS when the extension is missing."""
@@ -29,7 +31,6 @@ def test_duckdb_vss_fallback(tmp_path, monkeypatch):
 
 
 def test_ram_budget_benchmark(tmp_path, monkeypatch, benchmark):
-    pytest.importorskip("pytest_benchmark")
     ConfigLoader()._config = None
     cfg = ConfigLoader().config
     cfg.storage.duckdb_path = str(tmp_path / "kg.duckdb")

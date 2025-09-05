@@ -165,7 +165,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
     # ``<output_dir>/<extension_name>`` so tooling can reference a stable path
     # like ``extensions/vss/vss.duckdb_extension`` when network access is
     # unavailable.
-    output_extension_dir = os.path.join(output_dir, extension_name)
+    output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
 
     if duckdb is None:
@@ -201,7 +201,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
                         extension_name,
                         e,
                     )
-                    if attempt == 2 or _is_network_failure(e):
+                    if attempt == 2:
                         logger.warning(
                             "Network error downloading %s extension after %d attempts. "
                             "Attempting offline fallback.",

@@ -82,6 +82,7 @@ class StorageState:
     lru: "OrderedDict[str, int]" = field(default_factory=OrderedDict)
     lru_counter: int = 0
     lock: RLock = field(default_factory=RLock)
+    baseline_mb: float = 0.0
 
 
 _default_state = StorageState()
@@ -94,6 +95,28 @@ _delegate: type["StorageManager"] | None = None
 _message_queue: Any | None = None
 
 _cached_config: StorageConfig | None = None
+
+
+def _process_ram_mb() -> float:
+    """Return the process resident set size in megabytes."""
+    try:
+        import psutil  # type: ignore[import-untyped]
+
+        mem = psutil.Process(os.getpid()).memory_info().rss
+        return float(mem) / (1024**2)
+    except Exception as e:  # pragma: no cover - optional dependency
+        log.debug(f"Failed to get memory usage with psutil: {e}")
+        try:
+            import resource
+            import sys
+
+            usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            if sys.platform == "darwin":
+                return usage / (1024**2)
+            return usage / 1024
+        except Exception as e2:
+            log.warning(f"Failed to get memory usage: {e2}")
+            return 0.0
 
 
 def _get_config() -> StorageConfig:
@@ -134,6 +157,8 @@ def setup(
     st = state or _default_state
     ctx = context or st.context
     with st.lock:
+        if st.baseline_mb == 0.0:
+            st.baseline_mb = _process_ram_mb()
         if ctx.db_backend is not None and ctx.db_backend.get_connection() is not None:
             st.context = ctx
             return
@@ -406,38 +431,10 @@ class StorageManager(metaclass=StorageManagerMeta):
 
     @staticmethod
     def _current_ram_mb() -> float:
-        """Calculate the approximate RAM usage of the current process in MB.
+        """Return RAM usage relative to the recorded baseline."""
 
-        This method attempts to measure the current memory usage using psutil.
-        If psutil is not available, it falls back to the resource module.
-        If both fail, it returns 0.0.
-
-        Returns:
-            float: The approximate RAM usage in megabytes.
-
-        Note:
-            This method handles exceptions internally and will not raise exceptions
-            even if memory measurement fails.
-        """
-        try:
-            import psutil  # type: ignore[import-untyped]
-
-            mem = psutil.Process(os.getpid()).memory_info().rss
-            return float(mem) / (1024**2)
-        except Exception as e:  # pragma: no cover - psutil may not be available
-            log.debug(f"Failed to get memory usage with psutil: {e}, falling back to resource")
-            try:
-                import resource
-                import sys
-
-                usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-                # ``ru_maxrss`` units vary by platform: bytes on macOS, KB on Linux.
-                if sys.platform == "darwin":
-                    return usage / (1024**2)
-                return usage / 1024
-            except Exception as e:
-                log.warning(f"Failed to get memory usage: {e}, returning 0.0")
-                return 0.0
+        process_mb = _process_ram_mb()
+        return max(0.0, process_mb - StorageManager.state.baseline_mb)
 
     @staticmethod
     def _pop_lru() -> str | None:

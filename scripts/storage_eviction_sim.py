@@ -32,7 +32,7 @@ def _run(
     items: int,
     policy: str,
     scenario: str,
-    jitter: float,
+    jitter: float = 0.0,
     evictors: int = 0,
 ) -> int:
     """Persist claims concurrently and return remaining node count."""
