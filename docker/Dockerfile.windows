@@ -8,4 +8,5 @@ WORKDIR C:/workspace
 COPY . .
 RUN pip install --no-cache-dir uv; `
     uv pip install ".[$env:EXTRAS]"
-CMD ["powershell"]
+ENTRYPOINT ["autoresearch"]
+CMD ["--help"]

@@ -7,4 +7,5 @@ WORKDIR /workspace
 COPY . .
 RUN pip install --no-cache-dir uv \
     && uv pip install ".[${EXTRAS}]"
-CMD ["bash"]
+ENTRYPOINT ["autoresearch"]
+CMD ["--help"]
