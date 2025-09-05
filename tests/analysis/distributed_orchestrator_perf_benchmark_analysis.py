@@ -20,8 +20,25 @@ def run() -> dict[int, dict[str, float]]:
                 "throughput": item["throughput"],
                 "memory_mb": item["memory_mb"],
             }
-    out_path = Path(__file__).with_name("distributed_orchestrator_perf_benchmark_metrics.json")
-    out_path.write_text(json.dumps(results, indent=2) + "\n")
+    out_dir = Path(__file__).resolve().parent
+    out_dir.joinpath("distributed_orchestrator_perf_benchmark_metrics.json").write_text(
+        json.dumps(results, indent=2) + "\n"
+    )
+    try:  # optional visualization
+        import matplotlib.pyplot as plt
+
+        xs = sorted(results)
+        ys = [results[w]["throughput"] for w in xs]
+        plt.figure()
+        plt.plot(xs, ys, marker="o")
+        plt.xlabel("workers")
+        plt.ylabel("tasks/sec")
+        plt.title("Orchestrator throughput scaling")
+        plt.savefig(
+            out_dir / "distributed_orchestrator_perf_benchmark_plot.png"
+        )
+    except Exception:  # pragma: no cover
+        pass
     return results
 
 

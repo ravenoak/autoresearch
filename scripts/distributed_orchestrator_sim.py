@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
-"""Simulate distributed scheduling latency using an M/M/c queue model.
+"""Generate synthetic scheduling load with optional network delay.
 
 Usage:
-    uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 100 \\
+    uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 100 \
         --network-latency 0.005 --task-time 0.01
 
-The simulation applies queueing theory to estimate average latency and
-throughput for a distributed orchestrator. Each task experiences a network
-dispatch delay (``network_latency``) before reaching one of ``workers``
-identical servers that process tasks in ``task_time`` seconds. The model
-assumes Poisson arrivals and exponential service times as described in
-``docs/orchestrator_perf.md``.
+Each task waits ``network_latency`` seconds to mimic dispatch over a network
+before a worker process sleeps for ``task_time`` seconds to emulate work. The
+run reports average latency, throughput, and resource consumption.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import math
+import time
+from concurrent.futures import ProcessPoolExecutor
+from itertools import repeat
+
+from autoresearch.resource_monitor import ResourceMonitor
+
+
+def _handle_task(network_latency: float, task_time: float) -> int:
+    """Sleep to emulate network delay and processing."""
+
+    time.sleep(network_latency)
+    time.sleep(task_time)
+    return 0
 
 
 def run_simulation(
@@ -26,41 +35,45 @@ def run_simulation(
     network_latency: float = 0.005,
     task_time: float = 0.005,
 ) -> dict[str, float]:
-    """Return queue-based latency and throughput estimates.
+    """Process tasks across workers and collect performance metrics.
 
     Args:
         workers: Number of worker processes.
-        tasks: Total tasks to schedule (unused but kept for parity with benchmarks).
-        network_latency: Network dispatch delay per task in seconds.
-        task_time: Service time per task in seconds.
+        tasks: Total tasks to dispatch.
+        network_latency: Simulated dispatch latency per task in seconds.
+        task_time: Simulated processing time per task in seconds.
 
     Returns:
-        Dictionary with average latency, throughput, and placeholder CPU and
-        memory metrics (always ``0``).
+        Dictionary with average latency, throughput, CPU percentage, and memory
+        usage in megabytes.
     """
 
-    if workers <= 0 or tasks <= 0 or network_latency <= 0 or task_time <= 0:
+    if workers <= 0 or tasks <= 0 or network_latency < 0 or task_time <= 0:
         raise SystemExit("workers, tasks, latency, and task_time must be > 0")
 
-    arrival_rate = 1.0 / network_latency
-    service_rate = 1.0 / task_time
-    rho = arrival_rate / (workers * service_rate)
-    if rho >= 1:
-        raise SystemExit("system is unstable; arrival rate must be < workers * service_rate")
+    monitor = ResourceMonitor(interval=0.05)
+    monitor.start()
+    start = time.perf_counter()
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        list(
+            executor.map(
+                _handle_task,
+                repeat(network_latency, tasks),
+                repeat(task_time, tasks),
+            )
+        )
+    duration = time.perf_counter() - start
+    monitor.stop()
 
-    ratio = arrival_rate / service_rate
-    sum_terms = sum((ratio**n) / math.factorial(n) for n in range(workers))
-    last = (ratio**workers) / (math.factorial(workers) * (1 - rho))
-    p0 = 1 / (sum_terms + last)
-    lq = (p0 * (ratio**workers) * rho) / (math.factorial(workers) * (1 - rho) ** 2)
-    wq = lq / arrival_rate
-    avg_latency = network_latency + wq + task_time
-    throughput = arrival_rate
+    throughput = tasks / duration if duration > 0 else float("inf")
+    avg_latency = duration / tasks
+    cpu = float(monitor.cpu_gauge._value.get())
+    mem = float(monitor.mem_gauge._value.get())
     return {
         "avg_latency_s": avg_latency,
         "throughput": throughput,
-        "cpu_percent": 0.0,
-        "memory_mb": 0.0,
+        "cpu_percent": cpu,
+        "memory_mb": mem,
     }
 
 
@@ -84,7 +97,9 @@ def main(workers: int, tasks: int, network_latency: float, task_time: float) -> 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Distributed orchestrator scheduling simulation")
+    parser = argparse.ArgumentParser(
+        description="Distributed orchestrator scheduling simulation"
+    )
     parser.add_argument("--workers", type=int, default=2, help="number of worker processes")
     parser.add_argument("--tasks", type=int, default=100, help="tasks to schedule")
     parser.add_argument(
@@ -101,3 +116,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.workers, args.tasks, args.network_latency, args.task_time)
+
