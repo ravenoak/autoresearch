@@ -132,10 +132,11 @@ def setup(
     """Initialise storage components if not already initialised."""
     global _kuzu_backend
     st = state or _default_state
-    ctx = context or st.context
+    ctx = context or StorageManager.context or st.context
     with st.lock:
         if ctx.db_backend is not None and ctx.db_backend.get_connection() is not None:
             st.context = ctx
+            StorageManager.context = ctx
             return
 
         ctx.graph = nx.DiGraph()
@@ -186,6 +187,7 @@ def setup(
                     )
                 raise StorageError("Failed to open RDF store", cause=e)
     st.context = ctx
+    StorageManager.context = ctx
 
 
 def initialize_storage(

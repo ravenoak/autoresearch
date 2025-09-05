@@ -16,6 +16,7 @@ from .context import (
     spacy,
 )
 from .core import Search, get_search
+from .ranking import rank_by_recency_and_relevance
 from .http import _http_session, close_http_session, get_http_session, set_http_session
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "BERTOPIC_AVAILABLE",
     "SENTENCE_TRANSFORMERS_AVAILABLE",
     "spacy",
+    "rank_by_recency_and_relevance",
 ]

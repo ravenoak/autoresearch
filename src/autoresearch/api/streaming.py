@@ -12,7 +12,7 @@ from ..error_utils import format_error_for_api, get_error_info
 from ..models import QueryRequest, QueryResponse
 from ..orchestration import ReasoningMode
 from .deps import create_orchestrator
-from .webhooks import notify_webhook
+from . import webhooks
 
 
 # Interval between heartbeat messages to keep connections alive, in seconds.
@@ -40,9 +40,9 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
 
     def send_webhooks(response: QueryResponse) -> None:
         if request.webhook_url:
-            notify_webhook(request.webhook_url, response, timeout)
+            webhooks.notify_webhook(request.webhook_url, response, timeout)
         for url in getattr(config.api, "webhooks", []):
-            notify_webhook(url, response, timeout)
+            webhooks.notify_webhook(url, response, timeout)
 
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()

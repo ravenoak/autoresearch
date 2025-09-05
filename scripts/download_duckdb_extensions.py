@@ -162,10 +162,11 @@ def download_extension(extension_name, output_dir, platform_name=None):
         platform_name = detect_platform()
 
     # Create the output directory structure. Extensions are stored under
-    # ``<output_dir>/<extension_name>`` so tooling can reference a stable path
-    # like ``extensions/vss/vss.duckdb_extension`` when network access is
-    # unavailable.
-    output_extension_dir = os.path.join(output_dir, extension_name)
+    # ``<output_dir>/extensions/<extension_name>`` so tooling can reference a
+    # stable path like ``extensions/vss/vss.duckdb_extension`` when network
+    # access is unavailable.
+    extensions_root = os.path.join(output_dir, "extensions")
+    output_extension_dir = os.path.join(extensions_root, extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
 
     if duckdb is None:
@@ -179,7 +180,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
 
         try:
             # Set the extension directory to our output directory
-            extension_dir_path = output_dir
+            extension_dir_path = extensions_root
             logger.info(f"Setting extension directory to: {extension_dir_path}")
             conn.execute(f"SET extension_directory='{extension_dir_path}'")
 
@@ -201,7 +202,7 @@ def download_extension(extension_name, output_dir, platform_name=None):
                         extension_name,
                         e,
                     )
-                    if attempt == 2 or _is_network_failure(e):
+                    if attempt == 2 or not _is_network_failure(e):
                         logger.warning(
                             "Network error downloading %s extension after %d attempts. "
                             "Attempting offline fallback.",
@@ -212,23 +213,31 @@ def download_extension(extension_name, output_dir, platform_name=None):
 
             # Verify the extension was installed
             result = conn.execute(
-                "SELECT * FROM duckdb_extensions() WHERE extension_name = ?", [extension_name]
+                "SELECT * FROM duckdb_extensions() WHERE extension_name = ?",
+                [extension_name],
             ).fetchall()
             if not result:
                 logger.error(f"Failed to install {extension_name} extension.")
                 return None
 
             # Find and normalize the extension files
+            search_roots = [extensions_root]
+            default_root = os.path.join(
+                Path(temp_db_path).parent, ".duckdb", "extensions", platform_name
+            )
+            if os.path.exists(default_root):
+                search_roots.append(default_root)
             extension_files = []
-            for root, _, files in os.walk(output_dir):
-                for file in files:
-                    if extension_name in file and file.endswith(".duckdb_extension"):
-                        src_path = os.path.join(root, file)
-                        dst_path = os.path.join(output_extension_dir, file)
-                        if src_path != dst_path:
-                            shutil.copy2(src_path, dst_path)
-                            logger.info("Copied %s to %s", file, output_extension_dir)
-                        extension_files.append(dst_path)
+            for root in search_roots:
+                for current, _, files in os.walk(root):
+                    for file in files:
+                        if extension_name in file and file.endswith(".duckdb_extension"):
+                            src_path = os.path.join(current, file)
+                            dst_path = os.path.join(output_extension_dir, file)
+                            if src_path != dst_path:
+                                shutil.copy2(src_path, dst_path)
+                                logger.info("Copied %s to %s", file, output_extension_dir)
+                            extension_files.append(dst_path)
 
             if not extension_files:
                 logger.error(f"No {extension_name} extension files found")
