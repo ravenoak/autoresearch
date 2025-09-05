@@ -213,7 +213,11 @@ class DuckDBStorageBackend:
             if not skip_migrations:
                 self._run_migrations()
 
-        except Exception as e:
+        except duckdb.Error as e:  # type: ignore[attr-defined]
+            raise StorageError(f"DuckDB error while creating tables: {e}") from e
+        except StorageError:
+            raise
+        except Exception as e:  # pragma: no cover - unexpected error path
             raise StorageError("Failed to create tables", cause=e)
 
     def _initialize_schema_version(self) -> None:
@@ -229,11 +233,17 @@ class DuckDBStorageBackend:
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
 
+        raw_execute: Any | None = None
         try:
-            raw_execute = self._conn.__class__.execute
-            cursor = raw_execute(
-                self._conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
-            )
+            raw_execute = getattr(self._conn.__class__, "execute", None)
+            if raw_execute is None:
+                cursor = self._conn.execute(
+                    "SELECT value FROM metadata WHERE key = 'schema_version'"
+                )
+            else:
+                cursor = raw_execute(
+                    self._conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
+                )
             fetchone = getattr(cursor, "fetchone", None)
             if callable(fetchone):
                 row = fetchone()
@@ -243,14 +253,20 @@ class DuckDBStorageBackend:
 
             if row is None:
                 log.info("Initializing schema version to 1")
-                raw_execute(
-                    self._conn,
-                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
-                )
+                if raw_execute is None:
+                    self._conn.execute(
+                        "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
+                    )
+                else:
+                    raw_execute(
+                        self._conn,
+                        "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
+                    )
         except Exception as e:
             raise StorageError("Failed to initialize schema version", cause=e)
         finally:
-            self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
+            if raw_execute is not None and hasattr(raw_execute, "__get__"):
+                self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
 
     def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
         """
