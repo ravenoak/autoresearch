@@ -26,12 +26,16 @@ def test_storage_coordinator_persists_message(monkeypatch, tmp_path):
         lambda claim, partial_update=False: calls.append((claim, partial_update)),
     )
 
-    coordinator = StorageCoordinator(queue, str(tmp_path / "kg.duckdb"))
-    queue.put({"action": "persist_claim", "claim": {"id": "c1"}, "partial_update": True})
-    queue.put({"action": "stop"})
-    coordinator.run()
+    try:
+        coordinator = StorageCoordinator(queue, str(tmp_path / "kg.duckdb"))
+        queue.put({"action": "persist_claim", "claim": {"id": "c1"}, "partial_update": True})
+        queue.put({"action": "stop"})
+        coordinator.run()
 
-    assert calls == [({"id": "c1"}, True)]
+        assert calls == [({"id": "c1"}, True)]
+    finally:
+        queue.close()
+        queue.join_thread()
 
 
 def test_storage_coordinator_handles_stop(monkeypatch, tmp_path):
@@ -46,11 +50,15 @@ def test_storage_coordinator_handles_stop(monkeypatch, tmp_path):
         lambda claim, partial_update=False: calls.append((claim, partial_update)),
     )
 
-    coordinator = StorageCoordinator(queue, str(tmp_path / "kg.duckdb"))
-    queue.put({"action": "stop"})
-    coordinator.run()
+    try:
+        coordinator = StorageCoordinator(queue, str(tmp_path / "kg.duckdb"))
+        queue.put({"action": "stop"})
+        coordinator.run()
 
-    assert calls == []
+        assert calls == []
+    finally:
+        queue.close()
+        queue.join_thread()
 
 
 def test_storage_coordinator_queue_error(monkeypatch, tmp_path):
