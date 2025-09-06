@@ -5,17 +5,36 @@
 Distributed execution utilities. See [distributed coordination][dc] for
 coalition and scheduling details.
 
-## Algorithms
+## Scheduling Algorithms
 
-- Implement core behaviors described above.
+- **Round-robin** assigns each incoming task to the next worker in turn for
+  balanced workloads.
+- **Work stealing** lets idle workers pull tasks from peers, equalizing queue
+  lengths under bursty load.
+- **Priority queue** scheduling selects the highest-priority task available so
+  urgent work executes first.
+- Detailed complexity and performance models appear in
+  [distributed coordination][dc].
 
 ## Invariants
 
-- Preserve documented state across operations.
+- **No lost tasks:** every enqueued task is processed or persisted.
+- **Single leader:** at most one coordinator acts as leader at any time.
+- **FIFO ordering:** brokers emit tasks in the order they were published.
+- **Progress:** active workers eventually drain their assigned queues.
+- Property-based tests such as [test_distributed_coordination.py][t4] and
+  [test_coordination_properties.py][t5] exercise these guarantees.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+- A FIFO broker ensures ordering because dequeues mirror enqueues; tests [t4]
+  assert this correspondence.
+- Leader election chooses the minimum identifier; with unique identifiers a
+  single leader exists, and random shuffles in [t5] confirm convergence.
+- Tasks persist until acknowledged by a worker, so no task is lost;
+  integration tests [t1] demonstrate end-to-end completion.
+- As long as a worker remains alive, queued tasks eventually run, yielding
+  liveness.
 
 ## Simulation Expectations
 
