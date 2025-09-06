@@ -46,4 +46,9 @@ Results from
 Network delay dominates latency; additional workers cut queueing after two
 processes.
 
+## Mitigation strategies
+
+- Backpressure caps the number of in-flight tasks when queues grow too long.
+- Adaptive worker pools expand or shrink based on backlog and utilization.
+
 [bench]: ../src/autoresearch/orchestrator_perf.py#L71-L112

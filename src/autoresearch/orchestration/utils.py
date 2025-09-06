@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, Deque
+
 from ..models import QueryResponse
 
 
@@ -44,3 +46,26 @@ def calculate_result_confidence(result: QueryResponse) -> float:
             confidence -= min(0.4, 0.1 * error_count)
 
     return max(0.1, min(1.0, confidence))
+
+
+def enqueue_with_limit(queue: Deque[Any], item: Any, limit: int) -> bool:
+    """Append an item if the queue is below a size limit.
+
+    Args:
+        queue: Target queue to append to.
+        item: Item to enqueue.
+        limit: Maximum allowed queue size.
+
+    Returns:
+        ``True`` when the item is enqueued, ``False`` when dropped.
+
+    Raises:
+        ValueError: If ``limit`` is not positive.
+    """
+
+    if limit <= 0:
+        raise ValueError("limit must be positive")
+    if len(queue) >= limit:
+        return False
+    queue.append(item)
+    return True
