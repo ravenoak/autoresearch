@@ -2,11 +2,13 @@
 # macOS (ARM) container image with project extras for Autoresearch
 FROM ghcr.io/cirruslabs/macos-runner:sonoma
 
-ARG EXTRAS=full
+ARG EXTRAS="full,test"
 WORKDIR /workspace
 COPY . .
 RUN /bin/bash -lc "brew update && brew install python@3.12" \
     && pip3 install --no-cache-dir uv \
-    && uv pip install ".[${EXTRAS}]"
+    && uv pip install ".[${EXTRAS}]" \
+    && autoresearch --help >/dev/null \
+    && uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
