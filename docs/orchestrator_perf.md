@@ -41,3 +41,12 @@ Example curves for \(\lambda = 120\) tasks/s, \(\mu = 50\) tasks/s, and
 | 3 | 120 | 0.0466 |
 | 4 | 120 | 0.0286 |
 | 5 | 120 | 0.0259 |
+
+## Benchmark
+
+We validated the analytical model with a discrete-event simulation running
+100 tasks while varying workers and adding 5 ms of dispatch latency. The
+throughput curve matches the \(\min(\lambda, c\mu)\) prediction, and
+latency decreases as workers scale.
+
+![Benchmark throughput and latency](images/distributed_orchestrator_perf_benchmark.svg)
