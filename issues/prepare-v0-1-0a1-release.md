@@ -21,6 +21,8 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [resolve-package-metadata-warnings](archive/resolve-package-metadata-warnings.md)
 - [fix-check-env-warnings-test-failure](fix-check-env-warnings-test-failure.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
+- [complete-orchestration-spec](complete-orchestration-spec.md)
+- [fix-distributed-perf-sim-cli-failure](fix-distributed-perf-sim-cli-failure.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
