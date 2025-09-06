@@ -40,3 +40,11 @@ def test_cli_execution(tmp_path: Path) -> None:
     data = json.loads(out.decode())
     assert data[0]["throughput"] == 1
     assert (tmp_path / "plot.svg").exists()
+
+
+def test_cli_requires_arguments() -> None:
+    """Missing flags produce a helpful error."""
+    script = Path(__file__).parents[2] / "scripts" / "distributed_perf_sim.py"
+    proc = subprocess.run(["uv", "run", str(script)], stderr=subprocess.PIPE)
+    assert proc.returncode != 0
+    assert b"required" in proc.stderr
