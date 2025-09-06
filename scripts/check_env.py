@@ -149,14 +149,18 @@ def check_package(pkg: str) -> CheckResult | None:
     return CheckResult(pkg, current, required)
 
 
-def check_pytest_bdd() -> CheckResult:
+def check_pytest_bdd() -> CheckResult | None:
     """Ensure pytest-bdd is installed and importable."""
 
     try:
         import pytest_bdd  # noqa: F401
     except ModuleNotFoundError as exc:  # pragma: no cover - failure path
         raise VersionError("pytest-bdd import failed; run 'task install'.") from exc
-    current = metadata.version("pytest-bdd")
+    try:
+        current = metadata.version("pytest-bdd")
+    except metadata.PackageNotFoundError:
+        warnings.warn("package metadata not found for pytest-bdd")
+        return None
     required = REQUIREMENTS["pytest-bdd"]
     return CheckResult("pytest-bdd", current, required)
 
@@ -185,9 +189,7 @@ def main() -> None:
             if result.ok():
                 print(f"{result.name} {result.current}")
             else:
-                errors.append(
-                    f"{result.name} {result.current} < required {result.required}"
-                )
+                errors.append(f"{result.name} {result.current} < required {result.required}")
         except Exception as exc:  # pragma: no cover - failure paths
             errors.append(str(exc))
 
