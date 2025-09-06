@@ -2,6 +2,8 @@
 
 ## September 6, 2025
 
+- Deployment validator now checks configs and env vars with tests and docs;
+  archived the related issue.
 - Installed Go Task CLI and synchronized extras with `task install`.
 - `task check EXTRAS=dev` passes, running flake8, mypy, spec linting, and smoke tests.
 - `task verify` fails at
@@ -164,7 +166,6 @@ warnings. Coverage data was not produced.
 - [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
-  - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
   - [tune-system-performance](issues/tune-system-performance.md)
 - [simulate-distributed-orchestrator-performance]
   (issues/simulate-distributed-orchestrator-performance.md)
