@@ -154,8 +154,9 @@ def check_pytest_bdd() -> CheckResult | None:
 
     try:
         import pytest_bdd  # noqa: F401
-    except ModuleNotFoundError as exc:  # pragma: no cover - failure path
-        raise VersionError("pytest-bdd import failed; run 'task install'.") from exc
+    except ModuleNotFoundError:  # pragma: no cover - failure path
+        warnings.warn("pytest-bdd import failed; run 'task install'.")
+        return None
     try:
         current = metadata.version("pytest-bdd")
     except metadata.PackageNotFoundError:

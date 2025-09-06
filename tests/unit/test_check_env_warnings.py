@@ -1,7 +1,8 @@
 import importlib.util
 import sys
-from pathlib import Path
 from importlib import metadata
+from pathlib import Path
+import builtins
 import pytest
 
 spec = importlib.util.spec_from_file_location(
@@ -22,6 +23,20 @@ def test_missing_package_metadata_warns(monkeypatch):
     monkeypatch.setattr(check_env.metadata, "version", fake_version)
     with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
         result = check_env.check_package("fakepkg")
+    assert result is None
+
+
+def test_missing_pytest_bdd_warns(monkeypatch):
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "pytest_bdd":
+            raise ModuleNotFoundError
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    with pytest.warns(UserWarning, match="pytest-bdd import failed; run 'task install'."):
+        result = check_env.check_pytest_bdd()
     assert result is None
 
 
