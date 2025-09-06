@@ -1,8 +1,8 @@
 # Container Usage
 
-Autoresearch ships Dockerfiles for Linux, macOS, and Windows. Each image
-installs project extras via a build argument and starts the `autoresearch`
-CLI.
+Autoresearch ships a multi-stage Dockerfile targeting Linux, macOS, and
+Windows. Each stage installs project extras via a build argument and starts the
+`autoresearch` CLI.
 
 ## Build
 
@@ -10,20 +10,21 @@ CLI.
   `full`.
 - Replace `podman` with your container engine.
 
+Build and push all platforms:
+
 ```bash
-bash docker/build_images.sh
+bash scripts/release_images.sh ghcr.io/OWNER latest
 ```
 
-The script builds Linux, macOS, and Windows images. Pass an argument to
-override `EXTRAS`.
+Manual builds for a single platform use Docker Buildx targets:
 
 ```bash
-podman build -f docker/Dockerfile.linux --build-arg EXTRAS=minimal \
+podman buildx build --target linux --platform linux/amd64 \
     -t autoresearch-linux .
 ```
 
-Repeat manual builds with the macOS and Windows Dockerfiles on their
-respective hosts when a native build is required.
+Use `macos` or `windows` with the matching `--platform` value to build other
+images.
 
 ## Run
 
@@ -35,10 +36,6 @@ podman run --rm autoresearch-linux --version
 
 ## Release
 
-The `scripts/release_images.sh` script builds and pushes all images:
-
-```bash
-bash scripts/release_images.sh ghcr.io/OWNER latest
-```
-
-Set `CONTAINER_ENGINE` to `podman` when Docker is unavailable.
+`scripts/release_images.sh` builds Linux (amd64, arm64), macOS, and Windows
+images using pinned base digests to ensure reproducibility. Set
+`CONTAINER_ENGINE` to `podman` when Docker is unavailable.

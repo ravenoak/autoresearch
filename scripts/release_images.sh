@@ -3,7 +3,7 @@
 # Usage: release_images.sh REGISTRY TAG [EXTRAS]
 set -euo pipefail
 
-if [ "${1:-}" = "" ] || [ "${2:-}" = "" ]; then
+if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
   echo "Usage: $0 REGISTRY TAG [EXTRAS]" >&2
   exit 1
 fi
@@ -19,13 +19,17 @@ if ! command -v "$ENGINE" >/dev/null 2>&1; then
 fi
 
 build_and_push() {
-  local os="$1"
-  local file="$2"
-  "$ENGINE" build -f "$file" --build-arg EXTRAS="$EXTRAS" \
-    -t "$REGISTRY/autoresearch:$os-$TAG" .
-  "$ENGINE" push "$REGISTRY/autoresearch:$os-$TAG"
+  local target="$1"
+  local platforms="$2"
+  "$ENGINE" buildx build \
+    --file Dockerfile \
+    --target "$target" \
+    --build-arg EXTRAS="$EXTRAS" \
+    --platform "$platforms" \
+    --tag "$REGISTRY/autoresearch:$target-$TAG" \
+    --push .
 }
 
-build_and_push linux docker/Dockerfile.linux
-build_and_push macos docker/Dockerfile.macos
-build_and_push windows docker/Dockerfile.windows
+build_and_push linux "linux/amd64,linux/arm64"
+build_and_push macos "linux/amd64"
+build_and_push windows "windows/amd64"
