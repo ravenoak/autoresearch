@@ -2,6 +2,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from importlib import metadata
+import pytest
 
 spec = importlib.util.spec_from_file_location(
     "check_env",
@@ -12,17 +13,16 @@ sys.modules["check_env"] = check_env
 spec.loader.exec_module(check_env)
 
 
-def test_missing_package_metadata_warns(monkeypatch, capsys):
+def test_missing_package_metadata_warns(monkeypatch):
     monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})
 
     def fake_version(name):
         raise metadata.PackageNotFoundError
 
     monkeypatch.setattr(check_env.metadata, "version", lambda name: fake_version(name))
-    result = check_env.check_package("fakepkg")
-    captured = capsys.readouterr()
+    with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
+        result = check_env.check_package("fakepkg")
     assert result is None
-    assert "WARNING: package metadata not found for fakepkg" in captured.err
 
 
 def test_main_ignores_missing_metadata(monkeypatch, capsys):
@@ -38,7 +38,7 @@ def test_main_ignores_missing_metadata(monkeypatch, capsys):
         raise metadata.PackageNotFoundError
 
     monkeypatch.setattr(check_env.metadata, "version", lambda name: fake_version(name))
-    check_env.main()
+    with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
+        check_env.main()
     captured = capsys.readouterr()
-    assert "WARNING: package metadata not found for fakepkg" in captured.err
     assert "ERROR" not in captured.err
