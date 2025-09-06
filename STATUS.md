@@ -2,6 +2,15 @@
 
 ## September 6, 2025
 
+- `task verify` aborted on failing tests such as
+  `tests/unit/test_metrics_token_budget_spec.py::test_token_budget_spec`,
+  `tests/unit/test_token_budget.py::test_token_budget`, and later
+  `tests/integration/test_optional_modules_imports.py::test_optional_module_exports[spacy-__version__]`
+  before any multiprocessing resource tracker errors appeared. The issue was
+  archived.
+
+## September 6, 2025
+
 - Removed an unused import so `task install` completes without flake8 errors.
 - Added an "Algorithms" heading to `docs/specs/distributed.md` to satisfy spec
   linting.
