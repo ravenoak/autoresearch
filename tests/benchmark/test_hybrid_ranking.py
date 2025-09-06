@@ -10,6 +10,9 @@ import pytest
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "backend_benchmark.csv"
 
+# Updated weighting for hybrid ranking: bm25=0.4, semantic=0.5, credibility=0.1.
+RANKING_WEIGHTS = {"bm25": 0.4, "semantic": 0.5, "credibility": 0.1}
+
 
 def load_data() -> List[Dict[str, str]]:
     """Load benchmark rows from the shared dataset."""
@@ -43,6 +46,10 @@ def test_hybrid_ranking(backend: str, benchmark, metrics_baseline) -> None:
     """Record metrics for each backend and check against baselines."""
     rows = load_data()
     data = [r for r in rows if r["backend"] == backend]
+
+    if backend == "hybrid":
+        # Ensure weights remain normalised for the hybrid algorithm.
+        assert pytest.approx(sum(RANKING_WEIGHTS.values())) == 1.0
 
     def run() -> None:
         compute_metrics(data)

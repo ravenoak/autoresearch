@@ -133,6 +133,8 @@ class APIConfig(BaseModel):
 
     webhooks: List[str] = Field(default_factory=list)
     webhook_timeout: int = Field(default=5, ge=1)
+    webhook_retries: int = Field(default=3, ge=0)
+    webhook_backoff: float = Field(default=0.5, ge=0.0)
     api_key: str | None = Field(
         default=None,
         description="Shared secret required in the X-API-Key header when set",
