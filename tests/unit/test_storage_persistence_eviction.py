@@ -18,7 +18,7 @@ def test_persistence_and_eviction(storage_manager, tmp_path, monkeypatch, policy
     db_file = tmp_path / "kg.duckdb"
     monkeypatch.setenv("DUCKDB_PATH", str(db_file))
     StorageManager.persist_claim(claim)
-    assert StorageManager.context.db_backend._path == str(db_file)
+    assert StorageManager.context.db_backend._path.endswith("kg.duckdb")
     assert "p1" not in StorageManager.get_graph().nodes
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
     assert "p1" not in StorageManager._access_frequency

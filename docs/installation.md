@@ -397,6 +397,17 @@ uv sync --extra llm          # CPU LLM libraries
 uv sync --extra gpu          # BERTopic and lmstudio
 ```
 
+### Verifying the `llm` extra
+
+Create a clean environment and install the extra to confirm the CPU LLM
+dependencies resolve:
+
+```bash
+uv venv /tmp/ar-llm
+uv pip install "autoresearch[llm]" --python /tmp/ar-llm/bin/python
+uv pip list --python /tmp/ar-llm/bin/python | grep dspy
+```
+
 Install multiple extras separated by commas:
 
 ```bash

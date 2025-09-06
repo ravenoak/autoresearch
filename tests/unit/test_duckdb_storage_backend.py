@@ -161,6 +161,10 @@ class TestDuckDBStorageBackend:
         mock_result = MagicMock()
         mock_result.fetchall.return_value = []
         mock_conn.execute.return_value = mock_result
+        class_cursor = MagicMock()
+        class_cursor.fetchone.return_value = None
+        class_execute = MagicMock(return_value=class_cursor)
+        mock_conn.__class__.execute = class_execute
 
         # Setup the backend
         backend = DuckDBStorageBackend()
@@ -171,9 +175,11 @@ class TestDuckDBStorageBackend:
         # Call the _initialize_schema_version method directly
         backend._initialize_schema_version()
 
-        # Verify that the execute method was called to insert the schema version
-        mock_conn.execute.assert_any_call(
-            "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
+        # Verify that the class-level execute method was called to insert the
+        # schema version
+        class_execute.assert_any_call(
+            mock_conn,
+            "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
