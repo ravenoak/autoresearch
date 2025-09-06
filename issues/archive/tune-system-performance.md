@@ -7,8 +7,8 @@ Performance tuning ensures efficient operation and scalability under production 
 2027-04-01
 
 ## Dependencies
-- [containerize-and-package](containerize-and-package.md)
-- [validate-deployment-configurations](validate-deployment-configurations.md)
+- [containerize-and-package](../containerize-and-package.md)
+- [validate-deployment-configurations](../validate-deployment-configurations.md)
 
 ## Acceptance Criteria
 - Profile critical components and resolve bottlenecks.
