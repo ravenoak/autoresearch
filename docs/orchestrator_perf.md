@@ -16,6 +16,22 @@ arrivals at ninety five percent of capacity to estimate expected queue length.
 Throughput scales nearly linearly while latency falls. Queue length remains high
 when arrivals approach capacity, signaling saturation risk.
 
+## High-load scheduling benchmark
+
+We simulated 100 tasks with 0.5 MB each, arriving at 45 tasks/s while each
+worker served 50 tasks/s. A single worker ran near saturation, but adding
+workers scaled throughput and drained the queue.
+
+| workers | utilization | throughput (tasks/s) | avg queue length |
+| ------- | ----------- | ------------------- | ---------------- |
+| 1 | 0.90 | 802.03 | 8.10 |
+| 2 | 0.45 | 1586.84 | 0.23 |
+| 3 | 0.30 | 2236.15 | 0.03 |
+| 4 | 0.23 | 2846.91 | 0.00 |
+
+Expanding the worker pool sharply reduced queueing. If workers cannot scale or
+arrivals spike, mitigation relies on admission control.
+
 ## Distributed throughput model
 
 Assumptions follow the M/M/c queue with network delay in
@@ -65,8 +81,10 @@ toward the 5 ms network delay.
 
 ## Mitigation strategies
 
-- Backpressure caps the number of in-flight tasks when queues grow too long.
-- Adaptive worker pools expand or shrink based on backlog and utilization.
+- Expand worker pools to dilute utilization when backlog grows.
+- Throttle arrivals to keep utilization below capacity during spikes.
+- Enforce queue limits with backpressure to bound memory use.
+- Shed load when limits are exceeded to protect the orchestrator.
 
 [bench]: ../src/autoresearch/orchestrator_perf.py#L71-L112
 

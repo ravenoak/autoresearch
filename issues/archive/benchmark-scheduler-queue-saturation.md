@@ -12,8 +12,8 @@ adaptive load shedding.
 ## Acceptance Criteria
 - Mitigation strategies are documented and reviewed.
 - Benchmark findings in
-  [docs/orchestrator_perf.md](../docs/orchestrator_perf.md) inform follow-up
+  [docs/orchestrator_perf.md](../../docs/orchestrator_perf.md) inform follow-up
   tasks.
 
 ## Status
-Open
+Archived
