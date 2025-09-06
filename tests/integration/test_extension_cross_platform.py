@@ -1,3 +1,7 @@
+import os
+import shutil
+import subprocess
+
 import duckdb
 import pytest
 from autoresearch.config.models import ConfigModel, StorageConfig
@@ -5,9 +9,29 @@ from autoresearch.config.loader import ConfigLoader
 from autoresearch.storage_backends import DuckDBStorageBackend
 from autoresearch.extensions import VSSExtensionLoader
 
-pytestmark = [pytest.mark.slow, pytest.mark.requires_vss]
+pytestmark = pytest.mark.slow
 
 
+def test_container_startup(tmp_path):
+    engine = os.environ.get("CONTAINER_ENGINE", "docker")
+    if shutil.which(engine) is None:
+        pytest.skip(f"{engine} unavailable")
+    image = "autoresearch:smoke"
+    build = subprocess.run(
+        [engine, "build", "-q", "-t", image, "."],
+        capture_output=True,
+        text=True,
+    )
+    assert build.returncode == 0, build.stderr
+    run = subprocess.run(
+        [engine, "run", "--rm", image, "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert run.returncode == 0, run.stderr
+
+
+@pytest.mark.requires_vss
 def test_extension_path_normalized(tmp_path, monkeypatch):
     ext_file = tmp_path / "sub" / "vss.duckdb_extension"
     ext_file.parent.mkdir()
@@ -37,9 +61,7 @@ def test_extension_path_normalized(tmp_path, monkeypatch):
 
     dummy = DummyConn()
     monkeypatch.setattr(duckdb, "connect", lambda path: dummy)
-    monkeypatch.setattr(
-        VSSExtensionLoader, "verify_extension", lambda c, verbose=False: True
-    )
+    monkeypatch.setattr(VSSExtensionLoader, "verify_extension", lambda c, verbose=False: True)
 
     def fake_load(conn):
         VSSExtensionLoader.verify_extension(conn, verbose=False)

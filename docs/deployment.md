@@ -26,30 +26,26 @@ On a dedicated server you can run the API in the background using a process mana
 
 ## Containerized Deployment (Docker)
 
-Autoresearch can also be containerized. Platform-specific Dockerfiles live
-under `docker/` for Linux, macOS (ARM), and Windows images:
+Autoresearch can also be containerized using the multi-stage `Dockerfile` in
+the project root. Named stages `linux`, `macos`, and `windows` produce platform
+images.
 
-```
-docker/Dockerfile.linux
-docker/Dockerfile.macos
-docker/Dockerfile.windows
-```
-
-Build all images with Go Task:
+Build and push all images with the release script:
 
 ```bash
-task docker-build
+bash scripts/release_images.sh ghcr.io/OWNER latest
 ```
 
-To build a single target use one of:
+To build a single target use Docker Buildx:
 
 ```bash
-task docker-build:linux
-task docker-build:macos
-task docker-build:windows
+docker buildx build --target linux --platform linux/amd64 \
+  -t youruser/autoresearch:linux .
 ```
 
-### Using docker-compose
+Replace `linux` with `macos` or `windows` and adjust `--platform` as needed.
+
+## Using docker-compose
 
 You can orchestrate the container with `docker-compose`:
 
@@ -72,30 +68,21 @@ docker compose up --build
 
 ### Building and pushing images
 
-Use Docker Buildx to build and push per-platform images from the top-level
-Dockerfile:
+The release script wraps Docker Buildx and publishes images with pinned base
+digests:
 
 ```bash
-# Linux (x86_64)
-docker buildx build --platform linux/amd64 \
-  -t youruser/autoresearch:linux --push .
+bash scripts/release_images.sh ghcr.io/OWNER v1.2.3
+```
 
-# macOS (ARM64)
-docker buildx build --platform linux/arm64 \
+For manual pushes run:
+
+```bash
+docker buildx build --target macos --platform linux/amd64 \
   -t youruser/autoresearch:macos --push .
-
-# Windows
-docker buildx build --platform windows/amd64 \
-  --build-arg BASE_IMAGE=python:3.12-windowsservercore \
-  -t youruser/autoresearch:windows --push .
 ```
 
-Test an image locally before pushing:
-
-```bash
-docker buildx build --platform linux/amd64 -t autoresearch:test --load .
-docker run --rm -p 8000:8000 autoresearch:test
-```
+Update the digests in `Dockerfile` when upstream images change and rebuild.
 
 ## Building Wheels for Distribution
 
