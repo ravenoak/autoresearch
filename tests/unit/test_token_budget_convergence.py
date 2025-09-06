@@ -3,13 +3,21 @@
 The mathematical proof appears in ``docs/algorithms/token_budgeting.md``.
 """
 
-from decimal import Decimal, ROUND_CEILING
+from decimal import Decimal, ROUND_HALF_EVEN
 from typing import List
 
 from hypothesis import given
 from hypothesis import strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+
+
+HALF_BOUNDARY_MARGINS = [((n + 0.5) / 50) - 1 for n in range(50, 100)]
+NEAR_BOUNDARY_MARGINS = [
+    m + 1e-9 for m in HALF_BOUNDARY_MARGINS if m + 1e-9 <= 1.0
+] + [
+    m - 1e-9 for m in HALF_BOUNDARY_MARGINS if m - 1e-9 >= 0.0
+]
 
 
 def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, start: int) -> int:
@@ -20,19 +28,19 @@ def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, 
     return budget
 
 
-def _scaled_ceil(usage: float, margin: float) -> int:
+def _scaled_round(usage: float, margin: float) -> int:
     scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
-    return int(scaled.to_integral_value(rounding=ROUND_CEILING))
+    return int(scaled.to_integral_value(rounding=ROUND_HALF_EVEN))
 
 
 def test_suggest_token_budget_converges() -> None:
-    """Repeated updates reach ``ceil(u * (1 + m))`` for constant usage.
+    """Repeated updates reach ``round(u * (1 + m))`` for constant usage.
 
     See ``docs/algorithms/token_budgeting.md`` for the formal proof.
     """
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [50] * 8, margin=0.2, start=50)
-    assert budget == _scaled_ceil(50, 0.2)
+    assert budget == _scaled_round(50, 0.2)
 
 
 def test_budget_tracks_growth() -> None:
@@ -40,7 +48,7 @@ def test_budget_tracks_growth() -> None:
     m = OrchestrationMetrics()
     usage = [30, 30, 50, 50, 50]
     budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
-    assert budget == _scaled_ceil(50, 0.2)
+    assert budget == _scaled_round(50, 0.2)
 
 
 def test_budget_recovers_after_spike() -> None:
@@ -48,26 +56,29 @@ def test_budget_recovers_after_spike() -> None:
     m = OrchestrationMetrics()
     usage = [50, 80] + [50] * 20
     budget = _run_cycles(m, usage, margin=0.2, start=usage[0])
-    assert budget == _scaled_ceil(50, 0.2)
+    assert budget == _scaled_round(50, 0.2)
 
 
 def test_margin_precision_converges() -> None:
     """Decimal margins avoid rounding inflation."""
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [50] * 8, margin=0.1, start=50)
-    assert budget == _scaled_ceil(50, 0.1)
+    assert budget == _scaled_round(50, 0.1)
 
 
-@given(
-    start=st.integers(min_value=0, max_value=120),
-    margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+margin_strategy = st.one_of(
+    st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
+    st.sampled_from(HALF_BOUNDARY_MARGINS + NEAR_BOUNDARY_MARGINS),
 )
+
+
+@given(start=st.integers(min_value=0, max_value=120), margin=margin_strategy)
 def test_convergence_from_any_start(start: int, margin: float) -> None:
-    """Budgets converge to ``ceil(u * (1 + m))`` from arbitrary starts."""
+    """Budgets converge to ``round(u * (1 + m))`` from arbitrary starts."""
     m = OrchestrationMetrics()
     usage = [50] * 6
     budget = _run_cycles(m, usage, margin=margin, start=start)
-    assert budget == _scaled_ceil(50, margin)
+    assert budget == _scaled_round(50, margin)
 
 
 @given(
@@ -105,7 +116,7 @@ def test_margin_boundaries_converge(start: int, usage: int, margin: float) -> No
     m = OrchestrationMetrics()
     budget = _run_cycles(m, [usage] * 6, margin=margin, start=start)
     expected_margin = max(margin, 0.0)
-    assert budget == _scaled_ceil(usage, expected_margin)
+    assert budget == _scaled_round(usage, expected_margin)
 
 
 def test_agent_average_preserves_budget() -> None:
@@ -118,7 +129,7 @@ def test_agent_average_preserves_budget() -> None:
     for _ in range(5):
         m.record_tokens("a", 10, 0)
         budget = m.suggest_token_budget(budget, margin=0.2)
-    expected = _scaled_ceil((100 * 5 + 10 * 5) / 10, 0.2)
+    expected = _scaled_round((100 * 5 + 10 * 5) / 10, 0.2)
     assert budget == expected
 
 
@@ -139,7 +150,7 @@ def test_sparse_usage_retains_history(first: int, second: int, gap: int, margin:
     m.record_tokens("agent", second, 0)
     budget = m.suggest_token_budget(budget, margin=margin)
     base = max(second, (first + second) / 2)
-    expected = _scaled_ceil(base, margin)
+    expected = _scaled_round(base, margin)
     assert budget == expected
 
 
