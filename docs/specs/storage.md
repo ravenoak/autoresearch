@@ -2,9 +2,10 @@
 
 ## Overview
 
-The storage subsystem persists claims and enables hybrid retrieval across graph,
-vector, and RDF backends. Simulations and targeted tests confirm schema
-idempotency and RAM budget enforcement under concurrency [d1][s1][t4][t5][t6].
+The storage subsystem persists claims and enables hybrid retrieval across
+graph, vector, and RDF backends. Simulations and targeted tests confirm
+schema idempotency, concurrency safety, and RAM budget enforcement
+[d1][s1][s2][s3][s4][t4][t5][t6].
 
 ## Algorithms
 
@@ -13,7 +14,8 @@ idempotency and RAM budget enforcement under concurrency [d1][s1][t4][t5][t6].
 ## Invariants
 
 State-transition invariants describe properties that hold for the storage state
-`(G, U, B)` where `G` is the graph, `U` the RAM usage, and `B` the budget.
+`(G, U, B)` where `G` is the graph, `U` the RAM usage, `B` the budget, and `δ`
+the safety margin.
 
 1. **Setup**
    - Repeated `initialize_storage` calls leave `G` unchanged.
@@ -29,10 +31,12 @@ State-transition invariants describe properties that hold for the storage state
 
 ## Proof Sketch
 
-- `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so the schema is
-  unchanged after each run.
-- `_enforce_ram_budget` acquires a lock and decreases usage while
-  `U > B(1 - δ)`, guaranteeing termination below the target.
+- `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs yield
+  identical table listings, demonstrated in `schema_idempotency_sim.py` [s2].
+- `_enforce_ram_budget` acquires the lock and decreases usage while
+  `U > B(1 - δ)`. Each step evicts at least one node, forming a decreasing
+  sequence bounded below, so the loop halts within the budget. Sequential and
+  concurrent simulations validate the bound [s3][s4].
 - When `U ≤ B`, the loop does not run, preserving all nodes.
 
 These arguments rely on the formal proofs and simulations in
@@ -40,11 +44,17 @@ These arguments rely on the formal proofs and simulations in
 
 ## Simulation Expectations
 
-Unit tests and `storage_eviction_sim.py` cover nominal and edge cases for
-these routines.
+Unit tests and simulations cover nominal and edge cases for these routines,
+including `storage_eviction_sim.py`, `schema_idempotency_sim.py`,
+`ram_budget_enforcement_sim.py`, and `storage_concurrency_sim.py`.
+
+## Concurrency Assumptions
+
+- A process-wide re-entrant lock serializes graph mutations.
+- `_enforce_ram_budget` holds this lock, preventing eviction races.
+- Concurrent writers stay within budget in `storage_concurrency_sim.py` [s4].
 
 ## Traceability
-
 
 - Modules
   - [src/autoresearch/storage.py][m1]
@@ -52,6 +62,9 @@ these routines.
   - [docs/algorithms/storage.md][d1]
 - Scripts
   - [scripts/storage_eviction_sim.py][s1]
+  - [scripts/schema_idempotency_sim.py][s2]
+  - [scripts/ram_budget_enforcement_sim.py][s3]
+  - [scripts/storage_concurrency_sim.py][s4]
 - Tests
   - [tests/behavior/features/storage_search_integration.feature][t1]
   - [tests/integration/test_search_storage.py][t2]
@@ -64,6 +77,9 @@ these routines.
 [m1]: ../../src/autoresearch/storage.py
 [d1]: ../algorithms/storage.md
 [s1]: ../../scripts/storage_eviction_sim.py
+[s2]: ../../scripts/schema_idempotency_sim.py
+[s3]: ../../scripts/ram_budget_enforcement_sim.py
+[s4]: ../../scripts/storage_concurrency_sim.py
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
 [t2]: ../../tests/integration/test_search_storage.py
 [t3]: ../../tests/unit/test_storage_eviction.py
