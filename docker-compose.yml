@@ -6,11 +6,12 @@ services:
       dockerfile: docker/Dockerfile.linux
       args:
         EXTRAS: ${EXTRAS:-full,test}
+        OFFLINE: ${OFFLINE:-0}
     platform: ${DOCKER_PLATFORM:-linux/amd64}
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ${ENV_FILE:-.env.offline}
     command: uv run uvicorn autoresearch.api:app --host 0.0.0.0 --port 8000
   redis:
     image: redis:7-alpine
