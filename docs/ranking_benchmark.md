@@ -5,6 +5,10 @@ performance for hybrid ranking across search backends. The hybrid algorithm uses
 weights of 0.4 for BM25, 0.5 for semantic similarity, and 0.1 for source
 credibility.
 
+Regenerate these metrics with `uv run pytest`
+`tests/benchmark/test_hybrid_ranking.py`. The shared dataset lives in
+`tests/data/backend_benchmark.csv`.
+
 | Backend | Precision | Recall | Latency (ms) |
 |---------|-----------|--------|--------------|
 | bm25    | 1.00      | 1.00   | 0.0026       |

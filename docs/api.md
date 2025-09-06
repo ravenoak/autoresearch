@@ -37,7 +37,8 @@ Missing or invalid credentials yield **401 Unauthorized**. Authenticated
 clients without the required permission receive **403 Forbidden**. Adjust
 `AUTORESEARCH_API__ROLE_PERMISSIONS` to assign actions to roles.
 
-Restart the server after changing these values.
+The configuration watcher applies changes at runtime so a restart is
+unnecessary.
 
 ## Endpoints
 
@@ -104,6 +105,13 @@ curl -X POST 'http://localhost:8000/query/batch?page=2&page_size=2' \
 Use the `page` and `page_size` query parameters to control which subset of
 queries are processed. Both parameters start counting at 1. If omitted,
 `page` defaults to `1` and `page_size` defaults to `10`.
+
+### Streaming query responses
+
+Append `?stream=true` to keep the HTTP connection open while a query runs.
+The server emits JSON lines for partial results and sends blank heartbeat
+lines to prevent timeouts during long operations. The final line contains
+the completed result or an error message.
 
 ### Webhook notifications
 

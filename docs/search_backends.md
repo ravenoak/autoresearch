@@ -33,8 +33,15 @@ Use `scripts/optimize_search_weights.py` with a labelled evaluation dataset to
 automatically discover good values. The script runs a grid search and updates
 the configuration file with the best-performing weights.
 
+## Hot reload
+
+Changes to the `[search]` section are applied at runtime. The configuration
+watcher updates active search backends and weights without restarting
+services.
+
 ## Benchmarking
 
-To guard against regressions, run `tests/benchmark/test_hybrid_ranking.py`
-with the shared dataset in `tests/data/backend_benchmark.csv`. Example
-results and thresholds live in [ranking_benchmark.md](ranking_benchmark.md).
+To guard against regressions, run `uv run pytest`
+`tests/benchmark/test_hybrid_ranking.py` with the shared dataset in
+`tests/data/backend_benchmark.csv`. Example results and thresholds live in
+[ranking_benchmark.md](ranking_benchmark.md).
