@@ -40,12 +40,17 @@ def simulate(
 
     results: List[Dict[str, float]] = []
     for workers in range(1, max_workers + 1):
+        # Skip configurations where the system would be unstable (rho >= 1).
+        if arrival_rate >= workers * service_rate:
+            continue
+
         metrics = queue_metrics(workers, arrival_rate, service_rate)
         wait_q = metrics["avg_queue_length"] / arrival_rate
         latency = network_delay + wait_q + 1 / service_rate
         results.append(
             {
                 "workers": float(workers),
+                # In a stable M/M/c queue the throughput equals the arrival rate.
                 "throughput": arrival_rate,
                 "latency_s": latency,
                 "avg_queue_length": metrics["avg_queue_length"],

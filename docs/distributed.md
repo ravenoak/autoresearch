@@ -19,6 +19,43 @@ coordinator and agent results are aggregated asynchronously. Each broker
 supports a `publish` method and a `queue` attribute with `put` and `get`
 operations.
 
+## Analytical performance model
+
+We model the orchestrator as an M/M/c queue with a fixed dispatch delay
+`d`. Tasks arrive at rate `λ` and each worker completes tasks at rate
+`μ`. The system is stable only when the utilization `ρ = λ / (c μ)` is
+less than one.
+
+The probability of zero tasks in the system is
+
+```
+P0 = [ Σ_{n=0}^{c-1} (λ/μ)^n / n! + (λ/μ)^c / (c!(1-ρ)) ]^{-1}
+```
+
+The average queue length is
+
+```
+L_q = [(λ/μ)^c ρ / (c!(1-ρ)^2)] P0
+```
+
+The average latency combines network delay with queueing effects:
+
+```
+T = d + L_q/λ + 1/μ
+```
+
+Throughput equals the arrival rate `λ` while `ρ < 1`. The script
+`scripts/distributed_perf_sim.py` evaluates these equations across worker
+counts. The plots below use `λ = 100` tasks/s, `μ = 120` tasks/s, and
+`d = 0.005` s.
+
+![Latency vs workers](images/distributed_latency.svg)
+
+![Throughput vs workers](images/distributed_throughput.svg)
+
+For empirical validation, compare these projections with the benchmark
+results from `scripts/distributed_orchestrator_perf_benchmark.py`.
+
 ## Orchestrator Simulation
 
 The `distributed_orchestrator_sim.py` script models scheduling and resource
