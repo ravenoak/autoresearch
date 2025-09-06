@@ -7,14 +7,14 @@ Reliable deployment requires validated scripts and configuration checks to preve
 2027-01-15
 
 ## Dependencies
-- [containerize-and-package](../containerize-and-package.md)
+- [containerize-and-package](containerize-and-package.md)
 
 ## Acceptance Criteria
 - Deliver deployment scripts with automated configuration validation.
 - Test scripts across supported environments.
 - Document deployment procedures and configuration options.
-- Include [scripts/validate_deploy.py](../../scripts/validate_deploy.py) for
+- Include [scripts/validate_deploy.py](../scripts/validate_deploy.py) for
   preflight checks.
 
 ## Status
-Archived
+Open

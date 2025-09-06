@@ -49,7 +49,7 @@ before running tests.
   - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
     - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
     - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
-      (2027-01-15, depends on containerization)
+      (2027-01-15, depends on containerization; reopened)
     - [tune-system-performance](issues/archive/tune-system-performance.md)
       (2027-04-01, depends on deployment validation)
 
@@ -146,7 +146,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 
 - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
 - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
-  (2027-01-15, depends on containerization)
+  (2027-01-15, depends on containerization; reopened)
 - [tune-system-performance](issues/archive/tune-system-performance.md)
   (2027-04-01, depends on deployment validation)
 
