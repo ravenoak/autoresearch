@@ -135,10 +135,12 @@ async def query_endpoint(
                 metrics={"error": error_info.message, "error_details": error_data},
             )
             timeout = getattr(config.api, "webhook_timeout", 5)
+            retries = getattr(config.api, "webhook_retries", 3)
+            backoff = getattr(config.api, "webhook_backoff", 0.5)
             if request.webhook_url:
-                webhooks.notify_webhook(request.webhook_url, error_resp, timeout)
+                webhooks.notify_webhook(request.webhook_url, error_resp, timeout, retries, backoff)
             for url in getattr(config.api, "webhooks", []):
-                webhooks.notify_webhook(url, error_resp, timeout)
+                webhooks.notify_webhook(url, error_resp, timeout, retries, backoff)
             return error_resp
     try:
         validated = (
@@ -164,16 +166,20 @@ async def query_endpoint(
             },
         )
         timeout = getattr(config.api, "webhook_timeout", 5)
+        retries = getattr(config.api, "webhook_retries", 3)
+        backoff = getattr(config.api, "webhook_backoff", 0.5)
         if request.webhook_url:
-            webhooks.notify_webhook(request.webhook_url, error_resp, timeout)
+            webhooks.notify_webhook(request.webhook_url, error_resp, timeout, retries, backoff)
         for url in getattr(config.api, "webhooks", []):
-            webhooks.notify_webhook(url, error_resp, timeout)
+            webhooks.notify_webhook(url, error_resp, timeout, retries, backoff)
         return error_resp
     timeout = getattr(config.api, "webhook_timeout", 5)
+    retries = getattr(config.api, "webhook_retries", 3)
+    backoff = getattr(config.api, "webhook_backoff", 0.5)
     if request.webhook_url:
-        webhooks.notify_webhook(request.webhook_url, validated, timeout)
+        webhooks.notify_webhook(request.webhook_url, validated, timeout, retries, backoff)
     for url in getattr(config.api, "webhooks", []):
-        webhooks.notify_webhook(url, validated, timeout)
+        webhooks.notify_webhook(url, validated, timeout, retries, backoff)
     return validated
 
 

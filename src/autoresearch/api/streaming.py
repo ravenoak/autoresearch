@@ -37,12 +37,14 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
 
     queue: asyncio.Queue[str | None] = asyncio.Queue()
     timeout = getattr(config.api, "webhook_timeout", 5)
+    retries = getattr(config.api, "webhook_retries", 3)
+    backoff = getattr(config.api, "webhook_backoff", 0.5)
 
     def send_webhooks(response: QueryResponse) -> None:
         if request.webhook_url:
-            webhooks.notify_webhook(request.webhook_url, response, timeout)
+            webhooks.notify_webhook(request.webhook_url, response, timeout, retries, backoff)
         for url in getattr(config.api, "webhooks", []):
-            webhooks.notify_webhook(url, response, timeout)
+            webhooks.notify_webhook(url, response, timeout, retries, backoff)
 
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()

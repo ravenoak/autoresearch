@@ -39,14 +39,16 @@ def test_stream_emits_keepalive(monkeypatch, api_client):
 def test_stream_webhook_partial(monkeypatch, api_client):
     """Streaming should POST each partial result to the webhook."""
 
-    cfg = ConfigModel(api=APIConfig(webhook_timeout=1))
+    cfg = ConfigModel(api=APIConfig(webhook_timeout=1, webhook_retries=2, webhook_backoff=0.1))
     cfg.api.role_permissions["anonymous"] = ["query"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    api.config_loader._config = cfg
+    monkeypatch.setattr(streaming_module, "get_config", lambda: cfg)
 
     calls = []
 
     def fake_notify(url, result, timeout, retries=3, backoff=0.5):  # noqa: D401
-        calls.append(result.answer)
+        calls.append((result.answer, timeout, retries, backoff))
 
     def run_query(self, query, config, callbacks=None, **kwargs):
         from autoresearch.orchestration.state import QueryState
@@ -67,7 +69,11 @@ def test_stream_webhook_partial(monkeypatch, api_client):
         assert resp.status_code == 200
         [line for line in resp.iter_lines()]
 
-    assert calls == ["partial-0", "partial-1", "final"]
+    assert calls == [
+        ("partial-0", 1, 2, 0.1),
+        ("partial-1", 1, 2, 0.1),
+        ("final", 1, 2, 0.1),
+    ]
 
 
 @pytest.mark.slow
