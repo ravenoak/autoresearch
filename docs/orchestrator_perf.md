@@ -19,11 +19,9 @@ when arrivals approach capacity, signaling saturation risk.
 ## Distributed throughput model
 
 Assumptions follow the M/M/c queue with network delay in
-[algorithms/distributed_perf.md](algorithms/distributed_perf.md):
-
-- Tasks arrive at 100 tasks/s with a 5 ms network delay.
-- Each worker processes 120 tasks/s.
-- Arrivals and service times are exponential with utilization below one.
+[algorithms/distributed_perf.md](algorithms/distributed_perf.md). Tasks arrive
+at rate `\lambda` with network delay `d`, each worker processes `\mu` tasks/s,
+and arrivals and service times are exponential with utilization below one.
 
 Formulas:
 
@@ -32,19 +30,38 @@ Formulas:
 - Latency `T = d + W_q + 1/\mu`.
 - Throughput equals `\lambda` when `\rho < 1`.
 
-Results from
-`uv run scripts/distributed_perf_sim.py --max-workers 4 --arrival-rate 100 \\
-    --service-rate 120 --network-delay 0.005`:
+We varied arrival and service rates using
+`uv run scripts/distributed_perf_sim.py --max-workers 4 --network-delay 0.005`.
+
+### Arrival 50 tasks/s, service 80 tasks/s
 
 | workers | throughput (tasks/s) | latency (ms) | avg queue length |
 | ------- | ------------------- | ------------ | ---------------- |
-| 1 | 100.00 | 55.000 | 4.17 |
-| 2 | 100.00 | 15.084 | 0.18 |
-| 3 | 100.00 | 13.555 | 0.02 |
-| 4 | 100.00 | 13.362 | 0.00 |
+| 1 | 50.00 | 38.33 | 1.04 |
+| 2 | 50.00 | 18.85 | 0.07 |
+| 3 | 50.00 | 17.64 | 0.01 |
+| 4 | 50.00 | 17.51 | 0.00 |
 
-Network delay dominates latency; additional workers cut queueing after two
-processes.
+### Arrival 80 tasks/s, service 100 tasks/s
+
+| workers | throughput (tasks/s) | latency (ms) | avg queue length |
+| ------- | ------------------- | ------------ | ---------------- |
+| 1 | 80.00 | 55.00 | 3.20 |
+| 2 | 80.00 | 16.90 | 0.15 |
+| 3 | 80.00 | 15.24 | 0.02 |
+| 4 | 80.00 | 15.03 | 0.00 |
+
+### Arrival 120 tasks/s, service 150 tasks/s
+
+| workers | throughput (tasks/s) | latency (ms) | avg queue length |
+| ------- | ------------------- | ------------ | ---------------- |
+| 1 | 120.00 | 38.33 | 3.20 |
+| 2 | 120.00 | 12.94 | 0.15 |
+| 3 | 120.00 | 11.82 | 0.02 |
+| 4 | 120.00 | 11.69 | 0.00 |
+
+Higher service rates relative to arrivals shrink queues and drive latency
+toward the 5 ms network delay.
 
 ## Mitigation strategies
 
@@ -52,3 +69,10 @@ processes.
 - Adaptive worker pools expand or shrink based on backlog and utilization.
 
 [bench]: ../src/autoresearch/orchestrator_perf.py#L71-L112
+
+## Follow-up benchmarks and monitoring
+
+- Benchmark scenarios with non-exponential arrivals to stress test bursty
+  workloads.
+- Expose queue length and latency metrics via a monitoring hook to detect
+  saturation in production.
