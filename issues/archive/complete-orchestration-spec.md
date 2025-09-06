@@ -14,4 +14,4 @@ expectations.
 - `task check` passes without spec lint errors.
 
 ## Status
-Open
+Archived
