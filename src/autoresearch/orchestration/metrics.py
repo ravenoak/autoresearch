@@ -4,7 +4,7 @@ import logging
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from decimal import ROUND_CEILING, Decimal
+from decimal import Decimal, ROUND_HALF_EVEN
 from os import getenv
 from pathlib import Path
 from typing import Any
@@ -440,8 +440,9 @@ class OrchestrationMetrics:
         has been observed, the budget
         remains unchanged. A window of only zero-usage samples drives the
         budget to one token. When usage stabilizes, the update converges to
-        ``ceil(u * (1 + margin))`` for constant usage ``u``. Negative
-        ``margin`` values are treated as zero.
+        ``round(u * (1 + margin))`` for constant usage ``u`` using
+        round-half-even semantics. Negative ``margin`` values are treated as
+        zero.
 
         See ``docs/algorithms/token_budgeting.md`` for derivation and a
         formal proof of convergence.
@@ -482,9 +483,9 @@ class OrchestrationMetrics:
 
         usage_candidates = [latest, avg_used, max_agent_delta, max_agent_avg]
 
-        # Round using ``Decimal`` to avoid floating-point drift, then apply
-        # a ceiling so that half-way cases round up.
+        # Round using ``Decimal`` to avoid floating-point drift and apply
+        # round-half-even semantics to avoid upward bias for ``.5`` cases.
         scaled = Decimal(str(max(usage_candidates))) * (Decimal("1") + Decimal(str(margin)))
-        desired = int(scaled.to_integral_value(rounding=ROUND_CEILING))
+        desired = int(scaled.to_integral_value(rounding=ROUND_HALF_EVEN))
 
         return max(desired, 1)

@@ -1,5 +1,4 @@
-import math
-from decimal import Decimal, ROUND_CEILING
+from decimal import Decimal, ROUND_HALF_EVEN
 
 import pytest
 from hypothesis import given
@@ -56,7 +55,8 @@ def test_budget_converges_for_constant_usage():
     for _ in range(12):
         m.record_tokens("agent", usage, 0)
         budget = m.suggest_token_budget(budget, margin=margin)
-    target = math.ceil(usage * (1 + margin))
+    scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
+    target = int(scaled.to_integral_value(rounding=ROUND_HALF_EVEN))
     assert budget == target
     for _ in range(3):
         m.record_tokens("agent", usage, 0)
@@ -68,15 +68,15 @@ def test_budget_converges_for_constant_usage():
     usage=st.integers(min_value=1, max_value=100),
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
 )
-def test_budget_rounds_up(usage: int, margin: float) -> None:
-    """The update uses ceiling rounding on the scaled usage."""
+def test_budget_rounds_half_even(usage: int, margin: float) -> None:
+    """The update uses round-half-even on the scaled usage."""
     m = OrchestrationMetrics()
     budget = usage
     for _ in range(6):
         m.record_tokens("agent", usage, 0)
         budget = m.suggest_token_budget(budget, margin=margin)
     scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
-    expected = int(scaled.to_integral_value(rounding=ROUND_CEILING))
+    expected = int(scaled.to_integral_value(rounding=ROUND_HALF_EVEN))
     assert budget == expected
 
 
@@ -88,8 +88,16 @@ def test_budget_respects_bounds_during_spike():
     budget = 5
     m.record_tokens("agent", spike, 0)
     budget = m.suggest_token_budget(budget, margin=margin)
-    target = math.ceil(usage * (1 + margin))
-    upper = math.ceil(spike * (1 + margin))
+    target = int(
+        (Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))).to_integral_value(
+            rounding=ROUND_HALF_EVEN
+        )
+    )
+    upper = int(
+        (Decimal(str(spike)) * (Decimal("1") + Decimal(str(margin)))).to_integral_value(
+            rounding=ROUND_HALF_EVEN
+        )
+    )
     for _ in range(10):
         m.record_tokens("agent", usage, 0)
         budget = m.suggest_token_budget(budget, margin=margin)
@@ -110,8 +118,16 @@ def test_convergence_bound_holds(spike: int, usage: int, margin: float, start: i
     budget = start
     m.record_tokens("agent", spike, 0)
     budget = m.suggest_token_budget(budget, margin=margin)
-    target = math.ceil(usage * (1 + margin))
-    upper = math.ceil(max(spike, usage) * (1 + margin))
+    target = int(
+        (Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))).to_integral_value(
+            rounding=ROUND_HALF_EVEN
+        )
+    )
+    upper = int(
+        (Decimal(str(max(spike, usage))) * (Decimal("1") + Decimal(str(margin)))).to_integral_value(
+            rounding=ROUND_HALF_EVEN
+        )
+    )
     for _ in range(10):
         m.record_tokens("agent", usage, 0)
         budget = m.suggest_token_budget(budget, margin=margin)
