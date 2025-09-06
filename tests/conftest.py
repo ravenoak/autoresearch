@@ -7,6 +7,7 @@ from typing import Callable
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 import contextlib
+import multiprocessing
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
@@ -28,6 +29,19 @@ pytest_plugins = [
     "tests.fixtures.extras",
     "pytest_httpx",
 ]
+
+# Use spawn to avoid fork-related deadlocks and ensure clean state.
+multiprocessing.set_start_method("spawn", force=True)
+
+
+@pytest.fixture(autouse=True)
+def _terminate_active_children() -> None:
+    """Terminate stray multiprocessing children after each test."""
+    yield
+    for proc in multiprocessing.active_children():
+        proc.terminate()
+        proc.join()
+
 
 if importlib.util.find_spec("autoresearch") is None:
     src_path = Path(__file__).resolve().parents[1] / "src"

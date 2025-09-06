@@ -29,8 +29,8 @@ def test_network_failure_creates_stub(tmp_path, monkeypatch):
     monkeypatch.setattr(download_mod, "load_offline_env", lambda *_: {})
     monkeypatch.setattr(download_mod.duckdb, "connect", lambda *_: FailingConn())
 
-    dest = download_mod.download_extension("vss", str(tmp_path))
-    stub = tmp_path / "vss" / "vss.duckdb_extension"
-    assert Path(dest) == stub
+    dest = Path(download_mod.download_extension("vss", str(tmp_path)))
+    stub = tmp_path / "extensions" / "vss" / "vss.duckdb_extension"
+    assert dest == stub
     assert stub.exists()
     assert stub.stat().st_size == 0
