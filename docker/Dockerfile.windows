@@ -3,13 +3,20 @@
 FROM mcr.microsoft.com/windows/python:3.12
 
 ARG EXTRAS="full,test"
+ARG OFFLINE="0"
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 WORKDIR C:/workspace
 COPY . .
+COPY wheels C:/wheels
 # Validate the CLI and a small test
-RUN pip install --no-cache-dir uv; `
-    uv pip install ".[$env:EXTRAS]"; `
-    autoresearch --help | Out-Null; `
+RUN if ($env:OFFLINE -eq '1') { \
+        pip install --no-index --find-links C:/wheels uv; \
+        uv pip install --no-index --find-links C:/wheels ".[$env:EXTRAS]"; \
+    } else { \
+        pip install --no-cache-dir uv; \
+        uv pip install ".[$env:EXTRAS]"; \
+    }; \
+    autoresearch --help | Out-Null; \
     uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]

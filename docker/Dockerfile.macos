@@ -3,11 +3,18 @@
 FROM ghcr.io/cirruslabs/macos-runner:sonoma
 
 ARG EXTRAS="full,test"
+ARG OFFLINE="0"
 WORKDIR /workspace
 COPY . .
+COPY wheels /wheels
 RUN /bin/bash -lc "brew update && brew install python@3.12" \
-    && pip3 install --no-cache-dir uv \
-    && uv pip install ".[${EXTRAS}]" \
+    && if [ "$OFFLINE" = "1" ]; then \
+        pip3 install --no-index --find-links /wheels uv \
+        && uv pip install --no-index --find-links /wheels ".[${EXTRAS}]"; \
+    else \
+        pip3 install --no-cache-dir uv \
+        && uv pip install ".[${EXTRAS}]"; \
+    fi \
     && autoresearch --help >/dev/null \
     && uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]

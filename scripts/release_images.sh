@@ -1,47 +1,49 @@
 #!/usr/bin/env bash
-# release_images.sh - Build and publish Autoresearch container images to GHCR.
-# Usage: release_images.sh IMAGE TAG [EXTRAS]
-#
-# IMAGE should include the registry and repository, for example
-# "ghcr.io/my-user/autoresearch". TAG defaults to "latest" and EXTRAS
-# defaults to "full,test".
+# release_images.sh - Build and optionally push Autoresearch images.
+# Usage: release_images.sh [--push] [EXTRAS]
+# Set OFFLINE=1 to install from local wheels during the build.
 set -euo pipefail
 
-if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
-    echo "Usage: $0 IMAGE TAG [EXTRAS]" >&2
-    exit 1
-fi
+usage() {
+    echo "Usage: release_images.sh [--push] [EXTRAS]" >&2
+    echo "Set OFFLINE=1 to install from local wheels." >&2
+}
 
-IMAGE="$1"
-TAG="$2"
-EXTRAS="${3:-full,test}"
+PUSH=0
+EXTRAS="full,test"
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --push) PUSH=1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) EXTRAS="$1" ;;
+    esac
+    shift
+done
+
 ENGINE="${CONTAINER_ENGINE:-docker}"
-
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
     echo "Container engine '$ENGINE' not found" >&2
     exit 1
 fi
 
-build_and_push() {
-    local file="$1"
-    local platforms="$2"
-    local suffix="$3"
-    local tag="$IMAGE:$TAG"
-    if [ -n "$suffix" ]; then
-        tag="$IMAGE:${suffix}-$TAG"
+OFFLINE="${OFFLINE:-0}"
+
+build_image() {
+    local tag="$1"
+    local file="$2"
+    local platform="$3"
+    local cmd=("$ENGINE" buildx build -f "$file" \
+        --build-arg EXTRAS="$EXTRAS" --build-arg OFFLINE="$OFFLINE" \
+        --platform "$platform" -t "autoresearch-$tag" .)
+    if [ "$PUSH" -eq 1 ]; then
+        cmd+=(--push)
+    else
+        cmd+=(--load)
     fi
-    "$ENGINE" buildx build \
-        --file "$file" \
-        --platform "$platforms" \
-        --build-arg EXTRAS="$EXTRAS" \
-        --tag "$tag" \
-        --push .
+    "${cmd[@]}"
 }
 
-# Linux: multi-arch manifest (amd64, arm64)
-build_and_push docker/Dockerfile.linux "linux/amd64,linux/arm64" ""
-# macOS: single-arch (amd64)
-build_and_push docker/Dockerfile.macos "linux/amd64" "macos"
-# Windows: single-arch (amd64)
-build_and_push docker/Dockerfile.windows "windows/amd64" "windows"
-
+build_image linux docker/Dockerfile.linux linux/amd64
+build_image linux-arm64 docker/Dockerfile.linux linux/arm64
+build_image macos docker/Dockerfile.macos linux/amd64
+build_image windows docker/Dockerfile.windows windows/amd64
