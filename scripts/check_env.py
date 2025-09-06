@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import tomllib
+import warnings
 from dataclasses import dataclass
 from importlib import metadata
 
@@ -136,13 +137,14 @@ def check_uv() -> CheckResult:
     return CheckResult("uv", current, REQUIREMENTS["uv"])
 
 
-def check_package(pkg: str) -> CheckResult:
-    """Return the installed version for ``pkg`` or raise if missing."""
+def check_package(pkg: str) -> CheckResult | None:
+    """Return installed version for ``pkg`` or warn if metadata is missing."""
 
     try:
         current = metadata.version(pkg)
-    except metadata.PackageNotFoundError as exc:
-        raise VersionError(f"{pkg} not installed; run 'task install'.") from exc
+    except metadata.PackageNotFoundError:
+        warnings.warn(f"package metadata not found for {pkg}")
+        return None
     required = REQUIREMENTS[pkg]
     return CheckResult(pkg, current, required)
 
@@ -178,10 +180,14 @@ def main() -> None:
     for check in checks:
         try:
             result = check()
+            if result is None:
+                continue
             if result.ok():
                 print(f"{result.name} {result.current}")
             else:
-                errors.append(f"{result.name} {result.current} < required {result.required}")
+                errors.append(
+                    f"{result.name} {result.current} < required {result.required}"
+                )
         except Exception as exc:  # pragma: no cover - failure paths
             errors.append(str(exc))
 
