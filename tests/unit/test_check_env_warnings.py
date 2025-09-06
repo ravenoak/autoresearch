@@ -19,7 +19,7 @@ def test_missing_package_metadata_warns(monkeypatch):
     def fake_version(name):
         raise metadata.PackageNotFoundError
 
-    monkeypatch.setattr(check_env.metadata, "version", lambda name: fake_version(name))
+    monkeypatch.setattr(check_env.metadata, "version", fake_version)
     with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
         result = check_env.check_package("fakepkg")
     assert result is None
