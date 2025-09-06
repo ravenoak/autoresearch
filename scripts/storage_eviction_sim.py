@@ -5,6 +5,9 @@ Usage:
     uv run python scripts/storage_eviction_sim.py --threads 5 --items 5 \
         --policy lru --scenario normal --evictors 2
 
+The simulation reports the remaining nodes, runtime, and approximate
+throughput.
+
 Scenarios:
     normal           concurrent writers with usage above the budget
     zero_budget      budget set to zero disables eviction
@@ -34,8 +37,8 @@ def _run(
     scenario: str,
     jitter: float = 0.0,
     evictors: int = 0,
-) -> int:
-    """Persist claims concurrently and return remaining node count."""
+) -> tuple[int, float]:
+    """Persist claims concurrently and return remaining node count and runtime."""
 
     cfg = ConfigModel(
         storage=StorageConfig(duckdb_path=":memory:"),
@@ -61,6 +64,7 @@ def _run(
 
     enforce_budget = -1 if scenario == "negative_budget" else cfg.ram_budget_mb
 
+    start = time.perf_counter()
     try:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
 
@@ -110,7 +114,8 @@ def _run(
         StorageManager._current_ram_mb = original  # type: ignore[assignment]
         ConfigLoader.reset_instance()
 
-    return remaining
+    elapsed = time.perf_counter() - start
+    return remaining, elapsed
 
 
 VALID_POLICIES = {"lru", "score", "hybrid", "adaptive", "priority"}
@@ -144,8 +149,12 @@ def main(
         raise SystemExit(f"scenario must be one of: {allowed}")
     if jitter < 0:
         raise SystemExit("jitter must be non-negative")
-    remaining = _run(threads, items, policy, scenario, jitter, evictors)
+    remaining, elapsed = _run(threads, items, policy, scenario, jitter, evictors)
+    total = threads * items
+    rate = total / elapsed if elapsed else float("inf")
     print(f"nodes remaining after eviction: {remaining}")
+    print(f"runtime: {elapsed:.3f} s")
+    print(f"throughput: {rate:.1f} nodes/s")
 
 
 if __name__ == "__main__":
