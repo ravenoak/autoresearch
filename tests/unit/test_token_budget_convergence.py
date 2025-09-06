@@ -3,19 +3,16 @@
 The mathematical proof appears in ``docs/algorithms/token_budgeting.md``.
 """
 
-from decimal import Decimal, ROUND_HALF_EVEN
 from typing import List
 
 from hypothesis import given
 from hypothesis import strategies as st
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics
-
+from autoresearch.token_budget import round_with_margin
 
 HALF_BOUNDARY_MARGINS = [((n + 0.5) / 50) - 1 for n in range(50, 100)]
-NEAR_BOUNDARY_MARGINS = [
-    m + 1e-9 for m in HALF_BOUNDARY_MARGINS if m + 1e-9 <= 1.0
-] + [
+NEAR_BOUNDARY_MARGINS = [m + 1e-9 for m in HALF_BOUNDARY_MARGINS if m + 1e-9 <= 1.0] + [
     m - 1e-9 for m in HALF_BOUNDARY_MARGINS if m - 1e-9 >= 0.0
 ]
 
@@ -29,8 +26,7 @@ def _run_cycles(metrics: OrchestrationMetrics, usage: List[int], margin: float, 
 
 
 def _scaled_round(usage: float, margin: float) -> int:
-    scaled = Decimal(str(usage)) * (Decimal("1") + Decimal(str(margin)))
-    return int(scaled.to_integral_value(rounding=ROUND_HALF_EVEN))
+    return round_with_margin(usage, margin)
 
 
 def test_suggest_token_budget_converges() -> None:

@@ -14,4 +14,4 @@ the algorithm yields `63`. Rounding logic or test parameters need alignment.
 - Property-based tests cover edge cases near rounding boundaries.
 
 ## Status
-Open
+Archived
