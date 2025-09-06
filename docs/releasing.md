@@ -39,6 +39,16 @@ If the upload fails with a 403 response:
   uv run twine upload dist/*
   ```
 
+## Container images
+
+Build and push multi-arch images with Buildx:
+
+```bash
+bash scripts/release_images.sh ghcr.io/OWNER v1.2.3
+```
+
+The script publishes Linux (amd64, arm64), macOS, and Windows images.
+
 - Configure authentication in `config.yml` using `api.api_key`,
   `api.api_keys`, or `api.bearer_token`. Any supplied credential must be valid
   or the server returns a 401 error.

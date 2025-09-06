@@ -3,7 +3,7 @@
 # Usage: build_images.sh [EXTRAS]
 set -euo pipefail
 
-EXTRAS="${1:-full}"
+EXTRAS="${1:-full,test}"
 ENGINE="${CONTAINER_ENGINE:-docker}"
 
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
@@ -12,12 +12,14 @@ if ! command -v "$ENGINE" >/dev/null 2>&1; then
 fi
 
 build_image() {
-    local os="$1"
+    local tag="$1"
     local file="$2"
-    "$ENGINE" build -f "$file" --build-arg EXTRAS="$EXTRAS" \
-        -t "autoresearch-$os" .
+    local platform="$3"
+    "$ENGINE" buildx build -f "$file" --build-arg EXTRAS="$EXTRAS" \
+        --platform "$platform" -t "autoresearch-$tag" --load .
 }
 
-build_image linux docker/Dockerfile.linux
-build_image macos docker/Dockerfile.macos
-build_image windows docker/Dockerfile.windows
+build_image linux-amd64 docker/Dockerfile.linux linux/amd64
+build_image linux-arm64 docker/Dockerfile.linux linux/arm64
+build_image macos docker/Dockerfile.macos linux/amd64
+build_image windows docker/Dockerfile.windows windows/amd64
