@@ -10,10 +10,10 @@ idempotency and RAM budget enforcement under concurrency [d1][s1][t4][t5][t6].
 
 - Implement core behaviors described above.
 
-## State-transition invariants
+## Invariants
 
-Let the storage state be `(G, U, B)` where `G` is the graph, `U` the RAM
-usage, and `B` the budget.
+State-transition invariants describe properties that hold for the storage state
+`(G, U, B)` where `G` is the graph, `U` the RAM usage, and `B` the budget.
 
 1. **Setup**
    - Repeated `initialize_storage` calls leave `G` unchanged.
@@ -27,7 +27,7 @@ usage, and `B` the budget.
 5. **Teardown**
    - `teardown` clears `G` and releases resources.
 
-## Proof sketch
+## Proof Sketch
 
 - `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so the schema is
   unchanged after each run.
