@@ -16,4 +16,4 @@ invoked via `uv run`.
   errors.
 
 ## Status
-Open
+Archived

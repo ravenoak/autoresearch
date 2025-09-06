@@ -13,7 +13,6 @@ import json
 from pathlib import Path
 from typing import Dict, List, Sequence
 
-import matplotlib.pyplot as plt
 
 from autoresearch.orchestrator_perf import queue_metrics
 
@@ -67,13 +66,18 @@ def simulate(
 def _plot(results: Sequence[Dict[str, float]], output: Path) -> None:
     """Save throughput and latency curves to ``output``.
 
-    Args:
-        results: Metrics returned from :func:`simulate`.
-        output: Destination path for the SVG plot.
+    Falls back to a minimal placeholder SVG when ``matplotlib`` is unavailable.
     """
     workers = [r["workers"] for r in results]
     throughput = [r["throughput"] for r in results]
     latency = [r["latency_s"] for r in results]
+
+    try:
+        import matplotlib.pyplot as plt  # type: ignore
+    except Exception:  # pragma: no cover - missing optional dependency
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("<svg xmlns='http://www.w3.org/2000/svg'></svg>")
+        return
 
     fig, ax1 = plt.subplots()
     ax1.plot(workers, throughput, marker="o", color="tab:blue")
@@ -110,9 +114,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    results = simulate(
-        args.max_workers, args.arrival_rate, args.service_rate, args.network_delay
-    )
+    results = simulate(args.max_workers, args.arrival_rate, args.service_rate, args.network_delay)
     _plot(results, args.output)
     print(json.dumps(results))
 
