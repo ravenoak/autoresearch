@@ -5,7 +5,7 @@
 Distributed execution utilities. See [distributed coordination][dc] for
 coalition and scheduling details.
 
-## Scheduling Algorithms
+## Algorithms
 
 - **Round-robin** assigns each incoming task to the next worker in turn for
   balanced workloads.
