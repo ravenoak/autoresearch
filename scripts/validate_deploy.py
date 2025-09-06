@@ -4,16 +4,19 @@
 Usage:
     uv run scripts/validate_deploy.py
 
-This script verifies that required environment variables and configuration
-files exist and conform to their schemas before deployment.
+This script verifies that required environment variables, optional extras, and
+configuration files exist before deployment. It also checks for a specified
+container engine so misconfigurations fail fast.
 """
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+import tomllib
 import yaml
 from jsonschema import Draft7Validator
 
@@ -37,6 +40,22 @@ ENV_SCHEMA = {
     "properties": {"KEY": {"type": "string", "minLength": 1}},
     "required": ["KEY"],
 }
+
+
+def _load_valid_extras() -> set[str]:
+    """Return optional dependency groups from ``pyproject.toml``."""
+
+    project_root = Path(__file__).resolve().parents[1]
+    pyproject = project_root / "pyproject.toml"
+    if not pyproject.is_file():
+        return set()
+    with pyproject.open("rb") as fh:
+        data = tomllib.load(fh)
+    extras = data.get("project", {}).get("optional-dependencies", {})
+    return set(extras)
+
+
+VALID_EXTRAS = _load_valid_extras()
 
 
 def _missing_env() -> list[str]:
@@ -67,6 +86,23 @@ def _load_env_file(path: Path) -> Mapping[str, str]:
     return data
 
 
+def _unknown_extras(value: str) -> list[str]:
+    """Return extras not defined in ``pyproject.toml``."""
+
+    return [extra for extra in value.split() if extra and extra not in VALID_EXTRAS]
+
+
+def _check_container_engine() -> str | None:
+    """Return an error message if the container engine is missing."""
+
+    engine = os.getenv("CONTAINER_ENGINE")
+    if not engine:
+        return None
+    if shutil.which(engine) is None:
+        return f"Container engine '{engine}' not found"
+    return None
+
+
 def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:
     """Return validation errors for ``data`` against ``schema``."""
     validator = Draft7Validator(schema)
@@ -80,6 +116,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"Missing environment variables: {', '.join(missing_env)}",
             file=sys.stderr,
         )
+        return 1
+    extras_err = _unknown_extras(os.getenv("EXTRAS", ""))
+    if extras_err:
+        print(f"Unknown extras: {', '.join(extras_err)}", file=sys.stderr)
+        return 1
+    engine_err = _check_container_engine()
+    if engine_err:
+        print(engine_err, file=sys.stderr)
         return 1
     config_dir = Path(os.environ["CONFIG_DIR"])
     if not config_dir.is_dir():

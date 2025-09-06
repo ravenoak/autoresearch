@@ -73,3 +73,40 @@ def test_validate_deploy_missing_env_key(tmp_path: Path) -> None:
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "KEY" in result.stderr
+
+
+def test_validate_deploy_valid_extra(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update(
+        {"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "analysis"}
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode == 0
+    assert "validated" in result.stdout.lower()
+
+
+def test_validate_deploy_unknown_extra(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update(
+        {"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "unknown"}
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "Unknown extras" in result.stderr
+
+
+def test_validate_deploy_missing_container_engine(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update(
+        {
+            "DEPLOY_ENV": "production",
+            "CONFIG_DIR": str(tmp_path),
+            "CONTAINER_ENGINE": "no-such-engine",
+        }
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "Container engine" in result.stderr

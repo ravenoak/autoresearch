@@ -154,10 +154,15 @@ Confirm required settings before starting services.
 - Ensure `deploy.yml` and `.env` exist in `CONFIG_DIR`.
 - Include required entries such as `version` in `deploy.yml` and `KEY` in
   `.env`.
+- Optionally set `EXTRAS` to space-separated dependency groups; unknown values
+  cause the script to fail fast.
+- Optionally set `CONTAINER_ENGINE` to `docker` or `podman` to verify the
+  container CLI is available.
 - Run the validation script:
 
 ```bash
-DEPLOY_ENV=production CONFIG_DIR=config uv run scripts/validate_deploy.py
+DEPLOY_ENV=production CONFIG_DIR=config EXTRAS="analysis" \
+CONTAINER_ENGINE=docker uv run scripts/validate_deploy.py
 ```
 
 If any variable, file, or key is missing, the script exits with a non-zero
