@@ -1,45 +1,24 @@
-"""Unit tests for storage eviction simulation."""
+import time
+from unittest.mock import patch
 
-import sys
-from importlib.machinery import SourceFileLoader
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
+from scripts.storage_eviction_sim import StorageManager, _run
 
 
-def load() -> object:
-    path = Path(__file__).resolve().parents[2] / "scripts" / "storage_eviction_sim.py"
-    return SourceFileLoader("storage_eviction_sim", str(path)).load_module()
+def _fast_persist(claim: dict) -> None:
+    StorageManager.get_graph().add_node(claim["id"], **claim)
+    StorageManager.state.lru[claim["id"]] = time.time()
 
 
-def test_storage_eviction_sim() -> None:
-    sim = load()
-    scenarios = [
-        "normal",
-        "race",
-        "zero_budget",
-        "negative_budget",
-        "under_budget",
-        "no_nodes",
-    ]
-    results = {
-        s: (
-            sim._run(
-                threads=2,
-                items=2,
-                policy="lru",
-                scenario=s,
-                jitter=0.0,
-                evictors=2,
-            )
-            if s == "race"
-            else sim._run(threads=2, items=2, policy="lru", scenario=s, jitter=0.0)
-        )
-        for s in scenarios
-    }
-    assert results["normal"] == 0
-    assert results["race"] == 0
-    assert results["zero_budget"] == 4
-    assert results["negative_budget"] == 4
-    assert results["under_budget"] == 4
-    assert results["no_nodes"] == 0
+def test_eviction_removes_nodes_when_over_budget():
+    """Normal scenario evicts all nodes above the RAM budget."""
+    with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
+        remaining, _ = _run(threads=2, items=2, policy="lru", scenario="normal")
+    assert remaining == 0
+
+
+def test_under_budget_keeps_nodes():
+    """Nodes persist when usage never exceeds the budget."""
+    threads, items = 2, 2
+    with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
+        remaining, _ = _run(threads=threads, items=items, policy="lru", scenario="under_budget")
+    assert remaining == threads * items

@@ -266,7 +266,10 @@ class DuckDBStorageBackend:
             raise StorageError("Failed to initialize schema version", cause=e)
         finally:
             if raw_execute is not None and hasattr(raw_execute, "__get__"):
-                self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
+                try:
+                    self._conn.execute = raw_execute.__get__(self._conn, self._conn.__class__)
+                except AttributeError:
+                    pass
 
     def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
         """
