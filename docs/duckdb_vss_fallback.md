@@ -26,6 +26,20 @@ VECTOR_EXTENSION_PATH=/path/to/vss.duckdb_extension
 - The unit test [`test_download_duckdb_extensions.py`][test] demonstrates this
   fallback.
 
+## Testing the stub
+
+Run the integration test to confirm the stub activates when the VSS extension
+is missing:
+
+```bash
+uv run pytest \
+  tests/integration/test_storage_duckdb_fallback.py::test_duckdb_vss_fallback \
+  -q
+```
+
+The test imports `pytest-benchmark`; install it if the module is skipped.
+
+
 [dde]: ../scripts/download_duckdb_extensions.py
 [setup]: ../scripts/setup.sh
 [test]: ../tests/unit/test_download_duckdb_extensions.py

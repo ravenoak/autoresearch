@@ -74,7 +74,8 @@ These tasks completed in order: environment bootstrap → packaging verification
 - `flake8` and `mypy` pass, but several unit and integration tests still fail.
 - After resolving the ImportError in `task`, current coverage is **100%**;
   documentation reflects this result.
-- TestPyPI upload returns HTTP 403, so packaging needs a retry.
+- Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
+  with `--dry-run --repository testpypi`.
 
 The **0.1.0a1** date is re-targeted for **June 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.

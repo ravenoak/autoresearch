@@ -112,6 +112,7 @@ def test_current_ram_mb_large_graph():
         patch("resource.RUSAGE_SELF", 0),
     ):
         # Execute
+        StorageManager.state.baseline_mb = 0
         result = StorageManager._current_ram_mb()
 
         # Verify

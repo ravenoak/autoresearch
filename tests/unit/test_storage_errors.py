@@ -31,8 +31,9 @@ def test_setup_rdf_store_error(mock_config, assert_error):
                 ):
                     with patch("rdflib.Graph", return_value=mock_graph_instance):
                         with mock_config(config=config):
-                            with pytest.raises(StorageError) as excinfo:
-                                setup()
+                            with patch("autoresearch.storage._cached_config", None):
+                                with pytest.raises(StorageError) as excinfo:
+                                    setup()
 
     # Verify
     mock_graph_instance.open.assert_called_once()
@@ -58,8 +59,9 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
                 ):
                     with patch("rdflib.Graph", return_value=mock_graph_instance):
                         with mock_config(config=config):
-                            with pytest.raises(StorageError) as excinfo:
-                                setup()
+                            with patch("autoresearch.storage._cached_config", None):
+                                with pytest.raises(StorageError) as excinfo:
+                                    setup()
 
     mock_graph_instance.open.assert_called_once()
     assert_error(excinfo, "Missing RDF backend plugin", has_cause=True)
