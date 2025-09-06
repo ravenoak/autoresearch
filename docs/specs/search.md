@@ -2,25 +2,59 @@
 
 ## Overview
 
-The search package (`src/autoresearch/search/`) handles retrieving information
-from local files, storage backends and vector indexes. It supports keyword,
-vector and hybrid queries and exposes a CLI entry point.
+The search package (`src/autoresearch/search/`) retrieves information from
+local files, storage backends, and vector indexes. It supports keyword, vector,
+and hybrid queries and exposes a CLI entry point.
 
 ## Algorithms
 
-- Implement core behaviors described above.
+### Keyword
+
+- Uses a BM25-style ranking over tokenized documents.
+- Returns top `k` documents sorted by term frequency–inverse document
+  frequency (TF-IDF) scores.
+
+### Vector
+
+- Embeds documents and queries into a shared space.
+- Performs k-nearest neighbor search over the vector index using cosine
+  similarity.
+
+### Hybrid
+
+- Computes keyword and vector scores separately.
+- Combines results with a weighted sum of keyword, vector, and source
+  credibility weights.
+- Normalizes scores and resolves ties by deterministic document identifier.
 
 ## Invariants
 
-- Preserve documented state across operations.
+- Results are ordered by descending final score and are stable for repeated
+  queries.
+- Indexing is idempotent: re-ingesting an existing document updates the record
+  without creating duplicates.
+- Search does not mutate stored documents outside explicit persist or update
+  calls.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+- **Ordering:** Each algorithm returns a scored list, and the hybrid combiner
+  sorts the merged list before returning. Deterministic tie-breaking yields
+  stable output.
+- **Idempotent indexing:** Storage operations keyed by unique identifiers
+  overwrite existing entries. Refreshing the vector index ensures updated
+  embeddings are used without duplicating nodes.
+- **Safety:** Read-only search paths call storage through read operations, so
+  queries cannot modify claims.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+- `hybrid_search.feature` shows keyword and vector results appear together.
+- `local_sources.feature` verifies keyword search finds local files.
+- `vector_search_performance.feature` measures embedding search latency.
+- `test_search_reflects_updated_claim` demonstrates index updates are
+  visible.
+- `test_search_results_stable` guards against result ordering regressions.
 
 ## Traceability
 
@@ -35,6 +69,7 @@ Unit tests cover nominal and edge cases for these routines.
   - [tests/behavior/features/vector_search_performance.feature][t5]
   - [tests/integration/test_config_hot_reload_components.py][t6]
   - [tests/integration/test_search_storage.py][t7]
+  - [tests/integration/test_search_regression.py][t8]
 
 [m1]: ../../src/autoresearch/search/
 [t1]: ../../tests/behavior/features/hybrid_search.feature
@@ -44,3 +79,4 @@ Unit tests cover nominal and edge cases for these routines.
 [t5]: ../../tests/behavior/features/vector_search_performance.feature
 [t6]: ../../tests/integration/test_config_hot_reload_components.py
 [t7]: ../../tests/integration/test_search_storage.py
+[t8]: ../../tests/integration/test_search_regression.py
