@@ -20,6 +20,7 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [fix-duckdb-storage-table-creation-failure](archive/fix-duckdb-storage-table-creation-failure.md)
 - [resolve-package-metadata-warnings](archive/resolve-package-metadata-warnings.md)
 - [fix-check-env-warnings-test-failure](fix-check-env-warnings-test-failure.md)
+- [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.

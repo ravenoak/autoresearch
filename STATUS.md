@@ -2,6 +2,17 @@
 
 ## September 6, 2025
 
+- Removed an unused import so `task install` completes without flake8 errors.
+- Added an "Algorithms" heading to `docs/specs/distributed.md` to satisfy spec
+  linting.
+- `task check` passes.
+- `task verify` runs unit tests but exits with multiprocessing resource tracker
+  errors before integration tests.
+- `tests/integration/test_api_auth_middleware.py::test_webhook_auth` now
+  passes when run directly.
+
+## September 6, 2025
+
 - Deployment validator now checks configs and env vars with tests and docs;
   archived the related issue.
 - Installed Go Task CLI and synchronized extras with `task install`.

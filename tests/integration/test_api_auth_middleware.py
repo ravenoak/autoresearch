@@ -18,7 +18,7 @@ def test_webhook_auth(monkeypatch, api_client):
     called: list[str] = []
     monkeypatch.setattr(
         "autoresearch.api.webhooks.notify_webhook",
-        lambda url, result, timeout=5: called.append(url),
+        lambda url, result, timeout=5, retries=3, backoff=0.5: called.append(url),
     )
 
     resp = api_client.post(
