@@ -1,5 +1,13 @@
 # Status
 
+## September 6, 2025
+
+- Installed Go Task CLI and synchronized extras with `task install`.
+- `task check EXTRAS=dev` passes, running flake8, mypy, spec linting, and smoke tests.
+- `task verify` fails at
+  `tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`
+  with `VersionError: fakepkg not installed; run 'task install'.`
+
 ## September 5, 2025
 
 - `scripts/check_env.py` now enforces presence of packages listed in the
@@ -35,7 +43,8 @@
 ## September 5, 2025
 
 - Go Task CLI remains unavailable; `task` command not found.
-- `uv run pytest` reports 57 failed, 1037 passed tests, 27 skipped, 120 deselected, 9 xfailed, 4 xpassed, and 1 error.
+- `uv run pytest` reports 57 failed, 1037 passed tests, 27 skipped,
+  120 deselected, 9 xfailed, 4 xpassed, and 1 error.
 
 - Installing Go Task with the upstream script placed the binary under `.venv/bin`.
   `task check` then failed with "No package metadata was found for GitPython" and
