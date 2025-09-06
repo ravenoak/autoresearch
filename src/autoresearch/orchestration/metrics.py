@@ -440,7 +440,7 @@ class OrchestrationMetrics:
         has been observed, the budget
         remains unchanged. A window of only zero-usage samples drives the
         budget to one token. When usage stabilizes, the update converges to
-        ``round(u * (1 + margin))`` for constant usage ``u``. Negative
+        ``ceil(u * (1 + margin))`` for constant usage ``u``. Negative
         ``margin`` values are treated as zero.
 
         See ``docs/algorithms/token_budgeting.md`` for derivation and a
