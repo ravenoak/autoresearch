@@ -16,4 +16,4 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push images
-        run: bash scripts/release_images.sh ghcr.io/${{ github.repository_owner }} latest
+        run: bash scripts/release_images.sh ghcr.io/${{ github.repository_owner }}/autoresearch latest

@@ -2,11 +2,14 @@
 # Windows container image with project extras for Autoresearch
 FROM mcr.microsoft.com/windows/python:3.12
 
-ARG EXTRAS=full
+ARG EXTRAS="full,test"
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 WORKDIR C:/workspace
 COPY . .
+# Validate the CLI and a small test
 RUN pip install --no-cache-dir uv; `
-    uv pip install ".[$env:EXTRAS]"
+    uv pip install ".[$env:EXTRAS]"; `
+    autoresearch --help | Out-Null; `
+    uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
