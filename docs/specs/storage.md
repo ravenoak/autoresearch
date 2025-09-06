@@ -11,6 +11,18 @@ schema idempotency, concurrency safety, and RAM budget enforcement
 
 - Implement core behaviors described above.
 
+## State Transitions
+
+Given storage state `(G, U, B)`:
+
+- **Persist**
+  `(G, U, B) ─persist(c)→ (G ∪ {c}, U + u(c), B)`
+  and if `U + u(c) > B`, an eviction transition follows.
+
+- **Evict**
+  `(G, U, B) ─evict(E)→ (G \ E, U - u(E), B)`
+  where `E` is a set of nodes such that `U - u(E) ≤ B(1 - δ)`.
+
 ## Invariants
 
 State-transition invariants describe properties that hold for the storage state
@@ -33,11 +45,14 @@ the safety margin.
 
 - `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs yield
   identical table listings, demonstrated in `schema_idempotency_sim.py` [s2].
-- `_enforce_ram_budget` acquires the lock and decreases usage while
-  `U > B(1 - δ)`. Each step evicts at least one node, forming a decreasing
-  sequence bounded below, so the loop halts within the budget. Sequential and
-  concurrent simulations validate the bound [s3][s4].
-- When `U ≤ B`, the loop does not run, preserving all nodes.
+- **Concurrency safety.** Each transition acquires a re-entrant lock, yielding
+  sequences like `σ₀ ─t₁→ σ₁ ─t₂→ σ₂`. Mixed states cannot appear, and
+  `storage_concurrency_sim.py` [s4] exercises this ordering.
+- **RAM-budget enforcement.** `_enforce_ram_budget` applies `evict` while
+  `U > B(1 - δ)`. Let `U_i` be usage after step `i`; each step removes some
+  `u_i > 0`, so `U_{i+1} = U_i - u_i`. The strictly decreasing sequence has a
+  lower bound, yielding `U_k ≤ B(1 - δ)` for some `k`. Simulations [s1][s3]
+  validate this bound.
 
 These arguments rely on the formal proofs and simulations in
 [docs/algorithms/storage.md][d1].
@@ -45,8 +60,13 @@ These arguments rely on the formal proofs and simulations in
 ## Simulation Expectations
 
 Unit tests and simulations cover nominal and edge cases for these routines,
-including `storage_eviction_sim.py`, `schema_idempotency_sim.py`,
-`ram_budget_enforcement_sim.py`, and `storage_concurrency_sim.py`.
+including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
+`ram_budget_enforcement_sim.py` [s3], and `storage_concurrency_sim.py` [s4].
+
+## Benchmark Output
+
+`test_ram_budget_benchmark` measures eviction latency; results appear in the
+[DuckDB fallback benchmark][b1].
 
 ## Concurrency Assumptions
 
@@ -65,6 +85,8 @@ including `storage_eviction_sim.py`, `schema_idempotency_sim.py`,
   - [scripts/schema_idempotency_sim.py][s2]
   - [scripts/ram_budget_enforcement_sim.py][s3]
   - [scripts/storage_concurrency_sim.py][s4]
+- Benchmarks
+  - [docs/algorithms/storage.md#duckdb-fallback-benchmark][b1]
 - Tests
   - [tests/behavior/features/storage_search_integration.feature][t1]
   - [tests/integration/test_search_storage.py][t2]
@@ -80,6 +102,7 @@ including `storage_eviction_sim.py`, `schema_idempotency_sim.py`,
 [s2]: ../../scripts/schema_idempotency_sim.py
 [s3]: ../../scripts/ram_budget_enforcement_sim.py
 [s4]: ../../scripts/storage_concurrency_sim.py
+[b1]: ../algorithms/storage.md#duckdb-fallback-benchmark
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
 [t2]: ../../tests/integration/test_search_storage.py
 [t3]: ../../tests/unit/test_storage_eviction.py
