@@ -14,4 +14,4 @@ instead so verification can complete.
 - `scripts/check_env.py` emits a warning rather than raising when optional packages are missing.
 
 ## Status
-Open
+Archived
