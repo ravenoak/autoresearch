@@ -38,6 +38,7 @@ source "$SCRIPT_DIR/setup_common.sh"
 
 # Ensure Go Task is available before platform-specific setup
 "$SCRIPT_DIR/bootstrap.sh"
+ensure_venv_bin_on_path "$PWD/.venv/bin"
 
 # Run platform detection and universal setup
 AR_EXTRAS="${AR_EXTRAS:-}" "$SCRIPT_DIR/setup.sh" "$@"
