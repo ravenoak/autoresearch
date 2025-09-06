@@ -57,3 +57,46 @@ uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 20 \
 
 These formulas and metrics help tune worker counts and latency budgets when
 deploying the distributed orchestrator.
+
+## Performance benchmark
+
+We evaluated `distributed_orchestrator_perf_benchmark.py`:
+
+```
+PYTHONPATH=. uv run scripts/distributed_orchestrator_perf_benchmark.py \
+    --max-workers 4 --network-latency 0.005 --tasks N
+```
+
+Tasks take 5 ms, giving a service rate of 200 tasks/s per worker.
+
+### 500 tasks
+
+| workers | avg latency (ms) | throughput (tasks/s) | memory (MB) |
+| ------- | ---------------- | ------------------- | ----------- |
+| 1 | 12.22 | 81.82 | 50.56 |
+| 2 | 7.32 | 136.58 | 50.81 |
+| 3 | 5.72 | 174.90 | 50.94 |
+| 4 | 4.79 | 208.98 | 50.93 |
+
+### 800 tasks
+
+| workers | avg latency (ms) | throughput (tasks/s) | memory (MB) |
+| ------- | ---------------- | ------------------- | ----------- |
+| 1 | 12.21 | 81.93 | 51.41 |
+| 2 | 7.33 | 136.35 | 51.66 |
+| 3 | 5.51 | 181.54 | 51.79 |
+| 4 | 4.75 | 210.57 | 51.79 |
+
+### 1200 tasks
+
+| workers | avg latency (ms) | throughput (tasks/s) | memory (MB) |
+| ------- | ---------------- | ------------------- | ----------- |
+| 1 | 11.71 | 85.40 | 52.19 |
+| 2 | 6.98 | 143.26 | 52.21 |
+| 3 | 5.63 | 177.77 | 52.24 |
+| 4 | 4.56 | 219.53 | 52.37 |
+
+## Follow-up benchmarks and monitoring
+
+- Vary task processing time to study sensitivity to service rate changes.
+- Emit latency and memory metrics to a monitoring system for live tuning.
