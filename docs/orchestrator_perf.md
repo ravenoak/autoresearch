@@ -46,4 +46,49 @@ Results from
 Network delay dominates latency; additional workers cut queueing after two
 processes.
 
+## Arrival and service rate sensitivity
+
+Assumptions:
+
+- Service rate fixed at 100 tasks/s per worker.
+- Network delay 5 ms.
+- Arrival rates at 50, 75, and 90 tasks/s.
+
+Formulas mirror the M/M/c model above.
+
+### λ = 50 tasks/s, μ = 100 tasks/s
+
+| workers | throughput (tasks/s) | latency (ms) | avg queue length |
+| ------- | ------------------- | ------------ | ---------------- |
+| 1 | 50.00 | 25.000 | 0.50 |
+| 2 | 50.00 | 15.667 | 0.03 |
+| 3 | 50.00 | 15.061 | 0.00 |
+| 4 | 50.00 | 15.005 | 0.00 |
+
+### λ = 75 tasks/s, μ = 100 tasks/s
+
+| workers | throughput (tasks/s) | latency (ms) | avg queue length |
+| ------- | ------------------- | ------------ | ---------------- |
+| 1 | 75.00 | 45.000 | 2.25 |
+| 2 | 75.00 | 16.636 | 0.12 |
+| 3 | 75.00 | 15.197 | 0.01 |
+| 4 | 75.00 | 15.024 | 0.00 |
+
+### λ = 90 tasks/s, μ = 100 tasks/s
+
+| workers | throughput (tasks/s) | latency (ms) | avg queue length |
+| ------- | ------------------- | ------------ | ---------------- |
+| 1 | 90.00 | 105.000 | 8.10 |
+| 2 | 90.00 | 17.539 | 0.23 |
+| 3 | 90.00 | 15.333 | 0.03 |
+| 4 | 90.00 | 15.046 | 0.00 |
+
+Rising arrival rates inflate latency for a single worker. Adding workers
+restores sub-20 ms response times and limits queue growth.
+
+### Future work
+
+- Benchmark non-exponential arrivals to test robustness to bursts.
+- Hook production metrics to compare predicted and observed queue lengths.
+
 [bench]: ../src/autoresearch/orchestrator_perf.py#L71-L112

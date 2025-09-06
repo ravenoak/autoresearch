@@ -57,3 +57,39 @@ uv run scripts/distributed_orchestrator_sim.py --workers 2 --tasks 20 \
 
 These formulas and metrics help tune worker counts and latency budgets when
 deploying the distributed orchestrator.
+
+## Performance benchmark
+
+Assumptions:
+
+- 100 tasks per run with 5 ms network latency.
+- Task times varied: 5, 10, and 20 ms.
+
+Formulas:
+
+- `avg_latency_s = mean(completion - dispatch_start)`
+- `throughput = tasks / total_duration`
+- `memory_mb` sampled by `ResourceMonitor`
+
+| task_time (ms) | workers | avg_latency_ms | throughput | memory_mb |
+| -------------- | ------- | -------------- | ---------- | --------- |
+| 5 | 1 | 13.76 | 72.67 | 49.76 |
+| 5 | 2 | 8.52 | 117.43 | 50.01 |
+| 5 | 3 | 7.62 | 131.15 | 50.01 |
+| 5 | 4 | 7.02 | 142.45 | 50.13 |
+| 10 | 1 | 17.15 | 58.29 | 49.65 |
+| 10 | 2 | 12.24 | 81.72 | 50.02 |
+| 10 | 3 | 8.84 | 113.17 | 49.90 |
+| 10 | 4 | 7.38 | 135.51 | 50.02 |
+| 20 | 1 | 26.62 | 37.57 | 49.92 |
+| 20 | 2 | 16.18 | 61.82 | 50.17 |
+| 20 | 3 | 11.73 | 85.23 | 49.97 |
+| 20 | 4 | 9.49 | 105.33 | 50.10 |
+
+Longer task times inflate latency and cap throughput. Scaling workers restores
+performance and keeps memory use near 50 MB.
+
+### Future work
+
+- Benchmark with bursty task arrivals to mimic real traffic.
+- Expose a hook to suppress GPU warnings when no accelerator is present.
