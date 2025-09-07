@@ -6,16 +6,22 @@ contains all required wheels.
 
 ## Building images
 
-Use the release script to build images locally:
+Run the build script to create images for all platforms:
 
 ```
-./scripts/release_images.sh
+./scripts/build_images.sh
 ```
 
 Set `OFFLINE=1` to install from local wheels during the build:
 
 ```
-OFFLINE=1 ./scripts/release_images.sh
+OFFLINE=1 ./scripts/build_images.sh
+```
+
+Use the release script to build and push images:
+
+```
+./scripts/release_images.sh --push
 ```
 
 ## Running with docker compose
