@@ -172,6 +172,13 @@ CONTAINER_ENGINE=docker uv run scripts/validate_deploy.py
 If any variable, file, or key is missing, the script exits with a non-zero
 status and lists the missing items.
 
+Use the platform helpers under `scripts/deploy/` to run the validator and the
+deployment helper in one step:
+
+- `bash scripts/deploy/linux.sh`
+- `bash scripts/deploy/macos.sh`
+- `pwsh scripts/deploy/windows.ps1`
+
 The validator also checks the schemas for both files and reports any
 violations. For example, `version` must be a string or integer and `KEY` cannot
 be empty.

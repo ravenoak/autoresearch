@@ -80,9 +80,7 @@ def test_validate_deploy_missing_env_key(tmp_path: Path) -> None:
 def test_validate_deploy_valid_extra(tmp_path: Path) -> None:
     _write_config(tmp_path)
     env = os.environ.copy()
-    env.update(
-        {"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "analysis"}
-    )
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "analysis"})
     result = _run(env, tmp_path)
     assert result.returncode == 0
     assert "validated" in result.stdout.lower()
@@ -91,9 +89,7 @@ def test_validate_deploy_valid_extra(tmp_path: Path) -> None:
 def test_validate_deploy_unknown_extra(tmp_path: Path) -> None:
     _write_config(tmp_path)
     env = os.environ.copy()
-    env.update(
-        {"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "unknown"}
-    )
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path), "EXTRAS": "unknown"})
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "Unknown extras" in result.stderr
@@ -112,6 +108,25 @@ def test_validate_deploy_missing_container_engine(tmp_path: Path) -> None:
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "Container engine" in result.stderr
+
+
+def test_validate_deploy_invalid_yaml(tmp_path: Path) -> None:
+    (tmp_path / "deploy.yml").write_text("version: [\n")
+    (tmp_path / ".env").write_text("KEY=value\n")
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "Invalid YAML" in result.stderr
+
+
+def test_validate_deploy_duplicate_env_key(tmp_path: Path) -> None:
+    _write_config(tmp_path, env_content="KEY=one\nKEY=two\n")
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "Duplicate key" in result.stderr
 
 
 @pytest.mark.parametrize("os_name", ["linux", "macos", "windows"])
