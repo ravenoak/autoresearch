@@ -4,10 +4,13 @@
 Recent `uv run pytest -q` runs pass unit tests but surface 40 failing integration tests. Failures
 include unauthorized API endpoints returning 401/403, storage eviction simulations reporting tuple
 mismatches, AttributeError and PicklingError exceptions, and search ranking calculations accessing
-missing modules. These regressions block the 0.1.0a1 preview.
+missing modules. These regressions block the 0.1.0a1 preview. As of 2025-09-07,
+`task verify` additionally fails early because
+`tests/unit/test_property_api_rate_limit_bounds.py::test_rate_limit_bounds`
+exceeds Hypothesis' default deadline.
 
 ## Dependencies
-- None
+- [fix-rate-limit-bounds-test-deadline](fix-rate-limit-bounds-test-deadline.md)
 
 ## Acceptance Criteria
 - API docs, metrics, health, and streaming endpoints return expected status codes when authenticated
