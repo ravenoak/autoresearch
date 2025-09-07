@@ -18,7 +18,8 @@ Utilization:
 \(\rho = \lambda / (c\mu)\)
 
 Probability of zero tasks:
-\(P_0 = \Big(\sum_{n=0}^{c-1} (\lambda/\mu)^n / n! + (\lambda/\mu)^c /(c!(1-\rho))\Big)^{-1}\)
+\(P_0 = \Big(\sum_{n=0}^{c-1} (\lambda/\mu)^n / n! +\
+(\lambda/\mu)^c /(c!(1-\rho))\Big)^{-1}\)
 
 Average queue length:
 \(L_q = P_0 (\lambda/\mu)^c \rho / (c!(1-\rho)^2)\)
@@ -29,8 +30,19 @@ Wait time in queue:
 Total latency:
 \(L = d + W_q + 1/\mu\)
 
-## Example
+## Coordination Overhead
 
+Each task requires dispatch and result collection, adding coordination delay
+\(t_c\) per task. The effective service rate becomes
+\(\mu_{\text{eff}} = 1 / (1/\mu + t_c)\). The relative overhead is
+\(O = 1 - \mu_{\text{eff}}/\mu = t_c \mu / (1 + t_c \mu)\).
+Latency with coordination is
+\(L = d + W_q + 1/\mu_{\text{eff}}\).
+
+## Throughput and Latency Curves
+
+Throughput saturates at \(\min(\lambda, c\mu_{\text{eff}})\), while
+latency drops sharply once \(c\mu_{\text{eff}} > \lambda\).
 Example curves for \(\lambda = 120\) tasks/s, \(\mu = 50\) tasks/s, and
 \(d = 5\) ms are shown below.
 
@@ -42,11 +54,20 @@ Example curves for \(\lambda = 120\) tasks/s, \(\mu = 50\) tasks/s, and
 | 4 | 120 | 0.0286 |
 | 5 | 120 | 0.0259 |
 
+## Failure Recovery
+
+If a worker fails, remaining workers drain the queue. Throughput temporarily
+falls to \(\min(\lambda, (c-1)\mu_{\text{eff}})\) but no tasks are lost.
+Safety and liveness are preserved by the result aggregator. See
+[distributed coordination](algorithms/distributed_coordination.md) for more
+background.
+
 ## Benchmark
 
 We validated the analytical model with a discrete-event simulation running
 100 tasks while varying workers and adding 5 ms of dispatch latency. The
-throughput curve matches the \(\min(\lambda, c\mu)\) prediction, and
-latency decreases as workers scale.
+throughput curve matches the \(\min(\lambda, c\mu_{\text{eff}})\)
+prediction, and latency decreases as workers scale.
 
-![Benchmark throughput and latency](images/distributed_orchestrator_perf_benchmark.svg)
+![Benchmark throughput and latency]
+(images/distributed_orchestrator_perf_benchmark.svg)
