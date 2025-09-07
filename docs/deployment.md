@@ -145,7 +145,24 @@ Confirm required settings before starting services.
   cause the script to fail fast.
 - Optionally set `CONTAINER_ENGINE` to `docker` or `podman` to verify the
   container CLI is available.
-- Run the validation script:
+
+Create a configuration directory for each platform such as `config/linux`,
+`config/macos`, or `config/windows`. Each directory should contain a
+`deploy.yml` and `.env` file. Minimal examples:
+
+```yaml
+# deploy.yml
+version: 1
+services:
+  - api
+```
+
+```
+# .env
+KEY=value
+```
+
+Run the validation script:
 
 ```bash
 DEPLOY_ENV=production CONFIG_DIR=config EXTRAS="analysis" \

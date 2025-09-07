@@ -109,14 +109,38 @@ def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[s
     return [error.message for error in validator.iter_errors(data)]
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    missing_env = _missing_env()
+def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
+    """Check environment variables and configuration files.
+
+    Returns ``(config_dir, errors)`` where ``config_dir`` is the resolved
+    directory or ``None`` if unavailable. ``errors`` contains human-readable
+    messages for any problems.
+    """
+
+    errors: list[str] = []
+    missing_env = [name for name in REQUIRED_ENV_VARS if not env.get(name)]
     if missing_env:
-        print(
-            f"Missing environment variables: {', '.join(missing_env)}",
-            file=sys.stderr,
+        errors.append(
+            f"Missing environment variables: {', '.join(missing_env)}"
         )
+        return None, errors
+    config_dir = Path(env["CONFIG_DIR"])
+    if not config_dir.is_dir():
+        errors.append(f"CONFIG_DIR not found: {config_dir}")
+        return None, errors
+    missing_files = _missing_files(config_dir)
+    if missing_files:
+        missing = ", ".join(str(p) for p in missing_files)
+        errors.append(f"Missing configuration files: {missing}")
+    return config_dir, errors
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    config_dir, errors = _preflight(os.environ)
+    if errors:
+        print("; ".join(errors), file=sys.stderr)
         return 1
+    assert config_dir is not None
     extras_err = _unknown_extras(os.getenv("EXTRAS", ""))
     if extras_err:
         print(f"Unknown extras: {', '.join(extras_err)}", file=sys.stderr)
@@ -124,16 +148,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     engine_err = _check_container_engine()
     if engine_err:
         print(engine_err, file=sys.stderr)
-        return 1
-    config_dir = Path(os.environ["CONFIG_DIR"])
-    if not config_dir.is_dir():
-        print(f"CONFIG_DIR not found: {config_dir}", file=sys.stderr)
-        return 1
-
-    missing_files = _missing_files(config_dir)
-    if missing_files:
-        missing = ", ".join(str(p) for p in missing_files)
-        print(f"Missing configuration files: {missing}", file=sys.stderr)
         return 1
     yaml_data = _load_yaml(config_dir / "deploy.yml")
     yaml_errors = _schema_errors(yaml_data, DEPLOY_SCHEMA)

@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "validate_deploy.py"
 
 
@@ -110,3 +112,15 @@ def test_validate_deploy_missing_container_engine(tmp_path: Path) -> None:
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "Container engine" in result.stderr
+
+
+@pytest.mark.parametrize("os_name", ["linux", "macos", "windows"])
+def test_validate_deploy_os_samples(tmp_path: Path, os_name: str) -> None:
+    config_dir = tmp_path / os_name
+    config_dir.mkdir()
+    _write_config(config_dir)
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": os_name, "CONFIG_DIR": str(config_dir)})
+    result = _run(env, config_dir)
+    assert result.returncode == 0
+    assert "validated" in result.stdout.lower()
