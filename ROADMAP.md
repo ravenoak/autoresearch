@@ -3,7 +3,7 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **September 3, 2025**.
+Last updated **September 7, 2025**.
 
 ## Status
 
@@ -96,6 +96,7 @@ activities include:
 - Running all unit, integration and behavior tests (see [STATUS.md](STATUS.md)).
 - Finalizing API reference and user guides.
 - Verifying packaging metadata and TestPyPI uploads.
+- Document domain model for agents, queries, storage, and search.
 
 Type checking and unit tests currently fail; see [STATUS.md](STATUS.md) for
 details. The **0.1.0** milestone is targeted for **July 1, 2026** while
