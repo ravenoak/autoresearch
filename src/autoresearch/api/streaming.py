@@ -24,7 +24,8 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
 
     A blank line is sent every ``KEEPALIVE_INTERVAL`` seconds to prevent
     intermediaries from closing idle connections. Consumers should ignore
-    empty lines.
+    empty lines. Once processing completes the final response is posted to any
+    configured webhooks.
     """
     config = get_config()
 
@@ -49,7 +50,6 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()
         queue.put_nowait(partial.model_dump_json())
-        send_webhooks(partial)
 
     def run() -> None:
         try:

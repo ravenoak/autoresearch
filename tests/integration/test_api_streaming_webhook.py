@@ -36,8 +36,8 @@ def test_stream_emits_keepalive(monkeypatch, api_client):
 
 
 @pytest.mark.slow
-def test_stream_webhook_partial(monkeypatch, api_client):
-    """Streaming should POST each partial result to the webhook."""
+def test_stream_webhook_final_only(monkeypatch, api_client):
+    """Streaming should POST only the final result to the webhook."""
 
     cfg = ConfigModel(api=APIConfig(webhook_timeout=1, webhook_retries=2, webhook_backoff=0.1))
     cfg.api.role_permissions["anonymous"] = ["query"]
@@ -69,11 +69,7 @@ def test_stream_webhook_partial(monkeypatch, api_client):
         assert resp.status_code == 200
         [line for line in resp.iter_lines()]
 
-    assert calls == [
-        ("partial-0", 1, 2, 0.1),
-        ("partial-1", 1, 2, 0.1),
-        ("final", 1, 2, 0.1),
-    ]
+    assert calls == [("final", 1, 2, 0.1)]
 
 
 @pytest.mark.slow
