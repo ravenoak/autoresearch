@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 import time
 from typing import Any, Dict, List, Union
@@ -25,7 +24,7 @@ from ..resource_monitor import ResourceMonitor
 from .node_health import NodeHealthMonitor
 from .system_monitor import SystemMonitor
 
-monitor_app = typer.Typer(help="Monitoring utilities", invoke_without_command=True)
+monitor_app = typer.Typer(help="Monitoring utilities")
 
 _loader = ConfigLoader()
 _system_monitor: SystemMonitor | None = None
@@ -34,19 +33,10 @@ __all__ = ["SystemMonitor", "NodeHealthMonitor"]
 log = get_logger(__name__)
 
 
-@monitor_app.callback(invoke_without_command=True)
-def default_callback(
-    ctx: typer.Context,
-    watch: bool = typer.Option(False, "--watch", "-w", help="Refresh continuously"),
-) -> None:
-    """Display system metrics when no subcommand is provided."""
-    if ctx.invoked_subcommand is None:
-        if watch:
-            metrics(watch=True)
-        else:
-            data = _collect_system_metrics()
-            typer.echo(json.dumps(data))
-            raise typer.Exit(code=0)
+@monitor_app.callback()
+def init_metrics(ctx: typer.Context) -> None:  # pragma: no cover - simple hook
+    """Initialize counters before executing monitor commands."""
+    orch_metrics.ensure_counters_initialized()
 
 
 def _calculate_health(cpu: float, mem: float) -> str:
@@ -88,7 +78,6 @@ def _collect_system_metrics() -> Dict[str, Any]:
     except Exception as e:
         log.warning("Failed to collect system metrics", exc_info=e)
 
-    orch_metrics.ensure_counters_initialized()
     metrics["queries_total"] = int(orch_metrics.QUERY_COUNTER._value.get())
     metrics["tokens_in_total"] = int(orch_metrics.TOKENS_IN_COUNTER._value.get())
     metrics["tokens_out_total"] = int(orch_metrics.TOKENS_OUT_COUNTER._value.get())
