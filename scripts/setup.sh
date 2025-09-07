@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/setup.sh
+# Usage: AR_EXTRAS="nlp parsers" ./scripts/setup.sh
 # Verify Python 3.12+, confirm Go Task is installed, and sync dependencies.
 
 set -euo pipefail
