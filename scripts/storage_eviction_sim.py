@@ -37,8 +37,22 @@ def _run(
     scenario: str,
     jitter: float = 0.0,
     evictors: int = 0,
-) -> tuple[int, float]:
-    """Persist claims concurrently and return remaining node count and runtime."""
+    return_metrics: bool = False,
+) -> int | tuple[int, float]:
+    """Persist claims concurrently.
+
+    Args:
+        threads: Number of writer threads.
+        items: Items each thread should persist.
+        policy: Eviction policy to use.
+        scenario: Simulation scenario.
+        jitter: Sleep between writes to model contention.
+        evictors: Dedicated eviction threads.
+        return_metrics: When ``True`` also return the runtime.
+
+    Returns:
+        Remaining node count and optionally the elapsed time in seconds.
+    """
 
     cfg = ConfigModel(
         storage=StorageConfig(duckdb_path=":memory:"),
@@ -115,7 +129,9 @@ def _run(
         ConfigLoader.reset_instance()
 
     elapsed = time.perf_counter() - start
-    return remaining, elapsed
+    if return_metrics:
+        return remaining, elapsed
+    return remaining
 
 
 VALID_POLICIES = {"lru", "score", "hybrid", "adaptive", "priority"}
@@ -149,7 +165,15 @@ def main(
         raise SystemExit(f"scenario must be one of: {allowed}")
     if jitter < 0:
         raise SystemExit("jitter must be non-negative")
-    remaining, elapsed = _run(threads, items, policy, scenario, jitter, evictors)
+    remaining, elapsed = _run(
+        threads,
+        items,
+        policy,
+        scenario,
+        jitter,
+        evictors,
+        return_metrics=True,
+    )
     total = threads * items
     rate = total / elapsed if elapsed else float("inf")
     print(f"nodes remaining after eviction: {remaining}")
