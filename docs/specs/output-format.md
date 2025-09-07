@@ -2,9 +2,9 @@
 
 ## Overview
 
-The output formatting module (`src/autoresearch/output_format.py`) renders query
-responses in multiple formats such as Markdown, JSON, plain text, graph views,
-or custom templates.
+The output formatting module (`src/autoresearch/output_format.py`) renders
+query responses in formats such as Markdown, JSON, plain text, graph views, or
+custom templates.
 
 ## Algorithms
 
@@ -16,11 +16,19 @@ or custom templates.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+Assume `render_output` receives a response object and a format specifier.
+Each renderer maps the response to a deterministic string representation.
+The dispatch table binds formats to renderer functions, so every supported
+format resolves to a total function. Fallback to plain text ensures totality
+for unknown formats.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+BDD scenarios and unit tests exercise Markdown, JSON, and graph renderers.
+The tests assert deterministic strings and no side effects. On 2025-09-07,
+`pytest tests/unit/test_output_format.py` reported 21 passing tests, and
+the feature scenarios in `tests/behavior/features/output_formatting.feature`
+executed successfully in `task verify`.
 
 ## Traceability
 

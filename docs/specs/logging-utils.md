@@ -2,8 +2,9 @@
 
 ## Overview
 
-Logging utilities that combine loguru and structlog for structured JSON logging.
-Includes helpers to configure logging and obtain structured loggers.
+Logging utilities that combine loguru and structlog for structured JSON
+logging. Includes helpers to configure logging and obtain structured
+loggers.
 
 ## Algorithms
 
@@ -15,11 +16,19 @@ Includes helpers to configure logging and obtain structured loggers.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+Assume the logger is configured through `setup_logging`. The routine
+attaches a single sink and preserves contextual metadata. A subsequent
+call checks for existing sinks, ensuring idempotent configuration.
+Structured dictionaries flow through the logger, so the loguru and
+structlog integration yields deterministic JSON output, satisfying the
+invariants.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+Tests parameterize logger configuration and environment variables to
+verify idempotent setup and context propagation. On 2025-09-07,
+`pytest tests/unit/test_logging_utils.py
+tests/unit/test_logging_utils_env.py` reported four passing tests.
 
 ## Traceability
 
