@@ -31,14 +31,17 @@ the safety margin.
 
 1. **Setup**
    - Repeated `initialize_storage` calls leave `G` unchanged.
+   - The eviction counter resets to zero.
 2. **Persist**
    - Claim `c` does not exist in `G` prior to persistence.
    - After `persist_claim`, `c ∈ G` and `U' = U + u(c)`.
+   - A re-entrant lock serializes writers so `G` reflects a linear history.
    - If `U' > B`, subsequent eviction ensures `U'' ≤ B(1 - δ)`.
 3. **Evict**
    - Eviction chooses `E ⊆ G` per policy and yields
      `G' = G \ E` with `U' = U - u(E)`.
    - Each removed node increments the eviction counter [m2].
+   - Repeating eviction on the same `E` leaves state unchanged.
 4. **Under budget**
    - When `U ≤ B`, no eviction occurs and all nodes remain.
 5. **Teardown**
@@ -46,17 +49,19 @@ the safety margin.
 
 ## Proof Sketch
 
-- `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs yield
-  identical table listings, demonstrated in `schema_idempotency_sim.py` [s2].
+- `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs
+  yield identical table listings, demonstrated in
+  `schema_idempotency_sim.py` [s2].
 - **Concurrency safety.** A single re-entrant lock guards state, so any
   interleaving `t₁, t₂, …` reduces to a serial order. The resulting sequence
   `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves linearizability, and
   `storage_concurrency_sim.py` [s4] confirms mixed states cannot appear.
+- **Eviction termination.** Let `U_i` be usage after step `i` and `E_i` the
+  evicted set with `u(E_i) > 0`. Then `U_{i+1} = U_i - u(E_i)` and the
+  decreasing sequence `{U_i}` is bounded below by `0`, so some `U_k` satisfies
+  `U_k ≤ B(1 - δ)`.
 - **RAM-budget enforcement.** `_enforce_ram_budget` applies `evict` while
-  `U > B(1 - δ)`. Let `U_i` be usage after step `i`; each step removes some
-  `u_i > 0`, so `U_{i+1} = U_i - u_i`. The strictly decreasing sequence has a
-  lower bound, yielding `U_k ≤ B(1 - δ)` for some `k`. Simulations [s1][s3]
-  validate this bound.
+  `U > B(1 - δ)`, and simulations [s1][s3] validate this bound.
 
 These arguments rely on the formal proofs and simulations in
 [docs/algorithms/storage.md][d1].
@@ -66,6 +71,16 @@ These arguments rely on the formal proofs and simulations in
 Unit tests and simulations cover nominal and edge cases for these routines,
 including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 `ram_budget_enforcement_sim.py` [s3], and `storage_concurrency_sim.py` [s4].
+
+## Simulation Benchmarks
+
+Integration tests exercise these simulations to validate concurrency safety and
+RAM-budget enforcement.
+
+- `test_concurrency_benchmark` spawns two writer threads and leaves zero nodes
+  [t8].
+- `test_ram_budget_benchmark` persists five items sequentially and evicts down
+  to zero nodes [t8].
 
 ## Example Results
 
@@ -110,6 +125,7 @@ and `0.31 OPS` [t5r].
   - [tests/integration/test_storage_duckdb_fallback.py][t5]
   - [tests/targeted/test_storage_eviction.py][t6]
   - [tests/unit/test_storage_eviction_sim.py][t7]
+  - [tests/integration/storage/test_simulation_benchmarks.py][t8]
 
 [m1]: ../../src/autoresearch/storage.py
 [m2]: ../../src/autoresearch/storage.py#L729
@@ -129,6 +145,7 @@ and `0.31 OPS` [t5r].
 [t5r]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t6]: ../../tests/targeted/test_storage_eviction.py
 [t7]: ../../tests/unit/test_storage_eviction_sim.py
+[t8]: ../../tests/integration/storage/test_simulation_benchmarks.py
 
 ## Troubleshooting
 
