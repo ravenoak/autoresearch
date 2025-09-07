@@ -9,8 +9,12 @@ Reference issues by slugged filename (for example,
 - Track environment alignment to ensure Python 3.12 and dev tooling are
   available.
     [align-environment-with-requirements]
- - Update release plan with revised milestone schedule; 0.1.0a1 marked in
-   progress and coverage noted at **100%**.
+- Record current test suite status: 35 failing tests out of 1280 collected and
+  **100%** coverage (57/57 lines).
+    [resolve-current-integration-test-failures]
+    [resolve-pre-alpha-release-blockers]
+- Update release plan with revised milestone schedule; 0.1.0a1 marked in
+  progress and coverage noted at **100%**.
  - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 100% coverage and
    TestPyPI 403).
   - Add rich configuration context fixtures with sample data for tests.
@@ -67,4 +71,6 @@ See the [release plan](docs/release_plan.md) for upcoming milestones.
 [create-more-comprehensive-test-contexts]: issues/archive/create-more-comprehensive-test-contexts.md
 [update-release-documentation]: issues/archive/update-release-documentation.md
 [assemble-release-notes-readme]: issues/archive/assemble-release-notes-and-validate-readme.md
+[resolve-current-integration-test-failures]: issues/resolve-current-integration-test-failures.md
+[resolve-pre-alpha-release-blockers]: issues/archive/resolve-pre-alpha-release-blockers.md
 

@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **August 28, 2025** and
+`2025-05-18`). This schedule was last updated on **September 7, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -18,9 +18,10 @@ defined in `autoresearch.__version__`. Phase 3
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
-`flake8` and `mypy` pass. Coverage reports **100%** (57/57 lines) for
-targeted modules. Instrumentation and skipping slow tests resolved earlier
-`task verify` coverage hangs. Outstanding gaps are tracked in
+`flake8` and `mypy` pass. `uv run pytest -q` reports 35 failing tests out of
+1280 collected. Coverage reports **100%** (57/57 lines) for targeted modules.
+Instrumentation and skipping slow tests resolved earlier coverage hangs.
+Outstanding gaps are tracked in
 [resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
 are mirrored in [../STATUS.md](../STATUS.md).
 

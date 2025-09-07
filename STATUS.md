@@ -3,9 +3,11 @@
 ## September 7, 2025
 
 - Installed test extras with `uv pip install -e ".[test]"` to enable plugins.
-- `uv run pytest -q` reports 40 failing integration tests out of 1145 collected.
-  Failing cases include 401/403 API responses and AttributeError or PicklingError exceptions,
-  plus storage eviction tuple mismatches.
+- `uv run pytest -q` reports 35 failing tests out of 1280 collected. Failing
+  cases include 401/403 API responses and AttributeError or PicklingError
+  exceptions, plus storage eviction tuple mismatches.
+- `uv run coverage report` shows **100%** coverage (57/57 lines) for targeted
+  modules.
 
 
 ## September 6, 2025
