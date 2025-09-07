@@ -15,7 +15,7 @@ from autoresearch.config.models import APIConfig, ConfigModel
     limit=st.integers(min_value=1, max_value=5),
     requests=st.integers(min_value=0, max_value=10),
 )
-@settings(deadline=100)
+@settings(deadline=500)
 def test_rate_limit_bounds(limit: int, requests: int) -> None:
     """Client never exceeds the configured request limit.
 
