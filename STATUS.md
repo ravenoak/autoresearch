@@ -2,6 +2,10 @@
 
 ## September 6, 2025
 
+- Tagged `v0.1.0a1` and archived the release preparation issue.
+
+## September 6, 2025
+
 - `task verify` aborted on failing tests such as
   `tests/unit/test_metrics_token_budget_spec.py::test_token_budget_spec`,
   `tests/unit/test_token_budget.py::test_token_budget`, and later
@@ -183,7 +187,6 @@ with `KeyError: 'kuzu'`, reporting 1 failed, 212 passed, 22 deselected, and 3
 warnings. Coverage data was not produced.
 
 ## Open issues
-- [prepare-v0-1-0a1-release](issues/prepare-v0-1-0a1-release.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
   - [tune-system-performance](issues/tune-system-performance.md)

@@ -19,10 +19,13 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - [add-proof-sketches-to-core-specs](archive/add-proof-sketches-to-core-specs.md)
 - [fix-duckdb-storage-table-creation-failure](archive/fix-duckdb-storage-table-creation-failure.md)
 - [resolve-package-metadata-warnings](archive/resolve-package-metadata-warnings.md)
-- [fix-check-env-warnings-test-failure](fix-check-env-warnings-test-failure.md)
-- [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
-- [complete-orchestration-spec](complete-orchestration-spec.md)
-- [fix-distributed-perf-sim-cli-failure](fix-distributed-perf-sim-cli-failure.md)
+- [fix-check-env-warnings-test-failure]
+  (archive/fix-check-env-warnings-test-failure.md)
+- [resolve-resource-tracker-errors-in-verify]
+  (archive/resolve-resource-tracker-errors-in-verify.md)
+- [complete-orchestration-spec](archive/complete-orchestration-spec.md)
+- [fix-distributed-perf-sim-cli-failure]
+  (archive/fix-distributed-perf-sim-cli-failure.md)
 
 ## Acceptance Criteria
 - `task verify` runs to completion with all extras installed.
@@ -32,4 +35,4 @@ initial proofs. Completing these steps clears the way to tag v0.1.0a1.
 - TestPyPI dry-run succeeds and tag `v0.1.0a1` is created.
 
 ## Status
-Open
+Archived
