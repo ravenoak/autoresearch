@@ -1,11 +1,11 @@
 # Resolve current integration test failures
 
 ## Context
-Recent `uv run pytest -q` runs pass unit tests but surface 40 failing integration tests. Failures
-include unauthorized API endpoints returning 401/403, storage eviction simulations reporting tuple
-mismatches, AttributeError and PicklingError exceptions, and search ranking calculations accessing
-missing modules. These regressions block the 0.1.0a1 preview. As of 2025-09-07,
-`task verify` additionally fails early because
+Recent `uv run pytest -q` runs pass unit tests but surface 39 failing integration tests. Failures
+include unauthorized API endpoints returning 401/403, AttributeError and PicklingError exceptions,
+and search ranking calculations accessing missing modules. The storage eviction simulation tuple
+mismatch was resolved on 2025-09-07. These regressions continue to block the 0.1.0a1 preview. As of
+2025-09-07, `task verify` additionally fails early because
 `tests/unit/test_property_api_rate_limit_bounds.py::test_rate_limit_bounds`
 exceeds Hypothesis' default deadline.
 
