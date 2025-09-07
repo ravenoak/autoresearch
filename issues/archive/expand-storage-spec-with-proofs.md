@@ -14,4 +14,4 @@ clarify state transitions, eviction guarantees, and concurrency behavior.
 - Simulation results or benchmarks demonstrate schema idempotency and performance.
 
 ## Status
-Open
+Archived
