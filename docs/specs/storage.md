@@ -20,7 +20,7 @@ Given storage state `(G, U, B)`:
   and if `U + u(c) > B`, an eviction transition follows.
 
 - **Evict**
-  `(G, U, B) ─evict(E)→ (G \ E, U - u(E), B)`
+ `(G, U, B) ─evict(E)→ (G \ E, U - u(E), B)`
   where `E` is a set of nodes such that `U - u(E) ≤ B(1 - δ)`.
 
 ## Invariants
@@ -32,10 +32,13 @@ the safety margin.
 1. **Setup**
    - Repeated `initialize_storage` calls leave `G` unchanged.
 2. **Persist**
-   - After `persist_claim` and budget enforcement, `U ≤ B` unless
-     `B ≤ 0`.
+   - Claim `c` does not exist in `G` prior to persistence.
+   - After `persist_claim`, `c ∈ G` and `U' = U + u(c)`.
+   - If `U' > B`, subsequent eviction ensures `U'' ≤ B(1 - δ)`.
 3. **Evict**
-   - `_enforce_ram_budget` removes nodes until `U ≤ B(1 - δ)`.
+   - Eviction chooses `E ⊆ G` per policy and yields
+     `G' = G \ E` with `U' = U - u(E)`.
+   - Each removed node increments the eviction counter [m2].
 4. **Under budget**
    - When `U ≤ B`, no eviction occurs and all nodes remain.
 5. **Teardown**
@@ -45,9 +48,10 @@ the safety margin.
 
 - `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs yield
   identical table listings, demonstrated in `schema_idempotency_sim.py` [s2].
-- **Concurrency safety.** Each transition acquires a re-entrant lock, yielding
-  sequences like `σ₀ ─t₁→ σ₁ ─t₂→ σ₂`. Mixed states cannot appear, and
-  `storage_concurrency_sim.py` [s4] exercises this ordering.
+- **Concurrency safety.** A single re-entrant lock guards state, so any
+  interleaving `t₁, t₂, …` reduces to a serial order. The resulting sequence
+  `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves linearizability, and
+  `storage_concurrency_sim.py` [s4] confirms mixed states cannot appear.
 - **RAM-budget enforcement.** `_enforce_ram_budget` applies `evict` while
   `U > B(1 - δ)`. Let `U_i` be usage after step `i`; each step removes some
   `u_i > 0`, so `U_{i+1} = U_i - u_i`. The strictly decreasing sequence has a
@@ -63,9 +67,18 @@ Unit tests and simulations cover nominal and edge cases for these routines,
 including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 `ram_budget_enforcement_sim.py` [s3], and `storage_concurrency_sim.py` [s4].
 
+## Example Results
+
+`schema_idempotency_sim.py` reports `schema stable across 3 runs` [s2r].
+`storage_eviction_sim.py` with two threads and five items leaves zero nodes and
+achieves roughly `0.3 nodes/s` throughput [s1r].
+`test_ram_budget_benchmark` measures mean eviction latency of about `3.2 s`
+and `0.31 OPS` [t5r].
+
 ## Benchmark Output
 
-`test_ram_budget_benchmark` measures eviction latency; results appear in the
+`test_ram_budget_benchmark` measures eviction latency; results appear in
+[tests/integration/test_storage_duckdb_fallback.py][t5] and in the
 [DuckDB fallback benchmark][b1].
 
 ## Concurrency Assumptions
@@ -78,6 +91,8 @@ including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 
 - Modules
   - [src/autoresearch/storage.py][m1]
+- Metrics
+  - [src/autoresearch/storage.py#L729][m2]
 - Documents
   - [docs/algorithms/storage.md][d1]
 - Scripts
@@ -97,9 +112,12 @@ including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
   - [tests/unit/test_storage_eviction_sim.py][t7]
 
 [m1]: ../../src/autoresearch/storage.py
+[m2]: ../../src/autoresearch/storage.py#L729
 [d1]: ../algorithms/storage.md
 [s1]: ../../scripts/storage_eviction_sim.py
+[s1r]: ../../scripts/storage_eviction_sim.py
 [s2]: ../../scripts/schema_idempotency_sim.py
+[s2r]: ../../scripts/schema_idempotency_sim.py
 [s3]: ../../scripts/ram_budget_enforcement_sim.py
 [s4]: ../../scripts/storage_concurrency_sim.py
 [b1]: ../algorithms/storage.md#duckdb-fallback-benchmark
@@ -108,6 +126,7 @@ including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 [t3]: ../../tests/unit/test_storage_eviction.py
 [t4]: ../../tests/integration/test_storage_eviction.py
 [t5]: ../../tests/integration/test_storage_duckdb_fallback.py
+[t5r]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t6]: ../../tests/targeted/test_storage_eviction.py
 [t7]: ../../tests/unit/test_storage_eviction_sim.py
 
