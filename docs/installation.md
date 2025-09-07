@@ -31,11 +31,18 @@ source .venv/bin/activate
 
 Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. It
 places the `task` binary in `.venv/bin` and requires adding that directory to
-`PATH`. If the script fails or you want a system-wide binary, install manually:
+`PATH`. If the script fails or you want a system-wide binary, install
+manually and confirm the installation:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 # macOS: brew install go-task/tap/go-task
+```
+
+Verify Go Task is installed:
+
+```bash
+task --version
 ```
 
 `task install` also checks for Go Task and downloads it to `.venv/bin` when

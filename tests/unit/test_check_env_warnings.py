@@ -40,6 +40,15 @@ def test_missing_pytest_bdd_warns(monkeypatch):
     assert result is None
 
 
+def test_missing_go_task_detected(monkeypatch):
+    def fake_run(*args, **kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(check_env.subprocess, "run", fake_run)
+    with pytest.raises(check_env.VersionError, match="Go Task"):
+        check_env.check_task()
+
+
 def test_main_ignores_missing_metadata(monkeypatch, capsys):
     monkeypatch.setattr(check_env, "EXTRA_REQUIREMENTS", {"fakepkg": "1.0"})
     monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})

@@ -28,11 +28,17 @@ task check
 syncs the `dev-minimal` and `test` extras. It exits with an error if Go Task is
 missing or the dependency sync fails.
 
-Install Go Task manually if it is not on `PATH`:
+Install Go Task manually if it is not on `PATH` and verify the installation:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 # macOS: brew install go-task/tap/go-task
+```
+
+Confirm Go Task is available:
+
+```bash
+task --version
 ```
 
 Optional extras provide features such as NLP, a UI, or distributed
