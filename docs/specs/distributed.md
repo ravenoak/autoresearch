@@ -15,6 +15,9 @@ coalition and scheduling details.
   urgent work executes first.
 - Detailed complexity and performance models appear in
   [distributed coordination][dc].
+- Failure recovery adds an overhead factor `1/(1-p)` as described in
+  [distributed overhead](../algorithms/distributed_overhead.md) and modeled by
+  [`orchestrator_distributed_sim.py`][sim].
 
 ## Invariants
 
@@ -38,7 +41,9 @@ coalition and scheduling details.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+Unit tests cover nominal and edge cases for these routines. Benchmarks such as
+[distributed_recovery_benchmark.py][drb] record CPU and memory usage during
+retries.
 
 ## Traceability
 
@@ -51,6 +56,7 @@ Unit tests cover nominal and edge cases for these routines.
   - [tests/unit/test_distributed_extra.py][t3]
   - [tests/analysis/test_distributed_coordination.py][t4]
   - [tests/unit/distributed/test_coordination_properties.py][t5]
+  - [tests/benchmark/test_orchestrator_distributed_sim.py][t6]
 
 [m1]: ../../src/autoresearch/distributed/
 [t1]: ../../tests/integration/test_distributed_agent_storage.py
@@ -58,5 +64,9 @@ Unit tests cover nominal and edge cases for these routines.
 [t3]: ../../tests/unit/test_distributed_extra.py
 [t4]: ../../tests/analysis/test_distributed_coordination.py
 [t5]: ../../tests/unit/distributed/test_coordination_properties.py
+[t6]: ../../tests/benchmark/test_orchestrator_distributed_sim.py
+
+[drb]: ../../scripts/distributed_recovery_benchmark.py
+[sim]: ../../scripts/orchestrator_distributed_sim.py
 
 [dc]: ../algorithms/distributed_coordination.md
