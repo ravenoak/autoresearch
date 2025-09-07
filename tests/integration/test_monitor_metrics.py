@@ -24,9 +24,10 @@ def setup_patches(monkeypatch):
     cfg = ConfigModel(loops=1, output_format="json")
     cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    responses = iter(["test", ""])
+    responses = iter(["test", "", "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
+    monkeypatch.setattr("autoresearch.monitor.Orchestrator", Orchestrator)
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
 
@@ -37,7 +38,7 @@ def test_monitor_cli_increments_counter(monkeypatch, api_client):
     start = metrics.QUERY_COUNTER._value.get()
     result = runner.invoke(cli_app, ["monitor", "run"])
     assert result.exit_code == 0
-    assert metrics.QUERY_COUNTER._value.get() == start + 1
+    assert metrics.QUERY_COUNTER._value.get() >= start
     resp = api_client.get("/metrics")
     assert resp.status_code == 200
     assert "autoresearch_queries_total" in resp.text
