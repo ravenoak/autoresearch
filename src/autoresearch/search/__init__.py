@@ -18,6 +18,12 @@ from .context import (
 from .core import Search, get_search
 from .http import _http_session, close_http_session, get_http_session, set_http_session
 
+# Expose the ``core`` module for tests that patch internals via
+# ``autoresearch.search.core``. Without this explicit import, the module is not
+# registered as an attribute of the package which leads to ``AttributeError``
+# during monkeypatch resolution in integration tests.
+from . import core  # noqa: F401  (re-exported for test accessibility)
+
 __all__ = [
     "Search",
     "get_search",
@@ -31,4 +37,5 @@ __all__ = [
     "BERTOPIC_AVAILABLE",
     "SENTENCE_TRANSFORMERS_AVAILABLE",
     "spacy",
+    "core",
 ]
