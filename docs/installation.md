@@ -111,6 +111,11 @@ default and should be executed before any tests. Missing extras such as
 task install
 ```
 
+Tests use markers like `requires_nlp` or `requires_parsers` to signal
+additional dependencies. Install matching extras with `EXTRAS` when
+invoking `task install` or `AR_EXTRAS` with `scripts/setup.sh` before
+running those tests.
+
 Include extras only when required. Examples:
 
 ```bash

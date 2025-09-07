@@ -6,6 +6,15 @@ reliability of the test suite.
 
 For environment setup instructions see [installation](installation.md).
 
+Tests may require optional dependencies. Markers such as `requires_nlp` or
+`requires_parsers` map to extras with the same names. Install them by setting
+`EXTRAS` when running `task install` or `AR_EXTRAS` when invoking the setup
+script. `task verify` syncs all extras automatically:
+
+```bash
+EXTRAS="nlp parsers" task install
+```
+
 ## Test Organization
 
 Tests are organized into four categories:

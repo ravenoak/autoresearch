@@ -28,16 +28,17 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test nlp ui vss git distributed analysis llm parsers"
+          extras="dev-minimal test"
           uv sync --python-platform x86_64-manylinux_2_28 \
-              $(printf ' --extra %s' $extras){{if .EXTRAS}} --extra {{.EXTRAS}}{{end}} \
-              {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
+              $(printf ' --extra %s' $extras) \
+              {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
+              {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - uv run python -c "import pytest_httpx, tomli_w, redis"
       - uv run flake8 src tests
     desc: |
-      Initialize dev env with all extras.
-      Syncs dev-minimal, test, nlp, ui, vss, git, distributed,
-      analysis, llm, and parsers extras by default.
+      Initialize dev env with minimal extras.
+      Syncs dev-minimal and test extras by default.
+      Provide optional groups with EXTRAS, e.g. "nlp" or "parsers".
       Set EXTRAS="gpu" to include optional GPU packages.
       Place matching wheels in wheels/gpu to avoid source builds.
   check-env:
