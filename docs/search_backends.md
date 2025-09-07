@@ -45,3 +45,15 @@ To guard against regressions, run `uv run pytest`
 `tests/benchmark/test_hybrid_ranking.py` with the shared dataset in
 `tests/data/backend_benchmark.csv`. Example results and thresholds live in
 [ranking_benchmark.md](ranking_benchmark.md).
+
+### Benchmark results
+
+On 2025-09-07, running
+`uv run --extra test pytest tests/benchmark/test_hybrid_ranking.py -m slow`
+produced:
+
+| Backend | Precision | Recall | Mean latency (µs) |
+|---------|-----------|--------|-------------------|
+| bm25    | 1.00      | 1.00   | 1.93              |
+| semantic| 0.50      | 1.00   | 1.99              |
+| hybrid  | 0.75      | 1.00   | 2.20              |
