@@ -29,10 +29,12 @@ check_go_task() {
         echo "Go Task not found. Install it from https://taskfile.dev/" >&2
         exit 1
     fi
-    task --version >/dev/null 2>&1 || {
+    local version
+    if ! version=$(task --version 2>/dev/null); then
         echo "Go Task installation is broken; reinstall it." >&2
         exit 1
-    }
+    fi
+    echo "$version"
 }
 
 ensure_uv() {
