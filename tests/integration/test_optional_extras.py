@@ -126,12 +126,22 @@ def test_local_file_backend_pdf(tmp_path, monkeypatch) -> None:
     """The parsers extra allows reading ``.pdf`` files."""
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")
-    monkeypatch.setattr(
-        "autoresearch.search.core.extract_pdf_text", lambda _: "hello world"
-    )
+    monkeypatch.setattr("autoresearch.search.core.extract_pdf_text", lambda _: "hello world")
     cfg = get_config()
     cfg.search.local_file.path = str(tmp_path)
     cfg.search.local_file.file_types = ["pdf"]
     with temporary_config(cfg):
         results = _local_file_backend("hello", max_results=1)
     assert results and "hello" in results[0]["snippet"].lower()
+
+
+@pytest.mark.requires_gpu
+def test_bertopic_import() -> None:
+    """The GPU extra exposes BERTopic for topic modeling."""
+    cfg = get_config()
+    cfg.search.context_aware.enabled = True
+    with temporary_config(cfg):
+        from autoresearch.search.context import _try_import_bertopic
+
+        if not _try_import_bertopic():
+            pytest.skip("BERTopic import failed")
