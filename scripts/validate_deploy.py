@@ -69,20 +69,34 @@ def _missing_files(config_dir: Path) -> list[Path]:
 
 
 def _load_yaml(path: Path) -> Mapping[str, Any]:
-    """Load YAML data from ``path``."""
-    with path.open() as fh:
-        return yaml.safe_load(fh) or {}
+    """Load YAML data from ``path``.
+
+    Raises ``ValueError`` if the file contains invalid YAML.
+    """
+
+    try:
+        with path.open() as fh:
+            return yaml.safe_load(fh) or {}
+    except yaml.YAMLError as exc:  # pragma: no cover - parse error path
+        raise ValueError(f"Invalid YAML in {path}: {exc}") from exc
 
 
 def _load_env_file(path: Path) -> Mapping[str, str]:
-    """Parse simple ``.env`` files into a mapping."""
+    """Parse simple ``.env`` files into a mapping.
+
+    Raises ``ValueError`` if a key is defined more than once.
+    """
+
     data: dict[str, str] = {}
-    for line in path.read_text().splitlines():
+    for idx, line in enumerate(path.read_text().splitlines(), start=1):
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        data[key.strip()] = value.strip()
+        key = key.strip()
+        if key in data:
+            raise ValueError(f"Duplicate key '{key}' in {path} line {idx}")
+        data[key] = value.strip()
     return data
 
 
@@ -120,9 +134,7 @@ def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
     errors: list[str] = []
     missing_env = [name for name in REQUIRED_ENV_VARS if not env.get(name)]
     if missing_env:
-        errors.append(
-            f"Missing environment variables: {', '.join(missing_env)}"
-        )
+        errors.append(f"Missing environment variables: {', '.join(missing_env)}")
         return None, errors
     config_dir = Path(env["CONFIG_DIR"])
     if not config_dir.is_dir():
@@ -149,13 +161,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     if engine_err:
         print(engine_err, file=sys.stderr)
         return 1
-    yaml_data = _load_yaml(config_dir / "deploy.yml")
+    try:
+        yaml_data = _load_yaml(config_dir / "deploy.yml")
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
+        return 1
     yaml_errors = _schema_errors(yaml_data, DEPLOY_SCHEMA)
     if yaml_errors:
         errors = "; ".join(yaml_errors)
         print(f"Schema errors in deploy.yml: {errors}", file=sys.stderr)
         return 1
-    env_data = _load_env_file(config_dir / ".env")
+    try:
+        env_data = _load_env_file(config_dir / ".env")
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
+        return 1
     env_errors = _schema_errors(env_data, ENV_SCHEMA)
     if env_errors:
         errors = "; ".join(env_errors)
