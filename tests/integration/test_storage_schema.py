@@ -17,8 +17,9 @@ def test_initialize_storage_creates_tables(tmp_path, db_path):
     cfg = ConfigLoader().config
     cfg.storage.vector_extension = False
     path = ":memory:" if db_path == ":memory:" else str(tmp_path / "kg.duckdb")
-    if db_path != ":memory:":
+    if db_path != ":memory":
         cfg.storage.duckdb_path = path
+    cfg.storage.rdf_path = str(tmp_path / "rdf_store")
     ConfigLoader()._config = cfg
 
     st = StorageState()
