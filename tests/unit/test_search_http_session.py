@@ -36,3 +36,16 @@ def test_http_session_management(monkeypatch: pytest.MonkeyPatch) -> None:
     close_http_session()
     assert custom.closed
     assert get_http_session() is not custom
+
+
+@pytest.mark.requires_distributed
+def test_set_http_session_registers_atexit(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = []
+    monkeypatch.setattr("autoresearch.search.http.atexit.register", lambda func: calls.append(func))
+    close_http_session()
+    custom = DummySession()
+    set_http_session(custom)  # type: ignore[arg-type]
+    assert get_http_session() is custom
+    assert calls == [close_http_session]
+    close_http_session()
+    close_http_session()
