@@ -2,10 +2,11 @@
 
 ## September 7, 2025
 
-- Installed test extras with `uv pip install -e ".[test]"` to enable plugins.
-- `uv run pytest -q` reports 35 failing tests out of 1280 collected. Failing
-  cases include 401/403 API responses and AttributeError or PicklingError
-  exceptions, plus storage eviction tuple mismatches.
+- Installed test extras with `uv pip install -e "[test]"` to enable plugins.
+- `task check` succeeds after installing Go Task.
+- `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss \
+  and not requires_distributed" -q` reports **5 failing tests**, including
+  GitPython attribute errors and a failing CLI resource monitor.
 - `uv run coverage report` shows **100%** coverage (57/57 lines) for targeted
   modules.
 

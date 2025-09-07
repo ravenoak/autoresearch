@@ -14,4 +14,4 @@ full verification runs.
 - `task verify` passes the unit test phase without a DeadlineExceeded error.
 
 ## Status
-Open
+Archived
