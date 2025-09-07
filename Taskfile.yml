@@ -56,6 +56,15 @@ tasks:
       - >
           uv run python -c 'import redis' ||
           (echo "redis missing; run 'task install'." && exit 1)
+      - >
+          uv run python -c 'import pdfminer' ||
+          (echo "pdfminer-six missing; run 'task install'." && exit 1)
+      - >
+          uv run python -c 'import docx' ||
+          (echo "python-docx missing; run 'task install'." && exit 1)
+      - >
+          uv run python -c 'import pytest_benchmark' ||
+          (echo "pytest-benchmark missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
   check:
     vars:

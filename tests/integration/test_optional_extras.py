@@ -119,3 +119,19 @@ def test_local_file_backend_docx(tmp_path) -> None:
     with temporary_config(cfg):
         results = _local_file_backend("hello", max_results=1)
     assert isinstance(results, list)
+
+
+@pytest.mark.requires_parsers
+def test_local_file_backend_pdf(tmp_path, monkeypatch) -> None:
+    """The parsers extra allows reading ``.pdf`` files."""
+    pdf_path = tmp_path / "sample.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")
+    monkeypatch.setattr(
+        "autoresearch.search.core.extract_pdf_text", lambda _: "hello world"
+    )
+    cfg = get_config()
+    cfg.search.local_file.path = str(tmp_path)
+    cfg.search.local_file.file_types = ["pdf"]
+    with temporary_config(cfg):
+        results = _local_file_backend("hello", max_results=1)
+    assert results and "hello" in results[0]["snippet"].lower()

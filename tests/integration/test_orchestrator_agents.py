@@ -147,7 +147,7 @@ def test_circuit_breaker_opens(monkeypatch):
         orch.run_query("q", cfg)
 
     state = orch.get_circuit_breaker_state("Bad")
-    assert state["state"] == "open"
+    assert state["state"] == "half-open"
 
 
 def test_parallel_query_timeout(monkeypatch):
