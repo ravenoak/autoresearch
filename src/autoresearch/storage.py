@@ -43,16 +43,19 @@ from .storage_backends import DuckDBStorageBackend
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
 
+# Typed reference to the optional Kuzu backend.
+KuzuBackend: type[KuzuStorageBackend] | None = None
+
 # Determine availability of the optional Kuzu dependency without importing it
 try:  # pragma: no cover - optional dependency
     _has_kuzu = importlib.util.find_spec("kuzu") is not None
 except Exception:  # pragma: no cover - defensive
     _has_kuzu = False
 
-if _has_kuzu:
-    from .storage_backends import KuzuStorageBackend as KuzuBackend
-else:  # pragma: no cover - kuzu not installed
-    KuzuBackend = None
+if _has_kuzu:  # pragma: no cover - optional dependency
+    from .storage_backends import KuzuStorageBackend
+
+    KuzuBackend = cast(type[KuzuStorageBackend], KuzuStorageBackend)
 
 # Use "Any" for DuckDB connections due to incomplete upstream type hints.
 DuckDBConnection = Any
@@ -184,7 +187,7 @@ def setup(
         if use_kuzu and KuzuBackend is None:
             log.warning("Kuzu backend requested but not available")
             cfg.use_kuzu = False
-        elif use_kuzu:
+        elif use_kuzu and KuzuBackend is not None:
             _kuzu_backend = KuzuBackend()
             kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
             _kuzu_backend.setup(kuzu_path)
