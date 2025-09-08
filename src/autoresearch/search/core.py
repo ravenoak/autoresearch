@@ -645,22 +645,29 @@ class Search:
     ) -> List[Dict[str, Any]]:
         """Rank combined results from multiple backends.
 
-        Each backend's results are merged and ranked using the weighted
-        scoring described in ``docs/algorithms/bm25.md``,
-        ``docs/algorithms/semantic_similarity.md``, and
-        ``docs/algorithms/source_credibility.md``. A ``backend`` field is
-        added to every result indicating its origin.
+        The same ranking pipeline used for individual backends is applied in
+        two stages: results from each backend are first scored independently,
+        then the combined set is re-ranked to produce the final ordering.
         """
 
-        all_results: List[Dict[str, Any]] = []
+        cfg = get_config()
+        if query_embedding is None and cfg.search.use_semantic_similarity:
+            model = self.get_sentence_transformer()
+            if model is not None:
+                query_embedding = np.array(
+                    list(model.embed([query]))[0], dtype=float
+                )
+
+        all_ranked: List[Dict[str, Any]] = []
         for name, docs in backend_results.items():
-            for doc in docs:
+            ranked = self.rank_results(query, docs, query_embedding)
+            for doc in ranked:
                 doc.setdefault("backend", name)
-                all_results.append(doc)
+                all_ranked.append(doc)
 
         return cast(
             List[Dict[str, Any]],
-            self.rank_results(query, all_results, query_embedding),
+            self.rank_results(query, all_ranked, query_embedding),
         )
 
     @hybridmethod

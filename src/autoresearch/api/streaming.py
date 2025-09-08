@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from ..config import get_config
 from ..error_utils import format_error_for_api, get_error_info
-from ..models import QueryRequest, QueryResponse
+from .models import QueryRequestV1, QueryResponseV1
 from ..orchestration import ReasoningMode
 from .deps import create_orchestrator
 from . import webhooks
@@ -19,7 +19,7 @@ from . import webhooks
 KEEPALIVE_INTERVAL = 15
 
 
-async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
+async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
     """Stream incremental query results as JSON lines.
 
     A blank line is sent every ``KEEPALIVE_INTERVAL`` seconds to prevent
@@ -41,7 +41,7 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
     retries = getattr(config.api, "webhook_retries", 3)
     backoff = getattr(config.api, "webhook_backoff", 0.5)
 
-    def send_webhooks(response: QueryResponse) -> None:
+    def send_webhooks(response: QueryResponseV1) -> None:
         if request.webhook_url:
             webhooks.notify_webhook(request.webhook_url, response, timeout, retries, backoff)
         for url in getattr(config.api, "webhooks", []):
@@ -49,12 +49,19 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
 
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()
-        queue.put_nowait(partial.model_dump_json())
+        queue.put_nowait(
+            QueryResponseV1(**partial.model_dump()).model_dump_json()
+        )
 
     def run() -> None:
         try:
-            result = create_orchestrator().run_query(
+            raw = create_orchestrator().run_query(
                 request.query, config, callbacks={"on_cycle_end": on_cycle_end}
+            )
+            result = (
+                raw
+                if isinstance(raw, QueryResponseV1)
+                else QueryResponseV1.model_validate(raw)
             )
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
@@ -65,7 +72,7 @@ async def query_stream_endpoint(request: QueryRequest) -> StreamingResponse:
                     reasoning.append(f"Suggestion: {suggestion}")
             else:
                 reasoning.append("Please check the logs for details.")
-            result = QueryResponse(
+            result = QueryResponseV1(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
