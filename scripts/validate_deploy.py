@@ -41,6 +41,8 @@ ENV_SCHEMA = {
     "required": ["KEY"],
 }
 
+DEFAULT_DEPLOY_DIR = Path(__file__).resolve().parent / "deploy"
+
 
 def _load_valid_extras() -> set[str]:
     """Return optional dependency groups from ``pyproject.toml``."""
@@ -123,6 +125,38 @@ def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[s
     return [error.message for error in validator.iter_errors(data)]
 
 
+def _validate_deploy_dir(deploy_dir: Path) -> list[str]:
+    """Validate .env and YAML config files under ``deploy_dir``.
+
+    Returns a list of error messages for any invalid files.
+    """
+
+    errors: list[str] = []
+    if not deploy_dir.is_dir():
+        return [f"Deployment directory not found: {deploy_dir}"]
+    for env_file in deploy_dir.rglob("*.env"):
+        try:
+            env_data = _load_env_file(env_file)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        env_errors = _schema_errors(env_data, ENV_SCHEMA)
+        if env_errors:
+            msg = "; ".join(env_errors)
+            errors.append(f"Schema errors in {env_file}: {msg}")
+    for yaml_file in list(deploy_dir.rglob("*.yml")) + list(deploy_dir.rglob("*.yaml")):
+        try:
+            yaml_data = _load_yaml(yaml_file)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        yaml_errors = _schema_errors(yaml_data, DEPLOY_SCHEMA)
+        if yaml_errors:
+            msg = "; ".join(yaml_errors)
+            errors.append(f"Schema errors in {yaml_file}: {msg}")
+    return errors
+
+
 def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
     """Check environment variables and configuration files.
 
@@ -181,6 +215,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         errors = "; ".join(env_errors)
         print(f"Schema errors in .env: {errors}", file=sys.stderr)
         return 1
+    deploy_dir = Path(os.getenv("DEPLOY_DIR", DEFAULT_DEPLOY_DIR))
+    dir_errors = _validate_deploy_dir(deploy_dir)
+    if dir_errors:
+        print("; ".join(dir_errors), file=sys.stderr)
+        return 1
+
     print("Deployment configuration validated.")
     return 0
 

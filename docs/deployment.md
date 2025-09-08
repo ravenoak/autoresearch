@@ -4,6 +4,23 @@ Autoresearch can be deployed in several ways depending on your needs. This guide
 
 The project uses **uv** for dependency management. Example commands use `uv`.
 
+## Preflight Checks
+
+Verify configuration before deploying:
+
+- Set `DEPLOY_ENV` and `CONFIG_DIR` to select the configuration set.
+- Run the validator:
+
+  ```bash
+  uv run scripts/validate_deploy.py
+  ```
+
+  It scans every `.env` and `*.yml` file under `scripts/deploy/` and reports
+  schema violations.
+
+Proceed with the deployment steps only after the command exits without
+errors.
+
 ## Local Installation
 
 For personal use, run Autoresearch directly on your machine. Install the dependencies and invoke the CLI or API:
