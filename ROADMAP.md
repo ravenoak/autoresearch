@@ -2,16 +2,19 @@
 
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
-Installation and environment details are covered in the [README](README.md).
-Last updated **September 8, 2025**.
+See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
+and recent changes. Installation and environment details are covered in the
+[README](README.md). Last updated **September 8, 2025**.
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current results. `task verify` completes after
-running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
-packages, so only targeted tests run. Integration and behavior suites remain
-skipped and targeted modules report **95%** coverage (54/57 lines)
-(see [fix-task-check-deps]). Scheduler resource benchmarks
+See [STATUS.md](STATUS.md) for current results and
+[CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
+targets **June 15, 2026**; 0.1.0 is planned for **July 1, 2026**. `task verify`
+completes after running `scripts/setup.sh`, but `uv sync --extra dev-minimal`
+prunes optional packages, so only targeted tests run. Integration and behavior
+suites remain skipped and targeted modules report **95%** coverage (54/57
+lines) (see [fix-task-check-deps]). Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:

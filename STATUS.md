@@ -2,6 +2,10 @@
 
 ## September 8, 2025
 
+- `git tag` shows no `v0.1.0a1`; release remains pending. See
+  [docs/release_plan.md](docs/release_plan.md), [ROADMAP.md](ROADMAP.md), and
+  [CHANGELOG.md](CHANGELOG.md) for aligned milestones targeting **June 15,
+  2026** for 0.1.0a1 and **July 1, 2026** for 0.1.0.
 - Ran `scripts/setup.sh`, installing Go Task 3.44.1 and syncing `dev-minimal`
   and `test` extras.
 - `task check` fails with mypy errors in `src/autoresearch/storage.py:55`.
@@ -22,7 +26,7 @@
 
 ## September 6, 2025
 
-- Tagged `v0.1.0a1` and archived the release preparation issue.
+- Tagging `v0.1.0a1` remains pending; archived the release preparation issue.
 
 ## September 6, 2025
 

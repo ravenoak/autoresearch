@@ -6,6 +6,10 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- `v0.1.0a1` remains untagged; the alpha targets **June 15, 2026** and 0.1.0
+  aims for **July 1, 2026**. See [STATUS.md](STATUS.md),
+  [docs/release_plan.md](docs/release_plan.md), and
+  [ROADMAP.md](ROADMAP.md) for aligned milestones.
 - Track environment alignment to ensure Python 3.12 and dev tooling are
   available.
     [align-environment-with-requirements]
@@ -38,7 +42,7 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Handle DuckDB API changes by using `fetchall` for schema version lookup to
   prevent `AttributeError` during table creation.
 
-### 0.1.0a1 – 2025-09-06
+### 0.1.0a1 – Unreleased (target 2026-06-15)
 - Documented offline DuckDB VSS extension fallback and referenced its
   integration test.
 - Added minimal install steps for the `llm` extra.
