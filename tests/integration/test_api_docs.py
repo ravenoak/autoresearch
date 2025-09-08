@@ -1,14 +1,15 @@
 import pytest
 
-from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
-from autoresearch.models import QueryResponse
 
 
 def _setup(monkeypatch):
     cfg = ConfigModel(api=APIConfig())
+    ConfigLoader.reset_instance()
     cfg.api.role_permissions["anonymous"] = [
         "query",
         "metrics",
@@ -22,6 +23,7 @@ def _setup(monkeypatch):
 
 def test_docs_endpoints_require_auth(monkeypatch, api_client):
     cfg = ConfigModel(api=APIConfig(api_key="secret"))
+    ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
 
     assert api_client.get("/docs").status_code == 401
@@ -33,6 +35,18 @@ def test_docs_endpoints_require_auth(monkeypatch, api_client):
 
     openapi = api_client.get("/openapi.json", headers={"X-API-Key": "secret"})
     assert openapi.status_code == 200
+
+
+def test_docs_permission_denied(monkeypatch, api_client):
+    cfg = ConfigModel(api=APIConfig(api_keys={"u": "user"}))
+    cfg.api.role_permissions = {"user": []}
+    ConfigLoader.reset_instance()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+
+    resp = api_client.get("/docs", headers={"X-API-Key": "u"})
+
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Insufficient permissions"
 
 
 def test_query_endpoint(monkeypatch, api_client):

@@ -5,12 +5,18 @@ import time
 import httpx
 import pytest
 
+import autoresearch.api as api
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryRequest, QueryResponse
-import autoresearch.api as api
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.state import QueryState
+
+
+def _setup(monkeypatch, cfg: ConfigModel) -> ConfigModel:
+    ConfigLoader.reset_instance()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    return cfg
 
 
 @pytest.mark.slow
@@ -26,7 +32,7 @@ def test_query_stream_param(monkeypatch, api_client):
 
     cfg = ConfigModel(loops=2, api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
 
     with api_client.stream("POST", "/query?stream=true", json={"query": "q"}) as resp:
@@ -49,7 +55,7 @@ def test_long_running_stream(monkeypatch, api_client):
 
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(Orchestrator, "run_query", long_run_query)
 
     start = time.perf_counter()
@@ -67,7 +73,7 @@ def test_config_webhooks(monkeypatch, api_client, httpx_mock):
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -106,7 +112,7 @@ def test_webhook_retry(monkeypatch, api_client, httpx_mock):
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -130,7 +136,7 @@ def test_batch_query_pagination(monkeypatch, api_client):
 
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -155,7 +161,7 @@ def test_batch_query_defaults(monkeypatch, api_client):
 
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -178,7 +184,7 @@ def test_api_key_roles_integration(monkeypatch, api_client):
 
     cfg = ConfigModel(api=APIConfig(api_keys={"secret": "admin"}))
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(
         Orchestrator,
         "run_query",
@@ -205,7 +211,7 @@ def test_stream_requires_api_key(monkeypatch, api_client):
         return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
 
     cfg = ConfigModel(api=APIConfig(api_key="secret"))
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
 
     unauth = api_client.post("/query/stream", json={"query": "q"})
@@ -226,7 +232,7 @@ def test_batch_query_async_order(monkeypatch, api_client):
 
     cfg = ConfigModel(api=APIConfig())
     cfg.api.role_permissions["anonymous"] = ["query"]
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    _setup(monkeypatch, cfg)
 
     async def fake_query_endpoint(q: QueryRequest) -> QueryResponse:
         await asyncio.sleep(0.01)
