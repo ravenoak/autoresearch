@@ -4,8 +4,9 @@
 
 - Installed Go Task 3.44.1 and synchronized `dev-minimal` and `test` extras.
 - `task check` succeeded.
-- `task verify` failed at `tests/integration/test_storage_baseline.py::test_ram_budget_respects_baseline`
-  with `StorageError: Ontology reasoning interrupted`.
+- `task verify` failed at
+  `tests/targeted/test_extras_install.py::test_distributed_extra_imports`
+  with `ValueError: /workspace/autoresearch is not a valid URI`.
 - GitPython and monitor resource integration tests now pass.
 
 ## September 7, 2025
