@@ -4,9 +4,10 @@
 
 - Ran `scripts/setup.sh`, installing Go Task 3.44.1 and syncing `dev-minimal`
   and `test` extras.
-- `task check` succeeded without flake8 errors.
+- `task check` fails with mypy errors in `src/autoresearch/storage.py:55`.
 - Archived `fix-flake8-errors-in-tests` and `restore-task-cli-availability`.
-- `task verify` was interrupted after large dependency downloads.
+- Attempting `task verify` triggered large GPU and optional dependency
+  downloads and was aborted.
 
 ## September 7, 2025
 
