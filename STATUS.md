@@ -2,15 +2,11 @@
 
 ## September 8, 2025
 
-- `task check` passes after adding Go Task to the `PATH`.
-- `task verify` fails during flake8 with unused imports in
-  `tests/unit/test_ui_save_config.py` and `tests/unit/test_vss_has_vss.py`.
-- Installed Go Task 3.44.1 and synchronized `dev-minimal` and `test` extras.
-- `task check` succeeded.
-- `task verify` failed at
-  `tests/targeted/test_extras_install.py::test_distributed_extra_imports`
-  with `ValueError: /workspace/autoresearch is not a valid URI`.
-- GitPython and monitor resource integration tests now pass.
+- Ran `scripts/setup.sh`, installing Go Task 3.44.1 and syncing `dev-minimal`
+  and `test` extras.
+- `task check` succeeded without flake8 errors.
+- Archived `fix-flake8-errors-in-tests` and `restore-task-cli-availability`.
+- `task verify` was interrupted after large dependency downloads.
 
 ## September 7, 2025
 

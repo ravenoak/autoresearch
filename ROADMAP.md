@@ -3,7 +3,7 @@
 This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 Installation and environment details are covered in the [README](README.md).
-Last updated **September 7, 2025**.
+Last updated **September 8, 2025**.
 
 ## Status
 
@@ -68,7 +68,7 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
 - [ ] Task CLI availability restored
-  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
+  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
@@ -80,7 +80,7 @@ release is re-targeted for **June 15, 2026**. Key activities include:
   issues/archive/fix-task-verify-coverage-hang.md)).
 - [x] Algorithm validation for ranking and coordination
   ([add-ranking-algorithm-proofs-and-simulations](
-  issues/add-ranking-algorithm-proofs-and-simulations.md)).
+  issues/archive/add-ranking-algorithm-proofs-and-simulations.md)).
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
