@@ -1,10 +1,12 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **August 27, 2025**, see
+organized by phases from the code complete plan. As of **September 8, 2025**, `flake8`
+is missing, `mypy` passes, and `task verify` and `task coverage` cannot run
+because the Task CLI is unavailable. See
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status. An **0.1.0-alpha.1** preview is re-targeted for **2026-06-15**, with the
-final **0.1.0** release targeted for **July 1, 2026**.
+final **0.1.0** release targeted for **July 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 

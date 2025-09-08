@@ -1,5 +1,15 @@
 # Status
 
+## September 8, 2025
+
+- `uv run flake8 src tests` failed: command not found.
+- `uv run mypy src` succeeded with no issues.
+- `task verify` and `task coverage` could not run because the `task` CLI is
+  missing even after `scripts/codex_setup.sh`.
+- `uv run python scripts/publish_dev.py --dry-run --repository testpypi`
+  built the package and skipped upload.
+- Release remains blocked pending environment setup and passing tests.
+
 ## September 7, 2025
 
 - Installed test extras with `uv pip install -e "[test]"` to enable plugins.
