@@ -18,6 +18,7 @@ import tomllib
 import warnings
 from dataclasses import dataclass
 from importlib import metadata
+from pathlib import Path
 
 if sys.version_info < (3, 12):
     raise SystemExit(
@@ -46,10 +47,16 @@ def extras_to_check() -> list[str]:
     return sorted(set(BASE_EXTRAS + env_extras))
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]  # repository root
+PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
+
+
 def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
     """Return versions for packages from specified extras in pyproject."""
 
-    with open("pyproject.toml", "rb") as fh:
+    if not PYPROJECT_PATH.is_file():
+        raise FileNotFoundError("pyproject.toml not found; verify repository path")
+    with PYPROJECT_PATH.open("rb") as fh:
         data = tomllib.load(fh)
     extras = data.get("project", {}).get("optional-dependencies", {})
     reqs: dict[str, str] = {}
