@@ -13,7 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
-__all__ = ["Repo"]
+__all__ = ["Repo", "GitSearcher", "SearchResult"]
 
 
 class Repo:
@@ -157,3 +157,6 @@ class Repo:
             commits = commits[:max_count]
         for commit in commits:
             yield commit
+
+
+from .search import GitSearcher, SearchResult  # noqa: E402
