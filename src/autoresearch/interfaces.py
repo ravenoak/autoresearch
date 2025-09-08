@@ -1,4 +1,7 @@
-"""Common interfaces shared across the project."""
+"""Common interfaces shared across the project.
+
+Spec: docs/specs/interfaces.md
+"""
 
 from __future__ import annotations
 
