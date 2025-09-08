@@ -31,6 +31,25 @@ def setup_patches(monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
 
 
+def test_sampling_frequency_formula():
+    f_base = 1.0
+    f_max = 5.0
+    load = 0.75
+    thresh = 0.5
+    freq = min(f_max, f_base * (1 + load / thresh))
+    assert freq == pytest.approx(2.5)
+
+
+def test_resource_threshold_formula():
+    samples = [40, 50, 60, 50]
+    mean = sum(samples) / len(samples)
+    var = sum((x - mean) ** 2 for x in samples) / (len(samples) - 1)
+    sigma = var ** 0.5
+    k = 2
+    thresh = mean + k * sigma
+    assert thresh == pytest.approx(66.33, abs=0.01)
+
+
 @pytest.mark.slow
 def test_monitor_cli_increments_counter(monkeypatch, api_client):
     setup_patches(monkeypatch)
