@@ -1,7 +1,9 @@
 # Validate deployment configurations
 
 ## Context
-Reliable deployment requires validated scripts and configuration checks to prevent runtime errors.
+Reliable deployment requires validated scripts and configuration checks to
+prevent runtime errors. Builds on containerization work and supports
+[reach-stable-performance-and-interfaces](reach-stable-performance-and-interfaces.md).
 
 ## Milestone
 - 2027-01-15

@@ -8,10 +8,9 @@ stable interfaces and tuned performance.
 - 1.0.0 (2027-06-01)
 
 ## Dependencies
-
-- [containerize-and-package](containerize-and-package.md) open.
-- [validate-deployment-configurations](validate-deployment-configurations.md) open.
-- [tune-system-performance](archive/tune-system-performance.md) completed.
+- [containerize-and-package](containerize-and-package.md)
+- [validate-deployment-configurations](validate-deployment-configurations.md)
+- [tune-system-performance](archive/tune-system-performance.md)
 
 ## Acceptance Criteria
 - Containerization and packaging succeed across Windows, macOS and Linux.
