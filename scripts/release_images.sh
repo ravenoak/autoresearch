@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# release_images.sh - Build and optionally push Autoresearch images.
+# release_images.sh - Build and optionally push Autoresearch OCI images.
 # Usage: release_images.sh [--push] [EXTRAS]
 # Set OFFLINE=1 to install from local wheels during the build.
 set -euo pipefail
@@ -31,19 +31,24 @@ OFFLINE="${OFFLINE:-0}"
 build_image() {
     local tag="$1"
     local file="$2"
-    local platform="$3"
-    local cmd=("$ENGINE" buildx build -f "$file" \
-        --build-arg EXTRAS="$EXTRAS" --build-arg OFFLINE="$OFFLINE" \
-        --platform "$platform" -t "autoresearch-$tag" .)
+    local platforms="$3"
     if [ "$PUSH" -eq 1 ]; then
-        cmd+=(--push)
+        "$ENGINE" buildx build -f "$file" \
+            --build-arg EXTRAS="$EXTRAS" \
+            --build-arg OFFLINE="$OFFLINE" \
+            --platform "$platforms" -t "$tag" --push .
     else
-        cmd+=(--load)
+        IFS=',' read -r -a plist <<<"$platforms"
+        for p in "${plist[@]}"; do
+            "$ENGINE" buildx build -f "$file" \
+                --build-arg EXTRAS="$EXTRAS" \
+                --build-arg OFFLINE="$OFFLINE" \
+                --platform "$p" -t "${tag}-${p##*/}" --load .
+        done
     fi
-    "${cmd[@]}"
 }
 
-build_image linux docker/Dockerfile.linux linux/amd64
-build_image linux-arm64 docker/Dockerfile.linux linux/arm64
-build_image macos docker/Dockerfile.macos linux/amd64
-build_image windows docker/Dockerfile.windows windows/amd64
+build_image autoresearch-linux docker/Dockerfile.linux \
+    linux/amd64,linux/arm64
+build_image autoresearch-macos docker/Dockerfile.macos linux/amd64
+build_image autoresearch-windows docker/Dockerfile.windows windows/amd64
