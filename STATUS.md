@@ -2,6 +2,9 @@
 
 ## September 8, 2025
 
+- `task check` passes after adding Go Task to the `PATH`.
+- `task verify` fails during flake8 with unused imports in
+  `tests/unit/test_ui_save_config.py` and `tests/unit/test_vss_has_vss.py`.
 - Installed Go Task 3.44.1 and synchronized `dev-minimal` and `test` extras.
 - `task check` succeeded.
 - `task verify` failed at

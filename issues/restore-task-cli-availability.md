@@ -15,4 +15,4 @@ None.
 - `task check` and `task verify` run successfully in a clean environment.
 
 ## Status
-Archived
+Open
