@@ -7,7 +7,7 @@ behavior and failure modes remain uncertain, limiting confidence in distributed
 execution.
 
 ## Dependencies
-- [simulate-distributed-orchestrator-performance](../simulate-distributed-orchestrator-performance.md)
+- [simulate-distributed-orchestrator-performance](simulate-distributed-orchestrator-performance.md)
 
 ## Acceptance Criteria
 - Provide a mathematical proof or formal argument for the coordination

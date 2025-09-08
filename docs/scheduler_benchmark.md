@@ -52,4 +52,4 @@ detailed plan and [simulate-distributed-orchestrator-performance]
 [orchestrator-issue] for broader orchestrator benchmarks.
 
 [queue-issue]: ../issues/benchmark-scheduler-queue-saturation.md
-[orchestrator-issue]: ../issues/simulate-distributed-orchestrator-performance.md
+[orchestrator-issue]: ../issues/archive/simulate-distributed-orchestrator-performance.md

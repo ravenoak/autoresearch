@@ -50,7 +50,7 @@ Current test results are mirrored in [../STATUS.md](../STATUS.md).
 - **0.3.0** (2027-03-01, status: planned): Distributed execution support and
   monitoring utilities.
   - [simulate-distributed-orchestrator-performance](
-    ../issues/simulate-distributed-orchestrator-performance.md)
+    ../issues/archive/simulate-distributed-orchestrator-performance.md)
 - **1.0.0** (2027-06-01, status: planned): Full feature set, performance
   tuning and stable interfaces
   ([reach-stable-performance-and-interfaces](
