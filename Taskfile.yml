@@ -224,6 +224,7 @@ tasks:
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
+      - uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
     desc: |
       Run linting, type checks, targeted tests, and coverage.
       Set EXTRAS="gpu" to include optional GPU packages.
