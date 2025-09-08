@@ -107,13 +107,13 @@ def check_task() -> CheckResult:
     except FileNotFoundError as exc:
         hint = (
             f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
-            "or run scripts/setup.sh"
+            "or run scripts/bootstrap.sh"
         )
         raise VersionError(hint) from exc
     if proc.returncode != 0:
         hint = (
             f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
-            "or run scripts/setup.sh"
+            "or run scripts/bootstrap.sh"
         )
         raise VersionError(hint)
     match = re.search(r"(\d+\.\d+\.\d+)", proc.stdout)
@@ -123,7 +123,7 @@ def check_task() -> CheckResult:
     if Version(current) < Version(required):
         hint = (
             f"Go Task {current} found, but {required}+ is required. Install it from "
-            "https://taskfile.dev/ or run scripts/setup.sh"
+            "https://taskfile.dev/ or run scripts/bootstrap.sh"
         )
         raise VersionError(hint)
     return CheckResult("Go Task", current, required)

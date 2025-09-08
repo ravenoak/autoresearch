@@ -7,11 +7,15 @@ environments.
 For test conventions and workflows see
 [testing guidelines](testing_guidelines.md).
 
-Autoresearch requires **Python 3.12 or newer**,
-[**uv**](https://github.com/astral-sh/uv), and
-[**Go Task**](https://taskfile.dev/) for Taskfile commands. Install Go Task
-with your package manager or `scripts/bootstrap.sh`. Then verify the setup and
-sync minimal dependencies:
+Autoresearch requires these binaries on your `PATH`:
+
+- Python 3.12 or newer
+- [uv](https://github.com/astral-sh/uv)
+- [Go Task](https://taskfile.dev/) for Taskfile commands
+
+Run `uv run python scripts/check_env.py` to confirm they are available. Install
+Go Task with your package manager or `scripts/bootstrap.sh`. After installing
+the tools, sync minimal dependencies:
 
 ```bash
 ./scripts/setup.sh
@@ -20,9 +24,9 @@ task --version
 task check
 ```
 
-The script checks the Python version, installs Go Task if missing, and syncs the
-`dev-minimal` and `test` extras. It exits with an error if the dependency sync
-fails.
+The script checks the Python version, verifies Go Task and `uv` are installed,
+and syncs the `dev-minimal` and `test` extras. It exits with an error if a tool
+is missing or the dependency sync fails.
 
 Activate the virtual environment in new shells to restore the path:
 
@@ -70,8 +74,8 @@ If a tool or package is missing, rerun `task install` or sync extras with
 ## Setup script
 
 `scripts/setup.sh` bootstraps local development. It verifies Python 3.12+,
-installs Go Task when missing, ensures `uv` is installed, and syncs the
-`dev-minimal` and `test` extras. Set `AR_EXTRAS` to include additional groups.
+checks that Go Task and `uv` are installed, and syncs the `dev-minimal` and
+`test` extras. Set `AR_EXTRAS` to include additional groups.
 
 The script appends `.venv/bin` to `PATH` for its execution; add it manually and
 activate the environment in new shells:
@@ -194,8 +198,8 @@ role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
 ### Go Task
 
 Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
-`scripts/setup.sh` installs it to `.venv/bin` and adjusts activation scripts,
-but you can install it manually:
+`scripts/bootstrap.sh` downloads it to `.venv/bin` and adjusts activation
+scripts, but you can install it manually:
 
 ```bash
 # macOS
@@ -213,8 +217,8 @@ task install
 
 #### Troubleshooting
 
-- `scripts/setup.sh` adds `.venv/bin` to activation scripts, but if `task` is
-  missing ensure that directory is present.
+- `scripts/bootstrap.sh` adds `.venv/bin` to activation scripts, but if `task`
+  is missing ensure that directory is present.
 - Network failures during installation are usually transient. Rerun the
   command or download the installer and execute it locally.
 - For permission errors, run the installer with a writable `-b` path or use a
