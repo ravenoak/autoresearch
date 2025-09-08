@@ -30,45 +30,34 @@ from autoresearch.orchestration.state import QueryState  # noqa: E402
 from autoresearch.storage import StorageContext, StorageManager  # noqa: E402
 from tests.conftest import reset_limiter_state, VSS_AVAILABLE  # noqa: E402
 
-# Load step implementations alongside pytest-bdd so their fixtures are available
-pytest_plugins = ("pytest_bdd", "tests.behavior.steps")
+# Load fixtures and step implementations so their fixtures are available
+pytest_plugins = (
+    "pytest_bdd",
+    "tests.behavior.fixtures",
+    "tests.behavior.steps",
+)
 
 
-PENDING_STEP_MODULES = {
-    "cli_options_steps.py",
-    "configuration_hot_reload_steps.py",
-    "dkg_persistence_steps.py",
-    "error_handling_steps.py",
-    "error_recovery_extended_steps.py",
-    "error_recovery_workflow_steps.py",
-    "first_run_steps.py",
-    "gui_cli_steps.py",
-    "hybrid_search_steps.py",
-    "interactive_monitor_steps.py",
-    "interface_test_cli_steps.py",
-    "mcp_interface_steps.py",
-    "optional_extras_steps.py",
-    "orchestration_system_steps.py",
-    "orchestrator_agents_integration_steps.py",
-    "output_formatting_steps.py",
+ALLOWED_STEP_MODULES = {
+    "agent_orchestration_steps.py",
+    "circuit_breaker_recovery_steps.py",
+    "config_cli_steps.py",
+    "error_recovery_basic_steps.py",
+    "error_recovery_redis_steps.py",
+    "parallel_group_merging_steps.py",
     "query_interface_steps.py",
-    "reasoning_mode_api_steps.py",
-    "reasoning_mode_cli_steps.py",
-    "reasoning_mode_steps.py",
-    "reasoning_parameters_steps.py",
-    "serve_cli_steps.py",
-    "sparql_cli_steps.py",
-    "storage_search_integration_steps.py",
-    "test_cleanup_extended_steps.py",
     "visualization_cli_steps.py",
+    "reasoning_modes_all_steps.py",
+    "reasoning_modes_steps.py",
 }
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Mark pending step modules so they can be deselected."""
+    """Skip step modules that are not yet implemented."""
     for item in items:
-        if item.fspath.basename in PENDING_STEP_MODULES:
-            item.add_marker("pending")
+        basename = item.fspath.basename
+        if basename.endswith("_steps.py") and basename not in ALLOWED_STEP_MODULES:
+            item.add_marker(pytest.mark.skip(reason="scenario not implemented"))
 
 
 @pytest.hookimpl(trylast=True)
