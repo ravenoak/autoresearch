@@ -55,7 +55,7 @@ except Exception:  # pragma: no cover - defensive
 if _has_kuzu:  # pragma: no cover - optional dependency
     from .storage_backends import KuzuStorageBackend as _KuzuStorageBackend
 
-    KuzuBackend = cast(type[KuzuStorageBackend], _KuzuStorageBackend)
+    KuzuBackend = cast(type[_KuzuStorageBackend], _KuzuStorageBackend)
 
 # Use "Any" for DuckDB connections due to incomplete upstream type hints.
 DuckDBConnection = Any
