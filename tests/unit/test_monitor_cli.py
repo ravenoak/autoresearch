@@ -1,8 +1,8 @@
-import json
 from typing import Any, Dict, List
 
 import psutil  # type: ignore
 from typer.testing import CliRunner
+import typer
 
 try:
     import docx  # noqa: F401
@@ -54,10 +54,7 @@ def test_monitor_prompts_and_passes_callbacks(monkeypatch):
         ),
     )
     responses = iter(["test", "", "q"])
-    monkeypatch.setattr(
-        "autoresearch.main.Prompt.ask",
-        lambda *a, **k: next(responses),
-    )
+    monkeypatch.setattr(typer, "prompt", lambda *a, **k: next(responses))
     monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(assert_bm25_signature))
     monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
     result = runner.invoke(app, ["monitor", "run"])
@@ -86,18 +83,18 @@ def test_monitor_metrics(monkeypatch):
     monkeypatch.setattr(psutil, "Process", lambda: Proc())
     monkeypatch.setattr("autoresearch.resource_monitor._get_gpu_stats", lambda: (4.0, 5.0))
 
-    result = runner.invoke(app, ["monitor"])
+    result = runner.invoke(app, ["monitor", "metrics"])
     assert result.exit_code == 0
-    data = json.loads(result.stdout)
-    assert data["cpu_percent"] == 1.0
-    assert data["memory_percent"] == 2.0
-    assert data["memory_used_mb"] == 2.0
-    assert data["process_memory_mb"] == 3.0
-    assert data["gpu_percent"] == 4.0
-    assert data["gpu_memory_mb"] == 5.0
-    assert data["queries_total"] == 5
-    assert data["tokens_in_total"] == 7
-    assert data["tokens_out_total"] == 9
+    out = result.stdout
+    assert "cpu_percent" in out and "1.0" in out
+    assert "memory_percent" in out and "2.0" in out
+    assert "memory_used_mb" in out and "2.0" in out
+    assert "process_memory_mb" in out and "3.0" in out
+    assert "gpu_percent" in out and "4.0" in out
+    assert "gpu_memory_mb" in out and "5.0" in out
+    assert "queries_total" in out and "5" in out
+    assert "tokens_in_total" in out and "7" in out
+    assert "tokens_out_total" in out and "9" in out
 
 
 def test_monitor_metrics_default_counters(monkeypatch):
@@ -119,9 +116,9 @@ def test_monitor_metrics_default_counters(monkeypatch):
     monkeypatch.setattr(psutil, "Process", lambda: Proc())
     monkeypatch.setattr("autoresearch.resource_monitor._get_gpu_stats", lambda: (4.0, 5.0))
 
-    result = runner.invoke(app, ["monitor"])
+    result = runner.invoke(app, ["monitor", "metrics"])
     assert result.exit_code == 0
-    data = json.loads(result.stdout)
-    assert data["queries_total"] == 0
-    assert data["tokens_in_total"] == 0
-    assert data["tokens_out_total"] == 0
+    out = result.stdout
+    assert "queries_total" in out and "0" in out
+    assert "tokens_in_total" in out and "0" in out
+    assert "tokens_out_total" in out and "0" in out

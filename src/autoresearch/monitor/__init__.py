@@ -6,16 +6,15 @@ import sys
 import time
 from typing import Any, Dict, List, Union
 
-import typer
 from rich.console import Console
 from rich.live import Live
 from rich.progress import Progress
 from rich.table import Table
 from rich.tree import Tree
+import typer
 
 from ..config.loader import ConfigLoader
 from ..logging_utils import get_logger
-from ..main import Prompt
 from ..orchestration import metrics as orch_metrics
 from ..orchestration.orchestrator import Orchestrator
 from ..orchestration.state import QueryState
@@ -236,7 +235,7 @@ def run() -> None:
             usage_table.add_column("Used")
             usage_table.add_row(str(budget), str(usage))
             console.print(usage_table)
-        feedback = Prompt.ask("Feedback (q to stop)", default="")
+        feedback = typer.prompt("Feedback (q to stop)", default="")
         if feedback.lower() == "q":
             state.error_count = getattr(config, "max_errors", 3)
             abort_flag["stop"] = True
@@ -244,7 +243,7 @@ def run() -> None:
             state.claims.append({"type": "feedback", "text": feedback})
 
     while True:
-        query = Prompt.ask("Enter query (q to quit)")
+        query = typer.prompt("Enter query (q to quit)")
         if not query or query.lower() == "q":
             break
 

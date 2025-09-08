@@ -1,4 +1,6 @@
 import logging
+import time
+from types import SimpleNamespace
 
 import httpx
 
@@ -20,3 +22,26 @@ def test_notify_webhook_logs_request_error(monkeypatch, caplog):
         "http://hook" in record.getMessage() and "boom" in record.getMessage()
         for record in caplog.records
     )
+
+
+def test_notify_webhook_retries(monkeypatch):
+    """Webhook delivery retries with exponential backoff."""
+    calls = {"count": 0}
+
+    def fake_post(url, json, timeout):
+        if calls["count"] < 2:
+            calls["count"] += 1
+            raise httpx.RequestError("fail", request=httpx.Request("POST", url))
+        calls["count"] += 1
+        return SimpleNamespace(raise_for_status=lambda: None)
+
+    sleeps: list[float] = []
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
+
+    payload = QueryResponse(answer="", citations=[], reasoning=[], metrics={})
+    notify_webhook("http://hook", payload, timeout=1, retries=3, backoff=0.5)
+
+    assert calls["count"] == 3
+    assert sleeps == [0.5, 1.0]

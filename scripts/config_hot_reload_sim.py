@@ -8,7 +8,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from typing import Iterable, Callable
+import logging
+from typing import Callable, Iterable
+
+
+log = logging.getLogger(__name__)
 
 
 def is_valid(value: int) -> bool:
@@ -38,6 +42,8 @@ def simulate_reload(
         previous = active
         if validator(candidate):
             active = candidate
+        else:
+            log.warning("Invalid config value: %s", candidate)
         # Invariant 1: active config is always valid.
         assert validator(active)
         # Invariant 2: invalid updates do not change the active config.

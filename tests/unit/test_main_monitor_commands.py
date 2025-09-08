@@ -17,7 +17,7 @@ def test_monitor_command(monkeypatch):
     monkeypatch.setattr(
         "autoresearch.monitor._collect_system_metrics", lambda: {"cpu_percent": 1.0}
     )
-    result = runner.invoke(_main().app, ["monitor"])
+    result = runner.invoke(_main().app, ["monitor", "metrics"])
     assert result.exit_code == 0
     assert "cpu_percent" in result.stdout
 

@@ -17,6 +17,7 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 - Streamed responses emit chunks in request order.
 - Heartbeats occur at least once per connection.
 - The ``END`` sentinel terminates the stream.
+- Webhook callbacks retry failed deliveries with exponential backoff.
 
 ## Proof Sketch
 
@@ -47,6 +48,7 @@ Streaming simulations send three chunks and record metrics in
   - [tests/integration/test_api_streaming_webhook.py][t10]
   - [tests/integration/test_api_docs.py][t9]
   - [tests/analysis/test_api_streaming_sim.py][t11]
+  - [tests/unit/test_webhooks_logging.py][t12]
 
 [m1]: ../../src/autoresearch/api/
 [t1]: ../../tests/unit/test_api.py
@@ -60,4 +62,5 @@ Streaming simulations send three chunks and record metrics in
 [t10]: ../../tests/integration/test_api_streaming_webhook.py
 [t9]: ../../tests/integration/test_api_docs.py
 [t11]: ../../tests/analysis/test_api_streaming_sim.py
+[t12]: ../../tests/unit/test_webhooks_logging.py
 [r1]: ../../tests/analysis/api_streaming_metrics.json
