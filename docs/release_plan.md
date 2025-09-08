@@ -116,7 +116,7 @@ skips GPU-only packages unless `EXTRAS="gpu"` is set:
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` reports **100%** for targeted modules; keep docs in sync
+- [ ] `task coverage` reports **95%** for targeted modules; keep docs in sync
   and stay above **90%**
 - [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
   syncs docs with `baseline/coverage.xml`

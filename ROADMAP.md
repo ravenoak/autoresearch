@@ -10,7 +10,7 @@ Last updated **September 7, 2025**.
 See [STATUS.md](STATUS.md) for current results. `task verify` completes after
 running `scripts/setup.sh`, but `uv sync --extra dev-minimal` prunes optional
 packages, so only targeted tests run. Integration and behavior suites remain
-skipped and targeted modules report **100%** coverage (57/57 lines)
+skipped and targeted modules report **95%** coverage (54/57 lines)
 (see [fix-task-check-deps]). Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:

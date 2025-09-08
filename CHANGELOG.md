@@ -10,12 +10,12 @@ Reference issues by slugged filename (for example,
   available.
     [align-environment-with-requirements]
 - Record current test suite status: 35 failing tests out of 1280 collected and
-  **100%** coverage (57/57 lines).
+  **95%** coverage (54/57 lines).
     [resolve-current-integration-test-failures]
     [resolve-pre-alpha-release-blockers]
 - Update release plan with revised milestone schedule; 0.1.0a1 marked in
-  progress and coverage noted at **100%**.
- - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 100% coverage and
+  progress and coverage noted at **95%**.
+ - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 95% coverage and
    TestPyPI 403).
   - Add rich configuration context fixtures with sample data for tests.
     [create-more-comprehensive-test-contexts]
