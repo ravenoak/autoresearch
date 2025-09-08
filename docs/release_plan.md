@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 7, 2025** and
+`2025-05-18`). This schedule was last updated on **September 8, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -17,13 +17,12 @@ defined in `autoresearch.__version__`. Phase 3
 ## Status
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
-confirmed in `pyproject.toml` and [installation.md](installation.md).
-`flake8` and `mypy` pass. `uv run pytest -q` reports 35 failing tests out of
-1280 collected. Coverage reports **100%** (57/57 lines) for targeted modules.
-Instrumentation and skipping slow tests resolved earlier coverage hangs.
-Outstanding gaps are tracked in
-[resolve-pre-alpha-release-blockers][coverage-gap-issue]. Current test results
-are mirrored in [../STATUS.md](../STATUS.md).
+confirmed in `pyproject.toml` and [installation.md](installation.md). `uv run
+flake8 src tests` failed because `flake8` is missing, while `uv run mypy src`
+reports success. The `task` CLI is unavailable, so `task verify` and `task
+coverage` could not run. A dry-run publish built the package and skipped
+upload. Outstanding gaps are tracked in [integration-issue] and [task-issue].
+Current test results are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
 
@@ -62,8 +61,8 @@ while packaging tasks are resolved.
 - [ ] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
-- [x] Ensure Task CLI available ([restore-task-cli-availability](
-  ../issues/archive/restore-task-cli-availability.md)).
+- [ ] Ensure Task CLI available ([restore-task-cli-availability](
+  ../issues/restore-task-cli-availability.md)).
 - [x] Resolve coverage hang ([fix-task-verify-coverage-hang](
   ../issues/archive/fix-task-verify-coverage-hang.md)).
 
@@ -72,9 +71,10 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 ### Prerequisites for tagging 0.1.0a1
 
-- `flake8` and `mypy` pass, but several unit and integration tests still fail.
-- After resolving the ImportError in `task`, current coverage is **100%**;
-  documentation reflects this result.
+- `uv run flake8 src tests` failed: command not found.
+- `uv run mypy src` passed with no issues.
+- `task verify` and `task coverage` could not run because the `task` CLI is
+  unavailable.
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.
 
@@ -123,3 +123,5 @@ skips GPU-only packages unless `EXTRAS="gpu"` is set:
   syncs docs with `baseline/coverage.xml`
 
 [coverage-gap-issue]: ../issues/archive/resolve-pre-alpha-release-blockers.md
+[integration-issue]: ../issues/resolve-current-integration-test-failures.md
+[task-issue]: ../issues/restore-task-cli-availability.md

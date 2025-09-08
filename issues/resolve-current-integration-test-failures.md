@@ -10,6 +10,9 @@ The storage eviction simulation tuple mismatch was resolved on 2025-09-07, and t
 `test_property_api_rate_limit_bounds` deadline issue is fixed. These regressions continue to block
 the 0.1.0a1 preview.
 
+As of 2025-09-08, the `task` CLI is missing, preventing `task verify` from
+running and revalidating integration tests.
+
 ## Dependencies
 - [fix-gitpython-integration-tests](fix-gitpython-integration-tests.md)
 - [fix-monitor-resources-cli-test](fix-monitor-resources-cli-test.md)
