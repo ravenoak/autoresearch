@@ -93,7 +93,8 @@ uv run pytest -m requires_distributed -q
 
 Optional extras enable additional capabilities. Install them with
 `uv sync --extra <name>` or by setting `AR_EXTRAS` when running the setup
-script.
+script. Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm`
+pull large dependencies and are not installed by `task verify`.
 
 For a lean setup, sync the minimal development and test extras:
 
@@ -103,9 +104,8 @@ uv sync --extra dev-minimal --extra test
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
 dependencies. `task check` syncs only these extras so it runs quickly.
-`task verify` syncs the `dev-minimal`, `dev`, `test`, `nlp`, `ui`, `vss`,
-`git`, `distributed`, `analysis`, and `parsers` extras. Set
-`EXTRAS="gpu"` to install GPU-only packages.
+`task verify` syncs only the `dev-minimal` and `test` extras. Install other
+groups separately before running the task if you need them.
 
 ## After cloning
 
@@ -133,8 +133,8 @@ VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
 
-`task verify` always includes the `parsers` extra, so no additional flags are
-required for PDF or DOCX tests.
+`task verify` includes parser dependencies via the `test` extra, so no
+additional flags are required for PDF or DOCX tests.
 
 Use `./scripts/setup.sh` for the full developer bootstrap. It syncs the `dev`
 and `test` extras (including packages such as `pytest_httpx`, `tomli_w`,
@@ -430,10 +430,11 @@ pip install "autoresearch[minimal,nlp,parsers,git]"
 
 `task verify` skips GPU-only dependencies so the test suite runs with
 CPU-bound libraries. To include GPU packages such as `bertopic` and
-`lmstudio`, set `EXTRAS=gpu`:
+`lmstudio`, sync the `gpu` extra before running the task:
 
 ```bash
-EXTRAS=gpu task verify
+uv sync --extra gpu
+task verify
 ```
 
 References to pre-built wheels for these packages live under

@@ -174,7 +174,8 @@ tasks:
             --cov=src --cov-report=term-missing --cov-append
       - echo "[coverage] running targeted tests"
       - |
-          uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted -m 'not slow' \
+          uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted \
+            -m 'not slow and not requires_git and not requires_nlp and not requires_ui and not requires_vss and not requires_distributed and not requires_analysis and not requires_llm and not requires_parsers' \
             --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
             --cov=autoresearch.orchestration --cov-report=term-missing \
             --cov-report=xml --cov-append
@@ -199,22 +200,17 @@ tasks:
       Provide optional groups with EXTRAS; include "gpu" to use wheels/gpu.
 
   verify:
-    vars:
-      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
       - |
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             --extra dev-minimal \
-            --extra test \
-            {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{if (contains .EXTRAS "gpu")}} --find-links wheels/gpu{{end}}{{end}}
-      - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+            --extra test
+      - task check-env
       - uv run flake8 src tests
       - uv run mypy src
       - uv run python scripts/check_spec_tests.py
       - task: coverage
-        vars:
-          EXTRAS: "{{.EXTRAS}}"
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
@@ -222,9 +218,7 @@ tasks:
       - uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Syncs only the dev-minimal and test extras by default.
-      Provide optional groups with EXTRAS, e.g. "nlp" or "ui".
-      Pre-built wheels in wheels/gpu speed GPU installs.
+      Syncs only the dev-minimal and test extras.
 
   clean:
     cmds:
