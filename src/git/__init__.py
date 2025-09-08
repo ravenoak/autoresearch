@@ -13,6 +13,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
+__all__ = ["Repo"]
+
 
 class Repo:
     """Minimal stand-in for :class:`git.Repo`.
@@ -90,10 +92,13 @@ class Repo:
             return
         self._initialized = True
         self.path = Path(path) if path is not None else None
+        self.git_dir: Path | None = self.path / ".git" if self.path else None
+        self.working_tree_dir: str | None = str(self.path) if self.path else None
         self._commits: list[Repo.Commit] = []
         self._head: Repo.Head | None = None
         self.index = self.Index(self)
         self.active_branch = self.Branch("main")
+        self.heads = [self.active_branch]
 
     @staticmethod
     def init(path: str | Path) -> "Repo":
@@ -108,6 +113,7 @@ class Repo:
 
         repo_path = Path(path)
         repo_path.mkdir(parents=True, exist_ok=True)
+        (repo_path / ".git").mkdir(exist_ok=True)
         return Repo(repo_path)
 
     @property
@@ -121,6 +127,19 @@ class Repo:
         if self._head is None:
             raise AttributeError("Repository has no HEAD")
         return self._head
+
+    def close(self) -> None:  # pragma: no cover - placeholder
+        """Close the repository."""
+
+    def __enter__(self) -> "Repo":
+        """Return ``self`` to support context manager usage."""
+
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        """Invoke :meth:`close` when leaving a ``with`` block."""
+
+        self.close()
 
     def iter_commits(self, branches=None, max_count: int | None = None):
         """Yield commits from newest to oldest.
