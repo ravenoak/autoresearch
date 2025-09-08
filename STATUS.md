@@ -209,7 +209,5 @@ warnings. Coverage data was not produced.
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
-  - [tune-system-performance](issues/archive/tune-system-performance.md)
-- [simulate-distributed-orchestrator-performance]
-  (issues/simulate-distributed-orchestrator-performance.md)
+- [simulate-distributed-orchestrator-performance](issues/simulate-distributed-orchestrator-performance.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
