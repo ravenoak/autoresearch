@@ -27,7 +27,12 @@ def has_vss() -> bool:
 @pytest.fixture
 def has_git() -> bool:
     """Return True if GitPython is installed."""
-    return _module_available("git")
+    try:
+        import git  # type: ignore[import-not-found]
+
+        return hasattr(git, "Repo") and hasattr(git, "__version__")
+    except Exception:
+        return False
 
 
 @pytest.fixture
