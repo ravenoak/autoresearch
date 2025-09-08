@@ -71,3 +71,19 @@ prediction, and latency decreases as workers scale.
 
 ![Benchmark throughput and latency]
 (images/distributed_orchestrator_perf_benchmark.svg)
+
+## Failure Overhead Simulation
+
+A discrete-event simulation explored the cost of task retries across multiple
+workers. For failure probability \(p\), each task runs on average
+\(1/(1-p)\) times as shown in
+[distributed overhead](algorithms/distributed_overhead.md). Running 300 tasks
+with three workers and \(p = 0.2\) yielded an observed overhead of roughly
+\(1.25\) and throughput near the theoretical
+\(\Theta = w (1 - p) / (d + s)\). The measured values aligned with these
+formulas.
+
+![Observed overhead versus failure probability](images/multi_node_overhead.svg)
+
+The figure compares measured executions per task against the \(1/(1-p)\)
+model, demonstrating agreement between analysis and simulation.
