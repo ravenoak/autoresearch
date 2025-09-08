@@ -58,10 +58,10 @@ while packaging tasks are resolved.
 
 ### Alpha release checklist
 
-- [ ] Confirm STATUS.md and this plan share the same coverage details before
+- [x] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
-- [ ] Ensure Task CLI available ([restore-task-cli-availability](
+- [x] Ensure Task CLI available ([restore-task-cli-availability](
   ../issues/restore-task-cli-availability.md)).
 - [x] Resolve coverage hang ([fix-task-verify-coverage-hang](
   ../issues/archive/fix-task-verify-coverage-hang.md)).
@@ -73,8 +73,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 - `uv run flake8 src tests` failed: command not found.
 - `uv run mypy src` passed with no issues.
-- `task verify` and `task coverage` could not run because the `task` CLI is
-  unavailable.
+- `task verify` and `task coverage` executed with Go Task 3.44.1.
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.
 
