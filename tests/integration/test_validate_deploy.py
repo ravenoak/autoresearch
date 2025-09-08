@@ -139,3 +139,45 @@ def test_validate_deploy_os_samples(tmp_path: Path, os_name: str) -> None:
     result = _run(env, config_dir)
     assert result.returncode == 0
     assert "validated" in result.stdout.lower()
+
+
+def test_validate_deploy_scans_all_configs(tmp_path: Path) -> None:
+    deploy_dir = tmp_path / "deploy"
+    good = deploy_dir / "good"
+    good.mkdir(parents=True)
+    _write_config(good)
+    extra = deploy_dir / "extra"
+    extra.mkdir()
+    _write_config(extra)
+    env = os.environ.copy()
+    env.update(
+        {
+            "DEPLOY_ENV": "good",
+            "CONFIG_DIR": str(good),
+            "DEPLOY_DIR": str(deploy_dir),
+        }
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode == 0
+    assert "validated" in result.stdout.lower()
+
+
+def test_validate_deploy_scans_and_fails(tmp_path: Path) -> None:
+    deploy_dir = tmp_path / "deploy"
+    good = deploy_dir / "good"
+    good.mkdir(parents=True)
+    _write_config(good)
+    bad = deploy_dir / "bad"
+    bad.mkdir()
+    _write_config(bad, env_content="OTHER=1\n")
+    env = os.environ.copy()
+    env.update(
+        {
+            "DEPLOY_ENV": "good",
+            "CONFIG_DIR": str(good),
+            "DEPLOY_DIR": str(deploy_dir),
+        }
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "bad" in result.stderr
