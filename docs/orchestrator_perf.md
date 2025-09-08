@@ -72,6 +72,26 @@ prediction, and latency decreases as workers scale.
 ![Benchmark throughput and latency]
 (images/distributed_orchestrator_perf_benchmark.svg)
 
+The latest run used:
+
+```
+uv run python -m scripts.distributed_orchestrator_perf_benchmark \
+    --max-workers 4 --tasks 100
+```
+
+with a 5 ms dispatch latency and 5 ms task time. It reported:
+
+| workers | throughput (tasks/s) | avg latency (ms) |
+| ------- | ------------------- | ---------------- |
+| 1 | 70.12 | 14.26 |
+| 2 | 102.25 | 9.78 |
+| 3 | 126.38 | 7.91 |
+| 4 | 128.58 | 7.78 |
+
+A standalone run of `scripts/distributed_orchestrator_sim.py` with default
+settings (2 workers, 100 tasks) measured 114.35 tasks/s throughput and
+8.75 ms average latency.
+
 ## Failure Overhead Simulation
 
 A discrete-event simulation explored the cost of task retries across multiple
@@ -87,3 +107,12 @@ formulas.
 
 The figure compares measured executions per task against the \(1/(1-p)\)
 model, demonstrating agreement between analysis and simulation.
+
+## Recommendations
+
+- Use three to four workers for 5 ms dispatch latency and 5 ms task time,
+  where throughput saturates near 128 tasks/s.
+- Additional workers offer limited benefit; reducing latency or task time
+  improves performance more effectively.
+- Monitor CPU and memory usage; a two-worker run consumed roughly 50\%
+  CPU and 52 MB of memory.

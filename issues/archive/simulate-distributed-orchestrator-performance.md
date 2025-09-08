@@ -10,7 +10,7 @@ identify scaling limits and measure coordination overhead before real deployment
 ## Acceptance Criteria
 - Simulated workload demonstrates orchestrator behavior across multiple processes.
 - Report summarizes throughput, latency and bottlenecks with recommendations.
-- Findings link to implementation tickets or documentation updates.
+- Findings documented in [docs/orchestrator_perf.md](../../docs/orchestrator_perf.md).
 
 ## Status
-Open
+Archived
