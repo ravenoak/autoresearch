@@ -13,4 +13,4 @@ preventing validation of Git-backed search features.
 - `tests/integration/test_optional_extras.py::test_local_git_backend` passes.
 
 ## Status
-Open
+Archived

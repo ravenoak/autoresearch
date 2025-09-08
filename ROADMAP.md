@@ -67,8 +67,8 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
-- [x] Task CLI availability restored
-  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
+- [ ] Task CLI availability restored
+  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).

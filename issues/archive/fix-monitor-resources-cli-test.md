@@ -11,4 +11,4 @@ indicating the CLI reports unexpected resource counts.
 - `tests/integration/test_monitor_metrics.py::test_monitor_resources_cli` passes.
 
 ## Status
-Open
+Archived
