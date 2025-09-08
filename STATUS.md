@@ -8,6 +8,10 @@
 - Archived `fix-flake8-errors-in-tests` and `restore-task-cli-availability`.
 - Attempting `task verify` triggered large GPU and optional dependency
   downloads and was aborted.
+- `uv run flake8 src tests` flags F811 in `src/autoresearch/storage.py:56` and
+  W391 in `tests/unit/test_interfaces.py`.
+- `uv run pytest -q` runs but 32 tests fail, primarily in API auth and docs
+  modules.
 
 ## September 7, 2025
 
