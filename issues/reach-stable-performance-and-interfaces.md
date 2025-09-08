@@ -9,7 +9,7 @@ stable interfaces and tuned performance.
 
 ## Dependencies
 - [containerize-and-package](containerize-and-package.md)
-- [validate-deployment-configurations](validate-deployment-configurations.md)
+- [validate-deployment-configurations](./validate-deployment-configurations.md)
 - [tune-system-performance](archive/tune-system-performance.md)
 
 ## Acceptance Criteria
