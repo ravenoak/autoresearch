@@ -21,7 +21,7 @@ if it's enabled in the configuration.
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import os
 import time
 from collections import OrderedDict, deque
@@ -43,12 +43,15 @@ from .storage_backends import DuckDBStorageBackend
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
 
+# Determine availability of the optional Kuzu dependency without importing it
 try:  # pragma: no cover - optional dependency
-    KuzuBackend = getattr(
-        importlib.import_module("autoresearch.storage_backends"),
-        "KuzuStorageBackend",
-    )
-except Exception:  # noqa: BLE001
+    _has_kuzu = importlib.util.find_spec("kuzu") is not None
+except Exception:  # pragma: no cover - defensive
+    _has_kuzu = False
+
+if _has_kuzu:
+    from .storage_backends import KuzuStorageBackend as KuzuBackend
+else:  # pragma: no cover - kuzu not installed
     KuzuBackend = None
 
 # Use "Any" for DuckDB connections due to incomplete upstream type hints.
@@ -180,6 +183,7 @@ def setup(
         use_kuzu = getattr(cfg, "use_kuzu", False)
         if use_kuzu and KuzuBackend is None:
             log.warning("Kuzu backend requested but not available")
+            cfg.use_kuzu = False
         elif use_kuzu:
             _kuzu_backend = KuzuBackend()
             kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
