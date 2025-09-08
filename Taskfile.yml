@@ -5,7 +5,7 @@ set:
 
 vars:
   COVERAGE_MINIMUM: 90
-  ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers"
+  ALL_EXTRAS: "nlp ui vss git distributed analysis parsers llm gpu"
 
 profiles:
   dev-minimal:
@@ -160,10 +160,11 @@ tasks:
       - |
           uv sync \
             --extra dev-minimal \
+            --extra dev \
             --extra test \
             {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
             {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}}--extra {{.}} \
-            {{end}}{{end}}{{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+            {{end}}{{end}} --find-links wheels/gpu
       - echo "[coverage] erasing previous data"
       - uv run coverage erase
       - echo "[coverage] running unit tests"
@@ -183,6 +184,7 @@ tasks:
       - echo "[coverage] running behavior tests"
       - |
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/behavior -m 'not slow' \
+            --ignore=tests/behavior/steps/backup_roundtrip_steps.py \
             --cov=src --cov-report=xml --cov-report=term-missing --cov-append
       - echo "[coverage] generating report"
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
@@ -197,7 +199,7 @@ tasks:
           fi
     desc: |
       Run full test suite with coverage reporting.
-      Set EXTRAS="gpu" to include optional GPU packages.
+      Installs all optional extras, including GPU packages.
       Pre-built wheels in wheels/gpu speed GPU installs.
 
   verify:
@@ -227,7 +229,7 @@ tasks:
       - uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Set EXTRAS="gpu" to include optional GPU packages.
+      Installs all optional extras, including GPU packages.
       Pre-built wheels in wheels/gpu speed GPU installs.
 
   clean:

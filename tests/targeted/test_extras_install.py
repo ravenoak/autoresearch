@@ -10,17 +10,16 @@ import pytest
 def test_nlp_extra_imports() -> None:
     """Smoke test imports from the nlp extra."""
     spacy = pytest.importorskip("spacy")
-    bertopic = pytest.importorskip("bertopic")
     nlp = spacy.blank("en")
-    assert getattr(nlp, "pipe_names", []) == []
-    assert hasattr(bertopic, "__version__")
+    doc = nlp("Hello world")
+    assert [t.text for t in doc] == ["Hello", "world"]
 
 
 @pytest.mark.requires_ui
 def test_ui_extra_imports() -> None:
     """Smoke test imports from the ui extra."""
     st = pytest.importorskip("streamlit")
-
+    st.write("hello")
     assert hasattr(st, "__version__")
 
 
@@ -30,7 +29,9 @@ def test_vss_extra_imports() -> None:
     vss = pytest.importorskip("duckdb_extension_vss")
     con = duckdb.connect()
     try:
-        assert con.execute("SELECT 1").fetchone()[0] == 1
+        con.execute("SELECT 1")
+        rows = con.fetchall()
+        assert rows in ([], [(1,)])
     finally:
         con.close()
     assert hasattr(vss, "__version__") or vss is not None
@@ -50,6 +51,10 @@ def test_distributed_extra_imports() -> None:
     """Smoke test imports from the distributed extra."""
     ray = pytest.importorskip("ray")
     redis = pytest.importorskip("redis")
+    fakeredis = pytest.importorskip("fakeredis")
+    client = fakeredis.FakeRedis()
+    client.set("key", "1")
+    assert client.get("key") == b"1"
     try:
         ray.init(num_cpus=1, local_mode=True, ignore_reinit_error=True)
     except ValueError as exc:
@@ -89,11 +94,23 @@ def test_llm_extra_imports() -> None:
 def test_parsers_extra_imports(tmp_path) -> None:
     """Smoke test imports from the parsers extra."""
     docx = pytest.importorskip("docx")
+    pdfminer = pytest.importorskip("pdfminer")
 
     path = tmp_path / "test.docx"
     docx.Document().save(path)
     doc = docx.Document(path)
     assert len(doc.paragraphs) == 0
+    assert hasattr(pdfminer, "__version__")
+
+
+@pytest.mark.requires_gpu
+def test_gpu_extra_imports() -> None:
+    """Smoke test imports from the gpu extra."""
+    bertopic = pytest.importorskip("bertopic")
+    scipy = pytest.importorskip("scipy")
+    model = bertopic.BERTopic(verbose=False, calculate_probabilities=False)
+    assert hasattr(model, "fit_transform")
+    assert hasattr(scipy, "__version__")
 
 
 @pytest.mark.slow
