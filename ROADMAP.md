@@ -85,7 +85,7 @@ release is re-targeted for **June 15, 2026**. Key activities include:
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
 
-[fix-task-check-deps]: issues/fix-task-check-dependency-removal-and-extension-bootstrap.md
+[fix-task-check-deps]: issues/archive/fix-task-check-dependency-removal-and-extension-bootstrap.md
 
 ## 0.1.0 – First public preview
 
