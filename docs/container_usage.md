@@ -1,43 +1,37 @@
 # Container Usage
 
-Autoresearch ships Docker and OCI images for Linux, macOS, and Windows.
-These images can be built entirely offline when the `wheels/` directory
-contains all required wheels.
+This guide shows how to build and use Autoresearch container images on Linux,
+macOS, and Windows.
 
-## Building images
+## Build images
 
-Run the build script to create images for all platforms:
-
-```
-./scripts/build_images.sh
-```
-
-Set `OFFLINE=1` to install from local wheels during the build:
+Run the release script to build multi-architecture images. Use `--push` to
+publish to your registry.
 
 ```
-OFFLINE=1 ./scripts/build_images.sh
+scripts/release_images.sh --push
 ```
 
-Use the release script to build and push images:
+The script targets `linux/amd64` and `linux/arm64` for the Linux image and uses
+the macOS and Windows Dockerfiles for their respective images.
+
+## Package distributions
+
+Create source and wheel distributions inside a container by invoking the
+packaging script from the host. It launches the `autoresearch-linux` image by
+default.
 
 ```
-./scripts/release_images.sh --push
+scripts/package.sh dist
 ```
 
-## Running with docker compose
-
-`docker-compose.yml` builds the Linux image and starts a Redis service.
+For Windows artifacts use PowerShell.
 
 ```
-docker compose build
-docker compose up
+scripts\package.ps1 -DistDir dist
 ```
 
-For offline runs provide the offline environment file:
+Set `CONTAINER_IMAGE` to select a different image such as
+`autoresearch-macos`. Generated files appear in the directory supplied on the
+host.
 
-```
-ENV_FILE=.env.offline OFFLINE=1 docker compose build
-ENV_FILE=.env.offline docker compose up
-```
-
-The API is available at <http://localhost:8000> when the stack is running.
