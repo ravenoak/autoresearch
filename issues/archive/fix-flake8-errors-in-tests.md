@@ -1,8 +1,9 @@
 # Fix flake8 errors in tests
 
 ## Context
-`task verify` fails flake8 because `tests/unit/test_ui_save_config.py` and
-`tests/unit/test_vss_has_vss.py` include unused imports.
+`task verify` previously failed flake8 because
+`tests/unit/test_ui_save_config.py` and
+`tests/unit/test_vss_has_vss.py` included unused imports.
 
 ## Dependencies
 None.
@@ -13,4 +14,4 @@ None.
 - `task verify` completes the flake8 stage without failures.
 
 ## Status
-Open
+Archived

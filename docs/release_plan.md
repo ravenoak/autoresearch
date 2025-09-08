@@ -17,11 +17,12 @@ defined in `autoresearch.__version__`. Phase 3
 ## Status
 
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
-confirmed in `pyproject.toml` and [installation.md](installation.md). `uv run
-flake8 src tests` failed because `flake8` is missing, while `uv run mypy src`
-reports success. The `task` CLI is unavailable, so `task verify` and `task
-coverage` could not run. A dry-run publish built the package and skipped
-upload. Outstanding gaps are tracked in [integration-issue] and [task-issue].
+confirmed in `pyproject.toml` and [installation.md](installation.md).
+`uv run flake8 src tests` now passes, and `uv run mypy src` reports success.
+The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to
+complete. `task verify` still requires heavy extras and was interrupted after
+large downloads. A dry-run publish built the package and skipped upload.
+Outstanding gaps are tracked in [integration-issue] and [task-issue].
 Current test results are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
@@ -62,7 +63,7 @@ while packaging tasks are resolved.
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
 - [x] Ensure Task CLI available ([restore-task-cli-availability](
-  ../issues/restore-task-cli-availability.md)).
+  ../issues/archive/restore-task-cli-availability.md)).
 - [x] Resolve coverage hang ([fix-task-verify-coverage-hang](
   ../issues/archive/fix-task-verify-coverage-hang.md)).
 
@@ -123,4 +124,4 @@ skips GPU-only packages unless `EXTRAS="gpu"` is set:
 
 [coverage-gap-issue]: ../issues/archive/resolve-pre-alpha-release-blockers.md
 [integration-issue]: ../issues/resolve-current-integration-test-failures.md
-[task-issue]: ../issues/restore-task-cli-availability.md
+[task-issue]: ../issues/archive/restore-task-cli-availability.md
