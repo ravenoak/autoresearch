@@ -53,23 +53,19 @@ ensure_uv() {
     fi
 }
 
-sync_deps() {
-    local extras="dev-minimal test $EXTRAS"
-    local args=""
-    for extra in $extras; do
-        [ -n "$extra" ] && args+=" --extra $extra"
-    done
-    echo "Syncing dependencies ($extras)..."
-    if ! uv sync$args; then
-        echo "uv sync failed. Resolve the errors above and re-run." >&2
-        exit 1
-    fi
-}
-
 check_python
 ensure_go_task
 ensure_uv
-sync_deps
+
+extras_args=""
+for extra in dev-minimal test $EXTRAS; do
+    [ -n "$extra" ] && extras_args+=" --extra $extra"
+done
+echo "Syncing dependencies (dev-minimal test $EXTRAS)..."
+if ! uv sync$extras_args; then
+    echo "uv sync failed. Resolve the errors above and re-run." >&2
+    exit 1
+fi
 
 echo "Environment ready. Activate with 'source .venv/bin/activate'."
 
