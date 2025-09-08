@@ -15,13 +15,14 @@ sync minimal dependencies:
 
 ```bash
 ./scripts/setup.sh
-export PATH="$(pwd)/.venv/bin:$PATH"
+export PATH="$PATH:$(pwd)/.venv/bin"
+task --version
 task check
 ```
 
-The script checks the Python version, confirms Go Task is available, and syncs
-the `dev-minimal` and `test` extras. It exits with an error if Go Task is
-missing or the dependency sync fails.
+The script checks the Python version, installs Go Task if missing, and syncs the
+`dev-minimal` and `test` extras. It exits with an error if the dependency sync
+fails.
 
 Activate the virtual environment in new shells to restore the path:
 
@@ -30,8 +31,7 @@ source .venv/bin/activate
 ```
 
 Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. It
-places the `task` binary in `.venv/bin` and requires adding that directory to
-`PATH`. If the script fails or you want a system-wide binary, install
+places the `task` binary in `.venv/bin`. For a system-wide binary, install
 manually and confirm the installation:
 
 ```bash
@@ -70,14 +70,14 @@ If a tool or package is missing, rerun `task install` or sync extras with
 ## Setup script
 
 `scripts/setup.sh` bootstraps local development. It verifies Python 3.12+,
-checks for Go Task, ensures `uv` is installed, and syncs the `dev-minimal` and
-`test` extras. Set `AR_EXTRAS` to include additional groups.
+installs Go Task when missing, ensures `uv` is installed, and syncs the
+`dev-minimal` and `test` extras. Set `AR_EXTRAS` to include additional groups.
 
-The script does not modify `PATH`; add `.venv/bin` manually and activate the
-environment in new shells:
+The script appends `.venv/bin` to `PATH` for its execution; add it manually and
+activate the environment in new shells:
 
 ```bash
-export PATH="$(pwd)/.venv/bin:$PATH"
+export PATH="$PATH:$(pwd)/.venv/bin"
 source .venv/bin/activate
 ```
 
