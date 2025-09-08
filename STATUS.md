@@ -4,18 +4,14 @@
 
 - `git tag` shows no `v0.1.0a1`; release remains pending. See
   [docs/release_plan.md](docs/release_plan.md), [ROADMAP.md](ROADMAP.md), and
-  [CHANGELOG.md](CHANGELOG.md) for aligned milestones targeting **June 15,
-  2026** for 0.1.0a1 and **July 1, 2026** for 0.1.0.
+  [CHANGELOG.md](CHANGELOG.md).
 - Ran `scripts/setup.sh`, installing Go Task 3.44.1 and syncing `dev-minimal`
   and `test` extras.
-- `task check` fails with mypy errors in `src/autoresearch/storage.py:55`.
-- Archived `fix-flake8-errors-in-tests` and `restore-task-cli-availability`.
-- Attempting `task verify` triggered large GPU and optional dependency
-  downloads and was aborted.
-- `uv run flake8 src tests` flags F811 in `src/autoresearch/storage.py:56` and
-  W391 in `tests/unit/test_interfaces.py`.
-- `uv run pytest -q` runs but 32 tests fail, primarily in API auth and docs
-  modules.
+- `task check` passes with warnings about missing package metadata.
+- `task verify` fails in
+  `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+  with `hypothesis.errors.DeadlineExceeded`, so coverage is not generated.
+- `uv run flake8 src tests` and `uv run mypy src` succeed.
 
 ## September 7, 2025
 
@@ -37,7 +33,8 @@
 - `task verify` aborted on failing tests such as
   `tests/unit/test_metrics_token_budget_spec.py::test_token_budget_spec`,
   `tests/unit/test_token_budget.py::test_token_budget`, and later
-  `tests/integration/test_optional_modules_imports.py::test_optional_module_exports[spacy-__version__]`
+  `tests/integration/test_optional_modules_imports.py::`
+  `test_optional_module_exports[spacy-__version__]`
   before any multiprocessing resource tracker errors appeared. The issue was
   archived.
 
@@ -215,7 +212,11 @@ with `KeyError: 'kuzu'`, reporting 1 failed, 212 passed, 22 deselected, and 3
 warnings. Coverage data was not produced.
 
 ## Open issues
+- [fix-idempotent-message-processing-deadline-regression](
+  issues/fix-idempotent-message-processing-deadline-regression.md)
+- [fix-api-authentication-integration-tests](issues/fix-api-authentication-integration-tests.md)
+- [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
+- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
-- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)

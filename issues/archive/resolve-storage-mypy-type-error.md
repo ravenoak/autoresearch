@@ -12,4 +12,4 @@ None.
 - `task check` runs without mypy errors.
 
 ## Status
-Open
+Archived

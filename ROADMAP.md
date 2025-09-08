@@ -11,10 +11,11 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **June 15, 2026**; 0.1.0 is planned for **July 1, 2026**. `task verify`
-completes after running `scripts/setup.sh`, but `uv sync --extra dev-minimal`
-prunes optional packages, so only targeted tests run. Integration and behavior
-suites remain skipped and targeted modules report **95%** coverage (54/57
-lines) (see [fix-task-check-deps]). Scheduler resource benchmarks
+currently fails in
+`tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+with `hypothesis.errors.DeadlineExceeded`, so coverage data is missing. The
+`task check` task passes after running `scripts/setup.sh`. Integration and
+behavior suites remain skipped. Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:

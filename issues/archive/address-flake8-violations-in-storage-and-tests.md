@@ -12,4 +12,4 @@ a test module.
 - `uv run flake8 src tests` exits without F811 or W391 errors.
 
 ## Status
-Open
+Archived

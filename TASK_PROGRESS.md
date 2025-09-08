@@ -1,10 +1,12 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 8, 2025**, the
-environment installs `flake8`, `mypy` passes, and the Task CLI is available via
-`scripts/setup.sh`. `task check` succeeds, while `task verify` was interrupted
-after large dependency downloads. See [docs/release_plan.md](docs/release_plan.md)
+organized by phases from the code complete plan. As of **September 8, 2025**,
+`scripts/setup.sh` installs Go Task and syncs the `dev-minimal` and `test` extras.
+`task check` passes, but `task verify` fails in
+`tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+with `hypothesis.errors.DeadlineExceeded`.
+See [docs/release_plan.md](docs/release_plan.md)
 for current test and coverage status. An **0.1.0-alpha.1** preview is
 re-targeted for **2026-06-15**, with the final **0.1.0** release targeted for
 **July 1, 2026**.
