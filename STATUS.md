@@ -16,7 +16,7 @@
 - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss \
   and not requires_distributed" -q` reports **5 failing tests**, including
   GitPython attribute errors and a failing CLI resource monitor.
-- `uv run coverage report` shows **100%** coverage (57/57 lines) for targeted
+- `uv run coverage report` shows **95%** coverage (54/57 lines) for targeted
   modules.
 
 
