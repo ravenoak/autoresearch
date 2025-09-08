@@ -1,6 +1,8 @@
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 from autoresearch.agents.specialized.planner import PlannerAgent
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.orchestration.orchestrator import Orchestrator
@@ -66,6 +68,11 @@ def test_planner_execute(monkeypatch):
 
 
 def test_storage_setup_teardown(monkeypatch):
+    from autoresearch import storage
+
+    if storage.KuzuBackend is None:
+        pytest.skip("Kuzu backend not available")
+
     calls = {}
 
     class FakeDuck:
@@ -102,7 +109,6 @@ def test_storage_setup_teardown(monkeypatch):
         "autoresearch.storage.KuzuBackend",
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("Kuzu backend used")),
     )
-    from autoresearch import storage
 
     storage._cached_config = None
     storage.StorageManager.context.db_backend = None
