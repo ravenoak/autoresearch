@@ -44,7 +44,9 @@ services.
 To guard against regressions, run `uv run pytest`
 `tests/benchmark/test_hybrid_ranking.py` with the shared dataset in
 `tests/data/backend_benchmark.csv`. Example results and thresholds live in
-[ranking_benchmark.md](ranking_benchmark.md).
+[ranking_benchmark.md](ranking_benchmark.md). The test stores baseline
+metrics in `tests/data/backend_metrics.json` and fails if precision, recall
+or latency regress by more than 5\%.
 
 ### Benchmark results
 
