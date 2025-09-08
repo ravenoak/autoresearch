@@ -73,6 +73,13 @@ def test_markdown_no_ansi(capsys):
     assert "\x1b[" not in out
 
 
+def test_format_graph(capsys):
+    resp = QueryResponse(answer="a", citations=["c"], reasoning=[], metrics={})
+    OutputFormatter.format(resp, "graph")
+    out = capsys.readouterr().out
+    assert "Knowledge Graph" in out
+
+
 @pytest.mark.parametrize(
     "fmt, content",
     [

@@ -8,11 +8,64 @@ custom templates.
 
 ## Algorithms
 
-- Implement core behaviors described above.
+### Markdown renderer
+
+1. Validate or construct a `QueryResponse` object.
+2. Load the markdown template from the registry or a hard-coded fallback.
+3. Substitute answer, citations, reasoning, and metrics into the template.
+4. Emit the rendered string with sections: Answer, Citations, Reasoning, and
+   Metrics.
+
+**Invariants and complexity**
+
+- Runs in `O(n)` time relative to the length of formatted fields.
+- Order of sections is fixed and appears exactly once.
+- Output is deterministic and contains no ANSI escape sequences.
+
+### JSON renderer
+
+1. Validate or construct a `QueryResponse` object.
+2. Serialize the model with `model_dump_json(indent=2)`.
+3. Write the resulting string to stdout.
+
+**Invariants and complexity**
+
+- Runs in `O(n)` time where `n` is the serialized length.
+- Field order follows the pydantic model definition.
+- Output contains only UTF-8 text and no ANSI codes.
+
+### Graph renderer
+
+1. Build a `rich.tree.Tree` rooted at "Knowledge Graph".
+2. Add an "Answer" node containing the answer text.
+3. Nest "Citations" beneath the answer and add each citation as a child.
+4. Add sibling branches for "Reasoning" and "Metrics" with their entries.
+5. Render the tree using a `rich.console.Console` and write it to stdout.
+
+**Invariants and complexity**
+
+- Runs in `O(n)` nodes where `n` is the total items across fields.
+- Tree always has a single root labeled "Knowledge Graph".
+- Rendering is deterministic and free of color sequences.
+
+### Template renderer
+
+1. Parse the format specifier to obtain the template name.
+2. Retrieve the template from the registry, loading defaults on first use.
+3. Construct a variable map from response fields and individual metrics.
+4. Substitute variables via `string.Template`.
+5. Write the result to stdout or fall back to markdown if lookup fails.
+
+**Invariants and complexity**
+
+- Runs in `O(n)` where `n` is the template size plus variable count.
+- Missing variables raise `KeyError` with available placeholder names.
+- Template lookup is deterministic; absence triggers markdown fallback.
 
 ## Invariants
 
-- Preserve documented state across operations.
+- Every renderer is deterministic for a given `QueryResponse`.
+- Unknown format strings fall back to markdown output.
 
 ## Proof Sketch
 
