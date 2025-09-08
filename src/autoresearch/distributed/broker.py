@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import multiprocessing
-from queue import Queue
 from typing import TYPE_CHECKING, Any, Tuple, cast
 
 from ..logging_utils import get_logger
@@ -10,18 +9,49 @@ from ..logging_utils import get_logger
 log = get_logger(__name__)
 
 
+class _CountingQueue:
+    """Wrap ``multiprocessing.Queue`` with a reliable ``empty`` check."""
+
+    def __init__(self) -> None:
+        self._queue: multiprocessing.Queue[Any] = multiprocessing.Queue()
+        self._size = multiprocessing.Value("i", 0)
+
+    def put(self, item: Any) -> None:
+        self._queue.put(item)
+        with self._size.get_lock():
+            self._size.value += 1
+
+    def get(self) -> Any:
+        item = self._queue.get()
+        with self._size.get_lock():
+            self._size.value -= 1
+        return item
+
+    def empty(self) -> bool:  # pragma: no cover - trivial
+        return self._size.value == 0
+
+    def close(self) -> None:
+        self._queue.close()
+
+    def join_thread(self) -> None:
+        self._queue.join_thread()
+
+
 class InMemoryBroker:
     """Simple in-memory message broker using ``multiprocessing.Queue``."""
 
     def __init__(self) -> None:
-        self._manager = multiprocessing.Manager()
-        self.queue: Queue[Any] = self._manager.Queue()
+        """Initialize a local queue without a manager process for speed."""
+        self.queue = _CountingQueue()
 
     def publish(self, message: dict[str, Any]) -> None:
+        """Enqueue ``message`` for later retrieval."""
         self.queue.put(message)
 
     def shutdown(self) -> None:
-        self._manager.shutdown()
+        """Close the queue and wait for background threads to exit."""
+        self.queue.close()
+        self.queue.join_thread()
 
 
 if TYPE_CHECKING:  # pragma: no cover - used for type hints only
