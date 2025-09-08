@@ -20,25 +20,20 @@ or the upstream script. The minimal bootstrap is:
 
 ```bash
 ./scripts/setup.sh
-export PATH="$(pwd)/.venv/bin:$PATH"
+export PATH="$PATH:$(pwd)/.venv/bin"
+task --version
 task check
 ```
 
-`scripts/setup.sh` verifies the Python version, ensures `uv` is available, and
-syncs the `dev-minimal` and `test` extras. It exits with an error if Go Task is
-missing or the dependency sync fails.
+`scripts/setup.sh` verifies the Python version, installs Go Task if missing,
+ensures `uv` is available, and syncs the `dev-minimal` and `test` extras. It
+exits with an error if the dependency sync fails.
 
-Install Go Task manually if it is not on `PATH` and verify the installation:
+To install a system-wide Go Task binary instead, run:
 
 ```bash
 curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 # macOS: brew install go-task/tap/go-task
-```
-
-Confirm Go Task is available:
-
-```bash
-task --version
 ```
 
 Optional extras provide features such as NLP, a UI, or distributed

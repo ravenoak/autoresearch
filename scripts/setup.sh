@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp parsers" ./scripts/setup.sh
-# Verify Python 3.12+, confirm Go Task is installed, and sync dependencies.
+# Verify Python 3.12+, install Go Task if missing, append .venv/bin to PATH,
+# and sync dependencies.
 
 set -euo pipefail
+
+export PATH="$PATH:$(pwd)/.venv/bin"
 
 EXTRAS=${AR_EXTRAS:-}
 
@@ -24,10 +27,14 @@ PY
     fi
 }
 
-check_go_task() {
+ensure_go_task() {
     if ! command -v task >/dev/null 2>&1; then
-        echo "Go Task not found. Install it from https://taskfile.dev/" >&2
-        exit 1
+        echo "Installing Go Task..."
+        if ! curl -sSL https://taskfile.dev/install.sh \
+            | sh -s -- -b "$(pwd)/.venv/bin" >/dev/null; then
+            echo "Failed to install Go Task." >&2
+            exit 1
+        fi
     fi
     local version
     if ! version=$(task --version 2>/dev/null); then
@@ -60,7 +67,7 @@ sync_deps() {
 }
 
 check_python
-check_go_task
+ensure_go_task
 ensure_uv
 sync_deps
 
