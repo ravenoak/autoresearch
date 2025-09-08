@@ -26,7 +26,7 @@ The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to
 complete. `task verify` now syncs only the `dev-minimal` and `test` extras by
 default. Provide additional groups by setting `EXTRAS`, for example
 `EXTRAS="nlp ui"`. A dry-run publish built the package and skipped upload.
-Outstanding gaps are tracked in [integration-issue] and [task-issue].
+Outstanding gaps are tracked in [int-tests] and [task-issue].
 Current test results are mirrored in [../STATUS.md](../STATUS.md).
 
 ## Milestones
@@ -128,5 +128,5 @@ installs only `dev-minimal` and `test` extras by default; add groups with
   syncs docs with `baseline/coverage.xml`
 
 [coverage-gap-issue]: ../issues/archive/resolve-pre-alpha-release-blockers.md
-[integration-issue]: ../issues/resolve-current-integration-test-failures.md
+[int-tests]: ../issues/archive/resolve-current-integration-test-failures.md
 [task-issue]: ../issues/archive/restore-task-cli-availability.md
