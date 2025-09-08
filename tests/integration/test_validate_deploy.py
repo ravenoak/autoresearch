@@ -95,7 +95,7 @@ def test_validate_deploy_unknown_extra(tmp_path: Path) -> None:
     assert "Unknown extras" in result.stderr
 
 
-def test_validate_deploy_missing_container_engine(tmp_path: Path) -> None:
+def test_validate_deploy_unsupported_engine(tmp_path: Path) -> None:
     _write_config(tmp_path)
     env = os.environ.copy()
     env.update(
@@ -107,7 +107,22 @@ def test_validate_deploy_missing_container_engine(tmp_path: Path) -> None:
     )
     result = _run(env, tmp_path)
     assert result.returncode != 0
-    assert "Container engine" in result.stderr
+    assert "Unsupported container engine" in result.stderr
+
+
+def test_validate_deploy_engine_not_found(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update(
+        {
+            "DEPLOY_ENV": "production",
+            "CONFIG_DIR": str(tmp_path),
+            "CONTAINER_ENGINE": "podman",
+        }
+    )
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "not found" in result.stderr
 
 
 def test_validate_deploy_invalid_yaml(tmp_path: Path) -> None:
@@ -129,16 +144,25 @@ def test_validate_deploy_duplicate_env_key(tmp_path: Path) -> None:
     assert "Duplicate key" in result.stderr
 
 
-@pytest.mark.parametrize("os_name", ["linux", "macos", "windows"])
-def test_validate_deploy_os_samples(tmp_path: Path, os_name: str) -> None:
-    config_dir = tmp_path / os_name
+@pytest.mark.parametrize("env_name", ["linux", "macos", "windows", "production"])
+def test_validate_deploy_env_samples(tmp_path: Path, env_name: str) -> None:
+    config_dir = tmp_path / env_name
     config_dir.mkdir()
     _write_config(config_dir)
     env = os.environ.copy()
-    env.update({"DEPLOY_ENV": os_name, "CONFIG_DIR": str(config_dir)})
+    env.update({"DEPLOY_ENV": env_name, "CONFIG_DIR": str(config_dir)})
     result = _run(env, config_dir)
     assert result.returncode == 0
     assert "validated" in result.stdout.lower()
+
+
+def test_validate_deploy_invalid_env(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "unknown", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "DEPLOY_ENV must be one of" in result.stderr
 
 
 def test_validate_deploy_scans_all_configs(tmp_path: Path) -> None:

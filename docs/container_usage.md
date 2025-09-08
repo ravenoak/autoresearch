@@ -5,15 +5,16 @@ macOS, and Windows.
 
 ## Build images
 
-Run the release script to build multi-architecture images. Use `--push` to
-publish to your registry.
+Use `scripts/build_images.sh` to build images for Linux, macOS, and Windows.
+The first argument selects optional extras. Set `FORMAT=oci` to emit OCI
+archives in `dist/` or leave unset to load images into the local engine.
 
 ```
-scripts/release_images.sh --push
+FORMAT=oci scripts/build_images.sh analysis
 ```
 
-The script targets `linux/amd64` and `linux/arm64` for the Linux image and uses
-the macOS and Windows Dockerfiles for their respective images.
+Set `CONTAINER_ENGINE=podman` to build with Podman and `OFFLINE=1` to
+install from local wheels.
 
 ## Package distributions
 

@@ -22,6 +22,15 @@ from jsonschema import Draft7Validator
 
 REQUIRED_ENV_VARS = ("DEPLOY_ENV", "CONFIG_DIR")
 REQUIRED_FILES = ("deploy.yml", ".env")
+VALID_DEPLOY_ENVS = {
+    "production",
+    "staging",
+    "development",
+    "linux",
+    "macos",
+    "windows",
+}
+VALID_ENGINES = {"docker", "podman"}
 
 DEPLOY_SCHEMA = {
     "type": "object",
@@ -114,6 +123,8 @@ def _check_container_engine() -> str | None:
     engine = os.getenv("CONTAINER_ENGINE")
     if not engine:
         return None
+    if engine not in VALID_ENGINES:
+        return f"Unsupported container engine '{engine}'"
     if shutil.which(engine) is None:
         return f"Container engine '{engine}' not found"
     return None
@@ -169,6 +180,10 @@ def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
     missing_env = [name for name in REQUIRED_ENV_VARS if not env.get(name)]
     if missing_env:
         errors.append(f"Missing environment variables: {', '.join(missing_env)}")
+        return None, errors
+    if env["DEPLOY_ENV"] not in VALID_DEPLOY_ENVS:
+        allowed = ", ".join(sorted(VALID_DEPLOY_ENVS))
+        errors.append(f"DEPLOY_ENV must be one of {allowed}")
         return None, errors
     config_dir = Path(env["CONFIG_DIR"])
     if not config_dir.is_dir():

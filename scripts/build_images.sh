@@ -2,11 +2,13 @@
 # build_images.sh - Build Autoresearch images for Linux, macOS, and Windows.
 # Usage: build_images.sh [EXTRAS]
 # Set OFFLINE=1 to install from local wheels during the build.
+# Set FORMAT=oci to emit OCI archives instead of loading Docker images.
 set -euo pipefail
 
 usage() {
     echo "Usage: build_images.sh [EXTRAS]" >&2
     echo "Set OFFLINE=1 to install from local wheels." >&2
+    echo "Set FORMAT=oci to output OCI images to dist/." >&2
 }
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
@@ -17,6 +19,7 @@ fi
 EXTRAS="${1:-full,test}"
 ENGINE="${CONTAINER_ENGINE:-docker}"
 OFFLINE="${OFFLINE:-0}"
+FORMAT="${FORMAT:-docker}"
 
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
     echo "Container engine '$ENGINE' not found" >&2
@@ -26,15 +29,23 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+mkdir -p dist
+
 build_image() {
     local tag="$1"
     local file="$2"
     local platform="$3"
+    local output
+    if [ "$FORMAT" = "oci" ]; then
+        output="--output=type=oci,dest=dist/${tag}.oci"
+    else
+        output="--load"
+    fi
     "$ENGINE" buildx build -f "$file" \
         --build-arg EXTRAS="$EXTRAS" \
         --build-arg OFFLINE="$OFFLINE" \
         --platform "$platform" \
-        -t "autoresearch-$tag" --load .
+        -t "autoresearch-$tag" $output .
 }
 
 build_image linux-amd64 docker/Dockerfile.linux linux/amd64

@@ -1,37 +1,59 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1.5
 
-ARG EXTRAS=full
+ARG EXTRAS="full,test"
+ARG OFFLINE="0"
 
-ARG PYTHON_IMAGE=python:3.12-slim@sha256:
-ARG PYTHON_DIGEST=d67a7b66b989ad6b6d6b10d428dcc5e0bfc3e5f88906e67d490c4d3daac57047
-FROM ${PYTHON_IMAGE}${PYTHON_DIGEST} AS linux
+FROM --platform=$TARGETPLATFORM python:3.12-slim AS linux
 WORKDIR /workspace
 COPY . .
-RUN pip install --no-cache-dir uv \
-    && uv pip install ".[${EXTRAS}]"
+COPY wheels /wheels
+RUN if [ "$OFFLINE" = "1" ]; then \
+      pip install --no-index --find-links /wheels uv && \
+      uv pip install --no-index --find-links /wheels ".[${EXTRAS}]"; \
+    else \
+      pip install --no-cache-dir uv && \
+      uv pip install ".[${EXTRAS}]"; \
+    fi
+RUN --network=none autoresearch --help >/dev/null
+RUN --network=none uv run pytest \
+    tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
 
-ARG MACOS_IMAGE=ghcr.io/cirruslabs/macos-runner:sonoma@sha256:
-ARG MACOS_DIGEST=7331fefa25f3e8bca983bea2271ac28b5761a31ce88ea868d477483df9acb50b
-FROM ${MACOS_IMAGE}${MACOS_DIGEST} AS macos
+FROM ghcr.io/cirruslabs/macos-runner:sonoma AS macos
 ARG EXTRAS
+ARG OFFLINE
 WORKDIR /workspace
 COPY . .
-RUN /bin/bash -lc "brew update && brew install python@3.12" \
-    && pip3 install --no-cache-dir uv \
-    && uv pip install ".[${EXTRAS}]"
+COPY wheels /wheels
+RUN /bin/bash -lc "brew update && brew install python@3.12" && \
+    if [ "$OFFLINE" = "1" ]; then \
+      pip3 install --no-index --find-links /wheels uv && \
+      uv pip install --no-index --find-links /wheels ".[${EXTRAS}]"; \
+    else \
+      pip3 install --no-cache-dir uv && \
+      uv pip install ".[${EXTRAS}]"; \
+    fi && \
+    autoresearch --help >/dev/null && \
+    uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
 
-ARG WINDOWS_IMAGE=python:3.12-windowsservercore-ltsc2022@sha256:
-ARG WINDOWS_DIGEST=035418c04b5e8fcb13c6b23f6c801a52c510c43e8bf27e2379d26ad8c40c87a7
-FROM ${WINDOWS_IMAGE}${WINDOWS_DIGEST} AS windows
+FROM mcr.microsoft.com/windows/python:3.12 AS windows
 ARG EXTRAS
+ARG OFFLINE
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 WORKDIR C:/workspace
 COPY . .
-RUN pip install --no-cache-dir uv; \
-    uv pip install ".[$env:EXTRAS]"
+COPY wheels C:/wheels
+RUN if ($env:OFFLINE -eq '1') { \
+        pip install --no-index --find-links C:/wheels uv; \
+        uv pip install --no-index --find-links C:/wheels ".[${env:EXTRAS}]"; \
+    } else { \
+        pip install --no-cache-dir uv; \
+        uv pip install ".[${env:EXTRAS}]"; \
+    }; \
+    autoresearch --help | Out-Null; \
+    uv run pytest tests/unit/test_cli_help.py::test_cli_help_no_ansi -q
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
