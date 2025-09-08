@@ -11,8 +11,11 @@ The publishing workflow follows the steps in
 The project kicked off in **May 2025** (see the initial commit dated
 `2025-05-18`). This schedule was last updated on **September 8, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
-defined in `autoresearch.__version__`. Phase 3
-(stabilization/testing/documentation) and Phase 4 activities remain planned.
+defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
+**June 15, 2026** and **0.1.0** for **July 1, 2026**. See
+[../STATUS.md](../STATUS.md), [../ROADMAP.md](../ROADMAP.md), and
+[../CHANGELOG.md](../CHANGELOG.md) for aligned progress. Phase 3
+(stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Status
 
