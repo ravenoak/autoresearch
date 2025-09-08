@@ -51,7 +51,7 @@ before running tests.
 - 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
   - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
-    - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
+    - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01; reopened)
     - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
       (2027-01-15, depends on containerization; reopened)
     - [tune-system-performance](issues/archive/tune-system-performance.md)
@@ -149,7 +149,7 @@ Key features planned for this release include:
 
 The 1.0.0 milestone aims for a polished, production-ready system:
 
-- [containerize-and-package](issues/containerize-and-package.md) (2026-09-01)
+- [containerize-and-package](issues/containerize-and-package.md) (2026-09-01; reopened)
 - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
   (2027-01-15, depends on containerization; reopened)
 - [tune-system-performance](issues/archive/tune-system-performance.md)
