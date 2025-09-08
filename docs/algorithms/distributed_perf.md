@@ -28,3 +28,11 @@ $$T = d + W_q + \frac{1}{\mu}.$$
 
 Throughput equals the arrival rate `\lambda` when `\rho < 1`. See
 [orchestrator performance](../orchestrator_perf.md) for background.
+
+## Results
+
+The script
+[distributed_perf_compare.py](../../scripts/distributed_perf_compare.py)
+simulates an M/M/c queue and contrasts predicted metrics with measurements.
+Summary data for \(\lambda = 80\) and \(\mu = 100\) is stored in
+[../data/distributed_perf_summary.json](../data/distributed_perf_summary.json).

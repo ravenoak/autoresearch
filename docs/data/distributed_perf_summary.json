@@ -1,0 +1,35 @@
+[
+  {
+    "workers": 1.0,
+    "predicted": {
+      "throughput": 80.0,
+      "latency_s": 0.055000000000000014
+    },
+    "measured": {
+      "throughput": 79.6629103163039,
+      "latency_s": 0.04962192830059995
+    }
+  },
+  {
+    "workers": 2.0,
+    "predicted": {
+      "throughput": 80.0,
+      "latency_s": 0.016904761904761905
+    },
+    "measured": {
+      "throughput": 76.40926956382052,
+      "latency_s": 0.015884953602686783
+    }
+  },
+  {
+    "workers": 3.0,
+    "predicted": {
+      "throughput": 80.0,
+      "latency_s": 0.01523651145602365
+    },
+    "measured": {
+      "throughput": 77.77815203917072,
+      "latency_s": 0.014905053197514336
+    }
+  }
+]
