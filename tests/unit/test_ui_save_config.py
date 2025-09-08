@@ -1,7 +1,6 @@
 import importlib
 import sys
 import types
-import os
 
 import pytest
 
