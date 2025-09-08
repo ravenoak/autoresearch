@@ -37,7 +37,8 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 ```
 
 Optional extras provide features such as NLP, a UI, or distributed
-processing. Install them on demand with `uv sync --extra <name>` or
+processing. Install them on demand with `uv sync --extra <name>`,
+`task install EXTRAS="<name>"`, or
 `pip install "autoresearch[<name>]"`.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
@@ -50,17 +51,21 @@ with:
 uv run pytest -m requires_distributed -q
 ```
 
-To bootstrap a Python 3.12+ environment with the lightweight development and test
-extras run:
+To bootstrap a Python 3.12+ environment with the minimal development extras run:
 
 ```bash
 task install
 ```
 
-This syncs the `dev-minimal` and `test` extras to install tools like
-`pytest-httpx`, `duckdb`, and `networkx` needed for local testing. To install
-the `[test]` extras directly without Go Task and download the DuckDB VSS
-extension, run:
+This syncs the `dev-minimal` extra. Add the `test` group when you need the full
+suite:
+
+```bash
+task install EXTRAS="test"
+```
+
+To install the `[test]` extras directly without Go Task and download the DuckDB
+VSS extension, run:
 
 ```bash
 uv pip install -e ".[test]"
