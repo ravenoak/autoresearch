@@ -218,5 +218,5 @@ warnings. Coverage data was not produced.
 - [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
-  - [containerize-and-package](issues/containerize-and-package.md)
+  - [containerize-and-package](issues/containerize-and-package.md) (reopened)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
