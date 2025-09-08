@@ -8,7 +8,7 @@ stable interfaces and tuned performance.
 - 1.0.0 (2027-06-01)
 
 ## Dependencies
-- [containerize-and-package](containerize-and-package.md)
+- [containerize-and-package](archive/containerize-and-package.md)
 - [validate-deployment-configurations](validate-deployment-configurations.md)
 - [tune-system-performance](archive/tune-system-performance.md)
 
