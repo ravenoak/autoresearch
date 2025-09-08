@@ -7,7 +7,7 @@ and not requires_distributed" -q` runs passed GitPython and resource monitor tes
 `StorageError: Ontology reasoning interrupted`. The storage eviction simulation tuple
 mismatch and `test_property_api_rate_limit_bounds` deadline issue were resolved earlier, yet
 this remaining failure blocked the 0.1.0a1 preview. Related API work is tracked in
-[stabilize-api-and-improve-search](stabilize-api-and-improve-search.md).
+[stabilize-api-and-improve-search](../stabilize-api-and-improve-search.md).
 
 ## Dependencies
 None.
