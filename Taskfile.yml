@@ -161,9 +161,7 @@ tasks:
           uv sync \
             --extra dev-minimal \
             --extra test \
-            {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
-            {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}}--extra {{.}} \
-            {{end}}{{end}}{{if or (contains .ALL_EXTRAS "gpu") (and .EXTRAS (contains .EXTRAS "gpu"))}}--find-links wheels/gpu{{end}}
+            {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{if (contains .EXTRAS "gpu")}} --find-links wheels/gpu{{end}}{{end}}
       - echo "[coverage] erasing previous data"
       - uv run coverage erase
       - echo "[coverage] running unit tests"
@@ -197,8 +195,8 @@ tasks:
           fi
     desc: |
       Run full test suite with coverage reporting.
-      Installs all optional extras, including GPU packages.
-      Pre-built wheels in wheels/gpu speed GPU installs.
+      Syncs the dev-minimal and test extras by default.
+      Provide optional groups with EXTRAS; include "gpu" to use wheels/gpu.
 
   verify:
     vars:
@@ -208,11 +206,8 @@ tasks:
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             --extra dev-minimal \
-            --extra dev \
             --extra test \
-            {{range splitList " " .ALL_EXTRAS}}--extra {{.}} \
-            {{end}}{{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
-            {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+            {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{if (contains .EXTRAS "gpu")}} --find-links wheels/gpu{{end}}{{end}}
       - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src tests
       - uv run mypy src
@@ -227,7 +222,8 @@ tasks:
       - uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Installs all optional extras, including GPU packages.
+      Syncs only the dev-minimal and test extras by default.
+      Provide optional groups with EXTRAS, e.g. "nlp" or "ui".
       Pre-built wheels in wheels/gpu speed GPU installs.
 
   clean:

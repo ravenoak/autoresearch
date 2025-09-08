@@ -23,8 +23,9 @@ The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
 `uv run flake8 src tests` now passes, and `uv run mypy src` reports success.
 The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to
-complete. `task verify` still requires heavy extras and was interrupted after
-large downloads. A dry-run publish built the package and skipped upload.
+complete. `task verify` now syncs only the `dev-minimal` and `test` extras by
+default. Provide additional groups by setting `EXTRAS`, for example
+`EXTRAS="nlp ui"`. A dry-run publish built the package and skipped upload.
 Outstanding gaps are tracked in [integration-issue] and [task-issue].
 Current test results are mirrored in [../STATUS.md](../STATUS.md).
 
@@ -113,8 +114,9 @@ Each milestone may include additional patch releases for critical fixes.
 ## CI Checklist
 
 Before tagging **0.1.0**, ensure the following checks pass. `task verify`
-syncs with `--python-platform x86_64-manylinux_2_28` to prefer wheels and
-skips GPU-only packages unless `EXTRAS="gpu"` is set:
+syncs with `--python-platform x86_64-manylinux_2_28` to prefer wheels. It
+installs only `dev-minimal` and `test` extras by default; add groups with
+`EXTRAS`, e.g. `EXTRAS="nlp ui"` or `EXTRAS="gpu"`:
 
 - [ ] `uv run flake8 src tests`
 - [ ] `uv run mypy src`

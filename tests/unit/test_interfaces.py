@@ -1,5 +1,4 @@
 """Interface protocol tests.
-
 Spec: docs/specs/interfaces.md
 """
 
@@ -39,4 +38,3 @@ def test_incomplete_state_rejected() -> None:
             self.data = result
 
     assert not isinstance(BrokenState(), QueryStateLike)
-

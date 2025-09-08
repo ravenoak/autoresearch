@@ -165,6 +165,7 @@ def test_validate_deploy_invalid_env(tmp_path: Path) -> None:
     assert "DEPLOY_ENV must be one of" in result.stderr
 
 
+@pytest.mark.slow
 def test_validate_deploy_scans_all_configs(tmp_path: Path) -> None:
     deploy_dir = tmp_path / "deploy"
     good = deploy_dir / "good"
@@ -186,6 +187,7 @@ def test_validate_deploy_scans_all_configs(tmp_path: Path) -> None:
     assert "validated" in result.stdout.lower()
 
 
+@pytest.mark.slow
 def test_validate_deploy_scans_and_fails(tmp_path: Path) -> None:
     deploy_dir = tmp_path / "deploy"
     good = deploy_dir / "good"
