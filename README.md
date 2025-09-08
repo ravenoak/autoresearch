@@ -39,9 +39,9 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 Optional extras provide features such as NLP, a UI, or distributed
 processing. Install them on demand with `uv sync --extra <name>`,
 `task install EXTRAS="<name>"`, or
-`pip install "autoresearch[<name>]"`. Heavy extras are excluded from
-`task verify`; enable them by setting `EXTRAS` before running the task,
-for example `EXTRAS="nlp ui" task verify`.
+`pip install "autoresearch[<name>]"`. Heavy groups like `nlp`,
+`distributed`, `analysis`, and `llm` require additional dependencies and
+are excluded from `task verify`.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. The test suite's `redis_client` fixture connects
@@ -94,12 +94,8 @@ setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset (`test_version`
 and `test_cli_help`) for fast feedback. `task verify` runs the full suite and
-installs only the `dev-minimal` and `test` extras by default. Add heavy groups
-with `EXTRAS`, e.g.:
-
-```bash
-EXTRAS="nlp ui" task verify
-```
+installs only the `dev-minimal` and `test` extras. Sync optional extras
+separately before running the task if you need those features.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
@@ -145,6 +141,9 @@ installation guide, including environment setup, optional features and
 upgrade instructions.
 
 ### Optional extras
+
+Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm` pull large
+dependencies and are not synced by `task verify`.
 
 Autoresearch exposes optional extras to enable additional features:
 
