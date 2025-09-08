@@ -2,7 +2,9 @@
 
 ## Overview
 
-The ranking pipeline orders results by combining relevance and recency scores.
+The ranking pipeline orders results by combining relevance and recency
+scores. BM25 and semantic similarity are merged via a weighted sum that is
+applied uniformly across search backends.
 
 ## Algorithms
 

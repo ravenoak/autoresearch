@@ -18,7 +18,11 @@ from pydantic import ValidationError
 
 from ..config import ConfigLoader, ConfigModel, get_config
 from ..error_utils import format_error_for_api, get_error_info
-from ..models import BatchQueryRequest, QueryRequest, QueryResponse
+from .models import (
+    BatchQueryRequestV1,
+    QueryRequestV1,
+    QueryResponseV1,
+)
 from ..orchestration import ReasoningMode
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
@@ -99,8 +103,8 @@ async def get_openapi_schema(request: Request) -> dict:
 
 @router.post("/query", response_model=None, dependencies=[require_permission("query")])
 async def query_endpoint(
-    request: QueryRequest, stream: bool = False
-) -> StreamingResponse | QueryResponse:
+    request: QueryRequestV1, stream: bool = False
+) -> StreamingResponse | QueryResponseV1:
     """Process a query and return a structured response."""
     config = get_config()
 
@@ -128,7 +132,7 @@ async def query_endpoint(
                     reasoning.append(f"Suggestion: {suggestion}")
             else:
                 reasoning.append("Please check the logs for details.")
-            error_resp = QueryResponse(
+            error_resp = QueryResponseV1(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
@@ -144,7 +148,9 @@ async def query_endpoint(
             return error_resp
     try:
         validated = (
-            result if isinstance(result, QueryResponse) else QueryResponse.model_validate(result)
+            result
+            if isinstance(result, QueryResponseV1)
+            else QueryResponseV1.model_validate(result)
         )
     except ValidationError as exc:  # pragma: no cover - should not happen
         error_info = get_error_info(exc)
@@ -155,7 +161,7 @@ async def query_endpoint(
                 reasoning.append(f"Suggestion: {suggestion}")
         else:
             reasoning.append("Please check the logs for details.")
-        error_resp = QueryResponse(
+        error_resp = QueryResponseV1(
             answer="Error: Invalid response format",
             citations=[],
             reasoning=reasoning,
@@ -190,7 +196,7 @@ async def query_endpoint(
     dependencies=[require_permission("query")],
 )
 async def batch_query_endpoint(
-    batch: BatchQueryRequest, page: int = 1, page_size: int = 10
+    batch: BatchQueryRequestV1, page: int = 1, page_size: int = 10
 ) -> dict:
     """Execute multiple queries with pagination."""
     if page < 1 or page_size < 1:
@@ -199,12 +205,14 @@ async def batch_query_endpoint(
     start = (page - 1) * page_size
     selected = batch.queries[start : start + page_size]  # noqa: E203
 
-    async def run_one(idx: int, q: QueryRequest, results: list[Optional[QueryResponse]]) -> None:
+    async def run_one(
+        idx: int, q: QueryRequestV1, results: list[Optional[QueryResponseV1]]
+    ) -> None:
         from . import query_endpoint as api_query_endpoint
 
-        results[idx] = cast(QueryResponse, await api_query_endpoint(q))
+        results[idx] = cast(QueryResponseV1, await api_query_endpoint(q))
 
-    results: list[Optional[QueryResponse]] = [None for _ in selected]
+    results: list[Optional[QueryResponseV1]] = [None for _ in selected]
     async with asyncio.TaskGroup() as tg:
         for idx, query in enumerate(selected):
             tg.create_task(run_one(idx, query, results))
@@ -212,12 +220,12 @@ async def batch_query_endpoint(
     return {
         "page": page,
         "page_size": page_size,
-        "results": cast(List[QueryResponse], results),
+        "results": cast(List[QueryResponseV1], results),
     }
 
 
 @router.post("/query/async", dependencies=[require_permission("query")])
-async def async_query_endpoint(request: QueryRequest, http_request: Request) -> dict:
+async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -> dict:
     """Run a query asynchronously and return its ID."""
     config = get_config()
     if request.reasoning_mode is not None:
@@ -230,10 +238,15 @@ async def async_query_endpoint(request: QueryRequest, http_request: Request) -> 
     task_id = str(uuid4())
     config_copy: ConfigModel = config.model_copy(deep=True)
 
-    async def runner() -> QueryResponse | Any:
+    async def runner() -> QueryResponseV1 | Any:
         try:
             orchestrator = cast(Any, create_orchestrator())
-            return await orchestrator.run_query_async(request.query, config_copy)
+            result = await orchestrator.run_query_async(request.query, config_copy)
+            return (
+                result
+                if isinstance(result, QueryResponseV1)
+                else QueryResponseV1.model_validate(result)
+            )
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
@@ -243,7 +256,7 @@ async def async_query_endpoint(request: QueryRequest, http_request: Request) -> 
                     reasoning.append(f"Suggestion: {suggestion}")
             else:
                 reasoning.append("Please check the logs for details.")
-            return QueryResponse(
+            return QueryResponseV1(
                 answer=f"Error: {error_info.message}",
                 citations=[],
                 reasoning=reasoning,
@@ -264,7 +277,7 @@ async def get_query_status(query_id: str, request: Request) -> Response:
         return JSONResponse({"status": "running"})
     result = future.result()
     del request.app.state.async_tasks[query_id]
-    if isinstance(result, QueryResponse):
+    if isinstance(result, QueryResponseV1):
         return JSONResponse(result.model_dump())
     return JSONResponse(result)
 

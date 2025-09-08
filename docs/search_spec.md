@@ -26,8 +26,10 @@ This specification outlines expected behaviors for the
 - Final result ordering uses weighted combination of
   [BM25](algorithms/bm25.md),
   [semantic similarity](algorithms/semantic_similarity.md), and
-  [domain authority scores](algorithms/source_credibility.md). The formula
-  is detailed in [search ranking](algorithms/search_ranking.md).
+  [domain authority scores](algorithms/source_credibility.md). Results from
+  different backends are first scored individually and then merged and
+  re-ranked with the same weights to ensure consistent ordering across
+  sources. The formula is detailed in [search ranking](algorithms/search_ranking.md).
 
 ## Tests
 Property-based tests in `tests/unit/test_relevance_ranking.py` verify:

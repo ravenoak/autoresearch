@@ -8,6 +8,10 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 - [API rate limiting](../algorithms/api_rate_limiting.md)
 - [API streaming](../algorithms/api_streaming.md)
 
+Requests and responses use versioned schemas; the current
+`QueryRequestV1` and `QueryResponseV1` models require a `version` field of
+`"1"`.
+
 ## Algorithms
 
 - Implement core behaviors described above.
