@@ -7,13 +7,26 @@ reliability of the test suite.
 For environment setup instructions see [installation](installation.md).
 
 Tests may require optional dependencies. Markers such as `requires_nlp` or
-`requires_parsers` map to extras with the same names. Install them by setting
-`EXTRAS` when running `task install` or `AR_EXTRAS` when invoking the setup
-script. `task verify` syncs all extras automatically:
+`requires_parsers` map to extras with the same names. `task install` syncs only
+the `dev-minimal` extra; add groups with `EXTRAS` or set `AR_EXTRAS`
+when using the setup script. `task verify` syncs all extras automatically:
 
 ```bash
-EXTRAS="nlp parsers" task install
+EXTRAS="test nlp parsers" task install
 ```
+
+Available extras enable optional features:
+
+- `test` - full test suite tools
+- `nlp` - language processing via spaCy and BERTopic
+- `ui` - Streamlit interface
+- `vss` - DuckDB vector search extension
+- `git` - local Git repository search
+- `distributed` - Ray and Redis for distributed processing
+- `analysis` - Polars-based analytics
+- `llm` - large language model libraries
+- `parsers` - PDF and DOCX ingestion
+- `gpu` - GPU-accelerated dependencies
 
 ## Test Organization
 
@@ -33,8 +46,8 @@ Two installation strategies support different workflows:
 
 - **Minimal:** `task check` runs linting, type checks, and a fast targeted
   subset. It syncs only the `dev-minimal` extra. Add optional features with
-  `task install EXTRAS="nlp ui"` choosing from `analysis`, `distributed`,
-  `git`, `llm`, `minimal`, `nlp`, `parsers`, `ui`, and `vss`.
+  `task install EXTRAS="test nlp ui"` choosing from `analysis`, `distributed`,
+  `git`, `llm`, `nlp`, `parsers`, `ui`, `vss`, `gpu`, and `test`.
 - **Full:** `task verify` requires the `dev` and `test` extras and executes the
   targeted suite with coverage. Install them with `uv sync --extra dev --extra
   test` and append extras as needed for integration scenarios.

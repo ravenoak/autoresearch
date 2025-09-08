@@ -28,7 +28,7 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal test"
+          extras="dev-minimal"
           uv sync --python-platform x86_64-manylinux_2_28 \
               $(printf ' --extra %s' $extras) \
               {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
@@ -37,8 +37,8 @@ tasks:
       - uv run flake8 src tests
     desc: |
       Initialize dev env with minimal extras.
-      Syncs dev-minimal and test extras by default.
-      Provide optional groups with EXTRAS, e.g. "nlp" or "parsers".
+      Syncs the dev-minimal extra by default.
+      Provide optional groups with EXTRAS, e.g. "test", "nlp", or "parsers".
       Set EXTRAS="gpu" to include optional GPU packages.
       Place matching wheels in wheels/gpu to avoid source builds.
   check-env:
