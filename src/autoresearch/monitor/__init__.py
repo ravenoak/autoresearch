@@ -13,6 +13,8 @@ from rich.table import Table
 from rich.tree import Tree
 import typer
 
+from ..main import Prompt
+
 from ..config.loader import ConfigLoader
 from ..logging_utils import get_logger
 from ..orchestration import metrics as orch_metrics
@@ -235,7 +237,7 @@ def run() -> None:
             usage_table.add_column("Used")
             usage_table.add_row(str(budget), str(usage))
             console.print(usage_table)
-        feedback = typer.prompt("Feedback (q to stop)", default="")
+        feedback = Prompt.ask("Feedback (q to stop)", default="")
         if feedback.lower() == "q":
             state.error_count = getattr(config, "max_errors", 3)
             abort_flag["stop"] = True
@@ -243,7 +245,7 @@ def run() -> None:
             state.claims.append({"type": "feedback", "text": feedback})
 
     while True:
-        query = typer.prompt("Enter query (q to quit)")
+        query = Prompt.ask("Enter query (q to quit)")
         if not query or query.lower() == "q":
             break
 

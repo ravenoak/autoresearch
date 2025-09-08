@@ -169,6 +169,8 @@ class ResourceMonitor:
         """Start monitoring in a background thread."""
         if self._thread is not None:
             return
+        if self._stop.is_set():
+            self._stop = threading.Event()
         if prometheus_port is not None:
             start_http_server(prometheus_port, registry=self.registry)
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -204,3 +206,14 @@ class ResourceMonitor:
         if self._thread:
             self._thread.join()
             self._thread = None
+
+    def __enter__(self) -> "ResourceMonitor":
+        """Start the monitor when entering a context."""
+
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        """Ensure the monitor is stopped when leaving a context."""
+
+        self.stop()
