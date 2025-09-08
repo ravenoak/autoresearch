@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp parsers" ./scripts/setup.sh
-# Verify Python 3.12+, install Go Task if missing, append .venv/bin to PATH,
-# and sync dependencies.
+# Verify Python 3.12+, confirm Go Task and uv are installed, append .venv/bin to
+# PATH, and sync dependencies.
 
 set -euo pipefail
 
@@ -29,27 +29,25 @@ PY
 
 ensure_go_task() {
     if ! command -v task >/dev/null 2>&1; then
-        echo "Installing Go Task..."
-        if ! curl -sSL https://taskfile.dev/install.sh \
-            | sh -s -- -b "$(pwd)/.venv/bin" >/dev/null; then
-            echo "Failed to install Go Task." >&2
-            exit 1
-        fi
+        echo "Go Task not found. Install it from https://taskfile.dev/ or run" >&2
+        echo "scripts/bootstrap.sh, then re-run this script." >&2
+        exit 1
     fi
-    local version
-    if ! version=$(task --version 2>/dev/null); then
+    if ! task --version >/dev/null 2>&1; then
         echo "Go Task installation is broken; reinstall it." >&2
         exit 1
     fi
-    echo "$version"
 }
 
 ensure_uv() {
     if ! command -v uv >/dev/null 2>&1; then
-        if ! python3 -m pip install uv >/dev/null; then
-            echo "Failed to install uv. See https://github.com/astral-sh/uv" >&2
-            exit 1
-        fi
+        echo "uv is required but not installed. See" >&2
+        echo "https://github.com/astral-sh/uv for installation instructions." >&2
+        exit 1
+    fi
+    if ! uv --version >/dev/null 2>&1; then
+        echo "uv is installed but not functional; reinstall it." >&2
+        exit 1
     fi
 }
 
