@@ -2,13 +2,11 @@
 
 ## September 8, 2025
 
-- `uv run flake8 src tests` failed: command not found.
-- `uv run mypy src` succeeded with no issues.
-- `task verify` and `task coverage` could not run because the `task` CLI is
-  missing even after `scripts/codex_setup.sh`.
-- `uv run python scripts/publish_dev.py --dry-run --repository testpypi`
-  built the package and skipped upload.
-- Release remains blocked pending environment setup and passing tests.
+- Installed Go Task 3.44.1 and synchronized `dev-minimal` and `test` extras.
+- `task check` succeeded.
+- `task verify` failed at `tests/integration/test_storage_baseline.py::test_ram_budget_respects_baseline`
+  with `StorageError: Ontology reasoning interrupted`.
+- GitPython and monitor resource integration tests now pass.
 
 ## September 7, 2025
 
