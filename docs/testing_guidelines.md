@@ -52,6 +52,14 @@ uv run pytest -q
 
 This ensures required plugins like `pytest-bdd` are installed.
 
+If `pytest` reports missing plugins, ensure the `[test]` extra is installed:
+
+```bash
+uv sync --extra test
+# or
+uv pip install -e '.[test]'
+```
+
 Redis is an optional dependency, but tests that interact with it are marked
 `requires_distributed`. A lightweight `fakeredis` instance starts automatically
 when a real server is unreachable so distributed tests run without external
