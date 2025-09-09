@@ -13,4 +13,4 @@ None.
 - `task check` succeeds.
 
 ## Status
-Open
+Archived
