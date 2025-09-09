@@ -13,9 +13,8 @@ Autoresearch requires these binaries on your `PATH`:
 - [uv](https://github.com/astral-sh/uv)
 - [Go Task](https://taskfile.dev/) for Taskfile commands
 
-Run `uv run python scripts/check_env.py` to confirm they are available. Install
-Go Task with your package manager or `scripts/bootstrap.sh`. After installing
-the tools, sync minimal dependencies:
+Run `uv run python scripts/check_env.py` to confirm they are available. The
+setup script installs a local Go Task binary automatically when it is missing:
 
 ```bash
 ./scripts/setup.sh
@@ -24,9 +23,9 @@ task --version
 task check
 ```
 
-The script checks the Python version, verifies Go Task and `uv` are installed,
-and syncs the `dev-minimal` and `test` extras. It exits with an error if a tool
-is missing or the dependency sync fails.
+The script checks the Python version, installs Go Task when absent, verifies
+`uv` is functional, and syncs the `dev-minimal` and `test` extras. It exits with
+an error if a tool is missing or the dependency sync fails.
 
 Activate the virtual environment in new shells to restore the path:
 
@@ -34,8 +33,9 @@ Activate the virtual environment in new shells to restore the path:
 source .venv/bin/activate
 ```
 
-Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. It
-places the `task` binary in `.venv/bin`. For a system-wide binary, install
+Run `./scripts/bootstrap.sh` directly to install Go Task without syncing extras.
+This is usually unnecessary because `scripts/setup.sh` invokes it automatically.
+It places the `task` binary in `.venv/bin`. For a system-wide binary, install
 manually and confirm the installation:
 
 ```bash

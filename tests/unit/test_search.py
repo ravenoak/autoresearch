@@ -24,6 +24,7 @@ def _cfg() -> ConfigModel:
     cfg.search.use_semantic_similarity = False
     return cfg
 
+
 pytestmark = pytest.mark.skipif(
     not GITPYTHON_INSTALLED, reason="GitPython not installed"
 )
