@@ -13,6 +13,11 @@
 - Reopened issues to resolve package metadata warnings and to add coverage
   for optional components.
 
+- Verified that `GitPython`, `cibuildwheel`, `duckdb-extension-vss`, `spacy`,
+  `types-networkx`, `types-protobuf`, `types-requests`, and `types-tabulate`
+  are absent; updated `scripts/check_env.py` to skip packages without
+  distributions. Running `task check` fails with `command not found: task`.
+
 ## September 8, 2025
 
 - `git tag` shows no `v0.1.0a1`; release remains pending. See
