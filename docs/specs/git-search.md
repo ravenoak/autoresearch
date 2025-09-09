@@ -26,6 +26,24 @@ files, and records commit messages for later lookup.
 - Binary files remain unindexed and cannot surface in results.
 - Duplicate queries yield stable output given an unchanged repository.
 
+## Algorithms
+
+- Indexing performs a depth-first scan over tracked text files.
+- Querying runs a case-insensitive substring search on stored lines and commits.
+- Results merge file hits and commit messages in path then line order.
+
+## Proof Sketch
+
+- Every tracked text line and commit message is stored during indexing.
+- A query matches exactly when its lowercase form exists in the stored corpus.
+- Therefore a search returns all and only occurrences of the query string.
+
+## Simulation Expectations
+
+- Binary files are skipped and never appear in output.
+- Re-running the indexer on unchanged data yields identical search results.
+- Query latency scales linearly with repository size.
+
 ## Traceability
 
 - Modules
