@@ -35,10 +35,12 @@ def test_streaming_with_api_key(monkeypatch, api_client):
     bad = api_client.post("/query?stream=true", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid API key"
+    assert bad.headers["WWW-Authenticate"] == "API-Key"
 
     missing = api_client.post("/query?stream=true", json={"query": "q"})
     assert missing.status_code == 401
     assert missing.json()["detail"] == "Missing API key"
+    assert missing.headers["WWW-Authenticate"] == "API-Key"
 
 
 @pytest.mark.slow
@@ -63,7 +65,9 @@ def test_streaming_with_bearer_token(monkeypatch, api_client):
     )
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid token"
+    assert bad.headers["WWW-Authenticate"] == "Bearer"
 
     missing = api_client.post("/query?stream=true", json={"query": "q"})
     assert missing.status_code == 401
     assert missing.json()["detail"] == "Missing token"
+    assert missing.headers["WWW-Authenticate"] == "Bearer"
