@@ -108,8 +108,10 @@ uv sync --extra dev-minimal --extra test
 
 This installs `pytest_httpx`, `tomli_w`, and `redis` without heavy ML
 dependencies. `task check` syncs only these extras so it runs quickly.
-`task verify` syncs only the `dev-minimal` and `test` extras. Install other
-groups separately before running the task if you need them.
+`task verify` syncs only the `dev-minimal` and `test` extras. Set
+`EXTRAS="distributed analysis"` or similar when invoking the command to include
+additional groups. Install other extras separately before running the task if
+you need them.
 
 ## After cloning
 

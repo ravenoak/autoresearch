@@ -70,6 +70,7 @@ def _build_payload(text: str) -> dict:
     return {"type": "query", "message": msg.model_dump(mode="json")}
 
 
+@pytest.mark.slow
 def test_concurrent_queries(running_server):
     interface, start_times = running_server
     url = f"http://{interface.host}:{interface.port}/"

@@ -16,6 +16,7 @@ import re
 import subprocess
 import sys
 import tomllib
+import warnings
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
@@ -153,6 +154,10 @@ def check_package(pkg: str) -> CheckResult | None:
     try:
         current = metadata.version(pkg)
     except metadata.PackageNotFoundError:
+        warnings.warn(
+            f"package metadata not found for {pkg}",
+            UserWarning,
+        )
         logger.warning("No package metadata found for %s; skipping", pkg)
         return None
     required = REQUIREMENTS[pkg]
@@ -165,10 +170,18 @@ def check_pytest_bdd() -> CheckResult | None:
     try:
         import pytest_bdd  # noqa: F401
     except ModuleNotFoundError:  # pragma: no cover - failure path
+        warnings.warn(
+            "pytest-bdd import failed; run 'task install'.",
+            UserWarning,
+        )
         return None
     try:
         current = metadata.version("pytest-bdd")
     except metadata.PackageNotFoundError:
+        warnings.warn(
+            "package metadata not found for pytest-bdd",
+            UserWarning,
+        )
         logger.warning("No package metadata found for pytest-bdd; skipping")
         return None
     required = REQUIREMENTS["pytest-bdd"]

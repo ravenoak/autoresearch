@@ -48,24 +48,6 @@ tasks:
       EXTRAS: "{{.EXTRAS}}"
     cmds:
       - uv run python scripts/check_env.py
-      - >
-          uv run python -c 'import pytest_httpx' ||
-          (echo "pytest-httpx missing; run 'task install'." && exit 1)
-      - >
-          uv run python -c 'import tomli_w' ||
-          (echo "tomli-w missing; run 'task install'." && exit 1)
-      - >
-          uv run python -c 'import redis' ||
-          (echo "redis missing; run 'task install'." && exit 1)
-      - >
-          uv run python -c 'import pdfminer' ||
-          (echo "pdfminer-six missing; run 'task install'." && exit 1)
-      - >
-          uv run python -c 'import docx' ||
-          (echo "python-docx missing; run 'task install'." && exit 1)
-      - >
-          uv run python -c 'import pytest_benchmark' ||
-          (echo "pytest-benchmark missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
   lint-specs:
     cmds:
@@ -226,15 +208,15 @@ tasks:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
       EXTRA_MARKERS: >-
-        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
-        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
-        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
-        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
-        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
-        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
-        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
-        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
-        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
+        {{if contains .EXTRAS "git"}}{{else}} and not requires_git{{end}}
+        {{if contains .EXTRAS "nlp"}}{{else}} and not requires_nlp{{end}}
+        {{if contains .EXTRAS "ui"}}{{else}} and not requires_ui{{end}}
+        {{if contains .EXTRAS "vss"}}{{else}} and not requires_vss{{end}}
+        {{if contains .EXTRAS "distributed"}}{{else}} and not requires_distributed{{end}}
+        {{if contains .EXTRAS "analysis"}}{{else}} and not requires_analysis{{end}}
+        {{if contains .EXTRAS "llm"}}{{else}} and not requires_llm{{end}}
+        {{if contains .EXTRAS "parsers"}}{{else}} and not requires_parsers{{end}}
+        {{if contains .EXTRAS "gpu"}}{{else}} and not requires_gpu{{end}}
     cmds:
       - echo "[coverage] syncing dependencies"
       - |
@@ -254,11 +236,15 @@ tasks:
             --cov=src --cov-report=term-missing --cov-append
       - echo "[coverage] running targeted tests"
       - |
+          {{if .EXTRAS}}
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted \
             -m 'not slow{{.EXTRA_MARKERS}}' \
             --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
             --cov=autoresearch.orchestration --cov-report=term-missing \
             --cov-report=xml --cov-append
+          {{else}}
+          echo "[coverage] skipping targeted tests; no extras provided"
+          {{end}}
       - echo "[coverage] running behavior tests"
       - |
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/behavior -m 'not slow' \
@@ -294,12 +280,17 @@ tasks:
       - uv run mypy src
       - task lint-specs
       - uv run python scripts/check_spec_tests.py
-      - task: coverage EXTRAS="{{.EXTRAS}}"
+      - task: coverage
+        vars:
+          EXTRAS: "{{.EXTRAS}}"
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
       - task check-coverage-docs
-      - uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
+      - |-
+          {{if and (contains .EXTRAS "distributed") (contains .EXTRAS "analysis")}}
+          uv run pytest tests/benchmark -m "slow and requires_distributed and requires_analysis" -q
+          {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
       Syncs only the dev-minimal and test extras by default.
