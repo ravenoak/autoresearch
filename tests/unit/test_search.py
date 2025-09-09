@@ -18,6 +18,12 @@ from unittest.mock import patch
 import autoresearch.search as search
 from autoresearch.search import Search
 
+
+def _cfg() -> ConfigModel:
+    cfg = ConfigModel(loops=1)
+    cfg.search.use_semantic_similarity = False
+    return cfg
+
 pytestmark = pytest.mark.skipif(
     not GITPYTHON_INSTALLED, reason="GitPython not installed"
 )
@@ -35,9 +41,10 @@ def sample_search_results():
 
 @responses.activate
 def test_external_lookup(monkeypatch):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
+    cfg.search.use_semantic_similarity = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -57,9 +64,10 @@ def test_external_lookup(monkeypatch):
 
 @responses.activate
 def test_external_lookup_special_chars(monkeypatch):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
+    cfg.search.use_semantic_similarity = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "C++ tutorial & basics"
     url = "https://api.duckduckgo.com/"
@@ -91,9 +99,10 @@ def test_generate_queries():
 @responses.activate
 def test_external_lookup_backend_error(monkeypatch):
     """Test that a SearchError is raised when a search backend fails."""
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
+    cfg.search.use_semantic_similarity = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -120,9 +129,10 @@ def test_external_lookup_backend_error(monkeypatch):
 @responses.activate
 def test_duckduckgo_timeout_error(monkeypatch):
     """Test that a TimeoutError is raised when DuckDuckGo search times out."""
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
+    cfg.search.use_semantic_similarity = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     query = "python"
     url = "https://api.duckduckgo.com/"
@@ -146,7 +156,7 @@ def test_duckduckgo_timeout_error(monkeypatch):
 @responses.activate
 def test_duckduckgo_json_decode_error(monkeypatch):
     """Test that a SearchError is raised when DuckDuckGo returns invalid JSON."""
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["duckduckgo"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -172,7 +182,7 @@ def test_duckduckgo_json_decode_error(monkeypatch):
 @responses.activate
 def test_serper_backend_error(monkeypatch):
     """Test that a SearchError is raised when Serper search fails."""
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["serper"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -202,7 +212,7 @@ def test_serper_backend_error(monkeypatch):
 @responses.activate
 def test_serper_timeout_error(monkeypatch):
     """Test that a TimeoutError is raised when Serper search times out."""
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["serper"]
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -232,7 +242,7 @@ def test_local_file_backend(monkeypatch, tmp_path):
     file_path = docs_dir / "note.txt"
     file_path.write_text("hello from file")
 
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["local_file"]
     cfg.search.context_aware.enabled = False
     cfg.search.local_file.path = str(docs_dir)
@@ -257,7 +267,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
     subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-m", "Add TODO"], cwd=repo, check=True)
 
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["local_git"]
     cfg.search.context_aware.enabled = False
     cfg.search.local_git.repo_path = str(repo)
@@ -275,7 +285,7 @@ def test_local_git_backend(monkeypatch, tmp_path):
 
 @pytest.mark.xfail(reason="StorageManager not exposed in search module")
 def test_external_lookup_vector_search(monkeypatch):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = []
     cfg.search.context_aware.enabled = False
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
@@ -301,7 +311,7 @@ def test_external_lookup_vector_search(monkeypatch):
 
 
 def test_http_session_atexit_hook(monkeypatch):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.http_pool_size = 1
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     search.close_http_session()
@@ -319,10 +329,11 @@ def test_http_session_atexit_hook(monkeypatch):
 
 @patch("autoresearch.search.core.get_config")
 def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_results):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.semantic_similarity_weight = 1.0
     cfg.search.bm25_weight = 0.0
     cfg.search.source_credibility_weight = 0.0
+    cfg.search.use_semantic_similarity = True
     mock_get_config.return_value = cfg
 
     monkeypatch.setattr(
@@ -341,7 +352,7 @@ def test_rank_results_semantic_only(mock_get_config, monkeypatch, sample_search_
 
 @patch("autoresearch.search.core.get_config")
 def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_results):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 1.0
     cfg.search.source_credibility_weight = 0.0
@@ -363,7 +374,7 @@ def test_rank_results_bm25_only(mock_get_config, monkeypatch, sample_search_resu
 
 @patch("autoresearch.search.core.get_config")
 def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_search_results):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.bm25_weight = 0.0
     cfg.search.source_credibility_weight = 1.0
@@ -385,7 +396,7 @@ def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_sear
 
 @pytest.mark.xfail(reason="Hybrid search backend placeholder")
 def test_external_lookup_hybrid_query(monkeypatch):
-    cfg = ConfigModel(loops=1)
+    cfg = _cfg()
     cfg.search.backends = ["kw"]
     cfg.search.embedding_backends = ["emb"]
     cfg.search.hybrid_query = True

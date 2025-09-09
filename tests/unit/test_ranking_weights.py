@@ -65,6 +65,7 @@ def _setup_search(monkeypatch, w1: float, w2: float, w3: float) -> None:
     monkeypatch.setattr(
         Search, "assess_source_credibility", lambda self, r: [1.0] * len(r)
     )
+    cfg.search.use_semantic_similarity = False
 
 
 def test_rank_results_sorted(monkeypatch):

@@ -126,9 +126,11 @@ def test_cache_is_backend_specific(monkeypatch):
         cfg1 = ConfigModel.model_construct(loops=1)
         cfg1.search.backends = ["b1"]
         cfg1.search.context_aware.enabled = False
+        cfg1.search.use_semantic_similarity = False
         cfg2 = ConfigModel.model_construct(loops=1)
         cfg2.search.backends = ["b2"]
         cfg2.search.context_aware.enabled = False
+        cfg2.search.use_semantic_similarity = False
 
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
         results1 = s.external_lookup("python")

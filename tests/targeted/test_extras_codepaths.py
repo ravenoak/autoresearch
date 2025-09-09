@@ -172,3 +172,24 @@ def test_local_file_backend_docx(tmp_path, monkeypatch):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     results = _local_file_backend("hello", max_results=1)
     assert results and results[0]["title"] == "sample.docx"
+
+
+@pytest.mark.requires_parsers
+def test_local_file_backend_pdf(tmp_path, monkeypatch):
+    """Local file backend extracts text from PDF files."""
+    pytest.importorskip("pdfminer.high_level")
+    from autoresearch.search.core import _local_file_backend
+
+    pdf_path = tmp_path / "sample.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")
+    monkeypatch.setattr(
+        "autoresearch.search.core.extract_pdf_text", lambda _: "hello pdf"
+    )
+    cfg = SimpleNamespace(
+        search=SimpleNamespace(
+            local_file=SimpleNamespace(path=str(tmp_path), file_types=["pdf"])
+        )
+    )
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    results = _local_file_backend("hello", max_results=1)
+    assert results and results[0]["title"] == "sample.pdf"
