@@ -1,5 +1,18 @@
 # Status
 
+## September 9, 2025
+
+- Installed Go Task 3.44.1 and ran `task install`.
+- `task check` fails because `docs/specs/git-search.md` lacks
+  `Algorithms`, `Proof Sketch`, and `Simulation Expectations` headings, and
+  `scripts/check_env.py` warns about missing metadata for packages such as
+  `GitPython` and `spacy`.
+- `task verify` fails in
+  `tests/unit/test_cache.py::test_cache_is_backend_specific` with
+  `AttributeError: 'object' object has no attribute 'embed'`.
+- Reopened issues to resolve package metadata warnings and to add coverage
+  for optional components.
+
 ## September 8, 2025
 
 - `git tag` shows no `v0.1.0a1`; release remains pending. See
