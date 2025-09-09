@@ -21,8 +21,9 @@ Install these binaries and ensure they are on your `PATH`:
 - [Go Task](https://taskfile.dev/)
 
 Run `uv run python scripts/check_env.py` to confirm they are available. The
-setup script installs a local Go Task binary when missing by invoking
-`scripts/bootstrap.sh` automatically. The minimal bootstrap is:
+script now emits a warning when Go Task is missing and suggests installing it
+from <https://taskfile.dev/> or running `scripts/bootstrap.sh`. The minimal
+bootstrap is:
 
 ```bash
 ./scripts/setup.sh
