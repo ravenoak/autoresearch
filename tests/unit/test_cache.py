@@ -165,6 +165,60 @@ def test_cache_is_backend_specific(monkeypatch):
         assert results3[0]["url"] == results1[0]["url"]
 
 
+def test_cache_is_backend_specific_without_embeddings(monkeypatch):
+    """Ensure cache separation without relying on embeddings."""
+    cache = SearchCache()
+    search = Search(cache=cache)
+
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(assert_bm25_signature),
+    )
+    monkeypatch.setattr(
+        Search,
+        "get_sentence_transformer",
+        staticmethod(lambda: None),
+    )
+
+    calls = {"b1": 0, "b2": 0}
+
+    def backend1(query: str, max_results: int = 5):
+        calls["b1"] += 1
+        return [{"title": "B1", "url": "u1"}]
+
+    def backend2(query: str, max_results: int = 5):
+        calls["b2"] += 1
+        return [{"title": "B2", "url": "u2"}]
+
+    with search.temporary_state() as s:
+        s.backends = {"b1": backend1, "b2": backend2}
+
+        cfg1 = ConfigModel.model_construct(loops=1)
+        cfg1.search.backends = ["b1"]
+        cfg1.search.context_aware.enabled = False
+
+        cfg2 = ConfigModel.model_construct(loops=1)
+        cfg2.search.backends = ["b2"]
+        cfg2.search.context_aware.enabled = False
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        results1 = s.external_lookup("python")
+        assert calls == {"b1": 1, "b2": 0}
+        assert s.external_lookup("python") == results1
+        assert calls == {"b1": 1, "b2": 0}
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg2)
+        results2 = s.external_lookup("python")
+        assert calls == {"b1": 1, "b2": 1}
+        assert s.external_lookup("python") == results2
+        assert calls == {"b1": 1, "b2": 1}
+
+        monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg1)
+        assert s.external_lookup("python") == results1
+        assert calls == {"b1": 1, "b2": 1}
+
+
 def test_context_aware_query_expansion_uses_cache(monkeypatch):
     cache = SearchCache()
     search = Search(cache=cache)
