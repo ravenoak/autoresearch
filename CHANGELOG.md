@@ -6,21 +6,21 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
-- `v0.1.0a1` remains untagged; the alpha targets **June 15, 2026** and 0.1.0
-  aims for **July 1, 2026**. See [STATUS.md](STATUS.md),
+- `v0.1.0a1` remains untagged; the alpha targets **September 15, 2026** and
+  0.1.0 aims for **October 1, 2026**. See [STATUS.md](STATUS.md),
   [docs/release_plan.md](docs/release_plan.md), and
   [ROADMAP.md](ROADMAP.md) for aligned milestones.
 - Track environment alignment to ensure Python 3.12 and dev tooling are
   available.
     [align-environment-with-requirements]
-- Record current test suite status: 35 failing tests out of 1280 collected and
-  **95%** coverage (54/57 lines).
+- Record current test suite status: 3 failing tests out of 912 collected and
+  **100%** coverage (57/57 lines).
     [resolve-current-integration-test-failures]
     [resolve-pre-alpha-release-blockers]
 - Update release plan with revised milestone schedule; 0.1.0a1 marked in
-  progress and coverage noted at **95%**.
- - Summarize blockers before tagging 0.1.0a1 (mypy stalls, 95% coverage and
-   TestPyPI 403).
+  progress and coverage noted at **100%**.
+- Summarize blockers before tagging 0.1.0a1 (failing `check_env` warning tests,
+  100% coverage and TestPyPI 403).
   - Add rich configuration context fixtures with sample data for tests.
     [create-more-comprehensive-test-contexts]
 - Optimize mypy configuration to skip site packages, preventing hangs during
@@ -42,7 +42,7 @@ verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Handle DuckDB API changes by using `fetchall` for schema version lookup to
   prevent `AttributeError` during table creation.
 
-### 0.1.0a1 – Unreleased (target 2026-06-15)
+### 0.1.0a1 – Unreleased (target 2026-09-15)
 - Documented offline DuckDB VSS extension fallback and referenced its
   integration test.
 - Added minimal install steps for the `llm` extra.

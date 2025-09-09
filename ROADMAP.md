@@ -4,18 +4,17 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 8, 2025**.
+[README](README.md). Last updated **September 9, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
-targets **June 15, 2026**; 0.1.0 is planned for **July 1, 2026**. `task verify`
-now fails in `tests/unit/test_cache.py::test_cache_is_backend_specific` with
-`AttributeError: 'object' object has no attribute 'embed'`, while the previous
-Hypothesis deadline issue is resolved. `task check` fails because
-`docs/specs/git-search.md` lacks required headings. Targeted integration tests
-pass except `tests/integration/test_api_docs.py::test_query_endpoint`.
+targets **September 15, 2026**; 0.1.0 is planned for **October 1, 2026**.
+`task verify` now fails in
+`tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`.
+`task check` passes. Targeted integration tests pass except
+`tests/integration/test_api_docs.py::test_query_endpoint`.
 Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`)
 offer utilization and memory estimates documented in
 `docs/orchestrator_perf.md`. Dependency pins: `fastapi>=0.115.12` and
@@ -30,12 +29,12 @@ before running tests.
 
 ## Milestones
 
-- 0.1.0a1 (2026-06-15, status: in progress): Alpha preview to collect
+- 0.1.0a1 (2026-09-15, status: in progress): Alpha preview to collect
   feedback while aligning environment requirements.
-- 0.1.0 (2026-07-01, status: planned): Finalized packaging, docs and CI
+- 0.1.0 (2026-10-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- 0.1.1 (2026-09-15, status: planned): Bug fixes and documentation updates.
-- 0.2.0 (2026-12-01, status: planned): API stabilization, configuration
+- 0.1.1 (2026-12-15, status: planned): Bug fixes and documentation updates.
+- 0.2.0 (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
     issues/stabilize-api-and-improve-search.md)
@@ -45,18 +44,18 @@ before running tests.
       issues/archive/configuration-hot-reload-tests.md)
     - [hybrid-search-ranking-benchmarks](
       issues/archive/hybrid-search-ranking-benchmarks.md)
-- 0.3.0 (2027-03-01, status: planned): Distributed execution support and
+- 0.3.0 (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
   - [simulate-distributed-orchestrator-performance](
     issues/archive/simulate-distributed-orchestrator-performance.md)
-- 1.0.0 (2027-06-01, status: planned): Full feature set, performance tuning
+- 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
   - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
-    - [containerize-and-package](issues/containerize-and-package.md) (2026-09-01; reopened)
+    - [containerize-and-package](issues/containerize-and-package.md) (2026-12-01; reopened)
     - [validate-deployment-configurations](./issues/validate-deployment-configurations.md)
-      (2027-01-15, depends on containerization; reopened)
+      (2027-04-15, depends on containerization; reopened)
     - [tune-system-performance](issues/archive/tune-system-performance.md)
-      (2027-04-01, depends on deployment validation)
+      (2027-07-01, depends on deployment validation)
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
@@ -68,7 +67,7 @@ are verified. Related issue
 ([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)) tracks
 the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
 coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
-release is re-targeted for **June 15, 2026**. Key activities include:
+release is re-targeted for **September 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
@@ -104,7 +103,7 @@ activities include:
 - Document domain model for agents, queries, storage, and search.
 
 Type checking and unit tests currently fail; see [STATUS.md](STATUS.md) for
-details. The **0.1.0** milestone is targeted for **July 1, 2026** while
+details. The **0.1.0** milestone is targeted for **October 1, 2026** while
 packaging tasks are resolved.
 
 ## 0.1.1 – Bug fixes and documentation updates
@@ -124,7 +123,7 @@ Any remaining issues from these tasks will be addressed in 0.1.1.
   `src/autoresearch/agents/specialized/domain_specialist.py`,
   `src/autoresearch/agents/specialized/user_agent.py`) and will receive
   comprehensive unit tests once testing passes. The 0.1.1 release is planned for
-  **September 15, 2026**.
+  **December 15, 2026**.
 
 ## 0.2.0 – API stabilization and improved search
 
@@ -150,11 +149,11 @@ Key features planned for this release include:
 
 The 1.0.0 milestone aims for a polished, production-ready system:
 
-- [containerize-and-package](issues/containerize-and-package.md) (2026-09-01; reopened)
+- [containerize-and-package](issues/containerize-and-package.md) (2026-12-01; reopened)
 - [validate-deployment-configurations](./issues/validate-deployment-configurations.md)
-  (2027-01-15, depends on containerization; reopened)
+  (2027-04-15, depends on containerization; reopened)
 - [tune-system-performance](issues/archive/tune-system-performance.md)
-  (2027-04-01, depends on deployment validation)
+  (2027-07-01, depends on deployment validation)
 
 These tasks proceed sequentially: containerization → deployment validation → performance tuning.
 
