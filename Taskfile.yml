@@ -67,6 +67,10 @@ tasks:
           uv run python -c 'import pytest_benchmark' ||
           (echo "pytest-benchmark missing; run 'task install'." && exit 1)
     desc: "Validate required tool versions"
+  lint-specs:
+    cmds:
+      - uv run python scripts/lint_specs.py
+    desc: "Audit spec files for required sections"
   check:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
@@ -78,7 +82,7 @@ tasks:
       - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
-      - uv run python scripts/lint_specs.py
+      - task lint-specs
       - uv run python scripts/check_spec_tests.py
       - uv run pytest -c /dev/null tests/unit/test_version.py tests/unit/test_cli_help.py -q
     desc: "Run lint, type check, and selected fast tests"
@@ -225,6 +229,7 @@ tasks:
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src tests
       - uv run mypy src
+      - task lint-specs
       - uv run python scripts/check_spec_tests.py
       - task: coverage EXTRAS="{{.EXTRAS}}"
       - uv run coverage html

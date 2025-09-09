@@ -21,19 +21,24 @@ REQUIRED_HEADINGS = [
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    specs = list((root / "docs" / "specs").glob("*.md"))
+    specs_dir = root / "docs" / "specs"
+    specs = list(specs_dir.rglob("*.md"))
     specs.append(root / "docs" / "spec_template.md")
     missing: dict[Path, list[str]] = {}
     for path in specs:
         if path.name == "README.md":
             continue
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         missing_headings = [h for h in REQUIRED_HEADINGS if h not in text]
         if missing_headings:
             missing[path] = missing_headings
     if missing:
         for path, heads in missing.items():
-            print(f"{path} missing headings: {', '.join(heads)}", file=sys.stderr)
+            rel = path.relative_to(root)
+            print(
+                f"{rel} missing headings: {', '.join(heads)}",
+                file=sys.stderr,
+            )
         return 1
     return 0
 

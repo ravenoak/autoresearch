@@ -61,6 +61,8 @@ jobs:
         run: task --version
       - name: Validate tool versions
         run: uv run python scripts/check_env.py
+      - name: Audit spec files
+        run: uv run task lint-specs
       - name: Run task check
         run: uv run task check
       - name: Install extras
