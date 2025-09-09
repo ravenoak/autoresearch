@@ -19,3 +19,14 @@ Regression thresholds:
 
 - precision and recall may drop by at most 5 percentage points
 - latency may increase by no more than 5%
+
+## Convergence Simulation
+
+Run the convergence script to estimate ranking stability:
+
+```bash
+uv run scripts/ranking_convergence.py --items 5 --trials 100
+```
+
+The command reports the mean step count,
+e.g. `converged in 1.0 steps on average`.
