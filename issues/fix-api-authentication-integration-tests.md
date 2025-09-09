@@ -1,8 +1,10 @@
 # Fix API authentication integration tests
 
 ## Context
-`uv run pytest -q` shows 32 failures concentrated in API authentication,
-permissions, docs, streaming, and related endpoints.
+`uv run pytest` previously reported 32 failures across authentication and
+documentation endpoints. After recent fixes, only
+`tests/integration/test_api_docs.py::test_query_endpoint` fails with
+`"Error: Invalid response format"`.
 
 ## Dependencies
 - None

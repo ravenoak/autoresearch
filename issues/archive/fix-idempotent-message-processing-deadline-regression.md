@@ -14,4 +14,4 @@ exceeds the 1s Hypothesis deadline, preventing coverage collection.
 - `task verify` runs to completion without distributed coordination failures.
 
 ## Status
-Open
+Archived
