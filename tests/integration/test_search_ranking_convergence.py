@@ -1,3 +1,4 @@
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -15,4 +16,5 @@ def test_ranking_convergence_script() -> None:
         text=True,
         check=True,
     )
-    assert "converged in" in result.stdout
+    match = re.search(r"converged in (\d+(?:\.\d+)?) steps", result.stdout)
+    assert match, result.stdout
