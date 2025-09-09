@@ -7,11 +7,15 @@
   [CHANGELOG.md](CHANGELOG.md).
 - Ran `scripts/setup.sh`, installing Go Task 3.44.1 and syncing `dev-minimal`
   and `test` extras.
-- `task check` passes with warnings about missing package metadata.
-- `task verify` fails in
-  `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
-  with `hypothesis.errors.DeadlineExceeded`, so coverage is not generated.
-- `uv run flake8 src tests` and `uv run mypy src` succeed.
+- `task check` fails because `docs/specs/git-search.md` lacks required
+  specification headings.
+- `task verify` fails in `tests/unit/test_cache.py::test_cache_is_backend_specific`
+  with `AttributeError: 'object' object has no attribute 'embed'`.
+- Targeted integration tests pass except
+  `tests/integration/test_api_docs.py::test_query_endpoint`, which returns
+  `"Error: Invalid response format"`.
+- Property test `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+  now completes within its Hypothesis deadline.
 
 ## September 7, 2025
 
@@ -200,20 +204,20 @@ extras.
 `task check` runs `tests/unit/test_version.py` and `tests/unit/test_cli_help.py`; both pass.
 
 ## Integration tests
-Not executed.
+Targeted authentication suites pass except
+`tests/integration/test_api_docs.py::test_query_endpoint`, which returns
+`"Error: Invalid response format"`.
 
 ## Behavior tests
 Not executed.
 
 ## Coverage
-`uv run task verify` failed in
-`tests/unit/test_core_modules_additional.py::test_storage_setup_teardown`
-with `KeyError: 'kuzu'`, reporting 1 failed, 212 passed, 22 deselected, and 3
-warnings. Coverage data was not produced.
+`task verify` stops at `tests/unit/test_cache.py::test_cache_is_backend_specific`,
+so coverage reports are not generated.
 
 ## Open issues
-- [fix-idempotent-message-processing-deadline-regression](
-  issues/fix-idempotent-message-processing-deadline-regression.md)
+- [fix-cache-backend-specificity-test](issues/fix-cache-backend-specificity-test.md)
+- [add-missing-git-search-spec-sections](issues/add-missing-git-search-spec-sections.md)
 - [fix-api-authentication-integration-tests](issues/fix-api-authentication-integration-tests.md)
 - [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
