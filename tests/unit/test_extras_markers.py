@@ -39,3 +39,8 @@ def test_llm_marker():
 @pytest.mark.requires_parsers
 def test_parsers_marker():
     assert True
+
+
+@pytest.mark.requires_gpu
+def test_gpu_marker():
+    assert True

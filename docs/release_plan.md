@@ -28,6 +28,10 @@ default. Provide additional groups by setting `EXTRAS`, for example
 `EXTRAS="nlp ui"`. A dry-run publish built the package and skipped upload.
 Outstanding gaps are tracked in [int-tests] and [task-issue].
 Current test results are mirrored in [../STATUS.md](../STATUS.md).
+Coverage from `uv run coverage report` holds at **32%** overall (budgeting
+17%, HTTP 38%). Optional extras—`nlp`, `ui`, `vss`, `git`, `distributed`,
+`analysis`, `llm`, `parsers`, and `gpu`—each remain at **32%** baseline
+coverage.
 
 ## Milestones
 

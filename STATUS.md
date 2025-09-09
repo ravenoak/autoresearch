@@ -14,6 +14,10 @@
   the related issue is archived.
 - Milestones remain targeted for **September 15, 2026** (0.1.0a1) and
   **October 1, 2026** (0.1.0).
+- `uv run coverage report` after extra marker tests shows **32%** overall
+  coverage (budgeting 17%, HTTP 38%). Optional extras—`nlp`, `ui`, `vss`,
+  `git`, `distributed`, `analysis`, `llm`, `parsers`, and `gpu`—each hold
+  **32%** baseline coverage.
 
 ## September 8, 2025
 

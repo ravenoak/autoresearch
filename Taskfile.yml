@@ -108,47 +108,110 @@ tasks:
     desc: "Run all tests"
 
   test:unit:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
-      - uv run pytest tests/unit -q
+      - uv run pytest tests/unit -m 'not slow{{.EXTRA_MARKERS}}' -q
     desc: "Run unit tests with uv"
 
   test:integration:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
       - >
-          uv run pytest tests/integration -m "not slow and not requires_ui and
-          not requires_vss and not requires_distributed" -q
-    desc: "Run integration tests without slow/UI/VSS scenarios with uv"
+          uv run pytest tests/integration -m 'not slow{{.EXTRA_MARKERS}}' -q
+    desc: "Run integration tests without slow scenarios with uv"
 
   test:behavior:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
-      - uv run pytest tests/behavior -q
+      - uv run pytest tests/behavior -m 'not slow{{.EXTRA_MARKERS}}' -q
     desc: "Run BDD (behavior) tests with uv"
 
   test:all:
     # Full run before releases. Includes slow tests but continues to skip
     # UI and VSS scenarios unless the `ui` or `vss` extras are installed.
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
       - >
-          uv run pytest -m 'not requires_ui and not requires_vss and not
-          requires_distributed' -q
-    desc: "Run all tests including slow ones (UI/VSS scenarios skipped)"
+          uv run pytest -m '(not slow or slow){{.EXTRA_MARKERS}}' -q
+    desc: "Run all tests including slow ones"
 
   test:fast:
     # Minimal test run used for rapid iteration. Excludes slow tests and any
     # requiring UI (`.[ui]`) or VSS (`.[vss]`) extras.
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
       - >
-          uv run pytest -m 'not slow and not requires_ui and not requires_vss
-          and not requires_distributed'
-    desc: "Run tests excluding slow/UI/VSS scenarios with uv"
+          uv run pytest -m 'not slow{{.EXTRA_MARKERS}}'
+    desc: "Run tests excluding slow scenarios with uv"
 
   test:slow:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
       EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
         {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
         {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
-        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
       - >
           uv run pytest -m 'slow{{.EXTRA_MARKERS}}'
