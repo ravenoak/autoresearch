@@ -42,15 +42,30 @@ when performed in place.
 
 ## Simulation
 
-Run `uv run scripts/ranking_convergence.py --items 5` to explore convergence.
-[`ranking_convergence.py`](../../scripts/ranking_convergence.py) reports the
-iteration when the ordering stabilizes, which is `1` in practice.
+To confirm convergence empirically, run `M` independent trials and record the
+step count `S_m` for each run. The sample mean
+
+\[\hat{S} = \frac{1}{M} \sum_{m=1}^M S_m\]
+
+estimates the expected steps to a fixed point. Idempotence implies
+`S_m = 1` for all `m`, so `\hat{S}` converges to `1` as `M` grows.
+
+[`ranking_convergence.py`](../../scripts/ranking_convergence.py) implements
+`run_trials` to compute `\hat{S}`. Run
+
+```
+uv run scripts/ranking_convergence.py --items 5 --trials 100
+```
+
+to execute `100` trials and report the mean convergence step.
 
 Regression tests
 [`test_ranking_idempotence.py`](../../tests/unit/test_ranking_idempotence.py)
 and
 [`test_ranking_convergence.py`](../../tests/unit/test_ranking_convergence.py)
-validate idempotence and monotonic improvement.
+validate idempotence and monotonic improvement. Benchmark
+[`test_ranking_convergence_simulation.py`](../../tests/benchmark/test_ranking_convergence_simulation.py)
+records the mean convergence step.
 
 ## References
 
