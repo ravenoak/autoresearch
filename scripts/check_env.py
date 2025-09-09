@@ -99,7 +99,7 @@ def check_python() -> CheckResult:
     return CheckResult("Python", current, REQUIREMENTS["python"])
 
 
-def check_task() -> CheckResult:
+def check_task() -> CheckResult | None:
     required = REQUIREMENTS["task"]
     try:
         proc = subprocess.run(
@@ -108,12 +108,15 @@ def check_task() -> CheckResult:
             text=True,
             check=False,
         )
-    except FileNotFoundError as exc:
-        hint = (
-            f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
-            "or run scripts/bootstrap.sh"
+    except FileNotFoundError:
+        warnings.warn(
+            (
+                f"Go Task {required}+ not found; install it from https://taskfile.dev/ "
+                "or run scripts/bootstrap.sh"
+            ),
+            UserWarning,
         )
-        raise VersionError(hint) from exc
+        return None
     if proc.returncode != 0:
         hint = (
             f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
