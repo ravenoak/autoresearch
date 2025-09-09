@@ -3,8 +3,10 @@
 ## Context
 Running `task check` reports missing package metadata for `GitPython`,
 `cibuildwheel`, `duckdb-extension-vss`, `spacy`, and several `types-*`
-stubs. As of September 9, 2025, these warnings persist despite earlier
-fixes and should be eliminated for a clean environment check.
+stubs. As of September 9, 2025, `uv run python scripts/check_env.py`
+aborts early with `ERROR: Go Task 3.0.0+ is required`, so these warnings
+cannot be evaluated. The script should run to completion without
+emitting package metadata warnings.
 
 ## Dependencies
 None.

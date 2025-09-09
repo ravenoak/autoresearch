@@ -2,14 +2,18 @@
 
 ## September 9, 2025
 
-- Installed Go Task 3.44.1 and ran `task install`.
-- `task check` passes with 8 smoke tests.
-- `task verify` fails in
-  `tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`.
-- Running unit tests directly reports 3 failures in
-  `tests/unit/test_check_env_warnings.py` and **100%** coverage (57/57 lines).
-- Milestones retargeted to **September 15, 2026** for 0.1.0a1 and
-  **October 1, 2026** for 0.1.0.
+- Go Task CLI is unavailable; `task check` and `task verify` report
+  `command not found`.
+- `uv run --extra test pytest` executes the suite with **33 failing tests**,
+  **1089 passed**, 57 skipped, and 124 deselected. Failures concentrate in
+  API authentication and documentation modules.
+- `uv run python scripts/check_env.py` exits early with
+  `ERROR: Go Task 3.0.0+ is required`, so package metadata warnings cannot
+  be evaluated.
+- `tests/unit/test_cache.py::test_cache_is_backend_specific` now passes;
+  the related issue is archived.
+- Milestones remain targeted for **September 15, 2026** (0.1.0a1) and
+  **October 1, 2026** (0.1.0).
 
 ## September 8, 2025
 
@@ -227,9 +231,12 @@ Not executed.
 so coverage reports are not generated.
 
 ## Open issues
-- [fix-cache-backend-specificity-test](issues/fix-cache-backend-specificity-test.md)
 - [add-missing-git-search-spec-sections](issues/add-missing-git-search-spec-sections.md)
+- [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
 - [fix-api-authentication-integration-tests](issues/fix-api-authentication-integration-tests.md)
+- [resolve-package-metadata-warnings](issues/resolve-package-metadata-warnings.md)
+- [resolve-concurrent-query-interface-regression](issues/resolve-concurrent-query-interface-regression.md)
+- [fix-ranking-convergence-script-output](issues/fix-ranking-convergence-script-output.md)
 - [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
