@@ -10,6 +10,7 @@ can be specified via the ``EXTRAS`` environment variable.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import re
 import subprocess
@@ -37,6 +38,9 @@ BASE_REQUIREMENTS = {
 }
 
 BASE_EXTRAS = ["dev-minimal", "test"]
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def extras_to_check() -> list[str]:
@@ -149,6 +153,7 @@ def check_package(pkg: str) -> CheckResult | None:
     try:
         current = metadata.version(pkg)
     except metadata.PackageNotFoundError:
+        logger.warning("No package metadata found for %s; skipping", pkg)
         return None
     required = REQUIREMENTS[pkg]
     return CheckResult(pkg, current, required)
@@ -164,6 +169,7 @@ def check_pytest_bdd() -> CheckResult | None:
     try:
         current = metadata.version("pytest-bdd")
     except metadata.PackageNotFoundError:
+        logger.warning("No package metadata found for pytest-bdd; skipping")
         return None
     required = REQUIREMENTS["pytest-bdd"]
     return CheckResult("pytest-bdd", current, required)

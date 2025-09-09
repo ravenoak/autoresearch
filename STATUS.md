@@ -2,16 +2,12 @@
 
 ## September 9, 2025
 
-- Go Task CLI is unavailable; `task check` and `task verify` report
-  `command not found`.
-- `uv run --extra test pytest` executes the suite with **33 failing tests**,
-  **1089 passed**, 57 skipped, and 124 deselected. Failures concentrate in
-  API authentication and documentation modules.
-- `uv run python scripts/check_env.py` exits early with
-  `ERROR: Go Task 3.0.0+ is required`, so package metadata warnings cannot
-  be evaluated.
-- `tests/unit/test_cache.py::test_cache_is_backend_specific` now passes;
-  the related issue is archived.
+- `task check` completes successfully, logging warnings when package
+  metadata is missing.
+- `task verify` fails with `task: Task "coverage EXTRAS=""" does not
+  exist`.
+- `uv run python scripts/check_env.py` no longer aborts on missing package
+  metadata.
 - Milestones remain targeted for **September 15, 2026** (0.1.0a1) and
   **October 1, 2026** (0.1.0).
 - `uv run coverage report` after extra marker tests shows **32%** overall
