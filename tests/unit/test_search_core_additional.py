@@ -10,6 +10,7 @@ def test_cross_backend_rank_combines_results():
         "b": [{"title": "B", "url": "b"}],
     }
     cfg = ConfigModel()
+    cfg.search.use_semantic_similarity = False
     with patch("autoresearch.search.core.get_config", return_value=cfg):
         ranked = Search.cross_backend_rank("q", results)
     urls = [r["url"] for r in ranked]

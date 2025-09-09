@@ -139,13 +139,16 @@ tasks:
     desc: "Run tests excluding slow/UI/VSS scenarios with uv"
 
   test:slow:
-    # Executes only slow tests while skipping UI (`.[ui]`) and VSS (`.[vss]`)
-    # scenarios unless those extras are installed.
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}
     cmds:
       - >
-          uv run pytest -m 'slow and not requires_ui and not requires_vss and
-          not requires_distributed'
-    desc: "Run slow tests excluding UI/VSS scenarios with uv"
+          uv run pytest -m 'slow{{.EXTRA_MARKERS}}'
+    desc: "Run slow tests while excluding extras that are not installed"
 
   test:benchmarks:
     cmds:
@@ -155,6 +158,16 @@ tasks:
   coverage:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRA_MARKERS: >-
+        {{if not (contains .EXTRAS "git")}} and not requires_git{{end}}\
+        {{if not (contains .EXTRAS "nlp")}} and not requires_nlp{{end}}\
+        {{if not (contains .EXTRAS "ui")}} and not requires_ui{{end}}\
+        {{if not (contains .EXTRAS "vss")}} and not requires_vss{{end}}\
+        {{if not (contains .EXTRAS "distributed")}} and not requires_distributed{{end}}\
+        {{if not (contains .EXTRAS "analysis")}} and not requires_analysis{{end}}\
+        {{if not (contains .EXTRAS "llm")}} and not requires_llm{{end}}\
+        {{if not (contains .EXTRAS "parsers")}} and not requires_parsers{{end}}\
+        {{if not (contains .EXTRAS "gpu")}} and not requires_gpu{{end}}
     cmds:
       - echo "[coverage] syncing dependencies"
       - |
@@ -175,7 +188,7 @@ tasks:
       - echo "[coverage] running targeted tests"
       - |
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted \
-            -m 'not slow and not requires_git and not requires_nlp and not requires_ui and not requires_vss and not requires_distributed and not requires_analysis and not requires_llm and not requires_parsers' \
+            -m 'not slow{{.EXTRA_MARKERS}}' \
             --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
             --cov=autoresearch.orchestration --cov-report=term-missing \
             --cov-report=xml --cov-append
