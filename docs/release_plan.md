@@ -9,10 +9,10 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 8, 2025** and
+`2025-05-18`). This schedule was last updated on **September 9, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
-**June 15, 2026** and **0.1.0** for **July 1, 2026**. See
+**September 15, 2026** and **0.1.0** for **October 1, 2026**. See
 [../STATUS.md](../STATUS.md), [../ROADMAP.md](../ROADMAP.md), and
 [../CHANGELOG.md](../CHANGELOG.md) for aligned progress. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
@@ -35,11 +35,11 @@ coverage.
 
 ## Milestones
 
-- **0.1.0a1** (2026-06-15, status: in progress): Alpha preview to collect
+- **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
   feedback.
-- **0.1.0** (2026-07-01, status: planned): Finalized packaging, docs and CI
+- **0.1.0** (2026-10-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- **0.1.1** (2026-09-15, status: planned): Bug fixes and documentation updates
+- **0.1.1** (2026-12-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   ../issues/archive/deliver-bug-fixes-and-docs-update.md)).
 - **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
@@ -62,8 +62,8 @@ coverage.
   ../issues/reach-stable-performance-and-interfaces.md)).
 
 To gather early feedback, an alpha **0.1.0a1** release is targeted for
-**June 15, 2026**. The final **0.1.0** milestone is set for **July 1, 2026**
-while packaging tasks are resolved.
+**September 15, 2026**. The final **0.1.0** milestone is set for
+**October 1, 2026** while packaging tasks are resolved.
 
 ### Alpha release checklist
 
@@ -86,7 +86,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.
 
-The **0.1.0a1** date is re-targeted for **June 15, 2026** and the release
+The **0.1.0a1** date is re-targeted for **September 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.
 
 Completion of these items confirms the alpha baseline for **0.1.0**.

@@ -10,7 +10,8 @@ and recent changes. Installation and environment details are covered in the
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
-targets **September 15, 2026**; 0.1.0 is planned for **October 1, 2026**.
+targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
+across project documentation.
 `task verify` now fails in
 `tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`.
 `task check` passes. Targeted integration tests pass except
