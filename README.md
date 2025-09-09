@@ -20,9 +20,9 @@ Install these binaries and ensure they are on your `PATH`:
 - [uv](https://github.com/astral-sh/uv)
 - [Go Task](https://taskfile.dev/)
 
-Run `uv run python scripts/check_env.py` to confirm they are available. Install
-Go Task via your package manager or the upstream script if needed. The minimal
-bootstrap is:
+Run `uv run python scripts/check_env.py` to confirm they are available. The
+setup script installs a local Go Task binary when missing by invoking
+`scripts/bootstrap.sh` automatically. The minimal bootstrap is:
 
 ```bash
 ./scripts/setup.sh
@@ -31,9 +31,9 @@ task --version
 task check
 ```
 
-`scripts/setup.sh` verifies the Python version, confirms Go Task and `uv` are
-installed, and syncs the `dev-minimal` and `test` extras. It exits with an error
-if a tool is missing or the dependency sync fails.
+`scripts/setup.sh` verifies the Python version, installs Go Task when needed,
+confirms `uv` is functional, and syncs the `dev-minimal` and `test` extras. It
+exits with an error if a tool is missing or the dependency sync fails.
 
 To install a system-wide Go Task binary instead, run:
 
@@ -80,9 +80,10 @@ uv pip install -e ".[test]"
 uv run scripts/download_duckdb_extensions.py --output-dir ./extensions
 ```
 
-### Bootstrapping without Go Task
+### Manual setup without Go Task
 
-If the Go Task CLI is unavailable, install the test extras manually:
+`scripts/setup.sh` installs Go Task automatically. If you cannot use the
+bootstrap script, install the test extras manually:
 
 ```bash
 uv venv

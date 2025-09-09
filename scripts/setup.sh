@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 export PATH="$PATH:$(pwd)/.venv/bin"
 
 EXTRAS=${AR_EXTRAS:-}
@@ -29,8 +31,11 @@ PY
 
 ensure_go_task() {
     if ! command -v task >/dev/null 2>&1; then
-        echo "Go Task not found. Install it from https://taskfile.dev/ or run" >&2
-        echo "scripts/bootstrap.sh, then re-run this script." >&2
+        echo "Go Task not found; running scripts/bootstrap.sh..." >&2
+        "$SCRIPT_DIR/bootstrap.sh"
+    fi
+    if ! command -v task >/dev/null 2>&1; then
+        echo "Go Task installation failed. See docs/installation.md for manual steps." >&2
         exit 1
     fi
     if ! task --version >/dev/null 2>&1; then
