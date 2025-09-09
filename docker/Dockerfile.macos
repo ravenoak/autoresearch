@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# macOS (ARM) container image with project extras for Autoresearch
-FROM ghcr.io/cirruslabs/macos-runner:sonoma
+# macOS container image with project extras for Autoresearch
+FROM --platform=$TARGETPLATFORM ghcr.io/cirruslabs/macos-runner:sonoma
 
 ARG EXTRAS="full,test"
 ARG OFFLINE="0"
