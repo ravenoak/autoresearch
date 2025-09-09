@@ -18,6 +18,9 @@ Verify configuration before deploying:
   It scans every `.env` and `*.yml` file under `scripts/deploy/` and reports
   schema violations.
 
+  The validator loads `deploy.yml` and `.env` from `CONFIG_DIR` and exits with
+  an error if required keys or files are missing.
+
 Proceed with the deployment steps only after the command exits without
 errors.
 
