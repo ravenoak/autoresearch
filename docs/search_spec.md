@@ -30,6 +30,9 @@ This specification outlines expected behaviors for the
   different backends are first scored individually and then merged and
   re-ranked with the same weights to ensure consistent ordering across
   sources. The formula is detailed in [search ranking](algorithms/search_ranking.md).
+  Simulation trials in
+  [`ranking_convergence.py`](algorithms/relevance_ranking.md#simulation)
+  report a mean convergence step of `1`, confirming the idempotent ranking.
 
 ## Tests
 Property-based tests in `tests/unit/test_relevance_ranking.py` verify:

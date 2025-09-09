@@ -13,5 +13,10 @@
     "latency": 1.9882758211698783e-06,
     "precision": 0.5,
     "recall": 1.0
+  },
+  "tests/benchmark/test_ranking_convergence_simulation.py::test_ranking_convergence_simulation::ranking_convergence": {
+    "latency": 0.0019450484577541952,
+    "precision": 1.0,
+    "recall": 1.0
   }
 }

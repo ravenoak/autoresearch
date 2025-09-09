@@ -2,7 +2,7 @@
 """Simulate convergence of relevance ranking.
 
 Usage:
-    uv run scripts/ranking_convergence.py --items 5
+    uv run scripts/ranking_convergence.py --items 5 --trials 100
 """
 
 from __future__ import annotations
@@ -31,16 +31,28 @@ def simulate(items: int) -> Tuple[int, List[int]]:
         }
         for i in range(items)
     ]
-    previous = [r["id"] for r in results]
     ranked = rank_once(results)
     step = 1
+    order = [r["id"] for r in ranked]
     while True:
-        order = [r["id"] for r in ranked]
-        if order == previous:
+        reranked = rank_once(ranked)
+        new_order = [r["id"] for r in reranked]
+        if new_order == order:
             return step, order
-        previous = order
-        ranked = rank_once(ranked)
+        ranked = reranked
+        order = new_order
         step += 1
+
+
+def run_trials(trials: int, items: int) -> float:
+    """Return the mean convergence step over ``trials`` random runs."""
+    if trials <= 0:
+        raise ValueError("trials must be positive")
+    total = 0
+    for _ in range(trials):
+        step, _ = simulate(items)
+        total += step
+    return total / trials
 
 
 def main() -> None:
@@ -48,10 +60,17 @@ def main() -> None:
         description="Simulate ranking convergence",
     )
     parser.add_argument("--items", type=int, default=5, help="number of results")
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=1,
+        help="number of random simulations",
+    )
     args = parser.parse_args()
-    steps, order = simulate(args.items)
-    print(f"final order: {order}")
-    print(f"converged in {steps} step{'s' if steps != 1 else ''}")
+    if args.items <= 0:
+        raise SystemExit("--items must be positive")
+    mean = run_trials(args.trials, args.items)
+    print(f"mean convergence step: {mean}")
 
 
 if __name__ == "__main__":
