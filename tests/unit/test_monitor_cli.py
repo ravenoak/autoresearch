@@ -95,6 +95,7 @@ def test_monitor_metrics(monkeypatch):
     assert "queries_total" in out and "5" in out
     assert "tokens_in_total" in out and "7" in out
     assert "tokens_out_total" in out and "9" in out
+    assert orch_metrics.QUERY_COUNTER._value.get() == 5
 
 
 def test_monitor_metrics_default_counters(monkeypatch):
@@ -122,3 +123,25 @@ def test_monitor_metrics_default_counters(monkeypatch):
     assert "queries_total" in out and "0" in out
     assert "tokens_in_total" in out and "0" in out
     assert "tokens_out_total" in out and "0" in out
+    assert orch_metrics.QUERY_COUNTER._value.get() == 0
+
+
+def test_metrics_skips_storage(monkeypatch):
+    runner = CliRunner()
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: type("C", (), {})())
+    orch_metrics.reset_metrics()
+
+    called = {"init": False}
+
+    from autoresearch.storage import StorageManager
+
+    def fake_get_graph():
+        called["init"] = True
+        return {}
+
+    monkeypatch.setattr(StorageManager, "get_graph", staticmethod(fake_get_graph))
+
+    result = runner.invoke(app, ["monitor", "metrics"])
+    assert result.exit_code == 0
+    assert not called["init"]
