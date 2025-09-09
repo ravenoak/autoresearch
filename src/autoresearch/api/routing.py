@@ -18,14 +18,11 @@ from pydantic import ValidationError
 
 from ..config import ConfigLoader, ConfigModel, get_config
 from ..error_utils import format_error_for_api, get_error_info
-from .models import (
-    BatchQueryRequestV1,
-    QueryRequestV1,
-    QueryResponseV1,
-)
+from ..models import QueryResponse
 from ..orchestration import ReasoningMode
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
+from . import webhooks
 from .deps import create_orchestrator, require_permission
 from .errors import handle_rate_limit
 from .middleware import (
@@ -37,12 +34,16 @@ from .middleware import (
     RateLimitMiddleware,
     get_remote_address,
 )
+from .models import (
+    BatchQueryRequestV1,
+    QueryRequestV1,
+    QueryResponseV1,
+)
 from .streaming import query_stream_endpoint
 from .utils import (
     RequestLogger,
     create_request_logger,
 )
-from . import webhooks
 
 router = APIRouter()
 
@@ -150,7 +151,9 @@ async def query_endpoint(
         validated = (
             result
             if isinstance(result, QueryResponseV1)
-            else QueryResponseV1.model_validate(result)
+            else QueryResponseV1.model_validate(
+                result.model_dump(mode="json") if isinstance(result, QueryResponse) else result
+            )
         )
     except ValidationError as exc:  # pragma: no cover - should not happen
         error_info = get_error_info(exc)
@@ -245,7 +248,9 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
             return (
                 result
                 if isinstance(result, QueryResponseV1)
-                else QueryResponseV1.model_validate(result)
+                else QueryResponseV1.model_validate(
+                    result.model_dump(mode="json") if isinstance(result, QueryResponse) else result
+                )
             )
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
@@ -278,7 +283,10 @@ async def get_query_status(query_id: str, request: Request) -> Response:
     result = future.result()
     del request.app.state.async_tasks[query_id]
     if isinstance(result, QueryResponseV1):
-        return JSONResponse(result.model_dump())
+        return JSONResponse(result.model_dump(mode="json"))
+    if isinstance(result, QueryResponse):
+        converted = QueryResponseV1.model_validate(result.model_dump(mode="json"))
+        return JSONResponse(converted.model_dump(mode="json"))
     return JSONResponse(result)
 
 

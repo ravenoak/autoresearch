@@ -1,5 +1,6 @@
 import pytest
 
+from autoresearch.api.models import QueryResponseV1
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
@@ -67,10 +68,12 @@ def test_query_endpoint(monkeypatch, api_client):
     resp = api_client.post("/query", json={"query": "Explain ML"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["answer"] == "Machine learning is ..."
-    assert data["citations"] == ["https://example.com"]
-    assert data["reasoning"] == ["step 1", "step 2"]
-    assert data["metrics"]["cycles_completed"] == 1
+    parsed = QueryResponseV1.model_validate(data)
+    assert parsed.answer == "Machine learning is ..."
+    assert parsed.citations == ["https://example.com"]
+    assert parsed.reasoning == ["step 1", "step 2"]
+    assert parsed.metrics["cycles_completed"] == 1
+    assert parsed.version == "1"
 
 
 @pytest.mark.slow
@@ -111,6 +114,26 @@ def test_batch_endpoint(monkeypatch, api_client):
     data = resp.json()
     assert data["page"] == 1
     assert len(data["results"]) == 2
+
+
+def test_async_query_status_schema(monkeypatch, api_client):
+    _setup(monkeypatch)
+
+    async def dummy_run_query_async(*a, **k):
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query_async", dummy_run_query_async)
+
+    start = api_client.post("/query/async", json={"query": "hi"})
+    assert start.status_code == 200
+    qid = start.json()["query_id"]
+
+    resp = api_client.get(f"/query/{qid}")
+    assert resp.status_code == 200
+    data = resp.json()
+    parsed = QueryResponseV1.model_validate(data)
+    assert parsed.version == "1"
+    assert parsed.answer == "ok"
 
 
 def test_metrics_endpoint(monkeypatch, api_client):
