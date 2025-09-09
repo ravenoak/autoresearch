@@ -651,9 +651,13 @@ class Search:
         """
 
         cfg = get_config()
-        if query_embedding is None and cfg.search.use_semantic_similarity:
+        if (
+            query_embedding is None
+            and cfg.search.use_semantic_similarity
+            and cfg.search.context_aware.enabled
+        ):
             model = self.get_sentence_transformer()
-            if model is not None:
+            if model is not None and hasattr(model, "embed"):
                 query_embedding = np.array(
                     list(model.embed([query]))[0], dtype=float
                 )
