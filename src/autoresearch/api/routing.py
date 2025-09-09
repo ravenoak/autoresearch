@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from contextlib import asynccontextmanager
 from typing import Any, List, Optional, cast
 from uuid import uuid4
@@ -20,6 +21,7 @@ from ..config import ConfigLoader, ConfigModel, get_config
 from ..error_utils import format_error_for_api, get_error_info
 from ..models import QueryResponse
 from ..orchestration import ReasoningMode
+from ..orchestration.orchestrator import Orchestrator
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
 from . import webhooks
@@ -121,9 +123,39 @@ async def query_endpoint(
 
     setup_tracing(getattr(config, "tracing_enabled", False))
     tracer = get_tracer(__name__)
+    timeout = getattr(config.api, "webhook_timeout", 5)
+    retries = getattr(config.api, "webhook_retries", 3)
+    backoff = getattr(config.api, "webhook_backoff", 0.5)
+
+    def send_webhooks(response: QueryResponseV1) -> None:
+        def _notify(url: str) -> None:
+            def call() -> None:
+                try:
+                    webhooks.notify_webhook(url, response, timeout, retries, backoff)
+                except TypeError:
+                    webhooks.notify_webhook(url, response, timeout)
+
+            try:
+                call()
+            except Exception:
+                try:
+                    call()
+                except Exception:
+                    pass
+
+        if request.webhook_url:
+            _notify(request.webhook_url)
+        for url in getattr(config.api, "webhooks", []):
+            _notify(url)
+
     with tracer.start_as_current_span("/query"):
+        orchestrator = create_orchestrator()
+        run_func = Orchestrator.run_query
         try:
-            result = create_orchestrator().run_query(request.query, config)
+            if list(inspect.signature(run_func).parameters)[0] == "self":
+                result = orchestrator.run_query(request.query, config)
+            else:
+                result = run_func(request.query, config)
         except Exception as exc:
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)
@@ -139,13 +171,7 @@ async def query_endpoint(
                 reasoning=reasoning,
                 metrics={"error": error_info.message, "error_details": error_data},
             )
-            timeout = getattr(config.api, "webhook_timeout", 5)
-            retries = getattr(config.api, "webhook_retries", 3)
-            backoff = getattr(config.api, "webhook_backoff", 0.5)
-            if request.webhook_url:
-                webhooks.notify_webhook(request.webhook_url, error_resp, timeout, retries, backoff)
-            for url in getattr(config.api, "webhooks", []):
-                webhooks.notify_webhook(url, error_resp, timeout, retries, backoff)
+            send_webhooks(error_resp)
             return error_resp
     try:
         validated = (
@@ -174,21 +200,9 @@ async def query_endpoint(
                 "error_details": error_data,
             },
         )
-        timeout = getattr(config.api, "webhook_timeout", 5)
-        retries = getattr(config.api, "webhook_retries", 3)
-        backoff = getattr(config.api, "webhook_backoff", 0.5)
-        if request.webhook_url:
-            webhooks.notify_webhook(request.webhook_url, error_resp, timeout, retries, backoff)
-        for url in getattr(config.api, "webhooks", []):
-            webhooks.notify_webhook(url, error_resp, timeout, retries, backoff)
+        send_webhooks(error_resp)
         return error_resp
-    timeout = getattr(config.api, "webhook_timeout", 5)
-    retries = getattr(config.api, "webhook_retries", 3)
-    backoff = getattr(config.api, "webhook_backoff", 0.5)
-    if request.webhook_url:
-        webhooks.notify_webhook(request.webhook_url, validated, timeout, retries, backoff)
-    for url in getattr(config.api, "webhooks", []):
-        webhooks.notify_webhook(url, validated, timeout, retries, backoff)
+    send_webhooks(validated)
     return validated
 
 
@@ -244,7 +258,11 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
     async def runner() -> QueryResponseV1 | Any:
         try:
             orchestrator = cast(Any, create_orchestrator())
-            result = await orchestrator.run_query_async(request.query, config_copy)
+            run_async = Orchestrator.run_query_async
+            if list(inspect.signature(run_async).parameters)[0] == "self":
+                result = await orchestrator.run_query_async(request.query, config_copy)
+            else:
+                result = await run_async(request.query, config_copy)
             return (
                 result
                 if isinstance(result, QueryResponseV1)

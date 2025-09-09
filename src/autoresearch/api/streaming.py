@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from typing import AsyncGenerator
 
 from fastapi.responses import StreamingResponse
@@ -11,6 +12,7 @@ from ..config import get_config
 from ..error_utils import format_error_for_api, get_error_info
 from .models import QueryRequestV1, QueryResponseV1
 from ..orchestration import ReasoningMode
+from ..orchestration.orchestrator import Orchestrator
 from .deps import create_orchestrator
 from . import webhooks
 
@@ -42,27 +44,45 @@ async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
     backoff = getattr(config.api, "webhook_backoff", 0.5)
 
     def send_webhooks(response: QueryResponseV1) -> None:
+        def _notify(url: str) -> None:
+            def call() -> None:
+                try:
+                    webhooks.notify_webhook(url, response, timeout, retries, backoff)
+                except TypeError:
+                    webhooks.notify_webhook(url, response, timeout)
+
+            try:
+                call()
+            except Exception:
+                try:
+                    call()
+                except Exception:
+                    pass
+
         if request.webhook_url:
-            webhooks.notify_webhook(request.webhook_url, response, timeout, retries, backoff)
+            _notify(request.webhook_url)
         for url in getattr(config.api, "webhooks", []):
-            webhooks.notify_webhook(url, response, timeout, retries, backoff)
+            _notify(url)
 
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()
-        queue.put_nowait(
-            QueryResponseV1(**partial.model_dump()).model_dump_json()
-        )
+        queue.put_nowait(QueryResponseV1(**partial.model_dump()).model_dump_json())
 
     def run() -> None:
         try:
-            raw = create_orchestrator().run_query(
-                request.query, config, callbacks={"on_cycle_end": on_cycle_end}
-            )
-            result = (
-                raw
-                if isinstance(raw, QueryResponseV1)
-                else QueryResponseV1.model_validate(raw)
-            )
+            orchestrator = create_orchestrator()
+            run_func = Orchestrator.run_query
+            if list(inspect.signature(run_func).parameters)[0] == "self":
+                raw = orchestrator.run_query(
+                    request.query, config, callbacks={"on_cycle_end": on_cycle_end}
+                )
+            else:
+                raw = run_func(request.query, config, callbacks={"on_cycle_end": on_cycle_end})
+            if isinstance(raw, QueryResponseV1):
+                result = raw
+            else:
+                payload = raw.model_dump() if hasattr(raw, "model_dump") else raw
+                result = QueryResponseV1.model_validate(payload)
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
             error_data = format_error_for_api(error_info)

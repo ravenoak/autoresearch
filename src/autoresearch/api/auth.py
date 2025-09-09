@@ -1,10 +1,21 @@
-"""Compatibility shim for authentication middleware.
+"""Compatibility layer re-exporting API middlewares.
 
-This module re-exports :class:`AuthMiddleware` so older imports targeting
-``autoresearch.api.auth`` continue to function after the middleware was
-relocated to :mod:`autoresearch.api.middleware`.
+Historically authentication and rate limiting helpers lived under
+``autoresearch.api.auth``.  The implementation now resides in
+``autoresearch.api.middleware`` but imports from the old path are kept for
+backward compatibility.
 """
 
-from .middleware import AuthMiddleware
+from .middleware import (
+    AuthMiddleware,
+    FallbackRateLimitMiddleware,
+    RateLimitMiddleware,
+    dynamic_limit,
+)
 
-__all__ = ["AuthMiddleware"]
+__all__ = [
+    "AuthMiddleware",
+    "FallbackRateLimitMiddleware",
+    "RateLimitMiddleware",
+    "dynamic_limit",
+]

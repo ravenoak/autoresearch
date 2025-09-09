@@ -131,6 +131,26 @@ def test_webhook_retry(monkeypatch, api_client, httpx_mock):
 
 
 @pytest.mark.slow
+def test_streaming_accepts_queryresponse(monkeypatch, api_client):
+    """Streaming should accept QueryResponse dataclasses."""
+
+    cfg = ConfigModel(api=APIConfig())
+    cfg.api.role_permissions["anonymous"] = ["query"]
+    _setup(monkeypatch, cfg)
+
+    def run_query(q, c, callbacks=None, **k):
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr(Orchestrator, "run_query", run_query)
+
+    with api_client.stream("POST", "/query?stream=true", json={"query": "q"}) as resp:
+        assert resp.status_code == 200
+        chunks = [line for line in resp.iter_lines()]
+
+    assert json.loads(chunks[-1])["answer"] == "ok"
+
+
+@pytest.mark.slow
 def test_batch_query_pagination(monkeypatch, api_client):
     """/query/batch should honor page and page_size parameters."""
 

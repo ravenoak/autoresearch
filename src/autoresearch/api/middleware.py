@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import secrets
 import types
 from typing import Any, Callable, cast
@@ -75,6 +76,7 @@ security = HTTPBearer(auto_error=False)
 
 
 def dynamic_limit() -> str:
+    """Return the configured rate limit string for SlowAPI."""
     limit = getattr(get_config().api, "rate_limit", 0)
     return f"{limit}/minute" if limit > 0 else "1000000/minute"
 
@@ -108,7 +110,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         cfg = loader._config.api
 
         api_key = request.headers.get("X-API-Key")
-        credentials: HTTPAuthorizationCredentials | None = await security(request)
+        credentials_or_coro = security(request)
+        credentials: HTTPAuthorizationCredentials | None = (
+            await credentials_or_coro
+            if inspect.isawaitable(credentials_or_coro)
+            else credentials_or_coro
+        )
         token = credentials.credentials if credentials else None
 
         key_role, key_error = self._resolve_role(api_key, cfg)
@@ -210,3 +217,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return self.limiter._inject_headers(response, request.state.view_rate_limit)
         return await call_next(request)
+
+
+__all__ = [
+    "AuthMiddleware",
+    "FallbackRateLimitMiddleware",
+    "RateLimitMiddleware",
+    "dynamic_limit",
+]

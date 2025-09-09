@@ -2,6 +2,8 @@
 
 ## September 9, 2025
 
+- `uv run --extra test pytest tests/integration/test_api_auth.py tests/integration/test_api_auth_middleware.py tests/integration/test_api_auth_permissions.py tests/integration/test_api_docs.py` reports **31 passed** and 1 deselected test.
+- Running `uv run --extra test pytest tests/integration/test_api_auth_streaming.py tests/integration/test_api_streaming.py tests/integration/test_api_streaming_webhook.py -m slow` reports **12 passed** with 3 deselections.
 - Go Task CLI is unavailable; `task check` and `task verify` report
   `command not found`.
 - `uv run --extra test pytest` executes the suite with **33 failing tests**,
