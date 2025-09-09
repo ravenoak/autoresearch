@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict
 from enum import Enum
 from pydantic import BaseModel
 from uuid import uuid4
-from threading import Thread
+from threading import Thread, Lock
 
 import httpx
 import uvicorn
@@ -25,6 +25,7 @@ import uvicorn
 try:  # pragma: no cover - runtime import patch
     import pydantic.root_model as _rm  # noqa: F401
     import sys
+
     sys.modules.setdefault("pydantic.root_model", _rm)
 except Exception:  # pragma: no cover - best effort
     pass
@@ -39,6 +40,7 @@ try:
         SendMessageRequest,
         SendMessageResponse,
     )
+
     A2A_AVAILABLE = True
 
     class A2AMessageType(str, Enum):
@@ -67,7 +69,9 @@ try:
             self._server: uvicorn.Server | None = None
             self._thread: Thread | None = None
 
-        def register_handler(self, message_type: str, handler: Callable[[Message], Dict[str, Any]]) -> None:
+        def register_handler(
+            self, message_type: str, handler: Callable[[Message], Dict[str, Any]]
+        ) -> None:
             """Register a handler for a given message type."""
 
             self._handlers[message_type] = handler
@@ -91,7 +95,9 @@ try:
             app = FastAPI()
 
             @app.post("/")
-            async def handle(payload: Dict[str, Any]) -> Dict[str, Any]:  # pragma: no cover - network
+            async def handle(
+                payload: Dict[str, Any],
+            ) -> Dict[str, Any]:  # pragma: no cover - network
                 msg_type = str(payload.get("type", ""))
                 message_data = payload.get("message", {})
                 return await self._dispatch(msg_type, message_data)
@@ -115,6 +121,7 @@ try:
                 self._server.should_exit = True
             if self._thread:
                 self._thread.join()
+
 except ImportError:  # pragma: no cover - dependency missing
     A2A_AVAILABLE = False
 
@@ -155,6 +162,7 @@ class A2AInterface:
         self.port = port or env_port
         self.server = A2AServer(host=self.host, port=self.port)
         self.orchestrator = Orchestrator()
+        self._lock = Lock()
 
         # Register message handlers
         self.server.register_handler(A2AMessageType.QUERY, self._handle_query)
@@ -190,7 +198,8 @@ class A2AInterface:
 
         try:
             # Process the query using the orchestrator
-            result = self.orchestrator.run_query(query, get_config())
+            with self._lock:
+                result = self.orchestrator.run_query(query, get_config())
 
             response_msg: Message = new_agent_text_message(result.answer)
 
@@ -279,7 +288,11 @@ class A2AInterface:
 
             info_msg: Message = new_agent_text_message("info")
 
-            return {"status": "success", "agent_info": agent_info, "message": info_msg.model_dump(mode="json")}
+            return {
+                "status": "success",
+                "agent_info": agent_info,
+                "message": info_msg.model_dump(mode="json"),
+            }
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
@@ -376,16 +389,11 @@ class A2AClientWrapper:
             response = self._send_request(agent_url, params)
 
             if "error" in response:
-                logger.error(
-                    f"Error querying agent: {response.get('error')}")
+                logger.error(f"Error querying agent: {response.get('error')}")
                 return {"error": response.get("error")}
 
             result = response.get("result", {})
-            if (
-                isinstance(result, dict)
-                and result.get("kind") == "message"
-                and result.get("parts")
-            ):
+            if isinstance(result, dict) and result.get("kind") == "message" and result.get("parts"):
                 part = result["parts"][0]
                 if isinstance(part, dict) and "text" in part:
                     return {"answer": part["text"]}
@@ -409,9 +417,7 @@ class A2AClientWrapper:
             response = self._send_request(agent_url, params)
 
             if "error" in response:
-                logger.error(
-                    f"Error getting agent capabilities: {response.get('error')}"
-                )
+                logger.error(f"Error getting agent capabilities: {response.get('error')}")
                 return {"error": response.get("error")}
 
             return response.get("result", {})
@@ -433,9 +439,7 @@ class A2AClientWrapper:
             response = self._send_request(agent_url, params)
 
             if "error" in response:
-                logger.error(
-                    f"Error getting agent config: {response.get('error')}"
-                )
+                logger.error(f"Error getting agent config: {response.get('error')}")
                 return {"error": response.get("error")}
 
             return response.get("result", {})
@@ -443,9 +447,7 @@ class A2AClientWrapper:
             logger.error(f"Error getting agent config: {e}")
             return {"error": str(e)}
 
-    def set_agent_config(
-        self, agent_url: str, config_updates: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def set_agent_config(self, agent_url: str, config_updates: Dict[str, Any]) -> Dict[str, Any]:
         """Update the configuration of another agent.
 
         Args:
@@ -463,9 +465,7 @@ class A2AClientWrapper:
             response = self._send_request(agent_url, params)
 
             if "error" in response:
-                logger.error(
-                    f"Error setting agent config: {response.get('error')}"
-                )
+                logger.error(f"Error setting agent config: {response.get('error')}")
                 return {"error": response.get("error")}
 
             return response.get("result", {})
@@ -504,9 +504,7 @@ def requires_a2a(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not A2A_AVAILABLE:
-            raise ImportError(
-                "A2A SDK is not available. Install it with: pip install a2a-sdk"
-            )
+            raise ImportError("A2A SDK is not available. Install it with: pip install a2a-sdk")
         return func(*args, **kwargs)
 
     return wrapper

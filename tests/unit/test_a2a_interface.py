@@ -2,6 +2,8 @@
 
 import pytest
 from unittest.mock import MagicMock, call, patch
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 from autoresearch.a2a_interface import (
     A2AInterface,
@@ -185,6 +187,39 @@ class TestA2AInterface:
         assert "agent_info" in result
         assert "version" in result["agent_info"]
         assert "name" in result["agent_info"]
+
+    def test_handle_query_concurrent(self, mock_a2a_server, make_a2a_message):
+        """Ensure concurrent queries are serialized and return all results."""
+        interface = A2AInterface()
+
+        calls = []
+
+        class DummyOrchestrator:
+            def run_query(self, query: str, config: object) -> MagicMock:
+                start = time.time()
+                time.sleep(0.05)
+                end = time.time()
+                calls.append((start, end))
+                resp = MagicMock()
+                resp.answer = f"{query}-answer"
+                return resp
+
+        interface.orchestrator = DummyOrchestrator()
+
+        msg1 = make_a2a_message(query="q1")
+        msg2 = make_a2a_message(query="q2")
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            f1 = pool.submit(interface._handle_query, msg1)
+            f2 = pool.submit(interface._handle_query, msg2)
+            r1 = f1.result(timeout=2)
+            r2 = f2.result(timeout=2)
+
+        assert r1["status"] == "success"
+        assert r2["status"] == "success"
+        assert r1["message"] != r2["message"]
+        calls_sorted = sorted(calls, key=lambda x: x[0])
+        assert calls_sorted[0][1] <= calls_sorted[1][0]
 
 
 class TestA2AClient:
