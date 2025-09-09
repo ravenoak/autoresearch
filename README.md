@@ -99,10 +99,11 @@ setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
 `task`.
 
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
-`dev-minimal` and `test` extras and exercises a small unit subset (`test_version`
-and `test_cli_help`) for fast feedback. `task verify` runs the full suite and
-installs only the `dev-minimal` and `test` extras. Sync optional extras
-separately before running the task if you need those features.
+`dev-minimal` and `test` extras and exercises a small unit subset
+(`test_version` and `test_cli_help`) for fast feedback. `task verify` runs the
+full suite and installs only the `dev-minimal` and `test` extras. Pass
+`EXTRAS="distributed analysis"` or similar when invoking the command to include
+heavy groups.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
