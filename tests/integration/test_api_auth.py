@@ -108,6 +108,7 @@ def test_single_api_key(monkeypatch, api_client):
     missing = api_client.post("/query", json={"query": "q"})
     assert missing.status_code == 401
     assert missing.json()["detail"] == "Missing API key"
+    assert missing.headers["WWW-Authenticate"] == "API-Key"
 
 
 def test_invalid_api_key(monkeypatch, api_client):
@@ -117,6 +118,7 @@ def test_invalid_api_key(monkeypatch, api_client):
     bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid API key"
+    assert bad.headers["WWW-Authenticate"] == "API-Key"
 
 
 def test_api_key_or_token(monkeypatch, api_client):
@@ -194,6 +196,7 @@ def test_invalid_bearer_token(monkeypatch, api_client):
     resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer wrong"})
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid token"
+    assert resp.headers["WWW-Authenticate"] == "Bearer"
 
 
 def test_missing_bearer_token(monkeypatch, api_client):
@@ -203,6 +206,7 @@ def test_missing_bearer_token(monkeypatch, api_client):
     resp = api_client.post("/query", json={"query": "q"})
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Missing token"
+    assert resp.headers["WWW-Authenticate"] == "Bearer"
 
 
 def test_permission_denied(monkeypatch, api_client):
@@ -258,3 +262,12 @@ def test_cancel_query_permission_denied(monkeypatch, api_client):
     api_client.app.state.async_tasks["id"] = asyncio.new_event_loop().create_future()
     resp = api_client.delete("/query/id", headers={"X-API-Key": "u"})
     assert resp.status_code == 403
+
+
+def test_verify_bearer_token_reexport():
+    """``verify_bearer_token`` remains available via ``api.auth``."""
+    from autoresearch.api.auth import verify_bearer_token as exported
+
+    token = generate_bearer_token()
+    assert exported(token, token)
+    assert not exported("bad", token)

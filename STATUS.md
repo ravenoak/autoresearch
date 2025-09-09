@@ -6,6 +6,8 @@
   metadata is missing.
 - `task verify` fails with `task: Task "coverage EXTRAS=""" does not
   exist`.
+- Attempts to run `task check` and `task verify` produced `command not found`
+  errors in the current environment.
 - `uv run python scripts/check_env.py` no longer aborts on missing package
   metadata.
 - Milestones remain targeted for **September 15, 2026** (0.1.0a1) and
@@ -14,6 +16,9 @@
   coverage (budgeting 17%, HTTP 38%). Optional extras—`nlp`, `ui`, `vss`,
   `git`, `distributed`, `analysis`, `llm`, `parsers`, and `gpu`—each hold
   **32%** baseline coverage.
+- Added `WWW-Authenticate` headers to API auth responses; `uv run --extra test`
+  passed `tests/integration/test_api_auth*.py`, `test_api_docs.py`, and
+  `test_api_streaming.py` after regression tests were added.
 
 ## September 8, 2025
 

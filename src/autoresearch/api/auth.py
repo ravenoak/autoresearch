@@ -1,10 +1,12 @@
-"""Compatibility shim for authentication middleware.
+"""Compatibility shim for legacy authentication helpers.
 
-This module re-exports :class:`AuthMiddleware` so older imports targeting
-``autoresearch.api.auth`` continue to function after the middleware was
-relocated to :mod:`autoresearch.api.middleware`.
+Historically ``AuthMiddleware`` and ``verify_bearer_token`` lived in
+``autoresearch.api.auth``. They now reside in :mod:`autoresearch.api.middleware`
+and :mod:`autoresearch.api.utils` respectively. This module re-exports these
+symbols so older imports remain valid.
 """
 
 from .middleware import AuthMiddleware
+from .utils import verify_bearer_token
 
-__all__ = ["AuthMiddleware"]
+__all__ = ["AuthMiddleware", "verify_bearer_token"]
