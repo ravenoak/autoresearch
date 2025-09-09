@@ -1,6 +1,6 @@
 # escape=`
 # Windows container image with project extras for Autoresearch
-FROM mcr.microsoft.com/windows/python:3.12
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/windows/python:3.12
 
 ARG EXTRAS="full,test"
 ARG OFFLINE="0"

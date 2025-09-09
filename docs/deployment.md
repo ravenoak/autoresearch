@@ -46,24 +46,27 @@ On a dedicated server you can run the API in the background using a process mana
 
 ## Containerized Deployment (Docker)
 
-Autoresearch can also be containerized using the multi-stage `Dockerfile` in
-the project root. Named stages `linux`, `macos`, and `windows` produce platform
-images.
+Autoresearch provides platform Dockerfiles under `docker/`. The Linux file
+supports `linux/amd64` and `linux/arm64` through Docker Buildx.
 
-Build and push all images with the release script:
-
-```bash
-bash scripts/release_images.sh ghcr.io/OWNER latest
-```
-
-To build a single target use Docker Buildx:
+Build all images locally for verification:
 
 ```bash
-docker buildx build --target linux --platform linux/amd64 \
-  -t youruser/autoresearch:linux .
+bash scripts/build_images.sh
 ```
 
-Replace `linux` with `macos` or `windows` and adjust `--platform` as needed.
+Publish multi-platform images to a registry:
+
+```bash
+bash scripts/release_images.sh ghcr.io/OWNER/autoresearch v1.2.3
+```
+
+To build a single target manually with Buildx:
+
+```bash
+docker buildx build -f docker/Dockerfile.linux \\
+  --platform linux/amd64 -t youruser/autoresearch:linux --load .
+```
 
 ## Using docker-compose
 
@@ -85,24 +88,6 @@ Launch with:
 ```bash
 docker compose up --build
 ```
-
-### Building and pushing images
-
-The release script wraps Docker Buildx and publishes images with pinned base
-digests:
-
-```bash
-bash scripts/release_images.sh ghcr.io/OWNER v1.2.3
-```
-
-For manual pushes run:
-
-```bash
-docker buildx build --target macos --platform linux/amd64 \
-  -t youruser/autoresearch:macos --push .
-```
-
-Update the digests in `Dockerfile` when upstream images change and rebuild.
 
 ## Building Wheels for Distribution
 
