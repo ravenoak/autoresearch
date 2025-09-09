@@ -8,9 +8,10 @@ exercising these paths, regressions may slip into optional modules and
 overall coverage stays far below the 90% project goal.
 
 The August 31, 2025 coverage run failed during unit tests, so suites using
-optional extras never executed. On September 9, 2025, coverage remains
-stuck at 32% because `task verify` fails early in
-`tests/unit/test_cache.py::test_cache_is_backend_specific`.
+optional extras never executed. On September 9, 2025, `uv run --extra test
+pytest` reports 33 failing tests, primarily in authentication modules,
+preventing full coverage measurement. Optional extras remain untested
+and coverage sits near 32%.
 
 ## Dependencies
 None.
