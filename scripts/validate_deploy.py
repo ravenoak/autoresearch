@@ -196,6 +196,18 @@ def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
     return config_dir, errors
 
 
+def load_config(config_dir: Path) -> tuple[Mapping[str, Any], Mapping[str, str]]:
+    """Return ``deploy.yml`` and ``.env`` data from ``config_dir``.
+
+    Raises ``ValueError`` if either file contains invalid syntax. The caller
+    is responsible for handling schema validation.
+    """
+
+    yaml_data = _load_yaml(config_dir / "deploy.yml")
+    env_data = _load_env_file(config_dir / ".env")
+    return yaml_data, env_data
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     config_dir, errors = _preflight(os.environ)
     if errors:
@@ -211,24 +223,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(engine_err, file=sys.stderr)
         return 1
     try:
-        yaml_data = _load_yaml(config_dir / "deploy.yml")
+        yaml_data, env_data = load_config(config_dir)
     except ValueError as exc:
         print(exc, file=sys.stderr)
         return 1
     yaml_errors = _schema_errors(yaml_data, DEPLOY_SCHEMA)
     if yaml_errors:
-        errors = "; ".join(yaml_errors)
-        print(f"Schema errors in deploy.yml: {errors}", file=sys.stderr)
-        return 1
-    try:
-        env_data = _load_env_file(config_dir / ".env")
-    except ValueError as exc:
-        print(exc, file=sys.stderr)
+        msg = "; ".join(yaml_errors)
+        print(f"Schema errors in deploy.yml: {msg}", file=sys.stderr)
         return 1
     env_errors = _schema_errors(env_data, ENV_SCHEMA)
     if env_errors:
-        errors = "; ".join(env_errors)
-        print(f"Schema errors in .env: {errors}", file=sys.stderr)
+        msg = "; ".join(env_errors)
+        print(f"Schema errors in .env: {msg}", file=sys.stderr)
         return 1
     deploy_dir = Path(os.getenv("DEPLOY_DIR", DEFAULT_DEPLOY_DIR))
     dir_errors = _validate_deploy_dir(deploy_dir)

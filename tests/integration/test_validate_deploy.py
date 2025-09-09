@@ -59,6 +59,15 @@ def test_validate_deploy_missing_file(tmp_path: Path) -> None:
     assert "deploy.yml" in result.stderr
 
 
+def test_validate_deploy_missing_env_file(tmp_path: Path) -> None:
+    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert ".env" in result.stderr
+
+
 def test_validate_deploy_missing_yaml_key(tmp_path: Path) -> None:
     _write_config(tmp_path, yaml_content="{}\n")
     env = os.environ.copy()
@@ -163,6 +172,15 @@ def test_validate_deploy_invalid_env(tmp_path: Path) -> None:
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "DEPLOY_ENV must be one of" in result.stderr
+
+
+def test_validate_deploy_missing_config_dir(tmp_path: Path) -> None:
+    missing = tmp_path / "nope"
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(missing)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "CONFIG_DIR not found" in result.stderr
 
 
 @pytest.mark.slow
