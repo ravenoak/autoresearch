@@ -16,6 +16,9 @@
   `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`.
 - Confirmed all API authentication integration tests pass and archived the
   `fix-api-authentication-integration-tests` issue.
+- `task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"` fails at
+  `tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent`; no
+  coverage data is produced and `uv run coverage report` outputs "No data to report."
 
 ## September 9, 2025
 
