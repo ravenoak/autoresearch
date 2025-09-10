@@ -7,9 +7,6 @@ checks in [validate-deployment-configurations](validate-deployment-configuration
 and broader performance goals in
 [reach-stable-performance-and-interfaces](reach-stable-performance-and-interfaces.md).
 
-## Milestone
-- 2026-09-01
-
 ## Dependencies
 None.
 

@@ -50,6 +50,12 @@ for step in range(6):
 
 Tokens rise linearly and stop at ``C``, demonstrating convergence.
 
+## Simulation Expectations
+
+The simulation must show the bucket refilling linearly until it reaches
+capacity ``C``. Once full, further iterations should leave the level
+unchanged, proving convergence under the configured rate ``R``.
+
 ## Traceability
 
 

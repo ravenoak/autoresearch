@@ -4,11 +4,13 @@
 
 - Installed Go Task 3.44.1 so `task` commands are available.
 - Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
+- Added a `Simulation Expectations` section to `docs/specs/api_rate_limiting.md`
+  so spec linting succeeds.
 - `task check` runs 8 targeted tests and passes, warning that package metadata
   for GitPython, cibuildwheel, duckdb-extension-vss, spacy, types-networkx,
   types-protobuf, types-requests, and types-tabulate is missing.
-- `task verify` runs 8 targeted unit tests successfully. A subsequent coverage
-  run was interrupted, producing a `KeyboardInterrupt` stack trace.
+- `task verify` fails at
+  `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`.
 - Confirmed all API authentication integration tests pass and archived the
   `fix-api-authentication-integration-tests` issue.
 

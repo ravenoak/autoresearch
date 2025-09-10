@@ -4,9 +4,6 @@
 The 1.0.0 milestone aims to provide a polished, production-ready system with
 stable interfaces and tuned performance.
 
-## Milestone
-- 1.0.0 (2027-06-01)
-
 ## Dependencies
 - [containerize-and-package](containerize-and-package.md)
 - [validate-deployment-configurations](./validate-deployment-configurations.md)

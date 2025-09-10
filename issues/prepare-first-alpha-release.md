@@ -1,12 +1,15 @@
 # Prepare first alpha release
 
 ## Context
-The project remains unreleased even though the codebase and documentation are publicly available. To tag version v0.1.0a1, we need a coordinated effort to finalize outstanding testing, documentation, and packaging tasks while keeping workflows dispatch-only.
+The project remains unreleased even though the codebase and documentation are
+publicly available. To tag version v0.1.0a1, we need a coordinated effort to
+finalize outstanding testing, documentation, and packaging tasks while keeping
+workflows dispatch-only.
 
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
 - [resolve-package-metadata-warnings](resolve-package-metadata-warnings.md)
-- [fix-api-authentication-integration-tests](fix-api-authentication-integration-tests.md)
+- [fix-api-authentication-integration-tests](archive/fix-api-authentication-integration-tests.md)
 - [streamline-task-verify-extras](streamline-task-verify-extras.md)
 
 ## Acceptance Criteria
