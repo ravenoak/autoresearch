@@ -48,7 +48,9 @@ processing. Install them on demand with `uv sync --extra <name>`,
 `task install EXTRAS="<name>"`, or
 `pip install "autoresearch[<name>]"`. Heavy groups like `nlp`,
 `distributed`, `analysis`, and `llm` require additional dependencies and
-are excluded from `task verify`.
+are excluded from `task verify`. Set `EXTRAS` when running `task`
+commands to enable them, for example `EXTRAS="nlp distributed" task
+verify`.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. The test suite's `redis_client` fixture connects
@@ -60,17 +62,18 @@ with:
 uv run pytest -m requires_distributed -q
 ```
 
-To bootstrap a Python 3.12+ environment with the minimal development extras run:
+To bootstrap a Python 3.12+ environment with the minimal development and
+test extras run:
 
 ```bash
 task install
 ```
 
-This syncs the `dev-minimal` extra. Add the `test` group when you need the full
-suite:
+This syncs the `dev-minimal` and `test` extras. Include heavy groups
+only when required:
 
 ```bash
-task install EXTRAS="test"
+task install EXTRAS="nlp distributed"
 ```
 
 To install the `[test]` extras directly without Go Task and download the DuckDB

@@ -7,20 +7,20 @@ reliability of the test suite.
 For environment setup instructions see [installation](installation.md).
 
 Tests may require optional dependencies. Markers such as `requires_nlp` or
-`requires_parsers` map to extras with the same names. `task install` syncs only
-the `dev-minimal` extra; add groups with `EXTRAS` or set `AR_EXTRAS` when using
-the setup script. `task verify` installs the `dev-minimal` and `test` extras by
-default to keep setup light. Include heavy groups such as `nlp`, `distributed`,
-`analysis`, or `llm` only when needed:
+`requires_parsers` map to extras with the same names. `task install` syncs the
+`dev-minimal` and `test` extras by default; add groups with `EXTRAS` or set
+`AR_EXTRAS` when using the setup script. `task verify` also installs the
+`dev-minimal` and `test` extras by default. Include heavy groups such as `nlp`,
+`distributed`, `analysis`, or `llm` only when needed:
 
 ```bash
-EXTRAS="test nlp parsers" task install
+EXTRAS="nlp parsers" task install
 EXTRAS="analysis distributed" task verify
 ```
 
 Available extras enable optional features. Heavy groups require explicit flags:
 
-- `test` - full test suite tools
+- `test` - full test suite tools (installed by default)
 - `nlp` - language processing via spaCy and BERTopic
 - `ui` - Streamlit interface
 - `vss` - DuckDB vector search extension
@@ -48,9 +48,9 @@ Tests are organized into four categories:
 Two installation strategies support different workflows:
 
 - **Minimal:** `task check` runs linting, type checks, and a fast targeted
-  subset. It syncs only the `dev-minimal` extra. Add optional features with
-  `task install EXTRAS="test nlp ui"` choosing from `analysis`, `distributed`,
-  `git`, `llm`, `nlp`, `parsers`, `ui`, `vss`, `gpu`, and `test`.
+  subset. It syncs the `dev-minimal` and `test` extras. Add optional features
+  with `task install EXTRAS="nlp ui"` choosing from `analysis`, `distributed`,
+  `git`, `llm`, `nlp`, `parsers`, `ui`, `vss`, and `gpu`.
 - **Full:** `task verify` runs linting, type checks, and coverage. It installs
   the `dev-minimal` and `test` extras by default. Append optional groups with
   `EXTRAS` for integration scenarios.
