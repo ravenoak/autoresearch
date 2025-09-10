@@ -24,7 +24,7 @@ def _run(env: dict[str, str], tmp_path: Path) -> subprocess.CompletedProcess[str
 
 def _write_config(
     tmp_path: Path,
-    yaml_content: str = "version: 1\n",
+    yaml_content: str = "version: 1\nservices: [api]\n",
     env_content: str = "KEY=value\n",
 ) -> None:
     (tmp_path / "deploy.yml").write_text(yaml_content)
@@ -60,7 +60,7 @@ def test_validate_deploy_missing_file(tmp_path: Path) -> None:
 
 
 def test_validate_deploy_missing_env_file(tmp_path: Path) -> None:
-    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    (tmp_path / "deploy.yml").write_text("version: 1\nservices: [api]\n")
     env = os.environ.copy()
     env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
     result = _run(env, tmp_path)
@@ -151,6 +151,24 @@ def test_validate_deploy_duplicate_env_key(tmp_path: Path) -> None:
     result = _run(env, tmp_path)
     assert result.returncode != 0
     assert "Duplicate key" in result.stderr
+
+
+def test_validate_deploy_empty_services(tmp_path: Path) -> None:
+    _write_config(tmp_path, yaml_content="version: 1\nservices: []\n")
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "non-empty" in result.stderr
+
+
+def test_validate_deploy_duplicate_services(tmp_path: Path) -> None:
+    _write_config(tmp_path, yaml_content="version: 1\nservices: [api, api]\n")
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": str(tmp_path)})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "unique" in result.stderr.lower()
 
 
 @pytest.mark.parametrize("env_name", ["linux", "macos", "windows", "production"])

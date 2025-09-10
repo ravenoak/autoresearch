@@ -11,6 +11,11 @@ Verify configuration before deploying:
 
 - Set `DEPLOY_ENV` and `CONFIG_DIR` to select the configuration set.
 - Use an absolute path for `CONFIG_DIR`; relative paths are rejected.
+- `deploy.yml` must define a `version` and a non-empty `services` list with
+  unique entries.
+- Optionally set `EXTRAS` to validate required optional dependencies.
+- Set `CONTAINER_ENGINE` to ensure Docker or Podman is available.
+- Set `DEPLOY_DIR` to scan other configuration trees.
 - Run the validator:
 
   ```bash
@@ -21,7 +26,7 @@ Verify configuration before deploying:
   schema violations.
 
   The validator loads `deploy.yml` and `.env` from `CONFIG_DIR` and exits with
-  an error if required keys or files are missing.
+  an error if required keys, services, or files are missing.
 
 Proceed with the deployment steps only after the command exits without
 errors.
@@ -207,9 +212,9 @@ deployment helper in one step:
 - `bash scripts/deploy/macos.sh`
 - `pwsh scripts/deploy/windows.ps1`
 
-The validator also checks the schemas for both files and reports any
-violations. For example, `version` must be a string or integer and `KEY` cannot
-be empty.
+The validator checks schema rules, ensures `services` entries are unique, and
+verifies optional extras or container engines when the corresponding
+environment variables are set.
 
 ### Environment Matrix
 
