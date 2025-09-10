@@ -14,10 +14,9 @@ targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. `task check` runs 8 targeted tests and passes,
 warning that package metadata for GitPython, cibuildwheel,
 duckdb-extension-vss, spacy, types-networkx, types-protobuf, types-requests,
-and types-tabulate is missing. `task verify` runs 844 unit tests (34 skipped,
-25 deselected, 8 xfailed, 4 xpassed) and reports 95% coverage for budgeting
-and HTTP modules (57 statements) before the run is interrupted. Integration
-tests were not executed.
+and types-tabulate is missing. `task verify` fails in
+`tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent`,
+so coverage is not generated. Integration tests were not executed.
 Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`)
 offer utilization and memory estimates documented in
 `docs/orchestrator_perf.md`. Dependency pins: `fastapi>=0.115.12` and
@@ -67,7 +66,7 @@ for the alpha release checklist.
 
 This pre-release will provide an early package for testing once packaging tasks
 are verified. Related issue
-([prepare-first-alpha-release](issues/archive/prepare-first-alpha-release.md)) tracks
+([prepare-first-alpha-release](issues/prepare-first-alpha-release.md)) tracks
 the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
 coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
 release is re-targeted for **September 15, 2026**. Key activities include:
