@@ -2,9 +2,10 @@
 
 ## Context
 The project remains unreleased even though the codebase and documentation are
-publicly available. To tag version v0.1.0a1, we need a coordinated effort to
-finalize outstanding testing, documentation, and packaging tasks while keeping
-workflows dispatch-only.
+publicly available. The alpha release targets **September 15, 2026** with the
+final **0.1.0** milestone planned for **October 1, 2026**. To tag version
+v0.1.0a1, we need a coordinated effort to finalize outstanding testing,
+documentation, and packaging tasks while keeping workflows dispatch-only.
 
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)

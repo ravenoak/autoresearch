@@ -6,8 +6,8 @@ machine.
 
 ## 0.1.0a1 (unreleased)
 
-Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
-`slowapi==0.1.9`.
+Targeted for **2026-09-15**. Final **0.1.0** aims for **2026-10-01**.
+Dependency pins: `fastapi>=0.115.12` and `slowapi==0.1.9`.
 
 ### Capabilities
 
