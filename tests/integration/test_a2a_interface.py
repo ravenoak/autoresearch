@@ -84,6 +84,7 @@ def test_concurrent_queries(running_server):
         return [resp.json() for resp in responses]
 
     results = asyncio.run(send_all())
+    assert len(results) == 3
     assert len(start_times) == 3
     for i, data in enumerate(results):
         assert data["status"] == "success"
