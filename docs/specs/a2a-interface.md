@@ -46,8 +46,10 @@ submitted tasks. For broader concurrency context, see
   - [scripts/a2a_concurrency_sim.py][s1]
 - Tests
   - [tests/behavior/features/a2a_interface.feature][t1]
-  - [tests/integration/test_a2a_interface.py][t2]
-  - [tests/unit/test_a2a_interface.py][t3]
+  - [tests/integration/test_a2a_interface.py][t2] – verifies three
+    concurrent queries complete without blocking.
+  - [tests/unit/test_a2a_interface.py][t3] – checks three parallel
+    queries return distinct results.
   - [tests/unit/test_a2a_concurrency_sim.py][t4]
 
 [m1]: ../../src/autoresearch/a2a_interface.py

@@ -1,9 +1,12 @@
 """Unit tests for the A2A interface module."""
 
-import pytest
-from unittest.mock import MagicMock, call, patch
+import asyncio
 import time
-from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import MagicMock, call, patch
+
+import pytest
+from a2a.types import Message
+from a2a.utils.message import get_message_text
 
 from autoresearch.a2a_interface import (
     A2AInterface,
@@ -189,16 +192,16 @@ class TestA2AInterface:
         assert "name" in result["agent_info"]
 
     def test_handle_query_concurrent(self, mock_a2a_server, make_a2a_message):
-        """Ensure concurrent queries are serialized and return all results."""
+        """Ensure concurrent queries return distinct results."""
         interface = A2AInterface()
 
-        calls = []
+        calls: list[tuple[float, float]] = []
 
         class DummyOrchestrator:
             def run_query(self, query: str, config: object) -> MagicMock:
-                start = time.time()
+                start = time.perf_counter()
                 time.sleep(0.05)
-                end = time.time()
+                end = time.perf_counter()
                 calls.append((start, end))
                 resp = MagicMock()
                 resp.answer = f"{query}-answer"
@@ -206,20 +209,21 @@ class TestA2AInterface:
 
         interface.orchestrator = DummyOrchestrator()
 
-        msg1 = make_a2a_message(query="q1")
-        msg2 = make_a2a_message(query="q2")
+        async def run_queries() -> list[dict[str, object]]:
+            msgs = [make_a2a_message(query=f"q{i}") for i in range(3)]
+            return await asyncio.gather(*(interface._handle_query(m) for m in msgs))
 
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            f1 = pool.submit(interface._handle_query, msg1)
-            f2 = pool.submit(interface._handle_query, msg2)
-            r1 = f1.result(timeout=2)
-            r2 = f2.result(timeout=2)
+        results = asyncio.run(run_queries())
 
-        assert r1["status"] == "success"
-        assert r2["status"] == "success"
-        assert r1["message"] != r2["message"]
+        assert len(results) == 3
+        for i, res in enumerate(results):
+            assert res["status"] == "success"
+            msg = Message.model_validate(res["message"])
+            assert get_message_text(msg) == f"q{i}-answer"
+
         calls_sorted = sorted(calls, key=lambda x: x[0])
-        assert calls_sorted[0][1] <= calls_sorted[1][0]
+        assert calls_sorted[0][1] > calls_sorted[1][0]
+        assert calls_sorted[1][1] > calls_sorted[2][0]
 
 
 class TestA2AClient:
