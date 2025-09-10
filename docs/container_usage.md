@@ -36,3 +36,31 @@ Set `CONTAINER_IMAGE` to select a different image such as
 `autoresearch-macos`. Generated files appear in the directory supplied on the
 host.
 
+## Validate images
+
+Run a basic command in each image to confirm it starts correctly.
+
+- Linux:
+
+  ```
+  docker run --rm autoresearch-linux-amd64 --version
+  ```
+
+- macOS:
+
+  ```
+  docker run --rm autoresearch-macos --version
+  ```
+
+- Windows (PowerShell):
+
+  ```
+  docker run --rm autoresearch-windows --version
+  ```
+
+If you built OCI archives, load them before running the checks:
+
+```
+docker load < dist/autoresearch-linux-amd64.oci
+```
+
