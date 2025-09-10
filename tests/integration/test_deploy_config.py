@@ -28,21 +28,21 @@ def _write_configs(tmp_path: Path, yaml_text: str, env_text: str) -> None:
 
 
 def test_validate_success(tmp_path: Path) -> None:
-    _write_configs(tmp_path, "version: 1\n", "KEY=value\n")
+    _write_configs(tmp_path, "version: 1\nservices: [api]\n", "KEY=value\n")
     result = _run_validate(tmp_path)
     assert result.returncode == 0
     assert "validated" in result.stdout.lower()
 
 
 def test_missing_yaml_key(tmp_path: Path) -> None:
-    _write_configs(tmp_path, "other: 1\n", "KEY=value\n")
+    _write_configs(tmp_path, "services: [api]\n", "KEY=value\n")
     result = _run_validate(tmp_path)
     assert result.returncode != 0
     assert "version" in result.stderr
 
 
 def test_missing_env_key(tmp_path: Path) -> None:
-    _write_configs(tmp_path, "version: 1\n", "")
+    _write_configs(tmp_path, "version: 1\nservices: [api]\n", "")
     result = _run_validate(tmp_path)
     assert result.returncode != 0
     assert "KEY" in result.stderr

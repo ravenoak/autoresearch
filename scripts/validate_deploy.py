@@ -5,8 +5,9 @@ Usage:
     uv run scripts/validate_deploy.py
 
 This script verifies that required environment variables, optional extras, and
-configuration files exist before deployment. It also checks for a specified
-container engine so misconfigurations fail fast.
+configuration files exist before deployment. It enforces a non-empty,
+unique ``services`` list and checks for a specified container engine so
+misconfigurations fail fast.
 """
 from __future__ import annotations
 
@@ -38,10 +39,12 @@ DEPLOY_SCHEMA = {
         "version": {"type": ["integer", "string"]},
         "services": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 1,
+            "uniqueItems": True,
         },
     },
-    "required": ["version"],
+    "required": ["version", "services"],
 }
 
 ENV_SCHEMA = {
