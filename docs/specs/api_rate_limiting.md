@@ -7,19 +7,48 @@ convergence details.
 
 ## Algorithms
 
-- Implement core behaviors described above.
+The bucket stores ``b(t)`` tokens with capacity ``C`` and refill rate ``R``.
+After ``\Delta t`` seconds without requests the state evolves as
+
+\[
+b(t + \Delta t) = \min(C, b(t) + R \Delta t).
+\]
+
+Each request consumes one token; if ``b(t) = 0`` the request is denied.
 
 ## Invariants
 
-- Preserve documented state across operations.
+- Token count stays within ``0 \le b(t) \le C``.
+- Each request decrements the bucket by one.
+- Refills never raise the bucket above ``C``.
+- Requests with zero tokens are rejected.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+Assume the invariants hold at time ``t``. The refill equation keeps
+``b(t)`` within bounds, and a request subtracts one token, preserving the
+range. By induction no request sequence drives the count outside
+``[0, C]``, so a client never exceeds its configured limit.
 
-## Simulation Expectations
+## Simulation
 
-Unit tests cover nominal and edge cases for these routines.
+The snippet below refills an empty bucket until it reaches capacity.
+
+```python
+C, R = 5, 1
+b = 0
+for step in range(6):
+    b = min(C, b + R)
+    print(step, b)
+# 0 1
+# 1 2
+# 2 3
+# 3 4
+# 4 5
+# 5 5
+```
+
+Tokens rise linearly and stop at ``C``, demonstrating convergence.
 
 ## Traceability
 
