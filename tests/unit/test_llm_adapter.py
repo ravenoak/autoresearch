@@ -43,7 +43,7 @@ def test_openai_adapter(monkeypatch):
 
 
 def test_compress_prompt_falls_back_when_summary_exceeds_budget():
-    """Ellipsis fallback when summary exceeds token budget."""
+    """Ellipsis fallback when summary exceeds token budget per ``specs/llm``."""
 
     def summarizer(_: str, __: int) -> str:
         return "one two three four"

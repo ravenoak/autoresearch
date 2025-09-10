@@ -314,7 +314,7 @@ class TestCapabilityProber:
 
     @responses.activate
     def test_probe_openrouter_with_api_error(self):
-        """Test probing OpenRouter capabilities when the API returns an error."""
+        """OpenRouter probing falls back to defaults on API errors per ``specs/llm``."""
         # Setup
         prober = CapabilityProber.get_instance()
 
