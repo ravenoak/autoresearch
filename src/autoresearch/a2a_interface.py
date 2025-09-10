@@ -7,24 +7,25 @@ handlers and adapters to expose Autoresearch functionality through the A2A SDK.
 
 from __future__ import annotations
 
-import os
 import asyncio
+import os
 import time
-from functools import wraps
-from typing import Any, Callable, Dict
 from enum import Enum
-from pydantic import BaseModel
+from functools import wraps
+from threading import Thread
+from typing import Any, Callable, Dict
 from uuid import uuid4
-from threading import Thread, Lock
 
 import httpx
 import uvicorn
+from pydantic import BaseModel
 
 # Import ``pydantic.root_model`` early to avoid compatibility issues when the
 # A2A SDK uses generics with Pydantic 2.
 try:  # pragma: no cover - runtime import patch
-    import pydantic.root_model as _rm  # noqa: F401
     import sys
+
+    import pydantic.root_model as _rm  # noqa: F401
 
     sys.modules.setdefault("pydantic.root_model", _rm)
 except Exception:  # pragma: no cover - best effort
@@ -32,14 +33,13 @@ except Exception:  # pragma: no cover - best effort
 
 try:
     from a2a.client import A2AClient as SDKA2AClient
-
-    from a2a.utils.message import new_agent_text_message, get_message_text
     from a2a.types import (
         Message,
         MessageSendParams,
         SendMessageRequest,
         SendMessageResponse,
     )
+    from a2a.utils.message import get_message_text, new_agent_text_message
 
     A2A_AVAILABLE = True
 
@@ -125,12 +125,13 @@ try:
 except ImportError:  # pragma: no cover - dependency missing
     A2A_AVAILABLE = False
 
+from pydantic import ValidationError
+
+from .api import capabilities_endpoint
+from .config import ConfigLoader, ConfigModel, get_config
+from .error_utils import format_error_for_a2a, get_error_info
 from .logging_utils import get_logger
 from .orchestration.orchestrator import Orchestrator
-from .error_utils import get_error_info, format_error_for_a2a
-from .config import get_config, ConfigLoader, ConfigModel
-from .api import capabilities_endpoint
-from pydantic import ValidationError
 
 logger = get_logger(__name__)
 
@@ -162,7 +163,6 @@ class A2AInterface:
         self.port = port or env_port
         self.server = A2AServer(host=self.host, port=self.port)
         self.orchestrator = Orchestrator()
-        self._lock = Lock()
 
         # Register message handlers
         self.server.register_handler(A2AMessageType.QUERY, self._handle_query)
@@ -197,9 +197,10 @@ class A2AInterface:
             return {"status": "error", "error": "No query provided"}
 
         try:
-            # Process the query using the orchestrator
-            with self._lock:
-                result = self.orchestrator.run_query(query, get_config())
+            # Process the query using the orchestrator without serialization.
+            # The orchestrator is designed to be thread-safe, so omitting the
+            # lock enables concurrent query handling while maintaining safety.
+            result = self.orchestrator.run_query(query, get_config())
 
             response_msg: Message = new_agent_text_message(result.answer)
 
