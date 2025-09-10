@@ -1,5 +1,14 @@
 # Status
 
+## September 10, 2025
+
+- `task check` runs 8 targeted tests and passes, warning that package metadata
+  for GitPython, cibuildwheel, duckdb-extension-vss, spacy, types-networkx,
+  types-protobuf, types-requests, and types-tabulate is missing.
+- `task verify` runs 844 unit tests (34 skipped, 25 deselected, 8 xfailed, 4
+  xpassed) and reports 100% coverage for budgeting and HTTP modules (57
+  statements) before the run is interrupted.
+
 ## September 9, 2025
 
 - `task check` completes successfully, logging warnings when package
@@ -236,7 +245,6 @@ Not executed.
 so coverage reports are not generated.
 
 ## Open issues
-- [add-missing-git-search-spec-sections](issues/add-missing-git-search-spec-sections.md)
 - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
 - [fix-api-authentication-integration-tests](issues/fix-api-authentication-integration-tests.md)
 - [resolve-package-metadata-warnings](issues/resolve-package-metadata-warnings.md)

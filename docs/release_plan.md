@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 9, 2025** and
+`2025-05-18`). This schedule was last updated on **September 10, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -22,17 +22,15 @@ defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
 confirmed in `pyproject.toml` and [installation.md](installation.md).
 `uv run flake8 src tests` now passes, and `uv run mypy src` reports success.
-The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to
-complete. `task verify` now syncs only the `dev-minimal` and `test` extras by
-default. Provide additional groups by setting `EXTRAS`, for example
-`EXTRAS="nlp ui"`. A dry-run publish built the package and skipped upload.
-Outstanding gaps are tracked in [int-tests] and [task-issue].
-Current test results are mirrored in [../STATUS.md](../STATUS.md).
-Coverage from `uv run coverage report` holds at **32%** overall (budgeting
-17%, HTTP 38%). Optional extras—`nlp`, `ui`, `vss`, `git`, `distributed`,
-`analysis`, `llm`, `parsers`, and `gpu`—each remain at **32%** baseline
-coverage.
-
+The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to run
+8 targeted tests and pass while warning that package metadata for GitPython,
+cibuildwheel, duckdb-extension-vss, spacy, types-networkx, types-protobuf,
+types-requests, and types-tabulate is missing.
+`task verify` runs 844 unit tests (34 skipped, 25 deselected, 8 xfailed, 4
+ xpassed) and reports 100% coverage for budgeting and HTTP modules
+ (57 statements) before the run is interrupted. Outstanding gaps are tracked
+ in [int-tests] and [task-issue]. Current test results are mirrored in
+ [../STATUS.md](../STATUS.md).
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
