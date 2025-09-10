@@ -8,6 +8,8 @@
   types-protobuf, types-requests, and types-tabulate is missing.
 - `task verify` runs 8 targeted unit tests successfully. A subsequent coverage
   run was interrupted, producing a `KeyboardInterrupt` stack trace.
+- Confirmed all API authentication integration tests pass and archived the
+  `fix-api-authentication-integration-tests` issue.
 
 ## September 9, 2025
 
@@ -246,7 +248,6 @@ so coverage reports are not generated.
 
 ## Open issues
 - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
-- [fix-api-authentication-integration-tests](issues/fix-api-authentication-integration-tests.md)
 - [resolve-package-metadata-warnings](issues/resolve-package-metadata-warnings.md)
 - [resolve-concurrent-query-interface-regression](issues/resolve-concurrent-query-interface-regression.md)
 - [fix-ranking-convergence-script-output](issues/fix-ranking-convergence-script-output.md)
