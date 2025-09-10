@@ -9,15 +9,15 @@ For environment setup instructions see [installation](installation.md).
 Tests may require optional dependencies. Markers such as `requires_nlp` or
 `requires_parsers` map to extras with the same names. `task install` syncs only
 the `dev-minimal` extra; add groups with `EXTRAS` or set `AR_EXTRAS`
-when using the setup script. `task verify` installs only the `dev-minimal`
-and `test` extras. Include heavy groups by setting `EXTRAS`:
+when using the setup script. `task verify` installs the `dev-minimal`
+and `test` extras by default. Include heavy groups by setting `EXTRAS`:
 
 ```bash
 EXTRAS="test nlp parsers" task install
-EXTRAS="nlp parsers" task verify
+EXTRAS="analysis distributed" task verify
 ```
 
-Available extras enable optional features:
+Available extras enable optional features. Heavy groups require explicit flags:
 
 - `test` - full test suite tools
 - `nlp` - language processing via spaCy and BERTopic
