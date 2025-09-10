@@ -13,4 +13,4 @@ None.
 - `tests/integration/test_search_ranking_convergence.py::test_ranking_convergence_script` passes.
 
 ## Status
-Open
+Archived
