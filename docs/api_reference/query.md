@@ -8,6 +8,8 @@ evolve.
 
 ## Request Model
 
+::: autoresearch.api.models.QueryRequestV1
+
 Example request to `/query`:
 
 ```json
@@ -18,6 +20,8 @@ Example request to `/query`:
 ```
 
 ## Response Model
+
+::: autoresearch.api.models.QueryResponseV1
 
 A successful response includes reasoning and citations:
 
@@ -31,7 +35,13 @@ A successful response includes reasoning and citations:
 }
 ```
 
+## Batch Request
+
+::: autoresearch.api.models.BatchQueryRequestV1
+
 ## Batch Response
+
+::: autoresearch.api.models.BatchQueryResponseV1
 
 The batch endpoint wraps individual responses with pagination metadata:
 

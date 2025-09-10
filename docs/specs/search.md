@@ -23,14 +23,15 @@ and hybrid queries and exposes a CLI entry point.
 ### Hybrid
 
 - Computes keyword and vector scores separately.
+- Normalizes semantic and DuckDB similarities before averaging.
 - Combines results with a weighted sum of keyword, vector, and source
   credibility weights.
-- Normalizes scores and resolves ties by deterministic document identifier.
+- Resolves ties by deterministic document identifier.
 
 ## Invariants
 
 - Results are ordered by descending final score and are stable for repeated
-  queries.
+  queries, yielding consistent ordering across hybrid and semantic modes.
 - Indexing is idempotent: re-ingesting an existing document updates the record
   without creating duplicates.
 - Search does not mutate stored documents outside explicit persist or update
