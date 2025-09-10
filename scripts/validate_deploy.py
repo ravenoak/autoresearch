@@ -6,16 +6,18 @@ Usage:
 
 This script verifies that required environment variables, optional extras, and
 configuration files exist before deployment. It enforces a non-empty,
-unique ``services`` list and checks for a specified container engine so
-misconfigurations fail fast.
+unique ``services`` list, verifies container engines, and optionally checks
+database connectivity so misconfigurations fail fast.
 """
 from __future__ import annotations
 
 import os
 import shutil
 import sys
+import sqlite3
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlparse
 
 import tomllib
 import yaml
@@ -133,6 +135,28 @@ def _check_container_engine() -> str | None:
     return None
 
 
+def _check_database(url: str) -> str | None:
+    """Return an error message if the database is unreachable.
+
+    Supports ``sqlite`` URLs. When the scheme is ``sqlite`` the path is
+    extracted and a trivial ``SELECT 1`` query is executed. Any failure
+    returns a human-readable error message. Other schemes yield an
+    unsupported URL message.
+    """
+
+    if not url:
+        return None
+    parsed = urlparse(url)
+    if parsed.scheme != "sqlite":
+        return f"Unsupported database URL '{url}'"
+    try:
+        with sqlite3.connect(parsed.path) as conn:
+            conn.execute("SELECT 1")
+    except Exception as exc:  # pragma: no cover - connection failure path
+        return f"Database unavailable: {exc}"
+    return None
+
+
 def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:
     """Return validation errors for ``data`` against ``schema``."""
     validator = Draft7Validator(schema)
@@ -242,6 +266,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if env_errors:
         msg = "; ".join(env_errors)
         print(f"Schema errors in .env: {msg}", file=sys.stderr)
+        return 1
+    db_err = _check_database(os.getenv("DATABASE_URL", ""))
+    if db_err:
+        print(db_err, file=sys.stderr)
         return 1
     deploy_dir = Path(os.getenv("DEPLOY_DIR", DEFAULT_DEPLOY_DIR))
     dir_errors = _validate_deploy_dir(deploy_dir)

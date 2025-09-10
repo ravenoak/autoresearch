@@ -16,6 +16,8 @@ Verify configuration before deploying:
 - Optionally set `EXTRAS` to validate required optional dependencies.
 - Set `CONTAINER_ENGINE` to ensure Docker or Podman is available.
 - Set `DEPLOY_DIR` to scan other configuration trees.
+- Set `DATABASE_URL` to verify the application database is reachable. The
+  validator supports `sqlite:///` URLs and runs a simple query.
 - Run the validator:
 
   ```bash
@@ -26,7 +28,9 @@ Verify configuration before deploying:
   schema violations.
 
   The validator loads `deploy.yml` and `.env` from `CONFIG_DIR` and exits with
-  an error if required keys, services, or files are missing.
+  an error if required keys, services, or files are missing. When
+  `DATABASE_URL` is set it performs a lightweight connection test and fails if
+  the database cannot be reached.
 
 Proceed with the deployment steps only after the command exits without
 errors.
