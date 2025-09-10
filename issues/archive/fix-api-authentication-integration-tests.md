@@ -26,4 +26,4 @@ documentation endpoints. Suites affected include
 - `tests/integration/test_validate_deploy.py` passes.
 
 ## Status
-Open
+Archived
