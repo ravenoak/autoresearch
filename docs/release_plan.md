@@ -26,11 +26,10 @@ The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to run
 8 targeted tests and pass while warning that package metadata for GitPython,
 cibuildwheel, duckdb-extension-vss, spacy, types-networkx, types-protobuf,
 types-requests, and types-tabulate is missing.
-`task verify` runs 844 unit tests (34 skipped, 25 deselected, 8 xfailed, 4
- xpassed) and reports 100% coverage for budgeting and HTTP modules
- (57 statements) before the run is interrupted. Outstanding gaps are tracked
- in [int-tests] and [task-issue]. Current test results are mirrored in
- [../STATUS.md](../STATUS.md).
+`task verify` runs 844 tests (34 skipped, 25 deselected, 7 xfailed, 5 xpassed)
+and reports 95% coverage for budgeting and HTTP modules (57 statements).
+Outstanding gaps are tracked in [int-tests] and [task-issue]. Current test
+results are mirrored in [../STATUS.md](../STATUS.md).
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -78,7 +77,7 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 ### Prerequisites for tagging 0.1.0a1
 
-- `uv run flake8 src tests` failed: command not found.
+- `uv run flake8 src tests` passed with no issues.
 - `uv run mypy src` passed with no issues.
 - `task verify` and `task coverage` executed with Go Task 3.44.1.
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`

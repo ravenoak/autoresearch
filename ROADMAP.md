@@ -15,7 +15,7 @@ across project documentation. `task check` runs 8 targeted tests and passes,
 warning that package metadata for GitPython, cibuildwheel,
 duckdb-extension-vss, spacy, types-networkx, types-protobuf, types-requests,
 and types-tabulate is missing. `task verify` runs 844 unit tests (34 skipped,
-25 deselected, 8 xfailed, 4 xpassed) and reports 100% coverage for budgeting
+25 deselected, 8 xfailed, 4 xpassed) and reports 95% coverage for budgeting
 and HTTP modules (57 statements) before the run is interrupted. Integration
 tests were not executed.
 Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`)
