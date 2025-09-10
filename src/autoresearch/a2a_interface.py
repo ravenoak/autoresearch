@@ -70,11 +70,27 @@ try:
             self._thread: Thread | None = None
 
         def register_handler(
-            self, message_type: str, handler: Callable[[Message], Dict[str, Any]]
+            self,
+            message_type: str | A2AMessageType,
+            handler: Callable[[Message], Dict[str, Any]],
         ) -> None:
-            """Register a handler for a given message type."""
+            """Register a handler for a given message type.
 
-            self._handlers[message_type] = handler
+            The A2A SDK exposes message types as ``Enum`` members that inherit
+            from ``str``. Calling :func:`str` on such a member yields the fully
+            qualified name (e.g. ``"A2AMessageType.QUERY"``) rather than the raw
+            value ``"query"`` supplied in HTTP payloads. To ensure dispatch can
+            resolve handlers regardless of input form, both enum members and
+            plain strings are normalised to their underlying string value before
+            being stored.
+
+            Args:
+                message_type: Message type identifier or enum member.
+                handler: Callable invoked for the given message type.
+            """
+
+            key = message_type.value if isinstance(message_type, Enum) else str(message_type)
+            self._handlers[key] = handler
 
         async def _dispatch(self, msg_type: str, message_data: Dict[str, Any]) -> Dict[str, Any]:
             """Dispatch a request to the appropriate handler."""
