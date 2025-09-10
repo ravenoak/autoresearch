@@ -70,7 +70,10 @@ def main() -> None:
     if args.items <= 0:
         raise SystemExit("--items must be positive")
     mean = run_trials(args.trials, args.items)
-    print(f"converged in {mean:.1f} steps on average")
+    if args.trials == 1:
+        print(f"converged in {mean:.1f} steps")
+    else:
+        print(f"converged in {mean:.1f} steps on average")
 
 
 if __name__ == "__main__":
