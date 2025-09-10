@@ -91,4 +91,4 @@ def test_concurrent_queries(running_server):
         msg = Message.model_validate(data["message"])
         assert get_message_text(msg) == f"answer for q{i}"
 
-    assert max(start_times) - min(start_times) < 0.1
+    assert max(start_times) - min(start_times) < 0.05

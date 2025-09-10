@@ -195,7 +195,7 @@ class A2AInterface:
         logger.info("Stopping A2A server")
         self.server.stop()
 
-    def _handle_query(self, message: Message) -> Dict[str, Any]:
+    async def _handle_query(self, message: Message) -> Dict[str, Any]:
         """Handle a query message from another agent.
 
         Args:
@@ -213,10 +213,9 @@ class A2AInterface:
             return {"status": "error", "error": "No query provided"}
 
         try:
-            # Process the query using the orchestrator without serialization.
-            # The orchestrator is designed to be thread-safe, so omitting the
-            # lock enables concurrent query handling while maintaining safety.
-            result = self.orchestrator.run_query(query, get_config())
+            # Run the orchestrator query in a worker thread so multiple calls
+            # can execute concurrently without blocking the event loop.
+            result = await asyncio.to_thread(self.orchestrator.run_query, query, get_config())
 
             response_msg: Message = new_agent_text_message(result.answer)
 
