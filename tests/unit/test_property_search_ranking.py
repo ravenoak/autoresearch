@@ -95,8 +95,10 @@ def test_rank_results_orders_by_weighted_scores(
         bm25_scores[i] * weights[0] + semantic_scores[i] * weights[1] for i in range(len(docs))
     ]
     final = [merged[i] + credibility_scores[i] * weights[2] for i in range(len(docs))]
-    expected_order = sorted(range(len(docs)), key=lambda i: final[i], reverse=True)
+    max_score = max(final)
+    normalized = [f / max_score for f in final] if max_score > 0 else [0.0] * len(final)
+    expected_order = sorted(range(len(docs)), key=lambda i: normalized[i], reverse=True)
     ranked_titles = [r["title"] for r in ranked]
     assert ranked_titles == [titles[i] for i in expected_order]
     for r, i in zip(ranked, expected_order):
-        assert r["relevance_score"] == pytest.approx(final[i])
+        assert r["relevance_score"] == pytest.approx(normalized[i])

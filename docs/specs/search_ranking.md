@@ -11,6 +11,21 @@ applied uniformly across search backends.
 - Weight cosine similarity and metadata freshness.
 - Normalize scores before applying a deterministic sort.
 
+## Example
+
+Consider two documents with raw scores:
+
+```
+bm25 = [3, 1]
+semantic = [0.8, 0.2]
+credibility = [0.9, 0.5]
+```
+
+After normalizing BM25 to `1` and `0.33` and applying weights of `0.5`, `0.3`,
+and `0.2` respectively, the combined scores become `1.0` and `0.53`. The final
+normalization scales them to `1.0` and `0.53`, keeping values within the
+`0` to `1` range.
+
 ## Invariants
 
 - Scores stay within the 0 to 1 range after normalization.
@@ -18,8 +33,10 @@ applied uniformly across search backends.
 
 ## Proof Sketch
 
-Normalization preserves order within each scoring component, and the final sort
-is stable, proving deterministic rankings for equal scores.
+Normalization maps all component scores to the unit interval while maintaining
+their relative ordering. The weighted sum is therefore bounded by `0` and `1`,
+and the subsequent stable sort ensures that ties preserve input order. Thus,
+equal inputs deterministically produce the same ranking.
 
 ## Simulation Expectations
 

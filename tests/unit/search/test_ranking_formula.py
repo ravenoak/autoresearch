@@ -40,8 +40,12 @@ def test_rank_results_weighted_combination(monkeypatch: pytest.MonkeyPatch) -> N
     for i in range(len(docs)):
         merged = bm25[i] * 0.3 + semantic[i] * 0.4
         scores.append(merged + credibility[i] * 0.3)
+    max_score = max(scores)
+    normalized = [s / max_score for s in scores]
     assert [r["title"] for r in ranked] == ["B", "A"]
-    assert [r["relevance_score"] for r in ranked] == pytest.approx(sorted(scores, reverse=True))
+    assert [r["relevance_score"] for r in ranked] == pytest.approx(
+        sorted(normalized, reverse=True)
+    )
 
 
 def test_rank_results_invalid_weights(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -61,4 +61,5 @@ For detailed documentation of each module, see the corresponding pages in this s
 - [Search](search.md): Search functionality and backends
 - [Config](config.md): Configuration loading and management
 - [Distributed](distributed.md): Executors and helper utilities for distributed execution
+- [Query API](query.md): Versioned request and response models
 
