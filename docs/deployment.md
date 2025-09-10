@@ -9,6 +9,7 @@ The project uses **uv** for dependency management. Example commands use `uv`.
 Verify configuration before deploying:
 
 - Set `DEPLOY_ENV` and `CONFIG_DIR` to select the configuration set.
+- Use an absolute path for `CONFIG_DIR`; relative paths are rejected.
 - Run the validator:
 
   ```bash

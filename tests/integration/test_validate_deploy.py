@@ -183,6 +183,15 @@ def test_validate_deploy_missing_config_dir(tmp_path: Path) -> None:
     assert "CONFIG_DIR not found" in result.stderr
 
 
+def test_validate_deploy_relative_config_dir(tmp_path: Path) -> None:
+    _write_config(tmp_path)
+    env = os.environ.copy()
+    env.update({"DEPLOY_ENV": "production", "CONFIG_DIR": "relative"})
+    result = _run(env, tmp_path)
+    assert result.returncode != 0
+    assert "absolute" in result.stderr
+
+
 @pytest.mark.slow
 def test_validate_deploy_scans_all_configs(tmp_path: Path) -> None:
     deploy_dir = tmp_path / "deploy"

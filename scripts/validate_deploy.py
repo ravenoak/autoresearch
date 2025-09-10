@@ -186,6 +186,9 @@ def _preflight(env: Mapping[str, str]) -> tuple[Path | None, list[str]]:
         errors.append(f"DEPLOY_ENV must be one of {allowed}")
         return None, errors
     config_dir = Path(env["CONFIG_DIR"])
+    if not config_dir.is_absolute():
+        errors.append(f"CONFIG_DIR must be an absolute path: {config_dir}")
+        return None, errors
     if not config_dir.is_dir():
         errors.append(f"CONFIG_DIR not found: {config_dir}")
         return None, errors
