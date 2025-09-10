@@ -2,10 +2,10 @@
 
 ## September 10, 2025
 
-- After syncing `dev-minimal` and `test` extras, `uv run python
-  scripts/check_env.py` warns that package metadata is missing for GitPython,
-  cibuildwheel, duckdb-extension-vss, spacy, fakeredis, freezegun, hypothesis,
-  pdfminer-six, pytest-benchmark, python-docx, and several `types-*` stubs.
+- After installing the `dev-minimal` and `test` extras (e.g. `task install`),
+  `uv run python scripts/check_env.py` completes without warnings. Missing
+  Go Task is logged, and GitPython, cibuildwheel, duckdb-extension-vss, spacy,
+  and `types-*` stubs are ignored.
 - Installed Go Task 3.44.1 so `task` commands are available.
 - Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
 - Added a `Simulation Expectations` section to `docs/specs/api_rate_limiting.md`
