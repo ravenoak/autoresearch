@@ -219,7 +219,9 @@ class TestA2AInterface:
         assert r2["status"] == "success"
         assert r1["message"] != r2["message"]
         calls_sorted = sorted(calls, key=lambda x: x[0])
-        assert calls_sorted[0][1] <= calls_sorted[1][0]
+        # The interface allows concurrent query processing, so the second
+        # query should start before the first one finishes.
+        assert calls_sorted[0][1] > calls_sorted[1][0]
 
 
 class TestA2AClient:

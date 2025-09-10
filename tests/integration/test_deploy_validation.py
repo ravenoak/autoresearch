@@ -93,7 +93,7 @@ def _run_validate(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 
 def test_validate_deploy_success(tmp_path: Path) -> None:
-    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    (tmp_path / "deploy.yml").write_text("version: 1\nservices:\n- api\n")
     (tmp_path / ".env").write_text("KEY=value\n")
     env = os.environ.copy()
     env["DEPLOY_ENV"] = "production"
@@ -104,7 +104,7 @@ def test_validate_deploy_success(tmp_path: Path) -> None:
 
 
 def test_validate_deploy_missing_env(tmp_path: Path) -> None:
-    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    (tmp_path / "deploy.yml").write_text("version: 1\nservices:\n- api\n")
     (tmp_path / ".env").write_text("KEY=value\n")
     env = os.environ.copy()
     env.pop("DEPLOY_ENV", None)
@@ -136,7 +136,7 @@ def test_validate_deploy_yaml_schema_error(tmp_path: Path) -> None:
 
 
 def test_validate_deploy_env_schema_error(tmp_path: Path) -> None:
-    (tmp_path / "deploy.yml").write_text("version: 1\n")
+    (tmp_path / "deploy.yml").write_text("version: 1\nservices:\n- api\n")
     (tmp_path / ".env").write_text("KEY=\n")
     env = os.environ.copy()
     env["DEPLOY_ENV"] = "production"

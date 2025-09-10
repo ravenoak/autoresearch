@@ -272,6 +272,7 @@ tasks:
   verify:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
+    timeout: 0
     cmds:
       - |
           extras="dev-minimal test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
