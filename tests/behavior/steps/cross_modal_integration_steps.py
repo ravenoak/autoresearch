@@ -1,5 +1,7 @@
 from pytest_bdd import scenario, when, then, parsers, given
-from unittest.mock import patch
+import asyncio
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from .common_steps import application_running
@@ -268,16 +270,17 @@ def execute_query_via_a2a(bdd_context):
 
     with patch(
         "autoresearch.a2a_interface.A2AInterface._handle_query",
-        return_value=mock_response,
+        new_callable=AsyncMock,
     ) as mock_handle:
+        mock_handle.return_value = mock_response
         interface = A2AInterface()
         msg = new_agent_text_message("")
         msg.metadata = {"query": "What is the capital of France?"}
-        result = interface._handle_query(msg)
+        result = asyncio.run(interface._handle_query(msg))
 
         bdd_context["a2a_result"] = result
 
-        mock_handle.assert_called_once()
+        mock_handle.assert_awaited_once()
 
 
 @then("the response format should match the CLI response format")
@@ -332,7 +335,7 @@ def check_error_handling(bdd_context):
         patch_path = "autoresearch.mcp_interface.query"
         error_key = "mcp_error"
 
-    with patch(patch_path) as mock_query:
+    with patch(patch_path, new_callable=AsyncMock) as mock_query:
         mock_query.side_effect = ValueError("Invalid query: Query cannot be empty")
 
         if "a2a_result" in bdd_context:
@@ -343,7 +346,7 @@ def check_error_handling(bdd_context):
             try:
                 msg = new_agent_text_message("")
                 msg.metadata = {"query": ""}
-                interface._handle_query(msg)
+                asyncio.run(interface._handle_query(msg))
             except ValueError as e:
                 bdd_context[error_key] = str(e)
         else:

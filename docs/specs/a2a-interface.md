@@ -27,8 +27,8 @@ Unit tests cover nominal and edge cases for these routines.
   - [src/autoresearch/a2a_interface.py][m1]
 - Tests
   - [tests/behavior/features/a2a_interface.feature][t1]
-  - [tests/integration/test_a2a_interface.py][t2]
-  - [tests/unit/test_a2a_interface.py][t3]
+  - [tests/integration/test_a2a_interface.py][t2] – concurrent query handling
+  - [tests/unit/test_a2a_interface.py][t3] – concurrent query handling
 
 [m1]: ../../src/autoresearch/a2a_interface.py
 [t1]: ../../tests/behavior/features/a2a_interface.feature

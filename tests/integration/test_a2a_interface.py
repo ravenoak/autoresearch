@@ -43,9 +43,9 @@ def running_server(monkeypatch):
 
     start_times: list[float] = []
 
-    def run_query(self, query, config, *_, **__):
+    async def run_query(self, query, config, *_, **__):
         start_times.append(time.perf_counter())
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
 
         class Result:
             def __init__(self, answer: str) -> None:
@@ -54,7 +54,7 @@ def running_server(monkeypatch):
         return Result(f"answer for {query}")
 
     monkeypatch.setattr(
-        "autoresearch.orchestration.orchestrator.Orchestrator.run_query",
+        "autoresearch.orchestration.orchestrator.Orchestrator.run_query_async",
         run_query,
     )
 

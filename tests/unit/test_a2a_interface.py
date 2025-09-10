@@ -1,9 +1,11 @@
 """Unit tests for the A2A interface module."""
 
-import pytest
-from unittest.mock import MagicMock, call, patch
+import asyncio
 import time
-from concurrent.futures import ThreadPoolExecutor
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, call, patch
+
+import pytest
 
 from autoresearch.a2a_interface import (
     A2AInterface,
@@ -52,6 +54,7 @@ def mock_orchestrator():
     """Create a mock Orchestrator."""
     with patch("autoresearch.a2a_interface.Orchestrator") as mock_orch:
         mock_instance = MagicMock()
+        mock_instance.run_query_async = AsyncMock()
         mock_orch.return_value = mock_instance
         yield mock_instance
 
@@ -112,18 +115,15 @@ class TestA2AInterface:
 
     def test_handle_query(self, mock_a2a_server, make_a2a_message, mock_orchestrator):
         """Test handling a query message."""
-        # Setup
         interface = A2AInterface()
         msg = make_a2a_message(query="test query")
-        mock_orchestrator.run_query.return_value.answer = "test answer"
+        mock_orchestrator.run_query_async.return_value.answer = "test answer"
 
-        # Execute
-        result = interface._handle_query(msg)
+        result = asyncio.run(interface._handle_query(msg))
 
-        # Verify
         assert result["status"] == "success"
         assert result["message"]["role"] == "agent"
-        mock_orchestrator.run_query.assert_called_once()
+        mock_orchestrator.run_query_async.assert_called_once()
 
     def test_handle_command_get_capabilities(self, mock_a2a_server, make_a2a_message):
         """Test handling a get_capabilities command."""
@@ -189,37 +189,32 @@ class TestA2AInterface:
         assert "name" in result["agent_info"]
 
     def test_handle_query_concurrent(self, mock_a2a_server, make_a2a_message):
-        """Ensure concurrent queries are serialized and return all results."""
+        """Concurrent queries should run in parallel and all return results."""
         interface = A2AInterface()
 
-        calls = []
+        start_times: list[float] = []
 
-        class DummyOrchestrator:
-            def run_query(self, query: str, config: object) -> MagicMock:
-                start = time.time()
-                time.sleep(0.05)
-                end = time.time()
-                calls.append((start, end))
-                resp = MagicMock()
-                resp.answer = f"{query}-answer"
-                return resp
+        async def run_query(query: str, config: object) -> MagicMock:
+            start_times.append(time.perf_counter())
+            await asyncio.sleep(0.05)
+            resp = MagicMock()
+            resp.answer = f"{query}-answer"
+            return resp
 
-        interface.orchestrator = DummyOrchestrator()
+        interface.orchestrator.run_query_async = run_query  # type: ignore[attr-defined]
 
-        msg1 = make_a2a_message(query="q1")
-        msg2 = make_a2a_message(query="q2")
+        async def do_query(q: str) -> dict[str, Any]:
+            msg = make_a2a_message(query=q)
+            return await interface._handle_query(msg)
 
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            f1 = pool.submit(interface._handle_query, msg1)
-            f2 = pool.submit(interface._handle_query, msg2)
-            r1 = f1.result(timeout=2)
-            r2 = f2.result(timeout=2)
+        async def run_all() -> list[dict[str, Any]]:
+            return await asyncio.gather(*(do_query(f"q{i}") for i in range(3)))
 
-        assert r1["status"] == "success"
-        assert r2["status"] == "success"
-        assert r1["message"] != r2["message"]
-        calls_sorted = sorted(calls, key=lambda x: x[0])
-        assert calls_sorted[0][1] <= calls_sorted[1][0]
+        results = asyncio.run(run_all())
+
+        assert all(r["status"] == "success" for r in results)
+        assert len(results) == 3
+        assert max(start_times) - min(start_times) < 0.05
 
 
 class TestA2AClient:
@@ -326,8 +321,8 @@ def test_requires_a2a_decorator_not_available():
 def test_handle_query_exception(mock_a2a_server, make_a2a_message, mock_orchestrator):
     interface = A2AInterface()
     msg = make_a2a_message(query="bad")
-    mock_orchestrator.run_query.side_effect = RuntimeError("oops")
-    result = interface._handle_query(msg)
+    mock_orchestrator.run_query_async.side_effect = RuntimeError("oops")
+    result = asyncio.run(interface._handle_query(msg))
     assert result["status"] == "error"
 
     assert "oops" in result["error"]
