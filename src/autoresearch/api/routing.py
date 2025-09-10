@@ -36,6 +36,7 @@ from .middleware import (
 )
 from .models import (
     BatchQueryRequestV1,
+    BatchQueryResponseV1,
     QueryRequestV1,
     QueryResponseV1,
 )
@@ -196,11 +197,12 @@ async def query_endpoint(
     "/query/batch",
     summary="Batch Query Endpoint",
     description="Execute multiple queries with pagination support",
+    response_model=BatchQueryResponseV1,
     dependencies=[require_permission("query")],
 )
 async def batch_query_endpoint(
     batch: BatchQueryRequestV1, page: int = 1, page_size: int = 10
-) -> dict:
+) -> BatchQueryResponseV1:
     """Execute multiple queries with pagination."""
     if page < 1 or page_size < 1:
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
@@ -212,19 +214,25 @@ async def batch_query_endpoint(
         idx: int, q: QueryRequestV1, results: list[Optional[QueryResponseV1]]
     ) -> None:
         from . import query_endpoint as api_query_endpoint
-
-        results[idx] = cast(QueryResponseV1, await api_query_endpoint(q))
+        resp = await api_query_endpoint(q)
+        results[idx] = (
+            resp
+            if isinstance(resp, QueryResponseV1)
+            else QueryResponseV1.model_validate(
+                resp.model_dump(mode="json") if isinstance(resp, QueryResponse) else resp
+            )
+        )
 
     results: list[Optional[QueryResponseV1]] = [None for _ in selected]
     async with asyncio.TaskGroup() as tg:
         for idx, query in enumerate(selected):
             tg.create_task(run_one(idx, query, results))
 
-    return {
-        "page": page,
-        "page_size": page_size,
-        "results": cast(List[QueryResponseV1], results),
-    }
+    return BatchQueryResponseV1(
+        page=page,
+        page_size=page_size,
+        results=cast(List[QueryResponseV1], results),
+    )
 
 
 @router.post("/query/async", dependencies=[require_permission("query")])

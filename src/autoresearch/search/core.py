@@ -524,6 +524,24 @@ class Search:
             merged.append(bm25 * bm25_weight + semantic * semantic_weight)
         return merged
 
+    @staticmethod
+    def normalize_scores(scores: List[float]) -> List[float]:
+        """Scale scores to the 0–1 range.
+
+        Args:
+            scores: Raw relevance scores.
+
+        Returns:
+            List[float]: Normalized scores bounded by 0 and 1.
+        """
+
+        if not scores:
+            return scores
+        max_score = max(scores)
+        if max_score <= 0:
+            return [0.0 for _ in scores]
+        return [s / max_score for s in scores]
+
     @hybridmethod
     def rank_results(
         self,
@@ -615,6 +633,8 @@ class Search:
                 credibility_scores[i] * search_cfg.source_credibility_weight
             )
             final_scores.append(score)
+
+        final_scores = self.normalize_scores(final_scores)
 
         # Add scores to results for debugging/transparency
         for i, result in enumerate(results):

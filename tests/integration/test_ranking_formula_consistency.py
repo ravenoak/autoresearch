@@ -39,11 +39,13 @@ def test_convex_combination_matches_docs(monkeypatch):
     w_b = search_cfg.bm25_weight
     w_c = search_cfg.source_credibility_weight
     expected = [w_b * bm25[i] + w_s * semantic[i] + w_c * cred[i] for i in range(2)]
+    max_score = max(expected)
+    normalized = [e / max_score for e in expected] if max_score > 0 else [0.0] * 2
 
     ranked_ids = [r["id"] for r in ranked]
-    expected_ids = [i for i, _ in sorted(enumerate(expected), key=lambda p: p[1], reverse=True)]
+    expected_ids = [i for i, _ in sorted(enumerate(normalized), key=lambda p: p[1], reverse=True)]
     assert ranked_ids == expected_ids
 
     for r in ranked:
         idx = r["id"]
-        assert r["relevance_score"] == pytest.approx(expected[idx])
+        assert r["relevance_score"] == pytest.approx(normalized[idx])

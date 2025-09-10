@@ -4,15 +4,18 @@ from pytest_bdd import scenario, when, then
 from autoresearch.main import app as cli_app
 
 
-@when('I run `autoresearch visualize "What is quantum computing?" graph.png`')
-def run_visualize_query(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
-    def fake_visualize(query, output, layout='spring'):
+@when('I run `autoresearch visualize "{query}" graph.png`')
+def run_visualize_query(
+    cli_runner, bdd_context, monkeypatch, temp_config, isolate_network, query
+):
+    output_path = Path.cwd() / 'graph.png'
+
+    def fake_visualize(q, output, layout='spring'):
         Path(output).touch()
+
     monkeypatch.setattr('autoresearch.main.app._cli_visualize_query', fake_visualize)
     result = cli_runner.invoke(
-        cli_app,
-        ['visualize', 'What is quantum computing?', 'graph.png'],
-        catch_exceptions=False,
+        cli_app, ['visualize', query, str(output_path)], catch_exceptions=False
     )
     bdd_context['result'] = result
 

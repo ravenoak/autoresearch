@@ -6,9 +6,9 @@ declares an explicit ``version`` field which currently defaults to
 ``"1"``.
 """
 
-from typing import Literal, List
+from typing import List, Literal
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from ..models import BatchQueryRequest, QueryRequest, QueryResponse
 from ..orchestration.reasoning import ReasoningMode
@@ -47,9 +47,25 @@ class BatchQueryRequestV1(BatchQueryRequest):
     queries: List[QueryRequestV1]
 
 
+class BatchQueryResponseV1(BaseModel):
+    """Batch query response model for version 1.
+
+    Args:
+        version: API version identifier.
+    """
+
+    version: Literal["1"] = Field(
+        default="1", description="API version for the response"
+    )
+    page: int = Field(ge=1, description="Current page number")
+    page_size: int = Field(ge=1, description="Number of results per page")
+    results: List[QueryResponseV1]
+
+
 __all__ = [
     "ReasoningMode",
     "QueryRequestV1",
     "QueryResponseV1",
     "BatchQueryRequestV1",
+    "BatchQueryResponseV1",
 ]
