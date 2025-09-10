@@ -5,16 +5,16 @@ macOS, and Windows.
 
 ## Build images
 
-Use `scripts/build_images.sh` to build images for Linux, macOS, and Windows.
-The first argument selects optional extras. Set `FORMAT=oci` to emit OCI
-archives in `dist/` or leave unset to load images into the local engine.
+Go Task builds all platform images. Set `EXTRAS` to choose optional extras and
+`OFFLINE=1` to install from local wheels. Set `CONTAINER_ENGINE=podman` to use
+Podman instead of Docker:
 
 ```
-FORMAT=oci scripts/build_images.sh analysis
+EXTRAS=analysis OFFLINE=1 task docker-build
 ```
 
-Set `CONTAINER_ENGINE=podman` to build with Podman and `OFFLINE=1` to
-install from local wheels.
+Images are loaded into the local engine. Set `FORMAT=oci` to emit OCI archives
+in `dist/` instead.
 
 ## Package distributions
 

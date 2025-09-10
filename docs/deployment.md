@@ -1,6 +1,7 @@
 # Deployment Scenarios
 
-Autoresearch can be deployed in several ways depending on your needs. This guide outlines common approaches.
+Autoresearch can be deployed in several ways depending on your needs. This
+guide outlines common approaches.
 
 The project uses **uv** for dependency management. Example commands use `uv`.
 
@@ -27,7 +28,8 @@ errors.
 
 ## Local Installation
 
-For personal use, run Autoresearch directly on your machine. Install the dependencies and invoke the CLI or API:
+For personal use, run Autoresearch directly on your machine. Install the
+dependencies and invoke the CLI or API:
 
 ```bash
 uv venv
@@ -43,7 +45,9 @@ uvicorn autoresearch.api:app --reload
 
 ## Running as a Service
 
-On a dedicated server you can run the API in the background using a process manager such as `systemd` or `supervisord`. Configure environment variables in `.env` and set the working directory to the project root.
+On a dedicated server you can run the API in the background using a process
+manager such as `systemd` or `supervisord`. Configure environment variables in
+`.env` and set the working directory to the project root.
 
 ## Containerized Deployment (Docker)
 
@@ -53,7 +57,7 @@ supports `linux/amd64` and `linux/arm64` through Docker Buildx.
 Build all images locally for verification:
 
 ```bash
-bash scripts/build_images.sh
+task docker-build
 ```
 
 Publish multi-platform images to a registry:
@@ -67,6 +71,23 @@ To build a single target manually with Buildx:
 ```bash
 docker buildx build -f docker/Dockerfile.linux \\
   --platform linux/amd64 -t youruser/autoresearch:linux --load .
+```
+
+### Maintaining container images
+
+Rebuild images after updating dependencies or base images and push fresh tags
+to your registry:
+
+```bash
+task docker-build
+docker push ghcr.io/OWNER/autoresearch:linux
+```
+
+Schedule periodic rebuilds to pick up security patches. Remove unused images
+to reclaim disk space:
+
+```bash
+docker image prune
 ```
 
 ## Using docker-compose
@@ -121,14 +142,15 @@ message_broker = "memory"
 broker_url = "redis://head-node:6379/0" # optional
 ```
 
-When started with this configuration, agents are dispatched to remote workers and all
-claim persistence is coordinated through a background `StorageCoordinator`.
+When started with this configuration, agents are dispatched to remote workers
+and all claim persistence is coordinated through a background
+`StorageCoordinator`.
 
 The coordinator should be started before launching the API or CLI so that every
-worker writes to a single DuckDB database. If you specify `message_broker = "redis"`
-make sure the Redis service is reachable by all nodes. Result aggregation is
-handled by a `ResultAggregator` process which collects agent outputs across
-workers.
+worker writes to a single DuckDB database. If you specify
+`message_broker = "redis"` make sure the Redis service is reachable by all
+nodes. Result aggregation is handled by a `ResultAggregator` process which
+collects agent outputs across workers.
 
 When `distributed_config.enabled` is set to `true`, the executor waits for the
 `StorageCoordinator` to signal readiness before dispatching agents. This
