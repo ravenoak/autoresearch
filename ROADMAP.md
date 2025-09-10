@@ -4,18 +4,20 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 9, 2025**.
+[README](README.md). Last updated **September 10, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation.
-`task verify` now fails in
-`tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`.
-`task check` passes. Targeted integration tests pass except
-`tests/integration/test_api_docs.py::test_query_endpoint`.
+across project documentation. `task check` runs 8 targeted tests and passes,
+warning that package metadata for GitPython, cibuildwheel,
+duckdb-extension-vss, spacy, types-networkx, types-protobuf, types-requests,
+and types-tabulate is missing. `task verify` runs 844 unit tests (34 skipped,
+25 deselected, 8 xfailed, 4 xpassed) and reports 100% coverage for budgeting
+and HTTP modules (57 statements) before the run is interrupted. Integration
+tests were not executed.
 Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`)
 offer utilization and memory estimates documented in
 `docs/orchestrator_perf.md`. Dependency pins: `fastapi>=0.115.12` and
