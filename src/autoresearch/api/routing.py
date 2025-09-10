@@ -107,7 +107,17 @@ async def get_openapi_schema(request: Request) -> dict:
 async def query_endpoint(
     request: QueryRequestV1, stream: bool = False
 ) -> StreamingResponse | QueryResponseV1:
-    """Process a query and return a structured response."""
+    """Process a query and return a versioned response.
+
+    Args:
+        request: Versioned ``QueryRequestV1`` payload.
+        stream: When ``True`` stream newline-delimited ``QueryResponseV1``
+            objects.
+
+    Returns:
+        StreamingResponse | QueryResponseV1: Stream or full
+        ``QueryResponseV1``.
+    """
     config = get_config()
 
     if stream:
@@ -203,7 +213,16 @@ async def query_endpoint(
 async def batch_query_endpoint(
     batch: BatchQueryRequestV1, page: int = 1, page_size: int = 10
 ) -> BatchQueryResponseV1:
-    """Execute multiple queries with pagination."""
+    """Execute multiple queries with pagination.
+
+    Args:
+        batch: Versioned ``BatchQueryRequestV1`` payload.
+        page: Page number of queries to execute.
+        page_size: Number of queries per page.
+
+    Returns:
+        BatchQueryResponseV1: Paginated ``QueryResponseV1`` objects.
+    """
     if page < 1 or page_size < 1:
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
 
@@ -214,6 +233,7 @@ async def batch_query_endpoint(
         idx: int, q: QueryRequestV1, results: list[Optional[QueryResponseV1]]
     ) -> None:
         from . import query_endpoint as api_query_endpoint
+
         resp = await api_query_endpoint(q)
         results[idx] = (
             resp
@@ -237,7 +257,15 @@ async def batch_query_endpoint(
 
 @router.post("/query/async", dependencies=[require_permission("query")])
 async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -> dict:
-    """Run a query asynchronously and return its ID."""
+    """Run a query asynchronously and return its task identifier.
+
+    Args:
+        request: Versioned ``QueryRequestV1`` payload.
+        http_request: Raw ``Request`` object for storing task state.
+
+    Returns:
+        dict: Mapping containing the ``query_id`` of the background task.
+    """
     config = get_config()
     if request.reasoning_mode is not None:
         config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
@@ -283,6 +311,16 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
 
 @router.get("/query/{query_id}", dependencies=[require_permission("query")])
 async def get_query_status(query_id: str, request: Request) -> Response:
+    """Return the status or result of an asynchronous query.
+
+    Args:
+        query_id: Identifier returned by ``async_query_endpoint``.
+        request: Incoming ``Request`` holding task state.
+
+    Returns:
+        Response: ``{"status": "running"}`` until complete, otherwise a
+        ``QueryResponseV1`` payload or 404 if unknown.
+    """
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return JSONResponse({"detail": "not found"}, status_code=404)
@@ -300,6 +338,15 @@ async def get_query_status(query_id: str, request: Request) -> Response:
 
 @router.delete("/query/{query_id}", dependencies=[require_permission("query")])
 async def cancel_query(query_id: str, request: Request) -> Response:
+    """Cancel a running asynchronous query.
+
+    Args:
+        query_id: Identifier of the task to cancel.
+        request: Incoming ``Request`` holding task state.
+
+    Returns:
+        Response: ``"canceled"`` on success or 404 if the task is missing.
+    """
     future = request.app.state.async_tasks.get(query_id)
     if future is None:
         return PlainTextResponse("not found", status_code=404)
@@ -324,6 +371,7 @@ def health_endpoint(_: None = None) -> dict:
 
 @router.get("/capabilities", dependencies=[require_permission("capabilities")])
 def capabilities_endpoint(_: None = None) -> dict:
+    """Return server capability metadata."""
     config = get_config()
     reasoning_modes = [m.value for m in ReasoningMode]
     llm_backends = getattr(config, "llm_backends", [])

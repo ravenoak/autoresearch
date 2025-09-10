@@ -9,23 +9,28 @@ from fastapi.responses import StreamingResponse
 
 from ..config import get_config
 from ..error_utils import format_error_for_api, get_error_info
-from .models import QueryRequestV1, QueryResponseV1
 from ..orchestration import ReasoningMode
-from .deps import create_orchestrator
 from . import webhooks
-
+from .deps import create_orchestrator
+from .models import QueryRequestV1, QueryResponseV1
 
 # Interval between heartbeat messages to keep connections alive, in seconds.
 KEEPALIVE_INTERVAL = 15
 
 
 async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
-    """Stream incremental query results as JSON lines.
+    """Stream incremental ``QueryResponseV1`` objects as JSON lines.
 
     A blank line is sent every ``KEEPALIVE_INTERVAL`` seconds to prevent
-    intermediaries from closing idle connections. Consumers should ignore
-    empty lines. Once processing completes the final response is posted to any
+    intermediaries from closing idle connections. Consumers should ignore empty
+    lines. Once processing completes the final response is posted to any
     configured webhooks.
+
+    Args:
+        request: Versioned ``QueryRequestV1`` payload.
+
+    Returns:
+        StreamingResponse: Newline-delimited ``QueryResponseV1`` objects.
     """
     config = get_config()
 
@@ -49,9 +54,7 @@ async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
 
     def on_cycle_end(loop_idx: int, state) -> None:
         partial = state.synthesize()
-        queue.put_nowait(
-            QueryResponseV1(**partial.model_dump()).model_dump_json()
-        )
+        queue.put_nowait(QueryResponseV1(**partial.model_dump()).model_dump_json())
 
     def run() -> None:
         try:
@@ -59,9 +62,7 @@ async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
                 request.query, config, callbacks={"on_cycle_end": on_cycle_end}
             )
             result = (
-                raw
-                if isinstance(raw, QueryResponseV1)
-                else QueryResponseV1.model_validate(raw)
+                raw if isinstance(raw, QueryResponseV1) else QueryResponseV1.model_validate(raw)
             )
         except Exception as exc:  # pragma: no cover - defensive
             error_info = get_error_info(exc)
