@@ -44,7 +44,10 @@ The context-aware search functionality enhances search precision through entity 
 
 ## Relevance Ranking
 
-The relevance ranking functionality enhances search results by combining multiple relevance signals.
+The relevance ranking functionality enhances search results by combining
+multiple relevance signals. Semantic and DuckDB vector similarities are
+normalized before averaging so hybrid and semantic results align on the same
+scale.
 
 ::: autoresearch.config.models.SearchConfig
 
