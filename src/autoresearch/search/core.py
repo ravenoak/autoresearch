@@ -612,11 +612,11 @@ class Search:
 
         # Include vector similarity from DuckDB results when available
         duckdb_scores = [r.get("similarity", 0.5) for r in results]
+        semantic_norm = self.normalize_scores(semantic_scores)
+        duckdb_norm = self.normalize_scores(duckdb_scores)
 
-        # Average semantic embedding similarity with DuckDB score
-        embedding_scores = [
-            (semantic_scores[i] + duckdb_scores[i]) / 2 for i in range(len(results))
-        ]
+        # Average normalized semantic and DuckDB similarities
+        embedding_scores = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(results))]
 
         # Merge BM25 and semantic scores using weights
         merged_scores = self.merge_rank_scores(
@@ -678,9 +678,7 @@ class Search:
         ):
             model = self.get_sentence_transformer()
             if model is not None and hasattr(model, "embed"):
-                query_embedding = np.array(
-                    list(model.embed([query]))[0], dtype=float
-                )
+                query_embedding = np.array(list(model.embed([query]))[0], dtype=float)
 
         all_ranked: List[Dict[str, Any]] = []
         for name, docs in backend_results.items():

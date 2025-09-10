@@ -20,6 +20,12 @@ from .utils import (
     get_request_logger,
     reset_request_log,
 )
+from .models import (
+    BatchQueryRequestV1,
+    BatchQueryResponseV1,
+    QueryRequestV1,
+    QueryResponseV1,
+)
 
 create_app = routing.create_app
 app = routing.app
@@ -43,6 +49,10 @@ __all__ = [
     "RateLimitExceeded",
     "Limiter",
     "query_endpoint",
+    "QueryRequestV1",
+    "QueryResponseV1",
+    "BatchQueryRequestV1",
+    "BatchQueryResponseV1",
     "enforce_permission",
     "create_request_logger",
     "get_request_logger",

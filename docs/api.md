@@ -12,7 +12,8 @@ For details on orchestrator state transitions and the API contract see
 [orchestrator_state.md](orchestrator_state.md).
 
 Requests and responses are versioned. Include `"version": "1"` in request
-bodies; responses echo the same field to signal the contract in use.
+bodies; responses echo the same field to signal the contract in use. The
+`QueryRequestV1` and `QueryResponseV1` models live in `autoresearch.api.models`.
 
 ## Configuration
 

@@ -1,8 +1,10 @@
 # Query API
 
-The Query API provides versioned request and response models for interacting
-with the system. Each payload includes a `version` field so contracts remain
-stable as internal implementations evolve.
+The Query API exposes versioned Pydantic models for interacting with the
+system. `QueryRequestV1`, `QueryResponseV1`, `BatchQueryRequestV1` and
+`BatchQueryResponseV1` live in `autoresearch.api.models`. Each payload includes
+a `version` field so contracts remain stable as internal implementations
+evolve.
 
 ## Request Model
 

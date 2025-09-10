@@ -18,7 +18,9 @@ hybrid_query = true
 When `hybrid_query` is `true` every query is converted to a vector embedding in
 addition to regular keyword lookup. Scores from BM25, semantic similarity and
 source credibility are combined according to their weights to produce a unified
-ranking across all backends.
+ranking across all backends. Semantic and DuckDB vector similarities are
+normalized before averaging so hybrid and semantic results share a common
+scale.
 
 Weights are configured as follows and must sum to `1.0`:
 
