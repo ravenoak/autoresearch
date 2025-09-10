@@ -24,6 +24,8 @@ Reference issues by slugged filename (for example,
   403) with **95%** coverage achieved.
   - Add rich configuration context fixtures with sample data for tests.
     [create-more-comprehensive-test-contexts]
+- Revised `docs/release_notes/v0.1.0a1.md` with new 2026-09-15 target date
+  and unresolved gaps.
 - Optimize mypy configuration to skip site packages, preventing hangs during
 verification. [investigate-mypy-hang](issues/archive/investigate-mypy-hang.md).
 - Document virtual environment best practices in the developer guide.
