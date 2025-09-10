@@ -3,6 +3,7 @@
 ## September 10, 2025
 
 - Installed Go Task 3.44.1 so `task` commands are available.
+- Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
 - `task check` runs 8 targeted tests and passes, warning that package metadata
   for GitPython, cibuildwheel, duckdb-extension-vss, spacy, types-networkx,
   types-protobuf, types-requests, and types-tabulate is missing.
