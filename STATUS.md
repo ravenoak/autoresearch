@@ -2,23 +2,24 @@
 
 ## September 10, 2025
 
-- After running `scripts/setup.sh` to sync `dev-minimal` and `test` extras, `uv run python
-  scripts/check_env.py` completes without warnings; metadata for GitPython, cibuildwheel,
-  duckdb-extension-vss, spacy, and `types-*` stubs is now silenced.
-- Installed Go Task 3.44.1 so `task` commands are available.
-- Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
+- After syncing `dev-minimal` and `test` extras, `uv run python
+  scripts/check_env.py` warns that package metadata is missing for GitPython,
+  cibuildwheel, duckdb-extension-vss, spacy, fakeredis, freezegun, hypothesis,
+  pdfminer-six, pytest-benchmark, python-docx, and several `types-*` stubs.
+- Installed Go Task 3.44.1 so `task` commands are available.
+- Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
 - Added a `Simulation Expectations` section to `docs/specs/api_rate_limiting.md`
   so spec linting succeeds.
 - `task check` runs 8 targeted tests and passes, warning that package metadata
   for GitPython, cibuildwheel, duckdb-extension-vss, spacy, types-networkx,
   types-protobuf, types-requests, and types-tabulate is missing.
-- `task verify` fails at
-  `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`.
+- `task verify` fails in
+  `tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent`.
 - Confirmed all API authentication integration tests pass and archived the
   `fix-api-authentication-integration-tests` issue.
 - `task verify EXTRAS="nlp ui vss git distributed analysis llm parsers"` fails at
-  `tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent`; no
-  coverage data is produced and `uv run coverage report` outputs "No data to report."
+  the same concurrency test; no coverage data is produced and `uv run coverage
+  report` outputs "No data to report."
 
 ## September 9, 2025
 
@@ -259,9 +260,9 @@ so coverage reports are not generated.
 - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
 - [resolve-package-metadata-warnings](issues/resolve-package-metadata-warnings.md)
 - [resolve-concurrent-query-interface-regression](issues/resolve-concurrent-query-interface-regression.md)
-- [fix-ranking-convergence-script-output](issues/fix-ranking-convergence-script-output.md)
 - [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
+- [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md) (reopened)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)

@@ -12,4 +12,4 @@ None.
 - `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination` passes.
 
 ## Status
-Open
+Archived
