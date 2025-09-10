@@ -2,6 +2,9 @@
 
 ## September 10, 2025
 
+- After running `scripts/setup.sh` to sync `dev-minimal` and `test` extras, `uv run python
+  scripts/check_env.py` completes without warnings; metadata for GitPython, cibuildwheel,
+  duckdb-extension-vss, spacy, and `types-*` stubs is now silenced.
 - Installed Go Task 3.44.1 so `task` commands are available.
 - Added `.venv/bin` to `PATH` and confirmed `task --version` prints 3.44.1.
 - Added a `Simulation Expectations` section to `docs/specs/api_rate_limiting.md`
