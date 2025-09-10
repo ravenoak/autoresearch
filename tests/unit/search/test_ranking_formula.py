@@ -43,9 +43,9 @@ def test_rank_results_weighted_combination(monkeypatch: pytest.MonkeyPatch) -> N
     max_score = max(scores)
     normalized = [s / max_score for s in scores]
     assert [r["title"] for r in ranked] == ["B", "A"]
-    assert [r["relevance_score"] for r in ranked] == pytest.approx(
-        sorted(normalized, reverse=True)
-    )
+    relevance_scores = [r["relevance_score"] for r in ranked]
+    assert relevance_scores == pytest.approx(sorted(normalized, reverse=True))
+    assert relevance_scores == sorted(relevance_scores, reverse=True)
 
 
 def test_rank_results_invalid_weights(monkeypatch: pytest.MonkeyPatch) -> None:

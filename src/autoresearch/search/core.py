@@ -610,30 +610,16 @@ class Search:
             else [1.0] * len(results)
         )
 
-        # Include vector similarity from DuckDB results when available
-        duckdb_scores = [r.get("similarity", 0.5) for r in results]
-        semantic_norm = self.normalize_scores(semantic_scores)
-        duckdb_norm = self.normalize_scores(duckdb_scores)
+        # Track vector similarity for transparency but exclude it from ranking
+        duckdb_scores = [r.get("similarity", 0.0) for r in results]
 
-        # Average normalized semantic and DuckDB similarities
-        embedding_scores = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(results))]
-
-        # Merge BM25 and semantic scores using weights
-        merged_scores = self.merge_rank_scores(
-            bm25_scores,
-            embedding_scores,
-            search_cfg.bm25_weight,
-            search_cfg.semantic_similarity_weight,
-        )
-
-        # Combine merged score with credibility weight
-        final_scores: List[float] = []
-        for i in range(len(results)):
-            score = merged_scores[i] + (
-                credibility_scores[i] * search_cfg.source_credibility_weight
-            )
-            final_scores.append(score)
-
+        # Combine weighted scores directly
+        final_scores = [
+            bm25_scores[i] * search_cfg.bm25_weight
+            + semantic_scores[i] * search_cfg.semantic_similarity_weight
+            + credibility_scores[i] * search_cfg.source_credibility_weight
+            for i in range(len(results))
+        ]
         final_scores = self.normalize_scores(final_scores)
 
         # Add scores to results for debugging/transparency
@@ -642,17 +628,14 @@ class Search:
             result["bm25_score"] = bm25_scores[i]
             result["semantic_score"] = semantic_scores[i]
             result["duckdb_score"] = duckdb_scores[i]
-            result["embedding_score"] = embedding_scores[i]
             result["credibility_score"] = credibility_scores[i]
-            result["merged_score"] = merged_scores[i]
+            result["merged_score"] = (
+                bm25_scores[i] * search_cfg.bm25_weight
+                + semantic_scores[i] * search_cfg.semantic_similarity_weight
+            )
 
         # Sort results by final score (descending)
-        ranked_results = [
-            result
-            for _, result in sorted(
-                zip(final_scores, results), key=lambda pair: pair[0], reverse=True
-            )
-        ]
+        ranked_results = sorted(results, key=lambda r: r["relevance_score"], reverse=True)
 
         return ranked_results
 
