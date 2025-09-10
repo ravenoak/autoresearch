@@ -6,8 +6,8 @@ organized by phases from the code complete plan. As of **September 10, 2025**,
 `task check` and `task verify` pass, and the API authentication integration tests
 were confirmed, archiving the related issue. See
 [docs/release_plan.md](docs/release_plan.md) for current test and coverage
-status. An **0.1.0-alpha.1** preview is re-targeted for **2026-06-15**, with the
-final **0.1.0** release targeted for **July 1, 2026**.
+status. An **0.1.0a1** preview is targeted for **2026-09-15**, with the final
+**0.1.0** release targeted for **October 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 
