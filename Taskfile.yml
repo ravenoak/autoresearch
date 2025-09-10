@@ -274,12 +274,11 @@ tasks:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
       - |
+          extras="dev-minimal test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
-            --extra dev-minimal \
-            --extra test \
-            {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}\
-            {{if (contains .EXTRAS "gpu")}} --find-links wheels/gpu{{end}}{{end}}
+            $(printf ' --extra %s' $extras) \
+            {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src tests
       - uv run mypy src
@@ -299,7 +298,7 @@ tasks:
     desc: |
       Run linting, type checks, targeted tests, and coverage.
       Syncs only the dev-minimal and test extras by default.
-      Provide optional groups with EXTRAS; include "gpu" to use wheels/gpu.
+      Set EXTRAS to include heavy groups like nlp, distributed, analysis, or llm.
 
   clean:
     cmds:
