@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # package.sh - Build source and wheel distributions in a container.
 # Usage: scripts/package.sh [DIST_DIR]
+# Set CONTAINER_IMAGE to select a prebuilt image.
 
 set -euo pipefail
 
@@ -26,7 +27,7 @@ if [ -f /.dockerenv ] || [ "${IN_CONTAINER:-0}" = "1" ]; then
 fi
 
 ENGINE="${CONTAINER_ENGINE:-docker}"
-IMAGE="${CONTAINER_IMAGE:-autoresearch-linux}"
+IMAGE="${CONTAINER_IMAGE:-autoresearch-runtime}"
 
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
     echo "Container engine '$ENGINE' not found" >&2
@@ -37,4 +38,3 @@ mkdir -p "$dist_dir"
 "$ENGINE" run --rm -v "$(pwd):/workspace" -w /workspace \
     -e IN_CONTAINER=1 "$IMAGE" \
     bash -lc "scripts/package.sh '$dist_dir'"
-
