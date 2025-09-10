@@ -80,6 +80,22 @@ EXTRA_REQUIREMENTS = load_extra_requirements(extras_to_check())
 REQUIREMENTS = {**BASE_REQUIREMENTS, **EXTRA_REQUIREMENTS}
 
 
+# Packages lacking metadata in minimal environments.
+# They are optional and may be intentionally absent.
+SILENT_METADATA_PKGS = {
+    "gitpython",
+    "cibuildwheel",
+    "duckdb-extension-vss",
+    "spacy",
+}
+
+
+def _silenced_metadata(pkg: str) -> bool:
+    """Return True if metadata warnings for ``pkg`` should be suppressed."""
+
+    return pkg.lower() in SILENT_METADATA_PKGS or pkg.lower().startswith("types-")
+
+
 @dataclass
 class CheckResult:
     name: str
@@ -157,6 +173,9 @@ def check_package(pkg: str) -> CheckResult | None:
     try:
         current = metadata.version(pkg)
     except metadata.PackageNotFoundError:
+        if _silenced_metadata(pkg):
+            logger.info("No package metadata found for %s; skipping", pkg)
+            return None
         warnings.warn(
             f"package metadata not found for {pkg}",
             UserWarning,
