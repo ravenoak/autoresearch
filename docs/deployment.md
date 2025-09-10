@@ -56,40 +56,44 @@ manager such as `systemd` or `supervisord`. Configure environment variables in
 
 ## Containerized Deployment (Docker)
 
-Autoresearch provides platform Dockerfiles under `docker/`. The Linux file
-supports `linux/amd64` and `linux/arm64` through Docker Buildx.
-
-Build all images locally for verification:
+Autoresearch ships platform-neutral Dockerfiles for runtime and development
+variants under `docker/`. Build images with the helper script:
 
 ```bash
-task docker-build
+docker/build.sh runtime
+docker/build.sh dev
 ```
 
-Publish multi-platform images to a registry:
+### Running
+
+Run the CLI by mounting a host directory for data:
 
 ```bash
-bash scripts/release_images.sh ghcr.io/OWNER/autoresearch v1.2.3
+mkdir -p data
+docker run --rm -v "$(pwd)/data:/data" \
+  autoresearch-runtime search "example query"
 ```
 
-To build a single target manually with Buildx:
+Run the API on port 8000:
 
 ```bash
-docker buildx build -f docker/Dockerfile.linux \\
-  --platform linux/amd64 -t youruser/autoresearch:linux --load .
+docker run --rm -p 8000:8000 -v "$(pwd)/data:/data" \
+  autoresearch-runtime uv run uvicorn autoresearch.api:app \
+  --host 0.0.0.0 --port 8000
 ```
 
-### Maintaining container images
+### Packaging inside containers
 
-Rebuild images after updating dependencies or base images and push fresh tags
-to your registry:
+Build source and wheel distributions using the runtime image:
 
 ```bash
-task docker-build
-docker push ghcr.io/OWNER/autoresearch:linux
+scripts/package.sh dist
 ```
 
-Schedule periodic rebuilds to pick up security patches. Remove unused images
-to reclaim disk space:
+Set `CONTAINER_IMAGE` to use another image such as `autoresearch-dev`.
+
+Rebuild images after dependency updates and push new tags to your registry.
+Remove unused images to reclaim space:
 
 ```bash
 docker image prune

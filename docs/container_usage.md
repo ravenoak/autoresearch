@@ -1,66 +1,46 @@
 # Container Usage
 
-This guide shows how to build and use Autoresearch container images on Linux,
-macOS, and Windows.
+This guide shows how to build and run platform-neutral Autoresearch
+container images.
 
 ## Build images
 
-Go Task builds all platform images. Set `EXTRAS` to choose optional extras and
-`OFFLINE=1` to install from local wheels. Set `CONTAINER_ENGINE=podman` to use
-Podman instead of Docker:
+Use the helper script to build runtime or development images. Set `OFFLINE=1`
+to install from local wheels.
 
 ```
-EXTRAS=analysis OFFLINE=1 task docker-build
+docker/build.sh runtime
+docker/build.sh dev
 ```
 
-Images are loaded into the local engine. Set `FORMAT=oci` to emit OCI archives
-in `dist/` instead.
+## Run the CLI
+
+Mount a host directory for data and invoke the CLI.
+
+```
+mkdir -p data
+docker run --rm -v "$(pwd)/data:/data" \
+  autoresearch-runtime search "example query"
+```
+
+## Run the API
+
+Expose a port and mount the data volume.
+
+```
+docker run --rm -p 8000:8000 -v "$(pwd)/data:/data" \
+  autoresearch-runtime uv run uvicorn autoresearch.api:app \
+  --host 0.0.0.0 --port 8000
+```
+
+Stop the container with `Ctrl+C`.
 
 ## Package distributions
 
-Create source and wheel distributions inside a container by invoking the
-packaging script from the host. It launches the `autoresearch-linux` image by
-default.
+Build source and wheel distributions inside the runtime image.
 
 ```
 scripts/package.sh dist
 ```
 
-For Windows artifacts use PowerShell.
-
-```
-scripts\package.ps1 -DistDir dist
-```
-
-Set `CONTAINER_IMAGE` to select a different image such as
-`autoresearch-macos`. Generated files appear in the directory supplied on the
-host.
-
-## Validate images
-
-Run a basic command in each image to confirm it starts correctly.
-
-- Linux:
-
-  ```
-  docker run --rm autoresearch-linux-amd64 --version
-  ```
-
-- macOS:
-
-  ```
-  docker run --rm autoresearch-macos --version
-  ```
-
-- Windows (PowerShell):
-
-  ```
-  docker run --rm autoresearch-windows --version
-  ```
-
-If you built OCI archives, load them before running the checks:
-
-```
-docker load < dist/autoresearch-linux-amd64.oci
-```
-
+Set `CONTAINER_IMAGE` to use another image such as `autoresearch-dev`.

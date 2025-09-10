@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1.5
+# Development image for Autoresearch
+FROM --platform=$TARGETPLATFORM python:3.12
+
+ARG EXTRAS="full,dev"
+ARG OFFLINE="0"
+WORKDIR /workspace
+COPY . .
+COPY wheels /wheels
+RUN if [ "$OFFLINE" = "1" ]; then \
+        pip install --no-index --find-links /wheels uv \
+        && uv pip install --no-index --find-links /wheels ".[${EXTRAS}]"; \
+    else \
+        pip install --no-cache-dir uv \
+        && uv pip install ".[${EXTRAS}]"; \
+    fi
+VOLUME /data
+ENV AUTORESEARCH_DATA_DIR=/data
+RUN --network=none autoresearch --help >/dev/null
+ENTRYPOINT ["autoresearch"]
+CMD ["--help"]
