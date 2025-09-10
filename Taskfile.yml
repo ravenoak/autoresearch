@@ -27,7 +27,7 @@ tasks:
               export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
-          extras="dev-minimal"
+          extras="dev-minimal test"
           uv sync --python-platform x86_64-manylinux_2_28 \
               $(printf ' --extra %s' $extras) \
               {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
@@ -36,8 +36,8 @@ tasks:
       - uv run flake8 src tests
     desc: |
       Initialize dev env with minimal extras.
-      Syncs the dev-minimal extra by default.
-      Provide optional groups with EXTRAS, e.g. "test", "nlp", or "parsers".
+      Syncs the dev-minimal and test extras by default.
+      Provide optional groups with EXTRAS, e.g. "nlp" or "parsers".
       Set EXTRAS="gpu" to include optional GPU packages.
       Place matching wheels in wheels/gpu to avoid source builds.
   check-env:
@@ -55,16 +55,17 @@ tasks:
   check:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
-    # Minimal validation for quick feedback. Syncs only the dev-minimal extra
-    # and exercises version and CLI smoke tests. Skips slow tests and scenarios
-    # requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
+    # Minimal validation for quick feedback. Syncs the dev-minimal and test
+    # extras and exercises version and CLI smoke tests. Skips slow tests and
+    # scenarios requiring optional UI (`.[ui]`) or VSS (`.[vss]`) extras.
     cmds:
       - |
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             --extra dev-minimal \
+            --extra test \
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
-      - task check-env EXTRAS="dev{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+      - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - task lint-specs
