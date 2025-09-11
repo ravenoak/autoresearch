@@ -12,3 +12,4 @@ Feature: Hybrid Search
     And I have persisted claims with embeddings
     When I perform a hybrid search for "hello"
     Then the first result should match the semantic search ordering
+    And the relevance scores should be normalized

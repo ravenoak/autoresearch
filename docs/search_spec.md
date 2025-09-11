@@ -30,8 +30,11 @@ This specification outlines expected behaviors for the
   different backends are first scored individually and then merged and
   re-ranked with the same weights to ensure consistent ordering across
   sources. Each component score is normalized to the `0`–`1` range before
-  weighting. Combined scores are normalized again and sorted in descending
-  order. The math is detailed in [search ranking](specs/search_ranking.md).
+  weighting. Semantic similarities from transformers and DuckDB vectors are
+  averaged after normalization so hybrid and pure semantic searches operate
+  on the same scale. Combined scores are normalized again and sorted in
+  descending order. The math is detailed in
+  [search ranking](specs/search_ranking.md).
   Simulation trials in
   [`ranking_convergence.py`](algorithms/relevance_ranking.md#simulation)
   report a mean convergence step of `1`, confirming the idempotent ranking.
