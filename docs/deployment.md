@@ -18,6 +18,8 @@ Verify configuration before deploying:
 - Set `DEPLOY_DIR` to scan other configuration trees.
 - Set `DATABASE_URL` to verify the application database is reachable. The
   validator supports `sqlite:///` URLs and runs a simple query.
+- Set `REQUIRED_SERVICES` to ensure critical services appear in `deploy.yml`.
+  Provide a space-separated list such as `"api worker"`.
 - Run the validator:
 
   ```bash
@@ -29,6 +31,7 @@ Verify configuration before deploying:
 
   The validator loads `deploy.yml` and `.env` from `CONFIG_DIR` and exits with
   an error if required keys, services, or files are missing. When
+  `REQUIRED_SERVICES` is set it also ensures each listed service appears. When
   `DATABASE_URL` is set it performs a lightweight connection test and fails if
   the database cannot be reached.
 

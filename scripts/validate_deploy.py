@@ -7,7 +7,9 @@ Usage:
 This script verifies that required environment variables, optional extras, and
 configuration files exist before deployment. It enforces a non-empty,
 unique ``services`` list, verifies container engines, and optionally checks
-database connectivity so misconfigurations fail fast.
+database connectivity so misconfigurations fail fast. Operators may specify
+critical services via ``REQUIRED_SERVICES``; missing entries stop the process
+early.
 """
 from __future__ import annotations
 
@@ -120,6 +122,17 @@ def _unknown_extras(value: str) -> list[str]:
     """Return extras not defined in ``pyproject.toml``."""
 
     return [extra for extra in value.split() if extra and extra not in VALID_EXTRAS]
+
+
+def _missing_services(declared: Sequence[str], required: Sequence[str]) -> list[str]:
+    """Return required services absent from ``declared``.
+
+    The list is order-preserving to surface the first missing service. This
+    allows operators to address issues iteratively.
+    """
+
+    declared_set = set(declared)
+    return [svc for svc in required if svc not in declared_set]
 
 
 def _check_container_engine() -> str | None:
@@ -261,6 +274,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if yaml_errors:
         msg = "; ".join(yaml_errors)
         print(f"Schema errors in deploy.yml: {msg}", file=sys.stderr)
+        return 1
+    required_services = [svc for svc in os.getenv("REQUIRED_SERVICES", "").split() if svc]
+    missing_services = _missing_services(yaml_data.get("services", []), required_services)
+    if missing_services:
+        msg = ", ".join(missing_services)
+        print(f"Missing required services: {msg}", file=sys.stderr)
         return 1
     env_errors = _schema_errors(env_data, ENV_SCHEMA)
     if env_errors:
