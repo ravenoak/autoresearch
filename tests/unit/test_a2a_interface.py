@@ -351,6 +351,17 @@ def test_dispatch_simulation_invariants() -> None:
     assert all(count == 2 for count in result.agent_counts.values())
 
 
+def test_simulation_event_order() -> None:
+    """Event log provides a total ordering over dispatches."""
+    result = run_simulation(agents=2, tasks=3)
+    ids = [idx for idx, _ in result.dispatch_log]
+    assert ids == list(range(6))
+    counts = {0: 0, 1: 0}
+    for _, agent in result.dispatch_log:
+        counts[agent] += 1
+    assert counts == {0: 3, 1: 3}
+
+
 class TestA2AClientExtended(TestA2AClient):
     def test_query_agent_error(self, mock_send_request):
         client = A2AClient()

@@ -14,3 +14,5 @@ def test_simulation_counts() -> None:
     assert result.total_dispatched == agents * tasks
     assert sum(result.agent_counts.values()) == agents * tasks
     assert all(count == tasks for count in result.agent_counts.values())
+    ids = [idx for idx, _ in result.dispatch_log]
+    assert ids == list(range(agents * tasks))
