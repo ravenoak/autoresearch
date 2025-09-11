@@ -1,5 +1,6 @@
 import pytest
 
+from autoresearch.api import utils as api_utils
 from autoresearch.api.models import QueryResponseV1
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
@@ -135,6 +136,21 @@ def test_async_query_status_schema(monkeypatch, api_client):
     parsed = QueryResponseV1.model_validate(data)
     assert parsed.version == "1"
     assert parsed.answer == "ok"
+
+
+def test_unknown_version_rejected(monkeypatch, api_client):
+    _setup(monkeypatch)
+    resp = api_client.post("/query", json={"query": "hi", "version": "99"})
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Unsupported API version 99"
+
+
+def test_deprecated_version_rejected(monkeypatch, api_client):
+    _setup(monkeypatch)
+    monkeypatch.setattr(api_utils, "DEPRECATED_VERSIONS", {"0"})
+    resp = api_client.post("/query", json={"query": "hi", "version": "0"})
+    assert resp.status_code == 410
+    assert resp.json()["detail"] == "API version 0 is deprecated"
 
 
 def test_metrics_endpoint(monkeypatch, api_client):

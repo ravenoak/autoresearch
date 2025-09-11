@@ -6,57 +6,64 @@ declares an explicit ``version`` field which currently defaults to
 ``"1"``.
 """
 
-from typing import List, Literal
+from typing import ClassVar, List
 
 from pydantic import BaseModel, Field
 
 from ..models import BatchQueryRequest, QueryRequest, QueryResponse
 from ..orchestration.reasoning import ReasoningMode
+from .utils import DEPRECATED_VERSIONS, SUPPORTED_VERSIONS
 
 
-class QueryRequestV1(QueryRequest):
-    """API request model for version 1.
+class VersionedModel(BaseModel):
+    """Base class for versioned API schemas.
 
-    Args:
-        version: API version identifier.
+    The ``version`` field is unrestricted at validation time so the router
+    can return custom HTTP errors for deprecated or unknown versions. The
+    OpenAPI schema enumerates supported versions and marks deprecated
+    models accordingly.
     """
 
-    version: Literal["1"] = Field(
-        default="1", description="API version for the request"
-    )
+    __version__: ClassVar[str | None] = None
+    version: str = Field(description="API version identifier")
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):  # type: ignore[override]
+        schema = handler(core_schema)
+        enum = sorted(SUPPORTED_VERSIONS | DEPRECATED_VERSIONS)
+        schema["properties"]["version"]["enum"] = enum
+        if cls.__version__ in DEPRECATED_VERSIONS:
+            schema["deprecated"] = True
+        return schema
 
 
-class QueryResponseV1(QueryResponse):
-    """API response model for version 1.
+class QueryRequestV1(VersionedModel, QueryRequest):
+    """API request model for version 1."""
 
-    Args:
-        version: API version identifier.
-    """
-
-    version: Literal["1"] = Field(
-        default="1", description="API version for the response"
-    )
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the request")
 
 
-class BatchQueryRequestV1(BatchQueryRequest):
+class QueryResponseV1(VersionedModel, QueryResponse):
+    """API response model for version 1."""
+
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the response")
+
+
+class BatchQueryRequestV1(VersionedModel, BatchQueryRequest):
     """Batch query request model for version 1."""
 
-    version: Literal["1"] = Field(
-        default="1", description="API version for the request"
-    )
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the request")
     queries: List[QueryRequestV1]
 
 
-class BatchQueryResponseV1(BaseModel):
-    """Batch query response model for version 1.
+class BatchQueryResponseV1(VersionedModel):
+    """Batch query response model for version 1."""
 
-    Args:
-        version: API version identifier.
-    """
-
-    version: Literal["1"] = Field(
-        default="1", description="API version for the response"
-    )
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the response")
     page: int = Field(ge=1, description="Current page number")
     page_size: int = Field(ge=1, description="Number of results per page")
     results: List[QueryResponseV1]

@@ -1,7 +1,7 @@
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import parsers, scenario, then, when
 
-from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel
+from autoresearch.search import Search
 
 
 @scenario("../features/hybrid_search.feature", "Combine keyword and vector results")
@@ -42,3 +42,10 @@ def first_result_matches_semantic(bdd_context):
     hybrid = bdd_context["hybrid_results"][0]
     semantic = bdd_context["semantic_results"][0]
     assert hybrid["url"] == semantic["url"]
+
+
+@then("the relevance scores should be normalized")
+def relevance_scores_normalized(bdd_context):
+    scores = [r["relevance_score"] for r in bdd_context["hybrid_results"]]
+    assert all(0.0 <= s <= 1.0 for s in scores)
+    assert scores == sorted(scores, reverse=True)

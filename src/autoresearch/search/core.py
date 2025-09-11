@@ -542,6 +542,26 @@ class Search:
             return [0.0 for _ in scores]
         return [s / max_score for s in scores]
 
+    @staticmethod
+    def merge_semantic_scores(
+        semantic: List[float], duckdb: List[float]
+    ) -> Tuple[List[float], List[float]]:
+        """Average normalized semantic and vector similarities.
+
+        Args:
+            semantic: Raw cosine similarities from the transformer.
+            duckdb: Pre-computed similarities from the vector store.
+
+        Returns:
+            Tuple[List[float], List[float]]: Merged semantic scores and the
+            normalized DuckDB scores.
+        """
+
+        semantic_norm = Search.normalize_scores(semantic)
+        duckdb_norm = Search.normalize_scores(duckdb)
+        merged = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(semantic_norm))]
+        return merged, duckdb_norm
+
     @hybridmethod
     def rank_results(
         self,
@@ -603,24 +623,22 @@ class Search:
             if search_cfg.use_bm25
             else [1.0] * len(results)
         )
-        semantic_scores = (
-            self.calculate_semantic_similarity(query, results, query_embedding)
-            if search_cfg.use_semantic_similarity
-            else [1.0] * len(results)
-        )
         credibility_scores = (
             self.assess_source_credibility(results)
             if search_cfg.use_source_credibility
             else [1.0] * len(results)
         )
 
-        # Normalize component scores so each contributes within the 0–1 range.
         bm25_scores = self.normalize_scores(bm25_scores)
-        duckdb_scores = self.normalize_scores([r.get("similarity", 0.0) for r in results])
-        semantic_norm = self.normalize_scores(semantic_scores)
-        semantic_scores = [
-            (semantic_norm[i] + duckdb_scores[i]) / 2 for i in range(len(results))
-        ]
+
+        if search_cfg.use_semantic_similarity:
+            semantic_raw = self.calculate_semantic_similarity(query, results, query_embedding)
+            duckdb_raw = [r.get("similarity", 0.0) for r in results]
+            semantic_scores, duckdb_scores = self.merge_semantic_scores(semantic_raw, duckdb_raw)
+        else:
+            semantic_scores = [1.0] * len(results)
+            duckdb_scores = self.normalize_scores([r.get("similarity", 0.0) for r in results])
+
         credibility_scores = self.normalize_scores(credibility_scores)
 
         # Combine weighted scores directly
