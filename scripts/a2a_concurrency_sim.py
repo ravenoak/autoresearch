@@ -11,6 +11,7 @@ Assumptions:
 Outcomes:
 - each agent receives ``tasks`` assignments
 - the total equals ``agents * tasks``
+- a global counter yields a total event order
 
 See docs/specs/a2a-interface.md for invariants.
 """
@@ -19,9 +20,9 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from threading import Lock
-from typing import Dict
+from typing import Dict, List, Tuple
 
 
 @dataclass
@@ -30,6 +31,7 @@ class SimulationResult:
 
     total_dispatched: int
     agent_counts: Dict[int, int]
+    dispatch_log: List[Tuple[int, int]] = field(default_factory=list)
 
 
 def run_simulation(agents: int, tasks: int) -> SimulationResult:
@@ -40,11 +42,15 @@ def run_simulation(agents: int, tasks: int) -> SimulationResult:
     lock = Lock()
     agent_counts: Dict[int, int] = {a: 0 for a in range(agents)}
     total = 0
+    event_id = 0
+    dispatch_log: List[Tuple[int, int]] = []
 
     def dispatch(agent_id: int) -> None:
-        nonlocal total
+        nonlocal total, event_id
         with lock:
             agent_counts[agent_id] += 1
+            dispatch_log.append((event_id, agent_id))
+            event_id += 1
             total += 1
 
     with ThreadPoolExecutor(max_workers=agents) as ex:
@@ -52,7 +58,11 @@ def run_simulation(agents: int, tasks: int) -> SimulationResult:
             for _ in range(tasks):
                 ex.submit(dispatch, agent_id)
 
-    return SimulationResult(total_dispatched=total, agent_counts=agent_counts)
+    return SimulationResult(
+        total_dispatched=total,
+        agent_counts=agent_counts,
+        dispatch_log=dispatch_log,
+    )
 
 
 def main(agents: int, tasks: int) -> None:

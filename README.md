@@ -12,6 +12,11 @@ source for environment setup and optional features.
 For orchestrator state transitions and API contracts see
 [docs/orchestrator_state.md](docs/orchestrator_state.md).
 
+Concurrency guarantees for agent communication are detailed in
+[docs/specs/a2a-interface.md](docs/specs/a2a-interface.md), which includes a
+proof sketch and an event-driven simulation
+([scripts/a2a_concurrency_sim.py](scripts/a2a_concurrency_sim.py)).
+
 ## Prerequisites
 
 Install these binaries and ensure they are on your `PATH`:
