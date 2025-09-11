@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp parsers" ./scripts/setup.sh
-# Verify Python 3.12+, confirm Go Task and uv are installed, append .venv/bin to
-# PATH, and sync dependencies.
+# Verify Python 3.12+, confirm Go Task and uv>=0.7.0 are installed, append
+# .venv/bin to PATH, and sync dependencies.
 
 set -euo pipefail
 
@@ -52,6 +52,14 @@ ensure_uv() {
     fi
     if ! uv --version >/dev/null 2>&1; then
         echo "uv is installed but not functional; reinstall it." >&2
+        exit 1
+    fi
+    uv_version=$(uv --version | awk '{print $2}')
+    uv_major=${uv_version%%.*}
+    uv_minor=${uv_version#*.}
+    uv_minor=${uv_minor%%.*}
+    if [ "$uv_major" -lt 0 ] || { [ "$uv_major" -eq 0 ] && [ "$uv_minor" -lt 7 ]; }; then
+        echo "uv 0.7.0 or newer required, found $uv_version" >&2
         exit 1
     fi
 }

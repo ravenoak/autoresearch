@@ -24,6 +24,14 @@ ensure_uv() {
     fi
     command -v uv >/dev/null 2>&1 \
         || { echo "uv is required but missing" >&2; return 1; }
+    uv_version=$(uv --version | awk '{print $2}')
+    uv_major=${uv_version%%.*}
+    uv_minor=${uv_version#*.}
+    uv_minor=${uv_minor%%.*}
+    if [ "$uv_major" -lt 0 ] || { [ "$uv_major" -eq 0 ] && [ "$uv_minor" -lt 7 ]; }; then
+        echo "uv 0.7.0 or newer required, found $uv_version" >&2
+        return 1
+    fi
 }
 
 install_dev_test_extras() {
