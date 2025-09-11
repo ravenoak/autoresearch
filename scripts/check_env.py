@@ -5,7 +5,8 @@ Usage:
     uv run python scripts/check_env.py
 
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
-can be specified via the ``EXTRAS`` environment variable.
+can be specified via the ``EXTRAS`` environment variable. The script verifies
+Go Task availability by invoking ``task --version``.
 """
 from __future__ import annotations
 
