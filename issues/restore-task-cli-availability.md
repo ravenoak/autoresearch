@@ -2,9 +2,9 @@
 
 ## Context
 The environment again lacks the `task` command, preventing `task check`,
-`task verify`, and `task coverage` from running. `scripts/codex_setup.sh`
-completes, but `task` remains unavailable. This issue is reopened to restore
-the CLI.
+`task verify`, and `task coverage` from running. Running `scripts/codex_setup.sh`
+on September 11, 2025 completes in about 20 seconds but `task --version` still
+reports `command not found`. This issue is reopened to restore the CLI.
 
 ## Dependencies
 None.
