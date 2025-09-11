@@ -371,7 +371,7 @@ class ConfigLoader:
                             new_config = self.load_config()
                         except Exception as e:  # pragma: no cover - defensive
                             logger.error("Error reloading config: %s", e)
-                            continue
+                            raise ConfigError("Error in config watcher", cause=e) from e
                         self._config = new_config
                         self.notify_observers(new_config)
         except Exception as e:

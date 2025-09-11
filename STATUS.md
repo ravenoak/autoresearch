@@ -29,6 +29,16 @@
   search storage. Archived `fix-check-env-go-task-warning` and opened
   `resolve-integration-test-regressions` to address these failures.
 
+- Current failing tests:
+
+| Module  | Failing tests |
+| --- | --- |
+| API | None |
+| Config | None |
+| Storage | `tests/integration/test_storage_eviction_sim.py::test_zero_budget_keeps_nodes`<br>`tests/integration/test_storage_schema.py::test_initialize_schema_version_without_fetchone`<br>`tests/unit/test_storage_utils.py::test_initialize_storage_creates_tables` |
+| Ranking | `tests/unit/test_property_search_ranking.py::test_rank_results_orders_by_weighted_scores` |
+| RDF | `tests/integration/test_search_storage.py::test_search_returns_persisted_claim`<br>`tests/integration/test_search_storage.py::test_external_lookup_persists_results`<br>`tests/integration/test_search_storage.py::test_search_reflects_updated_claim`<br>`tests/integration/test_search_storage.py::test_search_persists_multiple_backend_results` |
+
 ## September 10, 2025
 
 - After installing the `dev-minimal` and `test` extras (e.g. `task install`),
