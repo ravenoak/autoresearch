@@ -1,118 +1,21 @@
-# Orchestrator Performance
+# Orchestrator performance
 
-This document summarizes the assumptions and formulas used for the
-distributed orchestrator performance simulation.
+Benchmark executed on 2025-09-11 using:
 
-## Assumptions
-
-- Task arrivals follow a Poisson process with rate \(\lambda\).
-- Service times are exponentially distributed with rate \(\mu\).
-- The system behaves as an M/M/c queue with \(c\) workers.
-- Network delay adds a fixed latency per task.
-- Throughput is \(\min(\lambda, c\mu)\). Latency is computed only when
-  \(\lambda < c\mu\).
-
-## Formulas
-
-Utilization:
-\(\rho = \lambda / (c\mu)\)
-
-Probability of zero tasks:
-\(P_0 = \Big(\sum_{n=0}^{c-1} (\lambda/\mu)^n / n! +\
-(\lambda/\mu)^c /(c!(1-\rho))\Big)^{-1}\)
-
-Average queue length:
-\(L_q = P_0 (\lambda/\mu)^c \rho / (c!(1-\rho)^2)\)
-
-Wait time in queue:
-\(W_q = L_q / \lambda\)
-
-Total latency:
-\(L = d + W_q + 1/\mu\)
-
-## Coordination Overhead
-
-Each task requires dispatch and result collection, adding coordination delay
-\(t_c\) per task. The effective service rate becomes
-\(\mu_{\text{eff}} = 1 / (1/\mu + t_c)\). The relative overhead is
-\(O = 1 - \mu_{\text{eff}}/\mu = t_c \mu / (1 + t_c \mu)\).
-Latency with coordination is
-\(L = d + W_q + 1/\mu_{\text{eff}}\).
-
-## Throughput and Latency Curves
-
-Throughput saturates at \(\min(\lambda, c\mu_{\text{eff}})\), while
-latency drops sharply once \(c\mu_{\text{eff}} > \lambda\).
-Example curves for \(\lambda = 120\) tasks/s, \(\mu = 50\) tasks/s, and
-\(d = 5\) ms are shown below.
-
-![Throughput and latency versus workers](images/distributed_perf.svg)
-
-| workers | throughput | latency (s) |
-| ------- | ---------- | ----------- |
-| 3 | 120 | 0.0466 |
-| 4 | 120 | 0.0286 |
-| 5 | 120 | 0.0259 |
-
-## Failure Recovery
-
-If a worker fails, remaining workers drain the queue. Throughput temporarily
-falls to \(\min(\lambda, (c-1)\mu_{\text{eff}})\) but no tasks are lost.
-Safety and liveness are preserved by the result aggregator. See
-[distributed coordination](algorithms/distributed_coordination.md) for more
-background.
-
-## Benchmark
-
-We validated the analytical model with a discrete-event simulation running
-100 tasks while varying workers and adding 5 ms of dispatch latency. The
-throughput curve matches the \(\min(\lambda, c\mu_{\text{eff}})\)
-prediction, and latency decreases as workers scale.
-
-![Benchmark throughput and latency]
-(images/distributed_orchestrator_perf_benchmark.svg)
-
-The latest run used:
-
-```
-uv run python -m scripts.distributed_orchestrator_perf_benchmark \
-    --max-workers 4 --tasks 100
+```sh
+uv run scripts/scheduling_resource_benchmark.py --max-workers 4 --tasks 100 \
+    --arrival-rate 3 --service-rate 5 --mem-per-task 0.5
 ```
 
-with a 5 ms dispatch latency and 5 ms task time. It reported:
+Results showed increasing throughput as workers scaled:
 
-| workers | throughput (tasks/s) | avg latency (ms) |
-| ------- | ------------------- | ---------------- |
-| 1 | 70.12 | 14.26 |
-| 2 | 102.25 | 9.78 |
-| 3 | 126.38 | 7.91 |
-| 4 | 128.58 | 7.78 |
+- 1 worker: ~846 tasks/s, CPU time 0.012 s.
+- 2 workers: ~1665 tasks/s, CPU time 0.012 s.
+- 3 workers: ~2426 tasks/s, CPU time 0.008 s.
+- 4 workers: ~3179 tasks/s, CPU time 0.010 s.
 
-A standalone run of `scripts/distributed_orchestrator_sim.py` with default
-settings (2 workers, 100 tasks) measured 114.35 tasks/s throughput and
-8.75 ms average latency.
-
-## Failure Overhead Simulation
-
-A discrete-event simulation explored the cost of task retries across multiple
-workers. For failure probability \(p\), each task runs on average
-\(1/(1-p)\) times as shown in
-[distributed overhead](algorithms/distributed_overhead.md). Running 300 tasks
-with three workers and \(p = 0.2\) yielded an observed overhead of roughly
-\(1.25\) and throughput near the theoretical
-\(\Theta = w (1 - p) / (d + s)\). The measured values aligned with these
-formulas.
-
-![Observed overhead versus failure probability](images/multi_node_overhead.svg)
-
-The figure compares measured executions per task against the \(1/(1-p)\)
-model, demonstrating agreement between analysis and simulation.
-
-## Recommendations
-
-- Use three to four workers for 5 ms dispatch latency and 5 ms task time,
-  where throughput saturates near 128 tasks/s.
-- Additional workers offer limited benefit; reducing latency or task time
-  improves performance more effectively.
-- Monitor CPU and memory usage; a two-worker run consumed roughly 50\%
-  CPU and 52 MB of memory.
+Profiling uncovered a list rotation routine in
+[`execution._rotate_list`](../src/autoresearch/orchestration/execution.py)
+that allocated multiple intermediate lists. The implementation now uses
+`itertools.islice` and `itertools.chain` to build the rotated sequence in a
+single pass, reducing memory overhead for large agent lists.

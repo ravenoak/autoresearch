@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from itertools import chain, islice
 from typing import Any, Callable, Dict, List
 
 import rdflib
@@ -285,11 +286,21 @@ def _execute_agent(
 
 
 def _rotate_list(items: List[Any], start_idx: int) -> List[Any]:
-    """Rotate a list so that start_idx becomes the first element."""
+    """Rotate ``items`` so ``start_idx`` becomes the first element.
+
+    This implementation avoids creating multiple intermediate lists by using
+    iterator slicing. The prior approach sliced the list twice and concatenated
+    the results, which increased memory usage for large collections. Using
+    :func:`itertools.islice` and :func:`itertools.chain` generates the rotated
+    sequence in a single pass before materializing it as a list, reducing
+    overhead.
+    """
+
     if not items:
         return []
-    start_idx = start_idx % len(items)
-    return items[start_idx:] + items[:start_idx]
+
+    start_idx %= len(items)
+    return list(chain(islice(items, start_idx, None), islice(items, 0, start_idx)))
 
 
 def _execute_cycle(
