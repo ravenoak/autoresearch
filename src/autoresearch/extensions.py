@@ -86,11 +86,12 @@ class VSSExtensionLoader:
                     log.warning("VSS extension may not be fully loaded")
             except duckdb.Error as e:  # type: ignore[attr-defined]
                 log.error("Failed to load VSS extension: %s", e)
-                extension_loaded = VSSExtensionLoader._load_local_stub(conn)
+                extension_loaded = VSSExtensionLoader._load_from_package(conn)
+                if not extension_loaded:
+                    extension_loaded = VSSExtensionLoader._load_local_stub(conn)
                 if (
                     not extension_loaded
-                    and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower()
-                    == "true"
+                    and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
                 ):
                     raise StorageError("Failed to load VSS extension", cause=e)
 
@@ -107,10 +108,7 @@ class VSSExtensionLoader:
             bool: True if the stub loaded and verified, else False.
         """
         stub_path = (
-            Path(__file__).resolve().parents[2]
-            / "extensions"
-            / "vss"
-            / "vss.duckdb_extension"
+            Path(__file__).resolve().parents[2] / "extensions" / "vss" / "vss.duckdb_extension"
         )
         if not stub_path.exists():
             log.warning("VSS stub not found at %s", stub_path)
@@ -124,6 +122,35 @@ class VSSExtensionLoader:
             log.warning("VSS stub failed verification")
         except duckdb.Error as err:  # type: ignore[attr-defined]
             log.warning("Failed to load VSS stub: %s", err)
+        return False
+
+    @staticmethod
+    def _load_from_package(conn: DuckDBConnection) -> bool:
+        """Attempt to load the VSS extension from the Python package.
+
+        The ``duckdb_extension_vss`` package ships prebuilt binaries for common
+        platforms. When available, its loader is used before falling back to a
+        stubbed extension.
+
+        Args:
+            conn: DuckDB connection to receive the extension.
+
+        Returns:
+            bool: True if the package provided the extension, else False.
+        """
+        try:
+            import duckdb_extension_vss as vss  # type: ignore[import-not-found]
+
+            if hasattr(vss, "load"):
+                vss.load(conn)  # type: ignore[attr-defined]
+                return VSSExtensionLoader.verify_extension(conn, verbose=False)
+            path = Path(getattr(vss, "__file__", "")).parent / "vss.duckdb_extension"
+            if path.exists():
+                conn.execute(f"LOAD '{path.as_posix()}'")
+                return VSSExtensionLoader.verify_extension(conn, verbose=False)
+            log.warning("duckdb_extension_vss package lacks load() and extension file")
+        except Exception as err:  # pragma: no cover - optional dependency
+            log.warning("Failed to load VSS extension from package: %s", err)
         return False
 
     @staticmethod

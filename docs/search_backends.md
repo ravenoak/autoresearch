@@ -31,6 +31,18 @@ bm25_weight = 0.3
 source_credibility_weight = 0.1
 ```
 
+The ranking formula normalizes each component to the `0`–`1` range and
+then applies a weighted sum:
+
+```
+score = bm25_norm * bm25_weight
+        + semantic_norm * semantic_similarity_weight
+        + credibility_norm * source_credibility_weight
+```
+
+The combined scores are normalized again before sorting so the highest
+ranked item always receives `1.0`.
+
 Use `scripts/optimize_search_weights.py` with a labelled evaluation dataset to
 automatically discover good values. The script runs a grid search and updates
 the configuration file with the best-performing weights.

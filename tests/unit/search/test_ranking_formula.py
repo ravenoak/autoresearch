@@ -1,79 +1,20 @@
 import pytest
 
-from autoresearch.config.loader import ConfigLoader
-from autoresearch.config.models import ConfigModel, SearchConfig
-from autoresearch.errors import ConfigError
-from autoresearch.search import Search
+from autoresearch.search.ranking import combine_scores
 
 
-def test_rank_results_weighted_combination(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Search.rank_results combines scores using configured weights."""
-    docs = [
-        {"title": "A", "url": "https://a", "similarity": 0.4},
-        {"title": "B", "url": "https://b", "similarity": 0.1},
-    ]
-    bm25 = [0.2, 0.5]
-    semantic = [0.4, 0.1]
-    credibility = [0.3, 0.7]
-    cfg = ConfigModel(
-        search=SearchConfig(
-            bm25_weight=0.3,
-            semantic_similarity_weight=0.4,
-            source_credibility_weight=0.3,
-            use_bm25=True,
-            use_semantic_similarity=True,
-            use_source_credibility=True,
-        )
-    )
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
-    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: bm25))
-    monkeypatch.setattr(
-        Search,
-        "calculate_semantic_similarity",
-        lambda self, q, r, query_embedding=None: semantic,
-    )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: credibility)
-
-    ranked = Search.rank_results("q", docs)
-    duckdb = Search.normalize_scores([r["similarity"] for r in docs])
-    semantic_norm = Search.normalize_scores(semantic)
-    semantic_scores = [(semantic_norm[i] + duckdb[i]) / 2 for i in range(len(docs))]
-    scores = []
-    for i in range(len(docs)):
-        merged = bm25[i] * 0.3 + semantic_scores[i] * 0.4
-        scores.append(merged + credibility[i] * 0.3)
-    max_score = max(scores)
-    normalized = [s / max_score for s in scores]
-    assert [r["title"] for r in ranked] == ["A", "B"]
-    relevance_scores = [r["relevance_score"] for r in ranked]
-    assert relevance_scores == pytest.approx(sorted(normalized, reverse=True))
-    assert relevance_scores == sorted(relevance_scores, reverse=True)
+def test_combine_scores_weighted_sum() -> None:
+    """combine_scores applies weights after normalizing components."""
+    bm25 = [3.0, 1.0]
+    semantic = [0.8, 0.2]
+    credibility = [0.9, 0.5]
+    weights = (0.5, 0.3, 0.2)
+    scores = combine_scores(bm25, semantic, credibility, weights)
+    assert scores == pytest.approx([1.0, 0.35], abs=0.01)
+    assert all(0.0 <= s <= 1.0 for s in scores)
 
 
-def test_rank_results_invalid_weights(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Invalid weight sums raise ConfigError."""
-    cfg = ConfigModel(
-        search=SearchConfig(
-            bm25_weight=0.3,
-            semantic_similarity_weight=0.4,
-            source_credibility_weight=0.3,
-            use_bm25=True,
-            use_semantic_similarity=True,
-            use_source_credibility=True,
-        )
-    )
-    cfg.search.bm25_weight = 0.6
-    cfg.search.semantic_similarity_weight = 0.3
-    cfg.search.source_credibility_weight = 0.2
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader()._config = None
-    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0]))
-    monkeypatch.setattr(
-        Search,
-        "calculate_semantic_similarity",
-        lambda self, q, r, query_embedding=None: [1.0],
-    )
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: [1.0])
-    with pytest.raises(ConfigError):
-        Search.rank_results("q", [{"url": "https://a"}])
+def test_combine_scores_invalid_weights() -> None:
+    """Invalid weight sums raise ValueError."""
+    with pytest.raises(ValueError):
+        combine_scores([1.0], [1.0], [1.0], (0.6, 0.3, 0.2))

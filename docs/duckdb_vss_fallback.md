@@ -4,6 +4,18 @@ When network access is limited, Autoresearch falls back to a stubbed vector
 search extension for DuckDB. The stub allows tests to run while
 disabling vector search features.
 
+## Loading order
+
+`VSSExtensionLoader.load_extension` tries multiple strategies:
+
+1. Load a user provided path from `storage.vector_extension_path`.
+2. Install and load the official `vss` extension from DuckDB's repository.
+3. Load the binary shipped with the `duckdb_extension_vss` Python package.
+4. Fall back to the stub in `extensions/vss/` when all else fails.
+
+The loader only raises :class:`StorageError` when
+`AUTORESEARCH_STRICT_EXTENSIONS=true`.
+
 ## Stub mechanism
 
 - [`download_duckdb_extensions.py`][dde] installs the VSS extension.

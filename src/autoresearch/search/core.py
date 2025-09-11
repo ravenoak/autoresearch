@@ -70,6 +70,7 @@ from ..logging_utils import get_logger
 from ..storage import StorageManager
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+from .ranking import combine_scores, normalize_scores as _normalize_scores
 
 Repo: Any | None
 try:
@@ -535,12 +536,7 @@ class Search:
             List[float]: Normalized scores bounded by 0 and 1.
         """
 
-        if not scores:
-            return scores
-        max_score = max(scores)
-        if max_score <= 0:
-            return [0.0 for _ in scores]
-        return [s / max_score for s in scores]
+        return _normalize_scores(scores)
 
     @staticmethod
     def merge_semantic_scores(
@@ -641,14 +637,17 @@ class Search:
 
         credibility_scores = self.normalize_scores(credibility_scores)
 
-        # Combine weighted scores directly
-        final_scores = [
-            bm25_scores[i] * search_cfg.bm25_weight
-            + semantic_scores[i] * search_cfg.semantic_similarity_weight
-            + credibility_scores[i] * search_cfg.source_credibility_weight
-            for i in range(len(results))
-        ]
-        final_scores = self.normalize_scores(final_scores)
+        # Combine weighted scores using the shared ranking utility
+        final_scores = combine_scores(
+            bm25_scores,
+            semantic_scores,
+            credibility_scores,
+            (
+                search_cfg.bm25_weight,
+                search_cfg.semantic_similarity_weight,
+                search_cfg.source_credibility_weight,
+            ),
+        )
 
         # Add scores to results for debugging/transparency
         for i, result in enumerate(results):
