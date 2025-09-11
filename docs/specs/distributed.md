@@ -37,13 +37,16 @@ coalition and scheduling details.
 - Tasks persist until acknowledged by a worker, so no task is lost;
   integration tests [t1] demonstrate end-to-end completion.
 - As long as a worker remains alive, queued tasks eventually run, yielding
-  liveness.
+    liveness.
+- The script [distributed_coordination_formulas.py][dcf] derives round-robin
+  allocations and failure overhead.
 
 ## Simulation Expectations
 
 Unit tests cover nominal and edge cases for these routines. Benchmarks such as
 [distributed_recovery_benchmark.py][drb] record CPU and memory usage during
-retries.
+retries. Simulations like [distributed_coordination_sim.py][sim2] exercise
+leader election and ordering.
 
 ## Traceability
 
@@ -68,5 +71,7 @@ retries.
 
 [drb]: ../../scripts/distributed_recovery_benchmark.py
 [sim]: ../../scripts/orchestrator_distributed_sim.py
+[sim2]: ../../scripts/distributed_coordination_sim.py
+[dcf]: ../../scripts/distributed_coordination_formulas.py
 
 [dc]: ../algorithms/distributed_coordination.md

@@ -44,7 +44,9 @@ loop:
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state.
+Core routines enforce invariants by validating inputs and state. The
+formula [resource_monitor_bounds.py][sim] derives expected sampling
+intervals and thresholds.
 
 ## Simulation Expectations
 
@@ -63,3 +65,4 @@ Unit tests cover nominal and edge cases for these routines.
 [t1]: ../../tests/unit/test_resource_monitor_gpu.py
 [t2]: ../../tests/integration/test_monitor_metrics.py
 [rm]: ../algorithms/resource_monitor.md
+[sim]: ../../scripts/resource_monitor_bounds.py
