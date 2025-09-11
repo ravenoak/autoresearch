@@ -8,7 +8,7 @@ points to gaps in our reasoning and documentation. Formalizing this module
 will prevent future regressions.
 
 ## Dependencies
-- [resolve-concurrent-query-interface-regression](resolve-concurrent-query-interface-regression.md)
+None.
 
 ## Acceptance Criteria
 - Provide a proof sketch or formal argument for the A2A concurrency model.

@@ -4,23 +4,22 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 10, 2025**.
+[README](README.md). Last updated **September 11, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. `task check` runs 8 targeted tests and passes,
-warning that package metadata for GitPython, cibuildwheel,
-duckdb-extension-vss, spacy, types-networkx, types-protobuf, types-requests,
-and types-tabulate is missing. `task verify` fails in
-`tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent`,
-so coverage is not generated. Integration tests were not executed.
-Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`)
-offer utilization and memory estimates documented in
-`docs/orchestrator_perf.md`. Dependency pins: `fastapi>=0.115.12` and
-`slowapi==0.1.9`. Use Python 3.12+ with:
+across project documentation. `task check` runs 8 targeted tests and passes.
+`task verify` fails in
+`tests/unit/test_check_env_warnings.py::test_missing_go_task_warns` because
+`check_env.check_task` logs instead of warning. Integration tests were not
+executed. The previous package metadata warnings and concurrency regression
+tests are resolved. Scheduler resource benchmarks
+(`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
+estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
+`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&

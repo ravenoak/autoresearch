@@ -13,4 +13,4 @@ None.
 - Concurrency logic in the A2A interface is restored with regression coverage.
 
 ## Status
-Open
+Archived

@@ -1,5 +1,21 @@
 # Status
 
+## September 11, 2025
+
+- Installed the `dev-minimal` and `test` extras; `uv run python scripts/check_env.py`
+  reports all dependencies present without warnings.
+- Verified Go Task 3.44.1 is available and added to `PATH`.
+- `task check` passes, running flake8, mypy, spec linting, and targeted tests.
+- `task verify` fails in
+  `tests/unit/test_check_env_warnings.py::test_missing_go_task_warns` because
+  `check_env.check_task` logs instead of warning.
+- `tests/integration/test_a2a_interface.py::test_concurrent_queries` passes when
+  run with the `slow` marker.
+- Archived the `resolve-package-metadata-warnings` and
+  `resolve-concurrent-query-interface-regression` issues.
+- Created `fix-check-env-go-task-warning` to align the test with `check_env`
+  behavior.
+
 ## September 10, 2025
 
 - After installing the `dev-minimal` and `test` extras (e.g. `task install`),
@@ -258,11 +274,10 @@ so coverage reports are not generated.
 
 ## Open issues
 - [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
-- [resolve-package-metadata-warnings](issues/resolve-package-metadata-warnings.md)
-- [resolve-concurrent-query-interface-regression](issues/resolve-concurrent-query-interface-regression.md)
 - [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
 - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
   - [containerize-and-package](issues/containerize-and-package.md) (reopened)
   - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
+- [fix-check-env-go-task-warning](issues/fix-check-env-go-task-warning.md)
