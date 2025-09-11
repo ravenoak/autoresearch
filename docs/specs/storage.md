@@ -44,7 +44,8 @@ the safety margin.
      `G' = G \ E` with `U' = U - u(E)`.
    - Each removed node increments the eviction counter [m2].
    - Repeating eviction on the same `E` leaves state unchanged.
-4. **Under budget**
+4. **Budget guard**
+   - When `B ≤ 0`, eviction is skipped and all nodes remain.
    - When `U ≤ B`, no eviction occurs and all nodes remain.
 5. **Teardown**
    - `teardown` clears `G` and releases resources.
@@ -53,7 +54,8 @@ the safety margin.
 
 - `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs
   yield identical table listings, demonstrated in
-  `schema_idempotency_sim.py` [s2].
+  `schema_idempotency_sim.py` [s2]. Schema version detection relies on
+  `fetchall` so connections without `fetchone` remain supported.
 - **Concurrency safety.** A single re-entrant lock guards state, so any
   interleaving `t₁, t₂, …` reduces to a serial order. The resulting sequence
   `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves linearizability, and

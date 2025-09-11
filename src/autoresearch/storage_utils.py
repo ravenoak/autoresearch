@@ -1,0 +1,33 @@
+"""Utility helpers for storage routines."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .errors import StorageError
+from .logging_utils import get_logger
+
+log = get_logger(__name__)
+
+
+def initialize_schema_version(conn: Any) -> None:
+    """Ensure the schema version exists in the metadata table.
+
+    DuckDB cursor objects may omit :meth:`fetchone`, so this helper relies on
+    :meth:`fetchall` to read existing values. If no version is present, it
+    inserts ``1``.
+
+    Args:
+        conn: Active DuckDB connection.
+
+    Raises:
+        StorageError: If the schema version cannot be initialised.
+    """
+    try:
+        cursor = conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
+        rows = cursor.fetchall()
+        if not rows:
+            log.info("Initializing schema version to 1")
+            conn.execute("INSERT INTO metadata (key, value) VALUES ('schema_version', '1')")
+    except Exception as exc:  # pragma: no cover - defensive
+        raise StorageError("Failed to initialize schema version", cause=exc)

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import autoresearch.storage as storage
 from autoresearch.config.loader import ConfigLoader
@@ -45,24 +45,11 @@ def test_initialize_storage_creates_tables(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
 
-    monkeypatch.setattr(
-        storage.DuckDBStorageBackend,
-        "_initialize_schema_version",
-        lambda self: None,
-    )
     monkeypatch.setattr(storage.DuckDBStorageBackend, "_run_migrations", lambda self: None)
 
     ctx = storage.initialize_storage(":memory:")
     backend = ctx.db_backend
     assert backend is not None
     conn = backend.get_connection()
-    show = MagicMock()
-    show.fetchall.return_value = [
-        ("nodes",),
-        ("edges",),
-        ("embeddings",),
-        ("metadata",),
-    ]
-    monkeypatch.setattr(conn, "execute", lambda _q: show)
     tables = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
     assert {"nodes", "edges", "embeddings", "metadata"}.issubset(tables)

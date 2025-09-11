@@ -38,11 +38,11 @@ def test_initialize_storage_creates_tables(tmp_path, db_path):
 
 
 def test_initialize_schema_version_without_fetchone(monkeypatch):
-    """_initialize_schema_version works when DuckDB lacks fetchone."""
+    """_initialize_schema_version tolerates connections without fetchone."""
     backend = DuckDBStorageBackend()
     backend.setup(db_path=":memory:", skip_migrations=True)
     backend._conn.execute("DELETE FROM metadata WHERE key='schema_version'")
-    original_execute = backend._conn.execute
+    original_execute = type(backend._conn).execute
 
     class NoFetchOneResult:
         def __init__(self, rows):
@@ -51,12 +51,12 @@ def test_initialize_schema_version_without_fetchone(monkeypatch):
         def fetchall(self) -> list[list[str]]:
             return self._rows
 
-    def fake_execute(sql: str, *args, **kwargs):
+    def fake_execute(self, sql: str, *args, **kwargs):
         if "schema_version" in sql and "SELECT" in sql:
             return NoFetchOneResult([])
-        return original_execute(sql, *args, **kwargs)
+        return original_execute(self, sql, *args, **kwargs)
 
-    monkeypatch.setattr(backend._conn, "execute", fake_execute)
+    monkeypatch.setattr(type(backend._conn), "execute", fake_execute)
     backend._initialize_schema_version()
-    backend._conn.execute = original_execute
+    monkeypatch.setattr(type(backend._conn), "execute", original_execute)
     assert backend.get_schema_version() == 1

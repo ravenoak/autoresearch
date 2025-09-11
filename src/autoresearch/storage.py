@@ -527,6 +527,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             usage within the budget.
         """
         if budget_mb <= 0:
+            log.debug("RAM budget <= 0; skipping eviction")
             return
 
         # Get current memory usage
