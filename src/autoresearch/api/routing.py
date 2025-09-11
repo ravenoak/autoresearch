@@ -44,6 +44,7 @@ from .streaming import query_stream_endpoint
 from .utils import (
     RequestLogger,
     create_request_logger,
+    validate_version,
 )
 
 router = APIRouter()
@@ -118,6 +119,7 @@ async def query_endpoint(
         StreamingResponse | QueryResponseV1: Stream or full
         ``QueryResponseV1``.
     """
+    validate_version(request.version)
     config = get_config()
 
     if stream:
@@ -223,6 +225,7 @@ async def batch_query_endpoint(
     Returns:
         BatchQueryResponseV1: Paginated ``QueryResponseV1`` objects.
     """
+    validate_version(batch.version)
     if page < 1 or page_size < 1:
         raise HTTPException(status_code=400, detail="Invalid pagination parameters")
 
@@ -266,6 +269,7 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
     Returns:
         dict: Mapping containing the ``query_id`` of the background task.
     """
+    validate_version(request.version)
     config = get_config()
     if request.reasoning_mode is not None:
         config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)

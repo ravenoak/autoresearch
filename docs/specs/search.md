@@ -23,7 +23,8 @@ and hybrid queries and exposes a CLI entry point.
 ### Hybrid
 
 - Computes keyword and vector scores separately.
-- Normalizes semantic and DuckDB similarities before averaging.
+- Normalizes semantic and DuckDB similarities before averaging so hybrid and
+  semantic rankings share a unified scale.
 - Combines results with a weighted sum of keyword, vector, and source
   credibility weights.
 - Resolves ties by deterministic document identifier.

@@ -10,7 +10,8 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 
 Requests and responses use versioned schemas; the current
 `QueryRequestV1` and `QueryResponseV1` models require a `version` field of
-`"1"`.
+`"1"`. Deprecated versions return **410 Gone** while unknown versions
+return **400 Bad Request**.
 
 ## Algorithms
 

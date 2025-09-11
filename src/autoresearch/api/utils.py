@@ -112,3 +112,29 @@ def enforce_permission(permissions: set[str] | None, required: str) -> None:
         raise HTTPException(status_code=401, detail="Authentication required")
     if required not in permissions:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+
+# Version support -----------------------------------------------------------
+
+SUPPORTED_VERSIONS: set[str] = {"1"}
+"""Set of recognised API schema versions."""
+
+DEPRECATED_VERSIONS: set[str] = set()
+"""Versions that remain parsable but return a ``410 Gone`` response."""
+
+
+def validate_version(version: str) -> None:
+    """Ensure an API version is supported and not deprecated.
+
+    Args:
+        version: Version string provided in the request body.
+
+    Raises:
+        HTTPException: ``410`` when the version is deprecated or ``400`` for
+            unknown versions.
+    """
+
+    if version in DEPRECATED_VERSIONS:
+        raise HTTPException(status_code=410, detail=f"API version {version} is deprecated")
+    if version not in SUPPORTED_VERSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported API version {version}")
