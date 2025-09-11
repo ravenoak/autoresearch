@@ -1,17 +1,17 @@
-from typer.testing import CliRunner
 from fastapi.testclient import TestClient
+from typer.testing import CliRunner
 
-from autoresearch.main import app as cli_app
 from autoresearch.api import app as api_app
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
-from autoresearch.orchestration.orchestrator import (
-    Orchestrator,
-    AgentFactory,
-)
-from autoresearch.llm import DummyAdapter
+from autoresearch.config.models import ConfigModel
 from autoresearch.errors import StorageError
+from autoresearch.llm import DummyAdapter
+from autoresearch.main import app as cli_app
 from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import (
+    AgentFactory,
+    Orchestrator,
+)
 from autoresearch.orchestration.state import QueryState
 
 
@@ -208,12 +208,17 @@ def test_http_api_key(monkeypatch):
             )
             assert resp.status_code == 200
 
+            resp = client.post("/query", json={"query": "test query"})
+            assert resp.status_code == 401
+            assert resp.headers["WWW-Authenticate"] == "API-Key"
+
             resp = client.post(
                 "/query",
                 json={"query": "test query"},
                 headers={"X-API-Key": "bad"},
             )
             assert resp.status_code == 401
+            assert resp.headers["WWW-Authenticate"] == "API-Key"
         finally:
             from autoresearch.storage import set_delegate
 

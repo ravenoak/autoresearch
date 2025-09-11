@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from ..config import ConfigLoader, ConfigModel, get_config
 from ..error_utils import format_error_for_api, get_error_info
 from ..models import QueryResponse
+from ..monitor.metrics import metrics_endpoint
 from ..orchestration import ReasoningMode
 from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
@@ -359,12 +360,9 @@ async def cancel_query(query_id: str, request: Request) -> Response:
     return PlainTextResponse("canceled")
 
 
-@router.get("/metrics", dependencies=[require_permission("metrics")])
-async def metrics_endpoint(_: None = None) -> Response:
-    """Expose Prometheus metrics."""
-    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+# Metrics -----------------------------------------------------------------
 
-    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+router.get("/metrics", dependencies=[require_permission("metrics")])(metrics_endpoint)
 
 
 @router.get("/health", dependencies=[require_permission("health")])
