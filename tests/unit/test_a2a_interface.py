@@ -16,6 +16,7 @@ from autoresearch.a2a_interface import (
     A2A_AVAILABLE,
 )
 from a2a.utils.message import new_agent_text_message
+from scripts.a2a_concurrency_sim import run_simulation
 
 
 # Skip all tests if A2A SDK is not available
@@ -341,6 +342,13 @@ def test_handle_set_config_invalid(monkeypatch, mock_a2a_server, make_a2a_messag
     msg = make_a2a_message(command="set_config", args={"loops": "bad"})
     result = interface._handle_command(msg)
     assert result["result"]["status"] == "error"
+
+
+def test_dispatch_simulation_invariants() -> None:
+    """Simulation confirms per-agent counts remain consistent."""
+    result = run_simulation(agents=3, tasks=2)
+    assert result.total_dispatched == 6
+    assert all(count == 2 for count in result.agent_counts.values())
 
 
 class TestA2AClientExtended(TestA2AClient):

@@ -25,6 +25,7 @@ from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: 
 from autoresearch.a2a_interface import A2A_AVAILABLE, A2AInterface  # noqa: E402
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
+from scripts.a2a_concurrency_sim import run_simulation  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 
@@ -92,3 +93,10 @@ def test_concurrent_queries(running_server):
         assert get_message_text(msg) == f"answer for q{i}"
 
     assert max(start_times) - min(start_times) < 0.05
+
+
+def test_simulated_dispatch_counts() -> None:
+    """Standalone simulation verifies dispatch totals."""
+    result = run_simulation(agents=3, tasks=4)
+    assert result.total_dispatched == 12
+    assert sum(result.agent_counts.values()) == 12
