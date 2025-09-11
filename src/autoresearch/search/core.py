@@ -556,9 +556,11 @@ class Search:
         ``docs/algorithms/bm25.md``, ``docs/algorithms/semantic_similarity.md``,
         and ``docs/algorithms/source_credibility.md`` for details. Convergence
         of the weighted ranking is discussed in
-        ``docs/algorithms/relevance_ranking.md``. Semantic and DuckDB
-        similarities are normalized before averaging so hybrid and semantic
-        rankings share a consistent scale.
+        ``docs/algorithms/relevance_ranking.md``. Component scores are
+        normalized to the 0–1 range before weighting, and the merged scores are
+        normalized again before sorting. Semantic and DuckDB similarities are
+        averaged after normalization so hybrid and semantic rankings share a
+        consistent scale.
 
         Args:
             query: The search query
@@ -612,11 +614,14 @@ class Search:
             else [1.0] * len(results)
         )
 
-        # Normalize semantic and DuckDB similarities before averaging so hybrid
-        # and semantic rankings share a unified scale.
+        # Normalize component scores so each contributes within the 0–1 range.
+        bm25_scores = self.normalize_scores(bm25_scores)
         duckdb_scores = self.normalize_scores([r.get("similarity", 0.0) for r in results])
         semantic_norm = self.normalize_scores(semantic_scores)
-        semantic_scores = [(semantic_norm[i] + duckdb_scores[i]) / 2 for i in range(len(results))]
+        semantic_scores = [
+            (semantic_norm[i] + duckdb_scores[i]) / 2 for i in range(len(results))
+        ]
+        credibility_scores = self.normalize_scores(credibility_scores)
 
         # Combine weighted scores directly
         final_scores = [

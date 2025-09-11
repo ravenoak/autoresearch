@@ -38,9 +38,15 @@ def test_convex_combination_matches_docs(monkeypatch):
     w_s = search_cfg.semantic_similarity_weight
     w_b = search_cfg.bm25_weight
     w_c = search_cfg.source_credibility_weight
-    expected = [w_b * bm25[i] + w_s * semantic[i] + w_c * cred[i] for i in range(2)]
+    bm25_norm = [b / max(bm25) for b in bm25]
+    sem_norm = [s / max(semantic) for s in semantic]
+    cred_norm = [c / max(cred) for c in cred]
+    expected = [
+        w_b * bm25_norm[i] + w_s * sem_norm[i] + w_c * cred_norm[i]
+        for i in range(2)
+    ]
     max_score = max(expected)
-    normalized = [e / max_score for e in expected] if max_score > 0 else [0.0] * 2
+    normalized = [e / max_score for e in expected] if max_score > 0 else [0.0, 0.0]
 
     ranked_ids = [r["id"] for r in ranked]
     expected_ids = [i for i, _ in sorted(enumerate(normalized), key=lambda p: p[1], reverse=True)]
