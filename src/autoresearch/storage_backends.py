@@ -8,6 +8,7 @@ focuses on DuckDB as the primary backend for relational storage and vector searc
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import time
 from contextlib import contextmanager
@@ -16,9 +17,9 @@ from queue import Queue
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
-from dotenv import dotenv_values
-
 import duckdb
+import rdflib
+from dotenv import dotenv_values
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
@@ -33,6 +34,52 @@ if TYPE_CHECKING:  # pragma: no cover - type hints only
     import kuzu
 
 log = get_logger(__name__)
+
+
+def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
+    """Initialize an RDFLib store with explicit driver checks.
+
+    Args:
+        backend: Storage backend name. ``sqlite`` selects the SQLAlchemy plugin
+            with a SQLite connection string, ``berkeleydb`` uses Sleepycat, and
+            ``memory`` returns an in-memory graph.
+        path: Filesystem location for the RDF store.
+
+    Returns:
+        A configured :class:`rdflib.Graph` instance.
+
+    Raises:
+        StorageError: If the requested backend or its driver is unavailable.
+    """
+
+    if backend == "memory":
+        return rdflib.Graph()
+
+    if backend == "berkeleydb":
+        store_name = "Sleepycat"
+        rdf_path = path
+    else:
+        store_name = "SQLAlchemy"
+        rdf_path = f"sqlite:///{path}"
+        if importlib.util.find_spec("sqlalchemy") is None:
+            raise StorageError(
+                "SQLAlchemy driver not installed",
+                suggestion="Install sqlalchemy to use the SQLAlchemy RDF backend",
+            )
+
+    try:
+        graph = rdflib.Graph(store=store_name)
+        graph.open(rdf_path, create=True)
+    except Exception as e:  # pragma: no cover - plugin may be missing
+        if "No plugin registered" in str(e):
+            raise StorageError(
+                f"Missing RDF backend plugin: {store_name}",
+                cause=e,
+                suggestion="Install rdflib-sqlalchemy or choose a different backend",
+            )
+        raise StorageError("Failed to open RDF store", cause=e)
+
+    return graph
 
 
 class DuckDBStorageBackend:
@@ -610,6 +657,32 @@ class DuckDBStorageBackend:
                         )
             except Exception as e:  # pragma: no cover - unexpected DB failure
                 raise StorageError("Failed to update claim in DuckDB", cause=e)
+
+    def get_claim(self, claim_id: str) -> Dict[str, Any]:
+        """Return a persisted claim by ID."""
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        with self.connection() as conn, self._lock:
+            row = conn.execute(
+                "SELECT id, type, content, conf FROM nodes WHERE id=?",
+                [claim_id],
+            ).fetchone()
+            if row is None:
+                raise NotFoundError("Claim not found")
+            result: Dict[str, Any] = {
+                "id": row[0],
+                "type": row[1],
+                "content": row[2],
+                "confidence": row[3],
+            }
+            emb = conn.execute(
+                "SELECT embedding FROM embeddings WHERE node_id=?",
+                [claim_id],
+            ).fetchone()
+            if emb is not None:
+                result["embedding"] = emb[0]
+            return result
 
     def vector_search(
         self,

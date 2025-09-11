@@ -4,11 +4,15 @@ This module contains tests for the RDF persistence functionality of the storage 
 verifying that claims are properly stored in the RDF store and can be retrieved.
 """
 
+import importlib
+
 import pytest
 import rdflib
-from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel, StorageConfig
+
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel, StorageConfig
+from autoresearch.errors import StorageError
+from autoresearch.storage import StorageManager
 
 
 @pytest.fixture(autouse=True)
@@ -78,6 +82,29 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     store = StorageManager.get_rdf_store()
     assert store.store.__class__.__name__ == "SQLAlchemy"
     assert str(store.store.engine.url).startswith("sqlite:///")
+
+
+def test_sqlalchemy_missing_driver(tmp_path, monkeypatch):
+    """Fail gracefully when SQLAlchemy is not installed."""
+    cfg = ConfigModel(
+        storage=StorageConfig(
+            rdf_backend="sqlite",
+            rdf_path=str(tmp_path / "rdf_store"),
+        )
+    )
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader.new_for_tests()
+
+    def fake_find_spec(name: str):
+        if name == "sqlalchemy":
+            return None
+        return importlib.util.find_spec(name)
+
+    monkeypatch.setattr("autoresearch.storage_backends.importlib.util.find_spec", fake_find_spec)
+
+    StorageManager.teardown(remove_db=True)
+    with pytest.raises(StorageError):
+        StorageManager.setup()
 
 
 @pytest.mark.slow

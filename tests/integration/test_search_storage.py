@@ -1,14 +1,14 @@
 import types
 
 import networkx as nx
+import numpy as np
 import pytest
 import rdflib
-import numpy as np
 
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
 from autoresearch.storage import StorageManager
-from autoresearch.config.models import ConfigModel
-from autoresearch.config.loader import ConfigLoader
 from tests.conftest import VSS_AVAILABLE
 
 pytestmark = [
@@ -23,6 +23,8 @@ def clean_storage(monkeypatch):
     dummy_backend = types.SimpleNamespace(
         persist_claim=lambda claim: None,
         update_claim=lambda claim, partial_update=False: None,
+        get_claim=lambda _id: {"id": _id},
+        has_vss=lambda: False,
         clear=lambda: None,
     )
     StorageManager.context.graph = nx.DiGraph()
@@ -30,9 +32,12 @@ def clean_storage(monkeypatch):
     StorageManager.context.rdf_store = rdflib.Graph()
     monkeypatch.setattr(StorageManager, "_ensure_storage_initialized", lambda: None)
     yield
-    StorageManager.context.graph.clear()
-    StorageManager.context.db_backend.clear()
-    StorageManager.context.rdf_store.remove((None, None, None))
+    if StorageManager.context.graph is not None:
+        StorageManager.context.graph.clear()
+    if StorageManager.context.db_backend is not None:
+        StorageManager.context.db_backend.clear()
+    if StorageManager.context.rdf_store is not None:
+        StorageManager.context.rdf_store.remove((None, None, None))
 
 
 def _config_without_network() -> ConfigModel:
@@ -50,6 +55,8 @@ def test_search_returns_persisted_claim(monkeypatch):
 
     # Remove external backends and simplify ranking
     monkeypatch.setattr(Search, "backends", {})
+    ns = types.SimpleNamespace(backends={}, embedding_backends={})
+    monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
@@ -59,6 +66,7 @@ def test_search_returns_persisted_claim(monkeypatch):
     # Avoid index refresh for simplicity
     monkeypatch.setattr(StorageManager, "refresh_vector_index", lambda: None)
     monkeypatch.setattr(StorageManager, "touch_node", lambda _id: None)
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
 
     # Track ontology reasoning calls
     calls = []
@@ -136,6 +144,8 @@ def test_external_lookup_persists_results(monkeypatch):
         return [{"title": "doc", "url": "u1"}]
 
     monkeypatch.setattr(Search, "backends", {"b": backend})
+    ns = types.SimpleNamespace(backends={"b": backend}, embedding_backends={})
+    monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
@@ -167,8 +177,11 @@ def test_search_reflects_updated_claim(monkeypatch):
         StorageManager,
         "update_claim",
         lambda claim, partial_update=False: store[claim["id"]].update(claim),
+        raising=False,
     )
     monkeypatch.setattr(Search, "backends", {})
+    ns = types.SimpleNamespace(backends={}, embedding_backends={})
+    monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
@@ -188,6 +201,7 @@ def test_search_reflects_updated_claim(monkeypatch):
 
     monkeypatch.setattr(StorageManager, "vector_search", vector_search)
     monkeypatch.setattr(StorageManager, "refresh_vector_index", lambda: None)
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
 
     StorageManager.persist_claim(store["c1"])
     StorageManager.update_claim({"id": "c1", "content": "new"}, partial_update=True)
@@ -214,6 +228,8 @@ def test_search_persists_multiple_backend_results(monkeypatch):
         return [{"title": "France", "url": "u2"}]
 
     monkeypatch.setattr(Search, "backends", {"b1": b1, "b2": b2})
+    ns = types.SimpleNamespace(backends={"b1": b1, "b2": b2}, embedding_backends={})
+    monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
@@ -222,3 +238,23 @@ def test_search_persists_multiple_backend_results(monkeypatch):
 
     Search.external_lookup("What is the capital of France?", max_results=2)
     assert stored == ["u1", "u2"]
+
+
+def test_duckdb_persistence_roundtrip(tmp_path, monkeypatch):
+    """Claims persist across DuckDB sessions."""
+    cfg = _config_without_network()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    ConfigLoader.new_for_tests()
+
+    StorageManager.teardown(remove_db=True)
+    StorageManager.setup(db_path=str(tmp_path / "kg.duckdb"))
+
+    claim = {"id": "c1", "type": "fact", "content": "hello"}
+    StorageManager.persist_claim(claim)
+    StorageManager.teardown()
+
+    StorageManager.setup(db_path=str(tmp_path / "kg.duckdb"))
+    retrieved = StorageManager.get_claim("c1")
+    assert retrieved["content"] == "hello"
+    StorageManager.teardown(remove_db=True)
+    ConfigLoader.reset_instance()

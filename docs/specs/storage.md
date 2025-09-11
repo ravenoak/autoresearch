@@ -37,6 +37,8 @@ the safety margin.
    - After `persist_claim`, `c ∈ G` and `U' = U + u(c)`.
    - A re-entrant lock serializes writers so `G` reflects a linear history.
    - If `U' > B`, subsequent eviction ensures `U'' ≤ B(1 - δ)`.
+   - Persisted claims remain retrievable via `get_claim` across DuckDB sessions
+     [t2].
 3. **Evict**
    - Eviction chooses `E ⊆ G` per policy and yields
      `G' = G \ E` with `U' = U - u(E)`.
@@ -126,6 +128,7 @@ and `0.31 OPS` [t5r].
   - [tests/targeted/test_storage_eviction.py][t6]
   - [tests/unit/test_storage_eviction_sim.py][t7]
   - [tests/integration/storage/test_simulation_benchmarks.py][t8]
+  - [tests/integration/test_rdf_persistence.py][t9]
 
 [m1]: ../../src/autoresearch/storage.py
 [m2]: ../../src/autoresearch/storage.py#L729
@@ -146,6 +149,7 @@ and `0.31 OPS` [t5r].
 [t6]: ../../tests/targeted/test_storage_eviction.py
 [t7]: ../../tests/unit/test_storage_eviction_sim.py
 [t8]: ../../tests/integration/storage/test_simulation_benchmarks.py
+[t9]: ../../tests/integration/test_rdf_persistence.py
 
 ## Troubleshooting
 
