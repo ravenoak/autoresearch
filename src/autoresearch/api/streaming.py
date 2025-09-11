@@ -13,6 +13,7 @@ from ..orchestration import ReasoningMode
 from . import webhooks
 from .deps import create_orchestrator
 from .models import QueryRequestV1, QueryResponseV1
+from .utils import validate_version
 
 # Interval between heartbeat messages to keep connections alive, in seconds.
 KEEPALIVE_INTERVAL = 15
@@ -32,6 +33,7 @@ async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
     Returns:
         StreamingResponse: Newline-delimited ``QueryResponseV1`` objects.
     """
+    validate_version(request.version)
     config = get_config()
 
     if request.reasoning_mode is not None:

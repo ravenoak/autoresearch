@@ -612,15 +612,11 @@ class Search:
             else [1.0] * len(results)
         )
 
-        # Normalize semantic and DuckDB similarities before combining so hybrid
-        # and semantic rankings share a consistent scale across backends.
-        duckdb_raw = [r.get("similarity", 0.0) for r in results]
-        duckdb_norm = self.normalize_scores(duckdb_raw)
+        # Normalize semantic and DuckDB similarities before averaging so hybrid
+        # and semantic rankings share a unified scale.
+        duckdb_scores = self.normalize_scores([r.get("similarity", 0.0) for r in results])
         semantic_norm = self.normalize_scores(semantic_scores)
-        combined_norm = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(results))]
-        max_sem = max(semantic_scores) if semantic_scores else 1.0
-        semantic_scores = [s * max_sem for s in combined_norm]
-        duckdb_scores = duckdb_norm
+        semantic_scores = [(semantic_norm[i] + duckdb_scores[i]) / 2 for i in range(len(results))]
 
         # Combine weighted scores directly
         final_scores = [

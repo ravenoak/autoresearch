@@ -13,3 +13,7 @@ Feature: API Edge Cases
   Scenario: Permission denied for metrics endpoint
     When I request the metrics endpoint
     Then the response status should be 403
+
+  Scenario: Deprecated API version rejected
+    When I submit a query with deprecated version "0"
+    Then the response status should be 410

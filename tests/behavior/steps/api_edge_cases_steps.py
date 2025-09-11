@@ -1,6 +1,6 @@
 """Step definitions for API edge case scenarios."""
 
-from pytest_bdd import scenario, given, when, then
+from pytest_bdd import scenario, given, when, then, parsers
 from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
 
@@ -51,6 +51,23 @@ def assert_status_403(test_context):
     assert "detail" in data
 
 
+@when(parsers.parse('I submit a query with deprecated version "{version}"'))
+def submit_deprecated_version(version, test_context):
+    """Send a query using an outdated API schema version."""
+    client = test_context["client"]
+    resp = client.post("/query", json={"version": version, "query": "test"})
+    test_context["response"] = resp
+
+
+@then("the response status should be 410")
+def assert_status_410(test_context):
+    """Ensure the API rejected a deprecated version."""
+    resp = test_context["response"]
+    assert resp.status_code == 410
+    data = resp.json()
+    assert "detail" in data
+
+
 @scenario("../features/api_edge_cases.feature", "Invalid JSON returns 422")
 def test_invalid_json():
     """Scenario: invalid JSON payload is rejected."""
@@ -63,4 +80,13 @@ def test_invalid_json():
 )
 def test_permission_denied_metrics():
     """Scenario: accessing metrics without permissions fails."""
+    pass
+
+
+@scenario(
+    "../features/api_edge_cases.feature",
+    "Deprecated API version rejected",
+)
+def test_deprecated_version():
+    """Scenario: server rejects deprecated API versions."""
     pass
