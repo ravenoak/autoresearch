@@ -2,6 +2,13 @@
 
 ## September 11, 2025
 
+- `task` command remains unavailable after running `scripts/codex_setup.sh`; reopened
+  `restore-task-cli-availability`.
+- Split 52 failing integration tests into targeted issues: `fix-api-authentication-and-metrics-tests`,
+  `fix-config-reload-and-deploy-validation-tests`, `fix-search-ranking-and-extension-tests`,
+  `fix-rdf-persistence-and-search-storage-tests`, and `fix-storage-schema-and-eviction-tests`.
+- Moved archived tickets `containerize-and-package`, `reach-stable-performance-and-interfaces`,
+  and `validate-deployment-configurations` into the `archive/` directory.
 - Installed the `dev-minimal` and `test` extras; `uv run python scripts/check_env.py`
   reports all dependencies present without warnings.
 - Verified Go Task 3.44.1 is available and added to `PATH`.
@@ -279,11 +286,13 @@ Not executed.
 so coverage reports are not generated.
 
 ## Open issues
-- [add-test-coverage-for-optional-components](issues/add-test-coverage-for-optional-components.md)
-- [streamline-task-verify-extras](issues/streamline-task-verify-extras.md)
+- [restore-task-cli-availability](issues/restore-task-cli-availability.md)
+- [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
+- [fix-config-reload-and-deploy-validation-tests](issues/fix-config-reload-and-deploy-validation-tests.md)
+- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
+- [fix-rdf-persistence-and-search-storage-tests](issues/fix-rdf-persistence-and-search-storage-tests.md)
+- [fix-storage-schema-and-eviction-tests](issues/fix-storage-schema-and-eviction-tests.md)
+- [add-a2a-concurrency-proofs-and-simulations](issues/add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
+- [resolve-integration-test-regressions](issues/resolve-integration-test-regressions.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
-- [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
-  - [containerize-and-package](issues/containerize-and-package.md) (reopened)
-  - [validate-deployment-configurations](issues/validate-deployment-configurations.md)
-- [fix-check-env-go-task-warning](issues/fix-check-env-go-task-warning.md)
