@@ -78,7 +78,8 @@ jobs:
             --extra distributed \
             --extra analysis \
             --extra parsers \
-            --extra llm
+            --extra llm \
+            --extra gpu
       - name: Run task verify
         run: uv run task verify
       - name: Sync extras for coverage
@@ -94,7 +95,8 @@ jobs:
             --extra distributed \
             --extra analysis \
             --extra parsers \
-            --extra llm
+            --extra llm \
+            --extra gpu
       - name: Run task coverage
         run: uv run task coverage
       - name: Enforce coverage threshold

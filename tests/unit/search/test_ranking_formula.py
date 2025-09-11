@@ -36,13 +36,16 @@ def test_rank_results_weighted_combination(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: credibility)
 
     ranked = Search.rank_results("q", docs)
+    duckdb = Search.normalize_scores([r["similarity"] for r in docs])
+    semantic_norm = Search.normalize_scores(semantic)
+    semantic_scores = [(semantic_norm[i] + duckdb[i]) / 2 for i in range(len(docs))]
     scores = []
     for i in range(len(docs)):
-        merged = bm25[i] * 0.3 + semantic[i] * 0.4
+        merged = bm25[i] * 0.3 + semantic_scores[i] * 0.4
         scores.append(merged + credibility[i] * 0.3)
     max_score = max(scores)
     normalized = [s / max_score for s in scores]
-    assert [r["title"] for r in ranked] == ["B", "A"]
+    assert [r["title"] for r in ranked] == ["A", "B"]
     relevance_scores = [r["relevance_score"] for r in ranked]
     assert relevance_scores == pytest.approx(sorted(normalized, reverse=True))
     assert relevance_scores == sorted(relevance_scores, reverse=True)

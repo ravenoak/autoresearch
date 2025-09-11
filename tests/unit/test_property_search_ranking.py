@@ -91,8 +91,14 @@ def test_rank_results_orders_by_weighted_scores(
     monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: credibility_scores)
 
     ranked = Search.rank_results("q", docs)
+    duckdb_norm = Search.normalize_scores([r["similarity"] for r in docs])
+    semantic_norm = Search.normalize_scores(semantic_scores)
+    semantic_scores_norm = [
+        (semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(docs))
+    ]
     merged = [
-        bm25_scores[i] * weights[0] + semantic_scores[i] * weights[1] for i in range(len(docs))
+        bm25_scores[i] * weights[0] + semantic_scores_norm[i] * weights[1]
+        for i in range(len(docs))
     ]
     final = [merged[i] + credibility_scores[i] * weights[2] for i in range(len(docs))]
     max_score = max(final)
