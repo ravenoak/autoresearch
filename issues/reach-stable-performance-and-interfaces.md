@@ -5,9 +5,9 @@ The 1.0.0 milestone aims to provide a polished, production-ready system with
 stable interfaces and tuned performance.
 
 ## Dependencies
-- [containerize-and-package](containerize-and-package.md)
-- [validate-deployment-configurations](./validate-deployment-configurations.md)
-- [tune-system-performance](archive/tune-system-performance.md)
+- [x] [containerize-and-package](containerize-and-package.md)
+- [x] [validate-deployment-configurations](./validate-deployment-configurations.md)
+- [x] [tune-system-performance](archive/tune-system-performance.md)
 
 ## Acceptance Criteria
 - Containerization and packaging succeed across Windows, macOS and Linux.
@@ -15,4 +15,4 @@ stable interfaces and tuned performance.
 - Performance bottlenecks are resolved and documentation finalized.
 
 ## Status
-Open
+Archived
