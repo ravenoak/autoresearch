@@ -53,6 +53,13 @@ record the `commit_hash` so that claims reference the exact revision. This
 metadata is stored alongside the claim `content` and is available through the
 regular storage APIs.
 
+## Search Result Persistence
+
+`Search.external_lookup` persists ranked results through
+`autoresearch.search.storage.persist_results`. Each result is converted into a
+claim and stored using the same backends, enabling future queries to retrieve
+prior findings via vector search.
+
 ## Eviction Policies
 
 The storage system supports automatic eviction of claims when the memory usage exceeds the configured budget:
@@ -116,6 +123,8 @@ sqlite:///path/to/rdf_store
 
 Make sure the `rdflib-sqlalchemy` package is installed so that RDFLib can load
 the SQLAlchemy plugin and open the SQLite store correctly.
+The parent directory is created automatically so DuckDB and the RDF store can
+initialize together without manual path setup.
 
 ## Troubleshooting
 

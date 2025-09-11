@@ -165,7 +165,11 @@ def setup(
     with st.lock:
         if st.baseline_mb == 0.0:
             st.baseline_mb = _process_ram_mb()
-        if ctx.db_backend is not None and ctx.db_backend.get_connection() is not None:
+        if (
+            ctx.db_backend is not None
+            and ctx.db_backend.get_connection() is not None
+            and ctx.rdf_store is not None
+        ):
             st.context = ctx
             return
 

@@ -29,6 +29,8 @@ def cleanup_rdf_store():
     if StorageManager.context.rdf_store is not None:
         StorageManager.context.rdf_store = None
     ConfigLoader.reset_instance()
+    import autoresearch.storage as storage_module
+    storage_module._cached_config = None
 
 
 @pytest.mark.slow
@@ -42,11 +44,13 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     cfg = ConfigModel(
         storage=StorageConfig(
             rdf_backend="sqlite",
-            rdf_path=str(tmp_path / "rdf_store"),
+            rdf_path=str(tmp_path / "nested" / "rdf_store"),
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
+    import autoresearch.storage as storage_module
+    storage_module._cached_config = None
 
     claim = {
         "id": "n1",
