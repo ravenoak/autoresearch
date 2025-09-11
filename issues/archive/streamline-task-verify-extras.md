@@ -12,4 +12,4 @@ None.
 - `task verify` completes in a reasonable time on a fresh environment.
 
 ## Status
-Open
+Archived
