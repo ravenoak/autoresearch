@@ -490,6 +490,20 @@ with a stub in the case of the `distributed` extra). Install them with
 `uv pip install -e '.[full,parsers,git,llm,dev,ui,analysis,vss,distributed]'`
 to run every test.
 
+### Running extra-specific tests
+
+Invoke Go Task with an explicit extras list to exercise optional paths:
+
+```bash
+EXTRAS="nlp ui vss git distributed analysis llm parsers gpu" task coverage
+```
+
+Run a single group by marker when only one extra is needed:
+
+```bash
+uv run pytest -m requires_ui -q
+```
+
 ### Distributed tests
 
 Install the extra and run the marked scenarios directly:

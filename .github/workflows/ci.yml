@@ -37,6 +37,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-14]
+    env:
+      ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers gpu"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -65,40 +67,10 @@ jobs:
         run: uv run task lint-specs
       - name: Run task check
         run: uv run task check
-      - name: Install extras
-        run: |
-          uv sync \
-            --extra dev-minimal \
-            --extra dev \
-            --extra test \
-            --extra nlp \
-            --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra parsers \
-            --extra llm \
-            --extra gpu
       - name: Run task verify
-        run: uv run task verify
-      - name: Sync extras for coverage
-        run: |
-          uv sync \
-            --extra dev-minimal \
-            --extra dev \
-            --extra test \
-            --extra nlp \
-            --extra ui \
-            --extra vss \
-            --extra git \
-            --extra distributed \
-            --extra analysis \
-            --extra parsers \
-            --extra llm \
-            --extra gpu
+        run: uv run task verify EXTRAS="$ALL_EXTRAS"
       - name: Run task coverage
-        run: uv run task coverage
+        run: uv run task coverage EXTRAS="$ALL_EXTRAS"
       - name: Enforce coverage threshold
         run: uv run coverage report --fail-under=90
       - name: Upload coverage
