@@ -258,12 +258,20 @@ class ConfigLoader:
         core_settings["agent_config"] = agent_config_dict
 
         self._profiles = raw.get("profiles", {})
-
-        if self._active_profile and self._active_profile in self._profiles:
-            profile_settings = self._profiles[self._active_profile]
-            for key, value in profile_settings.items():
+        active = self._active_profile or core_settings.get("active_profile")
+        if active:
+            if active not in self._profiles:
+                valid_profiles = list(self._profiles.keys())
+                raise ConfigError(
+                    "Invalid profile",
+                    valid_profiles=valid_profiles,
+                    provided=active,
+                    suggestion=f"Valid profiles: {', '.join(valid_profiles)}",
+                )
+            for key, value in self._profiles[active].items():
                 core_settings[key] = value
-            core_settings["active_profile"] = self._active_profile
+            core_settings["active_profile"] = active
+            self._active_profile = active
 
         try:
             return ConfigModel.from_dict(core_settings)

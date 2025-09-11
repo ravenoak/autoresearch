@@ -16,7 +16,28 @@ Environment variables are loaded from `.env` in the current working directory.
 
 ## Hot Reload
 
-Changes to configuration files are detected automatically while the tool is running, and the configuration is hot-reloaded without requiring a restart. This applies to both `autoresearch.toml` and `.env` files.
+Changes to configuration files are detected automatically while the tool is
+running, and the configuration is hot-reloaded without requiring a restart.
+This applies to both `autoresearch.toml` and `.env` files.
+
+### Reload procedure
+
+1. Edit `autoresearch.toml` or `.env`.
+2. Save the file atomically. Writing to a temporary file and calling
+   `os.replace` avoids partial reads.
+3. The running process detects the change and reloads the configuration.
+4. If parsing fails, the previous configuration remains active and an error is
+   logged.
+
+To watch files in custom tooling:
+
+```python
+from autoresearch.config.loader import ConfigLoader
+
+loader = ConfigLoader()
+with loader.watching():
+    ...  # application code
+```
 
 ## Configuration Profiles
 
@@ -32,11 +53,17 @@ llm_backend = "openai"
 vector_extension = true
 ```
 
-To activate a profile, set the `active_profile` option in the `[core]` section:
+To activate a profile, set the `active_profile` option in the `[core]` section
+or define `AUTORESEARCH_ACTIVE_PROFILE` in the environment. The loader applies
+the profile automatically during startup:
 
 ```toml
 [core]
 active_profile = "online"
+```
+
+```bash
+export AUTORESEARCH_ACTIVE_PROFILE=online
 ```
 
 ## Environment Variables

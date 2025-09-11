@@ -19,7 +19,7 @@ from typing import Sequence
 import httpx
 from dotenv import load_dotenv
 
-from autoresearch.config.loader import ConfigLoader, get_config
+from autoresearch.config.loader import ConfigLoader
 from autoresearch.errors import ConfigError
 
 
@@ -42,9 +42,9 @@ def _ensure_config_file() -> str:
     return path
 
 
-def _check_required_settings() -> list[str]:
+def _check_required_settings(config_path: str) -> list[str]:
     """Return missing environment variables based on the active config."""
-    loader = ConfigLoader()
+    loader = ConfigLoader(search_paths=[config_path])
     profile = os.getenv("AUTORESEARCH_ACTIVE_PROFILE")
     if profile:
         loader.set_active_profile(profile)
@@ -59,9 +59,9 @@ def _check_required_settings() -> list[str]:
 def validate_config() -> None:
     """Load configuration and ensure required settings exist."""
     load_dotenv()
-    _ensure_config_file()
+    cfg_path = _ensure_config_file()
     try:
-        _missing = _check_required_settings()
+        _missing = _check_required_settings(cfg_path)
     except ConfigError as exc:
         print(f"Configuration error: {exc}")
         sys.exit(1)
