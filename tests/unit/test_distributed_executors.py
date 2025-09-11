@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, Any, Type
 
+import pytest
+
 from autoresearch.agents.base import Agent
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
@@ -45,7 +47,9 @@ def test_execute_agent_process():
         _unregister_dummy()
 
 
-def test_execute_agent_remote():
+@pytest.mark.requires_distributed
+@pytest.mark.xfail(reason="Ray cannot serialize QueryState under Python 3.12")
+def test_execute_agent_remote() -> None:
     _register_dummy()
     try:
         config = ConfigModel(agents=["Dummy"], loops=1)

@@ -1,48 +1,47 @@
-@behavior
-Feature: Optional extras availability
-  Verify optional extras can be imported.
+Feature: Optional extras operate when installed
+  Optional extras like NLP or UI should expose corresponding functionality.
 
   @requires_nlp
-  Scenario: NLP extra modules are importable
-    Given the optional module "spacy" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: NLP extra provides spaCy
+    When I check nlp extra
+    Then the extra is functional
 
   @requires_ui
-  Scenario: UI extra modules are importable
-    Given the optional module "streamlit" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: UI extra provides Streamlit
+    When I check ui extra
+    Then the extra is functional
 
   @requires_vss
-  Scenario: VSS extra modules are importable
-    Given the optional module "duckdb" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: VSS extra loads DuckDB extension
+    When I check vss extra
+    Then the extra is functional
 
   @requires_git
-  Scenario: Git extra modules are importable
-    Given the optional module "git" can be imported
-    Then the module exposes attribute "Repo"
+  Scenario: Git extra enables repository search
+    When I check git extra
+    Then the extra is functional
 
   @requires_distributed
-  Scenario: Distributed extra modules are importable
-    Given the optional module "redis" can be imported
-    Then the module exposes attribute "Redis"
+  Scenario: Distributed extra enables message broker
+    When I check distributed extra
+    Then the extra is functional
 
   @requires_analysis
-  Scenario: Analysis extra modules are importable
-    Given the optional module "polars" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: Analysis extra enables Polars
+    When I check analysis extra
+    Then the extra is functional
 
   @requires_llm
-  Scenario: LLM extra modules are importable
-    Given the optional module "fastembed" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: LLM extra provides adapters
+    When I check llm extra
+    Then the extra is functional
 
   @requires_parsers
-  Scenario: Parsers extra modules are importable
-    Given the optional module "docx" can be imported
-    Then the module exposes attribute "Document"
+  Scenario: Parsers extra reads documents
+    When I check parsers extra
+    Then the extra is functional
 
   @requires_gpu
-  Scenario: GPU extra modules are importable
-    Given the optional module "bertopic" can be imported
-    Then the module exposes attribute "__version__"
+  Scenario: GPU extra exposes BERTopic
+    When I check gpu extra
+    Then the extra is functional
