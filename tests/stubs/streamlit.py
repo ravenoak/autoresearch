@@ -4,7 +4,7 @@ import importlib.util
 import sys
 import types
 
-if "streamlit" not in sys.modules:
+if importlib.util.find_spec("streamlit") is None and "streamlit" not in sys.modules:
     st_stub = types.ModuleType("streamlit")
     st_stub.markdown = lambda *a, **k: None
 

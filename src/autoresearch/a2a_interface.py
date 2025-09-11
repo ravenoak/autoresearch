@@ -181,9 +181,9 @@ class A2AInterface:
         self.orchestrator = Orchestrator()
 
         # Register message handlers
-        self.server.register_handler(A2AMessageType.QUERY, self._handle_query)
-        self.server.register_handler(A2AMessageType.COMMAND, self._handle_command)
-        self.server.register_handler(A2AMessageType.INFO, self._handle_info)
+        self.server.register_handler(A2AMessageType.QUERY, self._handle_query)  # type: ignore[arg-type]
+        self.server.register_handler(A2AMessageType.COMMAND, self._handle_command)  # type: ignore[arg-type]
+        self.server.register_handler(A2AMessageType.INFO, self._handle_info)  # type: ignore[arg-type]
 
     def start(self) -> None:
         """Start the A2A server."""

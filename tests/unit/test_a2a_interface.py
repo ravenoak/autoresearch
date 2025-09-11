@@ -121,7 +121,7 @@ class TestA2AInterface:
         mock_orchestrator.run_query.return_value.answer = "test answer"
 
         # Execute
-        result = interface._handle_query(msg)
+        result = asyncio.run(interface._handle_query(msg))
 
         # Verify
         assert result["status"] == "success"
@@ -331,9 +331,8 @@ def test_handle_query_exception(mock_a2a_server, make_a2a_message, mock_orchestr
     interface = A2AInterface()
     msg = make_a2a_message(query="bad")
     mock_orchestrator.run_query.side_effect = RuntimeError("oops")
-    result = interface._handle_query(msg)
+    result = asyncio.run(interface._handle_query(msg))
     assert result["status"] == "error"
-
     assert "oops" in result["error"]
 
 

@@ -188,20 +188,7 @@ def redis_service():
             client.close()
 
 
-def _check_vss() -> bool:
-    try:
-        conn = duckdb.connect(database=":memory:")
-        return VSSExtensionLoader.verify_extension(conn, verbose=False)
-    except Exception:
-        return False
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
-
-
-VSS_AVAILABLE = _check_vss()
+VSS_AVAILABLE = _module_available("duckdb_extension_vss")
 
 
 @pytest.fixture(autouse=True)
