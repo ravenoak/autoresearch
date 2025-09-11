@@ -16,3 +16,4 @@ def test_config_hot_reload_components(tmp_path: Path) -> None:
         updated = get_config()
         assert updated.loops == 2
         assert updated.api.rate_limit == 5
+        assert ConfigLoader() is loader
