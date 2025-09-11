@@ -125,10 +125,12 @@ def check_task() -> CheckResult | None:
             check=False,
         )
     except FileNotFoundError:
-        logger.info(
-            "Go Task %s+ not found; install it from https://taskfile.dev/ or run scripts/bootstrap.sh",
-            required,
+        msg = (
+            f"Go Task {required}+ not found; install it from https://taskfile.dev/ "
+            "or run scripts/bootstrap.sh"
         )
+        warnings.warn(msg, UserWarning)
+        logger.info("%s", msg)
         return None
     if proc.returncode != 0:
         hint = (

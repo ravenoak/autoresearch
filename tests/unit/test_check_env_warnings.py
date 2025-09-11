@@ -45,7 +45,10 @@ def test_missing_go_task_warns(monkeypatch):
         raise FileNotFoundError
 
     monkeypatch.setattr(check_env.subprocess, "run", fake_run)
-    with pytest.warns(UserWarning, match="Go Task .* not found"):
+    with pytest.warns(
+        UserWarning,
+        match="Go Task .* not found; install it from https://taskfile.dev/ or run scripts/bootstrap.sh",
+    ):
         result = check_env.check_task()
     assert result is None
 
