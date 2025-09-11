@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 [ROADMAP.md](../ROADMAP.md) for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 10, 2025** and
+`2025-05-18`). This schedule was last updated on **September 11, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -39,7 +39,7 @@ results are mirrored in [../STATUS.md](../STATUS.md).
 - **0.1.1** (2026-12-15, status: planned): Bug fixes and documentation updates
   ([deliver-bug-fixes-and-docs-update](
   ../issues/archive/deliver-bug-fixes-and-docs-update.md)).
-- **0.2.0** (2026-12-01, status: planned): API stabilization, configuration
+- **0.2.0** (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
     ../issues/stabilize-api-and-improve-search.md)
@@ -49,11 +49,11 @@ results are mirrored in [../STATUS.md](../STATUS.md).
       ../issues/archive/configuration-hot-reload-tests.md)
     - [hybrid-search-ranking-benchmarks](
       ../issues/archive/hybrid-search-ranking-benchmarks.md)
-- **0.3.0** (2027-03-01, status: planned): Distributed execution support and
+- **0.3.0** (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
   - [simulate-distributed-orchestrator-performance](
     ../issues/archive/simulate-distributed-orchestrator-performance.md)
-- **1.0.0** (2027-06-01, status: planned): Full feature set, performance
+- **1.0.0** (2027-09-01, status: planned): Full feature set, performance
   tuning and stable interfaces
   ([reach-stable-performance-and-interfaces](
   ../issues/reach-stable-performance-and-interfaces.md)).

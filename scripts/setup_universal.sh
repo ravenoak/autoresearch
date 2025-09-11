@@ -2,7 +2,7 @@
 # Usage: AR_EXTRAS="nlp" ./scripts/setup_universal.sh
 # Core environment bootstrap used by platform-specific setup scripts.
 # Creates .venv, installs or links Go Task to .venv/bin, and development/test
-# extras using uv. Optional extras are installed when AR_EXTRAS is set.
+# extras using uv>=0.7.0. Optional extras are installed when AR_EXTRAS is set.
 # Ensures Python 3.12 or newer and validates tool versions with
 # `uv run python scripts/check_env.py`.
 set -euo pipefail

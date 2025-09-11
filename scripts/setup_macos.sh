@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp ui" ./scripts/setup_macos.sh
 # macOS-specific environment setup; installs dependencies via Homebrew.
+# Requires Python 3.12+ and uv>=0.7.0 (enforced by setup_common.sh).
 # The universal setup is invoked by setup.sh after this script completes.
 set -euo pipefail
 

@@ -17,13 +17,14 @@ For orchestrator state transitions and API contracts see
 Install these binaries and ensure they are on your `PATH`:
 
 - Python 3.12+
-- [uv](https://github.com/astral-sh/uv)
+- [uv](https://github.com/astral-sh/uv) 0.7.0+
 - [Go Task](https://taskfile.dev/)
 
 Run `uv run python scripts/check_env.py` to confirm they are available. The
 script now emits a warning when Go Task is missing and suggests installing it
-from <https://taskfile.dev/> or running `scripts/bootstrap.sh`. The minimal
-bootstrap is:
+from <https://taskfile.dev/> or running `scripts/bootstrap.sh`. If the script
+warns that a tool or package is missing, rerun `task install` or sync optional
+extras with `uv sync --extra <name>`. The minimal bootstrap is:
 
 ```bash
 ./scripts/setup.sh
