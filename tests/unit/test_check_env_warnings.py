@@ -53,6 +53,15 @@ def test_missing_go_task_warns(monkeypatch):
     assert result is None
 
 
+def test_missing_uv_raises_version_error(monkeypatch):
+    def fake_run(*args, **kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(check_env.subprocess, "run", fake_run)
+    with pytest.raises(check_env.VersionError, match="uv is not installed"):
+        check_env.check_uv()
+
+
 def test_task_command_failure(monkeypatch):
     """Non-zero task exit should raise a VersionError with guidance."""
 
