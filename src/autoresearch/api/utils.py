@@ -95,13 +95,17 @@ def verify_bearer_token(token: str | None, expected: str | None) -> bool:
     return secrets.compare_digest(token, expected)
 
 
-def enforce_permission(permissions: set[str] | None, required: str) -> None:
+def enforce_permission(
+    permissions: set[str] | None, required: str, auth_scheme: str = "API-Key"
+) -> None:
     """Ensure a client has a specific permission.
 
     Args:
         permissions: Permissions granted to the client or ``None`` when
             authentication is missing.
         required: Permission required for the requested action.
+        auth_scheme: Authentication scheme for the ``WWW-Authenticate`` header
+            when ``permissions`` is ``None``.
 
     Raises:
         HTTPException: ``401`` if ``permissions`` is ``None`` and ``403`` when
@@ -109,7 +113,11 @@ def enforce_permission(permissions: set[str] | None, required: str) -> None:
     """
 
     if permissions is None:
-        raise HTTPException(status_code=401, detail="Authentication required")
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": auth_scheme},
+        )
     if required not in permissions:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
