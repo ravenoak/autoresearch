@@ -1,10 +1,10 @@
 # Restore task cli availability
 
 ## Context
-The environment previously lacked the `task` command, preventing `task check`,
-`task verify`, and `task coverage` from running. `scripts/setup.sh` and
-`scripts/codex_setup.sh` reported "Go Task not found." This issue tracked
-restoring the CLI.
+The environment again lacks the `task` command, preventing `task check`,
+`task verify`, and `task coverage` from running. `scripts/codex_setup.sh`
+completes, but `task` remains unavailable. This issue is reopened to restore
+the CLI.
 
 ## Dependencies
 None.
@@ -15,4 +15,4 @@ None.
 - `task check` and `task verify` run successfully in a clean environment.
 
 ## Status
-Archived
+Open

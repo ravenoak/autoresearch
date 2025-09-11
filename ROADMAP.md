@@ -50,10 +50,10 @@ before running tests.
     issues/archive/simulate-distributed-orchestrator-performance.md)
 - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
-  - [reach-stable-performance-and-interfaces](issues/reach-stable-performance-and-interfaces.md)
-    - [containerize-and-package](issues/containerize-and-package.md) (2026-12-01; reopened)
-    - [validate-deployment-configurations](./issues/validate-deployment-configurations.md)
-      (2027-04-15, depends on containerization; reopened)
+  - [reach-stable-performance-and-interfaces](issues/archive/reach-stable-performance-and-interfaces.md)
+    - [containerize-and-package](issues/archive/containerize-and-package.md) (2026-12-01)
+    - [validate-deployment-configurations](issues/archive/validate-deployment-configurations.md)
+      (2027-04-15, depends on containerization)
     - [tune-system-performance](issues/archive/tune-system-performance.md)
       (2027-07-01, depends on deployment validation)
 
@@ -72,7 +72,7 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
 - [ ] Task CLI availability restored
-  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
+  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
@@ -149,9 +149,9 @@ Key features planned for this release include:
 
 The 1.0.0 milestone aims for a polished, production-ready system:
 
-- [containerize-and-package](issues/containerize-and-package.md) (2026-12-01; reopened)
-- [validate-deployment-configurations](./issues/validate-deployment-configurations.md)
-  (2027-04-15, depends on containerization; reopened)
+- [containerize-and-package](issues/archive/containerize-and-package.md) (2026-12-01)
+- [validate-deployment-configurations](issues/archive/validate-deployment-configurations.md)
+  (2027-04-15, depends on containerization)
 - [tune-system-performance](issues/archive/tune-system-performance.md)
   (2027-07-01, depends on deployment validation)
 

@@ -1,10 +1,19 @@
 # Resolve integration test regressions
 
 ## Context
-Running `uv run --extra test pytest` reports 52 failing integration tests. Failures span API key enforcement, configuration hot reload, deployment validation, monitoring metrics, VSS extension loading, ranking consistency, RDF persistence, and search storage. These regressions block the `prepare-first-alpha-release` issue.
+Running `uv run --extra test pytest` reports 52 failing integration tests.
+Failures span API key enforcement, configuration hot reload, deployment
+validation, monitoring metrics, VSS extension loading, ranking
+consistency, RDF persistence and search storage. These regressions block
+the `prepare-first-alpha-release` issue and are split across dedicated
+tickets for targeted fixes.
 
 ## Dependencies
-None.
+- [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
+- [fix-config-reload-and-deploy-validation-tests](fix-config-reload-and-deploy-validation-tests.md)
+- [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
+- [fix-rdf-persistence-and-search-storage-tests](fix-rdf-persistence-and-search-storage-tests.md)
+- [fix-storage-schema-and-eviction-tests](fix-storage-schema-and-eviction-tests.md)
 
 ## Acceptance Criteria
 - API endpoints require keys and return correct status codes.

@@ -7,6 +7,7 @@ finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only.
 
 ## Dependencies
+- [restore-task-cli-availability](restore-task-cli-availability.md)
 - [add-a2a-concurrency-proofs-and-simulations](add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
