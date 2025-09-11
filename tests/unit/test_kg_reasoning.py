@@ -57,6 +57,17 @@ def test_run_ontology_reasoner_owlrl(monkeypatch):
     run_ontology_reasoner(g)
 
 
+def test_register_reasoner_adds_plugin():
+    import autoresearch.kg_reasoning as kr
+
+    @register_reasoner("unit_test")
+    def _plugin(store):  # pragma: no cover - no logic needed
+        pass
+
+    assert kr._REASONER_PLUGINS["unit_test"] is _plugin
+    kr._REASONER_PLUGINS.pop("unit_test", None)
+
+
 def test_run_ontology_reasoner_external(monkeypatch):
     called = {}
 
@@ -70,6 +81,44 @@ def test_run_ontology_reasoner_external(monkeypatch):
     _patch_config(monkeypatch, "dummy_mod:func")
     run_ontology_reasoner(g)
     assert called.get("ok") is True
+
+
+def test_run_ontology_reasoner_invokes_plugin_once(monkeypatch):
+    import autoresearch.kg_reasoning as kr
+
+    calls = []
+
+    @register_reasoner("once")
+    def _once(store):
+        calls.append(True)
+
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "once")
+    run_ontology_reasoner(g)
+    assert calls == [True]
+    kr._REASONER_PLUGINS.pop("once", None)
+
+
+def test_run_ontology_reasoner_preserves_triple_count(monkeypatch):
+    import autoresearch.kg_reasoning as kr
+
+    @register_reasoner("adder")
+    def _adder(store):
+        store.add(
+            (
+                rdflib.URIRef("urn:s2"),
+                rdflib.URIRef("urn:p"),
+                rdflib.URIRef("urn:o"),
+            )
+        )
+
+    g = rdflib.Graph()
+    g.add((rdflib.URIRef("urn:s1"), rdflib.URIRef("urn:p"), rdflib.URIRef("urn:o")))
+    before = len(g)
+    _patch_config(monkeypatch, "adder")
+    run_ontology_reasoner(g)
+    assert len(g) >= before
+    kr._REASONER_PLUGINS.pop("adder", None)
 
 
 def test_run_ontology_reasoner_external_error(monkeypatch):

@@ -2,10 +2,13 @@ from autoresearch.cli_helpers import (
     find_similar_commands,
     parse_agent_groups,
     handle_command_not_found,
+    report_missing_tables,
 )
-import typer
+import io
 import pytest
+import typer
 from pathlib import Path
+from rich.console import Console
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -20,6 +23,31 @@ def test_find_similar_commands_basic():
 def test_parse_agent_groups_parses_nested_lists():
     groups = ["alpha,beta", "gamma , delta ,", " "]
     assert parse_agent_groups(groups) == [["alpha", "beta"], ["gamma", "delta"]]
+
+
+def test_find_similar_commands_respects_threshold():
+    cmds = ["search"]
+    assert find_similar_commands("serch", cmds, threshold=0.95) == []
+
+
+def test_parse_agent_groups_discards_empty_groups():
+    assert parse_agent_groups([" ", ", ,"]) == []
+
+
+def test_report_missing_tables_sorts_and_prints(capsys, monkeypatch):
+    from autoresearch import cli_utils
+
+    monkeypatch.setattr(cli_utils, "VERBOSITY", cli_utils.Verbosity.VERBOSE)
+    report_missing_tables(["b", "a"])
+    out = capsys.readouterr().out
+    assert "a, b" in out
+
+
+def test_report_missing_tables_uses_console():
+    buf = io.StringIO()
+    console = Console(file=buf)
+    report_missing_tables(["b", "a"], console)
+    assert "a, b" in buf.getvalue()
 
 
 def test_handle_command_not_found_suggests_similar(capsys):
