@@ -275,7 +275,7 @@ tasks:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
       - |
-          extras="dev-minimal test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+          extras="dev-minimal dev test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             $(printf ' --extra %s' $extras) \
@@ -298,7 +298,7 @@ tasks:
           {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Syncs only the dev-minimal and test extras by default.
+      Syncs only the dev-minimal, dev, and test extras by default.
       Set EXTRAS to include heavy groups like nlp, distributed, analysis, or llm.
 
   clean:
