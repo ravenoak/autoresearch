@@ -29,7 +29,8 @@ Run `uv run python scripts/check_env.py` to confirm they are available. The
 script now emits a warning when Go Task is missing and suggests installing it
 from <https://taskfile.dev/> or running `scripts/bootstrap.sh`. If the script
 warns that a tool or package is missing, rerun `task install` or sync optional
-extras with `uv sync --extra <name>`. The minimal bootstrap is:
+extras with `uv sync --extra <name>`. Run the setup script and verify Go Task
+with `task --version`:
 
 ```bash
 ./scripts/setup.sh
@@ -78,14 +79,16 @@ uv run pytest -m requires_distributed -q
 ```
 
 To bootstrap a Python 3.12+ environment with the minimal development and
-test extras run:
+test extras run the install task and verify the Go Task binary:
 
 ```bash
 task install
+task --version
 source .venv/bin/activate
 ```
 
-This syncs the `dev-minimal` and `test` extras. Include heavy groups
+If `task --version` fails, follow the manual setup below to run tests with
+`uv`. This syncs the `dev-minimal` and `test` extras. Include heavy groups
 only when required:
 
 ```bash

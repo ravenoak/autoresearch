@@ -16,7 +16,7 @@ Autoresearch requires these binaries on your `PATH`:
 Run `uv run python scripts/check_env.py` to confirm they are available. If the
 script warns that a tool or package is missing, rerun `task install` or sync
 extras with `uv sync --extra <name>`. The setup script installs a local Go Task
-binary automatically when it is missing:
+binary automatically when it is missing. After it finishes, confirm the CLI:
 
 ```bash
 ./scripts/setup.sh
@@ -120,12 +120,16 @@ you need them.
 
 Run `task install` after cloning to bootstrap Go Task and the minimal
 development tools. This syncs the `dev-minimal` and `test` extras by
-default and should be executed before any tests. Missing extras such as
-`pytest-bdd` cause `pytest` to fail during collection:
+default and should be executed before any tests. After it completes,
+confirm the `task` binary:
 
 ```bash
 task install
+task --version
 ```
+
+If `task --version` fails, follow the steps in
+[Without Go Task](#without-go-task) to run tests directly with `uv`.
 
 Tests use markers like `requires_nlp` or `requires_parsers` to signal
 additional dependencies. Install matching extras with `EXTRAS` when
