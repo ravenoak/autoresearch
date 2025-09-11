@@ -2,6 +2,8 @@
 
 ## September 11, 2025
 
+- `uv 0.7.22` is installed, `task` is missing, and `extensions/` lacks the
+  DuckDB VSS extension.
 - `task` command remains unavailable after running `scripts/codex_setup.sh`; reopened
   `restore-task-cli-availability`.
 - Split 52 failing integration tests into targeted issues: `fix-api-authentication-and-metrics-tests`,

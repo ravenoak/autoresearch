@@ -33,6 +33,7 @@ extras with `uv sync --extra <name>`. The minimal bootstrap is:
 
 ```bash
 ./scripts/setup.sh
+source .venv/bin/activate
 export PATH="$PATH:$(pwd)/.venv/bin"
 task --version
 task check
@@ -81,6 +82,7 @@ test extras run:
 
 ```bash
 task install
+source .venv/bin/activate
 ```
 
 This syncs the `dev-minimal` and `test` extras. Include heavy groups
@@ -88,6 +90,7 @@ only when required:
 
 ```bash
 task install EXTRAS="nlp distributed"
+uv sync --extra nlp --extra distributed
 ```
 
 To install the `[test]` extras directly without Go Task and download the DuckDB
