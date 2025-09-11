@@ -11,14 +11,15 @@ Once the server is running you can interact with the endpoints described below.
 For details on orchestrator state transitions and the API contract see
 [orchestrator_state.md](orchestrator_state.md).
 
-Requests and responses are versioned. Include `"version": "1"` in request
-bodies; responses echo the same field to signal the contract in use. The
-`QueryRequestV1` and `QueryResponseV1` models live in
+Requests and responses are versioned. Include `"version": "2"` in request
+bodies; responses echo the same field to signal the contract in use. Version
+`"1"` is deprecated and will be removed after two minor releases.
+`QueryRequestV2` and `QueryResponseV2` models live in
 `autoresearch.api.models`.
 
-Deprecated versions remain available for two minor releases and return
-**410 Gone** once support is removed. Unknown versions yield **400 Bad
-Request**. Clients should upgrade before the deprecation window ends.
+Deprecated versions remain available for two minor releases and return **410
+Gone** once support is removed. Unknown versions yield **400 Bad Request**.
+Clients should upgrade before the deprecation window ends.
 
 ## Configuration
 
@@ -61,7 +62,7 @@ a metrics summary.
 ```bash
 curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "Explain machine learning"}'
+  -d '{"version": "2", "query": "Explain machine learning"}'
 ```
 
 Pass `stream=true` as a query parameter to receive incremental updates instead
@@ -71,14 +72,14 @@ the connection open:
 ```bash
 curl -X POST 'http://localhost:8000/query?stream=true' \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "Explain machine learning"}'
+  -d '{"version": "2", "query": "Explain machine learning"}'
 ```
 
 **Response**
 
 ```json
 {
-  "version": "1",
+  "version": "2",
   "answer": "Machine learning is ...",
   "citations": ["https://example.com"],
   "reasoning": ["step 1", "step 2"],
@@ -99,7 +100,7 @@ available. Clients should ignore empty lines.
 ```bash
 curl -X POST http://localhost:8000/query/stream \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "Explain AI"}'
+  -d '{"version": "2", "query": "Explain AI"}'
 ```
 
 ### `POST /query/batch`
@@ -109,7 +110,7 @@ Execute multiple queries in one request with pagination support.
 ```bash
 curl -X POST 'http://localhost:8000/query/batch?page=2&page_size=2' \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "queries": [{"version": "1", "query": "q1"}, {"version": "1", "query": "q2"}, {"version": "1", "query": "q3"}, {"version": "1", "query": "q4"}]}'
+  -d '{"version": "2", "queries": [{"version": "2", "query": "q1"}, {"version": "2", "query": "q2"}, {"version": "2", "query": "q3"}, {"version": "2", "query": "q4"}]}'
 ```
 
 Use the `page` and `page_size` query parameters to control which subset of
@@ -131,7 +132,7 @@ Include a `webhook_url` in the request body to have the final result sent via
 ```bash
 curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "hi", "webhook_url": "http://localhost:9000/hook"}'
+  -d '{"version": "2", "query": "hi", "webhook_url": "http://localhost:9000/hook"}'
 ```
 
 Additionally, any URLs listed under `[api].webhooks` in
@@ -244,7 +245,7 @@ task ID can be used to poll for completion or cancel the work.
 ```bash
 curl -X POST http://localhost:8000/query/async \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "Explain AI"}'
+  -d '{"version": "2", "query": "Explain AI"}'
 ```
 
 **Response**
@@ -301,7 +302,7 @@ this key in the `X-API-Key` header for every request.
 export AUTORESEARCH_API__API_KEY=mysecret
 curl -H "X-API-Key: $AUTORESEARCH_API__API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "test"}' http://localhost:8000/query
+  -d '{"version": "2", "query": "test"}' http://localhost:8000/query
 ```
 
 Alternatively, set `[api].bearer_token` or `AUTORESEARCH_API__BEARER_TOKEN` to
@@ -311,7 +312,7 @@ enable bearer token authentication. Pass this token in the `Authorization` heade
 export AUTORESEARCH_API__BEARER_TOKEN=mytoken
 curl -H "Authorization: Bearer $AUTORESEARCH_API__BEARER_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"version": "1", "query": "test"}' http://localhost:8000/query
+  -d '{"version": "2", "query": "test"}' http://localhost:8000/query
 ```
 
 Credentials may also be specified directly in `autoresearch.toml`:
@@ -389,6 +390,6 @@ includes a `Retry-After` header specifying when you may try again.
 
 ```bash
 export AUTORESEARCH_API__RATE_LIMIT=2
-curl -d '{"version": "1", "query": "test"}' http://localhost:8000/query
+curl -d '{"version": "2", "query": "test"}' http://localhost:8000/query
 ```
 

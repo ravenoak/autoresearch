@@ -1,12 +1,24 @@
-from pytest_bdd import scenario, when, then, parsers
+from pytest_bdd import parsers, scenario, then, when
 
-from autoresearch.search import Search
 from autoresearch.config.models import ConfigModel
+from autoresearch.search import Search
 
 
 @scenario("../features/hybrid_search.feature", "Combine keyword and vector results")
 def test_hybrid_search():
     """Hybrid search mixes vector and keyword results."""
+    pass
+
+
+@scenario("../features/hybrid_search.feature", "Semantic and hybrid rankings align")
+def test_hybrid_alignment():
+    """Hybrid search top result matches semantic ranking."""
+    pass
+
+
+@scenario("../features/hybrid_search.feature", "Hybrid search returns deterministic ordering")
+def test_hybrid_deterministic():
+    """Repeated hybrid searches return identical ordering."""
     pass
 
 
@@ -31,6 +43,24 @@ def perform_hybrid_search(query, monkeypatch, bdd_context):
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
 
+@when(parsers.parse('I perform the same hybrid search for "{query}" twice'))
+def perform_hybrid_search_twice(query, monkeypatch, bdd_context):
+    """Execute the same hybrid search twice to compare ordering."""
+    cfg = ConfigModel(loops=1)
+    cfg.search.backends = ["local_file"]
+    cfg.search.embedding_backends = ["duckdb"]
+    cfg.search.hybrid_query = True
+    cfg.search.context_aware.enabled = False
+    docs_dir = bdd_context["docs_dir"]
+    cfg.search.local_file.path = str(docs_dir)
+    cfg.search.local_file.file_types = ["txt"]
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    first = Search.external_lookup(query, max_results=5)
+    second = Search.external_lookup(query, max_results=5)
+    bdd_context["first_results"] = first
+    bdd_context["second_results"] = second
+
+
 @then("the search results should include vector results")
 def check_vector_results(bdd_context):
     results = bdd_context["search_results"]
@@ -42,3 +72,11 @@ def first_result_matches_semantic(bdd_context):
     hybrid = bdd_context["hybrid_results"][0]
     semantic = bdd_context["semantic_results"][0]
     assert hybrid["url"] == semantic["url"]
+
+
+@then("the search results should have the same ordering")
+def results_have_same_ordering(bdd_context):
+    """Ensure repeated hybrid searches return identical ordering."""
+    first = [r["url"] for r in bdd_context["first_results"]]
+    second = [r["url"] for r in bdd_context["second_results"]]
+    assert first == second

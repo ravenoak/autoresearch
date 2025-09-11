@@ -558,7 +558,8 @@ class Search:
         of the weighted ranking is discussed in
         ``docs/algorithms/relevance_ranking.md``. Semantic and DuckDB
         similarities are normalized before averaging so hybrid and semantic
-        rankings share a consistent scale.
+        rankings share a consistent scale. Results are deduplicated by URL
+        and ties are resolved deterministically to ensure stable ordering.
 
         Args:
             query: The search query
@@ -638,11 +639,22 @@ class Search:
                 bm25_scores[i] * search_cfg.bm25_weight
                 + semantic_scores[i] * search_cfg.semantic_similarity_weight
             )
+        # Deduplicate by URL and sort deterministically
+        unique: Dict[str, Dict[str, Any]] = {}
+        for res in results:
+            url = res.get("url")
+            if url in unique:
+                if res["relevance_score"] > unique[url]["relevance_score"]:
+                    unique[url] = res
+            else:
+                unique[url] = res
 
-        # Sort results by final score (descending)
-        ranked_results = sorted(results, key=lambda r: r["relevance_score"], reverse=True)
+        ranked_results = sorted(
+            unique.values(),
+            key=lambda r: (-r["relevance_score"], r.get("url", "")),
+        )
 
-        return ranked_results
+        return list(ranked_results)
 
     @hybridmethod
     def cross_backend_rank(

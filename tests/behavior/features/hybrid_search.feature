@@ -12,3 +12,9 @@ Feature: Hybrid Search
     And I have persisted claims with embeddings
     When I perform a hybrid search for "hello"
     Then the first result should match the semantic search ordering
+
+  Scenario: Hybrid search returns deterministic ordering
+    Given a directory with text files
+    And I have persisted claims with embeddings
+    When I perform the same hybrid search for "hello" twice
+    Then the search results should have the same ordering

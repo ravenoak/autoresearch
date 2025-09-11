@@ -13,18 +13,23 @@ from .middleware import (
     get_remote_address,
     parse,
 )
+from .models import (
+    DEPRECATED_VERSIONS,
+    BatchQueryRequestV1,
+    BatchQueryRequestV2,
+    BatchQueryResponseV1,
+    BatchQueryResponseV2,
+    QueryRequestV1,
+    QueryRequestV2,
+    QueryResponseV1,
+    QueryResponseV2,
+)
 from .utils import (
     RequestLogger,
     create_request_logger,
     enforce_permission,
     get_request_logger,
     reset_request_log,
-)
-from .models import (
-    BatchQueryRequestV1,
-    BatchQueryResponseV1,
-    QueryRequestV1,
-    QueryResponseV1,
 )
 
 create_app = routing.create_app
@@ -53,6 +58,11 @@ __all__ = [
     "QueryResponseV1",
     "BatchQueryRequestV1",
     "BatchQueryResponseV1",
+    "QueryRequestV2",
+    "QueryResponseV2",
+    "BatchQueryRequestV2",
+    "BatchQueryResponseV2",
+    "DEPRECATED_VERSIONS",
     "enforce_permission",
     "create_request_logger",
     "get_request_logger",

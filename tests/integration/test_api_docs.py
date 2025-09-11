@@ -1,6 +1,10 @@
 import pytest
 
-from autoresearch.api.models import QueryResponseV1
+from autoresearch.api.models import (
+    DEPRECATED_VERSIONS,
+    QueryRequestV2,
+    QueryResponseV1,
+)
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
@@ -158,3 +162,13 @@ def test_health_endpoint(monkeypatch, api_client):
     resp = api_client.get("/health")
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"
+
+
+def test_openapi_marks_v1_deprecated(monkeypatch, api_client):
+    """The OpenAPI schema flags version 1 as deprecated."""
+    _setup(monkeypatch)
+    resp = api_client.get("/openapi.json")
+    schema = resp.json()["components"]["schemas"]["QueryRequestV1"]["properties"]["version"]
+    assert schema["deprecated"] is True
+    assert "1" in DEPRECATED_VERSIONS
+    assert QueryRequestV2.model_fields["version"].default == "2"

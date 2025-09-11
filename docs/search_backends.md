@@ -20,7 +20,8 @@ addition to regular keyword lookup. Scores from BM25, semantic similarity and
 source credibility are combined according to their weights to produce a unified
 ranking across all backends. Semantic and DuckDB vector similarities are
 normalized before averaging so hybrid and semantic results share a common
-scale.
+scale. Results are deduplicated by URL and ties are broken by URL to keep
+ordering deterministic across runs.
 
 Weights are configured as follows and must sum to `1.0`:
 
