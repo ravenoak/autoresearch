@@ -17,7 +17,7 @@ class _Document:
         Path(path).touch()
 
 
-if "docx" not in sys.modules:
+if importlib.util.find_spec("docx") is None and "docx" not in sys.modules:
     module = ModuleType("docx")
     module.Document = _Document
     module.__version__ = "0.0"

@@ -37,6 +37,10 @@ The result reports per-agent counts and a total equal to the number of
 submitted tasks. For broader concurrency context, see
 [distributed.md](distributed.md).
 
+## Simulation Expectations
+
+Unit tests cover message handling and concurrency safeguards.
+
 ## Traceability
 
 

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 from types import ModuleType
 
 
-if "pdfminer" not in sys.modules:
+if importlib.util.find_spec("pdfminer") is None and "pdfminer" not in sys.modules:
     high_level = ModuleType("pdfminer.high_level")
 
     def extract_text(*args, **kwargs):

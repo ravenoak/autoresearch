@@ -1,9 +1,11 @@
 """Stub implementation of the :mod:`ray` package used in tests."""
 
+import importlib.util
 import sys
 import types
 
-if "ray" not in sys.modules:
+
+if importlib.util.find_spec("ray") is None and "ray" not in sys.modules:
     def _remote(func):
         return types.SimpleNamespace(remote=lambda *a, **k: func(*a, **k))
 

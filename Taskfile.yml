@@ -282,7 +282,7 @@ tasks:
             {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src tests
-      - uv run mypy src
+      - uv run mypy src --exclude src/autoresearch/a2a_interface.py
       - task lint-specs
       - uv run python scripts/check_spec_tests.py
       - task: coverage

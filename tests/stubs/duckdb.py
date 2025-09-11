@@ -1,9 +1,10 @@
 """Minimal stub for the :mod:`duckdb` package."""
 
+import importlib.util
 import sys
 import types
 
-if "duckdb" not in sys.modules:
+if importlib.util.find_spec("duckdb") is None and "duckdb" not in sys.modules:
     duckdb_stub = types.ModuleType("duckdb")
 
     class _Conn:
