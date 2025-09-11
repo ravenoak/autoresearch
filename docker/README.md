@@ -1,19 +1,8 @@
 # Container Images
 
-The `docker/` directory contains Dockerfiles for runtime and development
-variants of Autoresearch.
+Platform-specific Dockerfiles live here. Use `scripts/build_images.sh`
+to build OCI images for Linux, macOS, and Windows. Set `OFFLINE=1` to
+install from local wheels or sdists and `FORMAT=oci` to output archives
+in `dist/`.
 
-Build an image with the helper script. Set `OFFLINE=1` to install from
-local wheels:
-
-```bash
-docker/build.sh runtime
-```
-
-Use the development variant for testing:
-
-```bash
-docker/build.sh dev
-```
-
-See `docs/container_usage.md` for usage examples.
+See `docs/container_usage.md` for running and updating containers.

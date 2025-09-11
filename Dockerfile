@@ -20,7 +20,7 @@ RUN --network=none uv run pytest \
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
 
-FROM ghcr.io/cirruslabs/macos-runner:sonoma AS macos
+FROM --platform=linux/amd64 ghcr.io/cirruslabs/macos-runner:sonoma AS macos
 ARG EXTRAS
 ARG OFFLINE
 WORKDIR /workspace
@@ -39,7 +39,7 @@ RUN /bin/bash -lc "brew update && brew install python@3.12" && \
 ENTRYPOINT ["autoresearch"]
 CMD ["--help"]
 
-FROM mcr.microsoft.com/windows/python:3.12 AS windows
+FROM --platform=windows/amd64 mcr.microsoft.com/windows/python:3.12 AS windows
 ARG EXTRAS
 ARG OFFLINE
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]

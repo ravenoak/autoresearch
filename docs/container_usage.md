@@ -1,46 +1,56 @@
 # Container Usage
 
-This guide shows how to build and run platform-neutral Autoresearch
-container images.
+Build and run Autoresearch containers on Linux, macOS, and Windows.
 
 ## Build images
 
-Use the helper script to build runtime or development images. Set `OFFLINE=1`
-to install from local wheels.
+Use `scripts/build_images.sh` to create platform images. It targets
+Linux (amd64 and arm64), macOS, and Windows. Set `OFFLINE=1` to install
+from local wheels or sdists for reproducible builds. Place artifacts in
+`wheels/` or generate them with `scripts/package.sh dist`.
 
 ```
-docker/build.sh runtime
-docker/build.sh dev
+scripts/build_images.sh
 ```
 
-## Run the CLI
+To emit OCI archives instead of loading images into Docker:
 
-Mount a host directory for data and invoke the CLI.
+```
+FORMAT=oci scripts/build_images.sh
+```
+
+## Run containers
+
+Run the CLI from the Linux image:
+
+```
+docker run --rm autoresearch-linux-amd64 --help
+```
+
+Mount a host directory for data:
 
 ```
 mkdir -p data
 docker run --rm -v "$(pwd)/data:/data" \
-  autoresearch-runtime search "example query"
+  autoresearch-linux-amd64 search "example query"
 ```
 
-## Run the API
-
-Expose a port and mount the data volume.
+Expose a port and run the API:
 
 ```
 docker run --rm -p 8000:8000 -v "$(pwd)/data:/data" \
-  autoresearch-runtime uv run uvicorn autoresearch.api:app \
+  autoresearch-linux-amd64 uv run uvicorn autoresearch.api:app \
   --host 0.0.0.0 --port 8000
 ```
 
 Stop the container with `Ctrl+C`.
 
-## Package distributions
+## Update containers
 
-Build source and wheel distributions inside the runtime image.
+Rebuild images after pulling new source code. Re-run the build script
+and reload any OCI archives:
 
 ```
-scripts/package.sh dist
+scripts/build_images.sh
+docker load -i dist/autoresearch-linux-amd64.oci
 ```
-
-Set `CONTAINER_IMAGE` to use another image such as `autoresearch-dev`.

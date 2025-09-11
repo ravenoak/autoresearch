@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
-# build_images.sh - Build Autoresearch images for Linux, macOS, and Windows.
+# build_images.sh - Build, run, and update Autoresearch containers.
 # Usage: build_images.sh [EXTRAS]
-# Set OFFLINE=1 to install from local wheels during the build.
+# Set OFFLINE=1 to install from local wheels or sdists for reproducible builds.
 # Set FORMAT=oci to emit OCI archives instead of loading Docker images.
+# After building, run an image:
+#   docker run --rm autoresearch-linux-amd64 --help
+# Re-run this script to rebuild images when the source changes.
 set -euo pipefail
 
 usage() {
-    echo "Usage: build_images.sh [EXTRAS]" >&2
-    echo "Set OFFLINE=1 to install from local wheels." >&2
-    echo "Set FORMAT=oci to output OCI images to dist/." >&2
+    cat >&2 <<'EOF'
+Usage: build_images.sh [EXTRAS]
+Build OCI images for Linux, macOS, and Windows.
+Set OFFLINE=1 to install from local wheels or sdists.
+Set FORMAT=oci to output archives in dist/.
+Run an image:
+  docker run --rm autoresearch-linux-amd64 --help
+Update images by rerunning the script after pulling new code.
+EOF
 }
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
