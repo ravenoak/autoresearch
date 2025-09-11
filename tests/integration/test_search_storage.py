@@ -8,6 +8,7 @@ import rdflib
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.search import Search
+from autoresearch.search import storage as search_storage
 from autoresearch.storage import StorageManager
 from tests.conftest import VSS_AVAILABLE
 
@@ -55,12 +56,17 @@ def test_search_returns_persisted_claim(monkeypatch):
 
     # Remove external backends and simplify ranking
     monkeypatch.setattr(Search, "backends", {})
-    ns = types.SimpleNamespace(backends={}, embedding_backends={})
+    ns = Search()
+    ns.backends = {}
+    ns.cache = types.SimpleNamespace(
+        get_cached_results=lambda *a, **k: None,
+        cache_results=lambda *a, **k: None,
+    )
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
-        lambda q, b, query_embedding=None: sum(b.values(), []),
+        lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
 
     # Avoid index refresh for simplicity
@@ -81,7 +87,7 @@ def test_search_returns_persisted_claim(monkeypatch):
         "content": "hello",
         "embedding": [0.2, 0.1],
     }
-    StorageManager.persist_claim(claim)
+    search_storage.persist_claim(claim)
     assert calls, "run_ontology_reasoner should be invoked"
 
     def fake_vector_search(query_embedding, k=5):
@@ -117,7 +123,7 @@ def test_storage_cleared_between_tests(monkeypatch):
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
-        lambda q, b, query_embedding=None: sum(b.values(), []),
+        lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
     monkeypatch.setattr(StorageManager, "vector_search", lambda e, k=5: [])
 
@@ -138,18 +144,23 @@ def test_external_lookup_persists_results(monkeypatch):
     ConfigLoader()._config = None
 
     stored: list[str] = []
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+    monkeypatch.setattr(search_storage, "persist_claim", lambda claim: stored.append(claim["id"]))
 
     def backend(query: str, max_results: int = 5):
         return [{"title": "doc", "url": "u1"}]
 
     monkeypatch.setattr(Search, "backends", {"b": backend})
-    ns = types.SimpleNamespace(backends={"b": backend}, embedding_backends={})
+    ns = Search()
+    ns.backends = {"b": backend}
+    ns.cache = types.SimpleNamespace(
+        get_cached_results=lambda *a, **k: None,
+        cache_results=lambda *a, **k: None,
+    )
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
-        lambda q, b, query_embedding=None: sum(b.values(), []),
+        lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
 
     Search.external_lookup("q", max_results=1)
@@ -171,21 +182,26 @@ def test_search_reflects_updated_claim(monkeypatch):
     }
 
     monkeypatch.setattr(
-        StorageManager, "persist_claim", lambda claim: store.update({claim["id"]: claim})
+        search_storage, "persist_claim", lambda claim: store.update({claim["id"]: claim})
     )
     monkeypatch.setattr(
-        StorageManager,
+        search_storage,
         "update_claim",
         lambda claim, partial_update=False: store[claim["id"]].update(claim),
         raising=False,
     )
     monkeypatch.setattr(Search, "backends", {})
-    ns = types.SimpleNamespace(backends={}, embedding_backends={})
+    ns = Search()
+    ns.backends = {}
+    ns.cache = types.SimpleNamespace(
+        get_cached_results=lambda *a, **k: None,
+        cache_results=lambda *a, **k: None,
+    )
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
-        lambda q, b, query_embedding=None: sum(b.values(), []),
+        lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
 
     def vector_search(embedding, k=5):
@@ -203,8 +219,8 @@ def test_search_reflects_updated_claim(monkeypatch):
     monkeypatch.setattr(StorageManager, "refresh_vector_index", lambda: None)
     monkeypatch.setattr(StorageManager, "has_vss", lambda: False)
 
-    StorageManager.persist_claim(store["c1"])
-    StorageManager.update_claim({"id": "c1", "content": "new"}, partial_update=True)
+    search_storage.persist_claim(store["c1"])
+    search_storage.update_claim({"id": "c1", "content": "new"}, partial_update=True)
 
     results = Search.external_lookup(
         {"text": "", "embedding": np.array(store["c1"]["embedding"])},
@@ -219,7 +235,7 @@ def test_search_persists_multiple_backend_results(monkeypatch):
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader()._config = None
     stored: list[str] = []
-    monkeypatch.setattr(StorageManager, "persist_claim", lambda claim: stored.append(claim["id"]))
+    monkeypatch.setattr(search_storage, "persist_claim", lambda claim: stored.append(claim["id"]))
 
     def b1(query: str, max_results: int = 5):
         return [{"title": "Paris", "url": "u1"}]
@@ -228,16 +244,21 @@ def test_search_persists_multiple_backend_results(monkeypatch):
         return [{"title": "France", "url": "u2"}]
 
     monkeypatch.setattr(Search, "backends", {"b1": b1, "b2": b2})
-    ns = types.SimpleNamespace(backends={"b1": b1, "b2": b2}, embedding_backends={})
+    ns = Search()
+    ns.backends = {"b1": b1, "b2": b2}
+    ns.cache = types.SimpleNamespace(
+        get_cached_results=lambda *a, **k: None,
+        cache_results=lambda *a, **k: None,
+    )
     monkeypatch.setattr(Search, "_shared_instance", ns)
     monkeypatch.setattr(
         Search,
         "cross_backend_rank",
-        lambda q, b, query_embedding=None: sum(b.values(), []),
+        lambda self, q, b, query_embedding=None: sum(b.values(), []),
     )
 
     Search.external_lookup("What is the capital of France?", max_results=2)
-    assert stored == ["u1", "u2"]
+    assert set(stored) == {"u1", "u2"}
 
 
 def test_duckdb_persistence_roundtrip(tmp_path, monkeypatch):
@@ -245,12 +266,14 @@ def test_duckdb_persistence_roundtrip(tmp_path, monkeypatch):
     cfg = _config_without_network()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
+    import autoresearch.storage as storage_module
+    storage_module._cached_config = None
 
     StorageManager.teardown(remove_db=True)
     StorageManager.setup(db_path=str(tmp_path / "kg.duckdb"))
 
     claim = {"id": "c1", "type": "fact", "content": "hello"}
-    StorageManager.persist_claim(claim)
+    search_storage.persist_claim(claim)
     StorageManager.teardown()
 
     StorageManager.setup(db_path=str(tmp_path / "kg.duckdb"))

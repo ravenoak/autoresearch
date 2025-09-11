@@ -56,6 +56,10 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     if backend == "memory":
         return rdflib.Graph()
 
+    dir_path = os.path.dirname(path)
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
+
     if backend == "berkeleydb":
         store_name = "Sleepycat"
         rdf_path = path

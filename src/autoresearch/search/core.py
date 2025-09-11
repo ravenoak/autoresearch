@@ -68,6 +68,7 @@ from ..config.loader import get_config
 from ..errors import ConfigError, SearchError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
+from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
 from .ranking import combine_scores, normalize_scores as _normalize_scores
@@ -1086,6 +1087,8 @@ class Search:
                 text_query, results_by_backend, query_embedding
             )
 
+            search_storage.persist_results(ranked_results)
+
             # Update search context if context-aware search is enabled
             if cfg.search.context_aware.enabled:
                 context = SearchContext.get_instance()
@@ -1566,16 +1569,18 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
 def _duckdb_embedding_backend(
     query_embedding: np.ndarray, max_results: int = 5
 ) -> List[Dict[str, Any]]:
-    """Use StorageManager.vector_search for embedding lookups."""
+    """Use local storage for embedding lookups."""
 
-    vec_results = StorageManager.vector_search(query_embedding.tolist(), k=max_results)
+    vec_results = search_storage.vector_search(query_embedding.tolist(), k=max_results)
     formatted: List[Dict[str, Any]] = []
     for r in vec_results:
+        claim = search_storage.get_claim(r.get("node_id", "")) or {}
+        content = claim.get("content", r.get("content", ""))
         formatted.append(
             {
-                "title": r.get("content", "")[:60],
+                "title": content[:60],
                 "url": r.get("node_id", ""),
-                "snippet": r.get("content", ""),
+                "snippet": content,
                 "embedding": r.get("embedding"),
                 "similarity": r.get("similarity"),
             }
