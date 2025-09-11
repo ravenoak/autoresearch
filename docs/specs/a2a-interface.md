@@ -16,6 +16,8 @@ A2A (Agent-to-Agent) interface for Autoresearch.
 - Agent state updates occur atomically.
 - No agent handles more than one task at a time.
 - The total dispatched count equals the sum of per-agent counts.
+- A monotonically increasing event id yields a total order of dispatches.
+- The dispatch log length equals the total number of dispatched tasks.
 
 ## Proof Sketch
 
@@ -45,12 +47,18 @@ uv run scripts/a2a_concurrency_sim.py --agents 3 --tasks 5
 ```
 
 The result reports per-agent counts, a total equal to the number of submitted
-tasks, and a dispatch log enumerating the global event order. For broader
-concurrency context, see [distributed.md](distributed.md).
+tasks, and a dispatch log enumerating the global event order. The log is
+sorted by event id without gaps or duplicates, proving mutual exclusion.
+For broader concurrency context, see [distributed.md](distributed.md).
 
 ## Simulation Expectations
 
-Unit tests cover message handling and concurrency safeguards.
+Unit tests assert that:
+
+- totals match the sum of per-agent counts,
+- each agent receives exactly ``tasks`` assignments,
+- the dispatch log is already sorted by event id, and
+- the number of log entries equals the dispatched total.
 
 ## Traceability
 

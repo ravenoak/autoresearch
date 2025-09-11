@@ -348,7 +348,9 @@ def test_dispatch_simulation_invariants() -> None:
     """Simulation confirms per-agent counts remain consistent."""
     result = run_simulation(agents=3, tasks=2)
     assert result.total_dispatched == 6
+    assert result.total_dispatched == sum(result.agent_counts.values())
     assert all(count == 2 for count in result.agent_counts.values())
+    assert len(result.dispatch_log) == result.total_dispatched
 
 
 def test_simulation_event_order() -> None:
@@ -356,6 +358,7 @@ def test_simulation_event_order() -> None:
     result = run_simulation(agents=2, tasks=3)
     ids = [idx for idx, _ in result.dispatch_log]
     assert ids == list(range(6))
+    assert result.dispatch_log == sorted(result.dispatch_log)
     counts = {0: 0, 1: 0}
     for _, agent in result.dispatch_log:
         counts[agent] += 1
