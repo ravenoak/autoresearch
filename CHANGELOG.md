@@ -8,7 +8,7 @@ Reference issues by slugged filename (for example,
 ## [Unreleased]
 - No changes yet.
 
-## [0.1.0a1] - 2025-09-11
+## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research
   workflows.
 - CLI, HTTP API, and Streamlit interfaces for executing queries.
