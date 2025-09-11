@@ -26,7 +26,7 @@ documented behaviour.
 | `src/autoresearch/cli_utils.py` | [cli-utils.md](cli-utils.md) | `../../tests/unit/test_cli_utils_extra.py` |
 | `src/autoresearch/config_utils.py` | [config-utils.md](config-utils.md) | `../../tests/unit/test_config_env_file.py`<br>`../../tests/unit/test_config_errors.py`<br>`../../tests/unit/test_config_loader_defaults.py`<br>`../../tests/unit/test_config_profiles.py`<br>`../../tests/unit/test_config_reload.py`<br>`../../tests/unit/test_config_utils.py`<br>`../../tests/unit/test_config_validation_errors.py`<br>`../../tests/unit/test_config_validators_additional.py`<br>`../../tests/unit/test_config_watcher_cleanup.py`<br>`../../tests/unit/test_streamlit_app_edgecases.py`<br>`../../tests/unit/test_streamlit_utils.py` |
 | `src/autoresearch/config/` | [config.md](config.md) | `../../tests/unit/test_config_env_file.py<br>../../tests/unit/test_config_errors.py<br>../../tests/unit/test_config_loader_defaults.py` |
-| `src/autoresearch/distributed/` | [distributed.md](distributed.md) | `../../tests/unit/test_distributed.py<br>../../tests/unit/test_distributed_extra.py<br>../../tests/integration/test_distributed_agent_storage.py<br>../../tests/analysis/test_distributed_coordination.py` |
+| `src/autoresearch/distributed/` | [distributed.md](distributed.md) | `../../tests/unit/test_distributed.py<br>../../tests/unit/test_distributed_extra.py<br>../../tests/integration/test_distributed_agent_storage.py<br>../../tests/analysis/test_distributed_coordination.py<br>../../scripts/distributed_coordination_sim.py<br>../../scripts/distributed_coordination_formulas.py` |
 | `src/autoresearch/error_recovery.py` | [error-recovery.md](error-recovery.md) | `../../tests/unit/test_error_recovery.py` |
 | `src/autoresearch/error_utils.py` | [error-utils.md](error-utils.md) | `../../tests/unit/test_error_utils_additional.py` |
 | `src/autoresearch/errors.py` | [errors.md](errors.md) | `../../tests/unit/test_config_errors.py<br>../../tests/unit/test_config_validation_errors.py<br>../../tests/unit/test_errors.py` |
@@ -39,7 +39,7 @@ documented behaviour.
 | `src/autoresearch/mcp_interface.py` | [mcp-interface.md](mcp-interface.md) | `../../tests/unit/test_mcp_interface.py<br>../../tests/behavior/features/mcp_interface.feature` |
 | `src/autoresearch/models.py` | [models.md](models.md) | `../../tests/unit/test_models_docstrings.py` |
 | `src/autoresearch/monitor/` | [monitor.md](monitor.md) | `../../tests/unit/test_main_monitor_commands.py<br>../../tests/unit/test_monitor_cli.py<br>../../tests/unit/test_resource_monitor_gpu.py` |
-| `src/autoresearch/resource_monitor.py` | [resource-monitor.md](resource-monitor.md) | `../../tests/unit/test_resource_monitor_gpu.py<br>../../tests/integration/test_monitor_metrics.py` |
+| `src/autoresearch/resource_monitor.py` | [resource-monitor.md](resource-monitor.md) | `../../tests/unit/test_resource_monitor_gpu.py<br>../../tests/integration/test_monitor_metrics.py<br>../../scripts/resource_monitor_bounds.py` |
 | `src/autoresearch/storage_backends.py` | [storage-backends.md](storage-backends.md) | `../../tests/unit/test_duckdb_storage_backend.py<br>../../tests/unit/test_duckdb_storage_backend_extended.py` |
 | `src/autoresearch/storage_backup.py` | [storage-backup.md](storage-backup.md) | `../../tests/unit/test_storage_backup.py` |
 | `src/autoresearch/streamlit_app.py` | [streamlit-app.md](streamlit-app.md) | `../../tests/unit/test_streamlit_app_edgecases.py` |
