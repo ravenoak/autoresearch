@@ -30,3 +30,16 @@ def test_under_budget_keeps_nodes():
             return_metrics=True,
         )
     assert remaining == threads * items
+
+
+def test_zero_budget_disables_eviction():
+    """Zero budget turns off eviction and retains nodes."""
+    with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
+        remaining, _ = _run(
+            threads=1,
+            items=2,
+            policy="lru",
+            scenario="zero_budget",
+            return_metrics=True,
+        )
+    assert remaining == 2

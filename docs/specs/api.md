@@ -24,23 +24,34 @@ return **400 Bad Request**.
 - The ``END`` sentinel terminates the stream.
 - Webhook callbacks retry failed deliveries with exponential backoff.
 
+## Edge Cases
+
+- Zero chunks send only the ``END`` sentinel.
+- Deprecated versions return **410 Gone** and unknown versions return
+  **400 Bad Request**.
+
+## Complexity
+
+Streaming ``n`` chunks performs ``O(n)`` work and uses ``O(1)`` extra memory.
+
 ## Proof Sketch
 
 Streaming a finite chunk list while recording data and heartbeats shows the
-ordering and liveness invariants hold. Tests cover nominal and error paths,
-and the simulation in [api_streaming_metrics.json][r1] confirms ordered
-delivery and heartbeat retries.
+ordering and liveness invariants hold. Tests cover nominal and error paths, and
+the simulation in [api_stream_order_sim.py][s1] confirms ordered delivery,
+heartbeat counts, and linear operations.
 
 ## Simulation Expectations
 
-Streaming simulations send three chunks and record metrics in
-[api_streaming_metrics.json][r1].
+Streaming simulations send three chunks and record metrics such as
+``{"ordered": true, "heartbeats": 3, "operations": 7}``.
 
 ## Traceability
 
-
 - Modules
   - [src/autoresearch/api/][m1]
+- Scripts
+  - [scripts/api_stream_order_sim.py][s1]
 - Tests
   - [tests/unit/test_api.py][t1]
   - [tests/unit/test_api_error_handling.py][t2]
@@ -54,6 +65,7 @@ Streaming simulations send three chunks and record metrics in
   - [tests/integration/test_api_docs.py][t9]
   - [tests/analysis/test_api_streaming_sim.py][t11]
   - [tests/unit/test_webhooks_logging.py][t12]
+  - [tests/analysis/test_api_stream_order_sim.py][t13]
 
 [m1]: ../../src/autoresearch/api/
 [t1]: ../../tests/unit/test_api.py
@@ -69,3 +81,5 @@ Streaming simulations send three chunks and record metrics in
 [t11]: ../../tests/analysis/test_api_streaming_sim.py
 [t12]: ../../tests/unit/test_webhooks_logging.py
 [r1]: ../../tests/analysis/api_streaming_metrics.json
+[s1]: ../../scripts/api_stream_order_sim.py
+[t13]: ../../tests/analysis/test_api_stream_order_sim.py
