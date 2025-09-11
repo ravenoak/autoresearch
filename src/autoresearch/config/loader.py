@@ -3,16 +3,16 @@ from __future__ import annotations
 import atexit
 import contextvars
 import logging
+import os
+import sys
 import threading
+import tomllib
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Set
-import sys
-import tomllib
 
-from watchfiles import watch
 from dotenv import dotenv_values
-import os
+from watchfiles import watch
 
 from ..errors import ConfigError
 from .models import (
@@ -369,11 +369,11 @@ class ConfigLoader:
                             continue
                         try:
                             new_config = self.load_config()
-                            self._config = new_config
-                            self.notify_observers(new_config)
-                        except Exception as e:
-                            logger.error(f"Error reloading config: {e}")
-                            raise ConfigError("Error reloading config", cause=e) from e
+                        except Exception as e:  # pragma: no cover - defensive
+                            logger.error("Error reloading config: %s", e)
+                            continue
+                        self._config = new_config
+                        self.notify_observers(new_config)
         except Exception as e:
             logger.error(f"Error in config watcher: {e}")
             raise ConfigError(

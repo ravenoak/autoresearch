@@ -15,13 +15,13 @@ from __future__ import annotations
 
 import os
 import shutil
-import sys
 import sqlite3
+import sys
+import tomllib
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 from urllib.parse import urlparse
 
-import tomllib
 import yaml
 from jsonschema import Draft7Validator
 
@@ -173,7 +173,14 @@ def _check_database(url: str) -> str | None:
 def _schema_errors(data: Mapping[str, Any], schema: Mapping[str, Any]) -> list[str]:
     """Return validation errors for ``data`` against ``schema``."""
     validator = Draft7Validator(schema)
-    return [error.message for error in validator.iter_errors(data)]
+    errors: list[str] = []
+    for error in validator.iter_errors(data):
+        path = ".".join(str(p) for p in error.path)
+        if path:
+            errors.append(f"{path}: {error.message}")
+        else:
+            errors.append(error.message)
+    return errors
 
 
 def _validate_deploy_dir(deploy_dir: Path) -> list[str]:
