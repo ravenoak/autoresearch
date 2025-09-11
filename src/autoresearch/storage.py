@@ -38,7 +38,7 @@ from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
-from .storage_backends import DuckDBStorageBackend
+from .storage_backends import DuckDBStorageBackend, init_rdf_store
 
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
@@ -193,30 +193,12 @@ def setup(
             _kuzu_backend.setup(kuzu_path)
 
         # Initialize RDF store
-        if cfg.rdf_backend == "memory":
-            ctx.rdf_store = rdflib.Graph()
-        else:
-            if cfg.rdf_backend == "berkeleydb":
-                store_name = "Sleepycat"
-                rdf_path = cfg.rdf_path
-            else:
-                store_name = "SQLAlchemy"
-                rdf_path = f"sqlite:///{cfg.rdf_path}"
-            try:
-                ctx.rdf_store = rdflib.Graph(store=store_name)
-                ctx.rdf_store.open(rdf_path, create=True)
-            except Exception as e:  # pragma: no cover - store may fail
-                log.error(f"Failed to open RDF store: {e}")
-                ctx.rdf_store = None
-                if "No plugin registered" in str(e):
-                    raise StorageError(
-                        f"Missing RDF backend plugin: {store_name}",
-                        cause=e,
-                        suggestion=(
-                            "Install the required rdflib plugin or choose a different backend"
-                        ),
-                    )
-                raise StorageError("Failed to open RDF store", cause=e)
+        try:
+            ctx.rdf_store = init_rdf_store(cfg.rdf_backend, cfg.rdf_path)
+        except StorageError as e:
+            log.error(f"Failed to open RDF store: {e}")
+            ctx.rdf_store = None
+            raise
     st.context = ctx
 
 
@@ -1103,6 +1085,16 @@ class StorageManager(metaclass=StorageManagerMeta):
             # Check RAM usage and evict if needed
             budget = ConfigLoader().config.ram_budget_mb
             StorageManager._enforce_ram_budget(budget)
+
+    @staticmethod
+    def get_claim(claim_id: str) -> dict[str, Any]:
+        """Retrieve a persisted claim from DuckDB."""
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.get_claim(claim_id)
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        return StorageManager.context.db_backend.get_claim(claim_id)
 
     @staticmethod
     def _update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:

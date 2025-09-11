@@ -21,8 +21,11 @@ The relationships between these classes and their external dependencies are docu
 
 1. The `setup()` method initializes the storage backends
 2. The `persist_claim()` method validates and stores claims in all backends
-3. The `vector_search()` method finds similar claims using vector similarity
-4. The `teardown()` method closes connections and cleans up resources
+3. The `get_claim()` method retrieves persisted records from DuckDB
+4. The `vector_search()` method finds similar claims using vector similarity
+5. The `teardown()` method closes connections and cleans up resources
+
+See [specs/storage.md](specs/storage.md) for persistence guarantees.
 
 ## Incremental Updates
 
@@ -163,6 +166,9 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
    [storage]
    rdf_backend = "memory"
    ```
+
+If SQLAlchemy itself is missing, setup raises `SQLAlchemy driver not installed`.
+Install `sqlalchemy` before retrying.
 
 ## Ontology Reasoning and Visualization
 
