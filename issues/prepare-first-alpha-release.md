@@ -8,10 +8,7 @@ workflows dispatch-only.
 
 ## Dependencies
 - [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
-- [resolve-package-metadata-warnings](resolve-package-metadata-warnings.md)
-- [fix-api-authentication-integration-tests](archive/fix-api-authentication-integration-tests.md)
 - [streamline-task-verify-extras](streamline-task-verify-extras.md)
-- [resolve-concurrent-query-interface-regression](resolve-concurrent-query-interface-regression.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
