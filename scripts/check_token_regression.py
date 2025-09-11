@@ -50,7 +50,7 @@ def main() -> int:
     parser.add_argument(
         "--coverage-baseline",
         type=Path,
-        default=Path("baseline/coverage.xml"),
+        default=Path(__file__).resolve().parents[1] / "baseline/coverage.xml",
         help="Path to baseline coverage XML",
     )
     parser.add_argument(
@@ -64,8 +64,7 @@ def main() -> int:
         if not args.coverage_current.exists():
             parser.error(f"Coverage file not found: {args.coverage_current}")
         if not args.coverage_baseline.exists():
-            print(f"No baseline coverage at {args.coverage_baseline}")
-            return 0
+            parser.error(f"Coverage baseline not found: {args.coverage_baseline}")
         baseline_cov = _coverage_percent(args.coverage_baseline)
         current_cov = _coverage_percent(args.coverage_current)
         if current_cov + args.threshold < baseline_cov:
