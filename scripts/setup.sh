@@ -6,8 +6,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/setup_common.sh"
 
-export PATH="$PATH:$(pwd)/.venv/bin"
+ensure_venv_bin_on_path "$PWD/.venv/bin"
 
 EXTRAS=${AR_EXTRAS:-}
 

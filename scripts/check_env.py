@@ -130,7 +130,7 @@ def check_task() -> CheckResult | None:
             "or run scripts/bootstrap.sh"
         )
         warnings.warn(msg, UserWarning)
-        logger.info("%s", msg)
+        logger.warning("%s", msg)
         return None
     if proc.returncode != 0:
         hint = (

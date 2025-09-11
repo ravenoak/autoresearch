@@ -70,6 +70,17 @@ uv pip install -e ".[test]"
 uv run pytest -q
 ```
 
+If Go Task remains missing, bootstrap it and ensure `.venv/bin` is on `PATH`:
+
+```bash
+scripts/bootstrap.sh
+export PATH="$(pwd)/.venv/bin:$PATH"
+```
+
+You can also install Go Task manually from
+[taskfile.dev](https://taskfile.dev/#/installation) and add the binary to
+`PATH`. These steps let you run tests without the `task` helper.
+
 This ensures required plugins like `pytest-bdd` are installed.
 
 If `pytest` reports missing plugins, ensure the `[test]` extra is installed:
