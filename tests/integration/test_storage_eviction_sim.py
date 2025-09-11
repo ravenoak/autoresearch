@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from autoresearch.orchestration.metrics import EVICTION_COUNTER
+
 
 def _load_sim_module():
     path = Path(__file__).resolve().parents[2] / "scripts" / "storage_eviction_sim.py"
@@ -28,8 +30,10 @@ def test_normal_scenario_eviction() -> None:
 def test_zero_budget_keeps_nodes() -> None:
     """Zero budget disables eviction."""
 
+    start = EVICTION_COUNTER._value.get()
     remaining = sim._run(threads=1, items=3, policy="lru", scenario="zero_budget")
     assert remaining == 3
+    assert EVICTION_COUNTER._value.get() == start
 
 
 def test_under_budget_keeps_nodes() -> None:
