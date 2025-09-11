@@ -44,13 +44,21 @@ curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
 ```
 
 Optional extras provide features such as NLP, a UI, or distributed
-processing. Install them on demand with `uv sync --extra <name>`,
-`task install EXTRAS="<name>"`, or
-`pip install "autoresearch[<name>]"`. Heavy groups like `nlp`,
-`distributed`, `analysis`, and `llm` require additional dependencies and
-are excluded from `task verify`. Set `EXTRAS` when running `task`
-commands to enable them, for example `EXTRAS="nlp distributed" task
-verify`.
+processing. Install them on demand with `uv sync --extra <name>`, `task
+install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`.
+
+### Enabling heavy extras
+
+`task verify` syncs only the `dev-minimal`, `dev`, and `test` extras.
+Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm` require
+additional dependencies and must be enabled explicitly:
+
+```bash
+EXTRAS="nlp distributed" task verify
+```
+
+Use the same `EXTRAS` flag with `task install` to sync them for local
+development.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. The test suite's `redis_client` fixture connects
@@ -105,9 +113,9 @@ setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset
 (`test_version` and `test_cli_help`) for fast feedback. `task verify` runs the
-full suite and installs only the `dev-minimal` and `test` extras. Pass
-`EXTRAS="distributed analysis"` or similar when invoking the command to include
-heavy groups.
+full suite and installs only the `dev-minimal`, `dev`, and `test` extras.
+Pass `EXTRAS="distributed analysis"` or similar when invoking the command to
+include heavy groups.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).

@@ -9,9 +9,13 @@ For environment setup instructions see [installation](installation.md).
 Tests may require optional dependencies. Markers such as `requires_nlp` or
 `requires_parsers` map to extras with the same names. `task install` syncs the
 `dev-minimal` and `test` extras by default; add groups with `EXTRAS` or set
-`AR_EXTRAS` when using the setup script. `task verify` also installs the
-`dev-minimal` and `test` extras by default. Include heavy groups such as `nlp`,
-`distributed`, `analysis`, or `llm` only when needed:
+`AR_EXTRAS` when using the setup script. `task verify` installs the
+`dev-minimal`, `dev`, and `test` extras by default.
+
+### Enabling heavy extras
+
+Enable heavy groups like `nlp`, `distributed`, `analysis`, or `llm` only when
+needed:
 
 ```bash
 EXTRAS="nlp parsers" task install
@@ -52,8 +56,8 @@ Two installation strategies support different workflows:
   with `task install EXTRAS="nlp ui"` choosing from `analysis`, `distributed`,
   `git`, `llm`, `nlp`, `parsers`, `ui`, `vss`, and `gpu`.
 - **Full:** `task verify` runs linting, type checks, and coverage. It installs
-  the `dev-minimal` and `test` extras by default. Append optional groups with
-  `EXTRAS` for integration scenarios.
+  the `dev-minimal`, `dev`, and `test` extras by default. Append optional
+  groups with `EXTRAS` for integration scenarios.
 
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
