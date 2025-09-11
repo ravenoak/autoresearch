@@ -85,11 +85,46 @@ class VSSExtensionLoader:
                 else:
                     log.warning("VSS extension may not be fully loaded")
             except duckdb.Error as e:  # type: ignore[attr-defined]
-                log.error(f"Failed to load VSS extension: {e}")
-                if os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true":
+                log.error("Failed to load VSS extension: %s", e)
+                extension_loaded = VSSExtensionLoader._load_local_stub(conn)
+                if (
+                    not extension_loaded
+                    and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower()
+                    == "true"
+                ):
                     raise StorageError("Failed to load VSS extension", cause=e)
 
         return extension_loaded
+
+    @staticmethod
+    def _load_local_stub(conn: DuckDBConnection) -> bool:
+        """Attempt to load the stubbed VSS extension from the repository.
+
+        Args:
+            conn: DuckDB connection to receive the extension.
+
+        Returns:
+            bool: True if the stub loaded and verified, else False.
+        """
+        stub_path = (
+            Path(__file__).resolve().parents[2]
+            / "extensions"
+            / "vss"
+            / "vss.duckdb_extension"
+        )
+        if not stub_path.exists():
+            log.warning("VSS stub not found at %s", stub_path)
+            return False
+        try:
+            log.info("Loading VSS stub from %s", stub_path)
+            conn.execute(f"LOAD '{stub_path.as_posix()}'")
+            if VSSExtensionLoader.verify_extension(conn, verbose=False):
+                log.info("VSS stub extension loaded")
+                return True
+            log.warning("VSS stub failed verification")
+        except duckdb.Error as err:  # type: ignore[attr-defined]
+            log.warning("Failed to load VSS stub: %s", err)
+        return False
 
     @staticmethod
     def verify_extension(conn: DuckDBConnection, verbose: bool = True) -> bool:

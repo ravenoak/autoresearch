@@ -29,10 +29,20 @@ This specification outlines expected behaviors for the
   [domain authority scores](algorithms/source_credibility.md). Results from
   different backends are first scored individually and then merged and
   re-ranked with the same weights to ensure consistent ordering across
-  sources. The formula is detailed in [search ranking](algorithms/search_ranking.md).
+  sources. Each component score is normalized to the `0`–`1` range before
+  weighting. Combined scores are normalized again and sorted in descending
+  order. The math is detailed in [search ranking](specs/search_ranking.md).
   Simulation trials in
   [`ranking_convergence.py`](algorithms/relevance_ranking.md#simulation)
   report a mean convergence step of `1`, confirming the idempotent ranking.
+
+## Vector extension fallback
+
+- The DuckDB VSS extension is optional. `VSSExtensionLoader` installs it from
+  the network and falls back to a stub at `extensions/vss/vss.duckdb_extension`
+  when downloads fail. The stub disables vector search features but allows
+  storage initialization to continue. See
+  [duckdb_vss_fallback.md](duckdb_vss_fallback.md) for details.
 
 ## Tests
 Property-based tests in `tests/unit/test_relevance_ranking.py` verify:
