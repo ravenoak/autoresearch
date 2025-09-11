@@ -7,8 +7,9 @@ finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only.
 
 ## Dependencies
-- [add-test-coverage-for-optional-components](add-test-coverage-for-optional-components.md)
-- [streamline-task-verify-extras](streamline-task-verify-extras.md)
+- [add-a2a-concurrency-proofs-and-simulations](add-a2a-concurrency-proofs-and-simulations.md)
+- [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
+- [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.

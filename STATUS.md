@@ -15,6 +15,12 @@
   `resolve-concurrent-query-interface-regression` issues.
 - Created `fix-check-env-go-task-warning` to align the test with `check_env`
   behavior.
+- In a fresh environment without Go Task, `task` is unavailable. Running
+  `uv run --extra test pytest` shows 52 failing integration tests covering API
+  authentication, configuration reload, deployment validation, monitoring
+  metrics, VSS extension loading, ranking consistency, RDF persistence and
+  search storage. Archived `fix-check-env-go-task-warning` and opened
+  `resolve-integration-test-regressions` to address these failures.
 
 ## September 10, 2025
 

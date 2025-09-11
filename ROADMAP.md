@@ -11,12 +11,11 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. `task check` runs 8 targeted tests and passes.
-`task verify` fails in
-`tests/unit/test_check_env_warnings.py::test_missing_go_task_warns` because
-`check_env.check_task` logs instead of warning. Integration tests were not
-executed. The previous package metadata warnings and concurrency regression
-tests are resolved. Scheduler resource benchmarks
+across project documentation. In the current environment the Task CLI is
+missing, so `task` commands cannot run. `uv run --extra test pytest` reports 52
+failing integration tests, now tracked by
+[`resolve-integration-test-regressions`](issues/resolve-integration-test-regressions.md).
+Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
