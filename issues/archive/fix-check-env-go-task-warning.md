@@ -14,4 +14,4 @@ None.
 - `uv run python scripts/check_env.py` warns when Go Task is unavailable.
 
 ## Status
-Open
+Archived
