@@ -4,6 +4,14 @@
 Usage:
     uv run scripts/a2a_concurrency_sim.py --agents 3 --tasks 5
 
+Assumptions:
+- a single global :class:`~threading.Lock` protects the dispatch map
+- tasks are independent of one another
+
+Outcomes:
+- each agent receives ``tasks`` assignments
+- the total equals ``agents * tasks``
+
 See docs/specs/a2a-interface.md for invariants.
 """
 
@@ -48,8 +56,12 @@ def run_simulation(agents: int, tasks: int) -> SimulationResult:
 
 
 def main(agents: int, tasks: int) -> None:
-    """Run the simulation and print the result."""
+    """Run the simulation, validate invariants, and print the result."""
     result = run_simulation(agents, tasks)
+    expected = agents * tasks
+    assert result.total_dispatched == expected
+    assert sum(result.agent_counts.values()) == expected
+    assert all(count == tasks for count in result.agent_counts.values())
     print(result)
 
 

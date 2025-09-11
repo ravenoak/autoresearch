@@ -6,7 +6,8 @@ A2A (Agent-to-Agent) interface for Autoresearch.
 
 ## Algorithms
 
-- Implement core behaviors described above.
+- Implement core behaviors described above. See
+  [algorithms/a2a_interface.md][a1] for protocol flow and security notes.
 
 ## Invariants
 
@@ -20,10 +21,17 @@ A2A (Agent-to-Agent) interface for Autoresearch.
 
 A global lock guards the shared dispatch map. Each operation acquires the
 lock, updates the map, and releases the lock before the next dispatch.
-Mutual exclusion prevents lost updates and duplicate assignments, so the
-invariants hold. The simulation [a2a_concurrency_sim.py][s1] exercises the
-interface with concurrent threads and yields consistent counts across
-agents.
+Threads cannot interleave inside the critical section, so every increment
+of the per-agent count and the global total is atomic. Under these
+conditions the invariants hold:
+
+- totals are preserved because each task increments the counts exactly once,
+- agents never see the same task twice, and
+- no agent handles multiple tasks concurrently.
+
+The simulation [a2a_concurrency_sim.py][s1] schedules concurrent threads and
+confirms that observed counts match expectations. For algorithmic context see
+[algorithms/a2a_interface.md][a1].
 
 ## Simulation
 
@@ -46,6 +54,7 @@ Unit tests cover message handling and concurrency safeguards.
 
 - Modules
   - [src/autoresearch/a2a_interface.py][m1]
+  - [docs/algorithms/a2a_interface.md][a1]
 - Simulations
   - [scripts/a2a_concurrency_sim.py][s1]
 - Tests
@@ -57,6 +66,7 @@ Unit tests cover message handling and concurrency safeguards.
   - [tests/unit/test_a2a_concurrency_sim.py][t4]
 
 [m1]: ../../src/autoresearch/a2a_interface.py
+[a1]: ../algorithms/a2a_interface.md
 [s1]: ../../scripts/a2a_concurrency_sim.py
 [t1]: ../../tests/behavior/features/a2a_interface.feature
 [t2]: ../../tests/integration/test_a2a_interface.py
