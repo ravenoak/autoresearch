@@ -121,6 +121,16 @@ to detect regressions. To perform the comparison locally, run:
 uv run python scripts/check_token_regression.py --coverage-current coverage.xml
 ```
 
+When coverage changes legitimately, update the baseline by running:
+
+```bash
+task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"
+cp coverage.xml baseline/coverage.xml
+```
+
+`scripts/check_token_regression.py` compares new reports against
+`baseline/coverage.xml` to detect regressions.
+
 After tests complete, verify coverage meets the threshold:
 
 ```bash
