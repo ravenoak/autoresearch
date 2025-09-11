@@ -11,9 +11,11 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. In the current environment the Task CLI is
-missing, so `task` commands cannot run. `uv run --extra test pytest` reports 52
-failing integration tests, now tracked by
+across project documentation. Go Task 3.44.1 is available—`task check` passes,
+but `task verify` fails in
+`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`.
+`uv run --extra test pytest` still reports 52 failing integration tests, now
+tracked by
 [`resolve-integration-test-regressions`](issues/resolve-integration-test-regressions.md).
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
@@ -71,8 +73,8 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
-- [ ] Task CLI availability restored
-  ([restore-task-cli-availability](issues/restore-task-cli-availability.md)).
+- [x] Task CLI availability restored
+  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).

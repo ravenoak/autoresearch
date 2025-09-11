@@ -5,11 +5,11 @@ organized by phases from the code complete plan. As of **September 11, 2025**,
 syncing the `dev-minimal` and `test` extras lets
 `scripts/check_env.py` complete without warnings. `task check` passes, but
 `task verify` fails in
-`tests/unit/test_check_env_warnings.py::test_missing_go_task_warns` because
-`check_env.check_task` logs instead of warning. Integration concurrency tests
-pass. See [docs/release_plan.md](docs/release_plan.md) for current test and
-coverage status. An **0.1.0-alpha.1** preview is re-targeted for **2026-06-15**,
-with the final **0.1.0** release targeted for **July 1, 2026**.
+`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
+because the ranking order is incorrect. Integration concurrency tests pass.
+See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
+status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**,
+with the final **0.1.0** release targeted for **October 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 

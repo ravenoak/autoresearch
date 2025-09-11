@@ -6,7 +6,10 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
-- No changes yet.
+- Archived [restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)
+  after confirming Go Task 3.44.1 is installed and updating release docs.
+- Documented ranking formula test failure in
+  [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md).
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research
