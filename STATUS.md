@@ -2,10 +2,14 @@
 
 ## September 11, 2025
 
-- `uv 0.7.22` is installed, `task` is missing, and `extensions/` lacks the
-  DuckDB VSS extension.
-- `task` command remains unavailable after running `scripts/codex_setup.sh`; reopened
-  `restore-task-cli-availability`.
+- `uv 0.7.22` and Go Task 3.44.1 are installed; `extensions/` lacks the DuckDB
+  VSS extension.
+- `task check` passes, running flake8, mypy, spec linting, and targeted tests.
+- `task verify` fails in
+  `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
+  with an unexpected order `['B', 'A']`.
+- Archived `restore-task-cli-availability` after confirming
+  `task --version` prints 3.44.1.
 - Split 52 failing integration tests into targeted issues: `fix-api-authentication-and-metrics-tests`,
   `fix-config-reload-and-deploy-validation-tests`, `fix-search-ranking-and-extension-tests`,
   `fix-rdf-persistence-and-search-storage-tests`, and `fix-storage-schema-and-eviction-tests`.
@@ -13,11 +17,6 @@
   and `validate-deployment-configurations` into the `archive/` directory.
 - Installed the `dev-minimal` and `test` extras; `uv run python scripts/check_env.py`
   reports all dependencies present without warnings.
-- Verified Go Task 3.44.1 is available and added to `PATH`.
-- `task check` passes, running flake8, mypy, spec linting, and targeted tests.
-- `task verify` fails in
-  `tests/unit/test_check_env_warnings.py::test_missing_go_task_warns` because
-  `check_env.check_task` logs instead of warning.
 - `tests/integration/test_a2a_interface.py::test_concurrent_queries` passes when
   run with the `slow` marker.
 - Archived the `resolve-package-metadata-warnings` and
@@ -38,7 +37,7 @@
 | API | None |
 | Config | None |
 | Storage | `tests/integration/test_storage_eviction_sim.py::test_zero_budget_keeps_nodes`<br>`tests/integration/test_storage_schema.py::test_initialize_schema_version_without_fetchone`<br>`tests/unit/test_storage_utils.py::test_initialize_storage_creates_tables` |
-| Ranking | `tests/unit/test_property_search_ranking.py::test_rank_results_orders_by_weighted_scores` |
+| Ranking | `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination` |
 | RDF | `tests/integration/test_search_storage.py::test_search_returns_persisted_claim`<br>`tests/integration/test_search_storage.py::test_external_lookup_persists_results`<br>`tests/integration/test_search_storage.py::test_search_reflects_updated_claim`<br>`tests/integration/test_search_storage.py::test_search_persists_multiple_backend_results` |
 
 ## September 10, 2025
@@ -294,11 +293,10 @@ Targeted authentication suites pass except
 Not executed.
 
 ## Coverage
-`task verify` stops at `tests/unit/test_cache.py::test_cache_is_backend_specific`,
+`task verify` stops at `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`,
 so coverage reports are not generated.
 
 ## Open issues
-- [restore-task-cli-availability](issues/restore-task-cli-availability.md)
 - [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
 - [fix-config-reload-and-deploy-validation-tests](issues/fix-config-reload-and-deploy-validation-tests.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
