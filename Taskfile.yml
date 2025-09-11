@@ -5,6 +5,7 @@ set:
 
 vars:
   COVERAGE_MINIMUM: 90
+  ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers gpu"
 
 profiles:
   dev-minimal:
@@ -210,7 +211,7 @@ tasks:
 
   coverage:
     vars:
-      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS}}"
       EXTRA_MARKERS: >-
         {{if contains .EXTRAS "git"}}{{else}} and not requires_git{{end}}
         {{if contains .EXTRAS "nlp"}}{{else}} and not requires_nlp{{end}}
@@ -267,12 +268,12 @@ tasks:
           fi
     desc: |
       Run full test suite with coverage reporting.
-      Syncs the dev-minimal and test extras by default.
-      Provide optional groups with EXTRAS; include "gpu" to use wheels/gpu.
+      Installs all optional extras unless EXTRAS overrides them.
+      Include "gpu" to use wheels/gpu.
 
   verify:
     vars:
-      EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS}}"
     cmds:
       - |
           extras="dev-minimal dev test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
@@ -298,8 +299,7 @@ tasks:
           {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Syncs only the dev-minimal, dev, and test extras by default.
-      Set EXTRAS to include heavy groups like nlp, distributed, analysis, or llm.
+      Installs all optional extras by default; override with EXTRAS to limit.
 
   clean:
     cmds:
