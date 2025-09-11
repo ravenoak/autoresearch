@@ -216,6 +216,7 @@ def test_stream_requires_api_key(monkeypatch, api_client):
 
     unauth = api_client.post("/query/stream", json={"query": "q"})
     assert unauth.status_code == 401
+    assert unauth.headers["WWW-Authenticate"] == "API-Key"
 
     with api_client.stream(
         "POST", "/query/stream", json={"query": "q"}, headers={"X-API-Key": "secret"}
@@ -225,6 +226,7 @@ def test_stream_requires_api_key(monkeypatch, api_client):
     bad = api_client.post("/query/stream", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid API key"
+    assert bad.headers["WWW-Authenticate"] == "API-Key"
 
 
 def test_batch_query_async_order(monkeypatch, api_client):

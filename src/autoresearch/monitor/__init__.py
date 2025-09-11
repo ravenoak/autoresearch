@@ -13,7 +13,6 @@ from rich.table import Table
 from rich.tree import Tree
 import typer
 
-from ..main import Prompt
 
 from ..config.loader import ConfigLoader
 from ..logging_utils import get_logger
@@ -212,6 +211,8 @@ def graph(
 @monitor_app.command("run")
 def run() -> None:
     """Start the interactive monitor."""
+    from ..main import Prompt
+
     console = Console()
     config = _loader.load_config()
 

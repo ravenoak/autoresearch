@@ -1,18 +1,18 @@
 import time
 
+import psutil
 import pytest
-from typer.testing import CliRunner
 from prometheus_client import CollectorRegistry, generate_latest
+from typer.testing import CliRunner
 
-from autoresearch.main import app as cli_app
-from autoresearch.config.models import ConfigModel
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import APIConfig, ConfigModel
+from autoresearch.main import app as cli_app
+from autoresearch.models import QueryResponse
+from autoresearch.monitor.system_monitor import SystemMonitor
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.models import QueryResponse
 from autoresearch.resource_monitor import ResourceMonitor
-from autoresearch.monitor.system_monitor import SystemMonitor
-import psutil
 
 
 def dummy_run_query(query, config, callbacks=None, **kwargs):
@@ -44,7 +44,7 @@ def test_resource_threshold_formula():
     samples = [40, 50, 60, 50]
     mean = sum(samples) / len(samples)
     var = sum((x - mean) ** 2 for x in samples) / (len(samples) - 1)
-    sigma = var ** 0.5
+    sigma = var**0.5
     k = 2
     thresh = mean + k * sigma
     assert thresh == pytest.approx(66.33, abs=0.01)
@@ -148,3 +148,12 @@ def test_monitor_resources_cli(monkeypatch):
     out = result.stdout
     assert "GPU %" in out
     assert "GPU MB" in out
+
+
+def test_metrics_requires_api_key(monkeypatch, api_client):
+    cfg = ConfigModel(api=APIConfig(api_key="secret"))
+    cfg.api.role_permissions["user"] = ["metrics"]
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    resp = api_client.get("/metrics")
+    assert resp.status_code == 401
+    assert resp.headers["WWW-Authenticate"] == "API-Key"
