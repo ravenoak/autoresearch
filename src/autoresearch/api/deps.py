@@ -11,13 +11,15 @@ from .utils import enforce_permission
 def require_permission(permission: str):
     """Ensure the requesting client has a specific permission.
 
-    Raises HTTP 401 when no authentication information is present and
-    HTTP 403 when the user lacks the required permission.
+    Raises HTTP 401 with a ``WWW-Authenticate`` header when authentication
+    information is missing and HTTP 403 when the user lacks the required
+    permission.
     """
 
     async def checker(request: Request) -> None:
         permissions = getattr(request.state, "permissions", None)
-        enforce_permission(permissions, permission)
+        scheme = getattr(request.state, "www_authenticate", "API-Key")
+        enforce_permission(permissions, permission, scheme)
 
     return Depends(checker)
 

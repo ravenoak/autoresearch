@@ -64,6 +64,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         loader._config = loader.load_config()
         cfg = loader._config.api
 
+        auth_scheme = "API-Key" if (cfg.api_keys or cfg.api_key) else "Bearer"
+
         api_key = request.headers.get("X-API-Key")
         credentials: HTTPAuthorizationCredentials | None = await security(request)
         token = credentials.credentials if credentials else None
@@ -79,6 +81,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if provided_token and not token_valid:
             return self._unauthorized("Invalid token", "Bearer")
 
+        auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
+        if auth_configured and not (key_valid or token_valid):
+            if (cfg.api_keys or cfg.api_key) and cfg.bearer_token:
+                return self._unauthorized("Missing API key or token", auth_scheme)
+            if cfg.api_keys or cfg.api_key:
+                return self._unauthorized("Missing API key", auth_scheme)
+            return self._unauthorized("Missing token", auth_scheme)
+
         if key_valid:
             role = key_role
         elif token_valid:
@@ -88,14 +98,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         request.state.role = role
         request.state.permissions = set(cfg.role_permissions.get(role, []))
-
-        auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
-        if auth_configured and not (key_valid or token_valid):
-            if (cfg.api_keys or cfg.api_key) and cfg.bearer_token:
-                return self._unauthorized("Missing API key or token", "API-Key")
-            if cfg.api_keys or cfg.api_key:
-                return self._unauthorized("Missing API key", "API-Key")
-            return self._unauthorized("Missing token", "Bearer")
+        request.state.www_authenticate = auth_scheme
 
         return await call_next(request)
 
