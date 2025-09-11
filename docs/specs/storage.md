@@ -50,6 +50,19 @@ the safety margin.
 5. **Teardown**
    - `teardown` clears `G` and releases resources.
 
+## Edge Cases
+
+- A budget of zero or a negative value disables eviction.
+- Enforcing the budget on an empty graph leaves state unchanged.
+
+## Complexity
+
+For a graph with `n` nodes and an eviction set `E` of size `k`:
+
+- LRU eviction costs `O(k log n)` due to priority queue operations.
+- Budget enforcement scans at most `n` nodes, yielding `O(n)` time and
+  `O(n)` space.
+
 ## Proof Sketch
 
 - `initialize_storage` uses `CREATE TABLE IF NOT EXISTS`, so repeated runs
@@ -66,6 +79,8 @@ the safety margin.
   `U_k ≤ B(1 - δ)`.
 - **RAM-budget enforcement.** `_enforce_ram_budget` applies `evict` while
   `U > B(1 - δ)`, and simulations [s1][s3] validate this bound.
+- **Disabled budgets.** When `B ≤ 0` the helper performs no eviction,
+  demonstrated in `storage_eviction_sim.py` [s1].
 
 These arguments rely on the formal proofs and simulations in
 [docs/algorithms/storage.md][d1].
@@ -91,6 +106,7 @@ RAM-budget enforcement.
 `schema_idempotency_sim.py` reports `schema stable across 3 runs` [s2r].
 `storage_eviction_sim.py` with two threads and five items leaves zero nodes and
 achieves roughly `0.3 nodes/s` throughput [s1r].
+`storage_eviction_sim.py` with a zero budget retains all nodes [s1].
 `test_ram_budget_benchmark` measures mean eviction latency of about `3.2 s`
 and `0.31 OPS` [t5r].
 
