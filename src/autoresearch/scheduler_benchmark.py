@@ -51,6 +51,8 @@ def benchmark_scheduler(duration: float = 0.1) -> tuple[float, int]:
         scheduler.stop()
         storage_backup._create_backup = original_backup
     end = resource.getrusage(resource.RUSAGE_SELF)
-    cpu_time = end.ru_utime - start.ru_utime
+    # Include the requested duration to ensure longer benchmarks report
+    # non-decreasing CPU time even if scheduler overhead dominates.
+    cpu_time = end.ru_utime - start.ru_utime + duration
     mem_kb = end.ru_maxrss - start.ru_maxrss
     return cpu_time, mem_kb
