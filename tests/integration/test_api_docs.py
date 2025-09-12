@@ -141,7 +141,7 @@ def test_async_query_status_schema(monkeypatch, api_client):
 def test_unknown_version_rejected(monkeypatch, api_client):
     _setup(monkeypatch)
     resp = api_client.post("/query", json={"query": "hi", "version": "99"})
-    assert resp.status_code == 400
+    assert resp.status_code == 422
     assert resp.json()["detail"] == "Unsupported API version 99"
 
 

@@ -17,8 +17,9 @@ bodies; responses echo the same field to signal the contract in use. The
 `autoresearch.api.models`.
 
 Deprecated versions remain available for two minor releases and return
-**410 Gone** once support is removed. Unknown versions yield **400 Bad
-Request**. Clients should upgrade before the deprecation window ends.
+**410 Gone** once support is removed. Unknown versions yield
+**422 Unprocessable Entity**. Clients should upgrade before the
+deprecation window ends.
 The OpenAPI schema lists all recognised versions and marks deprecated
 releases, giving clients advance notice of upcoming removals.
 
