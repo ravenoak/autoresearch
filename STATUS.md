@@ -1,5 +1,8 @@
 # Status
 
+Install Go Task with `scripts/setup.sh` or your package manager to enable
+Taskfile commands.
+
 ## September 12, 2025
 
 - Ran `scripts/codex_setup.sh` to bootstrap the environment and append `.venv/bin` to `PATH`.

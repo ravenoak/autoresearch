@@ -41,13 +41,15 @@ def test_missing_pytest_bdd_warns(monkeypatch):
 
 
 def test_missing_go_task_warns(monkeypatch):
+    monkeypatch.setenv("CHECK_ENV_TASK_WARN_ONLY", "1")
+
     def fake_run(*args, **kwargs):
         raise FileNotFoundError
 
     monkeypatch.setattr(check_env.subprocess, "run", fake_run)
     with pytest.warns(
         UserWarning,
-        match="Go Task .* not found; install it from https://taskfile.dev/ or run scripts/bootstrap.sh",
+        match="Go Task .* not found; install it with scripts/setup.sh or your package manager",
     ):
         result = check_env.check_task()
     assert result is None
