@@ -28,6 +28,7 @@ Taskfile commands.
   - `tests/unit/test_storage_persistence.py::`
     `test_initialize_creates_tables_and_teardown_removes_file` fails with VSS
     extension download warnings and an unset `_create_tables` flag.
+- `task check` passes; `task verify` with all extras appeared to stall on `tests/unit/test_cache.py::test_cache_is_backend_specific` (~13s). Added [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md) to track performance and ontology warnings.
 
 
 ## September 11, 2025
@@ -332,7 +333,9 @@ so coverage reports are not generated and a multiprocessing resource tracker
 ## Open issues
 - [fix-duckdb-storage-schema-initialization](issues/fix-duckdb-storage-schema-initialization.md)
 - [resolve-storage-persistence-test-failure](issues/resolve-storage-persistence-test-failure.md)
+- [add-storage-initialization-proofs](issues/add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+- [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)

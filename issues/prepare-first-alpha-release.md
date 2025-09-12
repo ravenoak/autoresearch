@@ -7,14 +7,15 @@ finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only.
 
 ## Dependencies
-- [add-a2a-concurrency-proofs-and-simulations](
-  archive/add-a2a-concurrency-proofs-and-simulations.md)
+- [add-a2a-concurrency-proofs-and-simulations](archive/add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
 - [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
 - [resolve-storage-persistence-test-failure](resolve-storage-persistence-test-failure.md)
+- [add-storage-initialization-proofs](add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
+- [reduce-cache-backend-test-runtime](reduce-cache-backend-test-runtime.md)
 - [avoid-large-downloads-in-task-verify](archive/avoid-large-downloads-in-task-verify.md)
 
 ## Acceptance Criteria
