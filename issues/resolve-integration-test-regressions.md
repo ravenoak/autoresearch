@@ -1,12 +1,14 @@
 # Resolve integration test regressions
 
 ## Context
-Running `uv run --extra test pytest` reports 52 failing integration tests.
-Failures span API key enforcement, configuration hot reload, deployment
-validation, monitoring metrics, VSS extension loading, ranking
-consistency, RDF persistence and search storage. These regressions block
-the `prepare-first-alpha-release` issue and are split across dedicated
+Running `uv run --extra test pytest` now reports a single failing
+integration test. Recurring RDFlib/SQLAlchemy deprecation warnings also
+surface and require follow-up. These regressions block the
+`prepare-first-alpha-release` issue and are split across dedicated
 tickets for targeted fixes.
+
+## Failing Tests
+- `tests/integration/test_api_versioning.py::test_rejects_unknown_version`
 
 ## Dependencies
 - [fix-api-authentication-and-metrics-tests](archive/fix-api-authentication-and-metrics-tests.md)
