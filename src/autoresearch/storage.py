@@ -1092,6 +1092,39 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageManager._enforce_ram_budget(budget)
 
     @staticmethod
+    def update_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        """Update an existing claim across storage backends.
+
+        This method delegates to the configured database backend. When a message
+        queue is configured, the update request is placed on the queue for
+        asynchronous processing.
+
+        Args:
+            claim: Claim data containing at least an ``id`` field.
+            partial_update: If ``True``, only the provided fields are updated.
+
+        Raises:
+            StorageError: If storage is not initialized or the backend update
+                fails.
+        """
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.update_claim(claim, partial_update)
+
+        if _message_queue is not None:
+            _message_queue.put(
+                {
+                    "action": "update_claim",
+                    "claim": claim,
+                    "partial_update": partial_update,
+                }
+            )
+            return
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        StorageManager.context.db_backend.update_claim(claim, partial_update)
+
+    @staticmethod
     def get_claim(claim_id: str) -> dict[str, Any]:
         """Retrieve a persisted claim from DuckDB."""
         if _delegate and _delegate is not StorageManager:
