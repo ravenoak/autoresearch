@@ -11,7 +11,8 @@ workflows dispatch-only.
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
 - [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
-- [avoid-large-downloads-in-task-verify](avoid-large-downloads-in-task-verify.md)
+- [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
+- [avoid-large-downloads-in-task-verify](archive/avoid-large-downloads-in-task-verify.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.

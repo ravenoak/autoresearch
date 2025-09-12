@@ -312,17 +312,15 @@ Targeted authentication suites pass except
 Not executed.
 
 ## Coverage
-`task verify` stops at `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`,
-so coverage reports are not generated.
+`task verify` stops at
+`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+`test_initialize_schema_version`,
+so coverage reports are not generated and a multiprocessing resource tracker
+`KeyError` appears afterward.
 
 ## Open issues
-- [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
-- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-- [fix-rdf-persistence-and-search-storage-tests](issues/fix-rdf-persistence-and-search-storage-tests.md)
-- [fix-storage-schema-and-eviction-tests](issues/fix-storage-schema-and-eviction-tests.md)
-- [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md)
-- [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md)
-- [add-a2a-concurrency-proofs-and-simulations](issues/add-a2a-concurrency-proofs-and-simulations.md)
-- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
+- [fix-duckdb-storage-schema-initialization](issues/fix-duckdb-storage-schema-initialization.md)
+- [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-integration-test-regressions](issues/resolve-integration-test-regressions.md)
+- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
