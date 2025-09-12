@@ -17,6 +17,11 @@ Taskfile commands.
 - `task verify` fails in `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
 - Archived [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
 - Opened [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md).
+- Ran `uv run pytest tests/integration -q`; 289 passed, 10 skipped with
+  deprecation warnings. Archived
+  [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
+  and opened
+  [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
 
 
 ## September 11, 2025
@@ -47,7 +52,7 @@ Taskfile commands.
   authentication, configuration reload, deployment validation, monitoring
   metrics, VSS extension loading, ranking consistency, RDF persistence and
   search storage. Archived `fix-check-env-go-task-warning` and opened
-  `resolve-integration-test-regressions` to address these failures.
+  `resolve-integration-test-regressions` (archived) addressed these failures.
 
 - Current failing tests:
 
@@ -320,7 +325,8 @@ so coverage reports are not generated and a multiprocessing resource tracker
 
 ## Open issues
 - [fix-duckdb-storage-schema-initialization](issues/fix-duckdb-storage-schema-initialization.md)
+- [resolve-storage-persistence-test-failure](issues/resolve-storage-persistence-test-failure.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
-- [resolve-integration-test-regressions](issues/resolve-integration-test-regressions.md)
+- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
