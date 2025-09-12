@@ -268,6 +268,7 @@ been verified to install successfully with `uv pip install`.
 | responses | 0.25.8 |
 | rich | 14.1.0 |
 | slowapi | 0.1.9 |
+| sqlalchemy | <2 |
 | structlog | 25.4.0 |
 | tabulate | 0.9.0 |
 | tinydb | 4.8.2 |

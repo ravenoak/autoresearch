@@ -122,7 +122,9 @@ sqlite:///path/to/rdf_store
 ```
 
 Make sure the `rdflib-sqlalchemy` package is installed so that RDFLib can load
-the SQLAlchemy plugin and open the SQLite store correctly.
+the SQLAlchemy plugin and open the SQLite store correctly. The plugin is
+limited to SQLAlchemy 1.x, so install it alongside a pinned `sqlalchemy<2`
+dependency to avoid incompatibilities.
 The parent directory is created automatically so DuckDB and the RDF store can
 initialize together without manual path setup.
 
@@ -154,21 +156,20 @@ Failed to open RDF store: No plugin registered for (SQLAlchemy, <class 'rdflib.s
 
 This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To fix this:
 
-1. Ensure the `rdflib-sqlalchemy` package is installed:
+1. Ensure the `rdflib-sqlalchemy` package is installed with SQLAlchemy 1.x:
    ```bash
-   pip install rdflib-sqlalchemy
+   pip install "sqlalchemy<2" rdflib-sqlalchemy
    ```
 
-2. Ensure it appears in your `pyproject.toml` dependencies:
+2. Ensure both packages appear in your `pyproject.toml` dependencies:
    ```toml
    [project.dependencies]
    rdflib-sqlalchemy = "^0.5.0"
+   sqlalchemy = "<2"
    ```
 
-3. If the error persists, try installing additional dependencies:
-   ```bash
-   pip install sqlalchemy
-   ```
+3. If the error persists, verify the pinned SQLAlchemy version is respected by
+   your environment.
 
 4. For development environments, you can also use the in-memory store by setting:
    ```toml
@@ -177,7 +178,7 @@ This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To 
    ```
 
 If SQLAlchemy itself is missing, setup raises `SQLAlchemy driver not installed`.
-Install `sqlalchemy` before retrying.
+Install `sqlalchemy<2` before retrying.
 
 ## Ontology Reasoning and Visualization
 
