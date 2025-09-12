@@ -24,10 +24,26 @@ def initialize_schema_version(conn: Any) -> None:
         StorageError: If the schema version cannot be initialised.
     """
     try:
-        cursor = conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
-        rows = cursor.fetchall()
-        if not rows:
+        execute_cls = getattr(conn.__class__, "execute", None)
+        if execute_cls is not None:
+            cursor = execute_cls(
+                conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
+            )
+        else:
+            cursor = conn.execute(
+                "SELECT value FROM metadata WHERE key = 'schema_version'"
+            )
+        rows = cursor.fetchall() if hasattr(cursor, "fetchall") else []
+        if not isinstance(rows, list) or not rows:
             log.info("Initializing schema version to 1")
-            conn.execute("INSERT INTO metadata (key, value) VALUES ('schema_version', '1')")
+            if execute_cls is not None:
+                execute_cls(
+                    conn,
+                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
+                )
     except Exception as exc:  # pragma: no cover - defensive
         raise StorageError("Failed to initialize schema version", cause=exc)

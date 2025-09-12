@@ -30,6 +30,12 @@ Taskfile commands.
     extension download warnings and an unset `_create_tables` flag.
 - `task check` passes; `task verify` with all extras appeared to stall on `tests/unit/test_cache.py::test_cache_is_backend_specific` (~13s). Added [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md) to track performance and ontology warnings.
 
+- Fixed DuckDB schema initialization, metrics endpoint, ranking normalization,
+  and scheduler benchmark.
+- `task verify` runs 664 tests; a multiprocessing resource tracker warning
+  remains.
+- Coverage XML reports 0% (0 of 57 lines) after combining data files.
+
 
 ## September 11, 2025
 

@@ -58,12 +58,10 @@ def combine_scores(
     if any(w < 0 for w in weights):
         raise ValueError("Weights must be non-negative")
 
-    bm25_norm = normalize_scores(bm25)
-    semantic_norm = normalize_scores(semantic)
-    credibility_norm = normalize_scores(credibility)
-
     combined = [
-        bm25_norm[i] * weights[0] + semantic_norm[i] * weights[1] + credibility_norm[i] * weights[2]
-        for i in range(len(bm25_norm))
+        bm25[i] * weights[0]
+        + semantic[i] * weights[1]
+        + credibility[i] * weights[2]
+        for i in range(len(bm25))
     ]
     return normalize_scores(combined)
