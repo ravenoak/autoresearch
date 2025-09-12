@@ -8,11 +8,15 @@ Taskfile commands.
 - Ran `scripts/codex_setup.sh` to bootstrap the environment and append `.venv/bin` to `PATH`.
 - `uv run python scripts/run_task.py check` fails with mypy: "type[StorageManager]" missing `update_claim`.
 - `uv run python scripts/run_task.py verify` stops on the same mypy error before tests start.
-- Opened [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md).
+- Opened [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
 
 - Ran `scripts/setup.sh` to sync dependencies and exported `.venv/bin` to `PATH` for `task` access.
 - `task check` and `task verify` both fail with the same `StorageManager.update_claim` mypy error.
-- A fresh `task verify` attempt began multi-gigabyte GPU downloads and was aborted; opened [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md).
+- A fresh `task verify` attempt began multi-gigabyte GPU downloads and was aborted; opened [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md)
+- `task check` now passes after syncing extras.
+- `task verify` fails in `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
+- Archived [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
+- Opened [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md).
 
 
 ## September 11, 2025

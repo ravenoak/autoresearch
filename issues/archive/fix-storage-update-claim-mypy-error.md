@@ -13,4 +13,4 @@ None.
 - Documentation references the update claim capability.
 
 ## Status
-Open
+Archived
