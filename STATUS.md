@@ -9,6 +9,7 @@
 
 - Ran `scripts/setup.sh` to sync dependencies and exported `.venv/bin` to `PATH` for `task` access.
 - `task check` and `task verify` both fail with the same `StorageManager.update_claim` mypy error.
+- A fresh `task verify` attempt began multi-gigabyte GPU downloads and was aborted; opened [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md).
 
 
 ## September 11, 2025
@@ -313,6 +314,7 @@ so coverage reports are not generated.
 - [fix-rdf-persistence-and-search-storage-tests](issues/fix-rdf-persistence-and-search-storage-tests.md)
 - [fix-storage-schema-and-eviction-tests](issues/fix-storage-schema-and-eviction-tests.md)
 - [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md)
+- [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md)
 - [add-a2a-concurrency-proofs-and-simulations](issues/add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](issues/resolve-integration-test-regressions.md)

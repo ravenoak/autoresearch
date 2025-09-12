@@ -11,6 +11,7 @@ workflows dispatch-only.
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
 - [fix-storage-update-claim-mypy-error](fix-storage-update-claim-mypy-error.md)
+- [avoid-large-downloads-in-task-verify](avoid-large-downloads-in-task-verify.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
