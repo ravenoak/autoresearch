@@ -10,7 +10,6 @@ tickets for targeted fixes.
 
 ## Dependencies
 - [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
-- [fix-config-reload-and-deploy-validation-tests](fix-config-reload-and-deploy-validation-tests.md)
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
 - [fix-rdf-persistence-and-search-storage-tests](fix-rdf-persistence-and-search-storage-tests.md)
 - [fix-storage-schema-and-eviction-tests](fix-storage-schema-and-eviction-tests.md)

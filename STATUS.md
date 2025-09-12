@@ -7,6 +7,9 @@
 - `uv run python scripts/run_task.py verify` stops on the same mypy error before tests start.
 - Opened [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md).
 
+- Ran `scripts/setup.sh` to sync dependencies and exported `.venv/bin` to `PATH` for `task` access.
+- `task check` and `task verify` both fail with the same `StorageManager.update_claim` mypy error.
+
 
 ## September 11, 2025
 
@@ -306,10 +309,10 @@ so coverage reports are not generated.
 
 ## Open issues
 - [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
-- [fix-config-reload-and-deploy-validation-tests](issues/fix-config-reload-and-deploy-validation-tests.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [fix-rdf-persistence-and-search-storage-tests](issues/fix-rdf-persistence-and-search-storage-tests.md)
 - [fix-storage-schema-and-eviction-tests](issues/fix-storage-schema-and-eviction-tests.md)
+- [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md)
 - [add-a2a-concurrency-proofs-and-simulations](issues/add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](issues/resolve-integration-test-regressions.md)
