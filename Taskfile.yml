@@ -6,6 +6,7 @@ set:
 vars:
   COVERAGE_MINIMUM: 90
   ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers gpu"
+  ALL_EXTRAS_NO_GPU: "nlp ui vss git distributed analysis llm parsers"
 
 profiles:
   dev-minimal:
@@ -273,7 +274,7 @@ tasks:
 
   verify:
     vars:
-      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS}}"
+      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS_NO_GPU}}"
     cmds:
       - |
           extras="dev-minimal dev test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
@@ -299,7 +300,8 @@ tasks:
           {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Installs all optional extras by default; override with EXTRAS to limit.
+      Installs all optional extras except gpu by default; override with EXTRAS
+      to limit or include "gpu".
 
   clean:
     cmds:
