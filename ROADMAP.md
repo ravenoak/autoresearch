@@ -4,16 +4,16 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 11, 2025**.
+[README](README.md). Last updated **September 12, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available—`task check` passes,
-but `task verify` fails in
-`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`.
+across project documentation. Go Task 3.44.1 is available—`task check` now
+fails with a mypy error about the missing `StorageManager.update_claim`
+method, and `task verify` stops on the same issue before tests run.
 `uv run --extra test pytest` still reports 52 failing integration tests, now
 tracked by
 [`resolve-integration-test-regressions`](issues/resolve-integration-test-regressions.md).
