@@ -17,4 +17,4 @@ None.
 - Documentation links persistence behavior to storage APIs.
 
 ## Status
-Open
+Archived

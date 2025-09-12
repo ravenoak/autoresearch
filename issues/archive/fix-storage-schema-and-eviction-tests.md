@@ -18,4 +18,4 @@ None.
 - Docs describe schema initialization and eviction guarantees.
 
 ## Status
-Open
+Archived
