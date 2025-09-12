@@ -97,6 +97,7 @@ def test_storage_setup_teardown(monkeypatch):
         rdf_backend="memory",
         duckdb_path="db.duckdb",
         vector_extension=False,
+        rdf_path="rdf_store",
     )
     cfg_model = types.SimpleNamespace(storage=cfg_storage)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg_model)
@@ -143,6 +144,7 @@ def test_storage_setup_without_kuzu(monkeypatch):
         rdf_backend="memory",
         duckdb_path="db.duckdb",
         vector_extension=False,
+        rdf_path="rdf_store",
     )
     cfg_model = types.SimpleNamespace(storage=cfg_storage)
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg_model)
