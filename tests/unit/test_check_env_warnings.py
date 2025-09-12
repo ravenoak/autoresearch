@@ -40,19 +40,16 @@ def test_missing_pytest_bdd_warns(monkeypatch):
     assert result is None
 
 
-def test_missing_go_task_warns(monkeypatch):
-    monkeypatch.setenv("CHECK_ENV_TASK_WARN_ONLY", "1")
-
+def test_missing_go_task_raises(monkeypatch):
     def fake_run(*args, **kwargs):
         raise FileNotFoundError
 
     monkeypatch.setattr(check_env.subprocess, "run", fake_run)
-    with pytest.warns(
-        UserWarning,
+    with pytest.raises(
+        check_env.VersionError,
         match="Go Task .* not found; install it with scripts/setup.sh or your package manager",
     ):
-        result = check_env.check_task()
-    assert result is None
+        check_env.check_task()
 
 
 def test_missing_uv_raises_version_error(monkeypatch):

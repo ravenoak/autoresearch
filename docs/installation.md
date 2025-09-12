@@ -14,9 +14,10 @@ Autoresearch requires these binaries on your `PATH`:
 - [Go Task](https://taskfile.dev/) for Taskfile commands. Install via
   `./scripts/setup.sh` or your package manager.
 
-Run `uv run python scripts/check_env.py` to confirm they are available. If Go
-Task is missing, run `./scripts/setup.sh` or install it via your package
-manager. After it finishes, confirm the CLI:
+Run `uv run python scripts/check_env.py` to confirm they are available. The
+script exits with an error when Go Task is missing; install it with
+`./scripts/setup.sh` or your package manager. After it finishes, confirm the
+CLI:
 
 ```bash
 ./scripts/setup.sh
@@ -70,7 +71,7 @@ task check-env
 EXTRAS="ui vss" task check-env  # verify optional extras
 ```
 
-Warnings from `task check-env` or `scripts/check_env.py` indicate missing tools
+Errors from `task check-env` or `scripts/check_env.py` indicate missing tools
 or packages. Rerun `task install` or sync extras with `uv sync --extra <name>`
 to resolve them.
 

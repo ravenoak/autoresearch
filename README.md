@@ -26,11 +26,11 @@ Install these binaries and ensure they are on your `PATH`:
 - [Go Task](https://taskfile.dev/)
 
 Run `uv run python scripts/check_env.py` to confirm they are available. The
-script now emits a warning when Go Task is missing and suggests installing it
-from <https://taskfile.dev/> or running `scripts/bootstrap.sh`. If the script
-warns that a tool or package is missing, rerun `task install` or sync optional
-extras with `uv sync --extra <name>`. Run the setup script and verify Go Task
-with `task --version`:
+script exits with an error when Go Task is missing and suggests installing it
+with `scripts/setup.sh` or your package manager. If a tool or package is
+reported missing, rerun `task install` or sync optional extras with
+`uv sync --extra <name>`. Run the setup script and verify Go Task with
+`task --version`:
 
 ```bash
 ./scripts/setup.sh
