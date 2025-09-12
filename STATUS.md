@@ -1,5 +1,13 @@
 # Status
 
+## September 12, 2025
+
+- Ran `scripts/codex_setup.sh` to bootstrap the environment and append `.venv/bin` to `PATH`.
+- `uv run python scripts/run_task.py check` fails with mypy: "type[StorageManager]" missing `update_claim`.
+- `uv run python scripts/run_task.py verify` stops on the same mypy error before tests start.
+- Opened [fix-storage-update-claim-mypy-error](issues/fix-storage-update-claim-mypy-error.md).
+
+
 ## September 11, 2025
 
 - `uv 0.7.22` and Go Task 3.44.1 are installed; `extensions/` lacks the DuckDB

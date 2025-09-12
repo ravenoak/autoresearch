@@ -10,6 +10,7 @@ workflows dispatch-only.
 - [add-a2a-concurrency-proofs-and-simulations](add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
+- [fix-storage-update-claim-mypy-error](fix-storage-update-claim-mypy-error.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
