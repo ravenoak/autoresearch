@@ -23,7 +23,8 @@
 ## Testing
 - `task check` – run early for linting, type checks, and a fast test suite.
 - `task verify` – run before committing; executes linting, type checks, and
-  the full test suite with coverage.
+  the full test suite with coverage. Skips `gpu` extras unless `EXTRAS="gpu"`
+  is set.
 - `task clean` – remove build artifacts.
 - For testing details see `docs/testing_guidelines.md` (load only if needed).
 - See `tests/AGENTS.md` for test markers and extras.
