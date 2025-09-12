@@ -11,12 +11,12 @@ Autoresearch requires these binaries on your `PATH`:
 
 - Python 3.12 or newer
 - [uv](https://github.com/astral-sh/uv) 0.7.0 or newer
-- [Go Task](https://taskfile.dev/) for Taskfile commands
+- [Go Task](https://taskfile.dev/) for Taskfile commands. Install via
+  `./scripts/setup.sh` or your package manager.
 
-Run `uv run python scripts/check_env.py` to confirm they are available. If the
-script warns that a tool or package is missing, rerun `task install` or sync
-extras with `uv sync --extra <name>`. The setup script installs a local Go Task
-binary automatically when it is missing. After it finishes, confirm the CLI:
+Run `uv run python scripts/check_env.py` to confirm they are available. If Go
+Task is missing, run `./scripts/setup.sh` or install it via your package
+manager. After it finishes, confirm the CLI:
 
 ```bash
 ./scripts/setup.sh

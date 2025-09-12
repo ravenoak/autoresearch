@@ -118,6 +118,7 @@ def check_python() -> CheckResult:
 
 def check_task() -> CheckResult | None:
     required = REQUIREMENTS["task"]
+    warn_only = os.environ.get("CHECK_ENV_TASK_WARN_ONLY") == "1"
     try:
         proc = subprocess.run(
             ["task", "--version"],
@@ -126,18 +127,20 @@ def check_task() -> CheckResult | None:
             check=False,
         )
     except FileNotFoundError:
-        msg = (
-            f"Go Task {required}+ not found; install it from https://taskfile.dev/ "
-            "or run scripts/bootstrap.sh"
-        )
-        warnings.warn(msg, UserWarning)
-        logger.warning("%s", msg)
-        return None
+        hint = (
+            "Go Task {required}+ not found; install it with scripts/setup.sh or "
+            "your package manager"
+        ).format(required=required)
+        if warn_only:
+            warnings.warn(hint, UserWarning)
+            logger.warning("%s", hint)
+            return None
+        raise VersionError(hint)
     if proc.returncode != 0:
         hint = (
-            f"Go Task {required}+ is required. Install it from https://taskfile.dev/ "
-            "or run scripts/bootstrap.sh"
-        )
+            "Go Task {required}+ is required. Install it with scripts/setup.sh or "
+            "your package manager"
+        ).format(required=required)
         raise VersionError(hint)
     match = re.search(r"(\d+\.\d+\.\d+)", proc.stdout)
     if not match:
@@ -145,9 +148,9 @@ def check_task() -> CheckResult | None:
     current = match.group(1)
     if Version(current) < Version(required):
         hint = (
-            f"Go Task {current} found, but {required}+ is required. Install it from "
-            "https://taskfile.dev/ or run scripts/bootstrap.sh"
-        )
+            "Go Task {current} found, but {required}+ is required. Install it with "
+            "scripts/setup.sh or your package manager"
+        ).format(current=current, required=required)
         raise VersionError(hint)
     return CheckResult("Go Task", current, required)
 
