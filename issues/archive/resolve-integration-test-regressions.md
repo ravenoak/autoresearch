@@ -1,14 +1,11 @@
 # Resolve integration test regressions
 
 ## Context
-Running `uv run --extra test pytest` now reports a single failing
-integration test. Recurring RDFlib/SQLAlchemy deprecation warnings also
-surface and require follow-up. These regressions block the
-`prepare-first-alpha-release` issue and are split across dedicated
-tickets for targeted fixes.
-
-## Failing Tests
-- `tests/integration/test_api_versioning.py::test_rejects_unknown_version`
+Running `uv run --extra test pytest` previously reported a failing
+integration test. After fixes, a full run now passes
+(`289 passed`, `10 skipped`) though RDFlib/SQLAlchemy deprecation warnings
+remain. This resolution unblocks `prepare-first-alpha-release`, while
+follow-up warning cleanup is tracked separately.
 
 ## Dependencies
 - [fix-api-authentication-and-metrics-tests](archive/fix-api-authentication-and-metrics-tests.md)
@@ -27,4 +24,4 @@ tickets for targeted fixes.
 - Storage eviction simulations maintain expected node counts.
 
 ## Status
-Open
+Archived

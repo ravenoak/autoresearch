@@ -13,9 +13,10 @@ See [STATUS.md](STATUS.md) for current results and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. Go Task 3.44.1 is available—`task check` passes, but `task verify` fails in
 `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
-`uv run --extra test pytest` previously reported a failing integration test
-`tests/integration/test_api_versioning.py::test_rejects_unknown_version`, tracked by
-[`resolve-integration-test-regressions`](issues/resolve-integration-test-regressions.md).
+`uv run --extra test pytest` previously reported a failing integration test,
+but a recent full run passes (`289 passed`, `10 skipped`). The tracking issue
+[`resolve-integration-test-regressions`](issues/archive/resolve-integration-test-regressions.md)
+is archived.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
@@ -77,7 +78,7 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
-- [ ] Integration tests stabilized.
+- [x] Integration tests stabilized.
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](
   issues/archive/add-test-coverage-for-optional-components.md);
