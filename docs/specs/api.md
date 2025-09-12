@@ -11,7 +11,7 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 Requests and responses use versioned schemas; the current
 `QueryRequestV1` and `QueryResponseV1` models require a `version` field of
 `"1"`. Deprecated versions return **410 Gone** while unknown versions
-return **400 Bad Request**.
+return **422 Unprocessable Entity**.
 
 ## Algorithms
 
@@ -28,7 +28,7 @@ return **400 Bad Request**.
 
 - Zero chunks send only the ``END`` sentinel.
 - Deprecated versions return **410 Gone** and unknown versions return
-  **400 Bad Request**.
+  **422 Unprocessable Entity**.
 
 ## Complexity
 
