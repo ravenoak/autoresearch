@@ -1,0 +1,52 @@
+# Orchestrator Performance
+
+## Overview
+
+`queue_metrics` models an M/M/c queue for the orchestrator's worker pool, while
+`simulate` augments those metrics with a simple memory estimate. The spec
+summarizes formulas, invariants, and validation strategies.
+
+## Algorithms
+
+- Utilization is `rho = lambda / (c * mu)` where `lambda` is arrival rate,
+  `mu` the per-worker service rate, and `c` the worker count.
+- The empty-queue probability is
+  `p0 = 1 / (sum_{n=0}^{c-1} (lambda/mu)^n / n! + (lambda/mu)^c /`
+  `(c! * (1 - rho)))`.
+- Average queue length follows
+  `Lq = p0 * (lambda/mu)^c * rho / (c! * (1 - rho)^2)`.
+- `simulate` returns queue metrics and adds `tasks * mem_per_task` as
+  `expected_memory`.
+
+## Invariants
+
+- `workers`, `arrival_rate`, and `service_rate` are positive.
+- `rho < 1` ensures stability; otherwise metrics are undefined.
+- `expected_memory` equals `tasks * mem_per_task`.
+
+## Proof Sketch
+
+Standard M/M/c results [1] yield the expressions for `p0` and `Lq`. When
+`rho < 1`, these formulas guarantee finite queue length. `simulate` merely
+multiplies task count by per-task memory, so the memory invariant holds.
+
+## Simulation Expectations
+
+- Run `uv run scripts/orchestrator_perf_sim.py --workers 2 --arrival-rate 3 \
+  --service-rate 5 --tasks 50 --mem-per-task 0.5` to verify metrics.
+- Increasing `workers` should decrease `Lq` while utilization stays below one.
+- Adding `--benchmark` exercises the throughput micro-benchmark.
+
+## Traceability
+
+- Code: [src/autoresearch/orchestrator_perf.py][m1]
+- Script: [scripts/orchestrator_perf_sim.py][m2]
+- Tests:
+  - [tests/unit/test_orchestrator_perf_sim.py][t1]
+  - [tests/integration/test_orchestrator_performance.py][t2]
+
+[1]: https://en.wikipedia.org/wiki/M/M/c_queue
+[m1]: ../../src/autoresearch/orchestrator_perf.py
+[m2]: ../../scripts/orchestrator_perf_sim.py
+[t1]: ../../tests/unit/test_orchestrator_perf_sim.py
+[t2]: ../../tests/integration/test_orchestrator_performance.py
