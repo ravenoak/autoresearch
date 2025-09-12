@@ -10,7 +10,7 @@ workflows dispatch-only.
 - [add-a2a-concurrency-proofs-and-simulations](archive/add-a2a-concurrency-proofs-and-simulations.md)
 - [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
 - [resolve-integration-test-regressions](resolve-integration-test-regressions.md)
-- [fix-storage-update-claim-mypy-error](fix-storage-update-claim-mypy-error.md)
+- [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
 - [avoid-large-downloads-in-task-verify](avoid-large-downloads-in-task-verify.md)
 
 ## Acceptance Criteria

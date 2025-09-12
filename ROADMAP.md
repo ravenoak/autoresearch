@@ -11,11 +11,10 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available—`task check` now
-fails with a mypy error about the missing `StorageManager.update_claim`
-method, and `task verify` stops on the same issue before tests run.
-`uv run --extra test pytest` still reports 52 failing integration tests, now
-tracked by
+across project documentation. Go Task 3.44.1 is available—`task check` passes, but `task verify` fails in
+`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
+`uv run --extra test pytest` previously reported a failing integration test
+`tests/integration/test_api_versioning.py::test_rejects_unknown_version`, tracked by
 [`resolve-integration-test-regressions`](issues/resolve-integration-test-regressions.md).
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory

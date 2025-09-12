@@ -1,12 +1,12 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 11, 2025**,
+organized by phases from the code complete plan. As of **September 12, 2025**,
 syncing the `dev-minimal` and `test` extras lets
 `scripts/check_env.py` complete without warnings. `task check` passes, but
 `task verify` fails in
-`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
-because the ranking order is incorrect. Integration concurrency tests pass.
+`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`
+with a missing insert call. Integration concurrency tests pass.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**,
 with the final **0.1.0** release targeted for **October 1, 2026**.
@@ -245,13 +245,13 @@ Full suite attempts:
 ./.venv/bin/task check
 ```
 
-Result: 84 passed, 1 skipped, 24 deselected, 28 warnings
+Result: 8 passed in 1.44s
 
 ```
 ./.venv/bin/task verify
 ```
 
-Result: `tests/targeted/test_http_session.py::test_set_and_close_http_session` failed, and earlier runs reported `ModuleNotFoundError: No module named 'pdfminer'`.
+Result: `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version` failed.
 
 ### Performance Baselines
 
