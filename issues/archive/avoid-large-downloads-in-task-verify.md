@@ -13,4 +13,4 @@ None.
 - Release docs reflect the reduced default footprint.
 
 ## Status
-Open
+Archived
