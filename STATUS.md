@@ -22,6 +22,12 @@ Taskfile commands.
   [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
   and opened
   [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
+- Reproduced failing unit tests individually:
+  - `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+    `test_initialize_schema_version` fails on a missing INSERT mock.
+  - `tests/unit/test_storage_persistence.py::`
+    `test_initialize_creates_tables_and_teardown_removes_file` fails with VSS
+    extension download warnings and an unset `_create_tables` flag.
 
 
 ## September 11, 2025
