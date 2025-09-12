@@ -17,4 +17,4 @@ None.
 - Documentation references authentication and metrics behavior.
 
 ## Status
-Open
+Archived

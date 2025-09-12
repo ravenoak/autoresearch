@@ -9,10 +9,10 @@ the `prepare-first-alpha-release` issue and are split across dedicated
 tickets for targeted fixes.
 
 ## Dependencies
-- [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
-- [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
-- [fix-rdf-persistence-and-search-storage-tests](fix-rdf-persistence-and-search-storage-tests.md)
-- [fix-storage-schema-and-eviction-tests](fix-storage-schema-and-eviction-tests.md)
+- [fix-api-authentication-and-metrics-tests](archive/fix-api-authentication-and-metrics-tests.md)
+- [fix-search-ranking-and-extension-tests](archive/fix-search-ranking-and-extension-tests.md)
+- [fix-rdf-persistence-and-search-storage-tests](archive/fix-rdf-persistence-and-search-storage-tests.md)
+- [fix-storage-schema-and-eviction-tests](archive/fix-storage-schema-and-eviction-tests.md)
 
 ## Acceptance Criteria
 - API endpoints require keys and return correct status codes.
