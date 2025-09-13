@@ -6,8 +6,8 @@ initialization and teardown behavior, especially when DuckDB extensions are
 missing. Failing tests highlight gaps in documented invariants.
 
 ## Dependencies
-- [resolve-storage-persistence-test-failure](archive/resolve-storage-persistence-test-failure.md)
-- [fix-duckdb-storage-schema-initialization](archive/fix-duckdb-storage-schema-initialization.md)
+- [resolve-storage-persistence-test-failure](resolve-storage-persistence-test-failure.md)
+- [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
 
 ## Acceptance Criteria
 - Storage initialization invariants are formally proven or justified.
@@ -15,4 +15,4 @@ missing. Failing tests highlight gaps in documented invariants.
 - Documentation links to the new proofs and corresponding tests.
 
 ## Status
-Open
+Archived
