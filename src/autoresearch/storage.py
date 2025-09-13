@@ -213,11 +213,10 @@ def initialize_storage(
 ) -> StorageContext:
     """Initialize storage and ensure DuckDB tables exist.
 
-    ``setup`` initializes connections and ensures tables exist for new or
-    in-memory databases. DuckDB's in-memory databases start empty on every
-    invocation, so the helper checks for missing tables and recreates the
-    schema when needed. Tests previously relied on fixtures to perform this
-    step; doing it here keeps the behaviour consistent and self-contained.
+    ``setup`` initializes connections while ``_create_tables`` runs on every
+    call to guarantee that required tables exist, even when a previous run has
+    already created them. DuckDB's in-memory databases start empty each time,
+    so this extra invocation keeps behaviour consistent across sessions.
 
     Args:
         db_path: Optional path to the DuckDB database. ``:memory:`` creates
@@ -243,15 +242,9 @@ def initialize_storage(
     if backend is None:
         raise StorageError("DuckDB backend not initialized")
 
-    conn = backend.get_connection()
-    try:
-        tables = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
-    except Exception:  # pragma: no cover - show tables should not fail
-        tables = set()
-
-    required = {"nodes", "edges", "embeddings", "metadata"}
-    if not required.issubset(tables):
-        backend._create_tables(skip_migrations=True)
+    # Always run table creation to guard against missing schema components.
+    backend.get_connection()
+    backend._create_tables(skip_migrations=True)
 
     return ctx
 
