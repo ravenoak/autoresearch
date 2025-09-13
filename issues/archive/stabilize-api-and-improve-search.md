@@ -12,4 +12,4 @@ Finalize public API behavior and upgrade search backends for consistent, high qu
 - Documentation reflects updated API and search contracts.
 
 ## Status
-Open
+Archived

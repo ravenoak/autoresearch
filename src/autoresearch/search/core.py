@@ -561,6 +561,8 @@ class Search:
         semantic_norm = Search.normalize_scores(semantic)
         duckdb_norm = Search.normalize_scores(duckdb)
         if not duckdb_norm or max(duckdb_norm) <= 0:
+            if semantic and len(set(semantic)) == 1:
+                return [semantic[0]] * len(semantic), duckdb_norm
             return semantic_norm, duckdb_norm
         merged = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(semantic_norm))]
         return merged, duckdb_norm
@@ -583,7 +585,8 @@ class Search:
         normalized to the 0–1 range before weighting, and the merged scores are
         normalized again before sorting. Semantic and DuckDB similarities are
         averaged after normalization so hybrid and semantic rankings share a
-        consistent scale.
+        consistent scale. When semantic similarity is disabled the normalized
+        DuckDB scores serve as the semantic component to preserve weighting.
 
         Args:
             query: The search query
@@ -632,13 +635,13 @@ class Search:
             else [1.0] * len(results)
         )
 
+        duckdb_raw = [r.get("similarity", 0.0) for r in results]
         if search_cfg.use_semantic_similarity:
             semantic_raw = self.calculate_semantic_similarity(query, results, query_embedding)
-            duckdb_raw = [r.get("similarity", 0.0) for r in results]
             semantic_scores, duckdb_scores = self.merge_semantic_scores(semantic_raw, duckdb_raw)
         else:
-            semantic_scores = [1.0] * len(results)
-            duckdb_scores = self.normalize_scores([r.get("similarity", 0.0) for r in results])
+            duckdb_scores = self.normalize_scores(duckdb_raw)
+            semantic_scores = duckdb_scores
 
         # Credibility scores are expected to already be within 0–1 so skip
         # additional normalization to preserve relative differences.

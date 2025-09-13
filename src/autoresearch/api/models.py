@@ -78,6 +78,7 @@ class AsyncQueryResponseV1(VersionedModel):
 
 
 __all__ = [
+    "VersionedModel",
     "ReasoningMode",
     "QueryRequestV1",
     "QueryResponseV1",
