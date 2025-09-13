@@ -17,6 +17,15 @@ by default. Use `EXTRAS="gpu"` to include the GPU packages or limit extras.
 
 - No deprecation warnings are expected when running `task verify`.
 
+## Multiprocessing cleanup
+
+Python's `multiprocessing` registers OS semaphores for queues and pools. When
+these objects are not closed, the `resource_tracker` emits warnings such as
+"leaked semaphore objects to clean up at shutdown." Tests must call `close()`
+and `join_thread()` on all `Queue` and `Pool` instances. An autouse fixture in
+`tests/conftest.py` drains any remaining semaphores to prevent spurious
+warnings.
+
 ### Enabling heavy extras
 
 Enable heavy groups like `nlp`, `distributed`, `analysis`, `llm`, or `gpu` only

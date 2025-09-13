@@ -26,15 +26,22 @@ def simulate(node_count: int = 1, duration: float = 0.5) -> dict[str, float]:
     monitor = ResourceMonitor(interval=0.05, registry=registry)
     monitor.start()
     queue: Queue[float] = Queue()
-    procs = [Process(target=_worker, args=(duration, queue)) for _ in range(node_count)]
-    for proc in procs:
-        proc.start()
-    for proc in procs:
-        proc.join()
-    monitor.stop()
-    cpu = float(monitor.cpu_gauge._value.get())
-    mem = float(monitor.mem_gauge._value.get())
-    return {"cpu_percent": cpu, "memory_mb": mem}
+    try:
+        procs = [
+            Process(target=_worker, args=(duration, queue))
+            for _ in range(node_count)
+        ]
+        for proc in procs:
+            proc.start()
+        for proc in procs:
+            proc.join()
+        monitor.stop()
+        cpu = float(monitor.cpu_gauge._value.get())
+        mem = float(monitor.mem_gauge._value.get())
+        return {"cpu_percent": cpu, "memory_mb": mem}
+    finally:
+        queue.close()
+        queue.join_thread()
 
 
 def run() -> dict[int, dict[str, float]]:
