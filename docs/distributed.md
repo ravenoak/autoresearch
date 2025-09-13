@@ -19,6 +19,15 @@ coordinator and agent results are aggregated asynchronously. Each broker
 supports a `publish` method and a `queue` attribute with `put` and `get`
 operations.
 
+## Resource cleanup
+
+Multiprocessing queues spawn feeder threads that must be terminated
+explicitly. Before tests exit, call `close()` and `join_thread()` on every
+queue. The brokers' `shutdown()` method performs this cleanup, so tests should
+invoke it whenever a broker is created. Likewise, ensure any custom pools or
+queues created in tests are closed in a `finally` block to prevent resource
+tracker errors.
+
 ## Analytical performance model
 
 We model the orchestrator as an M/M/c queue with a fixed dispatch delay
