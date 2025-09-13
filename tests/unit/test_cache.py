@@ -2,6 +2,8 @@ import importlib.util
 from threading import Thread  # for thread-safety test
 from typing import Any, Dict, List
 
+import pytest
+
 if not importlib.util.find_spec("tinydb"):
     import tests.stubs.tinydb  # noqa: F401
 
@@ -15,6 +17,15 @@ def assert_bm25_signature(query: str, documents: List[Dict[str, Any]]) -> List[f
     assert isinstance(query, str)
     assert isinstance(documents, list)
     return [1.0] * len(documents)
+
+
+@pytest.fixture(autouse=True)
+def _skip_ontology_reasoner(monkeypatch) -> None:
+    """Bypass heavy ontology reasoning in tests."""
+    monkeypatch.setattr(
+        "autoresearch.storage.run_ontology_reasoner",
+        lambda *_, **__: None,
+    )
 
 
 def test_search_uses_cache(monkeypatch):
