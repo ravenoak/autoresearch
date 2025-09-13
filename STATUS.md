@@ -5,14 +5,17 @@ Taskfile commands.
 
 ## September 13, 2025
 
-- `task` is unavailable; `task check` exits with `command not found: task`.
-- `uv run pytest` fails during collection with `ImportError: No module named`
-  `pytest_bdd`.
-- `uv run pytest tests/unit/test_version.py -q` passes but warns that
-  `bdd_features_base_dir` is an unknown config option.
-- Opened
-  [ensure-pytest-bdd-plugin-available-for-tests](issues/ensure-pytest-bdd-plugin-available-for-tests.md)
-  to track the missing dependency.
+- Ran `scripts/setup.sh` to install Task 3.44.1 and sync development extras.
+- `task check` succeeds.
+- `task verify` runs unit tests (245 passed, 6 skipped) but was interrupted
+  during coverage, leaving a multiprocessing resource tracker `KeyError`.
+- `uv run pytest tests/unit/test_version.py -q` passes without
+  `bdd_features_base_dir` warnings.
+- Archived
+  [ensure-pytest-bdd-plugin-available-for-tests](issues/archive/ensure-pytest-bdd-plugin-available-for-tests.md)
+  after confirming `pytest-bdd` is installed.
+- `task verify` reports `test_cache_is_backend_specific` and its variant each
+  taking ~64s and emitting `rdflib_sqlalchemy` deprecation warnings.
 
 ## September 12, 2025
 

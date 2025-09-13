@@ -1,18 +1,13 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 12, 2025**,
-syncing the `dev-minimal` and `test` extras lets
-`scripts/check_env.py` complete without warnings. `task check` passes, but
-`task verify` fails in
-`tests/unit/test_duckdb_storage_backend.py::
-TestDuckDBStorageBackend::test_initialize_schema_version`
-with a missing insert call and
-`tests/unit/test_storage_persistence.py::
-test_initialize_creates_tables_and_teardown_removes_file`
-with an assertion failure. Integration concurrency tests pass.
-See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
-status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**,
+organized by phases from the code complete plan. As of **September 13, 2025**, 
+running `scripts/setup.sh` installs Task 3.44.1 and required extras. 
+`task check` succeeds, while `task verify` runs 245 unit tests but must be
+interrupted during coverage after cache tests exceed 60 seconds.
+The run leaves a multiprocessing resource tracker `KeyError` and no coverage report.
+See [docs/release_plan.md](docs/release_plan.md) for current test and coverage 
+status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**, 
 with the final **0.1.0** release targeted for **October 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
