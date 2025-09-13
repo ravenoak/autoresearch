@@ -128,6 +128,33 @@ class TestDuckDBStorageBackend:
             backend.setup(db_path=":memory:")
 
     @patch("autoresearch.storage_backends.duckdb.connect")
+    def test_setup_missing_extension_continues(self, mock_connect, tmp_path):
+        """Missing VSS extension leaves schema initialized and disables VSS."""
+
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+
+        with patch("autoresearch.storage_backends.ConfigLoader") as mock_cfg:
+            cfg = MagicMock()
+            cfg.config.storage.duckdb = MagicMock()
+            cfg.config.storage.duckdb.path = str(tmp_path / "db.duckdb")
+            cfg.config.storage.vector_extension = True
+            mock_cfg.return_value = cfg
+
+            with patch(
+                "autoresearch.extensions.VSSExtensionLoader.load_extension",
+                side_effect=duckdb.Error("missing"),
+            ) as mock_load, patch.object(
+                DuckDBStorageBackend, "_create_tables"
+            ) as mock_create:
+                backend = DuckDBStorageBackend()
+                backend.setup()
+
+        mock_load.assert_called()
+        mock_create.assert_called_once()
+        assert backend._has_vss is False
+
+    @patch("autoresearch.storage_backends.duckdb.connect")
     def test_create_tables(self, mock_connect):
         """Test creating tables."""
         # Mock the connection

@@ -19,28 +19,56 @@ downloads and table creation routines.
 
 ## Invariants
 
-- After running the extension algorithm, an extension file exists at the
-  target path even when downloads fail.
+- After running the extension algorithm, a real extension or zero-byte stub
+  exists at the target path even when downloads fail.
+- When the vector extension is requested but cannot be loaded, the storage
+  backend sets `has_vss` to `False` and still initializes the schema.
 - After calling `initialize_storage`, all required tables exist and repeated
   calls leave the schema unchanged.
 
 ## Proof Sketch
 
-- The extension routine ensures file existence by checking the cache after
-  network retries and writing an empty stub when nothing is available. Thus,
-  callers always encounter a file, satisfying the first invariant.
-- `_create_tables` uses `CREATE TABLE IF NOT EXISTS` for each required table.
-  The command is idempotent, so every invocation yields the same table set,
-  proving the second invariant.
+- *Extension presence.* The download routine checks the cache after network
+  retries. If no copy exists, it writes an empty stub and records its location
+  in `.env.offline`. Therefore a file always exists, satisfying the first
+  invariant.
+- *Missing extension tolerance.* During `setup` the backend loads the vector
+  extension. On failure it clears `has_vss` and still invokes `_create_tables`.
+  As table creation does not depend on `has_vss`, initialization succeeds,
+  establishing the second invariant.
+- *Table idempotence.* `_create_tables` executes `CREATE TABLE IF NOT EXISTS`
+  for `nodes`, `edges`, `embeddings`, and `metadata`. Idempotence of this
+  command guarantees that repeated calls yield the same schema, proving the
+  final invariant.
 
 ## Simulation Expectations
 
-- Simulate network failures with [`download_duckdb_extensions` tests][download].
-  `test_download_extension_network_fallback` observes a stub file when
-  downloads fail.
-- Verify table creation with `tests/unit/test_storage_persistence.py`.
-  The `test_initialize_creates_tables_and_teardown_removes_file` test confirms
-  the tables exist and the DB file is removed on teardown.
+- **Extension failure pseudocode**
+
+  ```text
+  simulate_load_extension_failure():
+      patch VSSExtensionLoader.load_extension -> raise duckdb.Error
+      ctx = initialize_storage(path)
+      assert ctx.db_backend.has_vss() is False
+      assert required_tables_exist(ctx.db_backend)
+  ```
+
+- **Table creation pseudocode**
+
+  ```text
+  simulate_table_creation():
+      path = temporary_file()
+      ctx = initialize_storage(path)
+      for table in ["nodes", "edges", "embeddings", "metadata"]:
+          ctx.db_backend._conn.execute(f"SELECT 1 FROM {table} LIMIT 1")
+      ctx.teardown(remove_db=True)
+  ```
+
+- Network failure simulations live in
+  [`download_duckdb_extensions` tests][download].
+- Table creation and extension fallback are validated in
+  `tests/unit/test_storage_persistence.py` and
+  `tests/unit/test_duckdb_storage_backend.py`.
 
 ## Traceability
 
