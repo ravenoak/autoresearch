@@ -14,19 +14,22 @@ sys.modules["check_env"] = check_env
 spec.loader.exec_module(check_env)
 
 
-def test_missing_package_metadata_warns(monkeypatch):
+@pytest.fixture()
+def missing_fakepkg(monkeypatch):
     monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})
 
-    def fake_version(name):
+    def fake_version(name: str) -> str:  # pragma: no cover - stub
         raise metadata.PackageNotFoundError
 
     monkeypatch.setattr(check_env.metadata, "version", fake_version)
-    with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
-        result = check_env.check_package("fakepkg")
-    assert result is None
 
 
-def test_missing_pytest_bdd_warns(monkeypatch):
+def test_missing_package_metadata_raises(missing_fakepkg):
+    with pytest.raises(check_env.VersionError, match="fakepkg not installed; run 'task install'"):
+        check_env.check_package("fakepkg")
+
+
+def test_missing_pytest_bdd_raises(monkeypatch):
     real_import = builtins.__import__
 
     def fake_import(name, *args, **kwargs):
@@ -35,9 +38,8 @@ def test_missing_pytest_bdd_warns(monkeypatch):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
-    with pytest.warns(UserWarning, match="pytest-bdd import failed; run 'task install'."):
-        result = check_env.check_pytest_bdd()
-    assert result is None
+    with pytest.raises(check_env.VersionError, match="pytest-bdd is required; run 'task install'"):
+        check_env.check_pytest_bdd()
 
 
 def test_missing_go_task_raises(monkeypatch):
@@ -73,20 +75,15 @@ def test_task_command_failure(monkeypatch):
         check_env.check_task()
 
 
-def test_main_ignores_missing_metadata(monkeypatch, capsys):
+def test_main_reports_missing_metadata(missing_fakepkg, monkeypatch, capsys):
     monkeypatch.setattr(check_env, "EXTRA_REQUIREMENTS", {"fakepkg": "1.0"})
-    monkeypatch.setattr(check_env, "REQUIREMENTS", {"fakepkg": "1.0"})
     dummy = check_env.CheckResult("ok", "1", "1")
     monkeypatch.setattr(check_env, "check_python", lambda: dummy)
     monkeypatch.setattr(check_env, "check_task", lambda: dummy)
     monkeypatch.setattr(check_env, "check_uv", lambda: dummy)
     monkeypatch.setattr(sys, "argv", ["check_env.py"])
 
-    def fake_version(name):
-        raise metadata.PackageNotFoundError
-
-    monkeypatch.setattr(check_env.metadata, "version", lambda name: fake_version(name))
-    with pytest.warns(UserWarning, match="package metadata not found for fakepkg"):
+    with pytest.raises(SystemExit):
         check_env.main()
     captured = capsys.readouterr()
-    assert "ERROR" not in captured.err
+    assert "fakepkg not installed" in captured.err

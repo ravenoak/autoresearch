@@ -14,4 +14,4 @@ None
 - `task verify` proceeds past this test.
 
 ## Status
-Open
+Archived
