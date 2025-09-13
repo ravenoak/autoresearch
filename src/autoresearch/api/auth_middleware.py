@@ -36,25 +36,30 @@ class AuthMiddleware(BaseHTTPMiddleware):
         )
 
     def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
-        """Return the role for ``key`` or an error response."""
+        """Return the role for ``key`` or an error response.
+
+        The API may be configured with either a single ``api_key`` or a mapping
+        of ``api_keys``. When a key is required but missing this function
+        returns an error response so callers can emit ``401`` immediately. Token
+        based authentication is handled separately, therefore a ``None`` key
+        should only trigger an error when no valid token is supplied.
+        """
 
         if cfg.api_keys:
-            match_role: str | None = None
-            if key:
-                for candidate, role in cfg.api_keys.items():
-                    if secrets.compare_digest(candidate, key):
-                        match_role = role
-            if match_role:
-                return match_role, None
-            if key:
-                return "anonymous", self._unauthorized("Invalid API key", "API-Key")
-            return "anonymous", None
+            if not key:
+                return "anonymous", self._unauthorized("Missing API key", "API-Key")
+            for candidate, role in cfg.api_keys.items():
+                if secrets.compare_digest(candidate, key):
+                    return role, None
+            return "anonymous", self._unauthorized("Invalid API key", "API-Key")
+
         if cfg.api_key:
-            if not (key and secrets.compare_digest(key, cfg.api_key)):
-                if key:
-                    return "anonymous", self._unauthorized("Invalid API key", "API-Key")
-                return "anonymous", None
+            if not key:
+                return "anonymous", self._unauthorized("Missing API key", "API-Key")
+            if not secrets.compare_digest(key, cfg.api_key):
+                return "anonymous", self._unauthorized("Invalid API key", "API-Key")
             return "user", None
+
         return "anonymous", None
 
     async def dispatch(self, request: Request, call_next):
@@ -72,11 +77,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         key_role, key_error = self._resolve_role(api_key, cfg)
         provided_key = bool(api_key)
-        if provided_key and key_error:
+
+        token_valid = verify_bearer_token(token, cfg.bearer_token)
+        if key_error and not token_valid:
             return key_error
         key_valid = provided_key and key_error is None
 
-        token_valid = verify_bearer_token(token, cfg.bearer_token)
         provided_token = bool(token)
         if provided_token and not token_valid:
             return self._unauthorized("Invalid token", "Bearer")
