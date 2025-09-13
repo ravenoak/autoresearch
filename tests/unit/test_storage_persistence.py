@@ -1,4 +1,7 @@
-"""Regression tests for storage initialization and cleanup."""
+"""Regression tests for storage initialization and cleanup.
+
+See docs/algorithms/storage_initialization.md for the specification.
+"""
 
 from __future__ import annotations
 
