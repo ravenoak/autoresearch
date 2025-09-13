@@ -12,6 +12,11 @@ On September 12, 2025, `task verify` again emitted `KeyError: '/mp-...'` after
 `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`
 failed, leaving coverage incomplete.
 
+On September 13, 2025, the run failed in
+`tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`
+and still produced a `KeyError` from the multiprocessing resource tracker after
+the unit suite finished.
+
 Auditing fixtures that spawn multiprocessing pools and queues shows they call
 `close()` and `join_thread()` to avoid leaking resources.
 

@@ -6,6 +6,9 @@ over 60 seconds and can appear stalled during `task verify`. Its variant
 `test_cache_is_backend_specific_without_embeddings` shows similar runtime.
 Interrupting either test raises `StorageError: Ontology reasoning interrupted`.
 
+On September 13, 2025, the test completed in about 0.22 seconds, but
+`rdflib_sqlalchemy` still emitted deprecation warnings.
+
 ## Dependencies
 None
 

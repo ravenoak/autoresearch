@@ -28,11 +28,15 @@ Taskfile commands.
   after confirming `pytest-bdd` is installed.
 - `task verify` reports `test_cache_is_backend_specific` and its variant each
   taking ~64s and emitting `rdflib_sqlalchemy` deprecation warnings.
- - `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+- `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
    `test_initialize_schema_version` and
     `tests/unit/test_storage_persistence.py::
-    test_initialize_creates_tables_and_teardown_removes_file`
-   now pass; related issues were archived.
+   test_initialize_creates_tables_and_teardown_removes_file`
+  now pass; related issues were archived.
+- A fresh `task verify` run fails in
+  `tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`
+  and still ends with a multiprocessing resource tracker `KeyError`; opened
+  [fix-check-env-warnings-test](issues/fix-check-env-warnings-test.md).
 
 ## September 12, 2025
 
@@ -393,6 +397,7 @@ incomplete.
 - [add-storage-initialization-proofs](issues/add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+- [fix-check-env-warnings-test](issues/fix-check-env-warnings-test.md)
 - [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
