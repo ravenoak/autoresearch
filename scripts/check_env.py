@@ -5,9 +5,9 @@ Usage:
     uv run python scripts/check_env.py
 
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
-can be specified via the ``EXTRAS`` environment variable. The script verifies
-Python compatibility, checks Go Task availability with ``task --version``, and
-reports missing packages for requested extras.
+can be specified via the ``EXTRAS`` environment variable. The script validates
+Python compatibility, flags unknown extras, checks Go Task availability with
+``task --version``, and reports missing packages for requested extras.
 """
 from __future__ import annotations
 
@@ -22,9 +22,9 @@ from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
 
-if sys.version_info < (3, 12):
+if not (3, 12) <= sys.version_info < (4, 0):
     raise SystemExit(
-        f"Python 3.12+ required, found {sys.version_info.major}.{sys.version_info.minor}"
+        f"Python 3.12+ and <4.0 required, found {sys.version_info.major}.{sys.version_info.minor}"
     )
 
 try:  # pragma: no cover - packaging is required
@@ -46,10 +46,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def extras_to_check() -> list[str]:
-    """Return extras from ``EXTRAS`` env var in addition to base extras."""
+def extras_to_check(available: dict[str, list[str]]) -> list[str]:
+    """Return extras from ``EXTRAS`` env var after validating names."""
 
     env_extras = os.environ.get("EXTRAS", "").split()
+    missing = [e for e in env_extras if e and e not in available]
+    if missing:
+        raise SystemExit(f"Unknown extras: {', '.join(sorted(missing))}")
     return sorted(set(BASE_EXTRAS + env_extras))
 
 
@@ -57,17 +60,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]  # repository root
 PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
 
 
-def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
+def load_extra_requirements() -> tuple[dict[str, str], list[str]]:
     """Return versions for packages from specified extras in pyproject."""
 
     if not PYPROJECT_PATH.is_file():
         raise FileNotFoundError("pyproject.toml not found; verify repository path")
     with PYPROJECT_PATH.open("rb") as fh:
         data = tomllib.load(fh)
-    extras = data.get("project", {}).get("optional-dependencies", {})
+    available = data.get("project", {}).get("optional-dependencies", {})
+    extras = extras_to_check(available)
     reqs: dict[str, str] = {}
-    for extra in extras_to_check:
-        for spec in extras.get(extra, []):
+    for extra in extras:
+        for spec in available.get(extra, []):
             req = Requirement(spec)
             ver = next(
                 (s.version for s in req.specifier if s.operator in (">=", "==")),
@@ -75,10 +79,10 @@ def load_extra_requirements(extras_to_check: list[str]) -> dict[str, str]:
             )
             if ver:
                 reqs[req.name] = ver
-    return reqs
+    return reqs, extras
 
 
-EXTRA_REQUIREMENTS = load_extra_requirements(extras_to_check())
+EXTRA_REQUIREMENTS, EXTRAS = load_extra_requirements()
 REQUIREMENTS = {**BASE_REQUIREMENTS, **EXTRA_REQUIREMENTS}
 
 
@@ -203,7 +207,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
 
-    extras = ", ".join(extras_to_check())
+    extras = ", ".join(EXTRAS)
     print(f"Verifying extras: {extras}")
 
     checks = [check_python, check_task, check_uv]

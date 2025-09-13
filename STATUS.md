@@ -5,16 +5,19 @@ Taskfile commands.
 
 ## September 13, 2025
 
-- Updated `scripts/check_env.py` to fail on unsupported Python versions and
-  missing extras, and wired it into `task check`.
-- README and installation guide now direct users to run `task install` before
-  executing tests.
+- Updated `scripts/check_env.py` to flag unknown extras and Python versions
+  outside 3.12–<4.0, and invoked it via the `check-env` task inside `task`
+  `check`.
+- README and installation guide now emphasize running `task install` before any
+  tests.
 - Ran `scripts/setup.sh` to install Task 3.44.1 and sync development extras.
 - `task check` succeeds.
-- `task verify` runs unit tests (245 passed, 6 skipped) but was interrupted
-  during coverage, leaving a multiprocessing resource tracker `KeyError`.
+- `task verify` attempted to run but terminated with a `KeyboardInterrupt`
+  while syncing optional extras; the full suite did not execute.
 - `uv run pytest tests/unit/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
+- `uv run mkdocs build` completes after installing `mkdocs-material` and
+  `mkdocstrings`, though numerous missing-link warnings remain.
 - Added `requires_*` markers to behavior step files and adjusted LLM extra test.
 - `task coverage` with all extras failed with a segmentation fault; coverage
   could not be determined.
