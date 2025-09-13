@@ -20,4 +20,4 @@ None
 - Regression test documents the corrected behavior.
 
 ## Status
-Open
+Archived

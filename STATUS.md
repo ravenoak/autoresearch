@@ -12,8 +12,9 @@ Taskfile commands.
   tests.
 - Ran `scripts/setup.sh` to install Task 3.44.1 and sync development extras.
 - `task check` succeeds.
-- `task verify` attempted to run but terminated with a `KeyboardInterrupt`
-  while syncing optional extras; the full suite did not execute.
+ - `task verify` installs optional extras and runs unit tests but exits with a
+   multiprocessing resource tracker `KeyError` after coverage, leaving
+   integration tests unfinished.
 - `uv run pytest tests/unit/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
 - `uv run mkdocs build` completes after installing `mkdocs-material` and
@@ -22,25 +23,43 @@ Taskfile commands.
 - `task coverage` with all extras failed with a segmentation fault; coverage
   could not be determined.
 - Archived
-  [ensure-pytest-bdd-plugin-available-for-tests](issues/archive/ensure-pytest-bdd-plugin-available-for-tests.md)
+  [ensure-pytest-bdd-plugin-available-for-tests](
+  issues/archive/ensure-pytest-bdd-plugin-available-for-tests.md)
   after confirming `pytest-bdd` is installed.
 - `task verify` reports `test_cache_is_backend_specific` and its variant each
   taking ~64s and emitting `rdflib_sqlalchemy` deprecation warnings.
+ - `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+   `test_initialize_schema_version` and
+    `tests/unit/test_storage_persistence.py::
+    test_initialize_creates_tables_and_teardown_removes_file`
+   now pass; related issues were archived.
 
 ## September 12, 2025
 
-- Ran `scripts/codex_setup.sh` to bootstrap the environment and append `.venv/bin` to `PATH`.
-- `uv run python scripts/run_task.py check` fails with mypy: "type[StorageManager]" missing `update_claim`.
-- `uv run python scripts/run_task.py verify` stops on the same mypy error before tests start.
-- Opened [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
+- Ran `scripts/codex_setup.sh` to bootstrap the environment and append
+  `.venv/bin` to `PATH`.
+- `uv run python scripts/run_task.py check` fails with mypy:
+  "type[StorageManager]" missing `update_claim`.
+- `uv run python scripts/run_task.py verify` stops on the same mypy error
+  before tests start.
+- Opened
+  [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
 
-- Ran `scripts/setup.sh` to sync dependencies and exported `.venv/bin` to `PATH` for `task` access.
-- `task check` and `task verify` both fail with the same `StorageManager.update_claim` mypy error.
-- A fresh `task verify` attempt began multi-gigabyte GPU downloads and was aborted; opened [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md)
+- Ran `scripts/setup.sh` to sync dependencies and exported `.venv/bin` to
+  `PATH` for `task` access.
+- `task check` and `task verify` both fail with the same
+  `StorageManager.update_claim` mypy error.
+- A fresh `task verify` attempt began multi-gigabyte GPU downloads and was
+  aborted; opened
+  [avoid-large-downloads-in-task-verify](issues/avoid-large-downloads-in-task-verify.md)
 - `task check` now passes after syncing extras.
-- `task verify` fails in `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
-- Archived [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
-- Opened [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md).
+- `task verify` fails in
+  `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::
+  test_initialize_schema_version`.
+- Archived
+  [fix-storage-update-claim-mypy-error](archive/fix-storage-update-claim-mypy-error.md).
+- Opened
+  [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md).
 - Ran `uv run pytest tests/integration -q`; 289 passed, 10 skipped with
   deprecation warnings. Archived
   [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
@@ -52,7 +71,10 @@ Taskfile commands.
   - `tests/unit/test_storage_persistence.py::`
     `test_initialize_creates_tables_and_teardown_removes_file` fails with VSS
     extension download warnings and an unset `_create_tables` flag.
-- `task check` passes; `task verify` with all extras appeared to stall on `tests/unit/test_cache.py::test_cache_is_backend_specific` (~13s). Added [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md) to track performance and ontology warnings.
+- `task check` passes; `task verify` with all extras appeared to stall on
+  `tests/unit/test_cache.py::test_cache_is_backend_specific` (~13s). Added
+  [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
+  to track performance and ontology warnings.
 
 - Fixed DuckDB schema initialization, metrics endpoint, ranking normalization,
   and scheduler benchmark.
@@ -71,11 +93,15 @@ Taskfile commands.
   with an unexpected order `['B', 'A']`.
 - Archived `restore-task-cli-availability` after confirming
   `task --version` prints 3.44.1.
-- Split 52 failing integration tests into targeted issues: `fix-api-authentication-and-metrics-tests`,
-  `fix-config-reload-and-deploy-validation-tests`, `fix-search-ranking-and-extension-tests`,
-  `fix-rdf-persistence-and-search-storage-tests`, and `fix-storage-schema-and-eviction-tests`.
-- Moved archived tickets `containerize-and-package`, `reach-stable-performance-and-interfaces`,
-  and `validate-deployment-configurations` into the `archive/` directory.
+- Split 52 failing integration tests into targeted issues:
+  `fix-api-authentication-and-metrics-tests`,
+  `fix-config-reload-and-deploy-validation-tests`,
+  `fix-search-ranking-and-extension-tests`,
+  `fix-rdf-persistence-and-search-storage-tests`, and
+  `fix-storage-schema-and-eviction-tests`.
+- Moved archived tickets `containerize-and-package`,
+  `reach-stable-performance-and-interfaces`, and
+  `validate-deployment-configurations` into the `archive/` directory.
 - Installed the `dev-minimal` and `test` extras; `uv run python scripts/check_env.py`
   reports all dependencies present without warnings.
 - `tests/integration/test_a2a_interface.py::test_concurrent_queries` passes when
@@ -93,13 +119,17 @@ Taskfile commands.
 
 - Current failing tests:
 
-| Module  | Failing tests |
-| --- | --- |
-| API | None |
-| Config | None |
-| Storage | `tests/integration/test_storage_eviction_sim.py::test_zero_budget_keeps_nodes`<br>`tests/integration/test_storage_schema.py::test_initialize_schema_version_without_fetchone`<br>`tests/unit/test_storage_utils.py::test_initialize_storage_creates_tables` |
-| Ranking | `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination` |
-| RDF | `tests/integration/test_search_storage.py::test_search_returns_persisted_claim`<br>`tests/integration/test_search_storage.py::test_external_lookup_persists_results`<br>`tests/integration/test_search_storage.py::test_search_reflects_updated_claim`<br>`tests/integration/test_search_storage.py::test_search_persists_multiple_backend_results` |
+  - Storage:
+    - `tests/integration/test_storage_eviction_sim.py::test_zero_budget_keeps_nodes`
+    - `tests/integration/test_storage_schema.py::test_initialize_schema_version_without_fetchone`
+    - `tests/unit/test_storage_utils.py::test_initialize_storage_creates_tables`
+  - Ranking:
+    - `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
+  - RDF:
+    - `tests/integration/test_search_storage.py::test_search_returns_persisted_claim`
+    - `tests/integration/test_search_storage.py::test_external_lookup_persists_results`
+    - `tests/integration/test_search_storage.py::test_search_reflects_updated_claim`
+    - `tests/integration/test_search_storage.py::test_search_persists_multiple_backend_results`
 
 ## September 10, 2025
 
@@ -156,8 +186,9 @@ Taskfile commands.
 - Targeted integration tests pass except
   `tests/integration/test_api_docs.py::test_query_endpoint`, which returns
   `"Error: Invalid response format"`.
-- Property test `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
-  now completes within its Hypothesis deadline.
+  - Property test
+    `tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent`
+    now completes within its Hypothesis deadline.
 
 ## September 7, 2025
 
@@ -354,19 +385,14 @@ Targeted authentication suites pass except
 Not executed.
 
 ## Coverage
-`task verify` stops at
-`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
-`test_initialize_schema_version`,
-so coverage reports are not generated and a multiprocessing resource tracker
-`KeyError` appears afterward.
+`task verify` runs unit tests but exits with a multiprocessing resource
+tracker `KeyError` before integration tests, leaving coverage reports
+incomplete.
 
 ## Open issues
-- [fix-duckdb-storage-schema-initialization](issues/fix-duckdb-storage-schema-initialization.md)
-- [resolve-storage-persistence-test-failure](issues/resolve-storage-persistence-test-failure.md)
 - [add-storage-initialization-proofs](issues/add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
-- [ensure-pytest-bdd-plugin-available-for-tests](issues/ensure-pytest-bdd-plugin-available-for-tests.md)
 - [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)

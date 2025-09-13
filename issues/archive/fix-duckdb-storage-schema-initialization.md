@@ -1,8 +1,11 @@
 # Fix DuckDB storage schema initialization
 
 ## Context
-`task verify` fails in `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version` because the mock insert call is missing. The schema initialization logic may not execute the expected INSERT when
- the metadata table exists.
+`task verify` fails in
+`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+`test_initialize_schema_version`
+because the mock insert call is missing. The schema initialization logic may
+not execute the expected INSERT when the metadata table exists.
 
 ## Dependencies
 None.
@@ -13,4 +16,4 @@ None.
 - Tests document the initialization path.
 
 ## Status
-Open
+Archived

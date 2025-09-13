@@ -11,10 +11,14 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available—`task check` passes, but `task verify` fails in
-`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`.
-`uv run --extra test pytest` previously reported a failing integration test,
-but a recent full run passes (`289 passed`, `10 skipped`). The tracking issue
+across project documentation. Go Task 3.44.1 is available—`task check` passes,
+but `task verify` exits with a multiprocessing resource tracker `KeyError`
+after unit tests, even though
+`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
+`test_initialize_schema_version`
+now passes individually. `uv run --extra test pytest` previously reported a
+failing integration test, but a recent full run passes (`289 passed`,
+`10 skipped`). The tracking issue
 [`resolve-integration-test-regressions`](issues/archive/resolve-integration-test-regressions.md)
 is archived.
 Scheduler resource benchmarks
@@ -52,7 +56,8 @@ before running tests.
     issues/archive/simulate-distributed-orchestrator-performance.md)
 - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
-  - [reach-stable-performance-and-interfaces](issues/archive/reach-stable-performance-and-interfaces.md)
+    - [reach-stable-performance-and-interfaces](
+      issues/archive/reach-stable-performance-and-interfaces.md)
     - [containerize-and-package](issues/archive/containerize-and-package.md) (2026-12-01)
     - [validate-deployment-configurations](issues/archive/validate-deployment-configurations.md)
       (2027-04-15, depends on containerization)
