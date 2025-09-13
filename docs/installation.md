@@ -16,7 +16,8 @@ Autoresearch requires these binaries on your `PATH`:
 
 Run `task install` immediately after installing these prerequisites. It
 syncs the `dev-minimal` and `test` extras so `task check` and `pytest` have
-the required plugins.
+the required plugins. Skipping this step typically yields missing dependency
+errors.
 
 Run `uv run python scripts/check_env.py` to confirm they are available. The
 script exits with an error when Go Task is missing; install it with

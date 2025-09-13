@@ -7,7 +7,10 @@ The project is built around a modular Python package located under `src/autorese
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
-source for environment setup and optional features.
+source for environment setup and optional features. Run `task install`
+immediately after cloning to bootstrap the required `dev-minimal` and `test`
+extras; skipping this step often yields missing plugin errors when running
+`task check` or any tests.
 
 For orchestrator state transitions and API contracts see
 [docs/orchestrator_state.md](docs/orchestrator_state.md).
