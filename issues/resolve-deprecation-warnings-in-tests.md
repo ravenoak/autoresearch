@@ -2,8 +2,9 @@
 
 ## Context
 Recent test runs emit deprecation warnings from packages such as Click and
-fastembed. These warnings may become errors in future releases and obscure test
-output.
+fastembed. The `weasel.util.config` module triggers a warning because it imports
+`click.parser.split_arg_string`, which will move in Click 9.0. These warnings may
+become errors in future releases and obscure test output.
 
 `rdflib_sqlalchemy` warnings were eliminated on September 13, 2025 by switching
 to `oxrdflib`.
