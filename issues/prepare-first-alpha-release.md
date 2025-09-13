@@ -15,6 +15,7 @@ workflows dispatch-only.
 - [add-storage-initialization-proofs](add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
+- [ensure-pytest-bdd-plugin-available-for-tests](ensure-pytest-bdd-plugin-available-for-tests.md)
 - [reduce-cache-backend-test-runtime](reduce-cache-backend-test-runtime.md)
 - [avoid-large-downloads-in-task-verify](archive/avoid-large-downloads-in-task-verify.md)
 

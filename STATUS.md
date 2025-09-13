@@ -3,6 +3,17 @@
 Install Go Task with `scripts/setup.sh` or your package manager to enable
 Taskfile commands.
 
+## September 13, 2025
+
+- `task` is unavailable; `task check` exits with `command not found: task`.
+- `uv run pytest` fails during collection with `ImportError: No module named`
+  `pytest_bdd`.
+- `uv run pytest tests/unit/test_version.py -q` passes but warns that
+  `bdd_features_base_dir` is an unknown config option.
+- Opened
+  [ensure-pytest-bdd-plugin-available-for-tests](issues/ensure-pytest-bdd-plugin-available-for-tests.md)
+  to track the missing dependency.
+
 ## September 12, 2025
 
 - Ran `scripts/codex_setup.sh` to bootstrap the environment and append `.venv/bin` to `PATH`.
@@ -342,6 +353,7 @@ so coverage reports are not generated and a multiprocessing resource tracker
 - [add-storage-initialization-proofs](issues/add-storage-initialization-proofs.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+- [ensure-pytest-bdd-plugin-available-for-tests](issues/ensure-pytest-bdd-plugin-available-for-tests.md)
 - [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
 - [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
