@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
+from dotenv import dotenv_values
 
 from .config import ConfigLoader
 from .errors import StorageError
@@ -35,9 +36,13 @@ class VSSExtensionLoader:
     def load_extension(conn: DuckDBConnection) -> bool:
         """Load the VSS extension into the provided DuckDB connection.
 
-        This method attempts to load the VSS extension using the following strategy:
-        1. If vector_extension_path is configured, try to load from filesystem
-        2. If loading from filesystem fails or no path is configured, try to download and install
+        This method attempts to load the VSS extension using the following
+        strategy:
+        1. If ``storage.vector_extension_path`` is configured or
+           ``.env.offline`` provides ``VECTOR_EXTENSION_PATH``, load from that
+           filesystem path.
+        2. If loading from filesystem fails or no path is configured, try to
+           download and install
 
         Args:
             conn: The DuckDB connection to load the extension into
@@ -51,9 +56,24 @@ class VSSExtensionLoader:
         """
         cfg = ConfigLoader().config.storage
 
-        extension_loaded = False
+        def _env_extension_path() -> Path | None:
+            offline = dotenv_values(".env.offline")
+            path = offline.get("VECTOR_EXTENSION_PATH")
+            if path:
+                candidate = Path(path).resolve()
+                if candidate.exists():
+                    return candidate
+                log.warning("Offline VSS path does not exist: %s", candidate)
+            return None
+
+        extension_path: Path | None = None
         if cfg.vector_extension_path:
             extension_path = Path(cfg.vector_extension_path).resolve()
+        else:
+            extension_path = _env_extension_path()
+
+        extension_loaded = False
+        if extension_path:
             log.info(f"Attempting to load VSS extension from {extension_path}")
             if extension_path.suffix != ".duckdb_extension":
                 log.warning(
