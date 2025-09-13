@@ -44,6 +44,8 @@ Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
   [DuckDB compatibility](duckdb_compatibility.md).
 - `task coverage` fails with an ImportError (`InMemorySpanExporter`), so
   coverage is treated as 0%.
+- Some dependencies still emit `pkg_resources` deprecation warnings; these
+  are suppressed until upstream packages resolve the issue.
 
 For installation and usage instructions see the [README](../README.md).
 
