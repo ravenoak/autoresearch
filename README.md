@@ -25,6 +25,10 @@ Install these binaries and ensure they are on your `PATH`:
 - [uv](https://github.com/astral-sh/uv) 0.7.0+
 - [Go Task](https://taskfile.dev/)
 
+After installing the prerequisites, run `task install` to sync the
+`dev-minimal` and `test` extras before executing any tests or `task`
+commands.
+
 Run `uv run python scripts/check_env.py` to confirm they are available. The
 script exits with an error when Go Task is missing and suggests installing it
 with `scripts/setup.sh` or your package manager. If a tool or package is
