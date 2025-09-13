@@ -7,22 +7,12 @@ finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only.
 
 ## Dependencies
-- [add-a2a-concurrency-proofs-and-simulations](
-  archive/add-a2a-concurrency-proofs-and-simulations.md)
-- [stabilize-api-and-improve-search](stabilize-api-and-improve-search.md)
-- [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
-- [fix-duckdb-storage-schema-initialization](archive/fix-duckdb-storage-schema-initialization.md)
-- [resolve-storage-persistence-test-failure](archive/resolve-storage-persistence-test-failure.md)
-- [add-storage-initialization-proofs](add-storage-initialization-proofs.md)
+- [install-task-cli-system-level](install-task-cli-system-level.md)
+- [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
+- [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
+- [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
-- [fix-check-env-warnings-test](fix-check-env-warnings-test.md)
-- [ensure-pytest-bdd-plugin-available-for-tests](
-  archive/ensure-pytest-bdd-plugin-available-for-tests.md)
-- [reduce-cache-backend-test-runtime](reduce-cache-backend-test-runtime.md)
-- [avoid-large-downloads-in-task-verify](archive/avoid-large-downloads-in-task-verify.md)
-- [add-test-coverage-for-optional-components](archive/add-test-coverage-for-optional-components.md)
-- [fix-task-verify-coverage-hang](archive/fix-task-verify-coverage-hang.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
