@@ -5,7 +5,11 @@ from typer.testing import CliRunner
 @pytest.fixture
 def bdd_context() -> dict:
     """Mutable mapping for sharing data between BDD steps."""
-    return {}
+    ctx: dict = {}
+    yield ctx
+    broker = ctx.get("broker")
+    if broker and hasattr(broker, "shutdown"):
+        broker.shutdown()
 
 
 @pytest.fixture

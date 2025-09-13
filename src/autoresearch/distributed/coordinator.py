@@ -18,6 +18,7 @@ benchmark data.
 
 from __future__ import annotations
 
+import contextlib
 import multiprocessing
 from multiprocessing.synchronize import Event
 from typing import Any
@@ -48,20 +49,25 @@ class StorageCoordinator(multiprocessing.Process):
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         storage.setup(self._db_path)
-        if self._ready_event is not None:
-            self._ready_event.set()
-        while True:
-            try:
-                msg = self._queue.get()
-            except (EOFError, OSError):
-                break
-            if msg.get("action") == "stop":
-                break
-            if msg.get("action") == "persist_claim":
-                storage.StorageManager.persist_claim(
-                    msg["claim"], msg.get("partial_update", False)
-                )
-        storage.teardown()
+        try:
+            if self._ready_event is not None:
+                self._ready_event.set()
+            while True:
+                try:
+                    msg = self._queue.get()
+                except (EOFError, OSError):
+                    break
+                if msg.get("action") == "stop":
+                    break
+                if msg.get("action") == "persist_claim":
+                    storage.StorageManager.persist_claim(
+                        msg["claim"], msg.get("partial_update", False)
+                    )
+        finally:
+            storage.teardown()
+            with contextlib.suppress(Exception):
+                self._queue.close()
+                self._queue.join_thread()
 
 
 class ResultAggregator(multiprocessing.Process):
@@ -78,15 +84,20 @@ class ResultAggregator(multiprocessing.Process):
         self.results: multiprocessing.managers.ListProxy[dict[str, Any]] = self._manager.list()  # type: ignore[attr-defined]
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
-        while True:
-            try:
-                msg = self._queue.get()
-            except (EOFError, OSError):
-                break
-            if msg.get("action") == "stop":
-                break
-            if msg.get("action") == "agent_result":
-                self.results.append(msg)
+        try:
+            while True:
+                try:
+                    msg = self._queue.get()
+                except (EOFError, OSError):
+                    break
+                if msg.get("action") == "stop":
+                    break
+                if msg.get("action") == "agent_result":
+                    self.results.append(msg)
+        finally:
+            with contextlib.suppress(Exception):
+                self._queue.close()
+                self._queue.join_thread()
 
 
 def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, BrokerType]:
