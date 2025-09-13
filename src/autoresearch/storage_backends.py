@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import time
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Queue
@@ -72,7 +73,13 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
             )
 
     try:
-        graph = rdflib.Graph(store=store_name)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="pkg_resources is deprecated",
+                category=UserWarning,
+            )
+            graph = rdflib.Graph(store=store_name)
         graph.open(rdf_path, create=True)
     except Exception as e:  # pragma: no cover - plugin may be missing
         if "No plugin registered" in str(e):
