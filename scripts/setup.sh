@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Usage: AR_EXTRAS="nlp parsers" ./scripts/setup.sh
+# Optionally set TASK_INSTALL_DIR to override the Go Task installation path.
 # Verify Python 3.12+, confirm Go Task and uv>=0.7.0 are installed, append
 # .venv/bin to PATH, and sync dependencies.
 
@@ -32,8 +33,12 @@ PY
 
 ensure_go_task() {
     if ! command -v task >/dev/null 2>&1; then
-        echo "Go Task not found; running scripts/bootstrap.sh..." >&2
-        "$SCRIPT_DIR/bootstrap.sh"
+        local install_dir="${TASK_INSTALL_DIR:-/usr/local/bin}"
+        echo "Go Task not found; installing into $install_dir..." >&2
+        if ! curl -sSL https://taskfile.dev/install.sh | sh -s -- -b "$install_dir"; then
+            echo "Failed to install Go Task. See docs/installation.md for manual steps." >&2
+            exit 1
+        fi
     fi
     if ! command -v task >/dev/null 2>&1; then
         echo "Go Task installation failed. See docs/installation.md for manual steps." >&2

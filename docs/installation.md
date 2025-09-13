@@ -11,8 +11,8 @@ Autoresearch requires these binaries on your `PATH`:
 
 - Python 3.12 or newer
 - [uv](https://github.com/astral-sh/uv) 0.7.0 or newer
-- [Go Task](https://taskfile.dev/) for Taskfile commands. Install via
-  `./scripts/setup.sh` or your package manager.
+- [Go Task](https://taskfile.dev/) for Taskfile commands.
+  `scripts/setup.sh` installs it into `/usr/local/bin` when missing.
 
 Run `task install` immediately after installing these prerequisites. It
 syncs the `dev-minimal` and `test` extras so `task check` and `pytest` have
@@ -26,14 +26,14 @@ CLI:
 
 ```bash
 ./scripts/setup.sh
-export PATH="$PATH:$(pwd)/.venv/bin"
 task --version
 task check
 ```
 
-The script checks the Python version, installs Go Task when absent, verifies
-`uv` is functional, and syncs the `dev-minimal` and `test` extras. It exits with
-an error if a tool is missing or the dependency sync fails.
+The script checks the Python version, installs Go Task into `/usr/local/bin`
+when absent, verifies `uv` is functional, and syncs the `dev-minimal` and
+`test` extras. It exits with an error if a tool is missing or the dependency
+sync fails.
 
 Activate the virtual environment in new shells to restore the path:
 
@@ -41,15 +41,9 @@ Activate the virtual environment in new shells to restore the path:
 source .venv/bin/activate
 ```
 
-Run `./scripts/bootstrap.sh` directly to install Go Task without syncing extras.
-This is usually unnecessary because `scripts/setup.sh` invokes it automatically.
-It places the `task` binary in `.venv/bin`. For a system-wide binary, install
-manually and confirm the installation:
-
-```bash
-curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
-# macOS: brew install go-task/tap/go-task
-```
+Run `./scripts/bootstrap.sh` to install Go Task without syncing extras. This is
+usually unnecessary because `scripts/setup.sh` installs the binary into
+`/usr/local/bin`. Set `TASK_INSTALL_DIR` to change the location.
 
 Verify Go Task is installed:
 
@@ -57,7 +51,7 @@ Verify Go Task is installed:
 task --version
 ```
 
-`task install` also checks for Go Task and downloads it to `.venv/bin` when
+`task install` also checks for Go Task and installs it to `/usr/local/bin` when
 missing.
 
 ## Version checks and troubleshooting
@@ -213,8 +207,9 @@ role are configured through `AUTORESEARCH_API__ROLE_PERMISSIONS`.
 ### Go Task
 
 Autoresearch uses [Go Task](https://taskfile.dev/) to run Taskfile commands.
-`scripts/bootstrap.sh` downloads it to `.venv/bin` and adjusts activation
-scripts, but you can install it manually:
+`scripts/setup.sh` installs the binary into `/usr/local/bin`. Run
+`scripts/bootstrap.sh` to place it in `.venv/bin` without syncing extras, or
+install it manually:
 
 ```bash
 # macOS
