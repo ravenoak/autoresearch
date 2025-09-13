@@ -632,7 +632,7 @@ def realistic_claim_batch(claim_factory):
 @pytest.fixture
 def sample_eval_data():
     """Load the sample evaluation CSV for search weight tests."""
-    pytest.importorskip("fastembed")
+    pytest.importorskip("fastembed", exc_type=ModuleNotFoundError)
     from autoresearch.search import Search
 
     path = Path(__file__).resolve().parent / "data" / "eval" / "sample_eval.csv"

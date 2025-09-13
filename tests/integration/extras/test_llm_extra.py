@@ -8,5 +8,5 @@ import pytest
 @pytest.mark.requires_llm
 def test_fastembed_available() -> None:
     """The LLM extra installs fast embedding models."""
-    fastembed = pytest.importorskip("fastembed")
+    fastembed = pytest.importorskip("fastembed", exc_type=ModuleNotFoundError)
     assert hasattr(fastembed, "TextEmbedding")

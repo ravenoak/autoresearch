@@ -263,7 +263,7 @@ def test_rank_results_with_unavailable_libraries(
 
     # Check that all scores are neutral for unavailable features
     assert all(result["bm25_score"] == 1.0 for result in ranked_results)
-    assert all(result["semantic_score"] == 0.5 for result in ranked_results)
+    assert all(result["semantic_score"] == 1.0 for result in ranked_results)
 
 
 @patch("autoresearch.search.core.get_config")

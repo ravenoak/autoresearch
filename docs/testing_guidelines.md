@@ -15,9 +15,7 @@ by default. Use `EXTRAS="gpu"` to include the GPU packages or limit extras.
 
 ## Deprecation warnings
 
-- `rdflib-sqlalchemy` imports `pkg_resources`, which emits a warning with
-  modern `setuptools`. The tests pin `setuptools<81` to suppress it.
-- No other deprecation warnings are expected when running `task verify`.
+- No deprecation warnings are expected when running `task verify`.
 
 ### Enabling heavy extras
 

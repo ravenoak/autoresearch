@@ -4,14 +4,11 @@ This module contains tests for the RDF persistence functionality of the storage 
 verifying that claims are properly stored in the RDF store and can be retrieved.
 """
 
-import importlib
-
 import pytest
 import rdflib
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
-from autoresearch.errors import StorageError
 from autoresearch.storage import StorageManager
 
 
@@ -30,6 +27,7 @@ def cleanup_rdf_store():
         StorageManager.context.rdf_store = None
     ConfigLoader.reset_instance()
     import autoresearch.storage as storage_module
+
     storage_module._cached_config = None
 
 
@@ -43,13 +41,14 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     # Setup
     cfg = ConfigModel(
         storage=StorageConfig(
-            rdf_backend="sqlite",
+            rdf_backend="oxigraph",
             rdf_path=str(tmp_path / "nested" / "rdf_store"),
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
     import autoresearch.storage as storage_module
+
     storage_module._cached_config = None
 
     claim = {
@@ -69,11 +68,11 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     assert results, "Claim was not persisted to the RDF store"
 
 
-def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
-    """RDF store should use SQLAlchemy backend when configured."""
+def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
+    """RDF store should use Oxigraph backend when configured."""
     cfg = ConfigModel(
         storage=StorageConfig(
-            rdf_backend="sqlite",
+            rdf_backend="oxigraph",
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
@@ -84,31 +83,7 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     StorageManager.setup()
 
     store = StorageManager.get_rdf_store()
-    assert store.store.__class__.__name__ == "SQLAlchemy"
-    assert str(store.store.engine.url).startswith("sqlite:///")
-
-
-def test_sqlalchemy_missing_driver(tmp_path, monkeypatch):
-    """Fail gracefully when SQLAlchemy is not installed."""
-    cfg = ConfigModel(
-        storage=StorageConfig(
-            rdf_backend="sqlite",
-            rdf_path=str(tmp_path / "rdf_store"),
-        )
-    )
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    ConfigLoader.new_for_tests()
-
-    def fake_find_spec(name: str):
-        if name == "sqlalchemy":
-            return None
-        return importlib.util.find_spec(name)
-
-    monkeypatch.setattr("autoresearch.storage_backends.importlib.util.find_spec", fake_find_spec)
-
-    StorageManager.teardown(remove_db=True)
-    with pytest.raises(StorageError):
-        StorageManager.setup()
+    assert store.store.__class__.__name__ == "OxigraphStore"
 
 
 @pytest.mark.slow
@@ -127,4 +102,4 @@ def test_memory_backend_initializes(tmp_path, monkeypatch):
     StorageManager.setup()
 
     store = StorageManager.get_rdf_store()
-    assert store.store.__class__.__name__ == "IOMemory"
+    assert store.store.__class__.__name__ in {"IOMemory", "Memory"}

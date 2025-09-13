@@ -120,20 +120,11 @@ settings impact search latency.
 
 ## RDF Storage Backends
 
-RDFLib provides two supported backends: `sqlite` (the default) and `berkeleydb`.
-When using the `sqlite` backend the **SQLAlchemy** plugin is required. The
-storage manager constructs a connection string in the format:
-
-```text
-sqlite:///path/to/rdf_store
-```
-
-Make sure the `rdflib-sqlalchemy` package is installed so that RDFLib can load
-the SQLAlchemy plugin and open the SQLite store correctly. The plugin is
-limited to SQLAlchemy 1.x, so install it alongside a pinned `sqlalchemy<2`
-dependency to avoid incompatibilities.
-The parent directory is created automatically so DuckDB and the RDF store can
-initialize together without manual path setup.
+RDFLib provides two supported backends: `oxigraph` (the default) and
+`berkeleydb`. The Oxigraph backend uses the `oxrdflib` plugin and stores data in
+the directory specified by `rdf_path`. The parent directory is created
+automatically so DuckDB and the RDF store can initialize together without
+manual path setup.
 
 ## Troubleshooting
 
@@ -158,34 +149,27 @@ This occurs because HNSW indexes in DuckDB require special handling for persiste
 If you encounter an error like:
 
 ```
-Failed to open RDF store: No plugin registered for (SQLAlchemy, <class 'rdflib.store.Store'>)
+Failed to open RDF store: No plugin registered for (Oxigraph, <class 'rdflib.store.Store'>)
 ```
 
-This indicates that the RDFLib SQLAlchemy plugin is not properly registered. To fix this:
+This indicates that the Oxigraph plugin is not available. To fix this:
 
-1. Ensure the `rdflib-sqlalchemy` package is installed with SQLAlchemy 1.x:
+1. Ensure the `oxrdflib` package is installed:
    ```bash
-   pip install "sqlalchemy<2" rdflib-sqlalchemy
+   pip install oxrdflib
    ```
 
-2. Ensure both packages appear in your `pyproject.toml` dependencies:
+2. Ensure the dependency appears in your `pyproject.toml`:
    ```toml
    [project.dependencies]
-   rdflib-sqlalchemy = "^0.5.0"
-   sqlalchemy = "<2"
+   oxrdflib = "^0.4.0"
    ```
 
-3. If the error persists, verify the pinned SQLAlchemy version is respected by
-   your environment.
-
-4. For development environments, you can also use the in-memory store by setting:
+3. For development environments, you can also use the in-memory store by setting:
    ```toml
    [storage]
    rdf_backend = "memory"
    ```
-
-If SQLAlchemy itself is missing, setup raises `SQLAlchemy driver not installed`.
-Install `sqlalchemy<2` before retrying.
 
 ## Ontology Reasoning and Visualization
 

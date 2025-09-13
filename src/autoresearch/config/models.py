@@ -102,7 +102,7 @@ class StorageConfig(BaseModel):
     vector_nprobe: int = Field(default=10, ge=1)
     vector_search_batch_size: Optional[int] = Field(default=None, ge=1)
     vector_search_timeout_ms: Optional[int] = Field(default=None, ge=1)
-    rdf_backend: str = Field(default="sqlite")
+    rdf_backend: str = Field(default="oxigraph")
     rdf_path: str = Field(default="rdf_store")
     ontology_reasoner: str = Field(default="owlrl")
     ontology_reasoner_timeout: float | None = Field(

@@ -45,7 +45,7 @@ def test_try_import_bertopic(monkeypatch):
 @pytest.mark.requires_llm
 def test_try_import_sentence_transformers(monkeypatch):
     """SearchContext imports fastembed when LLM extras are available."""
-    pytest.importorskip("fastembed")
+    pytest.importorskip("fastembed", exc_type=ModuleNotFoundError)
     from autoresearch.search import context
 
     monkeypatch.setattr(

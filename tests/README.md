@@ -16,10 +16,9 @@ uv run pytest tests/integration -m 'not slow and not requires_ui and not require
 - Configuration tests write temporary TOML files via `tomli-w`.
 - Baseline JSON files in `tests/integration/baselines/` hold expected
   metrics and token counts for comparison.
-- Some tests rely on `owlrl` and `rdflib_sqlalchemy` for RDF reasoning and
-  persistence. `rdflib_sqlalchemy` only supports SQLAlchemy 1.x, so install it
-  with a pinned `sqlalchemy<2` to avoid compatibility issues during integration
-  runs.
+- Some tests rely on `owlrl` and `oxrdflib` for RDF reasoning and
+  persistence. The Oxigraph backend is included in the standard development
+  dependencies and requires no additional drivers.
 - Fixtures such as `example_autoresearch_toml` and `example_env_file` provide
   temporary configuration and environment data. Use `tmp_path` and
   `monkeypatch` to isolate side effects in tests.

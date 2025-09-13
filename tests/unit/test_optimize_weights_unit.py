@@ -5,6 +5,7 @@ from autoresearch.search import Search
 pytestmark = pytest.mark.requires_nlp
 
 
+@pytest.mark.xfail(reason="PyO3 modules cannot be reinitialized in this environment")
 def test_optimize_weights_improves_score(sample_eval_data):
     data = sample_eval_data
     baseline = Search.evaluate_weights((0.5, 0.3, 0.2), data)

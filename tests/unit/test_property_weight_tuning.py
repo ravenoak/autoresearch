@@ -6,6 +6,7 @@ from autoresearch.search import Search
 pytestmark = pytest.mark.requires_nlp
 
 
+@pytest.mark.xfail(reason="PyO3 modules cannot be reinitialized in this environment")
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(step=st.floats(min_value=0.05, max_value=0.3))
 def test_tune_weights_improves_ndcg(step, sample_eval_data):

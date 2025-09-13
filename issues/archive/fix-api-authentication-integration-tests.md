@@ -8,7 +8,7 @@ documentation endpoints. Suites affected include
 `test_api_auth_permissions.py`, `test_api_docs.py`, `test_api_additional.py`,
 `test_api_streaming.py`, `test_cli_http.py`, and
 `test_monitor_metrics.py`. Related failures also surface in
-`tests/integration/test_rdf_persistence.py::test_sqlalchemy_backend_initializes`.
+`tests/integration/test_rdf_persistence.py::test_oxigraph_backend_initializes`.
 
 ## Dependencies
 - None
@@ -22,7 +22,7 @@ documentation endpoints. Suites affected include
 - `tests/integration/test_cli_http.py::test_http_api_key` passes.
 - `tests/integration/test_monitor_metrics.py::test_system_monitor_metrics_exposed` passes.
 - `tests/integration/test_optional_extras.py::test_inmemory_broker_roundtrip` passes.
-- `tests/integration/test_rdf_persistence.py::test_sqlalchemy_backend_initializes` passes.
+- `tests/integration/test_rdf_persistence.py::test_oxigraph_backend_initializes` passes.
 - `tests/integration/test_validate_deploy.py` passes.
 
 ## Status

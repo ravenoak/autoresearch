@@ -268,13 +268,12 @@ been verified to install successfully with `uv pip install`.
 | python-dotenv | 1.1.1 |
 | rank-bm25 | 0.2.2 |
 | rdflib | 7.1.4 |
-| rdflib-sqlalchemy | 0.5.4 |
+| oxrdflib | 0.4.0 |
 | redis | 6.2 |
 | requests | 2.32.4 |
 | responses | 0.25.8 |
 | rich | 14.1.0 |
 | slowapi | 0.1.9 |
-| sqlalchemy | <2 |
 | structlog | 25.4.0 |
 | tabulate | 0.9.0 |
 | tinydb | 4.8.2 |

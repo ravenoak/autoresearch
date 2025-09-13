@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def validate_rdf_backend(cls, v: str) -> str:
     """Validate the RDF backend configuration."""
-    valid_backends = ["sqlite", "berkeleydb", "memory"]
+    valid_backends = ["oxigraph", "berkeleydb", "memory"]
     if v not in valid_backends:
         raise ConfigError("Invalid RDF backend", valid_backends=valid_backends, provided=v)
     return v
