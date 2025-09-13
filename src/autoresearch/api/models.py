@@ -69,10 +69,19 @@ class BatchQueryResponseV1(VersionedModel):
     results: List[QueryResponseV1]
 
 
+class AsyncQueryResponseV1(VersionedModel):
+    """Async query acknowledgement model for version 1."""
+
+    __version__ = "1"
+    version: str = Field(default="1", description="API version for the response")
+    query_id: str = Field(description="Identifier for tracking the async query")
+
+
 __all__ = [
     "ReasoningMode",
     "QueryRequestV1",
     "QueryResponseV1",
     "BatchQueryRequestV1",
     "BatchQueryResponseV1",
+    "AsyncQueryResponseV1",
 ]

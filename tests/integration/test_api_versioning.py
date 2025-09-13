@@ -35,3 +35,19 @@ def test_batch_response_includes_version(monkeypatch, api_client) -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["version"] == "1"
+
+
+def test_async_endpoint_returns_version(monkeypatch, api_client) -> None:
+    """Async query acknowledgements include the schema version."""
+    _setup(monkeypatch)
+
+    class Dummy:
+        async def run_query_async(self, query, config):
+            return QueryResponseV1(answer=query, citations=[], reasoning=[], metrics={})
+
+    monkeypatch.setattr("autoresearch.api.routing.create_orchestrator", lambda: Dummy())
+    resp = api_client.post("/query/async", json={"query": "hi"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["version"] == "1"
+    assert "query_id" in body

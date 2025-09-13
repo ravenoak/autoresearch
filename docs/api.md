@@ -14,7 +14,8 @@ For details on orchestrator state transitions and the API contract see
 Requests and responses are versioned. Include `"version": "1"` in request
 bodies; responses echo the same field to signal the contract in use. The
 `QueryRequestV1` and `QueryResponseV1` models live in
-`autoresearch.api.models`.
+`autoresearch.api.models`. The `/query/async` endpoint acknowledges accepted
+jobs with `AsyncQueryResponseV1` containing the `query_id`.
 
 Deprecated versions remain available for two minor releases and return
 **410 Gone** once support is removed. Unknown versions yield
