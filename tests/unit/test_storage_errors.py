@@ -11,8 +11,8 @@ def test_setup_rdf_store_error(mock_config, assert_error):
     # Setup
     # Create a mock config
     config = MagicMock()
-    config.storage.rdf_backend = "sqlite"
-    config.storage.rdf_path = "/tmp/test.rdf"
+    config.storage.rdf_backend = "oxigraph"
+    config.storage.rdf_path = "/tmp/test_rdf"
 
     # Create a mock DuckDBStorageBackend
     mock_db_backend = MagicMock()
@@ -43,12 +43,12 @@ def test_setup_rdf_store_error(mock_config, assert_error):
 def test_setup_rdf_plugin_missing(mock_config, assert_error):
     """Test that setup raises a clear error when the RDF plugin is missing."""
     config = MagicMock()
-    config.storage.rdf_backend = "sqlite"
-    config.storage.rdf_path = "/tmp/test.rdf"
+    config.storage.rdf_backend = "oxigraph"
+    config.storage.rdf_path = "/tmp/test_rdf"
 
     mock_db_backend = MagicMock()
     mock_graph_instance = MagicMock()
-    mock_graph_instance.open.side_effect = Exception("No plugin registered: SQLite")
+    mock_graph_instance.open.side_effect = Exception("No plugin registered: Oxigraph")
 
     with patch.object(StorageManager.context, "graph", None):
         with patch.object(StorageManager.context, "db_backend", None):
@@ -67,9 +67,7 @@ def test_setup_rdf_plugin_missing(mock_config, assert_error):
     assert_error(excinfo, "Missing RDF backend plugin", has_cause=True)
 
 
-def test_setup_vector_extension_error(
-    mock_storage_components, mock_config, assert_error
-):
+def test_setup_vector_extension_error(mock_storage_components, mock_config, assert_error):
     """Test that setup handles vector extension errors properly."""
     # Setup
     # Create a mock for the DuckDB connection that raises an exception for LOAD vector
@@ -114,9 +112,7 @@ def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_er
     # Setup
     # Create a mock DuckDB backend that raises an exception when create_hnsw_index is called
     mock_db_backend = MagicMock()
-    mock_db_backend.create_hnsw_index.side_effect = Exception(
-        "HNSW index creation error"
-    )
+    mock_db_backend.create_hnsw_index.side_effect = Exception("HNSW index creation error")
 
     # Create a mock graph and RDF store
     mock_graph = nx.DiGraph()
@@ -126,9 +122,7 @@ def test_create_hnsw_index_error(mock_storage_components, mock_config, assert_er
     config = MagicMock()
 
     # Execute
-    with mock_storage_components(
-        graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf
-    ):
+    with mock_storage_components(graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf):
         with mock_config(config=config):
             with pytest.raises(StorageError) as excinfo:
                 StorageManager.create_hnsw_index()
@@ -158,9 +152,7 @@ def test_vector_search_error(mock_storage_components, mock_config, assert_error)
     config.storage.vector_nprobe = 10
 
     # Execute
-    with mock_storage_components(
-        graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf
-    ):
+    with mock_storage_components(graph=mock_graph, db_backend=mock_db_backend, rdf=mock_rdf):
         with mock_config(config=config):
             with pytest.raises(StorageError) as excinfo:
                 StorageManager.vector_search([0.1, 0.2])

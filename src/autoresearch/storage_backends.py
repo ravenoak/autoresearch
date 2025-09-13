@@ -11,7 +11,6 @@ from __future__ import annotations
 import importlib.util
 import os
 import time
-import warnings
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Queue
@@ -41,9 +40,9 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     """Initialize an RDFLib store with explicit driver checks.
 
     Args:
-        backend: Storage backend name. ``sqlite`` selects the SQLAlchemy plugin
-            with a SQLite connection string, ``berkeleydb`` uses Sleepycat, and
-            ``memory`` returns an in-memory graph.
+        backend: Storage backend name. ``oxigraph`` selects the Oxigraph store,
+            ``berkeleydb`` uses Sleepycat, and ``memory`` returns an in-memory
+            graph.
         path: Filesystem location for the RDF store.
 
     Returns:
@@ -56,37 +55,36 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     if backend == "memory":
         return rdflib.Graph()
 
-    dir_path = os.path.dirname(path)
-    if dir_path:
-        os.makedirs(dir_path, exist_ok=True)
-
     if backend == "berkeleydb":
         store_name = "Sleepycat"
         rdf_path = path
-    else:
-        store_name = "SQLAlchemy"
-        rdf_path = f"sqlite:///{path}"
-        if importlib.util.find_spec("sqlalchemy") is None:
+        dir_path = os.path.dirname(path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
+    elif backend == "oxigraph":
+        store_name = "Oxigraph"
+        rdf_path = path
+        os.makedirs(rdf_path, exist_ok=True)
+        if importlib.util.find_spec("oxrdflib") is None:
             raise StorageError(
-                "SQLAlchemy driver not installed",
-                suggestion="Install sqlalchemy to use the SQLAlchemy RDF backend",
+                "Oxigraph driver not installed",
+                suggestion="Install oxrdflib to use the Oxigraph RDF backend",
             )
+    else:
+        raise StorageError(
+            "Invalid RDF backend",
+            suggestion="Use oxigraph, berkeleydb, or memory",
+        )
 
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message="pkg_resources is deprecated",
-                category=UserWarning,
-            )
-            graph = rdflib.Graph(store=store_name)
-        graph.open(rdf_path, create=True)
+        graph = rdflib.Graph(store=store_name)
+        graph.open(rdf_path)
     except Exception as e:  # pragma: no cover - plugin may be missing
         if "No plugin registered" in str(e):
             raise StorageError(
                 f"Missing RDF backend plugin: {store_name}",
                 cause=e,
-                suggestion="Install rdflib-sqlalchemy or choose a different backend",
+                suggestion="Install oxrdflib or choose a different backend",
             )
         raise StorageError("Failed to open RDF store", cause=e)
 

@@ -30,6 +30,7 @@ def cleanup_rdf_store():
         StorageManager.context.rdf_store = None
     ConfigLoader.reset_instance()
     import autoresearch.storage as storage_module
+
     storage_module._cached_config = None
 
 
@@ -43,13 +44,14 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     # Setup
     cfg = ConfigModel(
         storage=StorageConfig(
-            rdf_backend="sqlite",
+            rdf_backend="oxigraph",
             rdf_path=str(tmp_path / "nested" / "rdf_store"),
         )
     )
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     ConfigLoader.new_for_tests()
     import autoresearch.storage as storage_module
+
     storage_module._cached_config = None
 
     claim = {
@@ -69,11 +71,11 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
     assert results, "Claim was not persisted to the RDF store"
 
 
-def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
-    """RDF store should use SQLAlchemy backend when configured."""
+def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
+    """RDF store should use Oxigraph backend when configured."""
     cfg = ConfigModel(
         storage=StorageConfig(
-            rdf_backend="sqlite",
+            rdf_backend="oxigraph",
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
@@ -84,15 +86,14 @@ def test_sqlalchemy_backend_initializes(tmp_path, monkeypatch):
     StorageManager.setup()
 
     store = StorageManager.get_rdf_store()
-    assert store.store.__class__.__name__ == "SQLAlchemy"
-    assert str(store.store.engine.url).startswith("sqlite:///")
+    assert store.store.__class__.__name__ == "OxigraphStore"
 
 
-def test_sqlalchemy_missing_driver(tmp_path, monkeypatch):
-    """Fail gracefully when SQLAlchemy is not installed."""
+def test_oxrdflib_missing_plugin(tmp_path, monkeypatch):
+    """Fail gracefully when oxrdflib is not installed."""
     cfg = ConfigModel(
         storage=StorageConfig(
-            rdf_backend="sqlite",
+            rdf_backend="oxigraph",
             rdf_path=str(tmp_path / "rdf_store"),
         )
     )
@@ -100,7 +101,7 @@ def test_sqlalchemy_missing_driver(tmp_path, monkeypatch):
     ConfigLoader.new_for_tests()
 
     def fake_find_spec(name: str):
-        if name == "sqlalchemy":
+        if name == "oxrdflib":
             return None
         return importlib.util.find_spec(name)
 
