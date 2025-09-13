@@ -3,9 +3,10 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 13, 2025**, 
 running `scripts/setup.sh` installs Task 3.44.1 and required extras. 
-`task check` succeeds, while `task verify` runs 245 unit tests but must be
-interrupted during coverage after cache tests exceed 60 seconds.
-The run leaves a multiprocessing resource tracker `KeyError` and no coverage report.
+`task check` succeeds. `task verify` installs optional extras and runs unit
+tests but exits with a multiprocessing resource tracker `KeyError` before
+integration tests, and `test_cache_is_backend_specific` still requires about
+64 seconds. Coverage reports are not produced.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage 
 status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**, 
 with the final **0.1.0** release targeted for **October 1, 2026**.
