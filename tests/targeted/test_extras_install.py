@@ -85,6 +85,13 @@ def test_parsers_extra_imports(tmp_path) -> None:
     assert len(doc.paragraphs) == 0
 
 
+@pytest.mark.requires_gpu
+def test_gpu_extra_imports() -> None:
+    """Smoke test imports from the gpu extra."""
+    bertopic = pytest.importorskip("bertopic")
+    assert hasattr(bertopic, "__version__")
+
+
 @pytest.mark.slow
 def test_task_check_runs_after_setup() -> None:
     """Ensure task check runs from a fresh setup."""

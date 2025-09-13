@@ -43,6 +43,8 @@ These instructions apply to files in the `tests/` directory.
 - Implement steps with existing fixtures such as `bdd_context` or `cli_runner`.
 - Register any new markers in `pytest.ini`.
 - Include extras corresponding to any other markers as needed.
+- Smoke tests for optional extras live under `tests/targeted/`.
+- Ensure cases for `gpu` and `parsers` extras exist.
 - Scenarios tagged `error_recovery` or `reasoning_modes` run with the base
   `.[test]` extra; add `[nlp]`, `[ui]`, or `[vss]` only when combining with
   their respective `requires_*` markers.
