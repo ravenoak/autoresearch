@@ -6,8 +6,8 @@ Usage:
 
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
 can be specified via the ``EXTRAS`` environment variable. The script verifies
-Go Task availability by invoking ``task --version`` and exits with an error if
-the command is missing.
+Python compatibility, checks Go Task availability with ``task --version``, and
+reports missing packages for requested extras.
 """
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ import re
 import subprocess
 import sys
 import tomllib
-import warnings
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
@@ -31,11 +30,12 @@ if sys.version_info < (3, 12):
 try:  # pragma: no cover - packaging is required
     from packaging.version import Version
     from packaging.requirements import Requirement
+    from packaging.specifiers import SpecifierSet
 except ModuleNotFoundError as exc:  # pragma: no cover
     raise SystemExit("packaging library is required") from exc
 
 BASE_REQUIREMENTS = {
-    "python": "3.12.0",
+    "python": ">=3.12,<4.0",
     "task": "3.0.0",
     "uv": "0.7.0",
 }
@@ -103,8 +103,11 @@ class CheckResult:
     name: str
     current: str
     required: str
+    spec: SpecifierSet | None = None
 
     def ok(self) -> bool:
+        if self.spec is not None:
+            return Version(self.current) in self.spec
         return Version(self.current) >= Version(self.required)
 
 
@@ -114,7 +117,8 @@ class VersionError(RuntimeError):
 
 def check_python() -> CheckResult:
     current = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    return CheckResult("Python", current, REQUIREMENTS["python"])
+    spec = SpecifierSet(REQUIREMENTS["python"])
+    return CheckResult("Python", current, REQUIREMENTS["python"], spec)
 
 
 def check_task() -> CheckResult:
@@ -175,36 +179,22 @@ def check_package(pkg: str) -> CheckResult | None:
         if _silenced_metadata(pkg):
             logger.info("No package metadata found for %s; skipping", pkg)
             return None
-        warnings.warn(
-            f"package metadata not found for {pkg}",
-            UserWarning,
-        )
-        logger.warning("No package metadata found for %s; skipping", pkg)
-        return None
+        raise VersionError(f"{pkg} not installed; run 'task install'") from None
     required = REQUIREMENTS[pkg]
     return CheckResult(pkg, current, required)
 
 
-def check_pytest_bdd() -> CheckResult | None:
-    """Return pytest-bdd version or skip if unavailable."""
+def check_pytest_bdd() -> CheckResult:
+    """Return pytest-bdd version or raise if unavailable."""
 
     try:
         import pytest_bdd  # noqa: F401
-    except ModuleNotFoundError:  # pragma: no cover - failure path
-        warnings.warn(
-            "pytest-bdd import failed; run 'task install'.",
-            UserWarning,
-        )
-        return None
+    except ModuleNotFoundError:
+        raise VersionError("pytest-bdd is required; run 'task install'") from None
     try:
         current = metadata.version("pytest-bdd")
     except metadata.PackageNotFoundError:
-        warnings.warn(
-            "package metadata not found for pytest-bdd",
-            UserWarning,
-        )
-        logger.warning("No package metadata found for pytest-bdd; skipping")
-        return None
+        raise VersionError("pytest-bdd metadata not found; run 'task install'") from None
     required = REQUIREMENTS["pytest-bdd"]
     return CheckResult("pytest-bdd", current, required)
 

@@ -14,6 +14,10 @@ Autoresearch requires these binaries on your `PATH`:
 - [Go Task](https://taskfile.dev/) for Taskfile commands. Install via
   `./scripts/setup.sh` or your package manager.
 
+Run `task install` immediately after installing these prerequisites. It
+syncs the `dev-minimal` and `test` extras so `task check` and `pytest` have
+the required plugins.
+
 Run `uv run python scripts/check_env.py` to confirm they are available. The
 script exits with an error when Go Task is missing; install it with
 `./scripts/setup.sh` or your package manager. After it finishes, confirm the

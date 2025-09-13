@@ -5,6 +5,10 @@ Taskfile commands.
 
 ## September 13, 2025
 
+- Updated `scripts/check_env.py` to fail on unsupported Python versions and
+  missing extras, and wired it into `task check`.
+- README and installation guide now direct users to run `task install` before
+  executing tests.
 - Ran `scripts/setup.sh` to install Task 3.44.1 and sync development extras.
 - `task check` succeeds.
 - `task verify` runs unit tests (245 passed, 6 skipped) but was interrupted

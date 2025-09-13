@@ -67,7 +67,7 @@ tasks:
             --extra dev-minimal \
             --extra test \
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
-      - task check-env EXTRAS="{{.EXTRAS}}"
+      - EXTRAS="{{.EXTRAS}}" uv run python scripts/check_env.py
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - task lint-specs
