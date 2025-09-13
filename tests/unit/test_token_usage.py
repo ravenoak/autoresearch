@@ -105,6 +105,31 @@ def test_compress_prompt_with_summarizer():
     assert "p" in called
 
 
+def test_summarizer_skipped_when_within_budget():
+    """Summarizer is ignored when the prompt already fits the budget."""
+
+    called = {}
+
+    def summarizer(prompt: str, budget: int) -> str:  # pragma: no cover - should not run
+        called["p"] = prompt
+        return "unused"
+
+    result = compress_prompt("one two", 3, summarizer)
+    assert result == "one two"
+    assert called == {}
+
+
+def test_summarizer_fallback_to_truncation():
+    """If the summary is too long an ellipsis-based truncation is used."""
+
+    def long_summary(prompt: str, budget: int) -> str:
+        return "this summary exceeds the budget"
+
+    result = compress_prompt("one two three four five", 3, long_summary)
+    assert result.split()[1] == "..."
+    assert len(result.split()) == 3
+
+
 def test_budget_considers_agent_history():
     """Token budget suggestion accounts for per-agent history."""
 
