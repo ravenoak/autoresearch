@@ -67,6 +67,8 @@ jobs:
         run: uv run task lint-specs
       - name: Run task check
         run: uv run task check
+      - name: Unit tests with deprecations as errors
+        run: PYTHONWARNINGS=error::DeprecationWarning uv run pytest tests/unit
       - name: Run task verify
         run: uv run task verify EXTRAS="$ALL_EXTRAS"
       - name: Run task coverage
