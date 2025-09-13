@@ -1,3 +1,8 @@
+"""DuckDB storage backend tests.
+
+See docs/algorithms/storage_initialization.md for the specification.
+"""
+
 import pytest
 from unittest.mock import patch, MagicMock, call
 
