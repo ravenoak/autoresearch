@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 import contextlib
 import multiprocessing
+from multiprocessing import resource_tracker
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
@@ -41,6 +42,21 @@ def _terminate_active_children() -> None:
     for proc in multiprocessing.active_children():
         proc.terminate()
         proc.join()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _drain_multiprocessing_semaphores() -> None:
+    """Remove leaked multiprocessing semaphores after the test session."""
+    yield
+    try:
+        cache = resource_tracker._resource_tracker._cache.copy()
+    except Exception:
+        return
+    for name, rtype in cache.items():
+        if rtype == "semaphore":
+            with contextlib.suppress(Exception):
+                resource_tracker.unregister(name, rtype)
+                resource_tracker._resource_tracker.maybe_unlink(name, rtype)
 
 
 if importlib.util.find_spec("autoresearch") is None:
