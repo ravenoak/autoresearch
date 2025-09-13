@@ -42,21 +42,15 @@ reported missing, rerun `task install` or sync optional extras with
 ```bash
 ./scripts/setup.sh
 source .venv/bin/activate
-export PATH="$PATH:$(pwd)/.venv/bin"
 task --version
 task check
 ```
 
-`scripts/setup.sh` verifies the Python version, installs Go Task when needed,
-confirms `uv` is functional, and syncs the `dev-minimal` and `test` extras. It
-exits with an error if a tool is missing or the dependency sync fails.
-
-To install a system-wide Go Task binary instead, run:
-
-```bash
-curl -sSL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
-# macOS: brew install go-task/tap/go-task
-```
+`scripts/setup.sh` verifies the Python version, installs Go Task into
+`/usr/local/bin` when needed, confirms `uv` is functional, and syncs the
+`dev-minimal` and `test` extras. It exits with an error if a tool is missing or
+the dependency sync fails. If installation fails, see `docs/installation.md`
+for manual steps or package manager commands.
 
 Optional extras provide features such as NLP, a UI, or distributed
 processing. Install them on demand with `uv sync --extra <name>`, `task

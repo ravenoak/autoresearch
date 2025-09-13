@@ -19,14 +19,13 @@ tasks:
     cmds:
       - |
           if ! command -v task >/dev/null 2>&1; then
-              echo "Go Task missing; installing into .venv/bin..."
-              mkdir -p .venv/bin
+              install_dir="${TASK_INSTALL_DIR:-/usr/local/bin}"
+              echo "Go Task missing; installing into $install_dir..."
               if ! curl -sSL https://taskfile.dev/install.sh \
-                  | sh -s -- -b .venv/bin; then
+                  | sh -s -- -b "$install_dir"; then
                   echo "Failed to install Go Task. Run scripts/setup.sh." >&2
                   exit 1
               fi
-              export PATH="$(pwd)/.venv/bin:$PATH"
           fi
       - |
           extras="dev-minimal test"
@@ -48,6 +47,7 @@ tasks:
     env:
       EXTRAS: "{{.EXTRAS}}"
     cmds:
+      - task --version
       - uv run python scripts/check_env.py
     desc: "Validate required tool versions"
   lint-specs:
