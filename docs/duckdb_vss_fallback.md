@@ -8,7 +8,8 @@ disabling vector search features.
 
 `VSSExtensionLoader.load_extension` tries multiple strategies:
 
-1. Load a user provided path from `storage.vector_extension_path`.
+1. Load a user provided path from `storage.vector_extension_path` or
+   `.env.offline`'s `VECTOR_EXTENSION_PATH`.
 2. Install and load the official `vss` extension from DuckDB's repository.
 3. Load the binary shipped with the `duckdb_extension_vss` Python package.
 4. Fall back to the stub in `extensions/vss/` when all else fails.
@@ -27,8 +28,9 @@ The loader only raises :class:`StorageError` when
 ## Environment variable usage
 
 - The stub path is stored in `.env.offline` under `VECTOR_EXTENSION_PATH`.
-- Later runs load this file so `download_duckdb_extensions.py` can copy the
-  recorded extension instead of downloading it again.
+- Later runs load this file so `download_duckdb_extensions.py` or
+  `VSSExtensionLoader` can reuse the recorded extension instead of downloading
+  it again.
 - Update or create `.env.offline` with:
 
 ```

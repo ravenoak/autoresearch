@@ -36,16 +36,17 @@ Note:
 """
 
 import argparse
+import logging
 import os
 import platform
+import shutil
+import socket
 import sys
 import tempfile
-import shutil
-import logging
 from pathlib import Path
-from dotenv import dotenv_values
-import socket
 from urllib.error import URLError
+
+from dotenv import dotenv_values
 
 try:
     import duckdb
@@ -167,6 +168,17 @@ def download_extension(extension_name, output_dir, platform_name=None):
     # unavailable.
     output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
+
+    # If an offline copy is configured, reuse it immediately and skip network
+    # access. This mirrors the post-failure fallback but avoids an unnecessary
+    # download attempt when the extension was previously captured.
+    offline_vars = load_offline_env()
+    env_path = offline_vars.get("VECTOR_EXTENSION_PATH")
+    if extension_name == "vss" and env_path and os.path.exists(env_path):
+        dst = os.path.join(output_extension_dir, os.path.basename(env_path))
+        shutil.copy2(env_path, dst)
+        logger.info("Using offline extension from %s", env_path)
+        return output_extension_dir
 
     if duckdb is None:
         logger.warning("duckdb package not available; falling back to offline copy if present")

@@ -6,6 +6,8 @@ import math
 from dataclasses import dataclass
 from typing import Iterable, List, Sequence
 
+from .ranking import normalize_scores
+
 
 @dataclass(frozen=True)
 class DocScores:
@@ -23,17 +25,24 @@ class DocScores:
 
 
 def _validate_weights(weights: Sequence[float]) -> None:
-    """Ensure ranking weights sum to 1.0."""
-    if not math.isclose(sum(weights), 1.0, abs_tol=1e-9):
+    """Ensure ranking weights form a proper convex combination.
+
+    Args:
+        weights: Sequence of component weights in BM25, semantic, credibility
+            order.
+
+    Raises:
+        ValueError: If weights do not sum to 1 within a small tolerance, if any
+            weight is negative, or if an unexpected number of weights is
+            provided.
+    """
+
+    if len(weights) != 3:
+        raise ValueError("weights must have three components")
+    if any(w < 0 for w in weights):
+        raise ValueError("weights must be non-negative")
+    if not math.isclose(sum(weights), 1.0, abs_tol=1e-3):
         raise ValueError("weights must sum to 1.0")
-
-
-def _normalize(values: Sequence[float]) -> List[float]:
-    """Scale values to the 0–1 range."""
-    max_val = max(values, default=0.0)
-    if max_val <= 0:
-        return [0.0 for _ in values]
-    return [v / max_val for v in values]
 
 
 def relevance_scores(docs: Iterable[DocScores], weights: Sequence[float]) -> List[float]:
@@ -49,15 +58,14 @@ def relevance_scores(docs: Iterable[DocScores], weights: Sequence[float]) -> Lis
     _validate_weights(weights)
     doc_list = list(docs)
     w_bm25, w_sem, w_cred = weights
-    bm25_norm = _normalize([d.bm25 for d in doc_list])
-    sem_norm = _normalize([d.semantic for d in doc_list])
-    cred_norm = _normalize([d.credibility for d in doc_list])
+    bm25_norm = normalize_scores([d.bm25 for d in doc_list])
+    sem_norm = normalize_scores([d.semantic for d in doc_list])
+    cred_norm = normalize_scores([d.credibility for d in doc_list])
     combined = [
         bm25_norm[i] * w_bm25 + sem_norm[i] * w_sem + cred_norm[i] * w_cred
         for i in range(len(doc_list))
     ]
-    final_max = max(combined) or 1.0
-    return [score / final_max for score in combined]
+    return normalize_scores(combined)
 
 
 def simulate_ranking_convergence(

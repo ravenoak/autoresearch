@@ -629,11 +629,13 @@ class Search:
             if search_cfg.use_bm25
             else [1.0] * len(results)
         )
+        bm25_scores = self.normalize_scores(bm25_scores)
         credibility_scores = (
             self.assess_source_credibility(results)
             if search_cfg.use_source_credibility
             else [1.0] * len(results)
         )
+        credibility_scores = self.normalize_scores(credibility_scores)
 
         duckdb_raw = [r.get("similarity", 0.0) for r in results]
         if search_cfg.use_semantic_similarity:
@@ -643,9 +645,7 @@ class Search:
             duckdb_scores = self.normalize_scores(duckdb_raw)
             semantic_scores = duckdb_scores
 
-        # Credibility scores are expected to already be within 0–1 so skip
-        # additional normalization to preserve relative differences.
-        # This mirrors the expectations in the test suite.
+        # All components are normalized to the 0–1 range before weighting.
 
         # Combine weighted scores using the shared ranking utility
         final_scores = combine_scores(
