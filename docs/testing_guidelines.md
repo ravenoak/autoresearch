@@ -13,6 +13,12 @@ Tests may require optional dependencies. Markers such as `requires_nlp` or
 `dev-minimal`, `dev`, and `test` extras plus all optional groups except `gpu`
 by default. Use `EXTRAS="gpu"` to include the GPU packages or limit extras.
 
+## Deprecation warnings
+
+- `rdflib-sqlalchemy` imports `pkg_resources`, which emits a warning with
+  modern `setuptools`. The tests pin `setuptools<81` to suppress it.
+- No other deprecation warnings are expected when running `task verify`.
+
 ### Enabling heavy extras
 
 Enable heavy groups like `nlp`, `distributed`, `analysis`, `llm`, or `gpu` only
