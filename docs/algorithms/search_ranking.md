@@ -6,7 +6,9 @@ combination of multiple signals. The formula is
 
 - \(b(d)\) is the [BM25](bm25.md) keyword score.
 - \(m(d)\) is the [semantic similarity](semantic_similarity.md) score.
-- \(v(d)\) is the DuckDB vector similarity when available.
+- \(v(d)\) is the DuckDB vector similarity when available. When semantic
+  similarity is disabled the normalized DuckDB score is used directly as the
+  semantic component so weighting remains consistent.
 - \(c(d)\) is the [domain authority](source_credibility.md) score.
 
 The weights \(w_b\), \(w_s\), and \(w_c\) are non-negative and must sum to

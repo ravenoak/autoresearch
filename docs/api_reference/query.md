@@ -51,9 +51,34 @@ The batch endpoint wraps individual responses with pagination metadata:
   "page": 1,
   "page_size": 2,
   "results": [
-    {"version": "1", "answer": "a", "citations": [], "reasoning": [], "metrics": {}},
-    {"version": "1", "answer": "b", "citations": [], "reasoning": [], "metrics": {}}
+    {
+      "version": "1",
+      "answer": "a",
+      "citations": [],
+      "reasoning": [],
+      "metrics": {}
+    },
+    {
+      "version": "1",
+      "answer": "b",
+      "citations": [],
+      "reasoning": [],
+      "metrics": {}
+    }
   ]
+}
+```
+
+## Async Response
+
+::: autoresearch.api.models.AsyncQueryResponseV1
+
+Async queries acknowledge receipt and provide a tracking identifier:
+
+```json
+{
+  "version": "1",
+  "query_id": "123"
 }
 ```
 
