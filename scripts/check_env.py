@@ -6,7 +6,8 @@ Usage:
 
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
 can be specified via the ``EXTRAS`` environment variable. The script verifies
-Go Task availability by invoking ``task --version``.
+Go Task availability by invoking ``task --version`` and exits with an error if
+the command is missing.
 """
 from __future__ import annotations
 
@@ -116,9 +117,8 @@ def check_python() -> CheckResult:
     return CheckResult("Python", current, REQUIREMENTS["python"])
 
 
-def check_task() -> CheckResult | None:
+def check_task() -> CheckResult:
     required = REQUIREMENTS["task"]
-    warn_only = os.environ.get("CHECK_ENV_TASK_WARN_ONLY") == "1"
     try:
         proc = subprocess.run(
             ["task", "--version"],
@@ -126,16 +126,12 @@ def check_task() -> CheckResult | None:
             text=True,
             check=False,
         )
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
         hint = (
             "Go Task {required}+ not found; install it with scripts/setup.sh or "
             "your package manager"
         ).format(required=required)
-        if warn_only:
-            warnings.warn(hint, UserWarning)
-            logger.warning("%s", hint)
-            return None
-        raise VersionError(hint)
+        raise VersionError(hint) from exc
     if proc.returncode != 0:
         hint = (
             "Go Task {required}+ is required. Install it with scripts/setup.sh or "
