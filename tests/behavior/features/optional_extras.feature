@@ -1,3 +1,4 @@
+@behavior
 Feature: Optional extras operate when installed
   Optional extras like NLP or UI should expose corresponding functionality.
 

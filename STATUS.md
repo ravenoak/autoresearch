@@ -9,6 +9,8 @@ Taskfile commands.
 - `task check` succeeds.
 - `task verify` runs unit tests (245 passed, 6 skipped) but was interrupted
   during coverage, leaving a multiprocessing resource tracker `KeyError`.
+- Attempted `task coverage` with all extras; run failed with a resource tracker
+  `KeyError`, so no updated coverage report was generated.
 - `uv run pytest tests/unit/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
 - Archived

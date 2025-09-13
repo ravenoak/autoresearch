@@ -21,6 +21,7 @@ import pytest
         pytest.param("polars", "__version__", marks=pytest.mark.requires_analysis),
         pytest.param("fastembed", "__version__", marks=pytest.mark.requires_llm),
         pytest.param("docx", "Document", marks=pytest.mark.requires_parsers),
+        pytest.param("bertopic", "BERTopic", marks=pytest.mark.requires_gpu),
     ],
 )
 def test_optional_module_exports(module: str, attr: str) -> None:

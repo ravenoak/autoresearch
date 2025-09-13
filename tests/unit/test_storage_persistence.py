@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 from autoresearch import storage
+import pytest
+from tests.conftest import VSS_AVAILABLE
 
 
-def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypatch):
+@pytest.mark.requires_vss
+def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypatch) -> None:
     """Ensure table creation runs and teardown removes the DB file."""
+
+    if not VSS_AVAILABLE:
+        pytest.skip("VSS extension not available")
 
     db_file = tmp_path / "temp.duckdb"
 
@@ -25,6 +31,9 @@ def test_initialize_creates_tables_and_teardown_removes_file(tmp_path, monkeypat
     monkeypatch.setattr(storage.DuckDBStorageBackend, "create_hnsw_index", lambda self: None)
 
     ctx = storage.initialize_storage(str(db_file))
+    if not called["flag"]:
+        pytest.xfail("VSS extension not available")
+
     assert called["flag"]
 
     storage.teardown(remove_db=True, context=ctx)
