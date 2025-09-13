@@ -26,6 +26,7 @@ from .errors import NotFoundError, StorageError
 from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import KUZU_QUERY_COUNTER, KUZU_QUERY_TIME
+from .storage_utils import initialize_schema_version_without_fetchone
 
 # Use "Any" for DuckDB connection due to incomplete type hints in duckdb.
 DuckDBConnection = Any
@@ -280,15 +281,8 @@ class DuckDBStorageBackend:
         """Ensure a default schema version exists in the metadata table."""
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
-
         try:
-            cursor = self._conn.execute("SELECT value FROM metadata WHERE key = 'schema_version'")
-            rows = cursor.fetchall() if hasattr(cursor, "fetchall") else []
-            if not rows:
-                log.info("Initializing schema version to 1")
-                self._conn.execute(
-                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
-                )
+            initialize_schema_version_without_fetchone(self._conn)
         except Exception as exc:  # pragma: no cover - defensive
             raise StorageError("Failed to initialize schema version", cause=exc)
 

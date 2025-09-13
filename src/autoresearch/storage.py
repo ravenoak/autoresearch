@@ -446,10 +446,11 @@ class StorageManager(metaclass=StorageManagerMeta):
             The caller is responsible for removing the node from the graph if needed.
         """
         state = StorageManager.state
-        lru = state.lru
-        if not lru:
-            return None
-        node_id, _ = lru.popitem(last=False)
+        with state.lock:
+            lru = state.lru
+            if not lru:
+                return None
+            node_id, _ = lru.popitem(last=False)
         return node_id
 
     @staticmethod
@@ -472,19 +473,20 @@ class StorageManager(metaclass=StorageManagerMeta):
             This method only identifies the node for eviction and removes it from the LRU cache if present.
             The caller is responsible for removing the node from the graph if needed.
         """
-        graph = StorageManager.context.graph
-        if not graph or not graph.nodes:
-            return None
-        node_id = cast(
-            str,
-            min(
-                graph.nodes,
-                key=lambda n: graph.nodes[n].get("confidence", 0.0),
-            ),
-        )
-        lru = StorageManager.state.lru
-        if node_id in lru:
-            del lru[node_id]
+        with StorageManager.state.lock:
+            graph = StorageManager.context.graph
+            if not graph or not graph.nodes:
+                return None
+            node_id = cast(
+                str,
+                min(
+                    graph.nodes,
+                    key=lambda n: graph.nodes[n].get("confidence", 0.0),
+                ),
+            )
+            lru = StorageManager.state.lru
+            if node_id in lru:
+                del lru[node_id]
         return node_id
 
     @staticmethod
@@ -523,224 +525,231 @@ class StorageManager(metaclass=StorageManagerMeta):
             ``⌈(U_0 - T) / s_{ min}⌉`` iterations, yielding memory
             usage within the budget.
         """
-        if budget_mb <= 0:
-            log.debug("RAM budget <= 0; skipping eviction")
-            return
+        state = StorageManager.state
+        with state.lock:
+            if budget_mb <= 0:
+                log.debug("RAM budget <= 0; skipping eviction")
+                return
 
-        # Get current memory usage
-        current_mb = StorageManager._current_ram_mb()
+            # Get current memory usage
+            current_mb = StorageManager._current_ram_mb()
 
-        # If we're under budget, no need to evict
-        if current_mb <= budget_mb:
-            return
+            # If we're under budget, no need to evict
+            if current_mb <= budget_mb:
+                return
 
-        # Get configuration
-        cfg = ConfigLoader().config
-        # Normalize policy name to ensure deterministic comparisons
-        policy = cfg.graph_eviction_policy.lower()
-        lru = StorageManager.state.lru
+            # Get configuration
+            cfg = ConfigLoader().config
+            # Normalize policy name to ensure deterministic comparisons
+            policy = cfg.graph_eviction_policy.lower()
+            lru = StorageManager.state.lru
 
-        # Track eviction metrics
-        eviction_start_time = time.time()
-        nodes_evicted = 0
-        starting_mb = current_mb
+            # Track eviction metrics
+            eviction_start_time = time.time()
+            nodes_evicted = 0
+            starting_mb = current_mb
 
-        # Get the safety margin (percentage of budget to keep free)
-        safety_margin = getattr(cfg, "eviction_safety_margin", 0.1)  # Default 10%
-        target_mb = budget_mb * (1 - safety_margin)
+            # Get the safety margin (percentage of budget to keep free)
+            safety_margin = getattr(cfg, "eviction_safety_margin", 0.1)  # Default 10%
+            target_mb = budget_mb * (1 - safety_margin)
 
-        # Batch size for eviction to improve performance
-        batch_size = min(
-            getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
-            (
-                max(1, len(StorageManager.context.graph.nodes) // 10)
-                if StorageManager.context.graph and StorageManager.context.graph.nodes
-                else 1
-            ),  # Don't exceed 10% of nodes, at least 1
-        )
+            # Batch size for eviction to improve performance
+            batch_size = min(
+                getattr(cfg, "eviction_batch_size", 10),  # Default batch size of 10
+                (
+                    max(1, len(StorageManager.context.graph.nodes) // 10)
+                    if StorageManager.context.graph and StorageManager.context.graph.nodes
+                    else 1
+                ),  # Don't exceed 10% of nodes, at least 1
+            )
 
-        # Determine if we should use aggressive eviction (when memory usage is critically high)
-        aggressive_threshold = budget_mb * 1.5  # 50% over budget
-        aggressive_eviction = current_mb > aggressive_threshold
+            # Determine if we should use aggressive eviction (when memory usage is critically high)
+            aggressive_threshold = budget_mb * 1.5  # 50% over budget
+            aggressive_eviction = current_mb > aggressive_threshold
 
-        log.info(
-            f"Starting eviction with policy={policy}, current={current_mb:.1f}MB, "
-            f"target={target_mb:.1f}MB, aggressive={aggressive_eviction}, batch_size={batch_size}"
-        )
+            log.info(
+                f"Starting eviction with policy={policy}, current={current_mb:.1f}MB, "
+                f"target={target_mb:.1f}MB, aggressive={aggressive_eviction}, batch_size={batch_size}"
+            )
 
-        # Implement different eviction policies
-        while StorageManager.context.graph and current_mb > target_mb:
-            nodes_to_evict = []
+            # Implement different eviction policies
+            while StorageManager.context.graph and current_mb > target_mb:
+                nodes_to_evict = []
 
-            if policy == "hybrid":
-                # Hybrid policy: combine recency and confidence score
-                # Calculate a hybrid score for each node: 0.7*recency_rank + 0.3*confidence_score
-                hybrid_scores = {}
+                if policy == "hybrid":
+                    # Hybrid policy: combine recency and confidence score
+                    # Calculate a hybrid score for each node: 0.7*recency_rank + 0.3*confidence_score
+                    hybrid_scores = {}
 
-                # Get recency information
-                recency_ranks = {}
-                # Iterate from most to least recent so older nodes receive higher ranks.
-                for i, node_id in enumerate(reversed(lru)):
-                    recency_ranks[node_id] = i / max(1, len(lru) - 1)
+                    # Get recency information
+                    recency_ranks = {}
+                    # Iterate from most to least recent so older nodes receive higher ranks.
+                    for i, node_id in enumerate(reversed(lru)):
+                        recency_ranks[node_id] = i / max(1, len(lru) - 1)
 
-                # Calculate hybrid scores
-                for node_id in StorageManager.context.graph.nodes:
-                    if node_id in recency_ranks:
-                        recency_weight = getattr(
-                            cfg, "recency_weight", 0.7
-                        )  # Default 70% weight to recency
-                        confidence_weight = 1.0 - recency_weight
+                    # Calculate hybrid scores
+                    for node_id in StorageManager.context.graph.nodes:
+                        if node_id in recency_ranks:
+                            recency_weight = getattr(
+                                cfg, "recency_weight", 0.7
+                            )  # Default 70% weight to recency
+                            confidence_weight = 1.0 - recency_weight
 
-                        recency_score = recency_ranks.get(
-                            node_id, 1.0
-                        )  # Higher is worse (more recent = 0)
-                        confidence_score = 1.0 - StorageManager.context.graph.nodes[node_id].get(
-                            "confidence", 0.5
-                        )  # Higher is worse
+                            recency_score = recency_ranks.get(
+                                node_id, 1.0
+                            )  # Higher is worse (more recent = 0)
+                            confidence_score = 1.0 - StorageManager.context.graph.nodes[
+                                node_id
+                            ].get(
+                                "confidence", 0.5
+                            )  # Higher is worse
 
-                        hybrid_scores[node_id] = (
-                            recency_weight * recency_score + confidence_weight * confidence_score
+                            hybrid_scores[node_id] = (
+                                recency_weight * recency_score
+                                + confidence_weight * confidence_score
+                            )
+
+                    # Sort by hybrid score (highest first = worst candidates)
+                    candidates = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
+
+                    # Take the top batch_size candidates
+                    nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
+
+                elif policy == "adaptive":
+                    # Adaptive policy: dynamically select based on usage patterns
+                    # Check if we have usage statistics
+                    if not hasattr(StorageManager, "_access_frequency"):
+                        StorageManager._access_frequency = {}
+                        StorageManager._last_adaptive_policy = "lru"  # Default to LRU
+
+                    # Determine which policy to use based on access patterns
+                    access_variance = 0.0
+                    if StorageManager._access_frequency:
+                        # Calculate variance in access frequency
+                        frequencies = list(StorageManager._access_frequency.values())
+                        if frequencies:
+                            mean = sum(frequencies) / len(frequencies)
+                            variance = sum((f - mean) ** 2 for f in frequencies) / len(frequencies)
+                            access_variance = variance
+
+                    # If high variance, use score-based (some nodes much more important)
+                    # If low variance, use LRU (all nodes similarly important)
+                    variance_threshold = getattr(cfg, "adaptive_variance_threshold", 5.0)
+                    if access_variance > variance_threshold:
+                        policy_to_use = "score"
+                    else:
+                        policy_to_use = "lru"
+
+                    # Remember which policy we used
+                    StorageManager._last_adaptive_policy = policy_to_use
+
+                    # Use the selected policy
+                    if policy_to_use == "score":
+                        for _ in range(batch_size):
+                            popped = StorageManager._pop_low_score()
+                            if popped and StorageManager.context.graph.has_node(popped):
+                                nodes_to_evict.append(popped)
+                    else:
+                        for _ in range(batch_size):
+                            popped = StorageManager._pop_lru()
+                            if popped and StorageManager.context.graph.has_node(popped):
+                                nodes_to_evict.append(popped)
+
+                elif policy == "priority":
+                    # Priority policy: evict based on configurable priority tiers
+                    # Define priority tiers (lower tier = higher priority = keep longer)
+                    priority_tiers = {
+                        "system": 0,  # System-critical nodes
+                        "user": 1,  # User-created nodes
+                        "synthesis": 2,  # Synthesis results
+                        "research": 3,  # Research findings
+                        "default": 4,  # Default tier
+                    }
+
+                    # Get custom tiers from config if available
+                    if hasattr(cfg, "priority_tiers") and isinstance(cfg.priority_tiers, dict):
+                        priority_tiers.update(cfg.priority_tiers)
+
+                    # Assign priority to each node
+                    node_priorities = {}
+                    for node_id in StorageManager.context.graph.nodes:
+                        node_type = StorageManager.context.graph.nodes[node_id].get(
+                            "type", "default"
                         )
+                        # Map node type to priority tier
+                        tier = priority_tiers.get(node_type, priority_tiers["default"])
+                        # Adjust by confidence
+                        confidence_boost = (
+                            StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                        )
+                        # Final priority score (lower = higher priority)
+                        node_priorities[node_id] = tier - confidence_boost
 
-                # Sort by hybrid score (highest first = worst candidates)
-                candidates = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
+                    # Sort by priority (highest first = worst candidates)
+                    candidates = sorted(node_priorities.items(), key=lambda x: x[1], reverse=True)
 
-                # Take the top batch_size candidates
-                nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
+                    # Take the top batch_size candidates
+                    nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
 
-            elif policy == "adaptive":
-                # Adaptive policy: dynamically select based on usage patterns
-                # Check if we have usage statistics
-                if not hasattr(StorageManager, "_access_frequency"):
-                    StorageManager._access_frequency = {}
-                    StorageManager._last_adaptive_policy = "lru"  # Default to LRU
-
-                # Determine which policy to use based on access patterns
-                access_variance = 0.0
-                if StorageManager._access_frequency:
-                    # Calculate variance in access frequency
-                    frequencies = list(StorageManager._access_frequency.values())
-                    if frequencies:
-                        mean = sum(frequencies) / len(frequencies)
-                        variance = sum((f - mean) ** 2 for f in frequencies) / len(frequencies)
-                        access_variance = variance
-
-                # If high variance, use score-based (some nodes much more important)
-                # If low variance, use LRU (all nodes similarly important)
-                variance_threshold = getattr(cfg, "adaptive_variance_threshold", 5.0)
-                if access_variance > variance_threshold:
-                    policy_to_use = "score"
-                else:
-                    policy_to_use = "lru"
-
-                # Remember which policy we used
-                StorageManager._last_adaptive_policy = policy_to_use
-
-                # Use the selected policy
-                if policy_to_use == "score":
+                elif policy == "score":
+                    # Score-based policy: evict nodes with lowest confidence
                     for _ in range(batch_size):
                         popped = StorageManager._pop_low_score()
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
+                elif policy == "lru":
+                    # LRU policy: evict least recently used nodes deterministically
+                    while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
+                        popped = StorageManager._pop_lru()
+                        if popped and StorageManager.context.graph.has_node(popped):
+                            nodes_to_evict.append(popped)
                 else:
-                    for _ in range(batch_size):
+                    # Unknown policy - default to LRU for safety
+                    while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
                         popped = StorageManager._pop_lru()
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
 
-            elif policy == "priority":
-                # Priority policy: evict based on configurable priority tiers
-                # Define priority tiers (lower tier = higher priority = keep longer)
-                priority_tiers = {
-                    "system": 0,  # System-critical nodes
-                    "user": 1,  # User-created nodes
-                    "synthesis": 2,  # Synthesis results
-                    "research": 3,  # Research findings
-                    "default": 4,  # Default tier
-                }
+                # If we couldn't find any nodes to evict, break
+                if not nodes_to_evict:
+                    break
 
-                # Get custom tiers from config if available
-                if hasattr(cfg, "priority_tiers") and isinstance(cfg.priority_tiers, dict):
-                    priority_tiers.update(cfg.priority_tiers)
+                # Evict the selected nodes
+                for node_id in nodes_to_evict:
+                    if StorageManager.context.graph.has_node(node_id):
+                        StorageManager.context.graph.remove_node(node_id)
+                        if node_id in lru:
+                            del lru[node_id]
+                        # Remove node from access frequency tracker to keep state consistent
+                        StorageManager._access_frequency.pop(node_id, None)
+                        EVICTION_COUNTER.inc()
+                        nodes_evicted += 1
 
-                # Assign priority to each node
-                node_priorities = {}
-                for node_id in StorageManager.context.graph.nodes:
-                    node_type = StorageManager.context.graph.nodes[node_id].get("type", "default")
-                    # Map node type to priority tier
-                    tier = priority_tiers.get(node_type, priority_tiers["default"])
-                    # Adjust by confidence
-                    confidence_boost = (
-                        StorageManager.context.graph.nodes[node_id].get("confidence", 0.5) * 0.5
+                # Update memory usage after eviction
+                current_mb = StorageManager._current_ram_mb()
+
+                # If we're not making progress fast enough and in aggressive mode,
+                # double the batch size
+                if aggressive_eviction and nodes_evicted > 50:
+                    batch_size = min(
+                        batch_size * 2,
+                        (
+                            len(StorageManager.context.graph.nodes) // 5
+                            if StorageManager.context.graph and StorageManager.context.graph.nodes
+                            else 1
+                        ),
                     )
-                    # Final priority score (lower = higher priority)
-                    node_priorities[node_id] = tier - confidence_boost
 
-                # Sort by priority (highest first = worst candidates)
-                candidates = sorted(node_priorities.items(), key=lambda x: x[1], reverse=True)
+            # Log eviction results
+            eviction_time = time.time() - eviction_start_time
+            final_mb = StorageManager._current_ram_mb()
+            mb_freed = starting_mb - final_mb
 
-                # Take the top batch_size candidates
-                nodes_to_evict = [node_id for node_id, _ in candidates[:batch_size]]
-
-            elif policy == "score":
-                # Score-based policy: evict nodes with lowest confidence
-                for _ in range(batch_size):
-                    popped = StorageManager._pop_low_score()
-                    if popped and StorageManager.context.graph.has_node(popped):
-                        nodes_to_evict.append(popped)
-            elif policy == "lru":
-                # LRU policy: evict least recently used nodes deterministically
-                while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
-                    popped = StorageManager._pop_lru()
-                    if popped and StorageManager.context.graph.has_node(popped):
-                        nodes_to_evict.append(popped)
-            else:
-                # Unknown policy - default to LRU for safety
-                while len(nodes_to_evict) < batch_size and StorageManager.state.lru:
-                    popped = StorageManager._pop_lru()
-                    if popped and StorageManager.context.graph.has_node(popped):
-                        nodes_to_evict.append(popped)
-
-            # If we couldn't find any nodes to evict, break
-            if not nodes_to_evict:
-                break
-
-            # Evict the selected nodes
-            for node_id in nodes_to_evict:
-                if StorageManager.context.graph.has_node(node_id):
-                    StorageManager.context.graph.remove_node(node_id)
-                    if node_id in lru:
-                        del lru[node_id]
-                    # Remove node from access frequency tracker to keep state consistent
-                    StorageManager._access_frequency.pop(node_id, None)
-                    EVICTION_COUNTER.inc()
-                    nodes_evicted += 1
-
-            # Update memory usage after eviction
-            current_mb = StorageManager._current_ram_mb()
-
-            # If we're not making progress fast enough and in aggressive mode,
-            # double the batch size
-            if aggressive_eviction and nodes_evicted > 50:
-                batch_size = min(
-                    batch_size * 2,
-                    (
-                        len(StorageManager.context.graph.nodes) // 5
-                        if StorageManager.context.graph and StorageManager.context.graph.nodes
-                        else 1
-                    ),
-                )
-
-        # Log eviction results
-        eviction_time = time.time() - eviction_start_time
-        final_mb = StorageManager._current_ram_mb()
-        mb_freed = starting_mb - final_mb
-
-        log.info(
-            f"Eviction completed: policy={policy}, nodes_evicted={nodes_evicted}, "
-            f"time={eviction_time:.2f}s, memory_freed={mb_freed:.1f}MB, "
-            f"final={final_mb:.1f}MB"
-        )
+            log.info(
+                f"Eviction completed: policy={policy}, nodes_evicted={nodes_evicted}, "
+                f"time={eviction_time:.2f}s, memory_freed={mb_freed:.1f}MB, "
+                f"final={final_mb:.1f}MB"
+            )
 
     @staticmethod
     def _validate_claim(claim: dict[str, Any]) -> None:

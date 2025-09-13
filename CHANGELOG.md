@@ -8,6 +8,9 @@ Reference issues by slugged filename (for example,
 ## [Unreleased]
 - Documented ranking formula test failure in
   [fix-search-ranking-and-extension-tests](issues/archive/fix-search-ranking-and-extension-tests.md).
+- Hardened storage concurrency and eviction logic with thread-safe locks and
+  added `initialize_schema_version_without_fetchone` helper to support DuckDB
+  connections lacking `fetchone`.
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

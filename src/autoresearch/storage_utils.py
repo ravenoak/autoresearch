@@ -10,10 +10,10 @@ from .logging_utils import get_logger
 log = get_logger(__name__)
 
 
-def initialize_schema_version(conn: Any) -> None:
+def initialize_schema_version_without_fetchone(conn: Any) -> None:
     """Ensure the schema version exists in the metadata table.
 
-    DuckDB cursor objects may omit :meth:`fetchone`, so this helper relies on
+    DuckDB cursors may lack :meth:`fetchone`, so this helper relies on
     :meth:`fetchall` to read existing values. If no version is present, it
     inserts ``1``.
 
@@ -26,12 +26,10 @@ def initialize_schema_version(conn: Any) -> None:
     try:
         execute_cls = getattr(conn.__class__, "execute", None)
         if execute_cls is not None:
-            cursor = execute_cls(
-                conn, "SELECT value FROM metadata WHERE key = 'schema_version'"
-            )
+            cursor = execute_cls(conn, "SELECT value FROM metadata WHERE key = 'schema_version'")
         else:
             cursor = conn.execute(
-                "SELECT value FROM metadata WHERE key = 'schema_version'"
+                "SELECT value FROM metadata WHERE key = 'schema_version'",
             )
         rows = cursor.fetchall() if hasattr(cursor, "fetchall") else []
         if not isinstance(rows, list) or not rows:
@@ -43,7 +41,11 @@ def initialize_schema_version(conn: Any) -> None:
                 )
             else:
                 conn.execute(
-                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
+                    "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
                 )
     except Exception as exc:  # pragma: no cover - defensive
         raise StorageError("Failed to initialize schema version", cause=exc)
+
+
+# Backward compatibility alias
+initialize_schema_version = initialize_schema_version_without_fetchone
