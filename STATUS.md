@@ -27,7 +27,8 @@ Taskfile commands.
   issues/archive/ensure-pytest-bdd-plugin-available-for-tests.md)
   after confirming `pytest-bdd` is installed.
 - `task verify` reports `test_cache_is_backend_specific` and its variant each
-  taking ~64s and emitting `rdflib_sqlalchemy` deprecation warnings.
+  taking ~64s. Replaced `rdflib_sqlalchemy` with `oxrdflib` to eliminate
+  deprecation warnings.
 - `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
    `test_initialize_schema_version` and
     `tests/unit/test_storage_persistence.py::

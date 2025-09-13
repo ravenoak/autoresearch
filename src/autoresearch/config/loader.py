@@ -206,7 +206,7 @@ class ConfigLoader:
             "vector_nprobe": duckdb_cfg.get("vector_nprobe", 10),
             "vector_search_batch_size": duckdb_cfg.get("vector_search_batch_size"),
             "vector_search_timeout_ms": duckdb_cfg.get("vector_search_timeout_ms"),
-            "rdf_backend": rdf_cfg.get("backend", "sqlite"),
+            "rdf_backend": rdf_cfg.get("backend", "oxigraph"),
             "rdf_path": rdf_cfg.get("path", "rdf_store"),
             "use_kuzu": storage_cfg.get("use_kuzu", False),
             "kuzu_path": storage_cfg.get("kuzu_path", "kuzu.db"),

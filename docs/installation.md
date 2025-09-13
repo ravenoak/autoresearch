@@ -261,6 +261,7 @@ been verified to install successfully with `uv pip install`.
 | networkx | 3.5 |
 | opentelemetry-api | 1.36.0 |
 | opentelemetry-sdk | 1.36.0 |
+| oxrdflib | 0.5.0 |
 | prometheus_client | 0.22.1 |
 | psutil | 7.0.0 |
 | pydantic | 2.11.7 |
@@ -268,13 +269,11 @@ been verified to install successfully with `uv pip install`.
 | python-dotenv | 1.1.1 |
 | rank-bm25 | 0.2.2 |
 | rdflib | 7.1.4 |
-| rdflib-sqlalchemy | 0.5.4 |
 | redis | 6.2 |
 | requests | 2.32.4 |
 | responses | 0.25.8 |
 | rich | 14.1.0 |
 | slowapi | 0.1.9 |
-| sqlalchemy | <2 |
 | structlog | 25.4.0 |
 | tabulate | 0.9.0 |
 | tinydb | 4.8.2 |

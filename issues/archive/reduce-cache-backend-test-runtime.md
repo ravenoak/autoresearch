@@ -11,9 +11,9 @@ On September 13, 2025, the test completed in about 0.22 seconds, but
 
 On the latest run on September 13, 2025, `task verify` reported
 `test_cache_is_backend_specific` completing in roughly 0.26 seconds and its
-variant finishing in about 0.21 seconds. Performance is now acceptable, yet
-`rdflib_sqlalchemy` continues to emit deprecation warnings that clutter test
-output.
+variant finishing in about 0.21 seconds. Performance is now acceptable. On
+September 13, 2025, `rdflib_sqlalchemy` was replaced with `oxrdflib`, removing
+the remaining deprecation warnings.
 
 ## Dependencies
 None
@@ -24,4 +24,4 @@ None
 - Warnings from `rdflib_sqlalchemy` are addressed or documented.
 
 ## Status
-Open
+Archived
