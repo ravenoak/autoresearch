@@ -270,3 +270,8 @@ kuzu_path = "knowledge.kuzu"
 
 When enabled each claim is inserted into a `Claim` node table. Basic metrics track query counts and execution time via Prometheus. The Kuzu database is created automatically at the configured path.
 
+## Regression Notes
+
+- 2025-09-13: `initialize_storage` always calls `_create_tables` so schema
+  tables exist even when a previous run has already created them.
+
