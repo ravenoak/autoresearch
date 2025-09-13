@@ -18,6 +18,8 @@ workflows dispatch-only.
 - [ensure-pytest-bdd-plugin-available-for-tests](archive/ensure-pytest-bdd-plugin-available-for-tests.md)
 - [reduce-cache-backend-test-runtime](reduce-cache-backend-test-runtime.md)
 - [avoid-large-downloads-in-task-verify](archive/avoid-large-downloads-in-task-verify.md)
+- [add-test-coverage-for-optional-components](archive/add-test-coverage-for-optional-components.md)
+- [fix-task-verify-coverage-hang](archive/fix-task-verify-coverage-hang.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
