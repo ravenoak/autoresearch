@@ -5,6 +5,8 @@ import pytest
 from .common_steps import application_running
 from autoresearch.cli_utils import format_error, format_success, format_info
 
+pytestmark = pytest.mark.requires_ui
+
 
 @given("the Autoresearch system is running")
 def autoresearch_system_running(tmp_path, monkeypatch):

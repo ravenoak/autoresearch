@@ -9,6 +9,8 @@ from pytest_bdd import scenario, given, when, then
 from autoresearch.models import QueryResponse
 from autoresearch.config.models import ConfigModel
 
+pytestmark = pytest.mark.requires_ui
+
 
 @given("the Streamlit application has a stored query history")
 def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context):

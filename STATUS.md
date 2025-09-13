@@ -11,6 +11,9 @@ Taskfile commands.
   during coverage, leaving a multiprocessing resource tracker `KeyError`.
 - `uv run pytest tests/unit/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
+- Added `requires_*` markers to behavior step files and adjusted LLM extra test.
+- `task coverage` with all extras failed with a segmentation fault; coverage
+  could not be determined.
 - Archived
   [ensure-pytest-bdd-plugin-available-for-tests](issues/archive/ensure-pytest-bdd-plugin-available-for-tests.md)
   after confirming `pytest-bdd` is installed.

@@ -2,7 +2,11 @@ from pytest_bdd import scenario, when, then
 from unittest.mock import patch
 import time
 
+import pytest
+
 from autoresearch.storage import StorageManager
+
+pytestmark = pytest.mark.requires_vss
 
 
 @scenario("../features/vector_search_performance.feature", "Vector search executes quickly")
