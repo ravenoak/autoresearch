@@ -11,16 +11,15 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available—`task check` passes,
-but `task verify` exits with a multiprocessing resource tracker `KeyError`
-after unit tests, even though
-`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
-`test_initialize_schema_version`
-now passes individually. `uv run --extra test pytest` previously reported a
-failing integration test, but a recent full run passes (`289 passed`,
-`10 skipped`). The tracking issue
-[`resolve-integration-test-regressions`](issues/archive/resolve-integration-test-regressions.md)
-is archived.
+across project documentation. The `task` command is currently unavailable and
+`uv run pytest` reports 43 failing integration tests covering API authentication,
+ranking, and storage. Reopened
+[fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
+[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
+and
+[fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)
+track these regressions. Once `task` is restored, `task verify` still exits with
+a multiprocessing resource tracker `KeyError` after unit tests.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
@@ -43,7 +42,7 @@ before running tests.
 - 0.2.0 (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
   - [stabilize-api-and-improve-search](
-    issues/stabilize-api-and-improve-search.md)
+    issues/archive/stabilize-api-and-improve-search.md)
     - [streaming-webhook-refinements](
       issues/archive/streaming-webhook-refinements.md)
     - [configuration-hot-reload-tests](
@@ -78,12 +77,15 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
-- [x] Task CLI availability restored
-  ([restore-task-cli-availability](issues/archive/restore-task-cli-availability.md)).
+- [ ] Task CLI availability restored
+  ([install-task-cli-system-level](issues/install-task-cli-system-level.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
-- [x] Integration tests stabilized.
+- [ ] Integration tests stabilized
+  ([fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
+  [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
+  [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)).
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](
   issues/archive/add-test-coverage-for-optional-components.md);

@@ -1,7 +1,8 @@
 # Install Task CLI system level
 
 ## Context
-The evaluation environment requires the Task CLI available on the PATH so task commands can run.
+The evaluation environment still lacks the Task CLI; current setup scripts leave
+`task` unavailable on PATH.
 
 ## Dependencies
 None
@@ -12,4 +13,4 @@ None
 - `task verify` runs without missing-command errors
 
 ## Status
-Archived
+Open

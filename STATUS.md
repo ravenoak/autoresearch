@@ -4,6 +4,15 @@ Install Go Task with `scripts/setup.sh` or your package manager to enable
 Taskfile commands.
 
 ## September 13, 2025
+- `task` command remains unavailable after running setup scripts; opened
+  [install-task-cli-system-level](issues/install-task-cli-system-level.md).
+- `uv run pytest` reports 43 failing integration tests touching API
+  authentication, ranking formulas, and storage layers.
+- Reopened
+  [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
+  [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
+  and
+  [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md).
 
 - Updated `scripts/check_env.py` to flag unknown extras and Python versions
   outside 3.12–<4.0, and invoked it via the `check-env` task inside `task`
@@ -41,7 +50,7 @@ Taskfile commands.
 
 ## September 12, 2025
 
-- Ran `scripts/codex_setup.sh` to bootstrap the environment and append
+- Ran the setup script to bootstrap the environment and append
   `.venv/bin` to `PATH`.
 - `uv run python scripts/run_task.py check` fails with mypy:
   "type[StorageManager]" missing `update_claim`.
@@ -395,10 +404,10 @@ tracker `KeyError` before integration tests, leaving coverage reports
 incomplete.
 
 ## Open issues
-- [add-storage-initialization-proofs](issues/add-storage-initialization-proofs.md)
+- [install-task-cli-system-level](issues/install-task-cli-system-level.md)
+- [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
+- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
+- [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
-- [fix-check-env-warnings-test](issues/fix-check-env-warnings-test.md)
-- [reduce-cache-backend-test-runtime](issues/reduce-cache-backend-test-runtime.md)
-- [stabilize-api-and-improve-search](issues/stabilize-api-and-improve-search.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)

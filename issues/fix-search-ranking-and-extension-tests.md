@@ -19,4 +19,4 @@ None.
 - Docs reference extension loading and ranking formulae.
 
 ## Status
-Archived
+Open
