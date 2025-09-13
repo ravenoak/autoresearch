@@ -560,6 +560,22 @@ docker-compose up -d redis
       ...
   ```
 
+### Ontology reasoning stubs
+
+Profiling `tests/unit/test_cache.py::test_cache_is_backend_specific` showed the
+`run_ontology_reasoner` call added about sixty seconds per run. Bypass the real
+reasoner in unit tests with an autouse fixture:
+
+```python
+@pytest.fixture(autouse=True)
+def _skip_ontology_reasoner(monkeypatch):
+    monkeypatch.setattr(
+        "autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None
+    )
+```
+
+This stub keeps runtime under ten seconds while preserving cache logic.
+
 ## Updating Baselines
 
 Some integration tests compare runtime metrics against JSON files in
