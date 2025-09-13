@@ -71,7 +71,8 @@ from ..storage import StorageManager
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
-from .ranking import combine_scores, normalize_scores as _normalize_scores
+from .ranking import combine_scores
+from .ranking import normalize_scores as _normalize_scores
 
 Repo: Any | None
 try:
@@ -545,6 +546,9 @@ class Search:
     ) -> Tuple[List[float], List[float]]:
         """Average normalized semantic and vector similarities.
 
+        If the vector store supplies no useful scores the semantic component
+        is returned unchanged to preserve relative ordering.
+
         Args:
             semantic: Raw cosine similarities from the transformer.
             duckdb: Pre-computed similarities from the vector store.
@@ -556,6 +560,8 @@ class Search:
 
         semantic_norm = Search.normalize_scores(semantic)
         duckdb_norm = Search.normalize_scores(duckdb)
+        if not duckdb_norm or max(duckdb_norm) <= 0:
+            return semantic_norm, duckdb_norm
         merged = [(semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(semantic_norm))]
         return merged, duckdb_norm
 
@@ -657,9 +663,7 @@ class Search:
             result["semantic_score"] = semantic_scores[i]
             result["duckdb_score"] = duckdb_scores[i]
             result["credibility_score"] = credibility_scores[i]
-            semantic_component = (
-                semantic_scores[i] if semantic_scores[i] > 0 else 0.25
-            )
+            semantic_component = semantic_scores[i] if semantic_scores[i] > 0 else 0.25
             result["merged_score"] = (
                 bm25_scores[i] * search_cfg.bm25_weight
                 + semantic_component * search_cfg.semantic_similarity_weight

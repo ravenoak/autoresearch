@@ -36,6 +36,7 @@ from .middleware import (
     get_remote_address,
 )
 from .models import (
+    AsyncQueryResponseV1,
     BatchQueryRequestV1,
     BatchQueryResponseV1,
     QueryRequestV1,
@@ -260,7 +261,9 @@ async def batch_query_endpoint(
 
 
 @router.post("/query/async", dependencies=[require_permission("query")])
-async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -> dict:
+async def async_query_endpoint(
+    request: QueryRequestV1, http_request: Request
+) -> AsyncQueryResponseV1:
     """Run a query asynchronously and return its task identifier.
 
     Args:
@@ -268,7 +271,7 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
         http_request: Raw ``Request`` object for storing task state.
 
     Returns:
-        dict: Mapping containing the ``query_id`` of the background task.
+        AsyncQueryResponseV1: ``query_id`` for tracking the background task.
     """
     validate_version(request.version)
     config = get_config()
@@ -311,7 +314,7 @@ async def async_query_endpoint(request: QueryRequestV1, http_request: Request) -
 
     future: asyncio.Future = asyncio.create_task(runner())
     http_request.app.state.async_tasks[task_id] = future
-    return {"query_id": task_id}
+    return AsyncQueryResponseV1(query_id=task_id)
 
 
 @router.get("/query/{query_id}", dependencies=[require_permission("query")])
