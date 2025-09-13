@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import difflib
-from typing import Sequence, List
+from typing import Sequence, List, Mapping
 
 import click
 import typer
 
 from rich.console import Console
+from fastapi import HTTPException
 
 from .cli_utils import (
     print_error,
@@ -38,6 +39,24 @@ def parse_agent_groups(groups: Sequence[str]) -> List[List[str]]:
         if agents:
             parsed.append(agents)
     return parsed
+
+
+def require_api_key(headers: Mapping[str, str]) -> None:
+    """Ensure an ``X-API-Key`` header is present.
+
+    Args:
+        headers: Mapping of request headers.
+
+    Raises:
+        HTTPException: ``401`` when the header is missing.
+    """
+
+    if "X-API-Key" not in headers:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key",
+            headers={"WWW-Authenticate": "API-Key"},
+        )
 
 
 def report_missing_tables(tables: Sequence[str], console: Console | None = None) -> None:

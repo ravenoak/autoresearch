@@ -12,6 +12,21 @@ required scheme.
 - Missing or incorrect keys trigger `401` with `WWW-Authenticate: API-Key`.
 - Multiple keys with different roles can be defined via `api.api_keys`.
 
+### Example
+
+```bash
+curl -i -H "X-API-Key: $AUTORESEARCH_API_KEY" \
+  http://localhost:8000/metrics
+```
+
+A missing header yields:
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: API-Key
+{"detail": "Missing API key"}
+```
+
 ## Bearer tokens
 
 - Set `api.bearer_token` to enable bearer authentication.

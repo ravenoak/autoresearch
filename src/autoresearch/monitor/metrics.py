@@ -7,9 +7,17 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 
 async def metrics_endpoint(_: None = None) -> PlainTextResponse:
-    """Return current metrics in Prometheus text format."""
+    """Return current metrics in Prometheus text format.
 
-    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+    Returns:
+        PlainTextResponse: Prometheus metrics with ``200`` status code.
+    """
+
+    return PlainTextResponse(
+        generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+        status_code=200,
+    )
 
 
 __all__ = ["metrics_endpoint"]

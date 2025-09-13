@@ -19,6 +19,21 @@ at a fixed interval. Gauges include `autoresearch_redis_up`,
 `autoresearch_ray_up`, and `autoresearch_node_health`. Use Prometheus to
 scrape the metrics and set alerts when values drop to `0`.
 
+When API authentication is enabled, include the `X-API-Key` header:
+
+```bash
+curl -i -H "X-API-Key: $AUTORESEARCH_API_KEY" \
+  http://localhost:8000/metrics
+```
+
+Missing keys produce:
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: API-Key
+{"detail": "Missing API key"}
+```
+
 ## CLI usage
 
 Run the monitor command to print current CPU and memory usage:
