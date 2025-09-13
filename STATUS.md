@@ -4,8 +4,8 @@ Install Go Task with `scripts/setup.sh` or your package manager to enable
 Taskfile commands.
 
 ## September 13, 2025
-- `task` command remains unavailable after running setup scripts; opened
-  [install-task-cli-system-level](issues/install-task-cli-system-level.md).
+- Installed Task CLI via setup script; archived
+  [install-task-cli-system-level](issues/archive/install-task-cli-system-level.md).
 - `uv run pytest` reports 43 failing integration tests touching API
   authentication, ranking formulas, and storage layers.
 - Reopened
@@ -21,9 +21,9 @@ Taskfile commands.
   tests.
 - Ran `scripts/setup.sh` to install Task 3.44.1 and sync development extras.
 - `task check` succeeds.
- - `task verify` installs optional extras and runs unit tests but exits with a
-   multiprocessing resource tracker `KeyError` after coverage, leaving
-   integration tests unfinished.
+ - `task verify` installs optional extras and currently fails at
+   `tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key`, so
+   integration tests do not run.
 - `uv run pytest tests/unit/test_version.py -q` passes without
   `bdd_features_base_dir` warnings.
 - `uv run mkdocs build` completes after installing `mkdocs-material` and
@@ -404,7 +404,6 @@ tracker `KeyError` before integration tests, leaving coverage reports
 incomplete.
 
 ## Open issues
-- [install-task-cli-system-level](issues/install-task-cli-system-level.md)
 - [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)

@@ -13,4 +13,4 @@ None
 - `task verify` runs without missing-command errors
 
 ## Status
-Open
+Archived

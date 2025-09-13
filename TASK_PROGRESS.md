@@ -2,11 +2,10 @@
 
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 13, 2025**, 
-running `scripts/setup.sh` installs Task 3.44.1 and required extras. 
-`task check` succeeds. `task verify` installs optional extras and runs unit
-tests but exits with a multiprocessing resource tracker `KeyError` before
-integration tests, and `test_cache_is_backend_specific` still requires about
-64 seconds. Coverage reports are not produced.
+running `scripts/setup.sh` installs Task 3.44.1 and required extras.
+`task check` succeeds. `task verify` installs optional extras and currently
+fails at `tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key`,
+so integration tests and coverage reports are skipped.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage 
 status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**, 
 with the final **0.1.0** release targeted for **October 1, 2026**.
@@ -245,13 +244,13 @@ Full suite attempts:
 ./.venv/bin/task check
 ```
 
-Result: 8 passed in 1.44s
+Result: 8 passed in ~1s
 
 ```
 ./.venv/bin/task verify
 ```
 
-Result: `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version` failed.
+Result: `tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key` failed.
 
 ### Performance Baselines
 

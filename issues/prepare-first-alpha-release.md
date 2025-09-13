@@ -7,7 +7,7 @@ finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only.
 
 ## Dependencies
-- [install-task-cli-system-level](install-task-cli-system-level.md)
+- [install-task-cli-system-level](archive/install-task-cli-system-level.md)
 - [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
 - [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
