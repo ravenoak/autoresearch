@@ -27,6 +27,13 @@ The relationships between these classes and their external dependencies are docu
 
 See [specs/storage.md](specs/storage.md) for persistence guarantees.
 
+## Schema Versioning
+
+DuckDB tracks migrations in a `metadata` table. During `setup()` the backend
+calls `_initialize_schema_version` to ensure a `schema_version` row exists. If
+the entry is absent the method inserts a default value of `1`. Migrations read
+this value to determine required upgrades.
+
 ## Incremental Updates
 
 `StorageManager.persist_claim()` supports partial updates. When a claim with an

@@ -48,9 +48,7 @@ class TestDuckDBStorageBackend:
             mock_config_loader.return_value = mock_config
 
             # Mock the _create_tables method
-            with patch.object(
-                DuckDBStorageBackend, "_create_tables"
-            ) as mock_create_tables:
+            with patch.object(DuckDBStorageBackend, "_create_tables") as mock_create_tables:
                 # Setup the backend
                 backend = DuckDBStorageBackend()
                 backend.setup()
@@ -143,43 +141,27 @@ class TestDuckDBStorageBackend:
             call(
                 "CREATE TABLE IF NOT EXISTS edges(src VARCHAR, dst VARCHAR, rel VARCHAR, w DOUBLE)"
             ),
-            call(
-                "CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding FLOAT[384])"
-            ),
+            call("CREATE TABLE IF NOT EXISTS embeddings(node_id VARCHAR, embedding FLOAT[384])"),
             call("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)"),
         ]
         mock_conn.execute.assert_has_calls(expected_calls, any_order=True)
 
     @patch("autoresearch.storage_backends.duckdb.connect")
     def test_initialize_schema_version(self, mock_connect):
-        """Test initializing schema version."""
-        # Mock the connection
+        """Test initializing schema version inserts a default entry."""
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
 
-        # Mock the fetchall method to return an empty list (no version)
         mock_result = MagicMock()
         mock_result.fetchall.return_value = []
         mock_conn.execute.return_value = mock_result
-        class_cursor = MagicMock()
-        class_cursor.fetchone.return_value = None
-        class_execute = MagicMock(return_value=class_cursor)
-        mock_conn.__class__.execute = class_execute
 
-        # Setup the backend
         backend = DuckDBStorageBackend()
-        backend.setup(
-            db_path=":memory:", skip_migrations=True
-        )  # Skip migrations to isolate the test
-
-        # Call the _initialize_schema_version method directly
+        backend._conn = mock_conn
         backend._initialize_schema_version()
 
-        # Verify that the class-level execute method was called to insert the
-        # schema version
-        class_execute.assert_any_call(
-            mock_conn,
-            "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')",
+        mock_conn.execute.assert_any_call(
+            "INSERT INTO metadata (key, value) VALUES ('schema_version', '1')"
         )
 
     @patch("autoresearch.storage_backends.duckdb.connect")
@@ -202,9 +184,7 @@ class TestDuckDBStorageBackend:
         version = backend.get_schema_version()
 
         # Verify that the execute method was called with the correct query
-        mock_conn.execute.assert_any_call(
-            "SELECT value FROM metadata WHERE key = 'schema_version'"
-        )
+        mock_conn.execute.assert_any_call("SELECT value FROM metadata WHERE key = 'schema_version'")
 
         # Verify that the schema version is correct
         assert version == 2
@@ -229,9 +209,7 @@ class TestDuckDBStorageBackend:
         version = backend.get_schema_version(initialize_if_missing=False)
 
         # Verify that the execute method was called with the correct query
-        mock_conn.execute.assert_any_call(
-            "SELECT value FROM metadata WHERE key = 'schema_version'"
-        )
+        mock_conn.execute.assert_any_call("SELECT value FROM metadata WHERE key = 'schema_version'")
 
         # Verify that the schema version is None
         assert version is None
@@ -265,9 +243,7 @@ class TestDuckDBStorageBackend:
         # Mock the get_schema_version method to return version 1
         with patch.object(DuckDBStorageBackend, "get_schema_version", return_value=1):
             # Mock the update_schema_version method
-            with patch.object(
-                DuckDBStorageBackend, "update_schema_version"
-            ) as mock_update_version:
+            with patch.object(DuckDBStorageBackend, "update_schema_version") as mock_update_version:
                 # Setup the backend
                 backend = DuckDBStorageBackend()
                 backend.setup(db_path=":memory:")
@@ -291,8 +267,10 @@ class TestDuckDBStorageBackend:
         backend = DuckDBStorageBackend()
         with patch(
             "autoresearch.storage_backends.ConfigLoader",
-            **{"return_value.config.storage.vector_extension": True,
-               "return_value.config.storage.duckdb.path": ":memory:"},
+            **{
+                "return_value.config.storage.vector_extension": True,
+                "return_value.config.storage.duckdb.path": ":memory:",
+            },
         ):
             with patch(
                 "autoresearch.extensions.VSSExtensionLoader.load_extension",
