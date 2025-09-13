@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 12, 2025**.
+[README](README.md). Last updated **September 13, 2025**.
 
 ## Status
 
