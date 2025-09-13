@@ -14,6 +14,8 @@ from autoresearch.storage import StorageManager, teardown
 
 logger = get_logger(__name__)
 
+pytestmark = pytest.mark.requires_vss
+
 
 # Scenarios
 @scenario(

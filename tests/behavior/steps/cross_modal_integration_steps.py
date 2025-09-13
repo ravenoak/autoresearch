@@ -5,6 +5,8 @@ import pytest
 from .common_steps import application_running
 from autoresearch.models import QueryResponse
 
+pytestmark = pytest.mark.requires_ui
+
 
 @given("the Autoresearch system is running")
 def autoresearch_system_running(tmp_path, monkeypatch):

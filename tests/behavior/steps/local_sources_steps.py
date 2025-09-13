@@ -10,6 +10,8 @@ from docx import Document
 import pytest
 import importlib.util
 
+pytestmark = [pytest.mark.requires_git, pytest.mark.requires_parsers]
+
 try:
     _spec = importlib.util.find_spec("git")
     _git_available = bool(_spec and _spec.origin)

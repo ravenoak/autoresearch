@@ -14,6 +14,8 @@ from .common_steps import (
 pytest_plugins = ["tests.behavior.steps.common_steps"]
 from autoresearch.models import QueryResponse
 
+pytestmark = pytest.mark.requires_ui
+
 
 @given("the Streamlit application is running")
 def streamlit_app_running(monkeypatch, bdd_context, isolate_network, restore_environment):
