@@ -17,6 +17,10 @@ The same run reported failures in:
 - `test_cross_backend_ranking_consistency.py::test_cross_backend_ranking_consistent`
 - `tests/integration/test_relevance_ranking_integration.py::test_rank_results_invalid_weight_sum`
 - `tests/integration/test_optional_extras.py::test_fastembed_available`
+A later run on September 14, 2025, failed in
+`tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking`
+with `hypothesis.errors.FailedHealthCheck` because input generation was too
+slow.
 
 ## Dependencies
 None.
