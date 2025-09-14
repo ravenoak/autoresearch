@@ -14,6 +14,7 @@ workflows dispatch-only.
 - [fix-benchmark-scheduler-scaling-test](fix-benchmark-scheduler-scaling-test.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
+- [document-llm-extras-for-task-check](document-llm-extras-for-task-check.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
