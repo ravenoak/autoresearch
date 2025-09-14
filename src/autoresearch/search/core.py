@@ -627,7 +627,11 @@ class Search:
                 weights=weights,
                 suggestion="Enable a component or increase its weight",
             )
-        normalized_weights = tuple(value / weights_sum for value in weights.values())
+        normalized_weights: tuple[float, float, float] = (
+            weights["bm25_weight"] / weights_sum,
+            weights["semantic_similarity_weight"] / weights_sum,
+            weights["source_credibility_weight"] / weights_sum,
+        )
 
         # Calculate scores using different algorithms
         bm25_scores = (

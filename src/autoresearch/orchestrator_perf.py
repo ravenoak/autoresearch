@@ -13,6 +13,7 @@ import pstats
 import resource
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Dict
 
 
@@ -71,12 +72,29 @@ def simulate(
     return metrics
 
 
+@dataclass
+class BenchmarkResult:
+    """Performance metrics from a scheduling benchmark.
+
+    Attributes:
+        throughput: Observed throughput in tasks per second.
+        cpu_time: User CPU time consumed in seconds.
+        mem_kb: Resident memory usage in kilobytes.
+        profile: Aggregated profiler statistics.
+    """
+
+    throughput: float
+    cpu_time: float
+    mem_kb: float
+    profile: str = ""
+
+
 def benchmark_scheduler(
     workers: int,
     tasks: int,
     mem_per_task: float = 0.0,
     profile: bool = False,
-) -> Dict[str, float]:
+) -> BenchmarkResult:
     """Measure scheduling throughput and resource usage.
 
     Each task allocates memory and sleeps briefly to mimic an I/O-bound
@@ -90,7 +108,7 @@ def benchmark_scheduler(
         profile: Whether to return cProfile statistics for the run.
 
     Returns:
-        Dictionary with observed throughput in tasks/s, CPU time, memory usage
+        BenchmarkResult containing throughput in tasks/s, CPU time, memory usage
         in kilobytes, and optional profiler output.
 
     Raises:
@@ -130,9 +148,9 @@ def benchmark_scheduler(
     throughput = tasks / elapsed if elapsed > 0 else float("inf")
     cpu_time = end_res.ru_utime - start_res.ru_utime
     mem_kb = end_res.ru_maxrss - start_res.ru_maxrss
-    return {
-        "throughput": throughput,
-        "cpu_time": cpu_time,
-        "mem_kb": mem_kb,
-        "profile": profile_output,
-    }
+    return BenchmarkResult(
+        throughput=throughput,
+        cpu_time=cpu_time,
+        mem_kb=mem_kb,
+        profile=profile_output,
+    )
