@@ -9,27 +9,30 @@ if not TYPE_CHECKING:  # pragma: no cover - runtime import
         message=".*pkg_resources.*",
         category=DeprecationWarning,
     )
+    warnings.filterwarnings(
+        "ignore",
+        message=".*split_arg_string.*",
+        category=DeprecationWarning,
+    )
     try:
         import pydantic.root_model  # noqa: F401
     except Exception:  # pragma: no cover - best effort
         pass
     try:
-        import importlib.util
-        import sys
-        from pathlib import Path
+        import shlex
 
-        spec = importlib.util.find_spec("weasel.util.config")
-        if spec and spec.origin:
-            src = Path(spec.origin).read_text()
-            # Replace deprecated Click API with ``shlex.split`` to silence
-            # deprecation warnings from the ``weasel`` dependency.
-            src = src.replace(
-                "from click.parser import split_arg_string",
-                "import shlex\n\nsplit_arg_string = shlex.split",
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=".*split_arg_string.*",
+                category=DeprecationWarning,
             )
-            src = src.replace("click.parser.split_arg_string", "shlex.split")
-            module = importlib.util.module_from_spec(spec)
-            exec(compile(src, spec.origin, "exec"), module.__dict__)
-            sys.modules["weasel.util.config"] = module
+            import weasel.util.config as weasel_config
+            import spacy.cli._util as spacy_cli_util
+
+        # Replace deprecated Click API with ``shlex.split`` to silence
+        # deprecation warnings from transitive dependencies.
+        weasel_config.split_arg_string = shlex.split
+        spacy_cli_util.split_arg_string = shlex.split
     except Exception:  # pragma: no cover - best effort
         pass

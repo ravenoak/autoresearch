@@ -111,7 +111,7 @@ analysis = [
 # CPU-friendly LLM dependencies
 llm = [
     "dspy-ai >=2.6.27",
-    "fastembed >=0.7.3,<0.8"
+    "fastembed ==0.7.3"
 ]
 # Dependencies needed only for running tests
 test = [
