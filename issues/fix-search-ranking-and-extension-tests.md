@@ -13,6 +13,10 @@ expects a stubbed extension file but returns a directory path.
 On September 14, 2025, `task verify` failed in
 `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
 when ranking returned `0.0` instead of `1.0` with disabled features.
+The same run reported failures in:
+- `test_cross_backend_ranking_consistency.py::test_cross_backend_ranking_consistent`
+- `tests/integration/test_relevance_ranking_integration.py::test_rank_results_invalid_weight_sum`
+- `tests/integration/test_optional_extras.py::test_fastembed_available`
 
 ## Dependencies
 None.
@@ -20,7 +24,9 @@ None.
 ## Acceptance Criteria
 - DuckDB VSS extension loads with fallback when network access is unavailable.
 - Ranking formula tests match documented values.
-- Integration tests for extension loading and ranking pass.
+- Integration tests for extension loading, ranking consistency, and invalid
+  weight detection pass.
+- Optional extras such as `fastembed` load in test environments.
 - Docs reference extension loading and ranking formulae.
 
 ## Status
