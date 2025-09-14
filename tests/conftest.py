@@ -28,6 +28,7 @@ pytest_plugins = [
     "tests.fixtures.storage",
     "tests.fixtures.redis",
     "tests.fixtures.extras",
+    "tests.fixtures.diagnostics",
     "pytest_httpx",
 ]
 
