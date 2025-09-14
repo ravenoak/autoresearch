@@ -1,21 +1,25 @@
 # Orchestrator performance
 
-Benchmark executed on 2025-09-11 using:
+Benchmark executed on 2025-09-14 using:
 
 ```sh
 uv run scripts/scheduling_resource_benchmark.py --max-workers 4 --tasks 100 \
     --arrival-rate 3 --service-rate 5 --mem-per-task 0.5
 ```
 
-Results showed increasing throughput as workers scaled:
+Empirical throughput across worker counts:
 
-- 1 worker: ~846 tasks/s, CPU time 0.012 s.
-- 2 workers: ~1665 tasks/s, CPU time 0.012 s.
-- 3 workers: ~2426 tasks/s, CPU time 0.008 s.
-- 4 workers: ~3179 tasks/s, CPU time 0.010 s.
+- 1 worker: ~795 tasks/s, CPU time 0.012 s.
+- 2 workers: ~1563 tasks/s, CPU time 0.010 s.
+- 3 workers: ~1763 tasks/s, CPU time 0.010 s.
+- 4 workers: ~2811 tasks/s, CPU time 0.012 s.
 
-Profiling uncovered a list rotation routine in `execution._rotate_list`
-that allocated multiple intermediate lists. The implementation now uses
+These ranges show near-linear scaling up to two workers with diminishing
+returns beyond that. Tests check for an improvement factor controlled by the
+``SCHEDULER_SCALE_THRESHOLD`` environment variable, defaulting to 1.1.
+
+Profiling uncovered a list rotation routine in `execution._rotate_list` that
+allocated multiple intermediate lists. The implementation now uses
 `itertools.islice` and `itertools.chain` to build the rotated sequence in a
 single pass, reducing memory overhead for large agent lists.
 
