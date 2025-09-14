@@ -85,8 +85,8 @@ def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
     StorageManager.teardown(remove_db=True)
     StorageManager.setup()
 
-    store = StorageManager.get_rdf_store()
-    assert store.store.__class__.__name__ == "OxigraphStore"
+    StorageManager.get_rdf_store()
+    assert StorageManager.get_rdf_backend_identifier() == "Oxigraph"
 
 
 def test_oxrdflib_missing_plugin(tmp_path, monkeypatch):
