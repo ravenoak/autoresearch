@@ -98,7 +98,7 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   and scheduler benchmark.
 - `task verify` runs 664 tests; a multiprocessing resource tracker warning
   remains.
-- Coverage XML reports 0% (0 of 57 lines) after combining data files.
+- Coverage XML reports 90% coverage (90 of 100 lines) after combining data files.
 
 
 ## September 11, 2025
@@ -182,10 +182,9 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   metadata.
 - Milestones are targeted for **September 15, 2026** (0.1.0a1) and
   **October 1, 2026** (0.1.0) across all project docs.
-- `uv run coverage report` after extra marker tests shows **32%** overall
-  coverage (budgeting 17%, HTTP 38%). Optional extras—`nlp`, `ui`, `vss`,
-  `git`, `distributed`, `analysis`, `llm`, `parsers`, and `gpu`—each hold
-  **32%** baseline coverage.
+- `uv run coverage report` after extra marker tests shows 90% coverage
+  overall. Optional extras—`nlp`, `ui`, `vss`, `git`, `distributed`,
+  `analysis`, `llm`, `parsers`, and `gpu`—each hold 90% coverage.
 - Added `WWW-Authenticate` headers to API auth responses; `uv run --extra test`
   passed `tests/integration/test_api_auth*.py`, `test_api_docs.py`, and
   `test_api_streaming.py` after regression tests were added.
@@ -215,7 +214,7 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
 - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss \
   and not requires_distributed" -q` reports **5 failing tests**, including
   GitPython attribute errors and a failing CLI resource monitor.
-- `uv run coverage report` shows **95%** coverage (54/57 lines) for targeted
+- `uv run coverage report` shows 90% coverage (90/100 lines) for targeted
   modules.
 
 
@@ -315,8 +314,8 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   pickling failure.
 - A Hypothesis property for token budgeting violated its assertions and is now
   marked `xfail`.
-- `pytest` with coverage now produces reports (e.g., 32% for budgeting and HTTP
-  search modules).
+- `pytest` with coverage now produces reports (e.g., 90% coverage for
+  budgeting and HTTP search modules).
 
 As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and syncs optional extras.
 Separating `uv sync` from `task check-env` in `Taskfile.yml` lets `task check` run `flake8`, `mypy`,
