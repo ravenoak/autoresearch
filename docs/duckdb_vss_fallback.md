@@ -22,8 +22,8 @@ The loader only raises :class:`StorageError` when
 ## Stub mechanism
 
 - [`download_duckdb_extensions.py`][dde] installs the VSS extension.
-- On repeated failures it creates an empty file in `extensions/vss/` and warns
-  that the stub is in use.
+- On repeated failures it creates an empty file in `extensions/vss/`, sets
+  `VECTOR_EXTENSION_PATH` to that stub, and warns that the stub is in use.
 - [`setup.sh`][setup] logs when the stub is selected and records its
   location for reuse.
 

@@ -130,6 +130,7 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     dst = os.path.join(output_extension_dir, f"{extension_name}.duckdb_extension")
     # Create a stub file so the extension path resolves during tests
     Path(dst).touch()
+    os.environ["VECTOR_EXTENSION_PATH"] = dst
     logger.warning(
         "No offline extension configured for %s; created stub at %s",
         extension_name,
@@ -169,16 +170,11 @@ def download_extension(extension_name, output_dir, platform_name=None):
     output_extension_dir = os.path.join(output_dir, "extensions", extension_name)
     os.makedirs(output_extension_dir, exist_ok=True)
 
-    # If an offline copy is configured, reuse it immediately and skip network
-    # access. This mirrors the post-failure fallback but avoids an unnecessary
-    # download attempt when the extension was previously captured.
+    # Load offline configuration early so any provided variables are available
+    # during fallback, but still attempt a network download first so failures
+    # are logged and retried before relying on cached artifacts.
     offline_vars = load_offline_env()
     env_path = offline_vars.get("VECTOR_EXTENSION_PATH")
-    if extension_name == "vss" and env_path and os.path.exists(env_path):
-        dst = os.path.join(output_extension_dir, os.path.basename(env_path))
-        shutil.copy2(env_path, dst)
-        logger.info("Using offline extension from %s", env_path)
-        return output_extension_dir
 
     if duckdb is None:
         logger.warning("duckdb package not available; falling back to offline copy if present")
