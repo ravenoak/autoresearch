@@ -9,7 +9,7 @@ applied uniformly across search backends.
 ## Algorithms
 
 - Weight cosine similarity and metadata freshness.
-- Normalize scores before applying a deterministic sort.
+- Normalize scores with min–max scaling before applying a deterministic sort.
 
 ## Example
 
@@ -21,10 +21,9 @@ semantic = [0.8, 0.2]
 credibility = [0.9, 0.5]
 ```
 
-After normalizing BM25 to `1` and `0.33` and applying weights of `0.5`, `0.3`,
-and `0.2` respectively, the combined scores become `1.0` and `0.53`. The final
-normalization scales them to `1.0` and `0.53`, keeping values within the
-`0` to `1` range.
+Min–max normalization maps each component to `1` and `0`. Applying weights of
+`0.5`, `0.3`, and `0.2` produces combined scores of `1.0` and `0.0`. A final
+normalization step keeps the results within the `0` to `1` range.
 
 ## Invariants
 

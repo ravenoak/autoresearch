@@ -22,10 +22,15 @@ def normalize_scores(scores: Sequence[float]) -> List[float]:
     """
     if not scores:
         return []
+
+    min_score = min(scores)
     max_score = max(scores)
-    if max_score <= 0:
+
+    if max_score == min_score:
         return [0.0 for _ in scores]
-    return [s / max_score for s in scores]
+
+    scale = max_score - min_score
+    return [(s - min_score) / scale for s in scores]
 
 
 def combine_scores(
