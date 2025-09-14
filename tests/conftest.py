@@ -44,9 +44,9 @@ def _terminate_active_children() -> None:
         proc.join()
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(autouse=True)
 def _drain_multiprocessing_semaphores() -> None:
-    """Remove leaked multiprocessing semaphores after the test session."""
+    """Remove leaked multiprocessing semaphores after each test."""
     yield
     try:
         cache = resource_tracker._resource_tracker._cache.copy()
