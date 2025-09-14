@@ -11,14 +11,14 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available and `task check`
-passes with `llm` extras installed. `task verify` fails in
-`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
-(expected score `1.0`, got `0.0`), and earlier runs failed at
-`tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`,
-so integration tests and resource tracker diagnostics do not run. The open
+across project documentation. Go Task 3.44.1 is available, but `task check` and
+`task verify` fail due to mypy errors in
+`src/autoresearch/orchestrator_perf.py` and
+`src/autoresearch/search/core.py`, preventing tests from running. The open
+[resolve-mypy-errors-in-orchestrator-perf-and-search-core](issues/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md)
+and
 [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-issue tracks remaining regressions.
+issues track the type-check failures and downstream test regressions.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
