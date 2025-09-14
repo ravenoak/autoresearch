@@ -15,10 +15,12 @@ checks are required.
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
 - Running `task check` without extras reports missing `dspy-ai` and `fastembed`.
-- Running `task check` fails due to mypy errors in
-  `src/autoresearch/orchestrator_perf.py` and
-  `src/autoresearch/search/core.py`. `task verify` stops at the same stage, so
-  tests and coverage do not run.
+- Running `task check` fails with mypy: `Dict entry 3 has incompatible type
+  'str': 'str'; expected 'str': 'float'` at
+  `src/autoresearch/orchestrator_perf.py:137` and `Argument 4 to
+  "combine_scores" has incompatible type 'tuple[float, ...]'; expected
+  'tuple[float, float, float]'` at `src/autoresearch/search/core.py:661`.
+  `task verify` stops at the same stage, so tests and coverage do not run.
 - Opened [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
   to confirm every module has matching specifications and proofs.
 - Opened [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md) to

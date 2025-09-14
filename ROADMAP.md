@@ -91,6 +91,8 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Algorithm validation for ranking and coordination
   ([add-ranking-algorithm-proofs-and-simulations](
   issues/archive/add-ranking-algorithm-proofs-and-simulations.md)).
+- [ ] Add formal validation for the OxiGraph backend
+  ([add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md)).
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
