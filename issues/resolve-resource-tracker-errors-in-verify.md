@@ -34,7 +34,7 @@ Another run on the same day fails in
 still preventing reproduction of the KeyError.
 
 ## Dependencies
-- [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
+- [fix-duckdb-storage-schema-initialization](../archive/fix-duckdb-storage-schema-initialization.md)
 
 ## Acceptance Criteria
 - `task verify` completes without resource tracker errors.
