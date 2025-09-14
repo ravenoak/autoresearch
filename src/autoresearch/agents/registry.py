@@ -5,12 +5,13 @@ This module provides classes for registering, retrieving, and creating agent ins
 It includes a registry for agent types and a factory for creating agent instances.
 """
 
-from typing import Any, Dict, Type, List
+import logging
+from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from contextlib import contextmanager
-import logging
+from typing import Any, Dict, List, Type
 
+from ..llm.adapters import LLMAdapter
 from .base import Agent
 
 log = logging.getLogger(__name__)
@@ -172,7 +173,7 @@ class AgentFactory:
             log.info(f"Registered agent: {name}")
 
     @classmethod
-    def get(cls, name: str, llm_adapter=None) -> Agent:
+    def get(cls, name: str, llm_adapter: LLMAdapter | None = None) -> Agent:
         """Get or create an agent instance.
 
         This method returns a cached instance if available, or creates a new one.
@@ -194,13 +195,11 @@ class AgentFactory:
             if name not in cls._instances:
                 if name not in cls._registry:
                     raise ValueError(f"Unknown agent: {name}")
-                cls._instances[name] = cls._registry[name](
-                    name=name, llm_adapter=llm_adapter
-                )
+                cls._instances[name] = cls._registry[name](name=name, llm_adapter=llm_adapter)
             return cls._instances[name]
 
     @classmethod
-    def create(cls, name: str, llm_adapter=None, **kwargs: Any) -> Agent:
+    def create(cls, name: str, llm_adapter: LLMAdapter | None = None, **kwargs: Any) -> Agent:
         """Create a new agent instance with custom parameters.
 
         This method always creates a new instance and does not cache it.

@@ -1,5 +1,4 @@
-"""
-Storage backend implementations for the autoresearch project.
+"""Storage backend implementations for the autoresearch project.
 
 This module provides storage backend classes that encapsulate the details
 of interacting with different storage systems. The current implementation
@@ -19,8 +18,8 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 import duckdb
 import rdflib
-from rdflib.plugin import Store, register
 from dotenv import dotenv_values
+from rdflib.plugin import Store, register
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
@@ -111,8 +110,7 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
 
 
 class DuckDBStorageBackend:
-    """
-    Encapsulates DuckDB connection and schema logic.
+    """Encapsulates DuckDB connection and schema logic.
 
     This class manages the DuckDB connection, schema creation, and query execution.
     It provides methods for persisting claims, searching by vector similarity,
@@ -132,17 +130,16 @@ class DuckDBStorageBackend:
         self._max_connections: int = 1
 
     def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
-        """
-        Initialize the DuckDB connection and create required tables.
+        """Initialize the DuckDB connection and create required tables.
 
         Args:
             db_path: Optional path to the DuckDB database file. If not provided,
-                    the path is determined with the following precedence:
-                    1. config.storage.duckdb.path
-                    2. DUCKDB_PATH environment variable
-                    3. Default to "kg.duckdb".
+                the path is determined with the following precedence:
+                1. config.storage.duckdb.path
+                2. DUCKDB_PATH environment variable
+                3. Default to "kg.duckdb".
             skip_migrations: If True, skip running migrations after creating tables.
-                            This is useful for testing.
+                This is useful for testing.
 
         Raises:
             StorageError: If the connection cannot be established or tables cannot be created.
@@ -241,8 +238,7 @@ class DuckDBStorageBackend:
                 self.create_hnsw_index()
 
     def _create_tables(self, skip_migrations: bool = False) -> None:
-        """
-        Create the required tables in the DuckDB database.
+        """Create the required tables in the DuckDB database.
 
         This method creates the following tables if they don't exist:
         - nodes: Stores claim nodes with ID, type, content, confidence, and timestamp
@@ -252,7 +248,7 @@ class DuckDBStorageBackend:
 
         Args:
             skip_migrations: If True, skip running migrations after creating tables.
-                            This is useful for testing.
+                This is useful for testing.
 
         Raises:
             StorageError: If the tables cannot be created.
@@ -305,12 +301,11 @@ class DuckDBStorageBackend:
             raise StorageError("Failed to initialize schema version", cause=exc)
 
     def get_schema_version(self, initialize_if_missing: bool = True) -> Optional[int]:
-        """
-        Get the current schema version from the metadata table.
+        """Get the current schema version from the metadata table.
 
         Args:
             initialize_if_missing: If True, initialize the schema version to 1 if it doesn't exist.
-                                  If False, return None if the schema version doesn't exist.
+                If False, return None if the schema version doesn't exist.
 
         Returns:
             The current schema version as an integer, or None if the schema version doesn't exist
@@ -341,8 +336,7 @@ class DuckDBStorageBackend:
             raise StorageError("Failed to get schema version", cause=e)
 
     def update_schema_version(self, version: int) -> None:
-        """
-        Update the schema version in the metadata table.
+        """Update the schema version in the metadata table.
 
         Args:
             version: The new schema version to set.
@@ -363,8 +357,7 @@ class DuckDBStorageBackend:
             raise StorageError(f"Failed to update schema version to {version}", cause=e)
 
     def _run_migrations(self) -> None:
-        """
-        Run schema migrations based on the current schema version.
+        """Run schema migrations based on the current schema version.
 
         This method checks the current schema version and runs any necessary
         migrations to bring the schema up to the latest version.
@@ -397,8 +390,7 @@ class DuckDBStorageBackend:
             raise StorageError("Failed to run migrations", cause=e)
 
     def create_hnsw_index(self) -> None:
-        """
-        Create a Hierarchical Navigable Small World (HNSW) index on the embeddings table.
+        """Create a Hierarchical Navigable Small World (HNSW) index.
 
         This method creates an HNSW index on the embeddings table to enable efficient
         approximate nearest neighbor search. The index parameters (m, ef_construction, metric)
@@ -406,7 +398,7 @@ class DuckDBStorageBackend:
 
         Raises:
             StorageError: If the index creation fails and AUTORESEARCH_STRICT_EXTENSIONS
-                         environment variable is set to "true".
+                environment variable is set to "true".
         """
         if self._conn is None:
             raise StorageError("DuckDB connection not initialized")
@@ -519,8 +511,7 @@ class DuckDBStorageBackend:
                 raise StorageError("Failed to refresh HNSW index", cause=e)
 
     def persist_claim(self, claim: Dict[str, Any]) -> None:
-        """
-        Persist a claim to the DuckDB database.
+        """Persist a claim to the DuckDB database.
 
         This method inserts the claim into three tables in DuckDB:
         1. nodes: Stores the claim's ID, type, content, and confidence score
@@ -528,9 +519,9 @@ class DuckDBStorageBackend:
         3. embeddings: Stores the claim's vector embedding (if available)
 
         Args:
-            claim: The claim to persist as a dictionary. Must contain an 'id' field.
-                  May also contain 'type', 'content', 'confidence', 'relations',
-                  and 'embedding'.
+            claim: The claim to persist as a dictionary. Must contain an "id" field.
+                May also contain "type", "content", "confidence", "relations",
+                and "embedding".
 
         Raises:
             StorageError: If the claim cannot be persisted.
@@ -678,29 +669,24 @@ class DuckDBStorageBackend:
         include_metadata: bool = False,
         filter_types: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Search for claims by vector similarity with advanced options.
+        """Search for claims by vector similarity with advanced options.
 
-        This method performs an optimized vector similarity search using the provided query embedding.
-        It uses the DuckDB VSS extension to find the k most similar claims, ordered by
-        similarity score, with options for filtering and metadata inclusion.
+        This method performs an optimized vector similarity search using the provided query
+        embedding. It uses the DuckDB VSS extension to find the k most similar claims, ordered
+        by similarity score, with options for filtering and metadata inclusion.
 
         Args:
-            query_embedding: The query embedding vector as a list of floats.
-                           Must be non-empty and contain only numeric values.
-            k: The number of results to return. Must be a positive integer.
-               Default is 5.
-            similarity_threshold: Minimum similarity score (0.0 to 1.0) for results.
-                                 Default is 0.0 (no threshold).
-            include_metadata: Whether to include node metadata in results.
-                            Default is False.
-            filter_types: Optional list of claim types to filter by.
-                        Default is None (no filtering).
+            query_embedding: The query embedding vector as a list of floats. Must be non-empty and
+                contain only numeric values.
+            k: The number of results to return. Must be a positive integer. Default is 5.
+            similarity_threshold: Minimum similarity score (0.0 to 1.0) for results. Default is 0.0.
+            include_metadata: Whether to include node metadata in results. Default is False.
+            filter_types: Optional list of claim types to filter by. Default is None.
 
         Returns:
-            List of nearest nodes with their embeddings and metadata, ordered by
-            similarity (highest first). Each result contains 'node_id', 'embedding',
-            'similarity', and optionally 'type', 'content', and 'confidence'.
+            List of nearest nodes with their embeddings and metadata, ordered by similarity
+            (highest first). Each result contains "node_id", "embedding", "similarity", and
+            optionally "type", "content", and "confidence".
 
         Raises:
             StorageError: If the search fails or the VSS extension is not available.
@@ -880,8 +866,7 @@ class DuckDBStorageBackend:
             )
 
     def get_connection(self) -> DuckDBConnection:
-        """
-        Get the DuckDB connection.
+        """Get the DuckDB connection.
 
         Returns:
             The DuckDB connection instance.
@@ -908,8 +893,7 @@ class DuckDBStorageBackend:
             self._pool.put(conn)
 
     def has_vss(self) -> bool:
-        """
-        Check if the VSS extension is available.
+        """Check if the VSS extension is available.
 
         Returns:
             bool: True if the VSS extension is loaded and available, False otherwise.
@@ -917,8 +901,7 @@ class DuckDBStorageBackend:
         return self._has_vss
 
     def close(self) -> None:
-        """
-        Close the DuckDB connection.
+        """Close the DuckDB connection.
 
         This method closes the DuckDB connection and releases any resources.
         It handles exceptions gracefully to ensure that cleanup always completes,
@@ -945,8 +928,7 @@ class DuckDBStorageBackend:
                     self._path = None
 
     def clear(self) -> None:
-        """
-        Clear all data from the DuckDB database.
+        """Clear all data from the DuckDB database.
 
         This method removes all rows from the nodes, edges, and embeddings tables.
 
