@@ -19,6 +19,7 @@ from executing.
 - [fix-oxigraph-backend-initialization](fix-oxigraph-backend-initialization.md)
 - [fix-mkdocs-griffe-warnings](fix-mkdocs-griffe-warnings.md)
 - [add-api-authentication-proofs](add-api-authentication-proofs.md)
+- [add-oxigraph-backend-proofs](add-oxigraph-backend-proofs.md)
 
 [resolve-mypy-errors]: resolve-mypy-errors-in-orchestrator-perf-and-search-core.md
 
