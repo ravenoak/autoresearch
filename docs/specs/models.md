@@ -2,7 +2,8 @@
 
 ## Overview
 
-This module provides data models for Autoresearch.
+This module provides data models for Autoresearch. See the
+[domain model](../domain_model.md) for query relationships.
 
 ## Algorithms
 

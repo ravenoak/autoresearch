@@ -5,7 +5,8 @@
 The storage subsystem persists claims and enables hybrid retrieval across
 graph, vector, and RDF backends. Simulations and targeted tests confirm
 schema idempotency, concurrency safety, and RAM budget enforcement
-[d1][s1][s2][s3][s4][t4][t5][t6].
+[d1][s1][s2][s3][s4][t4][t5][t6]. See the
+[domain model](../domain_model.md) for storage context.
 
 ## Algorithms
 
