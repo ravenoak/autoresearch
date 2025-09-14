@@ -6,10 +6,13 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
 ## September 14, 2025
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
-- `task check` succeeds after activating the development environment.
-- `task verify` fails at
-  `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
-  so coverage and resource tracker checks do not run.
+- Running `task check` without extras reports missing `dspy-ai` and `fastembed`.
+- `EXTRAS="llm" task check` succeeds.
+- `EXTRAS="llm" task verify` fails in
+  `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
+  (expected score `1.0`, got `0.0`), so coverage and resource tracker checks do not
+  run; earlier runs failed at
+  `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`.
 
 - Enabled full integration suite by removing unconditional skips for
   `requires_ui`, `requires_vss`, and `requires_distributed` markers.
@@ -17,11 +20,6 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
 - `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
   currently fails at `tests/unit/test_eviction.py::test_ram_eviction`, so
   coverage results are unavailable.
-
-- Installing `llm` extras allows `task check` to pass. `EXTRAS="llm" task verify`
-  fails in `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
-  (expected score `1.0`, got `0.0`), and earlier runs on the same day failed at
-  `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`.
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
@@ -423,6 +421,9 @@ tracker `KeyError` before integration tests, leaving coverage reports
 incomplete.
 
 ## Open issues
+- [fix-benchmark-scheduler-scaling-test](issues/fix-benchmark-scheduler-scaling-test.md)
+- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+- [document-llm-extras-for-task-check](issues/document-llm-extras-for-task-check.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
