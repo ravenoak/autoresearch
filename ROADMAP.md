@@ -16,12 +16,9 @@ passes with `llm` extras installed. `task verify` fails in
 `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
 (expected score `1.0`, got `0.0`), and earlier runs failed at
 `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`,
-so integration tests and resource tracker diagnostics do not run. Reopened
-[fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
-[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
-and
-[fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)
-still track earlier regressions.
+so integration tests and resource tracker diagnostics do not run. The open
+[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
+issue tracks remaining regressions.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
@@ -79,15 +76,13 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 
 - [x] Environment bootstrap documented and installation instructions
   consolidated.
-- [ ] Task CLI availability restored
-  ([install-task-cli-system-level](issues/install-task-cli-system-level.md)).
+- [x] Task CLI availability restored
+  ([install-task-cli-system-level](issues/archive/install-task-cli-system-level.md)).
 - [x] Packaging verification with DuckDB fallback.
 - [x] Improve DuckDB extension fallback
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
 - [ ] Integration tests stabilized
-  ([fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
-  [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
-  [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)).
+  ([fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)).
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](
   issues/archive/add-test-coverage-for-optional-components.md);
