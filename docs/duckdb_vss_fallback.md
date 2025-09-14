@@ -13,6 +13,8 @@ disabling vector search features.
 2. Install and load the official `vss` extension from DuckDB's repository.
 3. Load the binary shipped with the `duckdb_extension_vss` Python package.
 4. Fall back to the stub in `extensions/vss/` when all else fails.
+5. If the stub binary is missing, a temporary `vss_stub` table marks the
+   extension as loaded so offline tests can proceed.
 
 The loader only raises :class:`StorageError` when
 `AUTORESEARCH_STRICT_EXTENSIONS=true`.
@@ -35,6 +37,7 @@ The loader only raises :class:`StorageError` when
 
 ```
 VECTOR_EXTENSION_PATH=/path/to/vss.duckdb_extension
+ENABLE_ONLINE_EXTENSION_INSTALL=false
 ```
 
 - The unit test [`test_download_duckdb_extensions.py`][test] demonstrates this

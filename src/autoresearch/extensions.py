@@ -94,26 +94,42 @@ class VSSExtensionLoader:
                     log.warning("Failed to load VSS extension from filesystem: %s", e)
 
         if not extension_loaded:
-            try:
-                log.info("Installing vss extension...")
-                conn.execute("INSTALL vss")
-                log.info("Loading vss extension...")
-                conn.execute("LOAD vss")
-                if VSSExtensionLoader.verify_extension(conn, verbose=False):
-                    log.info("VSS extension loaded successfully")
-                    extension_loaded = True
-                else:
-                    log.warning("VSS extension may not be fully loaded")
-            except duckdb.Error as e:  # type: ignore[attr-defined]
-                log.error("Failed to load VSS extension: %s", e)
+            online_ok = os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
+            if online_ok:
+                try:
+                    log.info("Installing vss extension...")
+                    conn.execute("INSTALL vss")
+                    log.info("Loading vss extension...")
+                    conn.execute("LOAD vss")
+                    if VSSExtensionLoader.verify_extension(conn, verbose=False):
+                        log.info("VSS extension loaded successfully")
+                        extension_loaded = True
+                    else:
+                        log.warning("VSS extension may not be fully loaded")
+                except duckdb.Error as e:  # type: ignore[attr-defined]
+                    log.error("Failed to load VSS extension: %s", e)
+                    extension_loaded = VSSExtensionLoader._load_from_package(conn)
+                    if not extension_loaded:
+                        extension_loaded = VSSExtensionLoader._load_local_stub(conn)
+                    if not extension_loaded:
+                        extension_loaded = VSSExtensionLoader._create_stub_marker(conn)
+                    if (
+                        not extension_loaded
+                        and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
+                    ):
+                        raise StorageError("Failed to load VSS extension", cause=e)
+            else:
+                log.info("Skipping online VSS installation")
                 extension_loaded = VSSExtensionLoader._load_from_package(conn)
                 if not extension_loaded:
                     extension_loaded = VSSExtensionLoader._load_local_stub(conn)
+                if not extension_loaded:
+                    extension_loaded = VSSExtensionLoader._create_stub_marker(conn)
                 if (
                     not extension_loaded
                     and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
                 ):
-                    raise StorageError("Failed to load VSS extension", cause=e)
+                    raise StorageError("Failed to load VSS extension")
 
         return extension_loaded
 
@@ -143,6 +159,24 @@ class VSSExtensionLoader:
         except duckdb.Error as err:  # type: ignore[attr-defined]
             log.warning("Failed to load VSS stub: %s", err)
         return False
+
+    @staticmethod
+    def _create_stub_marker(conn: DuckDBConnection) -> bool:
+        """Create a temporary table to mark a stubbed VSS extension.
+
+        Args:
+            conn: Connection where the marker should be created.
+
+        Returns:
+            bool: True if the marker was created, else False.
+        """
+        try:
+            conn.execute("CREATE TEMP TABLE vss_stub(id INTEGER)")
+            log.info("Created VSS stub marker table")
+            return True
+        except duckdb.Error as err:  # type: ignore[attr-defined]
+            log.warning("Failed to create VSS stub marker: %s", err)
+            return False
 
     @staticmethod
     def _load_from_package(conn: DuckDBConnection) -> bool:
@@ -199,8 +233,16 @@ class VSSExtensionLoader:
             else:
                 if verbose:
                     log.warning("VSS extension is not loaded")
-                return False
         except duckdb.Error as e:  # type: ignore[attr-defined]
             if verbose:
                 log.warning(f"VSS extension verification failed: {e}")
+
+        try:
+            conn.execute("SELECT 1 FROM information_schema.tables WHERE table_name='vss_stub'")
+            if verbose:
+                log.info("VSS stub marker present")
+            return True
+        except duckdb.Error as err:  # type: ignore[attr-defined]
+            if verbose:
+                log.warning("VSS stub verification failed: %s", err)
             return False

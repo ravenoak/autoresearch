@@ -37,3 +37,34 @@ def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
     ]
     ranked = Search.rank_results("q", docs)
     assert [d["title"] for d in ranked] == ["b", "a"]
+
+
+def test_rank_results_weighted_combination(monkeypatch) -> None:
+    """Search.rank_results respects component weights when combining scores."""
+    cfg = ConfigModel(
+        search=SearchConfig(
+            bm25_weight=0.2,
+            semantic_similarity_weight=0.8,
+            source_credibility_weight=0.0,
+        )
+    )
+    ConfigLoader.reset_instance()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(lambda q, r: [0.1, 0.9]),
+    )
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda self, q, r, e=None: [0.9, 0.1],
+    )
+    monkeypatch.setattr(
+        Search,
+        "assess_source_credibility",
+        lambda self, r: [1.0, 1.0],
+    )
+    docs = [{"title": "a"}, {"title": "b"}]
+    ranked = Search.rank_results("q", docs)
+    assert [d["title"] for d in ranked] == ["a", "b"]

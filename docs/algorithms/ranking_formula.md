@@ -5,6 +5,10 @@ Autoresearch ranks documents by the convex combination
 \(b\), \(m\), and \(c\) denote the BM25, semantic similarity, and source
 credibility scores. The non negative weights satisfy \(w_b + w_s + w_c = 1\).
 
+Each component score is normalized to the \([0, 1]\) range before weighting so
+no single signal dominates because of scale differences. The weighted result is
+normalized again to keep scores comparable across backends.
+
 ## Proof of convex bounds
 
 Each component score lies in :math:`[0, 1]`. Because the weights sum to one,
