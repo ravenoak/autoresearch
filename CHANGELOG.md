@@ -8,6 +8,8 @@ Reference issues by slugged filename (for example,
 ## [Unreleased]
 - Documented ranking formula test failure in
   [fix-search-ranking-and-extension-tests](issues/archive/fix-search-ranking-and-extension-tests.md).
+- Tracked specification coverage gaps in
+  [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md).
 - Hardened storage concurrency and eviction logic with re-entrant locks
   guarding NetworkX writes and added
   `initialize_schema_version_without_fetchone` helper to support DuckDB

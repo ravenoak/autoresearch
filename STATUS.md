@@ -15,14 +15,12 @@ checks are required.
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
 - Running `task check` without extras reports missing `dspy-ai` and `fastembed`.
-- `EXTRAS="llm" task check` succeeds.
-- `EXTRAS="llm" task verify` fails in
-  `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
-  (expected score `1.0`, got `0.0`), so coverage and resource tracker checks do not
-  run; earlier runs failed at
-  `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`.
-- A later `EXTRAS="llm" task verify` run was interrupted after 135 unit tests,
-  leaving integration tests unexecuted.
+- Running `task check` fails due to mypy errors in
+  `src/autoresearch/orchestrator_perf.py` and
+  `src/autoresearch/search/core.py`. `task verify` stops at the same stage, so
+  tests and coverage do not run.
+- Opened [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
+  to confirm every module has matching specifications and proofs.
 
 - Enabled full integration suite by removing unconditional skips for
   `requires_ui`, `requires_vss`, and `requires_distributed` markers.
