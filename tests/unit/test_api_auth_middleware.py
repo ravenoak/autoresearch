@@ -32,7 +32,8 @@ def test_resolve_role_missing_key():
     middleware = AuthMiddleware(lambda *_: None)
     role, err = middleware._resolve_role(None, cfg.api)
     assert role == "anonymous"
-    assert err is None
+    assert err is not None
+    assert err.status_code == 401
 
 
 def test_dispatch_invalid_token(monkeypatch):

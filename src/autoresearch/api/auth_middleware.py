@@ -36,18 +36,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         )
 
     def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
-        """Return the role for ``key`` or an error response.
-
-        This helper validates API keys but defers missing key handling to
-        :meth:`dispatch`. Deferring allows the caller to return a consistent
-        ``401`` response with the appropriate ``WWW-Authenticate`` header when
-        no credential is supplied. Invalid keys still trigger an immediate
-        error response.
-        """
+        """Return the role for ``key`` or an error response."""
 
         if cfg.api_keys:
             if not key:
-                return "anonymous", None
+                return "anonymous", self._unauthorized("Missing API key", "API-Key")
             for candidate, role in cfg.api_keys.items():
                 if secrets.compare_digest(candidate, key):
                     return role, None
@@ -55,7 +48,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if cfg.api_key:
             if not key:
-                return "anonymous", None
+                return "anonymous", self._unauthorized("Missing API key", "API-Key")
             if not secrets.compare_digest(key, cfg.api_key):
                 return "anonymous", self._unauthorized("Invalid API key", "API-Key")
             return "user", None
@@ -76,24 +69,19 @@ class AuthMiddleware(BaseHTTPMiddleware):
         token = credentials.credentials if credentials else None
 
         key_role, key_error = self._resolve_role(api_key, cfg)
-        provided_key = bool(api_key)
+        if key_error:
+            return key_error
+        key_valid = api_key is not None
 
         token_valid = verify_bearer_token(token, cfg.bearer_token)
-        if key_error and not token_valid:
-            return key_error
-        key_valid = provided_key and key_error is None
-
-        provided_token = bool(token)
-        if provided_token and not token_valid:
+        if token and not token_valid:
             return self._unauthorized("Invalid token", "Bearer")
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
-            if (cfg.api_keys or cfg.api_key) and cfg.bearer_token:
-                return self._unauthorized("Missing API key or token", auth_scheme)
-            if cfg.api_keys or cfg.api_key:
-                return self._unauthorized("Missing API key", auth_scheme)
-            return self._unauthorized("Missing token", auth_scheme)
+            if cfg.bearer_token:
+                return self._unauthorized("Missing token", auth_scheme)
+            return self._unauthorized("Missing API key", auth_scheme)
 
         if key_valid:
             role = key_role

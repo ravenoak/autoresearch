@@ -11,6 +11,8 @@ required scheme.
 - Clients must include the value in the `X-API-Key` header.
 - Missing or incorrect keys trigger `401` with `WWW-Authenticate: API-Key`.
 - Multiple keys with different roles can be defined via `api.api_keys`.
+- Requests without `X-API-Key` are rejected even if a bearer token is
+  supplied.
 
 ### Example
 
@@ -31,11 +33,9 @@ WWW-Authenticate: API-Key
 
 - Set `api.bearer_token` to enable bearer authentication.
 - Clients send `Authorization: Bearer <token>` headers.
-
-- When both API keys and bearer tokens are configured, a valid bearer token
-  suffices even if no API key is supplied. Requests missing both credentials
-  return `401` with `WWW-Authenticate: API-Key` and a `Missing API key or token`
-  message.
+- Bearer tokens authenticate requests only when API keys are disabled.
+- When API keys are enabled, clients must include both a valid token and
+  `X-API-Key`.
 
 See [api.md](api.md) for a complete overview of available endpoints.
 

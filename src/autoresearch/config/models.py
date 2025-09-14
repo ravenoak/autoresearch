@@ -167,6 +167,10 @@ class APIConfig(BaseModel):
         ge=0,
         description="Requests per minute allowed per client IP",
     )
+    monitoring_enabled: bool = Field(
+        default=False,
+        description="Expose Prometheus metrics at /metrics",
+    )
 
 
 class DistributedConfig(BaseModel):
