@@ -11,8 +11,10 @@ required scheme.
 - Clients must include the value in the `X-API-Key` header.
 - Missing or incorrect keys trigger `401` with `WWW-Authenticate: API-Key`.
 - Multiple keys with different roles can be defined via `api.api_keys`.
-- Requests without `X-API-Key` are rejected even if a bearer token is
-  supplied.
+- Each key maps to a role that grants permissions via `api.role_permissions`.
+- Keys are validated and roles assigned before request bodies are read.
+- If an `X-API-Key` header is present but invalid, the request is rejected
+  even when a bearer token is supplied.
 
 ### Example
 
@@ -33,9 +35,18 @@ WWW-Authenticate: API-Key
 
 - Set `api.bearer_token` to enable bearer authentication.
 - Clients send `Authorization: Bearer <token>` headers.
-- Bearer tokens authenticate requests only when API keys are disabled.
-- When API keys are enabled, clients must include both a valid token and
-  `X-API-Key`.
+- Bearer tokens authenticate requests when `api.bearer_token` is set.
+- Tokens grant the `user` role.
+- When API keys are configured, a valid bearer token can be used instead of an
+  `X-API-Key`. Supplying an invalid API key still causes rejection.
+
+## Roles and permissions
+
+- Configure `api.role_permissions` to control which roles may access each
+  endpoint.
+- The default `anonymous` role has no permissions.
+- Bearer tokens resolve to the `user` role unless overridden.
+- Requests missing required permissions receive a `403` response.
 
 See [api.md](api.md) for a complete overview of available endpoints.
 
