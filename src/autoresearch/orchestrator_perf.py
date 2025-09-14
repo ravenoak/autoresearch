@@ -6,7 +6,10 @@ estimate throughput and resource usage.
 
 from __future__ import annotations
 
+import cProfile
+import io
 import math
+import pstats
 import resource
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -68,21 +71,27 @@ def simulate(
     return metrics
 
 
-def benchmark_scheduler(workers: int, tasks: int, mem_per_task: float = 0.0) -> Dict[str, float]:
+def benchmark_scheduler(
+    workers: int,
+    tasks: int,
+    mem_per_task: float = 0.0,
+    profile: bool = False,
+) -> Dict[str, float]:
     """Measure scheduling throughput and resource usage.
 
-    Each task allocates memory and sleeps briefly to mimic an I/O-bound workload
-    that releases the GIL, allowing throughput to scale with the number of
-    workers.
+    Each task allocates memory and sleeps briefly to mimic an I/O-bound
+    workload that releases the GIL, allowing throughput to scale with the number
+    of workers.
 
     Args:
         workers: Number of worker threads to schedule tasks.
         tasks: Total number of tasks to dispatch.
         mem_per_task: Megabytes of memory to allocate per task.
+        profile: Whether to return cProfile statistics for the run.
 
     Returns:
-        Dictionary with observed throughput in tasks/s, CPU time, and memory
-        usage in kilobytes.
+        Dictionary with observed throughput in tasks/s, CPU time, memory usage
+        in kilobytes, and optional profiler output.
 
     Raises:
         ValueError: If ``workers`` or ``tasks`` is not positive.
@@ -91,6 +100,11 @@ def benchmark_scheduler(workers: int, tasks: int, mem_per_task: float = 0.0) -> 
         raise ValueError("workers must be positive")
     if tasks <= 0:
         raise ValueError("tasks must be positive")
+
+    profiler: cProfile.Profile | None = None
+    if profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
 
     start_res = resource.getrusage(resource.RUSAGE_SELF)
     start = time.perf_counter()
@@ -106,7 +120,19 @@ def benchmark_scheduler(workers: int, tasks: int, mem_per_task: float = 0.0) -> 
     elapsed = time.perf_counter() - start
     end_res = resource.getrusage(resource.RUSAGE_SELF)
 
+    profile_output = ""
+    if profiler is not None:
+        profiler.disable()
+        buffer = io.StringIO()
+        pstats.Stats(profiler, stream=buffer).sort_stats("cumulative").print_stats(5)
+        profile_output = buffer.getvalue()
+
     throughput = tasks / elapsed if elapsed > 0 else float("inf")
     cpu_time = end_res.ru_utime - start_res.ru_utime
     mem_kb = end_res.ru_maxrss - start_res.ru_maxrss
-    return {"throughput": throughput, "cpu_time": cpu_time, "mem_kb": mem_kb}
+    return {
+        "throughput": throughput,
+        "cpu_time": cpu_time,
+        "mem_kb": mem_kb,
+        "profile": profile_output,
+    }
