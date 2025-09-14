@@ -25,6 +25,7 @@ checks are required.
   to confirm every module has matching specifications and proofs.
 - Opened [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md) to
   provide formal validation for the OxiGraph storage backend.
+- Generated `SPEC_COVERAGE.md` linking modules to specs and proofs; opened issues for missing or outdated specs.
 
 - Added `task check EXTRAS="llm"` instructions to README and testing
   guidelines; archived
