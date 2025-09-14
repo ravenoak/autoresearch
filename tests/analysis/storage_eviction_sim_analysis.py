@@ -1,15 +1,24 @@
 """Analysis helper for storage eviction simulation."""
 
 import sys
-from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
 
+def _load_module(name: str, path: Path):
+    spec = spec_from_file_location(name, path)
+    if spec and spec.loader:
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    raise ImportError(name)
+
+
 def run() -> dict[str, int]:
     path = Path(__file__).resolve().parents[2] / "scripts" / "storage_eviction_sim.py"
-    sim = SourceFileLoader("storage_eviction_sim", str(path)).load_module()
+    sim = _load_module("storage_eviction_sim", path)
     scenarios = [
         "normal",
         "race",
