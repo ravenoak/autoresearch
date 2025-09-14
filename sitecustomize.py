@@ -13,3 +13,19 @@ if not TYPE_CHECKING:  # pragma: no cover - runtime import
         import pydantic.root_model  # noqa: F401
     except Exception:  # pragma: no cover - best effort
         pass
+    try:
+        import importlib.util, sys, types
+        from pathlib import Path
+
+        spec = importlib.util.find_spec("weasel.util.config")
+        if spec and spec.origin:
+            src = Path(spec.origin).read_text()
+            src = src.replace(
+                "from click.parser import split_arg_string",
+                "import shlex\n\nsplit_arg_string = shlex.split",
+            )
+            module = types.ModuleType("weasel.util.config")
+            exec(compile(src, spec.origin, "exec"), module.__dict__)
+            sys.modules["weasel.util.config"] = module
+    except Exception:  # pragma: no cover - best effort
+        pass
