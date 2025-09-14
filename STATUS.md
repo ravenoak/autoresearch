@@ -42,6 +42,9 @@ checks are required.
   `ImportError` explicitly.
 - Running `task verify` now fails in
   `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`.
+- A subsequent run on 2025-09-14 with the default extras downloaded over 80
+  packages and was interrupted after the first unit test, so full coverage and
+  integration results remain unavailable.
 - Archived [resolve-mypy-errors-in-orchestrator-perf-and-search-core][resolve-mypy-errors-archive]
   after mypy passed in `task check`.
 

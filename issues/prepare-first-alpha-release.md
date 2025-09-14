@@ -8,6 +8,9 @@ workflows dispatch-only. `task check` now passes after resolving earlier mypy
 errors, but `task verify` fails in
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`,
 blocking the release.
+An attempt on 2025-09-14 to run `task verify` with the default extras
+required downloading more than 80 packages and was interrupted after the first
+test, so full results are still pending.
 
 ## Dependencies
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
