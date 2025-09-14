@@ -1,9 +1,11 @@
+import contextlib
 import os
 
 import pytest
 
 from autoresearch.config.models import ConfigModel, DistributedConfig
 from autoresearch.distributed import executors, ProcessExecutor
+from multiprocessing import resource_tracker
 from types import SimpleNamespace
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.state import QueryState
@@ -28,7 +30,9 @@ def _dummy_execute_agent_process(
 
 
 @pytest.fixture
-def process_executor(monkeypatch: pytest.MonkeyPatch) -> ProcessExecutor:
+def process_executor(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> ProcessExecutor:
     """Provide a ProcessExecutor that shuts down cleanly after the test."""
 
     monkeypatch.setattr(executors, "_execute_agent_process", _dummy_execute_agent_process)
@@ -68,11 +72,18 @@ def process_executor(monkeypatch: pytest.MonkeyPatch) -> ProcessExecutor:
         distributed_config=DistributedConfig(enabled=False, num_cpus=2),
     )
     executor = ProcessExecutor(cfg)
-    try:
-        yield executor
-    finally:
+
+    def _cleanup() -> None:
         executor.shutdown()
+        with contextlib.suppress(Exception):
+            cache = resource_tracker._resource_tracker._cache.copy()
+            for name, rtype in cache.items():
+                resource_tracker.unregister(name, rtype)
+                resource_tracker._resource_tracker.maybe_unlink(name, rtype)
         assert pool.closed and pool.joined
+
+    request.addfinalizer(_cleanup)
+    return executor
 
 
 @pytest.mark.integration
