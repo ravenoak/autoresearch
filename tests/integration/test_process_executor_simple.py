@@ -34,19 +34,32 @@ def process_executor(monkeypatch: pytest.MonkeyPatch) -> ProcessExecutor:
     monkeypatch.setattr(executors, "_execute_agent_process", _dummy_execute_agent_process)
 
     class DummyPool:
+        def __init__(self) -> None:
+            self.closed = False
+            self.joined = False
+
         def __enter__(self):
             return self
 
         def __exit__(self, *exc):
+            self.close()
+            self.join()
             return False
+
+        def close(self) -> None:
+            self.closed = True
+
+        def join(self) -> None:
+            self.joined = True
 
         def starmap(self, func, args):
             return [func(*a) for a in args]
 
+    pool = DummyPool()
     monkeypatch.setattr(
         executors.multiprocessing,
         "get_context",
-        lambda _: SimpleNamespace(Pool=lambda processes=None: DummyPool()),
+        lambda _: SimpleNamespace(Pool=lambda processes=None: pool),
     )
     cfg = ConfigModel(
         agents=["A", "B"],
@@ -59,6 +72,7 @@ def process_executor(monkeypatch: pytest.MonkeyPatch) -> ProcessExecutor:
         yield executor
     finally:
         executor.shutdown()
+        assert pool.closed and pool.joined
 
 
 @pytest.mark.integration
