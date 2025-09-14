@@ -10,10 +10,14 @@ checks are required.
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
   "command not found".
+- Attempting `apt-get install -y task` returned "Unable to locate package task".
 - Executing `scripts/codex_setup.sh` did not expose the `task` CLI; commands
   run via `uv run task` instead.
 - `uv run --extra test pytest tests/unit/test_version.py -q` runs two tests in
   0.33s, demonstrating minimal coverage without Task.
+- `uvx pre-commit run --all-files` succeeds.
+- Installed `pytest-bdd`, `hypothesis`, and `freezegun`; `uv run pytest -q`
+  reached 28% before manual interruption.
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
 - Running `task check` without extras reports missing `dspy-ai` and `fastembed`.
