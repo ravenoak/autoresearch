@@ -39,9 +39,12 @@ documented behaviour.
 | `src/autoresearch/mcp_interface.py` | [mcp-interface.md](mcp-interface.md) | `../../tests/unit/test_mcp_interface.py<br>../../tests/behavior/features/mcp_interface.feature` |
 | `src/autoresearch/models.py` | [models.md](models.md) | `../../tests/unit/test_models_docstrings.py` |
 | `src/autoresearch/monitor/` | [monitor.md](monitor.md) | `../../tests/unit/test_main_monitor_commands.py<br>../../tests/unit/test_monitor_cli.py<br>../../tests/unit/test_resource_monitor_gpu.py` |
+| `src/autoresearch/orchestrator_perf.py` | [orchestrator_perf.md](orchestrator_perf.md) | `../../tests/unit/test_orchestrator_perf_sim.py`<br>`../../tests/integration/test_orchestrator_performance.py` |
 | `src/autoresearch/resource_monitor.py` | [resource-monitor.md](resource-monitor.md) | `../../tests/unit/test_resource_monitor_gpu.py<br>../../tests/integration/test_monitor_metrics.py<br>../../scripts/resource_monitor_bounds.py` |
+| `src/autoresearch/scheduler_benchmark.py` | [scheduler_benchmark.md](scheduler_benchmark.md) | `../../tests/unit/test_scheduler_benchmark.py` |
 | `src/autoresearch/storage_backends.py` | [storage-backends.md](storage-backends.md) | `../../tests/unit/test_duckdb_storage_backend.py<br>../../tests/unit/test_duckdb_storage_backend_extended.py` |
 | `src/autoresearch/storage_backup.py` | [storage-backup.md](storage-backup.md) | `../../tests/unit/test_storage_backup.py` |
+| `src/autoresearch/storage_utils.py` | [storage-utils.md](storage-utils.md) | `../../tests/integration/test_storage_schema.py` |
 | `src/autoresearch/streamlit_app.py` | [streamlit-app.md](streamlit-app.md) | `../../tests/unit/test_streamlit_app_edgecases.py` |
 | `src/autoresearch/streamlit_ui.py` | [streamlit-ui.md](streamlit-ui.md) | `../../tests/unit/test_streamlit_ui_helpers.py` |
 | `src/autoresearch/test_tools.py` | [test-tools.md](test-tools.md) | `../../tests/unit/test_test_tools.py` |

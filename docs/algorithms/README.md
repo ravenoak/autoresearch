@@ -27,6 +27,17 @@
 - [Search Cache](cache.md)
 - [CLI Helpers](cli_helpers.md)
 - [Interfaces](interfaces.md)
+- [Agents](agents.md)
+- [API](api.md)
+- [Configuration](config.md)
+- [Distributed](distributed.md)
+- [Examples](examples.md)
+- [LLM](llm.md)
+- [Main Entrypoints](main.md)
+- [Monitor](monitor.md)
+- [Orchestrator Performance](orchestrator_perf.md)
+- [Scheduler Benchmark](scheduler_benchmark.md)
+- [Storage Utilities](storage_utils.md)
 
 ## Proof and Simulation Coverage
 
@@ -62,6 +73,17 @@
 - test_tools – simulation exercises testing tools.
 - tracing – simulation traces execution.
 - visualization – simulation renders graphs.
+- agents – simulation verifies agent coordination.
+- api – simulation exercises HTTP endpoints.
+- config – simulation validates configuration loading.
+- distributed – simulation models node coordination.
+- examples – simulation imports example workflows.
+- llm – simulation checks model adapters.
+- main – simulation exercises CLI entrypoints.
+- monitor – simulation monitors resource metrics.
+- orchestrator_perf – simulation benchmarks worker queues.
+- scheduler_benchmark – simulation measures scheduler resources.
+- storage_utils – simulation initialises schema version.
 
 ### Pending
 - None
