@@ -34,13 +34,14 @@ def test_search_stub_backend(monkeypatch):
     cfg.search.backends = ["stub"]
     cfg.search.context_aware.enabled = False
     cfg.search.max_workers = 1
-    cfg.search.use_bm25 = False
+    cfg.search.use_bm25 = True
     cfg.search.use_semantic_similarity = False
     cfg.search.use_source_credibility = False
     cfg.search.bm25_weight = 1.0
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.source_credibility_weight = 0.0
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0]))
     monkeypatch.setattr(Search, "embedding_lookup", lambda emb, max_results=5: {})
     monkeypatch.setattr(Search, "add_embeddings", lambda res, emb: None)
     monkeypatch.setattr("autoresearch.search.core.get_cached_results", lambda q, n: None)

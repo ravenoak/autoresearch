@@ -14,6 +14,9 @@ combination of multiple signals. The formula is
 The weights \(w_b\), \(w_s\), and \(w_c\) are non-negative and must sum to
 1.0. `semantic_similarity_weight` applies to the average of the embedding and
 DuckDB scores.
+Disabled components contribute a neutral score of `1.0` and are assigned a
+weight of `0.0`. The remaining weights are renormalized so they still sum to
+`1.0`.
 
 ## Properties
 

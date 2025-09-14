@@ -11,6 +11,7 @@ disabling vector search features.
 1. Load a user provided path from `storage.vector_extension_path` or
    `.env.offline`'s `VECTOR_EXTENSION_PATH`.
 2. Install and load the official `vss` extension from DuckDB's repository.
+   Network failures fall through to the remaining steps.
 3. Load the binary shipped with the `duckdb_extension_vss` Python package.
 4. Fall back to the stub in `extensions/vss/` when all else fails.
 5. If the stub binary is missing, a temporary `vss_stub` table marks the

@@ -16,11 +16,11 @@ def test_benchmark_scheduler_scales():
     """Throughput scales and profiling returns stats."""
     one = benchmark_scheduler(1, 50, profile=True)
     two = benchmark_scheduler(2, 50, profile=True)
-    assert one["throughput"] > 0
-    assert two["throughput"] > one["throughput"] * 1.2
-    assert one["cpu_time"] >= 0
-    assert one["mem_kb"] >= 0
-    assert one["profile"]
+    assert one.throughput > 0
+    assert two.throughput > one.throughput * 1.2
+    assert one.cpu_time >= 0
+    assert one.mem_kb >= 0
+    assert one.profile
 
 
 def test_queue_metrics_mm1_values():

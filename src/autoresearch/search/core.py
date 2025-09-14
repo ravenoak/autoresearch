@@ -606,10 +606,16 @@ class Search:
             "semantic_similarity_weight": search_cfg.semantic_similarity_weight,
             "source_credibility_weight": search_cfg.source_credibility_weight,
         }
+        raw_sum = sum(weights.values())
+        if abs(raw_sum - 1.0) > 0.001:
+            raise ConfigError(
+                "Relevance ranking weights must sum to 1.0",
+                weights=weights,
+                current_sum=raw_sum,
+                suggestion="Adjust the weights so they sum to 1.0",
+            )
         if not search_cfg.use_bm25:
             weights["bm25_weight"] = 0.0
-        if not search_cfg.use_semantic_similarity:
-            weights["semantic_similarity_weight"] = 0.0
         if not search_cfg.use_source_credibility:
             weights["source_credibility_weight"] = 0.0
 
@@ -634,23 +640,28 @@ class Search:
         )
 
         # Calculate scores using different algorithms
-        bm25_scores = (
-            type(self).calculate_bm25_scores(query, results)
-            if search_cfg.use_bm25
-            else [1.0] * len(results)
-        )
-        bm25_scores = self.normalize_scores(bm25_scores)
-        credibility_scores = (
-            self.assess_source_credibility(results)
-            if search_cfg.use_source_credibility
-            else [1.0] * len(results)
-        )
-        credibility_scores = self.normalize_scores(credibility_scores)
+        if search_cfg.use_bm25 and BM25_AVAILABLE:
+            bm25_scores = self.normalize_scores(
+                type(self).calculate_bm25_scores(query, results)
+            )
+        else:
+            bm25_scores = [1.0] * len(results)
+
+        if search_cfg.use_source_credibility:
+            credibility_scores = self.normalize_scores(
+                self.assess_source_credibility(results)
+            )
+        else:
+            credibility_scores = [1.0] * len(results)
 
         duckdb_raw = [r.get("similarity", 0.0) for r in results]
         if search_cfg.use_semantic_similarity:
-            semantic_raw = self.calculate_semantic_similarity(query, results, query_embedding)
-            semantic_scores, duckdb_scores = self.merge_semantic_scores(semantic_raw, duckdb_raw)
+            semantic_raw = self.calculate_semantic_similarity(
+                query, results, query_embedding
+            )
+            semantic_scores, duckdb_scores = self.merge_semantic_scores(
+                semantic_raw, duckdb_raw
+            )
         else:
             duckdb_scores = self.normalize_scores(duckdb_raw)
             semantic_scores = duckdb_scores
