@@ -40,7 +40,9 @@ BASE_REQUIREMENTS = {
     "uv": "0.7.0",
 }
 
-BASE_EXTRAS = ["dev-minimal", "test"]
+# Include LLM dependencies to verify packages like ``fastembed`` are
+# installed at compatible versions.
+BASE_EXTRAS = ["dev-minimal", "test", "llm"]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
