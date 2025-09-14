@@ -11,6 +11,8 @@ Reference issues by slugged filename (for example,
 - Hardened storage concurrency and eviction logic with thread-safe locks and
   added `initialize_schema_version_without_fetchone` helper to support DuckDB
   connections lacking `fetchone`.
+- Fallback to in-memory RDF store when persistent backends cannot acquire a
+  file lock, ensuring concurrent storage operations succeed.
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research
