@@ -606,15 +606,12 @@ class Search:
             "semantic_similarity_weight": search_cfg.semantic_similarity_weight,
             "source_credibility_weight": search_cfg.source_credibility_weight,
         }
-        weights_sum = sum(weights.values())
-
-        if abs(weights_sum - 1.0) > 0.001:
-            raise ConfigError(
-                "Relevance ranking weights must sum to 1.0",
-                current_sum=weights_sum,
-                weights=weights,
-                suggestion="Adjust the weights so they sum to 1.0",
-            )
+        if not search_cfg.use_bm25:
+            weights["bm25_weight"] = 0.0
+        if not search_cfg.use_semantic_similarity:
+            weights["semantic_similarity_weight"] = 0.0
+        if not search_cfg.use_source_credibility:
+            weights["source_credibility_weight"] = 0.0
 
         if any(value < 0 for value in weights.values()):
             raise ConfigError(
@@ -622,6 +619,15 @@ class Search:
                 weights=weights,
                 suggestion="Set negative weights to zero or a positive value",
             )
+
+        weights_sum = sum(weights.values())
+        if weights_sum <= 0:
+            raise ConfigError(
+                "At least one ranking weight must be positive and enabled",
+                weights=weights,
+                suggestion="Enable a component or increase its weight",
+            )
+        normalized_weights = tuple(value / weights_sum for value in weights.values())
 
         # Calculate scores using different algorithms
         bm25_scores = (
@@ -652,11 +658,7 @@ class Search:
             bm25_scores,
             semantic_scores,
             credibility_scores,
-            (
-                search_cfg.bm25_weight,
-                search_cfg.semantic_similarity_weight,
-                search_cfg.source_credibility_weight,
-            ),
+            normalized_weights,
         )
 
         # Add scores to results for debugging/transparency
@@ -668,8 +670,7 @@ class Search:
             result["credibility_score"] = credibility_scores[i]
             semantic_component = semantic_scores[i] if semantic_scores[i] > 0 else 0.25
             result["merged_score"] = (
-                bm25_scores[i] * search_cfg.bm25_weight
-                + semantic_component * search_cfg.semantic_similarity_weight
+                bm25_scores[i] * normalized_weights[0] + semantic_component * normalized_weights[1]
             )
 
         # Sort results by final score (descending)
