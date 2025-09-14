@@ -195,7 +195,9 @@ def test_api_key_roles_integration(monkeypatch, api_client):
 
     resp = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
     assert resp.status_code == 200
-
+    missing = api_client.post("/query", json={"query": "q"})
+    assert missing.status_code == 401
+    assert missing.json()["detail"] == "Missing API key"
     bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid API key"
@@ -217,6 +219,7 @@ def test_stream_requires_api_key(monkeypatch, api_client):
     unauth = api_client.post("/query/stream", json={"query": "q"})
     assert unauth.status_code == 401
     assert unauth.headers["WWW-Authenticate"] == "API-Key"
+    assert unauth.json()["detail"] == "Missing API key"
 
     with api_client.stream(
         "POST", "/query/stream", json={"query": "q"}, headers={"X-API-Key": "secret"}

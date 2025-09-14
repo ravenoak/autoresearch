@@ -23,6 +23,7 @@ def dummy_run_query(query, config, callbacks=None, **kwargs):
 def setup_patches(monkeypatch):
     cfg = ConfigModel(loops=1, output_format="json")
     cfg.api.role_permissions["anonymous"] = ["query", "metrics"]
+    cfg.api.monitoring_enabled = True
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     responses = iter(["test", "", "q"])
     monkeypatch.setattr("autoresearch.main.Prompt.ask", lambda *a, **k: next(responses))
@@ -83,6 +84,7 @@ def test_system_monitor_metrics_exposed(monkeypatch, api_client):
     setup_patches(monkeypatch)
     cfg = ConfigModel(loops=1, output_format="json")
     cfg.api.role_permissions["anonymous"] = ["metrics"]
+    cfg.api.monitoring_enabled = True
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: 5.0)
     mem = type("m", (), {"percent": 10.0})()
@@ -151,7 +153,7 @@ def test_monitor_resources_cli(monkeypatch):
 
 
 def test_metrics_requires_api_key(monkeypatch, api_client):
-    cfg = ConfigModel(api=APIConfig(api_key="secret"))
+    cfg = ConfigModel(api=APIConfig(api_key="secret", monitoring_enabled=True))
     cfg.api.role_permissions["user"] = ["metrics"]
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
     resp = api_client.get("/metrics")

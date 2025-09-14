@@ -5,6 +5,9 @@ Autoresearch exposes system and node metrics via Prometheus. The
 `NodeHealthMonitor` reports connectivity to Redis and Ray and provides a
 simple health indicator.
 
+Set `api.monitoring_enabled` to `true` to expose the `/metrics` endpoint on
+the API server.
+
 ```python
 from autoresearch.monitor.node_health import NodeHealthMonitor
 

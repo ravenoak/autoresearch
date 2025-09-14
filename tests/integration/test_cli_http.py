@@ -195,6 +195,7 @@ def test_http_api_key(monkeypatch):
     """API should require the correct key when enabled."""
     cfg = _common_patches(monkeypatch)
     cfg.api.api_key = "secret"
+    cfg.api.bearer_token = "token"
     with TestClient(api_app) as client:
         DummyStorage.persisted.append(
             {"id": "dummy-claim-id", "type": "thesis", "content": "Dummy claim for testing"}
@@ -216,6 +217,14 @@ def test_http_api_key(monkeypatch):
                 "/query",
                 json={"query": "test query"},
                 headers={"X-API-Key": "bad"},
+            )
+            assert resp.status_code == 401
+            assert resp.headers["WWW-Authenticate"] == "API-Key"
+
+            resp = client.post(
+                "/query",
+                json={"query": "test query"},
+                headers={"Authorization": "Bearer token"},
             )
             assert resp.status_code == 401
             assert resp.headers["WWW-Authenticate"] == "API-Key"
