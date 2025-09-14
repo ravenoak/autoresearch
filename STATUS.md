@@ -436,9 +436,14 @@ tracker `KeyError` before integration tests, leaving coverage reports
 incomplete.
 
 ## Open issues
+- [add-api-authentication-proofs](issues/add-api-authentication-proofs.md)
+- [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
+- [fix-api-authentication-regressions](issues/fix-api-authentication-regressions.md)
 - [fix-benchmark-scheduler-scaling-test](issues/fix-benchmark-scheduler-scaling-test.md)
+- [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md)
+- [fix-oxigraph-backend-initialization](issues/fix-oxigraph-backend-initialization.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-- [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
-- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
-- [document-llm-extras-for-task-check](issues/document-llm-extras-for-task-check.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
+- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+- [resolve-mypy-errors-in-orchestrator-perf-and-search-core](issues/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md)
+- [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
