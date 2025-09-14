@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import duckdb
-import pytest
 
 spec = importlib.util.spec_from_file_location(
     "download_duckdb_extensions",

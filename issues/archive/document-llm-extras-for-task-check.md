@@ -16,4 +16,4 @@ None
 - Documentation explains how to run `task check` with LLM extras.
 
 ## Status
-Open
+Archived
