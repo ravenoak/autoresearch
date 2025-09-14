@@ -40,6 +40,12 @@ checks are required.
 - `task verify` reports a `PytestDeprecationWarning` from
   `pytest.importorskip("fastembed")`; the warning persists until tests handle
   `ImportError` explicitly.
+- Running `task verify` now fails in
+  `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`.
+- Archived [resolve-mypy-errors-in-orchestrator-perf-and-search-core][resolve-mypy-errors-archive]
+  after mypy passed in `task check`.
+
+[resolve-mypy-errors-archive]: issues/archive/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
@@ -436,9 +442,9 @@ Targeted authentication suites pass except
 Not executed.
 
 ## Coverage
-`task verify` runs unit tests but exits with a multiprocessing resource
-tracker `KeyError` before integration tests, leaving coverage reports
-incomplete.
+`task verify` runs unit tests but fails in
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`,
+so coverage reports are not generated.
 
 ## Open issues
 - [add-api-authentication-proofs](issues/add-api-authentication-proofs.md)
@@ -451,5 +457,4 @@ incomplete.
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
-- [resolve-mypy-errors-in-orchestrator-perf-and-search-core](issues/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
