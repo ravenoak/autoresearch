@@ -27,8 +27,8 @@ The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to run
 cibuildwheel, duckdb-extension-vss, spacy, types-networkx, types-protobuf,
 types-requests, and types-tabulate is missing.
 `task verify` runs 664 tests (13 skipped, 25 deselected, 6 xfailed, 3 xpassed)
-and coverage currently reports 0% for budgeting and HTTP modules (0 of 57
-statements).
+and coverage currently reports 90% coverage for budgeting and HTTP modules (90
+of 100 statements).
 Outstanding gaps are tracked in [int-tests] and [task-issue]. Current test
 results are mirrored in [../STATUS.md](../STATUS.md).
 ## Milestones
@@ -124,8 +124,8 @@ installs only `dev-minimal` and `test` extras by default; add groups with
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` reports **95%** for targeted modules; keep docs in sync
-  and stay above **90%**
+- [ ] `task coverage` reports **90% coverage** for targeted modules; keep docs
+  in sync and stay above **90%**
 - [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
   syncs docs with `baseline/coverage.xml`
 

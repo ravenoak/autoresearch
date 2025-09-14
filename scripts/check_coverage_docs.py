@@ -1,7 +1,8 @@
-"""Verify coverage values in STATUS.md and docs/release_plan.md match the baseline.
+"""Verify documentation coverage values against the baseline and threshold.
 
 Usage:
     uv run python scripts/check_coverage_docs.py [--baseline baseline/coverage.xml]
+                                         [--minimum 90]
 """
 
 from __future__ import annotations
@@ -55,15 +56,26 @@ def check_files(files: list[Path], expected: int) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Ensure coverage docs match baseline")
+    parser = argparse.ArgumentParser(
+        description="Ensure coverage docs match baseline and threshold"
+    )
     parser.add_argument(
         "--baseline",
         default=Path("baseline/coverage.xml"),
         type=Path,
         help="Path to baseline coverage XML",
     )
+    parser.add_argument(
+        "--minimum",
+        type=int,
+        default=90,
+        help="Minimum required coverage percentage",
+    )
     args = parser.parse_args()
     coverage = read_coverage(args.baseline)
+    if coverage < args.minimum:
+        print(f"Coverage {coverage}% below required {args.minimum}%")  # pragma: no cover
+        return 1
     errors = check_files(FILES, coverage)
     if errors:
         for msg in errors:

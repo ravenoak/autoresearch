@@ -330,7 +330,7 @@ tasks:
 
   check-coverage-docs:
     cmds:
-      - uv run python scripts/check_coverage_docs.py
+      - uv run python scripts/check_coverage_docs.py --minimum {{.COVERAGE_MINIMUM}}
     desc: "Validate documentation coverage percentage"
 
   wheels:
