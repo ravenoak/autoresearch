@@ -21,6 +21,8 @@ checks are required.
   tests and coverage do not run.
 - Opened [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
   to confirm every module has matching specifications and proofs.
+- Opened [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md) to
+  provide formal validation for the OxiGraph storage backend.
 
 - Added `task check EXTRAS="llm"` instructions to README and testing
   guidelines; archived
@@ -442,6 +444,7 @@ incomplete.
 - [fix-benchmark-scheduler-scaling-test](issues/fix-benchmark-scheduler-scaling-test.md)
 - [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md)
 - [fix-oxigraph-backend-initialization](issues/fix-oxigraph-backend-initialization.md)
+- [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
