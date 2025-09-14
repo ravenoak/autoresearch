@@ -67,7 +67,7 @@ Example:
 
 ```bash
 task check-env
-EXTRAS="ui vss" task check-env  # verify optional extras
+EXTRAS="llm" task check-env  # verify LLM libraries
 ```
 
 Errors from `task check-env` or `scripts/check_env.py` indicate missing tools
@@ -101,7 +101,8 @@ uv run pytest -m requires_distributed -q
 Optional extras enable additional capabilities. Install them with
 `uv sync --extra <name>` or by setting `AR_EXTRAS` when running the setup
 script. Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm`
-pull large dependencies and are not installed by `task verify`.
+pull large dependencies and are not installed by `task verify`. LLM
+packages are skipped unless `EXTRAS="llm"` or `AR_EXTRAS="llm"` is set.
 
 For a lean setup, sync the minimal development and test extras:
 
@@ -140,6 +141,7 @@ Include extras only when required. Examples:
 
 ```bash
 EXTRAS="nlp" task install      # adds NLP packages
+EXTRAS="llm" task install      # adds CPU LLM libraries
 uv sync --extra llm            # CPU LLM libraries
 uv sync --extra gpu            # BERTopic and lmstudio
 VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers

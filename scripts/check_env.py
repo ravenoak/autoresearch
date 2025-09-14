@@ -7,7 +7,8 @@ Usage:
 Versions for optional extras are loaded from ``pyproject.toml``. Extra groups
 can be specified via the ``EXTRAS`` environment variable. The script validates
 Python compatibility, flags unknown extras, checks Go Task availability with
-``task --version``, and reports missing packages for requested extras.
+``task --version``, and reports missing packages for requested extras. LLM
+packages are skipped unless ``EXTRAS`` contains ``llm``.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ import tomllib
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
+from typing import Callable
 
 if not (3, 12) <= sys.version_info < (4, 0):
     raise SystemExit(
@@ -40,9 +42,8 @@ BASE_REQUIREMENTS = {
     "uv": "0.7.0",
 }
 
-# Include LLM dependencies to verify packages like ``fastembed`` are
-# installed at compatible versions.
-BASE_EXTRAS = ["dev-minimal", "test", "llm"]
+# LLM dependencies are optional; include ``llm`` via ``EXTRAS`` to validate them.
+BASE_EXTRAS = ["dev-minimal", "test"]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -205,6 +206,12 @@ def check_pytest_bdd() -> CheckResult:
     return CheckResult("pytest-bdd", current, required)
 
 
+def make_check(pkg: str) -> Callable[[], CheckResult | None]:
+    """Return a callable that checks ``pkg`` when invoked."""
+
+    return lambda: check_package(pkg)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate required tool versions")
     parser.parse_args()
@@ -212,13 +219,13 @@ def main() -> None:
     extras = ", ".join(EXTRAS)
     print(f"Verifying extras: {extras}")
 
-    checks = [check_python, check_task, check_uv]
+    checks: list[Callable[[], CheckResult | None]] = [check_python, check_task, check_uv]
 
     for pkg in sorted(EXTRA_REQUIREMENTS):
         if pkg == "pytest-bdd":
             checks.append(check_pytest_bdd)
             continue
-        checks.append(lambda pkg=pkg: check_package(pkg))
+        checks.append(make_check(pkg))
 
     errors: list[str] = []
     for check in checks:

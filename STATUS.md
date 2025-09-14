@@ -3,6 +3,10 @@
 Install Go Task with `scripts/setup.sh` or your package manager to enable
 Taskfile commands. Confirm the CLI is available with `task --version`.
 
+Run `task check` for linting and smoke tests, then `task verify` before
+committing. Include `EXTRAS="llm"` only when LLM features or dependency
+checks are required.
+
 ## September 14, 2025
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
