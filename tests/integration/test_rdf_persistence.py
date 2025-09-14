@@ -1,7 +1,11 @@
 """Tests for RDF persistence functionality.
 
-This module contains tests for the RDF persistence functionality of the storage system,
-verifying that claims are properly stored in the RDF store and can be retrieved.
+This module contains tests for the RDF persistence functionality of the storage
+system, verifying that claims are properly stored in the RDF store and can be
+retrieved.
+
+For a standalone demo of idempotent setup and teardown, see
+``scripts/oxigraph_backend_sim.py``.
 """
 
 import importlib
