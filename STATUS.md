@@ -22,6 +22,9 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
 - `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
   currently fails at `tests/unit/test_eviction.py::test_ram_eviction`, so
   coverage results are unavailable.
+- `task verify` reports a `PytestDeprecationWarning` from
+  `pytest.importorskip("fastembed")`; the warning persists until tests handle
+  `ImportError` explicitly.
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived

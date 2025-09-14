@@ -14,7 +14,8 @@ if not TYPE_CHECKING:  # pragma: no cover - runtime import
     except Exception:  # pragma: no cover - best effort
         pass
     try:
-        import importlib.util, sys, types
+        import importlib.util
+        import sys
         from pathlib import Path
 
         spec = importlib.util.find_spec("weasel.util.config")
@@ -27,7 +28,7 @@ if not TYPE_CHECKING:  # pragma: no cover - runtime import
                 "import shlex\n\nsplit_arg_string = shlex.split",
             )
             src = src.replace("click.parser.split_arg_string", "shlex.split")
-            module = types.ModuleType("weasel.util.config")
+            module = importlib.util.module_from_spec(spec)
             exec(compile(src, spec.origin, "exec"), module.__dict__)
             sys.modules["weasel.util.config"] = module
     except Exception:  # pragma: no cover - best effort

@@ -1,10 +1,15 @@
-from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 
 def _load_module():
     path = Path(__file__).resolve().parents[2] / "scripts" / "distributed_perf_compare.py"
-    return SourceFileLoader("distributed_perf_compare", str(path)).load_module()
+    spec = spec_from_file_location("distributed_perf_compare", path)
+    if spec and spec.loader:
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    raise ImportError("distributed_perf_compare")
 
 
 def test_compare_matches_theory_within_tolerance():
