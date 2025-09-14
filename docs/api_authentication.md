@@ -39,3 +39,8 @@ WWW-Authenticate: API-Key
 
 See [api.md](api.md) for a complete overview of available endpoints.
 
+## Further reading
+
+- [API authentication spec](specs/api_authentication.md)
+- [Authentication simulation](../scripts/api_auth_sim.py)
+
