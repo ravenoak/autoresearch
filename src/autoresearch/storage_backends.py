@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 import duckdb
 import rdflib
+from rdflib.plugin import Store, register
 from dotenv import dotenv_values
 
 from .config import ConfigLoader
@@ -56,7 +57,9 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     """
 
     if backend == "memory":
-        return rdflib.Graph()
+        graph = rdflib.Graph()
+        setattr(graph.store, "identifier", "Memory")
+        return graph
 
     if backend == "berkeleydb":
         store_name = "Sleepycat"
@@ -73,6 +76,8 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
                 "Oxigraph driver not installed",
                 suggestion="Install oxrdflib to use the Oxigraph RDF backend",
             )
+        # Ensure the plugin is registered even if entry points are skipped
+        register("Oxigraph", Store, "oxrdflib.store", "OxigraphStore")
     else:
         raise StorageError(
             "Invalid RDF backend",
@@ -82,6 +87,8 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     try:
         graph = rdflib.Graph(store=store_name)
         graph.open(rdf_path)
+        # Record the backend name for debugging and tests
+        setattr(graph.store, "identifier", store_name)
     except Exception as e:  # pragma: no cover - plugin may be missing
         if "No plugin registered" in str(e):
             raise StorageError(
@@ -95,7 +102,9 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
         # read-heavy scenarios can proceed.
         if isinstance(e, OSError) or "lock" in str(e).lower():
             log.warning("Falling back to in-memory RDF store: %s", e)
-            return rdflib.Graph()
+            graph = rdflib.Graph()
+            setattr(graph.store, "identifier", "Memory")
+            return graph
         raise StorageError("Failed to open RDF store", cause=e)
 
     return graph

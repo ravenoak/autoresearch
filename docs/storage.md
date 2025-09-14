@@ -133,6 +133,19 @@ Ensure the `oxrdflib` package is installed so RDFLib can load the Oxigraph
 store correctly. The parent directory is created automatically so DuckDB and
 the RDF store can initialize together without manual path setup.
 
+### Enabling Oxigraph
+
+Add the following to `autoresearch.toml` to persist RDF data with Oxigraph:
+
+```toml
+[storage]
+rdf_backend = "oxigraph"
+```
+
+Call `StorageManager.get_rdf_backend_identifier()` to verify that the
+"Oxigraph" backend is active. The function returns the name of the current RDF
+store, allowing tests to confirm the correct backend is in use.
+
 ## Troubleshooting
 
 ### HNSW Index Creation Error

@@ -1476,6 +1476,20 @@ class StorageManager(metaclass=StorageManagerMeta):
             return StorageManager.context.rdf_store
 
     @staticmethod
+    def get_rdf_backend_identifier() -> str:
+        """Return the identifier of the configured RDF store.
+
+        Returns:
+            str: Name of the underlying RDF backend. Defaults to the store's
+            class name when no explicit identifier is present.
+
+        Raises:
+            NotFoundError: If the RDF store is not initialized.
+        """
+        store = StorageManager.get_rdf_store()
+        return getattr(store.store, "identifier", store.store.__class__.__name__)
+
+    @staticmethod
     def has_vss() -> bool:
         """Check if the VSS extension is available for vector search.
 
