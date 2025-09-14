@@ -26,7 +26,7 @@ Install these binaries and ensure they are on your `PATH`:
 
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) 0.7.0+
-- [Go Task](https://taskfile.dev/)
+- [Go Task](https://taskfile.dev/) 3.44.1+ (verify with `task --version`)
 
 After installing the prerequisites, run `task install` to sync the
 `dev-minimal` and `test` extras before executing any tests or `task`

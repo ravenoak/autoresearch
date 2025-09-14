@@ -1,7 +1,11 @@
 # Status
 
 Install Go Task with `scripts/setup.sh` or your package manager to enable
-Taskfile commands.
+Taskfile commands. Confirm the CLI is available with `task --version`.
+
+## September 14, 2025
+- Verified Go Task 3.44.1 installation with `task --version`.
+- Updated README and STATUS with verification instructions.
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
