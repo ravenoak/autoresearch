@@ -335,6 +335,11 @@ tasks:
       - uv run python scripts/check_coverage_docs.py --minimum {{.COVERAGE_MINIMUM}}
     desc: "Validate documentation coverage percentage"
 
+  docs:
+    cmds:
+      - uv run --extra docs mkdocs build
+    desc: "Build project documentation"
+
   wheels:
     deps: [wheel-linux, wheel-windows, wheel-macos]
     desc: "Build wheels for all platforms"

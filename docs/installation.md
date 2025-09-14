@@ -149,9 +149,9 @@ AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 `task verify` includes parser dependencies via the `test` extra, so no
 additional flags are required for PDF or DOCX tests.
 
-Use `./scripts/setup.sh` for the full developer bootstrap. It syncs the `dev`
-and `test` extras (including packages such as `pytest_httpx`, `tomli_w`,
-`pytest-bdd`, and `redis`) and verifies Go Task is installed.
+Use `./scripts/setup.sh` for the full developer bootstrap. It syncs the
+`dev` and `test` extras (including packages such as `pytest_httpx`,
+`tomli_w`, `pytest-bdd`, and `redis`) and verifies Go Task is installed.
 
 You can manually confirm the CLI and development packages are available:
 
@@ -161,8 +161,7 @@ uv pip show pytest_httpx tomli_w redis
 ```
 
 If you see errors like `task: command not found` or `uv: command not found`,
-diagnose the environment with
-[`scripts/check_env.py`](../scripts/check_env.py):
+diagnose the environment with `scripts/check_env.py`:
 
 ```bash
 uv run python scripts/check_env.py
@@ -307,7 +306,7 @@ uv sync --extra nlp
 After installing Go Task, pick a bootstrap method:
 
 - `task install` – developer setup
-- [`scripts/setup.sh`](../scripts/setup.sh) – full developer toolchain
+- `scripts/setup.sh` – full developer toolchain
 
 Run `uv lock` whenever you change `pyproject.toml` to update `uv.lock`
 before syncing. Selecting Python 3.11 results in an error similar to:
@@ -348,7 +347,7 @@ export ARCHIVES_DIR=/path/to/archives
 ./scripts/setup.sh
 ```
 
-[`scripts/setup.sh`](../scripts/setup.sh) respects these variables.
+`scripts/setup.sh` respects these variables.
 
 `WHEELS_DIR` should contain wheel files (`*.whl`) and `ARCHIVES_DIR` should
 contain source archives (`*.tar.gz`). The setup script installs these caches
@@ -368,7 +367,7 @@ If you cloned the repository, run the appropriate setup helper:
 ./scripts/setup.sh
 ```
 
-[`scripts/setup.sh`](../scripts/setup.sh) installs every optional extra needed
+`scripts/setup.sh` installs every optional extra needed
 for development.
 
 The helper ensures the lock file is refreshed and installs every optional
@@ -452,7 +451,7 @@ task verify
 ```
 
 References to pre-built wheels for these packages live under
-[`wheels/gpu`](../wheels/gpu/README.md). Place the appropriate files in that
+`wheels/gpu`. Place the appropriate files in that
 directory to avoid source builds. Setup helpers and Taskfile commands
 automatically use this directory when the `gpu` extra is requested.
 

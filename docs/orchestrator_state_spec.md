@@ -22,5 +22,5 @@ final synthesized response.
 
 ## Traceability
 
-- [src/autoresearch/orchestration/state.py](../src/autoresearch/orchestration/state.py)
-- [tests/integration/test_orchestrator_state_transitions.py](../tests/integration/test_orchestrator_state_transitions.py)
+- `src/autoresearch/orchestration/state.py`
+- `../tests/integration/test_orchestrator_state_transitions.py`

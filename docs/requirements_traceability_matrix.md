@@ -25,8 +25,8 @@
 | F-21 | Maintain local indexes | `storage.py`, `search.py` | `tests/unit/test_incremental_updates.py`, `tests/unit/test_storage_validation.py`, `tests/behavior/features/storage_search_integration.feature` |
 | F-22 | Cross-modal interface consistency | `main.py`, `streamlit_app.py` | `tests/behavior/features/cross_modal_integration.feature`, `tests/behavior/features/streamlit_gui.feature` |
 | F-23 | Batch query endpoint | `api.py` | `tests/unit/test_api.py`, `tests/integration/test_api_streaming.py`, `tests/integration/test_cli_http.py`, `tests/behavior/features/api_orchestrator_integration.feature` |
-| F-24 | API auth handshake; constant-time token checks
-([spec](algorithms/api_authentication.md)) | `api.py`, `api/utils.py` |
+| F-24 | API auth handshake; constant-time token checks | `api.py`,
+`api/utils.py` |
 `tests/integration/test_api_auth.py`,
 `tests/integration/test_api_auth_failure.py`,
 `tests/behavior/features/api_auth.feature` |

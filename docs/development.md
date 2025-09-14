@@ -3,8 +3,8 @@
 This guide summarizes the development process and specification workflow.
 
 ## Specification workflow
-- Begin new modules by drafting a spec using the template in
-  [docs/specs/README.md](specs/README.md).
+- Begin new modules by drafting a spec using the template in the
+  inspirational documents.
 - Document algorithms, invariants, and proofs for each module.
 - Add a **Traceability** section linking modules and tests.
 

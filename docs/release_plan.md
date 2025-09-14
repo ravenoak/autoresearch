@@ -6,15 +6,14 @@ The publishing workflow follows the steps in
 [deployment.md](deployment.md). Detailed release commands are documented in
 [releasing.md](releasing.md). See
 [installation.md](installation.md) for environment setup and
-[ROADMAP.md](../ROADMAP.md) for high-level milestones.
+ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
 `2025-05-18`). This schedule was last updated on **September 13, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
-[../STATUS.md](../STATUS.md), [../ROADMAP.md](../ROADMAP.md), and
-[../CHANGELOG.md](../CHANGELOG.md) for aligned progress. Phase 3
+STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 (stabilization/testing/documentation) and Phase 4 activities remain planned.
 
 ## Status
@@ -29,35 +28,28 @@ types-requests, and types-tabulate is missing.
 `task verify` runs 664 tests (13 skipped, 25 deselected, 6 xfailed, 3 xpassed)
 and coverage currently reports 90% coverage for budgeting and HTTP modules (90
 of 100 statements).
-Outstanding gaps are tracked in [int-tests] and [task-issue]. Current test
-results are mirrored in [../STATUS.md](../STATUS.md).
+Outstanding gaps are tracked in int-tests and task-issue. Current test
+results are mirrored in STATUS.md.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
   feedback.
 - **0.1.0** (2026-10-01, status: planned): Finalized packaging, docs and CI
   checks with all tests passing.
-- **0.1.1** (2026-12-15, status: planned): Bug fixes and documentation updates
-  ([deliver-bug-fixes-and-docs-update](
-  ../issues/archive/deliver-bug-fixes-and-docs-update.md)).
+- **0.1.1** (2026-12-15, status: planned): Bug fixes and documentation
+  updates (deliver-bug-fixes-and-docs-update).
 - **0.2.0** (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
-  - [stabilize-api-and-improve-search](
-    ../issues/stabilize-api-and-improve-search.md)
-    - [streaming-webhook-refinements](
-      ../issues/archive/streaming-webhook-refinements.md)
-    - [configuration-hot-reload-tests](
-      ../issues/archive/configuration-hot-reload-tests.md)
-    - [hybrid-search-ranking-benchmarks](
-      ../issues/archive/hybrid-search-ranking-benchmarks.md)
+  - stabilize-api-and-improve-search
+    - streaming-webhook-refinements
+    - configuration-hot-reload-tests
+    - hybrid-search-ranking-benchmarks
 - **0.3.0** (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
-  - [simulate-distributed-orchestrator-performance](
-    ../issues/archive/simulate-distributed-orchestrator-performance.md)
+  - simulate-distributed-orchestrator-performance
 - **1.0.0** (2027-09-01, status: planned): Full feature set, performance
   tuning and stable interfaces
-  ([reach-stable-performance-and-interfaces](
-  ../issues/reach-stable-performance-and-interfaces.md)).
+  (reach-stable-performance-and-interfaces).
 
 To gather early feedback, an alpha **0.1.0a1** release is targeted for
 **September 15, 2026**. The final **0.1.0** milestone is set for
@@ -68,10 +60,8 @@ To gather early feedback, an alpha **0.1.0a1** release is targeted for
 - [x] Confirm STATUS.md and this plan share the same coverage details before
   tagging. CI runs `scripts/update_coverage_docs.py` after `task coverage` to
   sync the value.
-- [x] Ensure Task CLI available ([restore-task-cli-availability](
-  ../issues/archive/restore-task-cli-availability.md)).
-- [x] Resolve coverage hang ([fix-task-verify-coverage-hang](
-  ../issues/archive/fix-task-verify-coverage-hang.md)).
+- [x] Ensure Task CLI available (restore-task-cli-availability).
+- [x] Resolve coverage hang (fix-task-verify-coverage-hang).
 
 These tasks completed in order: environment bootstrap → packaging verification
 → integration tests → coverage gates → algorithm validation.
@@ -126,9 +116,6 @@ installs only `dev-minimal` and `test` extras by default; add groups with
 - [ ] `uv run pytest tests/behavior`
 - [ ] `task coverage` reports **90% coverage** for targeted modules; keep docs
   in sync and stay above **90%**
-- [ ] [`scripts/update_coverage_docs.py`](../scripts/update_coverage_docs.py)
-  syncs docs with `baseline/coverage.xml`
+- [ ] `scripts/update_coverage_docs.py` syncs docs with
+  `baseline/coverage.xml`
 
-[coverage-gap-issue]: ../issues/archive/resolve-pre-alpha-release-blockers.md
-[int-tests]: ../issues/archive/resolve-current-integration-test-failures.md
-[task-issue]: ../issues/archive/restore-task-cli-availability.md

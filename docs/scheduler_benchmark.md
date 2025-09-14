@@ -47,9 +47,7 @@ plot
 
 ## Follow-up
 Latency diverges when arrival rate approaches capacity, suggesting further
-benchmarking. See [benchmark-scheduler-queue-saturation][queue-issue] for a
-detailed plan and [simulate-distributed-orchestrator-performance]
-[orchestrator-issue] for broader orchestrator benchmarks.
+benchmarking. See benchmark-scheduler-queue-saturation for a detailed plan
+and simulate-distributed-orchestrator-performance for broader orchestrator
+benchmarks.
 
-[queue-issue]: ../issues/benchmark-scheduler-queue-saturation.md
-[orchestrator-issue]: ../issues/archive/simulate-distributed-orchestrator-performance.md

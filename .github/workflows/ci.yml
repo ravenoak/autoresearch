@@ -75,6 +75,8 @@ jobs:
         run: uv run task coverage EXTRAS="$ALL_EXTRAS"
       - name: Enforce coverage threshold
         run: uv run coverage report --fail-under=90
+      - name: Build documentation
+        run: uv run task docs
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

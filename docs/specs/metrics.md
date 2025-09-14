@@ -54,6 +54,22 @@ confirming convergence to `ceil(50 \times 1.2) = 60`.
 - [tests/unit/test_token_budget_convergence.py][t2] reproduces the
   simulation above and asserts convergence for constant workloads.
 
+## Algorithms
+
+The adaptation algorithm compares recent usage statistics and proposes a
+budget that covers observed peaks while remaining integer valued.
+
+## Proof Sketch
+
+Budget suggestions track the maximum of recent usage metrics and apply a
+margin. Because the proposal always bounds true usage from above and never
+drops below one, convergence follows from monotone sequences.
+
+## Simulation Expectations
+
+Simulations should show the suggested budget approaching the highest
+recorded usage scaled by the margin.
+
 ## Traceability
 
 - Modules

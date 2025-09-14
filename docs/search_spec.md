@@ -19,14 +19,12 @@ This specification outlines expected behaviors for the
 
 ## DomainAuthorityScore Ranking
 - Credibility ranking relies on `DomainAuthorityScore` entries that map
-  domains to scores in `[0,1]`. See
-  [source credibility heuristics](algorithms/source_credibility.md).
+  domains to scores in `[0,1]`. See the source credibility heuristics in the
+  inspirational documents.
 - `Search.assess_source_credibility` assigns the configured score for known
   domains and a default of `0.5` otherwise.
-- Final result ordering uses weighted combination of
-  [BM25](algorithms/bm25.md),
-  [semantic similarity](algorithms/semantic_similarity.md), and
-  [domain authority scores](algorithms/source_credibility.md). Results from
+- Final result ordering uses weighted combination of BM25, semantic
+  similarity and domain authority scores. Results from
   different backends are first scored individually and then merged and
   re-ranked with the same weights to ensure consistent ordering across
   sources. Weights must be non-negative and sum to one. Each component score
@@ -34,10 +32,7 @@ This specification outlines expected behaviors for the
   from transformers and DuckDB vectors are averaged after normalization so
   hybrid and pure semantic searches operate on the same scale. Combined
   scores are normalized again and sorted in descending order. The math is
-  detailed in
-  [search ranking](specs/search_ranking.md).
-  Simulation trials in
-  [`ranking_convergence.py`](algorithms/relevance_ranking.md#simulation)
+  detailed in search ranking. Simulation trials in `ranking_convergence.py`
   report a mean convergence step of `1`, confirming the idempotent ranking.
 
 ## Vector extension fallback

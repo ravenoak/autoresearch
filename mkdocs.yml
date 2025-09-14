@@ -51,6 +51,11 @@ plugins:
             show_category_heading: true
             show_if_no_docstring: false
             heading_level: 2
+  - exclude:
+      glob:
+        - inspirational_docs/**
+        - algorithms/**
+        - specs/**
 theme:
   name: material
   palette:

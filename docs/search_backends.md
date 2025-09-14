@@ -2,9 +2,7 @@
 
 Autoresearch can combine results from multiple search backends. By default the
 system merges all responses and ranks them together using a hybrid algorithm
-that mixes [BM25 keyword scores](algorithms/bm25.md),
-[semantic similarity](algorithms/semantic_similarity.md) and
-[source credibility](algorithms/source_credibility.md).
+that mixes BM25 keyword scores, semantic similarity and source credibility.
 
 Enable or disable backends in the `[search]` section of `autoresearch.toml`:
 
