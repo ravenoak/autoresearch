@@ -65,30 +65,38 @@ class AuthMiddleware(BaseHTTPMiddleware):
         auth_scheme = "API-Key" if (cfg.api_keys or cfg.api_key) else "Bearer"
 
         api_key = request.headers.get("X-API-Key")
-        credentials: HTTPAuthorizationCredentials | None = await security(request)
-        token = credentials.credentials if credentials else None
+        auth_header = request.headers.get("Authorization")
 
-        key_role, key_error = self._resolve_role(api_key, cfg)
-        if key_error:
-            return key_error
-        key_valid = api_key is not None
+        key_valid = False
+        role = "anonymous"
+        if api_key is not None:
+            role, key_error = self._resolve_role(api_key, cfg)
+            if key_error:
+                return key_error
+            key_valid = True
 
-        token_valid = verify_bearer_token(token, cfg.bearer_token)
-        if token and not token_valid:
-            return self._unauthorized("Invalid token", "Bearer")
+        token = None
+        token_valid = False
+        if (auth_header or not key_valid) and cfg.bearer_token:
+            credentials: HTTPAuthorizationCredentials | None = await security(request)
+            token = credentials.credentials if credentials else None
+            token_valid = verify_bearer_token(token, cfg.bearer_token)
+            if token and not token_valid:
+                return self._unauthorized("Invalid token", "Bearer")
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
-            if cfg.bearer_token:
-                return self._unauthorized("Missing token", auth_scheme)
-            return self._unauthorized("Missing API key", auth_scheme)
+            if cfg.bearer_token and not key_valid:
+                return self._unauthorized("Missing token", "Bearer")
+            return self._unauthorized("Missing API key", "API-Key")
 
-        if key_valid:
-            role = key_role
-        elif token_valid:
+        if not key_valid and token_valid:
             role = "user"
+            auth_scheme = "Bearer"
+        elif key_valid:
+            auth_scheme = "API-Key"
         else:
-            role = "anonymous"
+            auth_scheme = "Bearer" if cfg.bearer_token else "API-Key"
 
         request.state.role = role
         request.state.permissions = set(cfg.role_permissions.get(role, []))

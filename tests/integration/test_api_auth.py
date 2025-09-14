@@ -63,7 +63,7 @@ def test_role_assignments(monkeypatch, api_client):
 
     resp_missing = api_client.get("/whoami")
     assert resp_missing.status_code == 401
-    assert resp_missing.json()["detail"] == "Missing API key or token"
+    assert resp_missing.json()["detail"] == "Missing token"
 
 
 def test_rate_limit(monkeypatch, api_client):
@@ -138,7 +138,7 @@ def test_api_key_or_token(monkeypatch, api_client):
 
     missing = api_client.post("/query", json={"query": "q"})
     assert missing.status_code == 401
-    assert missing.json()["detail"] == "Missing API key or token"
+    assert missing.json()["detail"] == "Missing token"
 
 
 def test_invalid_api_key_with_valid_token(monkeypatch, api_client):

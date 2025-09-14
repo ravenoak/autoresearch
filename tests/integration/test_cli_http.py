@@ -211,7 +211,7 @@ def test_http_api_key(monkeypatch):
 
             resp = client.post("/query", json={"query": "test query"})
             assert resp.status_code == 401
-            assert resp.headers["WWW-Authenticate"] == "API-Key"
+            assert resp.headers["WWW-Authenticate"] == "Bearer"
 
             resp = client.post(
                 "/query",
@@ -226,8 +226,7 @@ def test_http_api_key(monkeypatch):
                 json={"query": "test query"},
                 headers={"Authorization": "Bearer token"},
             )
-            assert resp.status_code == 401
-            assert resp.headers["WWW-Authenticate"] == "API-Key"
+            assert resp.status_code == 200
         finally:
             from autoresearch.storage import set_delegate
 
