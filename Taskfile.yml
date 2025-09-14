@@ -80,11 +80,13 @@ tasks:
     desc: "Run unit tests with uv"
 
   integration:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"\"}}"
     cmds:
-      - >
-          uv run pytest tests/integration -m "not slow and not requires_ui and
-          not requires_vss and not requires_distributed" -q
-    desc: "Run integration tests without slow/UI/VSS scenarios with uv"
+      - task: test:integration
+        vars:
+          EXTRAS: "{{.EXTRAS}}"
+    desc: "Run integration tests with uv"
 
   behavior:
     cmds:
