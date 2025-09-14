@@ -22,10 +22,14 @@ The loader only raises :class:`StorageError` when
 ## Stub mechanism
 
 - `download_duckdb_extensions.py` installs the VSS extension.
-- On repeated failures it creates an empty file in `extensions/vss/`, sets
-  `VECTOR_EXTENSION_PATH` to that stub, and warns that the stub is in use.
-- `setup.sh` logs when the stub is selected and records its
-  location for reuse.
+- If `VECTOR_EXTENSION_PATH` is present in `.env.offline` the script copies
+  that file into the requested output directory and updates the environment
+  variable to point at the copy.
+- When no path is provided it creates an empty file in `extensions/vss/`,
+  sets `VECTOR_EXTENSION_PATH` to the stub and warns that the stub is in
+  use.
+- `setup.sh` logs when the stub is selected and records its location for
+  reuse.
 
 ## Environment variable usage
 

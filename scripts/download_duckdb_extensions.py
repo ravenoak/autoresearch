@@ -124,8 +124,9 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     if path and os.path.exists(path):
         dst = os.path.join(output_extension_dir, os.path.basename(path))
         shutil.copy2(path, dst)
+        os.environ["VECTOR_EXTENSION_PATH"] = dst
         logger.info("Copied offline extension from %s", path)
-        return path
+        return dst
 
     dst = os.path.join(output_extension_dir, f"{extension_name}.duckdb_extension")
     # Create a stub file so the extension path resolves during tests

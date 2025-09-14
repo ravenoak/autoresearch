@@ -53,23 +53,23 @@ class DefaultPathConn:
         pass
 
 
-@pytest.mark.xfail(reason="stub path mismatch during offline fallback")
 def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
     """Network failures load offline env and continue."""
     env_file = tmp_path / ".env.offline"
-    stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"
-    stub_path.parent.mkdir(parents=True, exist_ok=True)
-    stub_path.write_text("stub")
-    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
+    stub_src = tmp_path / "extensions" / "vss_stub.duckdb_extension"
+    stub_src.parent.mkdir(parents=True, exist_ok=True)
+    stub_src.write_text("stub")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_src}\n")
 
     monkeypatch.chdir(tmp_path)
     conn = FailingConn("path")
     monkeypatch.setattr(duckdb, "connect", lambda path: conn)
     caplog.set_level(logging.WARNING)
     result = dde.download_extension("vss", tmp_path, "linux_amd64")
-    assert result == str(stub_path)
+    dst = tmp_path / "extensions" / "vss" / stub_src.name
+    assert result == str(dst)
     assert conn.calls == 3
-    assert os.environ["VECTOR_EXTENSION_PATH"] == str(stub_path)
+    assert os.environ["VECTOR_EXTENSION_PATH"] == str(dst)
     assert "after 3 attempts" in caplog.text
     assert "Falling back to offline configuration" in caplog.text
 
@@ -98,20 +98,21 @@ def test_download_extension_creates_stub_when_offline(monkeypatch, tmp_path, cap
     assert "created stub" in caplog.text
 
 
-@pytest.mark.xfail(reason="stub path mismatch during offline fallback")
 def test_download_extension_offline_without_duckdb(monkeypatch, tmp_path, caplog):
     """Missing duckdb module uses offline copy."""
     env_file = tmp_path / ".env.offline"
-    stub_path = tmp_path / "extensions" / "vss_stub.duckdb_extension"
-    stub_path.parent.mkdir(parents=True, exist_ok=True)
-    stub_path.write_text("stub")
-    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_path}\n")
+    stub_src = tmp_path / "extensions" / "vss_stub.duckdb_extension"
+    stub_src.parent.mkdir(parents=True, exist_ok=True)
+    stub_src.write_text("stub")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={stub_src}\n")
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(dde, "duckdb", None)
     caplog.set_level(logging.WARNING)
     result = dde.download_extension("vss", tmp_path, "linux_amd64")
-    assert result == str(stub_path)
+    dst = tmp_path / "extensions" / "vss" / stub_src.name
+    assert result == str(dst)
+    assert os.environ["VECTOR_EXTENSION_PATH"] == str(dst)
     assert "duckdb package not available" in caplog.text
 
 

@@ -23,17 +23,25 @@ This specification outlines expected behaviors for the
   inspirational documents.
 - `Search.assess_source_credibility` assigns the configured score for known
   domains and a default of `0.5` otherwise.
-- Final result ordering uses weighted combination of BM25, semantic
-  similarity and domain authority scores. Results from
-  different backends are first scored individually and then merged and
-  re-ranked with the same weights to ensure consistent ordering across
-  sources. Weights must be non-negative and sum to one. Each component score
-  is normalized to the `0`–`1` range before weighting. Semantic similarities
-  from transformers and DuckDB vectors are averaged after normalization so
+- Final result ordering uses a convex combination of BM25, semantic
+  similarity and domain authority scores. Results from different
+  backends are first scored individually and then merged and re-ranked
+  with the same weights to ensure consistent ordering across sources.
+  Each component score is normalized to the `0`–`1` range before
+  weighting. The combined score is computed as:
+
+  ```
+  normalize(w_bm25 * bm25 + w_sem * semantic + w_cred * credibility)
+  ```
+
+  where the weights are non-negative and renormalized to sum to one
+  after disabling any component. Semantic similarities from
+  transformers and DuckDB vectors are averaged after normalization so
   hybrid and pure semantic searches operate on the same scale. Combined
-  scores are normalized again and sorted in descending order. The math is
-  detailed in search ranking. Simulation trials in `ranking_convergence.py`
-  report a mean convergence step of `1`, confirming the idempotent ranking.
+  scores are normalized again and sorted in descending order. The math
+  is implemented in `src/autoresearch/search/ranking_formula.py`.
+  Simulation trials in `ranking_convergence.py` report a mean
+  convergence step of `1`, confirming the idempotent ranking.
 
 ## Vector extension fallback
 
