@@ -13,6 +13,8 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   (expected score `1.0`, got `0.0`), so coverage and resource tracker checks do not
   run; earlier runs failed at
   `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`.
+- A later `EXTRAS="llm" task verify` run was interrupted after 135 unit tests,
+  leaving integration tests unexecuted.
 
 - Enabled full integration suite by removing unconditional skips for
   `requires_ui`, `requires_vss`, and `requires_distributed` markers.
