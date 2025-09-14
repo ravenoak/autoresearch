@@ -10,6 +10,8 @@ checks are required.
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
   "command not found".
+- Executing `scripts/codex_setup.sh` did not expose the `task` CLI; commands
+  run via `uv run task` instead.
 - `uv run --extra test pytest tests/unit/test_version.py -q` runs two tests in
   0.33s, demonstrating minimal coverage without Task.
 - Verified Go Task 3.44.1 installation with `task --version`.
@@ -45,6 +47,9 @@ checks are required.
 - A subsequent run on 2025-09-14 with the default extras downloaded over 80
   packages and was interrupted after the first unit test, so full coverage and
   integration results remain unavailable.
+- Another run on 2025-09-14 failed in
+  `tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking`
+  with `hypothesis.errors.FailedHealthCheck` due to slow input generation.
 - Archived [resolve-mypy-errors-in-orchestrator-perf-and-search-core][resolve-mypy-errors-archive]
   after mypy passed in `task check`.
 

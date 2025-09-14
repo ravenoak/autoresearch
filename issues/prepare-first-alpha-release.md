@@ -11,6 +11,9 @@ blocking the release.
 An attempt on 2025-09-14 to run `task verify` with the default extras
 required downloading more than 80 packages and was interrupted after the first
 test, so full results are still pending.
+A later run on September 14, 2025, failed in
+`tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking`
+with a `hypothesis.errors.FailedHealthCheck` due to slow input generation.
 
 ## Dependencies
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
