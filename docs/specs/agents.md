@@ -2,7 +2,8 @@
 
 ## Overview
 
-Dialectical agent infrastructure.
+Dialectical agent infrastructure. See the
+[domain model](../domain_model.md) for agent relationships.
 
 ## Algorithms
 

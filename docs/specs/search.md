@@ -4,7 +4,8 @@
 
 The search package (`src/autoresearch/search/`) retrieves information from
 local files, storage backends, and vector indexes. It supports keyword, vector,
-and hybrid queries and exposes a CLI entry point.
+and hybrid queries and exposes a CLI entry point. See the
+[domain model](../domain_model.md) for search relationships.
 
 ## Algorithms
 
