@@ -54,7 +54,8 @@ for manual steps or package manager commands.
 
 Optional extras provide features such as NLP, a UI, or distributed
 processing. Install them on demand with `uv sync --extra <name>`, `task
-install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`.
+install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`. LLM
+capabilities depend on the `llm` extra and are skipped unless you enable it.
 
 ### Enabling heavy extras
 
@@ -67,7 +68,8 @@ EXTRAS="nlp distributed" task verify
 ```
 
 Use the same `EXTRAS` flag with `task install` to sync them for local
-development.
+development. Include `EXTRAS="llm"` when verifying or installing LLM
+libraries; the environment check skips them otherwise.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. The test suite's `redis_client` fixture connects
