@@ -20,6 +20,11 @@ the unit suite finished.
 Auditing fixtures that spawn multiprocessing pools and queues shows they call
 `close()` and `join_thread()` to avoid leaking resources.
 
+On September 14, 2025, a per-test fixture was added to drain the resource
+tracker cache after each test. `task verify` still fails in
+`tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
+preventing the KeyError from being reproduced.
+
 ## Dependencies
 - [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
 

@@ -28,6 +28,8 @@ nav:
   - Pseudocode: pseudocode.md
   - Requirements Traceability Matrix: requirements_traceability_matrix.md
   - Testing Guidelines: testing_guidelines.md
+  - Troubleshooting:
+    - Multiprocessing Resource Tracker: multiprocessing_resource_tracker.md
 markdown_extensions:
   - toc
   - admonition
