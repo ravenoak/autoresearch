@@ -19,8 +19,8 @@ by default. Use `EXTRAS="gpu"` to include the GPU packages or limit extras.
 - `sitecustomize.py` replaces `click.parser.split_arg_string` with
   `shlex.split` to avoid Click deprecation warnings during tests.
 - Some third-party packages still issue deprecation warnings.
-  `pkg_resources` messages are filtered, and `fastembed` may emit
-  notices until upstream fixes land.
+  `pkg_resources` messages are filtered.
+  Document any other unavoidable warnings.
 
 ## Multiprocessing cleanup
 
