@@ -25,6 +25,14 @@ tracker cache after each test. `task verify` still fails in
 `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
 preventing the KeyError from being reproduced.
 
+Later on September 14, 2025, with LLM extras installed, `task verify` progressed
+further and failed at
+`tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`,
+again ending before any resource tracker errors appeared.
+Another run on the same day fails in
+`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`,
+still preventing reproduction of the KeyError.
+
 ## Dependencies
 - [fix-duckdb-storage-schema-initialization](fix-duckdb-storage-schema-initialization.md)
 

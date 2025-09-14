@@ -10,6 +10,9 @@ initialize the vector search extension and
 reports mismatched ranking values.
 Unit test `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`
 expects a stubbed extension file but returns a directory path.
+On September 14, 2025, `task verify` failed in
+`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
+when ranking returned `0.0` instead of `1.0` with disabled features.
 
 ## Dependencies
 None.
@@ -21,4 +24,4 @@ None.
 - Docs reference extension loading and ranking formulae.
 
 ## Status
-Archived
+Open

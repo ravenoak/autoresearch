@@ -11,6 +11,7 @@ workflows dispatch-only.
 - [fix-api-authentication-and-metrics-tests](fix-api-authentication-and-metrics-tests.md)
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)
 - [fix-storage-integration-test-failures](fix-storage-integration-test-failures.md)
+- [fix-benchmark-scheduler-scaling-test](fix-benchmark-scheduler-scaling-test.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
 
