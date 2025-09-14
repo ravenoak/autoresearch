@@ -32,5 +32,10 @@ WWW-Authenticate: API-Key
 - Set `api.bearer_token` to enable bearer authentication.
 - Clients send `Authorization: Bearer <token>` headers.
 
+- When both API keys and bearer tokens are configured, a valid bearer token
+  suffices even if no API key is supplied. Requests missing both credentials
+  return `401` with `WWW-Authenticate: API-Key` and a `Missing API key or token`
+  message.
+
 See [api.md](api.md) for a complete overview of available endpoints.
 

@@ -38,16 +38,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
         """Return the role for ``key`` or an error response.
 
-        The API may be configured with either a single ``api_key`` or a mapping
-        of ``api_keys``. When a key is required but missing this function
-        returns an error response so callers can emit ``401`` immediately. Token
-        based authentication is handled separately, therefore a ``None`` key
-        should only trigger an error when no valid token is supplied.
+        This helper validates API keys but defers missing key handling to
+        :meth:`dispatch`. Deferring allows the caller to return a consistent
+        ``401`` response with the appropriate ``WWW-Authenticate`` header when
+        no credential is supplied. Invalid keys still trigger an immediate
+        error response.
         """
 
         if cfg.api_keys:
             if not key:
-                return "anonymous", self._unauthorized("Missing API key", "API-Key")
+                return "anonymous", None
             for candidate, role in cfg.api_keys.items():
                 if secrets.compare_digest(candidate, key):
                     return role, None
@@ -55,7 +55,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if cfg.api_key:
             if not key:
-                return "anonymous", self._unauthorized("Missing API key", "API-Key")
+                return "anonymous", None
             if not secrets.compare_digest(key, cfg.api_key):
                 return "anonymous", self._unauthorized("Invalid API key", "API-Key")
             return "user", None
