@@ -163,12 +163,12 @@ After coverage reports are generated, synchronize documentation:
 uv run python scripts/update_coverage_docs.py
 ```
 
-This writes the percentage to [../STATUS.md](../STATUS.md),
-[../TASK_PROGRESS.md](../TASK_PROGRESS.md), and
+This writes the percentage to STATUS.md,
+TASK_PROGRESS.md, and
 [release_plan.md](release_plan.md) so all references remain aligned.
 
-The [scripts/simulate_llm_adapter.py](../scripts/simulate_llm_adapter.py)
-script models adapter switching and token budgets for exploratory testing:
+The script `scripts/simulate_llm_adapter.py` models adapter switching and
+token budgets for exploratory testing:
 
 ```bash
 uv run python scripts/simulate_llm_adapter.py "example prompt"

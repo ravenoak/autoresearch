@@ -334,8 +334,8 @@ token = generate_bearer_token()
 ```
 
 Token comparison uses constant-time verification to guard against timing
-attacks. See [API authentication algorithm](algorithms/api_authentication.md)
-for the handshake and threat model.
+attacks. See the API authentication algorithm for the handshake and
+threat model.
 
 When multiple API keys with different roles are needed, define `[api].api_keys`
 as a mapping from key to role:

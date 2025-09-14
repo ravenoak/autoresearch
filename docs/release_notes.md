@@ -47,16 +47,13 @@ Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
 - Some dependencies still emit `pkg_resources` deprecation warnings; these
   are suppressed until upstream packages resolve the issue.
 
-For installation and usage instructions see the [README](../README.md).
+For installation and usage instructions see the README.
 
 ### Open issues
 
-- [add-orchestration-proofs-and-tests](
-  ../issues/add-orchestration-proofs-and-tests.md)
-- [add-storage-proofs-and-simulations](
-  ../issues/add-storage-proofs-and-simulations.md)
-- [configure-redis-service-for-tests](
-  ../issues/configure-redis-service-for-tests.md)
+- add-orchestration-proofs-and-tests
+- add-storage-proofs-and-simulations
+- configure-redis-service-for-tests
 
 ## Packaging Logs
 

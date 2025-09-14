@@ -49,8 +49,8 @@ budget after compression, a summarization step can be supplied to
 ``compress_prompt`` to further reduce the text. This adaptive behaviour helps
 prevent runaway token consumption.
 
-See [Token Budget Helpers Specification](token_budget_spec.md) for the precise
-expected behaviour of these algorithms and the accompanying unit tests.
+See the Token Budget Helpers specification for the precise expected
+behaviour of these algorithms and the accompanying unit tests.
 
 When a token budget is set, the orchestrator applies this compression step
 inside ``_capture_token_usage`` before passing prompts to the LLM adapter.

@@ -84,6 +84,4 @@ Async queries acknowledge receipt and provide a tracking identifier:
 
 ## References
 
-- [API models][m1]
-
-[m1]: ../../src/autoresearch/api/models.py
+- `src/autoresearch/api/models.py`

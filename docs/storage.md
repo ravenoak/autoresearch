@@ -25,7 +25,8 @@ The relationships between these classes and their external dependencies are docu
 4. The `vector_search()` method finds similar claims using vector similarity
 5. The `teardown()` method closes connections and cleans up resources
 
-See [specs/storage.md](specs/storage.md) for persistence guarantees.
+See the storage specification in the inspirational documents for
+persistence guarantees.
 
 ## Schema Versioning
 

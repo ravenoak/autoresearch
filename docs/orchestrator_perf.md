@@ -14,8 +14,7 @@ Results showed increasing throughput as workers scaled:
 - 3 workers: ~2426 tasks/s, CPU time 0.008 s.
 - 4 workers: ~3179 tasks/s, CPU time 0.010 s.
 
-Profiling uncovered a list rotation routine in
-[`execution._rotate_list`](../src/autoresearch/orchestration/execution.py)
+Profiling uncovered a list rotation routine in `execution._rotate_list`
 that allocated multiple intermediate lists. The implementation now uses
 `itertools.islice` and `itertools.chain` to build the rotated sequence in a
 single pass, reducing memory overhead for large agent lists.

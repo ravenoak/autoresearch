@@ -92,6 +92,13 @@ parsers = [
 git = [
     "GitPython >=3.1; python_version < '3.13'"
 ]
+# Documentation build dependencies
+docs = [
+    "mkdocs >=1.6.1",
+    "mkdocs-material >=9.6.19",
+    "mkdocstrings[python] >=0.30.0",
+    "mkdocs-exclude >=1.0.2",
+]
 # Distributed computing support
 distributed = [
     "ray >=2.10.0",
