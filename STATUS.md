@@ -11,6 +11,13 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
   so coverage and resource tracker checks do not run.
 
+- Enabled full integration suite by removing unconditional skips for
+  `requires_ui`, `requires_vss`, and `requires_distributed` markers.
+- Archived integration test issues after upstream fixes.
+- `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
+  currently fails at `tests/unit/test_eviction.py::test_ram_eviction`, so
+  coverage results are unavailable.
+
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
   [install-task-cli-system-level](issues/archive/install-task-cli-system-level.md).
@@ -411,9 +418,6 @@ tracker `KeyError` before integration tests, leaving coverage reports
 incomplete.
 
 ## Open issues
-- [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md)
-- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-- [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)

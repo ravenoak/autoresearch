@@ -12,4 +12,4 @@ None.
 - Document fixes in the changelog.
 
 ## Status
-Open
+Archived

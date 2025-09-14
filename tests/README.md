@@ -6,8 +6,11 @@ The integration suite exercises the CLI and API without contacting
 external services. Run a fast subset with:
 
 ```bash
-uv run pytest tests/integration -m 'not slow and not requires_ui and not requires_vss'
+uv run pytest tests/integration -m 'not slow'
 ```
+
+Tests marked `requires_ui`, `requires_vss`, or `requires_distributed` skip
+unless their respective extras are installed.
 
 ## Required services and data
 
