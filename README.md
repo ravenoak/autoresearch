@@ -69,7 +69,9 @@ EXTRAS="nlp distributed" task verify
 
 Use the same `EXTRAS` flag with `task install` to sync them for local
 development. Include `EXTRAS="llm"` when verifying or installing LLM
-libraries; the environment check skips them otherwise.
+libraries; the environment check skips them otherwise. Run `task check
+EXTRAS="llm"` when editing LLM code so lint and smoke tests have
+`dspy-ai` and `fastembed` available.
 
 A running Redis server is needed only for the `[distributed]` extra or tests
 tagged `requires_distributed`. The test suite's `redis_client` fixture connects
