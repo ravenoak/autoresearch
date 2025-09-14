@@ -20,15 +20,35 @@ Core routines enforce invariants by validating inputs and state.
 
 Unit tests cover nominal and edge cases for these routines.
 
+## OxiGraph Backend
+
+### Proof Sketch
+
+- Setup opens an ``OxigraphStore`` at the requested path. When the directory
+  exists, ``rdflib.Graph.open`` reuses it; otherwise ``create=True`` initializes
+  a new store.
+- Teardown removes the directory with ``shutil.rmtree(..., ignore_errors=True)``
+  so repeated calls leave no residue.
+
+### Simulation
+
+Run [scripts/oxigraph_backend_sim.py][s1] to exercise repeated setup and
+teardown.
+
 ## Traceability
 
 
 - Modules
   - [src/autoresearch/storage_backends.py][m1]
+- Scripts
+  - [scripts/oxigraph_backend_sim.py][s1]
 - Tests
   - [tests/unit/test_duckdb_storage_backend.py][t1]
   - [tests/unit/test_duckdb_storage_backend_extended.py][t2]
+  - [tests/integration/test_rdf_persistence.py][t3]
 
 [m1]: ../../src/autoresearch/storage_backends.py
+[s1]: ../../scripts/oxigraph_backend_sim.py
 [t1]: ../../tests/unit/test_duckdb_storage_backend.py
 [t2]: ../../tests/unit/test_duckdb_storage_backend_extended.py
+[t3]: ../../tests/integration/test_rdf_persistence.py
