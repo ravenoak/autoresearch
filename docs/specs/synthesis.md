@@ -20,13 +20,3 @@ Core routines enforce invariants by validating inputs and state.
 
 Unit tests cover nominal and edge cases for these routines.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/synthesis.py][m1]
-- Tests
-  - [tests/behavior/features/synthesis.feature][t1]
-
-[m1]: ../../src/autoresearch/synthesis.py
-[t1]: ../../tests/behavior/features/synthesis.feature

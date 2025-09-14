@@ -29,16 +29,3 @@ Tests parameterize logger configuration and environment variables to
 verify idempotent setup and context propagation. On 2025-09-07,
 `pytest tests/unit/test_logging_utils.py
 tests/unit/test_logging_utils_env.py` reported four passing tests.
-
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/logging_utils.py][m1]
-- Tests
-  - [tests/unit/test_logging_utils.py][t1]
-  - [tests/unit/test_logging_utils_env.py][t2]
-
-[m1]: ../../src/autoresearch/logging_utils.py
-[t1]: ../../tests/unit/test_logging_utils.py
-[t2]: ../../tests/unit/test_logging_utils_env.py

@@ -35,8 +35,7 @@ activity.
 
 Running averages bound the compression threshold, ensuring prompts remain within
 budget. Budgets are derived from maxima of recent usage, guaranteeing the
-minimum token constraint. Simulation in
-[token_budget_convergence.py](../../scripts/token_budget_convergence.py)
+minimum token constraint. Simulation in `token_budget_convergence.py`
 demonstrates convergence toward `ceil(u * (1 + margin))` for constant
 workloads.
 
@@ -46,12 +45,4 @@ workloads.
 of suggested budgets. The script records metrics showing budgets approach
 `ceil(u * (1 + margin))` and that the minimum budget of one token is enforced
 after idle periods.
-
-## Traceability
-
-- [`token_budget.py`][impl]
-- [`test_metrics_token_budget_spec.py`][tests]
-
-[impl]: ../../src/autoresearch/token_budget.py
-[tests]: ../../tests/unit/test_metrics_token_budget_spec.py
 

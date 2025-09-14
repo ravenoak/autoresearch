@@ -47,17 +47,4 @@ equal inputs deterministically produce the same ranking.
   regression thresholds flag precision or recall drops over five
   percentage points or latency increases above five percent.
 
-## Traceability
-
-- Code: [src/autoresearch/search/ranking_convergence.py][m1]
-- Tests:
-  - [tests/behavior/features/search_cli.feature][t1]
-  - [tests/behavior/features/hybrid_search.feature][t2]
-  - [tests/benchmark/test_hybrid_ranking.py][t3]
-  - [docs/ranking_benchmark.md][d1]
-
-[m1]: ../../src/autoresearch/search/ranking_convergence.py
-[t1]: ../../tests/behavior/features/search_cli.feature
-[t2]: ../../tests/behavior/features/hybrid_search.feature
-[t3]: ../../tests/benchmark/test_hybrid_ranking.py
 [d1]: ../ranking_benchmark.md

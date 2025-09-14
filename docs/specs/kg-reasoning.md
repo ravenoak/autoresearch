@@ -52,13 +52,3 @@ Helper utilities for ontology reasoning and advanced SPARQL queries.
 
 Unit tests verify plugin registration, single-invocation semantics, skipping
 when the triple cap is exceeded, and query execution after reasoning.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/kg_reasoning.py][m1]
-- Tests
-  - [tests/unit/test_kg_reasoning.py][t1]
-
-[m1]: ../../src/autoresearch/kg_reasoning.py
-[t1]: ../../tests/unit/test_kg_reasoning.py

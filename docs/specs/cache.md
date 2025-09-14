@@ -27,14 +27,3 @@ establishing correctness.
 Unit tests insert and retrieve multiple queries across backends and validate
 cache hits and misses. On 2025-09-07, `pytest tests/unit/test_cache.py`
 reported five passing tests.
-
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/cache.py][m1]
-- Tests
-  - [tests/unit/test_cache.py][t1]
-
-[m1]: ../../src/autoresearch/cache.py
-[t1]: ../../tests/unit/test_cache.py

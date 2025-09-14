@@ -37,16 +37,4 @@ multiplies task count by per-task memory, so the memory invariant holds.
 - Increasing `workers` should decrease `Lq` while utilization stays below one.
 - Adding `--benchmark` exercises the throughput micro-benchmark.
 
-## Traceability
-
-- Code: [src/autoresearch/orchestrator_perf.py][m1]
-- Script: [scripts/orchestrator_perf_sim.py][m2]
-- Tests:
-  - [tests/unit/test_orchestrator_perf_sim.py][t1]
-  - [tests/integration/test_orchestrator_performance.py][t2]
-
 [1]: https://en.wikipedia.org/wiki/M/M/c_queue
-[m1]: ../../src/autoresearch/orchestrator_perf.py
-[m2]: ../../scripts/orchestrator_perf_sim.py
-[t1]: ../../tests/unit/test_orchestrator_perf_sim.py
-[t2]: ../../tests/integration/test_orchestrator_performance.py

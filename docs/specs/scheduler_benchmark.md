@@ -30,11 +30,3 @@ matches the invariants exercised in the unit tests.
 
 - Run the scheduler for varying durations to confirm minimal CPU usage.
 - Monitor memory across runs to ensure no significant growth.
-
-## Traceability
-
-- Code: [src/autoresearch/scheduler_benchmark.py][m1]
-- Tests: [tests/unit/test_scheduler_benchmark.py][t1]
-
-[m1]: ../../src/autoresearch/scheduler_benchmark.py
-[t1]: ../../tests/unit/test_scheduler_benchmark.py

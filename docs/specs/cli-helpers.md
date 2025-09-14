@@ -55,13 +55,3 @@ parsing.
 
 Unit tests exercise threshold handling, empty group parsing, sorted table
 reporting, and the single-execution contract for command dispatch errors.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/cli_helpers.py][m1]
-- Tests
-  - [tests/unit/test_cli_helpers.py][t1]
-
-[m1]: ../../src/autoresearch/cli_helpers.py
-[t1]: ../../tests/unit/test_cli_helpers.py

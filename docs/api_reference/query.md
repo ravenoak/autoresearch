@@ -81,9 +81,3 @@ Async queries acknowledge receipt and provide a tracking identifier:
   "query_id": "123"
 }
 ```
-
-## References
-
-- [API models][m1]
-
-[m1]: ../../src/autoresearch/api/models.py

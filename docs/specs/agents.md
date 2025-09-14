@@ -26,7 +26,7 @@ Processing ``n`` tasks uses ``O(n)`` time and ``O(min(n, c))`` space where
 
 ## Proof Sketch
 
-Simulation [agents_sim.py][s1] enqueues tasks under varying capacities. Metrics
+Simulation `agents_sim.py` enqueues tasks under varying capacities. Metrics
 confirm FIFO ordering and bounded growth, validating the invariants and edge
 cases above.
 
@@ -34,23 +34,3 @@ cases above.
 
 Running ``agents_sim.py`` with ten tasks and capacity five yields
 ``{"max_queue": 5, "ordered": true}``.
-
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/agents/][m1]
-- Scripts
-  - [scripts/agents_sim.py][s1]
-- Tests
-  - [tests/unit/test_advanced_agents.py][t1]
-  - [tests/unit/test_agents_llm.py][t2]
-  - [tests/unit/test_specialized_agents.py][t3]
-  - [tests/analysis/test_agents_sim.py][t4]
-
-[m1]: ../../src/autoresearch/agents/
-[t1]: ../../tests/unit/test_advanced_agents.py
-[t2]: ../../tests/unit/test_agents_llm.py
-[t3]: ../../tests/unit/test_specialized_agents.py
-[s1]: ../../scripts/agents_sim.py
-[t4]: ../../tests/analysis/test_agents_sim.py

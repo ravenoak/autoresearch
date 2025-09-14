@@ -23,14 +23,3 @@ dispatcher guarantees fair agent utilization, preserving the invariants.
 
 - Simulate mixed-priority workloads to confirm queue ordering.
 - Vary agent counts to verify concurrency limits.
-
-## Traceability
-
-- Code: [src/autoresearch/orchestrator_perf.py][m1]
-- Tests:
-  - [tests/unit/test_orchestrator_perf_sim.py][t1]
-  - [tests/unit/test_scheduler_benchmark.py][t2]
-
-[m1]: ../../src/autoresearch/orchestrator_perf.py
-[t1]: ../../tests/unit/test_orchestrator_perf_sim.py
-[t2]: ../../tests/unit/test_scheduler_benchmark.py

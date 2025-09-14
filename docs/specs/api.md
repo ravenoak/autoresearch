@@ -38,48 +38,10 @@ Streaming ``n`` chunks performs ``O(n)`` work and uses ``O(1)`` extra memory.
 
 Streaming a finite chunk list while recording data and heartbeats shows the
 ordering and liveness invariants hold. Tests cover nominal and error paths, and
-the simulation in [api_stream_order_sim.py][s1] confirms ordered delivery,
+the simulation in `api_stream_order_sim.py` confirms ordered delivery,
 heartbeat counts, and linear operations.
 
 ## Simulation Expectations
 
 Streaming simulations send three chunks and record metrics such as
 ``{"ordered": true, "heartbeats": 3, "operations": 7}``.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/api/][m1]
-- Scripts
-  - [scripts/api_stream_order_sim.py][s1]
-- Tests
-  - [tests/unit/test_api.py][t1]
-  - [tests/unit/test_api_error_handling.py][t2]
-  - [tests/unit/test_api_imports.py][t3]
-  - [tests/unit/test_api_auth_middleware.py][t4]
-  - [tests/unit/test_api_auth_deps.py][t5]
-  - [tests/integration/test_api_auth.py][t6]
-  - [tests/integration/test_api_auth_middleware.py][t7]
-  - [tests/integration/test_api_streaming.py][t8]
-  - [tests/integration/test_api_streaming_webhook.py][t10]
-  - [tests/integration/test_api_docs.py][t9]
-  - [tests/analysis/test_api_streaming_sim.py][t11]
-  - [tests/unit/test_webhooks_logging.py][t12]
-  - [tests/analysis/test_api_stream_order_sim.py][t13]
-
-[m1]: ../../src/autoresearch/api/
-[t1]: ../../tests/unit/test_api.py
-[t2]: ../../tests/unit/test_api_error_handling.py
-[t3]: ../../tests/unit/test_api_imports.py
-[t4]: ../../tests/unit/test_api_auth_middleware.py
-[t5]: ../../tests/unit/test_api_auth_deps.py
-[t6]: ../../tests/integration/test_api_auth.py
-[t7]: ../../tests/integration/test_api_auth_middleware.py
-[t8]: ../../tests/integration/test_api_streaming.py
-[t10]: ../../tests/integration/test_api_streaming_webhook.py
-[t9]: ../../tests/integration/test_api_docs.py
-[t11]: ../../tests/analysis/test_api_streaming_sim.py
-[t12]: ../../tests/unit/test_webhooks_logging.py
-[r1]: ../../tests/analysis/api_streaming_metrics.json
-[s1]: ../../scripts/api_stream_order_sim.py
-[t13]: ../../tests/analysis/test_api_stream_order_sim.py

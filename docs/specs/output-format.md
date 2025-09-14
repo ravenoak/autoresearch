@@ -82,16 +82,3 @@ The tests assert deterministic strings and no side effects. On 2025-09-07,
 `pytest tests/unit/test_output_format.py` reported 21 passing tests, and
 the feature scenarios in `tests/behavior/features/output_formatting.feature`
 executed successfully in `task verify`.
-
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/output_format.py][m1]
-- Tests
-  - [tests/behavior/features/output_formatting.feature][t1]
-  - [tests/unit/test_output_format.py][t2]
-
-[m1]: ../../src/autoresearch/output_format.py
-[t1]: ../../tests/behavior/features/output_formatting.feature
-[t2]: ../../tests/unit/test_output_format.py

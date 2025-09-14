@@ -45,24 +45,11 @@ loop:
 ## Proof Sketch
 
 Core routines enforce invariants by validating inputs and state. The
-formula [resource_monitor_bounds.py][sim] derives expected sampling
-intervals and thresholds.
+formula `resource_monitor_bounds.py` derives expected sampling intervals
+and thresholds.
 
 ## Simulation Expectations
 
 Unit tests cover nominal and edge cases for these routines.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/resource_monitor.py][m1]
-- Tests
-  - [tests/unit/test_resource_monitor_gpu.py][t1]
-  - [tests/integration/test_monitor_metrics.py][t2]
-
-[m1]: ../../src/autoresearch/resource_monitor.py
-[t1]: ../../tests/unit/test_resource_monitor_gpu.py
-[t2]: ../../tests/integration/test_monitor_metrics.py
 [rm]: ../algorithms/resource_monitor.md
-[sim]: ../../scripts/resource_monitor_bounds.py

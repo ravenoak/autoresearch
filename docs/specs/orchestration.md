@@ -61,28 +61,7 @@ the same aggregate state.
 ## Simulation Expectations
 
 `scripts/orchestration_sim.py` demonstrates deterministic breaker recovery and
-parallel aggregation. Unit tests exercise these properties and token
-budgeting logic:
+parallel aggregation.
 
-- [tests/unit/orchestration/test_circuit_breaker_thresholds.py][t13]
-- [tests/unit/orchestration/test_circuit_breaker_determinism.py][t14]
-- [tests/unit/orchestration/test_parallel_merge_invariant.py][t15]
-- [tests/unit/orchestration/test_parallel_execute.py][t16]
-- [tests/unit/orchestration/test_budgeting_algorithm.py][t17]
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/orchestration/][m1]
-  - [docs/algorithms/orchestration.md][d1]
-  - [scripts/orchestration_sim.py][s1]
-
-[m1]: ../../src/autoresearch/orchestration/
-[d1]: ../../docs/algorithms/orchestration.md
-[s1]: ../../scripts/orchestration_sim.py
-[t13]: ../../tests/unit/orchestration/test_circuit_breaker_thresholds.py
-[t14]: ../../tests/unit/orchestration/test_circuit_breaker_determinism.py
-[t15]: ../../tests/unit/orchestration/test_parallel_merge_invariant.py
-[t16]: ../../tests/unit/orchestration/test_parallel_execute.py
-[t17]: ../../tests/unit/orchestration/test_budgeting_algorithm.py
+[d1]: ../algorithms/orchestration.md
 

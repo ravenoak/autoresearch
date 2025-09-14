@@ -34,7 +34,7 @@ the invariants hold:
 - no agent handles multiple tasks concurrently, and
 - the event log reflects a single global ordering.
 
-The simulation [a2a_concurrency_sim.py][s1] schedules concurrent threads and
+The simulation `a2a_concurrency_sim.py` schedules concurrent threads and
 confirms that observed counts and event ordering match expectations. For
 algorithmic context see [algorithms/a2a_interface.md][a1].
 
@@ -60,26 +60,4 @@ Unit tests assert that:
 - the dispatch log is already sorted by event id, and
 - the number of log entries equals the dispatched total.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/a2a_interface.py][m1]
-  - [docs/algorithms/a2a_interface.md][a1]
-- Simulations
-  - [scripts/a2a_concurrency_sim.py][s1]
-- Tests
-  - [tests/behavior/features/a2a_interface.feature][t1]
-  - [tests/integration/test_a2a_interface.py][t2] – verifies three
-    concurrent queries complete without blocking.
-  - [tests/unit/test_a2a_interface.py][t3] – checks parallel queries return
-    distinct results and validates dispatch order.
-  - [tests/unit/test_a2a_concurrency_sim.py][t4]
-
-[m1]: ../../src/autoresearch/a2a_interface.py
 [a1]: ../algorithms/a2a_interface.md
-[s1]: ../../scripts/a2a_concurrency_sim.py
-[t1]: ../../tests/behavior/features/a2a_interface.feature
-[t2]: ../../tests/integration/test_a2a_interface.py
-[t3]: ../../tests/unit/test_a2a_interface.py
-[t4]: ../../tests/unit/test_a2a_concurrency_sim.py

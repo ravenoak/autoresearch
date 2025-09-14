@@ -21,14 +21,3 @@ Core routines enforce invariants by validating inputs and state.
 
 Unit tests cover nominal and edge cases for these routines.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/orchestration/metrics.py][m1]
-- Tests
-  - [tests/unit/test_metrics_token_budget_spec.py][t1]
-
-[m1]: ../../src/autoresearch/orchestration/metrics.py
-[t1]: ../../tests/unit/test_metrics_token_budget_spec.py
-

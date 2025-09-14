@@ -24,14 +24,4 @@ Core routines enforce invariants by validating inputs and state.
 
 Unit tests cover nominal and edge cases for these routines.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/error_recovery.py][m1]
-- Tests
-  - [tests/unit/test_error_recovery.py][t1]
-
-[m1]: ../../src/autoresearch/error_recovery.py
-[t1]: ../../tests/unit/test_error_recovery.py
 [alg]: ../algorithms/error_recovery.md

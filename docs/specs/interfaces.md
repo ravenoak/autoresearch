@@ -31,13 +31,3 @@ steps.
 Unit tests instantiate compliant and non-compliant objects. They verify
 `QueryState` and a minimal toy implementation satisfy the protocol while a
 partial implementation fails runtime checks.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/interfaces.py][m1]
-- Tests
-  - [tests/unit/test_interfaces.py][t1]
-
-[m1]: ../../src/autoresearch/interfaces.py
-[t1]: ../../tests/unit/test_interfaces.py

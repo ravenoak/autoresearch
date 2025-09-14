@@ -56,15 +56,4 @@ The simulation must show the bucket refilling linearly until it reaches
 capacity ``C``. Once full, further iterations should leave the level
 unchanged, proving convergence under the configured rate ``R``.
 
-## Traceability
-
-
-- Modules
-  - [src/autoresearch/api/middleware.py][m1]
-- Tests
-  - [tests/unit/test_property_api_rate_limit_bounds.py][t1]
-
-[m1]: ../../src/autoresearch/api/middleware.py
-[t1]: ../../tests/unit/test_property_api_rate_limit_bounds.py
-
 [alg]: ../algorithms/api_rate_limiting.md

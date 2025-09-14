@@ -15,13 +15,3 @@ The function inserts only when no row is returned, preserving uniqueness.
 
 ## Simulation Expectations
 Integration tests simulate a DuckDB connection without `fetchone`.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/storage_utils.py][m1]
-- Tests
-  - [tests/integration/test_storage_schema.py][t1]
-
-[m1]: ../../src/autoresearch/storage_utils.py
-[t1]: ../../tests/integration/test_storage_schema.py

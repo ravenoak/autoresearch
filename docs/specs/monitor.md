@@ -44,19 +44,7 @@ Correctness follows from command flow constraints and invariant checks.
 
 ## Simulation Expectations
 
-Monte Carlo analysis lives in
-[`monitor_cli_reliability.py`](../../scripts/monitor_cli_reliability.py), which
-estimates latency and failure rate. Unit tests cover nominal and edge cases for
-these routines.
-
-## Traceability
-
-- Modules
-  - [src/autoresearch/monitor/](../../src/autoresearch/monitor/)
-- Scripts
-  - [scripts/monitor_cli_reliability.py](../../scripts/monitor_cli_reliability.py)
-- Tests
-  - [tests/unit/test_main_monitor_commands.py](../../tests/unit/test_main_monitor_commands.py)
-  - [tests/unit/test_monitor_cli.py](../../tests/unit/test_monitor_cli.py)
-  - [tests/unit/test_resource_monitor_gpu.py](../../tests/unit/test_resource_monitor_gpu.py)
+Monte Carlo analysis lives in `monitor_cli_reliability.py`, which
+estimates latency and failure rate. Unit tests cover nominal and edge cases
+for these routines.
 

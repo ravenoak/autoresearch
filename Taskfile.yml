@@ -54,6 +54,10 @@ tasks:
     cmds:
       - uv run python scripts/lint_specs.py
     desc: "Audit spec files for required sections"
+  docs:
+    cmds:
+      - uv run mkdocs build
+    desc: "Build project documentation"
   check:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"

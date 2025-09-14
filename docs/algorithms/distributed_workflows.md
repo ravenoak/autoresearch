@@ -3,7 +3,7 @@
 ## Coordination
 
 Redis-backed workflows coordinate agents across processes using a list
-queue (see [broker.py](../../src/autoresearch/distributed/broker.py)). Each
+queue (see `broker.py`). Each
 call to `publish` serializes the message to JSON and appends it with
 `RPUSH`, preserving order. Workers block with `BLPOP` so at most one
 consumer retrieves each entry and FIFO semantics hold.
@@ -37,7 +37,7 @@ Trace these behaviors against the [distributed specification][spec].
 See [add-redis-distributed-workflows-specification][issue] for the
 discussion that introduced this specification.
 
-[spec]: ../specs/distributed.md#acceptance-criteria
+[spec]: ../specs/distributed.md
 [issue]: ../../issues/add-redis-distributed-workflows-specification.md
 
 ## Simulation
