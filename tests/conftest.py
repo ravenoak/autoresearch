@@ -45,18 +45,17 @@ def _terminate_active_children() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _drain_multiprocessing_semaphores() -> None:
-    """Remove leaked multiprocessing semaphores after each test."""
+def _drain_multiprocessing_resources() -> None:
+    """Unlink all multiprocessing resources registered during a test."""
     yield
     try:
         cache = resource_tracker._resource_tracker._cache.copy()
     except Exception:
         return
     for name, rtype in cache.items():
-        if rtype == "semaphore":
-            with contextlib.suppress(Exception):
-                resource_tracker.unregister(name, rtype)
-                resource_tracker._resource_tracker.maybe_unlink(name, rtype)
+        with contextlib.suppress(Exception):
+            resource_tracker.unregister(name, rtype)
+            resource_tracker._resource_tracker.maybe_unlink(name, rtype)
 
 
 if importlib.util.find_spec("autoresearch") is None:
