@@ -35,7 +35,8 @@ the safety margin.
 2. **Persist**
    - Claim `c` does not exist in `G` prior to persistence.
    - After `persist_claim`, `c ∈ G` and `U' = U + u(c)`.
-   - A re-entrant lock serializes writers so `G` reflects a linear history.
+  - A re-entrant lock serializes writers so `G` reflects a linear history and
+    LRU bookkeeping remains race-free.
    - If `U' > B`, subsequent eviction ensures `U'' ≤ B(1 - δ)`.
    - Persisted claims remain retrievable via `get_claim` across DuckDB sessions
      [t2].
@@ -70,9 +71,11 @@ For a graph with `n` nodes and an eviction set `E` of size `k`:
   `schema_idempotency_sim.py` [s2]. Schema version detection relies on
   `fetchall` so connections without `fetchone` remain supported.
 - **Concurrency safety.** A single re-entrant lock guards state, so any
-  interleaving `t₁, t₂, …` reduces to a serial order. The resulting sequence
-  `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves linearizability, and
-  `storage_concurrency_sim.py` [s4] confirms mixed states cannot appear.
+  interleaving `t₁, t₂, …` reduces to a serial order. Graph updates and LRU
+  counters execute inside this lock, eliminating race conditions uncovered in
+  earlier revisions. The resulting sequence `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves
+  linearizability, and `storage_concurrency_sim.py` [s4] confirms mixed states
+  cannot appear.
 - **Eviction termination.** Let `U_i` be usage after step `i` and `E_i` the
   evicted set with `u(E_i) > 0`. Then `U_{i+1} = U_i - u(E_i)` and the
   decreasing sequence `{U_i}` is bounded below by `0`, so some `U_k` satisfies

@@ -8,6 +8,7 @@ from autoresearch.storage import (
     teardown,
 )
 from autoresearch.storage_backends import DuckDBStorageBackend
+from autoresearch.storage_utils import initialize_schema_version_without_fetchone
 
 
 @pytest.mark.parametrize("db_path", [":memory:", "disk"], ids=["memory", "disk"])
@@ -37,26 +38,28 @@ def test_initialize_storage_creates_tables(tmp_path, db_path):
         ConfigLoader()._config = None
 
 
-def test_initialize_schema_version_without_fetchone(monkeypatch):
-    """_initialize_schema_version tolerates connections without fetchone."""
+def test_initialize_schema_version_without_fetchone() -> None:
+    """Helper initializes schema version when cursor lacks fetchone."""
     backend = DuckDBStorageBackend()
     backend.setup(db_path=":memory:", skip_migrations=True)
     backend._conn.execute("DELETE FROM metadata WHERE key='schema_version'")
-    original_execute = type(backend._conn).execute
 
     class NoFetchOneResult:
-        def __init__(self, rows):
+        def __init__(self, rows: list[list[str]]):
             self._rows = rows
 
         def fetchall(self) -> list[list[str]]:
             return self._rows
 
-    def fake_execute(self, sql: str, *args, **kwargs):
-        if "schema_version" in sql and "SELECT" in sql:
-            return NoFetchOneResult([])
-        return original_execute(self, sql, *args, **kwargs)
+    class NoFetchOneConn:
+        def __init__(self, conn):
+            self._conn = conn
 
-    monkeypatch.setattr(type(backend._conn), "execute", fake_execute)
-    backend._initialize_schema_version()
-    monkeypatch.setattr(type(backend._conn), "execute", original_execute)
+        def execute(self, sql: str, *args, **kwargs):
+            if "schema_version" in sql and "SELECT" in sql:
+                return NoFetchOneResult([])
+            return self._conn.execute(sql, *args, **kwargs)
+
+    proxy = NoFetchOneConn(backend._conn)
+    initialize_schema_version_without_fetchone(proxy)
     assert backend.get_schema_version() == 1

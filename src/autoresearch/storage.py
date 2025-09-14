@@ -854,22 +854,25 @@ class StorageManager(metaclass=StorageManagerMeta):
             has been validated. It should be called by persist_claim, which
             handles these prerequisites.
         """
-        attrs = dict(claim.get("attributes", {}))
-        if "confidence" in claim:
-            attrs["confidence"] = claim["confidence"]
-        assert StorageManager.context.graph is not None
-        StorageManager.context.graph.add_node(claim["id"], **attrs)
-        # Increment the counter and store it to maintain deterministic ordering
         state = StorageManager.state
-        state.lru_counter += 1
-        state.lru[claim["id"]] = state.lru_counter
-        for rel in claim.get("relations", []):
+        with state.lock:
+            attrs = dict(claim.get("attributes", {}))
+            if "confidence" in claim:
+                attrs["confidence"] = claim["confidence"]
             assert StorageManager.context.graph is not None
-            StorageManager.context.graph.add_edge(
-                rel["src"],
-                rel["dst"],
-                **rel.get("attributes", {}),
-            )
+            StorageManager.context.graph.add_node(claim["id"], **attrs)
+            # Increment the counter and store it to maintain deterministic
+            # ordering.  A re-entrant lock ensures concurrent writers cannot
+            # race on the counter or LRU structure.
+            state.lru_counter += 1
+            state.lru[claim["id"]] = state.lru_counter
+            for rel in claim.get("relations", []):
+                assert StorageManager.context.graph is not None
+                StorageManager.context.graph.add_edge(
+                    rel["src"],
+                    rel["dst"],
+                    **rel.get("attributes", {}),
+                )
 
     @staticmethod
     def _persist_to_duckdb(claim: dict[str, Any]) -> None:
