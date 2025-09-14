@@ -18,6 +18,8 @@ integration tests.
   called in a `finally` block.
 - An autouse fixture now drains the resource tracker cache after each
   test to unregister any leaked semaphores.
+- A diagnostics fixture logs the cache before and after each test so
+  leaks can be identified when they occur.
 
 These steps prevent stray resources from triggering `KeyError` and allow
 coverage and integration tests to run to completion.
