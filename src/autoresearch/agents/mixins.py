@@ -4,7 +4,7 @@ Mixins for agent functionality.
 This module provides mixins that can be used to add common functionality to agents.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from ..config.models import ConfigModel
@@ -17,7 +17,7 @@ log = get_logger(__name__)
 class PromptGeneratorMixin:
     """Mixin for generating prompts using the prompt template system."""
 
-    def generate_prompt(self, template_name: str, **kwargs) -> str:
+    def generate_prompt(self, template_name: str, **kwargs: Any) -> str:
         """Generate a prompt using a template.
 
         Args:
@@ -44,9 +44,7 @@ class ModelConfigMixin:
             The model name to use.
         """
         model_cfg = config.agent_config.get(agent_name)
-        return (
-            model_cfg.model if model_cfg and model_cfg.model else config.default_model
-        )
+        return model_cfg.model if model_cfg and model_cfg.model else config.default_model
 
 
 class ClaimGeneratorMixin:
