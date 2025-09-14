@@ -34,11 +34,13 @@ registered resources after each test to prevent spurious warnings.
 ### Enabling heavy extras
 
 Enable heavy groups like `nlp`, `distributed`, `analysis`, `llm`, or `gpu` only
-when needed:
+when needed. Run `task check EXTRAS="llm"` when working on LLM modules so
+linting and smoke tests install `dspy-ai` and `fastembed`:
 
 ```bash
 EXTRAS="nlp parsers" task install
 EXTRAS="analysis distributed" task verify
+EXTRAS="llm" task check
 ```
 
 Available extras enable optional features. Heavy groups require explicit flags:

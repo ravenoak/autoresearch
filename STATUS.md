@@ -22,6 +22,10 @@ checks are required.
 - Opened [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
   to confirm every module has matching specifications and proofs.
 
+- Added `task check EXTRAS="llm"` instructions to README and testing
+  guidelines; archived
+  [document-llm-extras-for-task-check](issues/archive/document-llm-extras-for-task-check.md).
+
 - Enabled full integration suite by removing unconditional skips for
   `requires_ui`, `requires_vss`, and `requires_distributed` markers.
 - Archived integration test issues after upstream fixes.

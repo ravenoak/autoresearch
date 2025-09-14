@@ -15,5 +15,8 @@ None
   are unused.
 - Documentation explains how to run `task check` with LLM extras.
 
+Archived on 2025-09-14 after updating README and testing guidelines with
+`task check EXTRAS="llm"` instructions.
+
 ## Status
 Archived
