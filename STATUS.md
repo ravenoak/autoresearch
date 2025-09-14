@@ -8,6 +8,10 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 14, 2025
+- Fresh environment lacked the Go Task CLI; `task check` returned
+  "command not found".
+- `uv run --extra test pytest tests/unit/test_version.py -q` runs two tests in
+  0.33s, demonstrating minimal coverage without Task.
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
 - Running `task check` without extras reports missing `dspy-ai` and `fastembed`.
