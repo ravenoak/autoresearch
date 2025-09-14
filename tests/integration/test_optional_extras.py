@@ -49,9 +49,10 @@ def test_streamlit_ui_helpers() -> None:
 
 
 @pytest.mark.requires_vss
-def test_vss_extension_loader() -> None:
+def test_vss_extension_loader(monkeypatch) -> None:
     """The VSS extra enables DuckDB vector extension management."""
 
+    monkeypatch.setenv("ENABLE_ONLINE_EXTENSION_INSTALL", "false")
     conn = duckdb.connect(":memory:")
     loaded = VSSExtensionLoader.load_extension(conn)
     assert loaded is VSSExtensionLoader.verify_extension(conn, verbose=False)

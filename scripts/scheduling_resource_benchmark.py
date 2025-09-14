@@ -39,7 +39,8 @@ def run_benchmark(
     results: List[Dict[str, float]] = []
     for workers in range(1, max_workers + 1):
         metrics = simulate(workers, arrival_rate, service_rate, tasks, mem_per_task)
-        metrics.update(benchmark_scheduler(workers, tasks, mem_per_task))
+        bench = benchmark_scheduler(workers, tasks, mem_per_task)
+        metrics.update(vars(bench))
         metrics["workers"] = workers
         results.append(metrics)
     return results

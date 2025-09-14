@@ -25,18 +25,23 @@ def test_combine_scores_invalid_weights() -> None:
 
 
 def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
-    """DuckDB similarities act as semantic component when semantic search is off."""
-    cfg = ConfigModel(search=SearchConfig(use_semantic_similarity=False))
+    """DuckDB similarities rank results when semantic search is disabled."""
+    cfg = ConfigModel(
+        search=SearchConfig(
+            use_semantic_similarity=False,
+            use_bm25=False,
+            use_source_credibility=False,
+        )
+    )
     ConfigLoader.reset_instance()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [0.0, 0.0]))
-    monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: [0.0, 0.0])
     docs = [
         {"title": "a", "similarity": 0.2},
         {"title": "b", "similarity": 0.8},
     ]
     ranked = Search.rank_results("q", docs)
     assert [d["title"] for d in ranked] == ["b", "a"]
+    assert ranked[0]["bm25_score"] == ranked[0]["credibility_score"] == 1.0
 
 
 def test_rank_results_weighted_combination(monkeypatch) -> None:

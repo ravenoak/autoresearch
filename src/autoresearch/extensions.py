@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import duckdb
 from dotenv import dotenv_values
 
 from .config import ConfigLoader
@@ -90,7 +89,7 @@ class VSSExtensionLoader:
                         extension_loaded = True
                     else:
                         log.warning("VSS extension failed verification after filesystem load")
-                except duckdb.Error as e:  # type: ignore[attr-defined]
+                except Exception as e:  # pragma: no cover - defensive
                     log.warning("Failed to load VSS extension from filesystem: %s", e)
 
         if not extension_loaded:
@@ -106,7 +105,7 @@ class VSSExtensionLoader:
                         extension_loaded = True
                     else:
                         log.warning("VSS extension may not be fully loaded")
-                except duckdb.Error as e:  # type: ignore[attr-defined]
+                except Exception as e:  # pragma: no cover - network or install failure
                     log.error("Failed to load VSS extension: %s", e)
                     extension_loaded = VSSExtensionLoader._load_from_package(conn)
                     if not extension_loaded:
@@ -156,7 +155,7 @@ class VSSExtensionLoader:
                 log.info("VSS stub extension loaded")
                 return True
             log.warning("VSS stub failed verification")
-        except duckdb.Error as err:  # type: ignore[attr-defined]
+        except Exception as err:  # pragma: no cover - defensive
             log.warning("Failed to load VSS stub: %s", err)
         return False
 
@@ -174,7 +173,7 @@ class VSSExtensionLoader:
             conn.execute("CREATE TEMP TABLE vss_stub(id INTEGER)")
             log.info("Created VSS stub marker table")
             return True
-        except duckdb.Error as err:  # type: ignore[attr-defined]
+        except Exception as err:  # pragma: no cover - defensive
             log.warning("Failed to create VSS stub marker: %s", err)
             return False
 
@@ -233,7 +232,7 @@ class VSSExtensionLoader:
             else:
                 if verbose:
                     log.warning("VSS extension is not loaded")
-        except duckdb.Error as e:  # type: ignore[attr-defined]
+        except Exception as e:  # pragma: no cover - defensive
             if verbose:
                 log.warning(f"VSS extension verification failed: {e}")
 
@@ -242,7 +241,7 @@ class VSSExtensionLoader:
             if verbose:
                 log.info("VSS stub marker present")
             return True
-        except duckdb.Error as err:  # type: ignore[attr-defined]
+        except Exception as err:  # pragma: no cover - defensive
             if verbose:
                 log.warning("VSS stub verification failed: %s", err)
             return False
