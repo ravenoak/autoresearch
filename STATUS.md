@@ -18,6 +18,11 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
   currently fails at `tests/unit/test_eviction.py::test_ram_eviction`, so
   coverage results are unavailable.
 
+- Installing `llm` extras allows `task check` to pass. `EXTRAS="llm" task verify`
+  fails in `tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
+  (expected score `1.0`, got `0.0`), and earlier runs on the same day failed at
+  `tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`.
+
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
   [install-task-cli-system-level](issues/archive/install-task-cli-system-level.md).

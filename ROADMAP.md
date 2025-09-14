@@ -4,22 +4,24 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 13, 2025**.
+[README](README.md). Last updated **September 14, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. The `task` command is currently unavailable and
-`uv run pytest` reports 43 failing integration tests covering API authentication,
-ranking, and storage. Reopened
+across project documentation. Go Task 3.44.1 is available and `task check`
+passes with `llm` extras installed. `task verify` fails in
+`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
+(expected score `1.0`, got `0.0`), and earlier runs failed at
+`tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`,
+so integration tests and resource tracker diagnostics do not run. Reopened
 [fix-api-authentication-and-metrics-tests](issues/fix-api-authentication-and-metrics-tests.md),
 [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
 and
 [fix-storage-integration-test-failures](issues/fix-storage-integration-test-failures.md)
-track these regressions. Once `task` is restored, `task verify` still exits with
-a multiprocessing resource tracker `KeyError` after unit tests.
+still track earlier regressions.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
