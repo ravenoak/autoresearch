@@ -6,6 +6,10 @@ Taskfile commands. Confirm the CLI is available with `task --version`.
 ## September 14, 2025
 - Verified Go Task 3.44.1 installation with `task --version`.
 - Updated README and STATUS with verification instructions.
+- `task check` succeeds after activating the development environment.
+- `task verify` fails at
+  `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
+  so coverage and resource tracker checks do not run.
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived

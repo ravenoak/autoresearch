@@ -8,6 +8,8 @@ returns `['B', 'A']` instead of `['A', 'B']`. Integration tests also fail:
 initialize the vector search extension and
 `tests/integration/test_ranking_formula_consistency.py::test_convex_combination_matches_docs`
 reports mismatched ranking values.
+Unit test `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`
+expects a stubbed extension file but returns a directory path.
 
 ## Dependencies
 None.
