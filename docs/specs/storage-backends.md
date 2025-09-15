@@ -37,9 +37,13 @@ teardown.
 
 ### Setup
 
-- Install `oxrdflib` to enable the OxiGraph RDF store.
+- Install `oxrdflib` with `uv pip install oxrdflib` to enable the OxiGraph
+  RDF store.
+- Verify the driver is discoverable with
+  `uv run python -c "import oxrdflib"`.
 - Set `storage.rdf_backend` to `oxigraph` and provide `storage.rdf_path`.
-- Confirm the backend with `StorageManager.get_rdf_backend_identifier()`.
+- Initialize storage and confirm the backend with
+  `StorageManager.get_rdf_backend_identifier()`; it should report `OxiGraph`.
 
 ## Traceability
 
