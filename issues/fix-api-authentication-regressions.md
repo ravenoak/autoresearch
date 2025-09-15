@@ -2,10 +2,13 @@
 
 ## Context
 A `uv run pytest` on 2025-09-14 reported numerous authentication and
-permission failures. Requests without valid API keys returned `200` instead
-of `401` or `403`, affecting suites under `tests/integration/test_api_auth*`,
+permission failures. Requests without valid API keys returned `200` instead of
+`401` or `403`, affecting suites under `tests/integration/test_api_auth*`,
 `test_api_docs.py`, `test_api_streaming.py`, `test_cli_http.py`, and
-`test_monitor_metrics.py`.
+`test_monitor_metrics.py`. A subsequent `task verify` on 2025-09-15 fails in
+`tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token` with
+`AttributeError: 'AuthMiddleware' object has no attribute 'dispatch'`, showing
+the middleware is not wired into Starlette correctly.
 
 ## Dependencies
 None

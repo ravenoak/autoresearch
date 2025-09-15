@@ -5,15 +5,11 @@ The project remains unreleased even though the codebase and documentation are
 publicly available. To tag version v0.1.0a1, we need a coordinated effort to
 finalize outstanding testing, documentation, and packaging tasks while keeping
 workflows dispatch-only. `task check` now passes after resolving earlier mypy
-errors, but `task verify` fails in
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`,
-blocking the release.
-An attempt on 2025-09-14 to run `task verify` with the default extras
-required downloading more than 80 packages and was interrupted after the first
-test, so full results are still pending.
-A later run on September 14, 2025, failed in
-`tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking`
-with a `hypothesis.errors.FailedHealthCheck` due to slow input generation.
+errors, but `task verify` now fails in
+`tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token`, where
+`AuthMiddleware` lacks a `dispatch` method. Earlier issues in the VSS extension
+loader and property ranking tests have been resolved, yet full results still
+depend on closing the open dependencies.
 
 ## Dependencies
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)

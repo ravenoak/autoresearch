@@ -23,6 +23,9 @@ checks are required.
 - Found 19 modules with specs but no proofs; opened
   [add-proofs-for-unverified-modules](issues/add-proofs-for-unverified-modules.md)
   to track verification work.
+- `task verify` on 2025-09-15 fails in
+  `tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token` with
+  `AttributeError: 'AuthMiddleware' object has no attribute 'dispatch'`.
 
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
