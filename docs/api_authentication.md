@@ -5,6 +5,14 @@ When either mechanism is configured, unauthenticated or invalid requests
 receive a `401` response with a `WWW-Authenticate` header indicating the
 required scheme.
 
+## Required keys and roles
+
+- Define keys with `api.api_key` or `api.api_keys`.
+- Map each key to a role and configure `api.role_permissions`.
+- Requests with missing or invalid credentials return **401 Unauthorized**.
+- Requests lacking required permissions return **403 Forbidden**.
+- Keys are validated and roles assigned before request bodies are read.
+
 ## API keys
 
 - Set `api.api_key` in your configuration to require a shared secret.
@@ -12,7 +20,6 @@ required scheme.
 - Missing or incorrect keys trigger `401` with `WWW-Authenticate: API-Key`.
 - Multiple keys with different roles can be defined via `api.api_keys`.
 - Each key maps to a role that grants permissions via `api.role_permissions`.
-- Keys are validated and roles assigned before request bodies are read.
 - If an `X-API-Key` header is present but invalid, the request is rejected
   even when a bearer token is supplied.
 

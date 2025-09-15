@@ -13,6 +13,18 @@ Requests and responses use versioned schemas; the current
 `"1"`. Deprecated versions return **410 Gone** while unknown versions
 return **422 Unprocessable Entity**.
 
+## Authentication
+
+Clients must include a valid API key or bearer token.
+
+- ``X-API-Key`` headers map to roles defined in ``api.api_keys``.
+- ``Authorization: Bearer <token>`` headers are checked against
+  ``api.bearer_token``.
+- Each role's permissions come from ``api.role_permissions``.
+- Missing or invalid credentials return **401 Unauthorized**.
+- Insufficient permissions return **403 Forbidden**.
+- Credentials are validated before request bodies are read.
+
 ## Algorithms
 
 - Implement core behaviors described above.
