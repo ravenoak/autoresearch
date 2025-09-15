@@ -19,6 +19,7 @@ def validate_rdf_backend(cls, v: str) -> str:
 
 def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
     """Normalize relevance weights to sum to ``1.0``."""
+    tolerance = 0.001
     default_weights = {
         "semantic_similarity_weight": 0.5,
         "bm25_weight": 0.3,
@@ -31,7 +32,7 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
             default_weights=default_weights,
             suggestion="Check the default weight values",
         )
-    if abs(defaults_total - 1.0) > 0.001:
+    if abs(defaults_total - 1.0) > tolerance:
         default_weights = {name: value / defaults_total for name, value in default_weights.items()}
 
     weight_fields = set(default_weights.keys())
@@ -39,7 +40,15 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
     weights = {name: getattr(self, name) for name in weight_fields}
 
     if provided != weight_fields:
-        remaining = 1.0 - sum(weights[n] for n in provided)
+        provided_total = sum(weights[n] for n in provided)
+        if provided_total - 1.0 > tolerance:
+            raise ConfigError(
+                "Relevance ranking weights cannot exceed 1.0",
+                provided_total=provided_total,
+                provided_weights={name: weights[name] for name in provided},
+                suggestion="Reduce the specified weights so they sum to at most 1.0.",
+            )
+        remaining = 1.0 - provided_total
         missing = weight_fields - provided
         missing_total = sum(default_weights[n] for n in missing)
         for name in missing:
@@ -51,6 +60,13 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
         weights = {n: getattr(self, n) for n in weight_fields}
 
     total = sum(weights.values())
+    if total - 1.0 > tolerance:
+        raise ConfigError(
+            "Relevance ranking weights cannot exceed 1.0",
+            total=total,
+            weights=weights,
+            suggestion="Reduce the weights so they sum to at most 1.0 before normalization.",
+        )
     if total <= 0:
         equal = 1.0 / len(weight_fields)
         for name in weight_fields:

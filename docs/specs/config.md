@@ -67,6 +67,9 @@ underlying watcher model.
   operation.
 - Environment variables override file values without mutating the original
   parsed dictionary.
+- Relevance ranking weights must not exceed a combined value of 1.0; a
+  `ConfigError` is raised when overweight vectors are provided instead of
+  silently renormalising them.
 - Observer notifications always receive validated `ConfigModel` instances.
 - Watch threads stop cleanly and clear `app.state.watch_ctx` during shutdown.
 - Active profiles inherit base settings and only override declared keys.
