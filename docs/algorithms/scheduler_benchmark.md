@@ -17,7 +17,7 @@ memory ceilings.
 
 ## References
 - [code](../../src/autoresearch/scheduler_benchmark.py)
-- [spec](../specs/scheduler_benchmark.md)
+- [spec](../specs/scheduler-benchmark.md)
 - [tests](../../tests/unit/test_scheduler_benchmark.py)
 
 ## Related Issues

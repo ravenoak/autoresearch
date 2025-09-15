@@ -9,6 +9,8 @@ documented behaviour.
 
 | Module | Spec | Tests |
 | --- | --- | --- |
+| `src/autoresearch/__init__.py` | [autoresearch.md](autoresearch.md) | `../../tests/unit/test_version.py` |
+| `src/autoresearch/__main__.py` | [main-entrypoint.md](main-entrypoint.md) | `../../tests/unit/test_main_module.py` |
 | `src/autoresearch/cache.py` | [cache.md](cache.md) | `../../tests/unit/test_cache.py` |
 | `src/autoresearch/data_analysis.py` | [data-analysis.md](data-analysis.md) | `../../tests/unit/test_data_analysis.py`<br>`../../tests/unit/test_kuzu_polars.py`<br>`../../tests/behavior/features/data_analysis.feature` |
 | `src/autoresearch/orchestration/` | [orchestration.md](orchestration.md) | `../../tests/behavior/features/orchestration_system.feature`<br>`../../tests/behavior/features/agent_orchestration.feature`<br>`../../tests/behavior/features/orchestrator_agents_integration.feature`<br>`../../tests/behavior/features/orchestrator_agents_integration_extended.feature`<br>`../../tests/behavior/features/parallel_query_execution.feature` |
@@ -39,9 +41,9 @@ documented behaviour.
 | `src/autoresearch/mcp_interface.py` | [mcp-interface.md](mcp-interface.md) | `../../tests/unit/test_mcp_interface.py<br>../../tests/behavior/features/mcp_interface.feature` |
 | `src/autoresearch/models.py` | [models.md](models.md) | `../../tests/unit/test_models_docstrings.py` |
 | `src/autoresearch/monitor/` | [monitor.md](monitor.md) | `../../tests/unit/test_main_monitor_commands.py<br>../../tests/unit/test_monitor_cli.py<br>../../tests/unit/test_resource_monitor_gpu.py` |
-| `src/autoresearch/orchestrator_perf.py` | [orchestrator_perf.md](orchestrator_perf.md) | `../../tests/unit/test_orchestrator_perf_sim.py`<br>`../../tests/integration/test_orchestrator_performance.py` |
+| `src/autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](orchestrator-perf.md) | `../../tests/unit/test_orchestrator_perf_sim.py`<br>`../../tests/integration/test_orchestrator_performance.py` |
 | `src/autoresearch/resource_monitor.py` | [resource-monitor.md](resource-monitor.md) | `../../tests/unit/test_resource_monitor_gpu.py<br>../../tests/integration/test_monitor_metrics.py<br>../../scripts/resource_monitor_bounds.py` |
-| `src/autoresearch/scheduler_benchmark.py` | [scheduler_benchmark.md](scheduler_benchmark.md) | `../../tests/unit/test_scheduler_benchmark.py` |
+| `src/autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](scheduler-benchmark.md) | `../../tests/unit/test_scheduler_benchmark.py` |
 | `src/autoresearch/storage_backends.py` | [storage-backends.md](storage-backends.md) | `../../tests/unit/test_duckdb_storage_backend.py<br>../../tests/unit/test_duckdb_storage_backend_extended.py` |
 | `src/autoresearch/storage_backup.py` | [storage-backup.md](storage-backup.md) | `../../tests/unit/test_storage_backup.py` |
 | `src/autoresearch/storage_utils.py` | [storage-utils.md](storage-utils.md) | `../../tests/integration/test_storage_schema.py` |
@@ -49,6 +51,8 @@ documented behaviour.
 | `src/autoresearch/streamlit_ui.py` | [streamlit-ui.md](streamlit-ui.md) | `../../tests/unit/test_streamlit_ui_helpers.py` |
 | `src/autoresearch/test_tools.py` | [test-tools.md](test-tools.md) | `../../tests/unit/test_test_tools.py` |
 | `src/autoresearch/visualization.py` | [visualization.md](visualization.md) | `../../tests/unit/test_visualization.py<br>../../tests/behavior/features/visualization_cli.feature` |
+| `src/git/` | [git.md](git.md) | `../../tests/unit/test_git_repo_stub.py`<br>`../../tests/targeted/test_git_search.py` |
+| `src/git/search.py` | [git-search.md](git-search.md) | `../../tests/targeted/test_git_search.py` |
 
 ## Mapping specs to tests
 

@@ -18,7 +18,7 @@ tests compare predictions to measured metrics.
 
 ## References
 - [code](../../src/autoresearch/orchestrator_perf.py)
-- [spec](../specs/orchestrator_perf.md)
+- [spec](../specs/orchestrator-perf.md)
 - [tests](../../tests/unit/test_orchestrator_perf_sim.py)
 - [simulation](../../scripts/orchestrator_perf_sim.py)
 
