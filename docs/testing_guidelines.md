@@ -83,6 +83,13 @@ Two installation strategies support different workflows:
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
 
+To keep local runs lightweight, pin verify to the default extras when heavy
+groups were previously synced:
+
+```bash
+task verify EXTRAS="dev-minimal test"
+```
+
 If the `task` CLI is unavailable, install the test extras before invoking
 `pytest` directly:
 
