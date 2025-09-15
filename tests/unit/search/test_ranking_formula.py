@@ -18,22 +18,15 @@ def test_combine_scores_weighted_sum() -> None:
     assert all(0.0 <= s <= 1.0 for s in scores)
 
 
-def test_combine_scores_normalizes_weights() -> None:
-    """Weights are normalized internally when they do not sum to 1."""
-    bm25 = [3.0, 1.0]
-    semantic = [0.8, 0.2]
-    credibility = [0.9, 0.5]
-    scores = combine_scores(bm25, semantic, credibility, (2.0, 1.0, 1.0))
-    expected = combine_scores(bm25, semantic, credibility, (0.5, 0.25, 0.25))
-    assert scores == pytest.approx(expected, abs=0.01)
-
-
-def test_combine_scores_invalid_weights() -> None:
-    """Negative or zero weights raise ValueError."""
+def test_combine_scores_requires_convex_weights() -> None:
+    """Weights must be non-negative and sum to one."""
+    bm25 = [3.0]
+    semantic = [0.8]
+    credibility = [0.9]
     with pytest.raises(ValueError):
-        combine_scores([1.0], [1.0], [1.0], (-0.1, 0.6, 0.5))
+        combine_scores(bm25, semantic, credibility, (0.5, 0.25, 0.1))
     with pytest.raises(ValueError):
-        combine_scores([1.0], [1.0], [1.0], (0.0, 0.0, 0.0))
+        combine_scores(bm25, semantic, credibility, (-0.1, 0.6, 0.5))
 
 
 def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:

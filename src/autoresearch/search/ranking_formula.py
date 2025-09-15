@@ -8,6 +8,7 @@ scores bounded and comparable across backends.
 
 from __future__ import annotations
 
+import math
 from typing import List, Sequence, Tuple
 
 
@@ -33,6 +34,26 @@ def normalize_scores(scores: Sequence[float]) -> List[float]:
     return [(s - min_score) / scale for s in scores]
 
 
+def validate_weights(weights: Sequence[float]) -> None:
+    """Ensure ranking weights form a convex combination.
+
+    Args:
+        weights: Sequence of component weights in BM25, semantic, credibility
+            order.
+
+    Raises:
+        ValueError: If weights are negative, do not sum to 1.0, or do not have
+            exactly three components.
+    """
+
+    if len(weights) != 3:
+        raise ValueError("weights must have three components")
+    if any(w < 0 for w in weights):
+        raise ValueError("weights must be non-negative")
+    if not math.isclose(sum(weights), 1.0, abs_tol=1e-3):
+        raise ValueError("weights must sum to 1.0")
+
+
 def combine_scores(
     bm25: Sequence[float],
     semantic: Sequence[float],
@@ -46,7 +67,7 @@ def combine_scores(
         semantic: Semantic similarity scores.
         credibility: Source credibility or freshness scores.
         weights: Tuple of weights ``(bm25, semantic, credibility)``. The values
-            need not sum to 1.0; they are normalized internally.
+            must form a convex combination.
 
     Returns:
         List[float]: Final normalized relevance scores.
@@ -57,12 +78,7 @@ def combine_scores(
     if not (len(bm25) == len(semantic) == len(credibility)):
         raise ValueError("Score sequences must have equal length")
 
-    if any(w < 0 for w in weights):
-        raise ValueError("Weights must be non-negative")
-    weight_sum = sum(weights)
-    if weight_sum <= 0:
-        raise ValueError("At least one weight must be positive")
-    norm_weights = tuple(w / weight_sum for w in weights)
+    validate_weights(weights)
 
     bm25_norm = normalize_scores(bm25)
     semantic_norm = normalize_scores(semantic)
@@ -70,9 +86,9 @@ def combine_scores(
 
     combined = [
         (
-            bm25_norm[i] * norm_weights[0]
-            + semantic_norm[i] * norm_weights[1]
-            + credibility_norm[i] * norm_weights[2]
+            bm25_norm[i] * weights[0]
+            + semantic_norm[i] * weights[1]
+            + credibility_norm[i] * weights[2]
         )
         for i in range(len(bm25_norm))
     ]

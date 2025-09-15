@@ -56,10 +56,12 @@ class VSSExtensionLoader:
         cfg = ConfigLoader().config.storage
 
         def _env_extension_path() -> Path | None:
-            offline = dotenv_values(".env.offline")
-            path = offline.get("VECTOR_EXTENSION_PATH")
-            if path:
-                candidate = Path(path).resolve()
+            env_path = os.getenv("VECTOR_EXTENSION_PATH")
+            if not env_path:
+                offline = dotenv_values(".env.offline")
+                env_path = offline.get("VECTOR_EXTENSION_PATH")
+            if env_path:
+                candidate = Path(env_path).resolve()
                 if candidate.exists():
                     return candidate
                 log.warning("Offline VSS path does not exist: %s", candidate)

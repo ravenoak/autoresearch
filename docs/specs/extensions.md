@@ -7,12 +7,19 @@ as the vector search system (VSS).
 
 ## Algorithms
 
-1. ``VSSExtensionLoader.load_extension`` tries the configured path then
-   downloads from DuckDB.
-2. ``verify_extension`` queries ``duckdb_extensions()`` to confirm the module
-   is active.
+1. ``VSSExtensionLoader.load_extension`` attempts, in order:
+   1. ``storage.vector_extension_path``
+   2. ``VECTOR_EXTENSION_PATH`` from the environment or ``.env.offline``
+   3. ``duckdb_extension_vss`` package
+   4. repository stub ``extensions/vss/vss.duckdb_extension``
+   5. creation of a ``vss_stub`` marker table
+2. ``verify_extension`` queries ``duckdb_extensions()`` or checks the marker
+   table to confirm activation.
 3. When ``AUTORESEARCH_STRICT_EXTENSIONS=true``, failures raise
    ``StorageError``.
+4. ``scripts/download_duckdb_extensions.py`` writes
+   ``VECTOR_EXTENSION_PATH`` to ``.env.offline`` and creates a stub when
+   downloads fail so offline runs succeed.
 
 ## Invariants
 
