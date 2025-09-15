@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Iterable, List, Sequence
 
 from .ranking import normalize_scores
+from .ranking_formula import validate_weights
 
 
 @dataclass(frozen=True)
@@ -24,27 +24,6 @@ class DocScores:
     credibility: float
 
 
-def _validate_weights(weights: Sequence[float]) -> None:
-    """Ensure ranking weights form a proper convex combination.
-
-    Args:
-        weights: Sequence of component weights in BM25, semantic, credibility
-            order.
-
-    Raises:
-        ValueError: If weights do not sum to 1 within a small tolerance, if any
-            weight is negative, or if an unexpected number of weights is
-            provided.
-    """
-
-    if len(weights) != 3:
-        raise ValueError("weights must have three components")
-    if any(w < 0 for w in weights):
-        raise ValueError("weights must be non-negative")
-    if not math.isclose(sum(weights), 1.0, abs_tol=1e-3):
-        raise ValueError("weights must sum to 1.0")
-
-
 def relevance_scores(docs: Iterable[DocScores], weights: Sequence[float]) -> List[float]:
     """Compute relevance scores from component scores.
 
@@ -55,7 +34,7 @@ def relevance_scores(docs: Iterable[DocScores], weights: Sequence[float]) -> Lis
     Returns:
         List[float]: Weighted relevance scores.
     """
-    _validate_weights(weights)
+    validate_weights(weights)
     doc_list = list(docs)
     w_bm25, w_sem, w_cred = weights
     bm25_norm = normalize_scores([d.bm25 for d in doc_list])

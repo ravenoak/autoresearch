@@ -108,6 +108,16 @@ def load_offline_env(env_path: str = ".env.offline") -> dict:
     return offline_vars
 
 
+def _write_offline_env(path: str) -> None:
+    """Persist the extension path to ``.env.offline``."""
+    vars = dotenv_values(".env.offline")
+    vars["VECTOR_EXTENSION_PATH"] = path
+    with open(".env.offline", "w", encoding="utf-8") as env_file:
+        for key, value in vars.items():
+            if value is not None:
+                env_file.write(f"{key}={value}\n")
+
+
 def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | None:
     """Use an already downloaded extension when network access fails.
 
@@ -119,12 +129,13 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     """
     offline_vars = load_offline_env()
     logger.warning("Falling back to offline configuration")
-    path = offline_vars.get("VECTOR_EXTENSION_PATH")
+    path = offline_vars.get("VECTOR_EXTENSION_PATH") or os.getenv("VECTOR_EXTENSION_PATH")
     os.makedirs(output_extension_dir, exist_ok=True)
     if path and os.path.exists(path):
         dst = os.path.join(output_extension_dir, os.path.basename(path))
         shutil.copy2(path, dst)
         os.environ["VECTOR_EXTENSION_PATH"] = dst
+        _write_offline_env(dst)
         logger.info("Copied offline extension from %s", path)
         return dst
 
@@ -132,6 +143,7 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     # Create a stub file so the extension path resolves during tests
     Path(dst).touch()
     os.environ["VECTOR_EXTENSION_PATH"] = dst
+    _write_offline_env(dst)
     logger.warning(
         "No offline extension configured for %s; created stub at %s",
         extension_name,

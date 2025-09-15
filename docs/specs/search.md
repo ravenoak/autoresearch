@@ -26,8 +26,16 @@ and hybrid queries and exposes a CLI entry point. See the
 - Computes keyword and vector scores separately.
 - Normalizes semantic and DuckDB similarities before averaging so hybrid and
   semantic rankings share a unified scale.
-- Combines results with a weighted sum of keyword, vector, and source
-  credibility weights.
+- Computes a convex combination of normalized BM25, semantic, and credibility
+  scores:
+
+  \[
+  s = \text{normalize}(b w_b + v w_v + c w_c)
+  \]
+
+  where ``b``, ``v``, and ``c`` are the min–max normalized component scores
+  and the weights ``w_b + w_v + w_c = 1``. If all configured weights are zero,
+  ranking falls back to equal weighting across enabled components.
 - Resolves ties by deterministic document identifier.
 
 ## Invariants
