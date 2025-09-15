@@ -16,7 +16,7 @@ defined in configuration files or registered programmatically.
 """
 
 import string
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +42,7 @@ class PromptTemplate(BaseModel):
     description: Optional[str] = None
     variables: Dict[str, str] = Field(default_factory=dict)
 
-    def render(self, **kwargs) -> str:
+    def render(self, **kwargs: Any) -> str:
         """Render the template with the given variables.
 
         This method renders the template by substituting variables into the template text.
@@ -69,7 +69,7 @@ class PromptTemplate(BaseModel):
                      and a list of available variables.
         """
         # Combine default variables with provided kwargs
-        variables = {**self.variables, **kwargs}
+        variables: Dict[str, Any] = {**self.variables, **kwargs}
 
         # Use string.Template for variable substitution
         template = string.Template(self.template)
@@ -545,18 +545,14 @@ Your verification should be objective, balanced, and focused on factual accuracy
         Raises:
             ConfigError: If the prompt templates configuration is invalid.
         """
-        prompt_config = (
-            config.prompt_templates if hasattr(config, "prompt_templates") else {}
-        )
+        prompt_config = config.prompt_templates if hasattr(config, "prompt_templates") else {}
 
         for name, template_config in prompt_config.items():
             try:
                 template = PromptTemplate(**template_config)
                 cls.register(name, template)
             except Exception as e:
-                raise ConfigError(
-                    f"Invalid prompt template configuration for '{name}': {str(e)}"
-                )
+                raise ConfigError(f"Invalid prompt template configuration for '{name}': {str(e)}")
 
     @classmethod
     def reset(cls) -> None:
@@ -579,7 +575,7 @@ def get_prompt_template(name: str) -> PromptTemplate:
     return PromptTemplateRegistry.get(name)
 
 
-def render_prompt(name: str, **kwargs) -> str:
+def render_prompt(name: str, **kwargs: Any) -> str:
     """Render a prompt template with the given variables.
 
     Args:
@@ -592,5 +588,5 @@ def render_prompt(name: str, **kwargs) -> str:
     Raises:
         KeyError: If the template is not found or a required variable is missing.
     """
-    template = get_prompt_template(name)
+    template: PromptTemplate = get_prompt_template(name)
     return template.render(**kwargs)

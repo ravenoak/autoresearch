@@ -139,6 +139,7 @@ class DuckDBStorageBackend:
         Args:
             db_path: Optional path to the DuckDB database file. If not provided,
                 the path is determined with the following precedence:
+
                 1. config.storage.duckdb.path
                 2. DUCKDB_PATH environment variable
                 3. Default to "kg.duckdb".
@@ -245,6 +246,7 @@ class DuckDBStorageBackend:
         """Create the required tables in the DuckDB database.
 
         This method creates the following tables if they don't exist:
+
         - nodes: Stores claim nodes with ID, type, content, confidence, and timestamp
         - edges: Stores relationships between nodes
         - embeddings: Stores vector embeddings for nodes
