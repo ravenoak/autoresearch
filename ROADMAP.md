@@ -14,12 +14,19 @@ targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container no longer includes the
 Go Task CLI by default, so install it manually or run automation via
 `uv run task ...`. After syncing the `dev-minimal`, `test`, and `docs` extras,
-`uv run pytest tests/unit --maxfail=1 -q` fails in
-`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`, and
-`tests/unit/test_download_duckdb_extensions.py` continues to fail its offline
-fallback scenarios. The unit test
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`
-also fails because the loader executes a second verification query. The open
+`uv run --extra test pytest
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
+still fails because the validation helper never raises `ConfigError`, and
+`uv run --extra test pytest tests/unit/test_download_duckdb_extensions.py -q`
+continues to fail its offline fallback scenarios with `SameFileError` and
+non-zero stub sizes. The unit test
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
+test_verify_extension_failure` also fails because the loader executes a second
+verification query. Running the unit suite without extras logs
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir`; install
+the `[test]` extras so `pytest-bdd` registers the option. `uv run --extra docs
+mkdocs build` succeeds but reports more than forty pages missing from `nav` and
+broken links such as `specs/api_authentication.md`. The open
 [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
 [fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md),
 and

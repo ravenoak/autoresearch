@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 13, 2025** and
+`2025-05-18`). This schedule was last updated on **September 15, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -23,13 +23,19 @@ confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment no longer includes the Go Task CLI by default.
 `task --version` fails unless contributors install Task manually or run
 commands via `uv run task ...`. After `uv sync --extra dev-minimal --extra test
---extra docs`, `uv run pytest tests/unit --maxfail=1 -q` fails in
-`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one` and
-the DuckDB extension helper tests under
-`tests/unit/test_download_duckdb_extensions.py`. The VSS extension loader mock
-also fails in
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
-`test_verify_extension_failure`.
+--extra docs`, `uv run --extra test pytest
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
+still reports that the validation path never raises `ConfigError`. The DuckDB
+extension helper suite (`uv run --extra test pytest
+tests/unit/test_download_duckdb_extensions.py -q`) continues to raise
+`SameFileError` during network fallbacks and leaves four-byte stub files, and
+the VSS loader still performs a second verification query in
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
+test_verify_extension_failure`. Running the unit suite without extras emits
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir`; install
+the `[test]` extras so `pytest-bdd` registers that option. `uv run --extra docs
+mkdocs build` succeeds but lists more than forty pages missing from the
+navigation alongside broken links such as `specs/api_authentication.md`.
 `task verify` has not been rerun because the missing CLI blocks the workflow,
 and coverage numbers are currently unavailable. These regressions are tracked
 in the open issues referenced by [STATUS.md](../STATUS.md).

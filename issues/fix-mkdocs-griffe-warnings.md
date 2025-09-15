@@ -8,7 +8,9 @@ docstring indentation in `src/autoresearch/storage_backends.py`. After the
 latest dependency sync on 2025-09-15 those `griffe` messages are gone, but the
 build now emits warnings about documentation files that are outside the `nav`
 configuration and broken relative links such as `specs/api_authentication.md`
-from `docs/api_authentication.md`. These warnings still hide actionable doc
+from `docs/api_authentication.md`. Running `uv run --extra docs mkdocs build`
+produces the same warnings after the documentation extras install, listing more
+than forty pages missing from `nav`. These warnings still hide actionable doc
 regressions and block a clean release build.
 
 ## Dependencies

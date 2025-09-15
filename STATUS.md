@@ -17,18 +17,36 @@ checks are required.
   `tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`
   because the Config validation path no longer raises `ConfigError` when the
   weights sum exceeds one.
+- `uv run --extra test pytest
+  tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
+  confirms the regression persists after installing the `[test]` extras; the
+  helper still never raises `ConfigError` for overweight vectors.
 - `uv run pytest tests/unit/test_download_duckdb_extensions.py -q` still fails
   three offline fallback scenarios, creating non-empty stub files and hitting
   `SameFileError` when copying stubs.
+- `uv run --extra test pytest tests/unit/test_download_duckdb_extensions.py -q`
+  fails with the same network fallback errors and leaves four-byte stub
+  artifacts, showing the fallback path still copies files over themselves.
 - `uv run pytest tests/unit/test_vss_extension_loader.py -q` fails because the
   loader executes a secondary verification query, so the mocked cursor records
   two calls instead of one.
+- `uv run --extra test pytest
+  tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
+  test_verify_extension_failure -q` reproduces the double `execute` call; the
+  loader runs a stub verification query after the expected
+  `duckdb_extensions()` probe.
 - Targeted API integration suites now pass
   (`tests/integration/test_api_auth.py`, `test_api_docs.py`,
   `test_api_streaming.py`, and `test_cli_http.py`).
+- Running the unit test entry point without extras logs
+  `PytestConfigWarning: Unknown config option: bdd_features_base_dir`; install
+  the `[test]` extra so `pytest-bdd` registers the option during local runs.
 - `uv run mkdocs build` completes but warns about documentation files missing
   from `nav` and broken links such as `specs/api_authentication.md` referenced
   by `docs/api_authentication.md`.
+- `uv run --extra docs mkdocs build` produces the same warnings after syncing
+  the documentation extras, listing more than forty uncatalogued pages and the
+  stale relative links that need repair.
 - Added `scripts/generate_spec_coverage.py` to rebuild `SPEC_COVERAGE.md`; the
   run confirmed every tracked module has both specification and proof links, so
   no follow-up issues were required.
