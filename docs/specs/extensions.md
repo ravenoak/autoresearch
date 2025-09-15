@@ -45,8 +45,10 @@ Strict mode raises `StorageError` when no strategy succeeds.
 ### verify_extension
 
 1. Query `duckdb_extensions()` for the `vss` extension.
-2. If unavailable, check for the `vss_stub` marker table.
-3. Log informative messages and return `True` only when either check succeeds.
+2. When the extension is absent, log the result and return `False` immediately
+   without probing stub markers.
+3. If the probe raises, log the exception and fall back to checking the
+   `vss_stub` marker table before reporting success.
 
 ## Invariants
 

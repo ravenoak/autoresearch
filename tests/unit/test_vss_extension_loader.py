@@ -29,9 +29,11 @@ class TestVSSExtensionLoader:
     @pytest.mark.real_vss
     def test_verify_extension_failure(self):
         """Test that verify_extension returns False when the extension is not loaded."""
-        # Create a mock connection that raises a DuckDB error when executing the verification query
+        # Create a mock connection that reports an empty extension list
         conn = MagicMock()
-        conn.execute.side_effect = duckdb.Error("Extension not loaded")
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = []
+        conn.execute.return_value = mock_result
 
         # Verify that the extension is reported as not loaded
         assert VSSExtensionLoader.verify_extension(conn) is False
