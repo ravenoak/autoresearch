@@ -19,7 +19,7 @@ control downstream.
 - Credential checks use constant-time comparisons.
 - Roles grant access only to permitted actions.
 
-## Proof
+## Proof Sketch
 
 ### Assumptions
 
@@ -64,7 +64,7 @@ are equivalent to set membership, and Lemma 3 demonstrates that alternative
 designs reintroduce timing or authorization risks. Therefore credential checks
 are constant-time and permission resolution is sound.
 
-## Simulation Evidence
+## Simulation Expectations
 
 Two simulations substantiate the proof:
 

@@ -10,6 +10,10 @@ Authorization verifies that a user's role permits the requested operation. A
 permissions mapping assigns actions to each role and fails fast when a role is
 missing or lacks the required permission.
 
+Permissions align with the [API spec](../specs/api.md), so query, config,
+metrics, docs, health, and capability endpoints stay isolated unless roles
+explicitly list the corresponding action.
+
 ## Constant-Time Comparison
 
 Traditional equality may exit on the first mismatched character, leaking timing

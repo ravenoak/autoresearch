@@ -6,7 +6,7 @@
 | `autoresearch/agents` | [agents.md](docs/specs/agents.md) | [s2], [t7], [t8], [t9], [t10] | OK |
 | `autoresearch/agents/dialectical` | [agents-dialectical.md](docs/specs/agents-dialectical.md) | [p20], [s19], [t9], [t113], [t114], [t115] | OK |
 | `autoresearch/agents/specialized` | [agents-specialized.md](docs/specs/agents-specialized.md) | [t8], [t10] | OK |
-| `autoresearch/api` | [api.md](docs/specs/api.md) | [p2], [p3], [p4], [p5], [p6], [s3], [s4], [t11], [t12], [t13], [t14], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23] | OK |
+| `autoresearch/api` | [api.md](docs/specs/api.md) | [p2], [p3], [p4], [p5], [p6], [p21], [s3], [s4], [t11], [t12], [t13], [t14], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23] | OK |
 | `autoresearch/api/middleware.py` | [api_rate_limiting.md](docs/specs/api_rate_limiting.md) | [p5], [t24] | OK |
 | `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [t25] | OK |
 | `autoresearch/cli_backup.py` | [cli-backup.md](docs/specs/cli-backup.md) | [t26] | OK |
@@ -73,6 +73,7 @@
 [p4]: docs/algorithms/api_authentication.md
 [p5]: docs/algorithms/api_rate_limiting.md
 [p6]: docs/algorithms/api_streaming.md
+[p21]: docs/algorithms/api.md
 [s3]: scripts/api_auth_credentials_sim.py
 [s4]: scripts/api_stream_order_sim.py
 [t11]: tests/analysis/test_api_stream_order_sim.py

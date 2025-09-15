@@ -28,6 +28,22 @@ Credentials are defined in `autoresearch.toml` under `[api]`:
 Roles gain capabilities via `[api.role_permissions]` with entries such as
 `query` or `docs`.
 
+## Permission coverage
+
+Each route declares a required permission with `require_permission`:
+
+- `query`: `POST /query`, `POST /query/stream`, `POST /query/batch`,
+  `POST /query/async`, `GET /query/{query_id}`, and
+  `DELETE /query/{query_id}`.
+- `health`: `GET /health`.
+- `capabilities`: `GET /capabilities`.
+- `config`: `GET/PUT/POST/DELETE /config`.
+- `metrics`: `GET /metrics` (available only when monitoring is enabled).
+- `docs`: `GET /docs` and `GET /openapi.json`.
+
+Roles missing the relevant permission reach `enforce_permission`, which raises
+**403 Forbidden** even when authentication succeeds.
+
 ## Threat model
 
 - Adversaries may sniff traffic, replay requests, or attempt token guessing.

@@ -18,7 +18,9 @@ Enumerates failure responses for API credential verification.
 
 - Authenticated clients lacking a required permission trigger
   `enforce_permission`, which raises **403 Forbidden** with
-  `detail="Insufficient permissions"`.
+  `detail="Insufficient permissions"`. Examples include roles that can run
+  queries but lack the `docs` permission for `/docs` or the `metrics`
+  permission for `/metrics`.
 
 ## Rate Limit Exceeded
 
