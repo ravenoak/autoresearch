@@ -5,7 +5,7 @@
 | `autoresearch/a2a_interface.py` | [a2a-interface.md](docs/specs/a2a-interface.md) |  | OK |
 | `autoresearch/agents` | [agents.md](docs/specs/agents.md) | [agents.md](docs/algorithms/agents.md) | OK |
 | `autoresearch/api` | [api.md](docs/specs/api.md) | [p1], [p2], [s1] | OK |
-| `autoresearch/api/auth_middleware.py` | [api_authentication.md](docs/specs/api_authentication.md) |  | OK |
+| `autoresearch/api/auth_middleware.py` | [api_authentication.md](docs/specs/api_authentication.md) | [s3], [s4], [t8], [t9] | OK |
 | `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [cache.md](docs/algorithms/cache.md) | OK |
 | `autoresearch/cli_backup.py` | [cli-backup.md](docs/specs/cli-backup.md) |  | OK |
 | `autoresearch/cli_helpers.py` | [cli-helpers.md](docs/specs/cli-helpers.md) | [cli_helpers.md](docs/algorithms/cli_helpers.md) | OK |
@@ -51,8 +51,12 @@
 [p3]: docs/algorithms/oxigraph.md
 [s1]: scripts/api_auth_credentials_sim.py
 [s2]: scripts/oxigraph_persistence_sim.py
+[s3]: scripts/api_auth_sim.py
+[s4]: scripts/api_auth_verification_sim.py
 [t3]: tests/integration/test_a2a_interface.py
 [t4]: tests/unit/test_distributed.py
 [t5]: tests/unit/test_main_module.py
+[t8]: tests/analysis/test_api_auth_sim.py
+[t9]: tests/unit/test_api_auth_middleware.py
 [t6]: tests/integration/test_local_git_backend.py
 [t7]: tests/targeted/test_git_search.py
