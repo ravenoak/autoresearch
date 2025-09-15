@@ -14,4 +14,8 @@ lighter verify for quick iterations.
 - STATUS.md notes the reduced download approach.
 
 ## Status
-Open
+Archived
+
+## Resolution
+README.md and docs/testing_guidelines.md highlight `task verify EXTRAS="dev-minimal
+test"` so local runs can avoid reinstalling optional extras.

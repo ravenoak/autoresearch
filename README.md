@@ -71,6 +71,14 @@ additional dependencies and must be enabled explicitly:
 task verify EXTRAS="dev-minimal test nlp distributed"
 ```
 
+For a lightweight iteration that avoids reinstalling optional extras, pin the
+verify task to the default groups. This skips heavy packages that may have been
+synced in previous sessions:
+
+```bash
+task verify EXTRAS="dev-minimal test"
+```
+
 Use the same `EXTRAS` flag with `task install` to sync them for local
 development. Include `EXTRAS="llm"` when verifying or installing LLM
 libraries; the environment check skips them otherwise. Run `task check
