@@ -74,12 +74,19 @@ def process_executor(
     executor = ProcessExecutor(cfg)
 
     def _cleanup() -> None:
-        executor.shutdown()
         with contextlib.suppress(Exception):
-            cache = resource_tracker._resource_tracker._cache.copy()
-            for name, rtype in cache.items():
-                resource_tracker.unregister(name, rtype)
-                resource_tracker._resource_tracker.maybe_unlink(name, rtype)
+            executor.shutdown()
+        for broker in (getattr(executor, "broker", None), getattr(executor, "result_broker", None)):
+            queue = getattr(broker, "queue", None)
+            if queue is None:
+                continue
+            with contextlib.suppress(Exception):
+                queue.close()
+            with contextlib.suppress(Exception):
+                queue.join_thread()
+        with contextlib.suppress(Exception):
+            cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
+            cache.clear()
         assert pool.closed and pool.joined
 
     request.addfinalizer(_cleanup)
