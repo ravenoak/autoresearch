@@ -566,14 +566,15 @@ class DuckDBStorageBackend:
     def update_claim(self, claim: Dict[str, Any], partial_update: bool = False) -> None:
         """Update an existing claim in the DuckDB database.
 
-        Parameters
-        ----------
-        claim:
-            The claim data with at least an ``id`` field. Other fields are
-            updated if provided.
-        partial_update:
-            If ``True`` only the supplied fields are updated, otherwise the
-            existing rows are fully replaced.
+        Args:
+            claim: The claim data with at least an ``id`` field. Other fields are
+                updated if provided.
+            partial_update: If ``True`` only the supplied fields are updated;
+                otherwise, existing rows are fully replaced.
+
+        Raises:
+            StorageError: If the DuckDB connection is not initialized or the
+                update fails.
         """
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
