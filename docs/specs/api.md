@@ -4,6 +4,7 @@
 
 FastAPI app aggregator for Autoresearch. See these algorithm references:
 - [API authentication](../algorithms/api_authentication.md)
+- [Constant-time auth proof](../algorithms/api-authentication.md)
 - [Error paths](../algorithms/api_auth_error_paths.md)
 - [API rate limiting](../algorithms/api_rate_limiting.md)
 - [API streaming](../algorithms/api_streaming.md)
@@ -52,6 +53,9 @@ Streaming a finite chunk list while recording data and heartbeats shows the
 ordering and liveness invariants hold. Tests cover nominal and error paths, and
 the simulation in [api_stream_order_sim.py][s1] confirms ordered delivery,
 heartbeat counts, and linear operations.
+The [api-authentication](../algorithms/api-authentication.md) proof outlines
+constant-time credential checks, and [api_auth_credentials_sim.py][s2]
+exercises valid and invalid tokens and roles.
 
 ## Simulation Expectations
 
@@ -64,6 +68,7 @@ Streaming simulations send three chunks and record metrics such as
   - [src/autoresearch/api/][m1]
 - Scripts
   - [scripts/api_stream_order_sim.py][s1]
+  - [scripts/api_auth_credentials_sim.py][s2]
 - Tests
   - [tests/unit/test_api.py][t1]
   - [tests/unit/test_api_error_handling.py][t2]
@@ -94,4 +99,5 @@ Streaming simulations send three chunks and record metrics such as
 [t12]: ../../tests/unit/test_webhooks_logging.py
 [r1]: ../../tests/analysis/api_streaming_metrics.json
 [s1]: ../../scripts/api_stream_order_sim.py
+[s2]: ../../scripts/api_auth_credentials_sim.py
 [t13]: ../../tests/analysis/test_api_stream_order_sim.py
