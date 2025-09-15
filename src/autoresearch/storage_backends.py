@@ -7,7 +7,6 @@ focuses on DuckDB as the primary backend for relational storage and vector searc
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import time
 from contextlib import contextmanager
@@ -20,6 +19,11 @@ import duckdb
 import rdflib
 from dotenv import dotenv_values
 from rdflib.plugin import Store, register
+
+try:  # pragma: no cover - optional dependency
+    from oxrdflib import OxigraphStore as OxiGraphBackend
+except Exception:  # pragma: no cover - optional dependency
+    OxiGraphBackend = None
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
@@ -41,7 +45,7 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
     """Initialize an RDFLib store with explicit driver checks.
 
     Args:
-        backend: Storage backend name. ``oxigraph`` selects the Oxigraph store,
+        backend: Storage backend name. ``oxigraph`` selects the OxiGraph store,
             ``berkeleydb`` uses Sleepycat, and ``memory`` returns an in-memory
             graph.
         path: Filesystem location for the RDF store.
@@ -67,16 +71,16 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
         if dir_path:
             os.makedirs(dir_path, exist_ok=True)
     elif backend == "oxigraph":
-        store_name = "Oxigraph"
+        store_name = "OxiGraph"
         rdf_path = path
         os.makedirs(rdf_path, exist_ok=True)
-        if importlib.util.find_spec("oxrdflib") is None:
+        if OxiGraphBackend is None:
             raise StorageError(
-                "Oxigraph driver not installed",
-                suggestion="Install oxrdflib to use the Oxigraph RDF backend",
+                "OxiGraph driver not installed",
+                suggestion="Install oxrdflib to use the OxiGraph RDF backend",
             )
         # Ensure the plugin is registered even if entry points are skipped
-        register("Oxigraph", Store, "oxrdflib.store", "OxigraphStore")
+        register("OxiGraph", Store, "oxrdflib.store", "OxigraphStore")
     else:
         raise StorageError(
             "Invalid RDF backend",
@@ -95,7 +99,7 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
                 cause=e,
                 suggestion="Install oxrdflib or choose a different backend",
             )
-        # Some environments lack file-locking support, causing Oxigraph to
+        # Some environments lack file-locking support, causing OxiGraph to
         # raise OSError("No locks available") on concurrent access. Rather
         # than failing outright, fall back to an in-memory store so tests and
         # read-heavy scenarios can proceed.
