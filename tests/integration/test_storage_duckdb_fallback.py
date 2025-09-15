@@ -2,7 +2,9 @@ import pytest
 from autoresearch.storage import StorageContext, StorageManager, StorageState
 from autoresearch.config import ConfigLoader
 
-pytest.importorskip("pytest_benchmark")
+from tests.optional_imports import import_or_skip
+
+import_or_skip("pytest_benchmark")
 
 
 def test_duckdb_vss_fallback(tmp_path, monkeypatch):

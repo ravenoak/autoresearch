@@ -1,5 +1,7 @@
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.parametrize(
     "module, attr",
@@ -17,6 +19,6 @@ import pytest
 )
 def test_optional_extra_versions(module: str, attr: str) -> None:
     """Each optional extra exposes a recognizable attribute."""
-    mod = pytest.importorskip(module)
+    mod = import_or_skip(module)
     if attr is not None:
         assert hasattr(mod, attr)

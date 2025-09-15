@@ -4,11 +4,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.requires_gpu
 def test_bertopic_integration(monkeypatch):
     """BERTopic integration activates when GPU extras are available."""
-    bertopic = pytest.importorskip("bertopic")
+    bertopic = import_or_skip("bertopic")
     from autoresearch.search import context
 
     monkeypatch.setattr(
@@ -26,7 +28,7 @@ def test_bertopic_integration(monkeypatch):
 @pytest.mark.requires_parsers
 def test_docx_backend_search(tmp_path, monkeypatch):
     """Local file backend indexes DOCX files when parsers extras are installed."""
-    docx = pytest.importorskip("docx")
+    docx = import_or_skip("docx")
     from autoresearch.search import core
 
     doc_path = tmp_path / "example.docx"

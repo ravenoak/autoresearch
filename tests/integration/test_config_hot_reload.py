@@ -5,12 +5,14 @@ from contextlib import contextmanager
 import pytest
 import tomli_w
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
 from tests.conftest import GITPYTHON_INSTALLED
 
-git = pytest.importorskip("git", reason="git extra not installed")
+git = import_or_skip("git", reason="git extra not installed")
 
 Orchestrator = orch_mod.Orchestrator
 AgentFactory = orch_mod.AgentFactory

@@ -1,11 +1,13 @@
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.data_analysis import metrics_dataframe
 from autoresearch.storage_backends import KuzuStorageBackend
 
 pytestmark = pytest.mark.requires_analysis
 
-pytest.importorskip("polars")
+import_or_skip("polars")
 
 
 def test_kuzu_backend_roundtrip(tmp_path):

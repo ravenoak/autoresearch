@@ -4,6 +4,8 @@ from contextlib import contextmanager
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import _local_git_backend
 from autoresearch.storage import StorageManager
@@ -24,7 +26,7 @@ def _dummy_connection():
 
 @pytest.mark.requires_git
 def test_local_git_backend_finds_file_content(tmp_path, monkeypatch):
-    git = pytest.importorskip("git", reason="git extra not installed")
+    git = import_or_skip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
     file_path = repo_path / "data.txt"
@@ -47,7 +49,7 @@ def test_local_git_backend_finds_file_content(tmp_path, monkeypatch):
 
 @pytest.mark.requires_git
 def test_local_git_backend_finds_commit_message(tmp_path, monkeypatch):
-    git = pytest.importorskip("git", reason="git extra not installed")
+    git = import_or_skip("git", reason="git extra not installed")
     repo_path = tmp_path / "repo"
     repo = git.Repo.init(repo_path)
     file_path = repo_path / "data.txt"

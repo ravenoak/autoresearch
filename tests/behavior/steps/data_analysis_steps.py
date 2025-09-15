@@ -2,8 +2,9 @@ import pytest
 from pytest_bdd import given, then, when
 
 from autoresearch.data_analysis import metrics_dataframe
+from tests.optional_imports import import_or_skip
 
-pl = pytest.importorskip("polars")
+pl = import_or_skip("polars")
 
 
 @given("sample metrics")

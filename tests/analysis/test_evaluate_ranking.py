@@ -3,11 +3,13 @@ from pathlib import Path
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 pytestmark = pytest.mark.requires_parsers
 
 # Skip if optional parsers are unavailable
-pytest.importorskip("docx")
-pytest.importorskip("pdfminer.high_level")
+import_or_skip("docx")
+import_or_skip("pdfminer.high_level")
 
 spec = util.spec_from_file_location(
     "evaluate_ranking",

@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 from pytest_bdd import parsers, scenarios, then, when
 
+from tests.optional_imports import import_or_skip
+
 scenarios("../features/optional_extras.feature")
 
 
@@ -12,14 +14,14 @@ scenarios("../features/optional_extras.feature")
 def check_extra(extra: str, tmp_path, monkeypatch) -> None:
     """Validate that a given optional extra functions correctly."""
     if extra == "nlp":
-        spacy = pytest.importorskip("spacy")
+        spacy = import_or_skip("spacy")
         doc = spacy.blank("en")("hello")
         assert doc[0].text == "hello"
     elif extra == "ui":
-        streamlit = pytest.importorskip("streamlit")
+        streamlit = import_or_skip("streamlit")
         assert callable(streamlit.write)
     elif extra == "vss":
-        duckdb = pytest.importorskip("duckdb")
+        duckdb = import_or_skip("duckdb")
         from autoresearch.extensions import VSSExtensionLoader
 
         con = duckdb.connect()
@@ -27,7 +29,7 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
             pytest.skip("vss extension not available")
         assert VSSExtensionLoader.verify_extension(con)
     elif extra == "git":
-        git = pytest.importorskip("git")
+        git = import_or_skip("git")
         repo = git.Repo.init(tmp_path)
         file_path = tmp_path / "README.txt"
         file_path.write_text("hello")
@@ -35,8 +37,8 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
         repo.index.commit("init")
         assert repo.head.commit.message.strip() == "init"
     elif extra == "distributed":
-        redis = pytest.importorskip("redis")
-        fakeredis = pytest.importorskip("fakeredis")
+        redis = import_or_skip("redis")
+        fakeredis = import_or_skip("fakeredis")
         monkeypatch.setattr(
             redis.Redis, "from_url", lambda *a, **k: fakeredis.FakeRedis()
         )
@@ -47,17 +49,17 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
         assert broker.queue.get()["k"] == "v"
         broker.shutdown()
     elif extra == "analysis":
-        pl = pytest.importorskip("polars")
+        pl = import_or_skip("polars")
         df = pl.DataFrame({"x": [1, 2, 3]})
         assert df.select(pl.col("x").mean()).item() == pytest.approx(2.0)
     elif extra == "llm":
-        pytest.importorskip("dspy")
+        import_or_skip("dspy")
         from autoresearch.llm import get_available_adapters
 
         adapters = get_available_adapters()
         assert "lmstudio" in adapters
     elif extra == "parsers":
-        docx = pytest.importorskip("docx")
+        docx = import_or_skip("docx")
         doc = docx.Document()
         sample = tmp_path / "sample.docx"
         doc.save(sample)
@@ -69,7 +71,7 @@ def check_extra(extra: str, tmp_path, monkeypatch) -> None:
             loader.config.search.local_file.file_types = ["docx"]
             _local_file_backend("hello", max_results=1)
     elif extra == "gpu":
-        pytest.importorskip("bertopic")
+        import_or_skip("bertopic")
         from autoresearch.search.context import _try_import_bertopic
 
         if not _try_import_bertopic():

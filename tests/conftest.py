@@ -13,6 +13,7 @@ from multiprocessing import resource_tracker
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
+from tests.optional_imports import import_or_skip
 
 try:
     from typer.testing import CliRunner
@@ -715,7 +716,7 @@ def realistic_claim_batch(claim_factory):
 @pytest.fixture
 def sample_eval_data():
     """Load the sample evaluation CSV for search weight tests."""
-    pytest.importorskip("fastembed")
+    import_or_skip("fastembed")
     from autoresearch.search import Search
 
     path = Path(__file__).resolve().parent / "data" / "eval" / "sample_eval.csv"

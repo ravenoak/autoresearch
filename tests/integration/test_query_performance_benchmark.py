@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration import orchestrator as orch_mod
@@ -22,7 +24,7 @@ class Search:
 
 pytestmark = [pytest.mark.slow, pytest.mark.integration]
 
-pytest.importorskip("pytest_benchmark")
+import_or_skip("pytest_benchmark")
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
 spec = importlib.util.spec_from_file_location("benchmark_token_memory", SCRIPT_PATH)

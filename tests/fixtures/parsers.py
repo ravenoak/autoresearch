@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.fixture
 def sample_pdf_file(tmp_path: Path) -> Path:
@@ -29,7 +31,7 @@ def sample_pdf_file(tmp_path: Path) -> Path:
 @pytest.fixture
 def sample_docx_file(tmp_path: Path) -> Path:
     """Create a DOCX file containing known text."""
-    docx = pytest.importorskip("docx")
+    docx = import_or_skip("docx")
     path = tmp_path / "sample.docx"
     doc = docx.Document()
     doc.add_paragraph("hello from docx")
