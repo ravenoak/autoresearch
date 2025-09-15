@@ -63,12 +63,12 @@ capabilities depend on the `llm` extra and are skipped unless you enable it.
 
 ### Enabling heavy extras
 
-`task verify` syncs only the `dev-minimal`, `dev`, and `test` extras.
+`task verify` syncs the `dev-minimal` and `test` extras by default.
 Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm` require
 additional dependencies and must be enabled explicitly:
 
 ```bash
-EXTRAS="nlp distributed" task verify
+task verify EXTRAS="dev-minimal test nlp distributed"
 ```
 
 Use the same `EXTRAS` flag with `task install` to sync them for local
@@ -134,9 +134,9 @@ setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset
 (`test_version` and `test_cli_help`) for fast feedback. `task verify` runs the
-full suite and installs only the `dev-minimal`, `dev`, and `test` extras.
-Pass `EXTRAS="distributed analysis"` or similar when invoking the command to
-include heavy groups.
+full suite and installs the `dev-minimal` and `test` extras by default.
+Pass `EXTRAS="dev-minimal test distributed analysis"` or similar when invoking
+the command to include heavy groups.
 
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).

@@ -10,6 +10,8 @@ checks are required.
 ## September 15, 2025
 - Running `scripts/codex_setup.sh` exports `.venv/bin` to `PATH`,
   giving the shell immediate access to `task`.
+- `task verify EXTRAS="dev-minimal test"` installs only minimal extras and
+  executes linting, type checks, and coverage.
 
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned

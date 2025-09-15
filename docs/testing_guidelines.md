@@ -10,8 +10,8 @@ Tests may require optional dependencies. Markers such as `requires_nlp` or
 `requires_parsers` map to extras with the same names. `task install` syncs the
 `dev-minimal` and `test` extras by default; add groups with `EXTRAS` or set
 `AR_EXTRAS` when using the setup script. `task verify` installs the
-`dev-minimal`, `dev`, and `test` extras plus all optional groups except `gpu`
-by default. Use `EXTRAS="gpu"` to include the GPU packages or limit extras.
+`dev-minimal` and `test` extras by default. Set `EXTRAS` to include optional
+groups or add `gpu` packages.
 
 ## Deprecation warnings
 
@@ -39,7 +39,7 @@ linting and smoke tests install `dspy-ai` and `fastembed`:
 
 ```bash
 EXTRAS="nlp parsers" task install
-EXTRAS="analysis distributed" task verify
+task verify EXTRAS="dev-minimal test analysis distributed"
 EXTRAS="llm" task check
 ```
 
@@ -76,10 +76,9 @@ Two installation strategies support different workflows:
   subset. It syncs the `dev-minimal` and `test` extras. Add optional features
   with `task install EXTRAS="nlp ui"` choosing from `analysis`, `distributed`,
   `git`, `llm`, `nlp`, `parsers`, `ui`, `vss`, and `gpu`.
-- **Full:** `task verify` runs linting, type checks, and coverage. It installs
-  the `dev-minimal`, `dev`, and `test` extras plus all optional groups except
-  `gpu` by default. Append optional groups with `EXTRAS` to limit or add
-  `gpu` for GPU packages.
+- **Full:** `task verify` runs linting, type checks, and coverage. By default it
+  installs the `dev-minimal` and `test` extras. Set `EXTRAS` to include
+  additional groups or add `gpu` for GPU packages.
 
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
