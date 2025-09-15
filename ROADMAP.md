@@ -4,21 +4,20 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 14, 2025**.
+[README](README.md). Last updated **September 15, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.44.1 is available, but `task check` and
-`task verify` fail due to mypy errors in
-`src/autoresearch/orchestrator_perf.py` and
-`src/autoresearch/search/core.py`, preventing tests from running. The open
-[resolve-mypy-errors-in-orchestrator-perf-and-search-core](issues/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md)
-and
-[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-issues track the type-check failures and downstream test regressions.
+across project documentation. Go Task 3.45.3 is available. `task check` passes,
+but `task verify` fails in
+`tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token`, where
+`AuthMiddleware` lacks a `dispatch` method. The open
+[fix-api-authentication-regressions](issues/fix-api-authentication-regressions.md)
+and [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
+issues track the regression and remaining test failures.
 Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
