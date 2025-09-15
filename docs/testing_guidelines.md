@@ -16,11 +16,13 @@ groups or add `gpu` packages.
 ## Deprecation warnings
 
 - No deprecation warnings are expected when running `task verify`.
-- `sitecustomize.py` replaces `click.parser.split_arg_string` with
-  `shlex.split` to avoid Click deprecation warnings during tests.
-- Some third-party packages still issue deprecation warnings.
-  `pkg_resources` messages are filtered.
-  Document any other unavoidable warnings.
+- `sitecustomize.py` re-exports `click.shell_completion.split_arg_string`
+  for compatibility so Click no longer warns about the deprecated
+  `click.parser` module during tests.
+- `pytest.ini` keeps the default `.hypothesis` ignore entry so Hypothesis'
+  plugin does not emit warnings when collecting tests.
+- Record any remaining unavoidable warnings here, along with a link to the
+  upstream tracker or mitigation plan.
 
 ## Multiprocessing cleanup
 
