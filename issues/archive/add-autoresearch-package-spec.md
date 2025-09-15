@@ -12,4 +12,4 @@ None
 - Update SPEC_COVERAGE.md to link the new spec.
 
 ## Status
-Open
+Archived
