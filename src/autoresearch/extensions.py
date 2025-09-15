@@ -227,19 +227,22 @@ class VSSExtensionLoader:
             result = conn.execute(
                 "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
             ).fetchall()
+        except Exception as err:  # pragma: no cover - defensive
+            if verbose:
+                log.warning("VSS extension verification failed: %s", err)
+        else:
             if result and len(result) > 0:
                 if verbose:
                     log.info("VSS extension is loaded")
                 return True
-            else:
-                if verbose:
-                    log.warning("VSS extension is not loaded")
-        except Exception as e:  # pragma: no cover - defensive
             if verbose:
-                log.warning(f"VSS extension verification failed: {e}")
+                log.warning("VSS extension is not loaded")
+            return False
 
         try:
-            conn.execute("SELECT 1 FROM information_schema.tables WHERE table_name='vss_stub'")
+            conn.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_name='vss_stub'"
+            )
             if verbose:
                 log.info("VSS stub marker present")
             return True
