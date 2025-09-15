@@ -56,6 +56,7 @@
 - cli_utils – simulation covers CLI utilities.
 - config_hot_reload – simulation confirms live config reload.
 - config_utils – simulation verifies config helpers.
+- data_analysis – simulation exercises metrics aggregation.
 - distributed_workflows – simulation models workflow distribution.
 - error_utils – simulation checks error helpers.
 - errors – simulation explores error scenarios.
