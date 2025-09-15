@@ -2,12 +2,16 @@
 
 ## Overview
 
-Specification for config module. See [config hot reload
-algorithm](../algorithms/config_hot_reload.md) for reload behavior.
+Configuration loader for Autoresearch. It merges defaults, environment
+variables, and profile files. See
+[config hot reload algorithm](../algorithms/config_hot_reload.md) for reload
+behavior.
 
 ## Algorithms
 
-- Implement core behaviors described above.
+1. Read defaults and overlay environment variables and profile data.
+2. Parse the active file into structured state.
+3. Watch the file and atomically swap ``state.active`` on valid changes.
 
 ## Invariants
 

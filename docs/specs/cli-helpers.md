@@ -40,6 +40,11 @@ parsing.
 - `handle_command_not_found` always raises `typer.Exit` and lists suggestions
   only when candidates exist.
 
+## Complexity
+
+- `find_similar_commands`: `O(n × m)` for `n` commands of length `m`.
+- `parse_agent_groups`: `O(k)` for `k` characters across groups.
+
 ## Proof Sketch
 
 - `find_similar_commands` delegates to Python's standard `difflib`, which

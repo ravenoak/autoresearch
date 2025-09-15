@@ -14,7 +14,7 @@ Utility functions in `cli_helpers` keep the command interface friendly.
 
 ## Missing table reporting
 - `report_missing_tables` sorts table names and prints guidance to the
-  console.
+  console only when tables are missing.
 
 ## Command not found handling
 - `handle_command_not_found` collects available commands, suggests similar

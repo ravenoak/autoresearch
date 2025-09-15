@@ -9,10 +9,10 @@ FastAPI app aggregator for Autoresearch. See these algorithm references:
 - [API rate limiting](../algorithms/api_rate_limiting.md)
 - [API streaming](../algorithms/api_streaming.md)
 
-Requests and responses use versioned schemas; the current
+Requests and responses use versioned schemas. The current
 `QueryRequestV1` and `QueryResponseV1` models require a `version` field of
-`"1"`. Deprecated versions return **410 Gone** while unknown versions
-return **422 Unprocessable Entity**.
+`"1"`. Deprecated versions return **410 Gone** while unknown versions
+return **422 Unprocessable Entity**.
 
 ## Authentication
 
@@ -50,10 +50,10 @@ Streaming ``n`` chunks performs ``O(n)`` work and uses ``O(1)`` extra memory.
 ## Proof Sketch
 
 Streaming a finite chunk list while recording data and heartbeats shows the
-ordering and liveness invariants hold. Tests cover nominal and error paths, and
-the simulation in [api_stream_order_sim.py][s1] confirms ordered delivery,
-heartbeat counts, and linear operations.
-The [api-authentication](../algorithms/api-authentication.md) proof outlines
+ordering and liveness invariants hold. Tests cover nominal and error paths,
+and the simulation in [api_stream_order_sim.py][s1] confirms ordered
+delivery, heartbeat counts, and linear operations. The
+[api-authentication](../algorithms/api-authentication.md) proof outlines
 constant-time credential checks, and [api_auth_credentials_sim.py][s2]
 exercises valid and invalid tokens and roles.
 

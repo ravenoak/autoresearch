@@ -4,8 +4,10 @@
 The config package loads settings from files and environment variables.
 
 ## Algorithm
-`ConfigLoader` merges defaults with profile data, watching files for
-changes to support live reload.
+`ConfigLoader` merges defaults with environment variables and profile
+data, watching files for changes to support live reload. Successful
+parses atomically replace the active state while unknown fields preserve
+prior values.
 
 ## Proof sketch
 Merging operates on ordered layers; each layer overrides the previous,

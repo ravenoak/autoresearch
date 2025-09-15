@@ -52,11 +52,16 @@ these routines.
 ## Traceability
 
 - Modules
-  - [src/autoresearch/monitor/](../../src/autoresearch/monitor/)
+  - [src/autoresearch/monitor/][m1]
 - Scripts
-  - [scripts/monitor_cli_reliability.py](../../scripts/monitor_cli_reliability.py)
+  - [monitor_cli_reliability.py][s1]
 - Tests
-  - [tests/unit/test_main_monitor_commands.py](../../tests/unit/test_main_monitor_commands.py)
-  - [tests/unit/test_monitor_cli.py](../../tests/unit/test_monitor_cli.py)
-  - [tests/unit/test_resource_monitor_gpu.py](../../tests/unit/test_resource_monitor_gpu.py)
+  - [test_main_monitor_commands.py][t1]
+  - [test_monitor_cli.py][t2]
+  - [test_resource_monitor_gpu.py][t3]
 
+[m1]: ../../src/autoresearch/monitor/
+[s1]: ../../scripts/monitor_cli_reliability.py
+[t1]: ../../tests/unit/test_main_monitor_commands.py
+[t2]: ../../tests/unit/test_monitor_cli.py
+[t3]: ../../tests/unit/test_resource_monitor_gpu.py
