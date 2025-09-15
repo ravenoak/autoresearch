@@ -7,6 +7,10 @@ Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
+## September 15, 2025
+- Running `scripts/codex_setup.sh` exports `.venv/bin` to `PATH`,
+  giving the shell immediate access to `task`.
+
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
   "command not found".

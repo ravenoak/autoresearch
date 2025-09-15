@@ -12,6 +12,10 @@ immediately after cloning to bootstrap the required `dev-minimal` and `test`
 extras; skipping this step often yields missing plugin errors when running
 `task check` or any tests.
 
+Run `scripts/codex_setup.sh` in the Codex evaluation environment to bootstrap
+dependencies. The script appends `.venv/bin` to `PATH`, so the shell exposes
+`task` immediately after it finishes.
+
 For orchestrator state transitions and API contracts see
 [docs/orchestrator_state.md](docs/orchestrator_state.md).
 
