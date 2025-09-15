@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 import contextlib
 import multiprocessing
+import multiprocessing.pool
 from multiprocessing import resource_tracker
 
 import pytest
@@ -93,6 +94,36 @@ def _cleanup_multiprocessing_queues(monkeypatch) -> None:
             q.close()
         with contextlib.suppress(Exception):
             q.join_thread()
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_multiprocessing_pools(monkeypatch) -> None:
+    """Ensure multiprocessing pools are closed and joined."""
+    created: list[multiprocessing.pool.Pool] = []
+    original_pool = multiprocessing.pool.Pool
+    original_thread_pool = multiprocessing.pool.ThreadPool
+
+    def tracking_pool(*args, **kwargs):
+        pool = original_pool(*args, **kwargs)
+        created.append(pool)
+        return pool
+
+    def tracking_thread_pool(*args, **kwargs):
+        pool = original_thread_pool(*args, **kwargs)
+        created.append(pool)
+        return pool
+
+    monkeypatch.setattr(multiprocessing, "Pool", tracking_pool)
+    monkeypatch.setattr(multiprocessing.pool, "Pool", tracking_pool)
+    monkeypatch.setattr(multiprocessing.pool, "ThreadPool", tracking_thread_pool)
+    yield
+    for pool in created:
+        with contextlib.suppress(Exception):
+            pool.close()
+        with contextlib.suppress(Exception):
+            pool.terminate()
+        with contextlib.suppress(Exception):
+            pool.join()
 
 
 if importlib.util.find_spec("autoresearch") is None:

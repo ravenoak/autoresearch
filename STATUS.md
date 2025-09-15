@@ -8,6 +8,8 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 15, 2025
+- Added fixtures to join multiprocessing pools and queues and clear the resource
+  tracker cache after tests.
 - Running `scripts/codex_setup.sh` exports `.venv/bin` to `PATH`,
   giving the shell immediate access to `task`.
 - `task verify EXTRAS="dev-minimal test"` installs only minimal extras and

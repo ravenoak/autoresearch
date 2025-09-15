@@ -17,11 +17,13 @@ def _log_resource_tracker_cache() -> None:
     during fixture cleanup and highlight any residual entries.
     """
     with contextlib.suppress(Exception):
-        before = resource_tracker._resource_tracker._cache.copy()  # type: ignore[attr-defined]
+        cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
+        before = cache.copy()
         if before:
             logger.debug("resource tracker pre-test: %s", before)
     yield
     with contextlib.suppress(Exception):
-        after = resource_tracker._resource_tracker._cache.copy()  # type: ignore[attr-defined]
-        if after:
-            logger.debug("resource tracker post-test: %s", after)
+        cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
+        if cache:
+            logger.debug("resource tracker post-test: %s", cache.copy())
+            cache.clear()
