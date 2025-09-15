@@ -18,12 +18,14 @@ def test_benchmark_scheduler_scales():
     """Throughput scales and profiling returns stats.
 
     The scaling threshold can be adjusted with the
-    ``SCHEDULER_SCALE_THRESHOLD`` environment variable.
+    ``SCHEDULER_SCALE_THRESHOLD`` environment variable. Baseline throughput is
+    tunable via ``SCHEDULER_BASELINE_OPS``.
     """
     one = benchmark_scheduler(1, 50, profile=True)
     two = benchmark_scheduler(2, 50, profile=True)
-    threshold = float(os.getenv("SCHEDULER_SCALE_THRESHOLD", "1.1"))
-    assert one.throughput > 0
+    baseline = float(os.getenv("SCHEDULER_BASELINE_OPS", "850"))
+    threshold = float(os.getenv("SCHEDULER_SCALE_THRESHOLD", "1.9"))
+    assert one.throughput == pytest.approx(baseline, rel=0.25)
     assert two.throughput > one.throughput * threshold
     assert one.cpu_time >= 0
     assert one.mem_kb >= 0
