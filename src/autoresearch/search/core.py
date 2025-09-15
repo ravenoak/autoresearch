@@ -634,7 +634,11 @@ class Search:
                     weights=weights,
                     suggestion="Enable a component or increase its weight",
                 )
-            normalized_weights = tuple(1.0 / enabled_count if flag else 0.0 for flag in enabled)
+            normalized_weights: tuple[float, float, float] = (
+                1.0 / enabled_count if search_cfg.use_bm25 else 0.0,
+                1.0 / enabled_count,
+                1.0 / enabled_count if search_cfg.use_source_credibility else 0.0,
+            )
         else:
             normalized_weights = (
                 weights["bm25_weight"] / weights_sum,
