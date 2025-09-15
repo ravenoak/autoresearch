@@ -2,81 +2,145 @@
 
 ## Overview
 
-Distributed execution utilities. See [distributed coordination][dc] for
-coalition and scheduling details.
+Distributed orchestration utilities that coordinate agent execution across
+processes or Ray workers. The package provides pluggable brokers, background
+processes for storage persistence and result aggregation, and executors that
+fan out agent work while maintaining consistency guarantees. Mathematical
+models and proofs appear in
+[distributed coordination](../algorithms/distributed_coordination.md) and
+[distributed overhead](../algorithms/distributed_overhead.md).
 
 ## Algorithms
 
-- **Round-robin** assigns each incoming task to the next worker in turn for
-  balanced workloads.
-- **Work stealing** lets idle workers pull tasks from peers, equalizing queue
-  lengths under bursty load.
-- **Priority queue** scheduling selects the highest-priority task available so
-  urgent work executes first.
-- Detailed complexity and performance models appear in
-  [distributed coordination][dc].
-- Failure recovery adds an overhead factor `1/(1-p)` as described in
-  [distributed overhead](../algorithms/distributed_overhead.md) and modeled by
-  [`orchestrator_distributed_sim.py`][sim].
+### get_message_broker
+
+1. Accept a broker name (`memory`, `redis`, or `ray`) and optional URL.
+2. Return `InMemoryBroker` with `_CountingQueue` for local queues.
+3. Return `RedisBroker` backed by a JSON-encoded Redis list when `redis` is
+   selected; raise when the `redis` package is absent.
+4. Return `RayBroker` configured via `ray.util.queue.Queue` when `ray` is
+   selected; lazily initialise Ray if needed.
+5. Raise `ValueError` for unsupported broker names.
+
+### StorageCoordinator
+
+1. Spawned as a daemon `multiprocessing.Process` with access to a broker queue
+   and DuckDB path.
+2. Initialise storage via `storage.setup`, set a readiness event, and consume
+   messages.
+3. Persist claims when `action == "persist_claim"`; exit when `action == "stop"`
+   or the queue closes.
+4. Tear down storage and close the queue on exit.
+
+### ResultAggregator
+
+1. Spawned as a daemon process with a broker queue.
+2. Store results in a `multiprocessing.Manager().list()` for cross-process
+   sharing.
+3. Append messages when `action == "agent_result"`; exit on `"stop"` or queue
+   shutdown.
+
+### publish_claim
+
+1. Serialize claim dictionaries with action metadata and enqueue them on the
+   chosen broker, allowing executors to offload storage writes safely.
+
+### RayExecutor.run_query
+
+1. Optionally start storage/result coordinators when distributed mode is
+   enabled in configuration.
+2. Push HTTP and LLM sessions into Ray via `ray.put` for reuse.
+3. For each loop:
+   - Clear aggregated results.
+   - Dispatch agents via `_execute_agent_remote` tasks.
+   - Retrieve results with `ray.get` and merge aggregator output if available.
+   - Update `QueryState`, publish claims, and invoke `on_cycle_end` callbacks.
+4. Return `state.synthesize()` after all loops complete.
+5. `shutdown` publishes stop messages, joins coordinators, shuts down brokers,
+   and calls `ray.shutdown()` when appropriate.
+
+### ProcessExecutor.run_query
+
+1. Optionally start storage/result coordinators similar to `RayExecutor`.
+2. For each loop:
+   - Clear aggregated results.
+   - Use a `multiprocessing.Pool` (spawn context) to execute
+     `_execute_agent_process` for each agent.
+   - Merge aggregator output if present, update `QueryState`, publish claims,
+     and invoke callbacks.
+3. Return `state.synthesize()`.
+4. `shutdown` mirrors `RayExecutor` cleanup without Ray-specific steps.
 
 ## Invariants
 
-- **No lost tasks:** every enqueued task is processed or persisted.
-- **Single leader:** at most one coordinator acts as leader at any time.
-- **FIFO ordering:** brokers emit tasks in the order they were published.
-- **Progress:** active workers eventually drain their assigned queues.
-- Property-based tests such as [test_distributed_coordination.py][t4] and
-  [test_coordination_properties.py][t5] exercise these guarantees.
+- Brokers only emit supported actions (`persist_claim`, `agent_result`, `stop`).
+- `_CountingQueue` maintains accurate length tracking, allowing `empty()` to
+  report true emptiness despite multiprocessing limitations.
+- Coordinators close their queues and join threads/processes on shutdown to
+  prevent resource leaks.
+- Executors reset aggregator buffers each loop so state reflects only current
+  cycle results.
+- Storage claims published by executors are persisted exactly once because the
+  coordinator processes every queue message serially.
+- `get_message_broker` returns a usable broker instance when dependencies are
+  installed and surfaces clear errors when optional packages are missing.
 
 ## Complexity
 
-- Round-robin and priority queue dispatch take `O(1)` time per task.
-- Work stealing performs `O(1)` extra work for each steal attempt.
+- Queue operations in `InMemoryBroker` and `RedisBroker` run in `O(1)` time per
+  message; `RayBroker` inherits the same bound from `ray.util.queue.Queue`.
+- `RayExecutor.run_query` performs `O(L × A)` work for `L` loops and `A`
+  agents, assuming fixed orchestration cost per agent.
+- `ProcessExecutor.run_query` adds `O(L × P)` overhead for pool management with
+  `P` processes but remains linear in the number of agent executions.
 
 ## Proof Sketch
 
-- A FIFO broker ensures ordering because dequeues mirror enqueues; tests [t4]
-  assert this correspondence.
-- Leader election chooses the minimum identifier; with unique identifiers a
-  single leader exists, and random shuffles in [t5] confirm convergence.
-- Tasks persist until acknowledged by a worker, so no task is lost;
-  integration tests [t1] demonstrate end-to-end completion.
-- As long as a worker remains alive, queued tasks eventually run, yielding
-    liveness.
-- The script [distributed_coordination_formulas.py][dcf] derives round-robin
-  allocations and failure overhead.
+The queue ordering, leader election, and safety/liveness arguments in
+[distributed coordination](../algorithms/distributed_coordination.md) apply
+directly: a single coordinator process drains the queue, guaranteeing FIFO
+ordering, while executors publish stop signals that ensure graceful shutdown.
+[distributed overhead](../algorithms/distributed_overhead.md) bounds retry
+costs when failures occur. Tests validate broker ordering, coordination safety,
+and executor convergence across multiprocessing and Ray backends.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines. Benchmarks such as
-[distributed_recovery_benchmark.py][drb] record CPU and memory usage during
-retries. Simulations like [distributed_coordination_sim.py][sim2] exercise
-leader election and ordering.
+- [distributed_coordination_formulas.py][s1] derives allocation and failure
+  overhead formulas.
+- [distributed_coordination_sim.py][s2] simulates leader election, queue
+  ordering, and throughput.
+- [distributed_recovery_benchmark.py][s3] measures CPU/memory impact when
+  retries occur.
+- [orchestrator_distributed_sim.py][s4] benchmarks distributed orchestration
+  loops and records scaling metrics.
 
 ## Traceability
 
-
 - Modules
-  - [src/autoresearch/distributed/][m1]
+  - [src/autoresearch/distributed/__init__.py][m1]
+  - [src/autoresearch/distributed/broker.py][m2]
+  - [src/autoresearch/distributed/coordinator.py][m3]
+  - [src/autoresearch/distributed/executors.py][m4]
 - Tests
-  - [tests/integration/test_distributed_agent_storage.py][t1]
-  - [tests/unit/test_distributed.py][t2]
-  - [tests/unit/test_distributed_extra.py][t3]
-  - [tests/analysis/test_distributed_coordination.py][t4]
-  - [tests/unit/distributed/test_coordination_properties.py][t5]
-  - [tests/benchmark/test_orchestrator_distributed_sim.py][t6]
+  - [tests/unit/test_distributed.py][t1]
+  - [tests/unit/test_distributed_extra.py][t2]
+  - [tests/unit/distributed/test_coordination_properties.py][t3]
+  - [tests/integration/test_distributed_agent_storage.py][t4]
+  - [tests/benchmark/test_orchestrator_distributed_sim.py][t5]
+  - [tests/analysis/test_distributed_coordination.py][t6]
 
-[m1]: ../../src/autoresearch/distributed/
-[t1]: ../../tests/integration/test_distributed_agent_storage.py
-[t2]: ../../tests/unit/test_distributed.py
-[t3]: ../../tests/unit/test_distributed_extra.py
-[t4]: ../../tests/analysis/test_distributed_coordination.py
-[t5]: ../../tests/unit/distributed/test_coordination_properties.py
-[t6]: ../../tests/benchmark/test_orchestrator_distributed_sim.py
-
-[drb]: ../../scripts/distributed_recovery_benchmark.py
-[sim]: ../../scripts/orchestrator_distributed_sim.py
-[sim2]: ../../scripts/distributed_coordination_sim.py
-[dcf]: ../../scripts/distributed_coordination_formulas.py
-
-[dc]: ../algorithms/distributed_coordination.md
+[m1]: ../../src/autoresearch/distributed/__init__.py
+[m2]: ../../src/autoresearch/distributed/broker.py
+[m3]: ../../src/autoresearch/distributed/coordinator.py
+[m4]: ../../src/autoresearch/distributed/executors.py
+[t1]: ../../tests/unit/test_distributed.py
+[t2]: ../../tests/unit/test_distributed_extra.py
+[t3]: ../../tests/unit/distributed/test_coordination_properties.py
+[t4]: ../../tests/integration/test_distributed_agent_storage.py
+[t5]: ../../tests/benchmark/test_orchestrator_distributed_sim.py
+[t6]: ../../tests/analysis/test_distributed_coordination.py
+[s1]: ../../scripts/distributed_coordination_formulas.py
+[s2]: ../../scripts/distributed_coordination_sim.py
+[s3]: ../../scripts/distributed_recovery_benchmark.py
+[s4]: ../../scripts/orchestrator_distributed_sim.py
