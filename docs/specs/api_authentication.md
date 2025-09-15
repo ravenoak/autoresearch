@@ -3,12 +3,16 @@
 ## Overview
 
 API requests include an API key or bearer token. Credentials map to roles
-whose permissions gate access to features.
+whose permissions gate access to features. The `AuthMiddleware` dispatch
+method validates credentials and populates request state before passing
+control downstream.
 
 ## Algorithms
 
 - Compare presented credentials with `secrets.compare_digest`.
 - Resolve roles and verify required permissions.
+- Use `AuthMiddleware.dispatch` to emit `401` responses on missing or invalid
+  credentials.
 
 ## Invariants
 

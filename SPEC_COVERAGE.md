@@ -5,6 +5,7 @@
 | `autoresearch/a2a_interface.py` | [a2a-interface.md](docs/specs/a2a-interface.md) |  | OK |
 | `autoresearch/agents` | [agents.md](docs/specs/agents.md) | [agents.md](docs/algorithms/agents.md) | OK |
 | `autoresearch/api` | [api.md](docs/specs/api.md) | [p1], [p2], [s1] | OK |
+| `autoresearch/api/auth_middleware.py` | [api_authentication.md](docs/specs/api_authentication.md) |  | OK |
 | `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [cache.md](docs/algorithms/cache.md) | OK |
 | `autoresearch/cli_backup.py` | [cli-backup.md](docs/specs/cli-backup.md) |  | OK |
 | `autoresearch/cli_helpers.py` | [cli-helpers.md](docs/specs/cli-helpers.md) | [cli_helpers.md](docs/algorithms/cli_helpers.md) | OK |

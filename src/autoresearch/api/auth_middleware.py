@@ -5,14 +5,17 @@ from __future__ import annotations
 import secrets
 from typing import cast
 
+from fastapi import Request
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ..config import ConfigLoader
 from .utils import verify_bearer_token
 
 
-class AuthMiddleware:
+class AuthMiddleware(BaseHTTPMiddleware):
     """API key and token authentication middleware."""
 
     def __init__(self, app: ASGIApp):
@@ -22,7 +25,7 @@ class AuthMiddleware:
             app: Downstream ASGI application.
         """
 
-        self.app = app
+        super().__init__(app)
 
     @staticmethod
     def _unauthorized(detail: str, scheme: str) -> JSONResponse:
@@ -71,21 +74,20 @@ class AuthMiddleware:
 
         return "anonymous", None
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Authenticate requests using API keys or bearer tokens."""
 
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
+        if request.scope.get("type") != "http":
+            return await call_next(request)
 
-        app_state = scope["app"].state  # type: ignore[index]
+        app_state = request.app.state
         loader = cast(ConfigLoader, app_state.config_loader)
         loader._config = loader.load_config()
         cfg = loader._config.api
 
         auth_scheme = "API-Key" if (cfg.api_keys or cfg.api_key) else "Bearer"
 
-        headers = {k.lower(): v for k, v in scope.get("headers", [])}
+        headers = {k.lower(): v for k, v in request.scope.get("headers", [])}
         api_key = headers.get(b"x-api-key")
         auth_header = headers.get(b"authorization")
 
@@ -95,8 +97,7 @@ class AuthMiddleware:
             api_key_str = api_key.decode()
             role, key_error = self._resolve_role(api_key_str, cfg)
             if key_error:
-                await key_error(scope, receive, send)
-                return
+                return key_error
             key_valid = True
 
         token_valid = False
@@ -108,18 +109,13 @@ class AuthMiddleware:
                     token = auth_str.split(" ", 1)[1]
             token_valid = verify_bearer_token(token, cfg.bearer_token)
             if token and not token_valid:
-                resp = self._unauthorized("Invalid token", "Bearer")
-                await resp(scope, receive, send)
-                return
+                return self._unauthorized("Invalid token", "Bearer")
 
         auth_configured = bool(cfg.api_keys or cfg.api_key or cfg.bearer_token)
         if auth_configured and not (key_valid or token_valid):
             if cfg.bearer_token and not key_valid:
-                resp = self._unauthorized("Missing token", "Bearer")
-            else:
-                resp = self._unauthorized("Missing API key", "API-Key")
-            await resp(scope, receive, send)
-            return
+                return self._unauthorized("Missing token", "Bearer")
+            return self._unauthorized("Missing API key", "API-Key")
 
         if not key_valid and token_valid:
             role = "user"
@@ -129,12 +125,12 @@ class AuthMiddleware:
         else:
             auth_scheme = "Bearer" if cfg.bearer_token else "API-Key"
 
-        state = scope.setdefault("state", {})
+        state = request.scope.setdefault("state", {})
         state["role"] = role
         state["permissions"] = set(cfg.role_permissions.get(role, []))
         state["www_authenticate"] = auth_scheme
 
-        await self.app(scope, receive, send)
+        return await call_next(request)
 
 
 __all__ = ["AuthMiddleware"]

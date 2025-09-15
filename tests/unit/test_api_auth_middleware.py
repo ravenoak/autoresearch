@@ -57,3 +57,30 @@ def test_dispatch_invalid_token(monkeypatch):
     resp = asyncio.run(middleware.dispatch(request, call_next))
     # Invalid bearer tokens yield 401 responses
     assert resp.status_code == 401
+
+
+def test_dispatch_valid_token(monkeypatch):
+    cfg = ConfigModel(api=APIConfig(bearer_token="secret"))
+    ConfigLoader.reset_instance()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    app = SimpleNamespace(state=SimpleNamespace(config_loader=ConfigLoader()))
+    scope = {
+        "type": "http",
+        "path": "/",
+        "method": "GET",
+        "headers": [(b"authorization", b"Bearer secret")],
+        "app": app,
+    }
+    request = Request(scope)
+    called = []
+
+    async def call_next(_):
+        called.append(True)
+        return Response("ok")
+
+    middleware = AuthMiddleware(lambda *_: None)
+    resp = asyncio.run(middleware.dispatch(request, call_next))
+    assert resp.status_code == 200
+    assert request.state.role == "user"
+    assert request.state.www_authenticate == "Bearer"
+    assert called
