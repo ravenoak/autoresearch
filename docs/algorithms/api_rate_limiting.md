@@ -48,12 +48,18 @@ usage is linear in the number of tracked clients.
 - Buckets must expire for idle clients to avoid unbounded memory use.
 - Bursty traffic may need jitter or leaky bucket smoothing.
 
+## Implementation Notes
+
+When SlowAPI is installed, `RateLimitMiddleware` injects limit headers and
+delegates enforcement to SlowAPI's limiter. When it is absent the
+`FallbackRateLimitMiddleware` reuses `RequestLogger` counters to track per-IP
+usage. Both modes share the same `Limiter` interface, matching the behaviour
+documented in the [API spec](../specs/api.md).
+
 ## Verification
 
-Property-based tests
-[tests/unit/test_property_api_rate_limit_bounds.py](../../tests/unit/test_property_api_rate_limit_bounds.py)
-generate random request patterns to confirm that a client never exceeds its
-configured bound.
+Property-based tests [test_rate_limit_bounds][test-rate-limit] generate random
+request patterns to confirm that a client never exceeds its configured bound.
 
 ## Convergence
 
@@ -66,13 +72,14 @@ b(t) = \min(C, b_0 + R t)
 
 where ``b_0`` is the starting token count. The state monotonically increases
 until `b(t) = C`, proving convergence. Property-based tests
-([`test_property_api_rate_limit_bounds.py`]
-(../../tests/unit/test_property_api_rate_limit_bounds.py)) simulate random
-request bursts and confirm that the bucket never grows beyond its limit.
+([`test_rate_limit_bounds`][test-rate-limit]) simulate random request bursts and
+confirm that the bucket never grows beyond its limit.
 
 ## Simulation
 
 Automated tests confirm api rate limiting behavior.
 
 - [Spec](../specs/api_rate_limiting.md)
-- [Tests](../../tests/unit/test_property_api_rate_limit_bounds.py)
+- [Tests][test-rate-limit]
+
+[test-rate-limit]: ../../tests/unit/test_property_api_rate_limit_bounds.py

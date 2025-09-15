@@ -1,8 +1,10 @@
 # API Streaming
 
 The streaming endpoint delivers intermediate query results over an HTTP
-connection. It runs the query in a background thread and forwards each cycle's
-state to the client, then posts the final response to any configured webhooks.
+connection. `POST /query/stream` and `POST /query?stream=true` both route into
+the same generator. The handler runs the query in a background thread and
+forwards each cycle's state to the client, then posts the final response to any
+configured webhooks.
 
 ## Back-pressure
 

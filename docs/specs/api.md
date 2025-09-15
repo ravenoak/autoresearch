@@ -37,24 +37,47 @@ results while posting webhook callbacks. Related derivations live in:
 
 ## Routing and Endpoints
 
-- `/query` validates request versions, runs synchronous queries, forwards
-  responses to configured webhooks, and normalises errors via
-  `format_error_for_api`.
-- `/query/stream` delegates to `query_stream_endpoint` to stream JSON lines,
-  emitting blank-line heartbeats every 15 seconds until a final payload
-  arrives.
-- `/query/batch` paginates batched requests and executes each query
-  concurrently with `asyncio.TaskGroup`.
-- `/query/async`, `/query/{id}`, and `DELETE /query/{id}` manage background
-  tasks stored in `app.state.async_tasks`.
-- `/config` (GET, PUT, POST, DELETE) surfaces live configuration, applies
-  validated updates via `ConfigModel`, and notifies observers.
-- `/capabilities` summarises reasoning modes, LLM backends, agent metadata,
-  and storage/search capabilities from `StorageManager`.
-- `/metrics` is available only when monitoring is enabled in configuration;
-  otherwise `routes.router` omits the path.
-- `/docs` and `/openapi.json` render customised documentation guarded by the
-  `docs` permission.
+- **POST /query** (`query`): Runs queries or streams when `?stream=true`.
+- **POST /query/stream** (`query`): Streams newline JSON with heartbeat blank
+  lines every 15 seconds.
+- **POST /query/batch** (`query`): Executes paginated batches concurrently
+  using `asyncio.TaskGroup`.
+- **POST /query/async** (`query`): Starts background work and returns an async
+  identifier stored in `app.state.async_tasks`.
+- **GET /query/{query_id}** (`query`): Reports async status or returns the
+  final payload before pruning stored futures.
+- **DELETE /query/{query_id}** (`query`): Cancels async work and removes task
+  state.
+- **GET /health** (`health`): Reports readiness once storage and configuration
+  loaders finish.
+- **GET /capabilities** (`capabilities`): Lists reasoning modes, storage,
+  search metadata, and agent descriptors.
+- **GET /config** (`config`): Returns the active configuration as JSON.
+- **PUT /config** (`config`): Merges updates, validates them, and notifies
+  observers.
+- **POST /config** (`config`): Replaces configuration after validation.
+- **DELETE /config** (`config`): Reloads configuration from disk and broadcasts
+  the new model.
+- **GET /metrics** (`metrics`): Exports Prometheus metrics when monitoring is
+  enabled; the compatibility shim removes the route otherwise.
+- **GET /docs** (`docs`): Serves Swagger UI with CDN-backed assets.
+- **GET /openapi.json** (`docs`): Provides the OpenAPI schema and metadata.
+
+- `POST /query` honours optional fields (`reasoning_mode`, `loops`,
+  `llm_backend`) by cloning the loaded configuration, applying overrides, and
+  restoring defaults per request. It logs results in a tracing span and posts
+  webhook notifications with retries.
+- `POST /query/batch` paginates via `page` and `page_size` query parameters.
+  Each slice is dispatched concurrently and the response preserves order.
+- `POST /query/async`, `GET /query/{query_id}`, and `DELETE /query/{query_id}`
+  coordinate futures stored in `app.state.async_tasks`, returning JSON status
+  payloads until completion or cancellation.
+- `POST /query/stream` and `POST /query?stream=true` share streaming logic via
+  `query_stream_endpoint`, yielding newline-delimited JSON with heartbeat
+  blank lines every 15 seconds.
+- Configuration routes use `ConfigLoader` to validate candidate models,
+  persist replacements, notify observers, and handle reload failures with
+  structured `HTTPException` errors.
 
 ## Rate Limiting and Logging
 
