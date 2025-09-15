@@ -4,14 +4,19 @@ Mixins for agent functionality.
 This module provides mixins that can be used to add common functionality to agents.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypeAlias
 from uuid import uuid4
 
-from ..config.models import ConfigModel
+from ..config.models import AgentConfig, ConfigModel
 from ..logging_utils import get_logger
 from .prompts import render_prompt
 
 log = get_logger(__name__)
+
+ClaimPayload: TypeAlias = Dict[str, Any]
+MetadataPayload: TypeAlias = Dict[str, Any]
+ResultPayload: TypeAlias = Dict[str, Any]
+SourcePayload: TypeAlias = Dict[str, Any]
 
 
 class PromptGeneratorMixin:
@@ -43,16 +48,18 @@ class ModelConfigMixin:
         Returns:
             The model name to use.
         """
-        model_cfg = config.agent_config.get(agent_name)
-        return model_cfg.model if model_cfg and model_cfg.model else config.default_model
+        model_cfg: AgentConfig | None = config.agent_config.get(agent_name)
+        if model_cfg and model_cfg.model:
+            return model_cfg.model
+        return config.default_model
 
 
 class ClaimGeneratorMixin:
     """Mixin for generating claims."""
 
     def create_claim(
-        self, content: str, claim_type: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, content: str, claim_type: str, metadata: Optional[MetadataPayload] = None
+    ) -> ClaimPayload:
         """Create a claim with the given content and type.
 
         Args:
@@ -63,7 +70,7 @@ class ClaimGeneratorMixin:
         Returns:
             A dictionary representing the claim.
         """
-        claim: Dict[str, Any] = {
+        claim: ClaimPayload = {
             "id": str(uuid4()),
             "type": claim_type,
             "content": content,
@@ -78,11 +85,11 @@ class ResultGeneratorMixin:
 
     def create_result(
         self,
-        claims: List[Dict[str, Any]],
-        metadata: Dict[str, Any],
-        results: Dict[str, Any],
-        sources: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        claims: List[ClaimPayload],
+        metadata: MetadataPayload,
+        results: ResultPayload,
+        sources: Optional[List[SourcePayload]] = None,
+    ) -> ResultPayload:
         """Create a result with the given claims, metadata, and results.
 
         Args:
@@ -94,7 +101,7 @@ class ResultGeneratorMixin:
         Returns:
             A dictionary representing the result.
         """
-        result: Dict[str, Any] = {
+        result: ResultPayload = {
             "claims": claims,
             "metadata": metadata,
             "results": results,

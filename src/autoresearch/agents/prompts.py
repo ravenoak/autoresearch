@@ -16,12 +16,15 @@ defined in configuration files or registered programmatically.
 """
 
 import string
-from typing import Any, Dict, Optional
+from typing import Any, ClassVar, Dict, Optional, cast
 
 from pydantic import BaseModel, Field
 
 from ..config.models import ConfigModel
 from ..errors import ConfigError
+
+PromptTemplateConfig = Dict[str, Any]
+PromptRegistryConfig = Dict[str, PromptTemplateConfig]
 
 
 class PromptTemplate(BaseModel):
@@ -98,8 +101,8 @@ class PromptTemplateRegistry:
     across the application.
     """
 
-    _templates: Dict[str, PromptTemplate] = {}
-    _default_templates: Dict[str, Dict[str, Any]] = {
+    _templates: ClassVar[Dict[str, PromptTemplate]] = {}
+    _default_templates: ClassVar[PromptRegistryConfig] = {
         "planner.research_plan": {
             "template": """You are a Planner agent responsible for structuring complex research tasks.
 
@@ -545,11 +548,17 @@ Your verification should be objective, balanced, and focused on factual accuracy
         Raises:
             ConfigError: If the prompt templates configuration is invalid.
         """
-        prompt_config = config.prompt_templates if hasattr(config, "prompt_templates") else {}
+        prompt_templates_config = getattr(config, "prompt_templates", None)
+        prompt_config: PromptRegistryConfig
+        if prompt_templates_config is None:
+            prompt_config = {}
+        else:
+            prompt_config = cast(PromptRegistryConfig, prompt_templates_config)
 
         for name, template_config in prompt_config.items():
             try:
-                template = PromptTemplate(**template_config)
+                template_data = cast(PromptTemplateConfig, template_config)
+                template = PromptTemplate(**template_data)
                 cls.register(name, template)
             except Exception as e:
                 raise ConfigError(f"Invalid prompt template configuration for '{name}': {str(e)}")

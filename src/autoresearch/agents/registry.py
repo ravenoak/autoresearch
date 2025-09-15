@@ -9,7 +9,7 @@ import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Dict, Iterator, List, Type
+from typing import Any, ClassVar, Dict, Iterator, List, Type
 
 from ..llm.adapters import LLMAdapter
 from .base import Agent
@@ -33,8 +33,8 @@ class AgentRegistry:
     all available agent types.
     """
 
-    _registry: Dict[str, Type[Agent]] = {}
-    _coalitions: Dict[str, Coalition] = {}
+    _registry: ClassVar[Dict[str, Type[Agent]]] = {}
+    _coalitions: ClassVar[Dict[str, Coalition]] = {}
 
     @classmethod
     def register(cls, name: str, agent_class: Type[Agent]) -> None:
@@ -106,7 +106,7 @@ class AgentRegistry:
     @classmethod
     def get_coalition(cls, name: str) -> List[str]:
         """Return members of a registered coalition."""
-        coalition = cls._coalitions.get(name)
+        coalition: Coalition | None = cls._coalitions.get(name)
         return coalition.members if coalition else []
 
     @classmethod
@@ -128,10 +128,10 @@ class AgentFactory:
     It also supports delegation to another factory implementation for testing.
     """
 
-    _registry: Dict[str, Type[Agent]] = {}
-    _instances: Dict[str, Agent] = {}
-    _lock = Lock()
-    _delegate: type["AgentFactory"] | None = None
+    _registry: ClassVar[Dict[str, Type[Agent]]] = {}
+    _instances: ClassVar[Dict[str, Agent]] = {}
+    _lock: ClassVar[Lock] = Lock()
+    _delegate: ClassVar[type["AgentFactory"] | None] = None
 
     @classmethod
     def set_delegate(cls, delegate: type["AgentFactory"] | None) -> None:
@@ -195,7 +195,8 @@ class AgentFactory:
             if name not in cls._instances:
                 if name not in cls._registry:
                     raise ValueError(f"Unknown agent: {name}")
-                cls._instances[name] = cls._registry[name](name=name, llm_adapter=llm_adapter)
+                agent_class: Type[Agent] = cls._registry[name]
+                cls._instances[name] = agent_class(name=name, llm_adapter=llm_adapter)
             return cls._instances[name]
 
     @classmethod
@@ -221,7 +222,8 @@ class AgentFactory:
         with cls._lock:
             if name not in cls._registry:
                 raise ValueError(f"Unknown agent: {name}")
-            return cls._registry[name](name=name, llm_adapter=llm_adapter, **kwargs)
+            agent_class: Type[Agent] = cls._registry[name]
+            return agent_class(name=name, llm_adapter=llm_adapter, **kwargs)
 
     @classmethod
     def list_available(cls) -> List[str]:
