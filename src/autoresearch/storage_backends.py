@@ -15,15 +15,11 @@ from queue import Queue
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
+import importlib.util
 import duckdb
 import rdflib
 from dotenv import dotenv_values
 from rdflib.plugin import Store, register
-
-try:  # pragma: no cover - optional dependency
-    from oxrdflib import OxigraphStore as OxiGraphBackend
-except Exception:  # pragma: no cover - optional dependency
-    OxiGraphBackend = None
 
 from .config import ConfigLoader
 from .errors import NotFoundError, StorageError
@@ -74,7 +70,7 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
         store_name = "OxiGraph"
         rdf_path = path
         os.makedirs(rdf_path, exist_ok=True)
-        if OxiGraphBackend is None:
+        if importlib.util.find_spec("oxrdflib") is None:
             raise StorageError(
                 "OxiGraph driver not installed",
                 suggestion="Install oxrdflib to use the OxiGraph RDF backend",
