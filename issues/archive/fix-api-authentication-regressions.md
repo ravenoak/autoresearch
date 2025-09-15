@@ -20,4 +20,4 @@ None
 - Documentation explains required API keys and roles.
 
 ## Status
-Open
+Archived

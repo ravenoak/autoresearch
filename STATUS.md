@@ -8,6 +8,27 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 15, 2025
+- The evaluation container does not ship with the Go Task CLI;
+  `task --version` reports `command not found`. Use `scripts/setup.sh` or
+  `uv run task ...` after installing Task manually.
+- `uv sync --extra dev-minimal --extra test --extra docs` bootstraps the
+  environment without the Task CLI.
+- `uv run pytest tests/unit --maxfail=1 -q` fails in
+  `tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`
+  because the Config validation path no longer raises `ConfigError` when the
+  weights sum exceeds one.
+- `uv run pytest tests/unit/test_download_duckdb_extensions.py -q` still fails
+  three offline fallback scenarios, creating non-empty stub files and hitting
+  `SameFileError` when copying stubs.
+- `uv run pytest tests/unit/test_vss_extension_loader.py -q` fails because the
+  loader executes a secondary verification query, so the mocked cursor records
+  two calls instead of one.
+- Targeted API integration suites now pass
+  (`tests/integration/test_api_auth.py`, `test_api_docs.py`,
+  `test_api_streaming.py`, and `test_cli_http.py`).
+- `uv run mkdocs build` completes but warns about documentation files missing
+  from `nav` and broken links such as `specs/api_authentication.md` referenced
+  by `docs/api_authentication.md`.
 - Added `scripts/generate_spec_coverage.py` to rebuild `SPEC_COVERAGE.md`; the
   run confirmed every tracked module has both specification and proof links, so
   no follow-up issues were required.
@@ -492,14 +513,16 @@ Not executed.
 so coverage reports are not generated.
 
 ## Open issues
-- [add-api-authentication-proofs](issues/add-api-authentication-proofs.md)
-- [audit-spec-coverage-and-proofs](issues/audit-spec-coverage-and-proofs.md)
-- [fix-api-authentication-regressions](issues/fix-api-authentication-regressions.md)
-- [fix-benchmark-scheduler-scaling-test](issues/fix-benchmark-scheduler-scaling-test.md)
+- [fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md)
+- [fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)
 - [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md)
-- [fix-oxigraph-backend-initialization](issues/fix-oxigraph-backend-initialization.md)
-- [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md)
 - [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
 - [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
+- [update-api-spec](issues/update-api-spec.md)
+- [update-cli-helpers-spec](issues/update-cli-helpers-spec.md)
+- [update-config-spec](issues/update-config-spec.md)
+- [update-distributed-spec](issues/update-distributed-spec.md)
+- [update-extensions-spec](issues/update-extensions-spec.md)
+- [update-monitor-spec](issues/update-monitor-spec.md)

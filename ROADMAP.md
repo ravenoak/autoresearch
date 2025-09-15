@@ -11,14 +11,20 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Go Task 3.45.3 is available. `task check` passes,
-but `task verify` fails in
-`tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token`, where
-`AuthMiddleware` lacks a `dispatch` method. The open
-[fix-api-authentication-regressions](issues/fix-api-authentication-regressions.md)
-and [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-issues track the regression and remaining test failures.
-Scheduler resource benchmarks
+across project documentation. The evaluation container no longer includes the
+Go Task CLI by default, so install it manually or run automation via
+`uv run task ...`. After syncing the `dev-minimal`, `test`, and `docs` extras,
+`uv run pytest tests/unit --maxfail=1 -q` fails in
+`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`, and
+`tests/unit/test_download_duckdb_extensions.py` continues to fail its offline
+fallback scenarios. The unit test
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`
+also fails because the loader executes a second verification query. The open
+[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
+[fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md),
+and
+[fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)
+issues track the remaining regressions. Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
@@ -82,6 +88,10 @@ release is re-targeted for **September 15, 2026**. Key activities include:
   ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
 - [ ] Integration tests stabilized
   ([fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)).
+- [ ] Offline DuckDB extension fallback produces zero-byte stubs
+  ([fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)).
+- [ ] Config validation rejects invalid ranking weights
+  ([fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md)).
 - [ ] Coverage gates target **90%** total coverage once tests run
   ([add-test-coverage-for-optional-components](
   issues/archive/add-test-coverage-for-optional-components.md);
@@ -90,8 +100,8 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Algorithm validation for ranking and coordination
   ([add-ranking-algorithm-proofs-and-simulations](
   issues/archive/add-ranking-algorithm-proofs-and-simulations.md)).
-- [ ] Add formal validation for the OxiGraph backend
-  ([add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md)).
+- [x] Add formal validation for the OxiGraph backend
+  ([add-oxigraph-backend-proofs](issues/archive/add-oxigraph-backend-proofs.md)).
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.

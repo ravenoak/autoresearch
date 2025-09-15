@@ -1,11 +1,15 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 14, 2025**, running
-`scripts/setup.sh` installs Task 3.44.1 and required extras. `task check` fails due to
-mypy errors in `src/autoresearch/orchestrator_perf.py` and
-`src/autoresearch/search/core.py`. `task verify` stops at the same stage, so
-integration tests and coverage reports are skipped.
+organized by phases from the code complete plan. As of **September 15, 2025** the
+evaluation container does not include the Go Task CLI by default—`task
+--version` reports `command not found`. Running `uv sync --extra dev-minimal
+--extra test --extra docs` prepares the virtual environment, after which
+`uv run pytest tests/unit --maxfail=1 -q` fails in
+`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one` and
+`tests/unit/test_download_duckdb_extensions.py` continues to fail the offline
+fallback scenarios. Unit coverage and `task verify` remain blocked until these
+regressions are resolved.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage 
 status. An **0.1.0-alpha.1** preview is re-targeted for **September 15, 2026**, 
 with the final **0.1.0** release targeted for **October 1, 2026**.

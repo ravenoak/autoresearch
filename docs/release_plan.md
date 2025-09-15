@@ -18,18 +18,21 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) are
-confirmed in `pyproject.toml` and [installation.md](installation.md).
-`uv run flake8 src tests` now passes, and `uv run mypy src` reports success.
-The `task` CLI installs via `scripts/setup.sh`, allowing `task check` to run
-8 targeted tests and pass while warning that package metadata for GitPython,
-cibuildwheel, duckdb-extension-vss, spacy, types-networkx, types-protobuf,
-types-requests, and types-tabulate is missing.
-`task verify` runs 664 tests (13 skipped, 25 deselected, 6 xfailed, 3 xpassed)
-and coverage currently reports 90% coverage for budgeting and HTTP modules (90
-of 100 statements).
-Outstanding gaps are tracked in int-tests and task-issue. Current test
-results are mirrored in STATUS.md.
+The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain
+confirmed in `pyproject.toml` and [installation.md](installation.md), but the
+evaluation environment no longer includes the Go Task CLI by default.
+`task --version` fails unless contributors install Task manually or run
+commands via `uv run task ...`. After `uv sync --extra dev-minimal --extra test
+--extra docs`, `uv run pytest tests/unit --maxfail=1 -q` fails in
+`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one` and
+the DuckDB extension helper tests under
+`tests/unit/test_download_duckdb_extensions.py`. The VSS extension loader mock
+also fails in
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
+`test_verify_extension_failure`.
+`task verify` has not been rerun because the missing CLI blocks the workflow,
+and coverage numbers are currently unavailable. These regressions are tracked
+in the open issues referenced by [STATUS.md](../STATUS.md).
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

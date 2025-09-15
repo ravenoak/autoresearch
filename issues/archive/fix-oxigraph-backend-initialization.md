@@ -15,4 +15,4 @@ None
 - Documentation covers enabling OxiGraph in environments and tests.
 
 ## Status
-Open
+Archived

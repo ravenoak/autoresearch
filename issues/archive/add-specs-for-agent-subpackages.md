@@ -12,4 +12,4 @@ None
 - Each entry links to a specification document.
 
 ## Status
-Open
+Archived
