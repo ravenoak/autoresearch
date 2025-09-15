@@ -37,6 +37,21 @@ multiplies task count by per-task memory, so the memory invariant holds.
 - Increasing `workers` should decrease `Lq` while utilization stays below one.
 - Adding `--benchmark` exercises the throughput micro-benchmark.
 
+## Benchmark Tuning
+
+Hardware differences affect throughput. Unit tests and scripts use the
+``SCHEDULER_BASELINE_OPS`` and ``SCHEDULER_SCALE_THRESHOLD`` environment
+variables to calibrate expectations.
+
+- ``SCHEDULER_BASELINE_OPS`` sets the minimum single-worker throughput in
+  tasks per second. It defaults to ``300``; lower it on constrained systems.
+- ``SCHEDULER_SCALE_THRESHOLD`` defines the required speedup when adding more
+  workers. It defaults to ``1.5`` and can be raised to demand near-linear
+  scaling on faster machines.
+
+Adjust these variables before running ``pytest`` or
+``scripts/orchestrator_perf_sim.py --benchmark`` to match local hardware.
+
 ## Traceability
 
 - Code: [src/autoresearch/orchestrator_perf.py][m1]
