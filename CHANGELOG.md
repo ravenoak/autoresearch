@@ -6,6 +6,9 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Prevented overweight search ranking vectors from being silently normalised by
+  raising a `ConfigError` and documenting the behaviour in
+  [docs/specs/config.md](docs/specs/config.md).
 - Logged the config weight validation regression in
   [fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md).
 - Captured offline DuckDB extension fallback failures in

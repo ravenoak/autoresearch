@@ -30,6 +30,13 @@ def test_weights_must_sum_to_one():
                 source_credibility_weight=0.5,
             )
         )
+    with pytest.raises(ConfigError):
+        ConfigModel(
+            search=SearchConfig(
+                semantic_similarity_weight=0.8,
+                bm25_weight=0.3,
+            )
+        )
 
 
 def test_default_config_loads_without_error():
