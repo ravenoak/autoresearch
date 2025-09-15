@@ -133,15 +133,27 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     os.makedirs(output_extension_dir, exist_ok=True)
     if path and os.path.exists(path):
         dst = os.path.join(output_extension_dir, os.path.basename(path))
-        shutil.copy2(path, dst)
+        try:
+            samefile = os.path.exists(dst) and os.path.samefile(path, dst)
+        except FileNotFoundError:
+            samefile = False
+        except OSError as exc:  # pragma: no cover - unexpected OS edge cases
+            logger.debug("Unable to compare offline extension paths: %s", exc)
+            samefile = False
+
+        if samefile:
+            logger.info("Offline extension already present at %s; skipping copy", dst)
+        else:
+            shutil.copy2(path, dst)
+            logger.info("Copied offline extension from %s", path)
+
         os.environ["VECTOR_EXTENSION_PATH"] = dst
         _write_offline_env(dst)
-        logger.info("Copied offline extension from %s", path)
         return dst
 
     dst = os.path.join(output_extension_dir, f"{extension_name}.duckdb_extension")
     # Create a stub file so the extension path resolves during tests
-    Path(dst).touch()
+    open(dst, "wb").close()
     os.environ["VECTOR_EXTENSION_PATH"] = dst
     _write_offline_env(dst)
     logger.warning(
