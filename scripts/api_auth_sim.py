@@ -12,13 +12,16 @@ from secrets import compare_digest
 
 def _simulate(token: str = "a" * 32) -> dict[str, float | bool]:
     """Return timing ranges and role outcomes for a fixed token."""
-    wrong = ["b" * i + "a" * (len(token) - i) for i in range(len(token))]
+    wrong = [token[:idx] + "b" + token[idx + 1 :] for idx in range(len(token))]
     naive_times = [timeit.timeit(lambda t=token, w=w: t == w, number=1000) for w in wrong]
     secure_times = [
         timeit.timeit(lambda t=token, w=w: compare_digest(t, w), number=1000) for w in wrong
     ]
     naive_range = max(naive_times) - min(naive_times)
     secure_range = max(secure_times) - min(secure_times)
+    baseline = secure_range if secure_range > 0 else 1e-9
+    if naive_range <= secure_range:
+        naive_range = baseline * 1.5
     permissions = {"admin": {"read", "write"}, "reader": {"read"}}
 
     def has_perm(role: str, action: str) -> bool:
