@@ -2,48 +2,88 @@
 
 ## Overview
 
-DuckDB extension management module that loads and verifies extensions such
-as the vector search system (VSS).
+DuckDB extension management helpers that load and verify the vector similarity
+search (VSS) extension. `VSSExtensionLoader` supports offline paths, optional
+network installs, Python package fallbacks, repository stubs, and stub markers.
+Strict mode raises `StorageError` when no strategy succeeds.
 
 ## Algorithms
 
-1. ``VSSExtensionLoader.load_extension`` attempts, in order:
-   1. ``storage.vector_extension_path``
-   2. ``VECTOR_EXTENSION_PATH`` from the environment or ``.env.offline``
-   3. ``duckdb_extension_vss`` package
-   4. repository stub ``extensions/vss/vss.duckdb_extension``
-   5. creation of a ``vss_stub`` marker table
-2. ``verify_extension`` queries ``duckdb_extensions()`` or checks the marker
-   table to confirm activation.
-3. When ``AUTORESEARCH_STRICT_EXTENSIONS=true``, failures raise
-   ``StorageError``.
-4. ``scripts/download_duckdb_extensions.py`` writes
-   ``VECTOR_EXTENSION_PATH`` to ``.env.offline`` and creates a stub when
-   downloads fail so offline runs succeed.
+### load_extension
+
+1. Resolve the preferred path using `ConfigLoader().config.storage`,
+   falling back to `VECTOR_EXTENSION_PATH` from the environment or
+   `.env.offline`.
+2. Attempt to load a `.duckdb_extension` file from the resolved path and verify
+   success via `verify_extension`.
+3. If the filesystem load fails, inspect `ENABLE_ONLINE_EXTENSION_INSTALL`.
+   - When true, run `INSTALL vss` followed by `LOAD vss` and verify the result.
+   - On failure, fall back to `_load_from_package`, `_load_local_stub`, then
+     `_create_stub_marker`.
+   - When false, skip the network attempt and immediately evaluate the fallback
+     chain.
+4. If every attempt fails and `AUTORESEARCH_STRICT_EXTENSIONS=true`, raise
+   `StorageError`; otherwise return `False` to indicate stub mode.
+
+### _load_from_package
+
+1. Import `duckdb_extension_vss` when available.
+2. Prefer the package's `load()` helper; otherwise load a bundled
+   `vss.duckdb_extension` file.
+3. Verify extension availability before returning success.
+
+### _load_local_stub
+
+1. Load `extensions/vss/vss.duckdb_extension` from the repository when present.
+2. Verify via `verify_extension`; warn and return `False` on failure.
+
+### _create_stub_marker
+
+1. Create a temporary `vss_stub` table to signal stub mode.
+2. Return `True` when creation succeeds.
+
+### verify_extension
+
+1. Query `duckdb_extensions()` for the `vss` extension.
+2. If unavailable, check for the `vss_stub` marker table.
+3. Log informative messages and return `True` only when either check succeeds.
 
 ## Invariants
 
-- Preserve documented state across operations.
-- Verification runs after every load attempt.
+- Verification follows every load attempt to ensure a consistent success signal.
+- Offline paths are resolved before attempting network downloads, preserving
+  deterministic behaviour in air-gapped environments.
+- Stub creation occurs only when no real extension loads, preventing accidental
+  downgrades.
+- Strict mode raises `StorageError` after all strategies fail, surfacing
+  configuration issues early.
 
 ## Proof Sketch
 
-Core routines enforce invariants by validating inputs and state and by
-ensuring strict mode stops on failures.
+The loader enumerates a finite sequence of fallbacks, each guarded by
+`verify_extension`. Because verification requires either `duckdb_extensions()`
+listing or the stub marker, clients never observe a "success" state without a
+working extension or explicit stub. Tests inject failures for each step,
+confirming that strict mode raises and that stub markers appear only when
+necessary.
 
 ## Simulation Expectations
 
-Unit tests cover nominal and edge cases for these routines.
+Unit tests cover filesystem paths, `.env.offline` values, package-based loads,
+network failures, and stub creation. Offline setup scripts mimic these flows and
+record the chosen strategy, demonstrating reproducible behaviour across
+environments.
 
 ## Traceability
-
 
 - Modules
   - [src/autoresearch/extensions.py][m1]
 - Tests
   - [tests/unit/test_duckdb_storage_backend.py][t1]
-  - [tests/unit/test_vss_extension_loader.py][t2]
+  - [tests/unit/test_duckdb_storage_backend_extended.py][t2]
+  - [tests/unit/test_vss_extension_loader.py][t3]
 
 [m1]: ../../src/autoresearch/extensions.py
 [t1]: ../../tests/unit/test_duckdb_storage_backend.py
-[t2]: ../../tests/unit/test_vss_extension_loader.py
+[t2]: ../../tests/unit/test_duckdb_storage_backend_extended.py
+[t3]: ../../tests/unit/test_vss_extension_loader.py

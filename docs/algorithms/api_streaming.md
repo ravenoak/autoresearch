@@ -12,6 +12,8 @@ state to the client, then posts the final response to any configured webhooks.
 - The queue is unbounded; the orchestrator never blocks when adding items. If a
   client stops reading, results accumulate in memory. Consumers should read from
   the stream to apply back-pressure and avoid unbounded growth.
+- When the queue is idle for 15 seconds the generator yields a blank newline as
+  a heartbeat to keep intermediaries from closing the connection.
 
 ## Queue growth model
 

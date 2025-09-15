@@ -4,13 +4,21 @@ Enumerates failure responses for API credential verification.
 
 ## Missing Credential
 
-- Request without `X-API-Key` or `Authorization` header returns **400 Bad
-  Request**.
+- When authentication is configured but no usable credentials are supplied,
+  the middleware returns **401 Unauthorized** and sets `WWW-Authenticate` to the
+  required scheme (`API-Key` or `Bearer`).
 
 ## Invalid Credential
 
-- Credentials that do not match stored secrets return **401 Unauthorized** and
-  log the failure.
+- API keys and bearer tokens that fail constant-time comparison return
+  **401 Unauthorized** with a message such as `Invalid API key` or
+  `Invalid token`.
+
+## Insufficient Permissions
+
+- Authenticated clients lacking a required permission trigger
+  `enforce_permission`, which raises **403 Forbidden** with
+  `detail="Insufficient permissions"`.
 
 ## Rate Limit Exceeded
 
@@ -19,11 +27,13 @@ Enumerates failure responses for API credential verification.
 
 ## Probabilistic Modeling
 
-Credential checks can be described by probabilities for missing, invalid, and
-rate limited requests. Let `p_m`, `p_i`, and `p_r` denote those values.
+Credential checks can be described by probabilities for missing, invalid,
+forbidden, and rate-limited requests. Let `p_m`, `p_i`, `p_f`, and `p_r` denote
+those values.
 
-- **400 Bad Request:** `p_m`
-- **401 Unauthorized:** `p_i`
+- **401 Unauthorized (missing)**: `p_m`
+- **401 Unauthorized (invalid)**: `p_i`
+- **403 Forbidden:** `p_f`
 - **429 Too Many Requests:** `p_r`
 
 Expected response rates follow from the chosen distribution. The simulation
@@ -31,7 +41,7 @@ script illustrates outcome frequencies:
 
 ```
 uv run scripts/simulate_api_auth_errors.py --requests 1000 \
-    --missing 0.2 --invalid 0.3 --rate-limit 0.1 --seed 0
+    --missing 0.2 --invalid 0.3 --forbidden 0.1 --rate-limit 0.1 --seed 0
 ```
 
 ## References
