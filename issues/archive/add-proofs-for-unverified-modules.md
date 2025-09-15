@@ -30,4 +30,4 @@ None
 - `SPEC_COVERAGE.md` references these proofs.
 
 ## Status
-Open
+Archived
