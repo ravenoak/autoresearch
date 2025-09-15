@@ -1,18 +1,72 @@
 site_name: Autoresearch
 nav:
-  - Getting Started: getting_started.md
-  - Configuration: configuration.md
-  - Agents: agents_overview.md
-  - Agent Communication: agent_communication.md
-  - Storage: storage.md
-  - Orchestration: orchestration.md
-  - API Usage: api.md
-  - Advanced Usage: advanced_usage.md
-  - Deployment: deployment.md
-  - FAQ: faq.md
-  - Agent System: agent_system.md
-  - Component Interactions: component_interactions.md
-  - Message Brokers: message_brokers.md
+  - Overview:
+    - Getting Started: getting_started.md
+    - Quickstart Guides: quickstart_guides.md
+    - FAQ: faq.md
+    - User Flows: user_flows.md
+  - Concepts:
+    - Agents: agents_overview.md
+    - Agent Communication: agent_communication.md
+    - Agent System: agent_system.md
+    - Component Interactions: component_interactions.md
+    - Domain Model: domain_model.md
+    - Orchestration: orchestration.md
+    - Orchestrator State: orchestrator_state.md
+    - Orchestrator State Spec: orchestrator_state_spec.md
+    - Message Brokers: message_brokers.md
+    - Storage: storage.md
+    - Search Backends: search_backends.md
+    - Search Specification: search_spec.md
+    - API Usage: api.md
+    - API Authentication: api_authentication.md
+    - A2A MCP Integration: a2a_mcp_integration.md
+  - Setup & Configuration:
+    - Installation: installation.md
+    - Setup Checklist: setup.md
+    - Configuration Overview: configuration.md
+    - Config Reference: config.md
+    - Advanced Usage: advanced_usage.md
+    - Custom UI Extensions: custom_ui_extensions.md
+    - Container Usage: container_usage.md
+    - CLI Helpers: cli_helpers.md
+    - Caching: caching.md
+    - Output Formats: output_formats.md
+  - Operations:
+    - Deployment Overview: deployment.md
+    - Deploy Validation: deploy_validation.md
+    - Distributed Execution: distributed.md
+    - Monitoring Overview: monitoring.md
+    - Monitor CLI: monitor.md
+    - Orchestrator Performance: orchestrator_perf.md
+    - Scheduler Benchmark: scheduler_benchmark.md
+    - Ranking Benchmark: ranking_benchmark.md
+    - Performance Overview: performance.md
+    - Performance Tuning: performance_tuning.md
+    - DuckDB Compatibility: duckdb_compatibility.md
+    - DuckDB VSS Fallback: duckdb_vss_fallback.md
+  - Development Workflow:
+    - Development Overview: development.md
+    - Developer Guide: developer_guide.md
+    - Spec-Driven Development: spec_driven_development.md
+    - Spec Template: spec_template.md
+    - Review Guidelines: review_guidelines.md
+    - Testing Guidelines: testing_guidelines.md
+    - UI Testing Procedures: ui_testing_procedures.md
+    - Contributing: contributing.md
+    - Releasing Workflow: releasing.md
+    - Release Plan: release_plan.md
+    - Release Notes:
+        - Overview: release_notes.md
+        - Version 0.1.0a1: release_notes/v0.1.0a1.md
+    - Requirements: requirements.md
+    - Requirements Traceability Matrix: requirements_traceability_matrix.md
+  - Planning & Design:
+    - Plan: plan.md
+    - Pseudocode: pseudocode.md
+    - Specification Overview: specification.md
+    - Diagrams:
+        - UX Architecture: diagrams/ux_architecture.md
   - API Reference:
     - Overview: api_reference/index.md
     - Agents: api_reference/agents.md
@@ -21,15 +75,12 @@ nav:
     - LLM: api_reference/llm.md
     - Search: api_reference/search.md
     - Config: api_reference/config.md
-  - Contributing: contributing.md
-  - Requirements: requirements.md
-  - Specification: specification.md
-  - Plan: plan.md
-  - Pseudocode: pseudocode.md
-  - Requirements Traceability Matrix: requirements_traceability_matrix.md
-  - Testing Guidelines: testing_guidelines.md
+    - Query: api_reference/query.md
+    - Distributed: api_reference/distributed.md
   - Troubleshooting:
     - Multiprocessing Resource Tracker: multiprocessing_resource_tracker.md
+  - Appendices:
+    - Documentation Guide: AGENTS.md
 markdown_extensions:
   - toc
   - admonition

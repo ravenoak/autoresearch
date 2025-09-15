@@ -38,7 +38,7 @@ mkdocs build` succeeds but lists more than forty pages missing from the
 navigation alongside broken links such as `specs/api_authentication.md`.
 `task verify` has not been rerun because the missing CLI blocks the workflow,
 and coverage numbers are currently unavailable. These regressions are tracked
-in the open issues referenced by [STATUS.md](../STATUS.md).
+in the open issues referenced by STATUS.md.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
