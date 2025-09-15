@@ -12,6 +12,12 @@ checks are required.
   giving the shell immediate access to `task`.
 - `task verify EXTRAS="dev-minimal test"` installs only minimal extras and
   executes linting, type checks, and coverage.
+- `task check` and `task check EXTRAS="llm"` pass without warnings after
+  updating `dspy-ai` to 3.0.3 and allowing `fastembed >=0.7.3`.
+- `task verify` fails at `tests/unit/test_config_validation_errors.py::`
+  `test_weights_must_sum_to_one` but emits no deprecation warnings.
+- Pinned Click `<9` because `weasel.util.config` still imports the removed
+  `split_arg_string` helper.
 
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
