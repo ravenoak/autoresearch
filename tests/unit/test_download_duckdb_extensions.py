@@ -86,14 +86,18 @@ def test_download_extension_network_fallback(monkeypatch, tmp_path, caplog):
 def test_download_extension_creates_stub_when_offline(monkeypatch, tmp_path, caplog):
     """Network failure without offline path creates stub."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("VECTOR_EXTENSION_PATH", raising=False)
     conn = FailingConn("path")
     monkeypatch.setattr(duckdb, "connect", lambda path: conn)
     caplog.set_level(logging.WARNING)
-    result = dde.download_extension("vss", tmp_path, "linux_amd64")
     stub = tmp_path / "extensions" / "vss" / "vss.duckdb_extension"
+    stub.parent.mkdir(parents=True, exist_ok=True)
+    stub.write_text("pre-existing data")
+    result = dde.download_extension("vss", tmp_path, "linux_amd64")
     assert result == str(stub)
     assert stub.exists()
     assert stub.stat().st_size == 0
+    assert stub.read_bytes() == b""
     assert "created stub" in caplog.text
 
 
@@ -129,10 +133,34 @@ def test_download_extension_fallback_path(monkeypatch, tmp_path):
     assert files, "extension file was not copied"
 
 
+def test_offline_fallback_skips_samefile_copy(monkeypatch, tmp_path, caplog):
+    """Offline fallback ignores copies when the cached file is already in place."""
+
+    env_file = tmp_path / ".env.offline"
+    cached = tmp_path / "extensions" / "vss" / "vss.duckdb_extension"
+    cached.parent.mkdir(parents=True, exist_ok=True)
+    cached.write_text("cached extension")
+    env_file.write_text(f"VECTOR_EXTENSION_PATH={cached}\n")
+
+    monkeypatch.chdir(tmp_path)
+    conn = FailingConn("path")
+    monkeypatch.setattr(duckdb, "connect", lambda path: conn)
+    caplog.set_level(logging.INFO)
+
+    result = dde.download_extension("vss", tmp_path, "linux_amd64")
+
+    assert result == str(cached)
+    assert conn.calls == 3
+    assert cached.read_text() == "cached extension"
+    assert "SameFileError" not in caplog.text
+    assert "already present" in caplog.text
+
+
 def test_setup_sh_ignores_smoke_failure_with_stub(monkeypatch, tmp_path):
     """Smoke test failures are ignored when only a stub extension exists."""
 
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("VECTOR_EXTENSION_PATH", raising=False)
     conn = FailingConn("path")
     monkeypatch.setattr(duckdb, "connect", lambda path: conn)
     result = dde.download_extension("vss", tmp_path, "linux_amd64")
