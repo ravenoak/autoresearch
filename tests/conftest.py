@@ -45,6 +45,22 @@ def _terminate_active_children() -> None:
         proc.join()
 
 
+@pytest.fixture(scope="session")
+def _resource_tracker_cache():
+    """Reference to the multiprocessing resource tracker cache."""
+    with contextlib.suppress(Exception):
+        return resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
+    return {}
+
+
+@pytest.fixture(autouse=True)
+def _clear_resource_tracker_cache(_resource_tracker_cache) -> None:
+    """Clear the resource tracker cache after each test."""
+    yield
+    with contextlib.suppress(Exception):
+        _resource_tracker_cache.clear()
+
+
 @pytest.fixture(autouse=True)
 def _drain_multiprocessing_resources() -> None:
     """Unlink all multiprocessing resources registered during a test."""
@@ -57,6 +73,26 @@ def _drain_multiprocessing_resources() -> None:
         with contextlib.suppress(Exception):
             resource_tracker.unregister(name, rtype)
             resource_tracker._resource_tracker.maybe_unlink(name, rtype)
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_multiprocessing_queues(monkeypatch) -> None:
+    """Ensure multiprocessing queues are closed and joined."""
+    created: list[multiprocessing.Queue] = []
+    original_queue = multiprocessing.Queue
+
+    def tracking_queue(*args, **kwargs):
+        q = original_queue(*args, **kwargs)
+        created.append(q)
+        return q
+
+    monkeypatch.setattr(multiprocessing, "Queue", tracking_queue)
+    yield
+    for q in created:
+        with contextlib.suppress(Exception):
+            q.close()
+        with contextlib.suppress(Exception):
+            q.join_thread()
 
 
 if importlib.util.find_spec("autoresearch") is None:
