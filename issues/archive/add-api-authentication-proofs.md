@@ -15,4 +15,4 @@ spec-driven approach.
 - Documentation references the proof and simulation.
 
 ## Status
-Open
+Archived

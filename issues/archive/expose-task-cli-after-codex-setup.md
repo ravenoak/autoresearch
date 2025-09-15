@@ -17,4 +17,4 @@ None.
 - STATUS.md notes the updated setup instructions.
 
 ## Status
-Open
+Archived

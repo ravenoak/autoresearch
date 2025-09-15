@@ -17,4 +17,4 @@ the OxiGraph backend.
 - Documentation references the proof and simulation.
 
 ## Status
-Open
+Archived

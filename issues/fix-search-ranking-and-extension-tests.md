@@ -1,32 +1,29 @@
 # Fix search ranking and extension tests
 
 ## Context
-Search-related tests continue to fail. The unit test
-`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
-returns `['B', 'A']` instead of `['A', 'B']`. Integration tests also fail:
-`tests/integration/test_optional_extras.py::test_vss_extension_loader` cannot
-initialize the vector search extension and
-`tests/integration/test_ranking_formula_consistency.py::test_convex_combination_matches_docs`
-reports mismatched ranking values.
-Unit test `tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`
-expects a stubbed extension file but returns a directory path.
-On September 14, 2025, `task verify` failed in
-`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`
-when ranking returned `0.0` instead of `1.0` with disabled features.
-The same run reported failures in:
-- `test_cross_backend_ranking_consistency.py::test_cross_backend_ranking_consistent`
-- `tests/integration/test_relevance_ranking_integration.py::test_rank_results_invalid_weight_sum`
-- `tests/integration/test_optional_extras.py::test_fastembed_available`
-A later run on September 14, 2025, failed in
-`tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking`
-with `hypothesis.errors.FailedHealthCheck` because input generation was too
-slow.
+Search-related tests continue to fail, but the problem set has narrowed. The
+unit ranking suite now passes (`uv run pytest` on 2025-09-15 returns the
+expected ordering in
+`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`),
+and the integration scenarios in
+`tests/integration/test_ranking_formula_consistency.py` now match the values
+documented in the specs. Optional extras also load successfully during
+`tests/integration/test_optional_extras.py`.
+
+Remaining regressions focus on extension bootstrapping. The unit test
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`
+still fails because `VSSExtensionLoader.verify_extension` executes an extra
+fallback query, so the mocked cursor records two calls instead of one. The
+DuckDB download helpers also mis-handle offline fallbacks and create
+non-empty stub files; track those failures separately in
+`fix-duckdb-extension-offline-fallback`.
 
 ## Dependencies
 None.
 
 ## Acceptance Criteria
-- DuckDB VSS extension loads with fallback when network access is unavailable.
+- DuckDB VSS extension loader unit tests pass; offline download fallbacks are
+  handled in `fix-duckdb-extension-offline-fallback`.
 - Ranking formula tests match documented values.
 - Integration tests for extension loading, ranking consistency, and invalid
   weight detection pass.
