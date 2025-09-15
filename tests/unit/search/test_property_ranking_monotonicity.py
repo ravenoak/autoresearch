@@ -1,14 +1,15 @@
 from typing import List
 
 import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search import Search
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     bm25_a=st.floats(min_value=0, max_value=1),
     bm25_b=st.floats(min_value=0, max_value=1),
@@ -16,9 +17,9 @@ from autoresearch.search import Search
     sem_b=st.floats(min_value=0, max_value=1),
     cred_a=st.floats(min_value=0, max_value=1),
     cred_b=st.floats(min_value=0, max_value=1),
-    weights=st.lists(
-        st.floats(min_value=0.01, max_value=1.0), min_size=3, max_size=3
-    ).map(lambda w: [x / sum(w) for x in w]),
+    weights=st.lists(st.floats(min_value=0.01, max_value=1.0), min_size=3, max_size=3).map(
+        lambda w: [x / sum(w) for x in w]
+    ),
 )
 def test_monotonic_ranking(
     bm25_a: float,

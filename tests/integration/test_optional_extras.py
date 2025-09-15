@@ -16,9 +16,10 @@ to modules is:
 
 from __future__ import annotations
 
+import sys
+
 import duckdb
 import pytest
-import sys
 
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
@@ -53,9 +54,12 @@ def test_vss_extension_loader(monkeypatch) -> None:
     """The VSS extra enables DuckDB vector extension management."""
 
     monkeypatch.setenv("ENABLE_ONLINE_EXTENSION_INSTALL", "false")
+    monkeypatch.setattr(VSSExtensionLoader, "_load_from_package", staticmethod(lambda conn: False))
+    monkeypatch.setattr(VSSExtensionLoader, "_load_local_stub", staticmethod(lambda conn: False))
     conn = duckdb.connect(":memory:")
     loaded = VSSExtensionLoader.load_extension(conn)
-    assert loaded is VSSExtensionLoader.verify_extension(conn, verbose=False)
+    assert loaded is True
+    assert VSSExtensionLoader.verify_extension(conn, verbose=False) is True
 
 
 @pytest.mark.requires_git

@@ -18,7 +18,7 @@ def validate_rdf_backend(cls, v: str) -> str:
 
 
 def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
-    """Ensure relevance weights sum to ``1.0``."""
+    """Normalize relevance weights to sum to ``1.0``."""
     default_weights = {
         "semantic_similarity_weight": 0.5,
         "bm25_weight": 0.3,
@@ -40,13 +40,6 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
 
     if provided != weight_fields:
         remaining = 1.0 - sum(weights[n] for n in provided)
-        if remaining < -0.001:
-            raise ConfigError(
-                "Relevance ranking weights must sum to 1.0",
-                current_sum=sum(weights[n] for n in provided),
-                weights={n: weights[n] for n in provided},
-                suggestion="Decrease the provided weights so they do not exceed 1.0",
-            )
         missing = weight_fields - provided
         missing_total = sum(default_weights[n] for n in missing)
         for name in missing:
@@ -58,13 +51,13 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
         weights = {n: getattr(self, n) for n in weight_fields}
 
     total = sum(weights.values())
-    if abs(total - 1.0) > 0.001:
-        raise ConfigError(
-            "Relevance ranking weights must sum to 1.0",
-            current_sum=total,
-            weights=weights,
-            suggestion="Adjust the weights so they sum to 1.0",
-        )
+    if total <= 0:
+        equal = 1.0 / len(weight_fields)
+        for name in weight_fields:
+            setattr(self, name, equal)
+        return self
+    for name in weight_fields:
+        setattr(self, name, weights[name] / total)
     return self
 
 
