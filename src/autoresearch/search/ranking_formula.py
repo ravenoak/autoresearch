@@ -45,8 +45,8 @@ def combine_scores(
         bm25: BM25 relevance scores.
         semantic: Semantic similarity scores.
         credibility: Source credibility or freshness scores.
-        weights: Tuple of weights ``(bm25, semantic, credibility)`` that must
-            sum to 1.0.
+        weights: Tuple of weights ``(bm25, semantic, credibility)``. The values
+            need not sum to 1.0; they are normalized internally.
 
     Returns:
         List[float]: Final normalized relevance scores.
@@ -57,10 +57,12 @@ def combine_scores(
     if not (len(bm25) == len(semantic) == len(credibility)):
         raise ValueError("Score sequences must have equal length")
 
-    if abs(sum(weights) - 1.0) > 0.001:
-        raise ValueError("Weights must sum to 1.0")
     if any(w < 0 for w in weights):
         raise ValueError("Weights must be non-negative")
+    weight_sum = sum(weights)
+    if weight_sum <= 0:
+        raise ValueError("At least one weight must be positive")
+    norm_weights = tuple(w / weight_sum for w in weights)
 
     bm25_norm = normalize_scores(bm25)
     semantic_norm = normalize_scores(semantic)
@@ -68,9 +70,9 @@ def combine_scores(
 
     combined = [
         (
-            bm25_norm[i] * weights[0]
-            + semantic_norm[i] * weights[1]
-            + credibility_norm[i] * weights[2]
+            bm25_norm[i] * norm_weights[0]
+            + semantic_norm[i] * norm_weights[1]
+            + credibility_norm[i] * norm_weights[2]
         )
         for i in range(len(bm25_norm))
     ]

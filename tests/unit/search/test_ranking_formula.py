@@ -1,10 +1,10 @@
 import pytest
 
-from autoresearch.search.ranking import combine_scores
-from autoresearch.search.core import Search
 from autoresearch.config import ConfigModel
-from autoresearch.config.models import SearchConfig
 from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import SearchConfig
+from autoresearch.search.core import Search
+from autoresearch.search.ranking import combine_scores
 
 
 def test_combine_scores_weighted_sum() -> None:
@@ -18,10 +18,22 @@ def test_combine_scores_weighted_sum() -> None:
     assert all(0.0 <= s <= 1.0 for s in scores)
 
 
+def test_combine_scores_normalizes_weights() -> None:
+    """Weights are normalized internally when they do not sum to 1."""
+    bm25 = [3.0, 1.0]
+    semantic = [0.8, 0.2]
+    credibility = [0.9, 0.5]
+    scores = combine_scores(bm25, semantic, credibility, (2.0, 1.0, 1.0))
+    expected = combine_scores(bm25, semantic, credibility, (0.5, 0.25, 0.25))
+    assert scores == pytest.approx(expected, abs=0.01)
+
+
 def test_combine_scores_invalid_weights() -> None:
-    """Invalid weight sums raise ValueError."""
+    """Negative or zero weights raise ValueError."""
     with pytest.raises(ValueError):
-        combine_scores([1.0], [1.0], [1.0], (0.6, 0.3, 0.2))
+        combine_scores([1.0], [1.0], [1.0], (-0.1, 0.6, 0.5))
+    with pytest.raises(ValueError):
+        combine_scores([1.0], [1.0], [1.0], (0.0, 0.0, 0.0))
 
 
 def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
@@ -45,11 +57,11 @@ def test_duckdb_scores_used_without_semantic(monkeypatch) -> None:
 
 
 def test_rank_results_weighted_combination(monkeypatch) -> None:
-    """Search.rank_results respects component weights when combining scores."""
+    """Search.rank_results normalizes and respects component weights."""
     cfg = ConfigModel(
         search=SearchConfig(
-            bm25_weight=0.2,
-            semantic_similarity_weight=0.8,
+            bm25_weight=2.0,
+            semantic_similarity_weight=8.0,
             source_credibility_weight=0.0,
         )
     )
@@ -69,6 +81,40 @@ def test_rank_results_weighted_combination(monkeypatch) -> None:
         Search,
         "assess_source_credibility",
         lambda self, r: [1.0, 1.0],
+    )
+    docs = [{"title": "a"}, {"title": "b"}]
+    ranked = Search.rank_results("q", docs)
+    assert [d["title"] for d in ranked] == ["a", "b"]
+
+
+def test_rank_results_weight_fallback(monkeypatch) -> None:
+    """Zero weights fall back to equal weighting across enabled components."""
+    cfg = ConfigModel(
+        search=SearchConfig(
+            bm25_weight=0.0,
+            semantic_similarity_weight=0.0,
+            source_credibility_weight=0.0,
+            use_bm25=True,
+            use_semantic_similarity=True,
+            use_source_credibility=True,
+        )
+    )
+    ConfigLoader.reset_instance()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
+    monkeypatch.setattr(
+        Search,
+        "calculate_bm25_scores",
+        staticmethod(lambda q, r: [0.9, 0.1]),
+    )
+    monkeypatch.setattr(
+        Search,
+        "calculate_semantic_similarity",
+        lambda self, q, r, e=None: [0.9, 0.1],
+    )
+    monkeypatch.setattr(
+        Search,
+        "assess_source_credibility",
+        lambda self, r: [0.9, 0.1],
     )
     docs = [{"title": "a"}, {"title": "b"}]
     ranked = Search.rank_results("q", docs)

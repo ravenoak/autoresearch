@@ -15,8 +15,8 @@ from ..orchestration import ReasoningMode
 from .validators import (
     normalize_ranking_weights,
     validate_eviction_policy,
-    validate_reasoning_mode,
     validate_rdf_backend,
+    validate_reasoning_mode,
     validate_token_budget,
 )
 
@@ -64,9 +64,9 @@ class SearchConfig(BaseModel):
     )
     use_semantic_similarity: bool = Field(default=True)
     use_bm25: bool = Field(default=True)
-    semantic_similarity_weight: float = Field(default=0.5, ge=0.0, le=1.0)
-    bm25_weight: float = Field(default=0.3, ge=0.0, le=1.0)
-    source_credibility_weight: float = Field(default=0.2, ge=0.0, le=1.0)
+    semantic_similarity_weight: float = Field(default=0.5, ge=0.0)
+    bm25_weight: float = Field(default=0.3, ge=0.0)
+    source_credibility_weight: float = Field(default=0.2, ge=0.0)
     use_source_credibility: bool = Field(default=True)
     domain_authority_factor: float = Field(default=0.6, ge=0.0, le=1.0)
     citation_count_factor: float = Field(default=0.4, ge=0.0, le=1.0)
