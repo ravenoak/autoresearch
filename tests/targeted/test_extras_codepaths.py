@@ -5,11 +5,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.requires_nlp
 def test_try_import_spacy(monkeypatch):
     """SearchContext imports spaCy when NLP extras are available."""
-    pytest.importorskip("spacy")
+    import_or_skip("spacy")
     from autoresearch.search import context
 
     monkeypatch.setattr(
@@ -26,7 +28,7 @@ def test_try_import_spacy(monkeypatch):
 def test_try_import_bertopic(monkeypatch):
     """SearchContext imports BERTopic when GPU extras are available."""
     try:
-        pytest.importorskip("bertopic")
+        import_or_skip("bertopic")
     except Exception as exc:  # pragma: no cover - import-time issues
         pytest.skip(str(exc))
     from autoresearch.search import context
@@ -45,7 +47,7 @@ def test_try_import_bertopic(monkeypatch):
 @pytest.mark.requires_llm
 def test_try_import_sentence_transformers(monkeypatch):
     """SearchContext imports fastembed when LLM extras are available."""
-    pytest.importorskip("fastembed")
+    import_or_skip("fastembed")
     from autoresearch.search import context
 
     monkeypatch.setattr(
@@ -61,7 +63,7 @@ def test_try_import_sentence_transformers(monkeypatch):
 @pytest.mark.requires_ui
 def test_apply_theme_settings(monkeypatch):
     """Streamlit UI helper executes with both theme states."""
-    st = pytest.importorskip("streamlit")
+    st = import_or_skip("streamlit")
     monkeypatch.setattr(st, "markdown", lambda *a, **k: None)
     from autoresearch import streamlit_ui
 
@@ -74,7 +76,7 @@ def test_apply_theme_settings(monkeypatch):
 @pytest.mark.requires_vss
 def test_vss_extension_loader(monkeypatch):
     """VSSExtensionLoader loads extension using a dummy connection."""
-    pytest.importorskip("duckdb_extension_vss")
+    import_or_skip("duckdb_extension_vss")
     from autoresearch.extensions import VSSExtensionLoader
 
     class DummyConn:
@@ -97,7 +99,7 @@ def test_vss_extension_loader(monkeypatch):
 @pytest.mark.requires_git
 def test_local_git_backend(monkeypatch):
     """Local Git backend searches this repository."""
-    pytest.importorskip("git")
+    import_or_skip("git")
     from autoresearch.search.core import _local_git_backend
 
     repo_path = Path(__file__).resolve().parents[2]
@@ -117,7 +119,7 @@ def test_local_git_backend(monkeypatch):
 @pytest.mark.requires_distributed
 def test_redis_broker_publish(monkeypatch):
     """RedisBroker publishes and retrieves messages using fakeredis."""
-    pytest.importorskip("redis")
+    import_or_skip("redis")
     import fakeredis
     import redis
     from autoresearch.distributed.broker import RedisBroker
@@ -139,7 +141,7 @@ def test_redis_broker_publish(monkeypatch):
 @pytest.mark.requires_analysis
 def test_metrics_dataframe(monkeypatch):
     """metrics_dataframe builds a Polars DataFrame."""
-    pytest.importorskip("polars")
+    import_or_skip("polars")
     from autoresearch.data_analysis import metrics_dataframe
 
     monkeypatch.setattr(
@@ -155,7 +157,7 @@ def test_metrics_dataframe(monkeypatch):
 @pytest.mark.requires_parsers
 def test_local_file_backend_docx(tmp_path, monkeypatch):
     """Local file backend extracts text from DOCX files."""
-    docx = pytest.importorskip("docx")
+    docx = import_or_skip("docx")
     from autoresearch.search.core import _local_file_backend
 
     doc_path = tmp_path / "sample.docx"
@@ -175,7 +177,7 @@ def test_local_file_backend_docx(tmp_path, monkeypatch):
 @pytest.mark.requires_parsers
 def test_local_file_backend_pdf(tmp_path, monkeypatch):
     """Local file backend extracts text from PDF files."""
-    pytest.importorskip("pdfminer.high_level")
+    import_or_skip("pdfminer.high_level")
     from autoresearch.search.core import _local_file_backend
 
     pdf_path = tmp_path / "sample.pdf"

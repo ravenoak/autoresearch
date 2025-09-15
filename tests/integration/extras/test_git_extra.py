@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.search.core import _local_git_backend
 
@@ -11,7 +13,7 @@ from autoresearch.search.core import _local_git_backend
 @pytest.mark.requires_git
 def test_local_git_backend(tmp_path) -> None:
     """The Git extra powers the local Git search backend."""
-    git = pytest.importorskip("git")
+    git = import_or_skip("git")
     repo = git.Repo.init(tmp_path)
     path = tmp_path / "sample.txt"
     path.write_text("hello world")

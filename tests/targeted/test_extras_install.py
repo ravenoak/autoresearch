@@ -4,11 +4,13 @@ from pathlib import Path
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.requires_nlp
 def test_nlp_extra_imports() -> None:
     """Smoke test imports from the nlp extra."""
-    spacy = pytest.importorskip("spacy")
+    spacy = import_or_skip("spacy")
     try:
         bertopic = __import__("bertopic")
     except Exception as exc:  # pragma: no cover - optional dependency issues
@@ -21,7 +23,7 @@ def test_nlp_extra_imports() -> None:
 @pytest.mark.requires_ui
 def test_ui_extra_imports() -> None:
     """Smoke test imports from the ui extra."""
-    st = pytest.importorskip("streamlit")
+    st = import_or_skip("streamlit")
 
     assert hasattr(st, "__version__")
 
@@ -29,14 +31,14 @@ def test_ui_extra_imports() -> None:
 @pytest.mark.requires_vss
 def test_vss_extra_imports() -> None:
     """Smoke test imports from the vss extra."""
-    vss = pytest.importorskip("duckdb_extension_vss")
+    vss = import_or_skip("duckdb_extension_vss")
     assert hasattr(vss, "__file__")
 
 
 @pytest.mark.requires_git
 def test_git_extra_imports(tmp_path) -> None:
     """Smoke test imports from the git extra."""
-    git = pytest.importorskip("git")
+    git = import_or_skip("git")
 
     repo = git.Repo.init(tmp_path)
     assert repo.git_dir
@@ -45,8 +47,8 @@ def test_git_extra_imports(tmp_path) -> None:
 @pytest.mark.requires_distributed
 def test_distributed_extra_imports() -> None:
     """Smoke test imports from the distributed extra."""
-    ray = pytest.importorskip("ray")
-    redis = pytest.importorskip("redis")
+    ray = import_or_skip("ray")
+    redis = import_or_skip("redis")
 
     assert hasattr(ray, "__version__")
     assert hasattr(redis, "__version__")
@@ -55,7 +57,7 @@ def test_distributed_extra_imports() -> None:
 @pytest.mark.requires_analysis
 def test_analysis_extra_imports() -> None:
     """Smoke test imports from the analysis extra."""
-    pl = pytest.importorskip("polars")
+    pl = import_or_skip("polars")
 
     df = pl.DataFrame({"a": [1, 2]})
     assert df.shape == (2, 1)
@@ -77,7 +79,7 @@ def test_llm_extra_imports() -> None:
 @pytest.mark.requires_parsers
 def test_parsers_extra_imports(tmp_path) -> None:
     """Smoke test imports from the parsers extra."""
-    docx = pytest.importorskip("docx")
+    docx = import_or_skip("docx")
 
     path = tmp_path / "test.docx"
     docx.Document().save(path)
@@ -88,7 +90,7 @@ def test_parsers_extra_imports(tmp_path) -> None:
 @pytest.mark.requires_gpu
 def test_gpu_extra_imports() -> None:
     """Smoke test imports from the gpu extra."""
-    bertopic = pytest.importorskip("bertopic")
+    bertopic = import_or_skip("bertopic")
     assert hasattr(bertopic, "__version__")
 
 

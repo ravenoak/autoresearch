@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.parametrize(
     ("module", "attr"),
@@ -26,7 +28,7 @@ import pytest
 def test_optional_module_exports(module: str, attr: str) -> None:
     """Modules installed via extras expose the expected attribute."""
     try:
-        mod = pytest.importorskip(module)
+        mod = import_or_skip(module)
     except Exception as exc:  # pragma: no cover - defensive
         if module == "spacy":
             pytest.skip(f"spacy import failed: {exc}")

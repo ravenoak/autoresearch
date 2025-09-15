@@ -4,14 +4,16 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 
 @pytest.mark.requires_distributed
 @pytest.mark.requires_analysis
 def test_redis_metrics_dataframe(monkeypatch):
     """RedisBroker publishes messages and Polars summarizes metrics."""
-    pytest.importorskip("redis")
-    pytest.importorskip("fakeredis")
-    pytest.importorskip("polars")
+    import_or_skip("redis")
+    import_or_skip("fakeredis")
+    import_or_skip("polars")
     import fakeredis
     import redis
     from autoresearch.distributed.broker import RedisBroker

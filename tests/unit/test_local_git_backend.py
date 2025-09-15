@@ -4,11 +4,13 @@ from contextlib import contextmanager
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import _local_git_backend
 from autoresearch.storage import StorageManager
 
-git = pytest.importorskip("git", reason="git extra not installed")
+git = import_or_skip("git", reason="git extra not installed")
 if getattr(git, "Repo", object) is object:
     pytest.skip("git extra not installed", allow_module_level=True)
 

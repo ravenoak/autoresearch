@@ -21,6 +21,8 @@ import sys
 import duckdb
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.config.loader import get_config, temporary_config
 from autoresearch.data_analysis import metrics_dataframe
 from autoresearch.distributed.broker import get_message_broker
@@ -66,7 +68,7 @@ def test_vss_extension_loader(monkeypatch) -> None:
 def test_local_git_backend(tmp_path) -> None:
     """The Git extra powers the local Git search backend."""
 
-    git = pytest.importorskip("git")
+    git = import_or_skip("git")
     repo = git.Repo.init(tmp_path)
     path = tmp_path / "sample.txt"
     path.write_text("hello world")
@@ -112,7 +114,7 @@ def test_fastembed_available() -> None:
 def test_local_file_backend_docx(tmp_path) -> None:
     """The parsers extra allows reading ``.docx`` files."""
     sys.modules.pop("docx", None)
-    docx = pytest.importorskip("docx")
+    docx = import_or_skip("docx")
     doc = docx.Document()
     if not hasattr(doc, "add_paragraph"):
         pytest.skip("python-docx not installed")

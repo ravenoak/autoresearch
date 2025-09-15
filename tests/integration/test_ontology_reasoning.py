@@ -3,6 +3,8 @@
 import rdflib
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.storage import StorageManager, teardown
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
@@ -72,7 +74,7 @@ def test_visualization_creates_file(tmp_path, monkeypatch):
     _configure(tmp_path, monkeypatch)
     StorageManager.setup()
 
-    pytest.importorskip("matplotlib")
+    import_or_skip("matplotlib")
 
     store = StorageManager.get_rdf_store()
     store.add(

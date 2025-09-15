@@ -8,6 +8,8 @@ from typing import Dict, List
 
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "backend_benchmark.csv"
 
 
@@ -36,7 +38,7 @@ def compute_metrics(rows: List[Dict[str, str]]) -> tuple[float, float]:
 
 
 pytestmark = [pytest.mark.slow, pytest.mark.integration]
-pytest.importorskip("pytest_benchmark")
+import_or_skip("pytest_benchmark")
 
 
 def test_backend_metrics(benchmark, metrics_baseline) -> None:

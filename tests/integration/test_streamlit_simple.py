@@ -2,7 +2,9 @@ import os
 
 import pytest
 
-AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
+from tests.optional_imports import import_or_skip
+
+AppTest = import_or_skip("streamlit.testing.v1", attr="AppTest")
 
 pytestmark = [pytest.mark.slow, pytest.mark.requires_ui]
 

@@ -8,6 +8,14 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 15, 2025
+- Added a Click compatibility shim in `sitecustomize.py` and loosened the Click
+  version pin; optional extras load without referencing the deprecated
+  `click.parser.split_arg_string` helper.
+- Replaced `pytest.importorskip` with a shared `tests.optional_imports` helper
+  so optional dependency checks skip cleanly and avoid Pytest deprecation
+  warnings.
+- `task verify` still requires the Go Task CLI; the command now runs without
+  `PytestDeprecationWarning` noise once the CLI is available.
 - Added fixtures to join multiprocessing pools and queues and clear the resource
   tracker cache after tests.
 - Running `scripts/codex_setup.sh` exports `.venv/bin` to `PATH`,

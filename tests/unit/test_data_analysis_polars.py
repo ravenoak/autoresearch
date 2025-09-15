@@ -1,11 +1,13 @@
 import pytest
 
+from tests.optional_imports import import_or_skip
+
 from autoresearch.data_analysis import metrics_dataframe
 
 
 @pytest.mark.requires_analysis
 def test_metrics_dataframe_summary() -> None:
-    pl = pytest.importorskip("polars")
+    pl = import_or_skip("polars")
     from polars.testing import assert_frame_equal
 
     metrics = {"agent_timings": {"A": [1.0, 2.0], "B": [3.0, 5.0]}}
