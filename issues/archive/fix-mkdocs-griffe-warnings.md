@@ -21,5 +21,13 @@ None
 - The docstring in `storage_backends.py` uses consistent indentation.
 - `uv run mkdocs build` completes without warnings.
 
+## Build Log
+```
+2025-09-15: uv run mkdocs build
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /workspace/autoresearch/site
+INFO    -  Documentation built in 5.91 seconds
+```
+
 ## Status
-Open
+Archived

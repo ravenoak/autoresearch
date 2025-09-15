@@ -8,7 +8,7 @@ relationships.
 Agents drive the dialectical reasoning cycle. Each agent implements the base
 interface and uses prompts and models defined in `AgentConfig`.
 
-- Spec: see the [agents specification](specs/agents.md)
+- Spec: documented in `docs/specs/agents.md`
 - Code: `src/autoresearch/agents/base.py`
 
 ## Queries
@@ -16,7 +16,7 @@ interface and uses prompts and models defined in `AgentConfig`.
 Queries define user intent and orchestrator responses. `QueryRequest` captures
 incoming parameters, while `QueryResponse` records final answers.
 
-- Spec: see the [models specification](specs/models.md)
+- Spec: documented in `docs/specs/models.md`
 - Code: `src/autoresearch/models.py`
 
 ## Storage
@@ -24,7 +24,7 @@ incoming parameters, while `QueryResponse` records final answers.
 Storage persists claims and supports graph and vector retrieval via a unified
 `StorageManager` over NetworkX, DuckDB, and RDFLib backends.
 
-- Spec: see the [storage specification](specs/storage.md)
+- Spec: documented in `docs/specs/storage.md`
 - Code: `src/autoresearch/storage.py`
 
 ## Search
@@ -32,7 +32,7 @@ Storage persists claims and supports graph and vector retrieval via a unified
 Search generates query variants and federates lookups across registered
 backends, caching results and ranking sources.
 
-- Spec: see the [search specification](specs/search.md)
+- Spec: documented in `docs/specs/search.md`
 - Code: `src/autoresearch/search/core.py`
 
 ## Relationships

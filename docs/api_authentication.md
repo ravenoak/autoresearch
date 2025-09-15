@@ -59,6 +59,6 @@ See [api.md](api.md) for a complete overview of available endpoints.
 
 ## Further reading
 
-- [API authentication spec](specs/api_authentication.md)
-- [Authentication simulation](../scripts/api_auth_sim.py)
+- Module specification: see `docs/specs/api_authentication.md`.
+- Authentication simulation script: see `scripts/api_auth_sim.py`.
 
