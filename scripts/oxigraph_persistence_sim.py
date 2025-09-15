@@ -20,6 +20,7 @@ SENTINEL = (
     rdflib.URIRef("urn:p"),
     rdflib.Literal("v"),
 )
+# Fixed triple used to detect whether state survives between runs.
 
 
 def init_store(path: Path) -> rdflib.Graph:
@@ -29,8 +30,10 @@ def init_store(path: Path) -> rdflib.Graph:
     graph = rdflib.Graph(store=store)
     cfg = str(path)
     if path.exists():
+        # Reuse existing store without the create flag.
         graph.open(configuration=cfg)
     else:
+        # First initialization writes schema and data to disk.
         graph.open(configuration=cfg, create=True)
     return graph
 
@@ -43,8 +46,10 @@ def cycle(path: Path, runs: int) -> None:
     for i in range(runs):
         graph = init_store(path)
         if i == 0:
+            # Insert the sentinel once; later cycles verify persistence.
             graph.add(SENTINEL)
         else:
+            # Reopening the store should retain the sentinel triple.
             assert SENTINEL in graph
         graph.close()
 

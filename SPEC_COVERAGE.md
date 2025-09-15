@@ -34,7 +34,7 @@
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [scheduler_benchmark.md](docs/algorithms/scheduler_benchmark.md) | OK |
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [search.md](docs/algorithms/search.md) | OK |
 | `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [storage.md](docs/algorithms/storage.md) | OK |
-| `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [oxigraph.md](docs/algorithms/oxigraph.md), [s2] | OK |
+| `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [p3], [s2] | OK |
 | `autoresearch/storage_backup.py` | [storage-backup.md](docs/specs/storage-backup.md) |  | OK |
 | `autoresearch/storage_utils.py` | [storage-utils.md](docs/specs/storage-utils.md) |  | OK |
 | `autoresearch/streamlit_app.py` | [streamlit-app.md](docs/specs/streamlit-app.md) |  | OK |
@@ -48,6 +48,7 @@
 | `git/search.py` | [git-search.md](docs/specs/git-search.md) |  | OK |
 [p1]: docs/algorithms/api.md
 [p2]: docs/algorithms/api-authentication.md
+[p3]: docs/algorithms/oxigraph.md
 [s1]: scripts/api_auth_credentials_sim.py
 [s2]: scripts/oxigraph_persistence_sim.py
 [t3]: tests/integration/test_a2a_interface.py
