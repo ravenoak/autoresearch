@@ -1,7 +1,7 @@
 | Module | Spec | Proof/Simulation | Status |
 | --- | --- | --- | --- |
-| `autoresearch` |  |  | Missing spec |
-| `autoresearch/__main__.py` |  |  | Missing spec |
+| `autoresearch` | [autoresearch.md](docs/specs/autoresearch.md) | [t3], [t4] | OK |
+| `autoresearch/__main__.py` | [main-entrypoint.md](docs/specs/main-entrypoint.md) | [t5] | OK |
 | `autoresearch/a2a_interface.py` | [a2a-interface.md](docs/specs/a2a-interface.md) |  | OK |
 | `autoresearch/agents` | [agents.md](docs/specs/agents.md) | [agents.md](docs/algorithms/agents.md) | OK |
 | `autoresearch/api` | [api.md](docs/specs/api.md) | [p1], [p2], [s1] | OK |
@@ -27,10 +27,10 @@
 | `autoresearch/models.py` | [models.md](docs/specs/models.md) | [models.md](docs/algorithms/models.md) | OK |
 | `autoresearch/monitor` | [monitor.md](docs/specs/monitor.md) | [monitor.md](docs/algorithms/monitor.md) | Outdated spec |
 | `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [orchestration.md](docs/algorithms/orchestration.md) | OK |
-| `autoresearch/orchestrator_perf.py` |  |  | Missing spec |
+| `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md) | [orchestrator_perf.md](docs/algorithms/orchestrator_perf.md) | OK |
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) |  | OK |
 | `autoresearch/resource_monitor.py` | [resource-monitor.md](docs/specs/resource-monitor.md) |  | OK |
-| `autoresearch/scheduler_benchmark.py` |  |  | Missing spec |
+| `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [scheduler_benchmark.md](docs/algorithms/scheduler_benchmark.md) | OK |
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [search.md](docs/algorithms/search.md) | OK |
 | `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [storage.md](docs/algorithms/storage.md) | OK |
 | `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [oxigraph.md](docs/algorithms/oxigraph.md), [s2] | OK |
@@ -43,9 +43,14 @@
 | `autoresearch/token_budget.py` | [token-budget.md](docs/specs/token-budget.md) |  | OK |
 | `autoresearch/tracing.py` | [tracing.md](docs/specs/tracing.md) | [tracing.md](docs/algorithms/tracing.md) | OK |
 | `autoresearch/visualization.py` | [visualization.md](docs/specs/visualization.md) | [visualization.md](docs/algorithms/visualization.md) | OK |
-| `git` |  |  | Missing spec |
+| `git` | [git.md](docs/specs/git.md) | [t6], [t7] | OK |
 | `git/search.py` | [git-search.md](docs/specs/git-search.md) |  | OK |
 [p1]: docs/algorithms/api.md
 [p2]: docs/algorithms/api-authentication.md
 [s1]: scripts/api_auth_credentials_sim.py
 [s2]: scripts/oxigraph_persistence_sim.py
+[t3]: tests/integration/test_a2a_interface.py
+[t4]: tests/unit/test_distributed.py
+[t5]: tests/unit/test_main_module.py
+[t6]: tests/integration/test_local_git_backend.py
+[t7]: tests/targeted/test_git_search.py
