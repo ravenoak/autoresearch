@@ -51,6 +51,16 @@ Run a search from the command line:
 autoresearch search "What is quantum computing?"
 ```
 
+## API authentication
+
+To access the HTTP API, configure keys and roles:
+
+- Set `api.api_key` for a shared secret or define multiple keys via
+  `api.api_keys`.
+- Map each key to a role and grant permissions with `api.role_permissions`.
+- Missing or invalid credentials return **401 Unauthorized**.
+- Insufficient permissions return **403 Forbidden**.
+
 ## Local file and Git search
 
 Enable local search backends in `autoresearch.toml`:

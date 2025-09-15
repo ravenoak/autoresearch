@@ -12,6 +12,19 @@ def test_auth_validated_before_body(monkeypatch, api_client):
     assert resp.json()["detail"] == "Missing API key"
 
 
+def test_invalid_key_before_body(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_key = "secret"
+
+    resp = api_client.post(
+        "/query",
+        data="not json",
+        headers={"Content-Type": "application/json", "X-API-Key": "bad"},
+    )
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid API key"
+
+
 def test_webhook_auth(monkeypatch, api_client):
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"

@@ -44,6 +44,20 @@ def test_streaming_with_api_key(monkeypatch, api_client):
 
 
 @pytest.mark.slow
+def test_streaming_forbidden(monkeypatch, api_client):
+    cfg = _setup_stream(monkeypatch)
+    cfg.api.api_keys = {"usr": "user"}
+    cfg.api.role_permissions = {"user": []}
+    resp = api_client.post(
+        "/query?stream=true",
+        json={"query": "q"},
+        headers={"X-API-Key": "usr"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Insufficient permissions"
+
+
+@pytest.mark.slow
 def test_streaming_with_bearer_token(monkeypatch, api_client):
     cfg = _setup_stream(monkeypatch)
     token = generate_bearer_token()

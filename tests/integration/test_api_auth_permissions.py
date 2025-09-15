@@ -40,3 +40,12 @@ def test_permission_unauthenticated(monkeypatch, api_client):
     resp = api_client.get("/metrics")
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Missing API key"
+
+
+def test_permission_invalid_key(monkeypatch, api_client):
+    cfg = _setup(monkeypatch)
+    cfg.api.api_keys = {"adm": "admin"}
+    cfg.api.role_permissions = {"admin": ["metrics"]}
+    resp = api_client.get("/metrics", headers={"X-API-Key": "bad"})
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid API key"
