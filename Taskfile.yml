@@ -276,14 +276,14 @@ tasks:
 
   verify:
     vars:
-      EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS_NO_GPU}}"
+      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
     cmds:
       - |
-          extras="dev-minimal dev test{{if .EXTRAS}} {{.EXTRAS}}{{end}}"
+          extras="{{.EXTRAS}}"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             $(printf ' --extra %s' $extras) \
-            {{if and .EXTRAS (contains .EXTRAS "gpu")}}--find-links wheels/gpu{{end}}
+            {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src tests
       - uv run mypy src --exclude src/autoresearch/a2a_interface.py
@@ -302,8 +302,8 @@ tasks:
           {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Installs all optional extras except gpu by default; override with EXTRAS
-      to limit or include "gpu".
+      Installs the `dev-minimal` and `test` extras by default; set EXTRAS to
+      add optional groups, including "gpu".
 
   clean:
     cmds:
