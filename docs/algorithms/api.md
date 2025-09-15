@@ -4,8 +4,9 @@
 The API package exposes HTTP endpoints for orchestrator actions.
 
 ## Algorithm
-Endpoints validate requests, delegate to orchestrator services, and stream
-responses to clients.
+Endpoints validate versioned schemas, authenticate API keys or bearer
+tokens, delegate to orchestrator services, and stream chunked responses with
+heartbeats and an ``END`` sentinel.
 
 ## Proof sketch
 Validation ensures well-formed data; the orchestrator confirms task

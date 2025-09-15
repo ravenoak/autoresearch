@@ -4,8 +4,13 @@
 The distributed package coordinates work across multiple nodes.
 
 ## Algorithm
-A leader elects workers via heartbeats and assigns tasks while monitoring
-queue saturation.
+Scheduling combines several strategies. A leader elects workers via
+heartbeats and assigns tasks while monitoring queue saturation.
+- **Round-robin** hands each new task to the next worker.
+- **Work stealing** lets idle workers pull tasks from peers.
+- **Priority queues** ensure high-priority tasks run first.
+Failure recovery adds an overhead factor ``1/(1-p)`` where ``p`` is the
+failure probability.
 
 ## Proof sketch
 Leader election uses timeouts so at most one leader exists; tasks are

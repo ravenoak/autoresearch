@@ -28,6 +28,11 @@ coalition and scheduling details.
 - Property-based tests such as [test_distributed_coordination.py][t4] and
   [test_coordination_properties.py][t5] exercise these guarantees.
 
+## Complexity
+
+- Round-robin and priority queue dispatch take `O(1)` time per task.
+- Work stealing performs `O(1)` extra work for each steal attempt.
+
 ## Proof Sketch
 
 - A FIFO broker ensures ordering because dequeues mirror enqueues; tests [t4]

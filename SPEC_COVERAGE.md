@@ -7,17 +7,17 @@
 | `autoresearch/api` | [api.md](docs/specs/api.md) | [p1], [p2], [s1] | OK |
 | `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [cache.md](docs/algorithms/cache.md) | OK |
 | `autoresearch/cli_backup.py` | [cli-backup.md](docs/specs/cli-backup.md) |  | OK |
-| `autoresearch/cli_helpers.py` | [cli-helpers.md](docs/specs/cli-helpers.md) |  | Outdated spec |
+| `autoresearch/cli_helpers.py` | [cli-helpers.md](docs/specs/cli-helpers.md) | [cli_helpers.md](docs/algorithms/cli_helpers.md) | OK |
 | `autoresearch/cli_utils.py` | [cli-utils.md](docs/specs/cli-utils.md) |  | OK |
-| `autoresearch/config` | [config.md](docs/specs/config.md) | [config.md](docs/algorithms/config.md) | Outdated spec |
+| `autoresearch/config` | [config.md](docs/specs/config.md) | [config.md](docs/algorithms/config.md) | OK |
 | `autoresearch/config_utils.py` | [config-utils.md](docs/specs/config-utils.md) |  | OK |
 | `autoresearch/data_analysis.py` | [data-analysis.md](docs/specs/data-analysis.md) |  | OK |
-| `autoresearch/distributed` | [distributed.md](docs/specs/distributed.md) | [distributed.md](docs/algorithms/distributed.md) | Outdated spec |
+| `autoresearch/distributed` | [distributed.md](docs/specs/distributed.md) | [distributed.md](docs/algorithms/distributed.md) | OK |
 | `autoresearch/error_recovery.py` | [error-recovery.md](docs/specs/error-recovery.md) |  | OK |
 | `autoresearch/error_utils.py` | [error-utils.md](docs/specs/error-utils.md) |  | OK |
 | `autoresearch/errors.py` | [errors.md](docs/specs/errors.md) | [errors.md](docs/algorithms/errors.md) | OK |
 | `autoresearch/examples` | [examples.md](docs/specs/examples.md) | [examples.md](docs/algorithms/examples.md) | OK |
-| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [extensions.md](docs/algorithms/extensions.md) | Outdated spec |
+| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [extensions.md](docs/algorithms/extensions.md) | OK |
 | `autoresearch/interfaces.py` | [interfaces.md](docs/specs/interfaces.md) | [interfaces.md](docs/algorithms/interfaces.md) | OK |
 | `autoresearch/kg_reasoning.py` | [kg-reasoning.md](docs/specs/kg-reasoning.md) |  | OK |
 | `autoresearch/llm` | [llm.md](docs/specs/llm.md) | [llm.md](docs/algorithms/llm.md) | OK |
@@ -25,7 +25,7 @@
 | `autoresearch/main` | [main.md](docs/specs/main.md) | [main.md](docs/algorithms/main.md) | OK |
 | `autoresearch/mcp_interface.py` | [mcp-interface.md](docs/specs/mcp-interface.md) |  | OK |
 | `autoresearch/models.py` | [models.md](docs/specs/models.md) | [models.md](docs/algorithms/models.md) | OK |
-| `autoresearch/monitor` | [monitor.md](docs/specs/monitor.md) | [monitor.md](docs/algorithms/monitor.md) | Outdated spec |
+| `autoresearch/monitor` | [monitor.md](docs/specs/monitor.md) | [monitor.md](docs/algorithms/monitor.md) | OK |
 | `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [orchestration.md](docs/algorithms/orchestration.md) | OK |
 | `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md) | [orchestrator_perf.md](docs/algorithms/orchestrator_perf.md) | OK |
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) |  | OK |
