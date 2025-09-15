@@ -28,10 +28,22 @@ groups or add `gpu` packages.
 
 Python's `multiprocessing` registers OS resources for queues and pools. When
 they are not closed, the `resource_tracker` emits warnings such as "leaked
-semaphore objects to clean up at shutdown." Tests must call `close()` and
-`join_thread()` on all `Queue` instances and `close()` followed by `join()` on
-`Pool` objects. An autouse fixture in `tests/conftest.py` unlinks any
-registered resources after each test to prevent spurious warnings.
+semaphore objects to clean up at shutdown." Always call `close()` and
+`join_thread()` on every `Queue`, and invoke `close()`, `terminate()`, and
+`join()` on each `Pool` instance.
+
+Autouse fixtures in `tests/conftest.py` wrap `multiprocessing.Queue`,
+`multiprocessing.pool.Pool`, and `ThreadPool` so all created objects are
+tracked. During teardown the fixtures close each queue, terminate and join
+every pool, then clear `resource_tracker._resource_tracker._cache` to
+avoid `KeyError` crashes when the tracker has already unregistered a
+resource. When tests construct multiprocessing primitives outside these
+fixtures they should perform the same shutdown sequence.
+
+A `pytest_sessionfinish` hook also calls `multiprocessing.shared_memory.
+_cleanup()` as a last resort. This guarantees that shared-memory segments do
+not linger between suites, keeping CI jobs quiet even when multiple test runs
+share a worker.
 
 ### Enabling heavy extras
 

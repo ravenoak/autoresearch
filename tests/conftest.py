@@ -3,13 +3,18 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 import contextlib
 import multiprocessing
 import multiprocessing.pool
 from multiprocessing import resource_tracker
+
+try:
+    from multiprocessing import shared_memory
+except ImportError:  # pragma: no cover - Python < 3.8
+    shared_memory = None  # type: ignore[assignment]
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
@@ -36,6 +41,24 @@ pytest_plugins = [
 
 # Use spawn to avoid fork-related deadlocks and ensure clean state.
 multiprocessing.set_start_method("spawn", force=True)
+
+
+_CREATED_QUEUES: list[Any] = []
+_QUEUE_FACTORY: Callable[..., Any] | None = None
+
+
+def _track_multiprocessing_queue(*args, **kwargs):
+    if _QUEUE_FACTORY is None:
+        raise RuntimeError("multiprocessing.Queue factory is not initialized")
+    queue = _QUEUE_FACTORY(*args, **kwargs)
+    _CREATED_QUEUES.append(queue)
+    return queue
+
+
+def _flush_resource_tracker_cache() -> None:
+    with contextlib.suppress(Exception):
+        cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
+        cache.clear()
 
 
 @pytest.fixture(autouse=True)
@@ -80,51 +103,66 @@ def _drain_multiprocessing_resources() -> None:
 @pytest.fixture(autouse=True)
 def _cleanup_multiprocessing_queues(monkeypatch) -> None:
     """Ensure multiprocessing queues are closed and joined."""
-    created: list[multiprocessing.Queue] = []
-    original_queue = multiprocessing.Queue
-
-    def tracking_queue(*args, **kwargs):
-        q = original_queue(*args, **kwargs)
-        created.append(q)
-        return q
-
-    monkeypatch.setattr(multiprocessing, "Queue", tracking_queue)
+    global _QUEUE_FACTORY
+    _QUEUE_FACTORY = multiprocessing.Queue
+    monkeypatch.setattr(multiprocessing, "Queue", _track_multiprocessing_queue)
     yield
-    for q in created:
+    while _CREATED_QUEUES:
+        q = _CREATED_QUEUES.pop()
         with contextlib.suppress(Exception):
             q.close()
         with contextlib.suppress(Exception):
             q.join_thread()
+    _QUEUE_FACTORY = None
+    _flush_resource_tracker_cache()
 
 
 @pytest.fixture(autouse=True)
 def _cleanup_multiprocessing_pools(monkeypatch) -> None:
     """Ensure multiprocessing pools are closed and joined."""
     created: list[multiprocessing.pool.Pool] = []
-    original_pool = multiprocessing.pool.Pool
-    original_thread_pool = multiprocessing.pool.ThreadPool
+    seen_ids: set[int] = set()
 
-    def tracking_pool(*args, **kwargs):
-        pool = original_pool(*args, **kwargs)
-        created.append(pool)
-        return pool
+    original_pool_init = multiprocessing.pool.Pool.__init__
+    original_thread_pool_init = multiprocessing.pool.ThreadPool.__init__
 
-    def tracking_thread_pool(*args, **kwargs):
-        pool = original_thread_pool(*args, **kwargs)
-        created.append(pool)
-        return pool
+    def _remember(instance: multiprocessing.pool.Pool) -> None:
+        ident = id(instance)
+        if ident not in seen_ids:
+            seen_ids.add(ident)
+            created.append(instance)
 
-    monkeypatch.setattr(multiprocessing, "Pool", tracking_pool)
-    monkeypatch.setattr(multiprocessing.pool, "Pool", tracking_pool)
-    monkeypatch.setattr(multiprocessing.pool, "ThreadPool", tracking_thread_pool)
+    def tracking_pool_init(self, *args, **kwargs):  # type: ignore[override]
+        _remember(self)
+        original_pool_init(self, *args, **kwargs)
+
+    def tracking_thread_pool_init(self, *args, **kwargs):  # type: ignore[override]
+        _remember(self)
+        original_thread_pool_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(
+        multiprocessing.pool.Pool,
+        "__init__",
+        tracking_pool_init,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        multiprocessing.pool.ThreadPool,
+        "__init__",
+        tracking_thread_pool_init,
+        raising=False,
+    )
     yield
-    for pool in created:
+    while created:
+        pool = created.pop()
         with contextlib.suppress(Exception):
             pool.close()
         with contextlib.suppress(Exception):
             pool.terminate()
         with contextlib.suppress(Exception):
             pool.join()
+    seen_ids.clear()
+    _flush_resource_tracker_cache()
 
 
 if importlib.util.find_spec("autoresearch") is None:
@@ -869,3 +907,13 @@ def example_autoresearch_toml(
 def temp_config(example_autoresearch_toml: Path) -> Path:
     """Compatibility alias for legacy tests expecting ``temp_config``."""
     return example_autoresearch_toml
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Clear shared memory segments and tracker state after the test session."""
+
+    del session, exitstatus  # Unused but part of the hook signature.
+    if shared_memory is not None:
+        with contextlib.suppress(Exception):
+            shared_memory._cleanup()  # type: ignore[attr-defined]
+    _flush_resource_tracker_cache()

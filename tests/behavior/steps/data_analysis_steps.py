@@ -1,4 +1,3 @@
-import pytest
 from pytest_bdd import given, then, when
 
 from autoresearch.data_analysis import metrics_dataframe
