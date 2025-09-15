@@ -11,11 +11,13 @@ documented in the specs. Optional extras also load successfully during
 `tests/integration/test_optional_extras.py`.
 
 Remaining regressions focus on extension bootstrapping. The unit test
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`
-still fails because `VSSExtensionLoader.verify_extension` executes an extra
-fallback query, so the mocked cursor records two calls instead of one. The
-DuckDB download helpers also mis-handle offline fallbacks and create
-non-empty stub files; track those failures separately in
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
+test_verify_extension_failure` still fails because
+`VSSExtensionLoader.verify_extension` executes an extra fallback query, so the
+mocked cursor records two calls instead of one—the expected
+`duckdb_extensions()` probe followed by a stub verification query. The DuckDB
+download helpers also mis-handle offline fallbacks and create non-empty stub
+files; track those failures separately in
 `fix-duckdb-extension-offline-fallback`.
 
 ## Dependencies

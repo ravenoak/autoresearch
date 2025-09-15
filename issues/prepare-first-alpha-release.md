@@ -7,13 +7,18 @@ documentation, and packaging while keeping workflows dispatch-only. As of
 2025-09-15 the Go Task CLI is absent in a fresh environment, so contributors
 must rely on `uv run task ...` or install Task manually before running
 automation. After syncing the `dev-minimal`, `test`, and `docs` extras,
-`uv run pytest tests/unit --maxfail=1 -q` fails in
-`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`, and
-the DuckDB extension helpers continue to create non-empty stub files. The VSS
-extension loader mock expectations also fail, and `uv run mkdocs build` still
-emits warnings about docs missing from `nav` and broken relative links. These
-regressions block the release checklist and require targeted fixes before we
-can draft reliable release notes.
+`uv run --extra test pytest
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
+still fails because overweight ranking vectors no longer raise `ConfigError`,
+`uv run --extra test pytest tests/unit/test_download_duckdb_extensions.py -q`
+continues to surface `SameFileError` and non-zero offline stubs, and the VSS
+extension loader mock expectations still fail due to a second verification
+query. Running the unit entry point without extras logs
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir`, and
+`uv run --extra docs mkdocs build` lists more than forty pages missing from
+`nav` alongside broken relative links. These regressions block the release
+checklist and require targeted fixes before we can draft reliable release
+notes.
 
 ## Dependencies
 - [fix-search-ranking-and-extension-tests](fix-search-ranking-and-extension-tests.md)

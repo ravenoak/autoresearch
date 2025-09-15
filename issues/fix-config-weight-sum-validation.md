@@ -1,7 +1,8 @@
 # Fix config weight sum validation
 
 ## Context
-`uv run pytest tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
+`uv run --extra test pytest
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
 failed on 2025-09-15. The check for invalid ranking weight totals no longer
 raises `ConfigError`, so misconfigured installations silently accept weight
 vectors that sum above one. This regression blocks `task verify`.

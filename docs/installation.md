@@ -117,6 +117,15 @@ dependencies. `task check` syncs only these extras so it runs quickly.
 additional groups. Install other extras separately before running the task if
 you need them.
 
+Install the documentation dependencies before building the site:
+
+```bash
+uv run --extra docs mkdocs build
+```
+
+This ensures `mkdocs`, `mkdocs-material`, and related plugins are available even
+when the base environment omits the `docs` extra.
+
 ## After cloning
 
 Run `task install` after cloning to bootstrap Go Task and the minimal

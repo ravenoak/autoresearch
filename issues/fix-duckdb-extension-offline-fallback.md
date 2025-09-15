@@ -1,10 +1,10 @@
 # Fix DuckDB extension offline fallback
 
 ## Context
-`uv run pytest tests/unit/test_download_duckdb_extensions.py -q` fails on
-2025-09-15. Offline fallbacks attempt to copy the stub extension over itself,
-raising `shutil.SameFileError`, and the stub files retain the literal string
-"stub" rather than a zero-byte placeholder. These failures break the
+`uv run --extra test pytest tests/unit/test_download_duckdb_extensions.py -q`
+fails on 2025-09-15. Offline fallbacks attempt to copy the stub extension over
+itself, raising `shutil.SameFileError`, and the stub files retain four bytes of
+content rather than acting as zero-byte placeholders. These failures break the
 network-fallback flow exercised by `scripts/download_duckdb_extensions.py` and
 prevent `task verify` from completing.
 
