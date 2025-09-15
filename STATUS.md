@@ -18,6 +18,11 @@ checks are required.
   `test_weights_must_sum_to_one` but emits no deprecation warnings.
 - Pinned Click `<9` because `weasel.util.config` still imports the removed
   `split_arg_string` helper.
+- Cross-checked modules against `SPEC_COVERAGE.md`; agent subpackages were absent
+  and prompted [add-specs-for-agent-subpackages](issues/add-specs-for-agent-subpackages.md).
+- Found 19 modules with specs but no proofs; opened
+  [add-proofs-for-unverified-modules](issues/add-proofs-for-unverified-modules.md)
+  to track verification work.
 
 ## September 14, 2025
 - Fresh environment lacked the Go Task CLI; `task check` returned
