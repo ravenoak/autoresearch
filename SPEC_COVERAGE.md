@@ -4,6 +4,8 @@
 | `autoresearch/__main__.py` | [main-entrypoint.md](docs/specs/main-entrypoint.md) | [t3] | OK |
 | `autoresearch/a2a_interface.py` | [a2a-interface.md](docs/specs/a2a-interface.md) | [p1], [s1], [t4], [t1], [t5], [t6] | OK |
 | `autoresearch/agents` | [agents.md](docs/specs/agents.md) | [s2], [t7], [t8], [t9], [t10] | OK |
+| `autoresearch/agents/dialectical` | [agents-dialectical.md](docs/specs/agents-dialectical.md) | [p20], [s19], [t9], [t113], [t114], [t115] | OK |
+| `autoresearch/agents/specialized` | [agents-specialized.md](docs/specs/agents-specialized.md) | [t8], [t10] | OK |
 | `autoresearch/api` | [api.md](docs/specs/api.md) | [p2], [p3], [p4], [p5], [p6], [s3], [s4], [t11], [t12], [t13], [t14], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23] | OK |
 | `autoresearch/api/middleware.py` | [api_rate_limiting.md](docs/specs/api_rate_limiting.md) | [p5], [t24] | OK |
 | `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [t25] | OK |
@@ -202,3 +204,8 @@
 [t110]: tests/unit/test_visualization.py
 [t111]: tests/integration/test_local_git_backend.py
 [t112]: tests/targeted/test_git_search.py
+[p20]: docs/algorithms/dialectical_coordination.md
+[s19]: scripts/dialectical_coordination_demo.py
+[t113]: tests/unit/test_synthesizer_agent_modes.py
+[t114]: tests/unit/test_property_dialectical_coordination.py
+[t115]: tests/analysis/test_dialectical_cycle_property.py
