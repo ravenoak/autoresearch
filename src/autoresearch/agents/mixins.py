@@ -63,7 +63,7 @@ class ClaimGeneratorMixin:
         Returns:
             A dictionary representing the claim.
         """
-        claim = {
+        claim: Dict[str, Any] = {
             "id": str(uuid4()),
             "type": claim_type,
             "content": content,
@@ -94,7 +94,7 @@ class ResultGeneratorMixin:
         Returns:
             A dictionary representing the result.
         """
-        result = {
+        result: Dict[str, Any] = {
             "claims": claims,
             "metadata": metadata,
             "results": results,

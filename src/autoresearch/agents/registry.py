@@ -9,7 +9,7 @@ import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Iterator, List, Type
 
 from ..llm.adapters import LLMAdapter
 from .base import Agent
@@ -81,10 +81,10 @@ class AgentRegistry:
 
     @classmethod
     @contextmanager
-    def temporary_state(cls):
+    def temporary_state(cls) -> Iterator[type["AgentRegistry"]]:
         """Isolate registry state within a context."""
-        registry = dict(cls._registry)
-        coalitions = dict(cls._coalitions)
+        registry: Dict[str, Type[Agent]] = dict(cls._registry)
+        coalitions: Dict[str, Coalition] = dict(cls._coalitions)
         try:
             yield cls
         finally:
@@ -243,11 +243,11 @@ class AgentFactory:
 
     @classmethod
     @contextmanager
-    def temporary_state(cls):
+    def temporary_state(cls) -> Iterator[type["AgentFactory"]]:
         """Provide a context with isolated factory state."""
-        registry = dict(cls._registry)
-        instances = dict(cls._instances)
-        delegate = cls._delegate
+        registry: Dict[str, Type[Agent]] = dict(cls._registry)
+        instances: Dict[str, Agent] = dict(cls._instances)
+        delegate: type["AgentFactory"] | None = cls._delegate
         try:
             yield cls
         finally:
