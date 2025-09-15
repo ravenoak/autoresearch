@@ -76,7 +76,7 @@ def test_rdf_persistence(storage_manager, tmp_path, monkeypatch):
 
 
 def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
-    """RDF store should use Oxigraph backend when configured."""
+    """RDF store should use OxiGraph backend when configured."""
     cfg = ConfigModel(
         storage=StorageConfig(
             rdf_backend="oxigraph",
@@ -90,7 +90,7 @@ def test_oxigraph_backend_initializes(tmp_path, monkeypatch):
     StorageManager.setup()
 
     StorageManager.get_rdf_store()
-    assert StorageManager.get_rdf_backend_identifier() == "Oxigraph"
+    assert StorageManager.get_rdf_backend_identifier() == "OxiGraph"
 
 
 def test_oxrdflib_missing_plugin(tmp_path, monkeypatch):

@@ -35,6 +35,12 @@ Unit tests cover nominal and edge cases for these routines.
 Run [scripts/oxigraph_backend_sim.py][s1] to exercise repeated setup and
 teardown.
 
+### Setup
+
+- Install `oxrdflib` to enable the OxiGraph RDF store.
+- Set `storage.rdf_backend` to `oxigraph` and provide `storage.rdf_path`.
+- Confirm the backend with `StorageManager.get_rdf_backend_identifier()`.
+
 ## Traceability
 
 
