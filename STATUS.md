@@ -8,6 +8,9 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 15, 2025
+- Added `scripts/generate_spec_coverage.py` to rebuild `SPEC_COVERAGE.md`; the
+  run confirmed every tracked module has both specification and proof links, so
+  no follow-up issues were required.
 - Added a Click compatibility shim in `sitecustomize.py` and loosened the Click
   version pin; optional extras load without referencing the deprecated
   `click.parser.split_arg_string` helper.
