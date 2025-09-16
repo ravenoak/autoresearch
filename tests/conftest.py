@@ -55,10 +55,24 @@ def _track_multiprocessing_queue(*args, **kwargs):
     return queue
 
 
+def _iter_resource_tracker_containers() -> list[Any]:
+    """Return resource tracker caches that need clearing."""
+
+    containers: list[Any] = []
+    tracker = getattr(resource_tracker, "_resource_tracker", None)
+    if tracker is not None:
+        for attr in ("_cache", "_registry"):
+            containers.append(getattr(tracker, attr, None))
+    containers.append(getattr(resource_tracker, "_cache", None))
+    return [container for container in containers if container is not None]
+
+
 def _flush_resource_tracker_cache() -> None:
-    with contextlib.suppress(Exception):
-        cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
-        cache.clear()
+    for container in _iter_resource_tracker_containers():
+        with contextlib.suppress(Exception):
+            clear = getattr(container, "clear", None)
+            if callable(clear):
+                clear()
 
 
 @pytest.fixture(autouse=True)
@@ -70,20 +84,12 @@ def _terminate_active_children() -> None:
         proc.join()
 
 
-@pytest.fixture(scope="session")
-def _resource_tracker_cache():
-    """Reference to the multiprocessing resource tracker cache."""
-    with contextlib.suppress(Exception):
-        return resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
-    return {}
-
-
 @pytest.fixture(autouse=True)
-def _clear_resource_tracker_cache(_resource_tracker_cache) -> None:
-    """Clear the resource tracker cache after each test."""
+def _clear_resource_tracker_cache() -> None:
+    """Clear resource tracker caches before and after each test."""
+    _flush_resource_tracker_cache()
     yield
-    with contextlib.suppress(Exception):
-        _resource_tracker_cache.clear()
+    _flush_resource_tracker_cache()
 
 
 @pytest.fixture(autouse=True)
