@@ -38,7 +38,7 @@
 | `autoresearch/error_utils.py` | [error-utils.md](docs/specs/error-utils.md) | [t62] | OK |
 | `autoresearch/errors.py` | [errors.md](docs/specs/errors.md) | [t43], [t47], [t63] | OK |
 | `autoresearch/examples` | [examples.md](docs/specs/examples.md) | [t64] | OK |
-| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [s10], [s11], [t65], [t66], [t67] | OK |
+| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [t65], [t66], [t67] (fallback ladder)<br>[s10], [s11] (offline cache) | OK |
 | `autoresearch/interfaces.py` | [interfaces.md](docs/specs/interfaces.md) | [t68] | OK |
 | `autoresearch/kg_reasoning.py` | [kg-reasoning.md](docs/specs/kg-reasoning.md) | [t69] | OK |
 | `autoresearch/llm` | [llm.md](docs/specs/llm.md) | [p14], [p15], [t9], [t70], [t71], [t72] | OK |

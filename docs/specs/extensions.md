@@ -5,8 +5,9 @@
 DuckDB extension management helpers that load and verify the vector similarity
 search (VSS) extension. `VSSExtensionLoader` orchestrates offline-first path
 resolution, optional network installs, Python package fallbacks, repository
-stubs, and stub markers. Strict mode raises `StorageError` when no strategy
-succeeds.
+stubs, and stub markers. Strict mode (`AUTORESEARCH_STRICT_EXTENSIONS=true`)
+raises `StorageError` when no strategy succeeds, and unexpected exceptions
+propagate so operators see actionable traces.
 
 ## Loader strategy
 
@@ -15,40 +16,46 @@ succeeds.
 1. Use `ConfigLoader().config.storage.vector_extension_path` when set.
 2. Otherwise call `_env_extension_path()` to read `VECTOR_EXTENSION_PATH` from
    the environment or `.env.offline`.
-3. Resolve the candidate path, warn when the suffix is not
-   `.duckdb_extension` or when the file is missing, and attempt
-   `LOAD '<path>'`.
-4. Invoke `verify_extension` to confirm success before returning; failures
-   fall through to the remaining strategies.
+3. Resolve the candidate path. Warn and skip the load when the suffix is not
+   `.duckdb_extension`, and warn again if the file is missing.
+4. Attempt `LOAD '<path>'` when the file is present and invoke
+   `verify_extension` before returning. DuckDB-specific errors fall through to
+   the remaining strategies while unexpected exceptions bubble up.
 
 ### Controlled network install
 
 1. Evaluate `ENABLE_ONLINE_EXTENSION_INSTALL` (default `true`).
-2. If enabled, execute `INSTALL vss` then `LOAD vss`.
-3. Verify the extension; errors log the failure and trigger the offline
-   fallback ladder.
-4. When disabled, skip network calls entirely so air-gapped environments do
-   not block on retries.
+2. If enabled, execute `INSTALL vss` then `LOAD vss`, propagating non-DuckDB
+   errors to preserve diagnostics.
+3. Verify the extension. A passing probe sets `extension_loaded`; a failure
+   returns `False` but only DuckDB install errors invoke the offline ladder.
+4. When disabled, skip network calls entirely so air-gapped environments enter
+   the fallback ladder immediately.
 
 ### Offline fallback ladder
 
+When the network install path is skipped or raises `duckdb.Error`, the loader
+walks the following ladder:
+
 1. `_load_from_package` imports `duckdb_extension_vss`, preferring its
-   `load()` helper before trying a bundled `vss.duckdb_extension`.
+   `load()` helper before trying a bundled `vss.duckdb_extension`. Each route
+   calls `verify_extension`.
 2. `_load_local_stub` loads `extensions/vss/vss.duckdb_extension` that the
-   repository or provisioning scripts populate.
+   repository or provisioning scripts populate, again verifying the result.
 3. `_create_stub_marker` creates a temporary `vss_stub` table so downstream
-   code can detect stubbed mode.
-4. Each step calls `verify_extension`; strict mode raises `StorageError`
-   after the ladder reports failure so CI surfaces misconfiguration quickly.
+   code can detect stubbed mode via `verify_extension`.
+4. After all attempts fail, strict mode raises `StorageError`; relaxed mode
+   returns `False` so callers can continue with stubbed reads.
 
 ## Verification
 
 - `verify_extension` queries `duckdb_extensions()` for a `vss` row and logs
-  the outcome. When the probe raises it checks for the `vss_stub` marker.
+  the outcome. When the probe raises it checks for the `vss_stub` marker via
+  `information_schema.tables`.
 - Callers can disable verbose logging to silence normal success messages.
-- `tests/unit/test_vss_extension_loader.py` mocks each branch to assert the
-  correct return value and strict-mode behaviour, ensuring the verification
-  contract is enforced.[t3]
+- `tests/unit/test_vss_extension_loader.py` exercises filesystem loads,
+  install fallbacks, stub creation, strict mode, and non-DuckDB propagation to
+  ensure the verification contract stays intact.[t3]
 
 ## Offline determinism
 
@@ -58,18 +65,19 @@ succeeds.
   stub shipped in `extensions/vss/`, aligning developer machines with CI
   caches.[s2]
 - `scripts/smoke_test.py` exercises the offline ladder during
-  `check_storage()` to confirm stub creation and logging when the real
-  extension is absent.[s1]
+  `check_storage()` to confirm stub creation, stub marker detection, and
+  logging when the real extension is absent.[s1]
 
 ## Proof sketch
 
 The loader enumerates a finite sequence of fallbacks guarded by
 `verify_extension`. Because verification only succeeds after loading a real
 extension or recording the stub marker, downstream callers never observe a
-false positive. Unit tests simulate filesystem paths, online installs, strict
-mode, and stub creation to cover the decision tree.[t3] Storage backend tests
-propagate failures to user-facing APIs, confirming strict mode raises early
-and non-strict mode preserves stub access.[t1][t2]
+false positive. Unit tests simulate filesystem paths, online installs,
+DuckDB-only error swallowing, strict mode, and stub creation to cover the
+decision tree.[t3] Storage backend tests propagate failures to user-facing
+APIs, confirming strict mode raises early and non-strict mode preserves stub
+access.[t1][t2]
 
 ## Simulation expectations
 
