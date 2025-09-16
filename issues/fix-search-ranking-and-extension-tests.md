@@ -10,22 +10,23 @@ and the integration scenarios in
 documented in the specs. Optional extras also load successfully during
 `tests/integration/test_optional_extras.py`.
 
-Remaining regressions focus on extension bootstrapping. The unit test
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_verify_extension_failure` still fails because
-`VSSExtensionLoader.verify_extension` executes an extra fallback query, so the
-mocked cursor records two calls instead of one—the expected
-`duckdb_extensions()` probe followed by a stub verification query. The DuckDB
-download helpers also mis-handle offline fallbacks and create non-empty stub
-files; track those failures separately in
-`fix-duckdb-extension-offline-fallback`.
+Remaining regressions focus on extension bootstrapping. Running
+`uv run pytest tests/unit/test_vss_extension_loader.py -q` on
+2025-09-16 fails in
+`TestVSSExtensionLoader.test_load_extension_download_unhandled_exception`
+because `VSSExtensionLoader.load_extension` now catches unexpected runtime
+errors, logs them, and falls back to stub creation instead of re-raising. The
+double `duckdb_extensions()` verification call no longer reproduces, and the
+DuckDB download helper suite passes after the offline fallback fixes (see
+`issues/archive/fix-duckdb-extension-offline-fallback.md`).
 
 ## Dependencies
 None.
 
 ## Acceptance Criteria
-- DuckDB VSS extension loader unit tests pass; offline download fallbacks are
-  handled in `fix-duckdb-extension-offline-fallback`.
+- DuckDB VSS extension loader unit tests pass, including
+  `test_load_extension_download_unhandled_exception` propagating
+  non-DuckDB errors.
 - Ranking formula tests match documented values.
 - Integration tests for extension loading, ranking consistency, and invalid
   weight detection pass.

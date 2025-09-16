@@ -7,6 +7,31 @@ Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
+## September 16, 2025
+- `uv run task check` still fails because the Go Task CLI is absent in the
+  container (`No such file or directory`).
+- `uv run pytest tests/unit/test_config_validation_errors.py::
+  test_weights_must_sum_to_one -q` now passes but emits
+  `PytestConfigWarning: Unknown config option: bdd_features_base_dir` until the
+  `[test]` extras install `pytest-bdd`.
+- `uv run pytest tests/unit/test_download_duckdb_extensions.py -q` passes with
+  the same missing-plugin warning, confirming the offline fallback stubs now
+  satisfy the tests.
+- `uv run pytest tests/unit/test_vss_extension_loader.py -q` fails in
+  `TestVSSExtensionLoader.test_load_extension_download_unhandled_exception`
+  because `VSSExtensionLoader.load_extension` suppresses unexpected runtime
+  errors instead of re-raising them, so the expected `RuntimeError` is not
+  propagated.
+- `uv run pytest tests/unit/test_api_auth_middleware.py::
+  test_dispatch_invalid_token -q` succeeds, indicating the earlier
+  `AuthMiddleware` regression has been resolved.
+- `uv run python -c "import pkgutil; ..."` confirms `pytest-bdd` is missing in
+  the unsynced environment; run `uv sync --extra test` or `scripts/setup.sh`
+  before executing tests to avoid warnings.
+- `uv run mkdocs build` fails with `No such file or directory` because docs
+  extras are not installed yet; sync them (e.g. `uv sync --extra docs`) before
+  building the documentation.
+
 ## September 15, 2025
 - The evaluation container does not ship with the Go Task CLI;
   `task --version` reports `command not found`. Use `scripts/setup.sh` or

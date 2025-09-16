@@ -1,27 +1,24 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 15, 2025** the
-evaluation container does not include the Go Task CLI by default—`task
---version` reports `command not found`. Running `uv sync --extra dev-minimal
---extra test --extra docs` prepares the virtual environment, after which
-`uv run --extra test pytest
-tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
-still fails because the validation helper does not raise `ConfigError`. The
-DuckDB extension suite (`uv run --extra test pytest
-tests/unit/test_download_duckdb_extensions.py -q`) continues to trigger
-`SameFileError` and leaves non-zero stub files, and the VSS loader still
-executes an extra verification query in
+organized by phases from the code complete plan. As of **September 16, 2025**
+the evaluation container still lacks the Go Task CLI by default, so
+`uv run task check` fails until `scripts/setup.sh` installs the binary.
+Targeted unit tests now confirm that
+`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`
+and the DuckDB offline fallback suite both pass, but
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_verify_extension_failure`. Running the tests without the `[test]` extras
-emits `PytestConfigWarning: Unknown config option: bdd_features_base_dir`; sync
-the extras before local runs. Unit coverage and `task verify` remain blocked
-until these regressions are resolved.
+test_load_extension_download_unhandled_exception` fails because
+`VSSExtensionLoader.load_extension` suppresses unexpected runtime errors. The
+API authentication middleware test succeeds. Running `pytest` without the
+`[test]` extras still triggers `PytestConfigWarning: Unknown config option:
+bdd_features_base_dir` because `pytest-bdd` is not yet installed, and
+`uv run mkdocs build` fails until the docs extras sync `mkdocs` onto the PATH.
+Unit coverage and `task verify` remain blocked while these regressions persist.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
-status, including the `uv run --extra docs mkdocs build` warnings about missing
-navigation entries and stale links. An **0.1.0-alpha.1** preview is
-re-targeted for **September 15, 2026**, with the final **0.1.0** release
-targeted for **October 1, 2026**.
+status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
+targeted for **September 15, 2026**, with the final **0.1.0** release targeted
+for **October 1, 2026**.
 
 ## Phase 1: Core System Completion (Weeks 1-2)
 

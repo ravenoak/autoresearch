@@ -11,27 +11,23 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. The evaluation container no longer includes the
-Go Task CLI by default, so install it manually or run automation via
-`uv run task ...`. After syncing the `dev-minimal`, `test`, and `docs` extras,
-`uv run --extra test pytest
-tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one -q`
-still fails because the validation helper never raises `ConfigError`, and
-`uv run --extra test pytest tests/unit/test_download_duckdb_extensions.py -q`
-continues to fail its offline fallback scenarios with `SameFileError` and
-non-zero stub sizes. The unit test
+across project documentation. The evaluation container still lacks the Go Task
+CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
+manual install provides the binary. Targeted unit tests on **September 16,
+2025** show the ranking weight regression and DuckDB offline fallback suite now
+pass, while
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_verify_extension_failure` also fails because the loader executes a second
-verification query. Running the unit suite without extras logs
-`PytestConfigWarning: Unknown config option: bdd_features_base_dir`; install
-the `[test]` extras so `pytest-bdd` registers the option. `uv run --extra docs
-mkdocs build` succeeds but reports more than forty pages missing from `nav` and
-broken links such as `specs/api_authentication.md`. The open
+test_load_extension_download_unhandled_exception` fails because
+`VSSExtensionLoader.load_extension` suppresses unexpected runtime errors.
+Running `pytest` without the `[test]` extras continues to trigger
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir` until
+`pytest-bdd` is installed, and documentation builds require syncing the docs
+extras because `mkdocs` is not yet available. The open
 [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
-[fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md),
+[resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md),
 and
-[fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)
-issues track the remaining regressions. Scheduler resource benchmarks
+[resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+issues track the remaining release blockers. Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
