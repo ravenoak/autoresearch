@@ -30,10 +30,10 @@
 | `autoresearch/config/validators.py` | [config.md](docs/specs/config.md) | [p8], [p9], [t38], [t39], [t40], [t41], [t42], [t43], [t44], [t45], [t46], [t47], [t48] | OK |
 | `autoresearch/config_utils.py` | [config-utils.md](docs/specs/config-utils.md) | [p10], [t42], [t43], [t44], [t45], [t46], [t49], [t47], [t50], [t48], [t51], [t52] | OK |
 | `autoresearch/data_analysis.py` | [data-analysis.md](docs/specs/data-analysis.md) | [t53], [t54], [t55] | OK |
-| `autoresearch/distributed` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
-| `autoresearch/distributed/broker.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
-| `autoresearch/distributed/coordinator.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
-| `autoresearch/distributed/executors.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
+| `autoresearch/distributed` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p21], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
+| `autoresearch/distributed/broker.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p21], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
+| `autoresearch/distributed/coordinator.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p21], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
+| `autoresearch/distributed/executors.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p21], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
 | `autoresearch/error_recovery.py` | [error-recovery.md](docs/specs/error-recovery.md) | [p13], [t61] | OK |
 | `autoresearch/error_utils.py` | [error-utils.md](docs/specs/error-utils.md) | [t62] | OK |
 | `autoresearch/errors.py` | [errors.md](docs/specs/errors.md) | [t43], [t47], [t63] | OK |
@@ -238,6 +238,7 @@
 [t119]: tests/unit/test_test_tools.py
 [t120]: tests/behavior/features/tracing.feature
 [p20]: docs/algorithms/visualization.md
+[p21]: docs/algorithms/distributed_perf.md
 [t121]: tests/behavior/features/visualization_cli.feature
 [t122]: tests/unit/test_visualization.py
 [t123]: tests/integration/test_local_git_backend.py
