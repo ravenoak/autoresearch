@@ -561,16 +561,27 @@ Not executed.
 so coverage reports are not generated.
 
 ## Open issues
-- [fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md)
-- [fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)
-- [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md)
-- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)
-- [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
-- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
+
+### Release blockers
+- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md) –
+  Restore extension loader error propagation so the ranking suites and integration checks pass.
 - [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
-- [update-api-spec](issues/update-api-spec.md)
-- [update-cli-helpers-spec](issues/update-cli-helpers-spec.md)
-- [update-config-spec](issues/update-config-spec.md)
-- [update-distributed-spec](issues/update-distributed-spec.md)
-- [update-extensions-spec](issues/update-extensions-spec.md)
-- [update-monitor-spec](issues/update-monitor-spec.md)
+  – Eliminate multiprocessing tracker `KeyError` noise so `task verify` can finish.
+- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md) –
+  Replace deprecated APIs and dependency pins that still trigger warnings during test runs.
+- [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) – Coordinate release notes,
+  packaging, and follow-up tasks once the dependent issues above close.
+
+### Specification and documentation updates
+- [update-api-spec](issues/update-api-spec.md) – Refresh API documentation to match the current
+  middleware and endpoints.
+- [update-cli-helpers-spec](issues/update-cli-helpers-spec.md) – Align CLI helper specs with the
+  updated Task-based workflows.
+- [update-config-spec](issues/update-config-spec.md) – Sync configuration specs with the runtime
+  validation logic.
+- [update-distributed-spec](issues/update-distributed-spec.md) – Document the revised distributed
+  orchestration design.
+- [update-extensions-spec](issues/update-extensions-spec.md) – Capture current extension bootstrap
+  behavior and fallbacks.
+- [update-monitor-spec](issues/update-monitor-spec.md) – Update monitoring specs for the latest
+  instrumentation plan.

@@ -22,14 +22,19 @@ test_load_extension_download_unhandled_exception` fails because
 Running `pytest` without the `[test]` extras continues to trigger
 `PytestConfigWarning: Unknown config option: bdd_features_base_dir` until
 `pytest-bdd` is installed, and documentation builds require syncing the docs
-extras because `mkdocs` is not yet available. The open
+extras because `mkdocs` is not yet available. Release blockers remain in
 [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
 [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md),
-and
-[resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md)
-issues track the remaining release blockers. Scheduler resource benchmarks
-(`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
-estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
+and [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md) coordinates the alpha tag once
+they close. Specification refreshes in [update-api-spec](issues/update-api-spec.md),
+[update-cli-helpers-spec](issues/update-cli-helpers-spec.md),
+[update-config-spec](issues/update-config-spec.md),
+[update-distributed-spec](issues/update-distributed-spec.md),
+[update-extensions-spec](issues/update-extensions-spec.md), and
+[update-monitor-spec](issues/update-monitor-spec.md) keep docs aligned with the implementation.
+Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`) offer utilization and
+memory estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
@@ -48,30 +53,33 @@ before running tests.
 - 0.1.1 (2026-12-15, status: planned): Bug fixes and documentation updates.
 - 0.2.0 (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
-  - [stabilize-api-and-improve-search](
-    issues/archive/stabilize-api-and-improve-search.md)
-    - [streaming-webhook-refinements](
-      issues/archive/streaming-webhook-refinements.md)
-    - [configuration-hot-reload-tests](
-      issues/archive/configuration-hot-reload-tests.md)
-    - [hybrid-search-ranking-benchmarks](
-      issues/archive/hybrid-search-ranking-benchmarks.md)
+  - Current workstreams rely on the open specification updates:
+    [update-api-spec](issues/update-api-spec.md),
+    [update-cli-helpers-spec](issues/update-cli-helpers-spec.md),
+    [update-config-spec](issues/update-config-spec.md),
+    [update-extensions-spec](issues/update-extensions-spec.md), and
+    [update-monitor-spec](issues/update-monitor-spec.md).
 - 0.3.0 (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
-  - [simulate-distributed-orchestrator-performance](
-    issues/archive/simulate-distributed-orchestrator-performance.md)
+  - Planning builds on [update-distributed-spec](issues/update-distributed-spec.md) to capture the
+    revised orchestration model.
 - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
-    - [reach-stable-performance-and-interfaces](
-      issues/archive/reach-stable-performance-and-interfaces.md)
-    - [containerize-and-package](issues/archive/containerize-and-package.md) (2026-12-01)
-    - [validate-deployment-configurations](issues/archive/validate-deployment-configurations.md)
-      (2027-04-15, depends on containerization)
-    - [tune-system-performance](issues/archive/tune-system-performance.md)
-      (2027-07-01, depends on deployment validation)
+  - Stability goals depend on closing:
+    - [prepare-first-alpha-release]
+    - [fix-search-ranking-and-extension-tests]
+    - [resolve-resource-tracker-errors-in-verify]
+    - [resolve-deprecation-warnings-in-tests]
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
+
+[prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
+[fix-search-ranking-and-extension-tests]: issues/fix-search-ranking-and-extension-tests.md
+[resolve-resource-tracker-errors-in-verify]: issues/resolve-resource-tracker-errors-in-verify.md
+[resolve-deprecation-warnings-in-tests]: issues/resolve-deprecation-warnings-in-tests.md
+[update-distributed-spec]: issues/update-distributed-spec.md
+[update-monitor-spec]: issues/update-monitor-spec.md
 
 ## 0.1.0a1 – Alpha preview
 
@@ -82,34 +90,22 @@ the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
 coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
 release is re-targeted for **September 15, 2026**. Key activities include:
 
-- [x] Environment bootstrap documented and installation instructions
-  consolidated.
-- [x] Task CLI availability restored
-  ([install-task-cli-system-level](issues/archive/install-task-cli-system-level.md)).
+- [x] Environment bootstrap documented and installation instructions consolidated.
+- [x] Task CLI availability restored.
 - [x] Packaging verification with DuckDB fallback.
-- [x] Improve DuckDB extension fallback
-  ([improve-duckdb-extension-fallback](issues/archive/improve-duckdb-extension-fallback.md)).
-- [ ] Integration tests stabilized
-  ([fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md)).
-- [ ] Offline DuckDB extension fallback produces zero-byte stubs
-  ([fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md)).
-- [ ] Config validation rejects invalid ranking weights
-  ([fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md)).
-- [ ] Coverage gates target **90%** total coverage once tests run
-  ([add-test-coverage-for-optional-components](
-  issues/archive/add-test-coverage-for-optional-components.md);
-  [fix-task-verify-coverage-hang](
-  issues/archive/fix-task-verify-coverage-hang.md)).
-- [x] Algorithm validation for ranking and coordination
-  ([add-ranking-algorithm-proofs-and-simulations](
-  issues/archive/add-ranking-algorithm-proofs-and-simulations.md)).
-- [x] Add formal validation for the OxiGraph backend
-  ([add-oxigraph-backend-proofs](issues/archive/add-oxigraph-backend-proofs.md)).
+- [x] DuckDB extension fallback hardened for offline setups.
+- [ ] Integration tests stabilized ([fix-search-ranking-and-extension-tests]).
+- [ ] `task verify` completes without resource tracker errors
+  ([resolve-resource-tracker-errors-in-verify]).
+- [ ] Deprecation warnings removed from test runs
+  ([resolve-deprecation-warnings-in-tests]).
+- [ ] Coverage and release packaging finalized for the alpha tag
+  ([prepare-first-alpha-release]).
+- [x] Algorithm validation for ranking and coordination.
+- [x] Formal validation for the OxiGraph backend.
 
 These steps proceed in sequence: environment bootstrap → packaging
 verification → integration tests → coverage gates → algorithm validation.
-
-[fix-task-check-deps]: issues/archive/fix-task-check-dependency-removal-and-extension-bootstrap.md
 
 ## 0.1.0 – First public preview
 
@@ -169,11 +165,11 @@ Key features planned for this release include:
 
 The 1.0.0 milestone aims for a polished, production-ready system:
 
-- [containerize-and-package](issues/archive/containerize-and-package.md) (2026-12-01)
-- [validate-deployment-configurations](issues/archive/validate-deployment-configurations.md)
-  (2027-04-15, depends on containerization)
-- [tune-system-performance](issues/archive/tune-system-performance.md)
-  (2027-07-01, depends on deployment validation)
+- Packaging and deployment planning draw on [prepare-first-alpha-release].
+- Integration stability depends on closing [fix-search-ranking-and-extension-tests],
+  [resolve-resource-tracker-errors-in-verify], and [resolve-deprecation-warnings-in-tests].
+- Long-term operations rely on [update-distributed-spec] and [update-monitor-spec] to document
+  orchestration and monitoring expectations.
 
 These tasks proceed sequentially: containerization → deployment validation → performance tuning.
 
