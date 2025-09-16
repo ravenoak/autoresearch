@@ -17,8 +17,8 @@ groups or add `gpu` packages.
 
 - No deprecation warnings are expected when running `task verify`.
 - `sitecustomize.py` re-exports `click.shell_completion.split_arg_string`
-  for compatibility so Click no longer warns about the deprecated
-  `click.parser` module during tests.
+  and rewrites `weasel.util.config` to import it so Click no longer warns
+  about the deprecated `click.parser` module during tests.
 - `pytest.ini` keeps the default `.hypothesis` ignore entry so Hypothesis'
   plugin does not emit warnings when collecting tests.
 - Record any remaining unavoidable warnings here, along with a link to the

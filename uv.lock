@@ -463,7 +463,7 @@ requires-dist = [
     { name = "tomli-w", marker = "extra == 'dev-minimal'", specifier = ">=1.2.0" },
     { name = "tomli-w", marker = "extra == 'test'", specifier = ">=1.2.0" },
     { name = "twine", marker = "extra == 'build'", specifier = ">=6.0.1" },
-    { name = "typer", specifier = ">=0.16.0" },
+    { name = "typer", specifier = ">=0.17.4" },
     { name = "typer", marker = "extra == 'dev'", specifier = ">=0.16.0" },
     { name = "types-networkx", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=3.4.0" },
     { name = "types-protobuf", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=6.30.2.20250516" },
