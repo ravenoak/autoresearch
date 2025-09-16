@@ -1,8 +1,8 @@
 import sys
-import pytest
-from importlib.machinery import SourceFileLoader
-from importlib.util import module_from_spec, spec_from_loader
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+
+import pytest
 
 pytestmark = pytest.mark.skip(
     reason="CollectorRegistry duplication in test environment"
@@ -12,13 +12,13 @@ pytestmark = pytest.mark.skip(
 def _load_module():
     root = Path(__file__).resolve().parents[3]
     path = root / "src/autoresearch/search/ranking_convergence.py"
-    name = "src.autoresearch.search.ranking_convergence"
-    loader = SourceFileLoader(name, str(path))
-    spec = spec_from_loader(name, loader)
+    name = "autoresearch.search.ranking_convergence"
+    spec = spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(name)
     module = module_from_spec(spec)
-    module.__package__ = "src.autoresearch.search"
     sys.modules[name] = module
-    loader.exec_module(module)
+    spec.loader.exec_module(module)
     return module
 
 

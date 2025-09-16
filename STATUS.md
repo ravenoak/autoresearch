@@ -10,6 +10,11 @@ checks are required.
 ## September 16, 2025
 - `uv run task check` still fails because the Go Task CLI is absent in the
   container (`No such file or directory`).
+- Added a sitecustomize importer that rewrites `weasel.util.config` to use
+  `click.shell_completion.split_arg_string`, clearing Click deprecation warnings
+  and allowing newer Click releases.
+- Bumped the Typer minimum version to 0.17.4 so the CLI depends on a release
+  that no longer references deprecated Click helpers.
 - `uv run pytest tests/unit/test_config_validation_errors.py::
   test_weights_must_sum_to_one -q` now passes but emits
   `PytestConfigWarning: Unknown config option: bdd_features_base_dir` until the
