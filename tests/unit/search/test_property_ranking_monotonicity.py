@@ -9,7 +9,15 @@ from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search import Search
 
 
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+# Allow the slower combinations of mocks and Hypothesis scheduling without
+# lowering the number of generated examples.
+@settings(
+    max_examples=50,
+    suppress_health_check=[
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.too_slow,
+    ],
+)
 @given(
     bm25_a=st.floats(min_value=0, max_value=1),
     bm25_b=st.floats(min_value=0, max_value=1),
