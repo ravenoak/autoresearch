@@ -5,28 +5,44 @@ model, and why comparisons run in constant time.
 
 ## Handshake
 
-1. Client obtains a credential: an API key or bearer token.
-2. For each request the client sends:
-   - `X-API-Key` header for an API key.
-   - `Authorization: Bearer <token>` for a bearer token.
-3. The server fetches the expected credential from configuration.
-4. Verification uses a constant-time comparison.
-5. The resolved role is checked against ``[api].role_permissions``.
-   Missing or invalid credentials trigger **401 Unauthorized** with messages
-   such as ``Missing API key``, ``Invalid API key``, ``Missing token``, or
-   ``Invalid token``. Authenticated clients lacking required permissions
-   receive **403 Forbidden** with an ``Insufficient permissions`` detail.
+1. Clients obtain credentials: API keys mapped to roles or a bearer token.
+2. Each HTTP request sends credential headers:
+   - `X-API-Key` carries an API key.
+   - `Authorization: Bearer <token>` carries a bearer token.
+   Clients may send both headers.
+3. `AuthMiddleware` reloads the latest configuration via
+   `ConfigLoader.load_config()` so hot-reloaded values apply before checks run.
+4. If `[api].api_keys` is populated the middleware compares the provided key
+   against each entry with `secrets.compare_digest`. Otherwise it checks a
+   single `[api].api_key`. Missing or mismatched keys return **401** with an
+   `API-Key` challenge.
+5. When `[api].bearer_token` is set the middleware extracts the bearer token
+   and verifies it with `verify_bearer_token`. Invalid tokens return **401**
+   even if a valid API key was supplied. When authentication is configured but
+   no credential succeeds the response includes the appropriate
+   `WWW-Authenticate` scheme.
+6. Successful validation assigns a role, populates
+   `request.scope["state"].permissions` from `[api].role_permissions`, and
+   stores the active challenge scheme. Downstream calls to
+   `enforce_permission` return **401** for missing credentials and **403** for
+   insufficient permissions.
+
+When no credentials are configured the middleware leaves the role as
+`anonymous` with an empty permission set, so unauthenticated deployments stay
+accessible.
 
 ## Configuration
 
 Credentials are defined in `autoresearch.toml` under `[api]`:
 
-- `api_key` – single shared key.
-- `api_keys` – mapping of keys to roles.
+- `api_keys` – mapping of keys to roles. When present it takes precedence over
+  `api_key`.
+- `api_key` – single shared key used when `api_keys` is empty.
 - `bearer_token` – value for the `Authorization` header.
 
-Roles gain capabilities via `[api.role_permissions]` with entries such as
-`query` or `docs`.
+Roles gain capabilities via `[api.role_permissions]` (for example `query` or
+`docs`). Entries for `anonymous` and `user` control defaults for unauthenticated
+and single-key clients.
 
 ## Permission coverage
 

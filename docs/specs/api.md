@@ -4,11 +4,12 @@
 
 The Autoresearch API assembles a FastAPI application that exposes query,
 configuration, documentation, and monitoring endpoints. `routing.create_app`
-initialises shared state, installs authentication and rate limiting
-middleware, and registers versioned routes built around
-`QueryRequestV1`/`QueryResponseV1`. The package draws configuration from
-`ConfigLoader`, uses `RequestLogger` to track per-client usage, and streams
-results while posting webhook callbacks. Related derivations live in:
+initialises `StorageManager`, enters the configuration watch context, and
+installs `AuthMiddleware` plus the active rate limiting middleware before
+mounting the router built around `QueryRequestV1`/`QueryResponseV1`. Shared
+state stores the `ConfigLoader`, `RequestLogger`, limiter, and async task
+registry so routes can reload configuration, track usage, and dispatch
+webhooks. Related derivations live in:
 
 - [API authentication](../algorithms/api_authentication.md)
 - [Authentication proof sketch](../algorithms/api-authentication.md)
@@ -26,74 +27,100 @@ results while posting webhook callbacks. Related derivations live in:
 
 ## Authentication and Permissions
 
-- `AuthMiddleware` reloads API configuration on each request, then checks
-  `api.api_keys`, `api.api_key`, or `api.bearer_token` for credentials.
-- API keys map to roles and leverage `secrets.compare_digest` to avoid timing
-  leaks; bearer tokens reuse `verify_bearer_token` for constant-time checks.
-- The resolved role's permissions populate `request.state.permissions`.
-- `require_permission` injects dependencies that call `enforce_permission`,
-  returning **401 Unauthorized** with `WWW-Authenticate` headers when missing
-  and **403 Forbidden** when insufficient.
+- `AuthMiddleware.dispatch` reloads the current configuration via
+  `ConfigLoader.load_config()` so file edits take effect before credential
+  checks.
+- When `[api].api_keys` is populated the middleware iterates each candidate and
+  compares it with `secrets.compare_digest`; otherwise it checks a single
+  `api_key`. Missing or invalid keys short-circuit with **401** responses that
+  carry an `API-Key` challenge.
+- If a bearer token is configured the middleware verifies it with
+  `verify_bearer_token`. Bearer credentials can satisfy authentication on their
+  own. When a token is present but invalid the middleware returns **401** even
+  if the accompanying API key was correct.
+- The resolved role, permissions, and active challenge scheme are recorded on
+  `request.scope["state"]`. Downstream dependencies call `enforce_permission`,
+  which returns **401** with the stored challenge when credentials are absent
+  and **403** when permissions are insufficient.
+- When no credentials are configured the middleware leaves the role as
+  `anonymous` and grants an empty permission set so open deployments remain
+  usable.
 
 ## Routing and Endpoints
 
-- **POST /query** (`query`): Runs queries or streams when `?stream=true`.
-- **POST /query/stream** (`query`): Streams newline JSON with heartbeat blank
-  lines every 15 seconds.
+- **POST /query** (`query`): Handles synchronous queries and toggles streaming
+  when the `stream` query parameter is truthy.
+- **POST /query/stream** (`query`): Streams newline-delimited JSON and emits
+  heartbeat blank lines every 15 seconds.
 - **POST /query/batch** (`query`): Executes paginated batches concurrently
   using `asyncio.TaskGroup`.
 - **POST /query/async** (`query`): Starts background work and returns an async
   identifier stored in `app.state.async_tasks`.
-- **GET /query/{query_id}** (`query`): Reports async status or returns the
-  final payload before pruning stored futures.
+- **GET /query/{query_id}** (`query`): Reports async status or emits the final
+  payload before clearing stored futures.
 - **DELETE /query/{query_id}** (`query`): Cancels async work and removes task
   state.
 - **GET /health** (`health`): Reports readiness once storage and configuration
   loaders finish.
-- **GET /capabilities** (`capabilities`): Lists reasoning modes, storage,
-  search metadata, and agent descriptors.
+- **GET /capabilities** (`capabilities`): Lists reasoning modes, storage and
+  search metadata, agent descriptors, and the active configuration subset.
 - **GET /config** (`config`): Returns the active configuration as JSON.
 - **PUT /config** (`config`): Merges updates, validates them, and notifies
   observers.
 - **POST /config** (`config`): Replaces configuration after validation.
-- **DELETE /config** (`config`): Reloads configuration from disk and broadcasts
-  the new model.
+- **DELETE /config** (`config`): Reloads configuration from disk and
+  broadcasts the new model.
 - **GET /metrics** (`metrics`): Exports Prometheus metrics when monitoring is
-  enabled; the compatibility shim removes the route otherwise.
+  enabled; `routes.py` removes the route otherwise.
 - **GET /docs** (`docs`): Serves Swagger UI with CDN-backed assets.
 - **GET /openapi.json** (`docs`): Provides the OpenAPI schema and metadata.
 
-- `POST /query` honours optional fields (`reasoning_mode`, `loops`,
-  `llm_backend`) by cloning the loaded configuration, applying overrides, and
-  restoring defaults per request. It logs results in a tracing span and posts
-  webhook notifications with retries.
-- `POST /query/batch` paginates via `page` and `page_size` query parameters.
-  Each slice is dispatched concurrently and the response preserves order.
-- `POST /query/async`, `GET /query/{query_id}`, and `DELETE /query/{query_id}`
-  coordinate futures stored in `app.state.async_tasks`, returning JSON status
-  payloads until completion or cancellation.
-- `POST /query/stream` and `POST /query?stream=true` share streaming logic via
-  `query_stream_endpoint`, yielding newline-delimited JSON with heartbeat
-  blank lines every 15 seconds.
-- Configuration routes use `ConfigLoader` to validate candidate models,
-  persist replacements, notify observers, and handle reload failures with
-  structured `HTTPException` errors.
+- `POST /query` validates the request version, applies optional overrides
+  (`reasoning_mode`, `loops`, `llm_backend`) directly to the shared config,
+  enables tracing, runs the orchestrator, and formats errors with
+  `format_error_for_api`. Results and failures are forwarded to per-request or
+  global webhooks using configurable retry and backoff values.
+- `POST /query/batch` paginates via `page` and `page_size`, then reuses
+  `query_endpoint` for each slice within an `asyncio.TaskGroup`. The response
+  order matches the original batch.
+- `POST /query/async` clones the config (`ConfigModel.model_copy(deep=True)`),
+  launches `run_query_async`, and stores the resulting future under a UUID.
+  Futures live in `app.state.async_tasks`.
+- `GET /query/{query_id}` returns JSON status while the future is pending,
+  serialises `QueryResponse` or `QueryResponseV1` results when complete, and
+  removes the stored future. `DELETE` cancels the task and responds with plain
+  text.
+- `POST /query/stream` and `POST /query?stream=true` share
+  `query_stream_endpoint`, which pushes partial responses into an `asyncio`
+  queue and yields newline-delimited JSON interleaved with keepalive blanks
+  until completion.
+- Configuration routes rely on `ConfigLoader` to validate updates, replace
+  state, broadcast observer notifications, and map `ValidationError` instances
+  to structured `HTTPException` responses.
+- `create_app` mounts the router, registers `handle_rate_limit` for
+  `RateLimitExceeded`, and stores the loader, limiter, request logger, and
+  async task dictionary on `app.state`.
 
 ## Rate Limiting and Logging
 
-- `Limiter` defaults to SlowAPI's implementation when available and falls back
-  to a stub that reuses `RequestLogger` counts per client IP.
-- `dynamic_limit` reads `api.rate_limit` to derive SlowAPI-compatible strings.
-- `RateLimitMiddleware` injects limit headers when SlowAPI is present;
-  `FallbackRateLimitMiddleware` enforces simple thresholds otherwise.
+- Both middleware variants rely on `RequestLogger.log` to track per-IP counts.
+  When SlowAPI is available `RateLimitMiddleware` also delegates to
+  `Limiter.limiter.hit` to enforce quotas.
+- `dynamic_limit` renders `[api].rate_limit` as a `limits` string and falls back
+  to `1000000/minute` when throttling is disabled so parsers still succeed.
+- Each request stores `(limit, [ip])` on `request.state.view_rate_limit`, and
+  either middleware injects standard headers through the limiter or stub.
+  `handle_rate_limit` is registered as the exception handler for
+  `RateLimitExceeded`.
 
 ## Algorithms
 
 1. **Version validation:** `validate_version` rejects deprecated or unknown
    schema versions before any orchestration work begins.
-2. **Authentication:** `AuthMiddleware.dispatch` loads configuration, extracts
-   headers, resolves roles, stores permissions, and short-circuits with
-   `WWW-Authenticate` errors when credentials are missing or invalid.
+2. **Authentication:** `AuthMiddleware.dispatch` reloads configuration and
+   validates API keys plus bearer tokens in constant time. It records the
+   resolved role, permissions, and active challenge scheme on the request,
+   then returns the appropriate `WWW-Authenticate` header when checks fail.
 3. **Query execution:** `query_endpoint` runs orchestrator queries inside a
    tracing span, formats errors, and mirrors responses to per-request or
    global webhooks with retry backoff settings.
@@ -111,6 +138,8 @@ results while posting webhook callbacks. Related derivations live in:
 
 - Every request populates `request.state.permissions`, `role`, and
   `www_authenticate` before reaching route handlers.
+- The application lifespan enters the configuration watch context during
+  startup and stops it on shutdown to keep `ConfigLoader` state consistent.
 - Versioned routes call `validate_version` exactly once, ensuring **410** or
   **422** responses for deprecated or unsupported schemas.
 - Streaming responses preserve enqueue order, interleave keepalive heartbeats,
