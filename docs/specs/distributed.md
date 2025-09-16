@@ -45,19 +45,38 @@ models and proofs appear in
 1. Serialize claim dictionaries with action metadata and enqueue them on the
    chosen broker, allowing executors to offload storage writes safely.
 
+### start_storage_coordinator
+
+1. Read distributed configuration for broker selection and optional URL.
+2. Create a message broker and storage coordinator pointing at DuckDB.
+3. Signal readiness through an `Event` before returning to the caller.
+4. Return the coordinator process alongside its broker for lifecycle control.
+
+### start_result_aggregator
+
+1. Read distributed configuration to reuse the broker selection logic.
+2. Spawn a `ResultAggregator` that drains the broker queue into shared memory.
+3. Return the aggregator process with its broker for later shutdown.
+
 ### RayExecutor.run_query
 
 1. Optionally start storage/result coordinators when distributed mode is
-   enabled in configuration.
+   enabled in configuration and capture the associated brokers.
 2. Push HTTP and LLM sessions into Ray via `ray.put` for reuse.
 3. For each loop:
    - Clear aggregated results.
    - Dispatch agents via `_execute_agent_remote` tasks.
    - Retrieve results with `ray.get` and merge aggregator output if available.
-   - Update `QueryState`, publish claims, and invoke `on_cycle_end` callbacks.
+   - Update `QueryState`, publish claims through the storage broker, and
+     invoke `on_cycle_end` callbacks.
 4. Return `state.synthesize()` after all loops complete.
-5. `shutdown` publishes stop messages, joins coordinators, shuts down brokers,
-   and calls `ray.shutdown()` when appropriate.
+
+### RayExecutor.shutdown
+
+1. Publish a stop signal before joining the storage coordinator.
+2. Shut down the storage broker and clear the storage message queue hook.
+3. Publish a stop signal for the result broker and join the aggregator.
+4. Close the result broker, then call `ray.shutdown()` when available.
 
 ### ProcessExecutor.run_query
 
@@ -69,7 +88,33 @@ models and proofs appear in
    - Merge aggregator output if present, update `QueryState`, publish claims,
      and invoke callbacks.
 3. Return `state.synthesize()`.
-4. `shutdown` mirrors `RayExecutor` cleanup without Ray-specific steps.
+
+### ProcessExecutor.shutdown
+
+1. Publish a stop signal, join the storage coordinator, and shut down the
+   broker.
+2. Publish a stop signal for the result broker, join the aggregator, and close
+   the broker connection.
+
+## Flow Diagrams
+
+```mermaid
+flowchart TD
+    Executor -->|publish_claim| Broker
+    Broker --> StorageCoordinator
+    StorageCoordinator --> DuckDB[(DuckDB)]
+```
+
+```mermaid
+sequenceDiagram
+    participant Exec as Executor
+    participant RBroker as Result broker
+    participant Aggregator
+    participant Client
+    Exec->>RBroker: agent_result
+    RBroker->>Aggregator: drain queue
+    Aggregator->>Client: share Manager list
+```
 
 ## Invariants
 
@@ -101,8 +146,11 @@ The queue ordering, leader election, and safety/liveness arguments in
 directly: a single coordinator process drains the queue, guaranteeing FIFO
 ordering, while executors publish stop signals that ensure graceful shutdown.
 [distributed overhead](../algorithms/distributed_overhead.md) bounds retry
-costs when failures occur. Tests validate broker ordering, coordination safety,
-and executor convergence across multiprocessing and Ray backends.
+costs when failures occur. The
+[distributed_coordination_sim.py](../../scripts/distributed_coordination_sim.py)
+script exercises leader election and FIFO delivery, offering an executable
+counterpart to the proof sketch. Tests validate broker ordering, coordination
+safety, and executor convergence across multiprocessing and Ray backends.
 
 ## Simulation Expectations
 
