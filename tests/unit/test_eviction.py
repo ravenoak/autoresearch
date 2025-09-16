@@ -19,17 +19,22 @@ def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
     # reload config property
     ConfigLoader()._config = None
 
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
     start = metrics.EVICTION_COUNTER._value.get()
-    claim = {"id": "c1", "type": "fact", "content": "a"}
-    StorageManager.persist_claim(claim)
+
+    StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
+    StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+
+    graph = StorageManager.get_graph()
+    assert "c1" not in graph.nodes
+    assert "c2" in graph.nodes
     assert metrics.EVICTION_COUNTER._value.get() >= start + 1
-    assert "c1" not in StorageManager.get_graph().nodes
 
 
 def test_score_eviction(ensure_duckdb_schema, monkeypatch):
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
-    config = ConfigModel(ram_budget_mb=1, graph_eviction_policy="score")
+    config = ConfigModel(ram_budget_mb=2, graph_eviction_policy="score")
     config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
@@ -50,7 +55,7 @@ def test_score_eviction(ensure_duckdb_schema, monkeypatch):
 
 
 def test_lru_eviction_order(monkeypatch, ensure_duckdb_schema):
-    config = ConfigModel(ram_budget_mb=1)
+    config = ConfigModel(ram_budget_mb=2)
     config.search.context_aware.enabled = False
     config.storage.rdf_backend = "memory"
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
@@ -79,7 +84,7 @@ def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
     """Verify older nodes are evicted before newer ones with LRU policy."""
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
-    config = ConfigModel(ram_budget_mb=1)
+    config = ConfigModel(ram_budget_mb=3)
     config.search.context_aware.enabled = False
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
     ConfigLoader()._config = None
