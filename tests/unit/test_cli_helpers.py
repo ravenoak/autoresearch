@@ -1,3 +1,12 @@
+import inspect
+import io
+from pathlib import Path
+
+import pytest
+import typer
+from fastapi import HTTPException
+from rich.console import Console
+
 from autoresearch.cli_helpers import (
     find_similar_commands,
     parse_agent_groups,
@@ -5,12 +14,6 @@ from autoresearch.cli_helpers import (
     report_missing_tables,
     require_api_key,
 )
-import io
-import pytest
-import typer
-from pathlib import Path
-from rich.console import Console
-from fastapi import HTTPException
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -20,6 +23,11 @@ def test_find_similar_commands_basic():
     cmds = ["search", "serve", "backup"]
     matches = find_similar_commands("serch", cmds)
     assert "search" in matches
+
+
+def test_find_similar_commands_default_threshold():
+    sig = inspect.signature(find_similar_commands)
+    assert sig.parameters["threshold"].default == 0.6
 
 
 def test_parse_agent_groups_parses_nested_lists():

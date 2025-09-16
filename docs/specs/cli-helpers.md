@@ -3,15 +3,16 @@
 ## Overview
 
 Utility helpers shared by CLI entry points. They provide fuzzy matching for
-commands, parse agent group arguments, enforce API headers, and surface storage
-state warnings with consistent Rich output.
+commands (default similarity cutoff ``0.6``), parse agent group arguments,
+enforce API headers, and surface storage state warnings with consistent Rich
+output.
 
 ## Algorithms
 
 ### find_similar_commands
 
-1. Call `difflib.get_close_matches` with up to three suggestions and a
-   configurable cutoff.
+1. Call `difflib.get_close_matches` with up to three suggestions, a configurable
+   cutoff, and the default threshold ``0.6`` when callers omit it.
 2. Return the matches as a list to keep the API stable for CLI consumers and
    tests.
 
@@ -20,7 +21,7 @@ state warnings with consistent Rich output.
 1. Split each string on commas.
 2. Strip whitespace, discard empty agent names, and preserve group ordering.
 3. Append only non-empty groups so the caller receives concrete team
-   assignments.
+   assignments and maintains the original ordering of group entries.
 
 ### require_api_key
 
@@ -33,16 +34,18 @@ state warnings with consistent Rich output.
 
 1. Exit immediately when the input sequence is empty.
 2. Sort table names, join them with commas, and render either to the provided
-   `Console` or through `print_error` with a schema initialization suggestion.
+   `Console` (including a yellow "Suggestion" line) or through `print_error`
+   with the same schema initialization guidance.
 
 ### handle_command_not_found
 
-1. Emit a formatted error for the unknown command.
+1. Emit a formatted error for the unknown command via `print_error`.
 2. Collect subcommand names from the active Click/Typer context.
 3. Suggest similar commands via `find_similar_commands`, announce them with
-   `print_info(symbol=False)`, and display each example through
+   `print_info(symbol=False)` when any exist, and display each example through
    `print_command_example`.
-4. Raise `typer.Exit(code=1)` after printing the `typer.secho` help hint to stop
+4. Raise `typer.Exit(code=1)` after printing the `typer.secho` help hint
+   "Run 'autoresearch --help' to see all available commands." to stop
    execution.
 
 ## Invariants
@@ -58,7 +61,7 @@ state warnings with consistent Rich output.
 - `report_missing_tables` sorts table names consistently and never emits output
   when the input is empty.
 - `handle_command_not_found` always raises `typer.Exit` after printing
-  suggestions (when any).
+  suggestions (when any) and the canonical help reminder.
 
 ## Complexity
 
@@ -70,6 +73,8 @@ state warnings with consistent Rich output.
 
 - Python's `difflib` enforces the upper bound on matches, guaranteeing the
   invariant for `find_similar_commands`.
+- A signature-level test verifies the default `threshold=0.6` contract for
+  `find_similar_commands`.
 - `parse_agent_groups` filters falsy values before appending, so empty groups
   are impossible.
 - `require_api_key` checks a single dictionary key and raises immediately,
@@ -81,8 +86,9 @@ state warnings with consistent Rich output.
 
 ## Simulation Expectations
 
-Unit tests cover threshold handling, group parsing edge cases, missing header
-errors, sorted table reporting, and friendly suggestions for mistyped commands.
+Unit tests cover signature defaults, threshold handling, group parsing edge
+cases, missing header errors, sorted table reporting, and friendly suggestions
+for mistyped commands.
 
 ## Proof Obligations
 
