@@ -14,10 +14,13 @@ Autoresearch requires these binaries on your `PATH`:
 - [Go Task](https://taskfile.dev/) for Taskfile commands.
   `scripts/setup.sh` installs it into `/usr/local/bin` when missing.
 
-Run `task install` immediately after installing these prerequisites. It
-syncs the `dev-minimal` and `test` extras so `task check` and `pytest` have
-the required plugins. Skipping this step typically yields missing dependency
-errors.
+Run `./scripts/setup.sh` immediately after installing these prerequisites.
+It installs Go Task when missing and syncs the `dev-minimal` and `test`
+extras so `task check` and `pytest` have the required plugins. If you prefer
+a manual workflow, run `uv sync --extra test --extra docs` before executing
+any tests or `uv run mkdocs build`. Skipping these steps typically yields
+missing dependency errors and `PytestConfigWarning` messages when
+`pytest-bdd` is not installed.
 
 Run `uv run python scripts/check_env.py` to confirm they are available. The
 script exits with an error when Go Task is missing; install it with
@@ -117,14 +120,16 @@ dependencies. `task check` syncs only these extras so it runs quickly.
 additional groups. Install other extras separately before running the task if
 you need them.
 
-Install the documentation dependencies before building the site:
+Install the documentation dependencies before building the site. The setup
+script can include the docs extra (`AR_EXTRAS="docs"`), or sync them manually:
 
 ```bash
-uv run --extra docs mkdocs build
+uv sync --extra test --extra docs
+uv run mkdocs build
 ```
 
-This ensures `mkdocs`, `mkdocs-material`, and related plugins are available even
-when the base environment omits the `docs` extra.
+This guarantees `mkdocs`, `mkdocs-material`, and testing plugins such as
+`pytest-bdd` are present before documentation commands run.
 
 ## After cloning
 
@@ -163,6 +168,8 @@ additional flags are required for PDF or DOCX tests.
 Use `./scripts/setup.sh` for the full developer bootstrap. It syncs the
 `dev` and `test` extras (including packages such as `pytest_httpx`,
 `tomli_w`, `pytest-bdd`, and `redis`) and verifies Go Task is installed.
+Ensuring `pytest-bdd` is installed prevents `PytestConfigWarning` notices
+about undefined BDD markers during test discovery.
 
 You can manually confirm the CLI and development packages are available:
 

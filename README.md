@@ -7,10 +7,12 @@ The project is built around a modular Python package located under `src/autorese
 CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
-source for environment setup and optional features. Run `task install`
-immediately after cloning to bootstrap the required `dev-minimal` and `test`
-extras; skipping this step often yields missing plugin errors when running
-`task check` or any tests.
+source for environment setup and optional features. After installing the
+prerequisites, run `./scripts/setup.sh` or `uv sync --extra test --extra docs`
+*before* invoking `task check`, `uv run pytest`, or `uv run mkdocs build`.
+This ensures Go Task is available and installs dependencies such as
+`pytest-bdd`, which suppresses `PytestConfigWarning` messages and prevents
+missing plugin errors during test and documentation commands.
 
 Run `scripts/codex_setup.sh` in the Codex evaluation environment to bootstrap
 dependencies. The script appends `.venv/bin` to `PATH`, so the shell exposes
@@ -135,9 +137,10 @@ uv run pytest tests/unit/test_version.py -q
 ```
 
 The `[test]` extra installs dependencies like `pytest-bdd`, which `task check`
-expects for quick smoke tests. Install it before `pytest` to mirror the DuckDB
-setup performed by `scripts/setup.sh` and let `uv run pytest` succeed without
-`task`.
+expects for quick smoke tests. Missing `pytest-bdd` triggers
+`PytestConfigWarning` notices about undefined BDD markers. Install it before
+`pytest` to mirror the DuckDB setup performed by `scripts/setup.sh` and let `uv`
+run `pytest` succeed without `task`.
 
 Run `task check` for linting, type checks, and quick smoke tests. It syncs the
 `dev-minimal` and `test` extras and exercises a small unit subset
