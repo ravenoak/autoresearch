@@ -82,6 +82,11 @@ Tests are organized into four categories:
    Run them manually and migrate to unit or integration suites once
    validated.
 
+During `task coverage`, targeted smoke tests execute once per optional extra.
+The task iterates over `ALL_EXTRAS` and runs `pytest tests/targeted -m
+"requires_<extra> and not slow" --noconftest` so CI logs show which marker
+passes. Extras omitted from the `EXTRAS` variable are logged as skipped.
+
 ## Running tests
 
 Two installation strategies support different workflows:

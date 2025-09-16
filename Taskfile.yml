@@ -243,17 +243,27 @@ tasks:
       - |
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/integration -m 'not slow' \
             --cov=src --cov-report=term-missing --cov-append
-      - echo "[coverage] running targeted tests"
+      - echo "[coverage] running targeted tests per extra"
       - |
-          {{if .EXTRAS}}
-          uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted \
-            -m 'not slow{{.EXTRA_MARKERS}}' \
-            --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
-            --cov=autoresearch.orchestration --cov-report=term-missing \
-            --cov-report=xml --cov-append
-          {{else}}
-          echo "[coverage] skipping targeted tests; no extras provided"
-          {{end}}
+          set -eu
+          extras_requested="{{.EXTRAS}}"
+          if [ -z "$extras_requested" ]; then
+            echo "[coverage][targeted] skipping; no extras requested"
+          else
+            for extra in {{.ALL_EXTRAS}}; do
+              if ! printf ' %s ' "$extras_requested" | grep -q " ${extra} "; then
+                echo "[coverage][targeted][${extra}] skipping; extra not requested"
+                continue
+              fi
+              echo "[coverage][targeted][${extra}] starting"
+              uv run pytest -vv --maxfail=1 --durations=10 -x tests/targeted \
+                -m "requires_${extra} and not slow" \
+                --noconftest --cov=autoresearch.search --cov=autoresearch.storage \
+                --cov=autoresearch.orchestration --cov-report=term-missing \
+                --cov-report=xml --cov-append
+              echo "[coverage][targeted][${extra}] passed"
+            done
+          fi
       - echo "[coverage] running behavior tests"
       - |
           uv run pytest -vv --maxfail=1 --durations=10 -x tests/behavior -m 'not slow' \
