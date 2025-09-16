@@ -38,7 +38,7 @@
 | `autoresearch/error_utils.py` | [error-utils.md](docs/specs/error-utils.md) | [t62] | OK |
 | `autoresearch/errors.py` | [errors.md](docs/specs/errors.md) | [t43], [t47], [t63] | OK |
 | `autoresearch/examples` | [examples.md](docs/specs/examples.md) | [t64] | OK |
-| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [t65], [t66], [t67] | OK |
+| `autoresearch/extensions.py` | [extensions.md](docs/specs/extensions.md) | [s10], [s11], [t65], [t66], [t67] | OK |
 | `autoresearch/interfaces.py` | [interfaces.md](docs/specs/interfaces.md) | [t68] | OK |
 | `autoresearch/kg_reasoning.py` | [kg-reasoning.md](docs/specs/kg-reasoning.md) | [t69] | OK |
 | `autoresearch/llm` | [llm.md](docs/specs/llm.md) | [p14], [p15], [t9], [t70], [t71], [t72] | OK |
@@ -50,28 +50,28 @@
 | `autoresearch/main` | [main.md](docs/specs/main.md) | [t75], [t76], [t77] | OK |
 | `autoresearch/mcp_interface.py` | [mcp-interface.md](docs/specs/mcp-interface.md) | [t78], [t79] | OK |
 | `autoresearch/models.py` | [models.md](docs/specs/models.md) | [p16], [t80] | OK |
-| `autoresearch/monitor` | [monitor.md](docs/specs/monitor.md) | [p17], [s10], [t81], [t82], [t83], [t84] | OK |
-| `autoresearch/monitor/cli.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s10], [t81], [t82], [t83], [t84] | OK |
-| `autoresearch/monitor/metrics.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s10], [t81], [t82], [t83], [t84] | OK |
-| `autoresearch/monitor/node_health.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s10], [t81], [t82], [t83], [t84] | OK |
-| `autoresearch/monitor/system_monitor.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s10], [t81], [t82], [t83], [t84] | OK |
-| `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [p18], [s11], [t85], [t86], [t87], [t88], [t89] | OK |
-| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p15], [s12], [t90], [t91] | OK |
-| `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md)<br>[orchestrator_scheduling.md](docs/specs/orchestrator_scheduling.md) | [s13], [t92], [t93], [t94] | OK |
+| `autoresearch/monitor` | [monitor.md](docs/specs/monitor.md) | [p17], [s12], [t81], [t82], [t83], [t84] | OK |
+| `autoresearch/monitor/cli.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s12], [t81], [t82], [t83], [t84] | OK |
+| `autoresearch/monitor/metrics.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s12], [t81], [t82], [t83], [t84] | OK |
+| `autoresearch/monitor/node_health.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s12], [t81], [t82], [t83], [t84] | OK |
+| `autoresearch/monitor/system_monitor.py` | [monitor.md](docs/specs/monitor.md) | [p17], [s12], [t81], [t82], [t83], [t84] | OK |
+| `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [p18], [s13], [t85], [t86], [t87], [t88], [t89] | OK |
+| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p15], [s14], [t90], [t91] | OK |
+| `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md)<br>[orchestrator_scheduling.md](docs/specs/orchestrator_scheduling.md) | [s15], [t92], [t93], [t94] | OK |
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) | [t95], [t96] | OK |
-| `autoresearch/resource_monitor.py` | [resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s14], [t81], [t84] | OK |
+| `autoresearch/resource_monitor.py` | [resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s16], [t81], [t84] | OK |
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [t94] | OK |
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [t97], [t98], [t99], [t100], [t101], [t41], [t102], [t103] | OK |
 | `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t97], [t99], [t104] | OK |
-| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s15], [s16], [s17], [s18], [t100], [t105], [t106], [t103], [t107], [t108], [t109], [t110], [t111] | OK |
-| `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s19], [t106], [t65], [t66] | OK |
+| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [t100], [t105], [t106], [t103], [t107], [t108], [t109], [t110], [t111] | OK |
+| `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s21], [t106], [t65], [t66] | OK |
 | `autoresearch/storage_backup.py` | [storage-backup.md](docs/specs/storage-backup.md) | [t112] | OK |
 | `autoresearch/storage_utils.py` | [storage-utils.md](docs/specs/storage-utils.md) | [t113] | OK |
 | `autoresearch/streamlit_app.py` | [streamlit-app.md](docs/specs/streamlit-app.md) | [t51] | OK |
 | `autoresearch/streamlit_ui.py` | [streamlit-ui.md](docs/specs/streamlit-ui.md) | [t114] | OK |
 | `autoresearch/synthesis.py` | [synthesis.md](docs/specs/synthesis.md) | [t115] | OK |
 | `autoresearch/test_tools.py` | [test-tools.md](docs/specs/test-tools.md) | [t116] | OK |
-| `autoresearch/token_budget.py` | [token-budget.md](docs/specs/token-budget.md) | [s12], [t90] | OK |
+| `autoresearch/token_budget.py` | [token-budget.md](docs/specs/token-budget.md) | [s14], [t90] | OK |
 | `autoresearch/tracing.py` | [tracing.md](docs/specs/tracing.md) | [t117] | OK |
 | `autoresearch/visualization.py` | [visualization.md](docs/specs/visualization.md) | [p21], [t118], [t119] | OK |
 | `git` | [git.md](docs/specs/git.md) | [t120], [t121] | OK |
@@ -163,6 +163,8 @@
 [t62]: tests/unit/test_error_utils_additional.py
 [t63]: tests/unit/test_errors.py
 [t64]: tests/unit/test_examples_package.py
+[s10]: scripts/download_duckdb_extensions.py
+[s11]: scripts/smoke_test.py
 [t65]: tests/unit/test_duckdb_storage_backend.py
 [t66]: tests/unit/test_duckdb_storage_backend_extended.py
 [t67]: tests/unit/test_vss_extension_loader.py
@@ -183,29 +185,29 @@
 [p16]: docs/algorithms/models.md
 [t80]: tests/unit/test_models_docstrings.py
 [p17]: docs/algorithms/monitor_cli.md
-[s10]: scripts/monitor_cli_reliability.py
+[s12]: scripts/monitor_cli_reliability.py
 [t81]: tests/integration/test_monitor_metrics.py
 [t82]: tests/unit/test_main_monitor_commands.py
 [t83]: tests/unit/test_monitor_cli.py
 [t84]: tests/unit/test_resource_monitor_gpu.py
 [p18]: docs/algorithms/orchestration.md
-[s11]: scripts/orchestration_sim.py
+[s13]: scripts/orchestration_sim.py
 [t85]: tests/unit/orchestration/test_budgeting_algorithm.py
 [t86]: tests/unit/orchestration/test_circuit_breaker_determinism.py
 [t87]: tests/unit/orchestration/test_circuit_breaker_thresholds.py
 [t88]: tests/unit/orchestration/test_parallel_execute.py
 [t89]: tests/unit/orchestration/test_parallel_merge_invariant.py
-[s12]: scripts/token_budget_convergence.py
+[s14]: scripts/token_budget_convergence.py
 [t90]: tests/unit/test_metrics_token_budget_spec.py
 [t91]: tests/unit/test_token_budget_convergence.py
-[s13]: scripts/orchestrator_perf_sim.py
+[s15]: scripts/orchestrator_perf_sim.py
 [t92]: tests/integration/test_orchestrator_performance.py
 [t93]: tests/unit/test_orchestrator_perf_sim.py
 [t94]: tests/unit/test_scheduler_benchmark.py
 [t95]: tests/behavior/features/output_formatting.feature
 [t96]: tests/unit/test_output_format.py
 [p19]: docs/algorithms/resource_monitor.md
-[s14]: scripts/resource_monitor_bounds.py
+[s16]: scripts/resource_monitor_bounds.py
 [t97]: tests/behavior/features/hybrid_search.feature
 [t98]: tests/behavior/features/local_sources.feature
 [t99]: tests/behavior/features/search_cli.feature
@@ -215,10 +217,10 @@
 [t103]: tests/integration/test_search_storage.py
 [t104]: tests/benchmark/test_hybrid_ranking.py
 [p20]: docs/algorithms/storage.md
-[s15]: scripts/ram_budget_enforcement_sim.py
-[s16]: scripts/schema_idempotency_sim.py
-[s17]: scripts/storage_concurrency_sim.py
-[s18]: scripts/storage_eviction_sim.py
+[s17]: scripts/ram_budget_enforcement_sim.py
+[s18]: scripts/schema_idempotency_sim.py
+[s19]: scripts/storage_concurrency_sim.py
+[s20]: scripts/storage_eviction_sim.py
 [t105]: tests/integration/storage/test_simulation_benchmarks.py
 [t106]: tests/integration/test_rdf_persistence.py
 [t107]: tests/integration/test_storage_duckdb_fallback.py
@@ -226,7 +228,7 @@
 [t109]: tests/targeted/test_storage_eviction.py
 [t110]: tests/unit/test_storage_eviction.py
 [t111]: tests/unit/test_storage_eviction_sim.py
-[s19]: scripts/oxigraph_backend_sim.py
+[s21]: scripts/oxigraph_backend_sim.py
 [t112]: tests/unit/test_storage_backup.py
 [t113]: tests/integration/test_storage_schema.py
 [t114]: tests/unit/test_streamlit_ui_helpers.py
