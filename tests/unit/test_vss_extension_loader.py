@@ -204,8 +204,10 @@ class TestVSSExtensionLoader:
         conn = MagicMock()
         conn.execute.side_effect = RuntimeError("boom")
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match="boom"):
             VSSExtensionLoader.load_extension(conn)
+
+        assert conn.execute.call_count == 1
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
