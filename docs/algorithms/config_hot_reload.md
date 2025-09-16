@@ -74,7 +74,8 @@ See [simulate_config_reload.py](../../scripts/simulate_config_reload.py).
 
 ## Simulation
 
-Automated tests confirm config hot reload behavior.
+Automated tests and collected metrics confirm config hot reload behavior.
 
 - [Spec](../specs/config.md)
+- [Metrics](../../tests/analysis/config_hot_reload_metrics.json)
 - [Tests](../../tests/integration/test_config_hot_reload_components.py)

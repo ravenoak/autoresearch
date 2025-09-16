@@ -2,161 +2,253 @@
 
 ## Overview
 
-Configuration loading and hot-reload utilities for Autoresearch. `ConfigLoader`
-locates configuration files, merges environment overrides (including `.env`
-values), instantiates `ConfigModel`, and optionally watches files for changes.
-Helper APIs expose the active configuration, temporary overrides, and profile
-management. See [config hot reload](../algorithms/config_hot_reload.md) for the
-underlying watcher model.
+The `autoresearch.config` package loads runtime settings from TOML files and
+environment overrides. `ConfigLoader` constructs a validated `ConfigModel`,
+applies profile specific overrides, and optionally watches the inputs for hot
+reloads. Validators ensure canonical values before configuration data reaches
+other subsystems. See
+[config hot reload](../algorithms/config_hot_reload.md) for timing and
+concurrency guarantees.
 
 ## Models
 
-### ConfigModel
+### ContextAwareSearchConfig
 
-- Pydantic container for runtime switches such as `backend`, `llm_backend`,
-  token budgeting, tracing flags, and agent orchestration parameters.
-- Wraps nested models (`StorageConfig`, `SearchConfig`, `APIConfig`,
-  `DistributedConfig`, `AnalysisConfig`) and per-agent overrides via
-  `agent_config`.
-- Applies validators that canonicalise `graph_eviction_policy`, enforce
-  positive `token_budget` values, and convert string reasoning modes before
-  instances are exposed to callers.
-- Stores observer hooks, profile selection, and monitoring thresholds while
-  ignoring extra keys through `SettingsConfigDict(extra="ignore")`.
+- `enabled` toggles the context aware search pipeline. Query expansion, entity
+  recognition, and topic modelling flags expose bounded float and integer
+  fields with defaults matching `models.py`.
+- History tracking stores at most `max_history_items` entries and weights prior
+  interactions through `history_weight`.
+
+### LocalFileConfig and LocalGitConfig
+
+- `LocalFileConfig` records the root path and allowed extensions for file based
+  retrieval.
+- `LocalGitConfig` captures the repository path, tracked branches, and history
+  depth for Git sources.
 
 ### SearchConfig
 
-- Chooses backends, embedding providers, result limits, and concurrency
-  controls for retrieval.
-- Coordinates hybrid ranking via `semantic_similarity_weight`,
-  `bm25_weight`, and `source_credibility_weight`. Missing weights inherit
-  defaults, and `_normalize_ranking_weights` ensures they remain positive and
-  sum to `1.0`, raising `ConfigError` when user supplied totals exceed one.
-- Provides toggles for user feedback, search history, and context awareness.
-  `ContextAwareSearchConfig` tunes expansion, entity recognition, and topic
-  modelling weights while respecting per-field bounds.
-- `LocalFileConfig` and `LocalGitConfig` capture connector specific paths,
-  extensions, and history depth.
+- Defaults to `backends=["serper"]` and leaves `embedding_backends` empty
+  until configured.
+- Limits retrieval through `max_results_per_query`, `max_workers`, and
+  `http_pool_size`.
+- Hybrid search controls (`hybrid_query`, `use_semantic_similarity`,
+  `use_bm25`, `use_source_credibility`) gate ranking strategies.
+- Ranking weights (`semantic_similarity_weight`, `bm25_weight`,
+  `source_credibility_weight`) must stay non negative. The
+  `_normalize_ranking_weights` validator rebases missing or zero entries to sum
+  to `1.0`, and raises `ConfigError` when provided totals exceed one.[p1]
+- Credibility heuristics use `domain_authority_factor` and
+  `citation_count_factor`. Feedback support is toggled by `use_feedback` and
+  weighted by `feedback_weight`.
+- Nested models include `ContextAwareSearchConfig`, `LocalFileConfig`, and
+  `LocalGitConfig` instances.
 
 ### StorageConfig
 
-- Describes DuckDB index options, vector extension availability, RDF store
-  settings, and ontology reasoning limits.
-- `validate_rdf_backend` constrains `rdf_backend` to supported engines and
-  surfaces actionable errors when misconfigured.
+- Configures DuckDB path selection, vector extension enablement, and
+  approximate nearest neighbour parameters (`hnsw_m`, `hnsw_ef_construction`,
+  `hnsw_metric`, `hnsw_ef_search`, `hnsw_auto_tune`).
+- Controls vector query behaviour with `vector_nprobe`, optional batch sizing,
+  and optional timeouts.
+- RDF stores define `rdf_backend`, `rdf_path`, and `ontology_reasoner`
+  settings. Optional limits cover `ontology_reasoner_timeout` and
+  `ontology_reasoner_max_triples`.
+- Connection management uses `max_connections`. Secondary stores toggle Kuzu
+  integration with `use_kuzu` and `kuzu_path`.
+- `validate_rdf_backend` accepts only the backends enumerated in
+  `validators.py`.
 
-### AgentConfig and APIConfig
+### AgentConfig
 
-- `AgentConfig` records enablement and per-agent model overrides.
-- `APIConfig` manages webhook addresses, authentication, rate limits, and role
-  permissions for HTTP exposure.
+- Tracks per agent enablement and optional model overrides.
 
-### DistributedConfig and AnalysisConfig
+### APIConfig
 
-- `DistributedConfig` toggles Ray based execution, broker selection, and worker
-  counts for distributed runs.
-- `AnalysisConfig` currently advertises whether Polars based pipelines are
-  enabled.
+- Lists webhook endpoints and handles timeout, retry, and backoff parameters.
+- Authentication fields cover shared secrets (`api_key`), bearer tokens, and an
+  optional `api_keys` to role mapping. Default `role_permissions` provide
+  conservative access per role.
+- `rate_limit` and `monitoring_enabled` govern API throttling and metrics
+  exposure.
+
+### DistributedConfig
+
+- Stores distributed toggles (`enabled`), an optional Ray address, CPU budget,
+  and broker information (`message_broker`, `broker_url`).
+
+### AnalysisConfig
+
+- Exposes a single `polars_enabled` flag for data analysis pipelines.
+
+### ConfigModel
+
+- Core runtime defaults include `backend`, `llm_backend`, `llm_pool_size`,
+  `loops`, and `ram_budget_mb`. Missing `llm_backend` values inherit the
+  selected `backend`.
+- Token governance uses `token_budget`, `adaptive_max_factor`, and
+  `adaptive_min_buffer`. Validators coerce numeric strings and reject
+  non positive limits.[p1]
+- Reliability controls include `circuit_breaker_threshold`,
+  `circuit_breaker_cooldown`, and `max_errors`.
+- Agent orchestration tracks `agents`, `primus_start`, `default_model`,
+  `enable_agent_messages`, `enable_feedback`, `coalitions`, and the
+  `graph_eviction_policy`, which normalises friendly names to canonical
+  tokens.[p1]
+- Reasoning and formatting settings cover `reasoning_mode`, `output_format`,
+  `tracing_enabled`, `monitor_interval`, and CPU or memory warning and critical
+  thresholds.
+- Nested models embed `StorageConfig`, `SearchConfig`, `APIConfig`,
+  `DistributedConfig`, and `AnalysisConfig`. Arbitrary JSON compatible entries
+  flow through `user_preferences` and `agent_config` (keyed by agent name).
+- `distributed` mirrors the distributed toggle, while `active_profile` stores
+  the applied profile identifier.
+- `SettingsConfigDict(extra="ignore")` drops unknown keys. `from_dict` applies
+  the schema field by field when a bulk validation error occurs, preserving the
+  valid subset of user supplied data.
+- Field validators enforce reasoning mode membership, positive token budgets,
+  and canonical eviction policies.
 
 ## Algorithms
 
+### Singleton and lifecycle helpers
+
+1. `ConfigLoader.__new__` returns a process wide singleton, unless a context
+   specific loader is active in `_current_loader`.
+2. `reset_instance` stops any watcher threads, clears the cached loader, and
+   resets the context variable so tests start from a clean state.
+3. `new_for_tests` builds an isolated loader with optional search or `.env`
+   paths, registers it in `_current_loader`, and returns it to callers.
+4. `temporary_instance` yields a fresh loader inside a context manager and
+   restores the singleton afterwards.
+5. Instances support context manager usage (`__enter__`, `__exit__`) and a
+   `close` method that stops watchers before clearing the cached configuration.
+6. The `config` property lazily loads and memoises a `ConfigModel` via
+   `load_config`.
+
 ### load_config
 
-1. Collect variables from `.env`, OS environment, and prefixed keys such as
-   `AUTORESEARCH_*` or `section__nested` pairs.
-2. Search `autoresearch.toml`, `config/autoresearch.toml`, or supplied paths
-   for the first existing configuration file.
-3. Parse TOML content, logging errors via `ConfigError`.
-4. Merge environment overrides into the parsed structure, expanding storage,
-   API, distributed, analysis, and agent sections.
-5. Instantiate nested models and validators, collecting valid values even when
-   some fields fail validation.
-6. Apply active profile overrides when `profiles.<name>` exists in the file or
-   was previously selected with `set_active_profile`.
-7. Create and return a `ConfigModel`; on validation failure, log the error and
-   fall back to defaults.
+1. Read key value pairs from `.env` (when present) and the process environment.
+   Keys prefixed with `AUTORESEARCH_` or containing `__` expand into nested
+   dictionaries.
+2. Search `search_paths` (defaulting to `autoresearch.toml` and
+   `config/autoresearch.toml`) for the first existing file. When found, record
+   its modification time and parse it with `tomllib`. Parsing failures raise
+   `ConfigError` with the source path.
+3. Merge environment overrides into the `core` section. If `backend` is set and
+   `llm_backend` is missing, copy the backend value.
+4. Assemble `StorageConfig` settings from `storage.duckdb`, `storage.rdf`, and
+   top level `storage` keys. Apply environment overrides for the `storage`
+   namespace.
+5. Extract API, distributed, analysis, user preference, and agent dictionaries
+   from the parsed file. A helper `_safe_model` instantiates each nested model
+   and filters out invalid fields when validation errors occur.
+6. Collect enabled agent names to seed the `agents` list and build an
+   `agent_config` mapping of `AgentConfig` instances.
+7. When `distributed.enabled` exists, propagate its boolean into the top level
+   `distributed` field so callers can check a single flag.
+8. Store declared profiles and apply the active profile. If the requested name
+   is unknown, raise `ConfigError` listing valid choices. Applied profiles copy
+   keys into the core settings and persist the selected name.
+9. Construct and return `ConfigModel.from_dict(core_settings)`. This method
+   preserves valid fields when the initial validation fails. Unexpected errors
+   fall back to a default `ConfigModel` after logging.
 
-### watch_changes / watching
+### validate_config
 
-1. Determine which configuration and `.env` paths exist and monitor their parent
-   directories with `watchfiles.watch`.
-2. Spawn a daemon thread that reloads the configuration when a watched file
-   changes.
-3. Update `self._config` with the fresh `ConfigModel` and notify registered
-   observers.
-4. Stop the watcher when the context manager exits or `stop_watching` is
-   invoked.
+- Invokes `load_config` and reports `(True, [])` for success. Validation or
+  runtime failures return `(False, [error message])`.
 
-### register_observer / notify_observers
+### Observer management
 
-1. Maintain a set of callables registered by clients.
-2. On reload, call each observer with the new `ConfigModel` and surface
-   exceptions as `ConfigError` to avoid silent failures.
+- `register_observer` and `unregister_observer` manage a set of callbacks.
+- `notify_observers` invokes each observer with the new `ConfigModel`. Raised
+  exceptions are wrapped in `ConfigError` to avoid silent failures.
 
-### set_active_profile
+### watch_changes and watching
 
-1. Ensure profiles are loaded (calling `load_config` if necessary).
-2. Validate that the requested profile exists; raise `ConfigError` with
-   suggestions when unknown.
-3. Record the active profile, invalidate cached configuration, and notify
-   observers with the new `ConfigModel`.
+1. Optionally register an observer callback and bail out if a watcher thread is
+   already running.
+2. Collect existing config files and the `.env` path. Watch their parent
+   directories with `watchfiles.watch`, and track the absolute paths that
+   should trigger reloads.
+3. Launch a daemon thread (`ConfigWatcher`) with a stop event. The first
+   invocation registers an `atexit` hook to halt the watcher on process exit.
+4. On relevant filesystem events, reload the configuration, replace the cached
+   model, and notify observers. Reload errors raise `ConfigError`.
+5. `stop_watching` sets the stop event, joins the thread, and logs shutdown. The
+   `watching` context manager wraps `watch_changes` and ensures watchers stop on
+   exit.
 
-### temporary_config / get_config
+### set_active_profile and available_profiles
 
-1. Use a `contextvars.ContextVar` to store a temporary configuration override.
-2. `temporary_config` sets the variable for the duration of the context manager
-   and restores the previous state on exit.
-3. `get_config` returns the context override when present, otherwise defers to
-   the singleton `ConfigLoader().config`.
+- `set_active_profile` loads profiles on demand, validates the requested name,
+  clears the cached configuration, and notifies observers with the refreshed
+  `ConfigModel`.
+- `available_profiles` exposes the cached profile names, loading the
+  configuration if necessary.
+
+### temporary_config and get_config
+
+1. `_current_config` stores per context overrides via `ContextVar`.
+2. `temporary_config` sets a temporary `ConfigModel` inside a context manager
+   and restores the previous state afterward.
+3. `get_config` returns the current override when present, otherwise delegates
+   to the singleton `ConfigLoader().config`.
 
 ## Validators
 
-- `normalize_ranking_weights` renormalises ranking weights, fills unspecified
-  fields in proportion to defaults, and rejects totals above `1.0`.
-- `validate_rdf_backend` restricts storage engines to known RDF backends.
-- `validate_reasoning_mode` lowercases or casts inputs into `ReasoningMode`
-  enumerations, reporting invalid strings.
-- `validate_token_budget` coerces numeric strings, rejects non-integer values,
-  and raises when non-positive limits are supplied.
-- `validate_eviction_policy` accepts friendly names, normalises case, and maps
-  them to canonical graph eviction policy tokens.
+- `normalize_ranking_weights` fills missing ranking weights in proportion to
+  defaults, rejects totals above `1.0`, and rebases zeroed configurations to an
+  even split.[p1]
+- `validate_rdf_backend` accepts only supported RDF backends and raises
+  `ConfigError` with the allowed list on invalid input.
+- `validate_reasoning_mode` normalises strings to lowercase before resolving
+  them to `ReasoningMode` enums. Invalid values include the allowed set in the
+  error payload.
+- `validate_token_budget` coerces numeric strings to integers and rejects
+  non positive or non integer values.[p1]
+- `validate_eviction_policy` tolerates friendly casing and maps known strings to
+  canonical policy tokens, raising `ConfigError` for unknown policies.[p1]
 
 ## Invariants
 
-- `ConfigLoader` behaves as a process-wide singleton unless `new_for_tests` or
-  `temporary_instance` is used, ensuring consistent state during normal
-  operation.
-- Environment variables override file values without mutating the original
-  parsed dictionary.
-- Search ranking weights always sum to `1.0`, missing entries inherit defaults,
-  and totals above `1.0` raise `ConfigError` before normalization.[p1]
+- `ConfigLoader` behaves as a singleton unless tests activate a temporary
+  instance, ensuring deterministic state across the process.
+- Environment overrides from `.env`, `AUTORESEARCH_*`, and double underscore
+  keys apply to a copy of the parsed data and never mutate the raw TOML.
+- `llm_backend` mirrors `backend` when no explicit model override is provided.
+- Search ranking weights sum to `1.0`. Missing entries inherit proportional
+  defaults and totals above `1.0` raise `ConfigError` before normalisation.[p1]
 - Zeroed ranking weights rebalance to equal shares so hybrid search remains
   deterministic.[p1]
-- Token budgets must be positive integers or omitted; non-positive or malformed
-  values surface `ConfigError` instead of clipping silently.[p1]
-- Graph eviction policies are validated and case-normalised so downstream
-  components receive canonical identifiers.[p1]
-- Observer notifications always receive validated `ConfigModel` instances.
-- Watch threads stop cleanly and clear `app.state.watch_ctx` during shutdown.
-- Active profiles inherit base settings and only override declared keys.
+- Token budgets must be positive integers or omitted. Invalid entries raise
+  `ConfigError` instead of being clamped.[p1]
+- Graph eviction policies normalise to canonical identifiers before reaching
+  downstream consumers.[p1]
+- Observers always receive validated `ConfigModel` instances. Exceptions bubble
+  up as `ConfigError` to prevent silent failures.
+- Watch threads honour the stop event and join cleanly when `stop_watching` or
+  `close` runs.
 
 ## Proof Sketch
 
-`ConfigLoader` adheres to the atomic reload guarantees outlined in
-[config hot reload](../algorithms/config_hot_reload.md). Parsing occurs before
-state swaps, observers run after validation, and context overrides ensure
-callers within `temporary_config` observe a consistent snapshot. Validators on
-`ConfigModel` and `SearchConfig` enforce canonical states prior to publishing
-updates, preventing downstream drift.
+`ConfigLoader` parses candidate configurations into dictionaries, merges
+environment overrides, and instantiates `ConfigModel.from_dict`. The helper
+retains validated fields even if some entries fail, preventing partial writes
+from breaking the active state. Watchers reload into temporary objects before
+swapping the cached reference, so observers only see validated models. The
+validators enforce token budgets, ranking weights, RDF engines, and eviction
+policies before data reaches other modules.
 
 ## Simulation Expectations
 
-- [Config weight and validator simulation][p1] demonstrates ranking weight,
-  eviction policy, and token budget invariants remain enforced across
-  configuration reloads.
-- Hot-reload simulations toggle configuration values and record transitions in
-  [config_hot_reload_metrics.json][r1], verifying that observers receive updated
-  state exactly once per change.
+- [Config weight and validator simulation][p1] demonstrates ranking weights,
+  eviction policy canonicalisation, and token budget guards across reloads.
+- Hot reload simulations track watcher notifications in
+  [config_hot_reload_metrics.json][r1], confirming observers receive each update
+  exactly once.
 
 ## Traceability
 
