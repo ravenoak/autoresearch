@@ -67,6 +67,13 @@ class VSSExtensionLoader:
                 log.warning("Offline VSS path does not exist: %s", candidate)
             return None
 
+        def _is_duckdb_error(err: Exception) -> bool:
+            try:
+                import duckdb  # type: ignore[import-not-found]
+            except ImportError:  # pragma: no cover - optional dependency
+                return False
+            return isinstance(err, duckdb.Error)
+
         extension_path: Path | None = None
         if cfg.vector_extension_path:
             extension_path = Path(cfg.vector_extension_path).resolve()
@@ -93,6 +100,8 @@ class VSSExtensionLoader:
                         log.warning("VSS extension failed verification after filesystem load")
                 except Exception as e:  # pragma: no cover - defensive
                     log.warning("Failed to load VSS extension from filesystem: %s", e)
+                    if not _is_duckdb_error(e):
+                        raise
 
         if not extension_loaded:
             online_ok = os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
@@ -109,6 +118,8 @@ class VSSExtensionLoader:
                         log.warning("VSS extension may not be fully loaded")
                 except Exception as e:  # pragma: no cover - network or install failure
                     log.error("Failed to load VSS extension: %s", e)
+                    if not _is_duckdb_error(e):
+                        raise
                     extension_loaded = VSSExtensionLoader._load_from_package(conn)
                     if not extension_loaded:
                         extension_loaded = VSSExtensionLoader._load_local_stub(conn)
