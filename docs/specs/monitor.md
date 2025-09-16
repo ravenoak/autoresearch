@@ -2,85 +2,138 @@
 
 ## Overview
 
-Monitoring commands and helpers for Autoresearch. The Typer application exposes
-metrics snapshots, resource recordings, knowledge graph inspection, interactive
-query loops, background monitors, and a node health server. All commands call
-`orch_metrics.ensure_counters_initialized` before execution. Algorithms and
-reliability analysis appear in [monitor CLI](../algorithms/monitor_cli.md).
+The monitor package hosts the Typer application registered as
+`autoresearch monitor`. Its commands stream live system metrics, sample
+resource usage, inspect the knowledge graph, run an interactive
+orchestrator loop, and supervise background monitors. The package also
+exposes the async `metrics_endpoint` for FastAPI routers so HTTP clients
+can scrape Prometheus metrics alongside the CLI utilities.
+
+A Typer callback calls `orch_metrics.ensure_counters_initialized()`
+before every command. `ConfigLoader` supplies CPU and memory thresholds
+that drive the health indicator and provides the default sampling
+interval when `--interval` is omitted. Background sampling reuses
+`ResourceMonitor` and `SystemMonitor`, letting CLI commands and HTTP
+scrapers observe the same gauges.
 
 ## Algorithms
 
 ### metrics
 
-1. Collect system metrics via `_collect_system_metrics`, aggregating CPU,
-   memory, GPU, and orchestration counters.
-2. Render a Rich table (`_render_metrics`).
-3. When `--watch` is provided, refresh the table every second using `Live`
-   without mutating counters.
+1. `_collect_system_metrics` merges values from `_system_monitor` when a
+   background sampler is running; otherwise it calls
+   `SystemMonitor.collect()` for a fresh psutil snapshot.
+2. psutil adds process RSS and total memory usage, GPU utilisation comes
+   from `resource_monitor._get_gpu_stats()`, and orchestration counters
+   are read via `._value.get()` without incrementing them.
+3. `_calculate_health` compares CPU and memory readings against
+   configuration thresholds to add a `health` field, and
+   `_render_metrics` colour-codes the row in a Rich table.
+4. With `--watch`, `Live` refreshes the table every second until
+   interrupted; otherwise the console prints a single snapshot.
 
 ### resources
 
-1. Instantiate `OrchestrationMetrics` to record system resource samples for the
-   requested duration.
-2. Loop until the timer expires, recording CPU, memory, and GPU values once per
-   second and updating a progress bar.
-3. Print a summary table when sampling completes.
+1. Instantiate `OrchestrationMetrics` and compute the end time from the
+   requested `--duration`.
+2. Loop once per second, calling `record_system_resources()` and
+   advancing a Rich progress bar until the timer expires.
+3. Query `tracker.get_summary()["resource_usage"]` and render a table
+   with timestamps plus CPU, memory, GPU, and GPU-memory columns.
 
 ### graph
 
-1. Read the in-memory knowledge graph via `StorageManager.get_graph()` when
-   available.
-2. Render a table of edges or a Rich `Tree` when `--tree` or `--tui` is set.
+1. `_collect_graph_data` tries `StorageManager.get_graph()` and builds a
+   dictionary of node -> edges, falling back to `{}` when storage is not
+   configured.
+2. When `--tui` is provided the command wraps a `Tree` view in a Rich
+   `Panel`; otherwise it renders a `Tree` when `--tree` is set or a table
+   by default.
 
 ### run
 
-1. Prompt for queries until the user enters `""` or `"q"`.
-2. Execute `Orchestrator.run_query` with an `on_cycle_end` callback that prints
-   cycle metrics, system metrics, and token budget usage.
-3. Collect optional feedback; on `"q"`, set `state.error_count` to force exit
-   via the configured `max_errors` threshold.
-4. Format the final result using `OutputFormatter` without initialising storage.
+1. Load the active configuration and prompt for queries until the user
+   submits an empty string or `q`.
+2. For each query create a progress bar sized to `config.loops` and call
+   `Orchestrator.run_query` with an `on_cycle_end` callback that advances
+   progress and captures each `QueryState`.
+3. The callback prints a table of `execution_metrics`, appends the
+   current system metrics table, and, when `token_budget` is configured,
+   shows a `Budget` versus `Used` table.
+4. Feedback collected with `Prompt.ask` appends structured claims; the
+   input `q` sets `state.error_count` to `config.max_errors` (default 3)
+   and flips an `abort_flag` so the outer loop terminates after the
+   current run.
+5. Results are formatted via `OutputFormatter.format` using
+   `config.output_format` or falling back to JSON when stdout is not a
+   TTY; exceptions are reported without stopping the monitor entirely.
 
 ### start
 
-1. Determine the sampling interval from CLI options or configuration.
-2. Start `ResourceMonitor` (with optional Prometheus export) and
-   `SystemMonitor`, storing the latter globally for reuse by `metrics`.
-3. Loop until interrupted, then stop both monitors and clear global state.
+1. Derive the sampling interval from `--interval` or
+   `config.monitor_interval`.
+2. Instantiate `ResourceMonitor` and assign a new `_system_monitor`
+   pointing to `SystemMonitor(interval=interval)`.
+3. Start `ResourceMonitor`, passing `prometheus_port=port` when
+   `--prometheus` is supplied, and call `_system_monitor.start()`.
+4. Print a status banner, sleep until interrupted, then stop both
+   monitors inside a `finally` block and clear `_system_monitor`.
 
 ### serve
 
-1. Instantiate `NodeHealthMonitor` with optional Redis URL, Ray address, port,
-   and interval.
-2. Start the Prometheus HTTP server and background check thread.
-3. Sleep until interrupted, then stop the monitor and exit with status 0.
+1. Build `NodeHealthMonitor` with the provided Redis URL, Ray address,
+   port, and interval.
+2. Print startup messages, invoke `monitor.start()` (which launches the
+   HTTP server and background thread), and sleep in a loop.
+3. On `KeyboardInterrupt` or `SystemExit`, log shutdown, invoke
+   `monitor.stop()` inside `finally`, and exit with `typer.Exit(0)`.
+
+### metrics_endpoint
+
+1. `metrics_endpoint` returns a `PlainTextResponse` containing
+   `generate_latest()` output and `CONTENT_TYPE_LATEST`, giving HTTP
+   clients Prometheus-formatted metrics with status code 200.
 
 ## Invariants
 
-- `metrics` reads orchestration counters but never increments them.
-- `_system_monitor` is started only once and stopped when `start` exits, keeping
-  metrics consistent for subsequent commands.
-- `NodeHealthMonitor` gauges reset to zero before each health check, ensuring
-  stale values do not persist.
-- `run` does not initialise storage directly; it relies on orchestrator
-  callbacks so monitors can operate without database configuration.
-- `serve` always stops the monitor thread before exiting, preventing orphaned
-  background work.
+- The Typer callback always initialises orchestration counters before any
+  command executes.
+- `_collect_system_metrics` reuses cached snapshots when possible and
+  only reads orchestration counters, so CLI commands never mutate totals.
+- `_system_monitor` is created once per `start` invocation and cleared in
+  the `finally` block, keeping future `metrics` calls consistent.
+- `_gauge` zeroes reused Prometheus gauges and `NodeHealthMonitor.check_once`
+  overwrites every gauge each interval, preventing stale readings.
+- `ResourceMonitor.start()` and `SystemMonitor.start()` guard against
+  duplicate threads, making repeated `start` invocations idempotent.
+- `serve` always executes `monitor.stop()` through its `finally` block,
+  so the background health thread halts even after interrupts.
 
 ## Proof Sketch
 
-`monitor` commands are thin wrappers around the primitives documented in
-[monitor CLI](../algorithms/monitor_cli.md). Each command prints deterministic
-Rich output and guards cleanup paths with `try`/`finally` blocks so monitors
-stop reliably. Unit tests exercise CLI entry points, metrics collection,
-feedback loops, and GPU/resource integration, providing empirical evidence
-that the invariants hold.
+- `tests/unit/test_monitor_metrics_init.py` confirms the Typer callback
+  initialises counters before commands run.
+- `tests/unit/test_monitor_cli.py` verifies the `metrics` command prints
+  CPU, memory, GPU, and counter data while `run` routes callbacks and
+  honours feedback.
+- `tests/unit/test_main_monitor_commands.py` exercises the CLI wiring and
+  ensures `monitor serve` stops its monitor on exit.
+- `tests/unit/test_node_health_monitor_property.py` uses property tests
+  to show gauge updates match Redis/Ray health outcomes.
+- `tests/unit/test_system_monitor.py` confirms `SystemMonitor` captures
+  CPU and memory percentages and exposes them through gauges.
+- `tests/integration/test_monitor_metrics.py` covers Prometheus scraping,
+  resource sampling tables, and counter increments across the CLI and
+  HTTP surfaces.
 
-## Simulation Expectations
+## Simulation Evidence
 
-[monitor_cli_reliability.py][s1] runs Monte Carlo analyses of sampling latency
-and failure rates, while GPU/resource tests simulate environments with and
-without GPU metrics to confirm graceful degradation.
+`scripts/monitor_cli_reliability.py` performs a Monte Carlo simulation of
+metrics collection latency and failure probability. Run
+`uv run scripts/monitor_cli_reliability.py --runs 1000 --fail-rate 0.05`
+to obtain `average_latency_ms` and `success_rate` estimates. Integration
+tests also simulate GPU present/absent scenarios so resource sampling and
+counter snapshots degrade gracefully when GPU metrics are unavailable.
 
 ## Traceability
 
@@ -90,19 +143,25 @@ without GPU metrics to confirm graceful degradation.
   - [src/autoresearch/monitor/metrics.py][m3]
   - [src/autoresearch/monitor/node_health.py][m4]
   - [src/autoresearch/monitor/system_monitor.py][m5]
+- Scripts
+  - [scripts/monitor_cli_reliability.py][s1]
 - Tests
   - [tests/unit/test_main_monitor_commands.py][t1]
   - [tests/unit/test_monitor_cli.py][t2]
-  - [tests/unit/test_resource_monitor_gpu.py][t3]
-  - [tests/integration/test_monitor_metrics.py][t4]
+  - [tests/unit/test_monitor_metrics_init.py][t3]
+  - [tests/unit/test_node_health_monitor_property.py][t4]
+  - [tests/unit/test_system_monitor.py][t5]
+  - [tests/integration/test_monitor_metrics.py][t6]
 
 [m1]: ../../src/autoresearch/monitor/__init__.py
 [m2]: ../../src/autoresearch/monitor/cli.py
 [m3]: ../../src/autoresearch/monitor/metrics.py
 [m4]: ../../src/autoresearch/monitor/node_health.py
 [m5]: ../../src/autoresearch/monitor/system_monitor.py
+[s1]: ../../scripts/monitor_cli_reliability.py
 [t1]: ../../tests/unit/test_main_monitor_commands.py
 [t2]: ../../tests/unit/test_monitor_cli.py
-[t3]: ../../tests/unit/test_resource_monitor_gpu.py
-[t4]: ../../tests/integration/test_monitor_metrics.py
-[s1]: ../../scripts/monitor_cli_reliability.py
+[t3]: ../../tests/unit/test_monitor_metrics_init.py
+[t4]: ../../tests/unit/test_node_health_monitor_property.py
+[t5]: ../../tests/unit/test_system_monitor.py
+[t6]: ../../tests/integration/test_monitor_metrics.py
