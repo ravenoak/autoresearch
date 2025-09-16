@@ -3,12 +3,14 @@ from autoresearch.cli_helpers import (
     parse_agent_groups,
     handle_command_not_found,
     report_missing_tables,
+    require_api_key,
 )
 import io
 import pytest
 import typer
 from pathlib import Path
 from rich.console import Console
+from fastapi import HTTPException
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -32,6 +34,19 @@ def test_find_similar_commands_respects_threshold():
 
 def test_parse_agent_groups_discards_empty_groups():
     assert parse_agent_groups([" ", ", ,"]) == []
+
+
+def test_require_api_key_missing_header():
+    with pytest.raises(HTTPException) as excinfo:
+        require_api_key({})
+    assert excinfo.value.status_code == 401
+    assert excinfo.value.detail == "Missing API key"
+    assert excinfo.value.headers == {"WWW-Authenticate": "API-Key"}
+
+
+def test_require_api_key_accepts_present_header():
+    # Should not raise when the header is available.
+    require_api_key({"X-API-Key": "secret"})
 
 
 def test_report_missing_tables_sorts_and_prints(capsys, monkeypatch):

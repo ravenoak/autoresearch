@@ -1,4 +1,4 @@
-# Cli Helpers
+# CLI Helpers
 
 ## Overview
 
@@ -10,35 +10,40 @@ state warnings with consistent Rich output.
 
 ### find_similar_commands
 
-1. Call `difflib.get_close_matches` with a maximum of three suggestions and a
+1. Call `difflib.get_close_matches` with up to three suggestions and a
    configurable cutoff.
-2. Return the matches as a list to keep the API stable for tests.
+2. Return the matches as a list to keep the API stable for CLI consumers and
+   tests.
 
 ### parse_agent_groups
 
 1. Split each string on commas.
-2. Strip whitespace and discard empty agent names.
-3. Append only non-empty groups to preserve input ordering.
+2. Strip whitespace, discard empty agent names, and preserve group ordering.
+3. Append only non-empty groups so the caller receives concrete team
+   assignments.
 
 ### require_api_key
 
 1. Check for an `X-API-Key` header in the provided mapping.
-2. Raise `HTTPException(status_code=401)` with a `WWW-Authenticate: API-Key`
-   header when missing.
-3. Return `None` when the header is present.
+2. Raise `HTTPException(status_code=401)` with a `detail` of `"Missing API key"`
+   and a `WWW-Authenticate: API-Key` header when the key is absent.
+3. Return `None` without side effects when the header is present.
 
 ### report_missing_tables
 
 1. Exit immediately when the input sequence is empty.
 2. Sort table names, join them with commas, and render either to the provided
-   `Console` or through `print_error` with a suggestion.
+   `Console` or through `print_error` with a schema initialization suggestion.
 
 ### handle_command_not_found
 
 1. Emit a formatted error for the unknown command.
 2. Collect subcommand names from the active Click/Typer context.
-3. Suggest similar commands via `find_similar_commands` and show examples.
-4. Raise `typer.Exit(code=1)` to stop execution.
+3. Suggest similar commands via `find_similar_commands`, announce them with
+   `print_info(symbol=False)`, and display each example through
+   `print_command_example`.
+4. Raise `typer.Exit(code=1)` after printing the `typer.secho` help hint to stop
+   execution.
 
 ## Invariants
 
@@ -46,8 +51,10 @@ state warnings with consistent Rich output.
   the cutoff threshold.
 - `parse_agent_groups` returns only non-empty, trimmed agent names and preserves
   original ordering.
-- `require_api_key` always raises `HTTPException` with a `WWW-Authenticate`
+- `require_api_key` always raises `HTTPException` with the documented detail and
   header when the key is missing.
+- `require_api_key` performs no work when the header is present, ensuring
+  idempotent authorization checks.
 - `report_missing_tables` sorts table names consistently and never emits output
   when the input is empty.
 - `handle_command_not_found` always raises `typer.Exit` after printing
@@ -67,7 +74,7 @@ state warnings with consistent Rich output.
   are impossible.
 - `require_api_key` checks a single dictionary key and raises immediately,
   ensuring no downstream code executes without credentials.
-- `report_missing_tables` shares the same branch regardless of whether a
+- `report_missing_tables` shares the same guidance regardless of whether a
   `Console` is supplied, keeping messages deterministic.
 - `handle_command_not_found` finishes by raising `typer.Exit`, preventing the
   CLI from continuing in an invalid state.
@@ -75,8 +82,17 @@ state warnings with consistent Rich output.
 ## Simulation Expectations
 
 Unit tests cover threshold handling, group parsing edge cases, missing header
-errors, sorted table reporting, and friendly suggestions for mistyped
-commands.
+errors, sorted table reporting, and friendly suggestions for mistyped commands.
+
+## Proof Obligations
+
+- `find_similar_commands` and `parse_agent_groups` behaviors are asserted in
+  fuzziness and parsing tests within [tests/unit/test_cli_helpers.py][t1].
+- `require_api_key` guard rails are verified through missing and present header
+  simulations in [tests/unit/test_cli_helpers.py][t1].
+- `report_missing_tables` rendering paths and `handle_command_not_found`
+  suggestion flows are exercised end-to-end in
+  [tests/unit/test_cli_helpers.py][t1].
 
 ## Traceability
 
