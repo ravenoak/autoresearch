@@ -1,5 +1,5 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import duckdb
 import pytest
@@ -39,6 +39,27 @@ class TestVSSExtensionLoader:
         assert VSSExtensionLoader.verify_extension(conn) is False
         conn.execute.assert_called_once_with(
             "SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"
+        )
+
+    @pytest.mark.real_vss
+    def test_verify_extension_fallback_to_stub_probe(self):
+        """Fallback probe runs only when duckdb_extensions() raises."""
+        conn = MagicMock()
+        conn.execute.side_effect = [
+            duckdb.Error("missing function"),
+            MagicMock(),
+        ]
+
+        assert VSSExtensionLoader.verify_extension(conn) is True
+        assert conn.execute.call_count == 2
+        conn.execute.assert_has_calls(
+            [
+                call("SELECT * FROM duckdb_extensions() WHERE extension_name = 'vss'"),
+                call(
+                    "SELECT 1 FROM information_schema.tables "
+                    "WHERE table_name='vss_stub'"
+                ),
+            ]
         )
 
     @patch("autoresearch.extensions.ConfigLoader")

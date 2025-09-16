@@ -241,6 +241,18 @@ class VSSExtensionLoader:
         except Exception as err:  # pragma: no cover - defensive
             if verbose:
                 log.warning("VSS extension verification failed: %s", err)
+            try:
+                conn.execute(
+                    "SELECT 1 FROM information_schema.tables "
+                    "WHERE table_name='vss_stub'"
+                )
+                if verbose:
+                    log.info("VSS stub marker present")
+                return True
+            except Exception as stub_err:  # pragma: no cover - defensive
+                if verbose:
+                    log.warning("VSS stub verification failed: %s", stub_err)
+                return False
         else:
             if result and len(result) > 0:
                 if verbose:
@@ -248,16 +260,4 @@ class VSSExtensionLoader:
                 return True
             if verbose:
                 log.warning("VSS extension is not loaded")
-            return False
-
-        try:
-            conn.execute(
-                "SELECT 1 FROM information_schema.tables WHERE table_name='vss_stub'"
-            )
-            if verbose:
-                log.info("VSS stub marker present")
-            return True
-        except Exception as err:  # pragma: no cover - defensive
-            if verbose:
-                log.warning("VSS stub verification failed: %s", err)
             return False
