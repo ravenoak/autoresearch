@@ -14,6 +14,9 @@ checks are required.
 - `task --version` still returns "command not found", so install Go Task with
   `scripts/setup.sh` (or a package manager) before using the Taskfile.
   【6c3849†L1-L3】
+- Resynced the `dev-minimal`, `test`, and `docs` extras and reran the
+  environment audit; `scripts/check_env.py` now flags only the missing Go Task
+  CLI in this container. 【ecec62†L1-L24】【5505fc†L1-L27】
 - `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails in
   teardown because `test_monitor_cli.py::test_metrics_skips_storage` replaces
   `ConfigLoader.load_config` with a bare object that lacks `storage`. The
@@ -22,6 +25,10 @@ checks are required.
   `AttributeError: 'C' object has no attribute 'storage'`. This blocks the
   broader unit suite until teardown tolerates patched loaders or the test
   supplies a storage stub. 【990fdc†L1-L66】【d23bdc†L1-L66】【93fac3†L10-L52】
+- Reproduced the storage teardown regression after resyncing extras; the
+  targeted storage suite still halts with
+  `AttributeError: 'C' object has no attribute 'storage'` in
+  `storage.teardown`, so coverage remains blocked. 【1ffd0e†L1-L56】
 - Distributed coordination property tests still pass when invoked directly,
   confirming the restored simulation exports once the suite reaches them.
   【09e2a9†L1-L2】
@@ -31,6 +38,9 @@ checks are required.
   but warns that `docs/status/task-coverage-2025-09-17.md` is not listed in the
   navigation. Add the status coverage log to `mkdocs.yml` to clear the warning
   before release notes are drafted. 【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+- Added the task coverage log to the MkDocs navigation and confirmed
+  `uv run --extra docs mkdocs build` now finishes without navigation
+  warnings. 【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】
 - Regenerated `SPEC_COVERAGE.md` with
   `uv run python scripts/generate_spec_coverage.py --output SPEC_COVERAGE.md`
   to confirm every module retains spec and proof references. 【a99f8d†L1-L2】

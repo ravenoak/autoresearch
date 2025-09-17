@@ -8,10 +8,13 @@ during teardown. After syncing the `dev-minimal` and `test` extras,
 `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`, raising
 `AttributeError: 'C' object has no attribute 'storage'` when
 `storage.teardown(remove_db=True)` runs. A focused invocation of the same test
-produces the identical teardown failure. The fixture loads the active
-configuration to locate RDF paths; when the patched loader returns an object
-without `storage`, `storage.teardown` raises. 【F:tests/unit/test_monitor_cli.py†L41-L88】
-【93590e†L1-L7】【7f1069†L1-L7】【990fdc†L1-L66】【d23bdc†L1-L66】【93fac3†L10-L52】
+produces the identical teardown failure. Re-running the targeted storage suite
+after resyncing the `dev-minimal`, `test`, and `docs` extras still raises the
+same `AttributeError`, so coverage remains blocked until teardown handles the
+patched config. The fixture loads the active configuration to locate RDF paths;
+when the patched loader returns an object without `storage`,
+`storage.teardown` raises. 【F:tests/unit/test_monitor_cli.py†L41-L88】
+【ecec62†L1-L24】【1ffd0e†L1-L56】
 
 ## Dependencies
 - None

@@ -56,6 +56,8 @@ nav:
     - Contributing: contributing.md
     - Releasing Workflow: releasing.md
     - Release Plan: release_plan.md
+    - Status Reports:
+        - Task coverage – 2025-09-17: status/task-coverage-2025-09-17.md
     - Release Notes:
         - Overview: release_notes.md
         - Version 0.1.0a1: release_notes/v0.1.0a1.md

@@ -10,7 +10,10 @@ tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
 autouse `cleanup_storage` fixture invokes `storage.teardown(remove_db=True)`
 during teardown and raises `AttributeError: 'C' object has no attribute 'storage'`,
 so `uv run --extra test pytest tests/unit -k "storage" -q` aborts
-before the distributed scenarios execute. 【990fdc†L1-L66】【d23bdc†L1-L66】 A
+before the distributed scenarios execute. Rerunning the storage subset after
+resyncing the development extras reproduces the same teardown failure, so the
+property suite remains blocked until storage cleanup is hardened.
+【ecec62†L1-L24】【1ffd0e†L1-L56】 A
 targeted run of `tests/unit/distributed/test_coordination_properties.py` still
 passes, confirming the helpers behave as expected once the suite reaches them,
 but we must keep this ticket open until the storage teardown regression is
