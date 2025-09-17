@@ -1,9 +1,9 @@
 # Fix search ranking and extension tests
 
 ## Context
-Search-related tests continue to fail, but the scope narrowed again on
-September 17, 2025. Extension bootstrapping now behaves as expected:
-`uv run --extra test pytest`
+Search-related tests continued to fail until the search ranking regression
+closed on September 17, 2025. Extension bootstrapping now behaves as
+expected: `uv run --extra test pytest`
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
 `test_load_extension_download_unhandled_exception -q` succeeds and
 confirms non-DuckDB errors still propagate. Integration coverage for
@@ -11,15 +11,12 @@ ranking consistency (`tests/integration/test_ranking_formula_consistency.py`)
 and optional extras (`tests/integration/test_optional_extras.py`) also
 passes with the `[test]` extras installed.
 
-The remaining regression lives in
 `tests/unit/search/test_ranking_formula.py::`
-`test_rank_results_weighted_combination`.
-`SearchConfig.normalize_ranking_weights` now raises `ConfigError` when the
-supplied weights sum above one, so the test fails after constructing a
-`ConfigModel` with weights `(bm25=2.0, semantic=8.0, credibility=0.0)`.
-The validator is documented in `docs/specs/config.md`, so the test either
-needs to adopt legal weights or assert the new exception. Ranking formula
-docs still describe the normalization ladder correctly.
+`test_rank_results_weighted_combination` now exercises the default convex
+weights documented in `docs/specs/search_ranking.md`, so the validator no
+longer raises `ConfigError`. The updated assertions confirm the normalized
+weights, semantic dominance, and scoring fallbacks described in the
+specification.
 
 ## Dependencies
 None.
@@ -37,4 +34,4 @@ None.
 - Docs reference extension loading and ranking formulae.
 
 ## Status
-Open
+Archived

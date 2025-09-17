@@ -1,20 +1,22 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 16, 2025**
+organized by phases from the code complete plan. As of **September 17, 2025**
 the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
-Targeted unit tests now confirm that
-`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`
-and the DuckDB offline fallback suite both pass, but
+Targeted unit tests confirm that
+`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`,
+the DuckDB offline fallback suite,
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_load_extension_download_unhandled_exception` fails because
-`VSSExtensionLoader.load_extension` suppresses unexpected runtime errors. The
-API authentication middleware test succeeds. Running `pytest` without the
-`[test]` extras still triggers `PytestConfigWarning: Unknown config option:
-bdd_features_base_dir` because `pytest-bdd` is not yet installed, and
-`uv run mkdocs build` fails until the docs extras sync `mkdocs` onto the PATH.
-Unit coverage and `task verify` remain blocked while these regressions persist.
+test_load_extension_download_unhandled_exception`, and
+`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
+all pass after the ranking weights were updated. However,
+`uv run --extra test pytest tests/unit -q` now aborts during collection because
+`scripts/distributed_coordination_sim.py` no longer exports `elect_leader` or
+`process_messages`, so the distributed property tests cannot import their
+reference helpers. `uv run mkdocs build` still fails until the docs extras sync
+`mkdocs` onto the PATH. Unit coverage and `task verify` remain blocked while
+the Task CLI is missing and the distributed regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

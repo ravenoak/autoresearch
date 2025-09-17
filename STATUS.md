@@ -14,10 +14,14 @@ checks are required.
   `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
   `test_load_extension_download_unhandled_exception -q` passes and keeps
   propagating non-DuckDB errors.
-- `uv run --extra test pytest tests/unit/search/test_ranking_formula.py -q`
-  fails in `test_rank_results_weighted_combination` because overweight
-  ranking vectors now raise `ConfigError`; updating that test remains the
-  primary blocker.
+- `uv run --extra test pytest`
+  `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination -q`
+  now passes with the documented convex weights, confirming the validator
+  and ranking formula stay in sync.
+- `uv run --extra test pytest tests/unit -q` fails during collection because
+  `scripts/distributed_coordination_sim.py` no longer exports `elect_leader`
+  or `process_messages`, so the distributed coordination property tests
+  cannot import their reference helpers.
 - Integration coverage for ranking and optional extras is stable once
   weights are legal:
   `tests/integration/test_ranking_formula_consistency.py -q` and
@@ -161,7 +165,8 @@ checks are required.
   to confirm every module has matching specifications and proofs.
 - Opened [add-oxigraph-backend-proofs](issues/add-oxigraph-backend-proofs.md) to
   provide formal validation for the OxiGraph storage backend.
-- Generated `SPEC_COVERAGE.md` linking modules to specs and proofs; opened issues for missing or outdated specs.
+- Generated `SPEC_COVERAGE.md` linking modules to specs and proofs; opened
+  issues for missing or outdated specs.
 
 - Added `task check EXTRAS="llm"` instructions to README and testing
   guidelines; archived
@@ -187,7 +192,8 @@ checks are required.
 - Archived [resolve-mypy-errors-in-orchestrator-perf-and-search-core][resolve-mypy-errors-archive]
   after mypy passed in `task check`.
 
-[resolve-mypy-errors-archive]: issues/archive/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md
+[resolve-mypy-errors-archive]:
+  issues/archive/resolve-mypy-errors-in-orchestrator-perf-and-search-core.md
 
 ## September 13, 2025
 - Installed Task CLI via setup script; archived
@@ -595,10 +601,10 @@ regression is resolved.
 ## Open issues
 
 ### Release blockers
-- [fix-search-ranking-and-extension-tests](
-  issues/fix-search-ranking-and-extension-tests.md) –
-  Update the overweight ranking test so it matches the validator while
-  keeping extension and integration suites green.
+- [restore-distributed-coordination-simulation-exports](
+  issues/restore-distributed-coordination-simulation-exports.md) –
+  Restore the leader election and message ordering helpers so the unit
+  suite and proofs align with the distributed coordination spec.
 - [resolve-resource-tracker-errors-in-verify](
   issues/resolve-resource-tracker-errors-in-verify.md)
   – Run `task verify` end-to-end once Task is installed to confirm the
