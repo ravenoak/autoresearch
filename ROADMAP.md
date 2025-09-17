@@ -13,18 +13,23 @@ See [STATUS.md](STATUS.md) for current results and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
-manual install provides the binary. Targeted tests on **September 17, 2025**
-show the DuckDB extension loader suite and
-`tests/unit/search/test_ranking_formula.py::`
+manual install provides the binary. Running `uv sync --extra dev-minimal --extra
+test` followed by `uv run python scripts/check_env.py` leaves only the missing
+Go Task CLI warning in this environment. 【024fb5†L1-L13】【f56f62†L1-L24】
+Targeted tests on **September 17, 2025** show the DuckDB extension loader suite
+and `tests/unit/search/test_ranking_formula.py::`
 `test_rank_results_weighted_combination` now pass with the documented convex
-weights. However, `uv run --extra test pytest tests/unit -q` fails during
-collection because `scripts/distributed_coordination_sim.py` no longer exports
-`elect_leader` or `process_messages`, so the distributed property tests cannot
-import their reference helpers. Integration scenarios for ranking consistency
-and optional extras still pass with the `[test]` extras installed, and CLI
-helper plus data analysis suites run with
-`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs`
-build still fails until docs extras install `mkdocs`. Release blockers remain
+weights. 【af6378†L1-L2】【75e1fd†L1-L2】 However, `uv run --extra test pytest`
+`tests/unit -q` fails during collection because
+`scripts/distributed_coordination_sim.py` no longer exports `elect_leader` or
+`process_messages`, so the distributed property tests cannot import their
+reference helpers. 【b4944c†L1-L23】 Integration scenarios for ranking
+consistency and optional extras still pass with the `[test]` extras installed,
+and CLI helper plus data analysis suites run with
+`PYTHONWARNINGS=error::DeprecationWarning` without warnings.
+【50b44e†L1-L2】【7a8f55†L1-L2】
+`uv run mkdocs build` still fails until docs extras install `mkdocs`.
+【6bcbaa†L1-L3】 Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [resolve-resource-tracker-errors-in-verify](
