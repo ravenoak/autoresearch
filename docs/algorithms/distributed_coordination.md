@@ -65,21 +65,23 @@ utilization rising from ~0% with one node to ~30% with two nodes and
 
 ### Leader Election
 
-The coordinator selects the agent with the lowest identifier as the leader.
-Given `n` unique identifiers, the election terminates in `O(n)` comparisons
-and produces exactly one leader. The chosen identifier is guaranteed to
-belong to the original set, ensuring safety and determinism
-([simulation script][dc-sim]).
+The helper ``elect_leader`` in the
+[`distributed_coordination_sim.py`][dc-sim] module selects the agent with the
+lowest identifier as the leader. Given `n` unique identifiers, the election
+terminates in `O(n)` comparisons and produces exactly one leader. The chosen
+identifier is guaranteed to belong to the original set, ensuring safety and
+determinism.
 
 [dc-sim]: ../../scripts/distributed_coordination_sim.py
 
 ### Message Ordering
 
 `InMemoryBroker` relies on ``multiprocessing.Queue`` and therefore preserves
-first-in-first-out semantics. Messages are dequeued in the same order they
-are published, yielding a total order consistent with enqueue time under a
-single broker process
-([broker.py](../../src/autoresearch/distributed/broker.py)).
+first-in-first-out semantics. Messages are dequeued in the same order they are
+published, yielding a total order consistent with enqueue time under a single
+broker process ([broker.py](../../src/autoresearch/distributed/broker.py)). The
+``process_messages`` helper in [`distributed_coordination_sim.py`][dc-sim]
+provides an executable model of this FIFO guarantee for property tests.
 
 ### Convergence
 
