@@ -19,7 +19,8 @@ This guide outlines how to write and maintain module specifications.
 
 - Update specs when behavior or interfaces change.
 - Keep links to code and tests current.
-- Run `uv run mkdocs build` to validate documentation.
+- Run `task docs` (or `uv run --extra docs mkdocs build`) to validate
+  documentation.
 - Use simulations to explore edge cases and assumptions.
 
 ## Review

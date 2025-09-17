@@ -11,6 +11,9 @@ Follow these steps to publish a new version of Autoresearch.
   uv run scripts/publish_dev.py --dry-run
   ```
 
+- Build the documentation with `task docs` (or `uv run --extra docs mkdocs
+  build`) to ensure the site compiles with the docs extras.
+
 - Upload the validated build to TestPyPI.
 
   ```bash

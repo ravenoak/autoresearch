@@ -25,7 +25,9 @@ pytest tests/unit -q` fails during collection because
 `process_messages`, so the distributed property tests cannot import their
 reference helpers. 【382418†L1-L23】 CLI helper and data analysis suites run with
 `PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs build`
-still fails until docs extras install `mkdocs`. 【9f25fa†L1-L3】 Release blockers remain
+still fails until docs extras install `mkdocs`, so run `task docs` (or `uv run
+--extra docs mkdocs build`) to pull the dependencies automatically.
+【9f25fa†L1-L3】 Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [resolve-resource-tracker-errors-in-verify](

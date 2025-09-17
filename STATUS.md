@@ -27,7 +27,11 @@ checks are required.
 - CLI helper and data analysis suites run with
   `PYTHONWARNINGS=error::DeprecationWarning` and report no warnings.
 - `uv run mkdocs build` still fails with `No such file or directory` because
-  docs extras are not installed. 【9f25fa†L1-L3】
+  docs extras are not installed; run `task docs` (or `uv run --extra docs
+  mkdocs build`) to pull them automatically. 【9f25fa†L1-L3】
+- Contributor docs and the release checklist now direct maintainers to run
+  `task docs` or `uv run --extra docs mkdocs build` before building the site,
+  keeping the workflow aligned with the Taskfile.
 - Regenerated `SPEC_COVERAGE.md` with
   `uv run python scripts/generate_spec_coverage.py --output SPEC_COVERAGE.md`
   to confirm every module retains spec and proof references. 【a99f8d†L1-L2】
@@ -62,8 +66,8 @@ checks are required.
   the unsynced environment; run `uv sync --extra test` or `scripts/setup.sh`
   before executing tests to avoid warnings.
 - `uv run mkdocs build` fails with `No such file or directory` because docs
-  extras are not installed yet; sync them (e.g. `uv sync --extra docs`) before
-  building the documentation.
+  extras are not installed yet; sync them (e.g. `uv sync --extra docs` or run
+  `task docs`) before building the documentation.
 
 ## September 15, 2025
 - The evaluation container does not ship with the Go Task CLI;

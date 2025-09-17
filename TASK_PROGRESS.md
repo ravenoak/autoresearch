@@ -15,7 +15,9 @@ However, `uv run --extra test pytest tests/unit -q` still aborts during
 collection because `scripts/distributed_coordination_sim.py` no longer exports
 `elect_leader` or `process_messages`, so the distributed property tests cannot
 import their reference helpers. 【382418†L1-L23】 `uv run mkdocs build` still fails
-until the docs extras sync `mkdocs` onto the PATH. 【9f25fa†L1-L3】 Unit coverage and `task verify` remain blocked while the
+until the docs extras sync `mkdocs` onto the PATH, so run `task docs` (or `uv
+run --extra docs mkdocs build`) to install them automatically. 【9f25fa†L1-L3】
+Unit coverage and `task verify` remain blocked while the
 Task CLI is missing and the distributed regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
