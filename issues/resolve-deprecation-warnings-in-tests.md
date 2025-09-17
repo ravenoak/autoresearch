@@ -14,19 +14,20 @@ On September 17, 2025, targeted retries with
 showed no remaining warnings in the CLI helper suite or distributed perf
 comparison test. The `sitecustomize.py` shim that rewrites
 `weasel.util.config` appears to be working, and the Click bump to 8.2.1 removed
-the original warning. After resyncing the `dev-minimal`, `test`, and `docs` extras,
-`uv run python scripts/check_env.py` still reports only the missing Go Task
-CLI, but `uv run --extra test pytest tests/unit -q` fails in teardown when
-monitor CLI metrics tests patch `ConfigLoader.load_config` to return
-`type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
-`AttributeError: 'C' object has no attribute 'storage'`, so the suite aborts
-before we can rerun the warnings sweep under Task. Targeted reruns of the
-storage-focused subset reproduce the same teardown error, confirming we must
-stabilize cleanup before checking for residual warnings.
-【ecec62†L1-L24】【5505fc†L1-L27】【1ffd0e†L1-L56】
+the original warning. After resyncing the `dev-minimal`, `test`, and `docs`
+extras, `uv run python scripts/check_env.py` still reports only the missing Go
+Task CLI. 【e6706c†L1-L26】 The storage teardown regression is fixed—the patched
+monitor metrics test now passes—so the unit suite advances to the storage
+eviction simulation. 【04f707†L1-L3】 `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` currently fails at
+`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
+because `_enforce_ram_budget` prunes nodes even when the mocked RAM usage stays
+within the budget. 【d7c968†L1-L164】 We must repair that regression and restore
+the Task CLI before rerunning the warnings sweep under Task with
+`PYTHONWARNINGS=error::DeprecationWarning`.
 
 ## Dependencies
-None
+- [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
 
 ## Acceptance Criteria
 - Unit and integration tests run without deprecation warnings, including a

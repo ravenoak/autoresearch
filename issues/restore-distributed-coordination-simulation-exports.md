@@ -4,24 +4,22 @@
 `scripts/distributed_coordination_sim.py` now exports `elect_leader` and
 `process_messages`, and direct imports confirm the helpers follow the proof in
 `docs/algorithms/distributed_coordination.md`.
-【F:scripts/distributed_coordination_sim.py†L1-L200】【049a40†L1-L3】 The unit
-suite still fails before the property tests run because monitor CLI metrics
-tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
-autouse `cleanup_storage` fixture invokes `storage.teardown(remove_db=True)`
-during teardown and raises `AttributeError: 'C' object has no attribute 'storage'`,
-so `uv run --extra test pytest tests/unit -k "storage" -q` aborts
-before the distributed scenarios execute. Rerunning the storage subset after
-resyncing the development extras reproduces the same teardown failure, so the
-property suite remains blocked until storage cleanup is hardened.
-【ecec62†L1-L24】【1ffd0e†L1-L56】 A
-targeted run of `tests/unit/distributed/test_coordination_properties.py` still
-passes, confirming the helpers behave as expected once the suite reaches them,
-but we must keep this ticket open until the storage teardown regression is
-resolved and the property suites can execute again. 【09e2a9†L1-L2】
+【F:scripts/distributed_coordination_sim.py†L1-L200】【049a40†L1-L3】 The
+storage teardown regression has been cleared—the patched
+`ConfigLoader.load_config` scenario now passes—so the unit suite progresses
+far enough to hit the storage eviction simulation. 【04f707†L1-L3】 The latest
+run halts at `tests/unit/test_storage_eviction_sim.py::
+test_under_budget_keeps_nodes`, where `_enforce_ram_budget` prunes nodes even
+though the mocked RAM usage stays within budget. 【d7c968†L1-L164】 That failure
+prevents the distributed property suite from executing during the targeted
+`-k "storage"` run. A focused invocation of
+`tests/unit/distributed/test_coordination_properties.py` still passes,
+confirming the helpers behave as expected once the suite reaches them, so we
+remain blocked only by the eviction regression. 【d3124a†L1-L2】
 
 ## Dependencies
-- [handle-config-loader-patches-in-storage-teardown](
-  handle-config-loader-patches-in-storage-teardown.md)
+- [fix-storage-eviction-under-budget-regression](
+  fix-storage-eviction-under-budget-regression.md)
 
 ## Acceptance Criteria
 - Reintroduce `elect_leader` and `process_messages` in

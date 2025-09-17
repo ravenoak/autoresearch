@@ -1,15 +1,20 @@
 # Rerun task coverage after storage teardown fix
 
 ## Context
-The last recorded coverage run (`uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`)
-reported 90% line coverage, but storage teardown regressions now prevent
-rerunning the task to verify the current baseline.
-`uv sync --extra dev-minimal --extra test --extra docs` installs the development, test, and documentation extras, and `uv run python scripts/check_env.py` confirms that only the Go Task CLI remains missing. However, `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` still fails because patched monitor CLI tests trigger `AttributeError: 'C' object has no attribute 'storage'`, so the full unit suite never reaches coverage. We need to rerun `task coverage` once the storage fixture and Go Task availability issues are resolved to refresh `baseline/coverage.xml` and publish a new docs status log.
-【ecec62†L1-L24】【5505fc†L1-L27】【1ffd0e†L1-L56】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
+The last recorded coverage run (`uv run task coverage EXTRAS="nlp ui vss git
+distributed analysis llm parsers gpu"`) reported 90% line coverage, but the
+suite cannot reach coverage today. `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` now fails at
+`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
+because `_enforce_ram_budget` trims nodes even when the mocked RAM usage stays
+within the budget. 【d7c968†L1-L164】 After syncing the `dev-minimal`, `test`, and
+`docs` extras, `uv run python scripts/check_env.py` still reports the missing Go
+Task CLI, so both the eviction regression and the CLI gap must be resolved
+before we can refresh `baseline/coverage.xml` and publish a new status log.
+【e6706c†L1-L26】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
 
 ## Dependencies
-- [handle-config-loader-patches-in-storage-teardown](handle-config-loader-patches-in-storage-teardown.md)
+- [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 
 ## Acceptance Criteria
