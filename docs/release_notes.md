@@ -6,7 +6,7 @@ machine.
 
 ## 0.1.0a1 (unreleased)
 
-Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
+Planned for **2026-09-15**. Dependency pins: `fastapi>=0.116.1` and
 `slowapi==0.1.9`.
 
 ### Capabilities
@@ -28,32 +28,25 @@ Planned for **2026-06-15**. Dependency pins: `fastapi>=0.115.12` and
 
 ### Known Limitations
 
-- The project is pre-release (0.1.0a1) and has not been published on PyPI.
-- Installation with all extras pulls large machine learning packages and may be
-  slow.
-- The CLI requires optional packages such as `python-docx`, `pdfminer.six`, and
-  `streamlit`.
-- Quick start commands expect an LLM backend like LM Studio; without one,
-  searches fail.
-- Loading the VSS extension may require network access and can fail offline.
-- `task` commands need Go Task; install it as noted in
-  [installation](installation.md).
-- CLI operations error without `python-docx` or `pdfminer.six`; see
-  [installation](installation.md).
-- VSS search and some tests require network access; see
-  [DuckDB compatibility](duckdb_compatibility.md).
-- `task coverage` fails with an ImportError (`InMemorySpanExporter`), so
-  coverage is treated as 0%.
-- Some dependencies still emit `pkg_resources` deprecation warnings; these
-  are suppressed until upstream packages resolve the issue.
+- Fresh environments omit the Go Task CLI, so `task --version` reports
+  `command not found` until Task is installed (for example via
+  `scripts/setup.sh`).
+- `uv run mkdocs build` fails with `No such file or directory` until the docs
+  extras install `mkdocs`; run `task docs` or `uv run --extra docs`
+  `mkdocs build` beforehand.
+- `uv run pytest tests/unit -q` aborts when monitor metrics tests patch
+  `ConfigLoader.load_config` to objects without `storage`; the autouse
+  `cleanup_storage` fixture raises `AttributeError` during teardown.
 
 For installation and usage instructions see the README.
 
 ### Open issues
 
-- add-orchestration-proofs-and-tests
-- add-storage-proofs-and-simulations
-- configure-redis-service-for-tests
+- handle-config-loader-patches-in-storage-teardown
+- prepare-first-alpha-release
+- resolve-deprecation-warnings-in-tests
+- resolve-resource-tracker-errors-in-verify
+- restore-distributed-coordination-simulation-exports
 
 ## Packaging Logs
 
