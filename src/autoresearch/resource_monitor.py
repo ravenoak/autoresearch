@@ -5,8 +5,12 @@ See docs/algorithms/resource_monitor.md for sampling models.
 
 from __future__ import annotations
 
+import contextlib
+import importlib.util
+import os
 import threading
 import time
+from functools import lru_cache
 from typing import Optional
 
 import structlog
@@ -18,6 +22,46 @@ log = structlog.get_logger(__name__)
 
 
 _DEF_REGISTRY = REGISTRY
+_GPU_SENTINEL_MODULES = ("bertopic", "pynndescent")
+_GPU_EXTRA_ENV_VARS = ("EXTRAS", "AR_EXTRAS")
+
+
+@lru_cache(maxsize=1)
+def _gpu_extra_enabled() -> bool:
+    """Return ``True`` when the optional GPU extra appears to be installed."""
+
+    extras: set[str] = set()
+    for env_name in _GPU_EXTRA_ENV_VARS:
+        value = os.environ.get(env_name, "")
+        extras.update(part for part in value.split() if part)
+    if "gpu" in extras:
+        return True
+    for module_name in _GPU_SENTINEL_MODULES:
+        with contextlib.suppress(Exception):
+            if importlib.util.find_spec(module_name) is not None:
+                return True
+    return False
+
+
+def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
+    """Log missing optional GPU dependencies at an informational level."""
+
+    extras_enabled = _gpu_extra_enabled()
+    if extras_enabled:
+        log.debug(
+            "gpu_metrics_dependency_missing",
+            dependency=dependency,
+            extras_enabled=extras_enabled,
+            reason=str(error),
+            exc_info=error,
+        )
+    else:
+        log.info(
+            "gpu_metrics_dependency_missing",
+            dependency=dependency,
+            extras_enabled=extras_enabled,
+            reason=str(error),
+        )
 
 
 def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
@@ -35,59 +79,70 @@ def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
 
 def _get_gpu_stats() -> tuple[float, float]:
     """Return average GPU utilization and memory usage in MB."""
+
     try:  # pragma: no cover - optional dependency
         import pynvml  # type: ignore
+    except ModuleNotFoundError as exc:
+        _log_gpu_dependency_missing("pynvml", exc)
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("Failed to import pynvml for GPU monitoring", exc_info=exc)
+    else:
+        try:
+            pynvml.nvmlInit()
+            try:
+                count = pynvml.nvmlDeviceGetCount()
+                util_total = 0.0
+                mem_total = 0.0
+                for i in range(count):
+                    handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                    util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                    mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                    util_total += float(util.gpu)
+                    mem_total += mem.used / (1024 * 1024)
+                if count:
+                    util_total /= count
+                return util_total, mem_total
+            finally:
+                with contextlib.suppress(Exception):
+                    pynvml.nvmlShutdown()
+        except Exception as exc:
+            log.warning("Failed to get GPU stats via pynvml", exc_info=exc)
 
-        pynvml.nvmlInit()
-        count = pynvml.nvmlDeviceGetCount()
-        util_total = 0.0
-        mem_total = 0.0
-        for i in range(count):
-            handle = pynvml.nvmlDeviceGetHandleByIndex(i)
-            util = pynvml.nvmlDeviceGetUtilizationRates(handle)
-            mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
-            util_total += float(util.gpu)
-            mem_total += mem.used / (1024 * 1024)
-        pynvml.nvmlShutdown()
-        if count:
-            util_total /= count
-        return util_total, mem_total
-    except Exception as e:
-        log.warning("Failed to get GPU stats via pynvml", exc_info=e)
-
+    cmd = [
+        "nvidia-smi",
+        "--query-gpu=utilization.gpu,memory.used",
+        "--format=csv,noheader,nounits",
+    ]
     try:  # pragma: no cover - may not be present
         import subprocess
 
+        output = ""
         try:
             import psutil  # type: ignore
 
             proc = psutil.Popen(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=utilization.gpu,memory.used",
-                    "--format=csv,noheader,nounits",
-                ],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
             )
-            out, _ = proc.communicate(timeout=1)
+            output, _ = proc.communicate(timeout=1)
+        except ModuleNotFoundError:
+            output = ""
         except Exception:
-            proc = subprocess.run(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=utilization.gpu,memory.used",
-                    "--format=csv,noheader,nounits",
-                ],
+            output = ""
+        if not output:
+            completed = subprocess.run(
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
                 timeout=1,
             )
-            out = proc.stdout
+            output = completed.stdout
         utils = []
         mems = []
-        for line in out.strip().splitlines():
+        for line in output.strip().splitlines():
             try:
                 util_str, mem_str = line.split(",")
                 utils.append(float(util_str.strip()))
@@ -98,8 +153,10 @@ def _get_gpu_stats() -> tuple[float, float]:
             avg_util = sum(utils) / len(utils)
             total_mem = sum(mems)
             return avg_util, total_mem
-    except Exception as e:
-        log.warning("Failed to get GPU stats via nvidia-smi", exc_info=e)
+    except FileNotFoundError as exc:
+        _log_gpu_dependency_missing("nvidia-smi", exc)
+    except Exception as exc:
+        log.warning("Failed to get GPU stats via nvidia-smi", exc_info=exc)
 
     return 0.0, 0.0
 
