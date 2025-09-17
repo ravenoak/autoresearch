@@ -7,9 +7,12 @@ during teardown. `test_metrics_skips_storage` in
 `tests/unit/test_monitor_cli.py` replaces the loader with `type("C", (), {})()`
 and the fixture subsequently raises `AttributeError: 'C' object has no
 attribute 'storage'` when `storage.teardown(remove_db=True)` runs.
-`uv run pytest tests/unit -k "storage" -q --maxfail=1` stops at that failure,
-so `uv run pytest tests/unit -q` never reaches the remaining suites.
-【F:tests/unit/test_monitor_cli.py†L41-L85】【eeec82†L1-L57】
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` stops at
+that failure, so `uv run --extra test pytest tests/unit -q` never reaches the
+remaining suites. The fixture loads the active configuration to locate RDF
+paths; when the patched loader returns an object without `storage`,
+`storage.teardown` raises. 【F:tests/unit/test_monitor_cli.py†L41-L88】
+【529dfa†L1-L57】【a3c726†L25-L38】【93fac3†L10-L52】
 
 ## Dependencies
 - None

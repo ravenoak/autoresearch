@@ -9,15 +9,16 @@ suite still fails before the property tests run because monitor CLI metrics
 tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
 autouse `cleanup_storage` fixture invokes `storage.teardown(remove_db=True)`
 during teardown and raises `AttributeError: 'C' object has no attribute
-'storage'`, so `uv run pytest tests/unit -q` aborts early and never reaches the
-distributed scenarios. 【eeec82†L1-L57】 A targeted run of
-`tests/unit/distributed/test_coordination_properties.py` passes, confirming the
-helpers behave as expected once the suite reaches them, but we must keep this
-ticket open until the storage teardown regression is resolved and the property
-suites can execute again. 【1daaef†L1-L3】
+'storage'`, so `uv run --extra test pytest tests/unit -q` aborts early and never
+reaches the distributed scenarios. 【529dfa†L1-L57】【a3c726†L25-L38】 A targeted
+run of `tests/unit/distributed/test_coordination_properties.py` passes,
+confirming the helpers behave as expected once the suite reaches them, but we
+must keep this ticket open until the storage teardown regression is resolved
+and the property suites can execute again. 【b35e17†L1-L2】
 
 ## Dependencies
-None.
+- [handle-config-loader-patches-in-storage-teardown](
+  handle-config-loader-patches-in-storage-teardown.md)
 
 ## Acceptance Criteria
 - Reintroduce `elect_leader` and `process_messages` in

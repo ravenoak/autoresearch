@@ -8,36 +8,32 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 17, 2025
-- `uv sync --extra dev-minimal --extra test` installs the linting and coverage
-  extras so `uv run python scripts/check_env.py` reports only the missing Go
-  Task CLI in this environment. 【8e4fc3†L1-L27】【37a1fe†L1-L26】
-- `task --version` still reports `command not found`, so install Task with
-  `scripts/setup.sh` before using the Taskfile. 【15b3ab†L1-L2】
-- Targeted unit suites pass where helpers exist: the config validator, DuckDB
-  extension fallback, and VSS loader all succeed with the `[test]` extras.
-  【5b737c†L1-L3】【a7a5ea†L1-L2】【93e5f9†L1-L2】
-- Distributed coordination property tests pass when invoked directly, but the
-  full suite cannot reach them until storage teardown stops failing.
-  【1daaef†L1-L3】【eeec82†L1-L57】
-- Integration coverage for ranking and optional extras remains stable once
-  weights are legal: `tests/integration/test_ranking_formula_consistency.py -q`
-  and `tests/integration/test_optional_extras.py -q` both pass.
-  【9a935a†L1-L2】【ee8c19†L1-L2】
-- `uv run pytest tests/unit -q` fails in teardown because monitor CLI metrics
-  tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
-  autouse `cleanup_storage` fixture raises `AttributeError: 'C' object has no
-  attribute 'storage'`, so the suite stops before the remaining modules run.
-  `uv run pytest tests/unit -k "storage" -q --maxfail=1` reproduces the
-  failure at `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-  【eeec82†L1-L57】
-- CLI helper and data analysis suites run with
-  `PYTHONWARNINGS=error::DeprecationWarning` and report no warnings.
-- `uv run mkdocs build` still fails with `No such file or directory` because
-  docs extras are not installed; run `task docs` (or `uv run --extra docs
-  mkdocs build`) to pull them automatically. 【3109f7†L1-L3】
-- Contributor docs and the release checklist now direct maintainers to run
-  `task docs` or `uv run --extra docs mkdocs build` before building the site,
-  keeping the workflow aligned with the Taskfile.
+- After installing the `dev-minimal` and `test` extras, `uv run python
+  scripts/check_env.py` reports that Go Task is the lone missing prerequisite.
+  【80552a†L1-L10】
+- `task --version` still returns "command not found", so install Go Task with
+  `scripts/setup.sh` (or a package manager) before using the Taskfile.
+  【0b96f0†L1-L2】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails in
+  teardown because `test_monitor_cli.py::test_metrics_skips_storage` replaces
+  `ConfigLoader.load_config` with a bare object that lacks `storage`. The
+  autouse `cleanup_storage` fixture then calls
+  `storage.teardown(remove_db=True)` and raises
+  `AttributeError: 'C' object has no attribute 'storage'`. This blocks the
+  broader unit suite until teardown tolerates patched loaders or the test
+  supplies a storage stub. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】
+- The failure originates from the storage teardown helper loading the active
+  config to locate RDF paths; it needs a safe fallback when no storage section
+  is present. 【93fac3†L10-L52】
+- Distributed coordination property tests still pass when invoked directly,
+  confirming the restored simulation exports once the suite reaches them.
+  【b35e17†L1-L2】
+- Integration suites for ranking consistency and optional extras continue to
+  pass with the `[test]` extras installed. 【71af25†L1-L2】【b8990e†L1-L2】
+- After syncing the docs extras, `uv run --extra docs mkdocs build` succeeds
+  but warns that `docs/status/task-coverage-2025-09-17.md` is not listed in the
+  navigation. Add the status coverage log to `mkdocs.yml` to clear the warning
+  before release notes are drafted. 【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
 - Regenerated `SPEC_COVERAGE.md` with
   `uv run python scripts/generate_spec_coverage.py --output SPEC_COVERAGE.md`
   to confirm every module retains spec and proof references. 【a99f8d†L1-L2】
@@ -619,6 +615,10 @@ regression is resolved.
   issues/resolve-deprecation-warnings-in-tests.md) –
   Execute the full suite with `PYTHONWARNINGS=error::DeprecationWarning`
   after installing Task to ensure no latent warnings remain.
+- [add-status-coverage-page-to-docs-nav](
+  issues/add-status-coverage-page-to-docs-nav.md) –
+  Link the status coverage report into `mkdocs.yml` so docs builds stop
+  warning about orphaned pages before drafting release notes.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.

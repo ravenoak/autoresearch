@@ -5,26 +5,26 @@ organized by phases from the code complete plan. As of **September 17, 2025**
 the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
-`uv run python scripts/check_env.py` leaves only the missing Go Task warning in
-this environment. 【8e4fc3†L1-L27】【37a1fe†L1-L26】 Targeted unit tests confirm
-that the config validator, DuckDB offline fallback, and VSS extension loader
-all pass with the `[test]` extras installed. 【5b737c†L1-L3】【a7a5ea†L1-L2】
-【93e5f9†L1-L2】 Integration scenarios for ranking consistency and optional extras
-also succeed with the `[test]` extras installed. 【9a935a†L1-L2】【ee8c19†L1-L2】
-Distributed coordination property tests likewise pass when run directly even
-though the full suite cannot reach them yet. 【1daaef†L1-L3】【eeec82†L1-L57】
-However, `uv run pytest tests/unit -q` now fails in teardown because
-monitor CLI metrics tests patch `ConfigLoader.load_config` to return
-`type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
-`AttributeError: 'C' object has no attribute 'storage'`, so the suite stops
-before the remaining modules run. `uv run pytest tests/unit -k "storage" -q
---maxfail=1` reproduces the failure at
-`tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-【eeec82†L1-L57】 `uv run mkdocs build` still fails until the
-docs extras install `mkdocs`, so run `task docs` (or `uv run --extra docs
-mkdocs build`) to pull the dependencies automatically. 【3109f7†L1-L3】 Unit
-coverage and `task verify` remain blocked while the Task CLI is missing and
-the storage teardown regression persists.
+`uv run python scripts/check_env.py` now reports Go Task as the only missing
+prerequisite. 【80552a†L1-L10】 `task --version` still returns "command not
+found", so the CLI must be installed manually. 【0b96f0†L1-L2】 The monitor CLI
+metrics tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`,
+and the autouse `cleanup_storage` fixture then calls `storage.teardown` on an
+object without a `storage` attribute. `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` reproduces the resulting
+`AttributeError: 'C' object has no attribute 'storage'`, preventing the full
+unit suite from running. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】 The
+teardown helper needs a safe fallback for missing storage settings.
+【93fac3†L10-L52】 Distributed coordination property tests pass when invoked
+directly, confirming the restored simulation exports once teardown is fixed.
+【b35e17†L1-L2】 Integration scenarios for ranking consistency and optional
+extras also pass with the `[test]` extras installed. 【71af25†L1-L2】【b8990e†L1-L2】
+After syncing the docs extras, `uv run --extra docs mkdocs build` completes but
+warns that `docs/status/task-coverage-2025-09-17.md` is missing from the `nav`
+configuration; add it to `mkdocs.yml` before release packaging.
+【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+Unit coverage and `task verify` remain blocked while the Task CLI is absent and
+storage teardown fails.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted
