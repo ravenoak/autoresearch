@@ -15,21 +15,17 @@ across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
 manual install provides the binary. Running `uv sync --extra dev-minimal --extra
 test` followed by `uv run python scripts/check_env.py` leaves only the missing
-Go Task CLI warning in this environment. 【024fb5†L1-L13】【f56f62†L1-L24】
-Targeted tests on **September 17, 2025** show the DuckDB extension loader suite
-and `tests/unit/search/test_ranking_formula.py::`
-`test_rank_results_weighted_combination` now pass with the documented convex
-weights. 【af6378†L1-L2】【75e1fd†L1-L2】 However, `uv run --extra test pytest`
-`tests/unit -q` fails during collection because
+Go Task CLI warning in this environment. 【12a21c†L1-L9】【0525bf†L1-L26】
+Targeted tests on **September 17, 2025** show the config validator, DuckDB
+extension fallback, VSS loader, ranking consistency, and optional extras suites
+now pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
+【abaaf2†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, `uv run --extra test
+pytest tests/unit -q` fails during collection because
 `scripts/distributed_coordination_sim.py` no longer exports `elect_leader` or
 `process_messages`, so the distributed property tests cannot import their
-reference helpers. 【b4944c†L1-L23】 Integration scenarios for ranking
-consistency and optional extras still pass with the `[test]` extras installed,
-and CLI helper plus data analysis suites run with
-`PYTHONWARNINGS=error::DeprecationWarning` without warnings.
-【50b44e†L1-L2】【7a8f55†L1-L2】
-`uv run mkdocs build` still fails until docs extras install `mkdocs`.
-【6bcbaa†L1-L3】 Release blockers remain
+reference helpers. 【382418†L1-L23】 CLI helper and data analysis suites run with
+`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs build`
+still fails until docs extras install `mkdocs`. 【9f25fa†L1-L3】 Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [resolve-resource-tracker-errors-in-verify](

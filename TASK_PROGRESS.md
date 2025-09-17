@@ -6,21 +6,16 @@ the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
 `uv run python scripts/check_env.py` leaves only the missing Go Task warning in
-this environment. 【024fb5†L1-L13】【f56f62†L1-L24】 Targeted unit tests confirm
-that `tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one`,
-the DuckDB offline fallback suite,
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_load_extension_download_unhandled_exception`, and
-`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`
-all pass after the ranking weights were updated.
-【127cf4†L1-L3】【af6378†L1-L2】【75e1fd†L1-L2】 Integration scenarios for ranking
-consistency and optional extras also succeed with the `[test]` extras installed.
-【50b44e†L1-L2】【7a8f55†L1-L2】 However, `uv run --extra test pytest tests/unit -q`
-still aborts during collection because `scripts/distributed_coordination_sim.py`
-no longer exports `elect_leader` or `process_messages`, so the distributed
-property tests cannot import their reference helpers. 【b4944c†L1-L23】
-`uv run mkdocs build` still fails until the docs extras sync `mkdocs` onto the
-PATH. 【6bcbaa†L1-L3】 Unit coverage and `task verify` remain blocked while the
+this environment. 【12a21c†L1-L9】【0525bf†L1-L26】 Targeted unit tests confirm
+that the config validator, DuckDB offline fallback, and VSS extension loader
+all pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
+【abaaf2†L1-L2】 Integration scenarios for ranking consistency and optional extras
+also succeed with the `[test]` extras installed. 【897640†L1-L3】【d26393†L1-L2】
+However, `uv run --extra test pytest tests/unit -q` still aborts during
+collection because `scripts/distributed_coordination_sim.py` no longer exports
+`elect_leader` or `process_messages`, so the distributed property tests cannot
+import their reference helpers. 【382418†L1-L23】 `uv run mkdocs build` still fails
+until the docs extras sync `mkdocs` onto the PATH. 【9f25fa†L1-L3】 Unit coverage and `task verify` remain blocked while the
 Task CLI is missing and the distributed regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains

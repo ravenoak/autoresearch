@@ -18,8 +18,8 @@ the original warning. We still need an end-to-end `task verify` run with Go
 Task installed to confirm the absence of warnings across the full suite, but
 `uv run --extra test pytest tests/unit -q` currently fails because
 `scripts/distributed_coordination_sim.py` no longer exports the helpers that
-the distributed property tests import. Once those exports return we can rerun
-the warnings sweep under Task.
+the distributed property tests import. 【382418†L1-L23】 Once those exports
+return we can rerun the warnings sweep under Task.
 
 ## Dependencies
 None

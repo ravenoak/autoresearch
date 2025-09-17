@@ -12,7 +12,7 @@ this script as the reference implementation, so the missing exports break the
 Doc/spec/test alignment and prevent `task verify` from running to completion.
 Pytest now raises `ImportError: cannot import name 'elect_leader'` for both
 distributed property suites, confirming the helpers must be reinstated before
-`tests/unit` can collect. 【b4944c†L1-L23】
+`tests/unit` can collect. 【382418†L1-L23】【F:scripts/distributed_coordination_sim.py†L67-L200】【F:docs/algorithms/distributed_coordination.md†L66-L90】
 
 ## Dependencies
 None.
