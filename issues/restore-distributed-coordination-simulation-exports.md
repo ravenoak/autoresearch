@@ -10,6 +10,9 @@ validate the leader election and message ordering proofs documented in
 `docs/algorithms/distributed_coordination.md`. The specification still cites
 this script as the reference implementation, so the missing exports break the
 Doc/spec/test alignment and prevent `task verify` from running to completion.
+Pytest now raises `ImportError: cannot import name 'elect_leader'` for both
+distributed property suites, confirming the helpers must be reinstated before
+`tests/unit` can collect. 【b4944c†L1-L23】
 
 ## Dependencies
 None.

@@ -22,20 +22,24 @@ The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
-Targeted unit runs on **September 17, 2025** show that the DuckDB offline
-fallback, extension loader suite, and
+Running `uv sync --extra dev-minimal --extra test` followed by
+`uv run python scripts/check_env.py` leaves only the missing Go Task warning in
+this setup. 【024fb5†L1-L13】【f56f62†L1-L24】 Targeted unit runs on **September 17,
+2025** show that the DuckDB offline fallback, extension loader suite, and
 `tests/unit/search/test_ranking_formula.py::`
 `test_rank_results_weighted_combination` now pass with the documented convex
-weights. However, `uv run --extra test pytest tests/unit -q` fails during
-collection because `scripts/distributed_coordination_sim.py` no longer exports
-`elect_leader` or `process_messages`, so the distributed property tests cannot
-import their reference helpers. Integration ranking checks and optional extras
-still pass with the `[test]` extras installed, and CLI helper plus data
+weights. 【127cf4†L1-L3】【af6378†L1-L2】【75e1fd†L1-L2】 However,
+`uv run --extra test pytest tests/unit -q` fails during collection because
+`scripts/distributed_coordination_sim.py` no longer exports `elect_leader` or
+`process_messages`, so the distributed property tests cannot import their
+reference helpers. 【b4944c†L1-L23】 Integration ranking checks and optional
+extras still pass with the `[test]` extras installed, and CLI helper plus data
 analysis suites run with `PYTHONWARNINGS=error::DeprecationWarning` without
-warnings. `uv run mkdocs` build still fails until the docs extras add `mkdocs`
-to the PATH. `task verify` remains blocked by the missing CLI and the
-distributed regression, so coverage numbers are still unavailable. These items
-are tracked in [STATUS.md](../STATUS.md) and the open issues listed there.
+warnings. 【50b44e†L1-L2】【7a8f55†L1-L2】 `uv run mkdocs build` still fails until
+the docs extras add `mkdocs` to the PATH. 【6bcbaa†L1-L3】 `task verify` remains
+blocked by the missing CLI and the distributed regression, so coverage numbers
+are still unavailable. These items are tracked in
+[STATUS.md](../STATUS.md) and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
