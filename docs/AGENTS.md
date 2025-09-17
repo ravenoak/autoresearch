@@ -9,7 +9,8 @@ These instructions apply to files in the `docs/` directory.
 
 ## Setup
 - Preview locally with `uv run mkdocs serve`.
-- Run `uv run mkdocs build` to verify docs compile without errors.
+- Run `task docs` (or `uv run --extra docs mkdocs build`) to verify docs
+  compile without errors.
 
 ## Conventions
 - Provide a working URL or relative path for every citation.

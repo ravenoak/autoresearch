@@ -11,4 +11,5 @@ This guide summarizes the development process and specification workflow.
 ## Contribution steps
 - Implement code and spec together on a feature branch.
 - Run `task check` early and `task verify` before submitting a pull request.
-- Build documentation with `uv run mkdocs build` to ensure it compiles.
+- Build documentation with `task docs` (or `uv run --extra docs mkdocs build`)
+  to ensure it compiles.

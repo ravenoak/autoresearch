@@ -9,10 +9,11 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
 source for environment setup and optional features. After installing the
 prerequisites, run `./scripts/setup.sh` or `uv sync --extra test --extra docs`
-*before* invoking `task check`, `uv run pytest`, or `uv run mkdocs build`.
-This ensures Go Task is available and installs dependencies such as
-`pytest-bdd`, which suppresses `PytestConfigWarning` messages and prevents
-missing plugin errors during test and documentation commands.
+*before* invoking `task check`, `uv run pytest`, or building the docs. Use
+`task docs` (or `uv run --extra docs mkdocs build`) once the extras sync. This
+ensures Go Task is available and installs dependencies such as `pytest-bdd`,
+which suppresses `PytestConfigWarning` messages and prevents missing plugin
+errors during test and documentation commands.
 
 Run `scripts/codex_setup.sh` in the Codex evaluation environment to bootstrap
 dependencies. The script appends `.venv/bin` to `PATH`, so the shell exposes
@@ -224,14 +225,15 @@ uv sync --extra llm          # LLM libraries
 
 ## Building the documentation
 
-Install MkDocs and generate the static site:
+Sync the documentation dependencies and build the static site:
 
 ```bash
-uv pip install mkdocs
-mkdocs build
+uv sync --extra docs
+task docs
 ```
 
-Use `mkdocs serve` to preview the documentation locally.
+Run `uv run --extra docs mkdocs build` directly if you skip Go Task, and use
+`uv run mkdocs serve` to preview the documentation locally.
 
 ## Accessibility
 

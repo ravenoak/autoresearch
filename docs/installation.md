@@ -18,7 +18,8 @@ Run `./scripts/setup.sh` immediately after installing these prerequisites.
 It installs Go Task when missing and syncs the `dev-minimal` and `test`
 extras so `task check` and `pytest` have the required plugins. If you prefer
 a manual workflow, run `uv sync --extra test --extra docs` before executing
-any tests or `uv run mkdocs build`. Skipping these steps typically yields
+any tests or building the docs. Use `task docs` (or `uv run --extra docs
+mkdocs build`) once the extras sync. Skipping these steps typically yields
 missing dependency errors and `PytestConfigWarning` messages when
 `pytest-bdd` is not installed.
 
@@ -125,10 +126,11 @@ script can include the docs extra (`AR_EXTRAS="docs"`), or sync them manually:
 
 ```bash
 uv sync --extra test --extra docs
-uv run mkdocs build
+task docs
 ```
 
-This guarantees `mkdocs`, `mkdocs-material`, and testing plugins such as
+Run `uv run --extra docs mkdocs build` directly if you skip Go Task. This
+guarantees `mkdocs`, `mkdocs-material`, and testing plugins such as
 `pytest-bdd` are present before documentation commands run.
 
 ## After cloning
