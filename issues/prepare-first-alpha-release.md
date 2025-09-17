@@ -6,10 +6,9 @@ public. To tag v0.1.0a1 we still need a coordinated push across testing,
 documentation, and packaging while keeping workflows dispatch-only. As of
 2025-09-17 the Go Task CLI is still absent in a fresh environment, so running
 `uv run task check` fails until contributors install Task manually. `task
---version` continues to return "command not found", and after syncing the
-`dev-minimal` and `test` extras, `uv run python scripts/check_env.py` reports Go
-Task as the only missing prerequisite. 【6c3849†L1-L3】【93590e†L1-L7】【7f1069†L1-L7】
-【57477e†L1-L26】 Targeted test suites confirm that distributed coordination
+--version` continues to return "command not found", and after resyncing the
+`dev-minimal`, `test`, and `docs` extras, `uv run python scripts/check_env.py` reports Go
+Task as the only missing prerequisite. 【6c3849†L1-L3】【ecec62†L1-L24】【5505fc†L1-L27】 Targeted test suites confirm that distributed coordination
 properties and VSS extension scenarios still pass with the `[test]` extras
 installed. `uv run --extra test pytest tests/unit/distributed/
 test_coordination_properties.py -q` and `uv run --extra test pytest
@@ -22,14 +21,12 @@ without a `storage` attribute. The autouse `cleanup_storage` fixture calls
 `AttributeError: 'C' object has no attribute 'storage'`, so the full suite never
 reaches the remaining modules. `uv run --extra test pytest tests/unit -k
 "storage" -q --maxfail=1` reproduces the failure at
-`tests/unit/test_monitor_cli.py::test_metrics_skips_storage`. The teardown helper
-needs a safe fallback when storage settings are missing to unblock coverage.
-【990fdc†L1-L66】【d23bdc†L1-L66】【93fac3†L10-L52】 After syncing the docs extras,
-`uv run --extra docs mkdocs build` succeeds but warns that
-`docs/status/task-coverage-2025-09-17.md` is missing from the navigation, so the
-status log must be added to `mkdocs.yml` before release notes are drafted.
-【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】 These gaps
-block the release checklist and require targeted fixes before we can tag
+`tests/unit/test_monitor_cli.py::test_metrics_skips_storage`, even after the
+extras resync, so the teardown helper still needs a safe fallback when storage
+settings are missing to unblock coverage. 【1ffd0e†L1-L56】 Adding the task
+coverage log to `mkdocs.yml` cleared the documentation warning; `uv run --extra
+docs mkdocs build` now completes without navigation errors.
+【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 These gaps block the release checklist and require targeted fixes before we can tag
 0.1.0a1.
 
 ## Dependencies
@@ -41,8 +38,6 @@ block the release checklist and require targeted fixes before we can tag
   resolve-deprecation-warnings-in-tests.md)
 - [handle-config-loader-patches-in-storage-teardown](
   handle-config-loader-patches-in-storage-teardown.md)
-- [add-status-coverage-page-to-docs-nav](
-  add-status-coverage-page-to-docs-nav.md)
 - [rerun-task-coverage-after-storage-fix](
   rerun-task-coverage-after-storage-fix.md)
 
