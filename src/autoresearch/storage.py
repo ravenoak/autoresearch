@@ -130,9 +130,24 @@ def _get_config() -> StorageConfig:
     global _cached_config
     if _cached_config is None:
         try:
-            _cached_config = ConfigLoader().config.storage
+            config = ConfigLoader().config
         except ConfigError:
             _cached_config = StorageConfig()
+        else:
+            storage_cfg = getattr(config, "storage", None)
+            if isinstance(storage_cfg, StorageConfig):
+                _cached_config = storage_cfg
+            elif storage_cfg is None:
+                _cached_config = StorageConfig()
+            else:
+                try:
+                    _cached_config = StorageConfig.model_validate(storage_cfg)
+                except Exception:  # pragma: no cover - defensive
+                    log.debug(
+                        "Storage configuration missing or invalid; using defaults",
+                        exc_info=True,
+                    )
+                    _cached_config = StorageConfig()
     return _cached_config
 
 
@@ -264,6 +279,7 @@ def teardown(
         remove_db: If True, also removes the database files from disk.
                   Default is False.
     """
+    global _cached_config
     global _kuzu_backend
     st = state or _default_state
     ctx = context or st.context
@@ -297,10 +313,7 @@ def teardown(
                 # We don't raise here as this is cleanup code
 
         # Remove RDF store files if requested
-        try:
-            cfg = ConfigLoader().config.storage
-        except ConfigError:
-            cfg = StorageConfig()
+        cfg = _get_config()
         if remove_db and os.path.exists(cfg.rdf_path):
             if os.path.isdir(cfg.rdf_path):
                 import shutil
@@ -330,6 +343,7 @@ def teardown(
         except NameError:  # pragma: no cover - StorageManager not yet defined
             pass
         st.context = ctx
+        _cached_config = None
 
 
 class StorageManagerMeta(type):

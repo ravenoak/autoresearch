@@ -29,6 +29,11 @@ checks are required.
   targeted storage suite still halts with
   `AttributeError: 'C' object has no attribute 'storage'` in
   `storage.teardown`, so coverage remains blocked. 【1ffd0e†L1-L56】
+- Hardened storage cleanup so `_get_config()` defaults when `ConfigLoader`
+  stubs omit `storage`, the `cleanup_storage` fixture logs teardown failures,
+  and a regression test confirms missing-storage configs no longer abort
+  cleanup. 【F:src/autoresearch/storage.py†L128-L151】【F:src/autoresearch/storage.py†L282-L346】
+  【F:tests/conftest.py†L478-L492】【F:tests/unit/test_monitor_cli.py†L151-L162】
 - Distributed coordination property tests still pass when invoked directly,
   confirming the restored simulation exports once the suite reaches them.
   【09e2a9†L1-L2】

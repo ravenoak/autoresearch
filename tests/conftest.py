@@ -1,5 +1,6 @@
 import importlib
 import importlib.util
+import logging
 import os
 import sys
 from pathlib import Path
@@ -45,6 +46,9 @@ multiprocessing.set_start_method("spawn", force=True)
 
 _CREATED_QUEUES: list[Any] = []
 _QUEUE_FACTORY: Callable[..., Any] | None = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def _track_multiprocessing_queue(*args, **kwargs):
@@ -475,9 +479,17 @@ def reset_orchestration_metrics():
 def cleanup_storage():
     """Remove any persistent storage state between tests."""
     # Use module-level teardown to avoid delegate recursion
-    storage.teardown(remove_db=True)
+    def _safe_teardown(stage: str) -> None:
+        try:
+            storage.teardown(remove_db=True)
+        except Exception:  # pragma: no cover - defensive cleanup
+            logger.warning(
+                "Storage teardown failed during %s cleanup", stage, exc_info=True
+            )
+
+    _safe_teardown("setup")
     yield
-    storage.teardown(remove_db=True)
+    _safe_teardown("teardown")
 
 
 @pytest.fixture(autouse=True)
