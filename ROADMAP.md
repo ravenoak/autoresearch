@@ -14,23 +14,24 @@ targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
 manual install provides the binary. Running `uv sync --extra dev-minimal --extra
-test` followed by `uv run python scripts/check_env.py` leaves only the missing
-Go Task CLI warning in this environment. 【8e4fc3†L1-L27】【37a1fe†L1-L26】
-Targeted tests on **September 17, 2025** show the config validator, DuckDB
-extension fallback, VSS loader, ranking consistency, and optional extras suites
-now pass with the `[test]` extras installed. 【5b737c†L1-L3】【a7a5ea†L1-L2】
-【93e5f9†L1-L2】【9a935a†L1-L2】【ee8c19†L1-L2】 However, `uv run pytest
-tests/unit -q` now fails in teardown because monitor CLI metrics tests patch
-`ConfigLoader.load_config` to return `type("C", (), {})()`. The autouse
-`cleanup_storage` fixture raises `AttributeError: 'C' object has no attribute
-'storage'`, so the suite stops before distributed scenarios run.
-`uv run pytest tests/unit -k "storage" -q --maxfail=1` reproduces the
-failure at `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-【eeec82†L1-L57】 CLI helper and data analysis suites run with
-`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs
-build` still fails until docs extras install `mkdocs`, so run `task docs` (or
-`uv run --extra docs mkdocs build`) to pull the dependencies automatically.
-【3109f7†L1-L3】 Release blockers remain
+test` followed by `uv run python scripts/check_env.py` now reports Go Task as
+the only missing prerequisite. 【80552a†L1-L10】 `task --version` continues to
+return "command not found", so contributors must install the CLI before using
+the Taskfile. 【0b96f0†L1-L2】 On **September 17, 2025** the monitor CLI metrics
+tests patched `ConfigLoader.load_config` with an object lacking `storage`, and
+the autouse `cleanup_storage` fixture invoked `storage.teardown(remove_db=True)`
+on the stub, triggering `AttributeError: 'C' object has no attribute
+'storage'`. `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
+reproduces the failure at `tests/unit/test_monitor_cli.py::
+test_metrics_skips_storage`. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】
+Distributed coordination property tests pass when run directly, and integration
+suites for ranking consistency and optional extras continue to succeed with the
+`[test]` extras installed. 【b35e17†L1-L2】【71af25†L1-L2】【b8990e†L1-L2】 After
+syncing the docs extras, `uv run --extra docs mkdocs build` completes but warns
+that `docs/status/task-coverage-2025-09-17.md` is missing from the navigation;
+update `mkdocs.yml` to keep the release documentation clean.
+【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [handle-config-loader-patches-in-storage-teardown](
