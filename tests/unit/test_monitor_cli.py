@@ -9,6 +9,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     import tests.stubs.docx  # noqa: F401
 
+from autoresearch import storage
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.main import app
@@ -145,3 +146,17 @@ def test_metrics_skips_storage(monkeypatch):
     result = runner.invoke(app, ["monitor", "metrics"])
     assert result.exit_code == 0
     assert not called["init"]
+
+
+def test_storage_teardown_handles_missing_config(monkeypatch):
+    bare_config = type("BareConfig", (), {})()
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: bare_config)
+    ConfigLoader.reset_instance()
+    storage._cached_config = None  # type: ignore[attr-defined]
+
+    cfg = storage._get_config()
+    assert isinstance(cfg, StorageConfig)
+    assert storage._cached_config is cfg  # type: ignore[attr-defined]
+
+    storage.teardown(remove_db=True)
+    assert storage._cached_config is None  # type: ignore[attr-defined]
