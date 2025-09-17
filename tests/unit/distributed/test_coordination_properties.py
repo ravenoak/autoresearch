@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import random
 import sys
 import multiprocessing
@@ -54,6 +55,20 @@ def test_election_converges_to_minimum(tmp_path_env: Path, ids: list[int]) -> No
         assert elect_leader(shuffled) == minimum
 
 
+def test_election_requires_identifier(tmp_path_env: Path) -> None:
+    """Empty collections cannot elect a leader."""
+
+    with pytest.raises(ValueError):
+        elect_leader([])
+
+
+def test_election_accepts_strings(tmp_path_env: Path) -> None:
+    """String identifiers are compared lexicographically."""
+
+    ids = ["agent-3", "agent-1", "agent-2"]
+    assert elect_leader(ids) == "agent-1"
+
+
 # The processing pipeline can run longer on constrained runners. Limit the
 # workload and apply a generous Hypothesis deadline to prevent hangs during
 # coverage runs.
@@ -71,3 +86,20 @@ def test_message_processing_is_idempotent(tmp_path_env: Path, messages: list[str
     first = process_messages(messages)
     second = process_messages(first)
     assert first == second == messages
+
+
+def test_message_processing_returns_copy(tmp_path_env: Path) -> None:
+    """Processing a list produces a new list with identical ordering."""
+
+    payload = ["a", "b", "c"]
+    processed = process_messages(payload)
+    assert processed == payload
+    assert processed is not payload
+
+
+def test_module_exports_helpers(tmp_path_env: Path) -> None:
+    """The simulation module exposes helper utilities via ``__all__``."""
+
+    module = importlib.import_module("scripts.distributed_coordination_sim")
+    exported = set(getattr(module, "__all__", ()))
+    assert {"elect_leader", "process_messages"}.issubset(exported)

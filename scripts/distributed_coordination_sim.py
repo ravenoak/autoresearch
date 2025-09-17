@@ -15,7 +15,7 @@ import types
 from collections import Counter
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Iterable, List, Protocol, TypeVar
 
 if "docx" not in sys.modules:
     sys.modules["docx"] = types.SimpleNamespace(
@@ -34,6 +34,27 @@ from autoresearch.distributed.coordinator import ResultAggregator, publish_claim
 
 ACTION_RESULT = "agent_result"
 ACTION_STOP = "stop"
+
+
+class _SupportsLessThan(Protocol):
+    """Protocol representing values that define an ordering."""
+
+    def __lt__(self, other: Any, /) -> bool:
+        """Return ``True`` if ``self`` is less than ``other``."""
+
+
+IdentifierT = TypeVar("IdentifierT", bound=_SupportsLessThan)
+MessageT = TypeVar("MessageT")
+
+__all__ = [
+    "SimulationConfig",
+    "SimulationSummary",
+    "elect_leader",
+    "process_messages",
+    "run_simulation",
+    "parse_args",
+    "main",
+]
 
 
 @dataclass
@@ -72,6 +93,54 @@ def _claim_key(claim: dict[str, int | str]) -> tuple[int, str, int]:
         str(claim["agent"]),
         int(claim["ordinal"]),
     )
+
+
+def elect_leader(agent_ids: Iterable[IdentifierT]) -> IdentifierT:
+    """Return the smallest identifier from ``agent_ids``.
+
+    The election mirrors the proof sketch in
+    :mod:`docs.algorithms.distributed_coordination`, scanning each identifier
+    exactly once. The chosen identifier therefore belongs to the original set
+    and is deterministic regardless of iteration order.
+
+    Args:
+        agent_ids: Iterable of comparable identifiers. Must contain at least
+            one element.
+
+    Returns:
+        The minimum identifier according to the ``<`` relation.
+
+    Raises:
+        ValueError: If ``agent_ids`` is empty.
+    """
+
+    ids = list(agent_ids)
+    if not ids:
+        raise ValueError("agent_ids must contain at least one identifier")
+
+    leader = ids[0]
+    for candidate in ids[1:]:
+        if candidate < leader:
+            leader = candidate
+    return leader
+
+
+def process_messages(messages: Iterable[MessageT]) -> list[MessageT]:
+    """Return messages in first-in-first-out order.
+
+    The helper replays the broker's FIFO guarantee described in
+    :mod:`docs.algorithms.distributed_coordination` by iterating through the
+    provided sequence exactly once and returning a new list with the same
+    ordering.
+
+    Args:
+        messages: Iterable of messages published to the broker.
+
+    Returns:
+        A list of messages in the order they were observed.
+    """
+
+    return list(messages)
 
 
 def _simulate_messages(
