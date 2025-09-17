@@ -5,24 +5,26 @@ The project remains unreleased even though the codebase and documentation are
 public. To tag v0.1.0a1 we still need a coordinated push across testing,
 documentation, and packaging while keeping workflows dispatch-only. As of
 2025-09-17 the Go Task CLI is still absent in a fresh environment, so running
-`uv run task check` fails until contributors install Task manually.
+`uv run task check` fails until contributors install Task manually. Targeted
+search and extension suites now pass:
 `uv run --extra test pytest`
 `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
-`test_load_extension_download_unhandled_exception -q` now passes and confirms
-non-DuckDB exceptions propagate. Targeted config validation, DuckDB download
-fallback, and optional extras suites also pass with the `[test]` extras
-installed. The remaining unit failure is
+`test_load_extension_download_unhandled_exception -q` succeeds, and
 `tests/unit/search/test_ranking_formula.py::`
-`test_rank_results_weighted_combination`,
-which now raises `ConfigError` because the new validator forbids overweight
-ranking vectors. Running `uv run mkdocs build` still fails because docs extras
-are not present, and the missing Task CLI prevents `task check`/`task verify`
-from running end-to-end. These regressions block the release checklist and
-require targeted fixes before we can draft reliable release notes.
+`test_rank_results_weighted_combination` exercises the documented convex
+weights without raising `ConfigError`. However, running
+`uv run --extra test pytest tests/unit -q` now fails during collection because
+`scripts/distributed_coordination_sim.py` no longer exports
+`elect_leader` or `process_messages`, so the distributed coordination
+properties cannot import the reference helpers. `uv run mkdocs build` still
+fails because docs extras are not present, and the missing Task CLI prevents
+`task check`/`task verify` from running end-to-end. These gaps block the
+release checklist and require targeted fixes before we can draft reliable
+release notes.
 
 ## Dependencies
-- [fix-search-ranking-and-extension-tests](
-  fix-search-ranking-and-extension-tests.md)
+- [restore-distributed-coordination-simulation-exports](
+  restore-distributed-coordination-simulation-exports.md)
 - [resolve-resource-tracker-errors-in-verify](
   resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](

@@ -14,16 +14,19 @@ targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
 manual install provides the binary. Targeted tests on **September 17, 2025**
-show the DuckDB extension loader suite now passes, but
+show the DuckDB extension loader suite and
 `tests/unit/search/test_ranking_formula.py::`
-`test_rank_results_weighted_combination` fails because the ranking weight
-validator raises `ConfigError` for overweight vectors. Integration scenarios
-for ranking consistency and optional extras pass with the `[test]` extras
-installed, and CLI helper plus data analysis suites run with
+`test_rank_results_weighted_combination` now pass with the documented convex
+weights. However, `uv run --extra test pytest tests/unit -q` fails during
+collection because `scripts/distributed_coordination_sim.py` no longer exports
+`elect_leader` or `process_messages`, so the distributed property tests cannot
+import their reference helpers. Integration scenarios for ranking consistency
+and optional extras still pass with the `[test]` extras installed, and CLI
+helper plus data analysis suites run with
 `PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs`
 build still fails until docs extras install `mkdocs`. Release blockers remain
-in [fix-search-ranking-and-extension-tests](
-issues/fix-search-ranking-and-extension-tests.md),
+in [restore-distributed-coordination-simulation-exports](
+issues/restore-distributed-coordination-simulation-exports.md),
 [resolve-resource-tracker-errors-in-verify](
 issues/resolve-resource-tracker-errors-in-verify.md),
 [resolve-deprecation-warnings-in-tests](
@@ -58,7 +61,7 @@ before running tests.
   and stable interfaces.
   - Stability goals depend on closing:
     - [prepare-first-alpha-release]
-    - [fix-search-ranking-and-extension-tests]
+    - [restore-distributed-coordination-simulation-exports]
     - [resolve-resource-tracker-errors-in-verify]
     - [resolve-deprecation-warnings-in-tests]
 
@@ -66,8 +69,8 @@ See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
 
 [prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
-[fix-search-ranking-and-extension-tests]:
-  issues/fix-search-ranking-and-extension-tests.md
+[restore-distributed-coordination-simulation-exports]:
+  issues/restore-distributed-coordination-simulation-exports.md
 [resolve-resource-tracker-errors-in-verify]:
   issues/resolve-resource-tracker-errors-in-verify.md
 [resolve-deprecation-warnings-in-tests]:
@@ -87,7 +90,8 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Task CLI availability restored.
 - [x] Packaging verification with DuckDB fallback.
 - [x] DuckDB extension fallback hardened for offline setups.
-- [ ] Integration tests stabilized ([fix-search-ranking-and-extension-tests]).
+- [ ] Distributed coordination helpers restored
+  ([restore-distributed-coordination-simulation-exports]).
 - [ ] `task verify` completes without resource tracker errors
   ([resolve-resource-tracker-errors-in-verify]).
 - [ ] Deprecation warnings removed from test runs
@@ -160,7 +164,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 
 - Packaging and deployment planning draw on [prepare-first-alpha-release].
 - Integration stability depends on closing
-  [fix-search-ranking-and-extension-tests],
+  [restore-distributed-coordination-simulation-exports],
   [resolve-resource-tracker-errors-in-verify], and
   [resolve-deprecation-warnings-in-tests].
 - Long-term operations rely on keeping the distributed and monitor

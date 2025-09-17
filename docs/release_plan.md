@@ -23,17 +23,19 @@ confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
 Targeted unit runs on **September 17, 2025** show that the DuckDB offline
-fallback and extension loader suites pass, while
+fallback, extension loader suite, and
 `tests/unit/search/test_ranking_formula.py::`
-`test_rank_results_weighted_combination` fails because the ranking weight
-validator raises `ConfigError` for overweight
-vectors. Integration ranking checks and optional extras pass with the `[test]`
-extras installed, and CLI helper plus data analysis suites run with
-`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs`
-build still fails until the docs extras add `mkdocs` to the PATH. `task verify`
-remains blocked by the missing CLI and the ranking regression, so coverage
-numbers are still unavailable. These items are tracked in
-[STATUS.md](../STATUS.md) and the open issues listed there.
+`test_rank_results_weighted_combination` now pass with the documented convex
+weights. However, `uv run --extra test pytest tests/unit -q` fails during
+collection because `scripts/distributed_coordination_sim.py` no longer exports
+`elect_leader` or `process_messages`, so the distributed property tests cannot
+import their reference helpers. Integration ranking checks and optional extras
+still pass with the `[test]` extras installed, and CLI helper plus data
+analysis suites run with `PYTHONWARNINGS=error::DeprecationWarning` without
+warnings. `uv run mkdocs` build still fails until the docs extras add `mkdocs`
+to the PATH. `task verify` remains blocked by the missing CLI and the
+distributed regression, so coverage numbers are still unavailable. These items
+are tracked in [STATUS.md](../STATUS.md) and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
