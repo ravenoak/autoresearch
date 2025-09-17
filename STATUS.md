@@ -8,37 +8,25 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 17, 2025
-- After installing the `dev-minimal` and `test` extras, `uv run python
-  scripts/check_env.py` reports that Go Task is the lone missing prerequisite.
-  【93590e†L1-L7】【7f1069†L1-L7】【57477e†L1-L26】
-- `task --version` still returns "command not found", so install Go Task with
-  `scripts/setup.sh` (or a package manager) before using the Taskfile.
-  【6c3849†L1-L3】
-- Resynced the `dev-minimal`, `test`, and `docs` extras and reran the
-  environment audit; `scripts/check_env.py` now flags only the missing Go Task
-  CLI in this container. 【ecec62†L1-L24】【5505fc†L1-L27】
-- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails in
-  teardown because `test_monitor_cli.py::test_metrics_skips_storage` replaces
-  `ConfigLoader.load_config` with a bare object that lacks `storage`. The
-  autouse `cleanup_storage` fixture then calls
-  `storage.teardown(remove_db=True)` and raises
-  `AttributeError: 'C' object has no attribute 'storage'`. This blocks the
-  broader unit suite until teardown tolerates patched loaders or the test
-  supplies a storage stub. 【990fdc†L1-L66】【d23bdc†L1-L66】【93fac3†L10-L52】
-- Reproduced the storage teardown regression after resyncing extras; the
-  targeted storage suite still halts with
-  `AttributeError: 'C' object has no attribute 'storage'` in
-  `storage.teardown`, so coverage remains blocked. 【1ffd0e†L1-L56】
-- Hardened storage cleanup so `_get_config()` defaults when `ConfigLoader`
-  stubs omit `storage`, the `cleanup_storage` fixture logs teardown failures,
-  and a regression test confirms missing-storage configs no longer abort
-  cleanup. 【F:src/autoresearch/storage.py†L128-L151】【F:src/autoresearch/storage.py†L282-L346】
-  【F:tests/conftest.py†L478-L492】【F:tests/unit/test_monitor_cli.py†L151-L162】
+- After installing the `dev-minimal`, `test`, and `docs` extras,
+  `uv run python scripts/check_env.py` reports that Go Task is still the lone
+  missing prerequisite. 【e6706c†L1-L26】
+- `task --version` continues to return "command not found", so install Go Task
+  with `scripts/setup.sh` (or a package manager) before using the Taskfile.
+  【cef78e†L1-L2】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` now fails
+  at `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
+  because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
+  within the budget. 【d7c968†L1-L164】 The regression blocks coverage and
+  release rehearsals until the deterministic fallback is fixed.
+- The patched monitor metrics scenario passes, confirming the storage teardown
+  fix and allowing the suite to progress to the eviction simulation.
+  【04f707†L1-L3】
 - Distributed coordination property tests still pass when invoked directly,
   confirming the restored simulation exports once the suite reaches them.
-  【09e2a9†L1-L2】
+  【d3124a†L1-L2】
 - The VSS extension loader suite also completes, showing recent fixes persist
-  once the storage regression is addressed. 【669da8†L1-L2】
+  once the eviction regression is addressed. 【669da8†L1-L2】
 - After syncing the docs extras, `uv run --extra docs mkdocs build` succeeds
   but warns that `docs/status/task-coverage-2025-09-17.md` is not listed in the
   navigation. Add the status coverage log to `mkdocs.yml` to clear the warning
