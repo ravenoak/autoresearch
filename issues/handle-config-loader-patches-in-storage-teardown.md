@@ -9,7 +9,7 @@ and the fixture subsequently raises `AttributeError: 'C' object has no
 attribute 'storage'` when `storage.teardown(remove_db=True)` runs.
 `uv run pytest tests/unit -k "storage" -q --maxfail=1` stops at that failure,
 so `uv run pytest tests/unit -q` never reaches the remaining suites.
-【F:tests/unit/test_monitor_cli.py†L41-L85】【d541c6†L1-L58】【35a0a9†L63-L73】
+【F:tests/unit/test_monitor_cli.py†L41-L85】【eeec82†L1-L57】
 
 ## Dependencies
 - None

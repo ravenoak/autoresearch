@@ -6,11 +6,13 @@ the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
 `uv run python scripts/check_env.py` leaves only the missing Go Task warning in
-this environment. 【12a21c†L1-L9】【0525bf†L1-L26】 Targeted unit tests confirm
+this environment. 【8e4fc3†L1-L27】【37a1fe†L1-L26】 Targeted unit tests confirm
 that the config validator, DuckDB offline fallback, and VSS extension loader
-all pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
-【abaaf2†L1-L2】 Integration scenarios for ranking consistency and optional extras
-also succeed with the `[test]` extras installed. 【897640†L1-L3】【d26393†L1-L2】
+all pass with the `[test]` extras installed. 【5b737c†L1-L3】【a7a5ea†L1-L2】
+【93e5f9†L1-L2】 Integration scenarios for ranking consistency and optional extras
+also succeed with the `[test]` extras installed. 【9a935a†L1-L2】【ee8c19†L1-L2】
+Distributed coordination property tests likewise pass when run directly even
+though the full suite cannot reach them yet. 【1daaef†L1-L3】【eeec82†L1-L57】
 However, `uv run pytest tests/unit -q` now fails in teardown because
 monitor CLI metrics tests patch `ConfigLoader.load_config` to return
 `type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
@@ -18,9 +20,9 @@ monitor CLI metrics tests patch `ConfigLoader.load_config` to return
 before the remaining modules run. `uv run pytest tests/unit -k "storage" -q
 --maxfail=1` reproduces the failure at
 `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-【d541c6†L1-L58】【35a0a9†L63-L73】 `uv run mkdocs build` still fails until the
+【eeec82†L1-L57】 `uv run mkdocs build` still fails until the
 docs extras install `mkdocs`, so run `task docs` (or `uv run --extra docs
-mkdocs build`) to pull the dependencies automatically. 【fef027†L1-L3】 Unit
+mkdocs build`) to pull the dependencies automatically. 【3109f7†L1-L3】 Unit
 coverage and `task verify` remain blocked while the Task CLI is missing and
 the storage teardown regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage

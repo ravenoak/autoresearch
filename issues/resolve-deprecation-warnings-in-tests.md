@@ -20,7 +20,7 @@ Task installed to confirm the absence of warnings across the full suite, but
 tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
 autouse `cleanup_storage` fixture raises `AttributeError: 'C' object has no
 attribute 'storage'`, so the suite aborts before we can rerun the warnings
-sweep under Task. 【d541c6†L1-L58】【35a0a9†L63-L73】
+sweep under Task. 【eeec82†L1-L57】
 
 ## Dependencies
 None

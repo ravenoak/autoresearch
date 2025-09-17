@@ -15,22 +15,22 @@ across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
 manual install provides the binary. Running `uv sync --extra dev-minimal --extra
 test` followed by `uv run python scripts/check_env.py` leaves only the missing
-Go Task CLI warning in this environment. 【12a21c†L1-L9】【0525bf†L1-L26】
+Go Task CLI warning in this environment. 【8e4fc3†L1-L27】【37a1fe†L1-L26】
 Targeted tests on **September 17, 2025** show the config validator, DuckDB
 extension fallback, VSS loader, ranking consistency, and optional extras suites
-now pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
-【abaaf2†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, `uv run pytest
+now pass with the `[test]` extras installed. 【5b737c†L1-L3】【a7a5ea†L1-L2】
+【93e5f9†L1-L2】【9a935a†L1-L2】【ee8c19†L1-L2】 However, `uv run pytest
 tests/unit -q` now fails in teardown because monitor CLI metrics tests patch
 `ConfigLoader.load_config` to return `type("C", (), {})()`. The autouse
 `cleanup_storage` fixture raises `AttributeError: 'C' object has no attribute
 'storage'`, so the suite stops before distributed scenarios run.
 `uv run pytest tests/unit -k "storage" -q --maxfail=1` reproduces the
 failure at `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-【d541c6†L1-L58】【35a0a9†L63-L73】 CLI helper and data analysis suites run with
+【eeec82†L1-L57】 CLI helper and data analysis suites run with
 `PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs
 build` still fails until docs extras install `mkdocs`, so run `task docs` (or
 `uv run --extra docs mkdocs build`) to pull the dependencies automatically.
-【fef027†L1-L3】 Release blockers remain
+【3109f7†L1-L3】 Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [handle-config-loader-patches-in-storage-teardown](
