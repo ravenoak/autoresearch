@@ -10,10 +10,10 @@ checks are required.
 ## September 17, 2025
 - After installing the `dev-minimal` and `test` extras, `uv run python
   scripts/check_env.py` reports that Go Task is the lone missing prerequisite.
-  【80552a†L1-L10】
+  【93590e†L1-L7】【7f1069†L1-L7】【57477e†L1-L26】
 - `task --version` still returns "command not found", so install Go Task with
   `scripts/setup.sh` (or a package manager) before using the Taskfile.
-  【0b96f0†L1-L2】
+  【6c3849†L1-L3】
 - `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails in
   teardown because `test_monitor_cli.py::test_metrics_skips_storage` replaces
   `ConfigLoader.load_config` with a bare object that lacks `storage`. The
@@ -21,19 +21,16 @@ checks are required.
   `storage.teardown(remove_db=True)` and raises
   `AttributeError: 'C' object has no attribute 'storage'`. This blocks the
   broader unit suite until teardown tolerates patched loaders or the test
-  supplies a storage stub. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】
-- The failure originates from the storage teardown helper loading the active
-  config to locate RDF paths; it needs a safe fallback when no storage section
-  is present. 【93fac3†L10-L52】
+  supplies a storage stub. 【990fdc†L1-L66】【d23bdc†L1-L66】【93fac3†L10-L52】
 - Distributed coordination property tests still pass when invoked directly,
   confirming the restored simulation exports once the suite reaches them.
-  【b35e17†L1-L2】
-- Integration suites for ranking consistency and optional extras continue to
-  pass with the `[test]` extras installed. 【71af25†L1-L2】【b8990e†L1-L2】
+  【09e2a9†L1-L2】
+- The VSS extension loader suite also completes, showing recent fixes persist
+  once the storage regression is addressed. 【669da8†L1-L2】
 - After syncing the docs extras, `uv run --extra docs mkdocs build` succeeds
   but warns that `docs/status/task-coverage-2025-09-17.md` is not listed in the
   navigation. Add the status coverage log to `mkdocs.yml` to clear the warning
-  before release notes are drafted. 【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+  before release notes are drafted. 【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
 - Regenerated `SPEC_COVERAGE.md` with
   `uv run python scripts/generate_spec_coverage.py --output SPEC_COVERAGE.md`
   to confirm every module retains spec and proof references. 【a99f8d†L1-L2】

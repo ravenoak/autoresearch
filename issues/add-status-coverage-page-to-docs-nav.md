@@ -7,7 +7,7 @@ Release preparation should include all published status reports so
 contributors do not miss coverage requirements or wonder whether the file is
 orphaned. The warning reappears on every docs build until the page is linked
 from `mkdocs.yml`, which also means MkDocs will exclude it from published
-navigation menus. 【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+navigation menus. 【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
 
 ## Dependencies
 - None

@@ -6,23 +6,23 @@ the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
 `uv run python scripts/check_env.py` now reports Go Task as the only missing
-prerequisite. 【80552a†L1-L10】 `task --version` still returns "command not
-found", so the CLI must be installed manually. 【0b96f0†L1-L2】 The monitor CLI
-metrics tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`,
-and the autouse `cleanup_storage` fixture then calls `storage.teardown` on an
-object without a `storage` attribute. `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` reproduces the resulting
-`AttributeError: 'C' object has no attribute 'storage'`, preventing the full
-unit suite from running. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】 The
+prerequisite. 【93590e†L1-L7】【7f1069†L1-L7】【57477e†L1-L26】 `task --version` still
+returns "command not found", so the CLI must be installed manually.
+【6c3849†L1-L3】 The monitor CLI metrics tests patch `ConfigLoader.load_config`
+to return `type("C", (), {})()`, and the autouse `cleanup_storage` fixture then
+calls `storage.teardown` on an object without a `storage` attribute.
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` reproduces
+the resulting `AttributeError: 'C' object has no attribute 'storage'`,
+preventing the full unit suite from running. 【990fdc†L1-L66】【d23bdc†L1-L66】 The
 teardown helper needs a safe fallback for missing storage settings.
 【93fac3†L10-L52】 Distributed coordination property tests pass when invoked
 directly, confirming the restored simulation exports once teardown is fixed.
-【b35e17†L1-L2】 Integration scenarios for ranking consistency and optional
-extras also pass with the `[test]` extras installed. 【71af25†L1-L2】【b8990e†L1-L2】
-After syncing the docs extras, `uv run --extra docs mkdocs build` completes but
-warns that `docs/status/task-coverage-2025-09-17.md` is missing from the `nav`
-configuration; add it to `mkdocs.yml` before release packaging.
-【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+【09e2a9†L1-L2】 The VSS extension loader suite also passes with the `[test]`
+extras, showing the remaining regression is isolated to storage cleanup.
+【669da8†L1-L2】 After syncing the docs extras, `uv run --extra docs mkdocs
+build` completes but warns that `docs/status/task-coverage-2025-09-17.md` is
+missing from the `nav` configuration; add it to `mkdocs.yml` before release
+packaging. 【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
 Unit coverage and `task verify` remain blocked while the Task CLI is absent and
 storage teardown fails.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage

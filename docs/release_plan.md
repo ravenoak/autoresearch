@@ -24,24 +24,25 @@ evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
 `uv run python scripts/check_env.py` now reports Go Task as the only missing
-prerequisite. 【80552a†L1-L10】 `task --version` continues to return "command not
-found", so the CLI must be bootstrapped manually. 【0b96f0†L1-L2】 Targeted unit
-runs on **September 17, 2025** reveal that
+prerequisite. 【93590e†L1-L7】【7f1069†L1-L7】【57477e†L1-L26】 `task --version`
+continues to return "command not found", so the CLI must be bootstrapped
+manually. 【6c3849†L1-L3】
+Targeted unit runs on **September 17, 2025** reveal that
 `tests/unit/test_monitor_cli.py::test_metrics_skips_storage` patches
 `ConfigLoader.load_config` with an object that lacks `storage`, and the autouse
 `cleanup_storage` fixture then calls `storage.teardown(remove_db=True)` and
 raises `AttributeError: 'C' object has no attribute 'storage'`. The regression
 prevents the full suite from reaching other modules until teardown tolerates
 patched loaders or the test injects a storage stub.
-【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】 Integration ranking checks and
-optional extras continue to pass with the `[test]` extras installed.
-【71af25†L1-L2】【b8990e†L1-L2】 Distributed coordination property tests also pass
-when invoked directly, confirming the restored simulation exports once
-teardown is fixed. 【b35e17†L1-L2】 After syncing the docs extras,
+【990fdc†L1-L66】【d23bdc†L1-L66】 Integration ranking checks and optional extras
+continue to pass with the `[test]` extras installed. Distributed coordination
+property tests and the VSS extension loader suite also pass when invoked
+directly, confirming the restored helpers once teardown is fixed.
+【09e2a9†L1-L2】【669da8†L1-L2】 After syncing the docs extras,
 `uv run --extra docs mkdocs build` succeeds but warns that
 `docs/status/task-coverage-2025-09-17.md` is missing from the navigation;
 update `mkdocs.yml` before finalizing release notes.
-【d860f2†L1-L4】【f44ab7†L1-L1】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
+【d78ca2†L1-L4】【F:docs/status/task-coverage-2025-09-17.md†L1-L30】
 `task verify` remains blocked by the missing CLI and the storage teardown
 regression, so coverage numbers are still unavailable. These items are tracked
 in STATUS.md and the open issues listed there.
