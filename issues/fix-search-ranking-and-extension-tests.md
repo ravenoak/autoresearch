@@ -1,24 +1,25 @@
 # Fix search ranking and extension tests
 
 ## Context
-Search-related tests continue to fail, but the problem set has narrowed. The
-unit ranking suite now passes (`uv run pytest` on 2025-09-15 returns the
-expected ordering in
-`tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination`),
-and the integration scenarios in
-`tests/integration/test_ranking_formula_consistency.py` now match the values
-documented in the specs. Optional extras also load successfully during
-`tests/integration/test_optional_extras.py`.
+Search-related tests continue to fail, but the scope narrowed again on
+September 17, 2025. Extension bootstrapping now behaves as expected:
+`uv run --extra test pytest`
+`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
+`test_load_extension_download_unhandled_exception -q` succeeds and
+confirms non-DuckDB errors still propagate. Integration coverage for
+ranking consistency (`tests/integration/test_ranking_formula_consistency.py`)
+and optional extras (`tests/integration/test_optional_extras.py`) also
+passes with the `[test]` extras installed.
 
-Remaining regressions focus on extension bootstrapping. Running
-`uv run pytest tests/unit/test_vss_extension_loader.py -q` on
-2025-09-16 fails in
-`TestVSSExtensionLoader.test_load_extension_download_unhandled_exception`
-because `VSSExtensionLoader.load_extension` now catches unexpected runtime
-errors, logs them, and falls back to stub creation instead of re-raising. The
-double `duckdb_extensions()` verification call no longer reproduces, and the
-DuckDB download helper suite passes after the offline fallback fixes (see
-`issues/archive/fix-duckdb-extension-offline-fallback.md`).
+The remaining regression lives in
+`tests/unit/search/test_ranking_formula.py::`
+`test_rank_results_weighted_combination`.
+`SearchConfig.normalize_ranking_weights` now raises `ConfigError` when the
+supplied weights sum above one, so the test fails after constructing a
+`ConfigModel` with weights `(bm25=2.0, semantic=8.0, credibility=0.0)`.
+The validator is documented in `docs/specs/config.md`, so the test either
+needs to adopt legal weights or assert the new exception. Ranking formula
+docs still describe the normalization ladder correctly.
 
 ## Dependencies
 None.
@@ -27,7 +28,9 @@ None.
 - DuckDB VSS extension loader unit tests pass, including
   `test_load_extension_download_unhandled_exception` propagating
   non-DuckDB errors.
-- Ranking formula tests match documented values.
+- Update `tests/unit/search/test_ranking_formula.py::`
+  `test_rank_results_weighted_combination` so it aligns with the validator
+  while still exercising non-uniform weights.
 - Integration tests for extension loading, ranking consistency, and invalid
   weight detection pass.
 - Optional extras such as `fastembed` load in test environments.

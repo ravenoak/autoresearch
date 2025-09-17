@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 16, 2025** and
+`2025-05-18`). This schedule was last updated on **September 17, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -22,19 +22,18 @@ The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
-Targeted unit runs on **September 16, 2025** show that
-`tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one` and
-the DuckDB offline fallback suite now pass, while
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_load_extension_download_unhandled_exception` fails because
-`VSSExtensionLoader.load_extension` suppresses unexpected runtime errors. The
-API authentication middleware test passes. Running the unit suite without the
-`[test]` extras continues to emit `PytestConfigWarning: Unknown config option:
-bdd_features_base_dir` because `pytest-bdd` is not installed, and
-`uv run mkdocs build` fails until the docs extras add `mkdocs` to the PATH.
-`task verify` remains blocked by the missing CLI and the outstanding extension
-regression, so coverage numbers are still unavailable. These items are tracked
-in [STATUS.md](../STATUS.md) and the open issues listed there.
+Targeted unit runs on **September 17, 2025** show that the DuckDB offline
+fallback and extension loader suites pass, while
+`tests/unit/search/test_ranking_formula.py::`
+`test_rank_results_weighted_combination` fails because the ranking weight
+validator raises `ConfigError` for overweight
+vectors. Integration ranking checks and optional extras pass with the `[test]`
+extras installed, and CLI helper plus data analysis suites run with
+`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs`
+build still fails until the docs extras add `mkdocs` to the PATH. `task verify`
+remains blocked by the missing CLI and the ranking regression, so coverage
+numbers are still unavailable. These items are tracked in
+[STATUS.md](../STATUS.md) and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

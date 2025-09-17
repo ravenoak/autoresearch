@@ -10,12 +10,16 @@ Reference issues by slugged filename (for example,
   raising a `ConfigError` and documenting the behaviour in
   [docs/specs/config.md](docs/specs/config.md).
 - Logged the config weight validation regression in
-  [fix-config-weight-sum-validation](issues/fix-config-weight-sum-validation.md).
+  [fix-config-weight-sum-validation](
+    issues/fix-config-weight-sum-validation.md).
 - Captured offline DuckDB extension fallback failures in
-  [fix-duckdb-extension-offline-fallback](issues/fix-duckdb-extension-offline-fallback.md).
+  [fix-duckdb-extension-offline-fallback](
+    issues/fix-duckdb-extension-offline-fallback.md).
 - Narrowed the search regression scope in
-  [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
-  which now focuses on the VSS loader mock expectations.
+  [fix-search-ranking-and-extension-tests](
+    issues/fix-search-ranking-and-extension-tests.md), which now focuses on
+  aligning the overweight ranking unit test with the validator while extension
+  loader suites pass.
 - Continued to track documentation build warnings in
   [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md).
 
@@ -36,7 +40,8 @@ Planned first public release bringing the core research workflow to life.
 
 ### Highlights
 - CLI, HTTP API and Streamlit interfaces for local-first research.
-- Dialectical orchestrator coordinating multiple agents with hot-reloadable configuration.
+- Dialectical orchestrator coordinating multiple agents with hot-reloadable
+  configuration.
 - Hybrid DuckDB/RDF knowledge graph persistence and plugin-based search backends
   (files, Git and web).
 - Prometheus metrics, interactive mode and graph visualization utilities.
@@ -44,7 +49,8 @@ Planned first public release bringing the core research workflow to life.
 ### Improvements
 - Refined token budget heuristics and asynchronous cancellation handling.
 - Cleaned up CLI commands and installer scripts.
-- Numerous bug fixes and reliability tweaks since the initial prototype was created in May 2025.
+- Numerous bug fixes and reliability tweaks since the initial prototype was
+  created in May 2025.
   - Exposed token usage capture helper on the orchestrator for easier testing.
 
 See the [release plan](docs/release_plan.md) for upcoming milestones.

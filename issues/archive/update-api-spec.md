@@ -3,6 +3,11 @@
 ## Context
 docs/specs/api.md predates recent changes to the API package.
 
+On September 17, 2025, the spec was reviewed against the FastAPI router,
+middleware, and streaming helpers. The document now covers authentication,
+rate limiting, metrics, and streaming endpoints, so no further edits are
+required for the current implementation.
+
 ## Dependencies
 None
 
@@ -12,4 +17,4 @@ None
 - Mark SPEC_COVERAGE.md status as OK.
 
 ## Status
-Open
+Archived
