@@ -113,7 +113,7 @@ Must     | Unit tests for logging utilities.          |
 
 SlowAPI supplies request rate limiting for FastAPI. It is pinned to
 version 0.1.9 because newer releases require Starlette APIs that
-conflict with FastAPI 0.115.12. The pin prevents runtime errors until
+conflict with FastAPI 0.116.1. The pin prevents runtime errors until
 the libraries align on compatible versions.
 
 ---

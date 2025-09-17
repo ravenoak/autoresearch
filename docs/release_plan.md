@@ -18,7 +18,7 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The dependency pins for `fastapi` (>=0.115.12) and `slowapi` (==0.1.9) remain
+The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
@@ -41,8 +41,7 @@ docs extras add `mkdocs` to the PATH, so run `task docs` (or `uv run
 --extra docs mkdocs build`) to install them automatically. 【3109f7†L1-L3】
 `task verify` remains blocked by the missing CLI and the storage teardown
 regression, so coverage numbers are still unavailable. These items are tracked
-in
-[STATUS.md](../STATUS.md) and the open issues listed there.
+in STATUS.md and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

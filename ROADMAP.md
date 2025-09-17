@@ -45,7 +45,7 @@ extensions, and monitor packages were reviewed and archived after confirming
 the docs match the implementation. Scheduler resource benchmarks
 (`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
 estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
-`fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
+`fastapi>=0.116.1` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
 uv venv && uv sync --all-extras &&
