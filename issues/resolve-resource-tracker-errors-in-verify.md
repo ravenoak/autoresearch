@@ -12,14 +12,15 @@ that Go Task is the remaining prerequisite. 【12a21c†L1-L9】【0525bf†L1-L
 Targeted retries of the DuckDB extension fallback, ranking consistency, and
 optional extras suites complete without resource tracker errors, suggesting the
 fixture cleanup helpers remain effective when the suite reaches teardown.
-【3108ac†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, running
-`uv run --extra test pytest tests/unit -q` still aborts during collection
-because `scripts/distributed_coordination_sim.py` no longer exports
-`elect_leader` or `process_messages`. 【382418†L1-L23】 Until the distributed
-properties import their reference helpers and Go Task is installed, we cannot
-exercise the full unit suite under coverage to confirm the resource tracker fix.
-We still need a full `task verify` execution (with Task installed) once the
-distributed regression is resolved.
+【3108ac†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, `uv run pytest tests/unit -q`
+now fails in teardown because the monitor metrics tests patch
+`ConfigLoader.load_config` to return `type("C", (), {})()`. The autouse
+`cleanup_storage` fixture calls `storage.teardown(remove_db=True)` during
+teardown and raises `AttributeError: 'C' object has no attribute 'storage'`,
+so the suite aborts before coverage can run. 【d541c6†L1-L58】【35a0a9†L63-L73】 Until
+the storage teardown regression is fixed and the Go Task CLI is available, we
+still cannot exercise the full unit suite under coverage to confirm the
+resource tracker fix.
 
 ## Dependencies
 - [fix-duckdb-storage-schema-initialization](

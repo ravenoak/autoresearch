@@ -20,15 +20,18 @@ checks are required.
   weights are legal: `tests/integration/test_ranking_formula_consistency.py -q`
   and `tests/integration/test_optional_extras.py -q` both pass.
   【897640†L1-L3】【d26393†L1-L2】
-- `uv run --extra test pytest tests/unit -q` fails during collection because
-  `scripts/distributed_coordination_sim.py` no longer exports `elect_leader`
-  or `process_messages`, so the distributed coordination property tests
-  cannot import their reference helpers. 【382418†L1-L23】
+- `uv run pytest tests/unit -q` fails in teardown because monitor CLI metrics
+  tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
+  autouse `cleanup_storage` fixture raises `AttributeError: 'C' object has no
+  attribute 'storage'`, so the suite stops before the remaining modules run.
+  `uv run pytest tests/unit -k "storage" -q --maxfail=1` reproduces the
+  failure at `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
+  【d541c6†L1-L58】【35a0a9†L63-L73】
 - CLI helper and data analysis suites run with
   `PYTHONWARNINGS=error::DeprecationWarning` and report no warnings.
 - `uv run mkdocs build` still fails with `No such file or directory` because
   docs extras are not installed; run `task docs` (or `uv run --extra docs
-  mkdocs build`) to pull them automatically. 【9f25fa†L1-L3】
+  mkdocs build`) to pull them automatically. 【fef027†L1-L3】
 - Contributor docs and the release checklist now direct maintainers to run
   `task docs` or `uv run --extra docs mkdocs build` before building the site,
   keeping the workflow aligned with the Taskfile.

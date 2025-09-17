@@ -19,17 +19,22 @@ Go Task CLI warning in this environment. 【12a21c†L1-L9】【0525bf†L1-L26�
 Targeted tests on **September 17, 2025** show the config validator, DuckDB
 extension fallback, VSS loader, ranking consistency, and optional extras suites
 now pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
-【abaaf2†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, `uv run --extra test
-pytest tests/unit -q` fails during collection because
-`scripts/distributed_coordination_sim.py` no longer exports `elect_leader` or
-`process_messages`, so the distributed property tests cannot import their
-reference helpers. 【382418†L1-L23】 CLI helper and data analysis suites run with
-`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs build`
-still fails until docs extras install `mkdocs`, so run `task docs` (or `uv run
---extra docs mkdocs build`) to pull the dependencies automatically.
-【9f25fa†L1-L3】 Release blockers remain
+【abaaf2†L1-L2】【897640†L1-L3】【d26393†L1-L2】 However, `uv run pytest
+tests/unit -q` now fails in teardown because monitor CLI metrics tests patch
+`ConfigLoader.load_config` to return `type("C", (), {})()`. The autouse
+`cleanup_storage` fixture raises `AttributeError: 'C' object has no attribute
+'storage'`, so the suite stops before distributed scenarios run.
+`uv run pytest tests/unit -k "storage" -q --maxfail=1` reproduces the
+failure at `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
+【d541c6†L1-L58】【35a0a9†L63-L73】 CLI helper and data analysis suites run with
+`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs
+build` still fails until docs extras install `mkdocs`, so run `task docs` (or
+`uv run --extra docs mkdocs build`) to pull the dependencies automatically.
+【fef027†L1-L3】 Release blockers remain
 in [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
+[handle-config-loader-patches-in-storage-teardown](
+issues/handle-config-loader-patches-in-storage-teardown.md),
 [resolve-resource-tracker-errors-in-verify](
 issues/resolve-resource-tracker-errors-in-verify.md),
 [resolve-deprecation-warnings-in-tests](
