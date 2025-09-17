@@ -14,13 +14,14 @@ On September 17, 2025, targeted retries with
 showed no remaining warnings in the CLI helper suite or distributed perf
 comparison test. The `sitecustomize.py` shim that rewrites
 `weasel.util.config` appears to be working, and the Click bump to 8.2.1 removed
-the original warning. We still need an end-to-end `task verify` run with Go
-Task installed to confirm the absence of warnings across the full suite, but
-`uv run --extra test pytest tests/unit -q` now fails in teardown when monitor
-CLI metrics tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`.
-The autouse `cleanup_storage` fixture raises `AttributeError: 'C' object has no
-attribute 'storage'`, so the suite aborts before we can rerun the warnings
-sweep under Task. 【529dfa†L1-L57】【4f24c8†L64-L88】【a3c726†L25-L38】
+the original warning. After syncing the `dev-minimal` and `test` extras,
+`uv run python scripts/check_env.py` now reports only the missing Go Task CLI,
+but `uv run --extra test pytest tests/unit -q` still fails in teardown when
+monitor CLI metrics tests patch `ConfigLoader.load_config` to return
+`type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
+`AttributeError: 'C' object has no attribute 'storage'`, so the suite aborts
+before we can rerun the warnings sweep under Task. 【57477e†L1-L26】
+【990fdc†L1-L66】【d23bdc†L1-L66】
 
 ## Dependencies
 None
