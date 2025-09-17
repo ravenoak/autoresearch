@@ -16,10 +16,11 @@ comparison test. The `sitecustomize.py` shim that rewrites
 `weasel.util.config` appears to be working, and the Click bump to 8.2.1 removed
 the original warning. We still need an end-to-end `task verify` run with Go
 Task installed to confirm the absence of warnings across the full suite, but
-`uv run --extra test pytest tests/unit -q` currently fails because
-`scripts/distributed_coordination_sim.py` no longer exports the helpers that
-the distributed property tests import. 【382418†L1-L23】 Once those exports
-return we can rerun the warnings sweep under Task.
+`uv run pytest tests/unit -q` now fails in teardown when monitor CLI metrics
+tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
+autouse `cleanup_storage` fixture raises `AttributeError: 'C' object has no
+attribute 'storage'`, so the suite aborts before we can rerun the warnings
+sweep under Task. 【d541c6†L1-L58】【35a0a9†L63-L73】
 
 ## Dependencies
 None

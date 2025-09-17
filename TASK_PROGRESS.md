@@ -11,14 +11,18 @@ that the config validator, DuckDB offline fallback, and VSS extension loader
 all pass with the `[test]` extras installed. 【4567c0†L1-L2】【3108ac†L1-L2】
 【abaaf2†L1-L2】 Integration scenarios for ranking consistency and optional extras
 also succeed with the `[test]` extras installed. 【897640†L1-L3】【d26393†L1-L2】
-However, `uv run --extra test pytest tests/unit -q` still aborts during
-collection because `scripts/distributed_coordination_sim.py` no longer exports
-`elect_leader` or `process_messages`, so the distributed property tests cannot
-import their reference helpers. 【382418†L1-L23】 `uv run mkdocs build` still fails
-until the docs extras sync `mkdocs` onto the PATH, so run `task docs` (or `uv
-run --extra docs mkdocs build`) to install them automatically. 【9f25fa†L1-L3】
-Unit coverage and `task verify` remain blocked while the
-Task CLI is missing and the distributed regression persists.
+However, `uv run pytest tests/unit -q` now fails in teardown because
+monitor CLI metrics tests patch `ConfigLoader.load_config` to return
+`type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
+`AttributeError: 'C' object has no attribute 'storage'`, so the suite stops
+before the remaining modules run. `uv run pytest tests/unit -k "storage" -q
+--maxfail=1` reproduces the failure at
+`tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
+【d541c6†L1-L58】【35a0a9†L63-L73】 `uv run mkdocs build` still fails until the
+docs extras install `mkdocs`, so run `task docs` (or `uv run --extra docs
+mkdocs build`) to pull the dependencies automatically. 【fef027†L1-L3】 Unit
+coverage and `task verify` remain blocked while the Task CLI is missing and
+the storage teardown regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

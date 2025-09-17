@@ -1,18 +1,18 @@
 # Restore distributed coordination simulation exports
 
 ## Context
-Running `uv run --extra test pytest tests/unit -q` on September 17, 2025
-fails during collection because `scripts/distributed_coordination_sim.py`
-no longer exports `elect_leader` or `process_messages`. Property-based tests
-(`tests/unit/distributed/test_coordination_properties.py` and
-`tests/unit/test_distributed_coordination_props.py`) import those helpers to
-validate the leader election and message ordering proofs documented in
-`docs/algorithms/distributed_coordination.md`. The specification still cites
-this script as the reference implementation, so the missing exports break the
-Doc/spec/test alignment and prevent `task verify` from running to completion.
-Pytest now raises `ImportError: cannot import name 'elect_leader'` for both
-distributed property suites, confirming the helpers must be reinstated before
-`tests/unit` can collect. 【382418†L1-L23】【F:scripts/distributed_coordination_sim.py†L67-L200】【F:docs/algorithms/distributed_coordination.md†L66-L90】
+`scripts/distributed_coordination_sim.py` now exports `elect_leader` and
+`process_messages`, and direct imports confirm the helpers follow the proof in
+`docs/algorithms/distributed_coordination.md`.
+【F:scripts/distributed_coordination_sim.py†L1-L200】【049a40†L1-L3】 The unit
+suite still fails before the property tests run because monitor CLI metrics
+tests patch `ConfigLoader.load_config` to return `type("C", (), {})()`. The
+autouse `cleanup_storage` fixture invokes `storage.teardown(remove_db=True)`
+during teardown and raises `AttributeError: 'C' object has no attribute
+'storage'`, so `uv run pytest tests/unit -q` aborts early and never reaches the
+distributed scenarios. 【d541c6†L1-L58】【35a0a9†L63-L73】 We must keep this ticket
+open until the storage teardown regression is resolved and the property suites
+can execute again.
 
 ## Dependencies
 None.
