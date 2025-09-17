@@ -516,7 +516,7 @@ Separating `uv sync` from `task check-env` in `Taskfile.yml` lets `task check` r
 `scripts/check_spec_tests.py`, and targeted `pytest` in a fresh environment. A full `uv run
 --all-extras task verify` attempt began downloading large GPU dependencies and was aborted. With
 test extras only, the fixed `tests/unit/distributed/test_coordination_properties.py` now runs
-without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.115.12) and `slowapi`
+without the previous `tmp_path` `KeyError`. Dependency pins for `fastapi` (>=0.116.1) and `slowapi`
 (==0.1.9) remain in place.
 
 Run `scripts/setup.sh` or `task install` before executing tests. These
