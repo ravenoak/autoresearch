@@ -5,36 +5,17 @@
 `KeyError` messages after unit tests, preventing integration tests and
 coverage from completing.
 
-On September 6, 2025, the error was not reproduced because the run aborted on
-other failing tests before reaching integration scenarios.
-
-On September 12, 2025, `task verify` again emitted `KeyError: '/mp-...'` after
-`tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version`
-failed, leaving coverage incomplete.
-
-On September 13, 2025, the run failed in
-`tests/unit/test_check_env_warnings.py::test_missing_package_metadata_warns`
-and still produced a `KeyError` from the multiprocessing resource tracker after
-the unit suite finished.
-
-Auditing fixtures that spawn multiprocessing pools and queues shows they call
-`close()` and `join_thread()` to avoid leaking resources.
-
-On September 14, 2025, a per-test fixture was added to drain the resource
-tracker cache after each test. `task verify` still fails in
-`tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback`,
-preventing the KeyError from being reproduced.
-
-Later on September 14, 2025, with LLM extras installed, `task verify` progressed
-further and failed at
-`tests/unit/test_orchestrator_perf_sim.py::test_benchmark_scheduler_scales`,
-again ending before any resource tracker errors appeared.
-Another run on the same day fails in
-`tests/unit/test_relevance_ranking.py::test_rank_results_with_disabled_features`,
-still preventing reproduction of the KeyError.
+On September 17, 2025, the environment still lacks the Go Task CLI by default,
+so a fresh `task verify` run has not been attempted. Targeted retries of the
+DuckDB storage backend initialization, orchestrator perf simulation, and
+optional extras suites complete without resource tracker errors, suggesting
+the fixture cleanup helpers are effective when the suite reaches teardown.
+We still need a full `task verify` execution (with Task installed) to confirm
+the issue is gone during coverage runs.
 
 ## Dependencies
-- [fix-duckdb-storage-schema-initialization](../archive/fix-duckdb-storage-schema-initialization.md)
+- [fix-duckdb-storage-schema-initialization](
+  ../archive/fix-duckdb-storage-schema-initialization.md)
 
 ## Acceptance Criteria
 - `task verify` completes without resource tracker errors.

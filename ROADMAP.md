@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 15, 2025**.
+[README](README.md). Last updated **September 17, 2025**.
 
 ## Status
 
@@ -13,28 +13,27 @@ See [STATUS.md](STATUS.md) for current results and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
-manual install provides the binary. Targeted unit tests on **September 16,
-2025** show the ranking weight regression and DuckDB offline fallback suite now
-pass, while
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::
-test_load_extension_download_unhandled_exception` fails because
-`VSSExtensionLoader.load_extension` suppresses unexpected runtime errors.
-Running `pytest` without the `[test]` extras continues to trigger
-`PytestConfigWarning: Unknown config option: bdd_features_base_dir` until
-`pytest-bdd` is installed, and documentation builds require syncing the docs
-extras because `mkdocs` is not yet available. Release blockers remain in
-[fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md),
-[resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md),
-and [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md) coordinates the alpha tag once
-they close. Specification refreshes in [update-api-spec](issues/update-api-spec.md),
-[update-cli-helpers-spec](issues/update-cli-helpers-spec.md),
-[update-config-spec](issues/update-config-spec.md),
-[update-distributed-spec](issues/update-distributed-spec.md),
-[update-extensions-spec](issues/update-extensions-spec.md), and
-[update-monitor-spec](issues/update-monitor-spec.md) keep docs aligned with the implementation.
-Scheduler resource benchmarks (`scripts/scheduling_resource_benchmark.py`) offer utilization and
-memory estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
+manual install provides the binary. Targeted tests on **September 17, 2025**
+show the DuckDB extension loader suite now passes, but
+`tests/unit/search/test_ranking_formula.py::`
+`test_rank_results_weighted_combination` fails because the ranking weight
+validator raises `ConfigError` for overweight vectors. Integration scenarios
+for ranking consistency and optional extras pass with the `[test]` extras
+installed, and CLI helper plus data analysis suites run with
+`PYTHONWARNINGS=error::DeprecationWarning` without warnings. `uv run mkdocs`
+build still fails until docs extras install `mkdocs`. Release blockers remain
+in [fix-search-ranking-and-extension-tests](
+issues/fix-search-ranking-and-extension-tests.md),
+[resolve-resource-tracker-errors-in-verify](
+issues/resolve-resource-tracker-errors-in-verify.md),
+[resolve-deprecation-warnings-in-tests](
+issues/resolve-deprecation-warnings-in-tests.md), and
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
+Specification updates for the API, CLI helpers, config, distributed execution,
+extensions, and monitor packages were reviewed and archived after confirming
+the docs match the implementation. Scheduler resource benchmarks
+(`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
+estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
 `fastapi>=0.115.12` and `slowapi==0.1.9`. Use Python 3.12+ with:
 
 ```
@@ -53,16 +52,8 @@ before running tests.
 - 0.1.1 (2026-12-15, status: planned): Bug fixes and documentation updates.
 - 0.2.0 (2027-03-01, status: planned): API stabilization, configuration
   hot-reload and improved search backends.
-  - Current workstreams rely on the open specification updates:
-    [update-api-spec](issues/update-api-spec.md),
-    [update-cli-helpers-spec](issues/update-cli-helpers-spec.md),
-    [update-config-spec](issues/update-config-spec.md),
-    [update-extensions-spec](issues/update-extensions-spec.md), and
-    [update-monitor-spec](issues/update-monitor-spec.md).
 - 0.3.0 (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
-  - Planning builds on [update-distributed-spec](issues/update-distributed-spec.md) to capture the
-    revised orchestration model.
 - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
   and stable interfaces.
   - Stability goals depend on closing:
@@ -75,11 +66,12 @@ See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
 
 [prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
-[fix-search-ranking-and-extension-tests]: issues/fix-search-ranking-and-extension-tests.md
-[resolve-resource-tracker-errors-in-verify]: issues/resolve-resource-tracker-errors-in-verify.md
-[resolve-deprecation-warnings-in-tests]: issues/resolve-deprecation-warnings-in-tests.md
-[update-distributed-spec]: issues/update-distributed-spec.md
-[update-monitor-spec]: issues/update-monitor-spec.md
+[fix-search-ranking-and-extension-tests]:
+  issues/fix-search-ranking-and-extension-tests.md
+[resolve-resource-tracker-errors-in-verify]:
+  issues/resolve-resource-tracker-errors-in-verify.md
+[resolve-deprecation-warnings-in-tests]:
+  issues/resolve-deprecation-warnings-in-tests.md
 
 ## 0.1.0a1 – Alpha preview
 
@@ -90,7 +82,8 @@ the work. Tagging **0.1.0a1** requires `task verify` to run to completion,
 coverage to reach **90%** once tests run, and a successful TestPyPI upload. The
 release is re-targeted for **September 15, 2026**. Key activities include:
 
-- [x] Environment bootstrap documented and installation instructions consolidated.
+- [x] Environment bootstrap documented and installation instructions
+  consolidated.
 - [x] Task CLI availability restored.
 - [x] Packaging verification with DuckDB fallback.
 - [x] DuckDB extension fallback hardened for offline setups.
@@ -166,10 +159,14 @@ Key features planned for this release include:
 The 1.0.0 milestone aims for a polished, production-ready system:
 
 - Packaging and deployment planning draw on [prepare-first-alpha-release].
-- Integration stability depends on closing [fix-search-ranking-and-extension-tests],
-  [resolve-resource-tracker-errors-in-verify], and [resolve-deprecation-warnings-in-tests].
-- Long-term operations rely on [update-distributed-spec] and [update-monitor-spec] to document
-  orchestration and monitoring expectations.
+- Integration stability depends on closing
+  [fix-search-ranking-and-extension-tests],
+  [resolve-resource-tracker-errors-in-verify], and
+  [resolve-deprecation-warnings-in-tests].
+- Long-term operations rely on keeping the distributed and monitor
+  specifications in sync with implementation changes; both docs were reviewed
+  on September 17, 2025.
 
-These tasks proceed sequentially: containerization → deployment validation → performance tuning.
+These tasks proceed sequentially: containerization → deployment validation →
+performance tuning.
 

@@ -3,6 +3,11 @@
 ## Context
 docs/specs/extensions.md predates recent changes.
 
+On September 17, 2025, the spec was compared with
+`src/autoresearch/extensions.VSSExtensionLoader`. The document now details the
+offline ladder, stub marker, and strict-mode error propagation, so no further
+updates are required.
+
 ## Dependencies
 None
 
@@ -12,4 +17,4 @@ None
 - Update SPEC_COVERAGE.md.
 
 ## Status
-Open
+Archived

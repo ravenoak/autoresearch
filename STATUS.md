@@ -8,15 +8,32 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 17, 2025
-- Coverage run targeted extras: analysis, distributed, git, gpu, llm, nlp,
-  parsers, ui, vss.
-- `uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
-  completed after syncing the PR1 environment and wrote both `coverage.xml`
-  and the mirrored baseline copy.
-- Combined line coverage held at 90% per `coverage.xml` after the run.
-- See [docs/status/task-coverage-2025-09-17.md](docs/status/task-coverage-2025-09-17.md)
-  from PR1 for wheel cache paths (`wheels/gpu`), Task CLI setup details, and
-  reproduction tips that future runs can reuse.
+- `task --version` still reports `command not found`, so install Task with
+  `scripts/setup.sh` before using the Taskfile.
+- `uv run --extra test pytest`
+  `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
+  `test_load_extension_download_unhandled_exception -q` passes and keeps
+  propagating non-DuckDB errors.
+- `uv run --extra test pytest tests/unit/search/test_ranking_formula.py -q`
+  fails in `test_rank_results_weighted_combination` because overweight
+  ranking vectors now raise `ConfigError`; updating that test remains the
+  primary blocker.
+- Integration coverage for ranking and optional extras is stable once
+  weights are legal:
+  `tests/integration/test_ranking_formula_consistency.py -q` and
+  `tests/integration/test_optional_extras.py -q` both pass with the `[test]`
+  extras.
+- `uv run pytest tests/unit/test_config_validation_errors.py::`
+  `test_weights_must_sum_to_one -q` passes after the validator fix, and
+  targeted DuckDB storage plus orchestrator perf tests complete without
+  resource tracker errors.
+- CLI helper and data analysis suites run with
+  `PYTHONWARNINGS=error::DeprecationWarning` and report no warnings.
+- `uv run mkdocs build` still fails with `No such file or directory` because
+  docs extras are not installed.
+- Reviewed the API, CLI helpers, config, distributed, extensions, and monitor
+  specs; the documents match the implementation, so the update tickets were
+  archived.
 
 ## September 16, 2025
 - `uv run task check` still fails because the Go Task CLI is absent in the
@@ -552,47 +569,44 @@ with smoke tests, allowing offline environments to initialize without vector
 search.
 
 ## Lint, type checks, and spec tests
-`task check` runs `flake8`, `mypy`, and `scripts/check_spec_tests.py` after syncing `dev` and `test`
-extras.
+`task check` runs `flake8`, `mypy`, and `scripts/check_spec_tests.py` after
+syncing `dev` and `test` extras.
 
 ## Targeted tests
-`task check` runs `tests/unit/test_version.py` and `tests/unit/test_cli_help.py`; both pass.
+`uv run --extra test pytest tests/unit/test_vss_extension_loader.py -q` now
+passes while `tests/unit/search/test_ranking_formula.py -q` fails in
+`test_rank_results_weighted_combination` due to the overweight validator.
+DuckDB storage initialization and orchestrator perf simulations pass without
+resource tracker errors.
 
 ## Integration tests
-Targeted authentication suites pass except
-`tests/integration/test_api_docs.py::test_query_endpoint`, which returns
-`"Error: Invalid response format"`.
+`tests/integration/test_ranking_formula_consistency.py -q` and
+`tests/integration/test_optional_extras.py -q` both pass with the `[test]`
+extras. API doc checks were not rerun.
 
 ## Behavior tests
 Not executed.
 
 ## Coverage
-`task verify` runs unit tests but fails in
-`tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::test_verify_extension_failure`,
-so coverage reports are not generated.
+`task verify` has not been rerun because the environment still lacks the Task
+CLI. Coverage remains unavailable until Task is installed and the ranking
+regression is resolved.
 
 ## Open issues
 
 ### Release blockers
-- [fix-search-ranking-and-extension-tests](issues/fix-search-ranking-and-extension-tests.md) –
-  Restore extension loader error propagation so the ranking suites and integration checks pass.
-- [resolve-resource-tracker-errors-in-verify](issues/resolve-resource-tracker-errors-in-verify.md)
-  – Eliminate multiprocessing tracker `KeyError` noise so `task verify` can finish.
-- [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md) –
-  Replace deprecated APIs and dependency pins that still trigger warnings during test runs.
-- [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) – Coordinate release notes,
-  packaging, and follow-up tasks once the dependent issues above close.
-
-### Specification and documentation updates
-- [update-api-spec](issues/update-api-spec.md) – Refresh API documentation to match the current
-  middleware and endpoints.
-- [update-cli-helpers-spec](issues/update-cli-helpers-spec.md) – Align CLI helper specs with the
-  updated Task-based workflows.
-- [update-config-spec](issues/update-config-spec.md) – Sync configuration specs with the runtime
-  validation logic.
-- [update-distributed-spec](issues/update-distributed-spec.md) – Document the revised distributed
-  orchestration design.
-- [update-extensions-spec](issues/update-extensions-spec.md) – Capture current extension bootstrap
-  behavior and fallbacks.
-- [update-monitor-spec](issues/update-monitor-spec.md) – Update monitoring specs for the latest
-  instrumentation plan.
+- [fix-search-ranking-and-extension-tests](
+  issues/fix-search-ranking-and-extension-tests.md) –
+  Update the overweight ranking test so it matches the validator while
+  keeping extension and integration suites green.
+- [resolve-resource-tracker-errors-in-verify](
+  issues/resolve-resource-tracker-errors-in-verify.md)
+  – Run `task verify` end-to-end once Task is installed to confirm the
+  multiprocessing tracker cleanup fixes hold under coverage.
+- [resolve-deprecation-warnings-in-tests](
+  issues/resolve-deprecation-warnings-in-tests.md) –
+  Execute the full suite with `PYTHONWARNINGS=error::DeprecationWarning`
+  after installing Task to ensure no latent warnings remain.
+- [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
+  Coordinate release notes, docs extras, Task installation, and final smoke
+  tests once the dependent issues above close.
