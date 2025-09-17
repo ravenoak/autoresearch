@@ -24,11 +24,11 @@ evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
 Running `uv sync --extra dev-minimal --extra test` followed by
 `uv run python scripts/check_env.py` leaves only the missing Go Task warning in
-this setup. 【12a21c†L1-L9】【0525bf†L1-L26】 Targeted unit runs on **September 17,
+this setup. 【8e4fc3†L1-L27】【37a1fe†L1-L26】 Targeted unit runs on **September 17,
 2025** show that the config validator, DuckDB offline fallback, and VSS
-extension loader now pass with the `[test]` extras installed. 【4567c0†L1-L2】
-【3108ac†L1-L2】【abaaf2†L1-L2】 Integration ranking checks and optional extras
-still pass with the `[test]` extras installed. 【897640†L1-L3】【d26393†L1-L2】
+extension loader now pass with the `[test]` extras installed. 【5b737c†L1-L3】
+【a7a5ea†L1-L2】【93e5f9†L1-L2】 Integration ranking checks and optional extras
+still pass with the `[test]` extras installed. 【9a935a†L1-L2】【ee8c19†L1-L2】
 However, `uv run pytest tests/unit -q` now fails in teardown because
 monitor CLI metrics tests patch `ConfigLoader.load_config` to return
 `type("C", (), {})()`. The autouse `cleanup_storage` fixture raises
@@ -36,9 +36,9 @@ monitor CLI metrics tests patch `ConfigLoader.load_config` to return
 before distributed scenarios run. `uv run pytest tests/unit -k "storage" -q
 --maxfail=1` reproduces the failure at
 `tests/unit/test_monitor_cli.py::test_metrics_skips_storage`.
-【d541c6†L1-L58】【35a0a9†L63-L73】 `uv run mkdocs build` still fails until the
+【eeec82†L1-L57】 `uv run mkdocs build` still fails until the
 docs extras add `mkdocs` to the PATH, so run `task docs` (or `uv run
---extra docs mkdocs build`) to install them automatically. 【fef027†L1-L3】
+--extra docs mkdocs build`) to install them automatically. 【3109f7†L1-L3】
 `task verify` remains blocked by the missing CLI and the storage teardown
 regression, so coverage numbers are still unavailable. These items are tracked
 in
