@@ -7,6 +7,17 @@ Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
+## September 17, 2025
+- Coverage run targeted extras: analysis, distributed, git, gpu, llm, nlp,
+  parsers, ui, vss.
+- `uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
+  completed after syncing the PR1 environment and wrote both `coverage.xml`
+  and the mirrored baseline copy.
+- Combined line coverage held at 90% per `coverage.xml` after the run.
+- See [docs/status/task-coverage-2025-09-17.md](docs/status/task-coverage-2025-09-17.md)
+  from PR1 for wheel cache paths (`wheels/gpu`), Task CLI setup details, and
+  reproduction tips that future runs can reuse.
+
 ## September 16, 2025
 - `uv run task check` still fails because the Go Task CLI is absent in the
   container (`No such file or directory`).
