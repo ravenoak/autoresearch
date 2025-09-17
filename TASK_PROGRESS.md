@@ -209,8 +209,9 @@ These behavior test issues remain open until the test suite passes.
 - [x] Enhance memory management
   - [x] Implement efficient caching strategies
   - [x] Add support for memory-constrained environments
-  - [x] Create resource monitoring tools
+- [x] Create resource monitoring tools
   - [x] Extend monitoring to GPU usage
+    - [x] Downgrade missing GPU dependencies to INFO logs when extras are absent
 
 ### 5.2 Scalability Enhancements
 

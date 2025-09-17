@@ -553,6 +553,10 @@ References to pre-built wheels for GPU-only packages live under `wheels/gpu`.
 features are required. Setup helpers and Taskfile commands consult this
 directory automatically when GPU extras are installed.
 
+Resource monitoring now treats missing GPU tooling as informational when GPU
+extras are absent, so CPU-only workflows no longer emit warning noise when
+`pynvml` or `nvidia-smi` is unavailable.
+
 Running tests without first executing `scripts/setup.sh` or `task install`
 leaves the Go Task CLI unavailable. `uv run task check` then fails with
 `command not found: task`, and `uv run pytest tests/unit/test_version.py -q`
