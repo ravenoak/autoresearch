@@ -10,34 +10,24 @@ checks are required.
 ## September 17, 2025
 - `uv sync --extra dev-minimal --extra test` installs the linting and coverage
   extras so `uv run python scripts/check_env.py` reports only the missing Go
-  Task CLI in this environment. 【024fb5†L1-L13】【f56f62†L1-L24】
+  Task CLI in this environment. 【12a21c†L1-L9】【0525bf†L1-L26】
 - `task --version` still reports `command not found`, so install Task with
   `scripts/setup.sh` before using the Taskfile.
-- `uv run --extra test pytest`
-  `tests/unit/test_vss_extension_loader.py::TestVSSExtensionLoader::`
-  `test_load_extension_download_unhandled_exception -q` passes and keeps
-  propagating non-DuckDB errors. 【af6378†L1-L2】
-- `uv run --extra test pytest`
-  `tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination -q`
-  now passes with the documented convex weights, confirming the validator
-  and ranking formula stay in sync. 【75e1fd†L1-L2】
+- Targeted unit suites pass where helpers exist: the config validator, DuckDB
+  extension fallback, and VSS loader all succeed with the `[test]` extras.
+  【4567c0†L1-L2】【3108ac†L1-L2】【abaaf2†L1-L2】
+- Integration coverage for ranking and optional extras remains stable once
+  weights are legal: `tests/integration/test_ranking_formula_consistency.py -q`
+  and `tests/integration/test_optional_extras.py -q` both pass.
+  【897640†L1-L3】【d26393†L1-L2】
 - `uv run --extra test pytest tests/unit -q` fails during collection because
   `scripts/distributed_coordination_sim.py` no longer exports `elect_leader`
   or `process_messages`, so the distributed coordination property tests
-  cannot import their reference helpers. 【b4944c†L1-L23】
-- Integration coverage for ranking and optional extras is stable once
-  weights are legal:
-  `tests/integration/test_ranking_formula_consistency.py -q` and
-  `tests/integration/test_optional_extras.py -q` both pass with the `[test]`
-  extras. 【50b44e†L1-L2】【7a8f55†L1-L2】
-- `uv run pytest tests/unit/test_config_validation_errors.py::`
-  `test_weights_must_sum_to_one -q` passes after the validator fix, and
-  targeted DuckDB storage plus orchestrator perf tests complete without
-  resource tracker errors. 【127cf4†L1-L3】
+  cannot import their reference helpers. 【382418†L1-L23】
 - CLI helper and data analysis suites run with
   `PYTHONWARNINGS=error::DeprecationWarning` and report no warnings.
 - `uv run mkdocs build` still fails with `No such file or directory` because
-  docs extras are not installed. 【6bcbaa†L1-L3】
+  docs extras are not installed. 【9f25fa†L1-L3】
 - Regenerated `SPEC_COVERAGE.md` with
   `uv run python scripts/generate_spec_coverage.py --output SPEC_COVERAGE.md`
   to confirm every module retains spec and proof references. 【a99f8d†L1-L2】

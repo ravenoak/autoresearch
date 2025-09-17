@@ -3,11 +3,12 @@
 ## Context
 Running `uv run mkdocs build` in the evaluation container still fails with
 `No such file or directory` because the docs extras are not installed by
-default. 【6bcbaa†L1-L3】 Contributors currently have to remember to sync the
+default. 【9f25fa†L1-L3】 Contributors currently have to remember to sync the
 docs dependencies manually, even though the Taskfile exposes a `docs` target
-that installs the extras on demand. 【132116†L22-L32】 We need to document the
-expected workflow so release instructions consistently recommend either
-`task docs` or `uv run --extra docs mkdocs build` before verifying the site.
+that installs the extras on demand. 【F:Taskfile.yml†L348-L350】 We need to
+document the expected workflow so release instructions consistently recommend
+either `task docs` or `uv run --extra docs mkdocs build` before verifying the
+site.
 
 ## Dependencies
 - None
