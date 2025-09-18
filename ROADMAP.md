@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 17, 2025**.
+[README](README.md). Last updated **September 18, 2025**.
 
 ## Status
 
@@ -16,20 +16,18 @@ CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
 manual install provides the binary. Running `uv run python scripts/check_env.py`
 in a fresh container reports the Go Task CLI plus unsynced development and test
 tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task
-install` or `uv sync` installs the extras. 【cd57a1†L1-L24】 `task --version`
+install` or `uv sync` installs the extras. 【0f3265†L1-L24】 `task --version`
 continues to return "command not found", so contributors must install the CLI
-before using the Taskfile. 【74a609†L1-L2】 On **September 17, 2025** the storage
-teardown regression was cleared and the patched monitor metrics test now
-passes, but `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
-fails at `tests/unit/test_storage_eviction_sim.py::
-test_under_budget_keeps_nodes` because `_enforce_ram_budget` prunes nodes even
-when mocked RAM usage stays within the budget. 【04f707†L1-L3】【d7c968†L1-L164】
-Distributed coordination property tests still pass when run directly, and the
-VSS extension loader suite succeeds with the `[test]` extras installed.
-【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras,
-`uv run --extra docs mkdocs build` completes without navigation warnings after
-adding `docs/status/task-coverage-2025-09-17.md` to `mkdocs.yml`.
-【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 Release blockers remain in
+before using the Taskfile. 【d853f2†L1-L2】 The storage teardown regression was
+cleared and the patched monitor metrics test now passes, but
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails at
+`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
+because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
+within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】 Distributed
+coordination property tests succeed once the `[test]` extras are installed, and
+the VSS extension loader suite continues to pass. 【f15357†L1-L2】【5f6286†L1-L1】
+After syncing the docs extras, `uv run --extra docs mkdocs build` completes
+without navigation warnings. 【586050†L1-L1】 Release blockers remain in
 [restore-distributed-coordination-simulation-exports](
 issues/restore-distributed-coordination-simulation-exports.md),
 [resolve-resource-tracker-errors-in-verify](

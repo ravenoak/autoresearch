@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 17, 2025** and
+`2025-05-18`). This schedule was last updated on **September 18, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -22,27 +22,25 @@ The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
-Running `uv run python scripts/check_env.py` now reports the Go Task CLI plus
+Running `uv run python scripts/check_env.py` reports the Go Task CLI plus
 unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
 `hypothesis`) until contributors run `task install` or `uv sync` to install the
-extras. 【cd57a1†L1-L24】 `task --version` continues to return "command not
-found", so the CLI must be bootstrapped manually. 【74a609†L1-L2】 Targeted unit
-runs on **September 17, 2025** confirm that the storage teardown regression is
-resolved—the patched monitor metrics test now passes—yet
+extras. 【0f3265†L1-L24】 `task --version` continues to return "command not
+found", so the CLI must be bootstrapped manually. 【d853f2†L1-L2】 Targeted unit
+runs confirm that the storage teardown regression is resolved—the patched
+monitor metrics test now passes—yet
 `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails at
 `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
 because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
-within the budget. 【04f707†L1-L3】【d7c968†L1-L164】 Integration ranking checks and
-optional extras continue to pass with the `[test]` extras installed. Without
-those extras Hypothesis is unavailable and the distributed coordination suite
-errors during collection, so install the dependencies before rerunning it.
-【791df7†L1-L18】【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras,
-`uv run --extra docs mkdocs build` completes without navigation warnings after
-adding `docs/status/task-coverage-2025-09-17.md` to `mkdocs.yml`.
-【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 `task verify` remains blocked by the
-missing CLI and the eviction regression, so coverage numbers are still
-unavailable. These items are tracked in STATUS.md and the open issues listed
-there.
+within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】 Integration
+ranking checks and optional extras continue to pass with the `[test]` extras
+installed, and the distributed coordination property suite succeeds once those
+dependencies are available. 【f15357†L1-L2】 The VSS extension loader suite also
+remains green. 【5f6286†L1-L1】 After syncing the docs extras,
+`uv run --extra docs mkdocs build` completes without navigation warnings.
+【586050†L1-L1】 `task verify` remains blocked by the missing CLI and the
+eviction regression, so coverage numbers are still unavailable. These items are
+tracked in STATUS.md and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

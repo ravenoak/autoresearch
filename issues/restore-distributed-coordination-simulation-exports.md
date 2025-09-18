@@ -10,12 +10,12 @@ storage teardown regression has been cleared—the patched
 far enough to hit the storage eviction simulation. 【04f707†L1-L3】 The latest
 run halts at `tests/unit/test_storage_eviction_sim.py::
 test_under_budget_keeps_nodes`, where `_enforce_ram_budget` prunes nodes even
-though the mocked RAM usage stays within budget. 【d7c968†L1-L164】 That failure
-prevents the distributed property suite from executing during the targeted
-`-k "storage"` run. A focused invocation of
+though the mocked RAM usage stays within budget. 【3b2b52†L1-L60】
+That failure prevents the distributed property suite from executing during the
+targeted `-k "storage"` run. A focused invocation of
 `tests/unit/distributed/test_coordination_properties.py` still passes,
 confirming the helpers behave as expected once the suite reaches them, so we
-remain blocked only by the eviction regression. 【d3124a†L1-L2】
+remain blocked only by the eviction regression. 【f15357†L1-L2】
 
 ## Dependencies
 - [fix-storage-eviction-under-budget-regression](

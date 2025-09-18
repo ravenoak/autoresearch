@@ -9,20 +9,27 @@ checks are required.
 
 ## September 18, 2025
 - `task --version` still reports "command not found", confirming the Go Task
-  CLI is absent in a fresh container until `scripts/setup.sh` or an
-  equivalent manual install runs. 【74a609†L1-L2】
-- `uv run python scripts/check_env.py` now flags missing development and test
+  CLI is absent in a fresh container until `scripts/setup.sh` or an equivalent
+  manual install runs. 【d853f2†L1-L2】
+- `uv run python scripts/check_env.py` flags missing development and test
   tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) in addition to
-  Go Task, showing that contributors must run `task install` or `uv sync`
-  before invoking the Taskfile. 【cd57a1†L1-L24】
-- `uv run pytest tests/unit/test_storage_eviction_sim.py::
-  test_under_budget_keeps_nodes -q` still fails, demonstrating that the
-  deterministic fallback in `_enforce_ram_budget` evicts nodes even when RAM
-  usage is mocked at zero and leaving the regression open. 【fa283d†L1-L62】
-- `uv run pytest tests/unit/distributed/test_coordination_properties.py -q`
-  errors during collection because `hypothesis` is missing, so installing the
-  `[test]` extras remains a prerequisite before re-running the coordination
-  property suite. 【791df7†L1-L18】
+  Go Task, reinforcing that contributors must run `task install` or `uv sync`
+  before invoking the Taskfile. 【0f3265†L1-L24】
+- `uv run --extra test pytest tests/unit/test_storage_eviction_sim.py::
+  test_under_budget_keeps_nodes -q` still fails, showing the deterministic
+  fallback in `_enforce_ram_budget` evicts nodes even when RAM usage is mocked
+  at zero and leaving the regression open. 【3b2b52†L1-L60】
+- Updated `.env.offline` to point at `extensions/vss/vss.duckdb_extension`,
+  removing the doubled `extensions/` prefix in offline logs; the storage
+  simulation now reports the corrected path while still exercising the stub
+  fallback. 【F:.env.offline†L1-L11】【3b2b52†L18-L24】
+- `uv run --extra test pytest tests/unit/distributed/
+  test_coordination_properties.py -q` succeeds once the `[test]` extras are
+  available, confirming the restored simulation exports behave as expected
+  outside the storage regression. 【f15357†L1-L2】
+- `uv run --extra test pytest tests/unit/test_vss_extension_loader.py -q`
+  passes, so the loader remains stable while the storage regression is under
+  investigation. 【5f6286†L1-L1】
 - `SPEC_COVERAGE.md` continues to list specifications plus proofs or
   simulations for every module, confirming the spec-driven baseline stays in
   sync with the implementation. 【F:SPEC_COVERAGE.md†L1-L120】
