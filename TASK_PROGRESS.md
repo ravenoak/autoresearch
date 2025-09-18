@@ -15,8 +15,10 @@ storage eviction simulation. `uv run --extra test pytest tests/unit -k "storage"
 test_under_budget_keeps_nodes` because `_enforce_ram_budget` prunes nodes even
 when mocked RAM usage stays within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】
 Distributed coordination property tests succeed once the `[test]` extras are
-installed, and the VSS extension loader suite remains green.
-【f15357†L1-L2】【5f6286†L1-L1】 After syncing the docs extras, `uv run --extra docs
+installed, and the VSS extension loader suite remains green while the offline
+fallback logs stay at INFO/WARNING thanks to the deduplicated logging helper
+and guard test. 【f15357†L1-L2】【F:src/autoresearch/extensions.py†L57-L179】
+【F:tests/unit/test_vss_extension_loader.py†L173-L227】【6ec3f1†L1-L2】 After syncing the docs extras, `uv run --extra docs
 mkdocs build` completes without warnings, clearing the release packaging
 blocker. 【586050†L1-L1】 Unit coverage and `task verify` remain blocked while the
 Task CLI is absent and the eviction regression persists.

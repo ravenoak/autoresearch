@@ -28,8 +28,10 @@ checks are required.
   available, confirming the restored simulation exports behave as expected
   outside the storage regression. 【f15357†L1-L2】
 - `uv run --extra test pytest tests/unit/test_vss_extension_loader.py -q`
-  passes, so the loader remains stable while the storage regression is under
-  investigation. 【5f6286†L1-L1】
+  still passes, and the loader's offline fallbacks now emit only INFO/WARNING
+  records while deduplicating repeated errors. The new log-focused test guards
+  the quieter behavior. 【F:src/autoresearch/extensions.py†L57-L179】
+  【F:tests/unit/test_vss_extension_loader.py†L173-L227】【6ec3f1†L1-L2】
 - `SPEC_COVERAGE.md` continues to list specifications plus proofs or
   simulations for every module, confirming the spec-driven baseline stays in
   sync with the implementation. 【F:SPEC_COVERAGE.md†L1-L120】

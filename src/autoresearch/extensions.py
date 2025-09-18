@@ -5,6 +5,7 @@ This module provides utilities for loading and managing DuckDB extensions,
 particularly the VSS extension used for vector similarity search.
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,15 @@ class VSSExtensionLoader:
                          environment variable is set to "true"
         """
         cfg = ConfigLoader().config.storage
+        logged_errors: set[str] = set()
+
+        def _log(level: int, message: str, *args: Any) -> None:
+            if level >= logging.ERROR:
+                formatted = message % args if args else message
+                if formatted in logged_errors:
+                    return
+                logged_errors.add(formatted)
+            log.log(level, message, *args)
 
         def _env_extension_path() -> Path | None:
             env_path = os.getenv("VECTOR_EXTENSION_PATH")
@@ -82,43 +92,62 @@ class VSSExtensionLoader:
 
         extension_loaded = False
         if extension_path:
-            log.info(f"Attempting to load VSS extension from {extension_path}")
+            _log(logging.INFO, "Attempting to load VSS extension from %s", extension_path)
             if extension_path.suffix != ".duckdb_extension":
-                log.warning(
+                _log(
+                    logging.WARNING,
                     "VSS extension path does not end with .duckdb_extension: %s",
                     extension_path,
                 )
             elif not extension_path.exists():
-                log.warning("VSS extension path does not exist: %s", extension_path)
+                _log(logging.WARNING, "VSS extension path does not exist: %s", extension_path)
             else:
                 try:
                     conn.execute(f"LOAD '{extension_path.as_posix()}'")
                     if VSSExtensionLoader.verify_extension(conn, verbose=False):
-                        log.info("VSS extension loaded successfully from filesystem")
+                        _log(
+                            logging.INFO,
+                            "VSS extension loaded successfully from filesystem",
+                        )
                         extension_loaded = True
                     else:
-                        log.warning("VSS extension failed verification after filesystem load")
+                        _log(
+                            logging.WARNING,
+                            "VSS extension failed verification after filesystem load",
+                        )
                 except Exception as e:  # pragma: no cover - defensive
-                    log.warning("Failed to load VSS extension from filesystem: %s", e)
+                    _log(
+                        logging.WARNING,
+                        "Failed to load VSS extension from filesystem: %s",
+                        e,
+                    )
                     if not _is_duckdb_error(e):
                         raise
 
         if not extension_loaded:
-            online_ok = os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
+            online_ok = (
+                os.getenv("ENABLE_ONLINE_EXTENSION_INSTALL", "true").lower() == "true"
+            )
             if online_ok:
                 try:
-                    log.info("Installing vss extension...")
+                    _log(logging.INFO, "Installing vss extension...")
                     conn.execute("INSTALL vss")
-                    log.info("Loading vss extension...")
+                    _log(logging.INFO, "Loading vss extension...")
                     conn.execute("LOAD vss")
                     if VSSExtensionLoader.verify_extension(conn, verbose=False):
-                        log.info("VSS extension loaded successfully")
+                        _log(logging.INFO, "VSS extension loaded successfully")
                         extension_loaded = True
                     else:
-                        log.warning("VSS extension may not be fully loaded")
+                        _log(logging.WARNING, "VSS extension may not be fully loaded")
                 except Exception as e:  # pragma: no cover - network or install failure
-                    log.error("Failed to load VSS extension: %s", e)
-                    if not _is_duckdb_error(e):
+                    if _is_duckdb_error(e):
+                        _log(
+                            logging.WARNING,
+                            "DuckDB reported VSS installation failure: %s",
+                            e,
+                        )
+                    else:
+                        _log(logging.ERROR, "Failed to load VSS extension: %s", e)
                         raise
                     extension_loaded = VSSExtensionLoader._load_from_package(conn)
                     if not extension_loaded:
@@ -129,9 +158,14 @@ class VSSExtensionLoader:
                         not extension_loaded
                         and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
                     ):
+                        _log(
+                            logging.ERROR,
+                            "Failed to load VSS extension after fallbacks: %s",
+                            e,
+                        )
                         raise StorageError("Failed to load VSS extension", cause=e)
             else:
-                log.info("Skipping online VSS installation")
+                _log(logging.INFO, "Skipping online VSS installation")
                 extension_loaded = VSSExtensionLoader._load_from_package(conn)
                 if not extension_loaded:
                     extension_loaded = VSSExtensionLoader._load_local_stub(conn)
@@ -141,6 +175,7 @@ class VSSExtensionLoader:
                     not extension_loaded
                     and os.getenv("AUTORESEARCH_STRICT_EXTENSIONS", "").lower() == "true"
                 ):
+                    _log(logging.ERROR, "Failed to load VSS extension in strict mode")
                     raise StorageError("Failed to load VSS extension")
 
         return extension_loaded

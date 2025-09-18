@@ -1,3 +1,4 @@
+import logging
 import os
 from unittest.mock import MagicMock, call, patch
 
@@ -168,6 +169,62 @@ class TestVSSExtensionLoader:
 
             # Verify that the extension was loaded
             assert result is True
+
+    @pytest.mark.real_vss
+    @patch("autoresearch.extensions.ConfigLoader")
+    @pytest.mark.parametrize(
+        ("package_result", "local_result", "marker_result", "expected_calls"),
+        [
+            (True, False, False, (1, 0, 0)),
+            (False, True, False, (1, 1, 0)),
+            (False, False, True, (1, 1, 1)),
+        ],
+        ids=("package", "local", "marker"),
+    )
+    def test_offline_fallbacks_quiet_logs(
+        self,
+        mock_config_loader,
+        caplog,
+        package_result,
+        local_result,
+        marker_result,
+        expected_calls,
+    ):
+        """Offline fallbacks avoid error-level logging."""
+
+        mock_config = MagicMock()
+        mock_config.config.storage.vector_extension_path = None
+        mock_config_loader.return_value = mock_config
+
+        conn = MagicMock()
+        conn.execute.side_effect = duckdb.Error("offline")
+
+        with patch.dict(os.environ, {"AUTORESEARCH_STRICT_EXTENSIONS": "false"}):
+            with (
+                patch.object(
+                    VSSExtensionLoader,
+                    "_load_from_package",
+                    return_value=package_result,
+                ) as load_package,
+                patch.object(
+                    VSSExtensionLoader,
+                    "_load_local_stub",
+                    return_value=local_result,
+                ) as load_local,
+                patch.object(
+                    VSSExtensionLoader,
+                    "_create_stub_marker",
+                    return_value=marker_result,
+                ) as create_marker,
+                caplog.at_level(logging.INFO),
+            ):
+                assert VSSExtensionLoader.load_extension(conn) is True
+
+        package_calls, local_calls, marker_calls = expected_calls
+        assert load_package.call_count == package_calls
+        assert load_local.call_count == local_calls
+        assert create_marker.call_count == marker_calls
+        assert not any(record.levelno >= logging.ERROR for record in caplog.records)
 
     @pytest.mark.real_vss
     @patch("autoresearch.extensions.ConfigLoader")
