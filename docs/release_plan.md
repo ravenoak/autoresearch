@@ -19,28 +19,28 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 ## Status
 
 The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
-confirmed in `pyproject.toml` and [installation.md](installation.md), but the
-evaluation environment still omits the Go Task CLI. `uv run task check` fails
-with `No such file or directory` until `scripts/setup.sh` installs the binary.
-Running `uv run python scripts/check_env.py` reports the Go Task CLI plus
-unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
-`hypothesis`) until contributors run `task install` or `uv sync` to install the
-extras. 【0f3265†L1-L24】 `task --version` continues to return "command not
-found", so the CLI must be bootstrapped manually. 【d853f2†L1-L2】 Targeted unit
-runs confirm that the storage teardown regression is resolved—the patched
-monitor metrics test now passes—yet
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails at
-`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
-because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
-within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】 Integration
-ranking checks and optional extras continue to pass with the `[test]` extras
-installed, and the distributed coordination property suite succeeds once those
-dependencies are available. 【f15357†L1-L2】 The VSS extension loader suite also
-remains green. 【5f6286†L1-L1】 After syncing the docs extras,
-`uv run --extra docs mkdocs build` completes without navigation warnings.
-【586050†L1-L1】 `task verify` remains blocked by the missing CLI and the
-eviction regression, so coverage numbers are still unavailable. These items are
-tracked in STATUS.md and the open issues listed there.
+confirmed in `pyproject.toml` and [installation.md](installation.md), and the
+base shell still omits the Go Task CLI. `task --version` therefore fails until
+`.venv/bin` is sourced or `scripts/setup.sh` installs the binary. 【8a589e†L1-L2】
+Running `uv run python scripts/check_env.py` now reports the expected
+toolchain—including Go Task 3.45.4, Black, Flake8, and Hypothesis—once the
+`dev-minimal` and `test` extras are synced. 【55fd29†L1-L18】【cb3edc†L1-L10】
+Targeted storage tests confirm `_enforce_ram_budget` leaves the graph intact
+when RAM usage stays under budget, yet
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` aborts
+with a segmentation fault in
+`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
+【3c1010†L1-L2】【0fcfb0†L1-L74】 Invoking that concurrency test directly
+reproduces the crash, so the threaded setup guard must be hardened before
+`task verify` and coverage can complete. 【2e8cf7†L1-L48】 Integration ranking
+checks and distributed coordination properties still pass with the `[test]`
+extras, and the VSS extension loader suite remains green while deduplicating
+offline errors. 【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】
+After syncing the docs extras, `uv run --extra docs mkdocs build` completes
+without navigation warnings. 【b1509d†L1-L2】【a1ea28†L1-L1】 `task verify` remains
+blocked by the missing CLI on the base PATH and the storage setup crash, so
+coverage numbers are still unavailable. These items are tracked in STATUS.md and
+the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

@@ -11,31 +11,29 @@ and recent changes. Installation and environment details are covered in the
 See [STATUS.md](STATUS.md) for current results and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. The evaluation container still lacks the Go Task
-CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
-manual install provides the binary. Running `uv run python scripts/check_env.py`
-in a fresh container reports the Go Task CLI plus unsynced development and test
-tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task
-install` or `uv sync` installs the extras. 【0f3265†L1-L24】 `task --version`
-continues to return "command not found", so contributors must install the CLI
-before using the Taskfile. 【d853f2†L1-L2】 The storage teardown regression was
-cleared and the patched monitor metrics test now passes, but
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails at
-`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
-because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
-within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】 Distributed
-coordination property tests succeed once the `[test]` extras are installed, and
-the VSS extension loader suite continues to pass. 【f15357†L1-L2】【5f6286†L1-L1】
-After syncing the docs extras, `uv run --extra docs mkdocs build` completes
-without navigation warnings. 【586050†L1-L1】 Release blockers remain in
-[restore-distributed-coordination-simulation-exports](
-issues/restore-distributed-coordination-simulation-exports.md),
+across project documentation. The base shell still lacks the Go Task CLI, so
+`task --version` fails until `.venv/bin` is sourced or `scripts/setup.sh`
+installs the binary. 【8a589e†L1-L2】 Running
+`uv run python scripts/check_env.py` now reports the expected toolchain—Go Task
+3.45.4, Black, Flake8, Hypothesis, and more—once the `dev-minimal` and `test`
+extras are synced via `uv`. 【55fd29†L1-L18】【cb3edc†L1-L10】 Targeted storage
+tests confirm `_enforce_ram_budget` behaves under the RAM budget constraint,
+yet the broader `uv run --extra test pytest tests/unit -k "storage" -q
+--maxfail=1` command aborts with a segmentation fault in
+`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
+【3c1010†L1-L2】【0fcfb0†L1-L74】 Re-running that concurrency test in isolation
+reproduces the crash, so shoring up the threaded setup path is now the top
+blocker before `task verify` can finish. 【2e8cf7†L1-L48】 Distributed
+coordination property tests remain green, and the VSS extension loader suite
+continues to deduplicate offline errors while passing its regression checks.
+【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】 The
+documentation build also succeeds without navigation warnings via
+`uv run --extra docs mkdocs build`. 【b1509d†L1-L2】【a1ea28†L1-L1】 Release
+blockers now concentrate on the new storage setup crash alongside
 [resolve-resource-tracker-errors-in-verify](
 issues/resolve-resource-tracker-errors-in-verify.md),
 [resolve-deprecation-warnings-in-tests](
-issues/resolve-deprecation-warnings-in-tests.md),
-[fix-storage-eviction-under-budget-regression](
-issues/fix-storage-eviction-under-budget-regression.md), and
+issues/resolve-deprecation-warnings-in-tests.md), and
 [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
 Specification updates for the API, CLI helpers, config, distributed execution,
 extensions, and monitor packages were reviewed and archived after confirming
@@ -66,20 +64,20 @@ before running tests.
   and stable interfaces.
   - Stability goals depend on closing:
     - [prepare-first-alpha-release]
-    - [restore-distributed-coordination-simulation-exports]
     - [resolve-resource-tracker-errors-in-verify]
     - [resolve-deprecation-warnings-in-tests]
+    - [address-storage-setup-concurrency-crash]
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
 
 [prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
-[restore-distributed-coordination-simulation-exports]:
-  issues/restore-distributed-coordination-simulation-exports.md
 [resolve-resource-tracker-errors-in-verify]:
   issues/resolve-resource-tracker-errors-in-verify.md
 [resolve-deprecation-warnings-in-tests]:
   issues/resolve-deprecation-warnings-in-tests.md
+[address-storage-setup-concurrency-crash]:
+  issues/address-storage-setup-concurrency-crash.md
 
 ## 0.1.0a1 – Alpha preview
 
@@ -95,14 +93,16 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Task CLI availability restored.
 - [x] Packaging verification with DuckDB fallback.
 - [x] DuckDB extension fallback hardened for offline setups.
-- [ ] Distributed coordination helpers restored
-  ([restore-distributed-coordination-simulation-exports]).
+- [x] Distributed coordination helpers restored
+  ([issues/archive/restore-distributed-coordination-simulation-exports.md](issues/archive/restore-distributed-coordination-simulation-exports.md)).
 - [ ] `task verify` completes without resource tracker errors
   ([resolve-resource-tracker-errors-in-verify]).
 - [ ] Deprecation warnings removed from test runs
   ([resolve-deprecation-warnings-in-tests]).
 - [ ] Coverage and release packaging finalized for the alpha tag
   ([prepare-first-alpha-release]).
+- [ ] Storage setup concurrency crash resolved
+  ([address-storage-setup-concurrency-crash]).
 - [x] Algorithm validation for ranking and coordination.
 - [x] Formal validation for the OxiGraph backend.
 
@@ -169,7 +169,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 
 - Packaging and deployment planning draw on [prepare-first-alpha-release].
 - Integration stability depends on closing
-  [restore-distributed-coordination-simulation-exports],
+  [address-storage-setup-concurrency-crash],
   [resolve-resource-tracker-errors-in-verify], and
   [resolve-deprecation-warnings-in-tests].
 - Long-term operations rely on keeping the distributed and monitor

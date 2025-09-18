@@ -4,31 +4,27 @@
 The project remains unreleased even though the codebase and documentation are
 public. To tag v0.1.0a1 we still need a coordinated push across testing,
 documentation, and packaging while keeping workflows dispatch-only. As of
-2025-09-18 the Go Task CLI is still absent in a fresh environment, so running
-`uv run task check` fails until contributors install Task manually. `task
---version` continues to return "command not found", and running `uv run python
-scripts/check_env.py` flags the Go Task CLI plus unsynced development and
-test tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task
-install` or `uv sync` installs the extras.
-【d853f2†L1-L2】【0f3265†L1-L24】 Targeted test suites confirm that distributed
-coordination properties and VSS extension scenarios pass with the `[test]`
-extras installed; without those extras Hypothesis is missing and the
-coordination suite errors during collection. 【f15357†L1-L2】【5f6286†L1-L1】 The
-storage teardown regression that blocked the monitor metrics suite has been
-resolved; the patched scenario now passes. 【04f707†L1-L3】 The unit run now
-halts at `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
-because `_enforce_ram_budget` evicts nodes even when the mocked RAM usage stays
-within the budget, preventing coverage and release rehearsals from finishing.
-【3b2b52†L1-L60】 Adding the task coverage log to `mkdocs.yml`
-cleared the documentation warning; `uv run --extra docs mkdocs build` still
-completes without navigation errors. 【586050†L1-L1】 These gaps block the release
+2025-09-18 the base shell still lacks the Go Task CLI—`task --version` returns
+"command not found"—but `uv run python scripts/check_env.py` now reports the
+expected toolchain once the `dev-minimal` and `test` extras are synced.
+【8a589e†L1-L2】【55fd29†L1-L18】【cb3edc†L1-L10】 Targeted suites confirm the
+distributed coordination properties and VSS extension scenarios pass with the
+`[test]` extras installed, and `uv run --extra docs mkdocs build` completes
+without navigation warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 The
+storage eviction regression is resolved—`uv run --extra test pytest
+tests/unit/test_storage_eviction_sim.py -q` now passes—but the broader
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` command
+aborts with a segmentation fault in
+`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
+Running that test directly reproduces the crash, so the threaded setup path has
+to be hardened before `task verify` and coverage can complete.
+【3c1010†L1-L2】【0fcfb0†L1-L74】【2e8cf7†L1-L48】 These gaps block the release
 checklist and require targeted fixes before we can tag 0.1.0a1.
 
 ## Dependencies
-- [restore-distributed-coordination-simulation-exports](restore-distributed-coordination-simulation-exports.md)
+- [address-storage-setup-concurrency-crash](address-storage-setup-concurrency-crash.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
-- [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
 - [rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md)
 
 ## Acceptance Criteria
