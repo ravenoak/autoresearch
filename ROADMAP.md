@@ -13,11 +13,12 @@ See [STATUS.md](STATUS.md) for current results and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. The evaluation container still lacks the Go Task
 CLI on first boot, so `uv run task check` fails until `scripts/setup.sh` or a
-manual install provides the binary. Running `uv sync --extra dev-minimal --extra
-test --extra docs` followed by `uv run python scripts/check_env.py` reports Go
-Task as the only missing prerequisite. 【e6706c†L1-L26】 `task --version`
+manual install provides the binary. Running `uv run python scripts/check_env.py`
+in a fresh container reports the Go Task CLI plus unsynced development and test
+tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task
+install` or `uv sync` installs the extras. 【cd57a1†L1-L24】 `task --version`
 continues to return "command not found", so contributors must install the CLI
-before using the Taskfile. 【cef78e†L1-L2】 On **September 17, 2025** the storage
+before using the Taskfile. 【74a609†L1-L2】 On **September 17, 2025** the storage
 teardown regression was cleared and the patched monitor metrics test now
 passes, but `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
 fails at `tests/unit/test_storage_eviction_sim.py::
