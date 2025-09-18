@@ -28,6 +28,7 @@ def run() -> dict[str, int]:
         "no_nodes",
         "exact_budget",
         "burst",
+        "deterministic_override",
     ]
     results: dict[str, int] = {}
     for s in scenarios:

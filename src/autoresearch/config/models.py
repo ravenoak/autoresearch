@@ -117,6 +117,14 @@ class StorageConfig(BaseModel):
     max_connections: int = Field(default=1, ge=1)
     use_kuzu: bool = Field(default=False)
     kuzu_path: str = Field(default="kuzu.db")
+    deterministic_node_budget: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Optional deterministic cap on in-memory graph nodes. When provided "
+            "it overrides the derived limit from the RAM budget."
+        ),
+    )
 
     _validate_rdf_backend = field_validator("rdf_backend")(validate_rdf_backend)
 

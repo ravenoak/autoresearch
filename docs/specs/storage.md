@@ -49,6 +49,8 @@ the safety margin.
 4. **Budget guard**
    - When `B ≤ 0`, eviction is skipped and all nodes remain.
    - When `U ≤ B`, no eviction occurs and all nodes remain.
+   - Deterministic node caps engage only when operators set
+     `storage.deterministic_node_budget` or when metrics report `U > B`.
 5. **Teardown**
    - `teardown` clears `G` and releases resources.
 
@@ -56,6 +58,16 @@ the safety margin.
 
 - A budget of zero or a negative value disables eviction.
 - Enforcing the budget on an empty graph leaves state unchanged.
+- A 0 MB usage reading is treated as "unknown" and leaves the graph unchanged
+  unless a deterministic override is configured.
+- `storage.deterministic_node_budget` optionally enforces a hard node cap even
+  when usage metrics are unavailable.
+
+## Configuration Notes
+
+- `storage.deterministic_node_budget` limits the in-memory graph to a fixed
+  size. Absent this override, deterministic caps derive from `ram_budget_mb`
+  only when `U > B`, maintaining the "no eviction when `U ≤ B`" invariant.
 
 ## Complexity
 

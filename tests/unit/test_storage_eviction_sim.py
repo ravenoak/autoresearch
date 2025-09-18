@@ -43,3 +43,16 @@ def test_zero_budget_disables_eviction():
             return_metrics=True,
         )
     assert remaining == 2
+
+
+def test_deterministic_override_enforces_cap():
+    """Explicit deterministic override bounds the graph despite unknown usage."""
+    with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
+        remaining, _ = _run(
+            threads=2,
+            items=2,
+            policy="lru",
+            scenario="deterministic_override",
+            return_metrics=True,
+        )
+    assert remaining == 1
