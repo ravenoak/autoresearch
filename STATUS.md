@@ -619,10 +619,10 @@ regression is resolved.
   issues/resolve-deprecation-warnings-in-tests.md) –
   Execute the full suite with `PYTHONWARNINGS=error::DeprecationWarning`
   after installing Task to ensure no latent warnings remain.
-- [add-status-coverage-page-to-docs-nav](
-  issues/add-status-coverage-page-to-docs-nav.md) –
-  Link the status coverage report into `mkdocs.yml` so docs builds stop
-  warning about orphaned pages before drafting release notes.
+- [fix-storage-eviction-under-budget-regression](
+  issues/fix-storage-eviction-under-budget-regression.md) –
+  Repair `_enforce_ram_budget` so storage eviction tests stop pruning nodes
+  under the configured RAM budget and unblock release rehearsals.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.
