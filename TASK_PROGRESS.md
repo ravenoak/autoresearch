@@ -4,26 +4,22 @@ This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 18, 2025**
 the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
-Running `uv run python scripts/check_env.py` now reports the Go Task CLI plus
+Running `uv run python scripts/check_env.py` reports the Go Task CLI plus
 unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
 `hypothesis`) until `task install` or `uv sync` installs the extras.
-【cd57a1†L1-L24】 `task --version` still returns "command not found", so the CLI
-must be installed manually. 【74a609†L1-L2】 The storage
-teardown regression is fixed—the patched monitor metrics test now passes—so the
-suite advances to the storage eviction simulation.
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` currently
-fails at `tests/unit/test_storage_eviction_sim.py::
+【0f3265†L1-L24】 `task --version` still returns "command not found", so the CLI
+must be installed manually. 【d853f2†L1-L2】 The storage teardown regression is
+fixed—the patched monitor metrics test now passes—so the suite advances to the
+storage eviction simulation. `uv run --extra test pytest tests/unit -k "storage"
+-q --maxfail=1` currently fails at `tests/unit/test_storage_eviction_sim.py::
 test_under_budget_keeps_nodes` because `_enforce_ram_budget` prunes nodes even
-when mocked RAM usage stays within the budget. 【04f707†L1-L3】【d7c968†L1-L164】
-Distributed coordination property tests require the `[test]` extras; without
-them Hypothesis is missing and the suite errors during collection, so install
-the extras before rerunning the properties.
-【791df7†L1-L18】【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras, we
-added `docs/status/task-coverage-2025-09-17.md` to the navigation and confirmed
-`uv run --extra docs mkdocs build` completes without warnings, clearing the
-release packaging blocker. 【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 Unit
-coverage and `task verify` remain blocked while the Task CLI is absent and the
-eviction regression persists.
+when mocked RAM usage stays within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】
+Distributed coordination property tests succeed once the `[test]` extras are
+installed, and the VSS extension loader suite remains green.
+【f15357†L1-L2】【5f6286†L1-L1】 After syncing the docs extras, `uv run --extra docs
+mkdocs build` completes without warnings, clearing the release packaging
+blocker. 【586050†L1-L1】 Unit coverage and `task verify` remain blocked while the
+Task CLI is absent and the eviction regression persists.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

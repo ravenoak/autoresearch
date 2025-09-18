@@ -6,8 +6,8 @@ now fails at `tests/unit/test_storage_eviction_sim.py::
 test_under_budget_keeps_nodes`. The scenario sets
 `StorageManager._current_ram_mb` to return `0` so the workload stays
 below the `1` MB budget, yet `_enforce_ram_budget` still prunes nodes
-until only one remains. 【d7c968†L1-L164】 The regression stems from the
-fallback that derives a deterministic node limit from the RAM budget.
+until only one remains. 【3b2b52†L1-L60】 The regression stems from
+the fallback that derives a deterministic node limit from the RAM budget.
 With the default configuration the helper returns `budget_mb`, so the
 loop removes entries whenever the graph holds more than one node even
 though RAM usage is reported within bounds.
