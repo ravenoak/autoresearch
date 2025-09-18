@@ -22,20 +22,21 @@ The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), but the
 evaluation environment still omits the Go Task CLI. `uv run task check` fails
 with `No such file or directory` until `scripts/setup.sh` installs the binary.
-Running `uv sync --extra dev-minimal --extra test --extra docs` followed by
-`uv run python scripts/check_env.py` reports Go Task as the only missing
-prerequisite. 【e6706c†L1-L26】 `task --version` continues to return "command not
-found", so the CLI must be bootstrapped manually. 【cef78e†L1-L2】 Targeted unit
+Running `uv run python scripts/check_env.py` now reports the Go Task CLI plus
+unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
+`hypothesis`) until contributors run `task install` or `uv sync` to install the
+extras. 【cd57a1†L1-L24】 `task --version` continues to return "command not
+found", so the CLI must be bootstrapped manually. 【74a609†L1-L2】 Targeted unit
 runs on **September 17, 2025** confirm that the storage teardown regression is
 resolved—the patched monitor metrics test now passes—yet
 `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` fails at
 `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
 because `_enforce_ram_budget` prunes nodes even when mocked RAM usage stays
 within the budget. 【04f707†L1-L3】【d7c968†L1-L164】 Integration ranking checks and
-optional extras continue to pass with the `[test]` extras installed. Distributed
-coordination property tests and the VSS extension loader suite also pass when
-invoked directly, confirming the restored helpers once the eviction regression
-is fixed. 【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras,
+optional extras continue to pass with the `[test]` extras installed. Without
+those extras Hypothesis is unavailable and the distributed coordination suite
+errors during collection, so install the dependencies before rerunning it.
+【791df7†L1-L18】【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras,
 `uv run --extra docs mkdocs build` completes without navigation warnings after
 adding `docs/status/task-coverage-2025-09-17.md` to `mkdocs.yml`.
 【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 `task verify` remains blocked by the

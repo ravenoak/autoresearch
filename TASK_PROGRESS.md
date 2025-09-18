@@ -1,22 +1,24 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 17, 2025**
+organized by phases from the code complete plan. As of **September 18, 2025**
 the evaluation container still lacks the Go Task CLI by default, so
 `uv run task check` fails until `scripts/setup.sh` installs the binary.
-Running `uv sync --extra dev-minimal --extra test --extra docs` followed by
-`uv run python scripts/check_env.py` reports Go Task as the only missing
-prerequisite. 【e6706c†L1-L26】 `task --version` still returns "command not
-found", so the CLI must be installed manually. 【cef78e†L1-L2】 The storage
+Running `uv run python scripts/check_env.py` now reports the Go Task CLI plus
+unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
+`hypothesis`) until `task install` or `uv sync` installs the extras.
+【cd57a1†L1-L24】 `task --version` still returns "command not found", so the CLI
+must be installed manually. 【74a609†L1-L2】 The storage
 teardown regression is fixed—the patched monitor metrics test now passes—so the
 suite advances to the storage eviction simulation.
 `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` currently
 fails at `tests/unit/test_storage_eviction_sim.py::
 test_under_budget_keeps_nodes` because `_enforce_ram_budget` prunes nodes even
 when mocked RAM usage stays within the budget. 【04f707†L1-L3】【d7c968†L1-L164】
-Distributed coordination property tests and the VSS extension loader suite pass
-with the `[test]` extras, showing recent fixes hold once the eviction regression
-is addressed. 【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras, we
+Distributed coordination property tests require the `[test]` extras; without
+them Hypothesis is missing and the suite errors during collection, so install
+the extras before rerunning the properties.
+【791df7†L1-L18】【d3124a†L1-L2】【669da8†L1-L2】 After syncing the docs extras, we
 added `docs/status/task-coverage-2025-09-17.md` to the navigation and confirmed
 `uv run --extra docs mkdocs build` completes without warnings, clearing the
 release packaging blocker. 【781a25†L1-L1】【a05d60†L1-L2】【bc0d4c†L1-L1】 Unit

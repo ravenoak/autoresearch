@@ -4,17 +4,17 @@
 The project remains unreleased even though the codebase and documentation are
 public. To tag v0.1.0a1 we still need a coordinated push across testing,
 documentation, and packaging while keeping workflows dispatch-only. As of
-2025-09-17 the Go Task CLI is still absent in a fresh environment, so running
+2025-09-18 the Go Task CLI is still absent in a fresh environment, so running
 `uv run task check` fails until contributors install Task manually. `task
---version` continues to return "command not found", and after resyncing the
-`dev-minimal`, `test`, and `docs` extras, `uv run python scripts/check_env.py`
-reports Go Task as the only missing prerequisite. 【6c3849†L1-L3】【e6706c†L1-L26】
-Targeted test suites confirm that distributed coordination properties and VSS
-extension scenarios still pass with the `[test]` extras installed. Running
-`uv run --extra test pytest tests/unit/distributed/`
-`test_coordination_properties.py -q` and `uv run --extra test pytest`
-`tests/unit/test_vss_extension_loader.py -q` both complete successfully.
-【d3124a†L1-L2】【669da8†L1-L2】 The storage teardown
+--version` continues to return "command not found", and running `uv run python
+scripts/check_env.py` now flags the Go Task CLI plus unsynced development and
+test tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task
+install` or `uv sync` installs the extras.
+【74a609†L1-L2】【cd57a1†L1-L24】 Targeted test suites confirm that distributed
+coordination properties and VSS extension scenarios still pass with the `[test]`
+extras installed, but without those extras Hypothesis is missing and the
+coordination suite errors during collection.
+【791df7†L1-L18】【d3124a†L1-L2】【669da8†L1-L2】 The storage teardown
 regression that blocked the monitor metrics suite has been resolved; the patched
 scenario now passes. 【04f707†L1-L3】 The unit run now halts at
 `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`

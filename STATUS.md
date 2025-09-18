@@ -7,6 +7,26 @@ Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
+## September 18, 2025
+- `task --version` still reports "command not found", confirming the Go Task
+  CLI is absent in a fresh container until `scripts/setup.sh` or an
+  equivalent manual install runs. 【74a609†L1-L2】
+- `uv run python scripts/check_env.py` now flags missing development and test
+  tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) in addition to
+  Go Task, showing that contributors must run `task install` or `uv sync`
+  before invoking the Taskfile. 【cd57a1†L1-L24】
+- `uv run pytest tests/unit/test_storage_eviction_sim.py::
+  test_under_budget_keeps_nodes -q` still fails, demonstrating that the
+  deterministic fallback in `_enforce_ram_budget` evicts nodes even when RAM
+  usage is mocked at zero and leaving the regression open. 【fa283d†L1-L62】
+- `uv run pytest tests/unit/distributed/test_coordination_properties.py -q`
+  errors during collection because `hypothesis` is missing, so installing the
+  `[test]` extras remains a prerequisite before re-running the coordination
+  property suite. 【791df7†L1-L18】
+- `SPEC_COVERAGE.md` continues to list specifications plus proofs or
+  simulations for every module, confirming the spec-driven baseline stays in
+  sync with the implementation. 【F:SPEC_COVERAGE.md†L1-L120】
+
 ## September 17, 2025
 - After installing the `dev-minimal`, `test`, and `docs` extras,
   `uv run python scripts/check_env.py` reports that Go Task is still the lone
@@ -626,3 +646,9 @@ regression is resolved.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.
+
+### Additional issues
+- [reduce-vss-extension-error-noise-offline](
+  issues/reduce-vss-extension-error-noise-offline.md) –
+  Tone down DuckDB VSS download errors during offline storage simulations so
+  regression logs remain readable while the stub fallback is active.

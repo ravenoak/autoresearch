@@ -8,10 +8,12 @@ suite cannot reach coverage today. `uv run --extra test pytest tests/unit -k
 `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
 because `_enforce_ram_budget` trims nodes even when the mocked RAM usage stays
 within the budget. 【d7c968†L1-L164】 After syncing the `dev-minimal`, `test`, and
-`docs` extras, `uv run python scripts/check_env.py` still reports the missing Go
-Task CLI, so both the eviction regression and the CLI gap must be resolved
+`docs` extras, `uv run python scripts/check_env.py` in a fresh container now
+flags the Go Task CLI plus unsynced development and test tooling (e.g., `black`,
+`flake8`, `fakeredis`, `hypothesis`) until `task install` or `uv sync` installs
+the extras. Both the eviction regression and the tooling gap must be resolved
 before we can refresh `baseline/coverage.xml` and publish a new status log.
-【e6706c†L1-L26】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
+【cd57a1†L1-L24】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
 
 ## Dependencies
 - [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
