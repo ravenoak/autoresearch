@@ -48,3 +48,15 @@ def test_no_nodes_scenario() -> None:
 
     remaining = sim._run(threads=2, items=2, policy="lru", scenario="no_nodes")
     assert remaining == 0
+
+
+def test_deterministic_override_caps_graph() -> None:
+    """Deterministic override bounds the graph even when usage metrics are absent."""
+
+    remaining = sim._run(
+        threads=2,
+        items=2,
+        policy="lru",
+        scenario="deterministic_override",
+    )
+    assert remaining == 1

@@ -13,3 +13,4 @@ def test_storage_eviction_sim() -> None:
     assert results["no_nodes"] == 0
     assert results["exact_budget"] == 9
     assert results["burst"] == 0
+    assert results["deterministic_override"] == 1

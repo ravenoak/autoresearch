@@ -504,8 +504,10 @@ class StorageManager(metaclass=StorageManagerMeta):
         return node_id
 
     @staticmethod
-    def _deterministic_node_limit(budget_mb: int, cfg: Any | None = None) -> int:
-        """Return a fallback node budget derived from the RAM budget."""
+    def _deterministic_node_limit(
+        budget_mb: int, cfg: Any | None = None
+    ) -> tuple[int | None, bool]:
+        """Return the deterministic node limit and whether it is an override."""
 
         if cfg is None:
             cfg = ConfigLoader().config
@@ -514,8 +516,10 @@ class StorageManager(metaclass=StorageManagerMeta):
         if storage_cfg is not None:
             override = getattr(storage_cfg, "deterministic_node_budget", None)
         if isinstance(override, int) and override >= 0:
-            return override
-        return max(0, budget_mb)
+            return override, True
+        if budget_mb > 0:
+            return max(0, budget_mb), False
+        return None, False
 
     @staticmethod
     def _enforce_ram_budget(budget_mb: int) -> None:
@@ -533,9 +537,10 @@ class StorageManager(metaclass=StorageManagerMeta):
         See ``docs/algorithms/cache_eviction.md`` for proofs of the LRU policy.
         The method continues evicting nodes until the RAM usage falls below the
         budget or there are no more nodes to evict. When operating system metrics
-        stay flat despite new nodes being added, the method falls back to a
-        deterministic node budget derived from the configured RAM limit so that
-        eviction remains predictable.
+        stay flat even as usage exceeds the budget, or when a deterministic
+        override is configured, the method falls back to a deterministic node
+        budget so eviction remains predictable without violating the
+        ``U ≤ B`` invariant.
 
         Args:
             budget_mb: The maximum amount of RAM to use in megabytes. If <= 0,
@@ -545,6 +550,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             Evicted nodes are removed from the in-memory graph but remain in the
             DuckDB and RDF stores. This allows for persistent storage while
             controlling memory usage.
+            A 0 MB usage reading is treated as "unknown" and leaves the graph
+            unchanged unless a deterministic override is active.
 
         Proof Sketch:
             Let ``U_0`` denote the initial RAM usage and ``T = B(1 - δ)`` the
@@ -563,6 +570,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 return
 
             current_mb = StorageManager._current_ram_mb()
+            ram_measurement_available = current_mb > 0.0
             graph = StorageManager.context.graph
             if graph is None or not graph.nodes:
                 return
@@ -571,26 +579,44 @@ class StorageManager(metaclass=StorageManagerMeta):
             policy = cfg.graph_eviction_policy.lower()
             lru = StorageManager.state.lru
 
-            deterministic_limit = StorageManager._deterministic_node_limit(budget_mb, cfg)
+            deterministic_limit, deterministic_override = StorageManager._deterministic_node_limit(
+                budget_mb, cfg
+            )
+            over_budget = ram_measurement_available and current_mb > budget_mb
+
+            if not over_budget and not deterministic_override:
+                if not ram_measurement_available:
+                    log.debug(
+                        "RAM usage unavailable; skipping eviction without deterministic override"
+                    )
+                return
+
             use_deterministic_budget = False
             target_node_count: int | None = None
             mode = "ram"
 
-            if current_mb > budget_mb:
-                pass
-            elif len(graph.nodes) > deterministic_limit:
+            if (
+                deterministic_limit is not None
+                and len(graph.nodes) > deterministic_limit
+                and (deterministic_override or over_budget)
+            ):
                 use_deterministic_budget = True
                 target_node_count = deterministic_limit
                 mode = f"deterministic(limit={deterministic_limit})"
-            else:
+            elif deterministic_override:
                 return
 
             eviction_start_time = time.time()
             nodes_evicted = 0
             starting_mb = current_mb
+            starting_measurement_available = ram_measurement_available
 
             safety_margin = getattr(cfg, "eviction_safety_margin", 0.1)
-            target_mb = budget_mb * (1 - safety_margin)
+            target_mb = (
+                budget_mb * (1 - safety_margin)
+                if ram_measurement_available
+                else None
+            )
 
             batch_size = min(
                 getattr(cfg, "eviction_batch_size", 10),
@@ -602,22 +628,40 @@ class StorageManager(metaclass=StorageManagerMeta):
             )
 
             if use_deterministic_budget:
-                removable = len(graph.nodes) - (target_node_count or 0)
+                if target_node_count is None:
+                    return
+                removable = len(graph.nodes) - target_node_count
                 if removable <= 0:
                     return
                 batch_size = max(1, min(batch_size, removable))
 
             aggressive_threshold = budget_mb * 1.5
-            aggressive_eviction = (not use_deterministic_budget) and current_mb > aggressive_threshold
+            aggressive_eviction = (
+                not use_deterministic_budget
+                and ram_measurement_available
+                and current_mb > aggressive_threshold
+            )
+
+            current_display = (
+                f"{current_mb:.1f}MB" if ram_measurement_available else "unknown"
+            )
+            target_display = (
+                f"{target_mb:.1f}MB" if target_mb is not None else "n/a"
+            )
 
             log.info(
-                f"Starting eviction with policy={policy}, current={current_mb:.1f}MB, "
-                f"target={target_mb:.1f}MB, mode={mode}, "
+                f"Starting eviction with policy={policy}, current={current_display}, "
+                f"target={target_display}, mode={mode}, "
                 f"aggressive={aggressive_eviction}, batch_size={batch_size}"
             )
 
             while StorageManager.context.graph and (
-                (not use_deterministic_budget and current_mb > target_mb)
+                (
+                    not use_deterministic_budget
+                    and ram_measurement_available
+                    and target_mb is not None
+                    and current_mb > target_mb
+                )
                 or (
                     use_deterministic_budget
                     and target_node_count is not None
@@ -629,6 +673,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                     break
 
                 if use_deterministic_budget:
+                    if target_node_count is None:
+                        break
                     remaining = len(graph.nodes) - target_node_count
                     if remaining <= 0:
                         break
@@ -745,6 +791,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                         nodes_evicted += 1
 
                 current_mb = StorageManager._current_ram_mb()
+                ram_measurement_available = current_mb > 0.0
 
                 if aggressive_eviction and not use_deterministic_budget and nodes_evicted > 50:
                     batch_size = min(
@@ -758,12 +805,21 @@ class StorageManager(metaclass=StorageManagerMeta):
 
             eviction_time = time.time() - eviction_start_time
             final_mb = StorageManager._current_ram_mb()
+            final_measurement_available = final_mb > 0.0
             mb_freed = starting_mb - final_mb
+            freed_display = (
+                f"{mb_freed:.1f}MB"
+                if starting_measurement_available and final_measurement_available
+                else "n/a"
+            )
+            final_display = (
+                f"{final_mb:.1f}MB" if final_measurement_available else "unknown"
+            )
 
             log.info(
                 f"Eviction completed: policy={policy}, nodes_evicted={nodes_evicted}, "
-                f"time={eviction_time:.2f}s, memory_freed={mb_freed:.1f}MB, "
-                f"final={final_mb:.1f}MB, mode={mode}"
+                f"time={eviction_time:.2f}s, memory_freed={freed_display}, "
+                f"final={final_display}, mode={mode}"
             )
 
     @staticmethod

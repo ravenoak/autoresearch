@@ -17,6 +17,9 @@ Scenarios:
     no_nodes         enforce budget when the graph is empty
     race             dedicated eviction threads run alongside writers
     burst            writers omit enforcement; separate evictors run
+    deterministic_override
+                     deterministic node cap enforces a hard limit despite
+                     missing RAM metrics
 """
 
 from __future__ import annotations
@@ -54,13 +57,18 @@ def _run(
         Remaining node count and optionally the elapsed time in seconds.
     """
 
+    deterministic_override = scenario == "deterministic_override"
     cfg = ConfigModel(
-        storage=StorageConfig(duckdb_path=":memory:"),
+        storage=StorageConfig(
+            duckdb_path=":memory:",
+            deterministic_node_budget=1 if deterministic_override else None,
+        ),
         ram_budget_mb=0 if scenario in {"zero_budget", "negative_budget"} else 1,
         graph_eviction_policy=policy,
     )
     loader = ConfigLoader.new_for_tests()
     loader._config = cfg
+    ConfigLoader._instance = loader
 
     st = StorageState()
     ctx = StorageContext()
@@ -68,10 +76,8 @@ def _run(
     StorageManager.context = ctx
 
     original = StorageManager._current_ram_mb
-    current = (
-        0
-        if scenario == "under_budget"
-        else cfg.ram_budget_mb if scenario == "exact_budget" else 1000
+    current = 0 if scenario in {"under_budget", "deterministic_override"} else (
+        cfg.ram_budget_mb if scenario == "exact_budget" else 1000
     )
     StorageManager._current_ram_mb = staticmethod(lambda: current)
     stop = Event()
@@ -144,6 +150,7 @@ SCENARIOS = {
     "no_nodes",
     "race",
     "burst",
+    "deterministic_override",
 }
 
 
