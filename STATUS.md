@@ -8,33 +8,34 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 18, 2025
-- `task --version` still reports "command not found", confirming the Go Task
-  CLI is absent in a fresh container until `scripts/setup.sh` or an equivalent
-  manual install runs. 【d853f2†L1-L2】
-- `uv run python scripts/check_env.py` flags missing development and test
-  tooling (e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) in addition to
-  Go Task, reinforcing that contributors must run `task install` or `uv sync`
-  before invoking the Taskfile. 【0f3265†L1-L24】
-- `uv run --extra test pytest tests/unit/test_storage_eviction_sim.py::
-  test_under_budget_keeps_nodes -q` still fails, showing the deterministic
-  fallback in `_enforce_ram_budget` evicts nodes even when RAM usage is mocked
-  at zero and leaving the regression open. 【3b2b52†L1-L60】
-- Updated `.env.offline` to point at `extensions/vss/vss.duckdb_extension`,
-  removing the doubled `extensions/` prefix in offline logs; the storage
-  simulation now reports the corrected path while still exercising the stub
-  fallback. 【F:.env.offline†L1-L11】【3b2b52†L18-L24】
-- `uv run --extra test pytest tests/unit/distributed/
-  test_coordination_properties.py -q` succeeds once the `[test]` extras are
-  available, confirming the restored simulation exports behave as expected
-  outside the storage regression. 【f15357†L1-L2】
+- `task --version` still reports "command not found" in the base shell, so the
+  Go Task CLI must be sourced from `.venv/bin` or installed via
+  `scripts/setup.sh` before invoking Taskfile commands directly.
+  【8a589e†L1-L2】
+- `uv run python scripts/check_env.py` now reports the expected toolchain,
+  including Go Task 3.45.4, when the `dev-minimal` and `test` extras are
+  synced. Running it through `uv run` ensures the bundled Task binary is on the
+  `PATH`. 【55fd29†L1-L18】【cb3edc†L1-L10】
+- `uv run --extra test pytest tests/unit/test_storage_eviction_sim.py -q`
+  passes, confirming `_enforce_ram_budget` keeps nodes when RAM usage stays
+  within the configured limit. 【3c1010†L1-L2】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` aborts
+  with a segmentation fault in `tests/unit/test_storage_manager_concurrency.py::
+  test_setup_thread_safe`, revealing a new crash in the threaded setup path.
+  【0fcfb0†L1-L74】
+- Running `uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py::
+  test_setup_thread_safe -q` reproduces the crash immediately, so the
+  concurrency guard needs to be hardened before `task verify` can exercise the
+  full suite. 【2e8cf7†L1-L48】
+- `uv run --extra test pytest tests/unit/distributed/test_coordination_properties.py -q`
+  still succeeds, showing the restored distributed coordination simulation
+  exports remain stable. 【344912†L1-L2】
 - `uv run --extra test pytest tests/unit/test_vss_extension_loader.py -q`
-  still passes, and the loader's offline fallbacks now emit only INFO/WARNING
-  records while deduplicating repeated errors. The new log-focused test guards
-  the quieter behavior. 【F:src/autoresearch/extensions.py†L57-L179】
-  【F:tests/unit/test_vss_extension_loader.py†L173-L227】【6ec3f1†L1-L2】
-- `SPEC_COVERAGE.md` continues to list specifications plus proofs or
-  simulations for every module, confirming the spec-driven baseline stays in
-  sync with the implementation. 【F:SPEC_COVERAGE.md†L1-L120】
+  remains green, and the loader continues to deduplicate offline error logs so
+  fallback scenarios stay quiet. 【d180a4†L1-L2】
+- `SPEC_COVERAGE.md` continues to map each module to specifications plus
+  proofs, simulations, or tests, keeping the spec-driven baseline intact.
+  【F:SPEC_COVERAGE.md†L1-L120】
 
 ## September 17, 2025
 - After installing the `dev-minimal`, `test`, and `docs` extras,
@@ -636,10 +637,10 @@ regression is resolved.
 ## Open issues
 
 ### Release blockers
-- [restore-distributed-coordination-simulation-exports](
-  issues/restore-distributed-coordination-simulation-exports.md) –
-  Restore the leader election and message ordering helpers so the unit
-  suite and proofs align with the distributed coordination spec.
+- [address-storage-setup-concurrency-crash](
+  issues/address-storage-setup-concurrency-crash.md) –
+  Harden the threaded storage setup path so concurrency tests stop aborting
+  and `task verify` can finish.
 - [resolve-resource-tracker-errors-in-verify](
   issues/resolve-resource-tracker-errors-in-verify.md)
   – Run `task verify` end-to-end once Task is installed to confirm the
@@ -648,16 +649,9 @@ regression is resolved.
   issues/resolve-deprecation-warnings-in-tests.md) –
   Execute the full suite with `PYTHONWARNINGS=error::DeprecationWarning`
   after installing Task to ensure no latent warnings remain.
-- [fix-storage-eviction-under-budget-regression](
-  issues/fix-storage-eviction-under-budget-regression.md) –
-  Repair `_enforce_ram_budget` so storage eviction tests stop pruning nodes
-  under the configured RAM budget and unblock release rehearsals.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.
-
-### Additional issues
-- [reduce-vss-extension-error-noise-offline](
-  issues/reduce-vss-extension-error-noise-offline.md) –
-  Tone down DuckDB VSS download errors during offline storage simulations so
-  regression logs remain readable while the stub fallback is active.
+- [rerun-task-coverage-after-storage-fix](
+  issues/rerun-task-coverage-after-storage-fix.md) – Refresh coverage once
+  the concurrency crash and Task CLI gaps are resolved.

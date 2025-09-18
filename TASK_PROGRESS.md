@@ -2,26 +2,24 @@
 
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 18, 2025**
-the evaluation container still lacks the Go Task CLI by default, so
-`uv run task check` fails until `scripts/setup.sh` installs the binary.
-Running `uv run python scripts/check_env.py` reports the Go Task CLI plus
-unsynced development and test tooling (e.g., `black`, `flake8`, `fakeredis`,
-`hypothesis`) until `task install` or `uv sync` installs the extras.
-【0f3265†L1-L24】 `task --version` still returns "command not found", so the CLI
-must be installed manually. 【d853f2†L1-L2】 The storage teardown regression is
-fixed—the patched monitor metrics test now passes—so the suite advances to the
-storage eviction simulation. `uv run --extra test pytest tests/unit -k "storage"
--q --maxfail=1` currently fails at `tests/unit/test_storage_eviction_sim.py::
-test_under_budget_keeps_nodes` because `_enforce_ram_budget` prunes nodes even
-when mocked RAM usage stays within the budget. 【04f707†L1-L3】【3b2b52†L1-L60】
-Distributed coordination property tests succeed once the `[test]` extras are
-installed, and the VSS extension loader suite remains green while the offline
-fallback logs stay at INFO/WARNING thanks to the deduplicated logging helper
-and guard test. 【f15357†L1-L2】【F:src/autoresearch/extensions.py†L57-L179】
-【F:tests/unit/test_vss_extension_loader.py†L173-L227】【6ec3f1†L1-L2】 After syncing the docs extras, `uv run --extra docs
-mkdocs build` completes without warnings, clearing the release packaging
-blocker. 【586050†L1-L1】 Unit coverage and `task verify` remain blocked while the
-Task CLI is absent and the eviction regression persists.
+the base shell still lacks the Go Task CLI, so `task --version` fails until
+`.venv/bin` is sourced or `scripts/setup.sh` installs the binary.
+【8a589e†L1-L2】 Running `uv run python scripts/check_env.py` now reports the
+expected toolchain—including Go Task 3.45.4—once the `dev-minimal` and `test`
+extras are synced. 【55fd29†L1-L18】【cb3edc†L1-L10】 Targeted storage tests no
+longer hit the under-budget eviction regression:
+`uv run --extra test pytest tests/unit/test_storage_eviction_sim.py -q` passes,
+but the broader `-k "storage"` selection still aborts with a segmentation fault
+in `tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
+【3c1010†L1-L2】【0fcfb0†L1-L74】 Invoking that concurrency test directly reproduces
+the crash, so stabilizing the threaded setup path is the next blocker before
+`task verify` can complete. 【2e8cf7†L1-L48】 Distributed coordination property
+tests remain green, and the VSS extension loader suite continues to emit only
+informational offline logs. 【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】
+`uv run --extra docs mkdocs build` also succeeds without navigation warnings,
+keeping the release packaging rehearsal on track. 【b1509d†L1-L2】【a1ea28†L1-L1】
+Unit coverage and `task verify` remain blocked until the concurrency crash and
+Task CLI accessibility are resolved.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

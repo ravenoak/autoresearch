@@ -4,19 +4,21 @@
 The last recorded coverage run (`uv run task coverage EXTRAS="nlp ui vss git
 distributed analysis llm parsers gpu"`) reported 90% line coverage, but the
 suite cannot reach coverage today. `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` now fails at
-`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
-because `_enforce_ram_budget` trims nodes even when the mocked RAM usage stays
-within the budget. 【3b2b52†L1-L60】 After syncing the `dev-minimal`,
-`test`, and `docs` extras, `uv run python scripts/check_env.py` in a fresh
-container flags the Go Task CLI plus unsynced development and test tooling
-(e.g., `black`, `flake8`, `fakeredis`, `hypothesis`) until `task install` or
-`uv sync` installs the extras. Both the eviction regression and the tooling gap
-must be resolved before we can refresh `baseline/coverage.xml` and publish a
-new status log. 【0f3265†L1-L24】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
+"storage" -q --maxfail=1` now aborts with a segmentation fault in
+`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`
+even though the under-budget eviction regression is resolved.
+`uv run --extra test pytest tests/unit/test_storage_eviction_sim.py -q`
+passes, so the coverage gap is now driven by the threaded setup crash rather
+than eviction. 【0fcfb0†L1-L74】【3c1010†L1-L2】 After syncing the `dev-minimal`,
+`test`, and `docs` extras, `uv run python scripts/check_env.py` reports the
+expected toolchain—including Go Task 3.45.4—when executed via `uv`, but the
+base shell still lacks the Task CLI. 【55fd29†L1-L18】【cb3edc†L1-L10】【8a589e†L1-L2】
+Both the concurrency crash and the shell-level Task CLI gap must be resolved
+before we can refresh `baseline/coverage.xml` and publish a new status log.
+【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
 
 ## Dependencies
-- [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
+- [address-storage-setup-concurrency-crash](address-storage-setup-concurrency-crash.md)
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 
 ## Acceptance Criteria

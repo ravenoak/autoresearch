@@ -15,24 +15,22 @@ showed no remaining warnings in the CLI helper suite or distributed perf
 comparison test. The `sitecustomize.py` shim that rewrites
 `weasel.util.config` appears to be working, and the Click bump to 8.2.1 removed
 the original warning. After resyncing the `dev-minimal`, `test`, and `docs`
-extras, `uv run python scripts/check_env.py` in a fresh container flags the
-Go Task CLI plus unsynced development and test tooling (e.g., `black`,
-`flake8`, `fakeredis`, `hypothesis`) until `task install` or `uv sync` installs
-the extras. 【0f3265†L1-L24】 The storage teardown regression is fixed—the patched
-monitor metrics test now passes—so the unit suite advances to the storage
-eviction simulation. 【04f707†L1-L3】 `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` currently fails at
-`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes`
-because `_enforce_ram_budget` prunes nodes even when the mocked RAM usage stays
-within the budget. 【3b2b52†L1-L60】 We must repair that regression
-and restore the Task CLI before rerunning the warnings sweep under Task with
-`PYTHONWARNINGS=error::DeprecationWarning`. Without the `[test]` extras Pytest
-also emits `PytestConfigWarning: Unknown config option: bdd_features_base_dir`
-during the storage simulations, so ensuring the extras are installed is part of
-the cleanup. 【3b2b52†L22-L36】
+extras, `uv run python scripts/check_env.py` now reports the expected toolchain
+when executed via `uv`, but the base shell still lacks the Task CLI.
+【55fd29†L1-L18】【cb3edc†L1-L10】【8a589e†L1-L2】 The storage eviction regression is
+fixed—`uv run --extra test pytest tests/unit/test_storage_eviction_sim.py -q`
+passes—but the broader `uv run --extra test pytest tests/unit -k "storage" -q
+--maxfail=1` invocation aborts with a segmentation fault in
+`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
+We must harden the threaded setup path and restore the Task CLI before rerunning
+the warnings sweep under Task with `PYTHONWARNINGS=error::DeprecationWarning`.
+Without the `[test]` extras Pytest still emits
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir` during the
+storage simulations, so ensuring the extras are installed remains part of the
+cleanup. 【0fcfb0†L1-L74】【3c1010†L1-L2】
 
 ## Dependencies
-- [fix-storage-eviction-under-budget-regression](fix-storage-eviction-under-budget-regression.md)
+- [address-storage-setup-concurrency-crash](address-storage-setup-concurrency-crash.md)
 
 ## Acceptance Criteria
 - Unit and integration tests run without deprecation warnings, including a
