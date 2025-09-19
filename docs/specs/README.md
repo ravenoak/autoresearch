@@ -62,7 +62,10 @@ documented behaviour.
 
 ## Spec template
 
-Start new specs with the following structure:
+Start new specs with the following structure.
+Keep the headings verbatim so `scripts/lint_specs.py` continues to recognize
+the document; consult that script for the authoritative list of required
+sections.
 
 ```markdown
 # Module name
@@ -76,8 +79,14 @@ Explain key algorithms and decision logic.
 ## Invariants
 List conditions maintained across operations.
 
-## Proofs
-Reasoning or links showing the invariants hold.
+## Proof Sketch
+Outline why the invariants hold and link to supporting arguments.
+
+## Simulation Expectations
+Describe scenarios and metrics used in simulation exercises.
+
+## Traceability
+Link to related modules and tests that validate the behaviour.
 ```
 
 ## Extending specs
