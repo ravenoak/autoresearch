@@ -117,11 +117,12 @@ uv pip install -e ".[test]"
 uv run pytest -q
 ```
 
-If Go Task remains missing, bootstrap it and ensure `.venv/bin` is on `PATH`:
+If Go Task remains missing, run `scripts/setup.sh`. Load the generated PATH
+helper so `.venv/bin` is on `PATH` without exporting it manually:
 
 ```bash
-scripts/bootstrap.sh
-export PATH="$(pwd)/.venv/bin:$PATH"
+./scripts/setup.sh
+eval "$(./scripts/setup.sh --print-path)"
 ```
 
 You can also install Go Task manually from

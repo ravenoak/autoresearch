@@ -9,6 +9,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/setup_common.sh"
 
+if [ "${1:-}" = "--print-path" ]; then
+    venv_path_snippet "$PWD/.venv/bin"
+    exit 0
+fi
+
 ensure_venv_bin_on_path "$PWD/.venv/bin"
 
 EXTRAS=${AR_EXTRAS:-}
@@ -84,5 +89,10 @@ if ! uv sync$extras_args; then
     exit 1
 fi
 
+snippet_file=$(venv_path_snippet_file "$PWD/.venv/bin")
+
 echo "Environment ready. Activate with 'source .venv/bin/activate'."
+echo "Persisted PATH helper at $snippet_file."
+echo "Run 'eval \"\$(./scripts/setup.sh --print-path)\"' in new shells or"
+echo "source the snippet to expose .venv/bin without re-running setup."
 
