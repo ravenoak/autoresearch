@@ -2,12 +2,10 @@ import threading
 import types
 
 import networkx as nx
-import pytest
 import autoresearch.storage as storage
 from autoresearch.storage import StorageManager
 
 
-@pytest.mark.xfail(reason="Thread-safety not enforced under coverage")
 def test_setup_thread_safe(monkeypatch):
     calls: list[int] = []
     original_setup = storage.setup
@@ -22,10 +20,16 @@ def test_setup_thread_safe(monkeypatch):
     StorageManager.context.rdf_store = None
 
     contexts: list = []
+    thread_errors: list[BaseException] = []
 
     def worker() -> None:
-        ctx = StorageManager.setup(db_path=":memory:")
-        contexts.append(ctx)
+        try:
+            ctx = StorageManager.setup(db_path=":memory:")
+        except BaseException as exc:  # pragma: no cover - defensive guard
+            thread_errors.append(exc)
+            raise
+        else:
+            contexts.append(ctx)
 
     threads = [threading.Thread(target=worker) for _ in range(5)]
     for thread in threads:
@@ -33,8 +37,11 @@ def test_setup_thread_safe(monkeypatch):
     for thread in threads:
         thread.join()
 
+    assert not thread_errors, f"worker threads failed: {thread_errors!r}"
     assert len(calls) == 1
+    assert len(contexts) == len(threads)
     assert len({id(c) for c in contexts}) == 1
+    assert StorageManager.context.db_backend is not None, "setup did not complete"
     StorageManager.teardown(remove_db=True)
 
 

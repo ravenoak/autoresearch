@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+
 def _load_module():
     root = Path(__file__).resolve().parents[3]
     path = root / "src/autoresearch/search/simulate_rate_limit.py"
