@@ -7,20 +7,16 @@ coverage from completing.
 
 Evaluating `./scripts/setup.sh --print-path` now exposes Go Task 3.45.4 in the
 base shell, so `task verify` can run without an extra `uv` wrapper once the
-venv PATH helper is loaded. 【c1ab5e†L1-L8】【5a32ba†L1-L3】 Targeted retries of the
-distributed coordination property suite and the VSS extension loader tests
-still demonstrate clean shutdowns when the `[test]` extras are present.
-【344912†L1-L2】【d180a4†L1-L2】 The storage selections that previously crashed now
-complete: `uv run --extra test pytest
-tests/unit/test_storage_manager_concurrency.py -q` passes, and the broader
-`-k "storage"` subset reports 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
-tests. 【b8e216†L1-L3】【babc25†L1-L3】 The next step is to rerun `task verify`
-directly (ideally with `PYTHONWARNINGS=error::DeprecationWarning`) to confirm
-the resource tracker tear-down path is stable now that the storage guard is
-fixed. Before that rerun we must realign the monitor and extensions specs with
-the lint template (`restore-spec-lint-template-compliance`) because the latest
-`task check` run stops in `scripts/lint_specs.py`, blocking the verify workflow
-until the headings are restored.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
+venv PATH helper is loaded. 【5d8a01†L1-L2】 The storage selections that
+previously crashed now complete: `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` reports 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
+tests. 【dbf750†L1-L1】 The next step is to rerun `task verify` directly (ideally
+with `PYTHONWARNINGS=error::DeprecationWarning`) to confirm the resource tracker
+tear-down path is stable now that the storage guard is fixed. Before that rerun
+we must realign the monitor and extensions specs with the lint template
+(`restore-spec-lint-template-compliance`) because `uv run python
+scripts/lint_specs.py` still fails, blocking the verify workflow until the
+headings are restored.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 
 ## Dependencies
 - None

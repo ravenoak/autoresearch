@@ -4,26 +4,22 @@ This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 19, 2025**
 the Go Task CLI is available after evaluating `./scripts/setup.sh --print-path`,
 so `task --version` reports 3.45.4 in a fresh shell without re-running setup.
-【c1ab5e†L1-L8】【5a32ba†L1-L3】 `uv run python scripts/check_env.py` continues to
-list the expected toolchain when the `dev-minimal` and `test` extras are
-synced. 【582859†L1-L25】 Storage tests that previously aborted now succeed:
-`uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
-passes, and the broader `uv run --extra test pytest tests/unit -k "storage" -q
---maxfail=1` run finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
-tests. 【b8e216†L1-L3】【babc25†L1-L3】 The xpass arises from
-`tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, so we opened
-`issues/remove-stale-xfail-for-rdf-store-error.md` to drop the stale marker and
-keep coverage honest; a fresh run on September 19 reproduced the xpass in
-2.32 seconds.【9da781†L1-L3】【d92c1a†L1-L2】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L29】
-The latest `task check` run now fails during `scripts/lint_specs.py` because the
-monitor and extensions specs drifted from the template, so
-`issues/restore-spec-lint-template-compliance.md` tracks the spec lint repair.
-【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
-Distributed coordination property tests and the VSS extension loader suite
-remain green, and `uv run --extra docs mkdocs build` still succeeds without
-navigation warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 `task verify`
+【5d8a01†L1-L2】 `uv run python scripts/check_env.py` continues to list the
+expected toolchain when the `dev-minimal` and `test` extras are synced.
+【0feb5e†L1-L17】【fa650a†L1-L10】 Storage tests that previously aborted now
+complete: `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
+finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests.
+【dbf750†L1-L1】 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`
+still xpasses, so `issues/remove-stale-xfail-for-rdf-store-error.md` remains
+open to drop the stale marker. 【cd543d†L1-L1】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L29】
+`uv run python scripts/lint_specs.py` currently fails because the monitor and
+extensions specs drifted from the template, so
+`issues/restore-spec-lint-template-compliance.md` tracks the spec lint repair
+before `task check` can proceed. 【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
+`uv run --extra docs mkdocs build` still succeeds without navigation warnings,
+keeping the docs pipeline clear for the release. 【e808c5†L1-L2】 `task verify`
 and coverage remain blocked on verifying the resource tracker fix, removing the
-xfail, and re-running the warnings sweep.
+xfail, and re-running the warnings sweep.【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

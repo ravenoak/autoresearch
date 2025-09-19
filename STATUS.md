@@ -11,24 +11,22 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 19, 2025
-- `task check` currently fails during `scripts/lint_specs.py` because
-  `docs/specs/monitor.md` and `docs/specs/extensions.md` drifted from the spec
-  template. Opened `issues/restore-spec-lint-template-compliance.md` to restore
-  the required headings before rerunning the full suite.
-  【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
-- `./scripts/setup.sh` now saves a PATH helper at `.autoresearch/path.sh`, so
-  new shells can load the snippet and run `task --version` without
-  reinstalling tooling. 【11ceea†L1-L8】【c82304†L1-L8】
-- After sourcing the helper in a new login shell, `task --version` reports
-  Go Task 3.45.4 immediately. 【d609c8†L1-L2】
-- `uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
-  passes, and the broader `uv run --extra test pytest tests/unit -k "storage" -q
-  --maxfail=1` run finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
-  tests, confirming the hardened setup guard. 【b8e216†L1-L3】【babc25†L1-L3】
+- Running `uv run python scripts/check_env.py` after loading the PATH helper
+  reconfirmed Go Task 3.45.4 and the expected development toolchain are still
+  available. 【0feb5e†L1-L17】【fa650a†L1-L10】
+- Sourcing `.autoresearch/path.sh` via `./scripts/setup.sh --print-path` keeps
+  `task --version` at 3.45.4 in fresh shells. 【5d8a01†L1-L2】
+- `uv run python scripts/lint_specs.py` continues to fail because the monitor
+  and extensions specs are missing required headings, so `task check` remains
+  blocked on restoring the template. 【4076c9†L1-L2】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` still
+  completes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests, so the
+  storage guard fix holds. 【dbf750†L1-L1】
 - `uv run --extra test pytest tests/unit/test_storage_errors.py::
-  test_setup_rdf_store_error -q` still xpasses (2.32 seconds), so the stale
-  xfail marker must be removed to keep coverage honest.
-  【9da781†L1-L3】【d92c1a†L1-L2】
+  test_setup_rdf_store_error -q` continues to xpass, confirming the stale
+  xfail marker must be removed. 【cd543d†L1-L1】
+- `uv run --extra docs mkdocs build` succeeds after syncing docs extras,
+  showing the navigation fix still applies. 【e808c5†L1-L2】
 
 ## September 18, 2025
 - `task --version` still reports "command not found" in the base shell, so the

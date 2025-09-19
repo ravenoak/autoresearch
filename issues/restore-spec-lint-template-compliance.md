@@ -10,7 +10,7 @@ standard `## Algorithms`, `## Invariants`, `## Proof Sketch`, and
 `## Simulation Expectations` headings that the lint tool enforces.
 `task check` stops after these errors, so no tests or coverage commands
 run until the spec documents are realigned with the template.
-【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
+【4076c9†L1-L2】
 
 ## Dependencies
 - None
@@ -22,7 +22,8 @@ run until the spec documents are realigned with the template.
 - `docs/specs/extensions.md` adopts the full spec template with
   `## Algorithms`, `## Invariants`, `## Proof Sketch`, and
   `## Simulation Expectations` headings populated with the existing
-  content.
+  offline-determinism content and any supporting formulas or decision
+  tables.
 - `uv run python scripts/lint_specs.py` and `task check` complete
   without spec lint failures.
 - STATUS.md records the spec lint fix so the release log reflects the
