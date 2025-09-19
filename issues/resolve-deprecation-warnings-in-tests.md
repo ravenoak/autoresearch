@@ -18,14 +18,13 @@ the original warning. After resyncing the `dev-minimal`, `test`, and `docs`
 extras, `uv run python scripts/check_env.py` still reports the expected
 toolchain, and evaluating `./scripts/setup.sh --print-path` exposes Go Task
 3.45.4 so the warnings sweep can run inside `task verify`.
-【582859†L1-L25】【c1ab5e†L1-L8】 The storage selections that previously aborted
-now succeed: `uv run --extra test pytest
-tests/unit/test_storage_manager_concurrency.py -q` passes, and the broader
-`-k "storage"` subset finishes with 135 passed, 2 skipped, 1 xfailed, and 1
-xpassed tests. 【b8e216†L1-L3】【babc25†L1-L3】 The lone xpass comes from
+【0feb5e†L1-L17】【fa650a†L1-L10】【5d8a01†L1-L2】 The storage selections that
+previously aborted now succeed: `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` finishes with 135 passed, 2 skipped, 1 xfailed, and 1
+xpassed tests. 【dbf750†L1-L1】 The lone xpass comes from
 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, so we still
 need to remove the stale xfail to keep coverage honest while the warning sweep
-runs. 【9da781†L1-L3】 Once the xfail cleanup lands and the resource tracker fix
+runs. 【cd543d†L1-L1】 Once the xfail cleanup lands and the resource tracker fix
 is verified, rerun `task verify` with `PYTHONWARNINGS=error::DeprecationWarning`
 to confirm the suite stays quiet. Without the `[test]` extras Pytest still
 emits `PytestConfigWarning: Unknown config option: bdd_features_base_dir`
@@ -34,7 +33,7 @@ part of the cleanup. We must also restore spec lint compliance
 (`restore-spec-lint-template-compliance`) because the newest `task check` run
 stops in `scripts/lint_specs.py`, preventing `task verify` from reaching the
 warnings sweep until the monitor and extensions specs adopt the required
-headings.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
+headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)

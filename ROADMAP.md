@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 18, 2025**.
+[README](README.md). Last updated **September 19, 2025**.
 
 ## Status
 
@@ -15,23 +15,21 @@ across project documentation. Loading the PATH helper emitted by
 `./scripts/setup.sh --print-path` makes `task --version` report 3.45.4 in the
 base shell, and `uv run python scripts/check_env.py` confirms the expected
 toolchain whenever the `dev-minimal` and `test` extras are synced.
-【af6d99†L1-L2】【ceafa9†L1-L27】 Storage regressions are contained:
-`uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
-passes, and the broader `-k "storage"` subset reports 135 passed, 2 skipped, 1
-xfail, and 1 xpass tests. 【b8e216†L1-L3】【babc25†L1-L3】 The lone xpass comes from
-`tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, which still
-completes in 2.32 seconds despite the stale xfail marker.
-【9da781†L1-L3】【d92c1a†L1-L2】 Distributed coordination and VSS loader checks
-remain green, and `uv run --extra docs mkdocs build` succeeds without navigation
-warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 The most recent
-`task check` run now fails during `scripts/lint_specs.py` because
-`docs/specs/monitor.md` and `docs/specs/extensions.md` drifted from the spec
-template; `issues/restore-spec-lint-template-compliance.md` tracks the fix so
-linting can reach tests again.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
-Release blockers therefore include restoring spec lint compliance, running
+【5d8a01†L1-L2】【0feb5e†L1-L17】【fa650a†L1-L10】 Storage regressions are contained:
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` reports 135
+passed, 2 skipped, 1 xfailed, and 1 xpassed tests. 【dbf750†L1-L1】 The lone xpass
+comes from `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`,
+which still succeeds despite the stale xfail marker. 【cd543d†L1-L1】
+`uv run python scripts/lint_specs.py` fails because `docs/specs/monitor.md` and
+`docs/specs/extensions.md` drifted from the spec template, and
+`issues/restore-spec-lint-template-compliance.md` tracks the fix so linting can
+reach tests again. 【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
+`uv run --extra docs mkdocs build` succeeds without navigation warnings,
+confirming the documentation pipeline stays green. 【e808c5†L1-L2】 Release
+blockers therefore include restoring spec lint compliance, running
 `task verify` without resource tracker errors, sweeping for deprecation warnings
 with `PYTHONWARNINGS=error::DeprecationWarning`, refreshing coverage, and then
-closing the alpha-release checklist.
+closing the alpha-release checklist.【F:issues/restore-spec-lint-template-compliance.md†L1-L33】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】
 
 ## Milestones
 
