@@ -17,7 +17,10 @@ tests/unit/test_storage_manager_concurrency.py -q` passes, and the broader
 tests. 【b8e216†L1-L3】【babc25†L1-L3】 The next step is to rerun `task verify`
 directly (ideally with `PYTHONWARNINGS=error::DeprecationWarning`) to confirm
 the resource tracker tear-down path is stable now that the storage guard is
-fixed.
+fixed. Before that rerun we must realign the monitor and extensions specs with
+the lint template (`restore-spec-lint-template-compliance`) because the latest
+`task check` run stops in `scripts/lint_specs.py`, blocking the verify workflow
+until the headings are restored.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
 
 ## Dependencies
 - None

@@ -8,46 +8,30 @@ and recent changes. Installation and environment details are covered in the
 
 ## Status
 
-See [STATUS.md](STATUS.md) for current results and
+See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. The base shell still lacks the Go Task CLI, so
-`task --version` fails until `.venv/bin` is sourced or `scripts/setup.sh`
-installs the binary. 【8a589e†L1-L2】 Running
-`uv run python scripts/check_env.py` now reports the expected toolchain—Go Task
-3.45.4, Black, Flake8, Hypothesis, and more—once the `dev-minimal` and `test`
-extras are synced via `uv`. 【55fd29†L1-L18】【cb3edc†L1-L10】 Targeted storage
-tests confirm `_enforce_ram_budget` behaves under the RAM budget constraint,
-yet the broader `uv run --extra test pytest tests/unit -k "storage" -q
---maxfail=1` command aborts with a segmentation fault in
-`tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
-【3c1010†L1-L2】【0fcfb0†L1-L74】 Re-running that concurrency test in isolation
-reproduces the crash, so shoring up the threaded setup path is now the top
-blocker before `task verify` can finish. 【2e8cf7†L1-L48】 Distributed
-coordination property tests remain green, and the VSS extension loader suite
-continues to deduplicate offline errors while passing its regression checks.
-【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】 The
-documentation build also succeeds without navigation warnings via
-`uv run --extra docs mkdocs build`. 【b1509d†L1-L2】【a1ea28†L1-L1】 Release
-blockers now concentrate on the new storage setup crash alongside
-[resolve-resource-tracker-errors-in-verify](
-issues/resolve-resource-tracker-errors-in-verify.md),
-[resolve-deprecation-warnings-in-tests](
-issues/resolve-deprecation-warnings-in-tests.md), and
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
-Specification updates for the API, CLI helpers, config, distributed execution,
-extensions, and monitor packages were reviewed and archived after confirming
-the docs match the implementation. Scheduler resource benchmarks
-(`scripts/scheduling_resource_benchmark.py`) offer utilization and memory
-estimates documented in `docs/orchestrator_perf.md`. Dependency pins:
-`fastapi>=0.116.1` and `slowapi==0.1.9`. Use Python 3.12+ with:
-
-```
-uv venv && uv sync --all-extras &&
-uv pip install -e '.[full,parsers,git,llm,dev]'
-```
-
-before running tests.
+across project documentation. Loading the PATH helper emitted by
+`./scripts/setup.sh --print-path` makes `task --version` report 3.45.4 in the
+base shell, and `uv run python scripts/check_env.py` confirms the expected
+toolchain whenever the `dev-minimal` and `test` extras are synced.
+【af6d99†L1-L2】【ceafa9†L1-L27】 Storage regressions are contained:
+`uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
+passes, and the broader `-k "storage"` subset reports 135 passed, 2 skipped, 1
+xfail, and 1 xpass tests. 【b8e216†L1-L3】【babc25†L1-L3】 The lone xpass comes from
+`tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, which still
+completes in 2.32 seconds despite the stale xfail marker.
+【9da781†L1-L3】【d92c1a†L1-L2】 Distributed coordination and VSS loader checks
+remain green, and `uv run --extra docs mkdocs build` succeeds without navigation
+warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 The most recent
+`task check` run now fails during `scripts/lint_specs.py` because
+`docs/specs/monitor.md` and `docs/specs/extensions.md` drifted from the spec
+template; `issues/restore-spec-lint-template-compliance.md` tracks the fix so
+linting can reach tests again.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
+Release blockers therefore include restoring spec lint compliance, running
+`task verify` without resource tracker errors, sweeping for deprecation warnings
+with `PYTHONWARNINGS=error::DeprecationWarning`, refreshing coverage, and then
+closing the alpha-release checklist.
 
 ## Milestones
 
@@ -60,13 +44,13 @@ before running tests.
   hot-reload and improved search backends.
 - 0.3.0 (2027-06-01, status: planned): Distributed execution support and
   monitoring utilities.
-- 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
-  and stable interfaces.
+  - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
+    and stable interfaces.
   - Stability goals depend on closing:
     - [prepare-first-alpha-release]
     - [resolve-resource-tracker-errors-in-verify]
     - [resolve-deprecation-warnings-in-tests]
-    - [address-storage-setup-concurrency-crash]
+    - [restore-spec-lint-template-compliance]
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
@@ -76,8 +60,8 @@ for the alpha release checklist.
   issues/resolve-resource-tracker-errors-in-verify.md
 [resolve-deprecation-warnings-in-tests]:
   issues/resolve-deprecation-warnings-in-tests.md
-[address-storage-setup-concurrency-crash]:
-  issues/address-storage-setup-concurrency-crash.md
+[restore-spec-lint-template-compliance]:
+  issues/restore-spec-lint-template-compliance.md
 
 ## 0.1.0a1 – Alpha preview
 

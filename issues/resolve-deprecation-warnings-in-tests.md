@@ -30,7 +30,11 @@ is verified, rerun `task verify` with `PYTHONWARNINGS=error::DeprecationWarning`
 to confirm the suite stays quiet. Without the `[test]` extras Pytest still
 emits `PytestConfigWarning: Unknown config option: bdd_features_base_dir`
 during the storage simulations, so ensuring the extras are installed remains
-part of the cleanup.
+part of the cleanup. We must also restore spec lint compliance
+(`restore-spec-lint-template-compliance`) because the newest `task check` run
+stops in `scripts/lint_specs.py`, preventing `task verify` from reaching the
+warnings sweep until the monitor and extensions specs adopt the required
+headings.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
 
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)

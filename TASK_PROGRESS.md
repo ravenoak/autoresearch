@@ -13,7 +13,12 @@ passes, and the broader `uv run --extra test pytest tests/unit -k "storage" -q
 tests. 【b8e216†L1-L3】【babc25†L1-L3】 The xpass arises from
 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, so we opened
 `issues/remove-stale-xfail-for-rdf-store-error.md` to drop the stale marker and
-keep coverage honest. 【9da781†L1-L3】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L27】
+keep coverage honest; a fresh run on September 19 reproduced the xpass in
+2.32 seconds.【9da781†L1-L3】【d92c1a†L1-L2】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L29】
+The latest `task check` run now fails during `scripts/lint_specs.py` because the
+monitor and extensions specs drifted from the template, so
+`issues/restore-spec-lint-template-compliance.md` tracks the spec lint repair.
+【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 Distributed coordination property tests and the VSS extension loader suite
 remain green, and `uv run --extra docs mkdocs build` still succeeds without
 navigation warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 `task verify`

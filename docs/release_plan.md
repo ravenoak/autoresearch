@@ -38,8 +38,13 @@ with the `[test]` extras, and the VSS extension loader suite remains green
 while deduplicating offline errors.
 【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】 After
 syncing the docs extras, `uv run --extra docs mkdocs build` completes without
-navigation warnings. 【b1509d†L1-L2】 `task verify` remains blocked on validating
-the resource tracker fix and removing the xfail, so the coverage refresh is
+navigation warnings. 【b1509d†L1-L2】 The newest `task check` run now fails during
+`scripts/lint_specs.py` because `docs/specs/monitor.md` and
+`docs/specs/extensions.md` drifted from the enforced headings, so
+`issues/restore-spec-lint-template-compliance.md` is open to restore the spec
+template before re-running the suite. 【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
+`task verify` remains blocked on validating the resource tracker fix, removing
+the xfail, and clearing the spec lint regression, so the coverage refresh is
 still pending. These items are tracked in STATUS.md and the open issues listed
 there.
 ## Milestones
@@ -82,6 +87,8 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 - `uv run flake8 src tests` passed with no issues.
 - `uv run mypy src` passed with no issues.
+- `uv run python scripts/lint_specs.py` passes with all specs aligned to the
+  template (monitor and extensions headings restored).
 - `task verify` and `task coverage` executed with Go Task 3.44.1.
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.

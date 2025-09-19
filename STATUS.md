@@ -11,6 +11,11 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 19, 2025
+- `task check` currently fails during `scripts/lint_specs.py` because
+  `docs/specs/monitor.md` and `docs/specs/extensions.md` drifted from the spec
+  template. Opened `issues/restore-spec-lint-template-compliance.md` to restore
+  the required headings before rerunning the full suite.
+  【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 - `./scripts/setup.sh` now saves a PATH helper at `.autoresearch/path.sh`, so
   new shells can load the snippet and run `task --version` without
   reinstalling tooling. 【11ceea†L1-L8】【c82304†L1-L8】
@@ -21,8 +26,9 @@ checks are required.
   --maxfail=1` run finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
   tests, confirming the hardened setup guard. 【b8e216†L1-L3】【babc25†L1-L3】
 - `uv run --extra test pytest tests/unit/test_storage_errors.py::
-  test_setup_rdf_store_error -q` now xpasses, so the stale xfail marker must be
-  removed to keep coverage honest. 【9da781†L1-L3】
+  test_setup_rdf_store_error -q` still xpasses (2.32 seconds), so the stale
+  xfail marker must be removed to keep coverage honest.
+  【9da781†L1-L3】【d92c1a†L1-L2】
 
 ## September 18, 2025
 - `task --version` still reports "command not found" in the base shell, so the
@@ -654,21 +660,20 @@ regression is resolved.
 ## Open issues
 
 ### Release blockers
-- [address-storage-setup-concurrency-crash](
-  issues/address-storage-setup-concurrency-crash.md) –
-  Harden the threaded storage setup path so concurrency tests stop aborting
-  and `task verify` can finish.
 - [resolve-resource-tracker-errors-in-verify](
-  issues/resolve-resource-tracker-errors-in-verify.md)
-  – Run `task verify` end-to-end once Task is installed to confirm the
-  multiprocessing tracker cleanup fixes hold under coverage.
+  issues/resolve-resource-tracker-errors-in-verify.md) – Run `task verify`
+  end-to-end once the PATH helper is loaded to confirm the multiprocessing
+  tracker cleanup fixes hold under coverage.
 - [resolve-deprecation-warnings-in-tests](
-  issues/resolve-deprecation-warnings-in-tests.md) –
-  Execute the full suite with `PYTHONWARNINGS=error::DeprecationWarning`
-  after installing Task to ensure no latent warnings remain.
+  issues/resolve-deprecation-warnings-in-tests.md) – Execute the full suite
+  with `PYTHONWARNINGS=error::DeprecationWarning` after installing Task to
+  ensure no latent warnings remain.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.
 - [rerun-task-coverage-after-storage-fix](
   issues/rerun-task-coverage-after-storage-fix.md) – Refresh coverage once
-  the concurrency crash and Task CLI gaps are resolved.
+  the spec lint and storage follow-ups are closed.
+- [restore-spec-lint-template-compliance](
+  issues/restore-spec-lint-template-compliance.md) – Realign spec documents
+  with the enforced template so `task check` reaches linting and tests.
