@@ -63,7 +63,7 @@
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [t96] | OK |
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106] | OK |
 | `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | OK |
-| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK |
+| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK |
 | `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s21], [t109], [t65], [t66] | OK |
 | `autoresearch/storage_backup.py` | [storage-backup.md](docs/specs/storage-backup.md) | [t115] | OK |
 | `autoresearch/storage_utils.py` | [storage-utils.md](docs/specs/storage-utils.md) | [t116] | OK |
@@ -224,6 +224,7 @@
 [s18]: scripts/schema_idempotency_sim.py
 [s19]: scripts/storage_concurrency_sim.py
 [s20]: scripts/storage_eviction_sim.py
+[s22]: docs/algorithms/storage.md#setup-concurrency-metrics
 [t108]: tests/integration/storage/test_simulation_benchmarks.py
 [t109]: tests/integration/test_rdf_persistence.py
 [t110]: tests/integration/test_storage_duckdb_fallback.py
