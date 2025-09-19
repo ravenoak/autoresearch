@@ -8,10 +8,12 @@ so `task --version` reports 3.45.4 in a fresh shell without re-running setup.
 expected toolchain when the `dev-minimal` and `test` extras are synced.
 【0feb5e†L1-L17】【fa650a†L1-L10】 Storage tests that previously aborted now
 complete: `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
-finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests.
-【dbf750†L1-L1】 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`
-still xpasses, so `issues/remove-stale-xfail-for-rdf-store-error.md` remains
-open to drop the stale marker. 【cd543d†L1-L1】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L29】
+finishes with 136 passed, 2 skipped, 818 deselected, and 1 xfailed tests,
+confirming the suite stays stable after dropping the stale xfail.
+【98baa8†L2-L2】 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`
+now passes without the decorator, so
+`issues/remove-stale-xfail-for-rdf-store-error.md` is ready to close once the
+follow-up warnings sweep lands. 【7cca17†L1-L1】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L29】
 `uv run python scripts/lint_specs.py` currently fails because the monitor and
 extensions specs drifted from the template, so
 `issues/restore-spec-lint-template-compliance.md` tracks the spec lint repair

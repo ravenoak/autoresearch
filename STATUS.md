@@ -19,12 +19,14 @@ checks are required.
 - `uv run python scripts/lint_specs.py` continues to fail because the monitor
   and extensions specs are missing required headings, so `task check` remains
   blocked on restoring the template. 【4076c9†L1-L2】
-- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` still
-  completes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests, so the
-  storage guard fix holds. 【dbf750†L1-L1】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` now
+  finishes with 136 passed, 2 skipped, 818 deselected, and 1 xfailed tests,
+  confirming the storage sweep stays stable after dropping the stale xfail.
+  【98baa8†L2-L2】
 - `uv run --extra test pytest tests/unit/test_storage_errors.py::
-  test_setup_rdf_store_error -q` continues to xpass, confirming the stale
-  xfail marker must be removed. 【cd543d†L1-L1】
+  test_setup_rdf_store_error -q` passes in isolation after removing the
+  decorator, so the RDF store setup path now runs as part of the default
+  storage checks. 【7cca17†L1-L1】
 - `uv run --extra docs mkdocs build` succeeds after syncing docs extras,
   showing the navigation fix still applies. 【e808c5†L1-L2】
 

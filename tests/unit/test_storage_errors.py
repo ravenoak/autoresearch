@@ -5,7 +5,6 @@ from autoresearch.storage import StorageManager, setup
 from autoresearch.errors import StorageError, NotFoundError
 
 
-@pytest.mark.xfail(reason="RDF store path handling differs in CI")
 def test_setup_rdf_store_error(mock_config, assert_error):
     """Test that setup handles RDF store errors properly."""
     # Setup
