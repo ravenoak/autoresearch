@@ -68,6 +68,29 @@ demonstrate enforcement under heavier contention. Integration
 [tests][concurrency-test] show that writers retain all claims when usage stays
 within the budget and trigger eviction once mocked memory exceeds the limit.
 
+### Setup concurrency metrics
+
+Running
+
+```
+uv run python scripts/storage_concurrency_sim.py --threads 6 --items 4
+```
+
+produced the following metrics:
+
+```
+setup calls: 1
+setup failures: 0
+unique contexts: 1
+setup wall time (ms): 1678.75
+persist wall time (ms): 1540.79
+nodes remaining after eviction: 0
+```
+
+These results show that only a single thread initializes storage while six
+threads race to call `StorageManager.setup`. The simulation also confirms that
+writers still converge to an empty graph once the RAM budget is enforced.
+
 ## Eviction performance
 
 Running `uv run python scripts/storage_eviction_sim.py --threads 1 --items 1`

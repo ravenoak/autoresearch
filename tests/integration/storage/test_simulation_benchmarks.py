@@ -9,8 +9,11 @@ from autoresearch.storage import StorageContext, StorageManager, StorageState
 
 
 def test_concurrency_benchmark() -> None:
-    remaining = concurrency_run(threads=2, items=3)
-    assert remaining == 0
+    result = concurrency_run(threads=2, items=3)
+    assert result.remaining_nodes == 0
+    assert result.setup_calls == 1
+    assert result.setup_failures == 0
+    assert result.unique_contexts == 1
 
 
 def _ram_budget_run(items: int) -> int:

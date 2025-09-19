@@ -127,6 +127,9 @@ RAM-budget enforcement.
 `storage_eviction_sim.py` with two threads and five items leaves zero nodes and
 achieves roughly `0.3 nodes/s` throughput [s1r].
 `storage_eviction_sim.py` with a zero budget retains all nodes [s1].
+`storage_concurrency_sim.py` with six setup threads and four items prints
+`setup calls: 1`, `setup failures: 0`, and `unique contexts: 1`, showing
+single initialization even under contention [s4m].
 `test_ram_budget_benchmark` measures mean eviction latency of about `3.2 s`
 and `0.31 OPS` [t5r].
 
@@ -181,6 +184,7 @@ and `0.31 OPS` [t5r].
 [s2r]: ../../scripts/schema_idempotency_sim.py
 [s3]: ../../scripts/ram_budget_enforcement_sim.py
 [s4]: ../../scripts/storage_concurrency_sim.py
+[s4m]: ../algorithms/storage.md#setup-concurrency-metrics
 [b1]: ../algorithms/storage.md#duckdb-fallback-benchmark
 [t1]: ../../tests/behavior/features/storage_search_integration.feature
 [t2]: ../../tests/integration/test_search_storage.py
