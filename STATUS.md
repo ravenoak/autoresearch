@@ -16,6 +16,13 @@ checks are required.
   reinstalling tooling. 【11ceea†L1-L8】【c82304†L1-L8】
 - After sourcing the helper in a new login shell, `task --version` reports
   Go Task 3.45.4 immediately. 【d609c8†L1-L2】
+- `uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
+  passes, and the broader `uv run --extra test pytest tests/unit -k "storage" -q
+  --maxfail=1` run finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
+  tests, confirming the hardened setup guard. 【b8e216†L1-L3】【babc25†L1-L3】
+- `uv run --extra test pytest tests/unit/test_storage_errors.py::
+  test_setup_rdf_store_error -q` now xpasses, so the stale xfail marker must be
+  removed to keep coverage honest. 【9da781†L1-L3】
 
 ## September 18, 2025
 - `task --version` still reports "command not found" in the base shell, so the

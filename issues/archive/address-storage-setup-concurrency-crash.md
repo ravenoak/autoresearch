@@ -10,7 +10,11 @@ though the under-budget eviction regression is fixed and
 an abort, indicating that the threaded `StorageManager.setup` path is still
 unsafe. 【2e8cf7†L1-L48】【F:src/autoresearch/storage.py†L381-L427】 The crash
 prevents `task verify` and `task coverage` from running to completion, so we
-need to restore deterministic, thread-safe setup semantics before release.
+need to restore deterministic, thread-safe setup semantics before release. The
+guard has since been hardened: `uv run --extra test pytest
+tests/unit/test_storage_manager_concurrency.py -q` and the broader
+`-k "storage"` selection now complete without crashes.
+【b8e216†L1-L3】【babc25†L1-L3】
 
 ## Dependencies
 - None
@@ -24,4 +28,4 @@ need to restore deterministic, thread-safe setup semantics before release.
   links to the validating test runs.
 
 ## Status
-Open
+Archived
