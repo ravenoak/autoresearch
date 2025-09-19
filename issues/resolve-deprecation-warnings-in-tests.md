@@ -46,5 +46,43 @@ headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.m
 - Deprecated APIs are replaced or dependencies pinned to supported versions.
 - Documentation notes any unavoidable warnings.
 
+## Multi-PR Remediation Plan
+
+### PR 1 – Establish warnings-as-errors harness and baseline log
+- Add a dedicated Taskfile target (e.g., `task verify:warnings`) that wraps
+  `PYTHONWARNINGS=error::DeprecationWarning uv run task verify` so future PRs
+  can invoke a single command instead of remembering the environment flag.
+- Provision a clean virtual environment (`uv sync --frozen --all-extras` for
+  reproducibility), document the exact steps in the Task description, and run
+  the new task to capture the first failure log.
+- Archive the raw command output under `baseline/logs/` with a timestamped file
+  name and add a README snippet describing how to regenerate the log.
+- Summarize the failure modes in this issue and open follow-up TODO checklists
+  that map each deprecation to the owning package or module so the next PRs
+  have concrete targets.
+
+### PR 2 – Refactor in-repo callers of deprecated APIs
+- For each warning traced to modules under `src/` or `tests/`, replace the
+  deprecated API usage with the forward-compatible alternative (e.g., migrate
+  helper shims to their permanent home or adopt new keyword arguments).
+- Update or extend tests to cover the new code paths and guard against regressions.
+- Keep commits focused per module when practical so the dependency updates in
+  PR 3 stay isolated.
+- Re-run `task verify:warnings`; attach the refreshed log to the baseline folder
+  and note the resolved warnings in this issue.
+
+### PR 3 – Align dependencies or add scoped filters
+- For remaining warnings triggered by third-party libraries, decide between a
+  version bump and a pin to the last safe release; update `pyproject.toml`
+  accordingly and regenerate `uv.lock` with `uv lock` so CI enforces the
+  constraint.
+- When an upstream fix is unavailable, add a targeted filter (e.g., in
+  `sitecustomize.py`) explaining the upstream ticket and why suppression is
+  temporary. Avoid global filters that could mask new regressions.
+- Document the dependency and filter decisions in `CHANGELOG.md` or relevant
+  issue notes so the rationale is easy to audit later.
+- Run `task verify:warnings` one final time, ensure the log is clean, and store
+  the passing log snapshot beside the earlier failures for provenance.
+
 ## Status
 Open
