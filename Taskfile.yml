@@ -315,6 +315,18 @@ tasks:
       Installs the `dev-minimal` and `test` extras by default; set EXTRAS to
       add optional groups, including "gpu".
 
+  verify:warnings:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
+    env:
+      PYTHONWARNINGS: "error::DeprecationWarning"
+    cmds:
+      - task verify EXTRAS="{{.EXTRAS}}"
+    desc: |
+      Run the verify pipeline with DeprecationWarning treated as errors.
+      Use after syncing the dev-minimal and test extras so pytest-bdd and
+      related plugins are available.
+
   clean:
     cmds:
       - find . -type d -name '__pycache__' -exec rm -rf {} +

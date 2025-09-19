@@ -85,6 +85,10 @@ synced in previous sessions:
 task verify EXTRAS="dev-minimal test"
 ```
 
+`task verify:warnings` runs the same pipeline with `DeprecationWarning`
+promoted to errors. Run it after `task install` (or any sync that includes the
+`dev-minimal` and `test` extras) so plugins like `pytest-bdd` stay available.
+
 Use the same `EXTRAS` flag with `task install` to sync them for local
 development. Include `EXTRAS="llm"` when verifying or installing LLM
 libraries; the environment check skips them otherwise. Run `task check

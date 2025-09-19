@@ -15,10 +15,14 @@ groups or add `gpu` packages.
 
 ## Deprecation warnings
 
+- Run `task verify:warnings` after syncing the `dev-minimal` and `test` extras
+  to treat `DeprecationWarning` as errors. `task install` or
+  `uv sync --extra test` keeps plugins such as `pytest-bdd` available for the
+  run.
 - No deprecation warnings are expected when running `task verify`.
-- `sitecustomize.py` re-exports `click.shell_completion.split_arg_string`
-  and rewrites `weasel.util.config` to import it so Click no longer warns
-  about the deprecated `click.parser` module during tests.
+- `sitecustomize.py` re-exports `click.shell_completion.split_arg_string` and
+  rewrites `weasel.util.config` to import it so Click no longer warns about the
+  deprecated `click.parser` module during tests.
 - `pytest.ini` keeps the default `.hypothesis` ignore entry so Hypothesis'
   plugin does not emit warnings when collecting tests.
 - Record any remaining unavoidable warnings here, along with a link to the
@@ -102,6 +106,10 @@ Two installation strategies support different workflows:
 `task check` offers fast feedback, while `task verify` enforces coverage and is
 expected before committing.
 
+Run `task verify:warnings` after the `dev-minimal` and `test` extras are synced
+when you need to gate on deprecation warnings. It reuses the `verify` pipeline
+and fails if any `DeprecationWarning` surfaces.
+
 To keep local runs lightweight, pin verify to the default extras when heavy
 groups were previously synced:
 
@@ -155,6 +163,7 @@ task test:fast         # unit, integration, and behavior tests (no slow)
 task test:slow         # only tests marked as slow
 task test:all          # entire suite including slow tests
 task verify           # lint, type checks, targeted tests with coverage
+task verify:warnings  # verify with DeprecationWarning promoted to errors
 task coverage          # full suite with coverage and regression checks
 ```
 Run `task verify` before committing to ensure linting, type checks, and
