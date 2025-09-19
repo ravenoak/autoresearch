@@ -140,18 +140,16 @@ that wraps `NodeHealthMonitor` for Redis and Ray health reporting.
   resource sampling tables, and counter increments across the CLI and HTTP
   surfaces.
 
-## Simulation Evidence
+## Simulation Expectations
 
 `scripts/monitor_cli_reliability.py` performs a Monte Carlo simulation of
-metrics collection latency and failure probability. Run
-
-```
-uv run scripts/monitor_cli_reliability.py --runs 1000 --fail-rate 0.05
-```
-
-to obtain `average_latency_ms` and `success_rate` estimates. Integration tests
-also exercise GPU present and absent scenarios so resource sampling and counter
-snapshots degrade gracefully when GPU metrics are unavailable.
+metrics collection latency and failure probability. Supply the number of trial
+cycles with `--runs` and optionally set the simulated sampler failure rate with
+`--fail-rate`. The script emits `average_latency_ms` and `success_rate` as the
+primary outputs, along with log lines for individual failure events when they
+occur. Integration tests also exercise GPU present and absent scenarios so
+resource sampling and counter snapshots degrade gracefully when GPU metrics are
+unavailable.
 
 ## Traceability
 
