@@ -19,7 +19,7 @@ scripts/lint_specs.py` still fails, blocking the verify workflow until the
 headings are restored.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 
 ## Dependencies
-- None
+- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
 
 ## Acceptance Criteria
 - `task verify` completes without resource tracker errors.
