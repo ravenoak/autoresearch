@@ -250,16 +250,22 @@ def initialize_storage(
     st = state or _default_state
     ctx = context or st.context
 
-    # Run regular setup
-    setup(db_path, ctx, st)
+    with st.lock:
+        backend_ready = (
+            ctx.db_backend is not None
+            and ctx.db_backend.get_connection() is not None
+            and ctx.rdf_store is not None
+        )
+        if not backend_ready:
+            setup(db_path, ctx, st)
 
-    backend = ctx.db_backend
-    if backend is None:
-        raise StorageError("DuckDB backend not initialized")
+        backend = ctx.db_backend
+        if backend is None:
+            raise StorageError("DuckDB backend not initialized")
 
-    # Always run table creation to guard against missing schema components.
-    backend.get_connection()
-    backend._create_tables(skip_migrations=True)
+        # Always run table creation to guard against missing schema components.
+        backend.get_connection()
+        backend._create_tables(skip_migrations=True)
 
     return ctx
 
@@ -408,9 +414,10 @@ class StorageManager(metaclass=StorageManagerMeta):
         ctx = context or st.context
         if _delegate and _delegate is not StorageManager:
             return _delegate.setup(db_path, ctx)
-        StorageManager.state = st
-        StorageManager.context = ctx
-        initialize_storage(db_path, context=ctx, state=st)
+        with st.lock:
+            StorageManager.state = st
+            StorageManager.context = ctx
+            initialize_storage(db_path, context=ctx, state=st)
         return ctx
 
     @staticmethod

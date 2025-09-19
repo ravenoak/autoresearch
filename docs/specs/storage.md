@@ -32,6 +32,9 @@ the safety margin.
 
 1. **Setup**
    - Repeated `initialize_storage` calls leave `G` unchanged.
+   - `StorageManager.setup` acquires `StorageState.lock` before calling
+     `initialize_storage`, keeping DuckDB schema creation single-threaded even
+     when multiple threads race to start storage [t125].
    - The eviction counter resets to zero.
 2. **Persist**
    - Claim `c` does not exist in `G` prior to persistence.
@@ -84,11 +87,12 @@ For a graph with `n` nodes and an eviction set `E` of size `k`:
   `schema_idempotency_sim.py` [s2]. Schema version detection relies on
   `fetchall` so connections without `fetchone` remain supported.
 - **Concurrency safety.** A single re-entrant lock guards state, so any
-  interleaving `t₁, t₂, …` reduces to a serial order. Graph updates and LRU
-  counters execute inside this lock, eliminating race conditions uncovered in
-  earlier revisions. The resulting sequence `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves
-  linearizability, and `storage_concurrency_sim.py` [s4] confirms mixed states
-  cannot appear.
+  interleaving `t₁, t₂, …` reduces to a serial order. Graph updates, LRU
+  counters, and even `StorageManager.setup` re-acquire the lock before
+  `initialize_storage`, eliminating the DuckDB schema race that previously
+  crashed under load. The resulting sequence `σ₀ ─t₁→ σ₁ ─t₂→ σ₂` preserves
+  linearizability, `storage_concurrency_sim.py` [s4] confirms mixed states
+  cannot appear, and `test_setup_thread_safe` guards against regressions [t125].
 - **Eviction termination.** Let `U_i` be usage after step `i` and `E_i` the
   evicted set with `u(E_i) > 0`. Then `U_{i+1} = U_i - u(E_i)` and the
   decreasing sequence `{U_i}` is bounded below by `0`, so some `U_k` satisfies
@@ -137,6 +141,9 @@ and `0.31 OPS` [t5r].
 - A process-wide re-entrant lock serializes graph mutations.
 - `_enforce_ram_budget` holds this lock, preventing eviction races.
 - Concurrent writers stay within budget in `storage_concurrency_sim.py` [s4].
+- `StorageManager.setup` serializes DuckDB initialization, avoiding
+  segmentation faults seen when concurrent threads touched
+  `initialize_storage` [t125].
 
 ## Traceability
 
@@ -161,6 +168,7 @@ and `0.31 OPS` [t5r].
   - [tests/integration/test_storage_duckdb_fallback.py][t5]
   - [tests/targeted/test_storage_eviction.py][t6]
   - [tests/unit/test_storage_eviction_sim.py][t7]
+  - [tests/unit/test_storage_manager_concurrency.py][t125]
   - [tests/integration/storage/test_simulation_benchmarks.py][t8]
   - [tests/integration/test_rdf_persistence.py][t9]
 
@@ -182,6 +190,7 @@ and `0.31 OPS` [t5r].
 [t5r]: ../../tests/integration/test_storage_duckdb_fallback.py
 [t6]: ../../tests/targeted/test_storage_eviction.py
 [t7]: ../../tests/unit/test_storage_eviction_sim.py
+[t125]: ../../tests/unit/test_storage_manager_concurrency.py
 [t8]: ../../tests/integration/storage/test_simulation_benchmarks.py
 [t9]: ../../tests/integration/test_rdf_persistence.py
 
