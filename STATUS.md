@@ -19,12 +19,12 @@ checks are required.
 - `uv run python scripts/lint_specs.py` now exits cleanly, and `uv run task
   check` flows through the `lint-specs` gate and finishes, so spec lint
   compliance is restored. 【53ce5c†L1-L2】【5e12ab†L1-L3】【ba6f1a†L1-L2】
-- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` still
-  completes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests, so the
-  storage guard fix holds. 【dbf750†L1-L1】
 - `uv run --extra test pytest tests/unit/test_storage_errors.py::
-  test_setup_rdf_store_error -q` continues to xpass, confirming the stale
-  xfail marker must be removed. 【cd543d†L1-L1】
+  test_setup_rdf_store_error -q` now passes without an xfail, confirming the
+  RDF store setup path is stable again. 【f873bf†L1-L2】
+- `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` returns
+  136 passed, 2 skipped, 1 xfailed, and 818 deselected tests after the stale
+  xfail removal. 【1c20bc†L1-L2】
 - `uv run --extra docs mkdocs build` succeeds after syncing docs extras,
   showing the navigation fix still applies. 【e808c5†L1-L2】
 
