@@ -23,6 +23,7 @@ reference point.【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [remove-stale-xfail-for-rdf-store-error](remove-stale-xfail-for-rdf-store-error.md)
+- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
 
 ## Acceptance Criteria
 - `uv run task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`

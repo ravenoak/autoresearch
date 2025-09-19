@@ -38,6 +38,7 @@ headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.m
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [remove-stale-xfail-for-rdf-store-error](remove-stale-xfail-for-rdf-store-error.md)
+- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
 
 ## Acceptance Criteria
 - Unit and integration tests run without deprecation warnings, including a
