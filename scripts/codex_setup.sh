@@ -63,5 +63,5 @@ uv run python -c "import owlrl" \
 
 ensure_venv_bin_on_path "$PWD/.venv/bin"
 echo ".venv/bin appended to PATH for this session"
-export PATH="$(pwd)/.venv/bin:$PATH"
+echo "Persisted PATH helper at $(venv_path_snippet_file "$PWD/.venv/bin")."
 

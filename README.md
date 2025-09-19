@@ -8,16 +8,18 @@ CLI utilities are provided via Typer and the HTTP API is powered by FastAPI.
 
 **Note:** [docs/installation.md](docs/installation.md) is the authoritative
 source for environment setup and optional features. After installing the
-prerequisites, run `./scripts/setup.sh` or `uv sync --extra test --extra docs`
-*before* invoking `task check`, `uv run pytest`, or building the docs. Use
-`task docs` (or `uv run --extra docs mkdocs build`) once the extras sync. This
-ensures Go Task is available and installs dependencies such as `pytest-bdd`,
+prerequisites, run `./scripts/setup.sh` to verify tooling, install
+dependencies, and persist a PATH helper at `.autoresearch/path.sh`. New
+shells can run `eval "$(./scripts/setup.sh --print-path)"` or source that
+snippet to expose `.venv/bin` without re-running the installer. You can still
+call `uv sync --extra test --extra docs` manually, but the setup script
+guarantees Go Task is present and installs dependencies such as `pytest-bdd`,
 which suppresses `PytestConfigWarning` messages and prevents missing plugin
 errors during test and documentation commands.
 
 Run `scripts/codex_setup.sh` in the Codex evaluation environment to bootstrap
-dependencies. The script appends `.venv/bin` to `PATH`, so the shell exposes
-`task` immediately after it finishes.
+dependencies. It shares the same PATH helper so `task` is available in new
+shells immediately after it finishes.
 
 For orchestrator state transitions and API contracts see
 [docs/orchestrator_state.md](docs/orchestrator_state.md).
@@ -44,11 +46,12 @@ script exits with an error when Go Task is missing and suggests installing it
 with `scripts/setup.sh` or your package manager. If a tool or package is
 reported missing, rerun `task install` or sync optional extras with
 `uv sync --extra <name>`. Run the setup script and verify Go Task with
-`task --version`:
+`task --version`. The generated `.autoresearch/path.sh` keeps `.venv/bin` on
+`PATH` for new shells; use the inline command to load it immediately:
 
 ```bash
 ./scripts/setup.sh
-source .venv/bin/activate
+eval "$(./scripts/setup.sh --print-path)"
 task --version
 task check
 ```
@@ -106,6 +109,11 @@ task install
 task --version
 source .venv/bin/activate
 ```
+
+Before running those commands in a fresh terminal, load the helper with
+`source .autoresearch/path.sh` (or `eval "$(./scripts/setup.sh --print-path)"`)
+so Go Task and the virtual environment are available without re-running
+`scripts/setup.sh`.
 
 If `task --version` fails, follow the manual setup below to run tests with
 `uv`. This syncs the `dev-minimal` and `test` extras. Include heavy groups

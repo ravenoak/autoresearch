@@ -1,11 +1,21 @@
 # Status
 
 Install Go Task with `scripts/setup.sh` or your package manager to enable
-Taskfile commands. Confirm the CLI is available with `task --version`.
+Taskfile commands. The setup script now persists a PATH helper at
+`.autoresearch/path.sh`; run `eval "$(./scripts/setup.sh --print-path)"` in
+new shells or source the snippet before invoking Taskfile commands. Confirm
+the CLI is available with `task --version`.
 
 Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
+
+## September 19, 2025
+- `./scripts/setup.sh` now saves a PATH helper at `.autoresearch/path.sh`, so
+  new shells can load the snippet and run `task --version` without
+  reinstalling tooling. 【11ceea†L1-L8】【c82304†L1-L8】
+- After sourcing the helper in a new login shell, `task --version` reports
+  Go Task 3.45.4 immediately. 【d609c8†L1-L2】
 
 ## September 18, 2025
 - `task --version` still reports "command not found" in the base shell, so the

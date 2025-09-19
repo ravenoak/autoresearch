@@ -20,8 +20,9 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md), and the
-base shell still omits the Go Task CLI. `task --version` therefore fails until
-`.venv/bin` is sourced or `scripts/setup.sh` installs the binary. 【8a589e†L1-L2】
+PATH helper saved at `.autoresearch/path.sh` keeps the Go Task CLI available in
+fresh shells. `task --version` now succeeds immediately after running
+`scripts/setup.sh`. 【11ceea†L1-L8】【c82304†L1-L8】【d609c8†L1-L2】
 Running `uv run python scripts/check_env.py` now reports the expected
 toolchain—including Go Task 3.45.4, Black, Flake8, and Hypothesis—once the
 `dev-minimal` and `test` extras are synced. 【55fd29†L1-L18】【cb3edc†L1-L10】
@@ -38,9 +39,8 @@ extras, and the VSS extension loader suite remains green while deduplicating
 offline errors. 【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】
 After syncing the docs extras, `uv run --extra docs mkdocs build` completes
 without navigation warnings. 【b1509d†L1-L2】【a1ea28†L1-L1】 `task verify` remains
-blocked by the missing CLI on the base PATH and the storage setup crash, so
-coverage numbers are still unavailable. These items are tracked in STATUS.md and
-the open issues listed there.
+blocked by the storage setup crash, so coverage numbers are still unavailable.
+These items are tracked in STATUS.md and the open issues listed there.
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
