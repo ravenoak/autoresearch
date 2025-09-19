@@ -16,9 +16,9 @@ checks are required.
   available. 【0feb5e†L1-L17】【fa650a†L1-L10】
 - Sourcing `.autoresearch/path.sh` via `./scripts/setup.sh --print-path` keeps
   `task --version` at 3.45.4 in fresh shells. 【5d8a01†L1-L2】
-- `uv run python scripts/lint_specs.py` continues to fail because the monitor
-  and extensions specs are missing required headings, so `task check` remains
-  blocked on restoring the template. 【4076c9†L1-L2】
+- `uv run python scripts/lint_specs.py` now exits cleanly, and `uv run task
+  check` flows through the `lint-specs` gate and finishes, so spec lint
+  compliance is restored. 【53ce5c†L1-L2】【5e12ab†L1-L3】【ba6f1a†L1-L2】
 - `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` still
   completes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed tests, so the
   storage guard fix holds. 【dbf750†L1-L1】
