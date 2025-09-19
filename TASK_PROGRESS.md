@@ -1,25 +1,24 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 18, 2025**
-the base shell still lacks the Go Task CLI, so `task --version` fails until
-`.venv/bin` is sourced or `scripts/setup.sh` installs the binary.
-【8a589e†L1-L2】 Running `uv run python scripts/check_env.py` now reports the
-expected toolchain—including Go Task 3.45.4—once the `dev-minimal` and `test`
-extras are synced. 【55fd29†L1-L18】【cb3edc†L1-L10】 Targeted storage tests no
-longer hit the under-budget eviction regression:
-`uv run --extra test pytest tests/unit/test_storage_eviction_sim.py -q` passes,
-but the broader `-k "storage"` selection still aborts with a segmentation fault
-in `tests/unit/test_storage_manager_concurrency.py::test_setup_thread_safe`.
-【3c1010†L1-L2】【0fcfb0†L1-L74】 Invoking that concurrency test directly reproduces
-the crash, so stabilizing the threaded setup path is the next blocker before
-`task verify` can complete. 【2e8cf7†L1-L48】 Distributed coordination property
-tests remain green, and the VSS extension loader suite continues to emit only
-informational offline logs. 【344912†L1-L2】【d180a4†L1-L2】【F:src/autoresearch/extensions.py†L36-L118】
-`uv run --extra docs mkdocs build` also succeeds without navigation warnings,
-keeping the release packaging rehearsal on track. 【b1509d†L1-L2】【a1ea28†L1-L1】
-Unit coverage and `task verify` remain blocked until the concurrency crash and
-Task CLI accessibility are resolved.
+organized by phases from the code complete plan. As of **September 19, 2025**
+the Go Task CLI is available after evaluating `./scripts/setup.sh --print-path`,
+so `task --version` reports 3.45.4 in a fresh shell without re-running setup.
+【c1ab5e†L1-L8】【5a32ba†L1-L3】 `uv run python scripts/check_env.py` continues to
+list the expected toolchain when the `dev-minimal` and `test` extras are
+synced. 【582859†L1-L25】 Storage tests that previously aborted now succeed:
+`uv run --extra test pytest tests/unit/test_storage_manager_concurrency.py -q`
+passes, and the broader `uv run --extra test pytest tests/unit -k "storage" -q
+--maxfail=1` run finishes with 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
+tests. 【b8e216†L1-L3】【babc25†L1-L3】 The xpass arises from
+`tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, so we opened
+`issues/remove-stale-xfail-for-rdf-store-error.md` to drop the stale marker and
+keep coverage honest. 【9da781†L1-L3】【F:issues/remove-stale-xfail-for-rdf-store-error.md†L1-L27】
+Distributed coordination property tests and the VSS extension loader suite
+remain green, and `uv run --extra docs mkdocs build` still succeeds without
+navigation warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 `task verify`
+and coverage remain blocked on verifying the resource tracker fix, removing the
+xfail, and re-running the warnings sweep.
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted
