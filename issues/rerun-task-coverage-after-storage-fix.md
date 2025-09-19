@@ -13,9 +13,11 @@ the blocker. 【b8e216†L1-L3】【babc25†L1-L3】 The xpass comes from
 remove the stale xfail marker before the coverage rerun. 【9da781†L1-L3】 The Go
 Task CLI is available as soon as we evaluate `./scripts/setup.sh --print-path`,
 so we can invoke `task coverage` once the resource tracker verification passes
-and the xfail cleanup lands. 【c1ab5e†L1-L8】【5a32ba†L1-L3】 Refreshing
-`baseline/coverage.xml` and the docs log remains blocked on those follow-up
-fixes. 【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
+and the xfail cleanup lands. 【c1ab5e†L1-L8】【5a32ba†L1-L3】 The newest
+`task check` run fails earlier in `scripts/lint_specs.py` because the monitor and
+extensions specs diverged from the template, so coverage must also wait for
+`restore-spec-lint-template-compliance` to clear the lint gate before we refresh
+`baseline/coverage.xml` and the docs log.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】【F:docs/status/task-coverage-2025-09-17.md†L1-L28】
 
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)

@@ -21,13 +21,18 @@ xfail marker needs to be removed to keep storage error handling covered.
 and `uv run --extra docs mkdocs build` still succeeds without navigation
 warnings. 【344912†L1-L2】【d180a4†L1-L2】【b1509d†L1-L2】 The release checklist now
 depends on cleaning up the xpass, re-running `task verify` to confirm the
-resource tracker fix, and refreshing coverage before we can tag 0.1.0a1.
+resource tracker fix, and refreshing coverage before we can tag 0.1.0a1. The
+latest `task check` run fails in `scripts/lint_specs.py` because the monitor and
+extensions specs drifted from the required headings, so we opened
+`restore-spec-lint-template-compliance` to restore spec lint compliance before
+rerunning full test and coverage workflows.【052352†L1-L6】【3370e6†L1-L120】【075d6a†L1-L120】
 
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
 - [rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md)
 - [remove-stale-xfail-for-rdf-store-error](remove-stale-xfail-for-rdf-store-error.md)
+- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.
