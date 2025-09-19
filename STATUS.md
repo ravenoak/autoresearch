@@ -11,6 +11,14 @@ committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
 ## September 19, 2025
+- From a clean tree, reloaded the PATH helper via `./scripts/setup.sh --print-path`
+  and reran `uv run task verify`; the suite now stops at
+  `tests/unit/test_eviction.py::test_ram_eviction` because the graph still holds
+  `c1`, but no multiprocessing resource-tracker `KeyError` messages appear in the
+  log. 【c7c7f5†L1-L78】
+- Storage eviction troubleshooting should revisit the RAM budget algorithm in
+  `docs/algorithms/storage_eviction.md` while diagnosing the remaining failure.
+  【F:docs/algorithms/storage_eviction.md†L1-L34】
 - Running `uv run python scripts/check_env.py` after loading the PATH helper
   reconfirmed Go Task 3.45.4 and the expected development toolchain are still
   available. 【0feb5e†L1-L17】【fa650a†L1-L10】
