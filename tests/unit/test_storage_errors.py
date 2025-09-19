@@ -5,7 +5,6 @@ from autoresearch.storage import StorageManager, setup
 from autoresearch.errors import StorageError, NotFoundError
 
 
-@pytest.mark.xfail(reason="RDF store path handling differs in CI")
 def test_setup_rdf_store_error(mock_config, assert_error):
     """Test that setup handles RDF store errors properly."""
     # Setup
@@ -30,10 +29,11 @@ def test_setup_rdf_store_error(mock_config, assert_error):
                     return_value=mock_db_backend,
                 ):
                     with patch("rdflib.Graph", return_value=mock_graph_instance):
-                        with mock_config(config=config):
-                            with patch("autoresearch.storage._cached_config", None):
-                                with pytest.raises(StorageError) as excinfo:
-                                    setup()
+                        with patch("importlib.util.find_spec", return_value=MagicMock()):
+                            with mock_config(config=config):
+                                with patch("autoresearch.storage._cached_config", None):
+                                    with pytest.raises(StorageError) as excinfo:
+                                        setup()
 
     # Verify
     mock_graph_instance.open.assert_called_once()
