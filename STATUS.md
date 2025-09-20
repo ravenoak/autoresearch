@@ -10,6 +10,21 @@ Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required.
 
+## September 20, 2025
+- Ran `task verify:warnings:log` to rerun the warnings-as-errors sweep; the
+  wrapper reuses `task verify:warnings` so
+  `PYTHONWARNINGS=error::DeprecationWarning` gates the suite. See the
+  [testing guidelines](docs/testing_guidelines.md) for setup details.
+  【F:baseline/logs/verify-warnings-20250920T042735Z.log†L1-L40】【F:docs/testing_guidelines.md†L14-L36】
+- PR 2 kept the suite clean by patching `weasel.util.config` via
+  `sitecustomize.py`, bumping the Typer minimum to 0.17.4, and switching the
+  API auth middleware tests to HTTPX's `content=` argument so deprecated
+  helpers no longer run.
+  【F:sitecustomize.py†L23-L134】【F:pyproject.toml†L30-L45】【F:tests/integration/test_api_auth_middleware.py†L6-L29】
+- The latest log stops at the known RAM eviction regression without any
+  `DeprecationWarning` entries, confirming the cleanup held through the rerun.
+  【F:baseline/logs/verify-warnings-20250920T042735Z.log†L409-L466】
+
 ## September 19, 2025
 - From a clean tree, reloaded the PATH helper via `./scripts/setup.sh --print-path`
   and reran `uv run task verify`; the suite now stops at
