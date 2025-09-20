@@ -72,7 +72,9 @@ def test_llm_extra_imports() -> None:
     except Exception as exc:  # pragma: no cover - environment-specific
         pytest.skip(str(exc))
 
-    assert hasattr(fastembed, "TextEmbedding")
+    assert any(
+        hasattr(fastembed, attr) for attr in ("OnnxTextEmbedding", "TextEmbedding")
+    )
     assert hasattr(dspy, "__version__")
 
 

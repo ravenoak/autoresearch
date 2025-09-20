@@ -22,6 +22,11 @@ Reference issues by slugged filename (for example,
   loader suites pass.
 - Continued to track documentation build warnings in
   [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md).
+- Replaced deprecated `fastembed.TextEmbedding` imports with the new
+  `OnnxTextEmbedding` entry point, updated stubs and tests to mirror the public
+  API, and noted the migration in
+  [resolve-deprecation-warnings-in-tests](
+    issues/resolve-deprecation-warnings-in-tests.md).
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

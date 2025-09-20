@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import csv
+import importlib
 import json
 import math
 import os
@@ -106,6 +107,22 @@ SentenceTransformer: type[SentenceTransformerType] | None = None
 SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 
+def _resolve_sentence_transformer_cls() -> type[SentenceTransformerType] | None:
+    """Resolve the fastembed embedding class, preferring the new API."""
+    candidates: tuple[tuple[str, str], ...] = (
+        ("fastembed", "OnnxTextEmbedding"),
+        ("fastembed.text", "OnnxTextEmbedding"),
+        ("fastembed", "TextEmbedding"),
+    )
+    for module_name, attr in candidates:
+        try:
+            module = importlib.import_module(module_name)
+            return cast(type[SentenceTransformerType], getattr(module, attr))
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            continue
+    return None
+
+
 def _try_import_sentence_transformers() -> bool:
     """Lazily import a lightweight embedding model when available."""
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
@@ -115,9 +132,10 @@ def _try_import_sentence_transformers() -> bool:
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
     try:  # pragma: no cover - optional dependency
-        from fastembed import TextEmbedding as ST
-
-        SentenceTransformer = ST
+        resolved = _resolve_sentence_transformer_cls()
+        if resolved is None:
+            raise ImportError("fastembed OnnxTextEmbedding not available")
+        SentenceTransformer = resolved
         SENTENCE_TRANSFORMERS_AVAILABLE = True
     except Exception:
         SentenceTransformer = None
@@ -126,7 +144,13 @@ def _try_import_sentence_transformers() -> bool:
 
 
 if TYPE_CHECKING:  # pragma: no cover - for type checking only
-    from fastembed import TextEmbedding as SentenceTransformerType
+    try:
+        from fastembed import OnnxTextEmbedding as SentenceTransformerType
+    except (ImportError, ModuleNotFoundError, AttributeError):
+        try:
+            from fastembed.text import OnnxTextEmbedding as SentenceTransformerType  # type: ignore[attr-defined]
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            from fastembed import TextEmbedding as SentenceTransformerType
 else:  # pragma: no cover - runtime fallback
     SentenceTransformerType = Any
 
