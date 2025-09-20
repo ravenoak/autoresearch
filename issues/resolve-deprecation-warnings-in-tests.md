@@ -35,6 +35,17 @@ stops in `scripts/lint_specs.py`, preventing `task verify` from reaching the
 warnings sweep until the monitor and extensions specs adopt the required
 headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
 
+## Latest failure signatures (2025-09-20)
+
+- **Storage – RAM eviction regression:**
+  `tests/unit/test_eviction.py::test_ram_eviction` now leaves both `c1` and
+  `c2` nodes in the in-memory graph, so the eviction assertion fails. The log
+  shows DuckDB VSS emitting
+  `Failed to create HNSW index: Catalog Error: Setting with name
+  "hnsw_enable_experimental_persistence" is not in the catalog`, suggesting the
+  storage backend never prunes the first claim. Assign follow-up to the storage
+  maintainers to restore the eviction behavior under warnings-as-errors.
+
 ## Dependencies
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
 - [remove-stale-xfail-for-rdf-store-error](remove-stale-xfail-for-rdf-store-error.md)

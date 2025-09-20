@@ -327,6 +327,54 @@ tasks:
       Use after syncing the dev-minimal and test extras so pytest-bdd and
       related plugins are available.
 
+  verify:warnings:log:
+    vars:
+      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
+      LOG_DIR: "{{.LOG_DIR | default \"baseline/logs\"}}"
+    cmds:
+      - |
+          mkdir -p "{{.LOG_DIR}}"
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          log_path="{{.LOG_DIR}}/verify-warnings-${timestamp}.log"
+          LOG_PATH="$log_path" EXTRAS_VALUE="{{.EXTRAS}}" \
+            uv run python - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+
+          def main() -> int:
+              log_path = os.environ["LOG_PATH"]
+              extras = os.environ.get("EXTRAS_VALUE", "")
+              env = os.environ.copy()
+              env.pop("LOG_PATH", None)
+              env.pop("EXTRAS_VALUE", None)
+              if extras:
+                  env["EXTRAS"] = extras
+              process = subprocess.Popen(
+                  ["task", "verify:warnings"],
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT,
+                  env=env,
+                  text=True,
+              )
+              assert process.stdout is not None
+              with open(log_path, "w", encoding="utf-8") as log_file:
+                  for line in process.stdout:
+                      sys.stdout.write(line)
+                      sys.stdout.flush()
+                      log_file.write(line)
+                      log_file.flush()
+              return process.wait()
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+          PY
+    desc: |
+      Run verify:warnings and archive the combined stdout/stderr output to a
+      timestamped log file under baseline/logs.
+
   clean:
     cmds:
       - find . -type d -name '__pycache__' -exec rm -rf {} +
