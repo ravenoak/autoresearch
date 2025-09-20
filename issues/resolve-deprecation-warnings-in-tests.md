@@ -37,6 +37,12 @@ headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.m
 
 ## Latest failure signatures (2025-09-20)
 
+- **HTTPX raw body warnings:** `tests/integration/test_api_auth_middleware.py` used
+  `data="not json"` to send invalid JSON, triggering `DeprecationWarning: Use
+  'content=<...>' to upload raw bytes/text content.` in HTTPX 0.28.1.
+  Mitigation: migrate the tests to `content=` and pin HTTPX to `<0.29` until the
+  upstream removal lands.
+
 - **Storage – RAM eviction regression:**
   `tests/unit/test_eviction.py::test_ram_eviction` now leaves both `c1` and
   `c2` nodes in the in-memory graph, so the eviction assertion fails. The log

@@ -7,7 +7,11 @@ def test_auth_validated_before_body(monkeypatch, api_client):
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
 
-    resp = api_client.post("/query", data="not json", headers={"Content-Type": "application/json"})
+    resp = api_client.post(
+        "/query",
+        content="not json",
+        headers={"Content-Type": "application/json"},
+    )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Missing API key"
 
@@ -18,7 +22,7 @@ def test_invalid_key_before_body(monkeypatch, api_client):
 
     resp = api_client.post(
         "/query",
-        data="not json",
+        content="not json",
         headers={"Content-Type": "application/json", "X-API-Key": "bad"},
     )
     assert resp.status_code == 401

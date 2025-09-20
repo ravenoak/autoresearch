@@ -645,6 +645,19 @@ class Search:
             )
 
         weights_sum = sum(weights.values())
+        tolerance = 0.001
+        positive_components = sum(1 for value in weights.values() if value > tolerance)
+        if (
+            weights_sum > 0
+            and positive_components >= 2
+            and abs(weights_sum - 1.0) > tolerance
+        ):
+            raise ConfigError(
+                "Relevance ranking weights must sum to 1.0",
+                weights=weights,
+                total=weights_sum,
+                suggestion="Adjust the ranking weights so they total 1.0",
+            )
         if weights_sum <= 0:
             enabled = [
                 search_cfg.use_bm25,

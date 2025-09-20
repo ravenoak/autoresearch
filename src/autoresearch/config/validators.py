@@ -67,6 +67,13 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
             weights=weights,
             suggestion="Reduce the weights so they sum to at most 1.0 before normalization.",
         )
+    if total > 0 and provided == weight_fields and 1.0 - total > tolerance:
+        raise ConfigError(
+            "Relevance ranking weights must sum to 1.0",
+            total=total,
+            weights=weights,
+            suggestion="Adjust the weights so they total 1.0",
+        )
     if total <= 0:
         equal = 1.0 / len(weight_fields)
         for name in weight_fields:
