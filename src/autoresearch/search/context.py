@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import importlib
 import os
 import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, List, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, cast
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
@@ -56,6 +57,22 @@ def _try_import_bertopic() -> bool:
     return BERTOPIC_AVAILABLE
 
 
+def _resolve_sentence_transformer_cls() -> type[Any] | None:
+    """Resolve the fastembed embedding class, preferring the new API."""
+    candidates: tuple[tuple[str, str], ...] = (
+        ("fastembed", "OnnxTextEmbedding"),
+        ("fastembed.text", "OnnxTextEmbedding"),
+        ("fastembed", "TextEmbedding"),
+    )
+    for module_name, attr in candidates:
+        try:
+            module = importlib.import_module(module_name)
+            return cast(type[Any], getattr(module, attr))
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            continue
+    return None
+
+
 def _try_import_sentence_transformers() -> bool:
     """Attempt to import a lightweight embedding model."""
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
@@ -64,9 +81,10 @@ def _try_import_sentence_transformers() -> bool:
     if not get_config().search.context_aware.enabled:
         return False
     try:  # pragma: no cover - optional dependency
-        from fastembed import TextEmbedding as ST  # type: ignore
-
-        SentenceTransformer = ST
+        resolved = _resolve_sentence_transformer_cls()
+        if resolved is None:
+            raise ImportError("fastembed OnnxTextEmbedding not available")
+        SentenceTransformer = resolved
         SENTENCE_TRANSFORMERS_AVAILABLE = True
     except Exception:
         SentenceTransformer = None

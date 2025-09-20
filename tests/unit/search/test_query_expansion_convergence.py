@@ -112,7 +112,7 @@ def test_try_import_sentence_transformers_success(monkeypatch):
 
     class DummyST:
         pass
-    dummy_mod = SimpleNamespace(TextEmbedding=DummyST)
+    dummy_mod = SimpleNamespace(OnnxTextEmbedding=DummyST, TextEmbedding=DummyST)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_mod)
     ctx.SentenceTransformer = None
     ctx.SENTENCE_TRANSFORMERS_AVAILABLE = False

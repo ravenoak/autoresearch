@@ -11,4 +11,6 @@ from tests.optional_imports import import_or_skip
 def test_fastembed_available() -> None:
     """The LLM extra installs fast embedding models."""
     fastembed = import_or_skip("fastembed")
-    assert hasattr(fastembed, "TextEmbedding")
+    assert any(
+        hasattr(fastembed, attr) for attr in ("OnnxTextEmbedding", "TextEmbedding")
+    )

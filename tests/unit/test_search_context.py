@@ -58,6 +58,7 @@ def test_topic_model_imports_when_built(monkeypatch):
     class DummySentenceTransformer:
         pass
 
+    dummy_st.OnnxTextEmbedding = DummySentenceTransformer
     dummy_st.TextEmbedding = DummySentenceTransformer
     monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
@@ -68,6 +69,41 @@ def test_topic_model_imports_when_built(monkeypatch):
 
     assert not module.BERTOPIC_AVAILABLE
     assert not module.SENTENCE_TRANSFORMERS_AVAILABLE
+
+    ctx.build_topic_model()
+
+    assert module.BERTOPIC_AVAILABLE
+    assert module.SENTENCE_TRANSFORMERS_AVAILABLE
+    assert isinstance(ctx.topic_model, DummyBERTopic)
+
+
+def test_topic_model_imports_with_legacy_fastembed(monkeypatch):
+    for name in ("spacy", "spacy.cli", "bertopic", "fastembed", "fastembed.text"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    module = importlib.reload(importlib.import_module("autoresearch.search.context"))
+    monkeypatch.setattr(module.SearchContext, "_initialize_nlp", lambda self: None)
+
+    dummy_bertopic = types.ModuleType("bertopic")
+
+    class DummyBERTopic:
+        def fit_transform(self, docs):
+            return [0 for _ in docs], []
+
+    dummy_bertopic.BERTopic = DummyBERTopic
+    monkeypatch.setitem(sys.modules, "bertopic", dummy_bertopic)
+
+    dummy_st = types.ModuleType("fastembed")
+
+    class LegacySentenceTransformer:
+        pass
+
+    dummy_st.TextEmbedding = LegacySentenceTransformer
+    monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
+
+    ctx = module.SearchContext.new_for_tests()
+    ctx.search_history = [
+        {"query": "foo", "results": [{"title": "bar", "snippet": "baz"}]}
+    ]
 
     ctx.build_topic_model()
 

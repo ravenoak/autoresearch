@@ -14,7 +14,10 @@ sys.modules.setdefault(
 sys.modules.setdefault("bertopic", types.SimpleNamespace())
 sys.modules.setdefault(
     "fastembed",
-    types.SimpleNamespace(TextEmbedding=lambda *_: None),
+    types.SimpleNamespace(
+        OnnxTextEmbedding=lambda *_: None,
+        TextEmbedding=lambda *_: None,
+    ),
 )
 
 from autoresearch.search import (  # noqa: E402

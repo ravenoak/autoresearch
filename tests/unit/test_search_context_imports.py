@@ -52,7 +52,7 @@ def test_try_import_bertopic_success(monkeypatch):
 
 def test_try_import_sentence_transformers_success(monkeypatch):
     ctx = _reload_ctx(monkeypatch, True)
-    dummy = types.SimpleNamespace(TextEmbedding=object)
+    dummy = types.SimpleNamespace(OnnxTextEmbedding=object, TextEmbedding=object)
     sys.modules["fastembed"] = dummy
     try:
         assert ctx._try_import_sentence_transformers() is True
