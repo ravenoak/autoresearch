@@ -1,0 +1,466 @@
+task: [verify:warnings] task verify EXTRAS="dev-minimal test"
+task: [verify] extras="dev-minimal test"
+uv sync \
+  --python-platform x86_64-manylinux_2_28 \
+  $(printf ' --extra %s' $extras) \
+  
+
+Resolved 324 packages in 8ms
+Audited 171 packages in 1ms
+task: [verify] task check-env EXTRAS="dev-minimal test"
+task: [check-env] task --version
+3.45.4
+task: [check-env] uv run python scripts/check_env.py
+Verifying extras: dev-minimal, test
+Python 3.12.10
+Go Task 3.45.4
+uv 0.7.22
+a2a-sdk 0.3.5
+black 25.1.0
+duckdb 1.3.2
+fakeredis 2.31.1
+flake8 7.3.0
+freezegun 1.5.5
+hypothesis 6.138.15
+mypy 1.18.1
+networkx 3.5
+owlrl 7.1.4
+pdfminer-six 20250506
+psutil 7.0.0
+pytest 8.4.2
+pytest-bdd 8.1.0
+pytest-benchmark 5.1.0
+pytest-cov 7.0.0
+pytest-httpx 0.35.0
+python-docx 1.2.0
+redis 6.4.0
+responses 0.25.8
+tomli-w 1.2.0
+uvicorn 0.35.0
+task: [verify] uv run flake8 src tests
+task: [verify] uv run mypy src --exclude src/autoresearch/a2a_interface.py
+Success: no issues found in 113 source files
+task: [verify] task lint-specs
+task: [lint-specs] uv run python scripts/lint_specs.py
+task: [verify] uv run python scripts/check_spec_tests.py
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+  --extra dev-minimal \
+  --extra test \
+   --extra dev-minimal --extra test\
+  
+
+Resolved 324 packages in 92ms
+Audited 171 packages in 0.79ms
+task: [coverage] echo "[coverage] erasing previous data"
+[coverage] erasing previous data
+task: [coverage] uv run coverage erase
+task: [coverage] echo "[coverage] running unit tests"
+[coverage] running unit tests
+task: [coverage] uv run pytest -vv --maxfail=1 --durations=10 -x tests/unit -m 'not slow' \
+  --cov=src --cov-report=term-missing --cov-append
+
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: bdd-8.1.0, benchmark-5.1.0, anyio-4.10.0, httpx-0.35.0, hypothesis-6.138.15, langsmith-0.4.27, cov-7.0.0
+collecting ... collected 956 items / 25 deselected / 1 skipped / 931 selected
+
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  0%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  0%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  0%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  0%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  1%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  1%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  1%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  1%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  1%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout PASSED                  [  1%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail PASSED                           [  1%]
+tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant PASSED                          [  1%]
+tests/unit/orchestration/test_utils_confidence.py::test_calculate_confidence_rewards_signal PASSED                       [  1%]
+tests/unit/orchestration/test_utils_confidence.py::test_calculate_confidence_penalties PASSED                            [  2%]
+tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking PASSED                                   [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_query_expansion_converges PASSED                             [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_reset_instance_creates_new_singleton PASSED                  [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_extract_entities_with_spacy PASSED                           [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_build_topic_model_with_insufficient_docs PASSED              [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_imports_disabled PASSED                                  [  2%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_import_sentence_transformers_success PASSED              [  2%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_ranking_converges SKIPPED (CollectorRegistry duplication
+in test environment)                                                                                                     [  2%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_invalid_weights_raise SKIPPED (CollectorRegistry
+duplication in test environment)                                                                                         [  3%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_weighted_sum PASSED                                       [  3%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_requires_convex_weights PASSED                            [  3%]
+tests/unit/search/test_ranking_formula.py::test_duckdb_scores_used_without_semantic PASSED                               [  3%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination PASSED                                 [  3%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weight_fallback PASSED                                      [  3%]
+tests/unit/search/test_session_retry.py::test_http_session_retries_and_reuse PASSED                                      [  3%]
+tests/unit/search/test_session_retry.py::test_http_session_recovery PASSED                                               [  3%]
+tests/unit/search/test_simulate_rate_limit.py::test_default_backoff PASSED                                               [  3%]
+tests/unit/search/test_simulate_rate_limit.py::test_custom_backoff PASSED                                                [  3%]
+tests/unit/test_a2a_concurrency_sim.py::test_simulation_counts PASSED                                                    [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_init PASSED                                                     [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_start PASSED                                                    [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_stop PASSED                                                     [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query PASSED                                             [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_capabilities PASSED                          [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_config PASSED                                [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_set_config PASSED                                [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_unknown PASSED                                   [  4%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_info PASSED                                              [  5%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent PASSED                                  [  5%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_init PASSED                                                        [  5%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_query_agent PASSED                                                 [  5%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_capabilities PASSED                                      [  5%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_config PASSED                                            [  5%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_set_agent_config PASSED                                            [  5%]
+tests/unit/test_a2a_interface.py::test_get_a2a_client PASSED                                                             [  5%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_available PASSED                                           [  5%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_not_available PASSED                                       [  6%]
+tests/unit/test_a2a_interface.py::test_handle_query_exception PASSED                                                     [  6%]
+tests/unit/test_a2a_interface.py::test_handle_set_config_invalid PASSED                                                  [  6%]
+tests/unit/test_a2a_interface.py::test_dispatch_simulation_invariants PASSED                                             [  6%]
+tests/unit/test_a2a_interface.py::test_simulation_event_order PASSED                                                     [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_init PASSED                                                [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent PASSED                                         [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_capabilities PASSED                              [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_config PASSED                                    [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_set_agent_config PASSED                                    [  6%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent_error PASSED                                   [  7%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_success PASSED                                                      [  7%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_timeout PASSED                                                      [  7%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_recovery PASSED                                                     [  7%]
+tests/unit/test_additional_algorithm_docs.py::test_algorithm_docs_exist PASSED                                           [  7%]
+tests/unit/test_additional_coverage.py::test_log_release_tokens_invalid_json PASSED                                      [  7%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_transitions PASSED                                          [  7%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_recovery PASSED                                             [  7%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_success_decrements PASSED                                   [  7%]
+tests/unit/test_additional_coverage.py::test_http_session_reuse_and_close PASSED                                         [  8%]
+tests/unit/test_additional_coverage.py::test_set_get_delegate PASSED                                                     [  8%]
+tests/unit/test_additional_coverage.py::test_pop_low_score_missing_confidence PASSED                                     [  8%]
+tests/unit/test_additional_coverage.py::test_output_formatter_invalid PASSED                                             [  8%]
+tests/unit/test_additional_coverage.py::test_streamlit_metrics PASSED                                                    [  8%]
+tests/unit/test_advanced_agents.py::test_domain_specialist_execute PASSED                                                [  8%]
+tests/unit/test_advanced_agents.py::test_domain_specialist_can_execute PASSED                                            [  8%]
+tests/unit/test_advanced_agents.py::test_moderator_execute PASSED                                                        [  8%]
+tests/unit/test_advanced_agents.py::test_moderator_can_execute PASSED                                                    [  8%]
+tests/unit/test_advanced_agents.py::test_user_agent_execute PASSED                                                       [  9%]
+tests/unit/test_advanced_agents.py::test_user_agent_can_execute PASSED                                                   [  9%]
+tests/unit/test_advanced_agents.py::test_planner_metadata PASSED                                                         [  9%]
+tests/unit/test_agent_communication.py::test_message_exchange_and_feedback PASSED                                        [  9%]
+tests/unit/test_agent_communication.py::test_coalition_management_in_state PASSED                                        [  9%]
+tests/unit/test_agent_communication.py::test_agent_registry_coalitions PASSED                                            [  9%]
+tests/unit/test_agent_communication.py::test_orchestrator_handles_coalitions PASSED                                      [  9%]
+tests/unit/test_agent_communication.py::test_message_protocols PASSED                                                    [  9%]
+tests/unit/test_agent_registry.py::test_register_and_get_cached_instance PASSED                                          [  9%]
+tests/unit/test_agent_registry.py::test_get_unknown_agent_raises PASSED                                                  [  9%]
+tests/unit/test_agent_registry.py::test_reset_instances PASSED                                                           [ 10%]
+tests/unit/test_agents_llm.py::test_synthesizer_with_injected_adapter PASSED                                             [ 10%]
+tests/unit/test_agents_llm.py::test_contrarian_with_injected_adapter PASSED                                              [ 10%]
+tests/unit/test_agents_llm.py::test_fact_checker_with_injected_adapter PASSED                                            [ 10%]
+tests/unit/test_agents_llm.py::test_agent_factory_with_injected_adapter PASSED                                           [ 10%]
+tests/unit/test_agents_llm.py::test_synthesizer_dynamic PASSED                                                           [ 10%]
+tests/unit/test_agents_llm.py::test_contrarian_dynamic PASSED                                                            [ 10%]
+tests/unit/test_agents_llm.py::test_fact_checker_sources PASSED                                                          [ 10%]
+tests/unit/test_algorithm_docs.py::test_algorithm_docs_exist PASSED                                                      [ 10%]
+tests/unit/test_algorithm_docs.py::test_core_docstrings_reference_docs PASSED                                            [ 11%]
+tests/unit/test_api.py::test_dynamic_limit PASSED                                                                        [ 11%]
+tests/unit/test_api.py::test_api_key_roles PASSED                                                                        [ 11%]
+tests/unit/test_api.py::test_batch_query_invalid_page PASSED                                                             [ 11%]
+tests/unit/test_api.py::test_fallback_no_limit PASSED                                                                    [ 11%]
+tests/unit/test_api.py::test_fallback_multiple_ips PASSED                                                                [ 11%]
+tests/unit/test_api.py::test_request_log_thread_safety PASSED                                                            [ 11%]
+tests/unit/test_api_auth_deps.py::test_require_permission_allows PASSED                                                  [ 11%]
+tests/unit/test_api_auth_deps.py::test_require_permission_auth_missing PASSED                                            [ 11%]
+tests/unit/test_api_auth_deps.py::test_require_permission_forbidden PASSED                                               [ 12%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_valid_key PASSED                                               [ 12%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_invalid_key PASSED                                             [ 12%]
+tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key PASSED                                             [ 12%]
+tests/unit/test_api_auth_middleware.py::test_dispatch_invalid_token PASSED                                               [ 12%]
+tests/unit/test_api_auth_middleware.py::test_dispatch_valid_token PASSED                                                 [ 12%]
+tests/unit/test_api_error_handling.py::test_query_endpoint_runtime_error PASSED                                          [ 12%]
+tests/unit/test_api_error_handling.py::test_query_endpoint_invalid_response PASSED                                       [ 12%]
+tests/unit/test_api_error_handling.py::test_simulate_api_auth_error_rates PASSED                                         [ 12%]
+tests/unit/test_api_errors.py::test_handle_rate_limit_response PASSED                                                    [ 12%]
+tests/unit/test_api_errors.py::test_handle_rate_limit_text PASSED                                                        [ 13%]
+tests/unit/test_api_imports.py::test_no_unused_imports PASSED                                                            [ 13%]
+tests/unit/test_api_lifespan.py::test_lifespan_startup_shutdown PASSED                                                   [ 13%]
+tests/unit/test_api_rate_limit.py::test_initial_burst_and_refill PASSED                                                  [ 13%]
+tests/unit/test_api_rate_limit.py::test_partial_refill PASSED                                                            [ 13%]
+tests/unit/test_api_rate_limit.py::test_clock_drift PASSED                                                               [ 13%]
+tests/unit/test_api_rate_limit.py::test_invalid_parameters PASSED                                                        [ 13%]
+tests/unit/test_api_token_utils.py::test_generate_bearer_token_unique PASSED                                             [ 13%]
+tests/unit/test_api_token_utils.py::test_verify_bearer_token PASSED                                                      [ 13%]
+tests/unit/test_backup_manager.py::test_create_and_restore_backup PASSED                                                 [ 14%]
+tests/unit/test_backup_manager.py::test_backup_scheduler_start_stop PASSED                                               [ 14%]
+tests/unit/test_bm25_scoring.py::test_calculate_bm25_scores_real_documents PASSED                                        [ 14%]
+tests/unit/test_budgeting.py::test_apply_adaptive_token_budget_paths PASSED                                              [ 14%]
+tests/unit/test_budgeting_module.py::test_budget_scaled_by_loops_and_capped PASSED                                       [ 14%]
+tests/unit/test_budgeting_module.py::test_budget_increased_when_too_low PASSED                                           [ 14%]
+tests/unit/test_budgeting_module.py::test_budget_unchanged_when_within_bounds PASSED                                     [ 14%]
+tests/unit/test_budgeting_module.py::test_budget_noop_when_missing PASSED                                                [ 14%]
+tests/unit/test_cache.py::test_search_uses_cache PASSED                                                                  [ 14%]
+tests/unit/test_cache.py::test_cache_lifecycle PASSED                                                                    [ 15%]
+tests/unit/test_cache.py::test_setup_thread_safe PASSED                                                                  [ 15%]
+tests/unit/test_cache.py::test_cache_is_backend_specific PASSED                                                          [ 15%]
+tests/unit/test_cache.py::test_cache_is_backend_specific_without_embeddings PASSED                                       [ 15%]
+tests/unit/test_cache.py::test_context_aware_query_expansion_uses_cache PASSED                                           [ 15%]
+tests/unit/test_cache_deepcopy.py::test_cache_results_are_deepcopied PASSED                                              [ 15%]
+tests/unit/test_cache_deepcopy.py::test_get_cache_returns_singleton PASSED                                               [ 15%]
+tests/unit/test_cache_extra.py::test_get_db_after_teardown PASSED                                                        [ 15%]
+tests/unit/test_check_env_warnings.py::test_missing_package_metadata_raises PASSED                                       [ 15%]
+tests/unit/test_check_env_warnings.py::test_missing_pytest_bdd_raises PASSED                                             [ 16%]
+tests/unit/test_check_env_warnings.py::test_missing_go_task_raises PASSED                                                [ 16%]
+tests/unit/test_check_env_warnings.py::test_missing_uv_raises_version_error PASSED                                       [ 16%]
+tests/unit/test_check_env_warnings.py::test_task_command_failure PASSED                                                  [ 16%]
+tests/unit/test_check_env_warnings.py::test_main_reports_missing_metadata PASSED                                         [ 16%]
+tests/unit/test_circuit_breaker_module.py::test_state_transitions PASSED                                                 [ 16%]
+tests/unit/test_circuit_breaker_module.py::test_recovery PASSED                                                          [ 16%]
+tests/unit/test_cli_backup_extra.py::test_format_size_units PASSED                                                       [ 16%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_error PASSED                                                     [ 16%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_missing_tables PASSED                                            [ 16%]
+tests/unit/test_cli_backup_extra.py::test_backup_create_success PASSED                                                   [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_restore_cancelled PASSED                                                [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_restore_error PASSED                                                    [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_list_no_backups PASSED                                                  [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_list_success PASSED                                                     [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_recover_invalid_timestamp PASSED                                        [ 17%]
+tests/unit/test_cli_backup_extra.py::test_backup_recover_error PASSED                                                    [ 17%]
+tests/unit/test_cli_help.py::test_cli_help_no_ansi PASSED                                                                [ 17%]
+tests/unit/test_cli_help.py::test_search_help_includes_interactive PASSED                                                [ 17%]
+tests/unit/test_cli_help.py::test_search_help_includes_visualize PASSED                                                  [ 18%]
+tests/unit/test_cli_help.py::test_search_loops_option PASSED                                                             [ 18%]
+tests/unit/test_cli_help.py::test_search_help_includes_ontology_flags PASSED                                             [ 18%]
+tests/unit/test_cli_help.py::test_visualize_help_includes_layout PASSED                                                  [ 18%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_basic PASSED                                                  [ 18%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_default_threshold PASSED                                      [ 18%]
+tests/unit/test_cli_helpers.py::test_parse_agent_groups_parses_nested_lists PASSED                                       [ 18%]
+tests/unit/test_cli_helpers.py::test_find_similar_commands_respects_threshold PASSED                                     [ 18%]
+tests/unit/test_cli_helpers.py::test_parse_agent_groups_discards_empty_groups PASSED                                     [ 18%]
+tests/unit/test_cli_helpers.py::test_require_api_key_missing_header PASSED                                               [ 19%]
+tests/unit/test_cli_helpers.py::test_require_api_key_accepts_present_header PASSED                                       [ 19%]
+tests/unit/test_cli_helpers.py::test_report_missing_tables_sorts_and_prints PASSED                                       [ 19%]
+tests/unit/test_cli_helpers.py::test_report_missing_tables_uses_console PASSED                                           [ 19%]
+tests/unit/test_cli_helpers.py::test_handle_command_not_found_suggests_similar PASSED                                    [ 19%]
+tests/unit/test_cli_helpers.py::test_install_help_text_in_readme PASSED                                                  [ 19%]
+tests/unit/test_cli_utils_extra.py::test_print_error_suggestion PASSED                                                   [ 19%]
+tests/unit/test_cli_utils_extra.py::test_verbosity_roundtrip PASSED                                                      [ 19%]
+tests/unit/test_cli_utils_extra.py::test_set_verbosity_sets_env PASSED                                                   [ 19%]
+tests/unit/test_cli_utils_extra.py::test_ascii_and_table_empty PASSED                                                    [ 19%]
+tests/unit/test_cli_utils_extra.py::test_format_functions PASSED                                                         [ 20%]
+tests/unit/test_cli_visualize.py::test_ascii_bar_graph_basic PASSED                                                      [ 20%]
+tests/unit/test_cli_visualize.py::test_summary_table_render PASSED                                                       [ 20%]
+tests/unit/test_cli_visualize.py::test_search_visualize_option PASSED                                                    [ 20%]
+tests/unit/test_coalition_execution.py::test_coalition_agents_run_together PASSED                                        [ 20%]
+tests/unit/test_coalition_execution.py::test_configmodel_from_dict_allows_coalitions PASSED                              [ 20%]
+tests/unit/test_config_env_file.py::test_config_spec_exists PASSED                                                       [ 20%]
+tests/unit/test_config_env_file.py::test_env_file_parsing PASSED                                                         [ 20%]
+tests/unit/test_config_errors.py::test_config_spec_exists PASSED                                                         [ 20%]
+tests/unit/test_config_errors.py::test_load_config_file_error PASSED                                                     [ 21%]
+tests/unit/test_config_errors.py::test_notify_observers_error PASSED                                                     [ 21%]
+tests/unit/test_config_errors.py::test_watch_config_files_error PASSED                                                   [ 21%]
+tests/unit/test_config_errors.py::test_watch_config_reload_error PASSED                                                  [ 21%]
+tests/unit/test_config_errors.py::test_reset_instance_error PASSED                                                       [ 21%]
+tests/unit/test_config_hot_reload_sim.py::test_config_hot_reload_sim PASSED                                              [ 21%]
+tests/unit/test_config_hot_reload_sim.py::test_invalid_update_logged PASSED                                              [ 21%]
+tests/unit/test_config_loader_defaults.py::test_config_spec_exists PASSED                                                [ 21%]
+tests/unit/test_config_loader_defaults.py::test_invalid_env_falls_back_to_defaults PASSED                                [ 21%]
+tests/unit/test_config_loader_defaults.py::test_validate_without_config_file PASSED                                      [ 22%]
+tests/unit/test_config_profiles.py::test_config_spec_exists PASSED                                                       [ 22%]
+tests/unit/test_config_profiles.py::test_config_profiles_default PASSED                                                  [ 22%]
+tests/unit/test_config_profiles.py::test_config_profiles_switch PASSED                                                   [ 22%]
+tests/unit/test_config_profiles.py::test_config_profiles_invalid PASSED                                                  [ 22%]
+tests/unit/test_config_profiles.py::test_config_profiles_merge PASSED                                                    [ 22%]
+tests/unit/test_config_reload.py::test_config_spec_exists PASSED                                                         [ 22%]
+tests/unit/test_config_reload.py::test_config_reload_on_change PASSED                                                    [ 22%]
+tests/unit/test_config_utils.py::test_config_spec_exists PASSED                                                          [ 22%]
+tests/unit/test_config_utils.py::test_module_docstring_mentions_spec PASSED                                              [ 22%]
+tests/unit/test_config_utils.py::test_apply_preset_returns_configuration PASSED                                          [ 23%]
+tests/unit/test_config_utils.py::test_apply_preset_unknown_name PASSED                                                   [ 23%]
+tests/unit/test_config_utils.py::test_validate_config_success PASSED                                                     [ 23%]
+tests/unit/test_config_utils.py::test_validate_config_failure PASSED                                                     [ 23%]
+tests/unit/test_config_validation_errors.py::test_config_spec_exists PASSED                                              [ 23%]
+tests/unit/test_config_validation_errors.py::test_invalid_rdf_backend PASSED                                             [ 23%]
+tests/unit/test_config_validation_errors.py::test_weights_must_sum_to_one PASSED                                         [ 23%]
+tests/unit/test_config_validation_errors.py::test_default_config_loads_without_error PASSED                              [ 23%]
+tests/unit/test_config_validators_additional.py::test_config_spec_exists PASSED                                          [ 23%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct0] PASSED                        [ 24%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_valid[direct-direct1] PASSED                        [ 24%]
+tests/unit/test_config_validators_additional.py::test_reasoning_mode_invalid PASSED                                      [ 24%]
+tests/unit/test_config_validators_additional.py::test_token_budget_valid[None] PASSED                                    [ 24%]
+tests/unit/test_config_validators_additional.py::test_token_budget_valid[10] PASSED                                      [ 24%]
+tests/unit/test_config_validators_additional.py::test_token_budget_invalid[0] PASSED                                     [ 24%]
+tests/unit/test_config_validators_additional.py::test_token_budget_invalid[-5] PASSED                                    [ 24%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[LRU] PASSED                                  [ 24%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[score] PASSED                                [ 24%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[hybrid] PASSED                               [ 25%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[priority] PASSED                             [ 25%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_valid[adaptive] PASSED                             [ 25%]
+tests/unit/test_config_validators_additional.py::test_eviction_policy_invalid PASSED                                     [ 25%]
+tests/unit/test_config_watcher_cleanup.py::test_config_spec_exists PASSED                                                [ 25%]
+tests/unit/test_config_watcher_cleanup.py::test_cli_watcher_cleanup PASSED                                               [ 25%]
+tests/unit/test_config_watcher_cleanup.py::test_api_watcher_cleanup PASSED                                               [ 25%]
+tests/unit/test_config_watcher_cleanup.py::test_cli_watcher_cleanup_error PASSED                                         [ 25%]
+tests/unit/test_config_watcher_cleanup.py::test_api_watcher_cleanup_error PASSED                                         [ 25%]
+tests/unit/test_core_modules_additional.py::test_orchestrator_parse_config_basic PASSED                                  [ 25%]
+tests/unit/test_core_modules_additional.py::test_search_stub_backend PASSED                                              [ 26%]
+tests/unit/test_core_modules_additional.py::test_planner_execute PASSED                                                  [ 26%]
+tests/unit/test_core_modules_additional.py::test_storage_setup_teardown SKIPPED (Kuzu backend not available)             [ 26%]
+tests/unit/test_core_modules_additional.py::test_storage_setup_without_kuzu PASSED                                       [ 26%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_enabled SKIPPED (analysis extra not installed)                  [ 26%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_disabled PASSED                                                 [ 26%]
+tests/unit/test_data_analysis.py::test_metrics_dataframe_polars_missing PASSED                                           [ 26%]
+tests/unit/test_data_analysis_polars.py::test_metrics_dataframe_summary SKIPPED (analysis extra not installed)           [ 26%]
+tests/unit/test_distributed.py::test_get_message_broker_invalid PASSED                                                   [ 26%]
+tests/unit/test_distributed.py::test_publish_claim_inmemory SKIPPED (multiprocessing Manager unsupported in this
+environment)                                                                                                             [ 27%]
+tests/unit/test_distributed_broker.py::test_get_message_broker_memory SKIPPED (multiprocessing Manager unsupported in
+this environment)                                                                                                        [ 27%]
+tests/unit/test_distributed_broker.py::test_get_message_broker_invalid PASSED                                            [ 27%]
+tests/unit/test_distributed_broker.py::test_redis_broker_requires_dependency PASSED                                      [ 27%]
+tests/unit/test_distributed_broker.py::test_ray_broker_publish PASSED                                                    [ 27%]
+tests/unit/test_distributed_broker_import_error.py::test_redis_broker_missing_dependency PASSED                          [ 27%]
+tests/unit/test_distributed_coordination_benchmark.py::test_benchmark_scales SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 27%]
+tests/unit/test_distributed_coordination_benchmark.py::test_benchmark_survives_worker_crash SKIPPED (multiprocessing
+Manager unsupported in this environment)                                                                                 [ 27%]
+tests/unit/test_distributed_coordination_props.py::test_leader_is_minimum PASSED                                         [ 27%]
+tests/unit/test_distributed_coordination_props.py::test_message_ordering_preserved SKIPPED (multiprocessing Manager
+unsupported in this environment)                                                                                         [ 28%]
+tests/unit/test_distributed_executors.py::test_execute_agent_process PASSED                                              [ 28%]
+tests/unit/test_distributed_executors.py::test_execute_agent_remote XPASS (Ray cannot serialize QueryState under Python
+3.12)                                                                                                                    [ 28%]
+tests/unit/test_distributed_extra.py::test_get_message_broker_default SKIPPED (multiprocessing Manager unsupported in
+this environment)                                                                                                        [ 28%]
+tests/unit/test_distributed_extra.py::test_redis_queue_roundtrip SKIPPED (multiprocessing Manager unsupported in this
+environment)                                                                                                             [ 28%]
+tests/unit/test_distributed_perf_compare.py::test_compare_matches_theory_within_tolerance PASSED                         [ 28%]
+tests/unit/test_distributed_perf_sim_script.py::test_latency_decreases_with_workers PASSED                               [ 28%]
+tests/unit/test_distributed_perf_sim_script.py::test_cli_execution PASSED                                                [ 28%]
+tests/unit/test_distributed_perf_sim_script.py::test_cli_requires_arguments PASSED                                       [ 28%]
+tests/unit/test_distributed_redis.py::test_get_message_broker_redis_roundtrip PASSED                                     [ 29%]
+tests/unit/test_distributed_redis.py::test_get_message_broker_redis_missing PASSED                                       [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_network_fallback PASSED                           [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_creates_stub_when_offline PASSED                  [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_offline_without_duckdb PASSED                     [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_download_extension_fallback_path PASSED                              [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_offline_fallback_skips_samefile_copy PASSED                          [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_setup_sh_ignores_smoke_failure_with_stub PASSED                      [ 29%]
+tests/unit/test_download_duckdb_extensions.py::test_load_offline_env_sets_vector_extension_path PASSED                   [ 29%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_init PASSED                                    [ 29%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_default_path PASSED                 [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_custom_path PASSED                  [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_with_connection_error PASSED             [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_table_creation_failure PASSED            [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_setup_missing_extension_continues PASSED       [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_create_tables PASSED                           [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_initialize_schema_version PASSED               [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version PASSED                      [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_get_schema_version_no_version PASSED           [ 30%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_update_schema_version PASSED                   [ 31%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_run_migrations PASSED                          [ 31%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_true PASSED                            [ 31%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_has_vss_false PASSED                           [ 31%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_close PASSED                                   [ 31%]
+tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::test_clear PASSED                                   [ 31%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_concurrent_setup_is_idempotent PASSED                        [ 31%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_initialize_schema_version_failure PASSED                     [ 31%]
+tests/unit/test_duckdb_storage_backend_concurrency.py::test_persist_claims_concurrent PASSED                             [ 31%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index PASSED      [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_extension_not_loaded PASSED [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_create_hnsw_index_error PASSED [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim PASSED          [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_minimal PASSED  [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_persist_claim_error PASSED    [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search PASSED          [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_vss_not_available PASSED [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_vector_search_error PASSED    [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection PASSED         [ 32%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_get_connection_not_initialized PASSED [ 33%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_full_replace PASSED [ 33%]
+tests/unit/test_duckdb_storage_backend_extended.py::TestDuckDBStorageBackendExtended::test_update_claim_partial PASSED   [ 33%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_succeeds_on_first_try PASSED                                  [ 33%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_retries_until_success PASSED                                  [ 33%]
+tests/unit/test_error_recovery.py::test_retry_with_backoff_raises_after_max_retries PASSED                               [ 33%]
+tests/unit/test_error_utils_additional.py::test_error_info_to_dict_and_str PASSED                                        [ 33%]
+tests/unit/test_error_utils_additional.py::test_formatters PASSED                                                        [ 33%]
+tests/unit/test_error_utils_additional.py::test_timeout_sets_warning PASSED                                              [ 33%]
+tests/unit/test_error_utils_additional.py::test_redacted_context_preserved PASSED                                        [ 34%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc0-Check your configuration file] PASSED                [ 34%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc1-API key] PASSED                                      [ 34%]
+tests/unit/test_error_utils_additional.py::test_get_error_info[exc2-5] PASSED                                            [ 34%]
+tests/unit/test_errors.py::test_error_hierarchy PASSED                                                                   [ 34%]
+tests/unit/test_errors.py::test_error_messages PASSED                                                                    [ 34%]
+tests/unit/test_errors.py::test_error_with_cause PASSED                                                                  [ 34%]
+tests/unit/test_errors.py::test_timeout_error PASSED                                                                     [ 34%]
+tests/unit/test_errors.py::test_not_found_error PASSED                                                                   [ 34%]
+tests/unit/test_eviction.py::test_ram_eviction FAILED                                                                    [ 35%]
+
+=========================================================== FAILURES ===========================================================
+______________________________________________________ test_ram_eviction _______________________________________________________
+
+ensure_duckdb_schema = '/tmp/pytest-of-root/pytest-0/test_ram_eviction0/kg.duckdb'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc5b3ce66c0>
+
+    def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
+        StorageManager.clear_all()
+        monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
+        config = ConfigModel(ram_budget_mb=1)
+        config.search.context_aware.enabled = False
+        config.storage.rdf_backend = "memory"
+        monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+        # reload config property
+        ConfigLoader()._config = None
+    
+        monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
+        start = metrics.EVICTION_COUNTER._value.get()
+    
+        StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
+        StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+    
+        graph = StorageManager.get_graph()
+>       assert "c1" not in graph.nodes
+E       AssertionError: assert 'c1' not in NodeView(('c1', 'c2'))
+E        +  where NodeView(('c1', 'c2')) = <networkx.classes.digraph.DiGraph object at 0x7fc5b3ce5f10>.nodes
+
+/workspace/autoresearch/tests/unit/test_eviction.py:29: AssertionError
+---------------------------------------------------- Captured stderr setup -----------------------------------------------------
+{"text": "2025-09-20 02:57:34.057 | INFO     | autoresearch.logging_utils:emit:81 - No configuration file found; using defaults\n", "record": {"elapsed": {"repr": "0:04:37.253286", "seconds": 277.253286}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 81, "message": "No configuration file found; using defaults", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5273, "name": "MainProcess"}, "thread": {"id": 140487541402496, "name": "MainThread"}, "time": {"repr": "2025-09-20 02:57:34.057375+00:00", "timestamp": 1758337054.057375}}}
+{"text": "2025-09-20 02:57:34.243 | INFO     | autoresearch.logging_utils:emit:81 - {\"event\": \"VSS extension loaded successfully\", \"timestamp\": \"2025-09-20T02:57:34.239073Z\"}\n", "record": {"elapsed": {"repr": "0:04:37.439262", "seconds": 277.439262}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 81, "message": "{\"event\": \"VSS extension loaded successfully\", \"timestamp\": \"2025-09-20T02:57:34.239073Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5273, "name": "MainProcess"}, "thread": {"id": 140487541402496, "name": "MainThread"}, "time": {"repr": "2025-09-20 02:57:34.243351+00:00", "timestamp": 1758337054.243351}}}
+{"text": "2025-09-20 02:57:34.322 | INFO     | autoresearch.logging_utils:emit:81 - {\"event\": \"Enabling experimental persistence for HNSW indexes\", \"timestamp\": \"2025-09-20T02:57:34.317297Z\"}\n", "record": {"elapsed": {"repr": "0:04:37.518242", "seconds": 277.518242}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "ℹ️", "name": "INFO", "no": 20}, "line": 81, "message": "{\"event\": \"Enabling experimental persistence for HNSW indexes\", \"timestamp\": \"2025-09-20T02:57:34.317297Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5273, "name": "MainProcess"}, "thread": {"id": 140487541402496, "name": "MainThread"}, "time": {"repr": "2025-09-20 02:57:34.322331+00:00", "timestamp": 1758337054.322331}}}
+{"text": "2025-09-20 02:57:34.344 | ERROR    | autoresearch.logging_utils:emit:81 - {\"event\": \"Failed to create HNSW index: Catalog Error: Setting with name \\\"hnsw_enable_experimental_persistence\\\" is not in the catalog, but it exists in the vss extension.\\n\\nPlease try installing and loading the vss extension:\\nINSTALL vss;\\nLOAD vss;\\n\\n\", \"timestamp\": \"2025-09-20T02:57:34.340803Z\"}\n", "record": {"elapsed": {"repr": "0:04:37.540035", "seconds": 277.540035}, "exception": null, "extra": {}, "file": {"name": "logging_utils.py", "path": "/workspace/autoresearch/src/autoresearch/logging_utils.py"}, "function": "emit", "level": {"icon": "❌", "name": "ERROR", "no": 40}, "line": 81, "message": "{\"event\": \"Failed to create HNSW index: Catalog Error: Setting with name \\\"hnsw_enable_experimental_persistence\\\" is not in the catalog, but it exists in the vss extension.\\n\\nPlease try installing and loading the vss extension:\\nINSTALL vss;\\nLOAD vss;\\n\\n\", \"timestamp\": \"2025-09-20T02:57:34.340803Z\"}", "module": "logging_utils", "name": "autoresearch.logging_utils", "process": {"id": 5273, "name": "MainProcess"}, "thread": {"id": 140487541402496, "name": "MainThread"}, "time": {"repr": "2025-09-20 02:57:34.344124+00:00", "timestamp": 1758337054.344124}}}
+------------------------------------------------------ Captured log setup ------------------------------------------------------
+INFO     autoresearch.config.loader:loader.py:186 No configuration file found; using defaults
+INFO     autoresearch.storage_backends:storage_backends.py:201 {"event": "VSS extension loaded successfully", "timestamp": "2025-09-20T02:57:34.239073Z"}
+INFO     autoresearch.storage_backends:storage_backends.py:424 {"event": "Enabling experimental persistence for HNSW indexes", "timestamp": "2025-09-20T02:57:34.317297Z"}
+ERROR    autoresearch.storage_backends:storage_backends.py:497 {"event": "Failed to create HNSW index: Catalog Error: Setting with name \"hnsw_enable_experimental_persistence\" is not in the catalog, but it exists in the vss extension.\n\nPlease try installing and loading the vss extension:\nINSTALL vss;\nLOAD vss;\n\n", "timestamp": "2025-09-20T02:57:34.340803Z"}
+===================================================== slowest 10 durations =====================================================
+7.64s call     tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent
+6.71s call     tests/unit/test_cache.py::test_cache_is_backend_specific_without_embeddings
+6.31s call     tests/unit/test_cli_visualize.py::test_search_visualize_option
+6.05s call     tests/unit/test_cache.py::test_context_aware_query_expansion_uses_cache
+4.57s call     tests/unit/test_distributed_coordination_props.py::test_leader_is_minimum
+4.26s call     tests/unit/test_cli_help.py::test_search_help_includes_interactive
+4.15s call     tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum
+4.00s call     tests/unit/test_cli_help.py::test_search_help_includes_visualize
+3.93s call     tests/unit/test_cache.py::test_cache_is_backend_specific
+3.48s call     tests/unit/test_config_watcher_cleanup.py::test_cli_watcher_cleanup_error
+=================================================== short test summary info ====================================================
+FAILED tests/unit/test_eviction.py::test_ram_eviction - AssertionError: assert 'c1' not in NodeView(('c1', 'c2'))
+ +  where NodeView(('c1', 'c2')) = <networkx.classes.digraph.DiGraph object at 0x7fc5b3ce5f10>.nodes
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================= 1 failed, 312 passed, 13 skipped, 25 deselected, 1 xpassed in 252.50s (0:04:12) ========================
+task: Failed to run task "verify": exit status 1
+task: Failed to run task "verify:warnings": exit status 201
