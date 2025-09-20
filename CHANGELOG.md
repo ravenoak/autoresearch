@@ -6,6 +6,13 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Documented deterministic eviction fallback when OS metrics are unavailable
+  and enforced ranking weight sums before normalization across the storage and
+  search modules.
+- Migrated integration tests to use `content=` with `httpx`, pinned the
+  dependency to the 0.28.x series, and recorded the `content` deprecation
+  warning in
+  [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
 - Prevented overweight search ranking vectors from being silently normalised by
   raising a `ConfigError` and documenting the behaviour in
   [docs/specs/config.md](docs/specs/config.md).

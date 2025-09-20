@@ -590,8 +590,15 @@ class StorageManager(metaclass=StorageManagerMeta):
                 budget_mb, cfg
             )
             over_budget = ram_measurement_available and current_mb > budget_mb
+            needs_deterministic_budget = (
+                deterministic_limit is not None
+                and len(graph.nodes) > deterministic_limit
+            )
+            should_use_deterministic = needs_deterministic_budget and (
+                deterministic_override or over_budget or not ram_measurement_available
+            )
 
-            if not over_budget and not deterministic_override:
+            if not over_budget and not deterministic_override and not should_use_deterministic:
                 if not ram_measurement_available:
                     log.debug(
                         "RAM usage unavailable; skipping eviction without deterministic override"
@@ -602,11 +609,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             target_node_count: int | None = None
             mode = "ram"
 
-            if (
-                deterministic_limit is not None
-                and len(graph.nodes) > deterministic_limit
-                and (deterministic_override or over_budget)
-            ):
+            if should_use_deterministic:
+                assert deterministic_limit is not None
                 use_deterministic_budget = True
                 target_node_count = deterministic_limit
                 mode = f"deterministic(limit={deterministic_limit})"
@@ -799,6 +803,13 @@ class StorageManager(metaclass=StorageManagerMeta):
 
                 current_mb = StorageManager._current_ram_mb()
                 ram_measurement_available = current_mb > 0.0
+
+                if (
+                    use_deterministic_budget
+                    and not deterministic_override
+                    and not ram_measurement_available
+                ):
+                    break
 
                 if aggressive_eviction and not use_deterministic_budget and nodes_evicted > 50:
                     batch_size = min(
