@@ -74,6 +74,26 @@ Available extras enable optional features. Heavy groups require explicit flags:
 - `parsers` - PDF and DOCX ingestion
 - `gpu` - GPU-accelerated dependencies
 
+### Full extras verification
+
+Run the full verify pipeline with every optional extra before releasing or
+when validating platform support end-to-end:
+
+```bash
+uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"
+```
+
+Execute the lightweight preflight to ensure representative imports succeed and
+the GPU wheel cache is hydrated before launching the heavy run:
+
+```bash
+task verify:preflight
+```
+
+Hydrate the GPU cache according to
+[wheels/gpu/README.md](../wheels/gpu/README.md) so the preflight succeeds when
+`gpu` is enabled.
+
 ## Test Organization
 
 Tests are organized into four categories:
