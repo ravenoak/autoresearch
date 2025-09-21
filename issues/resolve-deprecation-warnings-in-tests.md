@@ -34,6 +34,11 @@ part of the cleanup. We must also restore spec lint compliance
 stops in `scripts/lint_specs.py`, preventing `task verify` from reaching the
 warnings sweep until the monitor and extensions specs adopt the required
 headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
+`StorageManager._enforce_ram_budget` now skips deterministic node caps when the
+RAM helper reports 0 MB and no override is configured, so
+`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes` passes
+again and the storage selection no longer fails for that scenario.
+【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】【861261†L1-L2】
 
 ## Latest failure signatures (2025-09-20)
 

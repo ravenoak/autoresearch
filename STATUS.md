@@ -24,6 +24,12 @@ checks are required.
 - The latest log stops at the known RAM eviction regression without any
   `DeprecationWarning` entries, confirming the cleanup held through the rerun.
   【F:baseline/logs/verify-warnings-20250920T042735Z.log†L409-L466】
+- Adjusted `_enforce_ram_budget` to skip deterministic node caps when RAM
+  metrics report 0 MB without an explicit override. The targeted
+  `uv run --extra test pytest tests/unit/test_storage_eviction_sim.py::
+  test_under_budget_keeps_nodes -q` run passes again, and the broader storage
+  selection finishes with 136 passed, 2 skipped, 819 deselected, and 1 xfailed
+  tests. 【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】【861261†L1-L2】
 
 ## September 19, 2025
 - From a clean tree, reloaded the PATH helper via `./scripts/setup.sh --print-path`
