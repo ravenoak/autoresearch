@@ -9,6 +9,34 @@ from autoresearch.orchestration import metrics
 from autoresearch.storage import StorageManager
 
 
+def test_ram_eviction_skips_without_metrics(ensure_duckdb_schema, monkeypatch):
+    """Unknown RAM metrics should skip eviction and leave counters untouched."""
+
+    StorageManager.clear_all()
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
+
+    config = ConfigModel(ram_budget_mb=1)
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+    config.storage.deterministic_node_budget = None  # Explicitly disable deterministic override.
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    # Unknown metrics: force RAM readings to 0 MB so eviction short-circuits.
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0.0)
+
+    start = metrics.EVICTION_COUNTER._value.get()
+
+    StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
+    StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+
+    graph = StorageManager.get_graph()
+    assert "c1" in graph.nodes
+    assert "c2" in graph.nodes
+    assert metrics.EVICTION_COUNTER._value.get() == start
+
+
 def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
