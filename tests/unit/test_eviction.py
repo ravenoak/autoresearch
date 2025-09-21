@@ -19,11 +19,21 @@ def test_ram_eviction(ensure_duckdb_schema, monkeypatch):
     # reload config property
     ConfigLoader()._config = None
 
-    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
+    ram_readings: list[float] = []
+
+    def fake_ram() -> float:
+        graph = StorageManager.context.graph
+        value = 1000.0 if graph is not None and len(graph.nodes) > 1 else 0.0
+        ram_readings.append(value)
+        return value
+
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram)
     start = metrics.EVICTION_COUNTER._value.get()
 
     StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
     StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+
+    assert any(reading >= config.ram_budget_mb for reading in ram_readings)
 
     graph = StorageManager.get_graph()
     assert "c1" not in graph.nodes
