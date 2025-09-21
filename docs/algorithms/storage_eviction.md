@@ -42,6 +42,10 @@ therefore observe a state satisfying the invariant and leave it intact.
 - **Usage at or below budget:** When `U₀ \leq B` no nodes are evicted.
 - **Empty graph:** The loop exits with no effect when there are no nodes to
   remove.
+- **Missing metrics:** A 0 MB usage reading is treated as "unknown" and leaves
+  the graph unchanged unless a deterministic override is configured. The
+  deterministic fallback derived from `ram_budget_mb` only activates when
+  metrics confirm `U > B`, keeping under-budget scenarios intact.
 
 These arguments assume each node consumes at least `s_min > 0` MB, so the
 termination bound above is finite.

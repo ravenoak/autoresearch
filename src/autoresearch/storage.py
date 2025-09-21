@@ -589,13 +589,15 @@ class StorageManager(metaclass=StorageManagerMeta):
             deterministic_limit, deterministic_override = StorageManager._deterministic_node_limit(
                 budget_mb, cfg
             )
+            if not ram_measurement_available and not deterministic_override:
+                deterministic_limit = None
             over_budget = ram_measurement_available and current_mb > budget_mb
             needs_deterministic_budget = (
                 deterministic_limit is not None
                 and len(graph.nodes) > deterministic_limit
             )
             should_use_deterministic = needs_deterministic_budget and (
-                deterministic_override or over_budget or not ram_measurement_available
+                deterministic_override or over_budget
             )
 
             if not over_budget and not deterministic_override and not should_use_deterministic:
