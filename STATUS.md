@@ -8,7 +8,9 @@ the CLI is available with `task --version`.
 
 Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
-checks are required.
+checks are required. `task verify` always syncs the `dev-minimal` and `test`
+extras; supplying `EXTRAS` now adds optional groups on top of that baseline
+(e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 20, 2025
 - Ran `task verify:warnings:log` to rerun the warnings-as-errors sweep; the

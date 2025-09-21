@@ -7,6 +7,7 @@ vars:
   COVERAGE_MINIMUM: 90
   ALL_EXTRAS: "nlp ui vss git distributed analysis llm parsers gpu"
   ALL_EXTRAS_NO_GPU: "nlp ui vss git distributed analysis llm parsers"
+  VERIFY_BASE_EXTRAS: "dev-minimal test"
 
 profiles:
   dev-minimal:
@@ -28,7 +29,7 @@ tasks:
               fi
           fi
       - |
-          extras="dev-minimal test"
+          extras="{{.VERIFY_BASE_EXTRAS}}"
           uv sync --python-platform x86_64-manylinux_2_28 \
               $(printf ' --extra %s' $extras) \
               {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}} \
@@ -215,6 +216,21 @@ tasks:
   coverage:
     vars:
       EXTRAS: "{{.EXTRAS | default .ALL_EXTRAS}}"
+      SYNC_EXTRAS:
+        sh: |
+          set -eu
+          extras="{{.VERIFY_BASE_EXTRAS}}"
+          if [ -n "{{.EXTRAS}}" ]; then
+            extras="$extras {{.EXTRAS}}"
+          fi
+          dedup=""
+          for extra in $extras; do
+            case " $dedup " in
+              *" $extra "*) ;;
+              *) dedup="$dedup $extra" ;;
+            esac
+          done
+          printf '%s\n' "${dedup# }"
       EXTRA_MARKERS: >-
         {{if contains .EXTRAS "git"}}{{else}} and not requires_git{{end}}
         {{if contains .EXTRAS "nlp"}}{{else}} and not requires_nlp{{end}}
@@ -229,10 +245,8 @@ tasks:
       - echo "[coverage] syncing dependencies"
       - |
           uv sync \
-            --extra dev-minimal \
-            --extra test \
-            {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}\
-            {{if (contains .EXTRAS "gpu")}} --find-links wheels/gpu{{end}}{{end}}
+            {{range splitList " " .SYNC_EXTRAS}} --extra {{.}}{{end}} \
+            {{if contains .SYNC_EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
       - echo "[coverage] erasing previous data"
       - uv run coverage erase
       - echo "[coverage] running unit tests"
@@ -286,9 +300,25 @@ tasks:
 
   verify:
     vars:
-      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
+      USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
+      EXTRAS:
+        sh: |
+          set -eu
+          extras="{{.VERIFY_BASE_EXTRAS}}"
+          if [ -n "{{.USER_EXTRAS}}" ]; then
+            extras="$extras {{.USER_EXTRAS}}"
+          fi
+          dedup=""
+          for extra in $extras; do
+            case " $dedup " in
+              *" $extra "*) ;;
+              *) dedup="$dedup $extra" ;;
+            esac
+          done
+          printf '%s\n' "${dedup# }"
     cmds:
       - |
+          set -eu
           extras="{{.EXTRAS}}"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
@@ -312,16 +342,16 @@ tasks:
           {{end}}
     desc: |
       Run linting, type checks, targeted tests, and coverage.
-      Installs the `dev-minimal` and `test` extras by default; set EXTRAS to
-      add optional groups, including "gpu".
+      Installs the `dev-minimal` and `test` extras by default; setting EXTRAS
+      adds optional groups (e.g., "gpu") in addition to the baseline.
 
   verify:warnings:
     vars:
-      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
+      USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
     env:
       PYTHONWARNINGS: "error::DeprecationWarning"
     cmds:
-      - task verify EXTRAS="{{.EXTRAS}}"
+      - task verify EXTRAS="{{.USER_EXTRAS}}"
     desc: |
       Run the verify pipeline with DeprecationWarning treated as errors.
       Use after syncing the dev-minimal and test extras so pytest-bdd and
@@ -329,14 +359,14 @@ tasks:
 
   verify:warnings:log:
     vars:
-      EXTRAS: "{{.EXTRAS | default \"dev-minimal test\"}}"
+      USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
       LOG_DIR: "{{.LOG_DIR | default \"baseline/logs\"}}"
     cmds:
       - |
           mkdir -p "{{.LOG_DIR}}"
           timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
           log_path="{{.LOG_DIR}}/verify-warnings-${timestamp}.log"
-          LOG_PATH="$log_path" EXTRAS_VALUE="{{.EXTRAS}}" \
+          LOG_PATH="$log_path" EXTRAS_VALUE="{{.USER_EXTRAS}}" \
             uv run python - <<'PY'
           import os
           import subprocess
