@@ -162,6 +162,10 @@ full suite and installs the `dev-minimal` and `test` extras by default.
 Pass `EXTRAS="dev-minimal test distributed analysis"` or similar when invoking
 the command to include heavy groups.
 
+See [Full extras verification](docs/testing_guidelines.md#full-extras-verification)
+for the workflow that checks representative imports, hydrates GPU wheels, and
+runs `task verify` with every optional extra.
+
 For current capabilities and known limitations see
 [docs/release_notes.md](docs/release_notes.md).
 
