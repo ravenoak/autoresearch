@@ -325,6 +325,7 @@ tasks:
       - |
           set -eu
           extras="{{.EXTRAS}}"
+          export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
           uv sync \
             --python-platform x86_64-manylinux_2_28 \
             $(printf ' --extra %s' $extras) \
