@@ -189,3 +189,7 @@ cache.json
 CODEX_ENVIRONMENT_SETUP_FAILED
 kg.duckdb
 rdf_store
+
+# OS-specific files
+.DS_Store
+Thumbs.db
