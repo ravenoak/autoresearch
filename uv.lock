@@ -346,6 +346,11 @@ vss = [
     { name = "duckdb-extension-vss", marker = "python_full_version < '3.13'" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest-httpx" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "a2a-sdk", specifier = ">=0.3.0" },
@@ -474,6 +479,9 @@ requires-dist = [
     { name = "watchfiles", specifier = ">=1.1.0" },
 ]
 provides-extras = ["minimal", "nlp", "gpu", "ui", "vss", "parsers", "git", "docs", "distributed", "analysis", "llm", "test", "full", "dev", "dev-minimal", "build"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest-httpx", specifier = ">=0.35.0" }]
 
 [[package]]
 name = "babel"
@@ -750,7 +758,7 @@ wheels = [
 
 [[package]]
 name = "cibuildwheel"
-version = "3.1.4"
+version = "3.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bashlex" },
@@ -766,9 +774,9 @@ dependencies = [
     { name = "pyelftools" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8e/25/69676d781cdbfc3408fe276dac900deaaa527053553b2a434aac534ed53d/cibuildwheel-3.1.4.tar.gz", hash = "sha256:549c499e21641043ad9596e6472765152fa471d1922538fa87a1a11bdcf93422", size = 354445, upload-time = "2025-08-19T18:22:52.515Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/33/c3e5884a4f996d9138ace03464d0396752ec8c81adada549421bc68d185f/cibuildwheel-3.2.0.tar.gz", hash = "sha256:03ceab277255dc6c6451b25aad78844f4c07b03e410ee7411e9045b20ef6466f", size = 354877, upload-time = "2025-09-22T20:46:24.522Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/c8/9d25944bdc5b3998082260be2baee60f33944881c9410d8c137251389e47/cibuildwheel-3.1.4-py3-none-any.whl", hash = "sha256:c8dcd74a72e5e827d385b8851fc1996d0ca879e8563b837aec29493196d0ed50", size = 126312, upload-time = "2025-08-19T18:22:49.638Z" },
+    { url = "https://files.pythonhosted.org/packages/52/b0/cbf2260b9cc2fea23abd2fac607b4d3692dfd250062fba3523b8008847bd/cibuildwheel-3.2.0-py3-none-any.whl", hash = "sha256:5349f85b89ed63d53bf79315996adb9d4e507c4b69dacb480c1eef7fddde21e1", size = 126344, upload-time = "2025-09-22T20:46:22.157Z" },
 ]
 
 [[package]]
@@ -1793,15 +1801,15 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.140.0"
+version = "6.140.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/4d/bc00079d02c6ffc014e9bcc0533f12b4f5e74b22698df01552c4e0dcf377/hypothesis-6.140.0.tar.gz", hash = "sha256:bf6f79f19bb4e262c33849739639d94f8656510261d50a9ab74f539bcec8b782", size = 466332, upload-time = "2025-09-22T03:43:16.972Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/9a/6541df84f5baf8066a0f87ddae3884ff86c5dc609432c7001ec2b374648f/hypothesis-6.140.1.tar.gz", hash = "sha256:26fc31b1e39d6cd1e1a96fa0e692d2b74ce5c4fd8002a14e98d04f1fa39569fb", size = 466638, upload-time = "2025-09-22T19:05:37.887Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/01/02849c14b948fdc5b7a6959c1f22ebeebc4002fd0f0db02f4a216353c114/hypothesis-6.140.0-py3-none-any.whl", hash = "sha256:ff251c41e4ffed6484720ffef68b31f705e62f50e22947f9f7ef1206b715f376", size = 534072, upload-time = "2025-09-22T03:43:13.951Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/01/10f168b810f8c65f8af40a9f95ebe729cd0daa07229adf6fe072168d8ba2/hypothesis-6.140.1-py3-none-any.whl", hash = "sha256:115bf49d056409cd1bd9778f25a27ec824ad1c50d3584210cb5c598645fae9ca", size = 534320, upload-time = "2025-09-22T19:05:33.514Z" },
 ]
 
 [[package]]
@@ -2306,7 +2314,7 @@ wheels = [
 
 [[package]]
 name = "langsmith"
-version = "0.4.29"
+version = "0.4.30"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -2317,9 +2325,9 @@ dependencies = [
     { name = "requests-toolbelt" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/0e/7e218e85e6e10b1313e8bca504917ec260766d3d4d2a30c5fddeeb6e80b1/langsmith-0.4.29.tar.gz", hash = "sha256:7014606b6710cc1b14333c75cdb981d5bea3ed488626a026bad51d2a61e354c4", size = 958792, upload-time = "2025-09-18T22:07:58.742Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/d5/4cc88f246ce615a518a715cd2bf40001d1678ad6805a3706a90570adca8f/langsmith-0.4.30.tar.gz", hash = "sha256:388fe1060aca6507be41f417c7d4168a92dffe27f28bb6ef8a1bfee4a59f3681", size = 958857, upload-time = "2025-09-22T19:05:14.156Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/a5/56169ce49b3020b47112703b2f9ed0e3255073c8d438b74406b290fb5687/langsmith-0.4.29-py3-none-any.whl", hash = "sha256:20f39c96057d47a83b6df2b18a5137e2389b5b41f34fe0a64a8d6812de3c0ccf", size = 386229, upload-time = "2025-09-18T22:07:56.887Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/d1/b2b2ea7b443c6b028aca209d2e653256912906900cc146e64c65201211b7/langsmith-0.4.30-py3-none-any.whl", hash = "sha256:110767eb83e6da2cc99cfc61958631b5c36624758b52e7af35ec5550ad846cb3", size = 386300, upload-time = "2025-09-22T19:05:11.819Z" },
 ]
 
 [[package]]
