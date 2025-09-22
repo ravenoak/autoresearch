@@ -17,7 +17,7 @@ def send_invalid_json(test_context):
     client = test_context["client"]
     resp = client.post(
         "/query",
-        data="{invalid",
+        content=b"{invalid",
         headers={"Content-Type": "application/json"},
     )
     test_context["response"] = resp
