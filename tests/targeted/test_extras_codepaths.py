@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -63,14 +64,42 @@ def test_try_import_sentence_transformers(monkeypatch):
 @pytest.mark.requires_ui
 def test_apply_theme_settings(monkeypatch):
     """Streamlit UI helper executes with both theme states."""
-    st = import_or_skip("streamlit")
-    monkeypatch.setattr(st, "markdown", lambda *a, **k: None)
+    import_or_skip("streamlit")
     from autoresearch import streamlit_ui
 
-    st.session_state.clear()
+    fake_st = SimpleNamespace(markdown=MagicMock(), session_state={})
+    monkeypatch.setattr(streamlit_ui, "st", fake_st)
+
     streamlit_ui.apply_theme_settings()
-    st.session_state["dark_mode"] = True
+    fake_st.session_state["dark_mode"] = True
     streamlit_ui.apply_theme_settings()
+
+    assert fake_st.markdown.call_count == 2
+    light_markup = fake_st.markdown.call_args_list[0].args[0]
+    dark_markup = fake_st.markdown.call_args_list[1].args[0]
+    assert "background-color:#fff" in light_markup
+    assert "background-color:#1c1c1c" in dark_markup
+
+
+@pytest.mark.requires_ui
+def test_apply_accessibility_settings_high_contrast(monkeypatch):
+    """High-contrast mode injects the expected CSS overrides."""
+    import_or_skip("streamlit")
+    from autoresearch import streamlit_ui
+
+    calls: list[str] = []
+    fake_st = SimpleNamespace(
+        markdown=lambda markup, **_: calls.append(markup),
+        session_state={},
+    )
+    monkeypatch.setattr(streamlit_ui, "st", fake_st)
+
+    streamlit_ui.apply_accessibility_settings()
+    fake_st.session_state["high_contrast"] = True
+    streamlit_ui.apply_accessibility_settings()
+
+    assert any("outline: 2px solid #ffbf00" in html for html in calls)
+    assert any("background-color:#000" in html for html in calls)
 
 
 @pytest.mark.requires_vss

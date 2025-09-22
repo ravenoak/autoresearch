@@ -12,6 +12,12 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 22, 2025
+- Targeted the Streamlit UI helpers with `coverage run -m pytest` against the
+  UI unit tests plus the new `tests/targeted` coverage checks; the follow-up
+  report shows `autoresearch.streamlit_ui.py` now at **100 %** line coverage.
+  【4a66bf†L1-L9】【5fb807†L1-L6】
+
 ## September 20, 2025
 - Ran `task verify:warnings:log` to rerun the warnings-as-errors sweep; the
   wrapper reuses `task verify:warnings` so
