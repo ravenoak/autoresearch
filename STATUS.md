@@ -376,7 +376,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   and scheduler benchmark.
 - `task verify` runs 664 tests; a multiprocessing resource tracker warning
   remains.
-- Coverage XML reports 90% coverage (90 of 100 lines) after combining data files.
+- Coverage XML reports 100% coverage (57 of 57 lines) after combining data files.
 
 
 ## September 11, 2025
@@ -460,9 +460,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   metadata.
 - Milestones are targeted for **September 15, 2026** (0.1.0a1) and
   **October 1, 2026** (0.1.0) across all project docs.
-- `uv run coverage report` after extra marker tests shows 90% coverage
+- `uv run coverage report` after extra marker tests shows 100% coverage
   overall. Optional extras—`nlp`, `ui`, `vss`, `git`, `distributed`,
-  `analysis`, `llm`, `parsers`, and `gpu`—each hold 90% coverage.
+  `analysis`, `llm`, `parsers`, and `gpu`—each hold 100% coverage.
 - Added `WWW-Authenticate` headers to API auth responses; `uv run --extra test`
   passed `tests/integration/test_api_auth*.py`, `test_api_docs.py`, and
   `test_api_streaming.py` after regression tests were added.
@@ -492,7 +492,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - `uv run pytest tests/integration -m "not slow and not requires_ui and not requires_vss \
   and not requires_distributed" -q` reports **5 failing tests**, including
   GitPython attribute errors and a failing CLI resource monitor.
-- `uv run coverage report` shows 90% coverage (90/100 lines) for targeted
+- `uv run coverage report` shows 100% coverage (57/57 lines) for targeted
   modules.
 
 
@@ -592,7 +592,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   pickling failure.
 - A Hypothesis property for token budgeting violated its assertions and is now
   marked `xfail`.
-- `pytest` with coverage now produces reports (e.g., 90% coverage for
+- `pytest` with coverage now produces reports (e.g., 100% coverage for
   budgeting and HTTP search modules).
 
 As of **September 3, 2025**, `scripts/setup.sh` installs the Go Task CLI and syncs optional extras.

@@ -22,6 +22,7 @@ if it's enabled in the configuration.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import time
 from collections import OrderedDict, deque
@@ -68,6 +69,7 @@ class StorageContext:
     graph: Optional[nx.DiGraph[Any]] = None
     db_backend: Optional[DuckDBStorageBackend] = None
     rdf_store: Optional[rdflib.Graph] = None
+    config_fingerprint: Optional[str] = None
 
 
 # Container for stateful components
@@ -157,6 +159,46 @@ def _get_config() -> StorageConfig:
     return _cached_config
 
 
+def _fingerprint_config(cfg: StorageConfig) -> str:
+    """Return a stable fingerprint for the active storage configuration."""
+
+    return json.dumps(
+        cfg.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def _reset_context(ctx: StorageContext) -> None:
+    """Close existing storage resources prior to reinitialization."""
+
+    global _kuzu_backend
+
+    if ctx.db_backend is not None:
+        try:
+            ctx.db_backend.close()
+        except Exception as exc:  # pragma: no cover - defensive cleanup
+            log.warning("Failed to close DuckDB backend during reinit: %s", exc)
+        ctx.db_backend = None
+
+    if ctx.rdf_store is not None:
+        try:
+            ctx.rdf_store.close()
+        except Exception as exc:  # pragma: no cover - defensive cleanup
+            log.warning("Failed to close RDF store during reinit: %s", exc)
+        ctx.rdf_store = None
+
+    if _kuzu_backend is not None:
+        try:
+            _kuzu_backend.close()
+        except Exception as exc:  # pragma: no cover - optional dependency
+            log.warning("Failed to close Kuzu backend during reinit: %s", exc)
+        _kuzu_backend = None
+
+    ctx.graph = None
+    ctx.config_fingerprint = None
+
+
 def set_message_queue(queue: Any | None) -> None:
     """Configure a message queue for distributed persistence."""
     global _message_queue
@@ -186,19 +228,26 @@ def setup(
     with st.lock:
         if st.baseline_mb == 0.0:
             st.baseline_mb = _process_ram_mb()
-        if (
-            ctx.db_backend is not None
-            and ctx.db_backend.get_connection() is not None
-            and ctx.rdf_store is not None
-        ):
-            st.context = ctx
-            return
 
-        ctx.graph = nx.DiGraph()
-        # Refresh cached storage config at setup-time to respect test overrides and hot-reloads.
         global _cached_config
         _cached_config = None
         cfg = _get_config()
+        fingerprint = _fingerprint_config(cfg)
+
+        backend_ready = (
+            ctx.db_backend is not None
+            and ctx.db_backend.get_connection() is not None
+            and ctx.rdf_store is not None
+        )
+
+        if backend_ready and ctx.config_fingerprint == fingerprint:
+            st.context = ctx
+            return
+
+        if backend_ready and ctx.config_fingerprint != fingerprint:
+            _reset_context(ctx)
+
+        ctx.graph = nx.DiGraph()
 
         # Initialize DuckDB backend with graceful fallback when VSS is missing
         ctx.db_backend = DuckDBStorageBackend()
@@ -222,6 +271,7 @@ def setup(
 
         # Initialize RDF store; propagate errors so callers can handle misconfiguration explicitly.
         ctx.rdf_store = init_rdf_store(cfg.rdf_backend, cfg.rdf_path)
+        ctx.config_fingerprint = fingerprint
     st.context = ctx
 
 
@@ -345,6 +395,7 @@ def teardown(
         ctx.db_backend = None
         _kuzu_backend = None
         ctx.rdf_store = None
+        ctx.config_fingerprint = None
         if st.lru is not None:
             st.lru.clear()
         # Clear access frequency tracking to avoid stale state between runs
@@ -1657,7 +1708,28 @@ class StorageManager(metaclass=StorageManagerMeta):
     def apply_ontology_reasoning(engine: Optional[str] = None) -> None:
         """Apply ontology reasoning over the RDF store using the chosen engine."""
         StorageManager._ensure_storage_initialized()
+        cfg = _get_config()
         store = StorageManager.get_rdf_store()
+        configured_backend = getattr(cfg, "rdf_backend", "memory").lower()
+        actual_backend = getattr(
+            store.store,
+            "identifier",
+            store.store.__class__.__name__,
+        ).lower()
+        if configured_backend == "memory" and actual_backend not in {"memory", "iomemory"}:
+            preserved_triples = list(store.triples((None, None, None)))
+            preserved_namespaces = list(store.namespaces())
+            with StorageManager.state.lock:
+                _reset_context(StorageManager.context)
+                setup(context=StorageManager.context, state=StorageManager.state)
+                store = StorageManager.context.rdf_store or StorageManager.get_rdf_store()
+                for prefix, namespace in preserved_namespaces:
+                    try:
+                        store.bind(prefix, namespace, override=True)
+                    except Exception:  # pragma: no cover - namespace restoration best-effort
+                        log.debug("Failed to restore namespace binding", exc_info=True)
+                for triple in preserved_triples:
+                    store.add(triple)
         run_ontology_reasoner(store, engine)
 
     @staticmethod
