@@ -16,12 +16,14 @@ regressions remain resolved: `uv run --extra test pytest tests/unit -k
 "storage" -q --maxfail=1` still reports 136 passed, 2 skipped, 822 deselected,
 and 1 xfailed tests, and `baseline/coverage.xml` preserves a line-rate of 1 for
 the targeted suites. 【714199†L1-L2】【F:baseline/coverage.xml†L1-L12】
-Documentation builds now surface a MkDocs warning about the GPU wheels link in
-`docs/testing_guidelines.md`, so closing
+Documentation builds now surface MkDocs warnings about the GPU wheels link in
+`docs/testing_guidelines.md` and the release plan's references to the in-repo
+issue tracker, so closing
 [fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
+and [fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md)
 joins the existing release blockers alongside the resource tracker, warnings
 sweep, and coverage refresh tracked in the issue queue.
-【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
+【aaf0c5†L1-L7】【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】【F:docs/release_plan.md†L20-L36】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】【F:issues/fix-release-plan-issue-links.md†L1-L27】
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

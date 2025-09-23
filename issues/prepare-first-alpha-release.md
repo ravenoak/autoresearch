@@ -17,11 +17,12 @@ it. 【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-
 intact. 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
 `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` finishes
 with 136 passed, 2 skipped, 822 deselected, and 1 xfailed tests, confirming the
-storage teardown fixes hold. 【714199†L1-L2】 Documentation builds now emit a
-warning because `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
-outside MkDocs' tree, so the release plan must include cleaning up that
-reference. 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 All GitHub
-Actions workflows remain `workflow_dispatch` only.
+storage teardown fixes hold. 【714199†L1-L2】 Documentation builds now emit
+warnings because `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
+outside MkDocs' tree and `docs/release_plan.md` references the lint tickets via
+`../issues/...`, so the release scope must cover both documentation fixes.
+【aaf0c5†L1-L7】【F:docs/testing_guidelines.md†L90-L102】【F:docs/release_plan.md†L20-L36】
+All GitHub Actions workflows remain `workflow_dispatch` only.
 【F:.github/workflows/ci.yml†L1-L22】【F:.github/workflows/ranking-benchmark.yml†L1-L14】
 【F:.github/workflows/release-images.yml†L1-L14】
 `SPEC_COVERAGE.md` continues to map each module to specifications plus proofs,
@@ -53,6 +54,9 @@ before drafting release notes and tagging v0.1.0a1.
 - **Repair MkDocs GPU wheels link** – Update the testing guidelines so
   `uv run --extra docs mkdocs build` completes without warnings.
   ([fix-testing-guidelines-gpu-link](fix-testing-guidelines-gpu-link.md))
+- **Repair release plan issue links** – Update the release plan so it references
+  open tickets without pointing outside the MkDocs tree.
+  ([fix-release-plan-issue-links](fix-release-plan-issue-links.md))
 - **Stage release artifacts** – Draft CHANGELOG.md notes, confirm packaging
   metadata, and plan the `v0.1.0a1` tag once the above tickets land.
 
@@ -63,6 +67,7 @@ before drafting release notes and tagging v0.1.0a1.
 - [rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md)
 - [clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md)
 - [fix-testing-guidelines-gpu-link](fix-testing-guidelines-gpu-link.md)
+- [fix-release-plan-issue-links](fix-release-plan-issue-links.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.

@@ -23,13 +23,15 @@ regressions remain contained: `uv run --extra test pytest tests/unit -k
 and 1 xfailed tests after about 73 seconds. 【714199†L1-L2】 Spec coverage still
 maps every module to specifications with proofs, simulations, or tests.
 【F:SPEC_COVERAGE.md†L1-L120】 Documentation builds succeed but now warn that the
-testing guidelines link to `../wheels/gpu/README.md`, so
+testing guidelines link to `../wheels/gpu/README.md` and the release plan points
+to the in-repo issues directory, so
 [fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
-tracks the cleanup required for warning-free release builds.
-【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 The release sequence
-therefore depends on confirming resource tracker teardown, sweeping
-deprecations, refreshing coverage with optional extras, and repairing the
-MkDocs warning before executing the alpha checklist. The spec template lint
+and [fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md)
+track the cleanup required for warning-free release builds.
+【aaf0c5†L1-L7】【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】【F:docs/release_plan.md†L20-L36】
+The release sequence therefore depends on confirming resource tracker teardown,
+sweeping deprecations, refreshing coverage with optional extras, and repairing
+the MkDocs warnings before executing the alpha checklist. The spec template lint
 cleanup is archived as
 [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
 and coverage follow-ups
