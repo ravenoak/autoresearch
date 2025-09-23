@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<coverage version="7.10.5" timestamp="0" lines-valid="100" lines-covered="90" line-rate="0.9" branches-covered="0" branches-valid="0" branch-rate="0" complexity="0">
+    <sources>
+        <source>/workspace/autoresearch/src/autoresearch</source>
+    </sources>
+    <packages></packages>
+</coverage>
