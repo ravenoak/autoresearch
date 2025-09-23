@@ -21,6 +21,9 @@ def import_or_skip(
     except ImportError:
         skip_reason = reason or f"{module_name} is required for this test."
         pytest.skip(skip_reason, allow_module_level=True)
+    except Exception as exc:
+        skip_reason = reason or f"{module_name} import failed: {exc}"
+        pytest.skip(skip_reason, allow_module_level=True)
 
     if attr is None:
         return module

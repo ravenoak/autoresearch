@@ -6,7 +6,21 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tests.optional_imports import import_or_skip
+try:
+    from tests.optional_imports import import_or_skip
+except Exception:  # pragma: no cover - path fallback for --noconftest runs
+    import importlib.util
+    import sys
+    from pathlib import Path as _Path
+
+    _mod_path = _Path(__file__).resolve().parents[1] / "optional_imports.py"
+    spec = importlib.util.spec_from_file_location("tests.optional_imports", str(_mod_path))
+    if spec and spec.loader:
+        _mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_mod)
+        import_or_skip = getattr(_mod, "import_or_skip")
+    else:  # If even that fails, raise a clear error
+        raise ModuleNotFoundError("Could not import tests.optional_imports via direct path fallback")
 
 
 @pytest.mark.requires_nlp
