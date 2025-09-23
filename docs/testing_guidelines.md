@@ -83,6 +83,9 @@ when validating platform support end-to-end:
 uv run task verify EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"
 ```
 
+After running this command, record the reported coverage percentage in your
+pull request's Verification section so reviewers can confirm the run.
+
 Execute the lightweight preflight to ensure representative imports succeed and
 the GPU wheel cache is hydrated before launching the heavy run:
 
