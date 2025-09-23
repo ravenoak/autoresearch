@@ -52,6 +52,7 @@ nav:
     - Spec Template: spec_template.md
     - Review Guidelines: review_guidelines.md
     - Testing Guidelines: testing_guidelines.md
+    - GPU Wheel Cache: wheels/gpu.md
     - UI Testing Procedures: ui_testing_procedures.md
     - Contributing: contributing.md
     - Releasing Workflow: releasing.md

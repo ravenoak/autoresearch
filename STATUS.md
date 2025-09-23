@@ -55,6 +55,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   warning that `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
   outside the documentation tree, so the release checklists must add a cleanup
   task. 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】
+- Moved the GPU wheel cache instructions into `docs/wheels/gpu.md`, linked the
+  testing guidelines to the new page, and added the entry to the MkDocs
+  navigation. `uv run --extra docs mkdocs build` now only reports the existing
+  `release_plan.md` issue links, confirming the GPU warning is resolved.
+  【F:docs/wheels/gpu.md†L1-L24】【F:docs/testing_guidelines.md†L90-L102】
+  【F:mkdocs.yml†L30-L55】【933fff†L1-L6】
 - Re-ran `task check` after syncing dev-minimal and test extras; the command
   still halts in `flake8` on the unused `e` assignment and lingering
   `StorageError` import, matching the open lint ticket
