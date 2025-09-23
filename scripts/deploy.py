@@ -57,8 +57,14 @@ def _check_required_settings(config_path: str) -> list[str]:
 
 
 def validate_config() -> None:
-    """Load configuration and ensure required settings exist."""
-    load_dotenv()
+    """Load configuration and ensure required settings exist.
+
+    Only load environment variables from a local .env file in the current
+    working directory to avoid leaking parent repo settings into validation
+    runs (e.g., during tests).
+    """
+    local_env = os.path.join(os.getcwd(), ".env")
+    load_dotenv(dotenv_path=local_env)
     cfg_path = _ensure_config_file()
     try:
         _missing = _check_required_settings(cfg_path)
