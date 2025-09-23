@@ -12,6 +12,12 @@ standard `## Algorithms`, `## Invariants`, `## Proof Sketch`, and
 run until the spec documents are realigned with the template.
 【4076c9†L1-L2】
 
+Spec lint now passes: `uv run python scripts/lint_specs.py` returns
+successfully and both `docs/specs/monitor.md` and
+`docs/specs/extensions.md` include the required `## Simulation Expectations`
+heading, clearing the gate that blocked `task check`.
+【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+
 ## Dependencies
 - None
 
@@ -24,10 +30,10 @@ run until the spec documents are realigned with the template.
   `## Simulation Expectations` headings populated with the existing
   offline-determinism content and any supporting formulas or decision
   tables.
-- `uv run python scripts/lint_specs.py` and `task check` complete
-  without spec lint failures.
+- `uv run python scripts/lint_specs.py` and `task check` complete without spec
+  lint failures.
 - STATUS.md records the spec lint fix so the release log reflects the
   restored compliance.
 
 ## Status
-Open
+Archived

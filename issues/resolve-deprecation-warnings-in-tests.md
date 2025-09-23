@@ -1,6 +1,7 @@
 # Resolve deprecation warnings in tests
 
 ## Context
+
 Recent test runs emitted deprecation warnings from packages such as Click and
 fastembed. The `weasel.util.config` module used to trigger a warning because it
 imported `click.parser.split_arg_string`, which will move in Click 9.0. These
@@ -9,36 +10,30 @@ warnings may become errors in future releases and obscure test output.
 `rdflib_sqlalchemy` warnings were eliminated on September 13, 2025 by switching
 to `oxrdflib`.
 
-On September 17, 2025, targeted retries with
-`PYTHONWARNINGS=error::DeprecationWarning`
-showed no remaining warnings in the CLI helper suite or distributed perf
-comparison test. The `sitecustomize.py` shim that rewrites
-`weasel.util.config` appears to be working, and the Click bump to 8.2.1 removed
-the original warning. After resyncing the `dev-minimal`, `test`, and `docs`
-extras, `uv run python scripts/check_env.py` still reports the expected
-toolchain, and evaluating `./scripts/setup.sh --print-path` exposes Go Task
-3.45.4 so the warnings sweep can run inside `task verify`.
-【0feb5e†L1-L17】【fa650a†L1-L10】【5d8a01†L1-L2】 The storage selections that
+On September 23, 2025 the warnings-as-errors sweep still cannot complete
+because `task check` halts in `flake8` after sourcing
+`./scripts/setup.sh --print-path`: `src/autoresearch/api/routing.py` assigns an
+unused `e` variable and `src/autoresearch/search/storage.py` imports
+`StorageError` without using it, so the suite fails before reaching
+`PYTHONWARNINGS=error::DeprecationWarning`.【153af2†L1-L2】【1dc5f5†L1-L24】【d726d5†L1-L3】
+`uv run python scripts/check_env.py` still reports the expected toolchain once
+the `dev-minimal` and `test` extras are synced, and the storage selections that
 previously aborted now succeed: `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` finishes with 135 passed, 2 skipped, 1 xfailed, and 1
-xpassed tests. 【dbf750†L1-L1】 The lone xpass comes from
-`tests/unit/test_storage_errors.py::test_setup_rdf_store_error`, so we still
-need to remove the stale xfail to keep coverage honest while the warning sweep
-runs. 【cd543d†L1-L1】 Once the xfail cleanup lands and the resource tracker fix
-is verified, rerun `task verify` with `PYTHONWARNINGS=error::DeprecationWarning`
-to confirm the suite stays quiet. Without the `[test]` extras Pytest still
-emits `PytestConfigWarning: Unknown config option: bdd_features_base_dir`
-during the storage simulations, so ensuring the extras are installed remains
-part of the cleanup. We must also restore spec lint compliance
-(`restore-spec-lint-template-compliance`) because the newest `task check` run
-stops in `scripts/lint_specs.py`, preventing `task verify` from reaching the
-warnings sweep until the monitor and extensions specs adopt the required
-headings.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
-`StorageManager._enforce_ram_budget` now skips deterministic node caps when the
-RAM helper reports 0 MB and no override is configured, so
+"storage" -q --maxfail=1` finishes with 136 passed, 2 skipped, 1 xfailed, and
+822 deselected tests, while `tests/unit/test_storage_errors.py::
+test_setup_rdf_store_error -q` passes without an xpass. 【0feb5e†L1-L17】【fa650a†L1-L10】【f6d3fb†L1-L2】【fba3a6†L1-L2】
+Spec lint is stable—`uv run python scripts/lint_specs.py` succeeds and the
+monitor plus extensions specs retain the required `## Simulation
+Expectations` heading—so restoring the warnings harness hinges on fixing the
+flake8 regressions and validating the resource tracker tear-down path.
+【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+Without the `[test]` extras Pytest still emits
+`PytestConfigWarning: Unknown config option: bdd_features_base_dir` during the
+storage simulations, so ensuring the extras are installed remains part of the
+cleanup. `StorageManager._enforce_ram_budget` still skips deterministic node
+caps when the RAM helper reports 0 MB and no override is configured, so
 `tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes` passes
-again and the storage selection no longer fails for that scenario.
-【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】【861261†L1-L2】
+again. 【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】
 
 ## Latest failure signatures (2025-09-20)
 
@@ -58,9 +53,9 @@ again and the storage selection no longer fails for that scenario.
   maintainers to restore the eviction behavior under warnings-as-errors.
 
 ## Dependencies
+
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
-- [remove-stale-xfail-for-rdf-store-error](remove-stale-xfail-for-rdf-store-error.md)
-- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
+- [clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md)
 
 ## Acceptance Criteria
 - Unit and integration tests run without deprecation warnings, including a

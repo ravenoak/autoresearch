@@ -1,28 +1,25 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 20, 2025**
-the Go Task CLI is available after evaluating `./scripts/setup.sh --print-path`,
-so `task --version` reports 3.45.4 in a fresh shell without re-running setup.
-【5d8a01†L1-L2】 `uv run python scripts/check_env.py` continues to list the
-expected toolchain when the `dev-minimal` and `test` extras are synced.
-【0feb5e†L1-L17】【fa650a†L1-L10】 Storage tests that previously aborted now
-complete: `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`
-returns 136 passed, 2 skipped, 1 xfailed, and 819 deselected tests after
-skipping deterministic caps when RAM metrics report 0 MB.
-【861261†L1-L2】 `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`
-passes cleanly, and `tests/unit/test_storage_eviction_sim.py::
-test_under_budget_keeps_nodes` is green again once `_enforce_ram_budget`
-ignores deterministic limits without an override.
-【f873bf†L1-L2】【c1571c†L1-L2】【F:src/autoresearch/storage.py†L596-L606】 Spec lint
-also holds: `uv run python scripts/lint_specs.py` exits cleanly and `uv run task
-check` reaches the remaining warnings work.
-【36f4f1†L1-L1】【F:STATUS.md†L33-L36】 `uv run --extra docs mkdocs build` continues to
-finish without navigation warnings, keeping the docs pipeline clear for the
-release. 【e808c5†L1-L2】 `task verify` still hinges on confirming the resource
-tracker fix and rerunning the warnings sweep with the new eviction logic, yet the
-extras coverage run completed and refreshed `baseline/coverage.xml`, recording a
-line-rate of 1 (100% line coverage) for the targeted modules.【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:docs/status/task-coverage-2025-09-17.md†L3-L12】【F:baseline/coverage.xml†L1-L2】
+organized by phases from the code complete plan. As of **September 23, 2025**
+the Go Task CLI remains available after sourcing the helper emitted by
+`./scripts/setup.sh --print-path`, and `task check` now fails during `flake8`
+because `src/autoresearch/api/routing.py` assigns an unused `e` variable while
+`src/autoresearch/search/storage.py` still imports `StorageError` despite only
+logging generic exceptions. 【1dc5f5†L1-L24】【d726d5†L1-L3】 `uv run python
+scripts/lint_specs.py` completes successfully and the monitor plus extensions
+specs contain the required `## Simulation Expectations` sections, so spec lint
+remains green even though the lint pass blocks the rest of the check pipeline.
+【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` continues to
+pass after the deterministic RAM cap fix, and
+`tests/unit/test_storage_errors.py::test_setup_rdf_store_error` is green without
+an xpass. 【f6d3fb†L1-L2】【fba3a6†L1-L2】 The docs pipeline stays clean:
+`uv run --extra docs mkdocs build` finishes without navigation warnings.
+【e808c5†L1-L2】 `task verify` still depends on confirming the resource tracker
+fix under warnings-as-errors and rerunning coverage with optional extras, and
+`baseline/coverage.xml` retains the refreshed targeted report with a line-rate
+of 1. 【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:baseline/coverage.xml†L1-L12】
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted
