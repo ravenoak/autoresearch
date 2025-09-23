@@ -23,17 +23,16 @@ confirmed in `pyproject.toml` and [installation.md](installation.md). Sourcing
 `./scripts/setup.sh --print-path` keeps Go Task 3.45.4 on the PATH, and
 `task check` still bootstraps the environment with Python 3.12.10 plus the
 expected tooling before halting in `flake8` due to the unused `e` assignment
-and lingering `StorageError` import tracked in
-[clean-up-flake8-regressions-in-routing-and-search-storage](../issues/clean-up-flake8-regressions-in-routing-and-search-storage.md).
+and lingering `StorageError` import tracked in the
+clean-up-flake8-regressions-in-routing-and-search-storage issue.
 【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 The
 storage suites stay green: `uv run --extra test pytest tests/unit -k "storage"
 -q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected, and 1
 xfailed tests, and the RDF store regression test passes without an xfail
 marker. 【714199†L1-L2】【F:issues/clean-up-flake8-regressions-in-routing-and-search-storage.md†L1-L40】
 Documentation builds succeed but emit a warning about the testing guidelines
-linking to `../wheels/gpu/README.md`, so
-[fix-testing-guidelines-gpu-link](../issues/fix-testing-guidelines-gpu-link.md)
-is now part of the release scope.
+linking to `../wheels/gpu/README.md`, so the fix-testing-guidelines-gpu-link
+issue is now part of the release scope.
 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 Spec lint remains
 recovered—`docs/specs/monitor.md` and `docs/specs/extensions.md` retain the
 required `## Simulation Expectations` sections—so the remaining release work

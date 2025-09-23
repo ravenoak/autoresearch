@@ -19,14 +19,14 @@ and 1 xfailed tests, and `baseline/coverage.xml` preserves a line-rate of 1 for
 the targeted suites. 【714199†L1-L2】【F:baseline/coverage.xml†L1-L12】
 Documentation builds now publish the GPU wheel cache instructions inside
 `docs/wheels/gpu.md`, and the navigation links the new page so the MkDocs
-warning cleared. `uv run --extra docs mkdocs build` still reports the existing
-`release_plan.md` links to the issues directory, which remain tracked by
-[fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md)
-alongside the resource tracker, warnings sweep, and coverage refresh tasks.
+warning cleared. `uv run --extra docs mkdocs build` now completes without
+missing-target warnings after the release plan references the open tickets by
+slug, so fix-release-plan-issue-links is archived alongside the resource
+tracker, warnings sweep, and coverage refresh tasks that remain open.
 【F:docs/wheels/gpu.md†L1-L24】【F:mkdocs.yml†L30-L55】【933fff†L1-L6】【F:docs/release_plan.md†L20-L36】
+【5dff0b†L1-L7】【42eb89†L1-L2】【b8d7c1†L1-L1】
 【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】
 【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
-【F:issues/fix-release-plan-issue-links.md†L1-L27】
 
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains

@@ -25,4 +25,4 @@ documentation build ahead of the v0.1.0a1 tag.
 
 ## Status
 
-Open
+Archived
