@@ -129,7 +129,7 @@ def _offline_fallback(extension_name: str, output_extension_dir: str) -> str | N
     """
     offline_vars = load_offline_env()
     logger.warning("Falling back to offline configuration")
-    path = offline_vars.get("VECTOR_EXTENSION_PATH") or os.getenv("VECTOR_EXTENSION_PATH")
+    path = offline_vars.get("VECTOR_EXTENSION_PATH")
     os.makedirs(output_extension_dir, exist_ok=True)
     if path and os.path.exists(path):
         dst = os.path.join(output_extension_dir, os.path.basename(path))
