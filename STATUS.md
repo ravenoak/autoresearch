@@ -13,6 +13,16 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 23, 2025
+- Reran `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers
+  gpu"` after `task verify:preflight` confirmed the hydrated GPU wheels; 908
+  unit, 331 integration, optional-extra sweeps, and 29 behavior tests all kept
+  coverage at 100% while the ≥90% gate succeeded.【abdf1f†L1-L1】【4e6478†L1-L8】
+  【15fae0†L1-L20】【74e81d†L1-L74】【887934†L1-L54】【b68e0e†L1-L68】 Synced
+  `baseline/coverage.xml`, logged the run in
+  `docs/status/task-coverage-2025-09-23.md`, and archived
+  [issues/archive/rerun-task-coverage-after-storage-fix.md].【F:baseline/coverage.xml†L1-L12】
+  【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
+  【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】
 - Removed the repository-wide `pkg_resources` suppression from `sitecustomize.py`
   and reran the warnings harness with `task verify:warnings:log`; the refreshed
   archive at `baseline/logs/verify-warnings-20250923T224648Z.log` records 890

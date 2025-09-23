@@ -33,5 +33,16 @@ clearing the new flake8 regressions before recomputing `baseline/coverage.xml`.
   cite the new run.
 - `mkdocs build` references the updated coverage log in the docs navigation.
 
+## Resolution
+
+- `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
+  completed on 2025-09-23 with 908 unit, 331 integration, optional-extra, and
+  29 behavior tests keeping coverage at 100% and satisfying the ≥90% gate.
+  `baseline/coverage.xml`, `docs/status/task-coverage-2025-09-23.md`,
+  `STATUS.md`, and `TASK_PROGRESS.md` now reflect the refreshed results.【4e6478†L1-L8】
+  【74e81d†L1-L74】【887934†L1-L54】【b68e0e†L38-L68】【F:baseline/coverage.xml†L1-L12】
+  【F:docs/status/task-coverage-2025-09-23.md†L1-L32】【F:STATUS.md†L13-L22】
+  【F:TASK_PROGRESS.md†L1-L24】
+
 ## Status
-Open
+Archived
