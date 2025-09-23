@@ -3,13 +3,14 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 23, 2025**
 the Go Task CLI remains available after sourcing the helper emitted by
-`./scripts/setup.sh --print-path`, and `task check` still halts in `flake8`
-after bootstrapping Python 3.12.10 plus the expected development tooling
-because `src/autoresearch/api/routing.py` retains the unused `e` assignment and
-`src/autoresearch/search/storage.py` still imports `StorageError` despite only
-logging generic exceptions.
-【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 The
-monitor and extensions specs continue to present the required
+`./scripts/setup.sh --print-path`, and `uv run task check` now completes with
+`flake8`, `mypy`, and the smoke tests succeeding after the routing lifespan
+logs storage setup failures and the search storage helper drops the unused
+import tracked in
+[issues/clean-up-flake8-regressions-in-routing-and-search-storage.md].
+【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
+【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
+The monitor and extensions specs continue to present the required
 `## Simulation Expectations` sections, keeping spec lint green.
 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】 Storage
 regressions remain resolved: `uv run --extra test pytest tests/unit -k

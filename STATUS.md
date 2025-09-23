@@ -13,6 +13,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 23, 2025
+- `uv run task check` now completes with `flake8`, `mypy`, and the smoke tests
+  passing after the API lifespan logs storage setup failures and the search
+  storage helper drops the unused import, so
+  [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md] can
+  close.
+  【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
+  【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
 - Sourced the Task helper with `./scripts/setup.sh --print-path` and confirmed
   `task --version` still reports 3.45.4 before rerunning `task check`.
   【153af2†L1-L2】【1dc5f5†L1-L24】
