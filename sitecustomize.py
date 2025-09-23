@@ -14,12 +14,6 @@ if not TYPE_CHECKING:  # pragma: no cover - runtime import
     import sys
     import types
 
-    warnings.filterwarnings(
-        "ignore",
-        message=".*pkg_resources.*",
-        category=DeprecationWarning,
-    )
-
     def _ensure_click_split_arg_string() -> None:
         """Provide a ``click.parser.split_arg_string`` compat shim."""
 

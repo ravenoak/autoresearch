@@ -44,7 +44,6 @@ For installation and usage instructions see the README.
 
 - handle-config-loader-patches-in-storage-teardown
 - prepare-first-alpha-release
-- resolve-deprecation-warnings-in-tests
 - resolve-resource-tracker-errors-in-verify
 - restore-distributed-coordination-simulation-exports
 

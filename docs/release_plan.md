@@ -39,7 +39,7 @@ required `## Simulation Expectations` sections—so the remaining release work
 hinges on fixing the lint regression, confirming the resource tracker teardown,
 running the warnings-as-errors sweep, refreshing coverage with optional extras,
 and repairing the MkDocs warning noted above.
-【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
+【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

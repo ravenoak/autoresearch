@@ -3,37 +3,20 @@
 ## Context
 
 Recent test runs emitted deprecation warnings from packages such as Click and
-fastembed. The `weasel.util.config` module used to trigger a warning because it
-imported `click.parser.split_arg_string`, which will move in Click 9.0. These
-warnings may become errors in future releases and obscure test output.
+fastembed. Earlier work replaced the noisy imports under
+`weasel.util.config` and refreshed dependency pins, but the suite continued to
+rely on a repository-wide `pkg_resources` filter inside `sitecustomize.py`,
+masking any regressions during `task verify:warnings` sweeps.
+【F:sitecustomize.py†L1-L37】
 
-`rdflib_sqlalchemy` warnings were eliminated on September 13, 2025 by switching
-to `oxrdflib`.
-
-On September 23, 2025 the warnings-as-errors sweep still cannot complete
-because `task check` halts in `flake8` after sourcing
-`./scripts/setup.sh --print-path`: `src/autoresearch/api/routing.py` assigns an
-unused `e` variable and `src/autoresearch/search/storage.py` imports
-`StorageError` without using it, so the suite fails before reaching
-`PYTHONWARNINGS=error::DeprecationWarning`.【153af2†L1-L2】【1dc5f5†L1-L24】【d726d5†L1-L3】
-`uv run python scripts/check_env.py` still reports the expected toolchain once
-the `dev-minimal` and `test` extras are synced, and the storage selections that
-previously aborted now succeed: `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` finishes with 136 passed, 2 skipped, 1 xfailed, and
-822 deselected tests, while `tests/unit/test_storage_errors.py::
-test_setup_rdf_store_error -q` passes without an xpass. 【0feb5e†L1-L17】【fa650a†L1-L10】【f6d3fb†L1-L2】【fba3a6†L1-L2】
-Spec lint is stable—`uv run python scripts/lint_specs.py` succeeds and the
-monitor plus extensions specs retain the required `## Simulation
-Expectations` heading—so restoring the warnings harness hinges on fixing the
-flake8 regressions and validating the resource tracker tear-down path.
-【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
-Without the `[test]` extras Pytest still emits
-`PytestConfigWarning: Unknown config option: bdd_features_base_dir` during the
-storage simulations, so ensuring the extras are installed remains part of the
-cleanup. `StorageManager._enforce_ram_budget` still skips deterministic node
-caps when the RAM helper reports 0 MB and no override is configured, so
-`tests/unit/test_storage_eviction_sim.py::test_under_budget_keeps_nodes` passes
-again. 【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】
+The final remediation dropped that blanket suppression and reran
+`task verify:warnings:log`, producing
+`baseline/logs/verify-warnings-20250923T224648Z.log`. The archive shows the unit
+(890 passed), integration (324 passed), and behavior (29 passed) suites
+completing with warnings promoted to errors, confirming the harness now runs
+cleanly. 【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1047-L1047】
+【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1442-L1442】
+【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1749】
 
 ## Latest failure signatures (2025-09-20)
 
@@ -51,6 +34,20 @@ again. 【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】
   "hnsw_enable_experimental_persistence" is not in the catalog`, suggesting the
   storage backend never prunes the first claim. Assign follow-up to the storage
   maintainers to restore the eviction behavior under warnings-as-errors.
+
+These signatures remain in the historical logs but no longer reproduce after
+the targeted API migrations and the `sitecustomize.py` cleanup above.
+
+## Resolution
+
+- Removed the global `warnings.filterwarnings` block from `sitecustomize.py` so
+  DeprecationWarnings surface during test runs. 【F:sitecustomize.py†L1-L37】
+- Re-ran `task verify:warnings:log`; the archived output shows the full suite
+  finishing without DeprecationWarnings or harness failures, and the log is now
+  stored at `baseline/logs/verify-warnings-20250923T224648Z.log` for reference.
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1047-L1047】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1442-L1442】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1749】
 
 ## Dependencies
 
@@ -102,4 +99,5 @@ again. 【F:src/autoresearch/storage.py†L596-L606】【c1571c†L1-L2】
   the passing log snapshot beside the earlier failures for provenance.
 
 ## Status
-Open
+Archived – `task verify:warnings` now completes without DeprecationWarning
+noise after removing the repository-wide filter and refreshing the baseline log.

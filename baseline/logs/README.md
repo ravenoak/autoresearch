@@ -25,5 +25,5 @@ cause the run to abort.
 - Look for `DeprecationWarning`, `FAILED`, `ERROR`, and pytest summary blocks to
   assign owners for follow-up work.
 - When a warning is resolved, keep the historical log but update
-  `issues/resolve-deprecation-warnings-in-tests.md` with the new status so the
+  `issues/archive/resolve-deprecation-warnings-in-tests.md` with the new status so the
   remediation plan stays current.
