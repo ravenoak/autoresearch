@@ -67,12 +67,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `clean-up-flake8-regressions-in-routing-and-search-storage` in the in-repo
   tracker.
   【ae37a4†L1-L12】【19a195†L1-L24】【b323ba†L1-L4】
-- `uv run --extra docs mkdocs build` now warns that
-  `docs/release_plan.md` links to the in-repo issues directory in addition to
-  the GPU wheels reference, so
-  [fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md) joins
-  [fix-testing-guidelines-gpu-link] on the release checklist before tagging
-  v0.1.0a1. 【aaf0c5†L1-L7】【F:docs/release_plan.md†L20-L36】
+- Updated `docs/release_plan.md` to mention issue slugs without linking outside
+  the documentation tree, so `uv run --extra docs mkdocs build` now finishes
+  without missing-target warnings and the fix-release-plan-issue-links ticket
+  can move to the archive.
+  【F:docs/release_plan.md†L20-L36】【5dff0b†L1-L7】【42eb89†L1-L2】【b8d7c1†L1-L1】
 
 ## September 22, 2025
 - Targeted the Streamlit UI helpers with `coverage run -m pytest` against the
