@@ -1,25 +1,31 @@
 # Resolve resource tracker errors in verify
 
 ## Context
+
 `task verify` previously exited with multiprocessing resource tracker
 `KeyError` messages after unit tests, preventing integration tests and
 coverage from completing.
 
-Evaluating `./scripts/setup.sh --print-path` now exposes Go Task 3.45.4 in the
-base shell, so `task verify` can run without an extra `uv` wrapper once the
-venv PATH helper is loaded. 【5d8a01†L1-L2】 The storage selections that
-previously crashed now complete: `uv run --extra test pytest tests/unit -k
-"storage" -q --maxfail=1` reports 135 passed, 2 skipped, 1 xfailed, and 1 xpassed
-tests. 【dbf750†L1-L1】 The next step is to rerun `task verify` directly (ideally
-with `PYTHONWARNINGS=error::DeprecationWarning`) to confirm the resource tracker
-tear-down path is stable now that the storage guard is fixed. Before that rerun
-we must realign the monitor and extensions specs with the lint template
-(`restore-spec-lint-template-compliance`) because `uv run python
-scripts/lint_specs.py` still fails, blocking the verify workflow until the
-headings are restored.【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
+Sourcing `./scripts/setup.sh --print-path` exposes Go Task 3.45.4 in the base
+shell so `task verify` can run without an extra `uv` wrapper once the PATH
+helper is loaded. 【153af2†L1-L2】 The storage selection that used to crash now
+finishes with 136 passed, 2 skipped, 1 xfailed, and 822 deselected tests, and
+the RDF store regression test passes without an xfail marker, so storage no
+longer blocks the teardown path. 【f6d3fb†L1-L2】【fba3a6†L1-L2】 Spec lint also
+holds: `uv run python scripts/lint_specs.py` succeeds and the monitor plus
+extensions specs retain the required `## Simulation Expectations` heading.
+【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+The outstanding blocker is the new `flake8` failure in `task check`, where
+`src/autoresearch/api/routing.py` assigns an unused `e` variable and
+`src/autoresearch/search/storage.py` imports `StorageError` without using it,
+so `task verify` will continue to stop in linting until that cleanup lands.
+【1dc5f5†L1-L24】【d726d5†L1-L3】 Re-run `task verify` (ideally with
+`PYTHONWARNINGS=error::DeprecationWarning`) after the lint fix to confirm the
+resource tracker shutdown path is stable.
 
 ## Dependencies
-- [restore-spec-lint-template-compliance](restore-spec-lint-template-compliance.md)
+
+- [clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md)
 
 ## Acceptance Criteria
 - `task verify` completes without resource tracker errors.

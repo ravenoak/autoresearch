@@ -12,6 +12,28 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 23, 2025
+- Sourced the Task helper with `./scripts/setup.sh --print-path` and confirmed
+  `task --version` still reports 3.45.4 before rerunning `task check`.
+  【153af2†L1-L2】【1dc5f5†L1-L24】
+- `task check` now fails during `flake8` because
+  `src/autoresearch/api/routing.py` assigns the `e` variable inside the
+  defensive storage setup handler without using it and
+  `src/autoresearch/search/storage.py` still imports `StorageError` even though
+  the helper only logs generic exceptions. 【d726d5†L1-L3】
+- `uv run python scripts/lint_specs.py` returns successfully and
+  `docs/specs/monitor.md` plus `docs/specs/extensions.md` include the
+  `## Simulation Expectations` heading, so the spec lint regression is cleared
+  while `task check` focuses on the new lint violations.
+  【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+- `uv run --extra test pytest
+  tests/unit/test_storage_errors.py::test_setup_rdf_store_error -q` now passes
+  without reporting an xpass, confirming the stale marker cleanup held.
+  【fba3a6†L1-L2】
+- Opened [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md]
+  to track the lint fixes required before the alpha release checklist can
+  proceed.
+
 ## September 22, 2025
 - Targeted the Streamlit UI helpers with `coverage run -m pytest` against the
   UI unit tests plus the new `tests/targeted` coverage checks; the follow-up
