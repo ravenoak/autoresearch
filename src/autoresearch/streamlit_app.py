@@ -10,7 +10,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
-from typing import Dict, Any, List, cast
+from typing import Any, Callable, Dict, List, cast
 import random
 import io
 import time
@@ -148,6 +148,24 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+
+def _trigger_rerun() -> None:
+    """Trigger a rerun using whichever Streamlit API is available.
+
+    Prefers the stable ``st.rerun`` API and falls back to the experimental variant for
+    compatibility with older Streamlit releases.
+
+    Returns:
+        None.
+    """
+
+    rerun: Callable[[], None]
+    if hasattr(st, "rerun"):
+        rerun = cast(Callable[[], None], getattr(st, "rerun"))
+    else:
+        rerun = cast(Callable[[], None], getattr(st, "experimental_rerun"))
+    rerun()
 
 
 def display_config_editor():
@@ -555,7 +573,7 @@ def display_agent_performance():
                     )
 
             st.success("Sample data added")
-            st.experimental_rerun()  # type: ignore[attr-defined]
+            _trigger_rerun()
 
         return
 
@@ -1339,7 +1357,7 @@ def display_query_history():
             st.session_state.rerun_triggered = True
 
             # Rerun the app to process the query
-            st.experimental_rerun()  # type: ignore[attr-defined]
+            _trigger_rerun()
 
     # Process query when button is clicked
     if st.session_state.run_button and st.session_state.current_query:
