@@ -2,14 +2,26 @@
 
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 23, 2025**
-the Go Task CLI remains available after sourcing the helper emitted by
+the optional extras preflight and `task coverage EXTRAS="nlp ui vss git
+distributed analysis llm parsers gpu"` sweep completed with 908 unit, 331
+integration, optional-extra, and 29 behavior tests holding 100% line coverage
+under the ≥90% gate. `baseline/coverage.xml`,
+`docs/status/task-coverage-2025-09-23.md`, `STATUS.md`, and this file capture
+the refreshed run, allowing
+[issues/archive/rerun-task-coverage-after-storage-fix.md] to close.
+【abdf1f†L1-L1】【4e6478†L1-L8】【74e81d†L1-L74】【887934†L1-L54】【15fae0†L1-L20】
+【b68e0e†L38-L68】【F:baseline/coverage.xml†L1-L12】
+【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
+【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】
+The Go Task CLI remains available after sourcing the helper emitted by
 `./scripts/setup.sh --print-path`, and `uv run task check` now completes with
 `flake8`, `mypy`, and the smoke tests succeeding after the routing lifespan
 logs storage setup failures and the search storage helper drops the unused
 import tracked in
 [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md].
-【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
-【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
+【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【60cf8b†L1-L35】
+【0e7eac†L1-L4】【68d011†L1-L1】【F:src/autoresearch/api/routing.py†L55-L489】
+【F:src/autoresearch/search/storage.py†L1-L33】
 The first warnings-as-errors `task verify` attempt, captured in
 `baseline/logs/task-verify-20250923T204706Z.log`, stopped at
 `tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`.
@@ -42,7 +54,7 @@ tracker, warnings sweep, and coverage refresh tasks that remain open.
 【5dff0b†L1-L7】【42eb89†L1-L2】【b8d7c1†L1-L1】
 【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
 【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
-【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
+【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
@@ -272,9 +284,12 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Running `uv run task coverage` with the full extras suite now reports **100%**
-line coverage (line-rate 1) in the refreshed `baseline/coverage.xml`, aligning
-with the ≥90% summary captured in the latest coverage status log.【F:baseline/coverage.xml†L1-L2】【F:docs/status/task-coverage-2025-09-17.md†L3-L12】
+Running `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers
+gpu"` now reports **100%** line coverage (57/57) in
+`baseline/coverage.xml`, with details recorded in
+`docs/status/task-coverage-2025-09-23.md`.【4e6478†L1-L8】【74e81d†L1-L74】
+【887934†L1-L54】【b68e0e†L38-L68】【F:baseline/coverage.xml†L1-L12】
+【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
 
 ### Latest Test Results
 
