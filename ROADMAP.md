@@ -27,9 +27,14 @@ testing guidelines link to `../wheels/gpu/README.md`, so
 [fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
 tracks the cleanup required for warning-free release builds.
 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 The release sequence
-therefore depends on closing the lint ticket above, confirming resource tracker
-teardown, sweeping deprecations, refreshing coverage with optional extras, and
-repairing the MkDocs warning before executing the alpha checklist.
+therefore depends on confirming resource tracker teardown, sweeping
+deprecations, refreshing coverage with optional extras, and repairing the
+MkDocs warning before executing the alpha checklist. The spec template lint
+cleanup is archived as
+[spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
+and coverage follow-ups
+remain with
+[issues/rerun-task-coverage-after-storage-fix.md](issues/rerun-task-coverage-after-storage-fix.md).
 【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 ## Milestones
@@ -49,7 +54,10 @@ repairing the MkDocs warning before executing the alpha checklist.
     - [prepare-first-alpha-release]
     - [resolve-resource-tracker-errors-in-verify]
     - [resolve-deprecation-warnings-in-tests]
-    - [restore-spec-lint-template-compliance]
+    - [rerun-task-coverage-after-storage-fix](issues/rerun-task-coverage-after-storage-fix.md)
+  - The spec template lint cleanup is archived as
+    [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
+    so the coverage rerun ticket inherits the remaining release check.
 
 See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
@@ -59,8 +67,9 @@ for the alpha release checklist.
   issues/resolve-resource-tracker-errors-in-verify.md
 [resolve-deprecation-warnings-in-tests]:
   issues/resolve-deprecation-warnings-in-tests.md
-[restore-spec-lint-template-compliance]:
-  issues/restore-spec-lint-template-compliance.md
+
+[restore-spec-lint-template-compliance-archived]:
+  issues/archive/restore-spec-lint-template-compliance.md
 
 ## 0.1.0a1 – Alpha preview
 

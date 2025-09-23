@@ -745,7 +745,7 @@ regression is resolved.
   tests once the dependent issues above close.
 - [rerun-task-coverage-after-storage-fix](
   issues/rerun-task-coverage-after-storage-fix.md) – Refresh coverage once
-  the spec lint and storage follow-ups are closed.
-- [restore-spec-lint-template-compliance](
-  issues/restore-spec-lint-template-compliance.md) – Realign spec documents
-  with the enforced template so `task check` reaches linting and tests.
+  the storage follow-ups are closed and confirm the spec template cleanup,
+  archived as
+  [issues/archive/restore-spec-lint-template-compliance.md](issues/archive/restore-spec-lint-template-compliance.md),
+  remains satisfied.
