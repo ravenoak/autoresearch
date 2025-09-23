@@ -19,9 +19,10 @@ also holds: `uv run python scripts/lint_specs.py` exits cleanly and `uv run task
 check` reaches the remaining warnings work.
 【36f4f1†L1-L1】【F:STATUS.md†L33-L36】 `uv run --extra docs mkdocs build` continues to
 finish without navigation warnings, keeping the docs pipeline clear for the
-release. 【e808c5†L1-L2】 `task verify` and coverage remain blocked on verifying
-the resource tracker fix and rerunning the warnings sweep with the new eviction
-logic.【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】
+release. 【e808c5†L1-L2】 `task verify` still hinges on confirming the resource
+tracker fix and rerunning the warnings sweep with the new eviction logic, yet the
+extras coverage run completed and refreshed `baseline/coverage.xml`, recording a
+line-rate of 1 (100% line coverage) for the targeted modules.【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:docs/status/task-coverage-2025-09-17.md†L3-L12】【F:baseline/coverage.xml†L1-L2】
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted
@@ -250,9 +251,9 @@ These behavior test issues remain open until the test suite passes.
 
 ### Coverage Report
 
-Running a focused subset of tests with coverage produced **32%** line coverage
-across targeted modules. Full `task coverage` was attempted but could not
-complete in this environment.
+Running `uv run task coverage` with the full extras suite now reports **100%**
+line coverage (line-rate 1) in the refreshed `baseline/coverage.xml`, aligning
+with the ≥90% summary captured in the latest coverage status log.【F:baseline/coverage.xml†L1-L2】【F:docs/status/task-coverage-2025-09-17.md†L3-L12】
 
 ### Latest Test Results
 
