@@ -3,23 +3,25 @@
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **September 23, 2025**
 the Go Task CLI remains available after sourcing the helper emitted by
-`./scripts/setup.sh --print-path`, and `task check` now fails during `flake8`
-because `src/autoresearch/api/routing.py` assigns an unused `e` variable while
+`./scripts/setup.sh --print-path`, and `task check` still halts in `flake8`
+after bootstrapping Python 3.12.10 plus the expected development tooling
+because `src/autoresearch/api/routing.py` retains the unused `e` assignment and
 `src/autoresearch/search/storage.py` still imports `StorageError` despite only
-logging generic exceptions. 【1dc5f5†L1-L24】【d726d5†L1-L3】 `uv run python
-scripts/lint_specs.py` completes successfully and the monitor plus extensions
-specs contain the required `## Simulation Expectations` sections, so spec lint
-remains green even though the lint pass blocks the rest of the check pipeline.
-【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` continues to
-pass after the deterministic RAM cap fix, and
-`tests/unit/test_storage_errors.py::test_setup_rdf_store_error` is green without
-an xpass. 【f6d3fb†L1-L2】【fba3a6†L1-L2】 The docs pipeline stays clean:
-`uv run --extra docs mkdocs build` finishes without navigation warnings.
-【e808c5†L1-L2】 `task verify` still depends on confirming the resource tracker
-fix under warnings-as-errors and rerunning coverage with optional extras, and
-`baseline/coverage.xml` retains the refreshed targeted report with a line-rate
-of 1. 【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:baseline/coverage.xml†L1-L12】
+logging generic exceptions.
+【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 The
+monitor and extensions specs continue to present the required
+`## Simulation Expectations` sections, keeping spec lint green.
+【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】 Storage
+regressions remain resolved: `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` still reports 136 passed, 2 skipped, 822 deselected,
+and 1 xfailed tests, and `baseline/coverage.xml` preserves a line-rate of 1 for
+the targeted suites. 【714199†L1-L2】【F:baseline/coverage.xml†L1-L12】
+Documentation builds now surface a MkDocs warning about the GPU wheels link in
+`docs/testing_guidelines.md`, so closing
+[fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
+joins the existing release blockers alongside the resource tracker, warnings
+sweep, and coverage refresh tracked in the issue queue.
+【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted

@@ -20,26 +20,27 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md). Sourcing
-`./scripts/setup.sh --print-path` keeps Go Task 3.45.4 on the PATH so `task`
-commands and `task check` can run with the latest extras in place.
-【153af2†L1-L2】【1dc5f5†L1-L24】 The storage suites stay green:
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` finishes
-with 136 passed, 2 skipped, 1 xfailed, and 822 deselected tests, and the RDF
-store regression test passes without an xfail marker.
-【f6d3fb†L1-L2】【fba3a6†L1-L2】 After syncing the docs extras,
-`uv run --extra docs mkdocs build` completes without navigation warnings, so
-the documentation pipeline remains ready for release builds. 【e808c5†L1-L2】
-`task check` now stops in `flake8` because
-`src/autoresearch/api/routing.py` assigns an unused `e` variable and
-`src/autoresearch/search/storage.py` imports `StorageError` without using it,
-so the new lint cleanup issue coordinates the fix before `task verify` and
-`task coverage` reruns.
-【d726d5†L1-L3】【F:issues/clean-up-flake8-regressions-in-routing-and-search-storage.md†L1-L40】
-Spec lint has recovered—`uv run python scripts/lint_specs.py` succeeds and the
-monitor plus extensions specs include the required `## Simulation Expectations`
-heading—so the remaining release work hinges on warnings-as-errors verification
-and the coverage refresh tracked in STATUS.md.
-【b7abba†L1-L1】【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+`./scripts/setup.sh --print-path` keeps Go Task 3.45.4 on the PATH, and
+`task check` still bootstraps the environment with Python 3.12.10 plus the
+expected tooling before halting in `flake8` due to the unused `e` assignment
+and lingering `StorageError` import tracked in
+[clean-up-flake8-regressions-in-routing-and-search-storage](../issues/clean-up-flake8-regressions-in-routing-and-search-storage.md).
+【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 The
+storage suites stay green: `uv run --extra test pytest tests/unit -k "storage"
+-q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected, and 1
+xfailed tests, and the RDF store regression test passes without an xfail
+marker. 【714199†L1-L2】【F:issues/clean-up-flake8-regressions-in-routing-and-search-storage.md†L1-L40】
+Documentation builds succeed but emit a warning about the testing guidelines
+linking to `../wheels/gpu/README.md`, so
+[fix-testing-guidelines-gpu-link](../issues/fix-testing-guidelines-gpu-link.md)
+is now part of the release scope.
+【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 Spec lint remains
+recovered—`docs/specs/monitor.md` and `docs/specs/extensions.md` retain the
+required `## Simulation Expectations` sections—so the remaining release work
+hinges on fixing the lint regression, confirming the resource tracker teardown,
+running the warnings-as-errors sweep, refreshing coverage with optional extras,
+and repairing the MkDocs warning noted above.
+【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

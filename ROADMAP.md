@@ -4,32 +4,33 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 19, 2025**.
+[README](README.md). Last updated **September 23, 2025**.
 
 ## Status
 
 See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
-across project documentation. Loading the PATH helper emitted by
-`./scripts/setup.sh --print-path` makes `task --version` report 3.45.4 in the
-base shell, and `uv run python scripts/check_env.py` confirms the expected
-toolchain whenever the `dev-minimal` and `test` extras are synced.
-【5d8a01†L1-L2】【0feb5e†L1-L17】【fa650a†L1-L10】 Storage regressions are contained:
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` reports 135
-passed, 2 skipped, 1 xfailed, and 1 xpassed tests. 【dbf750†L1-L1】 The lone xpass
-comes from `tests/unit/test_storage_errors.py::test_setup_rdf_store_error`,
-which still succeeds despite the stale xfail marker. 【cd543d†L1-L1】
-`uv run python scripts/lint_specs.py` fails because `docs/specs/monitor.md` and
-`docs/specs/extensions.md` drifted from the spec template, and
-`issues/restore-spec-lint-template-compliance.md` tracks the fix so linting can
-reach tests again. 【4076c9†L1-L2】【F:issues/restore-spec-lint-template-compliance.md†L1-L33】
-`uv run --extra docs mkdocs build` succeeds without navigation warnings,
-confirming the documentation pipeline stays green. 【e808c5†L1-L2】 Release
-blockers therefore include restoring spec lint compliance, running
-`task verify` without resource tracker errors, sweeping for deprecation warnings
-with `PYTHONWARNINGS=error::DeprecationWarning`, refreshing coverage, and then
-closing the alpha-release checklist.【F:issues/restore-spec-lint-template-compliance.md†L1-L33】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】
+across project documentation. Sourcing the PATH helper emitted by
+`./scripts/setup.sh --print-path` keeps `task --version` at 3.45.4, and the
+`task check` bootstrap reconfirms Python 3.12.10 plus the expected
+development-toolchain packages even though the run still stops in `flake8`
+because of the unused `e` assignment and stale `StorageError` import tracked in
+[clean-up-flake8-regressions-in-routing-and-search-storage](issues/clean-up-flake8-regressions-in-routing-and-search-storage.md).
+【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 Storage
+regressions remain contained: `uv run --extra test pytest tests/unit -k
+"storage" -q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected,
+and 1 xfailed tests after about 73 seconds. 【714199†L1-L2】 Spec coverage still
+maps every module to specifications with proofs, simulations, or tests.
+【F:SPEC_COVERAGE.md†L1-L120】 Documentation builds succeed but now warn that the
+testing guidelines link to `../wheels/gpu/README.md`, so
+[fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
+tracks the cleanup required for warning-free release builds.
+【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 The release sequence
+therefore depends on closing the lint ticket above, confirming resource tracker
+teardown, sweeping deprecations, refreshing coverage with optional extras, and
+repairing the MkDocs warning before executing the alpha checklist.
+【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 ## Milestones
 

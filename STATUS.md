@@ -34,6 +34,21 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   to track the lint fixes required before the alpha release checklist can
   proceed.
 
+- Reloaded the PATH snippet from `./scripts/setup.sh --print-path` so
+  `task --version` reports 3.45.4 before rerunning `task check`; the run still
+  halts in `flake8` because the unused `e` assignment and dead `StorageError`
+  import remain, matching the open lint ticket, and the `check_env` step again
+  reports the expected Python 3.12.10 toolchain plus project dependencies.
+  【744f05†L1-L7】【152f28†L1-L2】【cd3ade†L1-L3】【48cdde†L1-L25】【910056†L1-L9】
+- Reconfirmed the storage regression suite stays green with
+  `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`, which
+  still finishes with 136 passed, 2 skipped, 822 deselected, and 1 xfailed
+  tests after 72.95s. 【714199†L1-L2】
+- `uv run --extra docs mkdocs build` now completes in 6.6 seconds but emits a
+  warning that `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
+  outside the documentation tree, so the release checklists must add a cleanup
+  task. 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】
+
 ## September 22, 2025
 - Targeted the Streamlit UI helpers with `coverage run -m pytest` against the
   UI unit tests plus the new `tests/targeted` coverage checks; the follow-up
