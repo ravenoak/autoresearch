@@ -13,6 +13,22 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 23, 2025
+- Captured a warnings-as-errors `task verify` run that halted at
+  `tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`,
+  removed the fallback import, and reran the command from the Task PATH helper
+  so the full pipeline could execute; logs live at
+  `baseline/logs/task-verify-20250923T204706Z.log` and
+  `baseline/logs/task-verify-20250923T204732Z.log`.
+  【F:baseline/logs/task-verify-20250923T204706Z.log†L1-L43】【F:tests/targeted/test_extras_codepaths.py†L9-L22】
+  【a74637†L1-L3】
+- The second run completed 890 unit, 324 integration, and 29 behavior tests
+  with coverage still at 100% and no resource tracker errors; the archived
+  `resolve-resource-tracker-errors-in-verify` ticket documents the closure.
+  【F:baseline/logs/task-verify-20250923T204732Z.log†L1046-L1046】
+  【F:baseline/logs/task-verify-20250923T204732Z.log†L1441-L1441】
+  【F:baseline/logs/task-verify-20250923T204732Z.log†L1748-L1785】
+  【F:baseline/logs/task-verify-20250923T204732Z.log†L1774-L1785】
+  【128a65†L1-L2】【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
 - `uv run task check` now completes with `flake8`, `mypy`, and the smoke tests
   passing after the API lifespan logs storage setup failures and the search
   storage helper drops the unused import, so

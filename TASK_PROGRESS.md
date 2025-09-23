@@ -10,6 +10,21 @@ import tracked in
 [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md].
 【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
 【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
+The first warnings-as-errors `task verify` attempt, captured in
+`baseline/logs/task-verify-20250923T204706Z.log`, stopped at
+`tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`.
+Removing that fallback import enabled the rerun to execute under
+`PYTHONWARNINGS=error::DeprecationWarning`, finishing 890 unit, 324
+integration, and 29 behavior tests with full coverage and no resource tracker
+messages in `baseline/logs/task-verify-20250923T204732Z.log` before archiving
+[issues/archive/resolve-resource-tracker-errors-in-verify.md].
+【F:baseline/logs/task-verify-20250923T204706Z.log†L1-L43】【F:tests/targeted/test_extras_codepaths.py†L9-L22】
+【a74637†L1-L3】【F:baseline/logs/task-verify-20250923T204732Z.log†L2-L6】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1046-L1046】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1441-L1441】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1748-L1785】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1774-L1785】【128a65†L1-L2】
+【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
 The monitor and extensions specs continue to present the required
 `## Simulation Expectations` sections, keeping spec lint green.
 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】 Storage
@@ -25,7 +40,8 @@ slug, so fix-release-plan-issue-links is archived alongside the resource
 tracker, warnings sweep, and coverage refresh tasks that remain open.
 【F:docs/wheels/gpu.md†L1-L24】【F:mkdocs.yml†L30-L55】【933fff†L1-L6】【F:docs/release_plan.md†L20-L36】
 【5dff0b†L1-L7】【42eb89†L1-L2】【b8d7c1†L1-L1】
-【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】
+【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
+【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】
 【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
@@ -271,10 +287,16 @@ Full suite attempts:
 Result: 8 passed in ~1s
 
 ```
-./.venv/bin/task verify
+PYTHONWARNINGS=error::DeprecationWarning ./.venv/bin/task verify
 ```
 
-Result: `tests/unit/test_api_auth_middleware.py::test_resolve_role_missing_key` failed.
+Result: 890 passed, 33 skipped, 25 deselected, 8 xfailed, and 5 xpassed in
+~166s with integration and behavior follow-ups pushing totals to 324 and 29
+additional passes while coverage stayed at 100%.
+【a74637†L1-L3】【F:baseline/logs/task-verify-20250923T204732Z.log†L1046-L1046】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1441-L1441】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1748-L1785】
+【F:baseline/logs/task-verify-20250923T204732Z.log†L1774-L1785】
 
 ### Performance Baselines
 
