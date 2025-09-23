@@ -131,7 +131,7 @@ installs only `dev-minimal` and `test` extras by default; add groups with
 - [ ] `uv run mypy src`
 - [ ] `uv run pytest -q`
 - [ ] `uv run pytest tests/behavior`
-- [ ] `task coverage` reports **90% coverage** for targeted modules; keep docs
+- [ ] `task coverage` reports **100% coverage** for targeted modules; keep docs
   in sync and stay above **90%**
 - [ ] `scripts/update_coverage_docs.py` syncs docs with
   `baseline/coverage.xml`
