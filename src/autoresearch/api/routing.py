@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from typing import Any, List, Optional, cast
 from uuid import uuid4
@@ -50,6 +51,8 @@ from .utils import (
 )
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 router.post("/query/stream", dependencies=[require_permission("query")])(query_stream_endpoint)
 
@@ -478,9 +481,12 @@ def create_app(
     async def lifespan(app: FastAPI):
         try:
             StorageManager.setup()
-        except Exception as e:  # pragma: no cover - defensive for environments without storage
+        except Exception:  # pragma: no cover - defensive for environments without storage
             # Continue without storage; API endpoints used in tests may mock orchestrator/storage
-            pass
+            logger.warning(
+                "StorageManager setup failed; continuing without storage",
+                exc_info=True,
+            )
         watch_ctx = loader.watching()
         watch_ctx.__enter__()
         app.state.watch_ctx = watch_ctx

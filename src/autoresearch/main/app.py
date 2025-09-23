@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 import time
@@ -61,9 +62,11 @@ app._cli_visualize = _cli_visualize  # type: ignore[attr-defined]
 app._cli_visualize_query = _cli_visualize_query  # type: ignore[attr-defined]
 # Expose a patchable orchestrator handle for tests, defaulting to the real class
 try:
-    from ..orchestration.orchestrator import Orchestrator as Orchestrator  # type: ignore[no-redef]
+    _orchestrator_module = importlib.import_module("autoresearch.orchestration.orchestrator")
 except Exception:  # pragma: no cover - fallback for environments without extras
-    Orchestrator = None  # type: ignore[assignment]
+    Orchestrator: Any | None = None
+else:
+    Orchestrator = getattr(_orchestrator_module, "Orchestrator", None)
 configure_logging()
 _config_loader: ConfigLoader = ConfigLoader()
 
@@ -334,9 +337,15 @@ def search(
     from ..output_format import OutputFormatter
 
     # Resolve orchestrator: prefer module-level handle (for tests) else import
-    OrchestratorLocal = Orchestrator if "Orchestrator" in globals() and Orchestrator is not None else None  # type: ignore[name-defined]
-    if OrchestratorLocal is None:  # type: ignore[truthy-function]
-        from ..orchestration.orchestrator import Orchestrator as OrchestratorLocal
+    OrchestratorLocal = Orchestrator
+    if OrchestratorLocal is None:
+        from ..orchestration.orchestrator import Orchestrator as _OrchestratorLocal
+
+        OrchestratorLocal = _OrchestratorLocal
+    if OrchestratorLocal is None:
+        raise RuntimeError(
+            "Autoresearch orchestrator is unavailable. Install optional extras to run queries.",
+        )
 
     updates: dict[str, Any] = {}
     if reasoning_mode is not None:
@@ -367,7 +376,7 @@ def search(
 
     if ontology:
         StorageManager.load_ontology(ontology)
-    if ontology_reasoning:
+    if ontology_reasoning and Orchestrator is not None:
         Orchestrator.infer_relations()
 
     # Check if query is empty or missing (this shouldn't happen with typer, but just in case)
@@ -402,14 +411,14 @@ def search(
                     total=len(groups),
                 )
                 # Respect test monkeypatching by using the module-level orchestrator handle
-                result = OrchestratorLocal.run_parallel_query(query, config, groups)  # type: ignore[attr-defined]
+                result = OrchestratorLocal.run_parallel_query(query, config, groups)
             else:
                 task = progress.add_task(
                     "[green]Processing query...",
                     total=loops,
                 )
                 # Use the resolved orchestrator (monkeypatched in tests when provided)
-                result = OrchestratorLocal().run_query(  # type: ignore[operator]
+                result = OrchestratorLocal().run_query(
                     query,
                     config,
                     callbacks={"on_cycle_end": on_cycle_end},

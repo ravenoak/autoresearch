@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from ..errors import StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
 
