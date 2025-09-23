@@ -27,7 +27,14 @@ class SearchCache:
     def __init__(self, db_path: Optional[str] = None) -> None:
         self._db_lock = Lock()
         self._db: Optional[TinyDB] = None
-        self._db_path = Path(db_path) if db_path is not None else _db_path
+        # Use a per-instance ephemeral path under pytest to avoid cross-test leakage
+        if db_path is None and os.environ.get("PYTEST_CURRENT_TEST"):
+            from pathlib import Path as _P
+            tmpdir = _P(".pytest_cache")
+            tmpdir.mkdir(exist_ok=True)
+            self._db_path = tmpdir / f"tinydb_{os.getpid()}_{id(self)}.json"
+        else:
+            self._db_path = Path(db_path) if db_path is not None else _db_path
         # Eagerly initialise so the file exists for tests
         self.setup()
 

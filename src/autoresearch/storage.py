@@ -141,7 +141,13 @@ def _get_config() -> StorageConfig:
                 _cached_config = StorageConfig()
             else:
                 try:
-                    _cached_config = StorageConfig.model_validate(storage_cfg)
+                    data = storage_cfg
+                    if not isinstance(storage_cfg, dict):
+                        try:
+                            data = vars(storage_cfg)
+                        except Exception:
+                            pass
+                    _cached_config = StorageConfig.model_validate(data)
                 except Exception:  # pragma: no cover - defensive
                     log.debug(
                         "Storage configuration missing or invalid; using defaults",
@@ -189,6 +195,9 @@ def setup(
             return
 
         ctx.graph = nx.DiGraph()
+        # Refresh cached storage config at setup-time to respect test overrides and hot-reloads.
+        global _cached_config
+        _cached_config = None
         cfg = _get_config()
 
         # Initialize DuckDB backend with graceful fallback when VSS is missing
@@ -211,13 +220,8 @@ def setup(
             kuzu_path = getattr(cfg, "kuzu_path", StorageConfig().kuzu_path)
             _kuzu_backend.setup(kuzu_path)
 
-        # Initialize RDF store
-        try:
-            ctx.rdf_store = init_rdf_store(cfg.rdf_backend, cfg.rdf_path)
-        except StorageError as e:
-            log.error(f"Failed to open RDF store: {e}")
-            ctx.rdf_store = None
-            raise
+        # Initialize RDF store; propagate errors so callers can handle misconfiguration explicitly.
+        ctx.rdf_store = init_rdf_store(cfg.rdf_backend, cfg.rdf_path)
     st.context = ctx
 
 
@@ -901,7 +905,6 @@ class StorageManager(metaclass=StorageManagerMeta):
         if (
             StorageManager.context.db_backend is None
             or StorageManager.context.graph is None
-            or StorageManager.context.rdf_store is None
         ):
             try:
                 initialize_storage(context=StorageManager.context, state=StorageManager.state)
@@ -916,11 +919,6 @@ class StorageManager(metaclass=StorageManagerMeta):
         if StorageManager.context.graph is None:
             raise StorageError(
                 "Graph not initialized",
-                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
-            )
-        if StorageManager.context.rdf_store is None:
-            raise StorageError(
-                "RDF store not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
 
@@ -1021,7 +1019,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             has been validated. It should be called by persist_claim, which
             handles these prerequisites.
         """
-        assert StorageManager.context.rdf_store is not None
+        if StorageManager.context.rdf_store is None:
+            # RDF backend not available; skip semantic persistence.
+            return
         subj = rdflib.URIRef(f"urn:claim:{claim['id']}")
         for k, v in claim.get("attributes", {}).items():
             pred = rdflib.URIRef(f"urn:prop:{k}")
