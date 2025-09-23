@@ -10,7 +10,6 @@ try:
     from tests.optional_imports import import_or_skip
 except Exception:  # pragma: no cover - path fallback for --noconftest runs
     import importlib.util
-    import sys
     from pathlib import Path as _Path
 
     _mod_path = _Path(__file__).resolve().parents[1] / "optional_imports.py"
