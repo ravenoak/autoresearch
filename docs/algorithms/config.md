@@ -44,6 +44,6 @@ policies before returning control to callers.[p1]
 
 - [Resolve deprecation warnings in tests][issue]
 
-[issue]: ../../issues/resolve-deprecation-warnings-in-tests.md
+[issue]: ../../issues/archive/resolve-deprecation-warnings-in-tests.md
 [p1]: ../algorithms/config_weight_sum_simulation.md
 [t]: ../../tests/unit/test_config_loader_defaults.py

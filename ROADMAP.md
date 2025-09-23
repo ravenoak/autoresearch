@@ -37,7 +37,7 @@ cleanup is archived as
 and coverage follow-ups
 remain with
 [issues/rerun-task-coverage-after-storage-fix.md](issues/rerun-task-coverage-after-storage-fix.md).
-【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
+【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 ## Milestones
 
@@ -55,7 +55,7 @@ remain with
   - Stability goals depend on closing:
     - [prepare-first-alpha-release]
     - [resolve-resource-tracker-errors-in-verify]
-    - [resolve-deprecation-warnings-in-tests]
+    - [resolve-deprecation-warnings-in-tests (archived)](issues/archive/resolve-deprecation-warnings-in-tests.md)
     - [rerun-task-coverage-after-storage-fix](issues/rerun-task-coverage-after-storage-fix.md)
   - The spec template lint cleanup is archived as
     [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
@@ -67,8 +67,8 @@ for the alpha release checklist.
 [prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
 [resolve-resource-tracker-errors-in-verify]:
   issues/resolve-resource-tracker-errors-in-verify.md
-[resolve-deprecation-warnings-in-tests]:
-  issues/resolve-deprecation-warnings-in-tests.md
+[resolve-deprecation-warnings-in-tests (archived)]:
+  issues/archive/resolve-deprecation-warnings-in-tests.md
 
 [restore-spec-lint-template-compliance-archived]:
   issues/archive/restore-spec-lint-template-compliance.md
@@ -91,8 +91,8 @@ release is re-targeted for **September 15, 2026**. Key activities include:
   ([issues/archive/restore-distributed-coordination-simulation-exports.md](issues/archive/restore-distributed-coordination-simulation-exports.md)).
 - [ ] `task verify` completes without resource tracker errors
   ([resolve-resource-tracker-errors-in-verify]).
-- [ ] Deprecation warnings removed from test runs
-  ([resolve-deprecation-warnings-in-tests]).
+- [x] Deprecation warnings removed from test runs
+  ([resolve-deprecation-warnings-in-tests (archived)]).
 - [ ] Coverage and release packaging finalized for the alpha tag
   ([prepare-first-alpha-release]).
 - [ ] Storage setup concurrency crash resolved
@@ -165,7 +165,7 @@ The 1.0.0 milestone aims for a polished, production-ready system:
 - Integration stability depends on closing
   [address-storage-setup-concurrency-crash],
   [resolve-resource-tracker-errors-in-verify], and
-  [resolve-deprecation-warnings-in-tests].
+  [resolve-deprecation-warnings-in-tests (archived)].
 - Long-term operations rely on keeping the distributed and monitor
   specifications in sync with implementation changes; both docs were reviewed
   on September 17, 2025.

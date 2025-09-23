@@ -41,7 +41,7 @@ tracker, warnings sweep, and coverage refresh tasks that remain open.
 【F:docs/wheels/gpu.md†L1-L24】【F:mkdocs.yml†L30-L55】【933fff†L1-L6】【F:docs/release_plan.md†L20-L36】
 【5dff0b†L1-L7】【42eb89†L1-L2】【b8d7c1†L1-L1】
 【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
-【F:issues/resolve-deprecation-warnings-in-tests.md†L1-L39】
+【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
 【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
 
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage

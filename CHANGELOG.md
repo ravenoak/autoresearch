@@ -6,13 +6,20 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Archived [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md)
+  after removing the repository-wide `pkg_resources` suppression from
+  `sitecustomize.py` and capturing a clean `task verify:warnings:log` run at
+  `baseline/logs/verify-warnings-20250923T224648Z.log`.
+  【F:sitecustomize.py†L1-L37】【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1047-L1047】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1442-L1442】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1749】
 - Documented deterministic eviction fallback when OS metrics are unavailable
   and enforced ranking weight sums before normalization across the storage and
   search modules.
 - Migrated integration tests to use `content=` with `httpx`, pinned the
   dependency to the 0.28.x series, and recorded the `content` deprecation
   warning in
-  [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
+  [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md).
 - Prevented overweight search ranking vectors from being silently normalised by
   raising a `ConfigError` and documenting the behaviour in
   [docs/specs/config.md](docs/specs/config.md).
@@ -33,7 +40,7 @@ Reference issues by slugged filename (for example,
   `OnnxTextEmbedding` entry point, updated stubs and tests to mirror the public
   API, and noted the migration in
   [resolve-deprecation-warnings-in-tests](
-    issues/resolve-deprecation-warnings-in-tests.md).
+    issues/archive/resolve-deprecation-warnings-in-tests.md).
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

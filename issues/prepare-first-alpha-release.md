@@ -46,7 +46,7 @@ before drafting release notes and tagging v0.1.0a1.
 - **Harden warnings-as-errors harness** – Implement the multi-PR remediation
   plan to capture deprecations, refactor callers, and pin or filter remaining
   warnings so future runs stay clean.
-  ([resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md))
+  ([resolve-deprecation-warnings-in-tests (archived)](archive/resolve-deprecation-warnings-in-tests.md))
 - **Refresh coverage with optional extras** – Execute
   `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
   once the suite passes and update `baseline/coverage.xml` plus docs status.
@@ -63,7 +63,7 @@ before drafting release notes and tagging v0.1.0a1.
 ## Dependencies
 
 - [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
-- [resolve-deprecation-warnings-in-tests](resolve-deprecation-warnings-in-tests.md)
+- [resolve-deprecation-warnings-in-tests (archived)](archive/resolve-deprecation-warnings-in-tests.md)
 - [rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md)
 - [clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md)
 - [fix-testing-guidelines-gpu-link](fix-testing-guidelines-gpu-link.md)

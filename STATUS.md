@@ -13,6 +13,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 23, 2025
+- Removed the repository-wide `pkg_resources` suppression from `sitecustomize.py`
+  and reran the warnings harness with `task verify:warnings:log`; the refreshed
+  archive at `baseline/logs/verify-warnings-20250923T224648Z.log` records 890
+  unit, 324 integration, and 29 behavior tests passing with warnings promoted to
+  errors, so `resolve-deprecation-warnings-in-tests` can move to the archive.
+  【F:sitecustomize.py†L1-L37】【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1047-L1047】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1442-L1442】
+  【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1749】
+  【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L103】
 - Captured a warnings-as-errors `task verify` run that halted at
   `tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`,
   removed the fallback import, and reran the command from the Task PATH helper
@@ -437,7 +446,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   deprecation warnings. Archived
   [resolve-integration-test-regressions](archive/resolve-integration-test-regressions.md)
   and opened
-  [resolve-deprecation-warnings-in-tests](issues/resolve-deprecation-warnings-in-tests.md).
+  [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md).
 - Reproduced failing unit tests individually:
   - `tests/unit/test_duckdb_storage_backend.py::TestDuckDBStorageBackend::`
     `test_initialize_schema_version` fails on a missing INSERT mock.
@@ -776,10 +785,6 @@ regression is resolved.
   issues/resolve-resource-tracker-errors-in-verify.md) – Run `task verify`
   end-to-end once the PATH helper is loaded to confirm the multiprocessing
   tracker cleanup fixes hold under coverage.
-- [resolve-deprecation-warnings-in-tests](
-  issues/resolve-deprecation-warnings-in-tests.md) – Execute the full suite
-  with `PYTHONWARNINGS=error::DeprecationWarning` after installing Task to
-  ensure no latent warnings remain.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
   Coordinate release notes, docs extras, Task installation, and final smoke
   tests once the dependent issues above close.
