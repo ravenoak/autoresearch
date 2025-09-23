@@ -48,6 +48,18 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   warning that `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
   outside the documentation tree, so the release checklists must add a cleanup
   task. 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】
+- Re-ran `task check` after syncing dev-minimal and test extras; the command
+  still halts in `flake8` on the unused `e` assignment and lingering
+  `StorageError` import, matching the open lint ticket
+  `clean-up-flake8-regressions-in-routing-and-search-storage` in the in-repo
+  tracker.
+  【ae37a4†L1-L12】【19a195†L1-L24】【b323ba†L1-L4】
+- `uv run --extra docs mkdocs build` now warns that
+  `docs/release_plan.md` links to the in-repo issues directory in addition to
+  the GPU wheels reference, so
+  [fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md) joins
+  [fix-testing-guidelines-gpu-link] on the release checklist before tagging
+  v0.1.0a1. 【aaf0c5†L1-L7】【F:docs/release_plan.md†L20-L36】
 
 ## September 22, 2025
 - Targeted the Streamlit UI helpers with `coverage run -m pytest` against the
