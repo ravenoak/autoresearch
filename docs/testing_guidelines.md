@@ -93,8 +93,8 @@ the GPU wheel cache is hydrated before launching the heavy run:
 task verify:preflight
 ```
 
-Hydrate the GPU cache according to
-[wheels/gpu/README.md](../wheels/gpu/README.md) so the preflight succeeds when
+Hydrate the GPU cache according to the
+[GPU wheel cache](wheels/gpu.md) instructions so the preflight succeeds when
 `gpu` is enabled.
 
 ## Test Organization
