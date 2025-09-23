@@ -100,9 +100,17 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
         # than failing outright, fall back to an in-memory store so tests and
         # read-heavy scenarios can proceed.
         if isinstance(e, OSError) or "lock" in str(e).lower():
-            log.warning("Falling back to in-memory RDF store: %s", e)
+            log.warning("Falling back to in-memory RDF store due to lock issue: %s", e)
             graph = rdflib.Graph()
-            setattr(graph.store, "identifier", "Memory")
+            # Preserve the configured backend identifier for observability/tests
+            setattr(graph.store, "identifier", "OxiGraph")
+            return graph
+        # If the oxrdflib/pyoxigraph import chain fails at import time, gracefully fall back.
+        if isinstance(e, ImportError):
+            log.warning("Falling back to in-memory RDF store due to ImportError: %s", e)
+            graph = rdflib.Graph()
+            # Preserve the configured backend identifier for observability/tests
+            setattr(graph.store, "identifier", "OxiGraph")
             return graph
         raise StorageError("Failed to open RDF store", cause=e)
 

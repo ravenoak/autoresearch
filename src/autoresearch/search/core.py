@@ -124,7 +124,12 @@ def _resolve_sentence_transformer_cls() -> type[SentenceTransformerType] | None:
 
 
 def _try_import_sentence_transformers() -> bool:
-    """Lazily import a lightweight embedding model when available."""
+    """Import an embedding model from fastembed or sentence-transformers.
+
+    Preference order:
+    1) fastembed.OnnxTextEmbedding (or TextEmbedding)
+    2) sentence_transformers.SentenceTransformer
+    """
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
     if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
         return SENTENCE_TRANSFORMERS_AVAILABLE
@@ -134,7 +139,15 @@ def _try_import_sentence_transformers() -> bool:
     try:  # pragma: no cover - optional dependency
         resolved = _resolve_sentence_transformer_cls()
         if resolved is None:
-            raise ImportError("fastembed OnnxTextEmbedding not available")
+            # Fallback to sentence-transformers if available
+            try:
+                from sentence_transformers import SentenceTransformer as ST  # type: ignore
+
+                resolved = ST  # type: ignore[assignment]
+            except Exception:
+                resolved = None
+        if resolved is None:
+            raise ImportError("No embedding backend available (fastembed or sentence-transformers)")
         SentenceTransformer = resolved
         SENTENCE_TRANSFORMERS_AVAILABLE = True
     except Exception:
@@ -685,8 +698,10 @@ class Search:
 
         # Calculate scores using different algorithms
         if search_cfg.use_bm25 and BM25_AVAILABLE:
-            bm25_scores = self.normalize_scores(type(self).calculate_bm25_scores(query, results))
+            bm25_raw = type(self).calculate_bm25_scores(query, results)
+            bm25_scores = self.normalize_scores(bm25_raw)
         else:
+            bm25_raw = [0.0] * len(results)
             bm25_scores = [1.0] * len(results)
 
         if search_cfg.use_source_credibility:
@@ -699,6 +714,8 @@ class Search:
             semantic_raw = self.calculate_semantic_similarity(query, results, query_embedding)
             semantic_scores, duckdb_scores = self.merge_semantic_scores(semantic_raw, duckdb_raw)
         else:
+            # When semantic similarity is disabled, fall back to DuckDB raw scores
+            semantic_raw = duckdb_raw
             duckdb_scores = self.normalize_scores(duckdb_raw)
             semantic_scores = duckdb_scores
 
@@ -719,13 +736,22 @@ class Search:
             result["semantic_score"] = semantic_scores[i]
             result["duckdb_score"] = duckdb_scores[i]
             result["credibility_score"] = credibility_scores[i]
+            # Include both normalized and raw tie-breaker components
             semantic_component = semantic_scores[i] if semantic_scores[i] > 0 else 0.25
             result["merged_score"] = (
                 bm25_scores[i] * normalized_weights[0] + semantic_component * normalized_weights[1]
             )
+            result["raw_merged_score"] = (
+                bm25_raw[i] * normalized_weights[0] + semantic_raw[i] * normalized_weights[1]
+            )
 
-        # Sort results by final score (descending)
-        ranked_results = sorted(results, key=lambda r: r["relevance_score"], reverse=True)
+        # Sort results by final score (descending) with a stable raw-score tiebreaker to ensure
+        # consistent ordering across backend combinations
+        ranked_results = sorted(
+            results,
+            key=lambda r: (r["relevance_score"], r.get("raw_merged_score", 0.0)),
+            reverse=True,
+        )
 
         return ranked_results
 
@@ -1541,88 +1567,94 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
         return results
 
     indexed: set[str] = set()
-    with StorageManager.connection() as conn:
-        try:
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS git_index("
-                "commit_hash VARCHAR PRIMARY KEY, author VARCHAR, date TIMESTAMP, message VARCHAR, diff VARCHAR)"
-            )
-            rows = conn.execute("SELECT commit_hash FROM git_index").fetchall()
-            indexed = {r[0] for r in rows}
-        except Exception as exc:  # pragma: no cover - db errors
-            log.warning(f"Failed to prepare git_index table: {exc}")
-
-        for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
-            commit_hash = commit.hexsha
-            diff_text = ""
+    # Persist a lightweight git index when storage is available. If storage
+    # is unavailable (e.g., RDF backend missing in minimal test envs), skip
+    # persistence gracefully to avoid coupling local git search to storage.
+    try:
+        with StorageManager.connection() as conn:
             try:
-                parent = commit.parents[0] if commit.parents else None
-                diffs = commit.diff(parent, create_patch=True)
-                for d in diffs:
-                    raw_diff = d.diff
-                    if isinstance(raw_diff, bytes):
-                        part = raw_diff.decode("utf-8", "ignore")
-                    else:
-                        part = str(raw_diff)
-                    diff_text += part
-                    if query.lower() in part.lower():
-                        snippet_match = re.search(
-                            rf".{{0,80}}{re.escape(query)}.{{0,80}}",
-                            part,
-                            re.IGNORECASE,
-                        )
-                        snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
-                        results.append(
-                            {
-                                "title": d.b_path or d.a_path or "diff",
-                                "url": commit_hash,
-                                "snippet": snippet,
-                                "commit": commit_hash,
-                                "author": commit.author.name or "",
-                                "date": commit.committed_datetime.isoformat(),
-                                "diff": part[:2000],
-                            }
-                        )
-                        if len(results) >= max_results:
-                            break
-                if len(results) >= max_results:
-                    break
-            except Exception as exc:  # pragma: no cover - git issues
-                log.warning(f"Failed to get diff for {commit_hash}: {exc}")
-            if commit_hash not in indexed:
-                try:
-                    conn.execute(
-                        "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
-                        [
-                            commit_hash,
-                            commit.author.name or "",
-                            commit.committed_datetime.isoformat(),
-                            commit.message,
-                            diff_text,
-                        ],
-                    )
-                    indexed.add(commit_hash)
-                except Exception as exc:  # pragma: no cover - db insert issues
-                    log.warning(f"Failed to index commit {commit_hash}: {exc}")
-
-            if query.lower() in commit.message.lower() and len(results) < max_results:
-                msg = commit.message
-                if isinstance(msg, bytes):
-                    msg = msg.decode("utf-8", "ignore")
-                snippet = msg.strip()[:200]
-                results.append(
-                    {
-                        "title": "commit message",
-                        "url": commit_hash,
-                        "snippet": snippet,
-                        "commit": commit_hash,
-                        "author": commit.author.name or "",
-                        "date": commit.committed_datetime.isoformat(),
-                        "diff": diff_text[:2000],
-                    }
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS git_index("
+                    "commit_hash VARCHAR PRIMARY KEY, author VARCHAR, date TIMESTAMP, message VARCHAR, diff VARCHAR)"
                 )
-                if len(results) >= max_results:
-                    break
+                rows = conn.execute("SELECT commit_hash FROM git_index").fetchall()
+                indexed = {r[0] for r in rows}
+            except Exception as exc:  # pragma: no cover - db errors
+                log.warning(f"Failed to prepare git_index table: {exc}")
+
+            for commit in repo.iter_commits(cast(Any, branches or None), max_count=depth):
+                commit_hash = commit.hexsha
+                diff_text = ""
+                try:
+                    parent = commit.parents[0] if commit.parents else None
+                    diffs = commit.diff(parent, create_patch=True)
+                    for d in diffs:
+                        raw_diff = d.diff
+                        if isinstance(raw_diff, bytes):
+                            part = raw_diff.decode("utf-8", "ignore")
+                        else:
+                            part = str(raw_diff)
+                        diff_text += part
+                        if query.lower() in part.lower():
+                            snippet_match = re.search(
+                                rf".{{0,80}}{re.escape(query)}.{{0,80}}",
+                                part,
+                                re.IGNORECASE,
+                            )
+                            snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
+                            results.append(
+                                {
+                                    "title": d.b_path or d.a_path or "diff",
+                                    "url": commit_hash,
+                                    "snippet": snippet,
+                                    "commit": commit_hash,
+                                    "author": commit.author.name or "",
+                                    "date": commit.committed_datetime.isoformat(),
+                                    "diff": part[:2000],
+                                }
+                            )
+                            if len(results) >= max_results:
+                                break
+                    if len(results) >= max_results:
+                        break
+                except Exception as exc:  # pragma: no cover - git issues
+                    log.warning(f"Failed to get diff for {commit_hash}: {exc}")
+                if commit_hash not in indexed:
+                    try:
+                        conn.execute(
+                            "INSERT INTO git_index VALUES (?, ?, ?, ?, ?)",
+                            [
+                                commit_hash,
+                                commit.author.name or "",
+                                commit.committed_datetime.isoformat(),
+                                commit.message,
+                                diff_text,
+                            ],
+                        )
+                        indexed.add(commit_hash)
+                    except Exception as exc:  # pragma: no cover - db insert issues
+                        log.warning(f"Failed to index commit {commit_hash}: {exc}")
+
+                if query.lower() in commit.message.lower() and len(results) < max_results:
+                    msg = commit.message
+                    if isinstance(msg, bytes):
+                        msg = msg.decode("utf-8", "ignore")
+                    snippet = msg.strip()[:200]
+                    results.append(
+                        {
+                            "title": "commit message",
+                            "url": commit_hash,
+                            "snippet": snippet,
+                            "commit": commit_hash,
+                            "author": commit.author.name or "",
+                            "date": commit.committed_datetime.isoformat(),
+                            "diff": diff_text[:2000],
+                        }
+                    )
+                    if len(results) >= max_results:
+                        break
+    except Exception as exc:  # pragma: no cover - storage unavailable
+        log.debug(f"Skipping git_index persistence due to unavailable storage: {exc}")
 
     return results
 

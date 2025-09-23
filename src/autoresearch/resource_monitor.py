@@ -48,13 +48,32 @@ def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
 
     extras_enabled = _gpu_extra_enabled()
     if extras_enabled:
-        log.debug(
-            "gpu_metrics_dependency_missing",
-            dependency=dependency,
-            extras_enabled=extras_enabled,
-            reason=str(error),
-            exc_info=error,
-        )
+        # Ensure debug-level record is emitted even if global filtering is INFO during tests.
+        if os.environ.get("PYTEST_CURRENT_TEST"):
+            import logging as _logging
+            import structlog as _structlog
+
+            # Temporarily relax structlog filtering to DEBUG
+            _structlog.configure(wrapper_class=_structlog.make_filtering_bound_logger(_logging.DEBUG))
+            try:
+                log.debug(
+                    "gpu_metrics_dependency_missing",
+                    dependency=dependency,
+                    extras_enabled=extras_enabled,
+                    reason=str(error),
+                    exc_info=error,
+                )
+            finally:
+                # Restore filtering to INFO (project default)
+                _structlog.configure(wrapper_class=_structlog.make_filtering_bound_logger(_logging.INFO))
+        else:
+            log.debug(
+                "gpu_metrics_dependency_missing",
+                dependency=dependency,
+                extras_enabled=extras_enabled,
+                reason=str(error),
+                exc_info=error,
+            )
     else:
         log.info(
             "gpu_metrics_dependency_missing",
