@@ -2,15 +2,17 @@
 
 ## Context
 `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1 -rxX`
-now reports XPASS for six tests that still carry `xfail` markers, five of
-which exercise production paths that have stabilised in the Ray executor
-and ranking pipelines. The September 23 verification log at
-`baseline/logs/task-verify-20250923T204732Z.log` shows
+continues to report XPASS for five tests that still carry `xfail`
+markers, each exercising production paths that have stabilised in the
+Ray executor and ranking pipelines. The September 23 verification log at
+`baseline/logs/task-verify-20250923T204732Z.log`, along with the
+September 24 rerun of
+`uv run --extra test pytest tests/unit -m "not slow" -rxX`, shows
 `test_execute_agent_remote`, `test_convergence_bound_holds`,
 `test_rank_results_idempotent`,
 `test_calculate_semantic_similarity`, and
-`test_external_lookup_uses_cache` all passing under the warnings-as-errors
-harness. The remaining guard on
+`test_external_lookup_uses_cache` all passing under the
+warnings-as-errors harness. The remaining guard on
 `tests/unit/test_heuristic_properties.py::test_token_budget_monotonicity`
 reflects an unresolved proof gap in
 `autoresearch.orchestration.metrics` rather than an unstable runtime

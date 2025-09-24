@@ -25,16 +25,22 @@ Codex shell the Go Task CLI is not on `PATH` until
 checks currently run via `uv`. `uv run --extra dev-minimal --extra test flake8
 src tests` and `uv run --extra dev-minimal --extra test mypy src` both succeed,
 and `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1 -rxX`
-passes with six XPASS cases now tracked in
-[issues/retire-stale-xfail-markers-in-unit-suite.md], with
+passes with five XPASS cases now tracked in
+[issues/retire-stale-xfail-markers-in-unit-suite.md], while the same run
+reports eight remaining XFAIL guards covered by
+[issues/stabilize-ranking-weight-property.md],
+[issues/restore-external-lookup-search-flow.md],
+[issues/finalize-search-parser-backends.md], and
+[issues/stabilize-storage-eviction-property.md].
 [issues/refresh-token-budget-monotonicity-proof.md] and
-[issues/stage-0-1-0a1-release-artifacts.md] capturing the proof refresh and
-release staging before tagging. Integration and behavior
-suites succeed with optional extras skipped, and `uv run --extra docs mkdocs
-build` finishes without warnings after the GPU wheel documentation move.
+[issues/stage-0-1-0a1-release-artifacts.md] capture the proof refresh and
+release staging before tagging. Integration and behavior suites succeed
+with optional extras skipped, and `uv run --extra docs mkdocs build`
+finishes without warnings after the GPU wheel documentation move.
 【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
 【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
-【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】 Spec lint remains
+【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】【bc4521†L101-L114】
+Spec lint remains
 recovered—`docs/specs/monitor.md` and `docs/specs/extensions.md` retain the
 required `## Simulation Expectations` sections—and coverage artifacts stay in
 sync with `baseline/coverage.xml` after the September 23 run documented in
@@ -92,6 +98,11 @@ These tasks completed in order: environment bootstrap → packaging verification
   [issues/refresh-token-budget-monotonicity-proof.md], and
   [issues/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
   promotions, heuristic proofs, and packaging logs land together.
+- Close [issues/stabilize-ranking-weight-property.md],
+  [issues/restore-external-lookup-search-flow.md],
+  [issues/finalize-search-parser-backends.md], and
+  [issues/stabilize-storage-eviction-property.md] so the remaining XFAIL
+  guards are resolved before tagging.
 - Record the latest `uv run python -m build` output and TestPyPI dry run in
   `baseline/logs/` and reference the timestamps here once the stage issue
   closes.

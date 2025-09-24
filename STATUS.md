@@ -18,6 +18,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   fails because the Go Task CLI is not installed in the Codex shell by
   default. Continue using `uv` wrappers or source `scripts/setup.sh` before
   invoking Taskfile commands.
+- Confirmed the base shell still lacks the Go Task CLI during this review;
+  `task --version` prints "command not found", so the release plan continues
+  to rely on `uv run` wrappers until `scripts/setup.sh --print-path` is
+  sourced. 【2aa5eb†L1-L2】
 - Reviewed `baseline/logs/task-verify-20250923T204732Z.log` to confirm the
   XPASS cases for Ray execution and ranking remain green under
   warnings-as-errors, then opened
@@ -30,6 +34,22 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   and refreshed
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) to
   align on packaging dry runs, changelog work, and dispatch-only workflows.
+- Re-ran `uv run --extra test pytest tests/unit -m "not slow" -rxX` to capture
+  the current XPASS and XFAIL list: 890 passed, 33 skipped, 25 deselected,
+  five XPASS promotions, and eight remaining XFAIL guards across ranking,
+  search, parser, and storage modules. Logged the Ray, ranking, semantic
+  similarity, cache, and token budget XPASS entries to unblock
+  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  and opened follow-up tickets for the persistent XFAILs.
+  【bc4521†L101-L114】
+- Added
+  [stabilize-ranking-weight-property](issues/stabilize-ranking-weight-property.md),
+  [restore-external-lookup-search-flow](issues/restore-external-lookup-search-flow.md),
+  [finalize-search-parser-backends](issues/finalize-search-parser-backends.md),
+  and
+  [stabilize-storage-eviction-property](issues/stabilize-storage-eviction-property.md)
+  to cover the ranking, search, parser, and storage guards surfaced by the
+  unit run so they land before the 0.1.0a1 tag.
 
 ## September 23, 2025
 - Confirmed the lint, type, unit, integration, and behavior pipelines with `uv`

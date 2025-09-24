@@ -57,6 +57,12 @@ Fresh September 24 planning added
 [stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
  to stage packaging outputs before tagging; both now sit under
 [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
+The same review opened
+[stabilize-ranking-weight-property](issues/stabilize-ranking-weight-property.md),
+[restore-external-lookup-search-flow](issues/restore-external-lookup-search-flow.md),
+[finalize-search-parser-backends](issues/finalize-search-parser-backends.md),
+and [stabilize-storage-eviction-property](issues/stabilize-storage-eviction-property.md)
+to close the remaining XFAIL guards before tagging 0.1.0a1.
 
 ## Milestones
 
