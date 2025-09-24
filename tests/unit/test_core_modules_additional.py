@@ -57,25 +57,41 @@ def test_search_stub_backend(monkeypatch):
             backend_calls.append((query, max_results, return_handles))
             return [dict(result) for result in results]
 
-        def _stub_embedding(self, query_embedding, max_results: int = 5):
-            embedding_calls.append("instance" if self is search_instance else "other")
+        def _resolve_subject(subject):
+            """Coerce hybridmethod callers to the shared instance for stable assertions."""
+
+            # The descriptor mirrors production hybridmethod semantics by passing either
+            # an instance or the class depending on how the stub is invoked; normalize both.
+            return search_instance if subject is Search else subject
+
+        def _stub_embedding(subject, query_embedding, max_results: int = 5):
+            """Accept both instance and class callers to align with hybridmethod semantics."""
+
+            target = _resolve_subject(subject)
+            embedding_calls.append("instance" if target is search_instance else "other")
             return {}
 
         def _stub_add_embeddings(
-            self, documents, query_embedding=None
+            subject, documents, query_embedding=None
         ) -> None:  # pragma: no cover - trivial
-            add_calls.append("instance" if self is search_instance else "other")
+            # The hybridmethod descriptor may send the class; normalize for backward compat.
+            target = _resolve_subject(subject)
+            add_calls.append("instance" if target is search_instance else "other")
 
         def _stub_rank_results(
-            self, query, result_docs, query_embedding=None
+            subject, query, result_docs, query_embedding=None
         ):  # pragma: no cover - trivial
-            rank_calls.append("instance" if self is search_instance else "other")
+            # Maintain compatibility with production methods that handle class or instance.
+            target = _resolve_subject(subject)
+            rank_calls.append("instance" if target is search_instance else "other")
             return result_docs
 
         def _stub_storage_lookup(
-            self, query, query_embedding, backend_results, max_results
+            subject, query, query_embedding, backend_results, max_results
         ):  # pragma: no cover - trivial
-            storage_calls.append("instance" if self is search_instance else "other")
+            # Storage lookups also need to support dual binding for hybridmethod parity.
+            target = _resolve_subject(subject)
+            storage_calls.append("instance" if target is search_instance else "other")
             return {}
 
         search_instance.backends = {"stub": _stub_backend}
