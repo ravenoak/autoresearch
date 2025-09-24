@@ -22,7 +22,7 @@ def test_weighted_score_normalization(scores, weights):
     baseline=st.integers(min_value=1, max_value=50),
     delta=st.integers(min_value=0, max_value=50),
 )
-def test_token_budget_monotonic_after_positive_usage(baseline, delta):
+def test_token_budget_monotonicity(baseline, delta):
     small = baseline
     large = baseline + delta
     metrics_small = OrchestrationMetrics()
@@ -32,6 +32,31 @@ def test_token_budget_monotonic_after_positive_usage(baseline, delta):
     budget_small = metrics_small.suggest_token_budget(10)
     budget_large = metrics_large.suggest_token_budget(10)
     assert budget_large >= budget_small
+
+
+@pytest.mark.unit
+def test_token_budget_monotonicity_deterministic():
+    metrics_small = OrchestrationMetrics()
+    metrics_large = OrchestrationMetrics()
+
+    baseline_budget = 10
+    baseline_usage = 5
+
+    metrics_small.record_tokens("agent", baseline_usage, 0)
+    metrics_large.record_tokens("agent", baseline_usage, 0)
+
+    current_small = metrics_small.suggest_token_budget(baseline_budget)
+    current_large = metrics_large.suggest_token_budget(baseline_budget)
+    assert current_small == current_large
+
+    metrics_small.record_tokens("agent", baseline_usage, 0)
+    metrics_large.record_tokens("agent", baseline_usage + 3, 0)
+
+    next_small = metrics_small.suggest_token_budget(current_small)
+    next_large = metrics_large.suggest_token_budget(current_large)
+
+    assert next_large >= next_small
+    assert next_small >= 1
 
 
 @pytest.mark.unit

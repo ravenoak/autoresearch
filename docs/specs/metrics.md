@@ -46,7 +46,8 @@ detailed in [Token Budget Adaptation][tb-derivation].
 > **A:** Raising the first positive sample would require special-casing
 > small deltas, inviting over-fitting to contrived workloads. The present
 > fallback guards cold starts by preserving the configured budget until a
-> positive observation arrives.
+> positive observation arrives, keeping safety aligned with the configured
+> margin.
 
 > **Q:** What specification do we adopt?
 >
@@ -56,6 +57,14 @@ detailed in [Token Budget Adaptation][tb-derivation].
 > [tests/unit/test_heuristic_properties.py][tb-tests]
 > now covers both the zero-usage fallback and the positive-usage
 > monotonicity guarantee.
+
+> **Q:** How do the tests exercise both sides of the dialectic?
+>
+> **A:** [`test_token_budget_zero_usage_regression`][tb-tests]
+> reconstructs the historical counterexample, while the Hypothesis
+> [`test_token_budget_monotonicity`][tb-tests] and deterministic
+> `test_token_budget_monotonicity_deterministic` confirm the post-usage
+> guarantee without the former `xfail` guard.
 
 ## Simulation
 
@@ -76,7 +85,7 @@ step 5: 60
 final budget: 60
 ```
 
-confirming convergence to `ceil(50 \times 1.2) = 60`.
+confirming convergence to `round_with_margin(50, 0.2) = 60`.
 
 ## Verification
 
@@ -110,6 +119,7 @@ recorded usage scaled by the margin.
 - Tests
   - [tests/unit/test_metrics_token_budget_spec.py][t1]
   - [tests/unit/test_token_budget_convergence.py][t2]
+  - [tests/unit/test_heuristic_properties.py][tb-tests]
 
 [m1]: ../../src/autoresearch/orchestration/metrics.py
 [s1]: ../../scripts/token_budget_convergence.py

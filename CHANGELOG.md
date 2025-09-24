@@ -39,10 +39,11 @@ Reference issues by slugged filename (for example,
   vanish mid-run, seeded the property and simulation with the regression
   seed, refreshed the storage docs, and updated spec coverage to remove the
   guard.【F:src/autoresearch/storage.py†L803-L836】【F:tests/unit/test_storage_eviction.py†L86-L195】【F:tests/unit/test_storage_eviction_sim.py†L1-L76】【F:scripts/storage_eviction_sim.py†L1-L246】【F:docs/algorithms/storage_eviction.md†L31-L96】【F:docs/specs/storage.md†L32-L65】【F:SPEC_COVERAGE.md†L67-L67】
-- Reframed the token budget spec around piecewise monotonicity,
-  documented the zero-usage counterexample, and promoted deterministic
-  regression coverage for
-  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md).
+- Documented the token budget dialectic by recording the zero-history
+  counterexample, codifying the piecewise specification, refreshing the
+  metrics review, adding deterministic regressions, updating spec coverage,
+  and lifting the former `xfail` guard for
+  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md).【F:docs/algorithms/token_budgeting.md†L93-L142】【F:docs/specs/token-budget.md†L20-L59】【F:docs/specs/metrics.md†L44-L67】【F:tests/unit/test_heuristic_properties.py†L25-L59】【F:SPEC_COVERAGE.md†L59-L59】
 - Archived [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md)
   after removing the repository-wide `pkg_resources` suppression from
   `sitecustomize.py` and capturing a clean `task verify:warnings:log` run at
