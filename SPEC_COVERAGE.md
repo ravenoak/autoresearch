@@ -20,7 +20,7 @@
 | `autoresearch/api/routing.py` | [api.md](docs/specs/api.md) | [p3], [p4], [p5], [p6], [p7], [s4], [s5], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23], [t24], [t25], [t26], [t27], [t28], [t29], [t30], [t31], [t32] | OK |
 | `autoresearch/api/streaming.py` | [api.md](docs/specs/api.md) | [p3], [p4], [p5], [p6], [p7], [s4], [s5], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23], [t24], [t25], [t26], [t27], [t28], [t29], [t30], [t31], [t32] | OK |
 | `autoresearch/api/utils.py` | [api.md](docs/specs/api.md) | [p3], [p4], [p5], [p6], [p7], [s4], [s5], [t15], [t16], [t17], [t18], [t19], [t20], [t21], [t22], [t23], [t24], [t25], [t26], [t27], [t28], [t29], [t30], [t31], [t32] | OK |
-| `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [t34] | OK |
+| `autoresearch/cache.py` | [cache.md](docs/specs/cache.md) | [t34], [t135] | OK |
 | `autoresearch/cli_backup.py` | [cli-backup.md](docs/specs/cli-backup.md) | [t35] | OK |
 | `autoresearch/cli_helpers.py` | [cli-helpers.md](docs/specs/cli-helpers.md) | [t36] | OK |
 | `autoresearch/cli_utils.py` | [cli-utils.md](docs/specs/cli-utils.md) | [t37] | OK |
@@ -33,7 +33,7 @@
 | `autoresearch/distributed` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p13], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
 | `autoresearch/distributed/broker.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p13], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
 | `autoresearch/distributed/coordinator.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p13], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
-| `autoresearch/distributed/executors.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p13], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60] | OK |
+| `autoresearch/distributed/executors.py` | [distributed.md](docs/specs/distributed.md) | [p11], [p12], [p13], [s6], [s7], [s8], [s9], [t56], [t57], [t58], [t59], [t2], [t60], [t137] | OK |
 | `autoresearch/error_recovery.py` | [error-recovery.md](docs/specs/error-recovery.md) | [p14], [t61] | OK |
 | `autoresearch/error_utils.py` | [error-utils.md](docs/specs/error-utils.md) | [t62] | OK |
 | `autoresearch/errors.py` | [errors.md](docs/specs/errors.md) | [t43], [t47], [t63] | OK |
@@ -56,12 +56,12 @@
 | `autoresearch/monitor/node_health.py` | [monitor.md](docs/specs/monitor.md) | [s12], [t81], [t82], [t83], [t84], [t85], [t86] | OK |
 | `autoresearch/monitor/system_monitor.py` | [monitor.md](docs/specs/monitor.md) | [s12], [t81], [t82], [t83], [t84], [t85], [t86] | OK |
 | `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [p18], [s13], [t87], [t88], [t89], [t90], [t91] | OK |
-| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p16], [s14], [t92], [t93], [t126] | OK (piecewise monotonic after first usage) |
+| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p16], [s14], [t92], [t93], [t126], [t139] | OK (piecewise monotonic after first usage) |
 | `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md)<br>[orchestrator_scheduling.md](docs/specs/orchestrator_scheduling.md) | [s15], [t94], [t95], [t96] | OK |
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) | [t97], [t98] | OK |
 | `autoresearch/resource_monitor.py` | [monitor.md](docs/specs/monitor.md)<br>[resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s12], [s16], [t81], [t82], [t83], [t84], [t85], [t99], [t86] | OK |
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [t96] | OK |
-| `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106], [t127], [t128], [t133] | OK (stable tie-break documented) |
+| `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106], [t127], [t128], [t133], [t134], [t135], [t136], [t138] | OK (stable tie-break documented) |
 | `autoresearch/search/parsers.py` | [search.md](docs/specs/search.md) | [t129], [t130], [t131], [t132] | OK |
 | `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | OK (deterministic ranking proven) |
 | `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK (stale LRU fallback covered) |
@@ -72,7 +72,7 @@
 | `autoresearch/streamlit_ui.py` | [streamlit-ui.md](docs/specs/streamlit-ui.md) | [t117] | OK |
 | `autoresearch/synthesis.py` | [synthesis.md](docs/specs/synthesis.md) | [t118] | OK |
 | `autoresearch/test_tools.py` | [test-tools.md](docs/specs/test-tools.md) | [t119] | OK |
-| `autoresearch/token_budget.py` | [token-budget.md](docs/specs/token-budget.md) | [s14], [t92] | OK |
+| `autoresearch/token_budget.py` | [token-budget.md](docs/specs/token-budget.md) | [s14], [t92], [t139] | OK |
 | `autoresearch/tracing.py` | [tracing.md](docs/specs/tracing.md) | [t120] | OK |
 | `autoresearch/visualization.py` | [visualization.md](docs/specs/visualization.md) | [p21], [t121], [t122] | OK |
 | `git` | [git.md](docs/specs/git.md) | [t123], [t124] | OK |
@@ -254,3 +254,9 @@
 [t131]: tests/unit/test_search_parsers.py::test_pdf_parser_errors_on_corrupt_file
 [t132]: tests/unit/test_search_parsers.py::test_docx_parser_errors_on_corrupt_file
 [t133]: tests/unit/test_search_parsers.py::test_search_local_file_backend
+[t134]: tests/unit/test_relevance_ranking.py::test_calculate_semantic_similarity
+[t135]: tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache
+[t136]: tests/unit/test_property_bm25_normalization.py::test_bm25_scores_normalized
+[t137]: tests/unit/test_distributed_executors.py::test_execute_agent_remote
+[t138]: tests/unit/test_ranking_idempotence.py::test_rank_results_idempotent
+[t139]: tests/unit/test_metrics_token_budget_spec.py::test_convergence_bound_holds

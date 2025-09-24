@@ -100,9 +100,8 @@ def test_budget_respects_bounds_during_spike():
     margin=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
     start=st.integers(min_value=1, max_value=200),
 )
-@pytest.mark.xfail(reason="Bound algorithm may violate hypothesis assumptions", strict=False)
 def test_convergence_bound_holds(spike: int, usage: int, margin: float, start: int) -> None:
-    """After a spike the budget stays within bounds and reaches the limit."""
+    """Bounds align with docs/algorithms/token_budgeting.md and SPEC_COVERAGE."""
     m = OrchestrationMetrics()
     budget = start
     m.record_tokens("agent", spike, 0)

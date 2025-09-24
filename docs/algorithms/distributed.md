@@ -20,6 +20,12 @@ acknowledged, preventing loss.
 `tests/unit/test_distributed.py` and `scripts/distributed_coordination_sim.py`
 model coordination and verify convergence.
 
+Regression coverage also exercises
+[`test_execute_agent_remote`](
+  ../../tests/unit/test_distributed_executors.py::test_execute_agent_remote
+),
+which ensures Ray-compatible serialization of `QueryState`.
+
 ## References
 - [code](../../src/autoresearch/distributed/)
 - [spec](../specs/distributed.md)

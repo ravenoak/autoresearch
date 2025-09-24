@@ -27,6 +27,12 @@ evicts the oldest entries until the TinyDB stays under a fixed size. The run
 time grows linearly with the number of records, empirically confirming the
 `O(n)` bounds above.
 
+Regression coverage includes
+[`test_external_lookup_uses_cache`](
+  ../../tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache
+),
+which asserts that cached lookups skip redundant backend calls.
+
 ## Lookup flow
 
 `Search.external_lookup` consults the cache before contacting any backend.

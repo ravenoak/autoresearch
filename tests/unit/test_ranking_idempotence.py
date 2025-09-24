@@ -24,9 +24,8 @@ def _setup(monkeypatch) -> None:
     monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: [0.5, 0.6])
 
 
-@pytest.mark.xfail(reason="ranking order unstable")
 def test_rank_results_idempotent(monkeypatch) -> None:
-    """Ranking a sorted list again leaves the order unchanged."""
+    """Ranking twice matches docs/algorithms/relevance_ranking.md coverage."""
     results = [
         {"title": "a", "url": "https://a"},
         {"title": "b", "url": "https://b"},
