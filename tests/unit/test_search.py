@@ -16,7 +16,7 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError, TimeoutError
 from unittest.mock import patch
 import autoresearch.search as search
-from autoresearch.search import Search
+from autoresearch.search import ExternalLookupResult, Search
 
 
 def _cfg() -> ConfigModel:
@@ -38,6 +38,17 @@ def sample_search_results():
         {"title": "Result 2", "url": "https://site2.com", "snippet": "B"},
         {"title": "Result 3", "url": "https://site3.com", "snippet": "C"},
     ]
+
+
+@pytest.fixture
+def storage_vector_doc():
+    """Representative storage payload used to hydrate hybrid lookups."""
+
+    return {
+        "node_id": "urn:claim:vector-fixture",
+        "content": "cached snippet",
+        "embedding": [0.25, 0.75],
+    }
 
 
 @responses.activate
@@ -312,6 +323,39 @@ def test_external_lookup_vector_search(monkeypatch):
     assert any(r.get("snippet") == "vector snippet" for r in results)
     assert all(r.get("backend") == "storage" for r in results)
     assert any("vector" in (r.get("storage_sources") or []) for r in results)
+
+
+def test_external_lookup_returns_handles(monkeypatch, storage_vector_doc):
+    cfg = _cfg()
+    cfg.search.backends = []
+    cfg.search.embedding_backends = []
+    cfg.search.hybrid_query = True
+    cfg.search.context_aware.enabled = False
+    monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
+
+    with Search.temporary_state() as search_instance:
+        search_instance.cache.clear()
+        monkeypatch.setattr(
+            "autoresearch.search.StorageManager.vector_search",
+            lambda embedding, k=5: [dict(storage_vector_doc)],
+        )
+
+        bundle = search_instance.external_lookup(
+            {"text": "vector query", "embedding": storage_vector_doc["embedding"]},
+            max_results=1,
+            return_handles=True,
+        )
+
+        assert isinstance(bundle, ExternalLookupResult)
+        assert bundle.query == "vector query"
+        assert bundle.cache is search_instance.cache
+        assert bundle.storage is search.StorageManager
+        assert list(bundle) == bundle.results
+        assert bundle[0]["backend"] == "storage"
+        storage_docs = bundle.by_backend.get("storage") or []
+        assert storage_docs
+        assert storage_docs[0]["snippet"] == "cached snippet"
+        assert "vector" in (storage_docs[0].get("storage_sources") or [])
 
 
 def test_http_session_atexit_hook(monkeypatch):

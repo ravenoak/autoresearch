@@ -174,6 +174,26 @@ else:  # pragma: no cover - runtime fallback
 
 log = get_logger(__name__)
 
+
+@dataclass
+class ExternalLookupResult:
+    """Aggregate external lookup output with cache and storage handles."""
+
+    query: str
+    results: List[Dict[str, Any]]
+    by_backend: Dict[str, List[Dict[str, Any]]]
+    cache: SearchCache
+    storage: type[StorageManager]
+
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
+        return iter(self.results)
+
+    def __len__(self) -> int:
+        return len(self.results)
+
+    def __getitem__(self, index: int) -> Dict[str, Any]:
+        return self.results[index]
+
 # Scores are bucketed on a 10^-6 grid before lexicographic tie-breaking. This scale
 # balances reproducibility with fidelity: it is coarse enough to absorb floating
 # point jitter while still distinguishing meaningful score deltas observed in
@@ -1302,8 +1322,12 @@ class Search:
 
     @hybridmethod
     def external_lookup(
-        self, query: str | Dict[str, Any], max_results: int = 5
-    ) -> List[Dict[str, Any]]:
+        self,
+        query: str | Dict[str, Any],
+        max_results: int = 5,
+        *,
+        return_handles: bool = False,
+    ) -> List[Dict[str, Any]] | ExternalLookupResult:
         """Perform an external search using configured backends.
 
         This method performs a search using all backends configured in the
@@ -1322,11 +1346,18 @@ class Search:
         Args:
             query: The search query string to look up.
             max_results: The maximum number of results to return per backend.
-                        Default is 5.
+                Default is 5.
+            return_handles: When ``True`` return an
+                :class:`ExternalLookupResult` bundling the ranked results,
+                cache handle, and storage manager reference. Defaults to
+                ``False`` for backwards compatibility.
 
         Returns:
             A list of dictionaries containing search results. Each dictionary
-            has at least 'title' and 'url' keys.
+            has at least 'title' and 'url' keys. When ``return_handles`` is
+            ``True`` an :class:`ExternalLookupResult` is returned instead,
+            providing the ranked results alongside the storage and cache
+            handles used to hydrate them.
 
         Raises:
             SearchError: If a search backend fails due to network issues, invalid
@@ -1508,14 +1539,34 @@ class Search:
                 if cfg.search.context_aware.use_topic_modeling:
                     context.build_topic_model()
 
-            return ranked_results
+            bundle = ExternalLookupResult(
+                query=text_query,
+                results=[dict(result) for result in ranked_results],
+                by_backend={
+                    name: [dict(doc) for doc in docs]
+                    for name, docs in results_by_backend.items()
+                },
+                cache=self.cache,
+                storage=StorageManager,
+            )
+            return bundle if return_handles else bundle.results
 
         # Fallback results when all backends fail
         fallback_results = [
             {"title": f"Result {i + 1} for {text_query}", "url": ""} for i in range(max_results)
         ]
+        bundle = ExternalLookupResult(
+            query=text_query,
+            results=[dict(result) for result in fallback_results],
+            by_backend={
+                name: [dict(doc) for doc in docs]
+                for name, docs in results_by_backend.items()
+            },
+            cache=self.cache,
+            storage=StorageManager,
+        )
 
-        return fallback_results
+        return bundle if return_handles else bundle.results
 
 
 def get_search() -> Search:

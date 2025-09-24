@@ -42,6 +42,13 @@ results with DuckDB and ontology matches. Misses trigger the configured
 backends, and the ranked documents are persisted so subsequent calls retrieve
 hydrated results without another network round-trip.
 
+Calling `Search.external_lookup` with `return_handles=True` returns an
+`ExternalLookupResult` bundle. The bundle exposes the shared
+`SearchCache` instance alongside the ranked documents, allowing tests or
+downstream services to inspect cache state without importing internal
+modules. The `autoresearch.search` package also re-exports `get_cache`
+for callers that prefer direct access to the TinyDB handle.
+
 ## Fallback behaviour
 
 The hybrid pipeline degrades gracefully when optional storage components are
