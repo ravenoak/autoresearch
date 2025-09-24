@@ -1,8 +1,24 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **2025-09-24** the PR 1
-release sweep captured `baseline/logs/release-alpha-20250924T183041Z.log`,
+organized by phases from the code complete plan. As of **2025-09-24** at
+23:30 UTC we repeated the stub backend sanity check and the full
+`release:alpha` sweep. The targeted invocation
+`uv run --extra test pytest tests/unit/test_core_modules_additional.py::test_search_stub_backend -vv`
+completed in 1.78 s, reconfirming the fixture still passes in isolation before
+the broader automation runs.【F:baseline/logs/targeted-test-search-stub-backend-20250924T233042Z.log†L1-L17】
+Running `uv run task release:alpha` at 23:30:58Z resynchronized every dev,
+test, analysis, and distribution extra, but the unit coverage phase failed when
+`test_search_stub_backend` observed four `embedding_calls` after the DuckDB VSS
+extras enabled vector search while the test still asserts only two calls. The
+log also shows the vector store emitting a transient "Failed to create HNSW
+index" error while enabling experimental persistence; the sweep continued past
+that warning but halted on the assertion mismatch, leaving packaging and
+publish steps unexecuted.【F:baseline/logs/release-alpha-20250924T233058Z.log†L1-L142】【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585】
+`baseline/logs/release-alpha-20250924T233058Z.summary.md` captures the new
+failure mode and the follow-up action to relax the stubbed assertion when VSS
+extras are active before rerunning the sweep.【F:baseline/logs/release-alpha-20250924T233058Z.summary.md†L1-L12】
+As of **2025-09-24** the PR 1 release sweep captured `baseline/logs/release-alpha-20250924T183041Z.log`,
 `baseline/logs/release-alpha-20250924T184646Z.log`, and
 `baseline/logs/release-alpha-20250924T184646Z.summary.md`. The run executed 243
 checks (240 passed, two skipped) before `test_search_stub_backend` raised a

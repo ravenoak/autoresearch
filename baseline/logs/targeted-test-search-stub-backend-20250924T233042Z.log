@@ -1,0 +1,17 @@
+   Building autoresearch @ file:///workspace/autoresearch
+      Built autoresearch @ file:///workspace/autoresearch
+Uninstalled 1 package in 0.63ms
+Installed 1 package in 4ms
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: benchmark-5.1.0, anyio-4.10.0, hypothesis-6.140.1, cov-7.0.0, bdd-8.1.0, langsmith-0.4.30, httpx-0.35.0
+collecting ... collected 1 item
+
+tests/unit/test_core_modules_additional.py::test_search_stub_backend PASSED                                              [100%]
+
+====================================================== 1 passed in 1.78s =======================================================

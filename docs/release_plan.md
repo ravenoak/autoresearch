@@ -18,19 +18,25 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The latest `task release:alpha` sweep from **September 24, 2025 at 18:46 UTC**
-re-synced every dev, test, and distribution extra, confirmed Python 3.12.10,
-uv 0.7.22, Go Task 3.45.4, and retained the broader toolchain versions
-including pytest 8.4.2, mypy 1.18.2, and twine 6.2.0 before entering the
-verification phase.
-【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】
-【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L44】
-`task coverage` then halted when `test_search_stub_backend` raised a TypeError,
-leaving the run with one failed, 240 passed, and two skipped tests plus two
-warnings over 243 executed checks, so packaging and publish stages were not
-reached.【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】 The
-failure blocks the alpha tag until the stub backend path accepts the new
-embedding lookup signature highlighted in the sweep output.【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L456】
+The latest `task release:alpha` sweep from **September 24, 2025 at 23:30:58 Z**
+again resynchronized every dev, test, analysis, and distribution extra, then
+completed linting, typing, spec lint, environment checks, and dependency audits
+before entering the coverage phase.
+【F:baseline/logs/release-alpha-20250924T233058Z.log†L1-L160】
+`task coverage` now fails because
+`tests/unit/test_core_modules_additional.py::test_search_stub_backend` records
+four `embedding_calls` when the DuckDB VSS extras enable vector search, while
+the fixture still asserts only two calls. A focused rerun of the individual test
+outside the sweep still passes, underscoring that the failure is triggered by
+the VSS-enabled release environment rather than the isolated fixture.
+【F:baseline/logs/targeted-test-search-stub-backend-20250924T233042Z.log†L1-L17】
+The sweep also logs an HNSW index initialization warning (`Failed to create
+HNSW index`) as experimental persistence toggles, but execution continues past
+the warning and stops on the assertion mismatch, keeping packaging and publish
+stages pending.【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585】
+`baseline/logs/release-alpha-20250924T233058Z.summary.md` tracks the open work
+to relax the stub assertion for VSS-aware runs before rerunning the automation.
+【F:baseline/logs/release-alpha-20250924T233058Z.summary.md†L1-L12】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -96,9 +102,11 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   `release:alpha` task exited during coverage before the docs stage reran.
   【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
-- [ ] `task verify` and `task coverage` must be rerun because the unit suite
-  halted on `test_search_stub_backend` with a TypeError.
-  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
+- [ ] `task verify` and `task coverage` must be rerun after relaxing
+  `test_search_stub_backend` to tolerate the additional `embedding_calls`
+  produced when VSS extras enable vector search; the sweep now halts on that
+  assertion rather than the earlier TypeError.
+  【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585】
 - [ ] `uv run --extra build python -m build` awaits rerun; the release sweep
   never reached the packaging stage after the failure.
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
