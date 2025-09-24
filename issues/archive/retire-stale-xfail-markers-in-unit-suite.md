@@ -63,5 +63,18 @@ coherence, and token budgeting—should therefore drive the promotions.
   until the dependency issue lands, then convert it to a standard
   assertion and cite the refreshed proof.
 
+## Resolution
+- Cross-checked the Unreleased changelog entry documenting the retirement
+  of search, distributed, and budgeting XFAIL markers. The references
+  cover the Ray executor, ranking, semantic similarity, cache, and token
+  budget updates that satisfy the acceptance criteria.
+- Verified the suite no longer carries `xfail` markers for
+  `tests/unit/test_distributed_executors.py`,
+  `tests/unit/test_ranking_idempotence.py`,
+  `tests/unit/test_relevance_ranking.py`, and
+  `tests/unit/test_heuristic_properties.py`.
+- With the dependent ranking, search, storage, and token budget tickets
+  archived, no further follow-up remains.
+
 ## Status
-Open
+Archived

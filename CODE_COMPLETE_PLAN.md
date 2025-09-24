@@ -10,7 +10,7 @@ As of **September 23, 2025**, Autoresearch targets an **0.1.0a1** preview on
 The September 23 verification runs keep `uv run flake8 src tests` and
 `uv run mypy src` green. `uv run pytest tests/unit -q` now passes with six
 XPASS cases tracked in
-[retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md),
+[retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md),
 and both the integration suite (`uv run pytest tests/integration -m "not slow
 and not requires_ui and not requires_vss" -q`) and behavior suite pass.
 `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
@@ -22,7 +22,7 @@ Release preparation now focuses on XPASS cleanup and staging
 ### Immediate Follow-ups
 
 - [ ] Retire the six XPASS cases documented in
-  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
   so the unit suite fails fast on regressions.
 - [ ] Complete the
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)

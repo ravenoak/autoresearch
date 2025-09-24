@@ -38,5 +38,16 @@ alpha release work moves forward.
   the refreshed proof or simulation artifacts.
 - Note the stabilization in `CHANGELOG.md` under the Unreleased section.
 
+## Resolution
+- Reviewed the Unreleased changelog entries covering score quantization,
+  deterministic tie-breaking, and overweight vector validation, which
+  document the fixes closing this ticket.
+- Confirmed `tests/unit/test_property_search_ranking.py` now exercises
+  deterministic fixtures without an `xfail` marker and that
+  `docs/algorithms/relevance_ranking.md` and `SPEC_COVERAGE.md` reflect
+  the updated proof.
+- No outstanding ranking regressions remain after dependent issues were
+  archived alongside this change.
+
 ## Status
-Open
+Archived

@@ -37,5 +37,15 @@ baselines truly guarantee installability without this staging sweep.
 - Attach the packaging log paths and resulting artifact hashes to the
   issue comment thread when closing.
 
+## Resolution
+- Verified the `[0.1.0a1] - Unreleased` changelog entry documenting the
+  staged `uv build` and TestPyPI dry run, including the archived logs and
+  release plan updates that satisfy this ticket.
+- Confirmed `docs/release_plan.md` now records the commands, artifact
+  checksums, and navigation updates, and `STATUS.md` notes the
+  environment adjustments for reproducible packaging.
+- With packaging evidence captured under `baseline/logs/`, staging is
+  complete for the alpha release.
+
 ## Status
-Open
+Archived

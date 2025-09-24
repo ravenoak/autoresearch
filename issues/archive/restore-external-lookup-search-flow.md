@@ -37,5 +37,16 @@ work so that the alpha release matches the advertised behavior.
 - Map the refreshed behavior in `SPEC_COVERAGE.md` and record the change
   in `CHANGELOG.md` under the Unreleased section.
 
+## Resolution
+- Verified the Unreleased changelog entry that documents the restored
+  storage-backed hybrid lookup flow, including references to the search
+  exports, hydrated caches, refreshed docs, and unit coverage closing
+  this ticket.
+- Confirmed `tests/unit/test_search.py` executes the vector and hybrid
+  lookup paths without `xfail` markers and that the documentation and
+  spec ledger now describe the hydrated flow.
+- With external lookup functionality stabilized, no further action is
+  required before archiving.
+
 ## Status
-Open
+Archived

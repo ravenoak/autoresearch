@@ -35,5 +35,16 @@ existing heuristics suffice without real parsers.
 - Update `SPEC_COVERAGE.md` to reference the finalized parser coverage
   and record the change in `CHANGELOG.md` under Unreleased.
 
+## Resolution
+- Cross-checked the Unreleased changelog entry that links to this ticket
+  and records the parser backend stabilization alongside refreshed tests,
+  docs, and installation guidance.
+- Verified `tests/unit/test_search_parsers.py` now asserts deterministic
+  PDF, DOCX, and local file behavior without `xfail` guards and that
+  `README.md`, `docs/installation.md`, and `SPEC_COVERAGE.md` describe the
+  finalized coverage.
+- Parser integrations and documentation now align with the 0.1.0a1 scope,
+  so the issue can be archived.
+
 ## Status
-Open
+Archived

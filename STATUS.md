@@ -48,12 +48,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Reviewed `baseline/logs/task-verify-20250923T204732Z.log` to confirm the
   XPASS cases for Ray execution and ranking remain green under
   warnings-as-errors, then opened
-  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
+  [refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md)
   so the heuristics proof matches behaviour and updated
-  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
   to depend on it.
 - Documented release staging gaps with
-  [stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
+  [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md)
   and refreshed
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) to
   align on packaging dry runs, changelog work, and dispatch-only workflows.
@@ -62,15 +62,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   five XPASS promotions, and eight remaining XFAIL guards across ranking,
   search, parser, and storage modules. Logged the Ray, ranking, semantic
   similarity, cache, and token budget XPASS entries to unblock
-  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
   and opened follow-up tickets for the persistent XFAILs.
   【bc4521†L101-L114】
 - Added
-  [stabilize-ranking-weight-property](issues/stabilize-ranking-weight-property.md),
-  [restore-external-lookup-search-flow](issues/restore-external-lookup-search-flow.md),
-  [finalize-search-parser-backends](issues/finalize-search-parser-backends.md),
+  [stabilize-ranking-weight-property](issues/archive/stabilize-ranking-weight-property.md),
+  [restore-external-lookup-search-flow](issues/archive/restore-external-lookup-search-flow.md),
+  [finalize-search-parser-backends](issues/archive/finalize-search-parser-backends.md),
   and
-  [stabilize-storage-eviction-property](issues/stabilize-storage-eviction-property.md)
+  [stabilize-storage-eviction-property](issues/archive/stabilize-storage-eviction-property.md)
   to cover the ranking, search, parser, and storage guards surfaced by the
   unit run so they land before the 0.1.0a1 tag.
 
@@ -81,7 +81,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   --extra dev-minimal --extra test mypy src`), unit (`uv run --extra test
   pytest tests/unit -m 'not slow' --maxfail=1 -rxX`), integration, and behavior
   suites all pass; the unit run reports six XPASS cases now tracked in
-  [issues/retire-stale-xfail-markers-in-unit-suite.md].【2d7183†L1-L3】【dab3a6†L1-L1】
+  [issues/archive/retire-stale-xfail-markers-in-unit-suite.md].【2d7183†L1-L3】【dab3a6†L1-L1】
   【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】【8e97b0†L1-L1】【ba4d58†L1-L104】
   【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】【88b85b†L1-L2】
 - Reran `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers
@@ -827,6 +827,6 @@ regression is resolved.
   Coordinate release notes, warnings-as-errors coverage with optional extras,
   and final smoke tests before tagging v0.1.0a1.
 - [retire-stale-xfail-markers-in-unit-suite](
-  issues/retire-stale-xfail-markers-in-unit-suite.md) – Promote the six XPASS
-  unit tests back to ordinary assertions so release verification can fail fast
-  on regressions.
+  issues/archive/retire-stale-xfail-markers-in-unit-suite.md) – Archived after
+  promoting the six XPASS unit tests back to ordinary assertions so release
+  verification can fail fast on regressions.

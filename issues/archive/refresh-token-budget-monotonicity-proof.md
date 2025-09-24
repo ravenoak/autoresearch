@@ -44,5 +44,16 @@ workloads.
 - Remove the `xfail` marker once the proof, simulation, and tests agree.
 - Capture the result in `CHANGELOG.md` under the Unreleased section.
 
+## Resolution
+- Confirmed the Unreleased changelog records the refreshed token budget
+  dialectic and links to this ticket along with the updated docs, specs,
+  and deterministic regression coverage.
+- Verified `tests/unit/test_heuristic_properties.py` asserts the
+  monotonicity guarantee without an `xfail` guard and that
+  `SPEC_COVERAGE.md` maps the proof back to
+  `autoresearch/orchestration/metrics.py`.
+- Dependency tickets have been archived, so the proof update is now
+  complete.
+
 ## Status
-Open
+Archived

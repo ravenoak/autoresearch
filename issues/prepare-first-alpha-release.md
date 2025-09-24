@@ -35,37 +35,37 @@ wrappers or the PATH helper until we package a Task binary alongside the
 alpha tag. 【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
 【311dfe†L1-L2】
 
-### PR-sized tasks
+### Completed PR-sized tasks
 - [retire-stale-xfail-markers-in-unit-suite.md]
-  (retire-stale-xfail-markers-in-unit-suite.md)
+  (archive/retire-stale-xfail-markers-in-unit-suite.md)
 - [refresh-token-budget-monotonicity-proof.md]
-  (refresh-token-budget-monotonicity-proof.md)
+  (archive/refresh-token-budget-monotonicity-proof.md)
 - [stabilize-ranking-weight-property.md]
-  (stabilize-ranking-weight-property.md)
+  (archive/stabilize-ranking-weight-property.md)
 - [restore-external-lookup-search-flow.md]
-  (restore-external-lookup-search-flow.md)
+  (archive/restore-external-lookup-search-flow.md)
 - [finalize-search-parser-backends.md]
-  (finalize-search-parser-backends.md)
+  (archive/finalize-search-parser-backends.md)
 - [stabilize-storage-eviction-property.md]
-  (stabilize-storage-eviction-property.md)
+  (archive/stabilize-storage-eviction-property.md)
 - [stage-0-1-0a1-release-artifacts.md]
-  (stage-0-1-0a1-release-artifacts.md)
+  (archive/stage-0-1-0a1-release-artifacts.md)
 
 ## Dependencies
 - [retire-stale-xfail-markers-in-unit-suite.md]
-  (retire-stale-xfail-markers-in-unit-suite.md)
+  (archive/retire-stale-xfail-markers-in-unit-suite.md)
 - [refresh-token-budget-monotonicity-proof.md]
-  (refresh-token-budget-monotonicity-proof.md)
+  (archive/refresh-token-budget-monotonicity-proof.md)
 - [stabilize-ranking-weight-property.md]
-  (stabilize-ranking-weight-property.md)
+  (archive/stabilize-ranking-weight-property.md)
 - [restore-external-lookup-search-flow.md]
-  (restore-external-lookup-search-flow.md)
+  (archive/restore-external-lookup-search-flow.md)
 - [finalize-search-parser-backends.md]
-  (finalize-search-parser-backends.md)
+  (archive/finalize-search-parser-backends.md)
 - [stabilize-storage-eviction-property.md]
-  (stabilize-storage-eviction-property.md)
+  (archive/stabilize-storage-eviction-property.md)
 - [stage-0-1-0a1-release-artifacts.md]
-  (stage-0-1-0a1-release-artifacts.md)
+  (archive/stage-0-1-0a1-release-artifacts.md)
 
 ## Acceptance Criteria
 - All dependency issues listed above are closed.
@@ -79,6 +79,13 @@ alpha tag. 【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e
 - Workflows under `.github/workflows` remain dispatch-only.
 - The `v0.1.0a1` tag is created only after the above steps and a fresh
   `task verify` pass succeed.
+
+## Resolution
+All dependency tickets have now been archived alongside the Unreleased
+changelog updates that document their fixes. Capture a final
+`task verify` run (including warnings-as-errors) after the upcoming
+verification sweep, then archive this umbrella issue with the resulting
+log references.
 
 ## Status
 Open

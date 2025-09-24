@@ -15,19 +15,20 @@ the refreshed run, allowing
 【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】 Direct
 `uv run` commands now verify the day-to-day lint, type, and smoke suites without
 requiring the Task CLI on `PATH`; the unit run reports five XPASS cases tracked
-in [issues/retire-stale-xfail-markers-in-unit-suite.md] and eight remaining
-XFAIL guards now covered by
-[issues/stabilize-ranking-weight-property.md],
-[issues/restore-external-lookup-search-flow.md],
-[issues/finalize-search-parser-backends.md], and
-[issues/stabilize-storage-eviction-property.md]. Integration and behavior suites
+in [issues/archive/retire-stale-xfail-markers-in-unit-suite.md] and eight
+remaining XFAIL guards now covered by
+[issues/archive/stabilize-ranking-weight-property.md],
+[issues/archive/restore-external-lookup-search-flow.md],
+[issues/archive/finalize-search-parser-backends.md], and
+[issues/archive/stabilize-storage-eviction-property.md]. Integration and
+behavior suites
 pass with optional extras skipped, and `uv run --extra docs mkdocs build`
 completes without warnings after prior documentation fixes. September 24
 planning added
-[refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
- and
-[stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
- as dependencies of
+[refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md)
+and
+[stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md)
+as dependencies of
 [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) so the
 XPASS promotions, heuristics proof, and packaging dry runs land before tagging.
 【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】

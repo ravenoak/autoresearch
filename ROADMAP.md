@@ -52,16 +52,16 @@ work.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L37-L49�
 The spec template lint cleanup is archived as
 [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
 Fresh September 24 planning added
-[refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
+[refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md)
  to document the heuristics proof gap and
-[stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
+[stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md)
  to stage packaging outputs before tagging; both now sit under
 [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
 The same review opened
-[stabilize-ranking-weight-property](issues/stabilize-ranking-weight-property.md),
-[restore-external-lookup-search-flow](issues/restore-external-lookup-search-flow.md),
-[finalize-search-parser-backends](issues/finalize-search-parser-backends.md),
-and [stabilize-storage-eviction-property](issues/stabilize-storage-eviction-property.md)
+[stabilize-ranking-weight-property](issues/archive/stabilize-ranking-weight-property.md),
+[restore-external-lookup-search-flow](issues/archive/restore-external-lookup-search-flow.md),
+[finalize-search-parser-backends](issues/archive/finalize-search-parser-backends.md),
+and [stabilize-storage-eviction-property](issues/archive/stabilize-storage-eviction-property.md)
 to close the remaining XFAIL guards before tagging 0.1.0a1.
 
 ## Milestones
