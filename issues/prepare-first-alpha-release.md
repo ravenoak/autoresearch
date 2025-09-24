@@ -26,6 +26,15 @@ proves what the tests assert and whether our packaging instructions
 match a fresh dry run. New issues cover each thread so that we can close
 this release ticket once the dependencies land.
 
+A fresh September 24 verification rechecked the supporting lint (`uv run
+--extra dev-minimal --extra test flake8 src tests`), typing (`uv run
+--extra dev-minimal --extra test mypy src`), and documentation (`uv run
+--extra docs mkdocs build`) gates. Each command succeeded while
+`task --version` still fails, reinforcing the need to rely on `uv`
+wrappers or the PATH helper until we package a Task binary alongside the
+alpha tag. 【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
+【311dfe†L1-L2】
+
 ### PR-sized tasks
 - [retire-stale-xfail-markers-in-unit-suite.md]
   (retire-stale-xfail-markers-in-unit-suite.md)

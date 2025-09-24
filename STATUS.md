@@ -13,6 +13,20 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 24, 2025
+- Reconfirmed the base environment: `python --version` reports 3.12.10,
+  `uv --version` reports 0.7.22, and `task --version` still fails, so the
+  Taskfile commands must run via `uv` or the PATH helper until we package a
+  new Task binary. 【c0ed6e†L1-L2】【7b55df†L1-L2】【311dfe†L1-L2】
+- Reran `uv run --extra test pytest tests/unit -m "not slow" -rxX`; 890 tests
+  passed with the expected eight XFAIL guards and five XPASS promotions,
+  matching the open ranking, search, metrics, and storage tickets in
+  SPEC_COVERAGE. This keeps the release dialectic focused on closing the
+  proof gaps before we lift the guards. 【5b78c5†L1-L71】
+  【F:SPEC_COVERAGE.md†L26-L52】
+- Spot-checked the fast verification entry points—`flake8`, `mypy`, and the
+  MkDocs build—all pass under `uv`, confirming the docs and lint gates stay
+  green while we iterate on the outstanding issues. 【6c5abf†L1-L1】
+  【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
 - Verified the local runtime before running tests: `python --version` reports
   3.12.10 and `uv --version` reports 0.7.22, while `task --version` still
   fails because the Go Task CLI is not installed in the Codex shell by
