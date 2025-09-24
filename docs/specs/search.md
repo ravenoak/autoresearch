@@ -50,6 +50,19 @@ and hybrid queries and exposes a CLI entry point. See the
   `ExternalLookupResult` containing the ranked documents, a backend map,
   and handles to the shared cache and storage manager.
 
+## Public API
+
+- `Search.external_lookup(query, max_results=5, *, return_handles=False)` is a
+  hybridmethod. It can be invoked on an instance or on the class, which will
+  delegate to the shared singleton. Monkeypatched doubles must accept the
+  implicit instance argument to keep parity with production
+  behaviour.
+- `Search.embedding_lookup(query_embedding, max_results=5)` and
+  `Search.add_embeddings(documents, query_embedding=None)` share the same
+  hybridmethod behaviour. Tests should wrap stubs with the
+  `hybridmethod` descriptor (or equivalent helper) so that both access paths
+  continue to work.
+
 ## Proof Sketch
 
 - **Ordering:** Each algorithm returns a scored list, and the hybrid combiner
