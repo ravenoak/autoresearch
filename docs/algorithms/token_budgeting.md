@@ -164,6 +164,9 @@ intermediate budgets and use Hypothesis to explore edge cases such as
 large spikes and near-zero margins. The Hypothesis scenario
 `test_convergence_bound_holds` now runs without an `xfail` guard,
 ensuring budgets stay within the documented bounds after spikes.
+[`SPEC_COVERAGE.md`](../../SPEC_COVERAGE.md) records the
+`autoresearch/orchestration/metrics.py` entry as covered by this promoted
+regression.
 
 For details on usage recording and metrics, see the
 [token budget specification](../token_budget_spec.md).
