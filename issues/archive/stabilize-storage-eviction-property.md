@@ -35,5 +35,16 @@ will surface the missing invariants before the release staging proceeds.
 - Add a regression scenario to `scripts/storage_eviction_sim.py` or a new
   simulation helper demonstrating the fixed invariant.
 
+## Resolution
+- Reviewed the Unreleased changelog entry for the RAM budget regression,
+  which captures the deterministic fallback, refreshed docs, simulation
+  coverage, and spec updates closing this ticket.
+- Confirmed `_enforce_ram_budget` and the associated property and
+  simulation tests now run without `xfail` markers, with supporting
+  documentation in `docs/algorithms/storage_eviction.md` and
+  `docs/specs/storage.md`.
+- Storage eviction stability is now tracked in regression coverage, so
+  the release no longer depends on this work.
+
 ## Status
-Open
+Archived

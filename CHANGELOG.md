@@ -9,15 +9,17 @@ Reference issues by slugged filename (for example,
 - Bucketed relevance scores at a :math:`10^{-6}` resolution to preserve
   deterministic tie-breaking, exposed the bucket metadata for property and
   idempotence regressions, refreshed the relevance ranking algorithm note, and
-  recorded the guarantee in the spec coverage ledger.【F:src/autoresearch/search/core.py†L175-L181】【F:src/autoresearch/search/core.py†L813-L866】【F:tests/unit/test_property_search_ranking.py†L12-L235】【F:tests/unit/test_ranking_idempotence.py†L1-L55】【F:tests/unit/test_relevance_ranking.py†L372-L414】【F:docs/algorithms/relevance_ranking.md†L40-L49】【F:SPEC_COVERAGE.md†L64-L64】【F:SPEC_COVERAGE.md†L263-L263】
+  recorded the guarantee in the spec coverage ledger, addressing
+  [stabilize-ranking-weight-property](issues/archive/stabilize-ranking-weight-property.md).【F:src/autoresearch/search/core.py†L175-L181】【F:src/autoresearch/search/core.py†L813-L866】【F:tests/unit/test_property_search_ranking.py†L12-L235】【F:tests/unit/test_ranking_idempotence.py†L1-L55】【F:tests/unit/test_relevance_ranking.py†L372-L414】【F:docs/algorithms/relevance_ranking.md†L40-L49】【F:SPEC_COVERAGE.md†L64-L64】【F:SPEC_COVERAGE.md†L263-L263】
 - Retired the remaining search, distributed, and budgeting XFAIL markers,
   refreshing the corresponding docs/algorithms entries, SPEC_COVERAGE.md, and
-  changelog coverage to lock in the XPASS promotions.【F:docs/algorithms/distributed.md†L19-L30】【F:docs/algorithms/relevance_ranking.md†L75-L83】【F:docs/algorithms/semantic_similarity.md†L24-L34】【F:docs/algorithms/cache.md†L24-L37】【F:docs/algorithms/token_budgeting.md†L159-L169】【F:SPEC_COVERAGE.md†L23-L64】
+  changelog coverage to lock in the XPASS promotions, closing
+  [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md).【F:docs/algorithms/distributed.md†L19-L30】【F:docs/algorithms/relevance_ranking.md†L75-L83】【F:docs/algorithms/semantic_similarity.md†L24-L34】【F:docs/algorithms/cache.md†L24-L37】【F:docs/algorithms/token_budgeting.md†L159-L169】【F:SPEC_COVERAGE.md†L23-L64】
 - Finalized PDF and DOCX ingestion for 0.1.0a1 by expanding regression
   coverage across dependency failures and text normalization, updating the
   spec ledger, and aligning README plus installation guidance with the
   optional parsers extra, addressing
-  [finalize-search-parser-backends](issues/finalize-search-parser-backends.md).
+  [finalize-search-parser-backends](issues/archive/finalize-search-parser-backends.md).
   【F:tests/unit/test_search_parsers.py†L55-L172】【F:README.md†L214-L245】
   【F:docs/installation.md†L105-L170】【F:SPEC_COVERAGE.md†L65-L65】
   【F:SPEC_COVERAGE.md†L250-L268】
@@ -26,14 +28,16 @@ Reference issues by slugged filename (for example,
   the `ExternalLookupResult` bundle for `return_handles=True`,
   rehydrating vector, BM25, and ontology signals during
   `Search.external_lookup`, and promoting the vector and hybrid query
-  regressions with documentation and spec updates.
+  regressions with documentation and spec updates, closing
+  [restore-external-lookup-search-flow](issues/archive/restore-external-lookup-search-flow.md).
   【F:src/autoresearch/search/__init__.py†L1-L38】【F:src/autoresearch/search/core.py†L85-L117】
   【F:src/autoresearch/search/core.py†L1326-L1496】【F:docs/algorithms/search.md†L49-L70】
   【F:docs/algorithms/cache.md†L27-L41】【F:docs/specs/search.md†L23-L44】
   【F:tests/unit/test_search.py†L296-L340】【F:SPEC_COVERAGE.md†L64-L64】
 - Stabilized storage eviction by documenting the stale-LRU counterexample,
   adding a fallback when caches are empty, extending the property-based
-  regression, and introducing a `stale_lru` simulation scenario.
+  regression, and introducing a `stale_lru` simulation scenario, closing
+  [stabilize-storage-eviction-property](issues/archive/stabilize-storage-eviction-property.md).
 - Captured the Hypothesis metrics-dropout regression for
   `_enforce_ram_budget`, ensured deterministic caps continue when RAM metrics
   vanish mid-run, seeded the property and simulation with the regression
@@ -43,7 +47,7 @@ Reference issues by slugged filename (for example,
   counterexample, codifying the piecewise specification, refreshing the
   metrics review, adding deterministic regressions, updating spec coverage,
   and lifting the former `xfail` guard for
-  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md).【F:docs/algorithms/token_budgeting.md†L93-L142】【F:docs/specs/token-budget.md†L20-L59】【F:docs/specs/metrics.md†L44-L67】【F:tests/unit/test_heuristic_properties.py†L25-L59】【F:SPEC_COVERAGE.md†L59-L59】
+  [refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md).【F:docs/algorithms/token_budgeting.md†L93-L142】【F:docs/specs/token-budget.md†L20-L59】【F:docs/specs/metrics.md†L44-L67】【F:tests/unit/test_heuristic_properties.py†L25-L59】【F:SPEC_COVERAGE.md†L59-L59】
 - Archived [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md)
   after removing the repository-wide `pkg_resources` suppression from
   `sitecustomize.py` and capturing a clean `task verify:warnings:log` run at
@@ -94,7 +98,9 @@ Reference issues by slugged filename (for example,
 - Staged the packaging dry run with Python 3.12.10 and `uv 0.7.22`; archived the
   build log (`baseline/logs/build-20250924T033349Z.log`), the TestPyPI dry run
   log (`baseline/logs/publish-dev-20250924T033415Z.log`), and the recorded
-  wheel and sdist checksums in [docs/release_plan.md](docs/release_plan.md).
+  wheel and sdist checksums in [docs/release_plan.md](docs/release_plan.md),
+  closing
+  [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).
 
 [add-test-coverage]: issues/archive/add-test-coverage-for-optional-components.md
 [streamline-extras]: issues/archive/streamline-task-verify-extras.md

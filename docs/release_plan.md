@@ -29,8 +29,8 @@ tests/unit -m 'not slow' -rxX` returns 890 passes, 33 skips, eight XFAIL guards,
 and five XPASS promotions that align with the open ranking, search, metrics, and
 storage tickets. `uv run --extra docs mkdocs build` completes without warnings
 after the GPU wheel documentation move, and
-[issues/refresh-token-budget-monotonicity-proof.md] plus
-[issues/stage-0-1-0a1-release-artifacts.md] capture the proof refresh and
+[issues/archive/refresh-token-budget-monotonicity-proof.md] plus
+[issues/archive/stage-0-1-0a1-release-artifacts.md] capture the proof refresh and
 release staging before tagging. Integration and behavior suites succeed with
 optional extras skipped, and spec lint remains recovered—`docs/specs/monitor.md`
 and `docs/specs/extensions.md` retain the required `## Simulation Expectations`
@@ -106,14 +106,14 @@ These tasks completed in order: environment bootstrap → packaging verification
   ```
   - Log: `baseline/logs/publish-dev-20250924T033415Z.log`.
     【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L14】
-- Close [issues/retire-stale-xfail-markers-in-unit-suite.md],
-  [issues/refresh-token-budget-monotonicity-proof.md], and
-  [issues/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
+- Close [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
+  [issues/archive/refresh-token-budget-monotonicity-proof.md], and
+  [issues/archive/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
   promotions, heuristic proofs, and packaging logs land together.
-- Close [issues/stabilize-ranking-weight-property.md],
-  [issues/restore-external-lookup-search-flow.md],
-  [issues/finalize-search-parser-backends.md], and
-  [issues/stabilize-storage-eviction-property.md] so the remaining XFAIL
+- Close [issues/archive/stabilize-ranking-weight-property.md],
+  [issues/archive/restore-external-lookup-search-flow.md],
+  [issues/archive/finalize-search-parser-backends.md], and
+  [issues/archive/stabilize-storage-eviction-property.md] so the remaining XFAIL
   guards are resolved before tagging.
 - Record future `uv run python -m build` and TestPyPI dry-run logs in
   `baseline/logs/` when the stage issue requests refreshed artifacts.
