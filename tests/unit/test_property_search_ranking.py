@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import string
+import copy
 from typing import List
 
 import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import given, strategies as st
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search import Search
+from autoresearch.search.ranking_formula import combine_scores
 
 
 @given(
@@ -34,42 +35,13 @@ def test_merge_rank_scores_linear(
         assert merged[i] == bm25_scores[i] * w1 + semantic_scores[i] * w2
 
 
-@pytest.mark.xfail(reason="ranking weights property fails intermittently")
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-@given(
-    results=st.lists(
-        st.tuples(
-            st.text(alphabet=string.ascii_lowercase, min_size=1),
-            st.floats(min_value=0, max_value=1),
-            st.floats(min_value=0, max_value=1),
-            st.floats(min_value=0, max_value=1),
-        ),
-        min_size=1,
-        max_size=5,
-    ),
-    weights=st.lists(st.floats(min_value=0.01, max_value=1.0), min_size=3, max_size=3).map(
-        lambda w: [x / sum(w) for x in w]
-    ),
-)
-def test_rank_results_orders_by_weighted_scores(
-    results: List[tuple[str, float, float, float]],
-    weights: List[float],
+def configure_ranker(
     monkeypatch: pytest.MonkeyPatch,
+    weights: List[float],
+    bm25_scores: List[float],
+    semantic_scores: List[float],
+    credibility_scores: List[float],
 ) -> None:
-    """Results are ordered by the weighted relevance score.
-
-    References: docs/algorithms/bm25.md, docs/algorithms/semantic_similarity.md,
-    docs/algorithms/source_credibility.md
-    """
-    titles = [t for t, _, _, _ in results]
-    bm25_scores = [b for _, b, _, _ in results]
-    semantic_scores = [s for _, _, s, _ in results]
-    credibility_scores = [c for _, _, _, c in results]
-    docs = [
-        {"title": t, "url": f"https://example.com/{i}", "similarity": semantic_scores[i]}
-        for i, t in enumerate(titles)
-    ]
-
     cfg = ConfigModel(
         search=SearchConfig(
             bm25_weight=weights[0],
@@ -91,21 +63,84 @@ def test_rank_results_orders_by_weighted_scores(
     )
     monkeypatch.setattr(Search, "assess_source_credibility", lambda self, r: credibility_scores)
 
-    ranked = Search.rank_results("q", docs)
-    duckdb_norm = Search.normalize_scores([r["similarity"] for r in docs])
-    semantic_norm = Search.normalize_scores(semantic_scores)
-    semantic_scores_norm = [
-        (semantic_norm[i] + duckdb_norm[i]) / 2 for i in range(len(docs))
+
+def test_rank_results_orders_by_weighted_scores(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Results are ordered by the weighted relevance score."""
+
+    weights = [0.55, 0.3, 0.15]
+    bm25_scores = [0.2, 0.5, 0.8]
+    semantic_scores = [0.7, 0.3, 0.6]
+    credibility_scores = [0.4, 0.9, 0.1]
+    docs = [
+        {"title": "alpha", "url": "https://example.com/a", "similarity": semantic_scores[0]},
+        {"title": "beta", "url": "https://example.com/b", "similarity": semantic_scores[1]},
+        {"title": "gamma", "url": "https://example.com/c", "similarity": semantic_scores[2]},
     ]
-    merged = [
-        bm25_scores[i] * weights[0] + semantic_scores_norm[i] * weights[1]
-        for i in range(len(docs))
-    ]
-    final = [merged[i] + credibility_scores[i] * weights[2] for i in range(len(docs))]
-    max_score = max(final)
-    normalized = [f / max_score for f in final] if max_score > 0 else [0.0] * len(final)
-    expected_order = sorted(range(len(docs)), key=lambda i: normalized[i], reverse=True)
+
+    configure_ranker(monkeypatch, weights, bm25_scores, semantic_scores, credibility_scores)
+
+    ranked = Search.rank_results("q", copy.deepcopy(docs))
+
+    bm25_norm = Search.normalize_scores(bm25_scores)
+    credibility_norm = Search.normalize_scores(credibility_scores)
+    duckdb_raw = [r["similarity"] for r in docs]
+    semantic_norm, _ = Search.merge_semantic_scores(semantic_scores, duckdb_raw)
+    final = combine_scores(bm25_norm, semantic_norm, credibility_norm, tuple(weights))
+    expected_order = sorted(range(len(docs)), key=lambda i: final[i], reverse=True)
     ranked_titles = [r["title"] for r in ranked]
-    assert ranked_titles == [titles[i] for i in expected_order]
-    for r, i in zip(ranked, expected_order):
-        assert r["relevance_score"] == pytest.approx(normalized[i])
+    assert ranked_titles == [docs[i]["title"] for i in expected_order]
+    for r, score in zip(ranked, [final[i] for i in expected_order]):
+        assert r["relevance_score"] == pytest.approx(score)
+
+
+def test_rank_results_breaks_ties_deterministically(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Equal scores fall back to deterministic identifiers for ordering."""
+
+    weights = [0.34, 0.33, 0.33]
+    bm25_scores = [0.6, 0.6, 0.6]
+    semantic_scores = [0.4, 0.4, 0.4]
+    credibility_scores = [0.8, 0.8, 0.8]
+    docs = [
+        {
+            "title": "alpha",
+            "url": "https://example.com/a",
+            "backend": "duckduckgo",
+            "similarity": semantic_scores[0],
+        },
+        {
+            "title": "beta",
+            "url": "https://example.com/b",
+            "backend": "serper",
+            "similarity": semantic_scores[1],
+        },
+        {
+            "title": "gamma",
+            "url": "https://example.com/c",
+            "backend": "duckduckgo",
+            "similarity": semantic_scores[2],
+        },
+    ]
+
+    configure_ranker(monkeypatch, weights, bm25_scores, semantic_scores, credibility_scores)
+
+    expected_urls = [
+        docs[index]["url"]
+        for index, _ in sorted(
+            enumerate(docs),
+            key=lambda item: (
+                docs[item[0]]["backend"],
+                docs[item[0]]["url"],
+                docs[item[0]]["title"],
+                item[0],
+            ),
+        )
+    ]
+
+    ranked = Search.rank_results("q", copy.deepcopy(docs))
+    assert [item["url"] for item in ranked] == expected_urls
+    assert len({item["relevance_score"] for item in ranked}) == 1
+
+    reordered = list(reversed(docs))
+    ranked_reordered = Search.rank_results("q", copy.deepcopy(reordered))
+    assert [item["url"] for item in ranked_reordered] == expected_urls
+    assert len({item["relevance_score"] for item in ranked_reordered}) == 1

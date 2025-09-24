@@ -35,6 +35,17 @@ Since :math:`I(R_1) = 0`, the sequence :math:`I(R_t)` decreases monotonically
 to zero. This derivation uses the inversion count formula
 :math:`I(R) = |\{(i, j) : i < j, R_i \succ R_j\}|`.
 
+### Deterministic tie-breaking
+
+Floating point arithmetic once caused ties to swap order between runs. The
+implementation now quantizes both the final relevance score and the merged
+raw score on a :math:`10^{-6}` grid before sorting. Documents with identical
+quantized scores fall back to lexicographic comparison of `(backend, url,
+title)` and finally the original index supplied by the calling backend.
+These secondary keys ensure repeatable rankings without weakening the
+convergence proof. When metadata is missing the empty string placeholder
+keeps the comparison well defined.
+
 ## Complexity
 
 Sorting `n` results by score uses `O(n log n)` time and `O(1)` extra space

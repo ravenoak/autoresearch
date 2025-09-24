@@ -10,7 +10,10 @@ Search results use a weighted sum of [BM25](bm25.md) keyword matching,
 [source credibility](source_credibility.md). The combined score is
 proven monotonic: increasing any component increases the final
 relevance. Weight normalization ensures convergence as detailed in
-[relevance_ranking.md](relevance_ranking.md).
+[relevance_ranking.md](relevance_ranking.md). Quantizing relevance and raw
+merge scores to a :math:`10^{-6}` grid keeps ties deterministic; identical
+values fall back to lexicographic `(backend, url, title)` ordering and the
+original index, ensuring repeatable rankings across runs.
 
 ### Proof of monotonic relevance
 
