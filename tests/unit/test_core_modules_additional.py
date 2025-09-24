@@ -12,20 +12,10 @@ from autoresearch.search import ExternalLookupResult, Search
 from autoresearch.search.core import hybridmethod
 
 
-def test_orchestrator_parse_config_basic():
-    cfg = MagicMock()
-    cfg.agents = ["A", "B"]
-    cfg.loops = 2
-    cfg.reasoning_mode = ReasoningMode.DIALECTICAL
-    params = Orchestrator._parse_config(cfg)
-    assert params["agents"] == ["A", "B"]
-    assert params["loops"] == 2
-    assert params["mode"] == ReasoningMode.DIALECTICAL
-    assert params["agent_groups"] == [["A"], ["B"]]
+@pytest.fixture
+def _stubbed_search_environment(monkeypatch):
+    """Create a temporary Search instance with controllable backend stubs."""
 
-
-def test_search_stub_backend(monkeypatch):
-    results = [{"title": "T", "url": "u"}]
     backend_calls: list[tuple[str, int, bool]] = []
     embedding_calls: list[str] = []
     add_calls: list[str] = []
@@ -45,23 +35,19 @@ def test_search_stub_backend(monkeypatch):
     cfg.search.semantic_similarity_weight = 0.0
     cfg.search.source_credibility_weight = 0.0
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
-    monkeypatch.setattr("autoresearch.search.core.get_cached_results", lambda q, n: None)
-    monkeypatch.setattr("autoresearch.search.core.cache_results", lambda q, n, r: None)
+    monkeypatch.setattr("autoresearch.search.core.get_cached_results", lambda *a, **k: None)
+    monkeypatch.setattr("autoresearch.search.core.cache_results", lambda *a, **k: None)
     monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0]))
     monkeypatch.setattr("autoresearch.search.storage.persist_results", lambda results: None)
 
     shared = Search.get_instance()
+    storage_payload: dict[str, list[dict]] = {}
 
     with shared.temporary_state() as search_instance:
-        def _stub_backend(query: str, max_results: int = 5, *, return_handles: bool = False):
-            backend_calls.append((query, max_results, return_handles))
-            return [dict(result) for result in results]
 
         def _resolve_subject(subject):
             """Coerce hybridmethod callers to the shared instance for stable assertions."""
 
-            # The descriptor mirrors production hybridmethod semantics by passing either
-            # an instance or the class depending on how the stub is invoked; normalize both.
             return search_instance if subject is Search else subject
 
         def _stub_embedding(subject, query_embedding, max_results: int = 5):
@@ -71,85 +57,131 @@ def test_search_stub_backend(monkeypatch):
             embedding_calls.append("instance" if target is search_instance else "other")
             return {}
 
-        def _stub_add_embeddings(
-            subject, documents, query_embedding=None
-        ) -> None:  # pragma: no cover - trivial
-            # The hybridmethod descriptor may send the class; normalize for backward compat.
+        def _stub_add_embeddings(subject, documents, query_embedding=None) -> None:
+            """Maintain dual binding compatibility for add_embeddings."""
+
             target = _resolve_subject(subject)
             add_calls.append("instance" if target is search_instance else "other")
 
-        def _stub_rank_results(
-            subject, query, result_docs, query_embedding=None
-        ):  # pragma: no cover - trivial
-            # Maintain compatibility with production methods that handle class or instance.
+        def _stub_rank_results(subject, query, result_docs, query_embedding=None):
+            """Track rank_results invocations while returning passthrough docs."""
+
             target = _resolve_subject(subject)
             rank_calls.append("instance" if target is search_instance else "other")
             return result_docs
 
-        def _stub_storage_lookup(
-            subject, query, query_embedding, backend_results, max_results
-        ):  # pragma: no cover - trivial
-            # Storage lookups also need to support dual binding for hybridmethod parity.
+        def _stub_storage_lookup(subject, query, query_embedding, backend_results, max_results):
+            """Mirror storage lookup behaviour while allowing custom payloads."""
+
             target = _resolve_subject(subject)
             storage_calls.append("instance" if target is search_instance else "other")
-            return {}
+            return {name: [dict(doc) for doc in docs] for name, docs in storage_payload.items()}
 
-        search_instance.backends = {"stub": _stub_backend}
         search_instance.embedding_backends = {}
         search_instance.cache.clear()
         monkeypatch.setattr(search_instance.cache, "get_cached_results", lambda *a, **k: None)
         monkeypatch.setattr(search_instance.cache, "cache_results", lambda *a, **k: None)
 
-        monkeypatch.setattr(
-            Search,
-            "embedding_lookup",
-            hybridmethod(_stub_embedding),
-        )
-        monkeypatch.setattr(
-            Search,
-            "add_embeddings",
-            hybridmethod(_stub_add_embeddings),
-        )
-        monkeypatch.setattr(
-            Search,
-            "rank_results",
-            hybridmethod(_stub_rank_results),
-        )
-        monkeypatch.setattr(
-            Search,
-            "storage_hybrid_lookup",
-            hybridmethod(_stub_storage_lookup),
-        )
-        monkeypatch.setattr(
-            Search,
-            "get_instance",
-            classmethod(lambda cls: search_instance),
+        monkeypatch.setattr(Search, "embedding_lookup", hybridmethod(_stub_embedding))
+        monkeypatch.setattr(Search, "add_embeddings", hybridmethod(_stub_add_embeddings))
+        monkeypatch.setattr(Search, "rank_results", hybridmethod(_stub_rank_results))
+        monkeypatch.setattr(Search, "storage_hybrid_lookup", hybridmethod(_stub_storage_lookup))
+        monkeypatch.setattr(Search, "get_instance", classmethod(lambda cls: search_instance))
+
+        def install_backend(docs):
+            if docs is None:
+                search_instance.backends = {}
+                cfg.search.backends = []
+                return
+
+            def _stub_backend(query: str, max_results: int = 5, *, return_handles: bool = False):
+                backend_calls.append((query, max_results, return_handles))
+                return [dict(result) for result in docs]
+
+            search_instance.backends = {"stub": _stub_backend}
+            cfg.search.backends = ["stub"]
+
+        def set_storage_results(payload):
+            storage_payload.clear()
+            if payload:
+                for name, docs in payload.items():
+                    storage_payload[name] = [dict(doc) for doc in docs]
+
+        install_backend([{"title": "T", "url": "u"}])
+
+        environment = types.SimpleNamespace(
+            cfg=cfg,
+            search_instance=search_instance,
+            backend_calls=backend_calls,
+            embedding_calls=embedding_calls,
+            add_calls=add_calls,
+            rank_calls=rank_calls,
+            storage_calls=storage_calls,
+            install_backend=install_backend,
+            set_storage_results=set_storage_results,
         )
 
-        instance_results = search_instance.external_lookup("q", max_results=1)
-        assert [r["title"] for r in instance_results] == ["T"]
-        assert [r["url"] for r in instance_results] == ["u"]
+        yield environment
 
-        bundle = Search.external_lookup("q", max_results=1, return_handles=True)
-        assert isinstance(bundle, ExternalLookupResult)
-        bundle_results = list(bundle)
-        assert [r["title"] for r in bundle_results] == ["T"]
-        assert [r["url"] for r in bundle_results] == ["u"]
-        assert bundle.results == bundle_results
-        assert bundle.cache is search_instance.cache
 
-        instance_embedding = search_instance.embedding_lookup([0.1], 1)
-        class_embedding = Search.embedding_lookup([0.1], 1)
-        assert instance_embedding == {}
-        assert class_embedding == {}
+def test_orchestrator_parse_config_basic():
+    cfg = MagicMock()
+    cfg.agents = ["A", "B"]
+    cfg.loops = 2
+    cfg.reasoning_mode = ReasoningMode.DIALECTICAL
+    params = Orchestrator._parse_config(cfg)
+    assert params["agents"] == ["A", "B"]
+    assert params["loops"] == 2
+    assert params["mode"] == ReasoningMode.DIALECTICAL
+    assert params["agent_groups"] == [["A"], ["B"]]
 
-    assert backend_calls == [("q", 1, False), ("q", 1, False)]
-    assert embedding_calls == ["instance", "instance"]
-    assert add_calls[:2] == ["instance", "instance"]
-    assert all(call == "instance" for call in rank_calls)
-    assert len(rank_calls) >= 2
-    assert all(call == "instance" for call in storage_calls)
-    assert len(storage_calls) >= 2
+
+def test_search_stub_backend(_stubbed_search_environment):
+    docs = [{"title": "T", "url": "u"}]
+    env = _stubbed_search_environment
+    env.install_backend(docs)
+
+    instance_results = env.search_instance.external_lookup("q", max_results=1)
+    assert [r["title"] for r in instance_results] == ["T"]
+    assert [r["url"] for r in instance_results] == ["u"]
+
+    bundle = Search.external_lookup("q", max_results=1, return_handles=True)
+    assert isinstance(bundle, ExternalLookupResult)
+    bundle_results = list(bundle)
+    assert [r["title"] for r in bundle_results] == ["T"]
+    assert [r["url"] for r in bundle_results] == ["u"]
+    assert bundle.results == bundle_results
+    assert bundle.cache is env.search_instance.cache
+
+    instance_embedding = env.search_instance.embedding_lookup([0.1], 1)
+    class_embedding = Search.embedding_lookup([0.1], 1)
+    assert instance_embedding == {}
+    assert class_embedding == {}
+
+    assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
+    assert env.embedding_calls == ["instance", "instance"]
+    assert env.add_calls[:2] == ["instance", "instance"]
+    assert all(call == "instance" for call in env.rank_calls)
+    assert len(env.rank_calls) >= 2
+    assert all(call == "instance" for call in env.storage_calls)
+    assert len(env.storage_calls) >= 2
+
+
+def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment):
+    env = _stubbed_search_environment
+    env.install_backend([])
+
+    bundle = Search.external_lookup("missing", max_results=2, return_handles=True)
+
+    assert isinstance(bundle, ExternalLookupResult)
+    assert bundle.query == "missing"
+    assert list(bundle) == bundle.results
+    assert len(bundle.results) == 2
+    assert all(result["title"].startswith("Result") for result in bundle.results)
+    assert all(result["url"] == "" for result in bundle.results)
+    assert bundle.cache is env.search_instance.cache
+    assert bundle.by_backend == {}
+    assert env.backend_calls == [("missing", 2, False)]
 
 
 def test_planner_execute(monkeypatch):
