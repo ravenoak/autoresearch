@@ -46,6 +46,9 @@ and hybrid queries and exposes a CLI entry point. See the
   without creating duplicates.
 - Search does not mutate stored documents outside explicit persist or update
   calls.
+- When `return_handles=True`, `Search.external_lookup` returns an
+  `ExternalLookupResult` containing the ranked documents, a backend map,
+  and handles to the shared cache and storage manager.
 
 ## Proof Sketch
 

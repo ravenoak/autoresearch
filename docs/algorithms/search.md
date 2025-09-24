@@ -57,6 +57,13 @@ sources still produce deterministic output. The merged `storage`
 backends are ranked with the same BM25/semantic/credibility formula as
 remote results, so cross-backend ordering remains reproducible.
 
+`Search.external_lookup` can return an `ExternalLookupResult` bundle when
+`return_handles=True`. The bundle exposes the ranked `results`, a
+`by_backend` map of hydrated documents, and direct references to the
+shared `SearchCache` and `StorageManager`. Regression tests assert the
+bundle preserves deterministic ordering while surfacing the handles
+needed to persist follow-up claims or inspect cache state.
+
 ## Document ingestion scope
 
 0.1.0a1 explicitly ships deterministic PDF and DOCX ingestion behind the

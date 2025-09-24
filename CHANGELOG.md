@@ -21,12 +21,15 @@ Reference issues by slugged filename (for example,
   【F:docs/algorithms/search.md†L1-L74】【F:docs/algorithms/cache.md†L1-L52】
   【F:tests/unit/test_search_parsers.py†L1-L74】
 - Restored the storage-backed hybrid lookup flow by exposing
-  `StorageManager` through `autoresearch.search`, rehydrating vector,
-  BM25, and ontology signals during `Search.external_lookup`, and
-  enabling the vector and hybrid query unit tests.
-  【F:src/autoresearch/search/__init__.py†L10-L38】【F:src/autoresearch/search/core.py†L320-L382】
-  【F:src/autoresearch/search/core.py†L904-L1087】【F:src/autoresearch/search/core.py†L1352-L1475】
-  【F:tests/unit/test_search.py†L296-L314】【F:tests/unit/test_search.py†L404-L429】
+  `StorageManager` and `get_cache` through `autoresearch.search`, adding
+  the `ExternalLookupResult` bundle for `return_handles=True`,
+  rehydrating vector, BM25, and ontology signals during
+  `Search.external_lookup`, and promoting the vector and hybrid query
+  regressions with documentation and spec updates.
+  【F:src/autoresearch/search/__init__.py†L1-L38】【F:src/autoresearch/search/core.py†L85-L117】
+  【F:src/autoresearch/search/core.py†L1326-L1496】【F:docs/algorithms/search.md†L49-L70】
+  【F:docs/algorithms/cache.md†L27-L41】【F:docs/specs/search.md†L23-L44】
+  【F:tests/unit/test_search.py†L296-L340】【F:SPEC_COVERAGE.md†L64-L64】
 - Stabilized storage eviction by documenting the stale-LRU counterexample,
   adding a fallback when caches are empty, extending the property-based
   regression, and introducing a `stale_lru` simulation scenario.
