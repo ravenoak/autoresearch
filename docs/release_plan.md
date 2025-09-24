@@ -18,44 +18,18 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
-confirmed in `pyproject.toml` and [installation.md](installation.md). In the
-Codex shell `python --version` reports 3.12.10, `uv --version` reports 0.7.22,
-and `task --version` still fails, so linting, typing, and test smoke checks run
-via `uv` or the PATH helper from `./scripts/setup.sh --print-path`.
-`uv run --extra dev-minimal --extra test flake8 src tests` and `uv run --extra
-dev-minimal --extra test mypy src` both succeed, and `uv run --extra test pytest
-tests/unit -m 'not slow' -rxX` returns 890 passes, 33 skips, eight XFAIL guards,
-and five XPASS promotions that align with the open ranking, search, metrics, and
-storage tickets. `uv run --extra docs mkdocs build` completes without warnings
-after the GPU wheel documentation move, and
-[issues/archive/refresh-token-budget-monotonicity-proof.md] plus
-[issues/archive/stage-0-1-0a1-release-artifacts.md] capture the proof refresh and
-release staging before tagging. Integration and behavior suites succeed with
-optional extras skipped, and spec lint remains recovered—`docs/specs/monitor.md`
-and `docs/specs/extensions.md` retain the required `## Simulation Expectations`
-sections—while coverage artifacts stay in sync with `baseline/coverage.xml`
-after the September 23 run documented in `docs/status/task-coverage-2025-09-23.md`.
-【c0ed6e†L1-L2】【7b55df†L1-L2】【311dfe†L1-L2】【6c5abf†L1-L1】【16543c†L1-L1】
-【5b78c5†L1-L71】【84bbfd†L1-L4】【5b4d9e†L1-L1】
-【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
-【F:baseline/coverage.xml†L1-L12】
-【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
-Revalidated lint, type, spec lint, documentation build, and packaging dry runs
-on September 24, 2025 using the current toolchain. `uv run --extra
-dev-minimal --extra test flake8 src tests`, `uv run --extra dev-minimal --extra
-test mypy src`, and `uv run python scripts/lint_specs.py` returned clean
-results.【5bf964†L1-L2】【4db948†L1-L3】【6e0aba†L1-L2】 `uv run --extra docs mkdocs
-build` rebuilt the site without warnings.【375bbd†L1-L4】【7349f6†L1-L1】 `uv run
-  `uv run --extra build python -m build` and
-  `uv run scripts/publish_dev.py --dry-run --repository testpypi` refreshed the
-  staged artifacts.【b4608b†L1-L3】【1cbd7f†L1-L3】 The runs are archived in
-  `baseline/logs/build-20250924T172531Z.log`.
-  【F:baseline/logs/build-20250924T172531Z.log†L1-L13】
-  The TestPyPI dry run lives at
-  `baseline/logs/publish-dev-20250924T172554Z.log`.
-  【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】
-The resulting wheel and sdist hashes are tracked below.【064c80†L1-L3】
+The latest `task release:alpha` sweep re-synced every dev, test, and
+distribution extra, confirmed Python 3.12.10, uv 0.7.22, Go Task 3.45.4, and
+retained the broader toolchain versions including pytest 8.4.2, mypy 1.18.2, and
+twine 6.2.0 before entering the verification phase.
+【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L72】 The verify step
+halted when `test_search_stub_backend` raised a TypeError, leaving the run with
+one failed, 240 passed, and two skipped tests plus two warnings over 243
+executed checks, so packaging and publish stages were not reached.
+【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】 The failure blocks
+the alpha tag until the stub backend path accepts the new embedding lookup
+signature logged in the sweep output.
+【F:baseline/logs/release-alpha-20250924T183041Z.log†L500-L534】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -101,29 +75,26 @@ lint, the verify and coverage tasks, packaging builds, metadata checks, and the
 TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
 
 - [x] `uv run --extra dev-minimal --extra test flake8 src tests` passed with no
-  issues.【5bf964†L1-L2】
+  issues before coverage started.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L76】
 - [x] `uv run --extra dev-minimal --extra test mypy src` reported no type
-  errors.【4db948†L1-L3】
+  errors with the a2a interface exclusion still applied.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L76】
 - [x] `uv run python scripts/lint_specs.py` kept the monitor and extensions
-  templates aligned.【6e0aba†L1-L2】
-- [x] `uv run --extra docs mkdocs build` completed without warnings.
-  【375bbd†L1-L4】【7349f6†L1-L1】
-- [x] `task verify` and `task coverage` executed with Go Task 3.45.4.
-  【5d8a01†L1-L2】
-- [x] `uv run --extra build python -m build` succeeded using the packaging
-  extras.
-  - Log: `baseline/logs/build-20250924T172531Z.log`.
-    【F:baseline/logs/build-20250924T172531Z.log†L1-L13】
-  - SHA256 checksums:
-    - `dist/autoresearch-0.1.0a1-py3-none-any.whl` –
-      `d223947a04b69e581cebbc2c66c7a6e995eac34cdde4f125775467aea269fbe7`
-    - `dist/autoresearch-0.1.0a1.tar.gz` –
-      `c33db93fe96270b254692731b948ea5ecc9c69d7b06d22a6f39620382881d762`
-      【064c80†L1-L3】
-- [x] Dry-run publish to TestPyPI succeeded using
-  `uv run scripts/publish_dev.py --dry-run --repository testpypi`.
-  - Log: `baseline/logs/publish-dev-20250924T172554Z.log`.
-    【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】
+  templates aligned during the sweep.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L74-L79】
+- [ ] `uv run --extra docs mkdocs build` remains pending for this sweep; the
+  `release:alpha` task exited before the docs stage reran.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+- [ ] `task verify` and `task coverage` must be rerun because the unit suite
+  halted on `test_search_stub_backend` with a TypeError.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+- [ ] `uv run --extra build python -m build` awaits rerun; the release sweep
+  never reached the packaging stage after the failure.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+- [ ] Dry-run publish to TestPyPI will resume after packaging succeeds; the
+  aborted sweep produced no new publish log.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L533-L534】
 - [x] Archived
   [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
   [issues/archive/refresh-token-budget-monotonicity-proof.md], and
