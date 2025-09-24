@@ -70,11 +70,12 @@ from ..storage import StorageManager
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
-from .parsers import (
+# Re-export parser helpers so downstream imports stay stable.
+from .parsers import (  # noqa: F401
     ParserDependencyError,
     ParserError,
-    extract_docx_text,  # noqa: F401 - re-exported for tests
-    extract_pdf_text,  # noqa: F401 - re-exported for tests
+    extract_docx_text,
+    extract_pdf_text,
     read_document_text,
 )
 from .ranking import combine_scores
@@ -193,6 +194,7 @@ class ExternalLookupResult:
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         return self.results[index]
+
 
 # Scores are bucketed on a 10^-6 grid before lexicographic tie-breaking. This scale
 # balances reproducibility with fidelity: it is coarse enough to absorb floating

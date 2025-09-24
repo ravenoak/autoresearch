@@ -2,7 +2,6 @@ import math
 from collections import OrderedDict, deque
 from unittest.mock import MagicMock, patch
 
-import pytest
 from hypothesis import HealthCheck, assume, example, given, seed, settings
 from hypothesis import strategies as st
 

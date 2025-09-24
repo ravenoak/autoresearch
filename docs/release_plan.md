@@ -41,6 +41,21 @@ after the September 23 run documented in `docs/status/task-coverage-2025-09-23.m
 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
 【F:baseline/coverage.xml†L1-L12】
 【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
+Revalidated lint, type, spec lint, documentation build, and packaging dry runs
+on September 24, 2025 using the current toolchain. `uv run --extra
+dev-minimal --extra test flake8 src tests`, `uv run --extra dev-minimal --extra
+test mypy src`, and `uv run python scripts/lint_specs.py` returned clean
+results.【5bf964†L1-L2】【4db948†L1-L3】【6e0aba†L1-L2】 `uv run --extra docs mkdocs
+build` rebuilt the site without warnings.【375bbd†L1-L4】【7349f6†L1-L1】 `uv run
+  `uv run --extra build python -m build` and
+  `uv run scripts/publish_dev.py --dry-run --repository testpypi` refreshed the
+  staged artifacts.【b4608b†L1-L3】【1cbd7f†L1-L3】 The runs are archived in
+  `baseline/logs/build-20250924T172531Z.log`.
+  【F:baseline/logs/build-20250924T172531Z.log†L1-L13】
+  The TestPyPI dry run lives at
+  `baseline/logs/publish-dev-20250924T172554Z.log`.
+  【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】
+The resulting wheel and sdist hashes are tracked below.【064c80†L1-L3】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -79,44 +94,48 @@ These tasks completed in order: environment bootstrap → packaging verification
 
 ### Prerequisites for tagging 0.1.0a1
 
-- `uv run flake8 src tests` passed with no issues.
-- `uv run mypy src` passed with no issues.
-- `uv run python scripts/lint_specs.py` passes with all specs aligned to the
-  template (monitor and extensions headings restored).
-- `task verify` and `task coverage` executed with Go Task 3.45.4.
+- [x] `uv run --extra dev-minimal --extra test flake8 src tests` passed with no
+  issues.【5bf964†L1-L2】
+- [x] `uv run --extra dev-minimal --extra test mypy src` reported no type
+  errors.【4db948†L1-L3】
+- [x] `uv run python scripts/lint_specs.py` kept the monitor and extensions
+  templates aligned.【6e0aba†L1-L2】
+- [x] `uv run --extra docs mkdocs build` completed without warnings.
+  【375bbd†L1-L4】【7349f6†L1-L1】
+- [x] `task verify` and `task coverage` executed with Go Task 3.45.4.
   【5d8a01†L1-L2】
-- `uv run --extra build python -m build` succeeded using the packaging extras.
-  ```text
-  $ uv run --extra build python -m build
-  Successfully built autoresearch-0.1.0a1.tar.gz and
-  autoresearch-0.1.0a1-py3-none-any.whl
-  ```
-  - Log: `baseline/logs/build-20250924T033349Z.log`.
-    【F:baseline/logs/build-20250924T033349Z.log†L1-L13】
+- [x] `uv run --extra build python -m build` succeeded using the packaging
+  extras.
+  - Log: `baseline/logs/build-20250924T172531Z.log`.
+    【F:baseline/logs/build-20250924T172531Z.log†L1-L13】
   - SHA256 checksums:
     - `dist/autoresearch-0.1.0a1-py3-none-any.whl` –
-      `d4b7890c211f3820f3688133df6fcad01e04abea2966ada22a733dcddc71d8ab`
+      `d223947a04b69e581cebbc2c66c7a6e995eac34cdde4f125775467aea269fbe7`
     - `dist/autoresearch-0.1.0a1.tar.gz` –
-      `8e4fca74164a5d77deaf4e88a7124d94d5954dd7e36f8ef6853722f7b04b2e66`
-- Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
-  with `--dry-run --repository testpypi`.
-  ```text
-  $ uv run scripts/publish_dev.py --dry-run --repository testpypi
-  Dry run selected; skipping upload
-  ```
-  - Log: `baseline/logs/publish-dev-20250924T033415Z.log`.
-    【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L14】
-- Close [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
+      `c33db93fe96270b254692731b948ea5ecc9c69d7b06d22a6f39620382881d762`
+      【064c80†L1-L3】
+- [x] Dry-run publish to TestPyPI succeeded using
+  `uv run scripts/publish_dev.py --dry-run --repository testpypi`.
+  - Log: `baseline/logs/publish-dev-20250924T172554Z.log`.
+    【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】
+- [x] Archived
+  [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
   [issues/archive/refresh-token-budget-monotonicity-proof.md], and
-  [issues/archive/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
-  promotions, heuristic proofs, and packaging logs land together.
-- Close [issues/archive/stabilize-ranking-weight-property.md],
+  [issues/archive/stage-0-1-0a1-release-artifacts.md] so XPASS promotions,
+  heuristics proofs, and packaging logs landed together.
+  【F:issues/archive/retire-stale-xfail-markers-in-unit-suite.md†L1-L81】
+  【F:issues/archive/refresh-token-budget-monotonicity-proof.md†L1-L74】
+  【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
+- [x] Archived
+  [issues/archive/stabilize-ranking-weight-property.md],
   [issues/archive/restore-external-lookup-search-flow.md],
   [issues/archive/finalize-search-parser-backends.md], and
-  [issues/archive/stabilize-storage-eviction-property.md] so the remaining XFAIL
-  guards are resolved before tagging.
-- Record future `uv run python -m build` and TestPyPI dry-run logs in
-  `baseline/logs/` when the stage issue requests refreshed artifacts.
+  [issues/archive/stabilize-storage-eviction-property.md] so the remaining
+  XFAIL guards were resolved before tagging.
+  【F:issues/archive/stabilize-ranking-weight-property.md†L1-L57】
+  【F:issues/archive/restore-external-lookup-search-flow.md†L1-L58】
+  【F:issues/archive/finalize-search-parser-backends.md†L1-L51】
+  【F:issues/archive/stabilize-storage-eviction-property.md†L1-L53】
 
 The **0.1.0a1** date is re-targeted for **September 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.

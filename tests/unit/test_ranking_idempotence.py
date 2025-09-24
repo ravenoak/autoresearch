@@ -1,5 +1,3 @@
-import pytest
-
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search.core import RANKING_BUCKET_SCALE, Search

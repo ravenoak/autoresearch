@@ -77,7 +77,7 @@ def _normalize_text(text: str) -> str:
     return _collapse_spaced_letters(normalized)
 
 
-def _load_pdfminer() -> Callable[[str], str]:
+def _load_pdfminer() -> Callable[..., str]:
     """Return ``pdfminer.six``'s ``extract_text`` helper or raise on failure."""
 
     global _PDF_EXTRACT, _PDF_IMPORT_ERROR

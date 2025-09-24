@@ -34,6 +34,16 @@ XPASS promotions, heuristics proof, and packaging dry runs land before tagging.
 【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
 【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
 【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】【bc4521†L101-L114】
+On September 24, 2025 we refreshed the lint, type, spec lint, documentation, and
+packaging gates with the current Python 3.12.10 / `uv 0.7.22` toolchain.
+`uv run --extra dev-minimal --extra test flake8 src tests`, `uv run --extra
+dev-minimal --extra test mypy src`, `uv run python scripts/lint_specs.py`, and
+`uv run --extra docs mkdocs build` all succeeded, and `uv run --extra build
+python -m build` plus `uv run scripts/publish_dev.py --dry-run --repository
+testpypi` produced the staged logs
+`baseline/logs/build-20250924T172531Z.log` and
+`baseline/logs/publish-dev-20250924T172554Z.log`, with hashes recorded in the
+release plan prerequisites section.【5bf964†L1-L2】【4db948†L1-L3】【6e0aba†L1-L2】【375bbd†L1-L4】【7349f6†L1-L1】【b4608b†L1-L3】【1cbd7f†L1-L3】【F:baseline/logs/build-20250924T172531Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】【F:docs/release_plan.md†L95-L120】
 The first warnings-as-errors `task verify` attempt, captured in
 `baseline/logs/task-verify-20250923T204706Z.log`, stopped at
 `tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`.
@@ -72,9 +82,9 @@ As of **September 24, 2025** we revalidated the fast gates with the Codex
 toolchain: `uv run --extra test pytest tests/unit -m "not slow" -rxX` returned
 890 passes, 33 skips, eight expected failures, and five xpass promotions,
 mirroring the outstanding tickets covering ranking, search, metrics, and
-storage. Linting (`flake8`), typing (`mypy`), and the MkDocs build also succeed
-under `uv`, so the alpha track can focus on the listed issue dependencies.
-【5b78c5†L1-L71】【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
+storage. Linting (`flake8`), typing (`mypy`), MkDocs, and the refreshed
+packaging logs also succeeded under `uv`, keeping the alpha track focused on
+the listed issue dependencies.【5b78c5†L1-L71】【5bf964†L1-L2】【4db948†L1-L3】【375bbd†L1-L4】【7349f6†L1-L1】【b4608b†L1-L3】【1cbd7f†L1-L3】【F:baseline/logs/build-20250924T172531Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】
 
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
