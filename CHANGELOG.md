@@ -85,12 +85,16 @@ Reference issues by slugged filename (for example,
   deterministic fixtures that now pass without an XFAIL marker.【F:src/autoresearch/search/core.py†L199-L203】【F:src/autoresearch/search/core.py†L803-L880】【F:tests/unit/test_property_search_ranking.py†L12-L235】【F:tests/unit/test_ranking_idempotence.py†L1-L53】
 
 ### Packaging Staging
+- Logged consecutive `uv run task release:alpha` sweeps halting at
+  `tests/unit/test_core_modules_additional.py::test_search_stub_backend` until
+  the stub fixture accepts the optional `return_handles` argument, keeping the
+  release gate open while the follow-up lands.【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L40】【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - Staged the packaging dry run with Python 3.12.10 and `uv 0.7.22`; archived the
-  build log (`baseline/logs/build-20250924T172531Z.log`), the TestPyPI dry run
-  log (`baseline/logs/publish-dev-20250924T172554Z.log`), and the refreshed
-  wheel and sdist checksums in [docs/release_plan.md](docs/release_plan.md),
-  closing
-  [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).【F:baseline/logs/build-20250924T172531Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】【F:docs/release_plan.md†L92-L129】【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
+  refreshed build log (`baseline/logs/build-20250924T033349Z.log`), the
+  TestPyPI dry run log (`baseline/logs/publish-dev-20250924T033415Z.log`), and
+  the wheel and sdist checksums in
+  [docs/release_plan.md](docs/release_plan.md), closing
+  [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】【F:STATUS.md†L33-L38】【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
 
 [add-test-coverage]: issues/archive/add-test-coverage-for-optional-components.md
 [streamline-extras]: issues/archive/streamline-task-verify-extras.md
