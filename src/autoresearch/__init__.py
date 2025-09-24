@@ -25,6 +25,9 @@ try:
 except PackageNotFoundError:  # pragma: no cover - fallback for tests
     __version__ = "0.1.0a1"
 
+# Keep release metadata aligned with pyproject.toml and CHANGELOG.md.
+__release_date__ = "Unreleased"
+
 if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
     from .distributed import (
         InMemoryBroker,
@@ -40,6 +43,7 @@ if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
 
 __all__ = [
     "__version__",
+    "__release_date__",
     "RayExecutor",
     "ProcessExecutor",
     "StorageCoordinator",

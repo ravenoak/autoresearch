@@ -53,6 +53,9 @@ classifiers = [
     "License :: OSI Approved :: GNU Affero General Public License v3",
 ]
 
+[tool.autoresearch]
+release_date = "Unreleased" # keep in sync with autoresearch.__release_date__
+
 [tool.setuptools]
 include-package-data = true
 

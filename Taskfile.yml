@@ -55,6 +55,10 @@ tasks:
     cmds:
       - uv run python scripts/lint_specs.py
     desc: "Audit spec files for required sections"
+  check-release-metadata:
+    cmds:
+      - uv run python scripts/check_release_metadata.py
+    desc: "Validate release version and date alignment"
   check:
     vars:
       EXTRAS: "{{.EXTRAS | default \"\"}}"
@@ -72,6 +76,7 @@ tasks:
       - uv run flake8 src
       - uv run mypy src --exclude src/autoresearch/distributed
       - task lint-specs
+      - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
       - uv run pytest -c /dev/null tests/unit/test_version.py tests/unit/test_cli_help.py -q
     desc: "Run lint, type check, and selected fast tests"
@@ -334,6 +339,7 @@ tasks:
       - uv run flake8 src tests
       - uv run mypy src --exclude src/autoresearch/a2a_interface.py
       - task lint-specs
+      - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
       - task: coverage
         vars:
@@ -394,6 +400,8 @@ tasks:
       - uv run mypy src
       - echo "[release:alpha] linting specs"
       - uv run python scripts/lint_specs.py
+      - echo "[release:alpha] checking release metadata"
+      - uv run python scripts/check_release_metadata.py
       - echo "[release:alpha] running task verify"
       - uv run task verify EXTRAS="{{.OPTIONAL_EXTRAS}}"
       - echo "[release:alpha] running task coverage"
