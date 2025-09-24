@@ -54,6 +54,10 @@ the safety margin.
    - When `U ≤ B`, no eviction occurs and all nodes remain.
    - Deterministic node caps engage only when operators set
      `storage.deterministic_node_budget` or when metrics report `U > B`.
+   - Stale policy caches no longer block eviction; if the LRU map is empty
+     while `G` still contains nodes, `_enforce_ram_budget` selects fallback
+     candidates directly from `G` before checking the RAM margin and the
+     deterministic cap.
 5. **Teardown**
    - `teardown` clears `G` and releases resources.
 

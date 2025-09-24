@@ -648,8 +648,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 deterministic_limit = None
             over_budget = ram_measurement_available and current_mb > budget_mb
             needs_deterministic_budget = (
-                deterministic_limit is not None
-                and len(graph.nodes) > deterministic_limit
+                deterministic_limit is not None and len(graph.nodes) > deterministic_limit
             )
             should_use_deterministic = needs_deterministic_budget and (
                 deterministic_override or over_budget
@@ -680,19 +679,11 @@ class StorageManager(metaclass=StorageManagerMeta):
             starting_measurement_available = ram_measurement_available
 
             safety_margin = getattr(cfg, "eviction_safety_margin", 0.1)
-            target_mb = (
-                budget_mb * (1 - safety_margin)
-                if ram_measurement_available
-                else None
-            )
+            target_mb = budget_mb * (1 - safety_margin) if ram_measurement_available else None
 
             batch_size = min(
                 getattr(cfg, "eviction_batch_size", 10),
-                (
-                    max(1, len(graph.nodes) // 10)
-                    if graph and graph.nodes
-                    else 1
-                ),
+                (max(1, len(graph.nodes) // 10) if graph and graph.nodes else 1),
             )
 
             if use_deterministic_budget:
@@ -710,12 +701,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                 and current_mb > aggressive_threshold
             )
 
-            current_display = (
-                f"{current_mb:.1f}MB" if ram_measurement_available else "unknown"
-            )
-            target_display = (
-                f"{target_mb:.1f}MB" if target_mb is not None else "n/a"
-            )
+            current_display = f"{current_mb:.1f}MB" if ram_measurement_available else "unknown"
+            target_display = f"{target_mb:.1f}MB" if target_mb is not None else "n/a"
 
             log.info(
                 f"Starting eviction with policy={policy}, current={current_display}, "
@@ -723,29 +710,26 @@ class StorageManager(metaclass=StorageManagerMeta):
                 f"aggressive={aggressive_eviction}, batch_size={batch_size}"
             )
 
-            while StorageManager.context.graph and (
-                (
-                    not use_deterministic_budget
-                    and ram_measurement_available
-                    and target_mb is not None
-                    and current_mb > target_mb
-                )
-                or (
-                    use_deterministic_budget
-                    and target_node_count is not None
-                    and len(StorageManager.context.graph.nodes) > target_node_count
-                )
-            ):
+            while StorageManager.context.graph:
                 graph = StorageManager.context.graph
                 if graph is None or not graph.nodes:
                     break
 
-                if use_deterministic_budget:
-                    if target_node_count is None:
-                        break
+                ram_condition = (
+                    ram_measurement_available and target_mb is not None and current_mb > target_mb
+                )
+                node_condition = (
+                    use_deterministic_budget
+                    and target_node_count is not None
+                    and len(graph.nodes) > target_node_count
+                )
+
+                if not (ram_condition or node_condition):
+                    break
+
+                if use_deterministic_budget and node_condition:
+                    assert target_node_count is not None
                     remaining = len(graph.nodes) - target_node_count
-                    if remaining <= 0:
-                        break
                     current_batch_size = min(batch_size, remaining)
                 else:
                     current_batch_size = batch_size
@@ -846,6 +830,36 @@ class StorageManager(metaclass=StorageManagerMeta):
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
 
+                still_over_target = (
+                    not use_deterministic_budget
+                    and ram_measurement_available
+                    and target_mb is not None
+                    and current_mb > target_mb
+                )
+                fallback_needed = (
+                    len(nodes_to_evict) < current_batch_size
+                    and graph is not None
+                    and graph.nodes
+                    and (use_deterministic_budget or still_over_target)
+                )
+                if fallback_needed:
+                    missing = current_batch_size - len(nodes_to_evict)
+                    fallback_candidates: list[str] = []
+                    for node_id in list(graph.nodes):
+                        if node_id in nodes_to_evict:
+                            continue
+                        if not graph.has_node(node_id):
+                            continue
+                        fallback_candidates.append(node_id)
+                        if len(fallback_candidates) >= missing:
+                            break
+                    if fallback_candidates:
+                        log.debug(
+                            "Eviction fallback selected %d graph nodes due to stale cache",
+                            len(fallback_candidates),
+                        )
+                    nodes_to_evict.extend(fallback_candidates)
+
                 if not nodes_to_evict:
                     break
 
@@ -887,9 +901,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 if starting_measurement_available and final_measurement_available
                 else "n/a"
             )
-            final_display = (
-                f"{final_mb:.1f}MB" if final_measurement_available else "unknown"
-            )
+            final_display = f"{final_mb:.1f}MB" if final_measurement_available else "unknown"
 
             log.info(
                 f"Eviction completed: policy={policy}, nodes_evicted={nodes_evicted}, "
@@ -953,10 +965,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                          uninitialized after calling setup(). The error message includes
                          a suggestion to call StorageManager.setup() before performing operations.
         """
-        if (
-            StorageManager.context.db_backend is None
-            or StorageManager.context.graph is None
-        ):
+        if StorageManager.context.db_backend is None or StorageManager.context.graph is None:
             try:
                 initialize_storage(context=StorageManager.context, state=StorageManager.state)
             except Exception as e:
