@@ -62,7 +62,7 @@
 | `autoresearch/resource_monitor.py` | [monitor.md](docs/specs/monitor.md)<br>[resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s12], [s16], [t81], [t82], [t83], [t84], [t85], [t99], [t86] | OK |
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [t96] | OK |
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106], [t127], [t128], [t133], [t134], [t135], [t136], [t138], [t140], [t141] | OK (quantized tie buckets asserted) |
-| `autoresearch/search/parsers.py` | [search.md](docs/specs/search.md) | [t129], [t130], [t131], [t132] | OK |
+| `autoresearch/search/parsers.py` | [search.md](docs/specs/search.md) | [t129], [t130], [t131], [t132], [t142], [t143], [t144], [t145] | OK |
 | `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | OK (deterministic ranking proven) |
 | `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK (stale LRU fallback covered) |
 | `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s21], [t109], [t65], [t66] | OK |
@@ -262,3 +262,7 @@
 [t139]: tests/unit/test_metrics_token_budget_spec.py::test_convergence_bound_holds
 [t140]: tests/unit/test_property_search_ranking.py::test_rank_results_breaks_ties_deterministically
 [t141]: tests/unit/test_search.py::test_external_lookup_returns_handles
+[t142]: tests/unit/test_search_parsers.py::test_extract_pdf_text_requires_dependency
+[t143]: tests/unit/test_search_parsers.py::test_extract_docx_text_requires_dependency
+[t144]: tests/unit/test_search_parsers.py::test_read_document_text_normalizes_plain_text
+[t145]: tests/unit/test_search_parsers.py::test_read_document_text_rejects_doc_files

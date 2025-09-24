@@ -13,13 +13,14 @@ Reference issues by slugged filename (for example,
 - Retired the remaining search, distributed, and budgeting XFAIL markers,
   refreshing the corresponding docs/algorithms entries, SPEC_COVERAGE.md, and
   changelog coverage to lock in the XPASS promotions.【F:tests/unit/test_relevance_ranking.py†L118-L213】【F:tests/unit/test_property_bm25_normalization.py†L1-L14】【F:tests/unit/test_distributed_executors.py†L1-L49】【F:tests/unit/test_ranking_idempotence.py†L1-L33】【F:tests/unit/test_metrics_token_budget_spec.py†L1-L74】【F:docs/algorithms/semantic_similarity.md†L20-L33】【F:docs/algorithms/bm25.md†L56-L66】【F:docs/algorithms/cache.md†L1-L36】【F:docs/algorithms/distributed.md†L9-L24】【F:docs/algorithms/token_budgeting.md†L105-L134】【F:SPEC_COVERAGE.md†L33-L110】
-- Finalized PDF and DOCX ingestion for 0.1.0a1 by introducing a deterministic
-  parser module, documenting the scope decision, and promoting parser tests
-  from XFAIL to regression coverage, addressing
+- Finalized PDF and DOCX ingestion for 0.1.0a1 by expanding regression
+  coverage across dependency failures and text normalization, updating the
+  spec ledger, and aligning README plus installation guidance with the
+  optional parsers extra, addressing
   [finalize-search-parser-backends](issues/finalize-search-parser-backends.md).
-  【F:src/autoresearch/search/parsers.py†L1-L149】【F:src/autoresearch/search/core.py†L55-L183】
-  【F:docs/algorithms/search.md†L1-L74】【F:docs/algorithms/cache.md†L1-L52】
-  【F:tests/unit/test_search_parsers.py†L1-L74】
+  【F:tests/unit/test_search_parsers.py†L55-L172】【F:README.md†L214-L245】
+  【F:docs/installation.md†L105-L170】【F:SPEC_COVERAGE.md†L65-L65】
+  【F:SPEC_COVERAGE.md†L250-L268】
 - Restored the storage-backed hybrid lookup flow by exposing
   `StorageManager` and `get_cache` through `autoresearch.search`, adding
   the `ExternalLookupResult` bundle for `return_handles=True`,

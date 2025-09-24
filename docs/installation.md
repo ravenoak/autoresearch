@@ -108,6 +108,11 @@ script. Heavy groups such as `nlp`, `distributed`, `analysis`, and `llm`
 pull large dependencies and are not installed by `task verify`. LLM
 packages are skipped unless `EXTRAS="llm"` or `AR_EXTRAS="llm"` is set.
 
+The parsers extra stays optional for runtime installations so lightweight
+deployments are not forced to install PDF and DOCX libraries. Developer
+workflows still exercise the parser stack because `task install` syncs the
+`test` extra, which already depends on `pdfminer-six` and `python-docx`.
+
 For a lean setup, sync the minimal development and test extras:
 
 ```bash
@@ -160,7 +165,8 @@ EXTRAS="nlp" task install      # adds NLP packages
 EXTRAS="llm" task install      # adds CPU LLM libraries
 uv sync --extra llm            # CPU LLM libraries
 uv sync --extra gpu            # BERTopic and lmstudio
-VERIFY_PARSERS=1 task install  # adds PDF and DOCX parsers
+EXTRAS="parsers" task install  # adds PDF and DOCX parsers to the runtime env
+uv sync --extra parsers        # PDF and DOCX ingestion for local files
 AR_EXTRAS="nlp ui" ./scripts/setup.sh  # extras via setup script
 ```
 
