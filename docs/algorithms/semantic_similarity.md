@@ -28,3 +28,7 @@ Automated tests confirm semantic similarity behavior.
 - [Spec](../specs/search.md)
 - [Integration test](../../tests/integration/test_relevance_ranking_integration.py)
 - [Unit test](../../tests/unit/test_relevance_ranking.py::test_calculate_semantic_similarity)
+
+The dedicated regression now runs without an `xfail` guard, and the
+[SPEC coverage ledger](../../SPEC_COVERAGE.md) links the production scorer
+to this unit test.

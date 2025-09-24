@@ -25,6 +25,9 @@ Regression coverage also exercises
   ../../tests/unit/test_distributed_executors.py::test_execute_agent_remote
 ),
 which ensures Ray-compatible serialization of `QueryState`.
+The regression now runs without an `xfail` guard, and
+[`SPEC_COVERAGE.md`](../../SPEC_COVERAGE.md) records the Ray path as
+standard coverage for the distributed executors module.
 
 ## References
 - [code](../../src/autoresearch/distributed/)

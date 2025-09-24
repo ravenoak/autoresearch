@@ -32,6 +32,9 @@ Regression coverage includes
   ../../tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache
 ),
 which asserts that cached lookups skip redundant backend calls.
+The scenario now runs without an `xfail` guard, and
+[`SPEC_COVERAGE.md`](../../SPEC_COVERAGE.md) documents the cache module's
+unit coverage.
 
 ## Lookup flow
 

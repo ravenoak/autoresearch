@@ -79,6 +79,8 @@ and
 validate idempotence and monotonic improvement. Benchmark
 [`test_ranking_convergence_simulation.py`](../../tests/benchmark/test_ranking_convergence_simulation.py)
 records the mean convergence step.
+SPEC coverage tracks these regressions so the ranking suite now runs
+without the former XPASS guard.
 
 ## References
 
