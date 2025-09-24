@@ -26,6 +26,37 @@ b_{t+1} = round_with_margin(max(u_t, \bar{u}_t, a_t, \bar{a}_t), m)
 The bounds, convergence proof, and choice of averaging windows are
 detailed in [Token Budget Adaptation][tb-derivation].
 
+## Monotonicity review (September 2025)
+
+> **Q:** What did the original proof assert about monotonicity?
+>
+> **A:** It claimed that larger per-cycle usage always yields a larger
+> budget because the update took a max and applied a margin via ``ceil``.
+
+> **Q:** Which assumption failed under regression testing?
+>
+> **A:** Hypothesis reproduced a case where one metrics instance had no
+> prior usage. The implementation keeps the current budget in that state,
+> while a single-token sample rounds to ``1`` because
+> ``round_with_margin`` uses round-half-up semantics. The counterexample
+> is now documented in [Token Budget Adaptation][tb-counterexample].
+
+> **Q:** Should the algorithm change to restore strict monotonicity?
+>
+> **A:** Raising the first positive sample would require special-casing
+> small deltas, inviting over-fitting to contrived workloads. The present
+> fallback guards cold starts by preserving the configured budget until a
+> positive observation arrives.
+
+> **Q:** What specification do we adopt?
+>
+> **A:** We frame the property as *piecewise monotonic*: once any positive
+> usage has been observed, larger deltas cannot decrease the suggested
+> budget. The regression suite in
+> [tests/unit/test_heuristic_properties.py][tb-tests]
+> now covers both the zero-usage fallback and the positive-usage
+> monotonicity guarantee.
+
 ## Simulation
 
 Running
@@ -85,4 +116,6 @@ recorded usage scaled by the margin.
 [t1]: ../../tests/unit/test_metrics_token_budget_spec.py
 [t2]: ../../tests/unit/test_token_budget_convergence.py
 [tb-derivation]: ../algorithms/token_budgeting.md#bounds-and-derivation
+[tb-counterexample]: ../algorithms/token_budgeting.md#counterexample
+[tb-tests]: ../../tests/unit/test_heuristic_properties.py
 

@@ -6,6 +6,10 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Reframed the token budget spec around piecewise monotonicity,
+  documented the zero-usage counterexample, and promoted deterministic
+  regression coverage for
+  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md).
 - Archived [resolve-deprecation-warnings-in-tests](issues/archive/resolve-deprecation-warnings-in-tests.md)
   after removing the repository-wide `pkg_resources` suppression from
   `sitecustomize.py` and capturing a clean `task verify:warnings:log` run at

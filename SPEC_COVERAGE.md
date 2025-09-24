@@ -56,7 +56,7 @@
 | `autoresearch/monitor/node_health.py` | [monitor.md](docs/specs/monitor.md) | [s12], [t81], [t82], [t83], [t84], [t85], [t86] | OK |
 | `autoresearch/monitor/system_monitor.py` | [monitor.md](docs/specs/monitor.md) | [s12], [t81], [t82], [t83], [t84], [t85], [t86] | OK |
 | `autoresearch/orchestration` | [orchestration.md](docs/specs/orchestration.md) | [p18], [s13], [t87], [t88], [t89], [t90], [t91] | OK |
-| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p16], [s14], [t92], [t93] | Needs proof refresh ([issues/refresh-token-budget-monotonicity-proof.md](issues/refresh-token-budget-monotonicity-proof.md)) |
+| `autoresearch/orchestration/metrics.py` | [metrics.md](docs/specs/metrics.md) | [p16], [s14], [t92], [t93], [t126] | OK (piecewise monotonic after first usage) |
 | `autoresearch/orchestrator_perf.py` | [orchestrator-perf.md](docs/specs/orchestrator-perf.md)<br>[orchestrator_scheduling.md](docs/specs/orchestrator_scheduling.md) | [s15], [t94], [t95], [t96] | OK |
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) | [t97], [t98] | OK |
 | `autoresearch/resource_monitor.py` | [monitor.md](docs/specs/monitor.md)<br>[resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s12], [s16], [t81], [t82], [t83], [t84], [t85], [t99], [t86] | OK |
@@ -202,6 +202,7 @@
 [s14]: scripts/token_budget_convergence.py
 [t92]: tests/unit/test_metrics_token_budget_spec.py
 [t93]: tests/unit/test_token_budget_convergence.py
+[t126]: tests/unit/test_heuristic_properties.py
 [s15]: scripts/orchestrator_perf_sim.py
 [t94]: tests/integration/test_orchestrator_performance.py
 [t95]: tests/unit/test_orchestrator_perf_sim.py
