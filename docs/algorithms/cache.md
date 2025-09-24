@@ -27,6 +27,24 @@ evicts the oldest entries until the TinyDB stays under a fixed size. The run
 time grows linearly with the number of records, empirically confirming the
 `O(n)` bounds above.
 
+## Lookup flow
+
+`Search.external_lookup` consults the cache before contacting any backend.
+Cache hits still receive embeddings via `Search.add_embeddings`, ensuring the
+storage hydration pipeline can reuse cached vectors and immediately merge the
+results with DuckDB and ontology matches. Misses trigger the configured
+backends, and the ranked documents are persisted so subsequent calls retrieve
+hydrated results without another network round-trip.
+
+## Fallback behaviour
+
+The hybrid pipeline degrades gracefully when optional storage components are
+unavailable. If the DuckDB VSS extension cannot load, the storage stage emits
+only lexical and ontology results. When the RDF store is missing, ontology
+queries are skipped but cached and BM25-ranked documents remain deterministic.
+The cache therefore guarantees stable output even as optional extras come and
+go.
+
 ## References
 - [`cache.py`](../../src/autoresearch/cache.py)
 - [spec](../specs/cache.md)

@@ -66,7 +66,7 @@ from ..cache import (
 )
 from ..cache import get_cached_results as _get_cached_results
 from ..config.loader import get_config
-from ..errors import ConfigError, SearchError
+from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
 from . import storage as search_storage
@@ -312,6 +312,76 @@ class Search:
                 return None
 
         return self._sentence_transformer
+
+    @staticmethod
+    def _coerce_embedding(raw: Any) -> Optional[np.ndarray]:
+        """Convert embedding outputs to a numpy array."""
+
+        if raw is None:
+            return None
+        if isinstance(raw, np.ndarray):
+            if raw.ndim == 1:
+                return raw.astype(float)
+            if raw.ndim >= 2:
+                return np.array(raw[0], dtype=float)
+        if isinstance(raw, (int, float)):
+            return np.array([float(raw)], dtype=float)
+        if isinstance(raw, (list, tuple)):
+            if not raw:
+                return None
+            first = raw[0]
+            if isinstance(first, (list, tuple, np.ndarray)):
+                return np.array(first, dtype=float)
+            if isinstance(first, (int, float)):
+                return np.array(raw, dtype=float)
+        if hasattr(raw, "__iter__") and not isinstance(raw, (str, bytes)):
+            try:
+                seq = list(raw)
+            except TypeError:
+                return None
+            if not seq:
+                return None
+            first = seq[0]
+            if isinstance(first, (list, tuple, np.ndarray)):
+                return np.array(first, dtype=float)
+            if isinstance(first, (int, float)):
+                return np.array(seq, dtype=float)
+            if hasattr(first, "__iter__") and not isinstance(first, (str, bytes)):
+                try:
+                    nested = list(first)
+                except TypeError:
+                    return None
+                if nested:
+                    return np.array(nested, dtype=float)
+        return None
+
+    @hybridmethod
+    def compute_query_embedding(self, query: str) -> Optional[np.ndarray]:
+        """Return a numeric embedding for ``query`` when a model is available."""
+
+        model = self.get_sentence_transformer()
+        if model is None:
+            return None
+
+        if hasattr(model, "embed"):
+            try:
+                raw = model.embed([query])
+            except TypeError:
+                raw = model.embed(query)
+            embedding = self._coerce_embedding(raw)
+            if embedding is not None:
+                return embedding
+
+        if hasattr(model, "encode"):
+            try:
+                raw = model.encode([query])
+            except TypeError:
+                raw = model.encode(query)
+            embedding = self._coerce_embedding(raw)
+            if embedding is not None:
+                return embedding
+
+        return None
 
     @staticmethod
     def preprocess_text(text: str) -> List[str]:
@@ -831,6 +901,191 @@ class Search:
 
         return results
 
+    @hybridmethod
+    def storage_hybrid_lookup(
+        self,
+        query: str,
+        query_embedding: Optional[np.ndarray],
+        backend_results: Dict[str, List[Dict[str, Any]]],
+        max_results: int,
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Combine storage-backed lexical, semantic, and ontology lookups."""
+
+        aggregated: Dict[str, Dict[str, Any]] = {}
+        source_map: Dict[str, set[str]] = {}
+
+        def _claim_id(value: Any) -> str:
+            text = str(value or "")
+            if text.startswith("urn:claim:"):
+                return text.split("urn:claim:", 1)[1]
+            return text
+
+        def _ensure_snippet(doc: Dict[str, Any], claim_id: str) -> None:
+            snippet = doc.get("snippet") or doc.get("content")
+            if snippet:
+                doc["snippet"] = str(snippet)
+                return
+            try:
+                claim = StorageManager.get_claim(claim_id)
+            except Exception:
+                claim = None
+            if claim:
+                content = claim.get("content")
+                if content:
+                    doc["snippet"] = str(content)
+                if not doc.get("title") and content:
+                    doc["title"] = str(content)[:60]
+
+        def _normalise_embedding(embedding: Any) -> Optional[List[float]]:
+            if embedding is None:
+                return None
+            if isinstance(embedding, np.ndarray):
+                return embedding.astype(float).tolist()
+            if hasattr(embedding, "tolist"):
+                try:
+                    return list(embedding.tolist())
+                except Exception:  # pragma: no cover - defensive
+                    return None
+            if isinstance(embedding, (list, tuple)):
+                try:
+                    return [float(v) for v in embedding]
+                except Exception:
+                    return None
+            return None
+
+        def _ingest(doc: Dict[str, Any], source: str) -> None:
+            claim_id = _claim_id(doc.get("url") or doc.get("node_id") or doc.get("id"))
+            if not claim_id:
+                return
+            entry = aggregated.setdefault(claim_id, {"url": claim_id})
+            title = doc.get("title") or doc.get("name")
+            if title and not entry.get("title"):
+                entry["title"] = str(title)
+            snippet = doc.get("snippet") or doc.get("content")
+            if snippet and not entry.get("snippet"):
+                entry["snippet"] = str(snippet)
+            _ensure_snippet(entry, claim_id)
+            embedding = _normalise_embedding(doc.get("embedding"))
+            if embedding is not None:
+                entry["embedding"] = embedding
+            similarity = doc.get("similarity")
+            if similarity is not None:
+                try:
+                    entry["similarity"] = float(similarity)
+                except (TypeError, ValueError):
+                    pass
+            if doc.get("ontology_matches"):
+                matches = entry.setdefault("ontology_matches", [])
+                for match in doc["ontology_matches"]:
+                    predicate = str(match.get("predicate", ""))
+                    value = str(match.get("value", ""))
+                    matches.append({"predicate": predicate, "value": value})
+            source_map.setdefault(claim_id, set()).add(source)
+
+        vector_docs = list(backend_results.get("duckdb", []))
+        if not vector_docs and query_embedding is not None:
+            try:
+                vector_hits = StorageManager.vector_search(query_embedding.tolist(), k=max_results)
+            except (StorageError, NotFoundError, Exception) as exc:
+                log.debug("Storage vector search unavailable: %s", exc)
+                vector_hits = []
+            for hit in vector_hits:
+                claim_id = _claim_id(hit.get("node_id") or hit.get("id"))
+                if not claim_id:
+                    continue
+                doc = {
+                    "url": claim_id,
+                    "title": hit.get("title") or hit.get("name"),
+                    "snippet": hit.get("content") or hit.get("snippet"),
+                    "embedding": hit.get("embedding"),
+                    "similarity": hit.get("similarity"),
+                }
+                _ensure_snippet(doc, claim_id)
+                vector_docs.append(doc)
+        for doc in vector_docs:
+            _ensure_snippet(doc, _claim_id(doc.get("url") or doc.get("node_id")))
+            _ingest(doc, "vector")
+
+        try:
+            graph = StorageManager.get_graph()
+        except NotFoundError:
+            graph = None
+        except Exception as exc:  # pragma: no cover - defensive
+            log.debug("Graph unavailable for storage lookup: %s", exc)
+            graph = None
+        if graph is not None:
+            sorted_nodes = sorted(graph.nodes(data=True), key=lambda item: str(item[0]))
+            limit = max(max_results * 5, max_results)
+            for node_id, data in sorted_nodes[:limit]:
+                content = data.get("content") or data.get("text") or data.get("snippet")
+                if not content:
+                    continue
+                doc = {
+                    "url": _claim_id(node_id),
+                    "title": data.get("title") or data.get("name"),
+                    "snippet": content,
+                }
+                _ingest(doc, "bm25")
+
+        tokens = self.preprocess_text(query)
+        if tokens:
+            filters = " || ".join(
+                f'CONTAINS(LCASE(STR(?o)), "{token}")' for token in tokens
+            )
+            sparql = (
+                "SELECT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(" + filters + ") }"
+            )
+            try:
+                rows = StorageManager.query_rdf(sparql)
+            except (NotFoundError, StorageError, Exception) as exc:
+                log.debug("Ontology lookup skipped: %s", exc)
+            else:
+                matches: List[Tuple[str, str, str]] = []
+                for row in rows:
+                    try:
+                        subj = getattr(row, "s", row[0])
+                        pred = getattr(row, "p", row[1])
+                        obj = getattr(row, "o", row[2])
+                    except Exception:  # pragma: no cover - rdflib row interface
+                        continue
+                    claim_id = _claim_id(subj)
+                    value = str(obj)
+                    matches.append((claim_id, str(pred), value))
+                matches.sort()
+                for claim_id, predicate, value in matches[: max_results * 2]:
+                    doc = {
+                        "url": claim_id,
+                        "snippet": value,
+                        "ontology_matches": [
+                            {"predicate": predicate, "value": value}
+                        ],
+                    }
+                    _ingest(doc, "ontology")
+
+        if not aggregated:
+            return {}
+
+        ordered: List[Dict[str, Any]] = []
+        for claim_id in sorted(aggregated):
+            entry = aggregated[claim_id]
+            if "ontology_matches" in entry:
+                matches = entry["ontology_matches"]
+                entry["ontology_matches"] = sorted(
+                    matches,
+                    key=lambda item: (item.get("predicate", ""), item.get("value", "")),
+                )
+            sources = sorted(source_map.get(claim_id, set()))
+            if sources:
+                entry["storage_sources"] = sources
+            entry.setdefault("title", claim_id)
+            entry.setdefault("snippet", "")
+            ordered.append(dict(entry))
+
+        if query_embedding is not None:
+            self.add_embeddings(ordered, query_embedding)
+
+        return {"storage": ordered[: max_results * 3]}
+
     @staticmethod
     def load_evaluation_data(path: Path) -> Dict[str, List[Dict[str, float]]]:
         """Load ranking evaluation data from a CSV file."""
@@ -1094,19 +1349,28 @@ class Search:
         results: List[Dict[str, Any]] = []
         results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
 
-        # Determine query embedding when hybrid search is enabled
-        if query_embedding is None and cfg.search.hybrid_query:
-            try:
-                model = self.get_sentence_transformer()
-                if model is not None:
-                    query_embedding = list(model.embed([search_query]))[0]
-                    if hasattr(query_embedding, "tolist"):
-                        query_embedding = query_embedding.tolist()
-            except Exception as exc:  # pragma: no cover - optional failure
-                log.warning(f"Embedding generation failed: {exc}")
-
+        np_query_embedding: Optional[np.ndarray] = None
         if query_embedding is not None:
-            emb_results = type(self).embedding_lookup(query_embedding, max_results)
+            try:
+                np_query_embedding = np.array(query_embedding, dtype=float)
+            except Exception:  # pragma: no cover - defensive
+                np_query_embedding = None
+        else:
+            need_embedding = (
+                cfg.search.hybrid_query
+                or cfg.search.use_semantic_similarity
+                or bool(cfg.search.embedding_backends)
+            )
+            if not need_embedding:
+                try:
+                    need_embedding = StorageManager.has_vss()
+                except Exception:  # pragma: no cover - optional dependency
+                    need_embedding = False
+            if need_embedding:
+                np_query_embedding = self.compute_query_embedding(search_query)
+
+        if np_query_embedding is not None:
+            emb_results = self.embedding_lookup(np_query_embedding, max_results)
             for name, docs in emb_results.items():
                 results_by_backend[name] = docs
                 results.extend(docs)
@@ -1125,7 +1389,7 @@ class Search:
 
             cached = self.cache.get_cached_results(search_query, name)
             if cached is not None:
-                type(self).add_embeddings(cached, query_embedding)
+                self.add_embeddings(cached, np_query_embedding)
                 for r in cached:
                     r.setdefault("backend", name)
                 return name, cached[:max_results]
@@ -1174,7 +1438,7 @@ class Search:
                 for r in backend_results:
                     r.setdefault("backend", name)
             self.cache.cache_results(search_query, name, backend_results)
-            type(self).add_embeddings(backend_results, query_embedding)
+            self.add_embeddings(backend_results, np_query_embedding)
             return name, backend_results
 
         max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
@@ -1188,10 +1452,26 @@ class Search:
                     results_by_backend[name] = backend_results
                     results.extend(backend_results)
 
+        storage_results = self.storage_hybrid_lookup(
+            text_query, np_query_embedding, results_by_backend, max_results
+        )
+        for name, docs in storage_results.items():
+            if not docs:
+                continue
+            if name in results_by_backend:
+                results_by_backend[name].extend(docs)
+            else:
+                results_by_backend[name] = docs
+        if storage_results.get("storage"):
+            results_by_backend.pop("duckdb", None)
+        results = []
+        for docs in results_by_backend.values():
+            results.extend(docs)
+
         if results:
             # Rank the results from all backends together
             ranked_results = self.cross_backend_rank(
-                text_query, results_by_backend, query_embedding
+                text_query, results_by_backend, np_query_embedding
             )
 
             search_storage.persist_results(ranked_results)

@@ -33,6 +33,30 @@ simulation ranks sample documents repeatedly. The ordering stabilizes
 after the first pass, demonstrating convergence of the weighted
 relevance formula.
 
+## Storage hydration pipeline
+
+`Search.external_lookup` deterministically rehydrates previously
+persisted claims before ranking network responses. The pipeline uses the
+`StorageManager` to combine three signals:
+
+- **Vector search:** DuckDB's VSS index returns nearest neighbours when
+  embeddings are available. Cached embedding lookups reuse the cached
+  vectors to avoid recomputation.
+- **BM25 sweep:** the in-memory graph is scanned in a deterministic
+  order, feeding the lexical scoring path so stored snippets participate
+  in the same ranking routine as live backends.
+- **Ontology matches:** a SPARQL `CONTAINS` filter over the RDF store
+  surfaces inferred triples. Each claim records which of the `vector`,
+  `bm25`, or `ontology` stages contributed via the `storage_sources`
+  metadata.
+
+If the VSS extension is disabled, the vector stage yields an empty list
+while the lexical and ontology components continue to run. When the RDF
+store is unavailable, ontology lookups are skipped but the remaining
+sources still produce deterministic output. The merged `storage`
+backends are ranked with the same BM25/semantic/credibility formula as
+remote results, so cross-backend ordering remains reproducible.
+
 ## Query expansion convergence
 
 A simple simulation iteratively expands queries using stored entities.

@@ -8,6 +8,7 @@ score is analysed in ``docs/algorithms/relevance_ranking.md``.
 """
 
 from ..config.loader import get_config
+from ..storage import StorageManager
 from .context import (
     BERTOPIC_AVAILABLE,
     SENTENCE_TRANSFORMERS_AVAILABLE,
@@ -33,6 +34,7 @@ __all__ = [
     "close_http_session",
     "_http_session",
     "get_config",
+    "StorageManager",
     "SPACY_AVAILABLE",
     "BERTOPIC_AVAILABLE",
     "SENTENCE_TRANSFORMERS_AVAILABLE",

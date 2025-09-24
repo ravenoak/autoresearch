@@ -284,11 +284,11 @@ def test_local_git_backend(monkeypatch, tmp_path):
     assert any(r["url"] == str(readme) for r in results)
 
 
-@pytest.mark.xfail(reason="StorageManager not exposed in search module")
 def test_external_lookup_vector_search(monkeypatch):
     cfg = _cfg()
     cfg.search.backends = []
     cfg.search.context_aware.enabled = False
+    cfg.search.embedding_backends = ["duckdb"]
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
 
     class DummyModel:
@@ -296,7 +296,8 @@ def test_external_lookup_vector_search(monkeypatch):
             return [0.1, 0.2]
 
     monkeypatch.setattr(
-        "autoresearch.search.Search.get_sentence_transformer", lambda: DummyModel()
+        "autoresearch.search.Search.get_sentence_transformer",
+        lambda *args, **kwargs: DummyModel(),
     )
 
     def mock_vector_search(embed, k=5):
@@ -309,6 +310,8 @@ def test_external_lookup_vector_search(monkeypatch):
     results = Search.external_lookup("query", max_results=1)
 
     assert any(r.get("snippet") == "vector snippet" for r in results)
+    assert all(r.get("backend") == "storage" for r in results)
+    assert any("vector" in (r.get("storage_sources") or []) for r in results)
 
 
 def test_http_session_atexit_hook(monkeypatch):
@@ -395,7 +398,6 @@ def test_rank_results_credibility_only(mock_get_config, monkeypatch, sample_sear
     assert ranked[0]["url"] == "https://site3.com"
 
 
-@pytest.mark.xfail(reason="Hybrid search backend placeholder")
 def test_external_lookup_hybrid_query(monkeypatch):
     cfg = _cfg()
     cfg.search.backends = ["kw"]
