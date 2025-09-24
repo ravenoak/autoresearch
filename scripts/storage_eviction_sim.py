@@ -20,6 +20,8 @@ Scenarios:
     deterministic_override
                      deterministic node cap enforces a hard limit despite
                      missing RAM metrics
+    stale_lru        clears the LRU cache before enforcement to mimic stale
+                     eviction metadata
 """
 
 from __future__ import annotations
@@ -76,8 +78,10 @@ def _run(
     StorageManager.context = ctx
 
     original = StorageManager._current_ram_mb
-    current = 0 if scenario in {"under_budget", "deterministic_override"} else (
-        cfg.ram_budget_mb if scenario == "exact_budget" else 1000
+    current = (
+        0
+        if scenario in {"under_budget", "deterministic_override"}
+        else (cfg.ram_budget_mb if scenario == "exact_budget" else 1000)
     )
     StorageManager._current_ram_mb = staticmethod(lambda: current)
     stop = Event()
@@ -125,6 +129,9 @@ def _run(
                 ev.join()
             if scenario == "burst":
                 StorageManager._enforce_ram_budget(enforce_budget)
+            if scenario == "stale_lru":
+                StorageManager.state.lru.clear()
+                StorageManager._enforce_ram_budget(enforce_budget)
 
         remaining = StorageManager.get_graph().number_of_nodes()
     finally:
@@ -151,6 +158,7 @@ SCENARIOS = {
     "race",
     "burst",
     "deterministic_override",
+    "stale_lru",
 }
 
 

@@ -47,6 +47,18 @@ therefore observe a state satisfying the invariant and leave it intact.
   deterministic fallback derived from `ram_budget_mb` only activates when
   metrics confirm `U > B`, keeping under-budget scenarios intact.
 
+### Counterexample: stale LRU
+
+Hypothesis generated a run with `B = 3` MB, `δ ≈ 0.29`, and `U₀ ≈ 7.13` MB where
+the NetworkX graph held three nodes but the LRU cache was empty. The original
+implementation saw the stale cache, found no eviction candidates, and exited
+with `U` still above the target `T ≈ 2.13` MB. `_enforce_ram_budget` now fills
+missing candidates directly from the graph and reevaluates both the RAM bound
+and the deterministic node limit on every iteration. Regression coverage lives
+in the strengthened property test in
+`tests/unit/test_storage_eviction.py` and the new `stale_lru` scenario in
+`scripts/storage_eviction_sim.py`.
+
 These arguments assume each node consumes at least `s_min > 0` MB, so the
 termination bound above is finite.
 

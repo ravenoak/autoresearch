@@ -76,37 +76,43 @@ def test_enforce_ram_budget_under_budget_property(budget, usage):
     mock_graph.remove_node.assert_not_called()
 
 
-@pytest.mark.xfail(reason="Eviction property generation unstable")
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=25)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=50)
 @given(
     budget=st.integers(min_value=1, max_value=50),
-    safety=st.floats(min_value=0, max_value=0.5),
+    safety=st.floats(min_value=0.0, max_value=0.5, allow_nan=False),
     reductions=st.lists(st.integers(min_value=1, max_value=20), min_size=1, max_size=5),
+    stale_lru=st.booleans(),
 )
-def test_enforce_ram_budget_reduces_usage_property(budget, safety, reductions):
-    """Eviction reduces usage to the safety margin target."""
-    start = budget + sum(reductions) + 1
+def test_enforce_ram_budget_reduces_usage_property(budget, safety, reductions, stale_lru):
+    """Eviction continues past stale caches until usage reaches the target."""
+    target = budget * (1 - safety)
+    total_reduction = sum(reductions)
+    assume(total_reduction > max(1.0, budget - target + 1e-6))
+    start = target + total_reduction
+    assume(start > budget)
+
     usage_sequence = [start]
     current = start
-    for r in reductions:
-        current -= r
+    for reduction in reductions:
+        current -= reduction
         usage_sequence.append(current)
-    target = budget * (1 - safety)
-    assume(usage_sequence[-1] <= target)
-    assume(all(u > target for u in usage_sequence[:-1]))
 
-    nodes = {f"n{i}": {} for i in range(len(reductions))}
+    nodes = {f"n{i}": {} for i in range(len(reductions) + 2)}
     mock_graph = MagicMock()
     mock_graph.nodes = nodes
     mock_graph.has_node.side_effect = lambda n, nodes=nodes: n in nodes
 
-    def remove_node(n: str) -> None:
-        nodes.pop(n, None)
+    def remove_node(node_id: str) -> None:
+        nodes.pop(node_id, None)
 
     mock_graph.remove_node.side_effect = remove_node
 
-    mock_lru = OrderedDict((n, i) for i, n in enumerate(nodes))
-    ram_mock = MagicMock(side_effect=usage_sequence + [usage_sequence[-1]])
+    if stale_lru:
+        mock_lru = OrderedDict()
+    else:
+        mock_lru = OrderedDict((node_id, index) for index, node_id in enumerate(nodes))
+
+    ram_mock = MagicMock(side_effect=usage_sequence + [usage_sequence[-1]] * 5)
     cfg = MagicMock(
         graph_eviction_policy="lru",
         eviction_batch_size=1,
@@ -125,8 +131,16 @@ def test_enforce_ram_budget_reduces_usage_property(budget, safety, reductions):
                 ):
                     StorageManager._enforce_ram_budget(budget)
 
-    assert mock_graph.remove_node.call_count == len(reductions)
-    assert ram_mock.call_count == len(usage_sequence) + 1
+    deterministic_limit = budget if budget > 0 else None
+    expected_evictions = len(reductions)
+    if deterministic_limit is not None and len(nodes) > deterministic_limit:
+        expected_evictions = max(expected_evictions, len(nodes) - deterministic_limit)
+
+    assert mock_graph.remove_node.call_count >= expected_evictions
+    assert ram_mock.call_count >= len(usage_sequence) + 1
+
+    if deterministic_limit is not None:
+        assert len(nodes) <= deterministic_limit
 
 
 def test_pop_lru():

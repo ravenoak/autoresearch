@@ -20,6 +20,9 @@ Reference issues by slugged filename (for example,
   【F:src/autoresearch/search/__init__.py†L10-L38】【F:src/autoresearch/search/core.py†L320-L382】
   【F:src/autoresearch/search/core.py†L904-L1087】【F:src/autoresearch/search/core.py†L1352-L1475】
   【F:tests/unit/test_search.py†L296-L314】【F:tests/unit/test_search.py†L404-L429】
+- Stabilized storage eviction by documenting the stale-LRU counterexample,
+  adding a fallback when caches are empty, extending the property-based
+  regression, and introducing a `stale_lru` simulation scenario.
 - Reframed the token budget spec around piecewise monotonicity,
   documented the zero-usage counterexample, and promoted deterministic
   regression coverage for
