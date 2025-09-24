@@ -351,6 +351,64 @@ tasks:
       Installs the `dev-minimal` and `test` extras by default; setting EXTRAS
       adds optional groups (e.g., "gpu") in addition to the baseline.
 
+  release:alpha:
+    vars:
+      USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
+      OPTIONAL_EXTRAS:
+        sh: |
+          set -eu
+          extras="{{.ALL_EXTRAS_NO_GPU}} build"
+          if [ -n "{{.USER_EXTRAS}}" ]; then
+            extras="$extras {{.USER_EXTRAS}}"
+          fi
+          dedup=""
+          for extra in $extras; do
+            case " $dedup " in
+              *" $extra "*) ;;
+              *) dedup="$dedup $extra" ;;
+            esac
+          done
+          printf '%s\n' "${dedup# }"
+      SYNC_EXTRAS:
+        sh: |
+          set -eu
+          extras="{{.VERIFY_BASE_EXTRAS}} {{.OPTIONAL_EXTRAS}}"
+          dedup=""
+          for extra in $extras; do
+            case " $dedup " in
+              *" $extra "*) ;;
+              *) dedup="$dedup $extra" ;;
+            esac
+          done
+          printf '%s\n' "${dedup# }"
+    cmds:
+      - echo "[release:alpha] syncing dependencies"
+      - |
+          uv sync \
+            --python-platform x86_64-manylinux_2_28 \
+            {{range splitList " " .SYNC_EXTRAS}} --extra {{.}}{{end}} \
+            {{if contains .SYNC_EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
+      - echo "[release:alpha] running flake8"
+      - uv run flake8 src tests
+      - echo "[release:alpha] running mypy"
+      - uv run mypy src
+      - echo "[release:alpha] linting specs"
+      - uv run python scripts/lint_specs.py
+      - echo "[release:alpha] running task verify"
+      - uv run task verify EXTRAS="{{.OPTIONAL_EXTRAS}}"
+      - echo "[release:alpha] running task coverage"
+      - uv run task coverage EXTRAS="{{.OPTIONAL_EXTRAS}}"
+      - echo "[release:alpha] building distributions"
+      - uv run python -m build
+      - echo "[release:alpha] checking metadata with twine"
+      - uv run twine check dist/*
+      - echo "[release:alpha] running TestPyPI dry run"
+      - uv run python scripts/publish_dev.py --dry-run
+    desc: |
+      Run the alpha release readiness sweep.
+      Installs dev-minimal, test, and optional extras (minus gpu) by default.
+      Pass EXTRAS (e.g., "gpu") to add more optional groups.
+
   verify:warnings:
     vars:
       USER_EXTRAS: "{{.EXTRAS | default \"\"}}"
