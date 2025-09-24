@@ -50,6 +50,10 @@ Reference issues by slugged filename (for example,
 - Prometheus metrics, interactive mode, and graph visualization utilities.
 - Release remains pending while tests, coverage, and documentation builds are
   stabilized (see the issues referenced above and in [STATUS.md](STATUS.md)).
+- Staged the packaging dry run with Python 3.12.10 and `uv 0.7.22`; archived the
+  build log (`baseline/logs/build-20250924T033349Z.log`), the TestPyPI dry run
+  log (`baseline/logs/publish-dev-20250924T033415Z.log`), and the recorded
+  wheel and sdist checksums in [docs/release_plan.md](docs/release_plan.md).
 
 [add-test-coverage]: issues/archive/add-test-coverage-for-optional-components.md
 [streamline-extras]: issues/archive/streamline-task-verify-extras.md

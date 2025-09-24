@@ -17,6 +17,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `uv --version` reports 0.7.22, and `task --version` still fails, so the
   Taskfile commands must run via `uv` or the PATH helper until we package a
   new Task binary. 【c0ed6e†L1-L2】【7b55df†L1-L2】【311dfe†L1-L2】
+- Staged the packaging dry run from a clean shell: `uv run --extra build python
+  -m build` and `uv run scripts/publish_dev.py --dry-run --repository testpypi`
+  refreshed the wheel and sdist. Logs live at
+  `baseline/logs/build-20250924T033349Z.log` and
+  `baseline/logs/publish-dev-20250924T033415Z.log`. Checksums now live in the
+  release plan so future reruns keep parity.
+  【F:baseline/logs/build-20250924T033349Z.log†L1-L13】
+  【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L14】
+  【F:docs/release_plan.md†L88-L109】
 - Reran `uv run --extra test pytest tests/unit -m "not slow" -rxX`; 890 tests
   passed with the expected eight XFAIL guards and five XPASS promotions,
   matching the open ranking, search, metrics, and storage tickets in

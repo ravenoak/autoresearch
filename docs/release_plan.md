@@ -85,8 +85,27 @@ These tasks completed in order: environment bootstrap → packaging verification
   template (monitor and extensions headings restored).
 - `task verify` and `task coverage` executed with Go Task 3.45.4.
   【5d8a01†L1-L2】
+- `uv run --extra build python -m build` succeeded using the packaging extras.
+  ```text
+  $ uv run --extra build python -m build
+  Successfully built autoresearch-0.1.0a1.tar.gz and
+  autoresearch-0.1.0a1-py3-none-any.whl
+  ```
+  - Log: `baseline/logs/build-20250924T033349Z.log`.
+    【F:baseline/logs/build-20250924T033349Z.log†L1-L13】
+  - SHA256 checksums:
+    - `dist/autoresearch-0.1.0a1-py3-none-any.whl` –
+      `d4b7890c211f3820f3688133df6fcad01e04abea2966ada22a733dcddc71d8ab`
+    - `dist/autoresearch-0.1.0a1.tar.gz` –
+      `8e4fca74164a5d77deaf4e88a7124d94d5954dd7e36f8ef6853722f7b04b2e66`
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.
+  ```text
+  $ uv run scripts/publish_dev.py --dry-run --repository testpypi
+  Dry run selected; skipping upload
+  ```
+  - Log: `baseline/logs/publish-dev-20250924T033415Z.log`.
+    【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L14】
 - Close [issues/retire-stale-xfail-markers-in-unit-suite.md],
   [issues/refresh-token-budget-monotonicity-proof.md], and
   [issues/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
@@ -96,9 +115,8 @@ These tasks completed in order: environment bootstrap → packaging verification
   [issues/finalize-search-parser-backends.md], and
   [issues/stabilize-storage-eviction-property.md] so the remaining XFAIL
   guards are resolved before tagging.
-- Record the latest `uv run python -m build` output and TestPyPI dry run in
-  `baseline/logs/` and reference the timestamps here once the stage issue
-  closes.
+- Record future `uv run python -m build` and TestPyPI dry-run logs in
+  `baseline/logs/` when the stage issue requests refreshed artifacts.
 
 The **0.1.0a1** date is re-targeted for **September 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.
