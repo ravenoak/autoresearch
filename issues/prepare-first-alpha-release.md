@@ -1,62 +1,55 @@
 # Prepare first alpha release
 
 ## Context
+The repository remains publicly visible yet untagged, so the first alpha
+release still depends on a coordinated push across testing, packaging,
+and documentation. The September 23 baselines captured in
+`baseline/logs/task-verify-20250923T204732Z.log` and
+`baseline/logs/verify-warnings-20250923T224648Z.log` confirm that
+`task verify`, `task coverage`, and the warnings-as-errors sweep all pass
+with 890 unit, 324 integration, and 29 behavior tests. Those runs also
+highlight five XPASS cases that continue to carry `xfail` markers, which
+prevents the release gate from failing fast when regressions appear. The
+Go Task CLI is still absent from the default Codex shell, so release
+operators must keep using `uv` invocations unless they source the
+`scripts/setup.sh` PATH helper.
 
-The project remains unreleased even though the codebase and documentation are
-public, so tagging v0.1.0a1 still needs a coordinated push across testing,
-documentation, and packaging while workflows stay dispatch-only.
-The September 23 `task verify` baseline shows the suite passing while five
-tests marked `xfail` reported XPASS—`tests/unit/test_distributed_executors.py::test_execute_agent_remote`,
-`tests/unit/test_metrics_token_budget_spec.py::test_convergence_bound_holds`,
-`tests/unit/test_ranking_idempotence.py::test_rank_results_idempotent`,
-`tests/unit/test_relevance_ranking.py::test_calculate_semantic_similarity`, and
-`tests/unit/test_relevance_ranking.py::test_external_lookup_uses_cache`—so those
-guards must be retired before the release can fail fast on regressions.
-【F:baseline/logs/task-verify-20250923T204732Z.log†L342-L343】【F:baseline/logs/task-verify-20250923T204732Z.log†L557-L558】
-【F:baseline/logs/task-verify-20250923T204732Z.log†L721-L721】【F:baseline/logs/task-verify-20250923T204732Z.log†L736-L737】
-【F:baseline/logs/task-verify-20250923T204732Z.log†L747-L748】 The follow-on
-`task verify:warnings` run captured on September 23 completed cleanly, giving a
-warnings-as-errors baseline with coverage, token-usage, and documentation checks
-finishing without failures while optional extras remain manual-only.
-【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1-L44】【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1786】
-`SPEC_COVERAGE.md` continues to map each module to specifications plus proofs,
-simulations, or tests, so every component still aligns with the project's
-spec-first mandate ahead of the release.【F:SPEC_COVERAGE.md†L1-L125】 With those
-baselines recorded, the remaining work centers on promoting the five XPASS cases
-and staging release artifacts—dry-run builds, changelog notes, and tag
-preparation—before drafting release notes and cutting v0.1.0a1.
-【F:docs/release_plan.md†L95-L109】【F:.github/workflows/ci.yml†L1-L22】
+A dialectical review of the outstanding work surfaces three threads: the
+XPASS promotions, refreshed mathematical backing for the token budget
+heuristic, and staging of packaging artifacts. Socratic questioning asks
+whether the existing documentation actually proves what the tests assert
+and whether our packaging instructions match a fresh dry run. New issues
+cover each thread so that we can close this release ticket once the
+dependencies land.
 
 ### PR-sized tasks
-
-- **Retire stale xfail markers** – Promote the five XPASS cases in the unit
-  suite so release verification runs fail fast when regressions reappear.
-  ([retire-stale-xfail-markers-in-unit-suite](retire-stale-xfail-markers-in-unit-suite.md))
-- ✅ **Refresh warnings-as-errors coverage** – Completed with the September 23
-  `task verify:warnings` run; keep
-  `baseline/logs/verify-warnings-20250923T224648Z.log` as the
-  `PYTHONWARNINGS=error::DeprecationWarning` reference when optional extras
-  change.【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1-L44】【F:baseline/logs/verify-warnings-20250923T224648Z.log†L1749-L1786】
-- **Stage release artifacts** – Draft CHANGELOG.md notes, confirm packaging
-  metadata with dry-run builds, and line up the `v0.1.0a1` tag plan once the
-  XPASS removals and documentation updates land.【F:docs/release_plan.md†L95-L109】【F:CHANGELOG.md†L1-L200】
+- [retire-stale-xfail-markers-in-unit-suite.md]
+  (retire-stale-xfail-markers-in-unit-suite.md)
+- [refresh-token-budget-monotonicity-proof.md]
+  (refresh-token-budget-monotonicity-proof.md)
+- [stage-0-1-0a1-release-artifacts.md]
+  (stage-0-1-0a1-release-artifacts.md)
 
 ## Dependencies
-
-- [retire-stale-xfail-markers-in-unit-suite](retire-stale-xfail-markers-in-unit-suite.md)
+- [retire-stale-xfail-markers-in-unit-suite.md]
+  (retire-stale-xfail-markers-in-unit-suite.md)
+- [refresh-token-budget-monotonicity-proof.md]
+  (refresh-token-budget-monotonicity-proof.md)
+- [stage-0-1-0a1-release-artifacts.md]
+  (stage-0-1-0a1-release-artifacts.md)
 
 ## Acceptance Criteria
-- All dependency issues, including
-  [retire-stale-xfail-markers-in-unit-suite](retire-stale-xfail-markers-in-unit-suite.md),
-  are closed.
-- The "Prerequisites for tagging 0.1.0a1" in `docs/release_plan.md` are
-  satisfied before tagging.【F:docs/release_plan.md†L66-L91】
-- Release notes for v0.1.0a1 are drafted in CHANGELOG.md.【F:CHANGELOG.md†L1-L200】
-- Git tag v0.1.0a1 is created only after tests pass and documentation is
-  updated.
-- `task docs` (or `uv run --extra docs mkdocs build`) completes after docs
-  extras sync.
-- Workflows remain manual or dispatch-only.【F:.github/workflows/ci.yml†L1-L22】
+- All dependency issues listed above are closed.
+- The "Prerequisites for tagging 0.1.0a1" section in
+  `docs/release_plan.md` reflects the latest dry-run packaging logs and
+  XPASS retirements.
+- `CHANGELOG.md` includes drafted release notes for `0.1.0a1` that cite
+  the staging sweep.
+- `task docs` (or `uv run --extra docs mkdocs build`) succeeds after the
+  documentation extras are synced.
+- Workflows under `.github/workflows` remain dispatch-only.
+- The `v0.1.0a1` tag is created only after the above steps and a fresh
+  `task verify` pass succeed.
 
 ## Status
 Open

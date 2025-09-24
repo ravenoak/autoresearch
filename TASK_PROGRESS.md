@@ -18,6 +18,13 @@ requiring the Task CLI on `PATH`; the unit run reports six XPASS cases tracked i
 [issues/retire-stale-xfail-markers-in-unit-suite.md], while integration and
 behavior suites pass with optional extras skipped. `uv run --extra docs mkdocs
 build` completes without warnings after prior documentation fixes.
+September 24 planning added
+[refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
+ and
+[stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
+ as dependencies of
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md) so the
+XPASS promotions, heuristics proof, and packaging dry runs land before tagging.
 【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
 【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
 【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】

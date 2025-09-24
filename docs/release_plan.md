@@ -26,7 +26,10 @@ checks currently run via `uv`. `uv run --extra dev-minimal --extra test flake8
 src tests` and `uv run --extra dev-minimal --extra test mypy src` both succeed,
 and `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1 -rxX`
 passes with six XPASS cases now tracked in
-[issues/retire-stale-xfail-markers-in-unit-suite.md]. Integration and behavior
+[issues/retire-stale-xfail-markers-in-unit-suite.md], with
+[issues/refresh-token-budget-monotonicity-proof.md] and
+[issues/stage-0-1-0a1-release-artifacts.md] capturing the proof refresh and
+release staging before tagging. Integration and behavior
 suites succeed with optional extras skipped, and `uv run --extra docs mkdocs
 build` finishes without warnings after the GPU wheel documentation move.
 【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
@@ -37,7 +40,8 @@ required `## Simulation Expectations` sections—and coverage artifacts stay in
 sync with `baseline/coverage.xml` after the September 23 run documented in
 `docs/status/task-coverage-2025-09-23.md`.
 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
-【F:baseline/coverage.xml†L1-L12】【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
+【F:baseline/coverage.xml†L1-L12】
+【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -84,6 +88,13 @@ These tasks completed in order: environment bootstrap → packaging verification
   【5d8a01†L1-L2】
 - Dry-run publish to TestPyPI succeeded using `uv run scripts/publish_dev.py`
   with `--dry-run --repository testpypi`.
+- Close [issues/retire-stale-xfail-markers-in-unit-suite.md],
+  [issues/refresh-token-budget-monotonicity-proof.md], and
+  [issues/stage-0-1-0a1-release-artifacts.md] before tagging so XPASS
+  promotions, heuristic proofs, and packaging logs land together.
+- Record the latest `uv run python -m build` output and TestPyPI dry run in
+  `baseline/logs/` and reference the timestamps here once the stage issue
+  closes.
 
 The **0.1.0a1** date is re-targeted for **September 15, 2026** and the release
 remains in progress until these prerequisites are satisfied.
