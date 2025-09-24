@@ -41,6 +41,9 @@ Reference issues by slugged filename (for example,
   API, and noted the migration in
   [resolve-deprecation-warnings-in-tests](
     issues/archive/resolve-deprecation-warnings-in-tests.md).
+- Stabilized search ranking determinism with quantized tie-breaking,
+  documented the fallback keys, and converted the ranking property test into
+  deterministic fixtures that now pass without an XFAIL marker.
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

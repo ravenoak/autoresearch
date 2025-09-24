@@ -61,8 +61,8 @@
 | `autoresearch/output_format.py` | [output-format.md](docs/specs/output-format.md) | [t97], [t98] | OK |
 | `autoresearch/resource_monitor.py` | [monitor.md](docs/specs/monitor.md)<br>[resource-monitor.md](docs/specs/resource-monitor.md) | [p19], [s12], [s16], [t81], [t82], [t83], [t84], [t85], [t99], [t86] | OK |
 | `autoresearch/scheduler_benchmark.py` | [scheduler-benchmark.md](docs/specs/scheduler-benchmark.md) | [t96] | OK |
-| `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106] | Needs XFAIL cleanup ([issues/restore-external-lookup-search-flow.md](issues/restore-external-lookup-search-flow.md),<br>[issues/finalize-search-parser-backends.md](issues/finalize-search-parser-backends.md)) |
-| `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | Needs deterministic ranking proof ([issues/stabilize-ranking-weight-property.md](issues/stabilize-ranking-weight-property.md)) |
+| `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106] | OK (stable tie-break documented) |
+| `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | OK (deterministic ranking proven) |
 | `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | Needs eviction invariant refresh ([issues/stabilize-storage-eviction-property.md](issues/stabilize-storage-eviction-property.md)) |
 | `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s21], [t109], [t65], [t66] | OK |
 | `autoresearch/storage_backup.py` | [storage-backup.md](docs/specs/storage-backup.md) | [t115] | OK |

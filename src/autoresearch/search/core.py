@@ -745,13 +745,32 @@ class Search:
                 bm25_raw[i] * normalized_weights[0] + semantic_raw[i] * normalized_weights[1]
             )
 
-        # Sort results by final score (descending) with a stable raw-score tiebreaker to ensure
-        # consistent ordering across backend combinations
-        ranked_results = sorted(
-            results,
-            key=lambda r: (r["relevance_score"], r.get("raw_merged_score", 0.0)),
-            reverse=True,
-        )
+        def _quantize(value: float, scale: int = 1_000_000) -> int:
+            """Map a floating point score to an integer grid for stable ordering."""
+
+            if not math.isfinite(value):
+                if math.isinf(value):
+                    return int(scale * 1_000_000 if value > 0 else -scale * 1_000_000)
+                return 0
+            return int(round(value * scale))
+
+        # Sort by quantized scores first, then by deterministic identifiers. Using an
+        # ascending sort with negated score buckets preserves descending ranking while
+        # keeping tie resolution independent of floating point jitter.
+        ranked_results = [
+            result
+            for _, result in sorted(
+                enumerate(results),
+                key=lambda item: (
+                    -_quantize(float(item[1].get("relevance_score", 0.0))),
+                    -_quantize(float(item[1].get("raw_merged_score", 0.0))),
+                    str(item[1].get("backend") or ""),
+                    str(item[1].get("url") or ""),
+                    str(item[1].get("title") or ""),
+                    item[0],
+                ),
+            )
+        ]
 
         return ranked_results
 
