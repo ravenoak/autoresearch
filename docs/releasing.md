@@ -2,9 +2,14 @@
 
 Follow these steps to publish a new version of Autoresearch.
 
+- Run `uv run task release:alpha` to automate the alpha readiness sweep before
+  tagging. It installs the dev-minimal, test, and default optional extras
+  (excluding `gpu`), then runs lint, type checks, spec lint, `task verify`,
+  `task coverage`, `python -m build`, `twine check`, and the TestPyPI dry run.
+  Provide `EXTRAS="gpu"` to include GPU wheels when available.
 - Update the version in `pyproject.toml` and
   `src/autoresearch/__init__.py`. Commit the change and tag the release.
-- Validate the package builds.
+- Validate the package builds if you need to re-run individual steps.
 
   ```bash
   uv run python -m build

@@ -6,6 +6,12 @@ Taskfile commands. The setup script now persists a PATH helper at
 new shells or source the snippet before invoking Taskfile commands. Confirm
 the CLI is available with `task --version`.
 
+When the Go Task binary is absent from the active shell, run
+`uv run task release:alpha` to reproduce the full release sweep without
+modifying `PATH`. The wrapper installs the default optional extras (minus
+`gpu`) and executes lint, verify, coverage, build, metadata, and TestPyPI dry
+run checks in order.
+
 Run `task check` for linting and smoke tests, then `task verify` before
 committing. Include `EXTRAS="llm"` only when LLM features or dependency
 checks are required. `task verify` always syncs the `dev-minimal` and `test`
