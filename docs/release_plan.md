@@ -9,7 +9,7 @@ The publishing workflow follows the steps in
 ROADMAP.md for high-level milestones.
 
 The project kicked off in **May 2025** (see the initial commit dated
-`2025-05-18`). This schedule was last updated on **September 19, 2025** and
+`2025-05-18`). This schedule was last updated on **September 24, 2025** and
 reflects that the codebase currently sits at the **unreleased 0.1.0a1** version
 defined in `autoresearch.__version__`. The project targets **0.1.0a1** for
 **September 15, 2026** and **0.1.0** for **October 1, 2026**. See
@@ -20,31 +20,24 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
 confirmed in `pyproject.toml` and [installation.md](installation.md). In the
-Codex shell the Go Task CLI is not on `PATH` until
-`./scripts/setup.sh --print-path` is sourced, so linting, typing, and test smoke
-checks currently run via `uv`. `uv run --extra dev-minimal --extra test flake8
-src tests` and `uv run --extra dev-minimal --extra test mypy src` both succeed,
-and `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1 -rxX`
-passes with five XPASS cases now tracked in
-[issues/retire-stale-xfail-markers-in-unit-suite.md], while the same run
-reports eight remaining XFAIL guards covered by
-[issues/stabilize-ranking-weight-property.md],
-[issues/restore-external-lookup-search-flow.md],
-[issues/finalize-search-parser-backends.md], and
-[issues/stabilize-storage-eviction-property.md].
-[issues/refresh-token-budget-monotonicity-proof.md] and
+Codex shell `python --version` reports 3.12.10, `uv --version` reports 0.7.22,
+and `task --version` still fails, so linting, typing, and test smoke checks run
+via `uv` or the PATH helper from `./scripts/setup.sh --print-path`.
+`uv run --extra dev-minimal --extra test flake8 src tests` and `uv run --extra
+dev-minimal --extra test mypy src` both succeed, and `uv run --extra test pytest
+tests/unit -m 'not slow' -rxX` returns 890 passes, 33 skips, eight XFAIL guards,
+and five XPASS promotions that align with the open ranking, search, metrics, and
+storage tickets. `uv run --extra docs mkdocs build` completes without warnings
+after the GPU wheel documentation move, and
+[issues/refresh-token-budget-monotonicity-proof.md] plus
 [issues/stage-0-1-0a1-release-artifacts.md] capture the proof refresh and
-release staging before tagging. Integration and behavior suites succeed
-with optional extras skipped, and `uv run --extra docs mkdocs build`
-finishes without warnings after the GPU wheel documentation move.
-【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
-【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
-【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】【bc4521†L101-L114】
-Spec lint remains
-recovered—`docs/specs/monitor.md` and `docs/specs/extensions.md` retain the
-required `## Simulation Expectations` sections—and coverage artifacts stay in
-sync with `baseline/coverage.xml` after the September 23 run documented in
-`docs/status/task-coverage-2025-09-23.md`.
+release staging before tagging. Integration and behavior suites succeed with
+optional extras skipped, and spec lint remains recovered—`docs/specs/monitor.md`
+and `docs/specs/extensions.md` retain the required `## Simulation Expectations`
+sections—while coverage artifacts stay in sync with `baseline/coverage.xml`
+after the September 23 run documented in `docs/status/task-coverage-2025-09-23.md`.
+【c0ed6e†L1-L2】【7b55df†L1-L2】【311dfe†L1-L2】【6c5abf†L1-L1】【16543c†L1-L1】
+【5b78c5†L1-L71】【84bbfd†L1-L4】【5b4d9e†L1-L1】
 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
 【F:baseline/coverage.xml†L1-L12】
 【F:docs/status/task-coverage-2025-09-23.md†L1-L32】

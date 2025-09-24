@@ -27,6 +27,10 @@ coherence, and token budgeting—should therefore drive the promotions.
 ## Dependencies
 - [refresh-token-budget-monotonicity-proof.md]
   (refresh-token-budget-monotonicity-proof.md)
+- [stabilize-ranking-weight-property.md]
+  (stabilize-ranking-weight-property.md)
+- [restore-external-lookup-search-flow.md]
+  (restore-external-lookup-search-flow.md)
 
 ## Acceptance Criteria
 - Remove or tighten the guard on

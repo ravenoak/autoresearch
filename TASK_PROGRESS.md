@@ -67,6 +67,14 @@ tracker, warnings sweep, and coverage refresh tasks that remain open.
 【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
 【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
 
+As of **September 24, 2025** we revalidated the fast gates with the Codex
+toolchain: `uv run --extra test pytest tests/unit -m "not slow" -rxX` returned
+890 passes, 33 skips, eight expected failures, and five xpass promotions,
+mirroring the outstanding tickets covering ranking, search, metrics, and
+storage. Linting (`flake8`), typing (`mypy`), and the MkDocs build also succeed
+under `uv`, so the alpha track can focus on the listed issue dependencies.
+【5b78c5†L1-L71】【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
+
 See [docs/release_plan.md](docs/release_plan.md) for current test and coverage
 status and the alpha release checklist. An **0.1.0-alpha.1** preview remains
 targeted for **September 15, 2026**, with the final **0.1.0** release targeted
