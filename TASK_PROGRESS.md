@@ -1,13 +1,26 @@
 # Autoresearch Project - Task Progress
 
 This document tracks the progress of tasks for the Autoresearch project,
-organized by phases from the code complete plan. As of **September 23, 2025**
-the optional extras preflight and `task coverage EXTRAS="nlp ui vss git
-distributed analysis llm parsers gpu"` sweep completed with 908 unit, 331
-integration, optional-extra, and 29 behavior tests holding 100% line coverage
-under the ≥90% gate. `baseline/coverage.xml`,
-`docs/status/task-coverage-2025-09-23.md`, `STATUS.md`, and this file capture
-the refreshed run, allowing
+organized by phases from the code complete plan. As of **2025-09-24** the PR 1
+release sweep captured `baseline/logs/release-alpha-20250924T183041Z.log`,
+`baseline/logs/release-alpha-20250924T184646Z.log`, and
+`baseline/logs/release-alpha-20250924T184646Z.summary.md`. The run executed 243
+checks (240 passed, two skipped) before `test_search_stub_backend` raised a
+TypeError, so packaging and publish steps remain blocked until the stub accepts
+the additional embedding handle parameter documented in the summary and release
+plan. Fresh shells still report `task --version` as missing, keeping the PATH
+helper in play for future sweeps.【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L40】【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】【3c283b†L21-L33】【0d0c77†L1-L3】
+PR 1 also produced new build and TestPyPI dry-run logs at
+`baseline/logs/build-20250924T033349Z.log` and
+`baseline/logs/publish-dev-20250924T033415Z.log`, confirming the reproducible
+0.1.0a1 wheels and sdists that STATUS.md and the release plan now reference
+alongside the failing sweep.【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L12】
+The September 23 optional extras preflight and
+`task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
+run completed with 908 unit, 331 integration, optional-extra, and 29 behavior
+tests holding 100% line coverage under the ≥90% gate.
+`baseline/coverage.xml`, `docs/status/task-coverage-2025-09-23.md`, `STATUS.md`,
+and this file capture that sweep, allowing
 [issues/archive/rerun-task-coverage-after-storage-fix.md] to close.
 【abdf1f†L1-L1】【4e6478†L1-L8】【74e81d†L1-L74】【887934†L1-L54】【15fae0†L1-L20】
 【b68e0e†L38-L68】【F:baseline/coverage.xml†L1-L12】
@@ -21,10 +34,9 @@ remaining XFAIL guards now covered by
 [issues/archive/restore-external-lookup-search-flow.md],
 [issues/archive/finalize-search-parser-backends.md], and
 [issues/archive/stabilize-storage-eviction-property.md]. Integration and
-behavior suites
-pass with optional extras skipped, and `uv run --extra docs mkdocs build`
-completes without warnings after prior documentation fixes. September 24
-planning added
+behavior suites pass with optional extras skipped, and `uv run --extra docs
+mkdocs build` completes without warnings after prior documentation fixes.
+September 24 planning added
 [refresh-token-budget-monotonicity-proof](issues/archive/refresh-token-budget-monotonicity-proof.md)
 and
 [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md)
@@ -78,7 +90,7 @@ tracker, warnings sweep, and coverage refresh tasks that remain open.
 【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
 【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】【F:issues/archive/fix-testing-guidelines-gpu-link.md†L1-L27】
 
-As of **September 24, 2025** we revalidated the fast gates with the Codex
+As of **2025-09-24** we revalidated the fast gates with the Codex
 toolchain: `uv run --extra test pytest tests/unit -m "not slow" -rxX` returned
 890 passes, 33 skips, eight expected failures, and five xpass promotions,
 mirroring the outstanding tickets covering ranking, search, metrics, and

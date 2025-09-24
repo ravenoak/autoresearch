@@ -18,6 +18,25 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 2026
+- As of 2025-09-24 the PR 1 sweep reran `uv run task release:alpha` from a
+  PATH-helper shell; `task --version` still fails in a fresh terminal, so we
+  continue sourcing `.autoresearch/path.sh` before invoking Taskfile targets.
+  The refreshed log confirms Go Task 3.45.4 once the helper is active.
+  【0d0c77†L1-L3】【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L12】
+- Both recorded sweeps
+  (`baseline/logs/release-alpha-20250924T183041Z.log` and
+  `baseline/logs/release-alpha-20250924T184646Z.log`) halted in
+  `test_search_stub_backend`; the summary documents the TypeError and follow-up
+  to align the stub signature before retrying the alpha pipeline.
+  【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L40】【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
+- PR 1 also captured new build and TestPyPI dry-run artifacts at
+  `baseline/logs/build-20250924T033349Z.log` and
+  `baseline/logs/publish-dev-20250924T033415Z.log`, showing the 0.1.0a1 wheel
+  and sdist generation remains reproducible even while the release sweep is
+  blocked on the stub fix.
+  【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】
+
 ## September 24, 2025
 - Reconfirmed the base environment: `python --version` reports 3.12.10,
   `uv --version` reports 0.7.22, and `task --version` still fails, so the
