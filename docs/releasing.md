@@ -7,8 +7,12 @@ Follow these steps to publish a new version of Autoresearch.
   (excluding `gpu`), then runs lint, type checks, spec lint, `task verify`,
   `task coverage`, `python -m build`, `twine check`, and the TestPyPI dry run.
   Provide `EXTRAS="gpu"` to include GPU wheels when available.
-- Update the version in `pyproject.toml` and
-  `src/autoresearch/__init__.py`. Commit the change and tag the release.
+- Update the version and release date in `pyproject.toml`
+  (`project.version`, `tool.autoresearch.release_date`),
+  `src/autoresearch/__init__.py` (`__version__`, `__release_date__`), and the
+  top entry in `CHANGELOG.md`. Run `task check-release-metadata` to confirm the
+  guard passes; it also runs as part of `task check`, `task verify`, and
+  `task release:alpha`. Commit the change and tag the release.
 - Validate the package builds if you need to re-run individual steps.
 
   ```bash
