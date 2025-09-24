@@ -241,6 +241,7 @@ Install extras with `uv sync --extra <name>` or
 uv sync --extra nlp          # language processing
 uv sync --extra ui           # Streamlit interface
 uv sync --extra distributed  # Ray and Redis
+uv sync --extra parsers      # PDF and DOCX ingestion for local files
 uv sync --extra llm          # LLM libraries
 ```
 
