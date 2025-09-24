@@ -4,11 +4,12 @@ import copy
 from typing import List
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import assume, given, strategies as st
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
 from autoresearch.search import Search
+from autoresearch.search.core import RANKING_BUCKET_SCALE
 from autoresearch.search.ranking_formula import combine_scores
 
 
@@ -139,8 +140,98 @@ def test_rank_results_breaks_ties_deterministically(monkeypatch: pytest.MonkeyPa
     ranked = Search.rank_results("q", copy.deepcopy(docs))
     assert [item["url"] for item in ranked] == expected_urls
     assert len({item["relevance_score"] for item in ranked}) == 1
+    assert len({item["relevance_bucket"] for item in ranked}) == 1
+    assert len({item["raw_relevance_bucket"] for item in ranked}) == 1
+    for item in ranked:
+        assert item["relevance_bucket"] == int(
+            round(item["relevance_score"] * RANKING_BUCKET_SCALE)
+        )
+        assert item["raw_relevance_bucket"] == int(
+            round(item["raw_merged_score"] * RANKING_BUCKET_SCALE)
+        )
 
     reordered = list(reversed(docs))
     ranked_reordered = Search.rank_results("q", copy.deepcopy(reordered))
     assert [item["url"] for item in ranked_reordered] == expected_urls
     assert len({item["relevance_score"] for item in ranked_reordered}) == 1
+    assert {item["relevance_bucket"] for item in ranked_reordered} == {
+        ranked[0]["relevance_bucket"]
+    }
+    assert {item["raw_relevance_bucket"] for item in ranked_reordered} == {
+        ranked[0]["raw_relevance_bucket"]
+    }
+
+
+@given(
+    base=st.floats(min_value=0.0, max_value=1.0),
+    delta=st.floats(
+        min_value=-(0.49 / RANKING_BUCKET_SCALE),
+        max_value=0.49 / RANKING_BUCKET_SCALE,
+    ),
+)
+def test_rank_results_groups_nearby_scores(base: float, delta: float) -> None:
+    """Scores inside one bucket reuse lexicographic tie-breaks deterministically."""
+
+    weights = [0.5, 0.3, 0.2]
+    bm25_scores = [0.7, 0.7, 0.7]
+    semantic_scores = [0.4, 0.4, 0.4]
+    credibility_scores = [0.6, 0.6, 0.6]
+    docs = [
+        {
+            "title": "alpha",
+            "url": "https://example.com/a",
+            "backend": "duckduckgo",
+            "similarity": 0.5,
+        },
+        {
+            "title": "beta",
+            "url": "https://example.com/b",
+            "backend": "serper",
+            "similarity": 0.5,
+        },
+        {
+            "title": "gamma",
+            "url": "https://example.com/c",
+            "backend": "duckduckgo",
+            "similarity": 0.5,
+        },
+    ]
+
+    patcher = pytest.MonkeyPatch()
+    try:
+        configure_ranker(patcher, weights, bm25_scores, semantic_scores, credibility_scores)
+
+        final_scores = [
+            max(0.0, min(1.0, base)),
+            max(0.0, min(1.0, base + delta)),
+            max(0.0, min(1.0, base - delta)),
+        ]
+        buckets = {int(round(score * RANKING_BUCKET_SCALE)) for score in final_scores}
+        assume(len(buckets) == 1)
+
+        patcher.setattr(
+            "autoresearch.search.core.combine_scores",
+            lambda *_, **__: list(final_scores),
+        )
+
+        expected_urls = [
+            docs[index]["url"]
+            for index, _ in sorted(
+                enumerate(docs),
+                key=lambda item: (
+                    docs[item[0]]["backend"],
+                    docs[item[0]]["url"],
+                    docs[item[0]]["title"],
+                    item[0],
+                ),
+            )
+        ]
+
+        ranked = Search.rank_results("q", copy.deepcopy(docs))
+        assert [item["url"] for item in ranked] == expected_urls
+        assert {item["relevance_bucket"] for item in ranked} == buckets
+        assert {item["raw_relevance_bucket"] for item in ranked} == {
+            ranked[0]["raw_relevance_bucket"]
+        }
+    finally:
+        patcher.undo()

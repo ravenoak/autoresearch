@@ -174,6 +174,12 @@ else:  # pragma: no cover - runtime fallback
 
 log = get_logger(__name__)
 
+# Scores are bucketed on a 10^-6 grid before lexicographic tie-breaking. This scale
+# balances reproducibility with fidelity: it is coarse enough to absorb floating
+# point jitter while still distinguishing meaningful score deltas observed in
+# ranking benchmarks.
+RANKING_BUCKET_SCALE = 1_000_000
+
 
 class hybridmethod:
     """Descriptor allowing methods usable as instance or shared class methods."""
@@ -804,7 +810,9 @@ class Search:
             normalized_weights,
         )
 
-        # Add scores to results for debugging/transparency
+        # Add scores and their quantized buckets for debugging/transparency. Buckets make
+        # the tie-break logic explicit to downstream consumers and to the property-based
+        # regression tests that validate deterministic ranking.
         for i, result in enumerate(results):
             result["relevance_score"] = final_scores[i]
             result["bm25_score"] = bm25_scores[i]
@@ -820,7 +828,7 @@ class Search:
                 bm25_raw[i] * normalized_weights[0] + semantic_raw[i] * normalized_weights[1]
             )
 
-        def _quantize(value: float, scale: int = 1_000_000) -> int:
+        def _quantize(value: float, scale: int = RANKING_BUCKET_SCALE) -> int:
             """Map a floating point score to an integer grid for stable ordering."""
 
             if not math.isfinite(value):
@@ -829,21 +837,29 @@ class Search:
                 return 0
             return int(round(value * scale))
 
-        # Sort by quantized scores first, then by deterministic identifiers. Using an
-        # ascending sort with negated score buckets preserves descending ranking while
+        for result in results:
+            result["relevance_bucket"] = _quantize(float(result.get("relevance_score", 0.0)))
+            result["raw_relevance_bucket"] = _quantize(float(result.get("raw_merged_score", 0.0)))
+
+        def _tie_break_key(item: Tuple[int, Dict[str, Any]]) -> Tuple[Any, ...]:
+            index, doc = item
+            return (
+                -int(doc.get("relevance_bucket", 0)),
+                -int(doc.get("raw_relevance_bucket", 0)),
+                str(doc.get("backend") or ""),
+                str(doc.get("url") or ""),
+                str(doc.get("title") or ""),
+                index,
+            )
+
+        # Sort by quantized score buckets first, then by deterministic identifiers. Using
+        # an ascending sort with negated score buckets preserves descending ranking while
         # keeping tie resolution independent of floating point jitter.
         ranked_results = [
             result
             for _, result in sorted(
                 enumerate(results),
-                key=lambda item: (
-                    -_quantize(float(item[1].get("relevance_score", 0.0))),
-                    -_quantize(float(item[1].get("raw_merged_score", 0.0))),
-                    str(item[1].get("backend") or ""),
-                    str(item[1].get("url") or ""),
-                    str(item[1].get("title") or ""),
-                    item[0],
-                ),
+                key=_tie_break_key,
             )
         ]
 

@@ -6,6 +6,10 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Bucketed relevance scores at a :math:`10^{-6}` resolution to preserve
+  deterministic tie-breaking, exposed the bucket metadata for property and
+  idempotence regressions, refreshed the relevance ranking algorithm note, and
+  recorded the guarantee in the spec coverage ledger.【F:src/autoresearch/search/core.py†L175-L181】【F:src/autoresearch/search/core.py†L813-L866】【F:tests/unit/test_property_search_ranking.py†L12-L235】【F:tests/unit/test_ranking_idempotence.py†L1-L55】【F:tests/unit/test_relevance_ranking.py†L372-L414】【F:docs/algorithms/relevance_ranking.md†L40-L49】【F:SPEC_COVERAGE.md†L64-L64】【F:SPEC_COVERAGE.md†L263-L263】
 - Retired the remaining search, distributed, and budgeting XFAIL markers,
   refreshing the corresponding docs/algorithms entries, SPEC_COVERAGE.md, and
   changelog coverage to lock in the XPASS promotions.【F:tests/unit/test_relevance_ranking.py†L118-L213】【F:tests/unit/test_property_bm25_normalization.py†L1-L14】【F:tests/unit/test_distributed_executors.py†L1-L49】【F:tests/unit/test_ranking_idempotence.py†L1-L33】【F:tests/unit/test_metrics_token_budget_spec.py†L1-L74】【F:docs/algorithms/semantic_similarity.md†L20-L33】【F:docs/algorithms/bm25.md†L56-L66】【F:docs/algorithms/cache.md†L1-L36】【F:docs/algorithms/distributed.md†L9-L24】【F:docs/algorithms/token_budgeting.md†L105-L134】【F:SPEC_COVERAGE.md†L33-L110】
