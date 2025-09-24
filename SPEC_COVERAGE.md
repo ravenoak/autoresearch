@@ -64,7 +64,7 @@
 | `autoresearch/search` | [search.md](docs/specs/search.md) | [t100], [t101], [t102], [t103], [t104], [t41], [t105], [t106], [t127], [t128], [t133], [t134], [t135], [t136], [t138], [t140], [t141] | OK (quantized tie buckets asserted) |
 | `autoresearch/search/parsers.py` | [search.md](docs/specs/search.md) | [t129], [t130], [t131], [t132], [t142], [t143], [t144], [t145] | OK |
 | `autoresearch/search/ranking_convergence.py` | [search_ranking.md](docs/specs/search_ranking.md) | [t100], [t102], [t107] | OK (deterministic ranking proven) |
-| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK (stale LRU fallback covered) |
+| `autoresearch/storage.py` | [storage.md](docs/specs/storage.md) | [p20], [s17], [s18], [s19], [s20], [s22], [t103], [t108], [t109], [t106], [t110], [t111], [t112], [t113], [t114], [t125] | OK (stale LRU and metrics dropout covered) |
 | `autoresearch/storage_backends.py` | [storage-backends.md](docs/specs/storage-backends.md) | [s21], [t109], [t65], [t66] | OK |
 | `autoresearch/storage_backup.py` | [storage-backup.md](docs/specs/storage-backup.md) | [t115] | OK |
 | `autoresearch/storage_utils.py` | [storage-utils.md](docs/specs/storage-utils.md) | [t116] | OK |

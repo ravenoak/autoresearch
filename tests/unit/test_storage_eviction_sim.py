@@ -56,3 +56,19 @@ def test_deterministic_override_enforces_cap():
             return_metrics=True,
         )
     assert remaining == 1
+
+
+def test_metrics_dropout_regression_seed():
+    """Regression seed keeps eviction running when metrics collapse to 0 MB."""
+
+    with patch("scripts.storage_eviction_sim.StorageManager.persist_claim", _fast_persist):
+        remaining, _ = _run(
+            threads=2,
+            items=2,
+            policy="lru",
+            scenario="metrics_dropout",
+            seed=170090525894866085979644260693064061602,
+            return_metrics=True,
+        )
+
+    assert remaining <= 3

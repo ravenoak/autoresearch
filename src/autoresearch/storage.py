@@ -875,12 +875,11 @@ class StorageManager(metaclass=StorageManagerMeta):
                 current_mb = StorageManager._current_ram_mb()
                 ram_measurement_available = current_mb > 0.0
 
-                if (
-                    use_deterministic_budget
-                    and not deterministic_override
-                    and not ram_measurement_available
-                ):
-                    break
+                if not ram_measurement_available:
+                    if use_deterministic_budget:
+                        target_mb = None
+                    else:
+                        break
 
                 if aggressive_eviction and not use_deterministic_budget and nodes_evicted > 50:
                     batch_size = min(

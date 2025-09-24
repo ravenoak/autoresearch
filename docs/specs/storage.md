@@ -65,8 +65,10 @@ the safety margin.
 
 - A budget of zero or a negative value disables eviction.
 - Enforcing the budget on an empty graph leaves state unchanged.
-- A 0 MB usage reading is treated as "unknown" and leaves the graph unchanged
-  unless a deterministic override is configured.
+- A 0 MB usage reading is treated as "unknown". If eviction already activated
+  a deterministic node cap—either from configuration or derived from
+  `ram_budget_mb` after observing `U > B`—the loop keeps removing nodes until
+  that limit is met; otherwise the graph remains unchanged.
 - `storage.deterministic_node_budget` optionally enforces a hard node cap even
   when usage metrics are unavailable.
 
@@ -114,6 +116,10 @@ These arguments rely on the formal proofs and simulations in
 Unit tests and simulations cover nominal and edge cases for these routines,
 including `storage_eviction_sim.py` [s1], `schema_idempotency_sim.py` [s2],
 `ram_budget_enforcement_sim.py` [s3], and `storage_concurrency_sim.py` [s4].
+The `metrics_dropout` scenario in `storage_eviction_sim.py` [s1] replays
+Hypothesis seed `170090525894866085979644260693064061602`. This keeps
+`tests/unit/test_storage_eviction.py` [t3] and
+`tests/unit/test_storage_eviction_sim.py` [t7] aligned on the regression.
 
 ## Simulation Benchmarks
 

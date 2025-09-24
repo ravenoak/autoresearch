@@ -22,11 +22,15 @@ Scenarios:
                      missing RAM metrics
     stale_lru        clears the LRU cache before enforcement to mimic stale
                      eviction metadata
+    metrics_dropout  reproduces the Hypothesis seed
+                     170090525894866085979644260693064061602 where RAM metrics
+                     report a spike once and then fall to 0 MB
 """
 
 from __future__ import annotations
 
 import argparse
+import random
 import time
 from threading import Event, Thread
 
@@ -42,6 +46,7 @@ def _run(
     scenario: str,
     jitter: float = 0.0,
     evictors: int = 0,
+    seed: int | None = None,
     return_metrics: bool = False,
 ) -> int | tuple[int, float]:
     """Persist claims concurrently.
@@ -53,6 +58,7 @@ def _run(
         scenario: Simulation scenario.
         jitter: Sleep between writes to model contention.
         evictors: Dedicated eviction threads.
+        seed: Optional regression seed used by scenarios that require determinism.
         return_metrics: When ``True`` also return the runtime.
 
     Returns:
@@ -60,12 +66,19 @@ def _run(
     """
 
     deterministic_override = scenario == "deterministic_override"
+    if scenario in {"zero_budget", "negative_budget"}:
+        ram_budget = 0
+    elif scenario == "metrics_dropout":
+        ram_budget = 3
+    else:
+        ram_budget = 1
+
     cfg = ConfigModel(
         storage=StorageConfig(
             duckdb_path=":memory:",
             deterministic_node_budget=1 if deterministic_override else None,
         ),
-        ram_budget_mb=0 if scenario in {"zero_budget", "negative_budget"} else 1,
+        ram_budget_mb=ram_budget,
         graph_eviction_policy=policy,
     )
     loader = ConfigLoader.new_for_tests()
@@ -78,12 +91,25 @@ def _run(
     StorageManager.context = ctx
 
     original = StorageManager._current_ram_mb
-    current = (
-        0
-        if scenario in {"under_budget", "deterministic_override"}
-        else (cfg.ram_budget_mb if scenario == "exact_budget" else 1000)
-    )
-    StorageManager._current_ram_mb = staticmethod(lambda: current)
+    scenario_seed = seed if seed is not None else DEFAULT_SCENARIO_SEEDS.get(scenario)
+    rng = random.Random(scenario_seed % (2**32)) if scenario_seed is not None else None
+
+    if scenario == "metrics_dropout":
+        spike = cfg.ram_budget_mb * (2 + (rng.random() if rng else 1.0))
+        readings = [spike] + [0.0] * 1024
+        iterator = iter(readings)
+
+        def _next_reading(iterator=iterator) -> float:
+            return next(iterator, 0.0)
+
+        StorageManager._current_ram_mb = staticmethod(_next_reading)
+    else:
+        current = (
+            0
+            if scenario in {"under_budget", "deterministic_override"}
+            else (cfg.ram_budget_mb if scenario == "exact_budget" else 1000)
+        )
+        StorageManager._current_ram_mb = staticmethod(lambda current=current: current)
     stop = Event()
 
     enforce_budget = -1 if scenario == "negative_budget" else cfg.ram_budget_mb
@@ -159,6 +185,11 @@ SCENARIOS = {
     "burst",
     "deterministic_override",
     "stale_lru",
+    "metrics_dropout",
+}
+
+DEFAULT_SCENARIO_SEEDS = {
+    "metrics_dropout": 170090525894866085979644260693064061602,
 }
 
 
@@ -169,6 +200,7 @@ def main(
     scenario: str,
     jitter: float,
     evictors: int,
+    seed: int | None,
 ) -> None:
     if threads <= 0 or items <= 0:
         raise SystemExit("threads and items must be positive")
@@ -187,6 +219,7 @@ def main(
         scenario,
         jitter,
         evictors,
+        seed,
         return_metrics=True,
     )
     total = threads * items
@@ -224,6 +257,12 @@ if __name__ == "__main__":
         default=0,
         help="dedicated eviction threads",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="optional regression seed for seeded scenarios",
+    )
     args = parser.parse_args()
     main(
         args.threads,
@@ -232,4 +271,5 @@ if __name__ == "__main__":
         args.scenario.lower(),
         args.jitter,
         args.evictors,
+        args.seed,
     )
