@@ -2,6 +2,19 @@
 
 Follow these steps to publish a new version of Autoresearch.
 
+## Preparing the environment
+
+`task` commands require the Go Task CLI. Fresh shells may not expose the
+binary on `PATH`; see [STATUS.md][status-cli] for the current availability
+notes. Before running any release workflow, pick one of the supported helpers:
+
+- **Source the PATH helper.** Run `./scripts/setup.sh` once, then start new
+  shells with `eval "$(./scripts/setup.sh --print-path)"` to load the Task
+  binary and synced extras.
+- **Use `uv run task …` wrappers.** The `uv` launcher injects the packaged
+  Task CLI, so commands like `uv run task release:alpha` work even when the
+  helper is not sourced.
+
 - Run `uv run task release:alpha` to automate the alpha readiness sweep before
   tagging. It installs the dev-minimal, test, and default optional extras
   (excluding `gpu`), then runs lint, type checks, spec lint, `task verify`,
@@ -28,6 +41,9 @@ Follow these steps to publish a new version of Autoresearch.
   ```bash
   uv run scripts/publish_dev.py
   ```
+
+[status-cli]:
+  https://github.com/autoresearch/autoresearch/blob/main/STATUS.md#status
 
 ## TestPyPI authentication
 
