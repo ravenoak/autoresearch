@@ -45,6 +45,16 @@ queries are skipped but cached and BM25-ranked documents remain deterministic.
 The cache therefore guarantees stable output even as optional extras come and
 go.
 
+## Document ingestion scope
+
+Document caching mirrors the 0.1.0a1 decision to ship PDF and DOCX ingestion
+behind the `parsers` extra. We debated marking binary formats unsupported, yet
+that approach fragmented cached snippets across backends. Normalizing text via
+`autoresearch.search.parsers` keeps cached entries consistent, while explicit
+`ParserError` exceptions allow the cache to ignore corrupt or dependency-free
+documents without polluting storage. Regression tests cover both success and
+failure paths to preserve this contract.
+
 ## References
 - [`cache.py`](../../src/autoresearch/cache.py)
 - [spec](../specs/cache.md)

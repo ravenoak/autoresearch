@@ -54,8 +54,6 @@ from weakref import WeakSet
 
 import numpy as np
 import requests
-from docx import Document
-from pdfminer.high_level import extract_text as extract_pdf_text
 
 from ..cache import (
     SearchCache,
@@ -72,6 +70,13 @@ from ..storage import StorageManager
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+from .parsers import (
+    ParserDependencyError,
+    ParserError,
+    extract_docx_text,  # noqa: F401 - re-exported for tests
+    extract_pdf_text,  # noqa: F401 - re-exported for tests
+    read_document_text,
+)
 from .ranking import combine_scores
 from .ranking import normalize_scores as _normalize_scores
 
@@ -1713,13 +1718,13 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
             if not file.is_file():
                 continue
             try:
-                if file.suffix.lower() == ".pdf":
-                    text = extract_pdf_text(str(file))
-                elif file.suffix.lower() in {".docx", ".doc"}:
-                    doc = Document(str(file))
-                    text = "\n".join(p.text for p in doc.paragraphs)
-                else:
-                    text = file.read_text(errors="ignore")
+                text = read_document_text(file)
+            except ParserDependencyError as exc:
+                log.warning("Parser dependency missing for %s: %s", file, exc)
+                continue
+            except ParserError as exc:
+                log.info("Skipping unreadable document %s: %s", file, exc)
+                continue
             except Exception as exc:  # pragma: no cover - unexpected file errors
                 log.warning("Failed to read %s: %s", file, exc)
                 continue

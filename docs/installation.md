@@ -432,6 +432,12 @@ table below summarizes their purpose and usage.
 The `llm` extra installs CPU-friendly libraries such as `fastembed` and
 `dspy-ai`. GPU-focused transformer stacks are no longer included.
 
+The 0.1.0a1 milestone keeps PDF and DOCX parsing in scope when the
+`parsers` extra is installed. `autoresearch.search.parsers` normalizes the
+extracted text and raises explicit errors for corrupt documents, allowing
+the local file backend and cache to skip bad inputs without polluting
+state.
+
 Examples:
 
 ```bash

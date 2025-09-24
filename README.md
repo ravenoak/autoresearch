@@ -229,6 +229,11 @@ Autoresearch exposes optional extras to enable additional features:
 - `full` – installs `nlp`, `ui`, `vss`, `git`, `distributed`,
   `analysis`, `llm`, and `parsers`
 
+PDF and DOCX ingestion is in-scope for the 0.1.0a1 milestone when the
+`parsers` extra is installed. The dedicated parser module normalizes text
+and raises explicit errors for corrupt files so the local file backend and
+cache stay deterministic.
+
 Install extras with `uv sync --extra <name>` or
 `pip install "autoresearch[<name>]"`. Examples:
 
