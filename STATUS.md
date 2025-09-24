@@ -17,25 +17,22 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `uv --version` reports 0.7.22, and `task --version` still fails, so the
   Taskfile commands must run via `uv` or the PATH helper until we package a
   new Task binary. 【c0ed6e†L1-L2】【7b55df†L1-L2】【311dfe†L1-L2】
-- Staged the packaging dry run from a clean shell: `uv run --extra build python
-  -m build` and `uv run scripts/publish_dev.py --dry-run --repository testpypi`
-  refreshed the wheel and sdist. Logs live at
-  `baseline/logs/build-20250924T033349Z.log` and
-  `baseline/logs/publish-dev-20250924T033415Z.log`. Checksums now live in the
-  release plan so future reruns keep parity.
-  【F:baseline/logs/build-20250924T033349Z.log†L1-L13】
-  【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L14】
-  【F:docs/release_plan.md†L88-L109】
+- Revalidated lint, type, spec lint, MkDocs build, and packaging dry runs with
+  Python 3.12.10 and `uv 0.7.22`: `uv run --extra dev-minimal --extra test
+  flake8 src tests`, `uv run --extra dev-minimal --extra test mypy src`, and
+  `uv run python scripts/lint_specs.py` all passed, `uv run --extra docs mkdocs
+  build` rebuilt the site without warnings, and `uv run --extra build
+  python -m build` plus `uv run scripts/publish_dev.py --dry-run --repository
+  testpypi` refreshed the staged artifacts at
+  `baseline/logs/build-20250924T172531Z.log` and
+  `baseline/logs/publish-dev-20250924T172554Z.log` with checksums recorded in
+  the release plan.【5bf964†L1-L2】【4db948†L1-L3】【6e0aba†L1-L2】【375bbd†L1-L4】【7349f6†L1-L1】【b4608b†L1-L3】【1cbd7f†L1-L3】【F:baseline/logs/build-20250924T172531Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T172554Z.log†L1-L14】【F:docs/release_plan.md†L95-L120】
 - Reran `uv run --extra test pytest tests/unit -m "not slow" -rxX`; 890 tests
   passed with the expected eight XFAIL guards and five XPASS promotions,
   matching the open ranking, search, metrics, and storage tickets in
   SPEC_COVERAGE. This keeps the release dialectic focused on closing the
   proof gaps before we lift the guards. 【5b78c5†L1-L71】
   【F:SPEC_COVERAGE.md†L26-L52】
-- Spot-checked the fast verification entry points—`flake8`, `mypy`, and the
-  MkDocs build—all pass under `uv`, confirming the docs and lint gates stay
-  green while we iterate on the outstanding issues. 【6c5abf†L1-L1】
-  【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e†L1-L1】
 - Verified the local runtime before running tests: `python --version` reports
   3.12.10 and `uv --version` reports 0.7.22, while `task --version` still
   fails because the Go Task CLI is not installed in the Codex shell by
