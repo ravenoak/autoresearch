@@ -3,7 +3,9 @@
 ## Context
 The heuristics suite still marks
 `tests/unit/test_heuristic_properties.py::test_token_budget_monotonicity`
-with `xfail` even though `task verify` now reports the case as XPASS.
+with `xfail` even though `task verify` and the September 24 rerun of
+`uv run --extra test pytest tests/unit -m "not slow" -rxX` now report the
+case as XPASS.
 The marker was introduced while we investigated non-monotonic updates in
 `OrchestrationMetrics.suggest_token_budget`, so the remaining guard
 blocks release gating from catching regressions early.
