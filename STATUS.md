@@ -12,6 +12,25 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 24, 2025
+- Verified the local runtime before running tests: `python --version` reports
+  3.12.10 and `uv --version` reports 0.7.22, while `task --version` still
+  fails because the Go Task CLI is not installed in the Codex shell by
+  default. Continue using `uv` wrappers or source `scripts/setup.sh` before
+  invoking Taskfile commands.
+- Reviewed `baseline/logs/task-verify-20250923T204732Z.log` to confirm the
+  XPASS cases for Ray execution and ranking remain green under
+  warnings-as-errors, then opened
+  [refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
+  so the heuristics proof matches behaviour and updated
+  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  to depend on it.
+- Documented release staging gaps with
+  [stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
+  and refreshed
+  [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) to
+  align on packaging dry runs, changelog work, and dispatch-only workflows.
+
 ## September 23, 2025
 - Confirmed the lint, type, unit, integration, and behavior pipelines with `uv`
   commands while the Task CLI remains off `PATH` in the Codex shell. The lint

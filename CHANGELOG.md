@@ -25,17 +25,17 @@ Reference issues by slugged filename (for example,
   [docs/specs/config.md](docs/specs/config.md).
 - Logged the config weight validation regression in
   [fix-config-weight-sum-validation](
-    issues/fix-config-weight-sum-validation.md).
+    issues/archive/fix-config-weight-sum-validation.md).
 - Captured offline DuckDB extension fallback failures in
   [fix-duckdb-extension-offline-fallback](
-    issues/fix-duckdb-extension-offline-fallback.md).
+    issues/archive/fix-duckdb-extension-offline-fallback.md).
 - Narrowed the search regression scope in
   [fix-search-ranking-and-extension-tests](
-    issues/fix-search-ranking-and-extension-tests.md), which now focuses on
+    issues/archive/fix-search-ranking-and-extension-tests.md), which now focuses on
   aligning the overweight ranking unit test with the validator while extension
   loader suites pass.
 - Continued to track documentation build warnings in
-  [fix-mkdocs-griffe-warnings](issues/fix-mkdocs-griffe-warnings.md).
+  [fix-mkdocs-griffe-warnings](issues/archive/fix-mkdocs-griffe-warnings.md).
 - Replaced deprecated `fastembed.TextEmbedding` imports with the new
   `OnnxTextEmbedding` entry point, updated stubs and tests to mirror the public
   API, and noted the migration in

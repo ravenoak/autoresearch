@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 23, 2025**.
+[README](README.md). Last updated **September 24, 2025**.
 
 ## Status
 
@@ -51,6 +51,12 @@ work.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L37-L49�
 【F:issues/archive/fix-release-plan-issue-links.md†L26-L28】
 The spec template lint cleanup is archived as
 [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
+Fresh September 24 planning added
+[refresh-token-budget-monotonicity-proof](issues/refresh-token-budget-monotonicity-proof.md)
+ to document the heuristics proof gap and
+[stage-0-1-0a1-release-artifacts](issues/stage-0-1-0a1-release-artifacts.md)
+ to stage packaging outputs before tagging; both now sit under
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
 
 ## Milestones
 
