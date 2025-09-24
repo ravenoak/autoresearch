@@ -26,4 +26,5 @@ This scaling allows combination with other non-negative metrics.
 Automated tests confirm semantic similarity behavior.
 
 - [Spec](../specs/search.md)
-- [Tests](../../tests/integration/test_relevance_ranking_integration.py)
+- [Integration test](../../tests/integration/test_relevance_ranking_integration.py)
+- [Unit test](../../tests/unit/test_relevance_ranking.py::test_calculate_semantic_similarity)

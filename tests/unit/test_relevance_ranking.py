@@ -110,30 +110,32 @@ def test_rank_results_empty_input(monkeypatch):
     assert Search.rank_results("q", []) == []
 
 
-@pytest.mark.xfail(reason="Semantic similarity uses placeholder scoring")
 @patch("autoresearch.search.SENTENCE_TRANSFORMERS_AVAILABLE", True)
 def test_calculate_semantic_similarity(sample_results):
-    """Test the semantic similarity scoring functionality."""
+    """Semantic scores follow the cosine spec and documented coverage.
+
+    The regression links the production path to
+    ``docs/algorithms/semantic_similarity.md`` and ``SPEC_COVERAGE.md`` by
+    checking the normalized cosine similarity values.
+    """
     # Create a mock sentence transformer
     mock_transformer = MagicMock()
 
-    # Mock the encode method to return embeddings
-    def mock_encode(texts):
+    # Mock the embed method to return embeddings
+    def mock_embed(texts):
         if isinstance(texts, str):
-            # Query embedding
-            return np.array([0.1, 0.2, 0.3])
-        else:
-            # Document embeddings
-            return np.array(
-                [
-                    [0.1, 0.2, 0.3],  # Similar to query
-                    [0.2, 0.3, 0.4],  # Somewhat similar
-                    [0.1, 0.2, 0.3],  # Similar to query
-                    [-0.1, -0.2, -0.3],  # Opposite direction (negative similarity)
-                ]
-            )
+            texts = [texts]
+        if len(texts) == 1:
+            return [np.array([0.1, 0.2, 0.3], dtype=float)]
+        return [
+            np.array([0.1, 0.2, 0.3], dtype=float),
+            np.array([0.2, 0.3, 0.4], dtype=float),
+            np.array([0.1, 0.2, 0.3], dtype=float),
+            np.array([-0.1, -0.2, -0.3], dtype=float),
+        ]
 
-    mock_transformer.encode = mock_encode
+    mock_transformer.embed = mock_embed
+    mock_transformer.encode = mock_embed
 
     # Patch the get_sentence_transformer method
     with patch.object(
@@ -146,8 +148,24 @@ def test_calculate_semantic_similarity(sample_results):
     # Check that scores are in the expected range
     assert all(0 <= score <= 1 for score in scores)
 
-    # Check that similar documents have higher scores
-    assert all(score == 0.5 for score in scores)
+    query_vec = np.array([0.1, 0.2, 0.3], dtype=float)
+    doc_vectors = [
+        np.array([0.1, 0.2, 0.3], dtype=float),
+        np.array([0.2, 0.3, 0.4], dtype=float),
+        np.array([0.1, 0.2, 0.3], dtype=float),
+        np.array([-0.1, -0.2, -0.3], dtype=float),
+    ]
+    expected = []
+    for vector in doc_vectors:
+        numerator = float(np.dot(query_vec, vector))
+        denominator = float(np.linalg.norm(query_vec) * np.linalg.norm(vector))
+        cosine = numerator / denominator
+        expected.append((cosine + 1) / 2)
+
+    assert scores == pytest.approx(expected)
+    assert scores[0] == pytest.approx(1.0)
+    assert scores[0] > scores[1]
+    assert scores[3] == pytest.approx(0.0, abs=1e-9)
 
 
 def test_assess_source_credibility(sample_results):
@@ -391,11 +409,13 @@ def test_rank_results_sorted(mock_config, data):
     )
 
 
-@pytest.mark.xfail(reason="External lookup cache property slow under coverage")
 @settings(deadline=None, max_examples=10)
 @given(texts=st.lists(st.text(min_size=1), min_size=1, max_size=5))
 def test_external_lookup_uses_cache(texts):
-    """External lookups should reuse cached results."""
+    """External lookups reuse cached results per the cache documentation.
+
+    Coverage traces to ``docs/algorithms/cache.md`` and ``SPEC_COVERAGE.md``.
+    """
     results = [
         {"title": t, "url": f"https://example.com/{i}", "snippet": "s"}
         for i, t in enumerate(texts)

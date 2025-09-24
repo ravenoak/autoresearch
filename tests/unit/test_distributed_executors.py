@@ -48,8 +48,8 @@ def test_execute_agent_process():
 
 
 @pytest.mark.requires_distributed
-@pytest.mark.xfail(reason="Ray cannot serialize QueryState under Python 3.12")
 def test_execute_agent_remote() -> None:
+    """Remote execution follows docs/algorithms/distributed.md and coverage."""
     _register_dummy()
     try:
         config = ConfigModel(agents=["Dummy"], loops=1)

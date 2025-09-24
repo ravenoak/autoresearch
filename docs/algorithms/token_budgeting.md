@@ -141,7 +141,9 @@ asserts that the limit `round_with_margin(u, m)` is reached for constant
 usage and after temporary workload spikes. Simulation tests
 [`test_metrics_token_budget_spec.py`][bounds-test] verify the bounds on
 intermediate budgets and use Hypothesis to explore edge cases such as
-large spikes and near-zero margins.
+large spikes and near-zero margins. The Hypothesis scenario
+`test_convergence_bound_holds` now runs without an `xfail` guard,
+ensuring budgets stay within the documented bounds after spikes.
 
  For details on usage recording and metrics, see the
  [token budget specification](../token_budget_spec.md).
