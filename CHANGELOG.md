@@ -6,6 +6,13 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Restored the storage-backed hybrid lookup flow by exposing
+  `StorageManager` through `autoresearch.search`, rehydrating vector,
+  BM25, and ontology signals during `Search.external_lookup`, and
+  enabling the vector and hybrid query unit tests.
+  【F:src/autoresearch/search/__init__.py†L10-L38】【F:src/autoresearch/search/core.py†L320-L382】
+  【F:src/autoresearch/search/core.py†L904-L1087】【F:src/autoresearch/search/core.py†L1352-L1475】
+  【F:tests/unit/test_search.py†L296-L314】【F:tests/unit/test_search.py†L404-L429】
 - Reframed the token budget spec around piecewise monotonicity,
   documented the zero-usage counterexample, and promoted deterministic
   regression coverage for
