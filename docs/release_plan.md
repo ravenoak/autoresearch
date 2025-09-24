@@ -18,18 +18,19 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The latest `task release:alpha` sweep re-synced every dev, test, and
-distribution extra, confirmed Python 3.12.10, uv 0.7.22, Go Task 3.45.4, and
-retained the broader toolchain versions including pytest 8.4.2, mypy 1.18.2, and
-twine 6.2.0 before entering the verification phase.
-【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L72】 The verify step
-halted when `test_search_stub_backend` raised a TypeError, leaving the run with
-one failed, 240 passed, and two skipped tests plus two warnings over 243
-executed checks, so packaging and publish stages were not reached.
-【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】 The failure blocks
-the alpha tag until the stub backend path accepts the new embedding lookup
-signature logged in the sweep output.
-【F:baseline/logs/release-alpha-20250924T183041Z.log†L500-L534】
+The latest `task release:alpha` sweep from **September 24, 2025 at 18:46 UTC**
+re-synced every dev, test, and distribution extra, confirmed Python 3.12.10,
+uv 0.7.22, Go Task 3.45.4, and retained the broader toolchain versions
+including pytest 8.4.2, mypy 1.18.2, and twine 6.2.0 before entering the
+verification phase.
+【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】
+【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L44】
+`task coverage` then halted when `test_search_stub_backend` raised a TypeError,
+leaving the run with one failed, 240 passed, and two skipped tests plus two
+warnings over 243 executed checks, so packaging and publish stages were not
+reached.【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】 The
+failure blocks the alpha tag until the stub backend path accepts the new
+embedding lookup signature highlighted in the sweep output.【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L456】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -74,27 +75,30 @@ default optional extras (excluding `gpu`). It then runs lint, type checks, spec
 lint, the verify and coverage tasks, packaging builds, metadata checks, and the
 TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
 
-- [x] `uv run --extra dev-minimal --extra test flake8 src tests` passed with no
-  issues before coverage started.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L76】
-- [x] `uv run --extra dev-minimal --extra test mypy src` reported no type
-  errors with the a2a interface exclusion still applied.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L20-L76】
-- [x] `uv run python scripts/lint_specs.py` kept the monitor and extensions
-  templates aligned during the sweep.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L74-L79】
+- [x] `uv run --extra dev-minimal --extra test flake8 src tests` ran as part of
+  the sweep before coverage began and the log advanced to the mypy step without
+  surfacing lint errors.
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L1-L3】
+- [x] `uv run --extra dev-minimal --extra test mypy src` reported "Success: no
+  issues found in 115 source files" with the a2a interface exclusion still
+  applied.
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L3-L4】
+- [x] `uv run python scripts/lint_specs.py` executed during the sweep to keep
+  the monitor and extensions templates aligned.
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L5-L5】
 - [ ] `uv run --extra docs mkdocs build` remains pending for this sweep; the
-  `release:alpha` task exited before the docs stage reran.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+  `release:alpha` task exited during coverage before the docs stage reran.
+  【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - [ ] `task verify` and `task coverage` must be rerun because the unit suite
   halted on `test_search_stub_backend` with a TypeError.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - [ ] `uv run --extra build python -m build` awaits rerun; the release sweep
   never reached the packaging stage after the failure.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L93-L534】
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - [ ] Dry-run publish to TestPyPI will resume after packaging succeeds; the
-  aborted sweep produced no new publish log.
-  【F:baseline/logs/release-alpha-20250924T183041Z.log†L533-L534】
+  aborted sweep produced no new publish log after the coverage failure.
+  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - [x] Archived
   [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
   [issues/archive/refresh-token-budget-monotonicity-proof.md], and
