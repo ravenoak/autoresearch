@@ -5,13 +5,29 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **August 20, 2025**, Autoresearch targets an **0.1.0a1** preview on
+As of **September 23, 2025**, Autoresearch targets an **0.1.0a1** preview on
 **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-`uv run flake8 src tests` and `uv run mypy src` both pass, and `uv run
-pytest tests/unit -q` reports 253 passing tests. `uv run pytest
-tests/integration -m "not slow and not requires_ui and not requires_vss" -q`
-currently yields numerous failures, so integration and behavior suites remain
-outstanding.
+The September 23 verification runs keep `uv run flake8 src tests` and
+`uv run mypy src` green. `uv run pytest tests/unit -q` now passes with six
+XPASS cases tracked in
+[retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md),
+and both the integration suite (`uv run pytest tests/integration -m "not slow
+and not requires_ui and not requires_vss" -q`) and behavior suite pass.
+`task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
+exercises 908 unit, 331 integration, optional-extra, and 29 behavior tests at
+100% line coverage, matching the expectations captured in `TASK_PROGRESS.md`.
+Release preparation now focuses on XPASS cleanup and staging
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
+
+### Immediate Follow-ups
+
+- [ ] Retire the six XPASS cases documented in
+  [retire-stale-xfail-markers-in-unit-suite](issues/retire-stale-xfail-markers-in-unit-suite.md)
+  so the unit suite fails fast on regressions.
+- [ ] Complete the
+  [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
+  milestones while keeping optional-extra coverage sweeps synchronized with
+  `TASK_PROGRESS.md`.
 
 ## 1. Core System Completion
 
