@@ -6,6 +6,13 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Finalized PDF and DOCX ingestion for 0.1.0a1 by introducing a deterministic
+  parser module, documenting the scope decision, and promoting parser tests
+  from XFAIL to regression coverage, addressing
+  [finalize-search-parser-backends](issues/finalize-search-parser-backends.md).
+  【F:src/autoresearch/search/parsers.py†L1-L149】【F:src/autoresearch/search/core.py†L55-L183】
+  【F:docs/algorithms/search.md†L1-L74】【F:docs/algorithms/cache.md†L1-L52】
+  【F:tests/unit/test_search_parsers.py†L1-L74】
 - Restored the storage-backed hybrid lookup flow by exposing
   `StorageManager` through `autoresearch.search`, rehydrating vector,
   BM25, and ontology signals during `Search.external_lookup`, and

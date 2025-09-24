@@ -57,6 +57,19 @@ sources still produce deterministic output. The merged `storage`
 backends are ranked with the same BM25/semantic/credibility formula as
 remote results, so cross-backend ordering remains reproducible.
 
+## Document ingestion scope
+
+0.1.0a1 explicitly ships deterministic PDF and DOCX ingestion behind the
+`parsers` extra. We considered softening the documentation and treating
+binary formats as unsupported, but that path left the cache storing
+backend-dependent snippets and undermined ranking determinism. The new
+`autoresearch.search.parsers` module normalizes extracted text and raises
+clear `ParserError` exceptions when files are corrupt or dependencies are
+missing. The local file backend now catches those failures, skips the
+offending documents, and continues serving cached snippets produced from
+the normalized text. Unit tests cover successful extraction and failure
+paths so the decision remains enforceable.
+
 ## Query expansion convergence
 
 A simple simulation iteratively expands queries using stored entities.
