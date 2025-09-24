@@ -34,6 +34,11 @@ Reference issues by slugged filename (for example,
 - Stabilized storage eviction by documenting the stale-LRU counterexample,
   adding a fallback when caches are empty, extending the property-based
   regression, and introducing a `stale_lru` simulation scenario.
+- Captured the Hypothesis metrics-dropout regression for
+  `_enforce_ram_budget`, ensured deterministic caps continue when RAM metrics
+  vanish mid-run, seeded the property and simulation with the regression
+  seed, refreshed the storage docs, and updated spec coverage to remove the
+  guard.【F:src/autoresearch/storage.py†L803-L836】【F:tests/unit/test_storage_eviction.py†L86-L195】【F:tests/unit/test_storage_eviction_sim.py†L1-L76】【F:scripts/storage_eviction_sim.py†L1-L246】【F:docs/algorithms/storage_eviction.md†L31-L96】【F:docs/specs/storage.md†L32-L65】【F:SPEC_COVERAGE.md†L67-L67】
 - Reframed the token budget spec around piecewise monotonicity,
   documented the zero-usage counterexample, and promoted deterministic
   regression coverage for

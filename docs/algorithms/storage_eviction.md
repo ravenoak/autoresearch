@@ -42,10 +42,11 @@ therefore observe a state satisfying the invariant and leave it intact.
 - **Usage at or below budget:** When `U₀ \leq B` no nodes are evicted.
 - **Empty graph:** The loop exits with no effect when there are no nodes to
   remove.
-- **Missing metrics:** A 0 MB usage reading is treated as "unknown" and leaves
-  the graph unchanged unless a deterministic override is configured. The
-  deterministic fallback derived from `ram_budget_mb` only activates when
-  metrics confirm `U > B`, keeping under-budget scenarios intact.
+- **Missing metrics:** A 0 MB usage reading is treated as "unknown". If a
+  deterministic override is configured, or if eviction already engaged the
+  derived node cap because metrics previously showed `U > B`, the loop
+  continues removing nodes until that deterministic limit is satisfied.
+  Otherwise the graph remains unchanged.
 
 ### Counterexample: stale LRU
 
@@ -57,6 +58,18 @@ missing candidates directly from the graph and reevaluates both the RAM bound
 and the deterministic node limit on every iteration. Regression coverage lives
 in the strengthened property test in
 `tests/unit/test_storage_eviction.py` and the new `stale_lru` scenario in
+`scripts/storage_eviction_sim.py`.
+
+### Counterexample: metrics dropout
+
+Hypothesis seed `170090525894866085979644260693064061602` produced a run where
+`_current_ram_mb` first reported `U₀ > B` and then returned `0` on every
+subsequent call while the graph still exceeded the deterministic limit derived
+from `ram_budget_mb`. The prior implementation broke out after the first
+eviction, leaving the graph above the cap. `_enforce_ram_budget` now keeps
+removing nodes until the deterministic limit holds even without fresh metrics.
+The regression is covered by the seeded property in
+`tests/unit/test_storage_eviction.py` and the `metrics_dropout` scenario in
 `scripts/storage_eviction_sim.py`.
 
 These arguments assume each node consumes at least `s_min > 0` MB, so the
@@ -75,8 +88,8 @@ Simulation tests [analysis-test]
 and property checks [unit-test]
 exercise access patterns and confirm deterministic eviction. The
 simulation script [sim-script] models concurrent writers, dedicated
-evictors, and edge cases such as zero, negative, exact, or under-budget
-usage.
+evictors, and edge cases such as zero, negative, exact, under-budget,
+stale-LRU, and metrics-dropout usage.
 
 [analysis-test]: ../../tests/analysis/test_storage_eviction.py
 [unit-test]: ../../tests/unit/test_storage_eviction.py
