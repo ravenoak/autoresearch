@@ -75,6 +75,12 @@ default optional extras (excluding `gpu`). It then runs lint, type checks, spec
 lint, the verify and coverage tasks, packaging builds, metadata checks, and the
 TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
 
+- [ ] Source the Task PATH helper or invoke release commands through
+  `uv run task …` as described in
+  [releasing.md](releasing.md#preparing-the-environment) so the CLI is
+  available in fresh shells. Reference the [STATUS.md][status-cli] log when
+  that guidance changes.
+
 - [x] `uv run --extra dev-minimal --extra test flake8 src tests` ran as part of
   the sweep before coverage began and the log advanced to the mypy step without
   surfacing lint errors.
@@ -162,4 +168,7 @@ installs only `dev-minimal` and `test` extras by default; add groups with
   in sync and stay above **90%**
 - [ ] `scripts/update_coverage_docs.py` syncs docs with
   `baseline/coverage.xml`
+
+[status-cli]:
+  https://github.com/autoresearch/autoresearch/blob/main/STATUS.md#status
 
