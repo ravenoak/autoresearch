@@ -2,7 +2,7 @@ import pytest
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, SearchConfig
-from autoresearch.search.core import Search
+from autoresearch.search.core import RANKING_BUCKET_SCALE, Search
 
 
 def _setup(monkeypatch) -> None:
@@ -34,3 +34,22 @@ def test_rank_results_idempotent(monkeypatch) -> None:
     ranked = Search.rank_results("q", results)
     reranked = Search.rank_results("q", ranked)
     assert [r["url"] for r in ranked] == [r["url"] for r in reranked]
+    assert [r["relevance_bucket"] for r in ranked] == [
+        r["relevance_bucket"] for r in reranked
+    ]
+    assert [r["raw_relevance_bucket"] for r in ranked] == [
+        r["raw_relevance_bucket"] for r in reranked
+    ]
+    for first, second in zip(ranked, reranked, strict=True):
+        assert first["relevance_bucket"] == int(
+            round(first["relevance_score"] * RANKING_BUCKET_SCALE)
+        )
+        assert second["relevance_bucket"] == int(
+            round(second["relevance_score"] * RANKING_BUCKET_SCALE)
+        )
+        assert first["raw_relevance_bucket"] == int(
+            round(first["raw_merged_score"] * RANKING_BUCKET_SCALE)
+        )
+        assert second["raw_relevance_bucket"] == int(
+            round(second["raw_merged_score"] * RANKING_BUCKET_SCALE)
+        )

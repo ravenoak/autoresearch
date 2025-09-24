@@ -17,6 +17,7 @@ from autoresearch.cache import SearchCache
 from autoresearch.config.models import ContextAwareSearchConfig, SearchConfig
 from autoresearch.errors import ConfigError
 from autoresearch.search import Search
+from autoresearch.search.core import RANKING_BUCKET_SCALE
 
 
 @pytest.fixture
@@ -403,10 +404,14 @@ def test_rank_results_sorted(mock_config, data):
         ranked = Search.rank_results("q", results)
 
     assert len(ranked) == n
-    assert all(
-        ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"]
-        for i in range(len(ranked) - 1)
-    )
+    buckets = [item["relevance_bucket"] for item in ranked]
+    assert all(buckets[i] >= buckets[i + 1] for i in range(len(buckets) - 1))
+    tolerance = 1.0 / RANKING_BUCKET_SCALE
+    for i in range(len(ranked) - 1):
+        if buckets[i] == buckets[i + 1]:
+            assert ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"] - tolerance
+        else:
+            assert ranked[i]["relevance_score"] >= ranked[i + 1]["relevance_score"]
 
 
 @settings(deadline=None, max_examples=10)

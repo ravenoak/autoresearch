@@ -39,12 +39,14 @@ to zero. This derivation uses the inversion count formula
 
 Floating point arithmetic once caused ties to swap order between runs. The
 implementation now quantizes both the final relevance score and the merged
-raw score on a :math:`10^{-6}` grid before sorting. Documents with identical
-quantized scores fall back to lexicographic comparison of `(backend, url,
-title)` and finally the original index supplied by the calling backend.
-These secondary keys ensure repeatable rankings without weakening the
-convergence proof. When metadata is missing the empty string placeholder
-keeps the comparison well defined.
+raw score on a :math:`10^{-6}` grid before sorting. The bucketed values are
+exposed as `relevance_bucket` and `raw_relevance_bucket` so diagnostics and
+tests can confirm that two passes through the ranking pipeline land in the
+same score bucket. Documents with identical quantized scores fall back to
+lexicographic comparison of `(backend, url, title)` and finally the original
+index supplied by the calling backend. These secondary keys ensure repeatable
+rankings without weakening the convergence proof. When metadata is missing the
+empty string placeholder keeps the comparison well defined.
 
 ## Complexity
 
