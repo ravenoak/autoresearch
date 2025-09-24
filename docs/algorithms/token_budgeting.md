@@ -121,6 +121,26 @@ positive sample has been recorded, subsequent increases remain
 monotonic; only the zero-history fallback violates the strict proof
 claim.
 
+## Dialectical resolution
+
+The counterexample forced a decision between tightening the heuristic or
+revising the specification. Raising the first positive sample to match
+the previous budget would over-allocate cold starts and distort the
+margin-derived convergence bound. Retaining the fallback keeps the
+system conservative until genuine demand appears. We therefore reframed
+the guarantee as *piecewise monotonicity*: before any usage the helper
+preserves the configured budget, and once a positive delta arrives,
+larger deltas cannot decrease the recommendation.
+
+The regression suite captures both sides of this dialectic.
+[`test_token_budget_zero_usage_regression`][tb-regression] replays the
+zero-history path, while
+[`test_token_budget_monotonicity`][tb-piecewise] and the deterministic
+[`test_token_budget_monotonicity_deterministic`][tb-deterministic]
+assert the post-usage monotonic guarantee. The Hypothesis property
+previously carried an `xfail` guard; aligning the specification with
+piecewise monotonicity promoted it to a standing regression.
+
 ## Simulation
 
 Run `uv run scripts/token_budget_convergence.py` to observe convergence
@@ -145,8 +165,11 @@ large spikes and near-zero margins. The Hypothesis scenario
 `test_convergence_bound_holds` now runs without an `xfail` guard,
 ensuring budgets stay within the documented bounds after spikes.
 
- For details on usage recording and metrics, see the
- [token budget specification](../token_budget_spec.md).
+For details on usage recording and metrics, see the
+[token budget specification](../token_budget_spec.md).
 
 [tb-test]: ../../tests/unit/test_token_budget_convergence.py
 [bounds-test]: ../../tests/unit/test_metrics_token_budget_spec.py
+[tb-regression]: ../../tests/unit/test_heuristic_properties.py
+[tb-piecewise]: ../../tests/unit/test_heuristic_properties.py
+[tb-deterministic]: ../../tests/unit/test_heuristic_properties.py
