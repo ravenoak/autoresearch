@@ -13,6 +13,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 23, 2025
+- Confirmed the lint, type, unit, integration, and behavior pipelines with `uv`
+  commands while the Task CLI remains off `PATH` in the Codex shell. The lint
+  (`uv run --extra dev-minimal --extra test flake8 src tests`), type (`uv run
+  --extra dev-minimal --extra test mypy src`), unit (`uv run --extra test
+  pytest tests/unit -m 'not slow' --maxfail=1 -rxX`), integration, and behavior
+  suites all pass; the unit run reports six XPASS cases now tracked in
+  [issues/retire-stale-xfail-markers-in-unit-suite.md].【2d7183†L1-L3】【dab3a6†L1-L1】
+  【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】【8e97b0†L1-L1】【ba4d58†L1-L104】
+  【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】【88b85b†L1-L2】
 - Reran `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers
   gpu"` after `task verify:preflight` confirmed the hydrated GPU wheels; 908
   unit, 331 integration, optional-extra sweeps, and 29 behavior tests all kept
@@ -48,21 +57,6 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   【F:baseline/logs/task-verify-20250923T204732Z.log†L1748-L1785】
   【F:baseline/logs/task-verify-20250923T204732Z.log†L1774-L1785】
   【128a65†L1-L2】【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L41】
-- `uv run task check` now completes with `flake8`, `mypy`, and the smoke tests
-  passing after the API lifespan logs storage setup failures and the search
-  storage helper drops the unused import, so
-  [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md] can
-  close.
-  【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
-  【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
-- Sourced the Task helper with `./scripts/setup.sh --print-path` and confirmed
-  `task --version` still reports 3.45.4 before rerunning `task check`.
-  【153af2†L1-L2】【1dc5f5†L1-L24】
-- `task check` now fails during `flake8` because
-  `src/autoresearch/api/routing.py` assigns the `e` variable inside the
-  defensive storage setup handler without using it and
-  `src/autoresearch/search/storage.py` still imports `StorageError` even though
-  the helper only logs generic exceptions. 【d726d5†L1-L3】
 - `uv run python scripts/lint_specs.py` returns successfully and
   `docs/specs/monitor.md` plus `docs/specs/extensions.md` include the
   `## Simulation Expectations` heading, so the spec lint regression is cleared
@@ -72,36 +66,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   tests/unit/test_storage_errors.py::test_setup_rdf_store_error -q` now passes
   without reporting an xpass, confirming the stale marker cleanup held.
   【fba3a6†L1-L2】
-- Opened [issues/clean-up-flake8-regressions-in-routing-and-search-storage.md]
-  to track the lint fixes required before the alpha release checklist can
-  proceed.
-
-- Reloaded the PATH snippet from `./scripts/setup.sh --print-path` so
-  `task --version` reports 3.45.4 before rerunning `task check`; the run still
-  halts in `flake8` because the unused `e` assignment and dead `StorageError`
-  import remain, matching the open lint ticket, and the `check_env` step again
-  reports the expected Python 3.12.10 toolchain plus project dependencies.
-  【744f05†L1-L7】【152f28†L1-L2】【cd3ade†L1-L3】【48cdde†L1-L25】【910056†L1-L9】
-- Reconfirmed the storage regression suite stays green with
-  `uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1`, which
-  still finishes with 136 passed, 2 skipped, 822 deselected, and 1 xfailed
-  tests after 72.95s. 【714199†L1-L2】
-- `uv run --extra docs mkdocs build` now completes in 6.6 seconds but emits a
-  warning that `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
-  outside the documentation tree, so the release checklists must add a cleanup
-  task. 【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】
 - Moved the GPU wheel cache instructions into `docs/wheels/gpu.md`, linked the
   testing guidelines to the new page, and added the entry to the MkDocs
-  navigation. `uv run --extra docs mkdocs build` now only reports the existing
-  `release_plan.md` issue links, confirming the GPU warning is resolved.
+  navigation. `uv run --extra docs mkdocs build` now completes without
+  warnings, only noting the archived release-plan references.
   【F:docs/wheels/gpu.md†L1-L24】【F:docs/testing_guidelines.md†L90-L102】
-  【F:mkdocs.yml†L30-L55】【933fff†L1-L6】
-- Re-ran `task check` after syncing dev-minimal and test extras; the command
-  still halts in `flake8` on the unused `e` assignment and lingering
-  `StorageError` import, matching the open lint ticket
-  `clean-up-flake8-regressions-in-routing-and-search-storage` in the in-repo
-  tracker.
-  【ae37a4†L1-L12】【19a195†L1-L24】【b323ba†L1-L4】
+  【F:mkdocs.yml†L30-L55】【933fff†L1-L6】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】
 - Updated `docs/release_plan.md` to mention issue slugs without linking outside
   the documentation tree, so `uv run --extra docs mkdocs build` now finishes
   without missing-target warnings and the fix-release-plan-issue-links ticket
@@ -791,16 +761,10 @@ regression is resolved.
 ## Open issues
 
 ### Release blockers
-- [resolve-resource-tracker-errors-in-verify](
-  issues/resolve-resource-tracker-errors-in-verify.md) – Run `task verify`
-  end-to-end once the PATH helper is loaded to confirm the multiprocessing
-  tracker cleanup fixes hold under coverage.
 - [prepare-first-alpha-release](issues/prepare-first-alpha-release.md) –
-  Coordinate release notes, docs extras, Task installation, and final smoke
-  tests once the dependent issues above close.
-- [rerun-task-coverage-after-storage-fix](
-  issues/rerun-task-coverage-after-storage-fix.md) – Refresh coverage once
-  the storage follow-ups are closed and confirm the spec template cleanup,
-  archived as
-  [issues/archive/restore-spec-lint-template-compliance.md](issues/archive/restore-spec-lint-template-compliance.md),
-  remains satisfied.
+  Coordinate release notes, warnings-as-errors coverage with optional extras,
+  and final smoke tests before tagging v0.1.0a1.
+- [retire-stale-xfail-markers-in-unit-suite](
+  issues/retire-stale-xfail-markers-in-unit-suite.md) – Promote the six XPASS
+  unit tests back to ordinary assertions so release verification can fail fast
+  on regressions.

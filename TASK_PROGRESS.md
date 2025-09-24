@@ -12,16 +12,15 @@ the refreshed run, allowing
 【abdf1f†L1-L1】【4e6478†L1-L8】【74e81d†L1-L74】【887934†L1-L54】【15fae0†L1-L20】
 【b68e0e†L38-L68】【F:baseline/coverage.xml†L1-L12】
 【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
-【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】
-The Go Task CLI remains available after sourcing the helper emitted by
-`./scripts/setup.sh --print-path`, and `uv run task check` now completes with
-`flake8`, `mypy`, and the smoke tests succeeding after the routing lifespan
-logs storage setup failures and the search storage helper drops the unused
-import tracked in
-[issues/clean-up-flake8-regressions-in-routing-and-search-storage.md].
-【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【60cf8b†L1-L35】
-【0e7eac†L1-L4】【68d011†L1-L1】【F:src/autoresearch/api/routing.py†L55-L489】
-【F:src/autoresearch/search/storage.py†L1-L33】
+【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L1-L36】 Direct
+`uv run` commands now verify the day-to-day lint, type, and smoke suites without
+requiring the Task CLI on `PATH`; the unit run reports six XPASS cases tracked in
+[issues/retire-stale-xfail-markers-in-unit-suite.md], while integration and
+behavior suites pass with optional extras skipped. `uv run --extra docs mkdocs
+build` completes without warnings after prior documentation fixes.
+【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
+【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
+【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】
 The first warnings-as-errors `task verify` attempt, captured in
 `baseline/logs/task-verify-20250923T204706Z.log`, stopped at
 `tests/targeted/test_extras_codepaths.py:13:5: F401 'sys' imported but unused`.

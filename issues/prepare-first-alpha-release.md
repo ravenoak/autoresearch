@@ -3,71 +3,47 @@
 ## Context
 
 The project remains unreleased even though the codebase and documentation are
-public. To tag v0.1.0a1 we still need a coordinated push across testing,
-documentation, and packaging while keeping workflows dispatch-only.
-Sourcing the PATH helper emitted by `./scripts/setup.sh --print-path` keeps
-`task --version` at 3.45.4, and the `task check` bootstrap reconfirms Python
-3.12.10 plus the expected development tooling before halting in `flake8`
-because `src/autoresearch/api/routing.py` still assigns an unused `e` variable
-and `src/autoresearch/search/storage.py` imports `StorageError` without using
-it. 【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】
-`uv run python scripts/lint_specs.py` already succeeds and
-`docs/specs/monitor.md` plus `docs/specs/extensions.md` retain the required
-`## Simulation Expectations` heading, so the spec-driven baseline remains
-intact. 【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
-`uv run --extra test pytest tests/unit -k "storage" -q --maxfail=1` finishes
-with 136 passed, 2 skipped, 822 deselected, and 1 xfailed tests, confirming the
-storage teardown fixes hold. 【714199†L1-L2】 Documentation builds now emit
-warnings because `docs/testing_guidelines.md` links to `../wheels/gpu/README.md`
-outside MkDocs' tree and `docs/release_plan.md` references the lint tickets via
-`../issues/...`, so the release scope must cover both documentation fixes.
-【aaf0c5†L1-L7】【F:docs/testing_guidelines.md†L90-L102】【F:docs/release_plan.md†L20-L36】
-All GitHub Actions workflows remain `workflow_dispatch` only.
-【F:.github/workflows/ci.yml†L1-L22】【F:.github/workflows/ranking-benchmark.yml†L1-L14】
-【F:.github/workflows/release-images.yml†L1-L14】
+public. Tagging v0.1.0a1 still requires a coordinated push across testing,
+documentation, and packaging while workflows stay dispatch-only. In the current
+Codex shell the Go Task CLI is not on `PATH` until
+`./scripts/setup.sh --print-path` is sourced, so we validated linting and type
+checks directly with `uv`. 【2d7183†L1-L3】 `uv run --extra dev-minimal --extra
+test flake8 src tests` and `uv run --extra dev-minimal --extra test mypy src`
+both succeed, confirming the earlier lint regressions remain resolved.
+【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】 The unit suite now
+passes under `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1
+-rxX`, but six tests marked `xfail` report XPASS and require promotion to
+ordinary assertions before release. 【8e97b0†L1-L1】【ba4d58†L1-L104】 Integration
+and behavior suites complete with skips only for optional extras.
+【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】【88b85b†L1-L2】 `uv run --extra docs
+mkdocs build` now finishes without warnings after prior documentation fixes, and
+all GitHub Actions workflows remain `workflow_dispatch` only.
+【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】【F:.github/workflows/ci.yml†L1-L22】
 `SPEC_COVERAGE.md` continues to map each module to specifications plus proofs,
 simulations, or tests, so every component still aligns with the project's
-spec-first mandate ahead of the release. 【F:SPEC_COVERAGE.md†L1-L120】 The
-remaining work involves closing the lint regression, validating the resource
-tracker tear-down under warnings-as-errors, hardening the deprecation sweep,
-refreshing coverage with optional extras, and repairing the MkDocs warning
-before drafting release notes and tagging v0.1.0a1.
+spec-first mandate ahead of the release. 【F:SPEC_COVERAGE.md†L1-L125】 The
+remaining work focuses on retiring the stale `xfail` markers, capturing
+warnings-as-errors baselines with optional extras, and staging the packaging
+artifacts before drafting release notes and tagging v0.1.0a1.
 
 ### PR-sized tasks
 
-- **Clear lint regressions** – Resolve
-  `autoresearch/api/routing.py`'s unused `e` variable and the dead
-  `StorageError` import so `task check` passes again.
-  ([clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md))
-- **Verify resource tracker teardown** – Re-run `task verify` (ideally with
-  `PYTHONWARNINGS=error::DeprecationWarning`) to ensure the multiprocessing
-  shutdown path remains stable.
-  ([resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md))
-- **Harden warnings-as-errors harness** – Implement the multi-PR remediation
-  plan to capture deprecations, refactor callers, and pin or filter remaining
-  warnings so future runs stay clean.
-  ([resolve-deprecation-warnings-in-tests (archived)](archive/resolve-deprecation-warnings-in-tests.md))
-- **Refresh coverage with optional extras** – Execute
-  `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
-  once the suite passes and update `baseline/coverage.xml` plus docs status.
-  ([rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md))
-- **Repair MkDocs GPU wheels link** – Update the testing guidelines so
-  `uv run --extra docs mkdocs build` completes without warnings.
-  ([fix-testing-guidelines-gpu-link](fix-testing-guidelines-gpu-link.md))
-- **Repair release plan issue links** – Update the release plan so it references
-  open tickets without pointing outside the MkDocs tree.
-  ([fix-release-plan-issue-links](fix-release-plan-issue-links.md))
+- **Retire stale xfail markers** – Promote the six XPASS cases in the unit
+  suite so release verification runs fail fast when regressions reappear.
+  ([retire-stale-xfail-markers-in-unit-suite](retire-stale-xfail-markers-in-unit-suite.md))
+- **Refresh warnings-as-errors coverage** – Capture a new
+  `PYTHONWARNINGS=error::DeprecationWarning` run with all optional extras to
+  ensure the resource tracker cleanup, DuckDB extension fallback, and
+  distributed paths stay quiet. (Reuses archived playbooks in
+  [`issues/archive/resolve-resource-tracker-errors-in-verify.md`](archive/resolve-resource-tracker-errors-in-verify.md)
+  and [`issues/archive/resolve-deprecation-warnings-in-tests.md`](archive/resolve-deprecation-warnings-in-tests.md).)
 - **Stage release artifacts** – Draft CHANGELOG.md notes, confirm packaging
-  metadata, and plan the `v0.1.0a1` tag once the above tickets land.
+  metadata, and plan the `v0.1.0a1` tag once verification runs and documentation
+  updates land.
 
 ## Dependencies
 
-- [resolve-resource-tracker-errors-in-verify](resolve-resource-tracker-errors-in-verify.md)
-- [resolve-deprecation-warnings-in-tests (archived)](archive/resolve-deprecation-warnings-in-tests.md)
-- [rerun-task-coverage-after-storage-fix](rerun-task-coverage-after-storage-fix.md)
-- [clean-up-flake8-regressions-in-routing-and-search-storage](clean-up-flake8-regressions-in-routing-and-search-storage.md)
-- [fix-testing-guidelines-gpu-link](fix-testing-guidelines-gpu-link.md)
-- [fix-release-plan-issue-links](fix-release-plan-issue-links.md)
+- [retire-stale-xfail-markers-in-unit-suite](retire-stale-xfail-markers-in-unit-suite.md)
 
 ## Acceptance Criteria
 - All dependency issues are closed.

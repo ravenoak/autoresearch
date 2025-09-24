@@ -19,27 +19,25 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 ## Status
 
 The dependency pins for `fastapi` (>=0.116.1) and `slowapi` (==0.1.9) remain
-confirmed in `pyproject.toml` and [installation.md](installation.md). Sourcing
-`./scripts/setup.sh --print-path` keeps Go Task 3.45.4 on the PATH, and
-`task check` still bootstraps the environment with Python 3.12.10 plus the
-expected tooling before halting in `flake8` due to the unused `e` assignment
-and lingering `StorageError` import tracked in the
-clean-up-flake8-regressions-in-routing-and-search-storage issue.
-【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 The
-storage suites stay green: `uv run --extra test pytest tests/unit -k "storage"
--q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected, and 1
-xfailed tests, and the RDF store regression test passes without an xfail
-marker. 【714199†L1-L2】【F:issues/clean-up-flake8-regressions-in-routing-and-search-storage.md†L1-L40】
-Documentation builds succeed but emit a warning about the testing guidelines
-linking to `../wheels/gpu/README.md`, so the fix-testing-guidelines-gpu-link
-issue is now part of the release scope.
-【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】 Spec lint remains
+confirmed in `pyproject.toml` and [installation.md](installation.md). In the
+Codex shell the Go Task CLI is not on `PATH` until
+`./scripts/setup.sh --print-path` is sourced, so linting, typing, and test smoke
+checks currently run via `uv`. `uv run --extra dev-minimal --extra test flake8
+src tests` and `uv run --extra dev-minimal --extra test mypy src` both succeed,
+and `uv run --extra test pytest tests/unit -m 'not slow' --maxfail=1 -rxX`
+passes with six XPASS cases now tracked in
+[issues/retire-stale-xfail-markers-in-unit-suite.md]. Integration and behavior
+suites succeed with optional extras skipped, and `uv run --extra docs mkdocs
+build` finishes without warnings after the GPU wheel documentation move.
+【2d7183†L1-L3】【dab3a6†L1-L1】【240ff7†L1-L1】【3fa75b†L1-L1】【8434e0†L1-L2】
+【8e97b0†L1-L1】【ba4d58†L1-L104】【ab24ed†L1-L1】【187f22†L1-L9】【87aa99†L1-L1】
+【88b85b†L1-L2】【6618c7†L1-L4】【69c7fe†L1-L3】【896928†L1-L4】 Spec lint remains
 recovered—`docs/specs/monitor.md` and `docs/specs/extensions.md` retain the
-required `## Simulation Expectations` sections—so the remaining release work
-hinges on fixing the lint regression, confirming the resource tracker teardown,
-running the warnings-as-errors sweep, refreshing coverage with optional extras,
-and repairing the MkDocs warning noted above.
-【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
+required `## Simulation Expectations` sections—and coverage artifacts stay in
+sync with `baseline/coverage.xml` after the September 23 run documented in
+`docs/status/task-coverage-2025-09-23.md`.
+【F:docs/specs/monitor.md†L126-L165】【F:docs/specs/extensions.md†L1-L69】
+【F:baseline/coverage.xml†L1-L12】【F:docs/status/task-coverage-2025-09-23.md†L1-L32】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect

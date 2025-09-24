@@ -27,7 +27,8 @@ Clearing these lint failures is required before `task verify` and
 - STATUS.md and TASK_PROGRESS.md record the lint cleanup.
 
 ## Status
-Closed – `uv run task check` now succeeds after the API lifespan logs storage
-setup failures and the search storage helper drops the unused import.
-【60cf8b†L1-L35】【0e7eac†L1-L4】【68d011†L1-L1】
+Archived – `uv run --extra dev-minimal --extra test flake8 src tests`
+reproduces a clean run after the routing lifespan logs storage setup
+failures and the search storage helper drops the unused import.
+【dab3a6†L1-L1】【240ff7†L1-L1】
 【F:src/autoresearch/api/routing.py†L55-L489】【F:src/autoresearch/search/storage.py†L1-L33】
