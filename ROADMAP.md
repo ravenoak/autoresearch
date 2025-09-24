@@ -12,32 +12,45 @@ See [STATUS.md](STATUS.md) for detailed logs and
 [CHANGELOG.md](CHANGELOG.md) for recent updates. 0.1.0a1 remains untagged and
 targets **September 15, 2026**, with **0.1.0** planned for **October 1, 2026**
 across project documentation. Sourcing the PATH helper emitted by
-`./scripts/setup.sh --print-path` keeps `task --version` at 3.45.4, and the
-`task check` bootstrap reconfirms Python 3.12.10 plus the expected
-development-toolchain packages even though the run still stops in `flake8`
-because of the unused `e` assignment and stale `StorageError` import tracked in
-[clean-up-flake8-regressions-in-routing-and-search-storage](issues/clean-up-flake8-regressions-in-routing-and-search-storage.md).
-【744f05†L1-L7】【152f28†L1-L2】【48cdde†L1-L25】【910056†L1-L9】【cd3ade†L1-L3】 Storage
-regressions remain contained: `uv run --extra test pytest tests/unit -k
+`./scripts/setup.sh --print-path` keeps `task --version` at 3.45.4, and the fast
+pipeline now runs cleanly through the `uv` commands documented in `STATUS.md`.
+`uv run --extra dev-minimal --extra test flake8 src tests`, `uv run --extra
+dev-minimal --extra test mypy src`, the targeted pytest smoke, and `uv run task
+check` complete without lint failures, closing the archived [clean-up flake8
+regressions][clean-up-flake8] ticket.【F:STATUS.md†L3-L24】
+【F:STATUS.md†L117-L124】
+【F:issues/archive/clean-up-flake8-regressions-in-routing-and-search-storage.md†L29-L34】
+`task verify` finishes end-to-end with warnings promoted to errors.【F:STATUS.md†L44-L59】
+`STATUS.md` records the run results, and `TASK_PROGRESS.md` mirrors the same
+coverage totals across 890 unit, 324 integration, and 29 behavior tests with no
+resource tracker errors.【F:STATUS.md†L44-L59】【F:TASK_PROGRESS.md†L24-L56】
+The associated verification and coverage rerun tickets now live in the
+archive.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L49】
+【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
+Storage regressions remain contained: `uv run --extra test pytest tests/unit -k
 "storage" -q --maxfail=1` finishes with 136 passed, 2 skipped, 822 deselected,
-and 1 xfailed tests after about 73 seconds. 【714199†L1-L2】 Spec coverage still
-maps every module to specifications with proofs, simulations, or tests.
-【F:SPEC_COVERAGE.md†L1-L120】 Documentation builds succeed but now warn that the
-testing guidelines link to `../wheels/gpu/README.md` and the release plan points
-to the in-repo issues directory, so
-[fix-testing-guidelines-gpu-link](issues/fix-testing-guidelines-gpu-link.md)
-and [fix-release-plan-issue-links](issues/fix-release-plan-issue-links.md)
-track the cleanup required for warning-free release builds.
-【aaf0c5†L1-L7】【9eabf1†L1-L6】【F:docs/testing_guidelines.md†L90-L102】【F:docs/release_plan.md†L20-L36】
-The release sequence therefore depends on confirming resource tracker teardown,
-sweeping deprecations, refreshing coverage with optional extras, and repairing
-the MkDocs warnings before executing the alpha checklist. The spec template lint
-cleanup is archived as
-[spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
-and coverage follow-ups
-remain with
-[issues/rerun-task-coverage-after-storage-fix.md](issues/rerun-task-coverage-after-storage-fix.md).
-【F:issues/resolve-resource-tracker-errors-in-verify.md†L1-L33】【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】【F:issues/rerun-task-coverage-after-storage-fix.md†L1-L33】【F:issues/fix-testing-guidelines-gpu-link.md†L1-L27】
+and 1 xfailed tests after targeted fixes held across reruns.【F:STATUS.md†L125-L130】
+【F:TASK_PROGRESS.md†L42-L45】 Spec coverage still maps every module to
+specifications with proofs, simulations, or tests.【F:SPEC_COVERAGE.md†L1-L120】
+Documentation builds now run without warnings. The testing guidelines link to
+`docs/wheels/gpu.md`, and the release plan references ticket slugs from within
+the docs tree.【F:docs/testing_guidelines.md†L96-L129】【F:docs/release_plan.md†L19-L38】
+The archived fixes record the resolved MkDocs warnings.
+【F:issues/archive/fix-testing-guidelines-gpu-link.md†L5-L34】
+【F:issues/archive/fix-release-plan-issue-links.md†L5-L28】
+`STATUS.md` and `TASK_PROGRESS.md` confirm `uv run --extra docs mkdocs build`
+completes without missing targets, leaving no outstanding MkDocs
+warnings.【F:STATUS.md†L69-L79】【F:TASK_PROGRESS.md†L19-L53】
+The release sequence therefore references the archived resource tracker,
+deprecation warning, coverage rerun, and documentation warning tickets while the
+alpha checklist monitors for regressions alongside the open alpha coordination
+work.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L37-L49】
+【F:issues/archive/resolve-deprecation-warnings-in-tests.md†L1-L93】
+【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
+【F:issues/archive/fix-testing-guidelines-gpu-link.md†L32-L34】
+【F:issues/archive/fix-release-plan-issue-links.md†L26-L28】
+The spec template lint cleanup is archived as
+[spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
 
 ## Milestones
 
@@ -52,11 +65,12 @@ remain with
   monitoring utilities.
   - 1.0.0 (2027-09-01, status: planned): Full feature set, performance tuning
     and stable interfaces.
-  - Stability goals depend on closing:
+  - Stability goals monitor the alpha coordination and archived verification
+    work:
     - [prepare-first-alpha-release]
-    - [resolve-resource-tracker-errors-in-verify]
-    - [resolve-deprecation-warnings-in-tests (archived)](issues/archive/resolve-deprecation-warnings-in-tests.md)
-    - [rerun-task-coverage-after-storage-fix](issues/rerun-task-coverage-after-storage-fix.md)
+    - [resolve-resource-tracker-errors-in-verify (archived)][resolve-resource-archived]
+    - [resolve-deprecation-warnings-in-tests (archived)][resolve-deprecation-archived]
+    - [rerun-task-coverage-after-storage-fix (archived)][rerun-coverage-archived]
   - The spec template lint cleanup is archived as
     [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived],
     so the coverage rerun ticket inherits the remaining release check.
@@ -65,11 +79,12 @@ See [docs/release_plan.md](docs/release_plan.md#alpha-release-checklist)
 for the alpha release checklist.
 
 [prepare-first-alpha-release]: issues/prepare-first-alpha-release.md
-[resolve-resource-tracker-errors-in-verify]:
-  issues/resolve-resource-tracker-errors-in-verify.md
-[resolve-deprecation-warnings-in-tests (archived)]:
-  issues/archive/resolve-deprecation-warnings-in-tests.md
-
+[clean-up-flake8]: issues/archive/clean-up-flake8-regressions-in-routing-and-search-storage.md
+[resolve-resource-archived]: issues/archive/resolve-resource-tracker-errors-in-verify.md
+[resolve-deprecation-archived]: issues/archive/resolve-deprecation-warnings-in-tests.md
+[rerun-coverage-archived]: issues/archive/rerun-task-coverage-after-storage-fix.md
+[address-storage-archived]: issues/archive/address-storage-setup-concurrency-crash.md
+[restore-dist-archived]: issues/archive/restore-distributed-coordination-simulation-exports.md
 [restore-spec-lint-template-compliance-archived]:
   issues/archive/restore-spec-lint-template-compliance.md
 
@@ -88,15 +103,15 @@ release is re-targeted for **September 15, 2026**. Key activities include:
 - [x] Packaging verification with DuckDB fallback.
 - [x] DuckDB extension fallback hardened for offline setups.
 - [x] Distributed coordination helpers restored
-  ([issues/archive/restore-distributed-coordination-simulation-exports.md](issues/archive/restore-distributed-coordination-simulation-exports.md)).
-- [ ] `task verify` completes without resource tracker errors
-  ([resolve-resource-tracker-errors-in-verify]).
+  ([restore-distributed-coordination simulation exports (archived)][restore-dist-archived]).
+- [x] `task verify` completes without resource tracker errors
+  ([resolve-resource-tracker-errors-in-verify (archived)][resolve-resource-archived]).
 - [x] Deprecation warnings removed from test runs
-  ([resolve-deprecation-warnings-in-tests (archived)]).
+  ([resolve-deprecation-warnings-in-tests (archived)][resolve-deprecation-archived]).
 - [ ] Coverage and release packaging finalized for the alpha tag
   ([prepare-first-alpha-release]).
-- [ ] Storage setup concurrency crash resolved
-  ([address-storage-setup-concurrency-crash]).
+- [x] Storage setup concurrency crash resolved
+  ([address-storage-setup-concurrency-crash (archived)][address-storage-archived]).
 - [x] Algorithm validation for ranking and coordination.
 - [x] Formal validation for the OxiGraph backend.
 
@@ -162,10 +177,10 @@ Key features planned for this release include:
 The 1.0.0 milestone aims for a polished, production-ready system:
 
 - Packaging and deployment planning draw on [prepare-first-alpha-release].
-- Integration stability depends on closing
-  [address-storage-setup-concurrency-crash],
-  [resolve-resource-tracker-errors-in-verify], and
-  [resolve-deprecation-warnings-in-tests (archived)].
+  - Integration stability depends on closing
+    [address-storage-setup-concurrency-crash (archived)][address-storage-archived],
+    [resolve-resource-tracker-errors-in-verify (archived)][resolve-resource-archived], and
+    [resolve-deprecation-warnings-in-tests (archived)][resolve-deprecation-archived].
 - Long-term operations rely on keeping the distributed and monitor
   specifications in sync with implementation changes; both docs were reviewed
   on September 17, 2025.
