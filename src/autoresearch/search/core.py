@@ -27,6 +27,7 @@ from __future__ import annotations
 import ast
 import csv
 import importlib
+import functools
 import json
 import math
 import os
@@ -44,14 +45,18 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Concatenate,
     Dict,
+    Generic,
     Iterator,
     List,
     Optional,
+    ParamSpec,
     Protocol,
     Sequence,
     Tuple,
     TypedDict,
+    TypeVar,
     cast,
 )
 from weakref import WeakSet
@@ -453,24 +458,32 @@ class LocalGitResult(TypedDict, total=False):
 RANKING_BUCKET_SCALE = 1_000_000
 
 
-class hybridmethod:
+P = ParamSpec("P")
+T_co = TypeVar("T_co")
+R = TypeVar("R")
+
+
+class hybridmethod(Generic[T_co, P, R]):
     """Descriptor allowing methods usable as instance or shared class methods."""
 
-    def __init__(self, func: Callable[..., Any]) -> None:
+    def __init__(self, func: Callable[Concatenate[T_co, P], R]) -> None:
         self.func = func
 
-    def __get__(self, obj: Any, objtype: type | None = None) -> Callable[..., Any]:
+    def __get__(
+        self, obj: T_co | None, objtype: type[T_co] | None = None
+    ) -> Callable[P, R]:
         if obj is None:
             if objtype is None or not hasattr(objtype, "get_instance"):
                 raise AttributeError("hybridmethod requires a class with get_instance()")
-            get_instance = cast(Callable[[], Any], getattr(objtype, "get_instance"))
+            get_instance = cast(Callable[[], T_co], getattr(objtype, "get_instance"))
 
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
+            @functools.wraps(self.func)
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 instance = get_instance()
                 return self.func(instance, *args, **kwargs)
 
             return wrapper
-        return cast(Callable[..., Any], self.func.__get__(obj, objtype))
+        return cast(Callable[P, R], self.func.__get__(obj, objtype))
 
 
 @dataclass(frozen=True)

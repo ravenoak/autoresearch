@@ -993,11 +993,13 @@ class KuzuStorageBackend:
             self._conn.close()
             self._conn = None
 
-    def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
+    def execute(
+        self, query: str, params: dict[str, Any] | None = None
+    ) -> "kuzu.QueryResult":
         if self._conn is None:
             raise StorageError("Kuzu connection not initialized")
         start = time.time()
-        result = self._conn.execute(query, params or {})
+        result: "kuzu.QueryResult" = self._conn.execute(query, params or {})
         KUZU_QUERY_COUNTER.inc()
         KUZU_QUERY_TIME.observe(time.time() - start)
         return result

@@ -320,7 +320,7 @@ class A2AInterface:
             # Return error response
             return error_data
 
-    def _handle_get_capabilities(self) -> Any:
+    def _handle_get_capabilities(self) -> Dict[str, Any]:
         """Handle a get_capabilities command.
 
         Returns:
@@ -329,7 +329,7 @@ class A2AInterface:
         capabilities = capabilities_endpoint()
         return capabilities
 
-    def _handle_get_config(self) -> Any:
+    def _handle_get_config(self) -> Dict[str, Any]:
         """Handle a get_config command.
 
         Returns:
@@ -338,7 +338,7 @@ class A2AInterface:
         config = get_config()
         return config.model_dump(mode="json")
 
-    def _handle_set_config(self, args: Dict[str, Any]) -> Any:
+    def _handle_set_config(self, args: Dict[str, Any]) -> Dict[str, Any]:
         """Handle a set_config command.
 
         Args:
