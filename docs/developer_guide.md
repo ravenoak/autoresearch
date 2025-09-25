@@ -40,6 +40,28 @@ extension. Include the `git` extra when setting up the environment, for example:
 - Public modules and functions should include concise docstrings.
 - Keep commits focused and avoid temporary files.
 
+## Typing and third-party stubs
+
+- Place third-party stubs under ``tests/stubs`` so ``MYPYPATH`` picks them up
+  during ``mypy`` runs. Reuse the existing package layout. For example,
+  ``tests/stubs/fastembed`` mirrors the runtime module structure with ``.pyi``
+  files or ``__init__.py`` shims.
+- Co-locate stubs inside ``src/`` only when they describe our own packages or
+  when a ``.pyi`` beside a module lets mypy see attributes that are generated at
+  runtime. Keep project-owned stubs in the same directory tree as the Python
+  module they document.
+- Gate optional imports behind ``if TYPE_CHECKING`` so heavy dependencies stay
+  optional at runtime while types remain available to the checker. Recent
+  examples include ``src/autoresearch/search/context.py`` (guards ``spacy`` and
+  ``BERTopic``) and ``src/autoresearch/orchestration/state.py`` (exposes the
+  ``QueryStateLike`` protocol without importing it eagerly).
+- When adding new shims, extend the PR 1 stubs for ``pydantic``, ``fastapi``,
+  ``starlette``, ``requests``, ``psutil``, ``pynvml``, ``spacy``,
+  ``sentence_transformers``, ``bertopic``, ``fastembed``, ``pdfminer.layout``,
+  and ``owlrl``. These live under ``tests/stubs`` and establish the expected
+  method and attribute surface for strict type checking. Reuse their patterns
+  when introducing additional modules or expanding coverage.
+
 ## Lifecycle Management
 
 Some components maintain global state such as configuration watchers and HTTP
