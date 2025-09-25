@@ -243,6 +243,25 @@ coverage reporting. This command must succeed to satisfy the 90% coverage gate.
 - Implement step definitions in `tests/behavior/steps/`
 - Focus on user-facing behavior and scenarios
 
+### Stub Modules for Optional Dependencies
+
+Tests rely on typed stub modules under `tests/stubs/` to provide fallbacks for
+optional third-party packages.  When adding a new stub:
+
+- Define the runtime behaviour with lightweight classes or functions.
+- Describe the available attributes using `typing.Protocol` (or `TypedDict`
+  when modelling dictionaries) so that mypy can type-check code that imports
+  the stubbed module.
+- Install the module via :func:`tests.stubs._registry.install_stub_module`
+  instead of manually modifying `sys.modules`.  The helper creates parent
+  packages, registers submodules, and returns the typed module instance.
+- Keep the stub small and deterministic—avoid network calls or heavy
+  dependencies.  If the real package is available, prefer importing it and only
+  use the stub when the import fails.
+
+Document new helper utilities or patterns alongside the stub so other
+contributors can maintain type parity with the real dependency.
+
 ## Pull Request Process
 
 1. Create a new branch for your feature or bugfix with a descriptive name

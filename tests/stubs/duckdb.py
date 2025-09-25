@@ -1,33 +1,70 @@
-"""Minimal stub for the :mod:`duckdb` package."""
+"""Typed stub for the :mod:`duckdb` package used in tests."""
 
-import importlib.util
-import sys
-import types
+from __future__ import annotations
 
-if importlib.util.find_spec("duckdb") is None and "duckdb" not in sys.modules:
-    duckdb_stub = types.ModuleType("duckdb")
+from types import ModuleType
+from typing import Any, ClassVar, Protocol, cast
 
-    class _Conn:
-        def __init__(self):
-            self._rows: list = []
+from ._registry import install_stub_module
 
-        def execute(self, *a, **k):
-            return self
 
-        def fetchall(self):
-            return self._rows
+class DuckDBPyConnectionProtocol(Protocol):
+    """Protocol describing the minimal subset of ``DuckDBPyConnection`` we use."""
 
-        def fetchone(self):
-            return self._rows[0] if self._rows else None
+    _rows: list[Any]
 
-        def close(self):
-            pass
+    def execute(self, *args: Any, **kwargs: Any) -> DuckDBPyConnectionProtocol: ...
 
-    duckdb_stub.DuckDBPyConnection = _Conn
-    duckdb_stub.connect = lambda *a, **k: _Conn()
+    def fetchall(self) -> list[Any]: ...
 
-    class Error(Exception):
-        """Base DuckDB exception stub."""
+    def fetchone(self) -> Any | None: ...
 
-    duckdb_stub.Error = Error
-    sys.modules["duckdb"] = duckdb_stub
+    def close(self) -> None: ...
+
+
+class Error(Exception):
+    """Base DuckDB exception for the stub module."""
+
+
+class DuckDBModule(Protocol):
+    """Protocol for the ``duckdb`` module functions consumed by the tests."""
+
+    Error: ClassVar[type[Error]]
+    DuckDBPyConnection: ClassVar[type[DuckDBPyConnectionProtocol]]
+
+    def connect(self, *args: Any, **kwargs: Any) -> DuckDBPyConnectionProtocol: ...
+
+
+class DuckDBPyConnection(DuckDBPyConnectionProtocol):
+    """In-memory stub mimicking a DuckDB connection."""
+
+    def __init__(self) -> None:
+        self._rows: list[Any] = []
+
+    def execute(self, *args: Any, **kwargs: Any) -> DuckDBPyConnection:
+        return self
+
+    def fetchall(self) -> list[Any]:
+        return list(self._rows)
+
+    def fetchone(self) -> Any | None:
+        return self._rows[0] if self._rows else None
+
+    def close(self) -> None:
+        return None
+
+
+class _DuckDBModule(ModuleType):
+    DuckDBPyConnection: ClassVar[type[DuckDBPyConnection]] = DuckDBPyConnection
+    Error: ClassVar[type[Error]] = Error
+
+    def __init__(self) -> None:
+        super().__init__("duckdb")
+
+    def connect(self, *args: Any, **kwargs: Any) -> DuckDBPyConnection:
+        return DuckDBPyConnection()
+
+
+duckdb = cast(DuckDBModule, install_stub_module("duckdb", _DuckDBModule))
+
+__all__ = ["duckdb", "DuckDBModule", "DuckDBPyConnection", "DuckDBPyConnectionProtocol"]

@@ -1,37 +1,59 @@
-"""Stub for the :mod:`fastmcp` package."""
+"""Typed stub for :mod:`fastmcp`."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "fastmcp" not in sys.modules:
-    fastmcp_stub = types.ModuleType("fastmcp")
+from collections.abc import Awaitable
+from types import ModuleType
+from typing import Any, Callable, Dict, Protocol, cast
 
-    class _FastMCP:
-        def __init__(self, *_, **__):
-            self.tools: dict[str, callable] = {}
+from ._registry import install_stub_module
 
-        def tool(self, func):
-            self.tools[func.__name__] = func
-            return func
 
-        async def call_tool(self, name, params):
-            return await self.tools[name](**params)
+class FastMCP:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.tools: Dict[str, Callable[..., Awaitable[Any] | Any]] = {}
 
-    class _Client:
-        def __init__(self, target):
-            self.target = target
+    def tool(self, func: Callable[..., Awaitable[Any] | Any]) -> Callable[..., Awaitable[Any] | Any]:
+        self.tools[func.__name__] = func
+        return func
 
-        async def __aenter__(self):
-            return self
+    async def call_tool(self, name: str, params: dict[str, Any]) -> Any:
+        tool = self.tools[name]
+        result = tool(**params)
+        if isinstance(result, Awaitable):
+            return await result
+        return result
 
-        async def __aexit__(self, exc_type, exc, tb):
-            pass
 
-        async def call_tool(self, name, params):
-            if hasattr(self.target, "call_tool"):
-                return await self.target.call_tool(name, params)
-            return {}
+class Client:
+    def __init__(self, target: FastMCP):
+        self.target = target
 
-    fastmcp_stub.FastMCP = _FastMCP
-    fastmcp_stub.Client = _Client
-    sys.modules["fastmcp"] = fastmcp_stub
+    async def __aenter__(self) -> Client:
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - trivial
+        return None
+
+    async def call_tool(self, name: str, params: dict[str, Any]) -> Any:
+        if hasattr(self.target, "call_tool"):
+            return await self.target.call_tool(name, params)
+        return {}
+
+
+class FastMCPModule(Protocol):
+    FastMCP: type[FastMCP]
+    Client: type[Client]
+
+
+class _FastMCPModule(ModuleType):
+    FastMCP = FastMCP
+    Client = Client
+
+    def __init__(self) -> None:
+        super().__init__("fastmcp")
+
+
+fastmcp = cast(FastMCPModule, install_stub_module("fastmcp", _FastMCPModule))
+
+__all__ = ["Client", "FastMCP", "FastMCPModule", "fastmcp"]

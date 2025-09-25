@@ -1,50 +1,68 @@
-"""Stub for the :mod:`kuzu` database library."""
+"""Typed stub for :mod:`kuzu`."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "kuzu" not in sys.modules:
-    kuzu_stub = types.ModuleType("kuzu")
+from types import ModuleType
+from typing import Any, Dict, Iterable, Protocol, cast
 
-    class _Result:
-        def __init__(self, rows=None):
-            self._rows = rows or []
-            self._idx = 0
+from ._registry import install_stub_module
 
-        def has_next(self):
-            return self._idx < len(self._rows)
 
-        def get_next(self):
-            row = self._rows[self._idx]
-            self._idx += 1
-            return row
+class _Result:
+    def __init__(self, rows: Iterable[Any] | None = None) -> None:
+        self._rows = list(rows or [])
+        self._idx = 0
 
-    class Database:
-        def __init__(self, path):
-            self.path = path
+    def has_next(self) -> bool:
+        return self._idx < len(self._rows)
 
-    class Connection:
-        def __init__(self, db):
-            self.db = db
-            self.data = {}
+    def get_next(self) -> Any:
+        row = self._rows[self._idx]
+        self._idx += 1
+        return row
 
-        def execute(self, query, params=None):
-            params = params or {}
-            if "MERGE (c:Claim" in query:
-                self.data[params["id"]] = (
-                    params.get("content", ""),
-                    params.get("conf", 0.0),
-                )
-                return _Result([])
-            if "MATCH (c:Claim" in query:
-                if params["id"] in self.data:
-                    return _Result([self.data[params["id"]]])
-                return _Result([])
+
+class Database:
+    def __init__(self, path: str) -> None:
+        self.path = path
+
+
+class Connection:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+        self.data: Dict[str, tuple[str, float]] = {}
+
+    def execute(self, query: str, params: Dict[str, Any] | None = None) -> _Result:
+        params = params or {}
+        if "MERGE (c:Claim" in query:
+            self.data[params["id"]] = (
+                params.get("content", ""),
+                float(params.get("conf", 0.0)),
+            )
             return _Result([])
+        if "MATCH (c:Claim" in query:
+            if params.get("id") in self.data:
+                return _Result([self.data[params["id"]]])
+            return _Result([])
+        return _Result([])
 
-        def close(self):
-            pass
+    def close(self) -> None:  # pragma: no cover - nothing to close
+        return None
 
-    kuzu_stub.Database = Database
-    kuzu_stub.Connection = Connection
-    sys.modules["kuzu"] = kuzu_stub
+
+class KuzuModule(Protocol):
+    Database: type[Database]
+    Connection: type[Connection]
+
+
+class _KuzuModule(ModuleType):
+    Database = Database
+    Connection = Connection
+
+    def __init__(self) -> None:
+        super().__init__("kuzu")
+
+
+kuzu = cast(KuzuModule, install_stub_module("kuzu", _KuzuModule))
+
+__all__ = ["Connection", "Database", "KuzuModule", "kuzu"]

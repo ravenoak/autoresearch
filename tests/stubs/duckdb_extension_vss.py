@@ -1,17 +1,35 @@
-"""Stub for the DuckDB VSS extension."""
+"""Typed stub for :mod:`duckdb_extension_vss`."""
+
+from __future__ import annotations
 
 import importlib.util
-import sys
 from types import ModuleType
+from typing import Protocol, cast
+
+from ._registry import install_stub_module
 
 
-if (
-    importlib.util.find_spec("duckdb_extension_vss") is None
-    and "duckdb_extension_vss" not in sys.modules
-):
-    module = ModuleType("duckdb_extension_vss")
-    module.__version__ = "0.0"
-    module.__spec__ = importlib.util.spec_from_loader(
-        "duckdb_extension_vss", loader=None
+class DuckDBExtensionVSSModule(Protocol):
+    __version__: str
+
+
+class _DuckDBExtensionVSSModule(ModuleType):
+    __version__ = "0.0"
+    __spec__ = importlib.util.spec_from_loader("duckdb_extension_vss", loader=None)
+
+    def __init__(self) -> None:
+        super().__init__("duckdb_extension_vss")
+
+
+if importlib.util.find_spec("duckdb_extension_vss") is None:
+    duckdb_extension_vss = cast(
+        DuckDBExtensionVSSModule,
+        install_stub_module("duckdb_extension_vss", _DuckDBExtensionVSSModule),
     )
-    sys.modules["duckdb_extension_vss"] = module
+else:  # pragma: no cover
+    import duckdb_extension_vss as _duckdb_extension_vss
+
+    duckdb_extension_vss = cast(DuckDBExtensionVSSModule, _duckdb_extension_vss)
+
+
+__all__ = ["DuckDBExtensionVSSModule", "duckdb_extension_vss"]
