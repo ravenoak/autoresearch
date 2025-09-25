@@ -13,15 +13,15 @@ class _CountingQueue:
     """Wrap ``multiprocessing.Queue`` with a reliable ``empty`` check."""
 
     def __init__(self) -> None:
-        self._queue: multiprocessing.Queue[Any] = multiprocessing.Queue()
+        self._queue: multiprocessing.Queue[dict[str, Any]] = multiprocessing.Queue()
         self._size = multiprocessing.Value("i", 0)
 
-    def put(self, item: Any) -> None:
+    def put(self, item: dict[str, Any]) -> None:
         self._queue.put(item)
         with self._size.get_lock():
             self._size.value += 1
 
-    def get(self) -> Any:
+    def get(self) -> dict[str, Any]:
         item = self._queue.get()
         with self._size.get_lock():
             self._size.value -= 1

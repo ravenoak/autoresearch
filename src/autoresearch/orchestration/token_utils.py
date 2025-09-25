@@ -10,6 +10,13 @@ from .state import QueryState  # for type hints in execute_with_adapter
 from .types import AgentExecutionResult
 
 
+class AdapterProtocol(Protocol):
+    """Structural protocol capturing the ``generate`` method used by adapters."""
+
+    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+        """Generate a response for ``prompt``."""
+
+
 class SupportsExecute(Protocol):
     """Structural protocol capturing the execute signature used by agents."""
 
@@ -25,17 +32,17 @@ class SupportsExecute(Protocol):
 class SupportsAdapterMutation(Protocol):
     """Protocol for agents exposing temporary adapter mutation hooks."""
 
-    def set_adapter(self, adapter: Any) -> None:  # pragma: no cover - structural
+    def set_adapter(self, adapter: AdapterProtocol) -> None:  # pragma: no cover - structural
         """Inject a temporary adapter implementation."""
 
-    def get_adapter(self) -> Any:  # pragma: no cover - structural
+    def get_adapter(self) -> AdapterProtocol:  # pragma: no cover - structural
         """Return the currently configured adapter."""
 
 
 @contextmanager
 def _capture_token_usage(
     agent_name: str, metrics: OrchestrationMetrics, config: ConfigModel
-) -> Iterator[tuple[dict[str, int], Any]]:
+) -> Iterator[tuple[dict[str, int], AdapterProtocol]]:
     """Capture token usage for all LLM calls within the block.
 
     This method uses the TokenCountingAdapter to count tokens for all LLM calls
@@ -54,19 +61,19 @@ def _capture_token_usage(
     import autoresearch.llm as llm
 
     backend = config.llm_backend
-    adapter = llm.get_pooled_adapter(backend)
+    adapter: AdapterProtocol = llm.get_pooled_adapter(backend)
     token_budget: int | None = getattr(config, "token_budget", None)
 
     with count_tokens(agent_name, adapter, metrics, token_budget) as (
         token_counter,
         base_adapter,
     ):
-        wrapped: Any = base_adapter
+        wrapped: AdapterProtocol = base_adapter
         if token_budget is not None:
             tb: int = token_budget
 
             class PromptCompressAdapter:
-                def __init__(self, inner: Any) -> None:
+                def __init__(self, inner: AdapterProtocol) -> None:
                     self.inner = inner
 
                 def generate(
@@ -75,10 +82,10 @@ def _capture_token_usage(
                     prompt = metrics.compress_prompt_if_needed(prompt, tb)
                     return self.inner.generate(prompt, model=model, **kwargs)
 
-                def __getattr__(self, name: str) -> Any:  # pragma: no cover
+                def __getattr__(self, name: str) -> object:  # pragma: no cover
                     return getattr(self.inner, name)
 
-            wrapped = PromptCompressAdapter(wrapped)
+            wrapped = cast(AdapterProtocol, PromptCompressAdapter(wrapped))
         yield token_counter, wrapped
 
 
@@ -86,7 +93,7 @@ def _execute_with_adapter(
     agent: SupportsExecute,
     state: QueryState,
     config: ConfigModel,
-    adapter: Any,
+    adapter: AdapterProtocol,
 ) -> AgentExecutionResult:
     """Execute an agent with a specific adapter.
 
@@ -111,7 +118,9 @@ def _execute_with_adapter(
         result = agent.execute(state, config, adapter=adapter)
     elif hasattr(agent, "set_adapter"):
         adapter_agent = cast(SupportsAdapterMutation, agent)
-        original_adapter = adapter_agent.get_adapter() if hasattr(agent, "get_adapter") else None
+        original_adapter: AdapterProtocol | None = (
+            adapter_agent.get_adapter() if hasattr(agent, "get_adapter") else None
+        )
         try:
             adapter_agent.set_adapter(adapter)
             result = agent.execute(state, config)

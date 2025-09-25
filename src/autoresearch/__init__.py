@@ -68,7 +68,7 @@ _DISTRIBUTED_ATTRS = {
 }
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     """Lazily import distributed features on first access."""
     if name in _DISTRIBUTED_ATTRS:
         try:  # pragma: no cover - optional distributed extras
