@@ -134,7 +134,12 @@ def test_local_file_backend_pdf(tmp_path, monkeypatch) -> None:
     """The parsers extra allows reading ``.pdf`` files."""
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"%PDF-1.4\n%Fake PDF")
-    monkeypatch.setattr("autoresearch.search.core.extract_pdf_text", lambda _: "hello world")
+
+    def _stub_pdf_extract(path, *, laparams=None, codec=None, **kwargs):
+        return "hello world"
+
+    monkeypatch.setattr("autoresearch.search.parsers.extract_pdf_text", _stub_pdf_extract)
+    monkeypatch.setattr("autoresearch.search.core.extract_pdf_text", _stub_pdf_extract)
     cfg = get_config()
     cfg.search.local_file.path = str(tmp_path)
     cfg.search.local_file.file_types = ["pdf"]

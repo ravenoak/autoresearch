@@ -18,7 +18,7 @@ def test_register_backend_and_lookup(monkeypatch):
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
         monkeypatch.setattr(Search, "get_sentence_transformer", lambda self: None)
         monkeypatch.setattr(Search, "embedding_lookup", lambda emb, max_results=5: {})
-        monkeypatch.setattr(Search, "add_embeddings", lambda docs, emb=None: None)
+        monkeypatch.setattr(Search, "add_embeddings", lambda self, docs, emb=None: None)
         monkeypatch.setattr(
             search, "cross_backend_rank", lambda q, b, query_embedding=None: b["dummy"]
         )

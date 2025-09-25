@@ -13,6 +13,8 @@ def _make_cfg(backends):
     search_cfg = types.SimpleNamespace(
         backends=backends,
         hybrid_query=False,
+        use_semantic_similarity=False,
+        embedding_backends=[],
         context_aware=types.SimpleNamespace(enabled=False),
         max_workers=1,
     )

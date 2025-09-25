@@ -50,6 +50,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   [investigate-lru-eviction-regression](issues/investigate-lru-eviction-regression.md)
   to restore the expected ordering before repeating the sweep.
   【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L476】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
+- After enforcing the survivor floor and updating the PDF stub, `uv run task
+  verify` now completes with the release extras: the unit regression retains
+  `c2`/`c3`, and the optional extras PDF smoke test succeeds alongside the rest
+  of the suite. Captured the passing run at
+  `baseline/logs/task-verify-20250925T022717Z.log` for ongoing release checks.
+  【F:baseline/logs/task-verify-20250925T022717Z.log†L404-L421】【F:baseline/logs/task-verify-20250925T022717Z.log†L1194-L1234】
 - Reran `uv run task coverage` with the full extras list; Ray now fails to
   serialize `QueryState`, causing
   `tests/unit/test_distributed_executors.py::test_execute_agent_remote` to abort
