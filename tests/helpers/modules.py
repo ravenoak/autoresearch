@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Mapping, MutableMapping
 import sys
 from types import ModuleType
-from typing import Any
 
 __all__ = ["StubModule", "create_stub_module", "ensure_stub_module"]
 
@@ -13,7 +12,7 @@ __all__ = ["StubModule", "create_stub_module", "ensure_stub_module"]
 class StubModule(ModuleType):
     """Module with dynamic attribute support for typing."""
 
-    def __getattr__(self, name: str) -> Any:  # pragma: no cover - dynamic fallback
+    def __getattr__(self, name: str) -> object:  # pragma: no cover - dynamic fallback
         try:
             return self.__dict__[name]
         except KeyError as exc:  # pragma: no cover - match ModuleType semantics
@@ -22,7 +21,7 @@ class StubModule(ModuleType):
 
 def create_stub_module(
     name: str,
-    attributes: Mapping[str, Any] | None = None,
+    attributes: Mapping[str, object] | None = None,
 ) -> StubModule:
     """Create a :class:`ModuleType` populated with ``attributes``.
 
@@ -43,7 +42,7 @@ def create_stub_module(
 
 def ensure_stub_module(
     name: str,
-    attributes: Mapping[str, Any] | None = None,
+    attributes: Mapping[str, object] | None = None,
     modules: MutableMapping[str, ModuleType] | None = None,
 ) -> ModuleType:
     """Install a stub module into ``modules`` if it is missing.
