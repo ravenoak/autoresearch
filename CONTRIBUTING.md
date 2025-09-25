@@ -278,6 +278,54 @@ optional third-party packages.  When adding a new stub:
 Document new helper utilities or patterns alongside the stub so other
 contributors can maintain type parity with the real dependency.
 
+### Strict typing workflow and stub fidelity
+
+The project enforces `--strict` typing across `src/` and `tests/`.  Use the
+following workflow to keep the codebase free from accidental `Any` regressions.
+
+#### Adding or updating stubs
+
+- Start from a failing import or type error and confirm whether a runtime shim
+  already exists under `tests/stubs/`.
+- Mirror the public API of the real package: align module names, exported
+  attributes, and the minimal behaviour needed by Autoresearch.
+- Use protocols or typed callables to model interactions instead of returning
+  loose dictionaries or untyped objects.
+- Record expectations in unit tests when possible so that stub drift is caught
+  by the suite.
+- After implementing the stub, run the strict mypy command listed below to
+  verify there are no residual `Any` types or interface mismatches.
+
+#### Socratic stub fidelity checklist
+
+Ask yourself these questions before submitting the stub:
+
+- Do I understand how the production library behaves, and does the stub expose
+  the same surface area that our code consumes?
+- Where might `Any` sneak back in?  Did every function and attribute gain an
+  explicit type instead of relying on inference from literals?
+- If the real package were installed, would the code still run without hitting
+  the stub?  Have I verified imports prefer the real module when available?
+- What unit or integration test will fail if the stub drifts from the real
+  implementation?  If none exist, can I add one?
+- Could downstream contributors misinterpret my types?  Did I document the stub
+  so reviewers can challenge hidden assumptions?
+
+#### Required strict type-check commands before merging
+
+Run both commands locally and paste the successful output into your pull
+request description:
+
+```bash
+uv run --extra dev-minimal --extra test mypy --strict src tests
+task check
+```
+
+Running the commands in this order first guarantees a clean strict type pass,
+then reuses `task check` to execute the broader formatter, lint, and test
+bundle.  If strict typing fails, address the missing annotations or stub gaps
+before requesting review.
+
 ## Pull Request Process
 
 1. Create a new branch for your feature or bugfix with a descriptive name
