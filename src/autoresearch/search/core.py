@@ -47,6 +47,8 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Protocol,
+    Sequence,
     Tuple,
     cast,
 )
@@ -139,7 +141,7 @@ def _try_import_sentence_transformers() -> bool:
     global SentenceTransformer, SENTENCE_TRANSFORMERS_AVAILABLE
     if SentenceTransformer is not None or SENTENCE_TRANSFORMERS_AVAILABLE:
         return SENTENCE_TRANSFORMERS_AVAILABLE
-    cfg = get_config()
+    cfg = _get_runtime_config()
     if not (cfg.search.context_aware.enabled or cfg.search.use_semantic_similarity):
         return False
     try:  # pragma: no cover - optional dependency
@@ -174,6 +176,58 @@ else:  # pragma: no cover - runtime fallback
     SentenceTransformerType = Any
 
 log = get_logger(__name__)
+
+
+class ContextAwareConfigProtocol(Protocol):
+    """Protocol describing the context-aware search configuration subset."""
+
+    enabled: bool
+    use_topic_modeling: bool
+
+
+class LocalFileConfigProtocol(Protocol):
+    """Protocol describing the local file search configuration subset."""
+
+    path: str
+    file_types: Sequence[str]
+
+
+class LocalGitConfigProtocol(Protocol):
+    """Protocol describing the local Git search configuration subset."""
+
+    repo_path: str
+    branches: Sequence[str]
+    history_depth: int
+
+
+class SearchConfigProtocol(Protocol):
+    """Protocol capturing search configuration attributes consumed here."""
+
+    backends: Sequence[str]
+    embedding_backends: Sequence[str]
+    hybrid_query: bool
+    use_semantic_similarity: bool
+    use_bm25: bool
+    use_source_credibility: bool
+    bm25_weight: float
+    semantic_similarity_weight: float
+    source_credibility_weight: float
+    max_workers: int
+    context_aware: ContextAwareConfigProtocol
+    local_file: LocalFileConfigProtocol
+    local_git: LocalGitConfigProtocol
+
+
+class ConfigProtocol(Protocol):
+    """Protocol describing the configuration object required by search."""
+
+    search: SearchConfigProtocol
+
+
+def _get_runtime_config() -> ConfigProtocol:
+    """Return the active configuration cast to the search protocol."""
+
+    return cast(ConfigProtocol, get_config())
 
 
 @dataclass
@@ -740,7 +794,7 @@ class Search:
         if not results:
             return results
 
-        cfg = get_config()
+        cfg = _get_runtime_config()
         search_cfg = cfg.search
 
         weights = {
@@ -901,7 +955,7 @@ class Search:
         then the combined set is re-ranked to produce the final ordering.
         """
 
-        cfg = get_config()
+        cfg = _get_runtime_config()
         if (
             query_embedding is None
             and cfg.search.use_semantic_similarity
@@ -928,7 +982,7 @@ class Search:
         self, query_embedding: np.ndarray, max_results: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """Perform embedding-based search using registered backends."""
-        cfg = get_config()
+        cfg = _get_runtime_config()
         results: Dict[str, List[Dict[str, Any]]] = {}
 
         for name in cfg.search.embedding_backends:
@@ -1373,7 +1427,7 @@ class Search:
                 {"title": "Python (programming language) - Wikipedia", "url": "https://en.wikipedia.org/wiki/Python_(programming_language)"}
             ]
         """
-        cfg = get_config()
+        cfg = _get_runtime_config()
 
         if isinstance(query, dict):
             text_query = str(query.get("text", ""))
@@ -1727,7 +1781,7 @@ def _brave_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
 def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Search plain text files on disk for a query."""
 
-    cfg = get_config()
+    cfg = _get_runtime_config()
     path = cfg.search.local_file.path
     file_types = cfg.search.local_file.file_types
 
@@ -1812,7 +1866,7 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
 def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     """Search a local Git repository's files and commit messages."""
 
-    cfg = get_config()
+    cfg = _get_runtime_config()
     repo_path = cfg.search.local_git.repo_path
     branches = cfg.search.local_git.branches
     depth = cfg.search.local_git.history_depth
