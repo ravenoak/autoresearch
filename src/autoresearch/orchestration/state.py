@@ -4,6 +4,8 @@ import time
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+LOCK_TYPE = type(RLock())
+
 from pydantic import BaseModel, Field, PrivateAttr
 
 from ..agents.feedback import FeedbackEvent
@@ -34,6 +36,11 @@ class QueryState(BaseModel):
     error_count: int = 0
 
     _lock: RLock = PrivateAttr(default_factory=RLock)
+
+    def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
+        """Ensure synchronization primitives survive model cloning."""
+        super().model_post_init(__context)
+        self._ensure_lock()
 
     def update(self, result: Dict[str, Any]) -> None:
         """Update state with agent result."""
@@ -115,6 +122,31 @@ class QueryState(BaseModel):
             messages = [m for m in messages if m.get("protocol") == protocol.value]
         return messages
 
+    def __getstate__(self) -> Dict[str, Any]:
+        """Drop non-serializable members before pickling."""
+        try:
+            state = super().__getstate__()  # type: ignore[misc]
+        except AttributeError:  # pragma: no cover - legacy BaseModel fallback
+            state = self.__dict__.copy()
+        state.pop("_lock", None)
+        private = state.get("__pydantic_private__")
+        if private is not None:
+            try:
+                private_copy = private.copy()  # type: ignore[assignment]
+            except AttributeError:  # pragma: no cover - fallback for exotic mappings
+                private_copy = dict(private)
+            private_copy.pop("_lock", None)
+            state["__pydantic_private__"] = private_copy
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """Restore serialization-safe state and recreate the lock."""
+        try:
+            super().__setstate__(state)  # type: ignore[misc]
+        except AttributeError:  # pragma: no cover - legacy BaseModel fallback
+            self.__dict__.update(state)
+        self._ensure_lock()
+
     def synthesize(self) -> QueryResponse:
         """Create final response from state."""
         # Default implementation - can be overridden by SynthesizerAgent
@@ -191,3 +223,9 @@ class QueryState(BaseModel):
 
             if any(pruned.values()):
                 self.metadata.setdefault("pruned", []).append(pruned)
+
+    def _ensure_lock(self) -> None:
+        """Guarantee the internal lock exists after serialization events."""
+        lock = getattr(self, "_lock", None)
+        if not isinstance(lock, LOCK_TYPE):
+            object.__setattr__(self, "_lock", RLock())

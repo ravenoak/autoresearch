@@ -63,6 +63,13 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `baseline/logs/task-coverage-20250925T001017Z.log` and tracked in
   [address-ray-serialization-regression](issues/address-ray-serialization-regression.md).
   【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】【F:issues/address-ray-serialization-regression.md†L1-L20】
+- Patched `QueryState` to drop its private lock during pickle and rebuild it on
+  load, keeping Ray workers from crashing on `_thread.RLock` while adding
+  regression guards around Ray and cloudpickle transports. A fresh coverage run
+  (`PYTEST_ADDOPTS="--deselect tests/unit/test_property_bm25_normalization.py::test_bm25_scores_normalized" uv run task
+  coverage`) now clears the earlier serialization error, with the log at
+  `baseline/logs/task-coverage-20250925T031805Z.log` capturing the remaining
+  scheduler benchmark failure. 【F:src/autoresearch/orchestration/state.py†L19-L28】【F:tests/unit/test_distributed_executors.py†L1-L98】【F:baseline/logs/task-coverage-20250925T031805Z.log†L1-L120】
 - `uv run --extra docs mkdocs build` and `uv run --extra build python -m build`
   both succeeded through the `uv` wrappers; the new artifacts at
   `baseline/logs/mkdocs-build-20250925T001535Z.log` and

@@ -21,4 +21,13 @@ spins up a local cluster during the unit phase.
   continue to run under `uv run task coverage`.
 
 ## Status
-Open
+In Review
+
+- 2025-09-25: `QueryState` now strips its private `RLock` during pickle and
+  regenerates the lock on load, so Ray workers no longer abort on the
+  `_thread.RLock` serialization error. Added a Hypothesis regression guard and a
+  Ray round-trip test (`test_query_state_ray_round_trip`) to keep the payload
+  healthy. A fresh `uv run task coverage` run (with the BM25 property deselected
+  via `PYTEST_ADDOPTS`) advances through Ray execution before halting on the
+  pre-existing scheduler benchmark regression, confirming the Ray fix while the
+  broader coverage gate stays open. 【F:src/autoresearch/orchestration/state.py†L19-L28】【F:tests/unit/test_distributed_executors.py†L1-L98】【F:baseline/logs/task-coverage-20250925T031805Z.log†L1-L120】
