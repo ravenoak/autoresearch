@@ -139,6 +139,22 @@ uv run mypy src
 # if you need quicker iterations.
 ```
 
+### Project-specific mypy baseline
+
+Before modifying the search stack or the tests that exercise it, capture the
+current typing gaps. First ensure the `dev-minimal` and `test` extras are
+installed (for example by running `task install`, which syncs both extras).
+Then execute the focused baseline check:
+
+```bash
+uv run --extra dev-minimal --extra test \
+  mypy src/autoresearch/search/core.py tests/unit tests/integration
+```
+
+Running the targeted command keeps the scope reproducible while covering the
+highest impact modules. Recording the resulting error inventory in your pull
+request description grounds subsequent fixes and helps reviewers track
+progress against the known baseline.
 
 ### Imports
 
