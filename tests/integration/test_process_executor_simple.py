@@ -85,8 +85,10 @@ def process_executor(
             with contextlib.suppress(Exception):
                 queue.join_thread()
         with contextlib.suppress(Exception):
-            cache = resource_tracker._resource_tracker._cache  # type: ignore[attr-defined]
-            cache.clear()
+            tracker = getattr(resource_tracker, "_resource_tracker", None)
+            cache = getattr(tracker, "_cache", None)
+            if cache is not None:
+                cache.clear()
         assert pool.closed and pool.joined
 
     request.addfinalizer(_cleanup)

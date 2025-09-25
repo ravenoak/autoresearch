@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Barrier, BrokenBarrierError, Lock, Thread
 from time import perf_counter
@@ -48,8 +49,8 @@ def _run(threads: int, items: int) -> SimulationResult:
     StorageManager.state = st
     StorageManager.context = ctx
 
-    original_ram = StorageManager._current_ram_mb
-    StorageManager._current_ram_mb = staticmethod(lambda: 1000)
+    original_ram: Callable[[], float] = StorageManager._current_ram_mb
+    StorageManager._current_ram_mb = staticmethod(lambda: 1000.0)
     original_setup = storage_module.setup
 
     setup_calls = 0
@@ -129,7 +130,7 @@ def _run(threads: int, items: int) -> SimulationResult:
         StorageManager.teardown(remove_db=True, context=ctx, state=st)
         StorageManager.state = StorageState()
         StorageManager.context = StorageContext()
-        StorageManager._current_ram_mb = original_ram  # type: ignore[assignment]
+        StorageManager._current_ram_mb = staticmethod(original_ram)
         ConfigLoader.reset_instance()
         storage_module.setup = original_setup
 

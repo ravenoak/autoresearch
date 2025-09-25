@@ -1,4 +1,6 @@
 import pytest
+import requests
+
 from autoresearch.search.http import (
     close_http_session,
     get_http_session,
@@ -6,8 +8,9 @@ from autoresearch.search.http import (
 )
 
 
-class DummySession:
+class DummySession(requests.Session):
     def __init__(self) -> None:
+        super().__init__()
         self.closed = False
 
     def close(self) -> None:  # pragma: no cover - simple close
@@ -29,7 +32,7 @@ def test_http_session_management(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Inject custom session and ensure it is returned
     custom = DummySession()
-    set_http_session(custom)  # type: ignore[arg-type]
+    set_http_session(custom)
     assert get_http_session() is custom
 
     # Closing should reset global session
@@ -44,7 +47,7 @@ def test_set_http_session_registers_atexit(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setattr("autoresearch.search.http.atexit.register", lambda func: calls.append(func))
     close_http_session()
     custom = DummySession()
-    set_http_session(custom)  # type: ignore[arg-type]
+    set_http_session(custom)
     assert get_http_session() is custom
     assert calls == [close_http_session]
     close_http_session()

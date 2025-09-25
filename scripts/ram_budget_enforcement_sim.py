@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
@@ -30,8 +31,8 @@ def _run(items: int) -> int:
     StorageManager.state = st
     StorageManager.context = ctx
 
-    original = StorageManager._current_ram_mb
-    StorageManager._current_ram_mb = staticmethod(lambda: 1000)
+    original: Callable[[], float] = StorageManager._current_ram_mb
+    StorageManager._current_ram_mb = staticmethod(lambda: 1000.0)
     try:
         StorageManager.setup(db_path=":memory:", context=ctx, state=st)
         for i in range(items):
@@ -42,7 +43,7 @@ def _run(items: int) -> int:
         StorageManager.teardown(remove_db=True, context=ctx, state=st)
         StorageManager.state = StorageState()
         StorageManager.context = StorageContext()
-        StorageManager._current_ram_mb = original  # type: ignore[assignment]
+        StorageManager._current_ram_mb = staticmethod(original)
         ConfigLoader.reset_instance()
 
     return remaining

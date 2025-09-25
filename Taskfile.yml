@@ -338,6 +338,7 @@ tasks:
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src tests
       - uv run mypy src --exclude src/autoresearch/a2a_interface.py
+      - uv run mypy tests/unit tests/integration
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py

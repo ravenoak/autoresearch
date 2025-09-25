@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-import psutil  # type: ignore
+import psutil
 from typer.testing import CliRunner
 import typer
 
@@ -152,11 +152,11 @@ def test_storage_teardown_handles_missing_config(monkeypatch):
     bare_config = type("BareConfig", (), {})()
     monkeypatch.setattr(ConfigLoader, "load_config", lambda self: bare_config)
     ConfigLoader.reset_instance()
-    storage._cached_config = None  # type: ignore[attr-defined]
+    setattr(storage, "_cached_config", None)
 
     cfg = storage._get_config()
     assert isinstance(cfg, StorageConfig)
-    assert storage._cached_config is cfg  # type: ignore[attr-defined]
+    assert getattr(storage, "_cached_config") is cfg
 
     storage.teardown(remove_db=True)
-    assert storage._cached_config is None  # type: ignore[attr-defined]
+    assert getattr(storage, "_cached_config") is None

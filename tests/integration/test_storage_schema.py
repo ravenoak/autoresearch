@@ -28,7 +28,8 @@ def test_initialize_storage_creates_tables(tmp_path, db_path):
 
     initialize_storage(path, context=ctx, state=st)
     try:
-        conn = ctx.db_backend.get_connection()  # type: ignore[union-attr]
+        assert ctx.db_backend is not None
+        conn = ctx.db_backend.get_connection()
         conn.execute("SELECT * FROM nodes")
         conn.execute("SELECT * FROM edges")
         conn.execute("SELECT * FROM embeddings")

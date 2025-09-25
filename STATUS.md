@@ -63,6 +63,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `baseline/logs/task-coverage-20250925T001017Z.log` and tracked in
   [address-ray-serialization-regression](issues/address-ray-serialization-regression.md).
   【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】【F:issues/address-ray-serialization-regression.md†L1-L20】
+- Added a dedicated typing sweep for the test suites: `task verify` now runs
+  `uv run mypy tests/unit tests/integration` alongside the existing source
+  check so CI catches fixture regressions immediately. 【F:Taskfile.yml†L338-L348】
 - Patched `QueryState` to drop its private lock during pickle and rebuild it on
   load, keeping Ray workers from crashing on `_thread.RLock` while adding
   regression guards around Ray and cloudpickle transports. A fresh coverage run

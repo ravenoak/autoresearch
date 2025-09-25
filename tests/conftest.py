@@ -14,10 +14,11 @@ import multiprocessing
 import multiprocessing.pool
 from multiprocessing import resource_tracker
 
+shared_memory: ModuleType | None
 try:
     from multiprocessing import shared_memory
 except ImportError:  # pragma: no cover - Python < 3.8
-    shared_memory = None  # type: ignore[assignment]
+    shared_memory = None
 
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
@@ -179,11 +180,15 @@ def _cleanup_multiprocessing_pools(
             seen_ids.add(ident)
             created.append(instance)
 
-    def tracking_pool_init(self, *args, **kwargs):  # type: ignore[override]
+    def tracking_pool_init(
+        self: multiprocessing.pool.Pool, *args: Any, **kwargs: Any
+    ) -> None:
         _remember(self)
         original_pool_init(self, *args, **kwargs)
 
-    def tracking_thread_pool_init(self, *args, **kwargs):  # type: ignore[override]
+    def tracking_thread_pool_init(
+        self: multiprocessing.pool.ThreadPool, *args: Any, **kwargs: Any
+    ) -> None:
         _remember(self)
         original_thread_pool_init(self, *args, **kwargs)
 
@@ -556,11 +561,11 @@ def initialize_storage(
     if filename.startswith("test_storage_") or filename == "test_main_backup_commands.py":
         if not hasattr(duckdb.DuckDBPyConnection, "fetchone"):
 
-            def _fetchone(self):
+            def _fetchone(self: Any):
                 rows = self.fetchall()
                 return rows[0] if rows else None
 
-            duckdb.DuckDBPyConnection.fetchone = _fetchone  # type: ignore[attr-defined]
+            setattr(cast(Any, duckdb.DuckDBPyConnection), "fetchone", _fetchone)
         storage.initialize_storage(str(tmp_path / "kg.duckdb"))
     yield
 
@@ -992,6 +997,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     del session, exitstatus  # Unused but part of the hook signature.
     if shared_memory is not None:
-        with contextlib.suppress(Exception):
-            shared_memory._cleanup()  # type: ignore[attr-defined]
+        cleanup = getattr(shared_memory, "_cleanup", None)
+        if callable(cleanup):
+            with contextlib.suppress(Exception):
+                cleanup()
     _flush_resource_tracker_cache()

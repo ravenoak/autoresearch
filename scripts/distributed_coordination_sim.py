@@ -188,8 +188,10 @@ def _simulate_messages(
         aggregator.join()
         aggregated = list(aggregator.results)
         aggregator.results[:] = []
-        with suppress(Exception):
-            aggregator._manager.shutdown()  # type: ignore[attr-defined]
+        manager = getattr(aggregator, "_manager", None)
+        if manager is not None:
+            with suppress(Exception):
+                manager.shutdown()
         result_broker.shutdown()
 
     storage_broker.publish({"action": ACTION_STOP})
