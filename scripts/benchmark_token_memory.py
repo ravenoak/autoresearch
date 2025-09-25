@@ -12,23 +12,30 @@ sys.modules.setdefault("sentence_transformers", ModuleType("sentence_transformer
 
 import json
 import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
+from autoresearch.agents.base import Agent
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.orchestrator import Orchestrator, AgentFactory
+from autoresearch.orchestration.orchestrator import AgentFactory, Orchestrator
+from autoresearch.orchestration.state import QueryState
 from autoresearch.storage import StorageManager
 
 
-class DummyAgent:
+class DummyAdapter:
+    def generate(self, _prompt: str) -> None:
+        return None
+
+
+class DummyAgent(Agent):
     """Minimal agent used for benchmarks."""
 
-    def __init__(self, name: str, llm_adapter=None) -> None:
-        self.name = name
-
-    def can_execute(self, state, config) -> bool:  # type: ignore[override]
+    def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         return True
 
-    def execute(self, state, config, adapter=None):  # type: ignore[override]
+    def execute(self, state: QueryState, config: ConfigModel) -> dict[str, Any]:
+        adapter = self.llm_adapter or DummyAdapter()
         adapter.generate("hello world")
         state.results[self.name] = "ok"
         state.results["final_answer"] = "answer"
@@ -37,7 +44,14 @@ class DummyAgent:
 
 def run_benchmark() -> dict[str, float | dict[str, dict[str, int]]]:
     """Execute a benchmark query and return metrics."""
-    AgentFactory.get = lambda name, llm_adapter=None: DummyAgent(name)  # type: ignore
+    def _get_dummy_agent(name: str, llm_adapter=None) -> DummyAgent:
+        adapter = llm_adapter or DummyAdapter()
+        return DummyAgent(name=name, llm_adapter=adapter)
+
+    AgentFactory.get = cast(
+        Callable[[str, Any], Agent],
+        _get_dummy_agent,
+    )
     cfg = ConfigModel(agents=["Dummy"], loops=1, llm_backend="dummy")
 
     memory_before = StorageManager._current_ram_mb()

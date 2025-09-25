@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
+from types import SimpleNamespace
 
 from autoresearch.orchestration import metrics
-from types import SimpleNamespace
 
 
 def test_mean_last_nonzero() -> None:
@@ -15,9 +16,12 @@ def test_mean_last_nonzero() -> None:
 
 def test_temporary_metrics_restores_state(tmp_path: Path) -> None:
     # Provide histogram with internal counters required by reset_metrics
-    metrics.KUZU_QUERY_TIME = SimpleNamespace(  # type: ignore[attr-defined]
-        _sum=SimpleNamespace(set=lambda x: None, get=lambda: 0.0),
-        _count=SimpleNamespace(set=lambda x: None, get=lambda: 0.0),
+    metrics.KUZU_QUERY_TIME = cast(
+        Any,
+        SimpleNamespace(
+            _sum=SimpleNamespace(set=lambda x: None, get=lambda: 0.0),
+            _count=SimpleNamespace(set=lambda x: None, get=lambda: 0.0),
+        ),
     )
     metrics.reset_metrics()
     metrics.QUERY_COUNTER.inc()

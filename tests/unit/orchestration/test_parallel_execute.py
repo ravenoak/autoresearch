@@ -16,7 +16,7 @@ from autoresearch.orchestration.parallel import execute_parallel_query
 class DummyTracer:
     def start_as_current_span(self, name: str):
         class Span:
-            def __enter__(self) -> Span:  # type: ignore[name-defined]
+            def __enter__(self) -> "Span":
                 return self
 
             def __exit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - no cleanup

@@ -13,8 +13,8 @@ def test_gauge_reuse_resets_value() -> None:
     registry = CollectorRegistry()
     gauge = resource_monitor._gauge("test_gauge", "desc", registry)
     gauge.set(5)
-    gauge2 = resource_monitor._gauge("test_gauge", "desc", registry)
-    assert gauge2._value.get() == 0  # type: ignore[attr-defined]
+    resource_monitor._gauge("test_gauge", "desc", registry)
+    assert registry.get_sample_value("test_gauge") == 0
 
 
 def test_resource_monitor_records_stats(monkeypatch) -> None:

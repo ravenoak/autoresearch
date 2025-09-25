@@ -73,7 +73,7 @@ def _plot(results: Sequence[Dict[str, float]], output: Path) -> None:
     latency = [r["latency_s"] for r in results]
 
     try:
-        import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib.pyplot as plt
     except Exception:  # pragma: no cover - missing optional dependency
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text("<svg xmlns='http://www.w3.org/2000/svg'></svg>")

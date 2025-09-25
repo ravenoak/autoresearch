@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from scripts.storage_concurrency_sim import _run as concurrency_run
 
 from autoresearch.config.loader import ConfigLoader
@@ -32,8 +34,8 @@ def _ram_budget_run(items: int) -> int:
     StorageManager.state = st
     StorageManager.context = ctx
 
-    original = StorageManager._current_ram_mb
-    StorageManager._current_ram_mb = staticmethod(lambda: 1000)
+    original: Callable[[], float] = StorageManager._current_ram_mb
+    StorageManager._current_ram_mb = staticmethod(lambda: 1000.0)
     original_reasoner = storage_module.run_ontology_reasoner
     storage_module.run_ontology_reasoner = lambda *a, **k: None
     try:
@@ -48,7 +50,7 @@ def _ram_budget_run(items: int) -> int:
         StorageManager.teardown(remove_db=True, context=ctx, state=st)
         StorageManager.state = StorageState()
         StorageManager.context = StorageContext()
-        StorageManager._current_ram_mb = original  # type: ignore[assignment]
+        StorageManager._current_ram_mb = staticmethod(original)
         storage_module.run_ontology_reasoner = original_reasoner
         ConfigLoader.reset_instance()
 

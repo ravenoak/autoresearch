@@ -33,6 +33,7 @@ import argparse
 import random
 import time
 from threading import Event, Thread
+from collections.abc import Callable
 from typing import cast
 
 from autoresearch.config.loader import ConfigLoader
@@ -91,7 +92,7 @@ def _run(
     StorageManager.state = st
     StorageManager.context = ctx
 
-    original = StorageManager._current_ram_mb
+    original: Callable[[], float] = StorageManager._current_ram_mb
     scenario_seed = seed if seed is not None else DEFAULT_SCENARIO_SEEDS.get(scenario)
     rng = random.Random(scenario_seed % (2**32)) if scenario_seed is not None else None
 
@@ -110,7 +111,9 @@ def _run(
             if scenario in {"under_budget", "deterministic_override"}
             else (cfg.ram_budget_mb if scenario == "exact_budget" else 1000)
         )
-        StorageManager._current_ram_mb = staticmethod(lambda current=current: current)
+        StorageManager._current_ram_mb = staticmethod(
+            lambda current=current: float(current)
+        )
     stop = Event()
 
     enforce_budget = -1 if scenario == "negative_budget" else cfg.ram_budget_mb
@@ -165,7 +168,7 @@ def _run(
         StorageManager.teardown(remove_db=True, context=ctx, state=st)
         StorageManager.state = StorageState()
         StorageManager.context = StorageContext()
-        StorageManager._current_ram_mb = original  # type: ignore[assignment]
+        StorageManager._current_ram_mb = staticmethod(original)
         ConfigLoader.reset_instance()
 
     elapsed = time.perf_counter() - start

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import importlib.util
 from types import ModuleType, SimpleNamespace
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol, Sequence, cast
 
 from ._registry import install_stub_module
 
 
 class SessionState(dict[str, Any]):
-    __getattr__ = dict.get  # type: ignore[assignment]
-    __setattr__ = dict.__setitem__  # type: ignore[assignment]
+    def __getattr__(self, name: str) -> Any:
+        return self.get(name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
 
 
 class StreamlitModule(Protocol):
@@ -84,7 +87,9 @@ class _StreamlitModule(ModuleType):
 if importlib.util.find_spec("streamlit") is None:
     streamlit: StreamlitModule = install_stub_module("streamlit", _StreamlitModule)
 else:  # pragma: no cover
-    import streamlit as streamlit  # type: ignore  # noqa: F401
+    import streamlit as _streamlit  # noqa: F401
+
+    streamlit = cast(StreamlitModule, _streamlit)
 
 
 __all__ = ["SessionState", "StreamlitModule", "streamlit"]
