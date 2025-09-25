@@ -15,6 +15,8 @@ spec = util.spec_from_file_location(
     "evaluate_ranking",
     Path(__file__).resolve().parents[2] / "scripts" / "evaluate_ranking.py",
 )
+if spec is None or spec.loader is None:
+    raise RuntimeError("Unable to load evaluate_ranking module")
 module = util.module_from_spec(spec)
 spec.loader.exec_module(module)
 

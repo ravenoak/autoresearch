@@ -75,7 +75,7 @@ def test_run_ontology_reasoner_external(monkeypatch):
         called["ok"] = True
 
     mod = ModuleType("dummy_mod")
-    mod.func = dummy
+    setattr(mod, "func", dummy)
     monkeypatch.setitem(sys.modules, "dummy_mod", mod)
     g = rdflib.Graph()
     _patch_config(monkeypatch, "dummy_mod:func")
@@ -126,7 +126,7 @@ def test_run_ontology_reasoner_external_error(monkeypatch):
         raise ValueError("boom")
 
     mod = ModuleType("bad_mod")
-    mod.run = fail
+    setattr(mod, "run", fail)
     monkeypatch.setitem(sys.modules, "bad_mod", mod)
     g = rdflib.Graph()
     _patch_config(monkeypatch, "bad_mod:run")
@@ -176,7 +176,7 @@ def test_run_ontology_reasoner_keyboard_interrupt(monkeypatch):
         raise KeyboardInterrupt()
 
     mod = ModuleType("kb_mod")
-    mod.run = boom
+    setattr(mod, "run", boom)
     monkeypatch.setitem(sys.modules, "kb_mod", mod)
     g = rdflib.Graph()
     _patch_config(monkeypatch, "kb_mod:run", timeout=1.0)

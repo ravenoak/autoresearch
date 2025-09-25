@@ -6,6 +6,8 @@ from pathlib import Path
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "download_duckdb_extensions.py"
 spec = importlib.util.spec_from_file_location("download_duckdb_extensions", MODULE_PATH)
+if spec is None or spec.loader is None:
+    raise RuntimeError("Unable to load download_duckdb_extensions module")
 download_mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(download_mod)
 

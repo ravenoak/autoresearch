@@ -9,8 +9,9 @@ import pytest
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "ranking_convergence.py"
 _spec = importlib.util.spec_from_file_location("ranking_convergence", SCRIPT)
+if _spec is None or _spec.loader is None:
+    raise RuntimeError("Unable to load ranking_convergence module")
 module = importlib.util.module_from_spec(_spec)
-assert _spec and _spec.loader
 _spec.loader.exec_module(module)
 
 pytestmark = [pytest.mark.slow]

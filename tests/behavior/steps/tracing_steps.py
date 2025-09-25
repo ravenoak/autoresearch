@@ -2,6 +2,8 @@ from pytest_bdd import given, when, then, scenario
 
 from . import common_steps  # noqa: F401
 from autoresearch import tracing
+from typing import Any
+
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
 
@@ -9,7 +11,7 @@ class MemorySpanExporter(SpanExporter):
     """Collect spans in memory for verification."""
 
     def __init__(self) -> None:
-        self._spans = []
+        self._spans: list[Any] = []
 
     def export(self, spans):  # type: ignore[override]
         self._spans.extend(spans)

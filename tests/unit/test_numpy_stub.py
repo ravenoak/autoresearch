@@ -2,6 +2,8 @@ import sys
 
 import numpy as real_numpy
 
+from typing import Any, cast
+
 import tests.stubs.numpy as numpy_stub
 
 
@@ -12,11 +14,12 @@ def test_numpy_stub_manual_install(monkeypatch):
     # Manually swap in the stub
     monkeypatch.delitem(sys.modules, "numpy")
     monkeypatch.delitem(sys.modules, "numpy.random", raising=False)
-    monkeypatch.setitem(sys.modules, "numpy", numpy_stub.numpy_stub)
-    monkeypatch.setitem(sys.modules, "numpy.random", numpy_stub.numpy_stub.random)
+    stub = cast(Any, numpy_stub).numpy_stub
+    monkeypatch.setitem(sys.modules, "numpy", stub)
+    monkeypatch.setitem(sys.modules, "numpy.random", stub.random)
 
     import numpy as np  # noqa: E402
 
-    assert np is numpy_stub.numpy_stub
+    assert np is stub
     assert np.array(1) == []
     assert np.random.rand(1) == []

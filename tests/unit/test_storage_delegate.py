@@ -30,7 +30,7 @@ def test_delegate_setup_called():
 
 
 def test_message_queue_put():
-    q = Queue()
+    q: Queue[dict[str, object]] = Queue()
     set_message_queue(q)
     StorageManager.persist_claim({"id": "1", "content": "c"})
     msg = q.get_nowait()

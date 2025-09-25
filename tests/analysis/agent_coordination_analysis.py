@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import json
-from multiprocessing import Lock, Process, Value
+from multiprocessing import Lock as create_lock
+from multiprocessing import Process, Value
+from multiprocessing.sharedctypes import Synchronized
+from multiprocessing.synchronize import Lock as SyncLock
 from pathlib import Path
 
 
-def _worker(counter: Value, lock: Lock, increments: int) -> None:
+CounterValue = Synchronized[int]
+
+
+def _worker(counter: CounterValue, lock: SyncLock, increments: int) -> None:
     """Increment ``counter`` safely using ``lock``."""
     for _ in range(increments):
         with lock:
@@ -16,8 +22,8 @@ def _worker(counter: Value, lock: Lock, increments: int) -> None:
 
 def simulate(workers: int = 4, increments: int = 1000) -> dict[str, int | bool]:
     """Run workers and validate the final counter value."""
-    counter = Value("i", 0)
-    lock = Lock()
+    counter: CounterValue = Value("i", 0)
+    lock: SyncLock = create_lock()
     procs = [Process(target=_worker, args=(counter, lock, increments)) for _ in range(workers)]
     for p in procs:
         p.start()

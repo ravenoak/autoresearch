@@ -12,7 +12,7 @@ from .error_recovery_steps import *  # noqa: F401,F403
     "../features/error_recovery_extended.feature",
     "Recovery after agent timeout",
 )
-def test_error_recovery_timeout() -> None:
+def test_error_recovery_timeout_extended() -> None:
     """System recovers after an agent times out."""
     return
 
@@ -21,7 +21,7 @@ def test_error_recovery_timeout() -> None:
     "../features/error_recovery_extended.feature",
     "Recovery after agent failure",
 )
-def test_error_recovery_agent_failure() -> None:
+def test_error_recovery_agent_failure_extended() -> None:
     """System handles agent execution failures gracefully."""
     return
 

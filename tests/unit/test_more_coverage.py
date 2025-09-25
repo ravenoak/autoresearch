@@ -1,5 +1,6 @@
 from queue import Queue
 from unittest.mock import MagicMock
+import types
 
 from autoresearch import search as search_module
 from autoresearch.orchestration import execution as exec_mod
@@ -50,10 +51,7 @@ def test_ndcg_perfect():
 
 
 def test_http_session_cycle(monkeypatch):
-    class Cfg:
-        pass
-    cfg = Cfg()
-    cfg.search = type("S", (), {"http_pool_size": 1})
+    cfg = types.SimpleNamespace(search=types.SimpleNamespace(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
     close_http_session()
     s1 = get_http_session()

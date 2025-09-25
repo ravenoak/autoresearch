@@ -78,18 +78,23 @@ def execute_query_via_cli(bdd_context, query):
 def open_streamlit_gui(bdd_context):
     """Open the Streamlit GUI."""
     # Mock Streamlit app
-    with patch("streamlit.session_state", {}) as mock_session_state:
+    initial_state: dict[str, object] = {}
+    with patch("streamlit.session_state", initial_state) as session_state:
         # Mock query history in session state
-        if "query_history" not in mock_session_state:
-            mock_session_state["query_history"] = []
+        if "query_history" not in session_state:
+            session_state["query_history"] = []
+        history = session_state["query_history"]
+        if not isinstance(history, list):
+            history = []
+            session_state["query_history"] = history
 
         # Add CLI query to history if it exists
         if "cli_query" in bdd_context and "cli_result" in bdd_context:
-            mock_session_state["query_history"].append(
+            history.append(
                 {"query": bdd_context["cli_query"], "result": bdd_context["cli_result"]}
             )
 
-        bdd_context["streamlit_session"] = mock_session_state
+        bdd_context["streamlit_session"] = session_state
 
 
 @then(parsers.parse('the query history should include "{query}"'))

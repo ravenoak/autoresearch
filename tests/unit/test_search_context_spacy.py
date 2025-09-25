@@ -15,7 +15,7 @@ def _install_dummy_spacy(monkeypatch, load_behavior):
     def download(model: str) -> None:
         download_calls.append(model)
 
-    dummy_cli.download = download
+    setattr(dummy_cli, "download", download)
 
     class DummySpacy(types.ModuleType):
         def __init__(self) -> None:

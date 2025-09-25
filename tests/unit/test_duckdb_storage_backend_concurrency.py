@@ -1,6 +1,10 @@
 import threading
 from unittest.mock import MagicMock, patch
 
+import threading
+from typing import Generator
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from autoresearch.config.loader import ConfigLoader
@@ -9,7 +13,7 @@ from autoresearch.storage_backends import DuckDBStorageBackend
 
 
 @pytest.fixture(autouse=True)
-def reset_config_loader() -> None:
+def reset_config_loader() -> Generator[None, None, None]:
     """Reset ``ConfigLoader`` before and after each test."""
 
     ConfigLoader.reset_instance()

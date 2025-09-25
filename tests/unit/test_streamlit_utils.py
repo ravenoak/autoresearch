@@ -1,18 +1,19 @@
-from types import ModuleType
 import sys
 from pathlib import Path
+from types import ModuleType
+
 import tomllib
 
 # Provide dummy modules for optional dependencies before importing
 fake_streamlit = ModuleType("streamlit")
-fake_streamlit.set_page_config = lambda *a, **k: None
-fake_streamlit.markdown = lambda *a, **k: None
-fake_streamlit.error = lambda *a, **k: None
-fake_streamlit.sidebar = ModuleType("sidebar")
+setattr(fake_streamlit, "set_page_config", lambda *a, **k: None)
+setattr(fake_streamlit, "markdown", lambda *a, **k: None)
+setattr(fake_streamlit, "error", lambda *a, **k: None)
+setattr(fake_streamlit, "sidebar", ModuleType("sidebar"))
 sys.modules.setdefault("streamlit", fake_streamlit)
 sys.modules.setdefault("networkx", ModuleType("networkx"))
 fake_matplotlib = ModuleType("matplotlib")
-fake_matplotlib.use = lambda *a, **k: None
+setattr(fake_matplotlib, "use", lambda *a, **k: None)
 sys.modules.setdefault("matplotlib", fake_matplotlib)
 sys.modules.setdefault("matplotlib.pyplot", ModuleType("pyplot"))
 sys.modules.setdefault("psutil", ModuleType("psutil"))

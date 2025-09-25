@@ -1,5 +1,7 @@
 import sys
 from types import ModuleType
+import sys
+from types import ModuleType
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,16 +22,16 @@ class DummyGraph:
 def fake_deps(monkeypatch):
     """Provide dummy matplotlib and networkx implementations."""
     fake_plt = ModuleType("pyplot")
-    fake_plt.figure = lambda *a, **k: None
-    fake_plt.tight_layout = lambda *a, **k: None
-    fake_plt.close = lambda *a, **k: None
-    fake_plt.savefig = MagicMock()
-    fake_plt.gcf = lambda: None
+    setattr(fake_plt, "figure", lambda *a, **k: None)
+    setattr(fake_plt, "tight_layout", lambda *a, **k: None)
+    setattr(fake_plt, "close", lambda *a, **k: None)
+    setattr(fake_plt, "savefig", MagicMock())
+    setattr(fake_plt, "gcf", lambda: None)
     monkeypatch.setitem(sys.modules, "matplotlib.pyplot", fake_plt)
     monkeypatch.setattr("autoresearch.visualization.plt", fake_plt, raising=False)
 
     fake_mpl = ModuleType("matplotlib")
-    fake_mpl.use = lambda *a, **k: None
+    setattr(fake_mpl, "use", lambda *a, **k: None)
     monkeypatch.setitem(sys.modules, "matplotlib", fake_mpl)
 
     import networkx as real_nx

@@ -5,7 +5,7 @@ from autoresearch.orchestration import ReasoningMode
 
 
 class DummyAgent:
-    def __init__(self, name, record):
+    def __init__(self, name: str, record: list[str]) -> None:
         self.name = name
         self.record = record
 
@@ -18,7 +18,7 @@ class DummyAgent:
 
 
 def _run(cfg, orchestrator_factory):
-    record = []
+    record: list[str] = []
 
     def get_agent(name):
         return DummyAgent(name, record)
@@ -34,7 +34,7 @@ def _run(cfg, orchestrator_factory):
 
 def test_direct_mode_executes_once(orchestrator_factory):
     cfg = ConfigModel(loops=3, reasoning_mode=ReasoningMode.DIRECT)
-    record = _run(cfg, orchestrator_factory)
+    record: list[str] = _run(cfg, orchestrator_factory)
     assert record == ["Synthesizer"]
 
 

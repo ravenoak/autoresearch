@@ -22,7 +22,8 @@ def example_resources(tmp_path, monkeypatch):
     """Provide temporary example config files."""
     src_dir = importlib_resources.files("autoresearch.examples")
     temp_dir = tmp_path / "examples"
-    shutil.copytree(src_dir, temp_dir)
+    with importlib_resources.as_file(src_dir) as resolved:
+        shutil.copytree(resolved, temp_dir)
 
     def _files(package: str):
         if package == "autoresearch.examples":

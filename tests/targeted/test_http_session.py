@@ -20,7 +20,7 @@ import autoresearch.search.http as http  # noqa: E402
 
 class DummySession:
     def __init__(self) -> None:
-        self.mounted = []
+        self.mounted: list[tuple[str, object]] = []
         self.closed = False
 
     def mount(self, prefix, adapter) -> None:

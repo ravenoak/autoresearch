@@ -9,7 +9,7 @@ from autoresearch.distributed.coordinator import ResultAggregator
 @pytest.mark.slow
 def test_result_aggregator_collects_messages() -> None:
     """Aggregator records results in publish order."""
-    queue: multiprocessing.Queue[dict[str, int]] = multiprocessing.Queue()
+    queue: multiprocessing.Queue[dict[str, object]] = multiprocessing.Queue()
     aggregator = ResultAggregator(queue)
     aggregator.start()
     try:

@@ -38,10 +38,11 @@ def test_cli_progress_and_interactive(monkeypatch):
     monkeypatch.setattr("autoresearch.main.Progress", progress_factory)
 
     prompts = []
-    monkeypatch.setattr(
-        "autoresearch.main.Prompt.ask",
-        lambda *a, **k: prompts.append(k.get("default", "")) or "",
-    )
+    def capture_prompt(*_args, **kwargs):
+        prompts.append(kwargs.get("default", ""))
+        return ""
+
+    monkeypatch.setattr("autoresearch.main.Prompt.ask", capture_prompt)
 
     def dummy_run_query(self, query, config, callbacks=None, **kwargs):
         state = QueryState(query=query)

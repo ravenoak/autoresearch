@@ -71,7 +71,14 @@ class DummyRemote:
         return _dummy_execute_agent_remote(*args, **kwargs)
 
 
+class DummyObjectRef:
+    def __init__(self, obj):  # pragma: no cover - trivial
+        self.obj = obj
+
+
 class DummyRay(types.ModuleType):
+    ObjectRef = DummyObjectRef
+
     def __init__(self) -> None:  # pragma: no cover - trivial
         super().__init__("ray")
         self._initialized = False
@@ -102,15 +109,9 @@ class DummyRay(types.ModuleType):
         return {"CPU": 1}
 
 
-class DummyObjectRef:
-    def __init__(self, obj):  # pragma: no cover - trivial
-        self.obj = obj
-
-
 @pytest.fixture
 def dummy_ray(monkeypatch: pytest.MonkeyPatch):
     ray_mod = DummyRay()
-    ray_mod.ObjectRef = DummyObjectRef
     monkeypatch.setitem(sys.modules, "ray", ray_mod)
     monkeypatch.setattr(executors, "ray", ray_mod)
     return ray_mod

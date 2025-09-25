@@ -16,7 +16,7 @@ from autoresearch.orchestration.state import QueryState
 
 
 class DummyStorage:
-    persisted = []
+    persisted: list[dict[str, object]] = []
 
     @staticmethod
     def setup(db_path=None):

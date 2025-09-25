@@ -58,9 +58,11 @@ def test_get_gpu_stats_cli_subprocess(monkeypatch):
             else orig_import(name, *a, **k)
         ),
     )
-    monkeypatch.setitem(
-        sys.modules, "subprocess", types.SimpleNamespace(run=fake_run, PIPE=None, DEVNULL=None)
-    )
+    fake_subprocess = types.ModuleType("subprocess")
+    setattr(fake_subprocess, "run", fake_run)
+    setattr(fake_subprocess, "PIPE", object())
+    setattr(fake_subprocess, "DEVNULL", object())
+    monkeypatch.setitem(sys.modules, "subprocess", fake_subprocess)
     util, mem = resource_monitor._get_gpu_stats()
     assert util == 30.0
     assert mem == 1024.0
@@ -81,13 +83,13 @@ def test_get_gpu_stats_logs_info_without_gpu_extra(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     fake_subprocess = types.ModuleType("subprocess")
-    fake_subprocess.PIPE = object()
-    fake_subprocess.DEVNULL = object()
+    setattr(fake_subprocess, "PIPE", object())
+    setattr(fake_subprocess, "DEVNULL", object())
 
     def fake_run(*args, **kwargs):
         raise FileNotFoundError("nvidia-smi missing")
 
-    fake_subprocess.run = fake_run
+    setattr(fake_subprocess, "run", fake_run)
     monkeypatch.setitem(sys.modules, "subprocess", fake_subprocess)
 
     with capture_logs() as logs:
@@ -119,9 +121,13 @@ def test_get_gpu_stats_logs_debug_with_gpu_extra(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     fake_subprocess = types.ModuleType("subprocess")
-    fake_subprocess.PIPE = object()
-    fake_subprocess.DEVNULL = object()
-    fake_subprocess.run = lambda *args, **kwargs: types.SimpleNamespace(stdout="0, 0")
+    setattr(fake_subprocess, "PIPE", object())
+    setattr(fake_subprocess, "DEVNULL", object())
+    setattr(
+        fake_subprocess,
+        "run",
+        lambda *args, **kwargs: types.SimpleNamespace(stdout="0, 0"),
+    )
     monkeypatch.setitem(sys.modules, "subprocess", fake_subprocess)
 
     with capture_logs() as logs:

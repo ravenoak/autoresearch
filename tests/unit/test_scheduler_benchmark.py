@@ -28,7 +28,7 @@ def test_benchmark_scheduler_time_scales_with_duration() -> None:
 
 def test_enqueue_with_limit_drops_items() -> None:
     """Queue drops items when the limit is reached."""
-    q = deque()
+    q: deque[int] = deque()
     assert enqueue_with_limit(q, 1, 1) is True
     assert enqueue_with_limit(q, 2, 1) is False
     assert list(q) == [1]
@@ -36,6 +36,6 @@ def test_enqueue_with_limit_drops_items() -> None:
 
 def test_enqueue_with_limit_invalid_limit() -> None:
     """Invalid limits raise a ValueError."""
-    q = deque()
+    q: deque[int] = deque()
     with pytest.raises(ValueError):
         enqueue_with_limit(q, 1, 0)

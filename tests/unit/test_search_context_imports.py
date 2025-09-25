@@ -30,9 +30,11 @@ def test_try_imports_disabled(monkeypatch):
 
 def test_try_import_spacy_success(monkeypatch):
     ctx = _reload_ctx(monkeypatch, True)
-    dummy = types.SimpleNamespace(cli=types.SimpleNamespace())
+    dummy = types.ModuleType("spacy")
+    cli = types.ModuleType("cli")
+    setattr(dummy, "cli", cli)
     sys.modules["spacy"] = dummy
-    sys.modules["spacy.cli"] = dummy.cli
+    sys.modules["spacy.cli"] = cli
     try:
         assert ctx._try_import_spacy() is True
     finally:
@@ -42,7 +44,8 @@ def test_try_import_spacy_success(monkeypatch):
 
 def test_try_import_bertopic_success(monkeypatch):
     ctx = _reload_ctx(monkeypatch, True)
-    dummy = types.SimpleNamespace(BERTopic=object)
+    dummy = types.ModuleType("bertopic")
+    setattr(dummy, "BERTopic", object)
     sys.modules["bertopic"] = dummy
     try:
         assert ctx._try_import_bertopic() is True
@@ -52,7 +55,9 @@ def test_try_import_bertopic_success(monkeypatch):
 
 def test_try_import_sentence_transformers_success(monkeypatch):
     ctx = _reload_ctx(monkeypatch, True)
-    dummy = types.SimpleNamespace(OnnxTextEmbedding=object, TextEmbedding=object)
+    dummy = types.ModuleType("fastembed")
+    setattr(dummy, "OnnxTextEmbedding", object)
+    setattr(dummy, "TextEmbedding", object)
     sys.modules["fastembed"] = dummy
     try:
         assert ctx._try_import_sentence_transformers() is True

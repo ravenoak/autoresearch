@@ -9,6 +9,8 @@ from pathlib import Path
 SPEC = importlib.util.spec_from_file_location(
     "distributed_perf_sim", Path(__file__).parents[2] / "scripts" / "distributed_perf_sim.py"
 )
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError("Unable to load distributed_perf_sim module")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 

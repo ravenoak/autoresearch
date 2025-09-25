@@ -11,6 +11,8 @@ ensure_stub_module(
     "pdfminer.high_level", {"extract_text": lambda *a, **k: ""}
 )
 
+from typing import cast
+
 from scripts.benchmark_token_memory import run_benchmark  # noqa: E402
 
 pytestmark = [pytest.mark.slow]
@@ -19,7 +21,8 @@ pytestmark = [pytest.mark.slow]
 def test_token_memory_baseline(token_memory_baseline) -> None:
     """Check token, memory, and duration metrics against baselines."""
     metrics = run_benchmark()
-    tokens = metrics["tokens"]["Dummy"]
+    token_map = cast(dict[str, dict[str, int]], metrics["tokens"])
+    tokens = token_map["Dummy"]
     token_memory_baseline(
         tokens["in"],
         tokens["out"],

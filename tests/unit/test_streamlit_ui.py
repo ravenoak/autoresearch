@@ -50,9 +50,13 @@ class _DummyContext:
 def test_display_guided_tour_dismiss(monkeypatch):
     ctx = _DummyContext()
     calls = {"modal": 0}
+    def track_modal(*_args, **_kwargs):
+        calls["modal"] += 1
+        return ctx
+
     fake_st = types.SimpleNamespace(
         markdown=lambda *a, **k: None,
-        modal=lambda *a, **k: calls.__setitem__("modal", calls["modal"] + 1) or ctx,
+        modal=track_modal,
         button=lambda *a, **k: True,
         session_state=Session(),
     )

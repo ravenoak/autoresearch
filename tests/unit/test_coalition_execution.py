@@ -4,11 +4,11 @@ from autoresearch.agents.registry import AgentFactory, AgentRegistry
 
 
 class DummyAgent:
-    def __init__(self, name, record):
+    def __init__(self, name: str, record: list[str]) -> None:
         self.name = name
         self.record = record
 
-    def can_execute(self, state, config):
+    def can_execute(self, state, config) -> bool:
         return True
 
     def execute(self, state, config):
@@ -17,7 +17,7 @@ class DummyAgent:
 
 
 def test_coalition_agents_run_together(monkeypatch, tmp_path, orchestrator):
-    record = []
+    record: list[str] = []
 
     with AgentRegistry.temporary_state(), AgentFactory.temporary_state():
         def get_agent(name):

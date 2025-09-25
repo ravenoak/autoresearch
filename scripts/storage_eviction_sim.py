@@ -33,6 +33,7 @@ import argparse
 import random
 import time
 from threading import Event, Thread
+from typing import cast
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel, StorageConfig
@@ -212,15 +213,18 @@ def main(
         raise SystemExit(f"scenario must be one of: {allowed}")
     if jitter < 0:
         raise SystemExit("jitter must be non-negative")
-    remaining, elapsed = _run(
-        threads,
-        items,
-        policy,
-        scenario,
-        jitter,
-        evictors,
-        seed,
-        return_metrics=True,
+    remaining, elapsed = cast(
+        tuple[int, float],
+        _run(
+            threads,
+            items,
+            policy,
+            scenario,
+            jitter,
+            evictors,
+            seed,
+            return_metrics=True,
+        ),
     )
     total = threads * items
     rate = total / elapsed if elapsed else float("inf")
