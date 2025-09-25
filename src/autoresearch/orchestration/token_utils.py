@@ -1,11 +1,35 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator
+from typing import Any, Protocol, cast
 
 from ..config.models import ConfigModel
 from .metrics import OrchestrationMetrics
 from .state import QueryState  # for type hints in execute_with_adapter
+from .types import AgentExecutionResult
+
+
+class SupportsExecute(Protocol):
+    """Structural protocol capturing the execute signature used by agents."""
+
+    def execute(
+        self,
+        state: QueryState,
+        config: ConfigModel,
+        **kwargs: Any,
+    ) -> AgentExecutionResult:
+        """Execute the agent with optional keyword arguments."""
+
+
+class SupportsAdapterMutation(Protocol):
+    """Protocol for agents exposing temporary adapter mutation hooks."""
+
+    def set_adapter(self, adapter: Any) -> None:  # pragma: no cover - structural
+        """Inject a temporary adapter implementation."""
+
+    def get_adapter(self) -> Any:  # pragma: no cover - structural
+        """Return the currently configured adapter."""
 
 
 @contextmanager
@@ -59,8 +83,11 @@ def _capture_token_usage(
 
 
 def _execute_with_adapter(
-    agent: Any, state: QueryState, config: ConfigModel, adapter: Any
-) -> Dict[str, Any]:
+    agent: SupportsExecute,
+    state: QueryState,
+    config: ConfigModel,
+    adapter: Any,
+) -> AgentExecutionResult:
     """Execute an agent with a specific adapter.
 
     This method handles executing an agent with a specific adapter, either by:
@@ -81,16 +108,22 @@ def _execute_with_adapter(
     sig = inspect.signature(agent.execute)
 
     if "adapter" in sig.parameters:
-        return agent.execute(state, config, adapter=adapter)
+        result = agent.execute(state, config, adapter=adapter)
     elif hasattr(agent, "set_adapter"):
-        original_adapter = (
-            agent.get_adapter() if hasattr(agent, "get_adapter") else None
-        )
+        adapter_agent = cast(SupportsAdapterMutation, agent)
+        original_adapter = adapter_agent.get_adapter() if hasattr(agent, "get_adapter") else None
         try:
-            agent.set_adapter(adapter)
-            return agent.execute(state, config)
+            adapter_agent.set_adapter(adapter)
+            result = agent.execute(state, config)
         finally:
             if original_adapter is not None:
-                agent.set_adapter(original_adapter)
+                adapter_agent.set_adapter(original_adapter)
     else:
-        return agent.execute(state, config)
+        result = agent.execute(state, config)
+
+    if not isinstance(result, Mapping):
+        raise TypeError(
+            "Agent.execute must return a mapping compatible with QueryState.update"
+        )
+
+    return cast(AgentExecutionResult, result)

@@ -9,7 +9,7 @@ is exercised by unit and integration tests under ``tests/``.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence, cast
 
 import rdflib
 
@@ -31,6 +31,7 @@ from .orchestration_utils import OrchestrationUtils
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
 from .token_utils import _capture_token_usage
+from .types import CallbackMap
 
 log = get_logger(__name__)
 
@@ -111,7 +112,7 @@ class Orchestrator:
         self,
         query: str,
         config: ConfigModel,
-        callbacks: Dict[str, Callable[..., None]] | None = None,
+        callbacks: CallbackMap | None = None,
         *,
         agent_factory: type[AgentFactory] = AgentFactory,
         storage_manager: type[StorageManager] = StorageManager,
@@ -122,7 +123,7 @@ class Orchestrator:
         tracer = get_tracer(__name__)
         record_query()
         metrics = OrchestrationMetrics()
-        callbacks = callbacks or {}
+        callbacks_map: CallbackMap = cast(CallbackMap, callbacks or {})
 
         if visualize:
             log.debug("Visualization requested for query")
@@ -201,7 +202,7 @@ class Orchestrator:
                 state,
                 config,
                 metrics,
-                callbacks,
+                callbacks_map,
                 agent_factory,
                 storage_manager,
                 tracer,
@@ -249,7 +250,7 @@ class Orchestrator:
         self,
         query: str,
         config: ConfigModel,
-        callbacks: Dict[str, Callable[..., None]] | None = None,
+        callbacks: CallbackMap | None = None,
         *,
         agent_factory: type[AgentFactory] = AgentFactory,
         storage_manager: type[StorageManager] = StorageManager,
@@ -260,7 +261,7 @@ class Orchestrator:
         tracer = get_tracer(__name__)
         record_query()
         metrics = OrchestrationMetrics()
-        callbacks = callbacks or {}
+        callbacks_map: CallbackMap = cast(CallbackMap, callbacks or {})
 
         config_params = self._parse_config(config)
         agents = config_params["agent_groups"]
@@ -337,7 +338,7 @@ class Orchestrator:
                 state,
                 config,
                 metrics,
-                callbacks,
+                callbacks_map,
                 agent_factory,
                 storage_manager,
                 tracer,

@@ -5,11 +5,12 @@ Spec: docs/specs/interfaces.md
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Protocol, runtime_checkable
+from collections.abc import Mapping
+from typing import Callable, Protocol, runtime_checkable
 
 from .models import QueryResponse
 
-CallbackMap = Dict[str, Callable[..., None]]
+CallbackMap = Mapping[str, Callable[..., object]]
 
 
 @runtime_checkable
@@ -18,7 +19,7 @@ class QueryStateLike(Protocol):
 
     cycle: int
 
-    def update(self, result: Dict[str, Any]) -> None:
+    def update(self, result: Mapping[str, object]) -> None:
         """Update state with agent result."""
 
     def synthesize(self) -> QueryResponse:
