@@ -28,9 +28,10 @@ import_or_skip("pytest_benchmark")
 
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts" / "benchmark_token_memory.py"
 spec = importlib.util.spec_from_file_location("benchmark_token_memory", SCRIPT_PATH)
+if spec is None or spec.loader is None:
+    raise RuntimeError("Unable to load benchmark_token_memory module")
 benchmark_module = importlib.util.module_from_spec(spec)
-assert spec and spec.loader
-spec.loader.exec_module(benchmark_module)  # type: ignore
+spec.loader.exec_module(benchmark_module)
 run_benchmark = benchmark_module.run_benchmark
 
 BASELINE_PATH = Path(__file__).resolve().parent / "baselines" / "token_memory.json"

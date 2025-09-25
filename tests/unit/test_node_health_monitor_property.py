@@ -9,8 +9,10 @@ spec = importlib.util.spec_from_file_location(
     "node_health",
     Path(__file__).resolve().parents[2] / "src" / "autoresearch" / "monitor" / "node_health.py",
 )
+if spec is None or spec.loader is None:
+    raise RuntimeError("Unable to load node_health module")
 module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)  # type: ignore[union-attr]
+spec.loader.exec_module(module)
 NodeHealthMonitor = module.NodeHealthMonitor  # type: ignore[attr-defined]
 
 

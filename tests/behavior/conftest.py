@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -85,7 +86,7 @@ def config_model() -> ConfigModel:
 
 
 @pytest.fixture(autouse=True)
-def enable_real_vss(monkeypatch: pytest.MonkeyPatch) -> None:
+def enable_real_vss(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Enable real VSS extension only when available."""
     if VSS_AVAILABLE:
         monkeypatch.setenv("REAL_VSS_TEST", "1")
@@ -109,13 +110,15 @@ def reset_api_request_log() -> None:
 
 
 @pytest.fixture(autouse=True)
-def bdd_storage_manager(storage_manager):
+def bdd_storage_manager(
+    storage_manager: StorageManager,
+) -> Generator[StorageManager, None, None]:
     """Use the global temporary storage fixture for behavior tests."""
     yield storage_manager
 
 
 @pytest.fixture(autouse=True)
-def reset_global_state() -> None:
+def reset_global_state() -> Generator[None, None, None]:
     """Reset ConfigLoader, environment variables, and storage after each scenario."""
     original_env = os.environ.copy()
     ConfigLoader.reset_instance()

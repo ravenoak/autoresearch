@@ -163,40 +163,52 @@ def storage_system_initialized(monkeypatch, tmp_path):
     # Mock the vector_search method to return expected results
     original_vector_search = StorageManager.vector_search
 
-    def mock_vector_search(query_embedding, k=5):
-        """Mock vector search that returns claims based on the query embedding."""
-        # Get all claims from the test context
-        claims = []
-        for claim in getattr(mock_vector_search, "claims", []):
-            # For AI queries, return claims about artificial intelligence
-            if (
-                query_embedding == [0.1, 0.2, 0.3]
-                and "artificial intelligence" in claim.get("content", "").lower()
-            ):
-                claims.append(claim)
-            # For other queries, return claims that match the query
-            elif (
-                query_embedding == [0.4, 0.5, 0.6]
-                and "testing" in claim.get("content", "").lower()
-            ):
-                claims.append(claim)
+    class MockVectorSearch:
+        """Capture filtered claims while delegating to the original implementation."""
 
-        # Sort claims by relevance (just use a simple heuristic for testing)
-        claims.sort(
-            key=lambda c: c.get("attributes", {}).get("confidence", 0), reverse=True
-        )
+        def __init__(self) -> None:
+            self.original = original_vector_search
+            self.claims: list[dict[str, object]] = []
+            self.results: list[dict[str, object]] = []
 
-        # Add a score field to each claim for testing
-        for claim in claims:
-            claim["score"] = claim.get("attributes", {}).get("confidence", 0)
+        def __call__(self, query_embedding, k: int = 5):
+            collected: list[dict[str, object]] = []
+            for claim in self.claims:
+                if not isinstance(claim, dict):
+                    continue
+                content = str(claim.get("content", ""))
+                if (
+                    query_embedding == [0.1, 0.2, 0.3]
+                    and "artificial intelligence" in content.lower()
+                ) or (
+                    query_embedding == [0.4, 0.5, 0.6]
+                    and "testing" in content.lower()
+                ):
+                    collected.append(claim)
 
-        return claims[:k]
+            def _confidence_key(claim: dict[str, object]) -> float:
+                attributes = claim.get("attributes", {})
+                if isinstance(attributes, dict):
+                    raw_confidence = attributes.get("confidence", 0)
+                    if isinstance(raw_confidence, (int, float)):
+                        return float(raw_confidence)
+                return 0.0
 
-    # Store the original method for cleanup
-    mock_vector_search.original = original_vector_search
-    mock_vector_search.claims = []
+            collected.sort(key=_confidence_key, reverse=True)
 
-    # Replace the vector_search method
+            for claim in collected:
+                attributes = claim.get("attributes", {})
+                confidence = 0.0
+                if isinstance(attributes, dict):
+                    raw_confidence = attributes.get("confidence", 0)
+                    if isinstance(raw_confidence, (int, float)):
+                        confidence = float(raw_confidence)
+                claim["score"] = confidence
+
+            self.results = collected[:k]
+            return self.results
+
+    mock_vector_search = MockVectorSearch()
     monkeypatch.setattr(StorageManager, "vector_search", mock_vector_search)
 
 
@@ -381,7 +393,9 @@ def update_claim(old_text, new_text, test_context):
             claim_index = i
             break
 
-    assert claim_id is not None, f"No claim found with text '{old_text}'"
+    assert claim_id is not None and claim_to_update is not None, (
+        f"No claim found with text '{old_text}'"
+    )
 
     # Create an updated claim with the new text
     updated_claim = claim_to_update.copy()

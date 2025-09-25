@@ -7,7 +7,7 @@ from autoresearch.orchestration.orchestrator import Orchestrator
 
 
 class DummyAgent:
-    def __init__(self, name, record):
+    def __init__(self, name: str, record: list[str]) -> None:
         self.name = name
         self.record = record
 
@@ -20,7 +20,7 @@ class DummyAgent:
 
 
 def test_custom_agents_order(orchestrator):
-    record = []
+    record: list[str] = []
 
     def get_agent(name):
         return DummyAgent(name, record)
@@ -36,7 +36,7 @@ def test_custom_agents_order(orchestrator):
 
 
 def test_async_custom_agents_concurrent(orchestrator):
-    record = []
+    record: list[str] = []
 
     def get_agent(name):
         return DummyAgent(name, record)

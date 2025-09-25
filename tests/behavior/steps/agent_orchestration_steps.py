@@ -196,7 +196,7 @@ def run_two_queries(monkeypatch):
     from autoresearch.models import QueryResponse
 
     original_run_query = Orchestrator.run_query
-    query_data = {"primus_indices": []}
+    query_data: dict[str, list[int]] = {"primus_indices": []}
 
     def mock_run_query(
         self,

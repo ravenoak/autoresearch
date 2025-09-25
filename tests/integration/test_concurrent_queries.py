@@ -8,7 +8,7 @@ Orchestrator = orch_mod.Orchestrator
 AgentFactory = orch_mod.AgentFactory
 
 
-def _make_echo_agent(name: str, calls: List[Tuple[str, str]]):
+def _make_echo_agent(name: str, calls: List[Tuple[str, str, int]]):
     class EchoAgent:
         def __init__(self, name: str, llm_adapter=None):
             self.name = name
@@ -25,7 +25,7 @@ def _make_echo_agent(name: str, calls: List[Tuple[str, str]]):
 
 
 def test_parallel_queries_isolate_state(monkeypatch):
-    calls: List[Tuple[str, str]] = []
+    calls: List[Tuple[str, str, int]] = []
     monkeypatch.setattr(AgentFactory, "get", lambda name: _make_echo_agent(name, calls))
 
     def run_query(q: str):

@@ -77,11 +77,7 @@ def test_circuit_breaker_success_decrements(monkeypatch):
 
 
 def test_http_session_reuse_and_close(monkeypatch):
-    class Cfg:
-        pass
-
-    cfg = Cfg()
-    cfg.search = types.SimpleNamespace(http_pool_size=1)
+    cfg = types.SimpleNamespace(search=types.SimpleNamespace(http_pool_size=1))
     monkeypatch.setattr("autoresearch.search.http.get_config", lambda: cfg)
     search.close_http_session()
     s1 = search.get_http_session()

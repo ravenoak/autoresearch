@@ -297,13 +297,11 @@ class TestDuckDBStorageBackend:
         mock_conn.execute.return_value = MagicMock()
 
         backend = DuckDBStorageBackend()
-        with patch(
-            "autoresearch.storage_backends.ConfigLoader",
-            **{
-                "return_value.config.storage.vector_extension": True,
-                "return_value.config.storage.duckdb.path": ":memory:",
-            },
-        ):
+        with patch("autoresearch.storage_backends.ConfigLoader") as mock_loader:
+            config = MagicMock()
+            config.config.storage.vector_extension = True
+            config.config.storage.duckdb.path = ":memory:"
+            mock_loader.return_value = config
             with patch(
                 "autoresearch.extensions.VSSExtensionLoader.load_extension",
                 return_value=True,

@@ -17,7 +17,7 @@ def streamlit_app_with_history(monkeypatch, tmp_path, bdd_context):
     import streamlit as st
 
     # Isolate session state
-    session_state = {}
+    session_state: dict[str, object] = {}
     monkeypatch.setattr(st, "session_state", session_state, raising=False)
 
     # Prepare a temporary file to persist history

@@ -73,7 +73,7 @@ def fake_storage_coordinators(
     """Patch :class:`StorageCoordinator` with a lightweight spy."""
 
     created: list[Any] = []
-    original_cls = dist_coordinator.StorageCoordinator
+    original_cls: type[dist_coordinator.StorageCoordinator] = dist_coordinator.StorageCoordinator
 
     class RecordingStorageCoordinator(original_cls):
         def __init__(self, queue: Any, db_path: str, ready_event: Any) -> None:
@@ -117,7 +117,7 @@ def fake_result_aggregators(
     """Patch :class:`ResultAggregator` with a lightweight spy."""
 
     created: list[Any] = []
-    original_cls = dist_coordinator.ResultAggregator
+    original_cls: type[dist_coordinator.ResultAggregator] = dist_coordinator.ResultAggregator
 
     class RecordingResultAggregator(original_cls):
         def __init__(self, queue: Any) -> None:

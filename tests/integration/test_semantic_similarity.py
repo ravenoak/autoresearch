@@ -20,8 +20,8 @@ def test_semantic_similarity_uses_fastembed(monkeypatch):
             return [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
 
     dummy_module = types.ModuleType("fastembed")
-    dummy_module.OnnxTextEmbedding = lambda: DummyFastEmbed()
-    dummy_module.TextEmbedding = lambda: DummyFastEmbed()
+    setattr(dummy_module, "OnnxTextEmbedding", lambda: DummyFastEmbed())
+    setattr(dummy_module, "TextEmbedding", lambda: DummyFastEmbed())
     monkeypatch.setitem(sys.modules, "fastembed", dummy_module)
 
     search = core.Search()
@@ -44,7 +44,7 @@ def test_semantic_similarity_legacy_fastembed(monkeypatch):
             return [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
 
     dummy_module = types.ModuleType("fastembed")
-    dummy_module.TextEmbedding = lambda: DummyFastEmbed()
+    setattr(dummy_module, "TextEmbedding", lambda: DummyFastEmbed())
     monkeypatch.setitem(sys.modules, "fastembed", dummy_module)
 
     search = core.Search()

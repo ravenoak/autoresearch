@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import sys
+from types import ModuleType
 
 # Avoid heavy optional dependencies during benchmarks
-sys.modules.setdefault("bertopic", None)
-sys.modules.setdefault("sentence_transformers", None)
+sys.modules.setdefault("bertopic", ModuleType("bertopic"))
+sys.modules.setdefault("sentence_transformers", ModuleType("sentence_transformers"))
 
 import json
 import time

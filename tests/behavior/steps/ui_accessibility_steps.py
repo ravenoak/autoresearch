@@ -22,8 +22,9 @@ def streamlit_app_running(monkeypatch, bdd_context, tmp_path):
     autoresearch_system_running(tmp_path, monkeypatch)
 
     # Mock Streamlit session state
-    with patch("streamlit.session_state", {}) as mock_session_state:
-        bdd_context["streamlit_session"] = mock_session_state
+    initial_state: dict[str, object] = {}
+    with patch("streamlit.session_state", initial_state) as session_state:
+        bdd_context["streamlit_session"] = session_state
 
     # Mock other Streamlit components as needed
     with patch("streamlit.markdown") as mock_markdown:

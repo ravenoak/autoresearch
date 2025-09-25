@@ -4,11 +4,13 @@ import importlib
 import random
 import sys
 import multiprocessing
+import sys
+from types import ModuleType
 from pathlib import Path
 
 import pytest
 
-sys.modules.setdefault("numpy", None)
+sys.modules.setdefault("numpy", ModuleType("numpy"))
 from hypothesis import HealthCheck, given, settings, strategies as st  # noqa: E402
 
 from scripts.distributed_coordination_sim import (  # noqa: E402

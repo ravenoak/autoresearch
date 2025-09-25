@@ -1,13 +1,15 @@
+import contextlib
 import importlib
 import importlib.util
 import logging
 import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Callable
-from unittest.mock import MagicMock, patch
+from types import ModuleType
+from typing import Any, Callable, Generator, Protocol, cast
+from unittest.mock import MagicMock, _patch, patch
 from uuid import uuid4
-import contextlib
 import multiprocessing
 import multiprocessing.pool
 from multiprocessing import resource_tracker
@@ -49,6 +51,23 @@ _CREATED_QUEUES: list[Any] = []
 _QUEUE_FACTORY: Callable[..., Any] | None = None
 
 
+class _RedisClient(Protocol):
+    """Protocol describing the Redis client methods used in tests."""
+
+    def flushdb(self) -> object: ...
+
+    def close(self) -> object: ...
+
+
+class _ResourceTrackerLike(Protocol):
+    """Minimal protocol for ``multiprocessing.resource_tracker`` internals."""
+
+    _cache: Mapping[str, str | tuple[str, str]]
+    _registry: Mapping[str, str | tuple[str, str]]
+
+    def maybe_unlink(self, name: str, rtype: str) -> None: ...
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,11 +79,20 @@ def _track_multiprocessing_queue(*args, **kwargs):
     return queue
 
 
+def _get_resource_tracker() -> _ResourceTrackerLike | None:
+    """Return the active ``ResourceTracker`` instance when available."""
+
+    tracker = getattr(resource_tracker, "_resource_tracker", None)
+    if tracker is None:
+        return None
+    return cast(_ResourceTrackerLike, tracker)
+
+
 def _iter_resource_tracker_containers() -> list[Any]:
     """Return resource tracker caches that need clearing."""
 
     containers: list[Any] = []
-    tracker = getattr(resource_tracker, "_resource_tracker", None)
+    tracker = _get_resource_tracker()
     if tracker is not None:
         for attr in ("_cache", "_registry"):
             containers.append(getattr(tracker, attr, None))
@@ -81,7 +109,7 @@ def _flush_resource_tracker_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _terminate_active_children() -> None:
+def _terminate_active_children() -> Generator[None, None, None]:
     """Terminate stray multiprocessing children after each test."""
     yield
     for proc in multiprocessing.active_children():
@@ -90,7 +118,7 @@ def _terminate_active_children() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _clear_resource_tracker_cache() -> None:
+def _clear_resource_tracker_cache() -> Generator[None, None, None]:
     """Clear resource tracker caches before and after each test."""
     _flush_resource_tracker_cache()
     yield
@@ -98,21 +126,27 @@ def _clear_resource_tracker_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _drain_multiprocessing_resources() -> None:
+def _drain_multiprocessing_resources() -> Generator[None, None, None]:
     """Unlink all multiprocessing resources registered during a test."""
     yield
-    try:
-        cache = resource_tracker._resource_tracker._cache.copy()
-    except Exception:
+    tracker = _get_resource_tracker()
+    if tracker is None:
         return
+    raw_cache = cast(
+        Mapping[str, str | tuple[str, str]], getattr(tracker, "_cache", {})
+    )
+    cache = dict(raw_cache)
     for name, rtype in cache.items():
+        resource_type = rtype[0] if isinstance(rtype, tuple) else rtype
         with contextlib.suppress(Exception):
-            resource_tracker.unregister(name, rtype)
-            resource_tracker._resource_tracker.maybe_unlink(name, rtype)
+            resource_tracker.unregister(name, resource_type)
+            tracker.maybe_unlink(name, resource_type)
 
 
 @pytest.fixture(autouse=True)
-def _cleanup_multiprocessing_queues(monkeypatch) -> None:
+def _cleanup_multiprocessing_queues(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     """Ensure multiprocessing queues are closed and joined."""
     global _QUEUE_FACTORY
     _QUEUE_FACTORY = multiprocessing.Queue
@@ -129,7 +163,9 @@ def _cleanup_multiprocessing_queues(monkeypatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _cleanup_multiprocessing_pools(monkeypatch) -> None:
+def _cleanup_multiprocessing_pools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     """Ensure multiprocessing pools are closed and joined."""
     created: list[multiprocessing.pool.Pool] = []
     seen_ids: set[int] = set()
@@ -278,7 +314,7 @@ NLP_AVAILABLE = _module_available("spacy")
 # Provide a lightweight Redis service for distributed tests.
 REDIS_URL = "redis://localhost:6379/0"
 _fakeredis_server = None
-_redis_factory: Callable[[], object] | None = None
+_redis_factory: Callable[[], _RedisClient] | None = None
 REDIS_AVAILABLE = False
 
 
@@ -289,16 +325,24 @@ def _init_redis() -> None:
         import redis
 
         redis.Redis.from_url(REDIS_URL, socket_connect_timeout=1).ping()
-        _redis_factory = lambda: redis.Redis.from_url(REDIS_URL)  # noqa: E731
+        def _make_client() -> _RedisClient:
+            return cast(_RedisClient, redis.Redis.from_url(REDIS_URL))
+
+        _redis_factory = _make_client
         REDIS_AVAILABLE = True
     except Exception:
         try:
             import fakeredis
 
             _fakeredis_server = fakeredis.FakeServer()
-            _redis_factory = lambda: fakeredis.FakeStrictRedis(  # noqa: E731
-                server=_fakeredis_server
-            )
+            
+            def _make_fake_client() -> _RedisClient:
+                return cast(
+                    _RedisClient,
+                    fakeredis.FakeStrictRedis(server=_fakeredis_server),
+                )
+
+            _redis_factory = _make_fake_client
             REDIS_AVAILABLE = True
         except Exception:
             REDIS_AVAILABLE = False
@@ -308,11 +352,13 @@ _init_redis()
 
 
 @pytest.fixture(scope="session")
-def redis_service():
+def redis_service() -> Generator[object, None, None]:
     """Yield a Redis client backed by a lightweight service."""
     if not REDIS_AVAILABLE or _redis_factory is None:
         pytest.skip("redis not available")
-    client = _redis_factory()
+    factory = _redis_factory
+    assert factory is not None
+    client = factory()
     try:
         yield client
     finally:
@@ -325,7 +371,9 @@ VSS_AVAILABLE = _module_available("duckdb_extension_vss")
 
 
 @pytest.fixture(autouse=True)
-def stub_vss_extension_download(monkeypatch, request, tmp_path):
+def stub_vss_extension_download(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest, tmp_path: Path
+) -> Generator[None, None, None]:
     """Prevent network calls when loading the DuckDB VSS extension."""
     if os.getenv("REAL_VSS_TEST") or request.node.get_closest_marker("real_vss"):
         yield
@@ -358,7 +406,7 @@ def stub_vss_extension_download(monkeypatch, request, tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def reset_config_loader_instance():
+def reset_config_loader_instance() -> Generator[None, None, None]:
     """Reset ConfigLoader singleton before each test."""
     ConfigLoader.reset_instance()
     yield
@@ -366,7 +414,9 @@ def reset_config_loader_instance():
 
 
 @pytest.fixture(autouse=True)
-def isolate_paths(tmp_path, monkeypatch):
+def isolate_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     """Use temporary working directory and cache file for each test."""
     monkeypatch.chdir(tmp_path)
     cache_path = tmp_path / "cache.json"
@@ -381,7 +431,7 @@ def isolate_paths(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def reset_registries():
+def reset_registries() -> Generator[None, None, None]:
     """Restore global registries after each test."""
     agent_reg = AgentRegistry._registry.copy()
     agent_fact = AgentFactory._registry.copy()
@@ -400,7 +450,7 @@ set_storage_delegate(None)
 
 
 @pytest.fixture
-def duckdb_path(tmp_path):
+def duckdb_path(tmp_path: Path) -> Generator[str, None, None]:
     """Create a fresh DuckDB schema and return its path."""
     db_file = tmp_path / "kg.duckdb"
     storage.teardown(remove_db=True)
@@ -411,7 +461,9 @@ def duckdb_path(tmp_path):
 
 
 @pytest.fixture
-def ensure_duckdb_schema(tmp_path, monkeypatch):
+def ensure_duckdb_schema(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[str, None, None]:
     """Ensure StorageManager setup creates required DuckDB tables."""
     db_file = tmp_path / "kg.duckdb"
     StorageManager.teardown(remove_db=True)
@@ -425,7 +477,7 @@ def ensure_duckdb_schema(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def storage_manager(duckdb_path):
+def storage_manager(duckdb_path: str) -> Generator[ModuleType, None, None]:
     """Initialize storage using a prepared DuckDB path and clean up."""
     storage.initialize_storage(duckdb_path)
     set_storage_delegate(storage.StorageManager)
@@ -435,7 +487,7 @@ def storage_manager(duckdb_path):
 
 
 @pytest.fixture
-def config_watcher():
+def config_watcher() -> Generator[ConfigLoader, None, None]:
     """Provide a ConfigLoader that is cleaned up after use."""
     loader = ConfigLoader()
     yield loader
@@ -443,7 +495,9 @@ def config_watcher():
 
 
 @pytest.fixture(autouse=True)
-def stop_config_watcher(monkeypatch):
+def stop_config_watcher(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     """Ensure ConfigLoader watcher threads are cleaned up quickly."""
 
     def fast_stop(self):
@@ -459,7 +513,7 @@ def stop_config_watcher(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def reset_rate_limiting():
+def reset_rate_limiting() -> Generator[None, None, None]:
     """Clear API rate limiter state and request log before each test."""
     reset_limiter_state()
     reset_request_log()
@@ -469,7 +523,7 @@ def reset_rate_limiting():
 
 
 @pytest.fixture(autouse=True)
-def reset_orchestration_metrics():
+def reset_orchestration_metrics() -> Generator[None, None, None]:
     """Reset global orchestration counters before and after each test."""
     metrics.reset_metrics()
     yield
@@ -477,7 +531,7 @@ def reset_orchestration_metrics():
 
 
 @pytest.fixture(autouse=True)
-def cleanup_storage():
+def cleanup_storage() -> Generator[None, None, None]:
     """Remove any persistent storage state between tests."""
     # Use module-level teardown to avoid delegate recursion
     def _safe_teardown(stage: str) -> None:
@@ -494,7 +548,9 @@ def cleanup_storage():
 
 
 @pytest.fixture(autouse=True)
-def initialize_storage(request, tmp_path, cleanup_storage):
+def initialize_storage(
+    request: pytest.FixtureRequest, tmp_path: Path, cleanup_storage: None
+) -> Generator[None, None, None]:
     """Create storage tables for storage-related tests."""
     filename = request.node.path.name
     if filename.startswith("test_storage_") or filename == "test_main_backup_commands.py":
@@ -510,10 +566,8 @@ def initialize_storage(request, tmp_path, cleanup_storage):
 
 
 @pytest.fixture(autouse=True)
-def restore_sys_modules():
+def restore_sys_modules() -> Generator[None, None, None]:
     """Remove non-module entries from ``sys.modules`` between tests."""
-    from types import ModuleType
-
     orig_modules = {k: v for k, v in sys.modules.items() if isinstance(v, ModuleType)}
     for name, module in list(sys.modules.items()):
         if not isinstance(module, ModuleType):
@@ -572,7 +626,7 @@ def mock_storage_components():
             self.has_db_backend = "db_backend" in kwargs or "db" in kwargs
             self.has_rdf = "rdf" in kwargs
 
-            self.patches = []
+            self.patches: list[_patch] = []
 
         def __enter__(self):
             # Add patches for all components that were explicitly passed
@@ -656,7 +710,7 @@ def mock_config():
     class ConfigMocker:
         def __init__(self, **kwargs):
             self.config = kwargs.get("config", MagicMock())
-            self.patcher = None
+            self.patcher: _patch | None = None
 
         def __enter__(self):
             self.patcher = patch("autoresearch.config.loader.ConfigLoader.config", self.config)
@@ -664,7 +718,8 @@ def mock_config():
             return self.config
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            self.patcher.stop()
+            if self.patcher is not None:
+                self.patcher.stop()
 
     def create_mocker(**kwargs):
         return ConfigMocker(**kwargs)
@@ -751,7 +806,9 @@ def realistic_claims(claim_factory):
 
 
 @pytest.fixture
-def realistic_claim_batch(claim_factory):
+def realistic_claim_batch(
+    claim_factory,
+) -> Generator[list[dict[str, object]], None, None]:
     """Yield a diverse batch of realistic claim dictionaries."""
 
     claims = [
@@ -781,7 +838,7 @@ def sample_eval_data():
 
 
 @pytest.fixture
-def dummy_llm_adapter(monkeypatch):
+def dummy_llm_adapter() -> Generator[object, None, None]:
     """Register and provide a dummy LLM adapter for tests."""
     from autoresearch.llm.adapters import DummyAdapter
 
@@ -791,7 +848,7 @@ def dummy_llm_adapter(monkeypatch):
 
 
 @pytest.fixture
-def mock_llm_adapter(monkeypatch):
+def mock_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> Generator[object, None, None]:
     """Provide a configurable mock LLM adapter for tests."""
 
     from autoresearch.llm.adapters import DummyAdapter
@@ -813,7 +870,9 @@ def mock_llm_adapter(monkeypatch):
 
 
 @pytest.fixture
-def flexible_llm_adapter(monkeypatch, request):
+def flexible_llm_adapter(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> Generator[object, None, None]:
     """Register a configurable LLM adapter returning custom prompt responses."""
 
     from autoresearch.llm.adapters import DummyAdapter

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import sys
+from typing import Generator
 from types import ModuleType, SimpleNamespace
 
 import pytest
@@ -22,7 +24,9 @@ except Exception:  # pragma: no cover - path fallback for --noconftest runs
 
 
 @pytest.fixture
-def stub_bertopic_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+def stub_bertopic_module(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[ModuleType, None, None]:
     """Provide a stub BERTopic module and restore ``sys.modules`` afterward."""
 
     original = sys.modules.get("bertopic")
@@ -31,7 +35,7 @@ def stub_bertopic_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     class _StubBERTopic:  # pragma: no cover - simple container
         pass
 
-    stub.BERTopic = _StubBERTopic
+    setattr(stub, "BERTopic", _StubBERTopic)
     monkeypatch.setitem(sys.modules, "bertopic", stub)
     try:
         yield stub
@@ -43,7 +47,7 @@ def stub_bertopic_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
 
 
 @pytest.fixture
-def reset_bertopic_state() -> ModuleType:
+def reset_bertopic_state() -> Generator[ModuleType, None, None]:
     """Reset ``context`` globals before and after a BERTopic import test."""
 
     from autoresearch.search import context

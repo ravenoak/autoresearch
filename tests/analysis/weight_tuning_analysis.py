@@ -59,7 +59,7 @@ def _grid_search(step: float) -> Tuple[Tuple[float, float, float], float]:
 def run(step: float = 0.1) -> dict[str, object]:
     """Grid search weights and persist metrics to JSON."""
     best, best_score = _grid_search(step)
-    result = {"weights": best, "ndcg": best_score}
+    result: dict[str, object] = {"weights": best, "ndcg": best_score}
     Path(__file__).with_name("weight_tuning_metrics.json").write_text(
         json.dumps(result, indent=2) + "\n"
     )
@@ -74,7 +74,7 @@ def simulate_convergence(step: float = 0.1) -> dict[str, object]:
         _, score = _grid_search(current)
         path.append({"step": current, "ndcg": score})
         current /= 2
-    result = {"steps": path}
+    result: dict[str, object] = {"steps": path}
     Path(__file__).with_name("weight_convergence_metrics.json").write_text(
         json.dumps(result, indent=2) + "\n"
     )

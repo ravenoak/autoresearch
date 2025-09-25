@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import sys
+from types import ModuleType
 
 import pytest
 from hypothesis import given, strategies as st  # noqa: E402
 
-sys.modules.setdefault("numpy", None)
+sys.modules.setdefault("numpy", ModuleType("numpy"))
 from scripts.distributed_coordination_sim import elect_leader, process_messages  # noqa: E402
 
 pytestmark = [pytest.mark.requires_distributed]

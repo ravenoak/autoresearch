@@ -16,7 +16,7 @@ from autoresearch.errors import StorageError, NotFoundError
 
 class DummyConn:
     def __init__(self, fail_on_create: bool = False):
-        self.calls = []
+        self.calls: list[str] = []
         self.fail_on_create = fail_on_create
 
     def execute(self, sql, params=None):

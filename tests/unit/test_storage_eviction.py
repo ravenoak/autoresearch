@@ -21,8 +21,8 @@ from autoresearch.storage import (
 def test_fifo_eviction_property(capacity, ops):
     """FIFO evicts in insertion order for unique keys."""
     policy = FIFOEvictionPolicy(capacity)
-    expected = deque()
-    evicted = []
+    expected: deque[str] = deque()
+    evicted: list[str] = []
     for key in ops:
         res = policy.record(key)
         if res:
@@ -41,8 +41,8 @@ def test_fifo_eviction_property(capacity, ops):
 def test_lru_eviction_property(capacity, ops):
     """LRU evicts the stalest accessed key."""
     policy = LRUEvictionPolicy(capacity)
-    mirror = OrderedDict()
-    evicted = []
+    mirror: OrderedDict[str, object] = OrderedDict()
+    evicted: list[str] = []
     for key in ops:
         res = policy.record(key)
         if res:
@@ -122,7 +122,9 @@ def test_enforce_ram_budget_reduces_usage_property(params):
         for idx in range(drop_at, len(ram_sequence)):
             ram_sequence[idx] = 0.0
 
-    nodes = {f"n{i}": {} for i in range(len(reductions) + 2)}
+    nodes: dict[str, dict[str, object]] = {
+        f"n{i}": {} for i in range(len(reductions) + 2)
+    }
     initial_node_count = len(nodes)
     mock_graph = MagicMock()
     mock_graph.nodes = nodes
@@ -133,6 +135,7 @@ def test_enforce_ram_budget_reduces_usage_property(params):
 
     mock_graph.remove_node.side_effect = remove_node
 
+    mock_lru: OrderedDict[str, int]
     if stale_lru:
         mock_lru = OrderedDict()
     else:
@@ -179,7 +182,7 @@ def test_enforce_ram_budget_handles_metric_dropout() -> None:
     """Regression: deterministic fallback survives a mid-run metrics dropout."""
 
     budget = 3
-    nodes = {f"n{i}": {} for i in range(6)}
+    nodes: dict[str, dict[str, object]] = {f"n{i}": {} for i in range(6)}
     mock_graph = MagicMock()
     mock_graph.nodes = nodes
     mock_graph.has_node.side_effect = lambda n, nodes=nodes: n in nodes
@@ -188,7 +191,9 @@ def test_enforce_ram_budget_handles_metric_dropout() -> None:
         nodes.pop(node_id, None)
 
     mock_graph.remove_node.side_effect = remove_node
-    mock_lru = OrderedDict((node_id, idx) for idx, node_id in enumerate(list(nodes)))
+    mock_lru: OrderedDict[str, int] = OrderedDict(
+        (node_id, idx) for idx, node_id in enumerate(list(nodes))
+    )
 
     ram_mock = MagicMock(side_effect=[10.0, 0.0, 0.0, 0.0, 0.0])
     cfg = MagicMock(
@@ -213,7 +218,7 @@ def test_enforce_ram_budget_handles_metric_dropout() -> None:
 def test_pop_lru():
     """Test that _pop_lru removes and returns the least recently used node."""
     # Setup
-    mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
+    mock_lru: OrderedDict[str, int] = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
     with patch.object(StorageManager.state, "lru", mock_lru):
         # Execute
         node_id = StorageManager._pop_lru()
@@ -227,7 +232,7 @@ def test_pop_lru():
 def test_pop_lru_empty():
     """Test that _pop_lru returns None when the LRU cache is empty."""
     # Setup
-    mock_lru = OrderedDict()
+    mock_lru: OrderedDict[str, int] = OrderedDict()
     with patch.object(StorageManager.state, "lru", mock_lru):
         # Execute
         node_id = StorageManager._pop_lru()
@@ -245,7 +250,7 @@ def test_pop_low_score():
         "b": {"confidence": 0.1},
         "c": {"confidence": 0.5},
     }
-    mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
+    mock_lru: OrderedDict[str, int] = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
     with patch.object(StorageManager.context, "graph", mock_graph):
         with patch.object(StorageManager.state, "lru", mock_lru):
@@ -290,7 +295,7 @@ def test_enforce_ram_budget_lru_policy():
         mock_graph.nodes.pop(node_id, None)
 
     mock_graph.remove_node.side_effect = mock_remove_node
-    mock_lru = OrderedDict((str(i), i) for i in range(10))
+    mock_lru: OrderedDict[str, int] = OrderedDict((str(i), i) for i in range(10))
 
     with patch.object(StorageManager.context, "graph", mock_graph):
         with patch.object(StorageManager.state, "lru", mock_lru):
@@ -327,7 +332,7 @@ def test_enforce_ram_budget_score_policy():
     mock_graph.nodes = nodes_dict
 
     # Create a mock LRU cache
-    mock_lru = OrderedDict((str(i), i) for i in range(10))
+    mock_lru: OrderedDict[str, int] = OrderedDict((str(i), i) for i in range(10))
 
     # Set up the remove_node method to update the nodes dictionary
     def mock_remove_node(node_id):
@@ -367,7 +372,7 @@ def test_enforce_ram_budget_hybrid_policy():
         "b": {"confidence": 0.2},
         "c": {"confidence": 0.1},
     }
-    mock_lru = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
+    mock_lru: OrderedDict[str, int] = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
     def mock_remove_node(node_id):
         mock_graph.nodes.pop(node_id, None)
@@ -398,7 +403,7 @@ def test_enforce_ram_budget_adaptive_policy():
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = True
     mock_graph.nodes = {"a": {"confidence": 0.1}, "b": {"confidence": 0.9}}
-    mock_lru = OrderedDict([("a", 1), ("b", 2)])
+    mock_lru: OrderedDict[str, int] = OrderedDict([("a", 1), ("b", 2)])
 
     def mock_remove_node(node_id):
         mock_graph.nodes.pop(node_id, None)
@@ -438,7 +443,9 @@ def test_enforce_ram_budget_priority_policy():
         "user": {"type": "user", "confidence": 0.5},
         "res": {"type": "research", "confidence": 0.5},
     }
-    mock_lru = OrderedDict([(k, i) for i, k in enumerate(["sys", "user", "res"])])
+    mock_lru: OrderedDict[str, int] = OrderedDict(
+        (k, i) for i, k in enumerate(["sys", "user", "res"])
+    )
 
     def mock_remove_node(node_id):
         mock_graph.nodes.pop(node_id, None)
@@ -482,7 +489,7 @@ def test_enforce_ram_budget_no_nodes_to_evict():
     # Setup
     mock_graph = MagicMock()
     mock_graph.has_node.return_value = False
-    mock_lru = OrderedDict()
+    mock_lru: OrderedDict[str, int] = OrderedDict()
 
     with patch.object(StorageManager.context, "graph", mock_graph):
         with patch.object(StorageManager.state, "lru", mock_lru):

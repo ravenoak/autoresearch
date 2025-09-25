@@ -1,5 +1,9 @@
 import csv
 from pathlib import Path
+import csv
+from pathlib import Path
+from typing import Dict, List
+
 from unittest.mock import patch
 
 import pytest
@@ -9,9 +13,9 @@ from autoresearch.errors import ConfigError
 from autoresearch.search import Search
 
 
-def load_data():
+def load_data() -> Dict[str, List[dict[str, float | int]]]:
     path = Path(__file__).resolve().parents[2] / "examples" / "search_evaluation.csv"
-    data = {}
+    data: Dict[str, List[dict[str, float | int]]] = {}
     with path.open() as f:
         reader = csv.DictReader(f)
         for row in reader:

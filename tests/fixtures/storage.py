@@ -22,7 +22,7 @@ def dummy_storage(monkeypatch: pytest.MonkeyPatch):
         def setup(*_args, **_kwargs) -> None:  # pragma: no cover - no-op
             pass
 
-    module.StorageManager = StorageManager
-    module.setup = lambda *_a, **_k: None
+    setattr(module, "StorageManager", StorageManager)
+    setattr(module, "setup", lambda *_a, **_k: None)
     monkeypatch.setitem(sys.modules, "autoresearch.storage", module)
     return module

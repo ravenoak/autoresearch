@@ -1,9 +1,10 @@
 import time
-import tomllib
+from collections.abc import Callable
 from contextlib import contextmanager
 
 import pytest
 import tomli_w
+import tomllib
 
 from tests.optional_imports import import_or_skip
 
@@ -20,7 +21,7 @@ StorageManager = orch_mod.StorageManager
 
 
 class Search:
-    backends: dict[str, callable] = {}
+    backends: dict[str, Callable[[str, int], list[dict[str, str]]]] = {}
 
     @staticmethod
     def external_lookup(query: str, max_results: int = 5):  # pragma: no cover - stub

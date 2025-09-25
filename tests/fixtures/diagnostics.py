@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import contextlib
-from multiprocessing import resource_tracker
 import logging
+from typing import Generator
+
+from multiprocessing import resource_tracker
 
 import pytest
 
@@ -10,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
-def _log_resource_tracker_cache() -> None:
+def _log_resource_tracker_cache() -> Generator[None, None, None]:
     """Log resource tracker state before and after each test.
 
     The diagnostics help confirm that multiprocessing resources are removed

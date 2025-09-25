@@ -11,9 +11,10 @@ from autoresearch.orchestration.metrics import EVICTION_COUNTER
 def _load_sim_module():
     path = Path(__file__).resolve().parents[2] / "scripts" / "storage_eviction_sim.py"
     spec = importlib.util.spec_from_file_location("storage_eviction_sim", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load storage_eviction_sim module")
     module = importlib.util.module_from_spec(spec)
-    assert spec.loader
-    spec.loader.exec_module(module)  # type: ignore[assignment]
+    spec.loader.exec_module(module)
     return module
 
 

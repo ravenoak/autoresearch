@@ -18,15 +18,16 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Protocol, TypeVar
 
 if "docx" not in sys.modules:
-    sys.modules["docx"] = types.SimpleNamespace(
-        Document=lambda *_args, **_kwargs: None
-    )
+    docx_module = types.ModuleType("docx")
+    setattr(docx_module, "Document", lambda *_args, **_kwargs: None)
+    sys.modules["docx"] = docx_module
 
 if "pdfminer" not in sys.modules:
-    high_level = types.SimpleNamespace(
-        extract_text=lambda *_args, **_kwargs: ""
-    )
-    sys.modules["pdfminer"] = types.SimpleNamespace(high_level=high_level)
+    high_level = types.ModuleType("pdfminer.high_level")
+    setattr(high_level, "extract_text", lambda *_args, **_kwargs: "")
+    pdfminer_module = types.ModuleType("pdfminer")
+    setattr(pdfminer_module, "high_level", high_level)
+    sys.modules["pdfminer"] = pdfminer_module
     sys.modules["pdfminer.high_level"] = high_level
 
 from autoresearch.distributed.broker import InMemoryBroker
@@ -163,7 +164,7 @@ def _simulate_messages(
                 agent_name = f"agent-{agent_idx}"
                 claims = []
                 for ordinal in range(cfg.claims_per_agent):
-                    claim = {
+                    claim: dict[str, int | str] = {
                         "loop": loop,
                         "agent": agent_name,
                         "ordinal": ordinal,

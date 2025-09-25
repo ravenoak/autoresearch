@@ -26,10 +26,10 @@ def test_spacy_loaded_when_needed(monkeypatch):
     assert not module.SPACY_AVAILABLE
 
     dummy_cli = types.ModuleType("cli")
-    dummy_cli.download = lambda model: None
+    setattr(dummy_cli, "download", lambda model: None)
     dummy_spacy = types.ModuleType("spacy")
-    dummy_spacy.load = lambda model: "nlp"
-    dummy_spacy.cli = dummy_cli
+    setattr(dummy_spacy, "load", lambda model: "nlp")
+    setattr(dummy_spacy, "cli", dummy_cli)
     monkeypatch.setitem(sys.modules, "spacy", dummy_spacy)
     monkeypatch.setitem(sys.modules, "spacy.cli", dummy_cli)
 
@@ -50,7 +50,7 @@ def test_topic_model_imports_when_built(monkeypatch):
         def fit_transform(self, docs):
             return [0 for _ in docs], []
 
-    dummy_bertopic.BERTopic = DummyBERTopic
+    setattr(dummy_bertopic, "BERTopic", DummyBERTopic)
     monkeypatch.setitem(sys.modules, "bertopic", dummy_bertopic)
 
     dummy_st = types.ModuleType("fastembed")
@@ -58,8 +58,8 @@ def test_topic_model_imports_when_built(monkeypatch):
     class DummySentenceTransformer:
         pass
 
-    dummy_st.OnnxTextEmbedding = DummySentenceTransformer
-    dummy_st.TextEmbedding = DummySentenceTransformer
+    setattr(dummy_st, "OnnxTextEmbedding", DummySentenceTransformer)
+    setattr(dummy_st, "TextEmbedding", DummySentenceTransformer)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
     ctx = module.SearchContext.new_for_tests()
@@ -89,7 +89,7 @@ def test_topic_model_imports_with_legacy_fastembed(monkeypatch):
         def fit_transform(self, docs):
             return [0 for _ in docs], []
 
-    dummy_bertopic.BERTopic = DummyBERTopic
+    setattr(dummy_bertopic, "BERTopic", DummyBERTopic)
     monkeypatch.setitem(sys.modules, "bertopic", dummy_bertopic)
 
     dummy_st = types.ModuleType("fastembed")
@@ -97,7 +97,7 @@ def test_topic_model_imports_with_legacy_fastembed(monkeypatch):
     class LegacySentenceTransformer:
         pass
 
-    dummy_st.TextEmbedding = LegacySentenceTransformer
+    setattr(dummy_st, "TextEmbedding", LegacySentenceTransformer)
     monkeypatch.setitem(sys.modules, "fastembed", dummy_st)
 
     ctx = module.SearchContext.new_for_tests()

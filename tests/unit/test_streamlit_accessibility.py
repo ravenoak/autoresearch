@@ -1,4 +1,6 @@
+from typing import Any
 import types
+
 import pytest
 
 from autoresearch import streamlit_app, streamlit_ui  # noqa: E402
@@ -6,8 +8,8 @@ from autoresearch import streamlit_app, streamlit_ui  # noqa: E402
 pytestmark = pytest.mark.requires_ui
 
 
-def test_apply_accessibility(monkeypatch):
-    calls = []
+def test_apply_accessibility(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[Any, ...]] = []
     fake_st = types.SimpleNamespace(
         markdown=lambda *a, **k: calls.append(a), session_state={"high_contrast": True}
     )
@@ -16,8 +18,8 @@ def test_apply_accessibility(monkeypatch):
     assert len(calls) == 2
 
 
-def test_display_query_input_has_accessibility(monkeypatch):
-    calls = {"markdown": [], "form_submit_button": []}
+def test_display_query_input_has_accessibility(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: dict[str, list[Any]] = {"markdown": [], "form_submit_button": []}
 
     class Dummy:
         def __enter__(self):
@@ -25,6 +27,10 @@ def test_display_query_input_has_accessibility(monkeypatch):
 
         def __exit__(self, exc_type, exc, tb):
             pass
+
+    def track_submit(*_args, **kwargs):
+        calls["form_submit_button"].append(kwargs)
+        return False
 
     fake_st = types.SimpleNamespace(
         markdown=lambda *a, **k: calls["markdown"].append((a, k)),
@@ -35,7 +41,7 @@ def test_display_query_input_has_accessibility(monkeypatch):
         columns=lambda *a, **k: (Dummy(), Dummy()),
         container=lambda: Dummy(),
         form=lambda *a, **k: Dummy(),
-        form_submit_button=lambda *a, **k: calls["form_submit_button"].append(k) or False,
+        form_submit_button=track_submit,
         session_state=types.SimpleNamespace(
             config=types.SimpleNamespace(
                 reasoning_mode=streamlit_app.ReasoningMode.DIALECTICAL, loops=2
