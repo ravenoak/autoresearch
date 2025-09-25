@@ -119,7 +119,7 @@ def temporary_metrics() -> Iterator[None]:
 def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
     try:
-        import psutil  # type: ignore
+        import psutil
 
         cpu = psutil.cpu_percent(interval=None)
         mem_mb = psutil.Process().memory_info().rss / (1024 * 1024)
@@ -127,7 +127,7 @@ def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
         gpu_util = 0.0
         gpu_mem = 0.0
         try:
-            import pynvml  # type: ignore
+            import pynvml
 
             pynvml.nvmlInit()
             count = pynvml.nvmlDeviceGetCount()

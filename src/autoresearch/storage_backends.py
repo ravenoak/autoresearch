@@ -969,7 +969,7 @@ class KuzuStorageBackend:
 
     def setup(self, db_path: str | None = None) -> None:
         try:
-            import kuzu  # type: ignore
+            import kuzu
         except Exception as e:  # pragma: no cover - optional dependency
             raise StorageError("Failed to initialize Kuzu", cause=e)
 

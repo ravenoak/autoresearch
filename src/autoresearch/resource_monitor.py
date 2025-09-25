@@ -100,7 +100,7 @@ def _get_gpu_stats() -> tuple[float, float]:
     """Return average GPU utilization and memory usage in MB."""
 
     try:  # pragma: no cover - optional dependency
-        import pynvml  # type: ignore
+        import pynvml
     except ModuleNotFoundError as exc:
         _log_gpu_dependency_missing("pynvml", exc)
     except Exception as exc:  # pragma: no cover - defensive
@@ -137,7 +137,7 @@ def _get_gpu_stats() -> tuple[float, float]:
 
         output = ""
         try:
-            import psutil  # type: ignore
+            import psutil
 
             proc = psutil.Popen(
                 cmd,
@@ -183,7 +183,7 @@ def _get_gpu_stats() -> tuple[float, float]:
 def _get_usage() -> tuple[float, float]:
     """Return CPU percent and memory usage in MB."""
     try:
-        import psutil  # type: ignore
+        import psutil
 
         cpu = psutil.cpu_percent(interval=None)
         mem = psutil.Process().memory_info().rss / (1024 * 1024)

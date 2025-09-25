@@ -79,7 +79,7 @@ class VSSExtensionLoader:
 
         def _is_duckdb_error(err: Exception) -> bool:
             try:
-                import duckdb  # type: ignore[import-not-found]
+                import duckdb
             except ImportError:  # pragma: no cover - optional dependency
                 return False
             return isinstance(err, duckdb.Error)
@@ -240,7 +240,7 @@ class VSSExtensionLoader:
             bool: True if the package provided the extension, else False.
         """
         try:
-            import duckdb_extension_vss as vss  # type: ignore[import-not-found]
+            import duckdb_extension_vss as vss
 
             if hasattr(vss, "load"):
                 vss.load(conn)  # type: ignore[attr-defined]

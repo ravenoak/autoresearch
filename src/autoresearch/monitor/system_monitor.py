@@ -4,7 +4,7 @@ import threading
 import time
 from typing import Dict, Optional
 
-import psutil  # type: ignore
+import psutil
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge
 
 

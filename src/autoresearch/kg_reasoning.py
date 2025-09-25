@@ -13,7 +13,7 @@ import warnings
 import rdflib
 
 try:  # pragma: no cover - optional dependency
-    import owlrl  # type: ignore
+    import owlrl
 except Exception:  # pragma: no cover - fallback for offline tests
     class _DeductiveClosure:
         def __init__(self, *args: Any, **kwargs: Any) -> None:

@@ -21,7 +21,7 @@ from .coordinator import (
 )
 
 try:  # pragma: no cover - optional dependency
-    import ray  # type: ignore
+    import ray
 except Exception:  # pragma: no cover - missing or faulty install
     import types
 

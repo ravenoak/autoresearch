@@ -114,7 +114,7 @@ _MIN_DETERMINISTIC_SURVIVORS = 2
 def _process_ram_mb() -> float:
     """Return the process resident set size in megabytes."""
     try:
-        import psutil  # type: ignore[import-untyped]
+        import psutil
 
         mem = psutil.Process(os.getpid()).memory_info().rss
         return float(mem) / (1024**2)
