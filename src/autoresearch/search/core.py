@@ -38,6 +38,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -72,6 +73,7 @@ from ..storage import StorageManager
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
+
 # Re-export parser helpers so downstream imports stay stable.
 from .parsers import (  # noqa: F401
     ParserDependencyError,
@@ -224,10 +226,191 @@ class ConfigProtocol(Protocol):
     search: SearchConfigProtocol
 
 
+def _coerce_bool(value: Any, default: bool) -> bool:
+    """Return ``value`` as a boolean, falling back to ``default`` when unknown."""
+
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+        return default
+    if value is None:
+        return default
+    try:
+        return bool(value)
+    except Exception:  # pragma: no cover - defensive for odd fixtures
+        return default
+
+
+def _coerce_float(value: Any, default: float) -> float:
+    """Convert ``value`` to ``float`` while tolerating fixture stubs."""
+
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        log.debug("Falling back to default float for search config", exc_info=True)
+        return default
+
+
+def _coerce_int(value: Any, default: int, *, minimum: int = 0) -> int:
+    """Convert ``value`` to ``int`` bounded below by ``minimum``."""
+
+    if value is None:
+        return max(default, minimum)
+    try:
+        coerced = int(value)
+    except (TypeError, ValueError):
+        log.debug("Falling back to default int for search config", exc_info=True)
+        return max(default, minimum)
+    return coerced if coerced >= minimum else max(default, minimum)
+
+
+def _normalize_str_sequence(value: Any, *, default: Sequence[str] = ()) -> tuple[str, ...]:
+    """Return a tuple of strings from ``value`` while handling loose fixtures."""
+
+    if value is None:
+        return tuple(default)
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, Sequence):
+        try:
+            return tuple(str(item) for item in value)
+        except Exception:  # pragma: no cover - defensive
+            return tuple(default)
+    try:
+        return tuple(str(item) for item in list(value))
+    except Exception:  # pragma: no cover - defensive
+        return tuple(default)
+
+
+@dataclass(frozen=True, slots=True)
+class _ContextAwareConfig(ContextAwareConfigProtocol):
+    """Typed view over context-aware settings resilient to loose fixtures."""
+
+    enabled: bool
+    use_topic_modeling: bool
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_ContextAwareConfig":
+        return cls(
+            enabled=_coerce_bool(getattr(obj, "enabled", None), default=False),
+            use_topic_modeling=_coerce_bool(getattr(obj, "use_topic_modeling", None), default=True),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _LocalFileConfig(LocalFileConfigProtocol):
+    """Typed view for local file search configuration."""
+
+    path: str
+    file_types: Sequence[str]
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_LocalFileConfig":
+        return cls(
+            path=str(getattr(obj, "path", "")),
+            file_types=_normalize_str_sequence(getattr(obj, "file_types", None), default=("txt",)),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _LocalGitConfig(LocalGitConfigProtocol):
+    """Typed view for local Git search configuration."""
+
+    repo_path: str
+    branches: Sequence[str]
+    history_depth: int
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_LocalGitConfig":
+        return cls(
+            repo_path=str(getattr(obj, "repo_path", "")),
+            branches=_normalize_str_sequence(getattr(obj, "branches", None), default=("main",)),
+            history_depth=_coerce_int(getattr(obj, "history_depth", None), default=50, minimum=1),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _SearchConfig(SearchConfigProtocol):
+    """Typed adapter ensuring ``Search`` sees a consistent configuration."""
+
+    backends: Sequence[str]
+    embedding_backends: Sequence[str]
+    hybrid_query: bool
+    use_semantic_similarity: bool
+    use_bm25: bool
+    use_source_credibility: bool
+    bm25_weight: float
+    semantic_similarity_weight: float
+    source_credibility_weight: float
+    max_workers: int
+    context_aware: ContextAwareConfigProtocol
+    local_file: LocalFileConfigProtocol
+    local_git: LocalGitConfigProtocol
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_SearchConfig":
+        backends = _normalize_str_sequence(getattr(obj, "backends", None))
+        embedding_backends = _normalize_str_sequence(getattr(obj, "embedding_backends", None))
+        context_obj = getattr(obj, "context_aware", SimpleNamespace())
+        local_file_obj = getattr(obj, "local_file", SimpleNamespace())
+        local_git_obj = getattr(obj, "local_git", SimpleNamespace())
+        return cls(
+            backends=backends,
+            embedding_backends=embedding_backends,
+            hybrid_query=_coerce_bool(getattr(obj, "hybrid_query", None), default=False),
+            use_semantic_similarity=_coerce_bool(
+                getattr(obj, "use_semantic_similarity", None), default=True
+            ),
+            use_bm25=_coerce_bool(getattr(obj, "use_bm25", None), default=True),
+            use_source_credibility=_coerce_bool(
+                getattr(obj, "use_source_credibility", None), default=True
+            ),
+            bm25_weight=_coerce_float(getattr(obj, "bm25_weight", None), default=0.3),
+            semantic_similarity_weight=_coerce_float(
+                getattr(obj, "semantic_similarity_weight", None), default=0.5
+            ),
+            source_credibility_weight=_coerce_float(
+                getattr(obj, "source_credibility_weight", None), default=0.2
+            ),
+            max_workers=_coerce_int(
+                getattr(obj, "max_workers", None),
+                default=max(1, len(backends)) if backends else 4,
+                minimum=1,
+            ),
+            context_aware=_ContextAwareConfig.from_object(context_obj),
+            local_file=_LocalFileConfig.from_object(local_file_obj),
+            local_git=_LocalGitConfig.from_object(local_git_obj),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _Config(ConfigProtocol):
+    """Wrapper ensuring the core module always sees a typed search config."""
+
+    search: SearchConfigProtocol
+
+    @classmethod
+    def from_object(cls, obj: Any) -> "_Config":
+        search_obj = getattr(obj, "search", None)
+        if search_obj is None:
+            raise ConfigError(
+                "Search configuration missing from runtime config",
+                suggestion="Ensure 'search' is defined in the configuration file",
+            )
+        return cls(search=_SearchConfig.from_object(search_obj))
+
+
 def _get_runtime_config() -> ConfigProtocol:
     """Return the active configuration cast to the search protocol."""
 
-    return cast(ConfigProtocol, get_config())
+    return _Config.from_object(get_config())
 
 
 @dataclass
@@ -817,11 +1000,7 @@ class Search:
         weights_sum = sum(weights.values())
         tolerance = 0.001
         positive_components = sum(1 for value in weights.values() if value > tolerance)
-        if (
-            weights_sum > 0
-            and positive_components >= 2
-            and abs(weights_sum - 1.0) > tolerance
-        ):
+        if weights_sum > 0 and positive_components >= 2 and abs(weights_sum - 1.0) > tolerance:
             raise ConfigError(
                 "Relevance ranking weights must sum to 1.0",
                 weights=weights,
@@ -1126,12 +1305,8 @@ class Search:
 
         tokens = self.preprocess_text(query)
         if tokens:
-            filters = " || ".join(
-                f'CONTAINS(LCASE(STR(?o)), "{token}")' for token in tokens
-            )
-            sparql = (
-                "SELECT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(" + filters + ") }"
-            )
+            filters = " || ".join(f'CONTAINS(LCASE(STR(?o)), "{token}")' for token in tokens)
+            sparql = "SELECT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(" + filters + ") }"
             try:
                 rows = StorageManager.query_rdf(sparql)
             except (NotFoundError, StorageError, Exception) as exc:
@@ -1153,9 +1328,7 @@ class Search:
                     doc = {
                         "url": claim_id,
                         "snippet": value,
-                        "ontology_matches": [
-                            {"predicate": predicate, "value": value}
-                        ],
+                        "ontology_matches": [{"predicate": predicate, "value": value}],
                     }
                     _ingest(doc, "ontology")
 
@@ -1599,8 +1772,7 @@ class Search:
                 query=text_query,
                 results=[dict(result) for result in ranked_results],
                 by_backend={
-                    name: [dict(doc) for doc in docs]
-                    for name, docs in results_by_backend.items()
+                    name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
                 },
                 cache=self.cache,
                 storage=StorageManager,
@@ -1615,8 +1787,7 @@ class Search:
             query=text_query,
             results=[dict(result) for result in fallback_results],
             by_backend={
-                name: [dict(doc) for doc in docs]
-                for name, docs in results_by_backend.items()
+                name: [dict(doc) for doc in docs] for name, docs in results_by_backend.items()
             },
             cache=self.cache,
             storage=StorageManager,
@@ -2028,7 +2199,9 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
                                 part,
                                 re.IGNORECASE,
                             )
-                            snippet = snippet_match.group(0).strip() if snippet_match else part[:200]
+                            snippet = (
+                                snippet_match.group(0).strip() if snippet_match else part[:200]
+                            )
                             results.append(
                                 {
                                     "title": d.b_path or d.a_path or "diff",
