@@ -1,20 +1,67 @@
-"""Stub for :mod:`matplotlib` and :mod:`matplotlib.pyplot`."""
+"""Typed stub for :mod:`matplotlib` and :mod:`matplotlib.pyplot`."""
+
+from __future__ import annotations
 
 import importlib.machinery
-import sys
-import types
+from types import ModuleType, SimpleNamespace
+from typing import Any, Protocol, cast
 
-if "matplotlib" not in sys.modules:
-    mpl = types.ModuleType("matplotlib")
-    mpl.use = lambda *a, **k: None
-    mpl.__spec__ = importlib.machinery.ModuleSpec("matplotlib", loader=None)
-    sys.modules["matplotlib"] = mpl
+from ._registry import install_stub_module
 
-if "matplotlib.pyplot" not in sys.modules:
-    mpl_py = types.ModuleType("matplotlib.pyplot")
-    mpl_py.plot = lambda *a, **k: None
-    mpl_py.figure = lambda *a, **k: None
-    mpl_py.gca = lambda *a, **k: types.SimpleNamespace()
-    mpl_py.savefig = lambda *a, **k: None
-    mpl_py.__spec__ = importlib.machinery.ModuleSpec("matplotlib.pyplot", loader=None)
-    sys.modules["matplotlib.pyplot"] = mpl_py
+
+class MatplotlibModule(Protocol):
+    __spec__: importlib.machinery.ModuleSpec
+
+    def use(self, *args: Any, **kwargs: Any) -> None: ...
+
+
+class MatplotlibPyplotModule(Protocol):
+    __spec__: importlib.machinery.ModuleSpec
+
+    def plot(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def figure(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def gca(self, *args: Any, **kwargs: Any) -> SimpleNamespace: ...
+
+    def savefig(self, *args: Any, **kwargs: Any) -> None: ...
+
+
+class _MatplotlibPyplotModule(ModuleType):
+    __spec__ = importlib.machinery.ModuleSpec("matplotlib.pyplot", loader=None)
+
+    def __init__(self) -> None:
+        super().__init__("matplotlib.pyplot")
+
+    def plot(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def figure(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def gca(self, *args: Any, **kwargs: Any) -> SimpleNamespace:
+        return SimpleNamespace()
+
+    def savefig(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+class _MatplotlibModule(ModuleType):
+    __spec__ = importlib.machinery.ModuleSpec("matplotlib", loader=None)
+
+    def __init__(self) -> None:
+        super().__init__("matplotlib")
+        self.pyplot = cast(
+            MatplotlibPyplotModule,
+            install_stub_module("matplotlib.pyplot", _MatplotlibPyplotModule),
+        )
+
+    def use(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+matplotlib = cast(
+    MatplotlibModule, install_stub_module("matplotlib", _MatplotlibModule)
+)
+
+__all__ = ["MatplotlibModule", "MatplotlibPyplotModule", "matplotlib"]

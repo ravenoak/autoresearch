@@ -1,61 +1,151 @@
-"""Stub for the optional :mod:`a2a` dependency."""
+"""Typed stubs for the optional :mod:`a2a` SDK."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "a2a" not in sys.modules:
-    a2a_stub = types.ModuleType("a2a")
-    sys.modules["a2a"] = a2a_stub
+from types import ModuleType
+from typing import Any, Protocol, cast
 
-    client_stub = types.ModuleType("a2a.client")
+from pydantic import BaseModel
 
-    class A2AClient:
-        ...
+from ._registry import install_stub_module
 
-    def _missing(name: str, *_a, **_k):
+
+class Message(BaseModel):
+    content: str = ""
+    metadata: dict[str, Any] | None = None
+    role: str = "agent"
+
+
+class MessageSendParams(BaseModel):
+    """Placeholder request parameters."""
+
+
+class SendMessageRequest(BaseModel):
+    message: Message | None = None
+
+
+class SendMessageResponse(BaseModel):
+    message: Message | None = None
+
+
+class A2AClient:
+    """Stub client that raises on any dynamic attribute access."""
+
+    def __getattr__(self, name: str) -> Any:  # pragma: no cover - defensive stub
         if name.startswith("__"):
             raise AttributeError(name)
         raise ImportError("A2A SDK not installed")
 
-    client_stub.A2AClient = A2AClient
-    client_stub.__getattr__ = _missing
-    client_stub.__file__ = __file__
-    sys.modules["a2a.client"] = client_stub
 
-    from typing import Any
-    from pydantic import BaseModel
+def new_agent_text_message(
+    content: str = "", metadata: dict[str, Any] | None = None
+) -> Message:
+    return Message(content=content, metadata=metadata or {})
 
-    utils_stub = types.ModuleType("a2a.utils")
-    message_stub = types.ModuleType("a2a.utils.message")
-    types_stub = types.ModuleType("a2a.types")
 
-    class Message(BaseModel):
-        content: str = ""
-        metadata: dict[str, Any] | None = None
-        role: str = "agent"
+def get_message_text(message: Message) -> str:
+    return message.content
 
-    def new_agent_text_message(content: str = "", metadata: dict[str, Any] | None = None) -> Message:
-        return Message(content=content, metadata=metadata or {})
 
-    def get_message_text(msg: Message) -> str:
-        return msg.content
+class A2AClientModule(Protocol):
+    A2AClient: type[A2AClient]
 
-    message_stub.new_agent_text_message = new_agent_text_message
-    message_stub.get_message_text = get_message_text
-    sys.modules["a2a.utils"] = utils_stub
-    sys.modules["a2a.utils.message"] = message_stub
+    def __getattr__(self, name: str) -> Any: ...
 
-    class MessageSendParams(BaseModel):
-        ...
 
-    class SendMessageRequest(BaseModel):
-        message: Message | None = None
+class A2AUtilsModule(Protocol):
+    message: "A2AUtilsMessageModule"
 
-    class SendMessageResponse(BaseModel):
-        message: Message | None = None
 
-    types_stub.Message = Message
-    types_stub.MessageSendParams = MessageSendParams
-    types_stub.SendMessageRequest = SendMessageRequest
-    types_stub.SendMessageResponse = SendMessageResponse
-    sys.modules["a2a.types"] = types_stub
+class A2AUtilsMessageModule(Protocol):
+    def new_agent_text_message(
+        self, content: str = "", metadata: dict[str, Any] | None = None
+    ) -> Message: ...
+
+    def get_message_text(self, message: Message) -> str: ...
+
+
+class A2ATypesModule(Protocol):
+    Message: type[Message]
+    MessageSendParams: type[MessageSendParams]
+    SendMessageRequest: type[SendMessageRequest]
+    SendMessageResponse: type[SendMessageResponse]
+
+
+class A2AModule(Protocol):
+    client: A2AClientModule
+    utils: A2AUtilsModule
+    types: A2ATypesModule
+
+
+class _A2AClientModule(ModuleType):
+    A2AClient = A2AClient
+
+    def __init__(self) -> None:
+        super().__init__("a2a.client")
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(A2AClient(), name)
+
+
+class _A2AUtilsModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("a2a.utils")
+
+
+class _A2AUtilsMessageModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("a2a.utils.message")
+
+    def new_agent_text_message(
+        self, content: str = "", metadata: dict[str, Any] | None = None
+    ) -> Message:
+        return new_agent_text_message(content, metadata)
+
+    def get_message_text(self, message: Message) -> str:
+        return get_message_text(message)
+
+
+class _A2ATypesModule(ModuleType):
+    Message = Message
+    MessageSendParams = MessageSendParams
+    SendMessageRequest = SendMessageRequest
+    SendMessageResponse = SendMessageResponse
+
+    def __init__(self) -> None:
+        super().__init__("a2a.types")
+
+
+class _A2AStub(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("a2a")
+
+
+a2a = cast(A2AModule, install_stub_module("a2a", _A2AStub))
+a2a_client = cast(A2AClientModule, install_stub_module("a2a.client", _A2AClientModule))
+a2a_utils = cast(A2AUtilsModule, install_stub_module("a2a.utils", _A2AUtilsModule))
+a2a_utils_message = cast(
+    A2AUtilsMessageModule, install_stub_module("a2a.utils.message", _A2AUtilsMessageModule)
+)
+a2a_types = cast(A2ATypesModule, install_stub_module("a2a.types", _A2ATypesModule))
+
+setattr(a2a_utils, "message", a2a_utils_message)
+setattr(a2a, "client", a2a_client)
+setattr(a2a, "utils", a2a_utils)
+setattr(a2a, "types", a2a_types)
+
+
+__all__ = [
+    "A2AClient",
+    "Message",
+    "MessageSendParams",
+    "SendMessageRequest",
+    "SendMessageResponse",
+    "a2a",
+    "a2a_client",
+    "a2a_utils",
+    "a2a_utils_message",
+    "a2a_types",
+    "get_message_text",
+    "new_agent_text_message",
+]

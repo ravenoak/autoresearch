@@ -1,14 +1,31 @@
-"""Minimal stub for the :mod:`watchfiles` package."""
+"""Typed stub for the :mod:`watchfiles` package."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "watchfiles" not in sys.modules:
-    watchfiles_stub = types.ModuleType("watchfiles")
+from collections.abc import Generator
+from types import ModuleType
+from typing import Iterable, Protocol, cast
 
-    def watch(*_args, **_kwargs):
-        if False:
-            yield ("", "")
+from ._registry import install_stub_module
 
-    watchfiles_stub.watch = watch
-    sys.modules["watchfiles"] = watchfiles_stub
+
+def watch(*_args, **_kwargs) -> Generator[tuple[str, str], None, None]:
+    if False:
+        yield ("", "")
+
+
+class WatchfilesModule(Protocol):
+    def watch(self, *args, **kwargs) -> Iterable[tuple[str, str]]: ...
+
+
+class _WatchfilesModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("watchfiles")
+
+    def watch(self, *args, **kwargs) -> Iterable[tuple[str, str]]:
+        return watch(*args, **kwargs)
+
+
+watchfiles = cast(WatchfilesModule, install_stub_module("watchfiles", _WatchfilesModule))
+
+__all__ = ["WatchfilesModule", "watch", "watchfiles"]

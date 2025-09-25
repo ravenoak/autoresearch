@@ -1,11 +1,41 @@
-"""Minimal stub for the :mod:`limits` package."""
+"""Typed stub for :mod:`limits` used in tests."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "limits" not in sys.modules:
-    limits_stub = types.ModuleType("limits")
-    util_mod = types.ModuleType("limits.util")
-    util_mod.parse = lambda s: s
-    sys.modules["limits"] = limits_stub
-    sys.modules["limits.util"] = util_mod
+from types import ModuleType
+from typing import Protocol, cast
+
+from ._registry import install_stub_module
+
+
+def parse(value: str) -> str:
+    return value
+
+
+class LimitsUtilModule(Protocol):
+    def parse(self, value: str) -> str: ...
+
+
+class _LimitsUtilModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("limits.util")
+
+    def parse(self, value: str) -> str:
+        return parse(value)
+
+
+class LimitsModule(Protocol):
+    util: LimitsUtilModule
+
+
+class _LimitsModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("limits")
+        self.util = cast(
+            LimitsUtilModule, install_stub_module("limits.util", _LimitsUtilModule)
+        )
+
+
+limits = cast(LimitsModule, install_stub_module("limits", _LimitsModule))
+
+__all__ = ["LimitsModule", "LimitsUtilModule", "limits", "parse"]

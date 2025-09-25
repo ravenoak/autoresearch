@@ -1,62 +1,145 @@
-"""Minimal stub for the :mod:`opentelemetry` package."""
+"""Typed stub for :mod:`opentelemetry` used in tests."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "opentelemetry" not in sys.modules:
-    otel = types.ModuleType("opentelemetry")
+from types import ModuleType
+from typing import Any, Literal, Protocol, cast
 
-    trace_mod = types.ModuleType("trace")
+from ._registry import install_stub_module
 
-    class _Tracer:
-        def start_as_current_span(self, *_a, **_k):
-            class _Span:
-                def __enter__(self):
-                    return self
 
-                def __exit__(self, *exc):
-                    return False
+class _Span:
+    def __enter__(self) -> _Span:
+        return self
 
-            return _Span()
+    def __exit__(self, *exc: Any) -> Literal[False]:
+        return False
 
-    trace_mod.get_tracer = lambda name=None: _Tracer()
-    trace_mod.set_tracer_provider = lambda provider: None
-    otel.trace = trace_mod
-    sys.modules["opentelemetry.trace"] = trace_mod
 
-    sdk_mod = types.ModuleType("sdk")
-    resources_mod = types.ModuleType("resources")
-    resources_mod.SERVICE_NAME = "service.name"
+class _Tracer:
+    def start_as_current_span(self, *_args: Any, **_kwargs: Any) -> _Span:
+        return _Span()
 
-    class Resource:
-        @staticmethod
-        def create(_data):
-            return Resource()
 
-    resources_mod.Resource = Resource
-    sys.modules["opentelemetry.sdk"] = sdk_mod
-    sys.modules["opentelemetry.sdk.resources"] = resources_mod
+class TraceModule(Protocol):
+    def get_tracer(self, name: str | None = None) -> _Tracer: ...
 
-    trace_sdk_mod = types.ModuleType("trace")
+    def set_tracer_provider(self, provider: Any) -> None: ...
 
-    class TracerProvider:
-        pass
 
-    trace_sdk_mod.TracerProvider = TracerProvider
-    sys.modules["opentelemetry.sdk.trace"] = trace_sdk_mod
+class _TraceModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("opentelemetry.trace")
 
-    export_mod = types.ModuleType("export")
+    def get_tracer(self, name: str | None = None) -> _Tracer:
+        return _Tracer()
 
-    class BatchSpanProcessor:
-        def __init__(self, *a, **k):
-            pass
+    def set_tracer_provider(self, provider: Any) -> None:
+        return None
 
-    class ConsoleSpanExporter:
-        def __init__(self, *a, **k):
-            pass
 
-    export_mod.BatchSpanProcessor = BatchSpanProcessor
-    export_mod.ConsoleSpanExporter = ConsoleSpanExporter
-    sys.modules["opentelemetry.sdk.trace.export"] = export_mod
+class Resource:
+    @staticmethod
+    def create(_data: Any) -> Resource:
+        return Resource()
 
-    sys.modules["opentelemetry"] = otel
+
+class ResourcesModule(Protocol):
+    SERVICE_NAME: str
+    Resource: type[Resource]
+
+
+class _ResourcesModule(ModuleType):
+    SERVICE_NAME = "service.name"
+    Resource = Resource
+
+    def __init__(self) -> None:
+        super().__init__("opentelemetry.sdk.resources")
+
+
+class TracerProvider:
+    pass
+
+
+class SDKTraceModule(Protocol):
+    TracerProvider: type[TracerProvider]
+
+
+class _SDKTraceModule(ModuleType):
+    TracerProvider = TracerProvider
+
+    def __init__(self) -> None:
+        super().__init__("opentelemetry.sdk.trace")
+
+
+class BatchSpanProcessor:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+class ConsoleSpanExporter:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+class SDKTraceExportModule(Protocol):
+    BatchSpanProcessor: type[BatchSpanProcessor]
+    ConsoleSpanExporter: type[ConsoleSpanExporter]
+
+
+class _SDKTraceExportModule(ModuleType):
+    BatchSpanProcessor = BatchSpanProcessor
+    ConsoleSpanExporter = ConsoleSpanExporter
+
+    def __init__(self) -> None:
+        super().__init__("opentelemetry.sdk.trace.export")
+
+
+class SDKModule(Protocol):
+    resources: ResourcesModule
+    trace: SDKTraceModule
+
+
+class _SDKModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("opentelemetry.sdk")
+        self.resources = cast(
+            ResourcesModule,
+            install_stub_module("opentelemetry.sdk.resources", _ResourcesModule),
+        )
+        self.trace = cast(
+            SDKTraceModule,
+            install_stub_module("opentelemetry.sdk.trace", _SDKTraceModule),
+        )
+        install_stub_module("opentelemetry.sdk.trace.export", _SDKTraceExportModule)
+
+
+class OpenTelemetryModule(Protocol):
+    trace: TraceModule
+    sdk: SDKModule
+
+
+class _OpenTelemetryModule(ModuleType):
+    def __init__(self) -> None:
+        super().__init__("opentelemetry")
+        self.trace = cast(TraceModule, install_stub_module("opentelemetry.trace", _TraceModule))
+        self.sdk = cast(SDKModule, install_stub_module("opentelemetry.sdk", _SDKModule))
+
+
+opentelemetry = cast(
+    OpenTelemetryModule, install_stub_module("opentelemetry", _OpenTelemetryModule)
+)
+
+__all__ = [
+    "BatchSpanProcessor",
+    "ConsoleSpanExporter",
+    "OpenTelemetryModule",
+    "Resource",
+    "ResourcesModule",
+    "SDKModule",
+    "SDKTraceExportModule",
+    "SDKTraceModule",
+    "TraceModule",
+    "TracerProvider",
+    "opentelemetry",
+]

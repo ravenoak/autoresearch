@@ -1,31 +1,59 @@
-"""Minimal stub for the :mod:`structlog` package."""
+"""Typed stub for the :mod:`structlog` package."""
 
-import sys
-import types
+from __future__ import annotations
 
-try:  # pragma: no cover - best effort to import real library
-    import structlog as _structlog  # type: ignore
-except Exception:  # pragma: no cover - fall back to stub
-    structlog_stub = types.ModuleType("structlog")
+import importlib
+from types import ModuleType
+from typing import Any, Callable, ClassVar, Protocol, cast
 
-    class BoundLogger:
-        def __getattr__(self, _name):
-            return lambda *a, **k: None
+from ._registry import install_stub_module
 
-    def get_logger(*_args, **_kwargs):
+
+class BoundLogger:
+    def __getattr__(self, _name: str) -> Callable[..., None]:  # pragma: no cover - trivial
+        return lambda *args, **kwargs: None
+
+
+class StructlogModule(Protocol):
+    BoundLogger: ClassVar[type[BoundLogger]]
+
+    def get_logger(self, *args: Any, **kwargs: Any) -> BoundLogger: ...
+
+    def configure(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def make_filtering_bound_logger(self, level: Any) -> type[BoundLogger]: ...
+
+
+class _StructlogModule(ModuleType):
+    BoundLogger: ClassVar[type[BoundLogger]] = BoundLogger
+
+    def __init__(self) -> None:
+        super().__init__("structlog")
+
+    def get_logger(self, *args: Any, **kwargs: Any) -> BoundLogger:
         return BoundLogger()
 
-    def configure(*args, **kwargs):  # noqa: D401 - simple placeholder
-        """Stubbed configure function."""
+    def configure(self, *args: Any, **kwargs: Any) -> None:
+        return None
 
-    def make_filtering_bound_logger(level):  # noqa: D401 - simple placeholder
-        """Return the stubbed :class:`BoundLogger` regardless of level."""
+    def make_filtering_bound_logger(self, level: Any) -> type[BoundLogger]:
         return BoundLogger
 
-    structlog_stub.BoundLogger = BoundLogger
-    structlog_stub.get_logger = get_logger
-    structlog_stub.configure = configure
-    structlog_stub.make_filtering_bound_logger = make_filtering_bound_logger
-    sys.modules["structlog"] = structlog_stub
-else:  # pragma: no cover - real library available
-    sys.modules["structlog"] = _structlog
+
+def _factory() -> _StructlogModule:
+    return _StructlogModule()
+
+
+try:  # pragma: no cover
+    _structlog = importlib.import_module("structlog")
+except Exception:  # pragma: no cover
+    structlog = cast(StructlogModule, install_stub_module("structlog", _factory))
+else:  # pragma: no cover
+    structlog = cast(StructlogModule, _structlog)
+
+
+__all__ = [
+    "BoundLogger",
+    "StructlogModule",
+    "structlog",
+]

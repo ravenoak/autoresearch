@@ -1,36 +1,79 @@
-"""Minimal stub for the :mod:`prometheus_client` package."""
+"""Typed stub for :mod:`prometheus_client` used in the test suite."""
 
-import sys
-import types
+from __future__ import annotations
 
-if "prometheus_client" not in sys.modules:
-    prom_stub = types.ModuleType("prometheus_client")
+from types import ModuleType
+from typing import Any, ClassVar, Protocol, cast
 
-    class Counter:
-        def __init__(self, *args, **kwargs):
-            pass
+from ._registry import install_stub_module
 
-    class Histogram:
-        def __init__(self, *args, **kwargs):
-            pass
 
-    class Gauge:
-        def __init__(self, *args, **kwargs):
-            pass
+class _Metric:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - trivial
+        return None
 
-    class CollectorRegistry:
-        def __init__(self, *args, **kwargs):
-            pass
 
-    def start_http_server(*args, **kwargs):
-        pass
+class Counter(_Metric):
+    """Stub Counter metric."""
 
-    REGISTRY = CollectorRegistry()
 
-    prom_stub.Counter = Counter
-    prom_stub.Histogram = Histogram
-    prom_stub.Gauge = Gauge
-    prom_stub.CollectorRegistry = CollectorRegistry
-    prom_stub.REGISTRY = REGISTRY
-    prom_stub.start_http_server = start_http_server
-    sys.modules["prometheus_client"] = prom_stub
+class Histogram(_Metric):
+    """Stub Histogram metric."""
+
+
+class Gauge(_Metric):
+    """Stub Gauge metric."""
+
+
+class CollectorRegistry:
+    """Stub CollectorRegistry that records no state."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - trivial
+        return None
+
+
+def _start_http_server_stub(port: int, addr: str = "0.0.0.0") -> None:
+    """Mimic :func:`prometheus_client.start_http_server` without networking."""
+
+
+def start_http_server(port: int, addr: str = "0.0.0.0") -> None:
+    _start_http_server_stub(port, addr)
+
+
+class PrometheusClientModule(Protocol):
+    Counter: ClassVar[type[Counter]]
+    Histogram: ClassVar[type[Histogram]]
+    Gauge: ClassVar[type[Gauge]]
+    CollectorRegistry: ClassVar[type[CollectorRegistry]]
+    REGISTRY: ClassVar[CollectorRegistry]
+
+    def start_http_server(self, port: int, addr: str = "0.0.0.0") -> None: ...
+
+
+class _PrometheusClientModule(ModuleType):
+    Counter: ClassVar[type[Counter]] = Counter
+    Histogram: ClassVar[type[Histogram]] = Histogram
+    Gauge: ClassVar[type[Gauge]] = Gauge
+    CollectorRegistry: ClassVar[type[CollectorRegistry]] = CollectorRegistry
+    REGISTRY: ClassVar[CollectorRegistry] = CollectorRegistry()
+
+    def __init__(self) -> None:
+        super().__init__("prometheus_client")
+
+    def start_http_server(self, port: int, addr: str = "0.0.0.0") -> None:
+        _start_http_server_stub(port, addr)
+
+
+prometheus_client = cast(
+    PrometheusClientModule, install_stub_module("prometheus_client", _PrometheusClientModule)
+)
+
+__all__ = [
+    "Counter",
+    "CollectorRegistry",
+    "Gauge",
+    "Histogram",
+    "prometheus_client",
+    "PrometheusClientModule",
+    "start_http_server",
+]

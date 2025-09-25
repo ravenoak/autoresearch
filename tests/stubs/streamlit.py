@@ -1,35 +1,90 @@
-"""Stub for :mod:`streamlit` to avoid heavy UI dependency."""
+"""Typed stub for :mod:`streamlit`."""
+
+from __future__ import annotations
 
 import importlib.util
-import sys
-import types
+from types import ModuleType, SimpleNamespace
+from typing import Any, Protocol, Sequence
 
-if importlib.util.find_spec("streamlit") is None and "streamlit" not in sys.modules:
-    st_stub = types.ModuleType("streamlit")
-    st_stub.markdown = lambda *a, **k: None
+from ._registry import install_stub_module
 
-    class SessionState(dict):
-        __getattr__ = dict.get
-        __setattr__ = dict.__setitem__
 
-    st_stub.session_state = SessionState()
-    st_stub.set_page_config = lambda *a, **k: None
-    st_stub.text_area = lambda *a, **k: ""
-    st_stub.selectbox = lambda *a, **k: None
-    st_stub.slider = lambda *a, **k: 0
-    st_stub.button = lambda *a, **k: False
-    st_stub.columns = lambda *a, **k: (
-        types.SimpleNamespace(),
-        types.SimpleNamespace(),
-    )
-    st_stub.container = lambda: types.SimpleNamespace(
-        __enter__=lambda s: None,
-        __exit__=lambda s, e, t, b: None,
-    )
-    st_stub.modal = lambda *a, **k: types.SimpleNamespace(
-        __enter__=lambda s: None,
-        __exit__=lambda s, e, t, b: None,
-    )
-    st_stub.__version__ = "0.0"
-    st_stub.__spec__ = importlib.util.spec_from_loader("streamlit", loader=None)
-    sys.modules["streamlit"] = st_stub
+class SessionState(dict[str, Any]):
+    __getattr__ = dict.get  # type: ignore[assignment]
+    __setattr__ = dict.__setitem__  # type: ignore[assignment]
+
+
+class StreamlitModule(Protocol):
+    __version__: str
+    session_state: SessionState
+
+    def markdown(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def set_page_config(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def text_area(self, *args: Any, **kwargs: Any) -> str: ...
+
+    def selectbox(self, *args: Any, **kwargs: Any) -> Any: ...
+
+    def slider(self, *args: Any, **kwargs: Any) -> Any: ...
+
+    def button(self, *args: Any, **kwargs: Any) -> bool: ...
+
+    def columns(self, *args: Any, **kwargs: Any) -> Sequence[SimpleNamespace]: ...
+
+    def container(self) -> SimpleNamespace: ...
+
+    def modal(self, *args: Any, **kwargs: Any) -> SimpleNamespace: ...
+
+
+class _ContextManager(SimpleNamespace):
+    def __enter__(self) -> None:  # pragma: no cover - trivial
+        return None
+
+    def __exit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - trivial
+        return None
+
+
+class _StreamlitModule(ModuleType):
+    __version__ = "0.0"
+
+    def __init__(self) -> None:
+        super().__init__("streamlit")
+        self.session_state = SessionState()
+        self.__spec__ = importlib.util.spec_from_loader("streamlit", loader=None)
+
+    def markdown(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def set_page_config(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+    def text_area(self, *args: Any, **kwargs: Any) -> str:
+        return ""
+
+    def selectbox(self, *args: Any, **kwargs: Any) -> Any:
+        return None
+
+    def slider(self, *args: Any, **kwargs: Any) -> Any:
+        return 0
+
+    def button(self, *args: Any, **kwargs: Any) -> bool:
+        return False
+
+    def columns(self, *args: Any, **kwargs: Any) -> Sequence[SimpleNamespace]:
+        return (SimpleNamespace(), SimpleNamespace())
+
+    def container(self) -> SimpleNamespace:
+        return _ContextManager()
+
+    def modal(self, *args: Any, **kwargs: Any) -> SimpleNamespace:
+        return _ContextManager()
+
+
+if importlib.util.find_spec("streamlit") is None:
+    streamlit: StreamlitModule = install_stub_module("streamlit", _StreamlitModule)
+else:  # pragma: no cover
+    import streamlit as streamlit  # type: ignore  # noqa: F401
+
+
+__all__ = ["SessionState", "StreamlitModule", "streamlit"]
