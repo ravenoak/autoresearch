@@ -3,11 +3,17 @@
 import sys
 from types import SimpleNamespace
 
-sys.modules.setdefault(
+from tests.helpers.modules import ensure_stub_module
+
+ensure_stub_module(
     "pydantic_settings",
-    SimpleNamespace(BaseSettings=object, CliApp=object, SettingsConfigDict=dict),
+    {
+        "BaseSettings": object,
+        "CliApp": object,
+        "SettingsConfigDict": dict,
+    },
 )
-sys.modules.setdefault("docx", SimpleNamespace(Document=object))
+ensure_stub_module("docx", {"Document": object})
 
 import autoresearch.search.http as http  # noqa: E402
 

@@ -1,14 +1,19 @@
 """Tests for token recording, regression checks, and coverage targets."""
 
 import json
-import sys
 import types
 
 from coverage import Coverage
 
-sys.modules.setdefault(
+from tests.helpers.modules import ensure_stub_module
+
+ensure_stub_module(
     "pydantic_settings",
-    types.SimpleNamespace(BaseSettings=object, CliApp=object, SettingsConfigDict=dict),
+    {
+        "BaseSettings": object,
+        "CliApp": object,
+        "SettingsConfigDict": dict,
+    },
 )
 
 from autoresearch.orchestration.metrics import OrchestrationMetrics  # noqa: E402

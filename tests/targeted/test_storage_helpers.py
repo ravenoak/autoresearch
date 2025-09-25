@@ -1,11 +1,14 @@
 """Tests for lightweight helpers in :mod:`autoresearch.storage`."""
 
-import sys
-import types
+from tests.helpers.modules import ensure_stub_module
 
-sys.modules.setdefault(
+ensure_stub_module(
     "pydantic_settings",
-    types.SimpleNamespace(BaseSettings=object, CliApp=object, SettingsConfigDict=dict),
+    {
+        "BaseSettings": object,
+        "CliApp": object,
+        "SettingsConfigDict": dict,
+    },
 )
 
 from autoresearch import storage  # noqa: E402

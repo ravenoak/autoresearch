@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import sys
-import types
-
 import pytest
 
-pdf_ns = types.SimpleNamespace(extract_text=lambda *a, **k: "")
-sys.modules.setdefault("docx", types.SimpleNamespace(Document=object))
-sys.modules.setdefault("pdfminer", types.SimpleNamespace(high_level=pdf_ns))
-sys.modules.setdefault("pdfminer.high_level", pdf_ns)
+from tests.helpers.modules import ensure_stub_module
+
+ensure_stub_module("docx", {"Document": object})
+ensure_stub_module(
+    "pdfminer.high_level", {"extract_text": lambda *a, **k: ""}
+)
 
 from scripts.benchmark_token_memory import run_benchmark  # noqa: E402
 

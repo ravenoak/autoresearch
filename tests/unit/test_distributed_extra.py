@@ -1,15 +1,14 @@
-import sys
-import types
-
 import pytest
 
+from tests.helpers.modules import ensure_stub_module
+
 # Stub heavy modules before importing distributed
-sys.modules.setdefault("ray", types.SimpleNamespace(remote=lambda f: f))
-sys.modules.setdefault("autoresearch.orchestration.state", types.SimpleNamespace(QueryState=object))
-sys.modules.setdefault(
-    "autoresearch.orchestration.orchestrator", types.SimpleNamespace(AgentFactory=object)
+ensure_stub_module("ray", {"remote": lambda f: f})
+ensure_stub_module("autoresearch.orchestration.state", {"QueryState": object})
+ensure_stub_module(
+    "autoresearch.orchestration.orchestrator", {"AgentFactory": object}
 )
-sys.modules.setdefault("autoresearch.models", types.SimpleNamespace())
+ensure_stub_module("autoresearch.models")
 
 from autoresearch.distributed import (  # noqa: E402
     get_message_broker,

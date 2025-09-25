@@ -1,23 +1,21 @@
-import sys
 import json
-import types
+import sys
+
 import pytest
 
+from tests.helpers.modules import ensure_stub_module
+
 # Provide dummy optional modules before importing Search
-sys.modules.setdefault("kuzu", types.SimpleNamespace())
-sys.modules.setdefault(
-    "spacy",
-    types.SimpleNamespace(
-        load=lambda *_: None, cli=types.SimpleNamespace(download=lambda *_: None)
-    ),
-)
-sys.modules.setdefault("bertopic", types.SimpleNamespace())
-sys.modules.setdefault(
+ensure_stub_module("kuzu")
+ensure_stub_module("spacy.cli", {"download": lambda *_: None})
+ensure_stub_module("spacy", {"load": lambda *_: None})
+ensure_stub_module("bertopic")
+ensure_stub_module(
     "fastembed",
-    types.SimpleNamespace(
-        OnnxTextEmbedding=lambda *_: None,
-        TextEmbedding=lambda *_: None,
-    ),
+    {
+        "OnnxTextEmbedding": lambda *_: None,
+        "TextEmbedding": lambda *_: None,
+    },
 )
 
 from autoresearch.search import (  # noqa: E402
