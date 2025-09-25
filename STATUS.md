@@ -42,11 +42,14 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   guidance; the run now stops at
   `tests/unit/test_eviction.py::test_lru_eviction_sequence` because the LRU
   policy evicts both `c1` and `c2` once the VSS extras hydrate vector search.
-  Archived the failure at `baseline/logs/task-verify-20250925T000904Z.log` and
-  opened
+  The log also records the `test_search_stub_backend[legacy]`,
+  `[vss-enabled]`, and `return_handles` fallback parametrisations passing before
+  the eviction failure, confirming the stub fix while we document the storage
+  regression. Archived the failure at `baseline/logs/task-verify-20250925T000904Z.log`
+  and opened
   [investigate-lru-eviction-regression](issues/investigate-lru-eviction-regression.md)
   to restore the expected ordering before repeating the sweep.
-  【F:baseline/logs/task-verify-20250925T000904Z.log†L416-L489】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
+  【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L476】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
 - Reran `uv run task coverage` with the full extras list; Ray now fails to
   serialize `QueryState`, causing
   `tests/unit/test_distributed_executors.py::test_execute_agent_remote` to abort
@@ -60,6 +63,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   `baseline/logs/python-build-20250925T001554Z.log` confirm the docs and
   packaging gates are clear pending the verify and coverage fixes.
   【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
+- Reaffirmed that GitHub workflows remain dispatch-only, so these verifications
+  continue to run manually via the documented `uv run` wrappers until we reissue
+  the alpha automation through Actions.
+  【F:.github/workflows/ci.yml†L1-L8】
 
 ## September 24, 2025
 - Reconfirmed the base environment: `python --version` reports 3.12.10,

@@ -6,22 +6,28 @@ organized by phases from the code complete plan. As of **2025-09-25** at
 `uv run --extra docs mkdocs build`, and `uv run --extra build python -m build`
 through the `uv` wrappers in fresh shells. `task verify` now halts in
 `tests/unit/test_eviction.py::test_lru_eviction_sequence` because the LRU
-policy removes both `c1` and `c2`; the regression log lives at
-`baseline/logs/task-verify-20250925T000904Z.log` and is tracked in
+policy removes both `c1` and `c2`, but the log shows
+`test_search_stub_backend[legacy]`, `[vss-enabled]`, and the
+`return_handles` fallback succeeding before the eviction failure, confirming the
+stub fix while we track the regression in
+`baseline/logs/task-verify-20250925T000904Z.log` and
 [investigate-lru-eviction-regression](issues/investigate-lru-eviction-regression.md).
-`task coverage` fails earlier when Ray cannot serialize `QueryState`, so the
-run ends at
-`tests/unit/test_distributed_executors.py::test_execute_agent_remote` with
-details recorded in `baseline/logs/task-coverage-20250925T001017Z.log` and the
-follow-up ticket
+`task coverage` fails earlier when Ray cannot serialize `QueryState`, so the run
+ends at `tests/unit/test_distributed_executors.py::test_execute_agent_remote`
+with details recorded in `baseline/logs/task-coverage-20250925T001017Z.log` and
+the follow-up ticket
 [address-ray-serialization-regression](issues/address-ray-serialization-regression.md).
 MkDocs and packaging both completed; their logs are archived at
 `baseline/logs/mkdocs-build-20250925T001535Z.log` and
-`baseline/logs/python-build-20250925T001554Z.log` while we work through the
-open verify and coverage failures.
-【F:baseline/logs/task-verify-20250925T000904Z.log†L416-L489】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
+`baseline/logs/python-build-20250925T001554Z.log` while we work through the open
+verify and coverage failures.
+【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L489】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
 【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】【F:issues/address-ray-serialization-regression.md†L1-L20】
 【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
+All GitHub workflows remain dispatch-only, so the verification reruns continue
+to execute manually through these `uv run` wrappers until the alpha gate is
+cleared and the Actions jobs are retriggered.
+【F:.github/workflows/ci.yml†L1-L8】
 As of **2025-09-24** at
 23:30 UTC we repeated the stub backend sanity check and the full
 `release:alpha` sweep. The targeted invocation
