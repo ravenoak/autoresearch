@@ -9,7 +9,7 @@ is exercised by unit and integration tests under ``tests/``.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Sequence
 
 import rdflib
 
@@ -386,13 +386,14 @@ class Orchestrator:
     def run_parallel_query(
         query: str,
         config: ConfigModel,
-        agent_groups: List[List[str]],
+        agent_groups: Sequence[Sequence[str]],
         timeout: int = 300,
     ) -> QueryResponse:
         """Run multiple parallel agent groups and synthesize results."""
         from . import parallel
 
-        return parallel.execute_parallel_query(query, config, agent_groups, timeout)
+        normalized_groups = [list(group) for group in agent_groups]
+        return parallel.execute_parallel_query(query, config, normalized_groups, timeout)
 
     @staticmethod
     def infer_relations() -> None:

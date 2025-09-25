@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from itertools import chain, islice
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Sequence, TypeVar
 
 import rdflib
 
@@ -26,6 +26,8 @@ from .token_utils import _capture_token_usage as capture_token_usage
 from .token_utils import _execute_with_adapter as execute_with_adapter
 
 log = get_logger(__name__)
+
+T = TypeVar("T")
 
 
 def _get_agent(agent_name: str, agent_factory: type[AgentFactory]) -> Any:
@@ -285,7 +287,7 @@ def _execute_agent(
             break
 
 
-def _rotate_list(items: List[Any], start_idx: int) -> List[Any]:
+def _rotate_list(items: Sequence[T], start_idx: int) -> List[T]:
     """Rotate ``items`` so ``start_idx`` becomes the first element.
 
     This implementation avoids creating multiple intermediate lists by using
@@ -306,7 +308,7 @@ def _rotate_list(items: List[Any], start_idx: int) -> List[Any]:
 def _execute_cycle(
     loop: int,
     loops: int,
-    agents: List[List[str]],
+    agents: Sequence[Sequence[str]],
     primus_index: int,
     max_errors: int,
     state: QueryState,
@@ -376,7 +378,7 @@ def _execute_cycle(
 async def _execute_cycle_async(
     loop: int,
     loops: int,
-    agents: List[List[str]],
+    agents: Sequence[Sequence[str]],
     primus_index: int,
     max_errors: int,
     state: QueryState,

@@ -51,6 +51,7 @@ from typing import (
     Protocol,
     Sequence,
     Tuple,
+    TypedDict,
     cast,
 )
 from weakref import WeakSet
@@ -431,6 +432,18 @@ class ExternalLookupResult:
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         return self.results[index]
+
+
+class LocalGitResult(TypedDict, total=False):
+    """Typed mapping describing entries produced by ``_local_git_backend``."""
+
+    title: str
+    url: str
+    snippet: str
+    commit: str
+    author: str
+    date: str
+    diff: str
 
 
 # Scores are bucketed on a 10^-6 grid before lexicographic tie-breaking. This scale
@@ -2034,7 +2047,7 @@ def _local_file_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]
 
 
 @Search.register_backend("local_git")
-def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+def _local_git_backend(query: str, max_results: int = 5) -> List[LocalGitResult]:
     """Search a local Git repository's files and commit messages."""
 
     cfg = _get_runtime_config()
@@ -2057,7 +2070,7 @@ def _local_git_backend(query: str, max_results: int = 5) -> List[Dict[str, Any]]
     repo = Repo(repo_path)
     head_hash = repo.head.commit.hexsha
 
-    results: List[Dict[str, str]] = []
+    results: List[LocalGitResult] = []
 
     # Search working tree files using ripgrep/Python scanning
     rg_path = shutil.which("rg")
