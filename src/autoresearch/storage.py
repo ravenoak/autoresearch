@@ -104,6 +104,12 @@ _message_queue: Any | None = None
 
 _cached_config: StorageConfig | None = None
 
+# At least two claims should remain resident when eviction falls back to
+# deterministic limits derived from RAM budgets. This guards against noisy
+# metrics (e.g., when the VSS extension toggles persistence settings) from
+# evicting the entire working set.
+_MIN_DETERMINISTIC_SURVIVORS = 2
+
 
 def _process_ram_mb() -> float:
     """Return the process resident set size in megabytes."""
@@ -568,20 +574,32 @@ class StorageManager(metaclass=StorageManagerMeta):
     @staticmethod
     def _deterministic_node_limit(
         budget_mb: int, cfg: Any | None = None
-    ) -> tuple[int | None, bool]:
+    ) -> tuple[int | None, bool, int]:
         """Return the deterministic node limit and whether it is an override."""
 
         if cfg is None:
             cfg = ConfigLoader().config
         storage_cfg = getattr(cfg, "storage", None)
         override = None
+        min_resident = _MIN_DETERMINISTIC_SURVIVORS
         if storage_cfg is not None:
             override = getattr(storage_cfg, "deterministic_node_budget", None)
+            configured_min = getattr(
+                storage_cfg,
+                "minimum_deterministic_resident_nodes",
+                _MIN_DETERMINISTIC_SURVIVORS,
+            )
+            try:
+                min_resident = max(_MIN_DETERMINISTIC_SURVIVORS, int(configured_min))
+            except (TypeError, ValueError):
+                min_resident = _MIN_DETERMINISTIC_SURVIVORS
+
         if isinstance(override, int) and override >= 0:
-            return override, True
+            return override, True, min_resident
         if budget_mb > 0:
-            return max(0, budget_mb), False
-        return None, False
+            derived_limit = max(0, budget_mb)
+            return max(derived_limit, min_resident), False, min_resident
+        return None, False, min_resident
 
     @staticmethod
     def _enforce_ram_budget(budget_mb: int) -> None:
@@ -641,9 +659,11 @@ class StorageManager(metaclass=StorageManagerMeta):
             policy = cfg.graph_eviction_policy.lower()
             lru = StorageManager.state.lru
 
-            deterministic_limit, deterministic_override = StorageManager._deterministic_node_limit(
-                budget_mb, cfg
-            )
+            (
+                deterministic_limit,
+                deterministic_override,
+                minimum_resident_nodes,
+            ) = StorageManager._deterministic_node_limit(budget_mb, cfg)
             if not ram_measurement_available and not deterministic_override:
                 deterministic_limit = None
             over_budget = ram_measurement_available and current_mb > budget_mb
@@ -669,6 +689,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                 assert deterministic_limit is not None
                 use_deterministic_budget = True
                 target_node_count = deterministic_limit
+                if not deterministic_override:
+                    target_node_count = max(target_node_count, minimum_resident_nodes)
+                    deterministic_limit = target_node_count
                 mode = f"deterministic(limit={deterministic_limit})"
             elif deterministic_override:
                 return
@@ -713,6 +736,17 @@ class StorageManager(metaclass=StorageManagerMeta):
             while StorageManager.context.graph:
                 graph = StorageManager.context.graph
                 if graph is None or not graph.nodes:
+                    break
+
+                if (
+                    use_deterministic_budget
+                    and not deterministic_override
+                    and len(graph.nodes) <= minimum_resident_nodes
+                ):
+                    log.debug(
+                        "Reached deterministic survivor floor (%d nodes); stopping eviction",
+                        minimum_resident_nodes,
+                    )
                     break
 
                 ram_condition = (

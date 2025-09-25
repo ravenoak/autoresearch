@@ -125,6 +125,14 @@ class StorageConfig(BaseModel):
             "it overrides the derived limit from the RAM budget."
         ),
     )
+    minimum_deterministic_resident_nodes: int = Field(
+        default=2,
+        ge=2,
+        description=(
+            "Lower bound on nodes kept resident when RAM-based eviction falls back "
+            "to deterministic limits."
+        ),
+    )
 
     _validate_rdf_backend = field_validator("rdf_backend")(validate_rdf_backend)
 
