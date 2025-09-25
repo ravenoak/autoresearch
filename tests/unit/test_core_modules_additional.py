@@ -1,4 +1,5 @@
 import types
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,17 +11,30 @@ from autoresearch.orchestration.reasoning import ReasoningMode
 from autoresearch.orchestration.state import QueryState
 from autoresearch.search import ExternalLookupResult, Search
 from autoresearch.search.core import hybridmethod
+from autoresearch.storage import StorageManager
 
 
 @pytest.fixture
-def _stubbed_search_environment(monkeypatch):
+def _stubbed_search_environment(monkeypatch, request):
     """Create a temporary Search instance with controllable backend stubs."""
+
+    features: dict[str, Any] = getattr(request, "param", {}) or {}
+    vector_search_enabled = bool(features.get("vector_search", False))
 
     backend_calls: list[tuple[str, int, bool]] = []
     embedding_calls: list[str] = []
+    embedding_events: list[tuple[str, str]] = []
+    compute_calls: list[tuple[str, str]] = []
     add_calls: list[str] = []
     rank_calls: list[str] = []
     storage_calls: list[str] = []
+    cache_probes: list[dict[str, Any]] = []
+
+    phase = "setup"
+
+    def set_phase(label: str) -> None:
+        nonlocal phase
+        phase = label
 
     cfg = MagicMock()
     cfg.search.backends = ["stub"]
@@ -40,6 +54,12 @@ def _stubbed_search_environment(monkeypatch):
     monkeypatch.setattr(Search, "calculate_bm25_scores", staticmethod(lambda q, r: [1.0]))
     monkeypatch.setattr("autoresearch.search.storage.persist_results", lambda results: None)
 
+    monkeypatch.setattr(
+        StorageManager,
+        "has_vss",
+        staticmethod(lambda: vector_search_enabled),
+    )
+
     shared = Search.get_instance()
     storage_payload: dict[str, list[dict]] = {}
 
@@ -55,7 +75,17 @@ def _stubbed_search_environment(monkeypatch):
 
             target = _resolve_subject(subject)
             embedding_calls.append("instance" if target is search_instance else "other")
+            embedding_events.append((phase, "instance" if target is search_instance else "other"))
             return {}
+
+        def _stub_compute_embedding(subject, query: str):
+            """Return a deterministic embedding when vector search extras are simulated."""
+
+            target = _resolve_subject(subject)
+            compute_calls.append((phase, "instance" if target is search_instance else "other"))
+            if vector_search_enabled:
+                return [0.42]
+            return None
 
         def _stub_add_embeddings(subject, documents, query_embedding=None) -> None:
             """Maintain dual binding compatibility for add_embeddings."""
@@ -79,10 +109,20 @@ def _stubbed_search_environment(monkeypatch):
 
         search_instance.embedding_backends = {}
         search_instance.cache.clear()
-        monkeypatch.setattr(search_instance.cache, "get_cached_results", lambda *a, **k: None)
+
+        def _stub_cache_lookup(query: str, backend: str):
+            cache_probes.append({})
+            return None
+
+        monkeypatch.setattr(search_instance.cache, "get_cached_results", _stub_cache_lookup)
         monkeypatch.setattr(search_instance.cache, "cache_results", lambda *a, **k: None)
 
         monkeypatch.setattr(Search, "embedding_lookup", hybridmethod(_stub_embedding))
+        monkeypatch.setattr(
+            Search,
+            "compute_query_embedding",
+            hybridmethod(_stub_compute_embedding),
+        )
         monkeypatch.setattr(Search, "add_embeddings", hybridmethod(_stub_add_embeddings))
         monkeypatch.setattr(Search, "rank_results", hybridmethod(_stub_rank_results))
         monkeypatch.setattr(Search, "storage_hybrid_lookup", hybridmethod(_stub_storage_lookup))
@@ -114,9 +154,14 @@ def _stubbed_search_environment(monkeypatch):
             search_instance=search_instance,
             backend_calls=backend_calls,
             embedding_calls=embedding_calls,
+            embedding_events=embedding_events,
+            compute_calls=compute_calls,
             add_calls=add_calls,
             rank_calls=rank_calls,
             storage_calls=storage_calls,
+            cache_probes=cache_probes,
+            set_phase=set_phase,
+            vector_search_enabled=vector_search_enabled,
             install_backend=install_backend,
             set_storage_results=set_storage_results,
         )
@@ -136,15 +181,36 @@ def test_orchestrator_parse_config_basic():
     assert params["agent_groups"] == [["A"], ["B"]]
 
 
-def test_search_stub_backend(_stubbed_search_environment):
+@pytest.mark.parametrize(
+    ("_stubbed_search_environment", "expected_search_embeddings"),
+    [
+        pytest.param({"vector_search": False}, 0, id="legacy"),
+        pytest.param({"vector_search": True}, 2, id="vss-enabled"),
+    ],
+    indirect=["_stubbed_search_environment"],
+)
+def test_search_stub_backend(_stubbed_search_environment, expected_search_embeddings):
+    """Exercise both legacy and vector-enabled lookup flows using the shared stub.
+
+    The fixture accepts a feature dictionary so we can simulate environments where the
+    DuckDB vector search extras are disabled (legacy) or enabled (vss-enabled). When the
+    extras toggle is active, the stubbed ``compute_query_embedding`` emits a deterministic
+    vector so ``Search.external_lookup`` performs additional embedding calls. We assert
+    the dynamic counts rather than a fixed list to keep regression coverage across both
+    pathways. Cache probes append empty dictionaries for each lookup to ensure miss
+    semantics remain unchanged as the embedding behaviour varies.
+    """
+
     docs = [{"title": "T", "url": "u"}]
     env = _stubbed_search_environment
     env.install_backend(docs)
 
+    env.set_phase("search")
     instance_results = env.search_instance.external_lookup("q", max_results=1)
     assert [r["title"] for r in instance_results] == ["T"]
     assert [r["url"] for r in instance_results] == ["u"]
 
+    env.set_phase("search")
     bundle = Search.external_lookup("q", max_results=1, return_handles=True)
     assert isinstance(bundle, ExternalLookupResult)
     bundle_results = list(bundle)
@@ -153,18 +219,41 @@ def test_search_stub_backend(_stubbed_search_environment):
     assert bundle.results == bundle_results
     assert bundle.cache is env.search_instance.cache
 
+    env.set_phase("direct")
     instance_embedding = env.search_instance.embedding_lookup([0.1], 1)
     class_embedding = Search.embedding_lookup([0.1], 1)
     assert instance_embedding == {}
     assert class_embedding == {}
 
+    search_embedding_bindings = [
+        binding
+        for phase, binding in env.embedding_events
+        if phase == "search"
+    ]
+    direct_embedding_bindings = [
+        binding
+        for phase, binding in env.embedding_events
+        if phase == "direct"
+    ]
+
+    assert len(search_embedding_bindings) == expected_search_embeddings
+    assert all(binding == "instance" for binding in search_embedding_bindings)
+
+    assert direct_embedding_bindings == ["instance", "instance"]
+
+    compute_binding = [binding for phase, binding in env.compute_calls if phase == "search"]
+    assert len(compute_binding) == expected_search_embeddings
+    assert all(binding == "instance" for binding in compute_binding)
+
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
-    assert env.embedding_calls == ["instance", "instance"]
     assert env.add_calls[:2] == ["instance", "instance"]
     assert all(call == "instance" for call in env.rank_calls)
     assert len(env.rank_calls) >= 2
     assert all(call == "instance" for call in env.storage_calls)
     assert len(env.storage_calls) >= 2
+
+    assert env.cache_probes
+    assert all(hit == {} for hit in env.cache_probes)
 
 
 def test_search_stub_backend_return_handles_fallback(_stubbed_search_environment):
