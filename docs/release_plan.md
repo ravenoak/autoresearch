@@ -37,6 +37,22 @@ stages pending.【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585
 `baseline/logs/release-alpha-20250924T233058Z.summary.md` tracks the open work
 to relax the stub assertion for VSS-aware runs before rerunning the automation.
 【F:baseline/logs/release-alpha-20250924T233058Z.summary.md†L1-L12】
+
+Follow-up `uv run task verify` and `uv run task coverage` runs on
+**September 25, 2025 at 00:09 Z** demonstrate the updated stub behaviour: the
+legacy, VSS-enabled, and `return_handles` fallback parametrisations pass before
+the verify sweep halts on the deterministic LRU eviction regression, and the
+coverage sweep stops on Ray serialising `_thread.RLock` in `QueryState`.
+【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L323】【F:baseline/logs/task-verify-20250925T000904Z.log†L430-L476】【F:baseline/logs/task-coverage-20250925T001017Z.log†L460-L515】
+*Q:* Does the stub backend respect vector search handles now?
+*A:* Yes—the verify log captures the VSS extension loading at 00:10:00Z and the
+passing parametrisations immediately before the eviction failure, providing a
+reproducible trace for the manual reruns.
+【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L476】
+
+All GitHub workflows remain dispatch-only, so these verifications were invoked
+manually via the documented `uv run` wrappers to mirror a
+`workflow_dispatch` execution.【F:.github/workflows/ci.yml†L1-L8】
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -103,14 +119,14 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   extras compile cleanly while verify remains blocked.
   【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】
 - [ ] `task verify` and `task coverage` were rerun via `uv` wrappers on
-  2025-09-25, but they now fail in
-  `tests/unit/test_eviction.py::test_lru_eviction_sequence` and
-  `tests/unit/test_distributed_executors.py::test_execute_agent_remote`,
-  respectively. The new logs and follow-up tickets capture the regressions so
-  the sweep can resume once storage and Ray serialization are repaired.
-  【F:baseline/logs/task-verify-20250925T000904Z.log†L416-L489】
+  2025-09-25; the stub parametrisations now pass with VSS enabled, but the runs
+  fail in `tests/unit/test_eviction.py::test_lru_eviction_sequence` and
+  `tests/unit/test_distributed_executors.py::test_execute_agent_remote`.
+  The new logs and follow-up tickets capture the regressions so the sweep can
+  resume once storage and Ray serialization are repaired.
+  【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L489】
   【F:issues/investigate-lru-eviction-regression.md†L1-L24】
-  【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】
+  【F:baseline/logs/task-coverage-20250925T001017Z.log†L460-L669】
   【F:issues/address-ray-serialization-regression.md†L1-L20】
 - [x] `uv run --extra build python -m build` succeeded out of band and archived
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
