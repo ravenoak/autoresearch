@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
@@ -26,7 +26,7 @@ log = get_logger(__name__)
 def execute_parallel_query(
     query: str,
     config: ConfigModel,
-    agent_groups: List[List[str]],
+    agent_groups: Sequence[Sequence[str]],
     timeout: int = 300,
 ) -> QueryResponse:
     """Run multiple agent groups in parallel and synthesize results."""
@@ -37,13 +37,17 @@ def execute_parallel_query(
 
     final_state = QueryState(query=query, coalitions=getattr(config, "coalitions", {}))
 
+    # Normalise the incoming groups so downstream logic can freely mutate or
+    # index into them without mutating caller-owned containers such as tuples.
+    group_list: List[List[str]] = [list(group) for group in agent_groups]
+
     cpu_count = os.cpu_count() or 4
-    max_workers = min(len(agent_groups), max(1, cpu_count - 1))
+    max_workers = min(len(group_list), max(1, cpu_count - 1))
 
     start_time = time.time()
     memory_usage_start = _get_memory_usage()
 
-    total_agents = sum(len(g) for g in agent_groups)
+    total_agents = sum(len(g) for g in group_list)
 
     def run_group(group: List[str]) -> QueryResponse:
         from .orchestrator import Orchestrator
@@ -52,7 +56,7 @@ def execute_parallel_query(
             update={
                 "agents": group,
                 "group_size": len(group),
-                "total_groups": len(agent_groups),
+                "total_groups": len(group_list),
                 "total_agents": total_agents,
             }
         )
@@ -80,11 +84,11 @@ def execute_parallel_query(
     timeouts: List[List[str]] = []
 
     with tracer.start_as_current_span("parallel_query") as span:
-        span.set_attribute("agent_groups", str(agent_groups))
+        span.set_attribute("agent_groups", str(group_list))
         span.set_attribute("max_workers", max_workers)
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(run_group, grp): grp for grp in agent_groups}
+            futures = {executor.submit(run_group, grp): grp for grp in group_list}
             import concurrent.futures
 
             try:
@@ -184,7 +188,7 @@ def execute_parallel_query(
     response.metrics.update(
         {
             "parallel_execution": {
-                "total_groups": len(agent_groups),
+                "total_groups": len(group_list),
                 "successful_groups": len(results),
                 "error_groups": len(errors),
                 "timeout_groups": len(timeouts),

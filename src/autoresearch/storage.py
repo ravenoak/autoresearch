@@ -240,9 +240,10 @@ def setup(
         cfg = _get_config()
         fingerprint = _fingerprint_config(cfg)
 
+        backend = ctx.db_backend
         backend_ready = (
-            ctx.db_backend is not None
-            and ctx.db_backend.get_connection() is not None
+            backend is not None
+            and backend.get_connection() is not None
             and ctx.rdf_store is not None
         )
 
@@ -311,9 +312,10 @@ def initialize_storage(
     ctx = context or st.context
 
     with st.lock:
+        backend = ctx.db_backend
         backend_ready = (
-            ctx.db_backend is not None
-            and ctx.db_backend.get_connection() is not None
+            backend is not None
+            and backend.get_connection() is not None
             and ctx.rdf_store is not None
         )
         if not backend_ready:
