@@ -11,7 +11,7 @@ interfaces and a modular architecture.
 import importlib
 import sys
 from importlib.metadata import PackageNotFoundError, version as _version
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 import warnings
 
 try:  # pragma: no cover - best effort patch
