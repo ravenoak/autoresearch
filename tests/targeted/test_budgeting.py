@@ -1,11 +1,16 @@
 """Coverage for adaptive token budgeting."""
 
-import sys
 from types import SimpleNamespace
 
-sys.modules.setdefault(
+from tests.helpers.modules import ensure_stub_module
+
+ensure_stub_module(
     "pydantic_settings",
-    SimpleNamespace(BaseSettings=object, CliApp=object, SettingsConfigDict=dict),
+    {
+        "BaseSettings": object,
+        "CliApp": object,
+        "SettingsConfigDict": dict,
+    },
 )
 
 from autoresearch.orchestration.budgeting import _apply_adaptive_token_budget  # noqa: E402

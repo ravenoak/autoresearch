@@ -1,16 +1,21 @@
 """Tests for SearchContext entity extraction and query expansion."""
 
-import sys
 import types
 
-sys.modules.setdefault(
+from tests.helpers.modules import ensure_stub_module
+
+ensure_stub_module(
     "pydantic_settings",
-    types.SimpleNamespace(BaseSettings=object, CliApp=object, SettingsConfigDict=dict),
+    {
+        "BaseSettings": object,
+        "CliApp": object,
+        "SettingsConfigDict": dict,
+    },
 )
-sys.modules.setdefault("docx", types.SimpleNamespace(Document=object))
-sys.modules.setdefault(
+ensure_stub_module("docx", {"Document": object})
+ensure_stub_module(
     "autoresearch.search.core",
-    types.SimpleNamespace(Search=object, get_search=lambda *a, **k: None),
+    {"Search": object, "get_search": lambda *a, **k: None},
 )
 
 from autoresearch.search.context import SearchContext  # noqa: E402
