@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import time
 from itertools import chain, islice
-from typing import Any, Callable, Dict, List, Sequence, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import rdflib
 
@@ -24,13 +25,24 @@ from .metrics import OrchestrationMetrics
 from .state import QueryState
 from .token_utils import _capture_token_usage as capture_token_usage
 from .token_utils import _execute_with_adapter as execute_with_adapter
+from .types import (
+    AgentEndCallback,
+    AgentExecutionResult,
+    AgentStartCallback,
+    CallbackMap,
+    CycleCallback,
+    TracerProtocol,
+)
 
 log = get_logger(__name__)
 
 T = TypeVar("T")
 
+if TYPE_CHECKING:  # pragma: no cover - typing helpers only
+    from ..agents.base import Agent
 
-def _get_agent(agent_name: str, agent_factory: type[AgentFactory]) -> Any:
+
+def _get_agent(agent_name: str, agent_factory: type[AgentFactory]) -> "Agent":
     """Get an agent instance from the factory."""
     try:
         return agent_factory.get(agent_name)
@@ -44,7 +56,7 @@ def _get_agent(agent_name: str, agent_factory: type[AgentFactory]) -> Any:
 
 
 def _check_agent_can_execute(
-    agent: Any, agent_name: str, state: QueryState, config: ConfigModel
+    agent: "Agent", agent_name: str, state: QueryState, config: ConfigModel
 ) -> bool:
     """Check if an agent can execute."""
     if not agent.can_execute(state, config):
@@ -84,21 +96,24 @@ def _deliver_messages(agent_name: str, state: QueryState, config: ConfigModel) -
 
 
 def _call_agent_start_callback(
-    agent_name: str, state: QueryState, callbacks: Dict[str, Callable[..., None]]
+    agent_name: str,
+    state: QueryState,
+    callbacks: CallbackMap,
 ) -> None:
     """Call the on_agent_start callback if it exists."""
-    if callbacks.get("on_agent_start"):
+    start_callback = cast(AgentStartCallback | None, callbacks.get("on_agent_start"))
+    if start_callback is not None:
         log.debug(f"Calling on_agent_start callback for {agent_name}")
-        callbacks["on_agent_start"](agent_name, state)
+        start_callback(agent_name, state)
 
 
 def _execute_agent_with_token_counting(
-    agent: Any,
+    agent: "Agent",
     agent_name: str,
     state: QueryState,
     config: ConfigModel,
     metrics: OrchestrationMetrics,
-) -> Dict[str, Any]:
+) -> AgentExecutionResult:
     """Execute an agent with token counting."""
     try:
         log.debug(f"Starting token counting for {agent_name}")
@@ -126,18 +141,19 @@ def _execute_agent_with_token_counting(
 
 def _handle_agent_completion(
     agent_name: str,
-    result: Dict[str, Any],
+    result: AgentExecutionResult,
     state: QueryState,
     metrics: OrchestrationMetrics,
-    callbacks: Dict[str, Callable[..., None]],
+    callbacks: CallbackMap,
     duration: float,
     loop: int,
 ) -> None:
     """Handle agent completion (timing, callbacks, logging)."""
     metrics.record_agent_timing(agent_name, duration)
-    if callbacks.get("on_agent_end"):
+    end_callback = cast(AgentEndCallback | None, callbacks.get("on_agent_end"))
+    if end_callback is not None:
         log.debug(f"Calling on_agent_end callback for {agent_name}")
-        callbacks["on_agent_end"](agent_name, result, state)
+        end_callback(agent_name, result, state)
     log.info(
         f"Agent {agent_name} completed turn (loop {loop + 1}, cycle {state.cycle}) in {duration:.2f}s",
         extra={
@@ -145,25 +161,37 @@ def _handle_agent_completion(
             "loop": loop + 1,
             "cycle": state.cycle,
             "duration": duration,
-            "has_claims": "claims" in result and bool(result["claims"]),
-            "has_sources": "sources" in result and bool(result["sources"]),
+            "has_claims": _has_nonempty_sequence(result.get("claims")),
+            "has_sources": _has_nonempty_sequence(result.get("sources")),
             "result_keys": list(result.keys()),
         },
     )
 
 
-def _log_sources(agent_name: str, result: Dict[str, Any]) -> None:
+def _has_nonempty_sequence(candidate: object) -> bool:
+    """Return ``True`` when ``candidate`` is a non-empty, non-string sequence."""
+
+    return bool(
+        isinstance(candidate, Sequence)
+        and not isinstance(candidate, (str, bytes))
+        and candidate
+    )
+
+
+def _log_sources(agent_name: str, result: AgentExecutionResult) -> None:
     """Log sources with context."""
-    if "sources" in result and result["sources"]:
-        source_count = len(result["sources"])
+    sources_obj = result.get("sources")
+    if _has_nonempty_sequence(sources_obj):
+        assert isinstance(sources_obj, Sequence)
+        source_count = len(sources_obj)
         log.info(
             f"Agent {agent_name} provided {source_count} sources",
             extra={
                 "agent": agent_name,
                 "source_count": source_count,
                 "sources": [
-                    s.get("title", "Untitled") if isinstance(s, dict) else str(s)
-                    for s in result["sources"][:5]
+                    s.get("title", "Untitled") if isinstance(s, Mapping) else str(s)
+                    for s in sources_obj[:5]
                 ],
             },
         )
@@ -175,22 +203,26 @@ def _log_sources(agent_name: str, result: Dict[str, Any]) -> None:
 
 
 def _persist_claims(
-    agent_name: str, result: Dict[str, Any], storage_manager: type[StorageManager]
+    agent_name: str,
+    result: AgentExecutionResult,
+    storage_manager: type[StorageManager],
 ) -> None:
     """Persist claims with error handling."""
     try:
-        claims = result.get("claims", [])
-        if claims:
+        claims_obj = result.get("claims")
+        if _has_nonempty_sequence(claims_obj):
+            assert isinstance(claims_obj, Sequence)
             log.debug(
-                f"Persisting {len(claims)} claims for agent {agent_name}",
-                extra={"agent": agent_name, "claim_count": len(claims)},
+                f"Persisting {len(claims_obj)} claims for agent {agent_name}",
+                extra={"agent": agent_name, "claim_count": len(claims_obj)},
             )
-            for i, claim in enumerate(claims):
-                if isinstance(claim, dict) and "id" in claim:
+            for i, claim in enumerate(claims_obj):
+                if isinstance(claim, Mapping) and "id" in claim:
+                    claim_payload = cast("dict[str, Any]", dict(claim))
                     log.debug(
-                        f"Persisting claim {i + 1}/{len(claims)}: {claim.get('id')}"
+                        f"Persisting claim {i + 1}/{len(claims_obj)}: {claim_payload.get('id')}"
                     )
-                    storage_manager.persist_claim(claim)
+                    storage_manager.persist_claim(claim_payload)
                 else:
                     log.warning(
                         f"Skipping invalid claim format from agent {agent_name}",
@@ -214,7 +246,7 @@ def _execute_agent(
     state: QueryState,
     config: ConfigModel,
     metrics: OrchestrationMetrics,
-    callbacks: Dict[str, Callable[..., None]],
+    callbacks: CallbackMap,
     agent_factory: type[AgentFactory],
     storage_manager: type[StorageManager],
     loop: int,
@@ -287,7 +319,7 @@ def _execute_agent(
             break
 
 
-def _rotate_list(items: Sequence[T], start_idx: int) -> List[T]:
+def _rotate_list(items: Sequence[T], start_idx: int) -> list[T]:
     """Rotate ``items`` so ``start_idx`` becomes the first element.
 
     This implementation avoids creating multiple intermediate lists by using
@@ -314,10 +346,10 @@ def _execute_cycle(
     state: QueryState,
     config: ConfigModel,
     metrics: OrchestrationMetrics,
-    callbacks: Dict[str, Callable[..., None]],
+    callbacks: CallbackMap,
     agent_factory: type[AgentFactory],
     storage_manager: type[StorageManager],
-    tracer: Any,
+    tracer: TracerProtocol,
     cb_manager: CircuitBreakerManager,
 ) -> int:
     """Execute a single dialectical cycle."""
@@ -327,8 +359,9 @@ def _execute_cycle(
     ):
         log.info(f"Starting loop {loop + 1}/{loops}")
         metrics.start_cycle()
-        if callbacks.get("on_cycle_start"):
-            callbacks["on_cycle_start"](loop, state)
+        cycle_start = cast(CycleCallback | None, callbacks.get("on_cycle_start"))
+        if cycle_start is not None:
+            cycle_start(loop, state)
         order = _rotate_list(agents, primus_index)
         for group in order:
             for agent_name in group:
@@ -358,8 +391,9 @@ def _execute_cycle(
         if token_budget is not None:
             config.token_budget = metrics.suggest_token_budget(token_budget)
         state.prune_context()
-        if callbacks.get("on_cycle_end"):
-            callbacks["on_cycle_end"](loop, state)
+        cycle_end = cast(CycleCallback | None, callbacks.get("on_cycle_end"))
+        if cycle_end is not None:
+            cycle_end(loop, state)
         if state.error_count >= max_errors:
             log.error(
                 "Aborting dialectical process due to error "
@@ -384,10 +418,10 @@ async def _execute_cycle_async(
     state: QueryState,
     config: ConfigModel,
     metrics: OrchestrationMetrics,
-    callbacks: Dict[str, Callable[..., None]],
+    callbacks: CallbackMap,
     agent_factory: type[AgentFactory],
     storage_manager: type[StorageManager],
-    tracer: Any,
+    tracer: TracerProtocol,
     *,
     concurrent: bool = False,
     cb_manager: CircuitBreakerManager,
@@ -399,8 +433,9 @@ async def _execute_cycle_async(
     ):
         log.info(f"Starting loop {loop + 1}/{loops}")
         metrics.start_cycle()
-        if callbacks.get("on_cycle_start"):
-            callbacks["on_cycle_start"](loop, state)
+        cycle_start = cast(CycleCallback | None, callbacks.get("on_cycle_start"))
+        if cycle_start is not None:
+            cycle_start(loop, state)
         order = _rotate_list(agents, primus_index)
 
         async def run_agent(name: str) -> None:
@@ -443,8 +478,9 @@ async def _execute_cycle_async(
         if token_budget is not None:
             config.token_budget = metrics.suggest_token_budget(token_budget)
         state.prune_context()
-        if callbacks.get("on_cycle_end"):
-            callbacks["on_cycle_end"](loop, state)
+        cycle_end = cast(CycleCallback | None, callbacks.get("on_cycle_end"))
+        if cycle_end is not None:
+            cycle_end(loop, state)
         if state.error_count >= max_errors:
             log.error(
                 "Aborting dialectical process due to error "

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from autoresearch.agents.feedback import FeedbackEvent
 from autoresearch.agents.messages import MessageProtocol
 from autoresearch.orchestration.state import QueryState
@@ -50,3 +52,21 @@ def test_query_state_update_and_retrieval() -> None:
         "messages": 1,
         "feedback": 1,
     }
+
+
+def test_query_state_update_validates_payload_shapes() -> None:
+    """Ensure ``QueryState.update`` enforces mapping and sequence contracts."""
+
+    state = QueryState(query="validate")
+
+    with pytest.raises(TypeError):
+        state.update({"claims": {"id": "c1"}})
+
+    with pytest.raises(TypeError):
+        state.update({"sources": ["not-a-mapping"]})
+
+    with pytest.raises(TypeError):
+        state.update({"metadata": [("key", "value")]})
+
+    with pytest.raises(TypeError):
+        state.update({"results": ["oops"]})

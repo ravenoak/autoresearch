@@ -1,16 +1,17 @@
 """State management for the dialectical reasoning process."""
 
 import time
+from collections.abc import Mapping, Sequence
 from threading import RLock
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-LOCK_TYPE = type(RLock())
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr
 
 from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
 from ..models import QueryResponse
+
+LOCK_TYPE = type(RLock())
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..interfaces import QueryStateLike  # noqa: F401
@@ -23,13 +24,13 @@ class QueryState(BaseModel):
     """
 
     query: str
-    claims: List[Dict[str, Any]] = Field(default_factory=list)
-    sources: List[Dict[str, Any]] = Field(default_factory=list)
-    results: Dict[str, Any] = Field(default_factory=dict)
-    messages: List[Dict[str, Any]] = Field(default_factory=list)
-    feedback_events: List[FeedbackEvent] = Field(default_factory=list)
-    coalitions: Dict[str, List[str]] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    claims: list[dict[str, Any]] = Field(default_factory=list)
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    results: dict[str, Any] = Field(default_factory=dict)
+    messages: list[dict[str, Any]] = Field(default_factory=list)
+    feedback_events: list[FeedbackEvent] = Field(default_factory=list)
+    coalitions: dict[str, list[str]] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     cycle: int = 0
     primus_index: int = 0
     last_updated: float = Field(default_factory=time.time)
@@ -42,21 +43,47 @@ class QueryState(BaseModel):
         super().model_post_init(__context)
         self._ensure_lock()
 
-    def update(self, result: Dict[str, Any]) -> None:
+    def update(self, result: Mapping[str, object]) -> None:
         """Update state with agent result."""
         with self._lock:
-            if "claims" in result:
-                self.claims.extend(result["claims"])
-            if "sources" in result:
-                self.sources.extend(result["sources"])
-            for k, v in result.get("metadata", {}).items():
-                self.metadata[k] = v
+            claims_obj = result.get("claims")
+            if claims_obj is not None:
+                if not isinstance(claims_obj, Sequence) or isinstance(
+                    claims_obj, (str, bytes)
+                ):
+                    raise TypeError("claims must be a sequence of mappings")
+                for claim in claims_obj:
+                    if not isinstance(claim, Mapping):
+                        raise TypeError("each claim must be a mapping")
+                    self.claims.append(dict(claim))
+
+            sources_obj = result.get("sources")
+            if sources_obj is not None:
+                if not isinstance(sources_obj, Sequence) or isinstance(
+                    sources_obj, (str, bytes)
+                ):
+                    raise TypeError("sources must be a sequence of mappings")
+                for source in sources_obj:
+                    if not isinstance(source, Mapping):
+                        raise TypeError("each source must be a mapping")
+                    self.sources.append(dict(source))
+
+            metadata_obj = result.get("metadata")
+            if metadata_obj is not None:
+                if not isinstance(metadata_obj, Mapping):
+                    raise TypeError("metadata must be a mapping")
+                for key, value in metadata_obj.items():
+                    self.metadata[key] = value
             # Update results with agent-specific outputs
-            self.results.update(result.get("results", {}))
+            results_obj = result.get("results")
+            if results_obj is not None:
+                if not isinstance(results_obj, Mapping):
+                    raise TypeError("results must be a mapping")
+                self.results.update(results_obj)
             # Update timestamp
             self.last_updated = time.time()
 
-    def add_error(self, error_info: Dict[str, Any]) -> None:
+    def add_error(self, error_info: dict[str, Any]) -> None:
         """Track execution errors."""
         with self._lock:
             self.error_count += 1
@@ -64,7 +91,7 @@ class QueryState(BaseModel):
                 self.metadata["errors"] = []
             self.metadata["errors"].append(error_info)
 
-    def add_message(self, message: Dict[str, Any]) -> None:
+    def add_message(self, message: dict[str, Any]) -> None:
         """Store a message exchanged between agents."""
         with self._lock:
             self.messages.append(message)
@@ -74,7 +101,7 @@ class QueryState(BaseModel):
         with self._lock:
             self.feedback_events.append(event)
 
-    def get_feedback_events(self, *, recipient: Optional[str] = None) -> List[FeedbackEvent]:
+    def get_feedback_events(self, *, recipient: Optional[str] = None) -> list[FeedbackEvent]:
         """Retrieve feedback events for a specific recipient."""
         with self._lock:
             events = list(self.feedback_events)
@@ -86,7 +113,7 @@ class QueryState(BaseModel):
     # Coalition management utilities
     # ------------------------------------------------------------------
 
-    def add_coalition(self, name: str, members: List[str]) -> None:
+    def add_coalition(self, name: str, members: list[str]) -> None:
         """Register a coalition of agents.
 
         Args:
@@ -99,7 +126,7 @@ class QueryState(BaseModel):
         """Remove a coalition if it exists."""
         self.coalitions.pop(name, None)
 
-    def get_coalition_members(self, name: str) -> List[str]:
+    def get_coalition_members(self, name: str) -> list[str]:
         """Return members of a coalition."""
         return self.coalitions.get(name, [])
 
@@ -109,7 +136,7 @@ class QueryState(BaseModel):
         recipient: Optional[str] = None,
         coalition: Optional[str] = None,
         protocol: MessageProtocol | None = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retrieve messages for a specific recipient or coalition."""
         with self._lock:
             messages = list(self.messages)
@@ -122,7 +149,7 @@ class QueryState(BaseModel):
             messages = [m for m in messages if m.get("protocol") == protocol.value]
         return messages
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """Drop non-serializable members before pickling."""
         try:
             state = super().__getstate__()  # type: ignore[misc]
@@ -139,7 +166,7 @@ class QueryState(BaseModel):
             state["__pydantic_private__"] = private_copy
         return state
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore serialization-safe state and recreate the lock."""
         try:
             super().__setstate__(state)  # type: ignore[misc]
@@ -157,9 +184,9 @@ class QueryState(BaseModel):
             metrics=self.metadata,
         )
 
-    def get_dialectical_structure(self) -> Dict[str, Any]:
+    def get_dialectical_structure(self) -> dict[str, Any]:
         """Extract thesis, antithesis, verification, and synthesis claims."""
-        structure: Dict[str, Any] = {
+        structure: dict[str, Any] = {
             "thesis": None,
             "antithesis": [],
             "verification": [],
