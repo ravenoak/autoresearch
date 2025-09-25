@@ -242,10 +242,8 @@ markers = [
 
 [tool.mypy]
 python_version = "3.12"
-ignore_missing_imports = true
-disable_error_code = ["import-untyped"]
 no_site_packages = true
-check_untyped_defs = true
+strict = true
 
 [tool.flake8]
 max-line-length = 100
