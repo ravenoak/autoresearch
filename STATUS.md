@@ -37,6 +37,30 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   blocked on the stub fix.
   【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】
 
+## September 25, 2025
+- Replayed `uv run task verify` from a fresh shell to honour the PATH-helper
+  guidance; the run now stops at
+  `tests/unit/test_eviction.py::test_lru_eviction_sequence` because the LRU
+  policy evicts both `c1` and `c2` once the VSS extras hydrate vector search.
+  Archived the failure at `baseline/logs/task-verify-20250925T000904Z.log` and
+  opened
+  [investigate-lru-eviction-regression](issues/investigate-lru-eviction-regression.md)
+  to restore the expected ordering before repeating the sweep.
+  【F:baseline/logs/task-verify-20250925T000904Z.log†L416-L489】【F:issues/investigate-lru-eviction-regression.md†L1-L24】
+- Reran `uv run task coverage` with the full extras list; Ray now fails to
+  serialize `QueryState`, causing
+  `tests/unit/test_distributed_executors.py::test_execute_agent_remote` to abort
+  before a coverage report is written. The regression is logged at
+  `baseline/logs/task-coverage-20250925T001017Z.log` and tracked in
+  [address-ray-serialization-regression](issues/address-ray-serialization-regression.md).
+  【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】【F:issues/address-ray-serialization-regression.md†L1-L20】
+- `uv run --extra docs mkdocs build` and `uv run --extra build python -m build`
+  both succeeded through the `uv` wrappers; the new artifacts at
+  `baseline/logs/mkdocs-build-20250925T001535Z.log` and
+  `baseline/logs/python-build-20250925T001554Z.log` confirm the docs and
+  packaging gates are clear pending the verify and coverage fixes.
+  【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
+
 ## September 24, 2025
 - Reconfirmed the base environment: `python --version` reports 3.12.10,
   `uv --version` reports 0.7.22, and `task --version` still fails, so the

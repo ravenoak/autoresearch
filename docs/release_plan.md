@@ -98,20 +98,26 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
 - [x] `uv run python scripts/lint_specs.py` executed during the sweep to keep
   the monitor and extensions templates aligned.
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L5-L5】
-- [ ] `uv run --extra docs mkdocs build` remains pending for this sweep; the
-  `release:alpha` task exited during coverage before the docs stage reran.
-  【F:baseline/logs/release-alpha-20250924T184646Z.summary.md†L1-L5】
-  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
-- [ ] `task verify` and `task coverage` must be rerun after relaxing
-  `test_search_stub_backend` to tolerate the additional `embedding_calls`
-  produced when VSS extras enable vector search; the sweep now halts on that
-  assertion rather than the earlier TypeError.
-  【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585】
-- [ ] `uv run --extra build python -m build` awaits rerun; the release sweep
-  never reached the packaging stage after the failure.
-  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
-- [ ] Dry-run publish to TestPyPI will resume after packaging succeeds; the
-  aborted sweep produced no new publish log after the coverage failure.
+- [x] `uv run --extra docs mkdocs build` completed outside the sweep; the new
+  log at `baseline/logs/mkdocs-build-20250925T001535Z.log` confirms the docs
+  extras compile cleanly while verify remains blocked.
+  【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】
+- [ ] `task verify` and `task coverage` were rerun via `uv` wrappers on
+  2025-09-25, but they now fail in
+  `tests/unit/test_eviction.py::test_lru_eviction_sequence` and
+  `tests/unit/test_distributed_executors.py::test_execute_agent_remote`,
+  respectively. The new logs and follow-up tickets capture the regressions so
+  the sweep can resume once storage and Ray serialization are repaired.
+  【F:baseline/logs/task-verify-20250925T000904Z.log†L416-L489】
+  【F:issues/investigate-lru-eviction-regression.md†L1-L24】
+  【F:baseline/logs/task-coverage-20250925T001017Z.log†L484-L669】
+  【F:issues/address-ray-serialization-regression.md†L1-L20】
+- [x] `uv run --extra build python -m build` succeeded out of band and archived
+  `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
+  resume once verify and coverage pass.
+  【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
+- [ ] Dry-run publish to TestPyPI remains on hold per the release plan until
+  the verify and coverage regressions are cleared.
   【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
 - [x] Archived
   [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],

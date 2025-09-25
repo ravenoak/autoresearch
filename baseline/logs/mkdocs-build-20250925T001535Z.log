@@ -1,0 +1,14 @@
+Downloading babel (9.7MiB)
+   Building mkdocs-exclude==1.0.2
+Downloading mkdocs-material (8.8MiB)
+ Downloading babel
+Downloading mkdocs (3.7MiB)
+      Built mkdocs-exclude==1.0.2
+ Downloading mkdocs
+ Downloading mkdocs-material
+Installed 18 packages in 237ms
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /workspace/autoresearch/site
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - status/task-coverage-2025-09-23.md
+INFO    -  Documentation built in 11.09 seconds
