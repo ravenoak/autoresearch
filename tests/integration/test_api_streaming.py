@@ -100,14 +100,23 @@ def test_webhook_retry(monkeypatch, api_client, httpx_mock):
 
     attempts = {"count": 0}
 
-    def notify_with_retry(url, result, timeout):
-        for _ in range(2):
+    observed: list[tuple[float | int, int, float]] = []
+
+    def notify_with_retry(
+        url: str,
+        result: QueryResponse,
+        timeout: float | int,
+        retries: int = 3,
+        backoff: float = 0.5,
+    ) -> None:
+        observed.append((timeout, retries, backoff))
+        for _ in range(retries):
             attempts["count"] += 1
             try:
                 resp = httpx.post(url, json=result.model_dump(), timeout=timeout)
                 resp.raise_for_status()
                 return
-            except httpx.RequestError:
+            except (httpx.RequestError, httpx.HTTPStatusError):
                 continue
 
     cfg = ConfigModel(api=APIConfig(webhooks=["http://hook"], webhook_timeout=1))
@@ -127,6 +136,7 @@ def test_webhook_retry(monkeypatch, api_client, httpx_mock):
     resp = api_client.post("/query", json={"query": "hi"})
     assert resp.status_code == 200
     assert attempts["count"] == 2
+    assert observed == [(1, 3, 0.5)]
     assert len(httpx_mock.get_requests()) == 2
 
 
