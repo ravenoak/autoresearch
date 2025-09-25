@@ -5,7 +5,7 @@ to send test requests to these interfaces and verify the responses.
 """
 
 import json
-import requests  # type: ignore[import-untyped]
+import requests
 from typing import Dict, Any, List, Optional
 import time
 

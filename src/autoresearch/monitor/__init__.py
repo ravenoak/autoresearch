@@ -64,7 +64,7 @@ def _collect_system_metrics() -> Dict[str, Any]:
         else:
             metrics.update(SystemMonitor.collect())
 
-        import psutil  # type: ignore
+        import psutil
 
         mem = psutil.virtual_memory()
         proc = psutil.Process()

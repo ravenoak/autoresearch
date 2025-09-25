@@ -31,8 +31,8 @@ def _try_import_spacy() -> bool:
     if not get_config().search.context_aware.enabled:
         return False
     try:  # pragma: no cover - optional dependency
-        import spacy as spacy_mod  # type: ignore
-        import spacy.cli  # type: ignore
+        import spacy as spacy_mod
+        import spacy.cli
 
         spacy = spacy_mod
         SPACY_AVAILABLE = True
@@ -50,7 +50,7 @@ def _try_import_bertopic() -> bool:
     if not get_config().search.context_aware.enabled:
         return False
     try:  # pragma: no cover - optional dependency
-        from bertopic import BERTopic as BERTopic_cls  # type: ignore
+        from bertopic import BERTopic as BERTopic_cls
 
         BERTopic = BERTopic_cls
         BERTOPIC_AVAILABLE = True
@@ -111,9 +111,9 @@ def _try_import_sentence_transformers() -> bool:
         if resolved is None:
             # Fallback to sentence-transformers if available
             try:
-                from sentence_transformers import SentenceTransformer as ST  # type: ignore
+                from sentence_transformers import SentenceTransformer as ST
 
-                resolved = ST  # type: ignore[assignment]
+                resolved = ST
             except Exception:
                 resolved = None
         if resolved is None:

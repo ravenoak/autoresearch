@@ -152,9 +152,9 @@ def _try_import_sentence_transformers() -> bool:
         if resolved is None:
             # Fallback to sentence-transformers if available
             try:
-                from sentence_transformers import SentenceTransformer as ST  # type: ignore
+                from sentence_transformers import SentenceTransformer as ST
 
-                resolved = ST  # type: ignore[assignment]
+                resolved = ST
             except Exception:
                 resolved = None
         if resolved is None:
@@ -172,7 +172,7 @@ if TYPE_CHECKING:  # pragma: no cover - for type checking only
         from fastembed import OnnxTextEmbedding as SentenceTransformerType
     except (ImportError, ModuleNotFoundError, AttributeError):
         try:
-            from fastembed.text import OnnxTextEmbedding as SentenceTransformerType  # type: ignore[attr-defined]
+            from fastembed.text import OnnxTextEmbedding as SentenceTransformerType
         except (ImportError, ModuleNotFoundError, AttributeError):
             from fastembed import TextEmbedding as SentenceTransformerType
 else:  # pragma: no cover - runtime fallback

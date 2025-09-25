@@ -1,5 +1,6 @@
+from typing import Any, Optional
+
 from pydantic import BaseModel
-from typing import Optional
 
 
 class FeedbackEvent(BaseModel):
@@ -9,4 +10,4 @@ class FeedbackEvent(BaseModel):
     target: str
     content: str
     cycle: int
-    metadata: Optional[dict] = None
+    metadata: Optional[dict[str, Any]] = None

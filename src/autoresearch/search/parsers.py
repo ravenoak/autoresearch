@@ -134,7 +134,7 @@ def extract_pdf_text(path: str | Path) -> str:
     pdfminer_extract = _load_pdfminer()
     laparams = None
     try:  # pragma: no cover - optional tuning exercised in tests
-        from pdfminer.layout import LAParams  # type: ignore
+        from pdfminer.layout import LAParams
 
         laparams = LAParams(word_margin=0.1, char_margin=2.0, line_margin=0.5)
     except Exception:  # pragma: no cover - fallback when layout module missing
