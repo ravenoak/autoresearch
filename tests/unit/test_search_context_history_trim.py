@@ -1,25 +1,23 @@
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
 from autoresearch.search.context import SearchContext
+from tests.helpers import ConfigModelStub, make_config_model
 
 
 pytestmark = pytest.mark.requires_nlp
 
 
-def make_config(max_history):
-    return SimpleNamespace(
-        search=SimpleNamespace(
-            context_aware=SimpleNamespace(
-                max_history_items=max_history,
-                enabled=True,
-                use_search_history=True,
-                use_query_expansion=True,
-                expansion_factor=0.5,
-            )
-        )
+def make_config(max_history: int) -> ConfigModelStub:
+    return make_config_model(
+        context_overrides={
+            "max_history_items": max_history,
+            "enabled": True,
+            "use_search_history": True,
+            "use_query_expansion": True,
+            "expansion_factor": 0.5,
+        }
     )
 
 

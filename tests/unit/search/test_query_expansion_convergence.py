@@ -1,23 +1,22 @@
+import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import autoresearch.search.context as ctx
-import sys
 from autoresearch.search.context import SearchContext
+from tests.helpers import make_config_model
 
 
 @patch(
     "autoresearch.search.context.get_config",
-    lambda: SimpleNamespace(
-        search=SimpleNamespace(
-            context_aware=SimpleNamespace(
-                enabled=True,
-                max_history_items=5,
-                use_search_history=True,
-                use_query_expansion=True,
-                expansion_factor=1.0,
-            )
-        )
+    lambda: make_config_model(
+        context_overrides={
+            "enabled": True,
+            "max_history_items": 5,
+            "use_search_history": True,
+            "use_query_expansion": True,
+            "expansion_factor": 1.0,
+        }
     ),
 )
 def test_query_expansion_converges():
@@ -68,11 +67,7 @@ def test_build_topic_model_with_insufficient_docs(monkeypatch):
     With only one query recorded, build_topic_model leaves topic_model unset,
     confirming the guard against sparse history.
     """
-    cfg = SimpleNamespace(
-        search=SimpleNamespace(
-            context_aware=SimpleNamespace(enabled=True)
-        )
-    )
+    cfg = make_config_model(context_overrides={"enabled": True})
     monkeypatch.setattr(
         "autoresearch.search.context.get_config", lambda: cfg
     )
@@ -88,7 +83,7 @@ def test_try_imports_disabled(monkeypatch):
     Disabling context-aware search causes all import helpers to return False
     without altering availability flags.
     """
-    cfg = SimpleNamespace(search=SimpleNamespace(context_aware=SimpleNamespace(enabled=False)))
+    cfg = make_config_model(context_overrides={"enabled": False})
     monkeypatch.setattr(ctx, "get_config", lambda: cfg)
     ctx.SPACY_AVAILABLE = False
     ctx.BERTOPIC_AVAILABLE = False
@@ -107,7 +102,7 @@ def test_try_import_sentence_transformers_success(monkeypatch):
     Injecting a dummy module simulates a successful import and flips the
     availability flag to True.
     """
-    cfg = SimpleNamespace(search=SimpleNamespace(context_aware=SimpleNamespace(enabled=True)))
+    cfg = make_config_model(context_overrides={"enabled": True})
     monkeypatch.setattr(ctx, "get_config", lambda: cfg)
 
     class DummyST:

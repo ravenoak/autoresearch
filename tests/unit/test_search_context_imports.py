@@ -3,14 +3,11 @@ import sys
 import types
 
 import autoresearch.search.context as context
+from tests.helpers import ConfigModelStub, make_config_model
 
 
-def _make_cfg(enabled: bool) -> types.SimpleNamespace:
-    return types.SimpleNamespace(
-        search=types.SimpleNamespace(
-            context_aware=types.SimpleNamespace(enabled=enabled)
-        )
-    )
+def _make_cfg(enabled: bool) -> ConfigModelStub:
+    return make_config_model(context_overrides={"enabled": enabled})
 
 
 def _reload_ctx(monkeypatch, enabled: bool):
