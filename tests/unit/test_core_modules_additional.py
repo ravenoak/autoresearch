@@ -287,7 +287,9 @@ def test_planner_execute(monkeypatch):
     monkeypatch.setattr(PlannerAgent, "generate_prompt", lambda self, name, **kw: "prompt")
 
     result = agent.execute(state, cfg)
-    assert result["results"]["research_plan"] == "PLAN"
+    graph = result["results"].get("task_graph")
+    assert graph is not None
+    assert graph["tasks"][0]["question"].startswith("PLAN")
 
 
 def test_storage_setup_teardown(monkeypatch):
