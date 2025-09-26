@@ -9,12 +9,25 @@ from __future__ import annotations
 import cProfile
 import io
 import math
+import statistics
 import pstats
 import resource
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
+
+# Tunable parameters to keep the benchmark representative yet stable.
+#
+# Sleep duration mimics an I/O-bound task that briefly releases the GIL so
+# additional workers can make progress.
+_SLEEP_DURATION = 0.001
+# Require each measurement batch to last at least this long to amortize thread
+# start-up overhead and scheduling jitter.
+_MIN_MEASURE_DURATION = 0.05
+# Gather multiple throughput samples per worker count to smooth transient noise
+# without stretching overall runtime excessively.
+_THROUGHPUT_SAMPLES = 3
 
 
 def queue_metrics(workers: int, arrival_rate: float, service_rate: float) -> Dict[str, float]:
@@ -81,12 +94,15 @@ class BenchmarkResult:
         cpu_time: User CPU time consumed in seconds.
         mem_kb: Resident memory usage in kilobytes.
         profile: Aggregated profiler statistics.
+        throughput_samples: Individual throughput samples used to compute the
+            aggregate throughput.
     """
 
     throughput: float
     cpu_time: float
     mem_kb: float
     profile: str = ""
+    throughput_samples: tuple[float, ...] = field(default_factory=tuple)
 
 
 def benchmark_scheduler(
@@ -124,19 +140,38 @@ def benchmark_scheduler(
         profiler = cProfile.Profile()
         profiler.enable()
 
-    start_res = resource.getrusage(resource.RUSAGE_SELF)
-    start = time.perf_counter()
+    effective_tasks = tasks
+    estimated_task_time = tasks * _SLEEP_DURATION
+    if estimated_task_time < _MIN_MEASURE_DURATION:
+        effective_tasks *= math.ceil(
+            _MIN_MEASURE_DURATION / max(estimated_task_time, _SLEEP_DURATION)
+        )
+
+    def _warmup(_: int) -> None:
+        time.sleep(0)
 
     def _workload(_: int) -> None:
-        buf = bytearray(int(mem_per_task * 1024 * 1024))
-        time.sleep(0.001)
-        del buf
+        if mem_per_task > 0:
+            buf = bytearray(int(mem_per_task * 1024 * 1024))
+        else:
+            buf = None
+        time.sleep(_SLEEP_DURATION)
+        if buf is not None:
+            del buf
 
+    throughput_samples: list[float] = []
     with ThreadPoolExecutor(max_workers=workers) as exe:
-        list(exe.map(_workload, range(tasks)))
+        list(exe.map(_warmup, range(workers)))
 
-    elapsed = time.perf_counter() - start
-    end_res = resource.getrusage(resource.RUSAGE_SELF)
+        start_res = resource.getrusage(resource.RUSAGE_SELF)
+        for _ in range(_THROUGHPUT_SAMPLES):
+            iter_start = time.perf_counter()
+            list(exe.map(_workload, range(effective_tasks)))
+            elapsed = time.perf_counter() - iter_start
+            throughput_samples.append(
+                effective_tasks / elapsed if elapsed > 0 else float("inf")
+            )
+        end_res = resource.getrusage(resource.RUSAGE_SELF)
 
     profile_output = ""
     if profiler is not None:
@@ -145,7 +180,7 @@ def benchmark_scheduler(
         pstats.Stats(profiler, stream=buffer).sort_stats("cumulative").print_stats(5)
         profile_output = buffer.getvalue()
 
-    throughput = tasks / elapsed if elapsed > 0 else float("inf")
+    throughput = statistics.median(throughput_samples)
     cpu_time = end_res.ru_utime - start_res.ru_utime
     mem_kb = end_res.ru_maxrss - start_res.ru_maxrss
     return BenchmarkResult(
@@ -153,4 +188,5 @@ def benchmark_scheduler(
         cpu_time=cpu_time,
         mem_kb=mem_kb,
         profile=profile_output,
+        throughput_samples=tuple(throughput_samples),
     )
