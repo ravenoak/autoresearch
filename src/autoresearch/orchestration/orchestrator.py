@@ -171,6 +171,37 @@ class Orchestrator:
             coalitions=config_params.get("coalitions", {}),
         )
 
+        decision = OrchestrationUtils.evaluate_scout_gate_policy(
+            query=query,
+            config=config,
+            state=state,
+            loops=loops,
+            metrics=metrics,
+        )
+        if decision.target_loops != loops:
+            log.info(
+                "Scout gate reduced debate loops",
+                extra={
+                    "original_loops": loops,
+                    "target_loops": decision.target_loops,
+                    "reason": decision.reason,
+                    "heuristics": decision.heuristics,
+                    "thresholds": decision.thresholds,
+                    "tokens_saved_estimate": decision.tokens_saved,
+                },
+            )
+        else:
+            log.debug(
+                "Scout gate proceeding with configured loops",
+                extra={
+                    "loops": loops,
+                    "reason": decision.reason,
+                    "heuristics": decision.heuristics,
+                    "thresholds": decision.thresholds,
+                },
+            )
+        loops = decision.target_loops
+
         total_agents = sum(len(g) for g in agents)
         log.info(
             f"Starting dialectical process with {total_agents} agents in {len(agents)} groups and {loops} loops",
@@ -306,6 +337,37 @@ class Orchestrator:
             primus_index=primus_index,
             coalitions=config_params.get("coalitions", {}),
         )
+
+        decision = OrchestrationUtils.evaluate_scout_gate_policy(
+            query=query,
+            config=config,
+            state=state,
+            loops=loops,
+            metrics=metrics,
+        )
+        if decision.target_loops != loops:
+            log.info(
+                "Scout gate reduced debate loops",
+                extra={
+                    "original_loops": loops,
+                    "target_loops": decision.target_loops,
+                    "reason": decision.reason,
+                    "heuristics": decision.heuristics,
+                    "thresholds": decision.thresholds,
+                    "tokens_saved_estimate": decision.tokens_saved,
+                },
+            )
+        else:
+            log.debug(
+                "Scout gate proceeding with configured loops",
+                extra={
+                    "loops": loops,
+                    "reason": decision.reason,
+                    "heuristics": decision.heuristics,
+                    "thresholds": decision.thresholds,
+                },
+            )
+        loops = decision.target_loops
 
         total_agents = sum(len(g) for g in agents)
         log.info(

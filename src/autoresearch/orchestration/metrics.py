@@ -6,13 +6,16 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from os import getenv
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prometheus_client import Counter, Histogram
 
 from autoresearch.token_budget import round_with_margin
 
 from .circuit_breaker import CircuitBreakerState
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .orchestration_utils import ScoutGateDecision
 
 log = logging.getLogger(__name__)
 
@@ -229,6 +232,7 @@ class OrchestrationMetrics:
         self.agent_usage_history: dict[str, list[int]] = {}
         self._last_agent_totals: dict[str, int] = {}
         self.circuit_breakers: dict[str, CircuitBreakerState] = {}
+        self.gate_events: list[dict[str, Any]] = []
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -271,6 +275,19 @@ class OrchestrationMetrics:
     def record_circuit_breaker(self, agent_name: str, state: CircuitBreakerState) -> None:
         """Record the circuit breaker ``state`` for ``agent_name``."""
         self.circuit_breakers[agent_name] = state
+
+    def record_gate_decision(self, decision: "ScoutGateDecision") -> None:
+        """Record the scout gate ``decision`` for telemetry and analysis."""
+
+        event = {
+            "should_debate": decision.should_debate,
+            "target_loops": decision.target_loops,
+            "heuristics": decision.heuristics,
+            "thresholds": decision.thresholds,
+            "reason": decision.reason,
+            "tokens_saved_estimate": decision.tokens_saved,
+        }
+        self.gate_events.append(event)
 
     def _log_release_tokens(self) -> None:
         """Persist token counts for this release."""
@@ -322,6 +339,7 @@ class OrchestrationMetrics:
             "agent_tokens": self.token_counts,
             "errors": {"total": total_errors, "by_agent": self.error_counts},
             "circuit_breakers": self.circuit_breakers,
+            "gate_events": self.gate_events,
             "resource_usage": [
                 {
                     "timestamp": ts,

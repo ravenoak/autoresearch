@@ -21,6 +21,9 @@ keep truthfulness, verifiability, and cost discipline in balance.
 
 1. **Phase 1 – Adaptive Gate and Claim Audits**
    - Implement the scout pass and gating heuristics with clear metrics.
+   - Surface configuration toggles (`gate_policy_enabled`, overlap, conflict,
+     and complexity thresholds, plus overrides) so operators can tailor the
+     decision boundary.
    - Extend the evidence pipeline to record per-claim support status.
    - Update response formats so clients can render audit tables.
 2. **Phase 2 – Planner and Coordinator Evolution**

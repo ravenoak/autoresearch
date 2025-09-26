@@ -170,7 +170,6 @@ def benchmark_scheduler(
             ):
                 effective_tasks += min_workers
 
-
     def _warmup(_: int) -> None:
         time.sleep(0)
 
