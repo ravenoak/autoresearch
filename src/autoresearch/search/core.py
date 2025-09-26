@@ -59,6 +59,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from uuid import uuid4
 from weakref import WeakSet
 
 import numpy as np
@@ -541,7 +542,34 @@ class Search:
             dict(self._default_embedding_backends)
         )
         self._sentence_transformer: Optional[SentenceTransformerType] = None
-        self.cache: SearchCache = cache or get_cache()
+        namespace: str | None = None
+        shared_cache = True
+        try:
+            runtime_cfg = _get_runtime_config()
+            namespace = getattr(runtime_cfg.search, "cache_namespace", None)
+            shared_cache = getattr(runtime_cfg.search, "shared_cache", True)
+        except ConfigError:
+            namespace = None
+            shared_cache = True
+
+        if cache is not None:
+            base_cache = cache
+        elif shared_cache:
+            base_cache = get_cache()
+        else:
+            private_dir = Path(".autoresearch") / "cache"
+            private_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = private_dir / f"search_{os.getpid()}_{uuid4().hex}.json"
+            base_cache = SearchCache(str(cache_file))
+
+        self.cache = base_cache.namespaced(namespace)
+        log.debug(
+            "Initialised search cache",
+            extra={
+                "shared_cache": shared_cache,
+                "namespace": namespace or "__default__",
+            },
+        )
         type(self)._instances.add(self)
 
     @classmethod
@@ -1756,13 +1784,48 @@ class Search:
             self.add_embeddings(backend_results, np_query_embedding)
             return name, backend_results
 
-        max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
-                executor.submit(run_backend, name): name for name in cfg.search.backends
-            }
-            for future in as_completed(futures):
-                name, backend_results = future.result()
+        backend_names = list(cfg.search.backends)
+        parallel_enabled = getattr(cfg.search, "parallel_enabled", True)
+        prefetch = getattr(cfg.search, "parallel_prefetch", 0)
+        if not parallel_enabled:
+            prefetch = len(backend_names)
+        else:
+            prefetch = max(0, min(prefetch, len(backend_names)))
+
+        processed: set[str] = set()
+        sequential_backends = backend_names[:prefetch]
+        for candidate in sequential_backends:
+            name, backend_results = run_backend(candidate)
+            processed.add(name)
+            if backend_results:
+                results_by_backend[name] = backend_results
+                results.extend(backend_results)
+
+        remaining = [name for name in backend_names if name not in processed]
+        log.debug(
+            "Executing search backends",
+            extra={
+                "parallel_enabled": parallel_enabled,
+                "prefetch": prefetch,
+                "sequential_backends": sequential_backends,
+                "parallel_backends": remaining if parallel_enabled else [],
+            },
+        )
+
+        if parallel_enabled and remaining:
+            max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
+                    executor.submit(run_backend, name): name for name in remaining
+                }
+                for future in as_completed(futures):
+                    name, backend_results = future.result()
+                    if backend_results:
+                        results_by_backend[name] = backend_results
+                        results.extend(backend_results)
+        elif remaining:
+            for candidate in remaining:
+                name, backend_results = run_backend(candidate)
                 if backend_results:
                     results_by_backend[name] = backend_results
                     results.extend(backend_results)

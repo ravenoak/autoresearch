@@ -24,9 +24,10 @@ _db_path: Path = Path(os.getenv("TINYDB_PATH", "cache.json"))
 class SearchCache:
     """TinyDB-backed cache that can be instantiated per test or service."""
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(self, db_path: Optional[str] = None, *, namespace: str | None = None) -> None:
         self._db_lock = Lock()
         self._db: Optional[TinyDB] = None
+        self._namespace = namespace or "__default__"
         # Use a per-instance ephemeral path under pytest to avoid cross-test leakage
         if db_path is None and os.environ.get("PYTEST_CURRENT_TEST"):
             from pathlib import Path as _P
@@ -60,38 +61,113 @@ class SearchCache:
         """Return the underlying TinyDB instance, initialising if necessary."""
         return self.setup()
 
+    def _resolve_namespace(self, namespace: str | None) -> str:
+        return namespace or self._namespace
+
     def cache_results(
-        self, query: str, backend: str, results: List[Dict[str, Any]]
+        self,
+        query: str,
+        backend: str,
+        results: List[Dict[str, Any]],
+        *,
+        namespace: str | None = None,
     ) -> None:
         """Store search results for a specific query/backend combination."""
         db = self.get_db()
+        ns = self._resolve_namespace(namespace)
         db.upsert(
             {
+                "namespace": ns,
                 "query": query,
                 "backend": backend,
                 "results": deepcopy(results),
             },
-            (Query().query == query) & (Query().backend == backend),
+            (Query().namespace == ns)
+            & (Query().query == query)
+            & (Query().backend == backend),
         )
 
     def get_cached_results(
-        self, query: str, backend: str
+        self,
+        query: str,
+        backend: str,
+        *,
+        namespace: str | None = None,
     ) -> Optional[List[Dict[str, Any]]]:
         """Retrieve cached search results for a query/backend pair."""
         db = self.get_db()
-        condition = (Query().query == query) & (Query().backend == backend)
+        ns = self._resolve_namespace(namespace)
+        condition = (
+            (Query().namespace == ns)
+            & (Query().query == query)
+            & (Query().backend == backend)
+        )
         row = db.get(condition)
         if row:
             return deepcopy(row.get("results", []))
         return None
 
-    def clear(self) -> None:
-        """Remove all cached entries."""
+    def clear(self, namespace: str | None = None) -> None:
+        """Remove cached entries, optionally scoped by namespace."""
         db = self.get_db()
-        if hasattr(db, "drop_tables"):
-            db.drop_tables()
-        else:  # pragma: no cover - tinydb < 4
-            db.table("_default").truncate()
+        ns = self._resolve_namespace(namespace)
+        if namespace is None and ns == self._namespace:
+            if hasattr(db, "drop_tables"):
+                db.drop_tables()
+            else:  # pragma: no cover - tinydb < 4
+                db.table("_default").truncate()
+            return
+        table = db.table("_default")
+        table.remove(Query().namespace == ns)
+
+    def namespaced(self, namespace: str | None) -> "SearchCache | _SearchCacheView":
+        """Return a view of this cache that isolates entries to ``namespace``."""
+
+        if not namespace:
+            return self
+        return _SearchCacheView(self, namespace)
+
+
+class _SearchCacheView:
+    """Lightweight view that scopes cache operations to a namespace."""
+
+    def __init__(self, base: SearchCache, namespace: str) -> None:
+        self._base = base
+        self._namespace = namespace
+
+    def cache_results(
+        self, query: str, backend: str, results: List[Dict[str, Any]]
+    ) -> None:
+        self._base.cache_results(
+            query,
+            backend,
+            results,
+            namespace=self._namespace,
+        )
+
+    def get_cached_results(
+        self, query: str, backend: str
+    ) -> Optional[List[Dict[str, Any]]]:
+        return self._base.get_cached_results(
+            query,
+            backend,
+            namespace=self._namespace,
+        )
+
+    def clear(self) -> None:
+        self._base.clear(namespace=self._namespace)
+
+    def setup(self, db_path: Optional[str] = None) -> TinyDB:
+        return self._base.setup(db_path)
+
+    def teardown(self, remove_file: bool = False) -> None:
+        self._base.teardown(remove_file)
+
+    def get_db(self) -> TinyDB:
+        return self._base.get_db()
+
+    def namespaced(self, namespace: str | None) -> "SearchCache | _SearchCacheView":
+        return self._base.namespaced(namespace)
 
 
 _shared_cache = SearchCache()

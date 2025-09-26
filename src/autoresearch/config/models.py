@@ -52,6 +52,45 @@ class LocalGitConfig(BaseModel):
     history_depth: int = Field(default=50, ge=1)
 
 
+class ModelRouteProfile(BaseModel):
+    """Describe pricing and latency characteristics for a single model."""
+
+    prompt_cost_per_1k: float = Field(default=0.0, ge=0.0)
+    completion_cost_per_1k: float = Field(default=0.0, ge=0.0)
+    latency_p95_ms: float = Field(default=1000.0, ge=0.0)
+    quality_rank: int = Field(
+        default=0,
+        description="Relative quality score; higher values are preferred",
+    )
+
+
+class ModelRoutingConfig(BaseModel):
+    """Global configuration controlling budget-aware model routing."""
+
+    enabled: bool = Field(
+        default=False,
+        description="Enable budget-aware routing when true",
+    )
+    default_latency_slo_ms: float = Field(
+        default=5000.0,
+        ge=0.0,
+        description="Fallback latency SLO applied when agents omit overrides",
+    )
+    budget_pressure_ratio: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Fraction of an agent's token share that must remain before routing "
+            "prefers cheaper models",
+        ),
+    )
+    model_profiles: Dict[str, ModelRouteProfile] = Field(
+        default_factory=dict,
+        description="Cost and latency metadata for eligible models",
+    )
+
+
 class SearchConfig(BaseModel):
     """Configuration for search functionality."""
 
@@ -77,6 +116,23 @@ class SearchConfig(BaseModel):
     local_git: LocalGitConfig = Field(default_factory=LocalGitConfig)
     max_workers: int = Field(default=4, ge=1)
     http_pool_size: int = Field(default=10, ge=1)
+    shared_cache: bool = Field(
+        default=True,
+        description="Reuse the process-wide search cache when true",
+    )
+    cache_namespace: Optional[str] = Field(
+        default=None,
+        description="Optional namespace isolating cached search results",
+    )
+    parallel_enabled: bool = Field(
+        default=True,
+        description="Fan out search backends concurrently when true",
+    )
+    parallel_prefetch: int = Field(
+        default=0,
+        ge=0,
+        description="Sequential backends executed before launching parallel lookups",
+    )
 
     _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
 
@@ -142,6 +198,25 @@ class AgentConfig(BaseModel):
 
     enabled: bool = Field(default=True)
     model: Optional[str] = None
+    preferred_models: List[str] = Field(
+        default_factory=list,
+        description="Ordered list of models preferred for this agent",
+    )
+    allowed_models: List[str] = Field(
+        default_factory=list,
+        description="Allowlist restricting which models may be selected",
+    )
+    token_share: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of the global token budget reserved for the agent",
+    )
+    latency_slo_ms: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Agent-specific latency objective in milliseconds",
+    )
 
 
 class APIConfig(BaseModel):
@@ -258,6 +333,7 @@ class ConfigModel(BaseModel):
     search: SearchConfig = Field(default_factory=SearchConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
+    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
     user_preferences: Dict[str, Any] = Field(default_factory=dict)
     enable_agent_messages: bool = Field(
         default=False,

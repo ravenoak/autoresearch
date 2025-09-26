@@ -10,11 +10,12 @@ from typing import TYPE_CHECKING, Any
 
 from prometheus_client import Counter, Histogram
 
-from autoresearch.token_budget import round_with_margin
+from autoresearch.token_budget import AgentUsageStats, BudgetRouter, round_with_margin
 
 from .circuit_breaker import CircuitBreakerState
 
 if TYPE_CHECKING:  # pragma: no cover
+    from ..config.models import AgentConfig, ConfigModel
     from .orchestration_utils import ScoutGateDecision
 
 log = logging.getLogger(__name__)
@@ -233,6 +234,8 @@ class OrchestrationMetrics:
         self._last_agent_totals: dict[str, int] = {}
         self.circuit_breakers: dict[str, CircuitBreakerState] = {}
         self.gate_events: list[dict[str, Any]] = []
+        self.agent_token_samples: dict[str, list[tuple[int, int]]] = {}
+        self._max_sample_history = 20
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -249,7 +252,21 @@ class OrchestrationMetrics:
         """Record execution time for an agent."""
         if agent_name not in self.agent_timings:
             self.agent_timings[agent_name] = []
-        self.agent_timings[agent_name].append(duration)
+        timings = self.agent_timings[agent_name]
+        timings.append(duration)
+        if len(timings) > self._max_sample_history:
+            del timings[0 : len(timings) - self._max_sample_history]
+        latency_ms = duration * 1000.0
+        avg_ms = sum(timings) * 1000.0 / len(timings)
+        log.info(
+            "Recorded agent latency sample",
+            extra={
+                "agent": agent_name,
+                "latency_ms": latency_ms,
+                "avg_latency_ms": avg_ms,
+                "samples": len(timings),
+            },
+        )
 
     def record_system_resources(self) -> None:
         """Record current CPU, memory, and GPU usage."""
@@ -264,6 +281,21 @@ class OrchestrationMetrics:
         self.token_counts[agent_name]["out"] += tokens_out
         TOKENS_IN_COUNTER.inc(tokens_in)
         TOKENS_OUT_COUNTER.inc(tokens_out)
+        samples = self.agent_token_samples.setdefault(agent_name, [])
+        samples.append((tokens_in, tokens_out))
+        if len(samples) > self._max_sample_history:
+            del samples[0 : len(samples) - self._max_sample_history]
+        avg_tokens = sum(sum(pair) for pair in samples) / len(samples)
+        log.info(
+            "Recorded agent token usage",
+            extra={
+                "agent": agent_name,
+                "tokens_in": tokens_in,
+                "tokens_out": tokens_out,
+                "avg_tokens_per_call": avg_tokens,
+                "samples": len(samples),
+            },
+        )
 
     def record_error(self, agent_name: str) -> None:
         """Record an error for an agent."""
@@ -351,6 +383,111 @@ class OrchestrationMetrics:
                 for ts, cpu, mem, gpu, gpu_mem in self.resource_usage
             ],
         }
+
+    def get_agent_usage_stats(
+        self, agent_name: str, default_latency_ms: float
+    ) -> AgentUsageStats | None:
+        """Return rolling usage statistics for ``agent_name`` when available."""
+
+        samples = self.agent_token_samples.get(agent_name)
+        if not samples:
+            return None
+        latencies = [
+            duration * 1000.0 for duration in self.agent_timings.get(agent_name, [])
+        ]
+        stats = AgentUsageStats.from_samples(samples, latencies)
+        if stats is None:
+            return None
+        if stats.p95_latency_ms <= 0 and default_latency_ms > 0:
+            return AgentUsageStats(
+                avg_prompt_tokens=stats.avg_prompt_tokens,
+                avg_completion_tokens=stats.avg_completion_tokens,
+                p95_latency_ms=default_latency_ms,
+                call_count=stats.call_count,
+            )
+        return stats
+
+    def _default_token_share(self, config: "ConfigModel", agent_name: str) -> float:
+        """Return an even token share when the agent does not override it."""
+
+        agents = getattr(config, "agents", [])
+        if not agents:
+            return 1.0
+        return 1.0 / max(len(agents), 1)
+
+    def apply_model_routing(
+        self, agent_name: str, config: "ConfigModel"
+    ) -> str | None:
+        """Update ``config`` with a budget-aware model recommendation."""
+
+        routing_cfg = getattr(config, "model_routing", None)
+        if (
+            routing_cfg is None
+            or not routing_cfg.enabled
+            or not routing_cfg.model_profiles
+        ):
+            return None
+
+        agent_cfg = config.agent_config.get(agent_name)
+        preferred = agent_cfg.preferred_models if agent_cfg else None
+        allowed = agent_cfg.allowed_models if agent_cfg else None
+        if preferred is not None and len(preferred) == 0:
+            preferred = None
+        if allowed is not None and len(allowed) == 0:
+            allowed = None
+        latency_slo = agent_cfg.latency_slo_ms if agent_cfg else None
+        current_model = (
+            agent_cfg.model if agent_cfg and agent_cfg.model else config.default_model
+        )
+
+        token_share = agent_cfg.token_share if agent_cfg else None
+        if token_share is None:
+            token_share = self._default_token_share(config, agent_name)
+        else:
+            token_share = max(0.0, min(float(token_share), 1.0))
+
+        agent_budget_tokens = None
+        if config.token_budget is not None:
+            agent_budget_tokens = max(config.token_budget * token_share, 0.0)
+
+        usage = self.get_agent_usage_stats(
+            agent_name, routing_cfg.default_latency_slo_ms
+        )
+        router = BudgetRouter(
+            routing_cfg.model_profiles,
+            default_model=config.default_model,
+            pressure_ratio=routing_cfg.budget_pressure_ratio,
+            default_latency_slo_ms=routing_cfg.default_latency_slo_ms,
+        )
+        selected = router.select_model(
+            agent_name,
+            usage,
+            agent_budget_tokens=agent_budget_tokens,
+            agent_latency_slo_ms=latency_slo,
+            allowed_models=allowed,
+            preferred_models=preferred,
+            current_model=current_model,
+        )
+        if not selected or selected == current_model:
+            return selected
+
+        from ..config.models import AgentConfig  # Local import to avoid cycles
+
+        agent_cfg_obj = agent_cfg or config.agent_config.setdefault(
+            agent_name, AgentConfig()
+        )
+        previous_model = agent_cfg_obj.model or config.default_model
+        agent_cfg_obj.model = selected
+        log.info(
+            "Applied budget-aware model routing",
+            extra={
+                "agent": agent_name,
+                "previous_model": previous_model,
+                "selected_model": selected,
+                "token_budget": config.token_budget,
+            },
+        )
+        return selected
 
     # ------------------------------------------------------------------
     # Query token monitoring helpers
