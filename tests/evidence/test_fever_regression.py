@@ -56,6 +56,17 @@ def test_entailment_scoring_unsupported_claim() -> None:
     assert status == ClaimAuditStatus.UNSUPPORTED
 
 
+def test_claim_audit_record_from_score_overrides_status() -> None:
+    record = ClaimAuditRecord.from_score(
+        "claim-override",
+        0.15,
+        status="needs_review",
+        sources=[{"title": "Manual review"}],
+    )
+    assert record.status is ClaimAuditStatus.NEEDS_REVIEW
+    assert record.sources[0]["title"] == "Manual review"
+
+
 def test_claim_generator_attaches_audit_metadata() -> None:
     harness = _MixinHarness()
     record = ClaimAuditRecord(

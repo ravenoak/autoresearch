@@ -210,6 +210,42 @@ class ClaimAuditRecord:
             created_at=created_at,
         )
 
+    @classmethod
+    def from_score(
+        cls,
+        claim_id: str,
+        score: float | None,
+        *,
+        sources: Sequence[Mapping[str, Any]] | None = None,
+        notes: str | None = None,
+        status: ClaimAuditStatus | str | None = None,
+    ) -> "ClaimAuditRecord":
+        """Build a record from an entailment score and optional metadata."""
+
+        resolved_status: ClaimAuditStatus
+        if status is None:
+            resolved_status = ClaimAuditStatus.from_entailment(score)
+        elif isinstance(status, ClaimAuditStatus):
+            resolved_status = status
+        else:
+            resolved_status = ClaimAuditStatus(str(status))
+
+        serialised_sources: list[dict[str, Any]] = []
+        if sources:
+            for src in sources:
+                if isinstance(src, Mapping):
+                    serialised_sources.append(dict(src))
+                else:
+                    raise TypeError("sources must contain mappings")
+
+        return cls(
+            claim_id=claim_id,
+            status=resolved_status,
+            entailment_score=score,
+            sources=serialised_sources,
+            notes=notes,
+        )
+
 
 def _process_ram_mb() -> float:
     """Return the process resident set size in megabytes."""

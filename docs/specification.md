@@ -53,9 +53,12 @@
   `metrics`, and `claim_audits` (for automation); Markdown/pretty text for
   humans.
 - `claim_audits` is a FEVER-style array of verification records containing a
-  `claim_id`, `status` (`supported`, `unsupported`, `needs_review`),
-  `entailment_score`, `sources`, optional reviewer `notes`, and a
-  `created_at` timestamp.
+  `claim_id`, `status` (`supported`, `unsupported`, `needs_review`), an
+  `entailment_score`, normalised `sources`, optional reviewer `notes`, a
+  unique `audit_id`, and a `created_at` timestamp.
+- The Streamlit and Markdown renderers surface status badges (🟢 supported,
+  🔴 unsupported, 🟡 needs review) and the highest-ranked source so reviewers
+  can triage evidence at a glance.
 
 ## 5. Reasoning Modes
 

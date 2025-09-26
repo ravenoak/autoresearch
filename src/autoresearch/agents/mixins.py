@@ -104,27 +104,16 @@ class ClaimGeneratorMixin:
             value is not None
             for value in (verification_status, verification_sources, entailment_score)
         ):
-            status_enum: ClaimAuditStatus
-            if verification_status is None:
-                status_enum = ClaimAuditStatus.from_entailment(entailment_score)
-            elif isinstance(verification_status, ClaimAuditStatus):
-                status_enum = verification_status
-            else:
-                status_enum = ClaimAuditStatus(str(verification_status))
-            sources_payload: list[dict[str, Any]] = []
-            if verification_sources:
-                for src in verification_sources:
-                    if isinstance(src, Mapping):
-                        sources_payload.append(dict(src))
-                    else:
-                        raise TypeError("verification_sources must contain mappings")
-            record = ClaimAuditRecord(
-                claim_id=claim["id"],
-                status=status_enum,
-                entailment_score=entailment_score,
-                sources=sources_payload,
-                notes=notes,
-            )
+            try:
+                record = ClaimAuditRecord.from_score(
+                    claim["id"],
+                    entailment_score,
+                    sources=verification_sources,
+                    notes=notes,
+                    status=verification_status,
+                )
+            except TypeError as exc:
+                raise TypeError("verification_sources must contain mappings") from exc
             audit_payload = record.to_payload()
 
         if audit_payload is not None:

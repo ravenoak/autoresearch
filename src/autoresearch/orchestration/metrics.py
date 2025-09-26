@@ -15,7 +15,7 @@ from autoresearch.token_budget import AgentUsageStats, BudgetRouter, round_with_
 from .circuit_breaker import CircuitBreakerState
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ..config.models import AgentConfig, ConfigModel
+    from ..config.models import ConfigModel
     from .orchestration_utils import ScoutGateDecision
 
 log = logging.getLogger(__name__)

@@ -1,7 +1,5 @@
 """Utilities for evidence retrieval expansion and entailment scoring."""
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from typing import Iterable, List
@@ -57,6 +55,7 @@ def expand_retrieval_queries(
         return []
 
     variations: list[str] = []
+    seen: set[str] = set()
     candidates = [cleaned]
     if base_query:
         candidates.append(f"{base_query.strip()} {cleaned}")
@@ -74,8 +73,10 @@ def expand_retrieval_queries(
 
     for candidate in candidates:
         normalised = " ".join(candidate.split())
-        if normalised and normalised.lower() not in {c.lower() for c in variations}:
+        key = normalised.lower()
+        if normalised and key not in seen:
             variations.append(normalised)
+            seen.add(key)
         if len(variations) >= max_variations:
             break
 
