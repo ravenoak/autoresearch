@@ -140,10 +140,11 @@ This will start the Streamlit server and open the GUI in your default web browse
 
 2. **View results:**
    - The answer will appear in the "Answer" tab
-   - Click on other tabs to view reasoning, citations, claim audits, metrics,
-     and the knowledge graph. The **Claim Audits** tab surfaces FEVER-style
-     status badges (supported, unsupported, needs review) together with the
-     top evidence snippet and entailment score for each claim.
+   - Click on other tabs to view reasoning, citations, claim audits,
+     metrics, and the knowledge graph. The **Claim Audits** tab surfaces
+     FEVER-style status badges (🟢 supported, 🔴 unsupported,
+     🟡 needs review) together with the top evidence snippet and
+     entailment score for each claim.
 
 3. **Export results:**
    - Click the "Export" button

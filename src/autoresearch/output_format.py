@@ -164,6 +164,13 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
 }
 
 
+_STATUS_BADGES: Dict[str, tuple[str, str]] = {
+    "supported": ("🟢", "Supported"),
+    "unsupported": ("🔴", "Unsupported"),
+    "needs_review": ("🟡", "Needs review"),
+}
+
+
 def get_depth_aliases() -> Dict[str, OutputDepth]:
     """Return a copy of the registered depth aliases."""
 
@@ -1026,23 +1033,29 @@ class OutputFormatter:
 
 
 def _format_claim_audits_markdown(audits: list[dict[str, Any]]) -> str:
-    """Render claim audits as a Markdown table."""
+    """Render claim audits as a Markdown table with status badges."""
 
     if not audits:
         return "No claim audits recorded."
 
-    lines = ["| Claim ID | Status | Entailment | Top Source |", "| --- | --- | --- | --- |"]
+    lines = [
+        "| Claim ID | Status | Entailment | Top Source |",
+        "| --- | --- | --- | --- |",
+    ]
     for audit in audits:
-        status = str(audit.get("status", "unknown"))
+        badge = _render_status_badge(audit.get("status", "unknown"))
         entailment = audit.get("entailment_score")
         entailment_display = "—" if entailment is None else f"{entailment:.2f}"
         sources = audit.get("sources") or []
         primary = sources[0] if sources else {}
-        label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
-        if label and len(label) > 60:
-            label = label[:57] + "..."
+        label = _format_source_label(primary)
         lines.append(
-            f"| {audit.get('claim_id', '')} | {status} | {entailment_display} | {label} |"
+            "| {claim_id} | {badge} | {entailment} | {source} |".format(
+                claim_id=audit.get("claim_id", ""),
+                badge=badge,
+                entailment=entailment_display,
+                source=label,
+            )
         )
     return "\n".join(lines)
 
@@ -1054,10 +1067,48 @@ def _format_claim_audits_plain(audits: list[dict[str, Any]]) -> str:
         return "No claim audits recorded."
     segments = []
     for audit in audits:
-        status = str(audit.get("status", "unknown"))
+        status = _render_status_badge(audit.get("status", "unknown"), plain=True)
         entailment = audit.get("entailment_score")
         entailment_display = "n/a" if entailment is None else f"{entailment:.2f}"
         segments.append(
-            f"- Claim {audit.get('claim_id', '')}: status={status}, entailment={entailment_display}"
+            f"- Claim {audit.get('claim_id', '')}: {status}, "
+            f"entailment={entailment_display}"
         )
+        sources = audit.get("sources") or []
+        if sources:
+            primary = sources[0]
+            snippet = primary.get("snippet")
+            if snippet:
+                segments.append(f"  Top source: {snippet}")
+            elif primary.get("title"):
+                segments.append(f"  Top source: {primary['title']}")
+            elif primary.get("url"):
+                segments.append(f"  Top source: {primary['url']}")
     return "\n".join(segments)
+
+
+def _render_status_badge(status: Any, *, plain: bool = False) -> str:
+    """Return a textual badge for a claim status."""
+
+    status_text = str(status)
+    key = status_text.lower().strip()
+    emoji, label = _STATUS_BADGES.get(key, ("⚪", status_text.title()))
+    if plain:
+        return label
+    return f"{emoji} {label}"
+
+
+def _format_source_label(source: Mapping[str, Any]) -> str:
+    """Return a compact label for a source mapping."""
+
+    if not source:
+        return ""
+    title = str(source.get("title") or "").strip()
+    url = str(source.get("url") or "").strip()
+    snippet = str(source.get("snippet") or "").strip()
+    label = title or snippet or url
+    if url and title:
+        label = f"[{title}]({url})"
+    if label and len(label) > 60:
+        label = label[:57] + "..."
+    return label

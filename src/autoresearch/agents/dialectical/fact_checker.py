@@ -59,11 +59,11 @@ class FactChecker(Agent):
                     best_score = breakdown.score
                     best_source = source
             status = classify_entailment(best_score)
-            record = ClaimAuditRecord(
-                claim_id=claim["id"],
+            record = ClaimAuditRecord.from_score(
+                claim["id"],
+                best_score,
+                sources=[best_source] if best_source else None,
                 status=status,
-                entailment_score=best_score,
-                sources=[best_source] if best_source else [],
             )
             audit_payload = record.to_payload()
             claim_audits.append(audit_payload)

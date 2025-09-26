@@ -207,4 +207,3 @@ class BudgetRouter:
         """Return an iterator over configured model profiles."""
 
         return self._profiles.items()
-
