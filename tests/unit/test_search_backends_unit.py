@@ -1,9 +1,35 @@
+from typing import Any, Callable
+
 import pytest
 
 from autoresearch.search import Search
-from autoresearch.search.core import _local_git_backend
+from autoresearch.search.core import _local_git_backend, hybridmethod
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import SearchError
+
+
+def _make_hybrid_stub(
+    calls: list[dict[str, Any]],
+    *,
+    responder: Callable[[Any, tuple[Any, ...], dict[str, Any]], Any] | None = None,
+    default: Any = None,
+):
+    """Create a hybridmethod stub that tracks invocations.
+
+    The returned stub accepts both class and instance invocations, mirroring the
+    behaviour of :func:`hybridmethod` in production code. Calls are recorded with
+    the binding context and provided positional and keyword arguments. A custom
+    ``responder`` can tailor the return value; otherwise ``default`` is used.
+    """
+
+    def _stub(subject, *args, **kwargs):
+        binding = "class" if subject is Search else "instance"
+        calls.append({"binding": binding, "args": args, "kwargs": kwargs})
+        if responder is not None:
+            return responder(subject, args, kwargs)
+        return default
+
+    return hybridmethod(_stub)
 
 
 def test_register_backend_and_lookup(monkeypatch):
@@ -17,8 +43,18 @@ def test_register_backend_and_lookup(monkeypatch):
         cfg.search.context_aware.enabled = False
         monkeypatch.setattr("autoresearch.search.core.get_config", lambda: cfg)
         monkeypatch.setattr(Search, "get_sentence_transformer", lambda self: None)
-        monkeypatch.setattr(Search, "embedding_lookup", lambda emb, max_results=5: {})
-        monkeypatch.setattr(Search, "add_embeddings", lambda self, docs, emb=None: None)
+        embedding_calls: list[dict[str, Any]] = []
+        add_calls: list[dict[str, Any]] = []
+        monkeypatch.setattr(
+            Search,
+            "embedding_lookup",
+            _make_hybrid_stub(embedding_calls, default={}),
+        )
+        monkeypatch.setattr(
+            Search,
+            "add_embeddings",
+            _make_hybrid_stub(add_calls),
+        )
         monkeypatch.setattr(
             search, "cross_backend_rank", lambda q, b, query_embedding=None: b["dummy"]
         )
