@@ -97,17 +97,24 @@ Reference issues by slugged filename (for example,
   [stage-0-1-0a1-release-artifacts](issues/archive/stage-0-1-0a1-release-artifacts.md).【F:baseline/logs/build-20250924T033349Z.log†L1-L13】【F:baseline/logs/publish-dev-20250924T033415Z.log†L1-L13】【F:STATUS.md†L33-L38】【F:issues/archive/stage-0-1-0a1-release-artifacts.md†L1-L40】
 
 ### Verification Evidence
-- Replayed `uv run task verify` on 2025-09-25; both the legacy and VSS-enabled
-  parametrisations of `test_search_stub_backend` plus the new
-  `return_handles` fallback passed before the sweep stopped on the deterministic
-  LRU eviction regression. The log captures the vector search extension loading
-  at 00:10:00Z alongside the eviction trace, confirming the stub behaviour while
-  documenting the remaining storage fix.【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L323】【F:baseline/logs/task-verify-20250925T000904Z.log†L430-L476】
-- Followed with `uv run task coverage` in the same window; Ray still cannot
-  serialise `QueryState`, so `test_execute_agent_remote` aborts while the other
-  stub scenarios continue to pass under coverage. The log records the
-  cloudpickle failure for `_thread.RLock`, keeping the distributed regression on
-  the blocker list for the alpha tag.【F:baseline/logs/task-coverage-20250925T001017Z.log†L460-L515】
+- `uv run task verify` completed on 2025-09-25 at 02:27:17 Z after
+  normalizing BM25 scoring, remapping the parallel execution payload maps, and
+  making the numpy stub deterministic. The log documents the LRU eviction
+  sequence and distributed executor remote case passing with VSS-enabled search
+  instrumentation.
+  【F:baseline/logs/task-verify-20250925T022717Z.log†L332-L360】
+  【F:baseline/logs/task-verify-20250925T022717Z.log†L400-L420】
+  【F:src/autoresearch/search/core.py†L705-L760】
+  【F:src/autoresearch/orchestration/parallel.py†L145-L182】
+  【F:tests/stubs/numpy.py†L12-L81】
+- A targeted coverage rerun at 23:30:24 Z replayed the distributed executor and
+  storage suites with those fixes; the focused log records the formerly blocking
+  parametrisations passing while we schedule a full extras sweep on refreshed
+  runners.
+  【F:baseline/logs/task-coverage-20250925T233024Z-targeted.log†L1-L14】
+  【F:src/autoresearch/search/core.py†L705-L760】
+  【F:src/autoresearch/orchestration/parallel.py†L145-L182】
+  【F:tests/stubs/numpy.py†L12-L81】
 
 [add-test-coverage]: issues/archive/add-test-coverage-for-optional-components.md
 [streamline-extras]: issues/archive/streamline-task-verify-extras.md

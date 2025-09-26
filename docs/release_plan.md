@@ -18,41 +18,38 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The latest `task release:alpha` sweep from **September 24, 2025 at 23:30:58 Z**
-again resynchronized every dev, test, analysis, and distribution extra, then
-completed linting, typing, spec lint, environment checks, and dependency audits
-before entering the coverage phase.
-【F:baseline/logs/release-alpha-20250924T233058Z.log†L1-L160】
-`task coverage` now fails because
-`tests/unit/test_core_modules_additional.py::test_search_stub_backend` records
-four `embedding_calls` when the DuckDB VSS extras enable vector search, while
-the fixture still asserts only two calls. A focused rerun of the individual test
-outside the sweep still passes, underscoring that the failure is triggered by
-the VSS-enabled release environment rather than the isolated fixture.
-【F:baseline/logs/targeted-test-search-stub-backend-20250924T233042Z.log†L1-L17】
-The sweep also logs an HNSW index initialization warning (`Failed to create
-HNSW index`) as experimental persistence toggles, but execution continues past
-the warning and stops on the assertion mismatch, keeping packaging and publish
-stages pending.【F:baseline/logs/release-alpha-20250924T233058Z.log†L488-L585】
-`baseline/logs/release-alpha-20250924T233058Z.summary.md` tracks the open work
-to relax the stub assertion for VSS-aware runs before rerunning the automation.
-【F:baseline/logs/release-alpha-20250924T233058Z.summary.md†L1-L12】
+`uv run task verify` succeeded on **September 25, 2025 at 02:27:17 Z**
+after we normalized BM25 scores, remapped parallel aggregator payloads into
+claim-friendly maps, and hardened the numpy stub to generate deterministic
+arrays. The log at
+[baseline/logs/task-verify-20250925T022717Z.log][verify-log-pass]
+shows the storage eviction, distributed executor, and VSS-enabled search
+parametrisations passing in sequence, reflecting the updates in
+[src/autoresearch/search/core.py][bm25-normalization],
+[src/autoresearch/orchestration/parallel.py][parallel-claims],
+and [tests/stubs/numpy.py][numpy-stub-deterministic].
 
-Follow-up `uv run task verify` and `uv run task coverage` runs on
-**September 25, 2025 at 00:09 Z** demonstrate the updated stub behaviour: the
-legacy, VSS-enabled, and `return_handles` fallback parametrisations pass before
-the verify sweep halts on the deterministic LRU eviction regression, and the
-coverage sweep stops on Ray serialising `_thread.RLock` in `QueryState`.
-【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L323】【F:baseline/logs/task-verify-20250925T000904Z.log†L430-L476】【F:baseline/logs/task-coverage-20250925T001017Z.log†L460-L515】
-*Q:* Does the stub backend respect vector search handles now?
-*A:* Yes—the verify log captures the VSS extension loading at 00:10:00Z and the
-passing parametrisations immediately before the eviction failure, providing a
-reproducible trace for the manual reruns.
-【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L476】
+A targeted coverage rerun at **September 25, 2025 at 23:30:24 Z** exercised the
+previously blocking suites with the same fixes and recorded a clean pass in the
+[targeted coverage log][targeted-coverage-log].
+The focused log keeps the coverage evidence manageable while we line up the
+full sweep on refreshed CI runners.
 
-All GitHub workflows remain dispatch-only, so these verifications were invoked
-manually via the documented `uv run` wrappers to mirror a
-`workflow_dispatch` execution.【F:.github/workflows/ci.yml†L1-L8】
+Broader integration and performance coverage remains outstanding, but the
+release gate now has reproducible verification and targeted coverage evidence
+for the regressions that halted the prior alpha sweep.
+
+[verify-log-pass]:
+  ../baseline/logs/task-verify-20250925T022717Z.log
+[bm25-normalization]:
+  ../src/autoresearch/search/core.py#L705-L760
+[parallel-claims]:
+  ../src/autoresearch/orchestration/parallel.py#L145-L182
+[numpy-stub-deterministic]:
+  ../tests/stubs/numpy.py#L12-L81
+[targeted-coverage-log]:
+  ../baseline/logs/task-coverage-20250925T233024Z-targeted.log
+
 ## Milestones
 
 - **0.1.0a1** (2026-09-15, status: in progress): Alpha preview to collect
@@ -118,16 +115,18 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   log at `baseline/logs/mkdocs-build-20250925T001535Z.log` confirms the docs
   extras compile cleanly while verify remains blocked.
   【F:baseline/logs/mkdocs-build-20250925T001535Z.log†L1-L15】
-- [ ] `task verify` and `task coverage` were rerun via `uv` wrappers on
-  2025-09-25; the stub parametrisations now pass with VSS enabled, but the runs
-  fail in `tests/unit/test_eviction.py::test_lru_eviction_sequence` and
-  `tests/unit/test_distributed_executors.py::test_execute_agent_remote`.
-  The new logs and follow-up tickets capture the regressions so the sweep can
-  resume once storage and Ray serialization are repaired.
-  【F:baseline/logs/task-verify-20250925T000904Z.log†L320-L489】
-  【F:issues/investigate-lru-eviction-regression.md†L1-L24】
-  【F:baseline/logs/task-coverage-20250925T001017Z.log†L460-L669】
-  【F:issues/address-ray-serialization-regression.md†L1-L20】
+- [x] `uv run task verify` completed on 2025-09-25 at 02:27:17 Z after the
+  BM25 normalization, parallel aggregator payload mapping, and deterministic
+  numpy stub fixes cleared the storage eviction and distributed executor
+  regressions. A targeted coverage follow-up at 23:30:24 Z replayed the same
+  suites to confirm the behaviour while we schedule a full sweep on refreshed
+  runners.
+  【F:baseline/logs/task-verify-20250925T022717Z.log†L332-L360】
+  【F:baseline/logs/task-verify-20250925T022717Z.log†L400-L420】
+  【F:baseline/logs/task-coverage-20250925T233024Z-targeted.log†L1-L14】
+  【F:src/autoresearch/search/core.py†L705-L760】
+  【F:src/autoresearch/orchestration/parallel.py†L145-L182】
+  【F:tests/stubs/numpy.py†L12-L81】
 - [x] `uv run --extra build python -m build` succeeded out of band and archived
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
   resume once verify and coverage pass.

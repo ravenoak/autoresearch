@@ -14,6 +14,11 @@ from typing import Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover - typing helpers only
     from .state import QueryState
+else:  # pragma: no cover - runtime guard for coverage runs
+    try:
+        from .state import QueryState  # type: ignore  # circular-safe import
+    except ImportError:  # pragma: no cover - fallback when state is unavailable
+        QueryState = "QueryState"  # type: ignore[misc, assignment]
 
 
 # ``AgentExecutionResult`` captures the minimum contract expected from agent
