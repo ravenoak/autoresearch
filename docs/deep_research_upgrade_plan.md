@@ -31,9 +31,14 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Capture ReAct traces for transparency and replay.
    - Document interfaces for specialized agents and tool calls.
 3. **Phase 3 – Graph-Augmented Retrieval**
-   - Build session-scoped knowledge graphs using existing storage hooks.
-   - Surface contradiction checks that feed back into the gate policy.
-   - Export lightweight GraphML or JSON artifacts per session.
+   - Build session-scoped knowledge graphs by extracting entities and
+     relations from retrieval snippets and persisting them to DuckDB and
+     RDFLib via `KnowledgeGraphPipeline`.
+   - Surface contradiction checks to the scout gate through
+     `SearchContext.get_contradiction_signal()` while exposing neighbour and
+     path queries to agents for multi-hop reasoning.
+   - Export lightweight GraphML or JSON artifacts via the output formatter so
+     downstream tools can visualise graph state per session.
 4. **Phase 4 – Evaluation Harness and Layered UX**
    - Automate TruthfulQA, FEVER, and HotpotQA smoke runs with KPIs.
    - Add layered summaries, Socratic prompts, and per-claim audits to the UI.

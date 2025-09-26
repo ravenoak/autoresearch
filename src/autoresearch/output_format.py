@@ -15,6 +15,7 @@ from .models import QueryResponse
 from .errors import ValidationError as AutoresearchValidationError
 from .config import ConfigLoader
 from .logging_utils import get_logger
+from .storage import StorageManager
 
 log = get_logger(__name__)
 
@@ -1263,6 +1264,10 @@ class OutputFormatter:
             template = TemplateRegistry.get(template_name)
             extra = _template_variables_from_payload(payload)
             return template.render(response, extra=extra)
+        if fmt == "graphml":
+            return StorageManager.export_knowledge_graph_graphml()
+        if fmt in {"graph-json", "graphjson"}:
+            return StorageManager.export_knowledge_graph_json()
         if fmt == "graph":
             raise ValueError(
                 "Graph format cannot be rendered to a string; use format() instead."
@@ -1302,6 +1307,16 @@ class OutputFormatter:
                 metrics_node.add(f"{k}: {v}")
 
             Console(file=sys.stdout, force_terminal=False, color_system=None).print(tree)
+            return
+        if fmt == "graphml":
+            graphml = StorageManager.export_knowledge_graph_graphml()
+            sys.stdout.write(graphml + ("\n" if graphml and not graphml.endswith("\n") else ""))
+            return
+        if fmt in {"graph-json", "graphjson"}:
+            graph_json = StorageManager.export_knowledge_graph_json()
+            if graph_json and not graph_json.endswith("\n"):
+                graph_json += "\n"
+            sys.stdout.write(graph_json)
             return
 
         try:
