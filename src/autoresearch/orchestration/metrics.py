@@ -2,15 +2,22 @@
 
 import logging
 import time
+from collections import Counter as CounterCollection, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from os import getenv
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 from prometheus_client import Counter, Histogram
 
-from autoresearch.token_budget import round_with_margin
+from autoresearch.token_budget import (
+    ModelBudget,
+    RoleUsageSnapshot,
+    RoutingDecision,
+    round_with_margin,
+    select_model_for_role as _select_model_for_role,
+)
 
 from .circuit_breaker import CircuitBreakerState
 
@@ -210,6 +217,15 @@ def _mean_last(values: list[int], n: int = 10) -> float:
     return sum(recent) / len(recent) if recent else 0.0
 
 
+def _safe_average(values: Iterable[float]) -> float | None:
+    """Return the arithmetic mean of ``values`` or ``None`` when empty."""
+
+    recent = list(values)
+    if not recent:
+        return None
+    return sum(recent) / len(recent)
+
+
 class OrchestrationMetrics:
     """Collects metrics during query execution."""
 
@@ -229,6 +245,16 @@ class OrchestrationMetrics:
         self.agent_usage_history: dict[str, list[int]] = {}
         self._last_agent_totals: dict[str, int] = {}
         self.circuit_breakers: dict[str, CircuitBreakerState] = {}
+        self.agent_roles: dict[str, str] = {}
+        self.agent_models: dict[str, str] = {}
+        self.role_call_counts: CounterCollection[str] = CounterCollection()
+        self.role_tokens: defaultdict[str, dict[str, int]] = defaultdict(
+            lambda: {"in": 0, "out": 0}
+        )
+        self.role_timings: dict[str, list[float]] = defaultdict(list)
+        self.role_model_counts: dict[str, CounterCollection[str]] = defaultdict(
+            CounterCollection
+        )
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -241,11 +267,34 @@ class OrchestrationMetrics:
             self.cycle_durations.append(duration)
             self.last_cycle_start = None
 
+    def begin_agent_turn(
+        self, agent_name: str, role: str | None = None, model: str | None = None
+    ) -> None:
+        """Register metadata for a turn before execution begins."""
+
+        if role:
+            self.agent_roles[agent_name] = role
+            self.role_call_counts[role] += 1
+        if model:
+            self.agent_models[agent_name] = model
+            if role:
+                self.role_model_counts[role][model] += 1
+
     def record_agent_timing(self, agent_name: str, duration: float) -> None:
         """Record execution time for an agent."""
         if agent_name not in self.agent_timings:
             self.agent_timings[agent_name] = []
         self.agent_timings[agent_name].append(duration)
+        role = self.agent_roles.get(agent_name)
+        if role:
+            self.role_timings[role].append(duration)
+            log.debug(
+                "Agent %s (%s) completed in %.3fs using %s",
+                agent_name,
+                role,
+                duration,
+                self.agent_models.get(agent_name, "<unknown>"),
+            )
 
     def record_system_resources(self) -> None:
         """Record current CPU, memory, and GPU usage."""
@@ -260,6 +309,11 @@ class OrchestrationMetrics:
         self.token_counts[agent_name]["out"] += tokens_out
         TOKENS_IN_COUNTER.inc(tokens_in)
         TOKENS_OUT_COUNTER.inc(tokens_out)
+        role = self.agent_roles.get(agent_name)
+        if role:
+            totals = self.role_tokens[role]
+            totals["in"] += tokens_in
+            totals["out"] += tokens_out
 
     def record_error(self, agent_name: str) -> None:
         """Record an error for an agent."""
@@ -332,7 +386,73 @@ class OrchestrationMetrics:
                 }
                 for ts, cpu, mem, gpu, gpu_mem in self.resource_usage
             ],
+            "role_usage": {
+                role: {
+                    "calls": self.role_call_counts.get(role, 0),
+                    "avg_latency_ms": _safe_average(self.role_timings.get(role, [])),
+                    "avg_prompt_tokens": self._average_prompt_tokens(role),
+                    "avg_completion_tokens": self._average_completion_tokens(role),
+                    "models": dict(self.role_model_counts.get(role, CounterCollection())),
+                }
+                for role in self.role_call_counts
+            },
         }
+
+    def _average_prompt_tokens(self, role: str) -> float:
+        calls = self.role_call_counts.get(role, 0)
+        if not calls:
+            return 0.0
+        totals = self.role_tokens.get(role, {"in": 0, "out": 0})
+        return totals["in"] / calls
+
+    def _average_completion_tokens(self, role: str) -> float:
+        calls = self.role_call_counts.get(role, 0)
+        if not calls:
+            return 0.0
+        totals = self.role_tokens.get(role, {"in": 0, "out": 0})
+        return totals["out"] / calls
+
+    def get_role_usage_snapshot(self, role: str) -> RoleUsageSnapshot:
+        """Return a snapshot summarising usage for ``role``."""
+
+        totals = self.role_tokens.get(role, {"in": 0, "out": 0})
+        snapshot = RoleUsageSnapshot(
+            role=role,
+            call_count=self.role_call_counts.get(role, 0),
+            total_prompt_tokens=totals["in"],
+            total_completion_tokens=totals["out"],
+            avg_prompt_tokens=self._average_prompt_tokens(role),
+            avg_completion_tokens=self._average_completion_tokens(role),
+            avg_latency_ms=_safe_average(self.role_timings.get(role, [])),
+            model_counts=dict(self.role_model_counts.get(role, CounterCollection())),
+        )
+        return snapshot
+
+    def iter_role_usage_snapshots(self) -> Iterable[RoleUsageSnapshot]:
+        """Yield usage snapshots for every recorded role."""
+
+        for role in self.role_call_counts:
+            yield self.get_role_usage_snapshot(role)
+
+    def select_model_for_role(
+        self,
+        role: str,
+        candidates: Mapping[str, ModelBudget],
+        *,
+        default_model: str,
+        cost_budget: float | None = None,
+        latency_budget_ms: float | None = None,
+    ) -> RoutingDecision:
+        """Delegate to :func:`select_model_for_role` using recorded metrics."""
+
+        snapshot = self.get_role_usage_snapshot(role)
+        return _select_model_for_role(
+            snapshot,
+            candidates,
+            default_model=default_model,
+            cost_budget=cost_budget,
+            latency_budget_ms=latency_budget_ms,
+        )
 
     # ------------------------------------------------------------------
     # Query token monitoring helpers

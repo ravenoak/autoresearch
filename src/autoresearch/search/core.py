@@ -35,6 +35,7 @@ import re
 import shutil
 import subprocess
 import warnings
+from copy import deepcopy
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -59,6 +60,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from threading import Lock
 from weakref import WeakSet
 
 import numpy as np
@@ -221,6 +223,8 @@ class SearchConfigProtocol(Protocol):
     semantic_similarity_weight: float
     source_credibility_weight: float
     max_workers: int
+    shared_retrieval_cache: bool
+    parallel_backends: bool
     context_aware: ContextAwareConfigProtocol
     local_file: LocalFileConfigProtocol
     local_git: LocalGitConfigProtocol
@@ -356,6 +360,8 @@ class _SearchConfig(SearchConfigProtocol):
     semantic_similarity_weight: float
     source_credibility_weight: float
     max_workers: int
+    shared_retrieval_cache: bool
+    parallel_backends: bool
     context_aware: ContextAwareConfigProtocol
     local_file: LocalFileConfigProtocol
     local_git: LocalGitConfigProtocol
@@ -389,6 +395,12 @@ class _SearchConfig(SearchConfigProtocol):
                 getattr(obj, "max_workers", None),
                 default=max(1, len(backends)) if backends else 4,
                 minimum=1,
+            ),
+            shared_retrieval_cache=_coerce_bool(
+                getattr(obj, "shared_retrieval_cache", None), default=True
+            ),
+            parallel_backends=_coerce_bool(
+                getattr(obj, "parallel_backends", None), default=True
             ),
             context_aware=_ContextAwareConfig.from_object(context_obj),
             local_file=_LocalFileConfig.from_object(local_file_obj),
@@ -532,6 +544,10 @@ class Search:
     )
     _shared_instance: ClassVar[Optional["Search"]] = None
     _instances: ClassVar[WeakSet["Search"]] = WeakSet()
+    _retrieval_cache_lock: ClassVar[Lock] = Lock()
+    _shared_retrieval_cache: ClassVar[
+        Dict[tuple[str, str, int], List[Dict[str, Any]]]
+    ] = {}
 
     def __init__(self, cache: Optional[SearchCache] = None) -> None:
         self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
@@ -576,6 +592,47 @@ class Search:
         self.close_http_session()
         type(self).backends = self.backends
         type(self).embedding_backends = self.embedding_backends
+        type(self)._clear_shared_caches()
+
+    @classmethod
+    def _clear_shared_caches(cls) -> None:
+        """Clear the shared in-memory retrieval caches."""
+
+        with cls._retrieval_cache_lock:
+            cls._shared_retrieval_cache.clear()
+
+    @classmethod
+    def _normalise_cache_query(cls, query: str) -> str:
+        """Return a normalised cache key component for ``query``."""
+
+        return query.strip().casefold()
+
+    @classmethod
+    def _make_cache_key(
+        cls, query: str, backend: str, max_results: int
+    ) -> tuple[str, str, int]:
+        """Return a hashable cache key for retrieval results."""
+
+        return backend, cls._normalise_cache_query(query), max_results
+
+    @classmethod
+    def _get_shared_cached_results(
+        cls, cache_key: tuple[str, str, int]
+    ) -> list[Dict[str, Any]] | None:
+        """Return cached results for ``cache_key`` if available."""
+
+        with cls._retrieval_cache_lock:
+            cached = cls._shared_retrieval_cache.get(cache_key)
+            return deepcopy(cached) if cached is not None else None
+
+    @classmethod
+    def _store_shared_cached_results(
+        cls, cache_key: tuple[str, str, int], results: Sequence[Dict[str, Any]]
+    ) -> None:
+        """Persist ``results`` in the shared retrieval cache."""
+
+        with cls._retrieval_cache_lock:
+            cls._shared_retrieval_cache[cache_key] = deepcopy(list(results))
 
     @hybridmethod
     @contextmanager
@@ -1690,6 +1747,9 @@ class Search:
                 results_by_backend[name] = docs
                 results.extend(docs)
 
+        shared_cache_enabled = getattr(cfg.search, "shared_retrieval_cache", True)
+        backend_names = list(cfg.search.backends)
+
         def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
             backend = self.backends.get(name)
             if not backend:
@@ -1702,12 +1762,25 @@ class Search:
                     suggestion="Configure a valid search backend in your configuration file",
                 )
 
+            cache_key = self._make_cache_key(search_query, name, max_results)
+            if shared_cache_enabled:
+                shared_cached = self._get_shared_cached_results(cache_key)
+                if shared_cached is not None:
+                    log.debug(
+                        "Shared retrieval cache hit for %s via %s", search_query, name
+                    )
+                    self.add_embeddings(shared_cached, np_query_embedding)
+                    return name, shared_cached
+
             cached = self.cache.get_cached_results(search_query, name)
             if cached is not None:
-                self.add_embeddings(cached, np_query_embedding)
-                for r in cached:
+                trimmed = cached[:max_results]
+                self.add_embeddings(trimmed, np_query_embedding)
+                for r in trimmed:
                     r.setdefault("backend", name)
-                return name, cached[:max_results]
+                if shared_cache_enabled:
+                    self._store_shared_cached_results(cache_key, trimmed)
+                return name, trimmed
 
             try:
                 backend_results = backend(search_query, max_results)
@@ -1754,18 +1827,31 @@ class Search:
                     r.setdefault("backend", name)
             self.cache.cache_results(search_query, name, backend_results)
             self.add_embeddings(backend_results, np_query_embedding)
+            if shared_cache_enabled:
+                self._store_shared_cached_results(cache_key, backend_results)
             return name, backend_results
 
-        max_workers = getattr(cfg.search, "max_workers", len(cfg.search.backends))
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
-                executor.submit(run_backend, name): name for name in cfg.search.backends
-            }
-            for future in as_completed(futures):
-                name, backend_results = future.result()
-                if backend_results:
-                    results_by_backend[name] = backend_results
-                    results.extend(backend_results)
+        max_workers = getattr(cfg.search, "max_workers", len(backend_names) or 1)
+        max_workers = max(1, min(max_workers, len(backend_names) or 1))
+        parallel_enabled = getattr(cfg.search, "parallel_backends", True)
+
+        def _ingest_backend_output(name: str, backend_results: List[Dict[str, Any]]) -> None:
+            if backend_results:
+                results_by_backend[name] = backend_results
+                results.extend(backend_results)
+
+        if parallel_enabled and len(backend_names) > 1 and max_workers > 1:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures: Dict[Future[Tuple[str, List[Dict[str, Any]]]], str] = {
+                    executor.submit(run_backend, name): name for name in backend_names
+                }
+                for future in as_completed(futures):
+                    name, backend_results = future.result()
+                    _ingest_backend_output(name, backend_results)
+        else:
+            for name in backend_names:
+                name, backend_results = run_backend(name)
+                _ingest_backend_output(name, backend_results)
 
         storage_results = self.storage_hybrid_lookup(
             text_query, np_query_embedding, results_by_backend, max_results

@@ -77,6 +77,14 @@ class SearchConfig(BaseModel):
     local_git: LocalGitConfig = Field(default_factory=LocalGitConfig)
     max_workers: int = Field(default=4, ge=1)
     http_pool_size: int = Field(default=10, ge=1)
+    shared_retrieval_cache: bool = Field(
+        default=True,
+        description="Share in-memory retrieval caches across Search instances.",
+    )
+    parallel_backends: bool = Field(
+        default=True,
+        description="Execute HTTP backends concurrently when enabled.",
+    )
 
     _normalize_ranking_weights = model_validator(mode="after")(normalize_ranking_weights)
 

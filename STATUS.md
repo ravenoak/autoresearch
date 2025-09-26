@@ -19,6 +19,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 26, 2025
+- Wired budget-aware routing metrics into the orchestrator so dashboards can
+  surface per-role latency percentiles and token spend; added shared retrieval
+  cache and parallelisation toggles to stabilise search cost benchmarks.
 - Logged the Deep Research Enhancement Initiative and five-phase execution plan
   across ROADMAP.md and the new Deep Research Upgrade Plan so the alpha release
   workstream can stage adaptive gating, audits, GraphRAG, evaluation harnesses,

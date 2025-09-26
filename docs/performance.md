@@ -57,6 +57,39 @@ inside ``_capture_token_usage`` before passing prompts to the LLM adapter.
 Any remaining excess is trimmed by the adapter so prompts never exceed the
 configured budget.
 
+## Budget-Aware Model Routing
+
+``OrchestrationMetrics`` now tracks token deltas and latency per agent role.
+The new ``get_role_usage_snapshot`` helper provides average prompt tokens,
+completion tokens, latency, and model frequency for each role. These
+snapshots feed ``select_model_for_role`` in ``autoresearch.token_budget`` which
+scores candidate models against optional latency and cost ceilings. The
+heuristic defaults to the configured model when no candidates improve on the
+baseline, otherwise it chooses the lowest-cost option that satisfies the
+constraints. Routing decisions persist rationale strings so telemetry
+dashboards can visualise cost savings and latency percentiles per role.
+
+Each call to ``record_agent_timing`` logs role, model, latency, and token
+usage, enabling Grafana or Prometheus boards to chart P50/P95 latency by role
+alongside projected token spend. The telemetry summary emitted after every
+cycle now includes a ``role_usage`` section that can be ingested by downstream
+dashboards without extra aggregation.
+
+## Shared Retrieval Cache Controls
+
+External search requests now honour ``search.shared_retrieval_cache`` and
+``search.parallel_backends`` toggles. When the cache toggle is enabled all
+``Search`` instances reuse an in-memory retrieval cache on top of the existing
+TinyDB persistence, preventing redundant HTTP calls once a backend has already
+served a query. Clearing the persistent cache no longer forces repeated
+network calls within the same run.
+
+Parallelism can be disabled by setting ``search.parallel_backends`` to
+``false`` which skips the thread pool entirely. This is useful when testing
+rate-limited backends or benchmarking serial behaviour. The shared cache and
+parallel toggles are surfaced in the runtime summary so observability stacks
+can flag when the knobs flip between runs.
+
 ## Connection Pooling
 
 HTTP requests to LLM and search backends reuse shared `requests.Session`

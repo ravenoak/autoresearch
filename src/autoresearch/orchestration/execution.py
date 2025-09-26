@@ -274,6 +274,17 @@ def _execute_agent(
             agent = _get_agent(agent_name, agent_factory)
             if not _check_agent_can_execute(agent, agent_name, state, config):
                 return
+            role_attr = getattr(agent, "role", None)
+            role_name = (
+                role_attr.value
+                if hasattr(role_attr, "value")
+                else str(role_attr) if role_attr is not None else agent_name
+            )
+            try:
+                model_name = agent.get_model(config)
+            except Exception:  # pragma: no cover - defensive guard
+                model_name = getattr(config, "default_model", "")
+            metrics.begin_agent_turn(agent_name, role_name, model_name)
             _deliver_messages(agent_name, state, config)
             _log_agent_execution(agent_name, state, loop)
             _call_agent_start_callback(agent_name, state, callbacks)
