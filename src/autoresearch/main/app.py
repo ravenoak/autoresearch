@@ -11,7 +11,12 @@ from typing import Any, Optional
 import typer
 from rich.console import Console
 
-from ..cli_helpers import handle_command_not_found, parse_agent_groups
+from ..cli_helpers import (
+    handle_command_not_found,
+    parse_agent_groups,
+    depth_option_callback,
+    depth_help_text,
+)
 from ..cli_utils import (
     Verbosity,
     console,
@@ -38,6 +43,7 @@ from ..errors import StorageError
 from ..logging_utils import configure_logging
 from ..mcp_interface import create_server
 from ..monitor import monitor_app
+from ..output_format import OutputDepth
 
 app = typer.Typer(
     help=(
@@ -204,6 +210,12 @@ def search(
     query: str = typer.Argument(..., help="Natural-language query to process"),
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
+    ),
+    depth: Optional[OutputDepth] = typer.Option(
+        None,
+        "--depth",
+        help=f"Depth of detail in CLI output ({depth_help_text()})",
+        callback=depth_option_callback,
     ),
     interactive: bool = typer.Option(
         False,
@@ -434,7 +446,7 @@ def search(
         # Show a success message before the results
         print_success("Query processed successfully")
 
-        OutputFormatter.format(result, fmt)
+        OutputFormatter.format(result, fmt, depth=depth)
         if visualize:
             OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)
@@ -486,7 +498,7 @@ def search(
             if os.getenv("PYTEST_CURRENT_TEST")
             else ("json" if not sys.stdout.isatty() else "markdown")
         )
-        OutputFormatter.format(error_result, fmt)
+        OutputFormatter.format(error_result, fmt, depth=depth)
 
 
 # Add monitoring subcommands

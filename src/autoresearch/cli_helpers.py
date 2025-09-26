@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 import difflib
-from typing import Sequence, List, Mapping
+from typing import Sequence, List, Mapping, Optional
 
 import click
 import typer
 
 from rich.console import Console
 from fastapi import HTTPException
+
+from .output_format import (
+    OutputDepth,
+    describe_depth_levels,
+    get_depth_aliases,
+    normalize_depth,
+)
 
 from .cli_utils import (
     print_error,
@@ -95,3 +102,26 @@ def handle_command_not_found(ctx: typer.Context, command: str) -> None:
 
     typer.secho("\nRun 'autoresearch --help' to see all available commands.")
     raise typer.Exit(code=1)
+
+
+def depth_option_callback(value: Optional[str]) -> Optional[OutputDepth]:
+    """Parse ``--depth`` option values into :class:`OutputDepth`."""
+
+    if value is None:
+        return None
+    try:
+        return normalize_depth(value)
+    except ValueError as exc:  # pragma: no cover - typer handles user feedback
+        raise typer.BadParameter(str(exc)) from exc
+
+
+def depth_help_text() -> str:
+    """Return a human-readable description of depth choices."""
+
+    descriptions = describe_depth_levels()
+    parts = [f"{depth.label.lower()}: {desc}" for depth, desc in descriptions.items()]
+    aliases = sorted({k for k in get_depth_aliases().keys() if k.isalpha()})
+    return (
+        " | ".join(parts)
+        + f". Aliases: {', '.join(aliases)} or 0-3."
+    )

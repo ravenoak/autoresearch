@@ -34,6 +34,12 @@ from .config_utils import (
     get_config_presets,
     apply_preset,
 )
+from .output_format import OutputFormatter, build_depth_payload, OutputDepth
+from .ui.provenance import (
+    depth_sequence,
+    extract_graphrag_artifacts,
+    generate_socratic_prompts,
+)
 from .streamlit_ui import (
     apply_accessibility_settings,
     apply_theme_settings,
@@ -1641,103 +1647,16 @@ def create_progress_graph(agent_perf: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def format_result_as_markdown(result: QueryResponse) -> str:
-    """Format the query result as Markdown.
+def format_result_as_markdown(result: QueryResponse, depth: OutputDepth) -> str:
+    """Format the query result as Markdown using the shared formatter."""
 
-    Args:
-        result: The query response to format
-
-    Returns:
-        str: The formatted Markdown string
-    """
-    markdown = []
-
-    # Add answer
-    markdown.append("# Answer")
-    markdown.append("")
-    markdown.append(result.answer)
-    markdown.append("")
-
-    # Add citations
-    markdown.append("## Citations")
-    markdown.append("")
-    if result.citations:
-        for i, citation in enumerate(result.citations):
-            markdown.append(f"{i + 1}. {citation}")
-            markdown.append("")
-    else:
-        markdown.append("No citations provided")
-        markdown.append("")
-
-    # Add reasoning
-    markdown.append("## Reasoning")
-    markdown.append("")
-    if result.reasoning:
-        for i, step in enumerate(result.reasoning):
-            markdown.append(f"{i + 1}. {step}")
-            markdown.append("")
-    else:
-        markdown.append("No reasoning steps provided")
-        markdown.append("")
-
-    # Add metrics
-    markdown.append("## Metrics")
-    markdown.append("")
-    if result.metrics:
-        for key, value in result.metrics.items():
-            markdown.append(f"**{key}:** {value}")
-        markdown.append("")
-    else:
-        markdown.append("No metrics provided")
-        markdown.append("")
-
-    markdown.append("## Claim Audits")
-    markdown.append("")
-    if result.claim_audits:
-        markdown.append("| Claim ID | Status | Entailment | Top Source |")
-        markdown.append("| --- | --- | --- | --- |")
-        for audit in result.claim_audits:
-            status = str(audit.get("status", "unknown"))
-            entailment = audit.get("entailment_score")
-            entailment_display = "—" if entailment is None else f"{entailment:.2f}"
-            sources = audit.get("sources") or []
-            primary = sources[0] if sources else {}
-            label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
-            if label and len(label) > 60:
-                label = label[:57] + "..."
-            markdown.append(
-                f"| {audit.get('claim_id', '')} | {status} | {entailment_display} | {label} |"
-            )
-        markdown.append("")
-    else:
-        markdown.append("No claim audits recorded")
-        markdown.append("")
-
-    return "\n".join(markdown)
+    return OutputFormatter.render(result, "markdown", depth=depth)
 
 
-def format_result_as_json(result: QueryResponse) -> str:
-    """Format the query result as JSON.
+def format_result_as_json(result: QueryResponse, depth: OutputDepth) -> str:
+    """Format the query result as JSON."""
 
-    Args:
-        result: The query response to format
-
-    Returns:
-        str: The formatted JSON string
-    """
-    import json
-
-    # Convert the result to a dictionary
-    result_dict = {
-        "answer": result.answer,
-        "citations": result.citations,
-        "reasoning": result.reasoning,
-        "metrics": result.metrics,
-        "claim_audits": result.claim_audits,
-    }
-
-    # Convert to JSON with pretty formatting
-    return json.dumps(result_dict, indent=2)
+    return OutputFormatter.render(result, "json", depth=depth)
 
 
 def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
@@ -1749,34 +1668,59 @@ def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
     print_success(f"Graph written to {output_path}")
 
 
-def display_results(result: QueryResponse):
-    """Display the query results in a formatted way.
+def display_results(result: QueryResponse) -> None:
+    """Display the query results in a formatted way."""
 
-    Args:
-        result: The query response to display
-    """
-    # Store the result in session state
     st.session_state.current_result = result
 
-    # Display answer
+    depth_options = depth_sequence()
+    depth_values = [depth.value for depth in depth_options]
+    stored_depth = st.session_state.get("ui_depth", OutputDepth.STANDARD.value)
+    try:
+        default_index = depth_values.index(stored_depth)
+    except ValueError:
+        default_index = depth_values.index(OutputDepth.STANDARD.value)
+
+    selected_value = st.radio(
+        "Detail depth",
+        depth_values,
+        index=default_index,
+        format_func=lambda val: OutputDepth(val).label,
+        horizontal=True,
+        help="Choose how much detail to display, from TL;DR to full trace.",
+    )
+    selected_depth = OutputDepth(selected_value)
+    st.session_state.ui_depth = selected_depth.value
+
+    payload = build_depth_payload(result, selected_depth)
+    st.session_state["current_payload"] = payload
+
     st.markdown(
         "<div role='region' aria-label='Query results' aria-live='polite'>",
         unsafe_allow_html=True,
     )
+    st.markdown("<h2 class='subheader'>TL;DR</h2>", unsafe_allow_html=True)
+    st.write(payload.tldr or "No summary available.")
+
     st.markdown("<h2 class='subheader'>Answer</h2>", unsafe_allow_html=True)
+    st.markdown(payload.answer, unsafe_allow_html=True)
 
-    # Enhanced Markdown rendering with support for LaTeX
-    # Use unsafe_allow_html=True to allow HTML formatting in the Markdown
-    st.markdown(result.answer, unsafe_allow_html=True)
+    st.markdown("<h3>Key Findings</h3>", unsafe_allow_html=True)
+    if payload.key_findings:
+        for finding in payload.key_findings:
+            st.markdown(f"- {finding}")
+    if note := payload.notes.get("key_findings"):
+        st.caption(note)
 
-    # Add support for LaTeX math expressions
-    # This is handled automatically by Streamlit's Markdown renderer
+    prompts = generate_socratic_prompts(payload)
+    if prompts:
+        with st.expander("Socratic prompts", expanded=False):
+            for prompt in prompts:
+                st.markdown(f"- {prompt}")
 
-    # Add export buttons
     col1, col2 = st.columns(2)
     with col1:
-        # Export as Markdown
-        markdown_result = format_result_as_markdown(result)
+        markdown_result = format_result_as_markdown(result, selected_depth)
         st.download_button(
             label="Export as Markdown",
             data=markdown_result,
@@ -1785,8 +1729,7 @@ def display_results(result: QueryResponse):
         )
 
     with col2:
-        # Export as JSON
-        json_result = format_result_as_json(result)
+        json_result = format_result_as_json(result, selected_depth)
         st.download_button(
             label="Export as JSON",
             data=json_result,
@@ -1794,40 +1737,39 @@ def display_results(result: QueryResponse):
             mime="application/json",
         )
 
-    # Create tabs for citations, reasoning, audits, metrics, knowledge graph and trace
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Citations", "Reasoning", "Claim Audits", "Metrics", "Knowledge Graph", "Trace"]
+        ["Citations", "Reasoning", "Provenance", "Metrics", "Knowledge Graph", "Trace"]
     )
 
-    # Citations tab
     with tab1:
         st.markdown("<h3>Citations</h3>", unsafe_allow_html=True)
-        if result.citations:
-            for i, citation in enumerate(result.citations):
-                with st.container():
-                    st.markdown(
-                        f"<div class='citation' role='listitem'>{citation}</div>",
-                        unsafe_allow_html=True,
-                    )
+        if payload.citations:
+            for citation in payload.citations:
+                st.markdown(
+                    f"<div class='citation' role='listitem'>{citation}</div>",
+                    unsafe_allow_html=True,
+                )
+        elif note := payload.notes.get("citations"):
+            st.info(note)
         else:
             st.info("No citations provided")
 
-    # Reasoning tab
     with tab2:
         st.markdown("<h3>Reasoning</h3>", unsafe_allow_html=True)
-        if result.reasoning:
-            for i, step in enumerate(result.reasoning):
+        if payload.reasoning:
+            for idx, step in enumerate(payload.reasoning, 1):
                 st.markdown(
-                    f"<div class='reasoning-step' role='listitem'>{i + 1}. {step}</div>",
+                    f"<div class='reasoning-step' role='listitem'>{idx}. {step}</div>",
                     unsafe_allow_html=True,
                 )
+        elif note := payload.notes.get("reasoning"):
+            st.info(note)
         else:
             st.info("No reasoning steps provided")
 
-    # Claim Audits tab
     with tab3:
         st.markdown("<h3>Claim Audits</h3>", unsafe_allow_html=True)
-        if result.claim_audits:
+        if payload.claim_audits:
             badge_styles = {
                 "supported": "#0f5132",
                 "unsupported": "#842029",
@@ -1851,8 +1793,8 @@ def display_results(result: QueryResponse):
                 """,
                 unsafe_allow_html=True,
             )
-            rows = []
-            for audit in result.claim_audits:
+            rows: list[str] = []
+            for audit in payload.claim_audits:
                 status_raw = str(audit.get("status", "unknown")).lower()
                 color = badge_styles.get(status_raw, "#6c757d")
                 badge = (
@@ -1880,31 +1822,44 @@ def display_results(result: QueryResponse):
                 f"<tbody>{''.join(rows)}</tbody></table>"
             )
             st.markdown(table_html, unsafe_allow_html=True)
+            if note := payload.notes.get("claim_audits"):
+                st.caption(note)
+        elif note := payload.notes.get("claim_audits"):
+            st.info(note)
         else:
             st.info("No claim audits recorded")
 
-    # Metrics tab
+        artifacts = extract_graphrag_artifacts(result.metrics)
+        if artifacts:
+            st.markdown("### GraphRAG Artifacts")
+            st.json(artifacts)
+        elif payload.notes.get("metrics"):
+            st.caption(payload.notes["metrics"])
+
     with tab4:
         st.markdown("<h3>Metrics</h3>", unsafe_allow_html=True)
-        if result.metrics:
+        if payload.metrics:
             with st.container():
                 st.markdown(
                     "<div class='metrics-container' role='region' aria-label='Metrics'>",
                     unsafe_allow_html=True,
                 )
-                for key, value in result.metrics.items():
+                for key, value in payload.metrics.items():
                     st.markdown(f"**{key}:** {value}")
                 st.markdown("</div>", unsafe_allow_html=True)
+            if note := payload.notes.get("metrics"):
+                st.caption(note)
+        elif note := payload.notes.get("metrics"):
+            st.info(note)
         else:
             st.info("No metrics provided")
 
-    # Knowledge Graph tab
     with tab5:
         st.markdown("<h3>Knowledge Graph</h3>", unsafe_allow_html=True)
-        if result.reasoning and result.citations:
-            # Create and display the knowledge graph
+        if payload.citations and payload.reasoning:
             graph_image = create_knowledge_graph(result)
             import base64
+
             buffered = io.BytesIO()
             graph_image.save(buffered, format="PNG")
             encoded = base64.b64encode(buffered.getvalue()).decode()
@@ -1912,15 +1867,21 @@ def display_results(result: QueryResponse):
                 f"<img src='data:image/png;base64,{encoded}' alt='Knowledge graph visualization' style='width:100%;' />",
                 unsafe_allow_html=True,
             )
+        elif payload.notes.get("citations") or payload.notes.get("reasoning"):
+            st.info("Increase depth to view the knowledge graph.")
         else:
             st.info("Not enough information to create a knowledge graph")
 
-    # Trace tab
     with tab6:
         st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)
-        if result.reasoning:
-            trace_graph = create_interaction_trace(result.reasoning)
+        if payload.reasoning:
+            trace_graph = create_interaction_trace(payload.reasoning)
             st.graphviz_chart(trace_graph)
+        elif payload.notes.get("reasoning"):
+            st.info(payload.notes["reasoning"])
+        else:
+            st.info("No reasoning steps available")
+
         metrics = st.session_state.get("agent_performance", {})
         if metrics:
             st.markdown("### Progress Metrics")

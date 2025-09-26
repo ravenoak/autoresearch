@@ -51,6 +51,29 @@ Run a search from the command line:
 autoresearch search "What is quantum computing?"
 ```
 
+### Controlling output depth
+
+The `search` command accepts a `--depth` flag so you can tune how much detail
+is printed. Depth presets include:
+
+- `tldr` – TL;DR summary plus the final answer.
+- `concise` – adds key findings and a short citation roll-up.
+- `standard` – includes claim audit tables and expanded metrics.
+- `trace` – exposes the full reasoning trace and raw response payload.
+
+For example:
+
+```bash
+autoresearch search "What is agentic search?" --depth concise
+autoresearch search "Explain prompt reflection" --depth trace --output json
+```
+
+When using the Streamlit UI, a radio selector above the results mirrors the
+same depth levels. Switching depth refreshes the TL;DR, key findings, claim
+audits, and GraphRAG artefacts without re-running the query. Each panel shows a
+provenance note when information is truncated so you know when to increase the
+depth for audit work.
+
 ## API authentication
 
 To access the HTTP API, configure keys and roles:
