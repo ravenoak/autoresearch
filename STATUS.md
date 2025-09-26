@@ -21,6 +21,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 ## September 26, 2025
 - Integrated budget-aware model routing, shared retrieval cache namespaces, and
   telemetry updates that surface cost savings alongside latency percentiles.
+- Instrumented the orchestration summary with `agent_latency_p95_ms`,
+  `agent_avg_tokens`, `model_routing_decisions`, and `model_routing_cost_savings`
+  so dashboards can plot budget impact without reprocessing raw samples.
 - Logged the Deep Research Enhancement Initiative and five-phase execution plan
   across ROADMAP.md and the new Deep Research Upgrade Plan so the alpha release
   workstream can stage adaptive gating, audits, GraphRAG, evaluation harnesses,
