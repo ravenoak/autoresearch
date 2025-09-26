@@ -23,8 +23,16 @@ def _make_hybrid_stub(
     """
 
     def _stub(subject, *args, **kwargs):
-        binding = "class" if subject is Search else "instance"
-        calls.append({"binding": binding, "args": args, "kwargs": kwargs})
+        is_class = isinstance(subject, type) and issubclass(subject, Search)
+        binding = "class" if is_class else "instance"
+        calls.append(
+            {
+                "binding": binding,
+                "subject": subject,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        )
         if responder is not None:
             return responder(subject, args, kwargs)
         return default
