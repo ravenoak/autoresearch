@@ -102,6 +102,7 @@ def test_lru_eviction_order(monkeypatch, ensure_duckdb_schema):
     StorageManager.clear_all()
     monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
     monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
+
     with freeze_time("2024-01-01") as frozen_time:
         StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
         frozen_time.tick(delta=timedelta(seconds=1))
@@ -194,7 +195,7 @@ def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_sche
 
 
 def test_deterministic_override_clamped_to_minimum(
-    ensure_duckdb_schema, monkeypatch, capfd
+    ensure_duckdb_schema, monkeypatch, capfd, caplog
 ):
     """Overrides below the survivor floor are clamped even when VSS persistence fails."""
 
@@ -221,6 +222,7 @@ def test_deterministic_override_clamped_to_minimum(
         raise StorageError("VSS persistence failed")
 
     monkeypatch.setattr(StorageManager, "refresh_vector_index", fail_refresh)
+    caplog.set_level("INFO")
 
     with freeze_time("2024-01-01") as frozen_time:
         StorageManager.persist_claim(
@@ -256,8 +258,9 @@ def test_deterministic_override_clamped_to_minimum(
     assert failure_calls["count"] >= 1
 
     clamp_message = "Deterministic node budget (override=1) below minimum 2; clamping to 2"
-    out, _ = capfd.readouterr()
-    assert clamp_message in out
+    out, err = capfd.readouterr()
+    combined_output = f"{out}{err}{''.join(caplog.messages)}"
+    assert clamp_message in combined_output
 
 
 def test_initialize_storage_in_memory(monkeypatch):

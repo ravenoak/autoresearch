@@ -19,5 +19,16 @@ def test_run_benchmark_scaling():
     mod = _load_module()
     results = mod.run_benchmark(2, 3, 5, 20, 0.5)
     assert len(results) == 2
-    assert results[1]["throughput"] > results[0]["throughput"]
-    assert results[0]["expected_memory"] == 10.0
+
+    one_worker, two_workers = results
+    assert one_worker["expected_memory"] == 10.0
+
+    # The median throughput should scale noticeably once thread start-up costs
+    # are amortized.
+    assert two_workers["throughput"] >= one_worker["throughput"] * 1.2
+
+    # Each individual throughput sample for two workers should comfortably
+    # exceed the single-worker samples to guard against regressions in the
+    # amortization logic. A small tolerance covers scheduler jitter.
+    paired_samples = zip(one_worker["throughput_samples"], two_workers["throughput_samples"])
+    assert all(two >= one * 1.1 for one, two in paired_samples)
