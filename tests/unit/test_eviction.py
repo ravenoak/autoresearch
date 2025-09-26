@@ -5,6 +5,7 @@ from freezegun import freeze_time
 from autoresearch import storage
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
+from autoresearch.errors import StorageError
 from autoresearch.orchestration import metrics
 from autoresearch.storage import StorageManager
 
@@ -190,6 +191,73 @@ def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_sche
     graph = StorageManager.get_graph()
     assert set(graph.nodes) == {"c2", "c3"}
     assert len(graph.nodes) == 2
+
+
+def test_deterministic_override_clamped_to_minimum(
+    ensure_duckdb_schema, monkeypatch, capfd
+):
+    """Overrides below the survivor floor are clamped even when VSS persistence fails."""
+
+    StorageManager.clear_all()
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
+
+    config = ConfigModel(ram_budget_mb=3)
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+    config.storage.vector_extension = True
+    config.storage.deterministic_node_budget = 1
+    config.storage.minimum_deterministic_resident_nodes = 2
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 1024.0)
+    monkeypatch.setattr(StorageManager, "has_vss", lambda: True)
+
+    failure_calls = {"count": 0}
+
+    def fail_refresh() -> None:
+        failure_calls["count"] += 1
+        raise StorageError("VSS persistence failed")
+
+    monkeypatch.setattr(StorageManager, "refresh_vector_index", fail_refresh)
+
+    with freeze_time("2024-01-01") as frozen_time:
+        StorageManager.persist_claim(
+            {
+                "id": "c1",
+                "type": "fact",
+                "content": "a",
+                "embedding": [0.0] * 384,
+            }
+        )
+        frozen_time.tick(delta=timedelta(seconds=1))
+        StorageManager.persist_claim(
+            {
+                "id": "c2",
+                "type": "fact",
+                "content": "b",
+                "embedding": [0.0] * 384,
+            }
+        )
+        frozen_time.tick(delta=timedelta(seconds=1))
+        StorageManager.persist_claim(
+            {
+                "id": "c3",
+                "type": "fact",
+                "content": "c",
+                "embedding": [0.0] * 384,
+            }
+        )
+
+    graph = StorageManager.get_graph()
+    assert set(graph.nodes) == {"c2", "c3"}
+    assert len(graph.nodes) == 2
+    assert failure_calls["count"] >= 1
+
+    clamp_message = "Deterministic node budget (override=1) below minimum 2; clamping to 2"
+    out, _ = capfd.readouterr()
+    assert clamp_message in out
 
 
 def test_initialize_storage_in_memory(monkeypatch):
