@@ -71,6 +71,10 @@ class DepthPlan:
     reasoning_limit: Optional[int]
     include_metrics: bool
     include_raw: bool
+    include_task_graph: bool
+    task_graph_limit: Optional[int]
+    include_react_traces: bool
+    react_trace_limit: Optional[int]
 
 
 @dataclass
@@ -86,6 +90,8 @@ class DepthPayload:
     reasoning: list[str]
     metrics: dict[str, Any]
     raw_response: Optional[dict[str, Any]]
+    task_graph: Optional[dict[str, Any]]
+    react_traces: list[dict[str, Any]]
     notes: dict[str, str] = field(default_factory=dict)
 
 
@@ -121,6 +127,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         reasoning_limit=None,
         include_metrics=False,
         include_raw=False,
+        include_task_graph=False,
+        task_graph_limit=None,
+        include_react_traces=False,
+        react_trace_limit=None,
     ),
     OutputDepth.CONCISE: DepthPlan(
         level=OutputDepth.CONCISE,
@@ -134,6 +144,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         reasoning_limit=None,
         include_metrics=True,
         include_raw=False,
+        include_task_graph=False,
+        task_graph_limit=None,
+        include_react_traces=False,
+        react_trace_limit=None,
     ),
     OutputDepth.STANDARD: DepthPlan(
         level=OutputDepth.STANDARD,
@@ -147,6 +161,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         reasoning_limit=8,
         include_metrics=True,
         include_raw=False,
+        include_task_graph=True,
+        task_graph_limit=3,
+        include_react_traces=False,
+        react_trace_limit=None,
     ),
     OutputDepth.TRACE: DepthPlan(
         level=OutputDepth.TRACE,
@@ -160,6 +178,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         reasoning_limit=None,
         include_metrics=True,
         include_raw=True,
+        include_task_graph=True,
+        task_graph_limit=None,
+        include_react_traces=True,
+        react_trace_limit=None,
     ),
 }
 
@@ -204,6 +226,8 @@ _SECTION_LABELS: Dict[str, str] = {
     "reasoning": "Reasoning trace",
     "metrics": "Metrics",
     "raw_response": "Raw response",
+    "task_graph": "Task graph",
+    "react_traces": "ReAct traces",
 }
 
 
@@ -350,6 +374,48 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         metrics = {}
         notes["metrics"] = _hidden_message("metrics", plan)
 
+    if plan.include_task_graph:
+        graph_payload: Optional[dict[str, Any]] = None
+        if response.task_graph:
+            if isinstance(response.task_graph, Mapping):
+                graph_payload = dict(response.task_graph)
+            else:
+                graph_payload = {"tasks": list(response.task_graph)}
+            tasks_all = graph_payload.get("tasks", [])
+            limited_tasks, truncated = _limit_items(tasks_all, plan.task_graph_limit)
+            graph_payload["tasks"] = [
+                dict(task) if isinstance(task, Mapping) else {"value": task}
+                for task in limited_tasks
+            ]
+            if truncated is not None:
+                notes["task_graph"] = _truncation_message(
+                    "task_graph", len(limited_tasks), truncated, depth_level
+                )
+        else:
+            graph_payload = None
+    else:
+        graph_payload = None
+        notes["task_graph"] = _hidden_message("task_graph", plan)
+
+    if plan.include_react_traces:
+        traces_all = list(response.react_traces)
+        react_traces_limited, truncated = _limit_items(
+            traces_all, plan.react_trace_limit
+        )
+        react_traces_payload: list[dict[str, Any]] = []
+        for trace in react_traces_limited:
+            if isinstance(trace, Mapping):
+                react_traces_payload.append(dict(trace))
+            else:
+                react_traces_payload.append({"value": trace})
+        if truncated is not None:
+            notes["react_traces"] = _truncation_message(
+                "react_traces", len(react_traces_payload), truncated, depth_level
+            )
+    else:
+        react_traces_payload = []
+        notes["react_traces"] = _hidden_message("react_traces", plan)
+
     raw_response = response.model_dump() if plan.include_raw else None
     if raw_response is None:
         notes["raw_response"] = _hidden_message("raw_response", plan)
@@ -364,6 +430,8 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         reasoning=reasoning,
         metrics=metrics,
         raw_response=raw_response,
+        task_graph=graph_payload,
+        react_traces=react_traces_payload,
         notes=notes,
     )
 
@@ -440,6 +508,154 @@ def _format_metrics_plain(metrics: Mapping[str, Any]) -> str:
     return "\n".join(f"- {key}: {value}" for key, value in metrics.items())
 
 
+def _format_task_graph_markdown(task_graph: Optional[Mapping[str, Any]]) -> str:
+    """Format planner task graph for markdown output."""
+
+    if not task_graph:
+        return ""
+    tasks = task_graph.get("tasks", []) if isinstance(task_graph, Mapping) else []
+    if not tasks:
+        return ""
+
+    lines: list[str] = []
+    for task in tasks:
+        if not isinstance(task, Mapping):
+            lines.append(f"- {task}")
+            continue
+        task_id = str(task.get("id") or "task")
+        question = str(task.get("question") or "").strip()
+        headline = f"- **{task_id}**"
+        if question:
+            headline += f": {question}"
+        lines.append(headline)
+
+        def _join(items: Iterable[Any]) -> str:
+            return ", ".join(str(item) for item in items if str(item).strip())
+
+        tools = _join(task.get("tools", []))
+        if tools:
+            lines.append(f"  - Tools: {tools}")
+
+        depends_on = _join(task.get("depends_on", []))
+        if depends_on:
+            lines.append(f"  - Depends on: {depends_on}")
+
+        criteria = _join(task.get("criteria", []))
+        if criteria:
+            lines.append(f"  - Criteria: {criteria}")
+
+        sub_questions = task.get("sub_questions", [])
+        if isinstance(sub_questions, Iterable) and not isinstance(sub_questions, (str, bytes)):
+            sub_items = [str(item).strip() for item in sub_questions if str(item).strip()]
+            if sub_items:
+                lines.append("  - Sub-questions:")
+                lines.extend(f"    - {item}" for item in sub_items)
+    return "\n".join(lines)
+
+
+def _format_task_graph_plain(task_graph: Optional[Mapping[str, Any]]) -> str:
+    """Format planner task graph for plain text output."""
+
+    if not task_graph:
+        return ""
+    tasks = task_graph.get("tasks", []) if isinstance(task_graph, Mapping) else []
+    if not tasks:
+        return ""
+
+    lines: list[str] = []
+    for task in tasks:
+        if not isinstance(task, Mapping):
+            lines.append(f"- {task}")
+            continue
+        task_id = str(task.get("id") or "task")
+        question = str(task.get("question") or "").strip()
+        headline = f"- {task_id}"
+        if question:
+            headline += f": {question}"
+        lines.append(headline)
+
+        def _join(items: Iterable[Any]) -> str:
+            return ", ".join(str(item) for item in items if str(item).strip())
+
+        tools = _join(task.get("tools", []))
+        if tools:
+            lines.append(f"  - Tools: {tools}")
+
+        depends_on = _join(task.get("depends_on", []))
+        if depends_on:
+            lines.append(f"  - Depends on: {depends_on}")
+
+        criteria = _join(task.get("criteria", []))
+        if criteria:
+            lines.append(f"  - Criteria: {criteria}")
+
+        sub_questions = task.get("sub_questions", [])
+        if isinstance(sub_questions, Iterable) and not isinstance(sub_questions, (str, bytes)):
+            sub_items = [str(item).strip() for item in sub_questions if str(item).strip()]
+            if sub_items:
+                lines.append("  - Sub-questions:")
+                lines.extend(f"    - {item}" for item in sub_items)
+    return "\n".join(lines)
+
+
+def _format_react_traces_markdown(traces: Iterable[Mapping[str, Any]]) -> str:
+    """Format ReAct traces for markdown output."""
+
+    lines: list[str] = []
+    for trace in traces:
+        if not isinstance(trace, Mapping):
+            lines.append(f"- {trace}")
+            continue
+        task_id = str(trace.get("task_id") or "task")
+        step = trace.get("step")
+        thought = str(trace.get("thought") or "").strip()
+        header = f"- **{task_id}" + (f"#{step}" if step is not None else "") + "**"
+        if thought:
+            header += f": {thought}"
+        lines.append(header)
+        action = trace.get("action")
+        if isinstance(action, str) and action.strip():
+            lines.append(f"  - Action: {action.strip()}")
+        observation = trace.get("observation")
+        if isinstance(observation, str) and observation.strip():
+            lines.append(f"  - Observation: {observation.strip()}")
+        elif observation not in (None, ""):
+            lines.append(f"  - Observation: {observation}")
+        tool = trace.get("tool")
+        if tool:
+            lines.append(f"  - Tool: {tool}")
+    return "\n".join(lines)
+
+
+def _format_react_traces_plain(traces: Iterable[Mapping[str, Any]]) -> str:
+    """Format ReAct traces for plain text output."""
+
+    lines: list[str] = []
+    for trace in traces:
+        if not isinstance(trace, Mapping):
+            lines.append(f"- {trace}")
+            continue
+        task_id = str(trace.get("task_id") or "task")
+        step = trace.get("step")
+        thought = str(trace.get("thought") or "").strip()
+        header = f"- {task_id}" + (f"#{step}" if step is not None else "")
+        if thought:
+            header += f": {thought}"
+        lines.append(header)
+        action = trace.get("action")
+        if isinstance(action, str) and action.strip():
+            lines.append(f"  - Action: {action.strip()}")
+        observation = trace.get("observation")
+        if isinstance(observation, str) and observation.strip():
+            lines.append(f"  - Observation: {observation.strip()}")
+        elif observation not in (None, ""):
+            lines.append(f"  - Observation: {observation}")
+        tool = trace.get("tool")
+        if tool:
+            lines.append(f"  - Tool: {tool}")
+    return "\n".join(lines)
+
+
 def _render_markdown(payload: DepthPayload) -> str:
     """Render the payload as markdown text."""
 
@@ -485,6 +701,22 @@ def _render_markdown(payload: DepthPayload) -> str:
     if metrics_section:
         parts.append(metrics_section)
     if note := payload.notes.get("metrics"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Task Graph")
+    task_graph_section = _format_task_graph_markdown(payload.task_graph)
+    if task_graph_section:
+        parts.append(task_graph_section)
+    if note := payload.notes.get("task_graph"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## ReAct Trace")
+    react_section = _format_react_traces_markdown(payload.react_traces)
+    if react_section:
+        parts.append(react_section)
+    if note := payload.notes.get("react_traces"):
         parts.append(f"> {note}")
 
     parts.append("")
@@ -547,6 +779,22 @@ def _render_plain(payload: DepthPayload) -> str:
         lines.append(note)
 
     lines.append("")
+    lines.append("Task Graph:")
+    task_graph_section = _format_task_graph_plain(payload.task_graph)
+    if task_graph_section:
+        lines.append(task_graph_section)
+    if note := payload.notes.get("task_graph"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append("ReAct Trace:")
+    react_section = _format_react_traces_plain(payload.react_traces)
+    if react_section:
+        lines.append(react_section)
+    if note := payload.notes.get("react_traces"):
+        lines.append(note)
+
+    lines.append("")
     lines.append(f"Depth: {payload.depth.label}")
 
     lines.append("")
@@ -573,6 +821,10 @@ def _render_json(payload: DepthPayload) -> str:
         "metrics": _json_safe(payload.metrics),
         "notes": payload.notes,
     }
+    if payload.task_graph is not None:
+        data["task_graph"] = _json_safe(payload.task_graph)
+    if payload.react_traces:
+        data["react_traces"] = [_json_safe(item) for item in payload.react_traces]
     if payload.raw_response is not None:
         data["raw_response"] = _json_safe(payload.raw_response)
     return json.dumps(data, indent=2, ensure_ascii=False)
@@ -591,6 +843,10 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
     metrics_plain = _format_metrics_plain(payload.metrics)
     claim_audits_markdown = _format_claim_audits_markdown(payload.claim_audits)
     claim_audits_plain = _format_claim_audits_plain(payload.claim_audits)
+    task_graph_markdown = _format_task_graph_markdown(payload.task_graph)
+    task_graph_plain = _format_task_graph_plain(payload.task_graph)
+    react_markdown = _format_react_traces_markdown(payload.react_traces)
+    react_plain = _format_react_traces_plain(payload.react_traces)
 
     return {
         "tldr": payload.tldr,
@@ -618,6 +874,14 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         "metrics_markdown": metrics_markdown,
         "metrics_plain": metrics_plain,
         "metrics_note": payload.notes.get("metrics", ""),
+        "task_graph": task_graph_markdown or payload.notes.get("task_graph", ""),
+        "task_graph_markdown": task_graph_markdown,
+        "task_graph_plain": task_graph_plain,
+        "task_graph_note": payload.notes.get("task_graph", ""),
+        "react_traces": react_markdown or payload.notes.get("react_traces", ""),
+        "react_traces_markdown": react_markdown,
+        "react_traces_plain": react_plain,
+        "react_traces_note": payload.notes.get("react_traces", ""),
         "raw_json": (
             json.dumps(payload.raw_response, indent=2, ensure_ascii=False)
             if payload.raw_response is not None
@@ -665,6 +929,10 @@ class FormatTemplate(BaseModel):
             "claim_audits_note": "",
             "reasoning_note": "",
             "metrics_note": "",
+            "task_graph": "",
+            "task_graph_note": "",
+            "react_traces": "",
+            "react_traces_note": "",
             "raw_json": "",
             "raw_response_note": "",
         }
@@ -725,6 +993,14 @@ ${reasoning_note}
 ${metrics}
 ${metrics_note}
 
+## Task Graph
+${task_graph}
+${task_graph_note}
+
+## ReAct Trace
+${react_traces}
+${react_traces_note}
+
 ## Depth
 ${depth_label}
 
@@ -761,6 +1037,14 @@ ${reasoning_note}
 Metrics:
 ${metrics}
 ${metrics_note}
+
+Task Graph:
+${task_graph}
+${task_graph_note}
+
+ReAct Trace:
+${react_traces}
+${react_traces_note}
 
 Raw Response:
 ${raw_json}
@@ -936,6 +1220,10 @@ class OutputFormatter:
                 or extra.get("reasoning_note", ""),
                 "metrics": extra.get("metrics_plain")
                 or extra.get("metrics_note", ""),
+                "task_graph": extra.get("task_graph_plain")
+                or extra.get("task_graph_note", ""),
+                "react_traces": extra.get("react_traces_plain")
+                or extra.get("react_traces_note", ""),
             }
             extra.update(overrides)
             return template.render(response, extra=extra)
@@ -956,6 +1244,10 @@ class OutputFormatter:
                 or extra.get("reasoning_note", ""),
                 "metrics": extra.get("metrics_markdown")
                 or extra.get("metrics_note", ""),
+                "task_graph": extra.get("task_graph_markdown")
+                or extra.get("task_graph_note", ""),
+                "react_traces": extra.get("react_traces_markdown")
+                or extra.get("react_traces_note", ""),
             }
             extra.update(overrides)
             return template.render(response, extra=extra)

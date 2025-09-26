@@ -40,6 +40,8 @@ def test_format_markdown(capsys):
     assert "- c" in captured
     assert "## Reasoning" in captured
     assert "## Metrics" in captured
+    assert "## Task Graph" in captured
+    assert "## ReAct Trace" in captured
 
 
 def test_format_plain(capsys):
@@ -50,6 +52,8 @@ def test_format_plain(capsys):
     assert "Citations:" in captured
     assert "- c" in captured  # Plain format now uses bullet points for citations
     assert "#" not in captured  # Still no markdown headings
+    assert "Task Graph:" in captured
+    assert "ReAct Trace:" in captured
 
 
 def test_format_text_alias(capsys):

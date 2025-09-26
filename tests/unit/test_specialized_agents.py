@@ -1,15 +1,9 @@
-"""
-Unit tests for specialized agents.
+"""Unit tests for specialized agents."""
 
-This module contains tests for the specialized agents:
-- ResearcherAgent
-- CriticAgent
-- SummarizerAgent
-- PlannerAgent
-"""
+import json
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 from autoresearch.agents.specialized.researcher import ResearcherAgent
 from autoresearch.agents.specialized.critic import CriticAgent
@@ -193,6 +187,10 @@ def test_planner_agent_execute(mock_llm_adapter, mock_state, mock_config):
     assert "results" in result
     assert "research_plan" in result["results"]
     assert result["results"]["research_plan"] == "Mock response from LLM"
+    graph = result["results"].get("task_graph")
+    assert graph is not None
+    assert graph["tasks"], "planner must surface structured tasks"
+    assert mock_state.task_graph["tasks"], "state should store planner task graph"
 
     # Verify the LLM adapter was called with the correct parameters
     mock_llm_adapter.generate.assert_called_once()
@@ -203,6 +201,40 @@ def test_planner_agent_execute(mock_llm_adapter, mock_state, mock_config):
     )
     assert "Your research plan should be comprehensive, well-organized" in args[0]
     assert kwargs["model"] == "test-model"
+
+
+def test_planner_agent_parses_json_plan(mock_config):
+    """Planner normalises JSON plans into the state task graph."""
+
+    class StubAdapter:
+        def generate(self, prompt: str, model: str | None = None) -> str:
+            return json.dumps(
+                {
+                    "tasks": [
+                        {
+                            "id": "t1",
+                            "question": "Collect baseline data",
+                            "tools": ["search"],
+                        },
+                        {
+                            "id": "t2",
+                            "question": "Synthesize findings",
+                            "depends_on": ["t1"],
+                            "tools": ["analysis"],
+                            "criteria": ["cite sources"],
+                        },
+                    ],
+                }
+            )
+
+    state = QueryState(query="Structured task graph demo")
+    agent = PlannerAgent(name="Planner", llm_adapter=StubAdapter())
+    result = agent.execute(state, mock_config)
+
+    graph = result["results"]["task_graph"]
+    assert graph["tasks"][1]["depends_on"] == ["t1"]
+    assert graph["tasks"][1]["tools"] == ["analysis"]
+    assert state.task_graph["edges"], "edges should capture dependencies"
 
 
 def test_researcher_agent_can_execute(mock_state, mock_config):

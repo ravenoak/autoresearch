@@ -90,6 +90,14 @@ class QueryResponse(BaseModel):
         default_factory=list,
         description="FEVER-style verification metadata for individual claims",
     )
+    task_graph: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Structured planner output describing sub-questions and tool routing",
+    )
+    react_traces: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Sequenced ReAct traces captured during task execution",
+    )
 
 
 class BatchQueryRequest(BaseModel):

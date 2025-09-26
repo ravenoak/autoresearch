@@ -161,6 +161,10 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 - Each task encodes model preferences, tool requirements, and evidence exit
   criteria so cheaper models can handle low-risk work.
 - Planner outputs persist in the query state for observability and debugging.
+- ``QueryState`` records the canonical task graph along with coordinator
+  metadata. ``TaskCoordinator`` serialises every ReAct step (thought, action,
+  observation, tool) under ``react_traces`` so sessions can be replayed or
+  audited deterministically.
 
 ## 12. Graph-Augmented Retrieval
 
