@@ -12,7 +12,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from autoresearch.models import QueryResponse
-from autoresearch.output_format import OutputFormatter, FormatTemplate, TemplateRegistry
+from autoresearch.output_format import (
+    DepthLevel,
+    FormatTemplate,
+    OutputFormatter,
+    TemplateRegistry,
+)
 from autoresearch.errors import ValidationError as AutoresearchValidationError
 
 
@@ -78,6 +83,37 @@ def test_format_graph(capsys):
     OutputFormatter.format(resp, "graph")
     out = capsys.readouterr().out
     assert "Knowledge Graph" in out
+
+
+def test_depth_sections_markdown(capsys):
+    resp = QueryResponse(
+        answer="Depth answer. More details.",
+        citations=["Ref"],
+        reasoning=[{"id": "c1", "type": "claim", "content": "Claim body", "confidence": 0.9}],
+        metrics={"tldr": "Short form", "audit": {"steps": [{"agent": "Synth", "action": "search"}]}},
+    )
+    OutputFormatter.format(
+        resp,
+        "markdown",
+        depth=[DepthLevel.TLDR, DepthLevel.CLAIMS, DepthLevel.TRACE],
+    )
+    captured = capsys.readouterr().out
+    assert "## TL;DR" in captured
+    assert "Short form" in captured
+    assert "| Claim" in captured
+    assert "Trace" in captured
+
+
+def test_depth_sections_json(capsys):
+    resp = QueryResponse(
+        answer="Depth answer",
+        citations=["Ref"],
+        reasoning=[],
+        metrics={"tldr": "Short form"},
+    )
+    OutputFormatter.format(resp, "json", depth=[DepthLevel.TLDR])
+    data = json.loads(capsys.readouterr().out)
+    assert data["depth_sections"]["tldr"] == "Short form"
 
 
 @pytest.mark.parametrize(

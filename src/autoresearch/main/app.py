@@ -6,12 +6,17 @@ import importlib
 import os
 import sys
 import time
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import typer
 from rich.console import Console
 
-from ..cli_helpers import handle_command_not_found, parse_agent_groups
+from ..cli_helpers import (
+    DEPTH_FLAG_HELP,
+    handle_command_not_found,
+    parse_agent_groups,
+    parse_depth_flags,
+)
 from ..cli_utils import (
     Verbosity,
     console,
@@ -205,6 +210,13 @@ def search(
     output: Optional[str] = typer.Option(
         None, "-o", "--output", help="Output format: json|markdown|plain"
     ),
+    depth: Optional[List[str]] = typer.Option(
+        None,
+        "--depth",
+        help=DEPTH_FLAG_HELP,
+        case_sensitive=False,
+        show_default=False,
+    ),
     interactive: bool = typer.Option(
         False,
         "--interactive",
@@ -331,6 +343,7 @@ def search(
         # --interactive, --loops, --ontology, --ontology-reasoner, --infer-relations, --visualize
     """
     config = _config_loader.load_config()
+    depth_levels = parse_depth_flags(depth)
 
     # Lazy imports to avoid side effects during help rendering
     from ..storage import StorageManager
@@ -434,7 +447,7 @@ def search(
         # Show a success message before the results
         print_success("Query processed successfully")
 
-        OutputFormatter.format(result, fmt)
+        OutputFormatter.format(result, fmt, depth=depth_levels)
         if visualize:
             OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)
@@ -486,7 +499,7 @@ def search(
             if os.getenv("PYTEST_CURRENT_TEST")
             else ("json" if not sys.stdout.isatty() else "markdown")
         )
-        OutputFormatter.format(error_result, fmt)
+        OutputFormatter.format(error_result, fmt, depth=depth_levels)
 
 
 # Add monitoring subcommands

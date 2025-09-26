@@ -10,10 +10,12 @@ from rich.console import Console
 from autoresearch.cli_helpers import (
     find_similar_commands,
     parse_agent_groups,
+    parse_depth_flags,
     handle_command_not_found,
     report_missing_tables,
     require_api_key,
 )
+from autoresearch.output_format import DepthLevel
 
 
 pytestmark = pytest.mark.usefixtures("dummy_storage")
@@ -33,6 +35,26 @@ def test_find_similar_commands_default_threshold():
 def test_parse_agent_groups_parses_nested_lists():
     groups = ["alpha,beta", "gamma , delta ,", " "]
     assert parse_agent_groups(groups) == [["alpha", "beta"], ["gamma", "delta"]]
+
+
+def test_parse_depth_flags_basic():
+    levels = parse_depth_flags([DepthLevel.TLDR.value, DepthLevel.CLAIMS.value])
+    assert levels == [DepthLevel.TLDR, DepthLevel.CLAIMS]
+
+
+def test_parse_depth_flags_full():
+    levels = parse_depth_flags([DepthLevel.FULL.value])
+    assert levels == [
+        DepthLevel.TLDR,
+        DepthLevel.KEY_FINDINGS,
+        DepthLevel.CLAIMS,
+        DepthLevel.TRACE,
+    ]
+
+
+def test_parse_depth_flags_unknown():
+    with pytest.raises(typer.BadParameter):
+        parse_depth_flags(["unknown"])
 
 
 def test_find_similar_commands_respects_threshold():

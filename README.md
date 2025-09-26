@@ -67,6 +67,28 @@ processing. Install them on demand with `uv sync --extra <name>`, `task
 install EXTRAS="<name>"`, or `pip install "autoresearch[<name>]"`. LLM
 capabilities depend on the `llm` extra and are skipped unless you enable it.
 
+## Depth-aware output controls
+
+The `autoresearch search` command accepts a repeatable `--depth` flag that
+reveals progressively richer sections of the final answer. Choose from the
+following layers:
+
+- `tldr` – prepend a concise summary of the answer.
+- `findings` – list key findings distilled from the reasoning steps.
+- `claims` – render a structured claim table with confidence and evidence.
+- `trace` – print the execution trace captured by the audit log.
+- `full` – enable every layer in a single flag.
+
+For example, `autoresearch search "What changed?" --depth tldr --depth trace`
+prints the standard report plus a TL;DR block and the recorded agent trace. The
+JSON renderer attaches the same information under a `depth_sections` field so
+automation can inspect the additional artifacts.
+
+The Streamlit UI exposes matching controls in the query form. Toggle the depth
+layers to tailor the answer and review evidence in the new **Provenance** tab,
+which surfaces audit trail details and GraphRAG artifacts alongside the
+knowledge graph.
+
 ### Enabling heavy extras
 
 `task verify` syncs the `dev-minimal` and `test` extras by default.

@@ -10,7 +10,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, cast
 import random
 import io
 import time
@@ -34,11 +34,13 @@ from .config_utils import (
     get_config_presets,
     apply_preset,
 )
+from .output_format import DepthLevel, OutputFormatter
 from .streamlit_ui import (
     apply_accessibility_settings,
     apply_theme_settings,
     display_guided_tour,
     display_help_sidebar,
+    display_socratic_prompt_panel,
 )
 
 # Configure matplotlib to use a non-interactive backend
@@ -147,6 +149,26 @@ st.markdown(
 </style>
 """,
     unsafe_allow_html=True,
+)
+
+DEPTH_OPTION_LABELS: Dict[DepthLevel, str] = {
+    DepthLevel.TLDR: "TL;DR summary",
+    DepthLevel.KEY_FINDINGS: "Key findings",
+    DepthLevel.CLAIMS: "Claim table",
+    DepthLevel.TRACE: "Full trace",
+    DepthLevel.FULL: "All depth layers",
+}
+
+DEFAULT_DEPTH_SELECTION: List[str] = [
+    DepthLevel.TLDR.value,
+    DepthLevel.KEY_FINDINGS.value,
+]
+
+SOCRATIC_BASE_PROMPTS: Sequence[str] = (
+    "Which assumptions underpin this question?",
+    "What evidence would falsify the current answer?",
+    "Whose perspective is missing from the sources?",
+    "How do the claims connect to the cited evidence?",
 )
 
 
@@ -1079,6 +1101,9 @@ def initialize_session_state():
     if "current_result" not in st.session_state:
         st.session_state.current_result = None
 
+    if "depth_selection" not in st.session_state:
+        st.session_state.depth_selection = list(DEFAULT_DEPTH_SELECTION)
+
 
 def display_query_input() -> None:
     """Render the query input controls."""
@@ -1114,6 +1139,24 @@ def display_query_input() -> None:
                 ),
                 key="reasoning_mode",
             )
+            depth_options = [level.value for level in DepthLevel if level != DepthLevel.FULL]
+            current_depth = st.session_state.get("depth_selection", DEFAULT_DEPTH_SELECTION)
+            selection = st.multiselect(
+                "Depth Layers:",
+                options=depth_options + [DepthLevel.FULL.value],
+                default=current_depth,
+                help=(
+                    "Choose how much detail to render below the answer. "
+                    "Select multiple layers to combine them."
+                ),
+                format_func=lambda value: DEPTH_OPTION_LABELS[DepthLevel(value)],
+            )
+            if DepthLevel.FULL.value in selection:
+                st.session_state.depth_selection = depth_options
+            else:
+                st.session_state.depth_selection = [
+                    item for item in selection if item in depth_options
+                ]
             st.session_state.loops = st.slider(
                 "Loops:",
                 min_value=1,
@@ -1129,6 +1172,85 @@ def display_query_input() -> None:
             )
             st.session_state.run_button = submitted
         st.markdown("</div>", unsafe_allow_html=True)
+
+
+def build_socratic_prompts(query: str) -> List[str]:
+    """Derive Socratic prompts tailored to the current query."""
+
+    prompts: List[str] = list(SOCRATIC_BASE_PROMPTS)
+    clean_query = query.strip()
+    if clean_query:
+        prompts.insert(0, f"What would convince you that \"{clean_query}\" is incorrect?")
+        prompts.append(f"Which further evidence would strengthen \"{clean_query}\"?")
+
+    unique: List[str] = []
+    for prompt in prompts:
+        if prompt not in unique:
+            unique.append(prompt)
+    return unique[:5]
+
+
+def get_depth_levels_from_state() -> List[DepthLevel]:
+    """Convert UI depth selections into ``DepthLevel`` values."""
+
+    raw_selection = st.session_state.get("depth_selection", DEFAULT_DEPTH_SELECTION)
+    levels: List[DepthLevel] = []
+
+    for raw in raw_selection:
+        try:
+            level = DepthLevel(raw)
+        except ValueError:
+            continue
+        if level is DepthLevel.FULL:
+            return [lvl for lvl in DepthLevel if lvl is not DepthLevel.FULL]
+        levels.append(level)
+
+    return levels
+
+
+def extract_provenance_data(result: QueryResponse) -> tuple[Any, Any]:
+    """Return audit and GraphRAG information from metrics when present."""
+
+    metrics = result.metrics if isinstance(result.metrics, dict) else {}
+    audit = metrics.get("audit") or metrics.get("audit_log")
+    graphrag = (
+        metrics.get("graph_rag")
+        or metrics.get("graph_rag_artifacts")
+        or metrics.get("graphrag")
+    )
+    return audit, graphrag
+
+
+def build_graphrag_graphviz(graph_data: Mapping[str, Any]) -> Optional[str]:
+    """Create a GraphViz representation of GraphRAG nodes and edges."""
+
+    nodes = graph_data.get("nodes")
+    edges = graph_data.get("edges")
+    if not isinstance(nodes, Sequence) or not isinstance(edges, Sequence):
+        return None
+
+    lines = ["digraph GraphRAG {"]
+    for node in nodes:
+        if isinstance(node, Mapping):
+            node_id = str(node.get("id") or node.get("name") or node.get("label") or "node")
+            label = str(node.get("label") or node_id)
+        else:
+            node_id = label = str(node)
+        lines.append(f'  "{node_id}" [label="{label}"];')
+
+    for edge in edges:
+        if not isinstance(edge, Mapping):
+            continue
+        source = edge.get("source") or edge.get("from")
+        target = edge.get("target") or edge.get("to")
+        if not source or not target:
+            continue
+        label = edge.get("label") or edge.get("relation")
+        attr = f' [label="{label}"]' if label else ""
+        lines.append(f'  "{source}" -> "{target}"{attr};')
+
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def main():
@@ -1233,6 +1355,8 @@ def main():
         )
         # Query input section
         display_query_input()
+        prompts = build_socratic_prompts(st.session_state.get("current_query", ""))
+        display_socratic_prompt_panel(prompts)
 
     with metrics_tab:
         # Display metrics dashboard
@@ -1691,6 +1815,13 @@ def format_result_as_markdown(result: QueryResponse) -> str:
         markdown.append("No metrics provided")
         markdown.append("")
 
+    depth_sections = OutputFormatter.collect_depth_sections(
+        result, get_depth_levels_from_state()
+    )
+    extra = OutputFormatter.render_depth_sections(depth_sections, "markdown")
+    if extra:
+        markdown.append(extra)
+
     return "\n".join(markdown)
 
 
@@ -1706,12 +1837,17 @@ def format_result_as_json(result: QueryResponse) -> str:
     import json
 
     # Convert the result to a dictionary
+    depth_sections = OutputFormatter.collect_depth_sections(
+        result, get_depth_levels_from_state()
+    )
     result_dict = {
         "answer": result.answer,
         "citations": result.citations,
         "reasoning": result.reasoning,
         "metrics": result.metrics,
     }
+    if depth_sections:
+        result_dict["depth_sections"] = depth_sections
 
     # Convert to JSON with pretty formatting
     return json.dumps(result_dict, indent=2)
@@ -1726,33 +1862,38 @@ def visualize_rdf(output_path: str = "rdf_graph.png") -> None:
     print_success(f"Graph written to {output_path}")
 
 
-def display_results(result: QueryResponse):
-    """Display the query results in a formatted way.
+def display_results(result: QueryResponse) -> None:
+    """Display the query results with depth-aware enrichments."""
 
-    Args:
-        result: The query response to display
-    """
-    # Store the result in session state
     st.session_state.current_result = result
+    depth_levels = get_depth_levels_from_state()
+    depth_sections = OutputFormatter.collect_depth_sections(result, depth_levels)
 
-    # Display answer
     st.markdown(
         "<div role='region' aria-label='Query results' aria-live='polite'>",
         unsafe_allow_html=True,
     )
-    st.markdown("<h2 class='subheader'>Answer</h2>", unsafe_allow_html=True)
 
-    # Enhanced Markdown rendering with support for LaTeX
-    # Use unsafe_allow_html=True to allow HTML formatting in the Markdown
+    if depth_sections.get("tldr"):
+        st.markdown("<h2 class='subheader'>TL;DR</h2>", unsafe_allow_html=True)
+        st.info(depth_sections["tldr"])
+
+    st.markdown("<h2 class='subheader'>Answer</h2>", unsafe_allow_html=True)
     st.markdown(result.answer, unsafe_allow_html=True)
 
-    # Add support for LaTeX math expressions
-    # This is handled automatically by Streamlit's Markdown renderer
+    if depth_sections.get("key_findings"):
+        st.markdown("<h3>Key Findings</h3>", unsafe_allow_html=True)
+        for idx, finding in enumerate(depth_sections["key_findings"], start=1):
+            st.markdown(f"{idx}. {finding}")
 
-    # Add export buttons
+    if depth_sections.get("claims"):
+        st.markdown("<h3>Claim Table</h3>", unsafe_allow_html=True)
+        st.markdown(
+            OutputFormatter.render_claim_table_markdown(depth_sections["claims"])
+        )
+
     col1, col2 = st.columns(2)
     with col1:
-        # Export as Markdown
         markdown_result = format_result_as_markdown(result)
         st.download_button(
             label="Export as Markdown",
@@ -1762,7 +1903,6 @@ def display_results(result: QueryResponse):
         )
 
     with col2:
-        # Export as JSON
         json_result = format_result_as_json(result)
         st.download_button(
             label="Export as JSON",
@@ -1771,37 +1911,39 @@ def display_results(result: QueryResponse):
             mime="application/json",
         )
 
-    # Create tabs for citations, reasoning, metrics, knowledge graph and trace
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Citations", "Reasoning", "Metrics", "Knowledge Graph", "Trace"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        [
+            "Citations",
+            "Reasoning",
+            "Metrics",
+            "Knowledge Graph",
+            "Trace",
+            "Provenance",
+        ]
     )
 
-    # Citations tab
     with tab1:
         st.markdown("<h3>Citations</h3>", unsafe_allow_html=True)
         if result.citations:
-            for i, citation in enumerate(result.citations):
-                with st.container():
-                    st.markdown(
-                        f"<div class='citation' role='listitem'>{citation}</div>",
-                        unsafe_allow_html=True,
-                    )
+            for citation in result.citations:
+                st.markdown(
+                    f"<div class='citation' role='listitem'>{citation}</div>",
+                    unsafe_allow_html=True,
+                )
         else:
             st.info("No citations provided")
 
-    # Reasoning tab
     with tab2:
         st.markdown("<h3>Reasoning</h3>", unsafe_allow_html=True)
         if result.reasoning:
-            for i, step in enumerate(result.reasoning):
+            for idx, step in enumerate(result.reasoning, start=1):
                 st.markdown(
-                    f"<div class='reasoning-step' role='listitem'>{i + 1}. {step}</div>",
+                    f"<div class='reasoning-step' role='listitem'>{idx}. {step}</div>",
                     unsafe_allow_html=True,
                 )
         else:
             st.info("No reasoning steps provided")
 
-    # Metrics tab
     with tab3:
         st.markdown("<h3>Metrics</h3>", unsafe_allow_html=True)
         if result.metrics:
@@ -1816,13 +1958,12 @@ def display_results(result: QueryResponse):
         else:
             st.info("No metrics provided")
 
-    # Knowledge Graph tab
     with tab4:
         st.markdown("<h3>Knowledge Graph</h3>", unsafe_allow_html=True)
         if result.reasoning and result.citations:
-            # Create and display the knowledge graph
             graph_image = create_knowledge_graph(result)
             import base64
+
             buffered = io.BytesIO()
             graph_image.save(buffered, format="PNG")
             encoded = base64.b64encode(buffered.getvalue()).decode()
@@ -1833,9 +1974,13 @@ def display_results(result: QueryResponse):
         else:
             st.info("Not enough information to create a knowledge graph")
 
-    # Trace tab
     with tab5:
         st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)
+        trace_steps = depth_sections.get("trace", [])
+        if trace_steps:
+            st.markdown("#### Trace Steps", unsafe_allow_html=True)
+            for step in trace_steps:
+                st.markdown(f"- {step}")
         if result.reasoning:
             trace_graph = create_interaction_trace(result.reasoning)
             st.graphviz_chart(trace_graph)
@@ -1844,6 +1989,28 @@ def display_results(result: QueryResponse):
             st.markdown("### Progress Metrics")
             progress_graph = create_progress_graph(metrics)
             st.graphviz_chart(progress_graph)
+
+    with tab6:
+        st.markdown("<h3>Provenance</h3>", unsafe_allow_html=True)
+        audit, graphrag = extract_provenance_data(result)
+        if audit:
+            st.markdown("#### Audit Trail", unsafe_allow_html=True)
+            st.json(audit)
+        else:
+            st.info("No audit data captured for this query.")
+
+        if graphrag:
+            st.markdown("#### GraphRAG Artifacts", unsafe_allow_html=True)
+            if isinstance(graphrag, Mapping):
+                graphviz = build_graphrag_graphviz(graphrag)
+                if graphviz:
+                    st.graphviz_chart(graphviz)
+                else:
+                    st.json(graphrag)
+            else:
+                st.write(graphrag)
+        else:
+            st.info("No GraphRAG artifacts were recorded.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 

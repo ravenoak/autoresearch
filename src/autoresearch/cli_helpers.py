@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import Sequence, List, Mapping
+from typing import Iterable, List, Mapping, Sequence, Tuple
 
 import click
 import typer
@@ -14,6 +14,24 @@ from .cli_utils import (
     print_error,
     print_info,
     print_command_example,
+)
+from .output_format import DepthLevel
+
+
+DEPTH_LEVEL_ORDER: Tuple[DepthLevel, ...] = (
+    DepthLevel.TLDR,
+    DepthLevel.KEY_FINDINGS,
+    DepthLevel.CLAIMS,
+    DepthLevel.TRACE,
+)
+
+DEPTH_FLAG_CHOICES: Tuple[str, ...] = tuple(level.value for level in DEPTH_LEVEL_ORDER) + (
+    DepthLevel.FULL.value,
+)
+
+DEPTH_FLAG_HELP: str = (
+    "Add detail layers to CLI output. Repeat --depth with values: tldr, findings, "
+    "claims, trace, or full for every layer."
 )
 
 
@@ -39,6 +57,36 @@ def parse_agent_groups(groups: Sequence[str]) -> List[List[str]]:
         if agents:
             parsed.append(agents)
     return parsed
+
+
+def parse_depth_flags(flags: Iterable[str] | None) -> List[DepthLevel]:
+    """Normalize ``--depth`` flags into ``DepthLevel`` values."""
+
+    if not flags:
+        return []
+
+    seen: set[DepthLevel] = set()
+    for raw in flags:
+        candidate = str(raw).lower()
+        try:
+            level = DepthLevel(candidate)
+        except ValueError as exc:  # pragma: no cover - defensive branch
+            valid = ", ".join(DEPTH_FLAG_CHOICES)
+            raise typer.BadParameter(
+                f"Unknown depth flag '{raw}'. Choose from: {valid}"
+            ) from exc
+
+        if level is DepthLevel.FULL:
+            return list(DEPTH_LEVEL_ORDER)
+
+        seen.add(level)
+
+    ordered: List[DepthLevel] = []
+    for level in DEPTH_LEVEL_ORDER:
+        if level in seen:
+            ordered.append(level)
+
+    return ordered
 
 
 def require_api_key(headers: Mapping[str, str]) -> None:

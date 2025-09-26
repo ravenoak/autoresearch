@@ -1,6 +1,8 @@
 """Helper functions for the Streamlit user interface."""
 from __future__ import annotations
 
+from typing import Sequence
+
 import streamlit as st
 
 
@@ -96,3 +98,17 @@ def display_help_sidebar() -> None:
         if expanded:
             if st.button("Dismiss tutorial", key="dismiss_tutorial"):
                 st.session_state.first_visit = False
+
+
+def display_socratic_prompt_panel(prompts: Sequence[str]) -> None:
+    """Render a collapsible set of Socratic prompts."""
+
+    if not prompts:
+        return
+
+    with st.expander("Socratic prompts", expanded=False):
+        st.markdown(
+            "Use these prompts to challenge assumptions and inspect supporting evidence."
+        )
+        for prompt in prompts:
+            st.markdown(f"- {prompt}")
