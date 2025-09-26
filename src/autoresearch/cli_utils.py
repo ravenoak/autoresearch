@@ -8,7 +8,7 @@ with both color and text-based alternatives, as well as symbolic indicators.
 import os
 import sys
 from enum import Enum
-from typing import Any, Optional, Mapping, Iterable, cast
+from typing import Any, Optional, Mapping, Iterable, Sequence, TYPE_CHECKING, cast
 from rich.console import Console
 from rich.table import Table
 import rdflib
@@ -29,6 +29,9 @@ VERBOSITY = Verbosity.NORMAL
 # Global console instance
 console = Console()
 
+
+if TYPE_CHECKING:
+    from .evaluation import EvaluationSummary
 
 def set_verbosity(level: Verbosity) -> None:
     """Set the global verbosity level.
@@ -210,6 +213,70 @@ def print_command_example(
             console.print(f"[cyan]{command}[/cyan] - {description}")
         else:
             console.print(f"[cyan]{command}[/cyan]")
+
+
+def _format_optional(value: Optional[float], precision: int = 2) -> str:
+    """Return a formatted string for optional floats."""
+
+    if value is None:
+        return "—"
+    return f"{value:.{precision}f}"
+
+
+def _format_tokens(summary: "EvaluationSummary") -> str:
+    """Format average token counts for display."""
+
+    if (
+        summary.avg_tokens_input is None
+        and summary.avg_tokens_output is None
+        and summary.avg_tokens_total is None
+    ):
+        return "—"
+    parts = [
+        _format_optional(summary.avg_tokens_input, precision=1),
+        _format_optional(summary.avg_tokens_output, precision=1),
+        _format_optional(summary.avg_tokens_total, precision=1),
+    ]
+    return "/".join(parts)
+
+
+def render_evaluation_summary(
+    summaries: Sequence["EvaluationSummary"],
+) -> None:
+    """Render a tabular summary of evaluation runs."""
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Dataset", style="bold")
+    table.add_column("Accuracy")
+    table.add_column("Citation coverage")
+    table.add_column("Contradiction rate")
+    table.add_column("Avg latency (s)")
+    table.add_column("Avg tokens in/out/total")
+    table.add_column("Run ID")
+    table.add_column("Artifacts")
+
+    for summary in summaries:
+        artifacts: list[str] = []
+        if summary.duckdb_path:
+            artifacts.append(f"duckdb: {summary.duckdb_path}")
+        if summary.example_parquet:
+            artifacts.append(f"examples: {summary.example_parquet}")
+        if summary.summary_parquet:
+            artifacts.append(f"summary: {summary.summary_parquet}")
+
+        table.add_row(
+            summary.dataset,
+            _format_optional(summary.accuracy),
+            _format_optional(summary.citation_coverage),
+            _format_optional(summary.contradiction_rate),
+            _format_optional(summary.avg_latency_seconds),
+            _format_tokens(summary),
+            summary.run_id,
+            "
+".join(artifacts) if artifacts else "—",
+        )
+
+    console.print(table)
 
 
 def _write_placeholder_png(path: str) -> None:

@@ -186,6 +186,9 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 - Store benchmark runs in DuckDB or Parquet for longitudinal analysis.
 - Support A/B comparisons between gate policies, model routings, and retrieval
   strategies.
+- Highlight runs where accuracy drops more than 5% or the contradiction rate
+  exceeds 0.10 so gate and routing policies can be reviewed alongside telemetry
+  snapshots keyed by the config signature.
 
 ## 14. Layered UX and Outputs
 

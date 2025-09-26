@@ -6,6 +6,21 @@ reliability of the test suite.
 
 For environment setup instructions see [installation](installation.md).
 
+## Truthfulness benchmark harness
+
+- The curated evaluation subsets live in `src/autoresearch/evaluation/datasets.py`.
+- Run `uv run autoresearch evaluate run <suite>` (or the Taskfile aliases) to
+  execute the curated TruthfulQA, FEVER, or HotpotQA suites. Artifacts default
+  to `baseline/evaluation/` and include a DuckDB database and Parquet exports.
+- TruthfulQA is released under the MIT License; the curated prompts are
+  paraphrased to avoid redistributing the full set.
+- FEVER and HotpotQA are both licensed under CC BY-SA 4.0. Download the full
+  corpora only if you can meet their attribution and share-alike requirements.
+  The harness defaults to the lightweight curated subset so CI stays compliant.
+- Always respect dataset licensing when extending the subsets; cite the
+  original papers (Lin et al., 2021; Thorne et al., 2018; Yang et al., 2018)
+  when publishing benchmark results.
+
 Tests may require optional dependencies. Markers such as `requires_nlp` or
 `requires_parsers` map to extras with the same names. `task install` syncs the
 `dev-minimal` and `test` extras by default; add groups with `EXTRAS` or set
