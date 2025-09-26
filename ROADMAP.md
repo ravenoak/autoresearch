@@ -164,6 +164,35 @@ Any remaining issues from these tasks will be addressed in 0.1.1.
   comprehensive unit tests once testing passes. The 0.1.1 release is planned for
   **December 15, 2026**.
 
+## Deep Research Enhancement Initiative (2025-2026)
+
+The September 26, 2025 dialectical review produced a five-phase plan to raise
+truthfulness, verifiability, and research depth. See
+[Deep Research Upgrade Plan](docs/deep_research_upgrade_plan.md) for complete
+details. The phases integrate with existing milestones as follows:
+
+1. **Phase 1 – Adaptive Gate and Claim Audits** (feeds alpha readiness)
+   - Implement scout pass signals, gating policy, and per-claim audit exports.
+   - Update response schemas and clients to display audit tables.
+   - Track metrics for early-exit accuracy and cost deltas in STATUS.md.
+2. **Phase 2 – Planner and Coordinator Evolution** (bridges 0.1.0 scope)
+   - Promote planner outputs to task graphs with coordinator scheduling.
+   - Persist ReAct traces for replay and debugging.
+   - Document agent responsibilities and tool interfaces.
+3. **Phase 3 – Graph-Augmented Retrieval** (extends storage/search roadmap)
+   - Build session knowledge graphs, neighbor expansion, and contradiction
+     checks.
+   - Export graph artifacts and surface policy triggers for contradictions.
+4. **Phase 4 – Evaluation Harness and Layered UX** (aligns with QA goals)
+   - Automate TruthfulQA, FEVER, and HotpotQA subsets for continuous scoring.
+   - Add layered outputs, Socratic prompts, and per-claim audit UX.
+5. **Phase 5 – Cost-Aware Model Routing** (feeds performance objectives)
+   - Route tasks to heterogeneous models with budget-aware fallbacks.
+   - Monitor token, latency, and accuracy telemetry for regression detection.
+
+Roadmap checkpoints and release notes should reference the phase identifiers
+when logging progress or opening follow-up tickets.
+
 ## 0.2.0 – API stabilization and improved search
 
 The next minor release focuses on API improvements and search enhancements:

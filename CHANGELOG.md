@@ -6,7 +6,15 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
-- No unreleased changes since the 0.1.0a1 staging summary.
+- Documented the Deep Research Enhancement Initiative phases in the roadmap and
+  created `docs/deep_research_upgrade_plan.md` to coordinate adaptive gating,
+  per-claim audits, GraphRAG, evaluation harnesses, and cost-aware routing
+  ahead of implementation.
+- Expanded the system specification and pseudocode to cover the adaptive gate,
+  evidence pipeline 2.0, planner coordination, session GraphRAG, evaluation
+  harness, and layered UX outputs.
+- Opened coordination and execution tickets for the deep research upgrades to
+  stage Phase 1 through Phase 5 deliverables before the alpha release.
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

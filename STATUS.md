@@ -18,6 +18,18 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 26, 2025
+- Logged the Deep Research Enhancement Initiative and five-phase execution plan
+  across ROADMAP.md and the new Deep Research Upgrade Plan so the alpha release
+  workstream can stage adaptive gating, audits, GraphRAG, evaluation harnesses,
+  and model routing with clear checkpoints.
+- Expanded the system specification and pseudocode references to cover the
+  adaptive gate, evidence pipeline, planner coordination, GraphRAG, evaluation
+  harness, and layered UX expectations ahead of implementation.
+- Opened coordination and execution tickets for the adaptive gate, evidence
+  pipeline 2.0, session GraphRAG, evaluation harness, and layered UX/model
+  routing deliverables.
+
 ## September 2026
 - As of 2025-09-24 the PR 1 sweep reran `uv run task release:alpha` from a
   PATH-helper shell; `task --version` still fails in a fresh terminal, so we

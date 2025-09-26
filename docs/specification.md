@@ -118,6 +118,67 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 - Structured logs for all major actions, errors, and reasoning steps (structlog/loguru).
 - Log level and output configurable.
 - No secrets or sensitive info in logs.
+- Prometheus metrics expose gate decisions, debate depth, and audit outcomes.
+
+## 9. Adaptive Orchestration
+
+- **Scout pass:** Draft a quick answer, run focused retrieval, and extract
+  uncertainty signals (coverage, conflicts, multi-hop likelihood).
+- **Gate policy:** Decide between early exit and dialectical debate using the
+  scout signals, policy-sensitive topic detection, and budget guards.
+- **Debate stage:** Limit cycles adaptively; ensure the fact checker audits all
+  claims before synthesis and citation formatting.
+- **Telemetry:** Record gate inputs and outcomes so policies can be tuned with
+  offline evaluation.
+
+## 10. Evidence Pipeline 2.0
+
+- Extract claims from drafts and syntheses at sentence granularity.
+- Run iterative retrieval with query expansion and snippet re-ranking.
+- Score claim support with entailment checks and a self-checking ensemble for
+  instability detection.
+- Emit per-claim audit records (`supported`, `weak`, `disputed`) containing
+  sources, quotes, entailment scores, and reviewer notes.
+- Block synthesis on unsupported claims; require hedging or removal before
+  completion.
+
+## 11. Planner and Coordinator
+
+- Planner agent produces a structured task graph with sub-questions, tool
+  actions, and success criteria (Self-Ask style).
+- Coordinator consumes the task graph, schedules specialized agents, and logs
+  ReAct traces for replay.
+- Each task encodes model preferences, tool requirements, and evidence exit
+  criteria so cheaper models can handle low-risk work.
+- Planner outputs persist in the query state for observability and debugging.
+
+## 12. Graph-Augmented Retrieval
+
+- Build a session-scoped knowledge graph from retrieved entities and relations
+  using existing storage primitives.
+- Generate community summaries and neighbor expansions for prompt augmentation.
+- Flag contradictions between candidate answers and graph assertions; escalate
+  to contrarian review when inconsistencies appear.
+- Export graphs as JSON or GraphML artifacts for downstream auditing.
+
+## 13. Evaluation Harness
+
+- Provide CLI entry points to run TruthfulQA, FEVER, and HotpotQA subsets.
+- Record KPIs: accuracy, citation coverage, contradiction rate, cost, and
+  latency.
+- Store benchmark runs in DuckDB or Parquet for longitudinal analysis.
+- Support A/B comparisons between gate policies, model routings, and retrieval
+  strategies.
+
+## 14. Layered UX and Outputs
+
+- Layered responses: TL;DR, key findings, per-claim audit table, full debate
+  trace, and downloadable session bundle.
+- Socratic prompts encourage users to clarify scope or request deeper dives.
+- CLI and GUI share `--depth` controls and toggles for graph previews and audit
+  exports.
+- Session bundles include sources, knowledge graph snapshots, planner traces,
+  and configuration digests for reproducibility.
 - Prometheus metrics and OpenTelemetry tracing for performance and debugging.
 
 ## 9. Testing
