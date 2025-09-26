@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
@@ -144,8 +144,18 @@ def execute_parallel_query(
 
     for group, result in results:
         confidence = _calculate_result_confidence(result)
+        raw_claims = result.reasoning
+        claims: list[dict[str, object]] = []
+        if isinstance(raw_claims, Sequence) and not isinstance(raw_claims, (str, bytes)):
+            for entry in raw_claims:
+                if isinstance(entry, Mapping):
+                    claims.append(dict(entry))
+                else:
+                    claims.append({"text": str(entry)})
+        elif raw_claims is not None:
+            claims.append({"text": str(raw_claims)})
         result_dict = {
-            "claims": result.reasoning,
+            "claims": claims,
             "sources": result.citations,
             "metadata": {**result.metrics, "confidence": confidence, "agent_group": group},
             "results": {"group_answer": result.answer, "group_confidence": confidence},
@@ -153,19 +163,22 @@ def execute_parallel_query(
         final_state.update(result_dict)
 
     if errors or timeouts:
+        err_claims: list[dict[str, object]] = []
+        if errors:
+            err_claims.extend(
+                {"text": f"Error in agent group {grp}: {err}"} for grp, err in errors
+            )
+        if timeouts:
+            err_claims.extend(
+                {"text": f"Agent group {grp} timed out"} for grp in timeouts
+            )
         err_info: Dict[str, Any] = {
-            "claims": [],
+            "claims": err_claims,
             "metadata": {
                 "errors": [f"{grp}: {err}" for grp, err in errors],
                 "timeouts": [f"{grp}" for grp in timeouts],
             },
         }
-        if errors:
-            err_claims = [f"Error in agent group {grp}: {err}" for grp, err in errors]
-            err_info["claims"].extend(err_claims)
-        if timeouts:
-            timeout_claims = [f"Agent group {grp} timed out" for grp in timeouts]
-            err_info["claims"].extend(timeout_claims)
         final_state.update(err_info)
 
     synthesizer = AgentFactory.get("Synthesizer")

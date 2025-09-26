@@ -748,8 +748,16 @@ class Search:
             scores = np.asarray(scores, dtype=float)
 
             # Normalize scores to [0, 1] range
-            if scores.size and scores.max() > 0:
-                scores = scores / scores.max()
+            if scores.size:
+                min_score = float(scores.min())
+                max_score = float(scores.max())
+                if max_score > min_score:
+                    scores = (scores - min_score) / (max_score - min_score)
+                elif max_score > 0:
+                    scores = scores / max_score
+                else:
+                    scores = np.ones_like(scores)
+                scores = np.clip(scores, 0.0, 1.0)
 
             return cast(List[float], scores.tolist())
         except Exception as e:
