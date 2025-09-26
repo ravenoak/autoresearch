@@ -4,11 +4,12 @@ Mixins for agent functionality.
 This module provides mixins that can be used to add common functionality to agents.
 """
 
-from typing import Any, Dict, List, Optional, TypeAlias
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypeAlias
 from uuid import uuid4
 
 from ..config.models import AgentConfig, ConfigModel
 from ..logging_utils import get_logger
+from ..storage import ClaimAuditRecord, ClaimAuditStatus
 from .prompts import render_prompt
 
 log = get_logger(__name__)
@@ -58,7 +59,16 @@ class ClaimGeneratorMixin:
     """Mixin for generating claims."""
 
     def create_claim(
-        self, content: str, claim_type: str, metadata: Optional[MetadataPayload] = None
+        self,
+        content: str,
+        claim_type: str,
+        metadata: Optional[MetadataPayload] = None,
+        *,
+        audit: ClaimAuditRecord | Mapping[str, Any] | None = None,
+        verification_status: ClaimAuditStatus | str | None = None,
+        verification_sources: Optional[Sequence[SourcePayload]] = None,
+        entailment_score: float | None = None,
+        notes: str | None = None,
     ) -> ClaimPayload:
         """Create a claim with the given content and type.
 
@@ -66,6 +76,13 @@ class ClaimGeneratorMixin:
             content: The content of the claim.
             claim_type: The type of the claim (e.g., "thesis", "antithesis").
             metadata: Optional metadata to include with the claim.
+            audit: Optional pre-built :class:`ClaimAuditRecord` or mapping.
+            verification_status: Convenience shortcut to derive an audit payload
+                without constructing a :class:`ClaimAuditRecord` manually.
+            verification_sources: Evidence payloads that informed the
+                verification decision.
+            entailment_score: Normalised entailment score in ``[0, 1]``.
+            notes: Optional reviewer notes to attach to the audit payload.
 
         Returns:
             A dictionary representing the claim.
@@ -77,6 +94,42 @@ class ClaimGeneratorMixin:
         }
         if metadata:
             claim.update(metadata)
+
+        audit_payload: dict[str, Any] | None = None
+        if audit is not None:
+            audit_payload = (
+                audit.to_payload() if isinstance(audit, ClaimAuditRecord) else dict(audit)
+            )
+        elif any(
+            value is not None
+            for value in (verification_status, verification_sources, entailment_score)
+        ):
+            status_enum: ClaimAuditStatus
+            if verification_status is None:
+                status_enum = ClaimAuditStatus.from_entailment(entailment_score)
+            elif isinstance(verification_status, ClaimAuditStatus):
+                status_enum = verification_status
+            else:
+                status_enum = ClaimAuditStatus(str(verification_status))
+            sources_payload: list[dict[str, Any]] = []
+            if verification_sources:
+                for src in verification_sources:
+                    if isinstance(src, Mapping):
+                        sources_payload.append(dict(src))
+                    else:
+                        raise TypeError("verification_sources must contain mappings")
+            record = ClaimAuditRecord(
+                claim_id=claim["id"],
+                status=status_enum,
+                entailment_score=entailment_score,
+                sources=sources_payload,
+                notes=notes,
+            )
+            audit_payload = record.to_payload()
+
+        if audit_payload is not None:
+            audit_payload["claim_id"] = claim["id"]
+            claim["audit"] = audit_payload
         return claim
 
 
@@ -89,6 +142,7 @@ class ResultGeneratorMixin:
         metadata: MetadataPayload,
         results: ResultPayload,
         sources: Optional[List[SourcePayload]] = None,
+        claim_audits: Optional[List[Dict[str, Any]]] = None,
     ) -> ResultPayload:
         """Create a result with the given claims, metadata, and results.
 
@@ -97,6 +151,9 @@ class ResultGeneratorMixin:
             metadata: Metadata to include with the result.
             results: Results to include with the result.
             sources: Optional sources to include with the result.
+            claim_audits: Optional list of audit payloads for downstream
+                consumers. Each entry should match the schema emitted by
+                :class:`ClaimAuditRecord`.
 
         Returns:
             A dictionary representing the result.
@@ -108,4 +165,6 @@ class ResultGeneratorMixin:
         }
         if sources:
             result["sources"] = sources
+        if claim_audits:
+            result["claim_audits"] = claim_audits
         return result

@@ -28,8 +28,19 @@ import time
 from collections import OrderedDict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from enum import StrEnum
 from threading import RLock
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    cast,
+)
+from uuid import uuid4
 
 import networkx as nx
 import rdflib
@@ -109,6 +120,96 @@ _cached_config: StorageConfig | None = None
 # metrics (e.g., when the VSS extension toggles persistence settings) from
 # evicting the entire working set.
 _MIN_DETERMINISTIC_SURVIVORS = 2
+
+
+class ClaimAuditStatus(StrEnum):
+    """Verification label assigned to a claim."""
+
+    SUPPORTED = "supported"
+    UNSUPPORTED = "unsupported"
+    NEEDS_REVIEW = "needs_review"
+
+    @classmethod
+    def from_entailment(cls, score: float | None) -> "ClaimAuditStatus":
+        """Map an entailment score onto a FEVER-style status label.
+
+        Args:
+            score: Normalised entailment score between 0 and 1.
+
+        Returns:
+            ClaimAuditStatus: The corresponding verification label.
+        """
+
+        if score is None:
+            return cls.NEEDS_REVIEW
+        if score >= 0.6:
+            return cls.SUPPORTED
+        if score <= 0.3:
+            return cls.UNSUPPORTED
+        return cls.NEEDS_REVIEW
+
+
+@dataclass(slots=True)
+class ClaimAuditRecord:
+    """Structured verification metadata stored alongside claims."""
+
+    claim_id: str
+    status: ClaimAuditStatus
+    entailment_score: float | None = None
+    sources: list[dict[str, Any]] = field(default_factory=list)
+    notes: str | None = None
+    audit_id: str = field(default_factory=lambda: str(uuid4()))
+    created_at: float = field(default_factory=time.time)
+
+    def to_payload(self) -> dict[str, Any]:
+        """Serialise the record into a JSON-compatible payload."""
+
+        return {
+            "audit_id": self.audit_id,
+            "claim_id": self.claim_id,
+            "status": self.status.value,
+            "entailment_score": self.entailment_score,
+            "sources": self.sources,
+            "notes": self.notes,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_payload(cls, payload: Mapping[str, Any]) -> "ClaimAuditRecord":
+        """Create a record from a dictionary payload."""
+
+        status_value = payload.get("status", ClaimAuditStatus.NEEDS_REVIEW)
+        if isinstance(status_value, ClaimAuditStatus):
+            status = status_value
+        else:
+            try:
+                status = ClaimAuditStatus(str(status_value))
+            except ValueError as exc:  # pragma: no cover - defensive
+                raise StorageError("Invalid claim audit status") from exc
+        sources = payload.get("sources") or []
+        if not isinstance(sources, Sequence) or isinstance(sources, (str, bytes)):
+            raise StorageError("sources must be a sequence of mappings")
+        serialised_sources: list[dict[str, Any]] = []
+        for src in sources:
+            if isinstance(src, Mapping):
+                serialised_sources.append(dict(src))
+            else:
+                raise StorageError("each source must be a mapping")
+        created_at = float(payload.get("created_at", time.time()))
+        audit_id = payload.get("audit_id") or str(uuid4())
+        claim_id = str(payload.get("claim_id", ""))
+        if not claim_id:
+            raise StorageError("claim_id is required for claim audit records")
+        return cls(
+            claim_id=claim_id,
+            status=status,
+            entailment_score=payload.get("entailment_score"),
+            sources=serialised_sources,
+            notes=payload.get("notes"),
+            audit_id=audit_id,
+            created_at=created_at,
+        )
+
 
 
 def _process_ram_mb() -> float:
@@ -505,6 +606,30 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         process_mb = _process_ram_mb()
         return max(0.0, process_mb - StorageManager.state.baseline_mb)
+
+    @staticmethod
+    def record_claim_audit(
+        audit: ClaimAuditRecord | Mapping[str, Any]
+    ) -> ClaimAuditRecord:
+        """Persist a claim audit entry across storage backends."""
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.record_claim_audit(audit)  # type: ignore[attr-defined]
+
+        payload = audit.to_payload() if isinstance(audit, ClaimAuditRecord) else dict(audit)
+        return StorageManager._persist_claim_audit_payload(payload)
+
+    @staticmethod
+    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]:
+        """Return persisted claim audits, optionally filtered by claim id."""
+
+        if _delegate and _delegate is not StorageManager:
+            return _delegate.list_claim_audits(claim_id)  # type: ignore[attr-defined]
+
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        payloads = StorageManager.context.db_backend.list_claim_audits(claim_id)
+        return [ClaimAuditRecord.from_payload(p) for p in payloads]
 
     @staticmethod
     def _pop_lru() -> str | None:
@@ -1076,6 +1201,8 @@ class StorageManager(metaclass=StorageManagerMeta):
             attrs = dict(claim.get("attributes", {}))
             if "confidence" in claim:
                 attrs["confidence"] = claim["confidence"]
+            if "audit" in claim:
+                attrs["audit"] = claim["audit"]
             assert StorageManager.context.graph is not None
             StorageManager.context.graph.add_node(claim["id"], **attrs)
             # Increment the counter and store it to maintain deterministic
@@ -1090,6 +1217,20 @@ class StorageManager(metaclass=StorageManagerMeta):
                     rel["dst"],
                     **rel.get("attributes", {}),
                 )
+
+    @staticmethod
+    def _persist_claim_audit_payload(audit_payload: Mapping[str, Any]) -> ClaimAuditRecord:
+        """Persist verification metadata across storage backends."""
+
+        record = ClaimAuditRecord.from_payload(dict(audit_payload))
+        StorageManager._ensure_storage_initialized()
+        assert StorageManager.context.db_backend is not None
+        StorageManager.context.db_backend.persist_claim_audit(record.to_payload())
+
+        graph = StorageManager.context.graph
+        if graph is not None and graph.has_node(record.claim_id):
+            graph.nodes[record.claim_id]["audit"] = record.to_payload()
+        return record
 
     @staticmethod
     def _persist_to_duckdb(claim: dict[str, Any]) -> None:
@@ -1281,6 +1422,12 @@ class StorageManager(metaclass=StorageManagerMeta):
             # Persist to all backends with appropriate update mode
             StorageManager._persist_to_networkx(claim_to_persist)
 
+            audit_payload = claim_to_persist.get("audit")
+            if isinstance(audit_payload, Mapping):
+                payload = dict(audit_payload)
+                payload.setdefault("claim_id", claim_id)
+                StorageManager._persist_claim_audit_payload(payload)
+
             # For database backends, use different methods for updates vs. new claims
             assert StorageManager.context.db_backend is not None
             if is_update:
@@ -1347,6 +1494,13 @@ class StorageManager(metaclass=StorageManagerMeta):
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
         StorageManager.context.db_backend.update_claim(claim, partial_update)
+
+        audit_payload = claim.get("audit")
+        if isinstance(audit_payload, Mapping):
+            payload = dict(audit_payload)
+            payload.setdefault("claim_id", claim.get("id", ""))
+            if payload.get("claim_id"):
+                StorageManager._persist_claim_audit_payload(payload)
 
     @staticmethod
     def get_claim(claim_id: str) -> dict[str, Any]:
