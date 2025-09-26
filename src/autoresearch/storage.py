@@ -576,7 +576,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     @staticmethod
     def _deterministic_node_limit(
         budget_mb: int, cfg: Any | None = None
-    ) -> tuple[int | None, bool, int]:
+    ) -> tuple[int | None, bool, int, int | None]:
         """Return the deterministic node limit and whether it is an override."""
 
         if cfg is None:
@@ -597,11 +597,18 @@ class StorageManager(metaclass=StorageManagerMeta):
                 min_resident = _MIN_DETERMINISTIC_SURVIVORS
 
         if isinstance(override, int) and override >= 0:
-            return override, True, min_resident
+            limit = override
+            clamped_from = None
+            if limit < min_resident:
+                clamped_from = limit
+                limit = min_resident
+            return limit, True, min_resident, clamped_from
         if budget_mb > 0:
             derived_limit = max(0, budget_mb)
-            return max(derived_limit, min_resident), False, min_resident
-        return None, False, min_resident
+            final_limit = max(derived_limit, min_resident)
+            clamped_from = derived_limit if final_limit != derived_limit else None
+            return final_limit, False, min_resident, clamped_from
+        return None, False, min_resident, None
 
     @staticmethod
     def _enforce_ram_budget(budget_mb: int) -> None:
@@ -665,7 +672,17 @@ class StorageManager(metaclass=StorageManagerMeta):
                 deterministic_limit,
                 deterministic_override,
                 minimum_resident_nodes,
+                clamped_from,
             ) = StorageManager._deterministic_node_limit(budget_mb, cfg)
+            if clamped_from is not None and deterministic_limit is not None:
+                source = "override" if deterministic_override else "derived"
+                log.info(
+                    "Deterministic node budget (%s=%d) below minimum %d; clamping to %d",
+                    source,
+                    clamped_from,
+                    minimum_resident_nodes,
+                    deterministic_limit,
+                )
             if not ram_measurement_available and not deterministic_override:
                 deterministic_limit = None
             over_budget = ram_measurement_available and current_mb > budget_mb
