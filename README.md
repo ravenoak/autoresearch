@@ -262,3 +262,22 @@ Run `uv run --extra docs mkdocs build` directly if you skip Go Task, and use
 CLI output uses Markdown headings and plain-text lists so screen readers can
 navigate sections. Help messages avoid color-only cues and respect the
 `NO_COLOR` environment variable for ANSI-free output.
+
+## Depth-aware output and provenance
+
+The `search` command exposes a `--depth` option that controls how much detail
+is returned for each run. Depth presets range from `tldr` (TL;DR plus the full
+answer) through `concise`, `standard`, and `trace`. Higher levels progressively
+include key findings, verification tables, and the raw response payload:
+
+```bash
+autoresearch search "What is agentic search?" --depth concise
+autoresearch search "Explain prompt reflection" --depth trace --output json
+```
+
+Streamlit mirrors the same depth levels through a radio selector above the
+results panel. Adjusting the selector toggles TL;DR summaries, key findings,
+claim tables, GraphRAG artefacts, and agent traces without re-running the
+query. Provenance notes underneath each section highlight when data is hidden
+or truncated, making it explicit when a deeper depth is required for audit
+workflows.

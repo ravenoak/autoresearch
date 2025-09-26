@@ -211,7 +211,6 @@ class ClaimAuditRecord:
         )
 
 
-
 def _process_ram_mb() -> float:
     """Return the process resident set size in megabytes."""
     try:

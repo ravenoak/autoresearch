@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Iterable, List, Sequence
+from typing import Iterable, List
 
 from ..storage import ClaimAuditStatus
 

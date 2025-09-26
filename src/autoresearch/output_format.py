@@ -1,40 +1,15 @@
-"""Adaptive output formatting for CLI and automation contexts.
+"""Adaptive output formatting for CLI and automation contexts."""
 
-This module provides functionality to format query responses in different formats
-based on the context in which they are being displayed. It supports multiple output
-formats including:
+from __future__ import annotations
 
-- JSON: Structured format suitable for programmatic consumption
-- Plain text: Simple text format for basic terminal output
-- Markdown: Rich text format with headings and lists for documentation
-- Custom templates: User-defined templates for specialized output formats
-
-The formatting system validates that the input conforms to the expected QueryResponse
-structure before formatting, ensuring consistent output regardless of the source of
-the data.
-
-Typical usage:
-    ```python
-    from autoresearch.output_format import OutputFormatter
-
-    # Format a query response as Markdown
-    OutputFormatter.format(query_result, "markdown")
-
-    # Format a query response as JSON
-    OutputFormatter.format(query_result, "json")
-
-    # Format a query response as plain text
-    OutputFormatter.format(query_result, "plain")
-
-    # Format a query response using a custom template
-    OutputFormatter.format(query_result, "template:my_template")
-    ```
-"""
-
+import json
+import re
 import sys
 import string
+from dataclasses import dataclass, field
+from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 from pydantic import BaseModel, ValidationError
 from .models import QueryResponse
 from .errors import ValidationError as AutoresearchValidationError
@@ -42,6 +17,615 @@ from .config import ConfigLoader
 from .logging_utils import get_logger
 
 log = get_logger(__name__)
+
+
+class OutputDepth(IntEnum):
+    """Enumerate output detail levels for deterministic rendering."""
+
+    TLDR = 0
+    CONCISE = 1
+    STANDARD = 2
+    TRACE = 3
+
+    @property
+    def label(self) -> str:
+        """Human-friendly label."""
+
+        return {
+            OutputDepth.TLDR: "TL;DR",
+            OutputDepth.CONCISE: "Concise",
+            OutputDepth.STANDARD: "Standard",
+            OutputDepth.TRACE: "Trace",
+        }[self]
+
+    @property
+    def description(self) -> str:
+        """Describe the scope of this depth level."""
+
+        return {
+            OutputDepth.TLDR: "Highlight the TL;DR, answer, and top citations only.",
+            OutputDepth.CONCISE: (
+                "Add key findings and a short citation roll-up for quick reviews."
+            ),
+            OutputDepth.STANDARD: (
+                "Include claim tables, expanded citations, and summary reasoning."
+            ),
+            OutputDepth.TRACE: (
+                "Expose the full reasoning trace, complete audits, and raw payloads."
+            ),
+        }[self]
+
+
+@dataclass(frozen=True)
+class DepthPlan:
+    """Plan describing which sections to include for a depth selection."""
+
+    level: OutputDepth
+    include_key_findings: bool
+    key_findings_limit: Optional[int]
+    include_citations: bool
+    citation_limit: Optional[int]
+    include_claims: bool
+    claim_limit: Optional[int]
+    include_reasoning: bool
+    reasoning_limit: Optional[int]
+    include_metrics: bool
+    include_raw: bool
+
+
+@dataclass
+class DepthPayload:
+    """Structured payload returned by depth-aware render planning."""
+
+    depth: OutputDepth
+    tldr: str
+    answer: str
+    key_findings: list[str]
+    citations: list[Any]
+    claim_audits: list[dict[str, Any]]
+    reasoning: list[str]
+    metrics: dict[str, Any]
+    raw_response: Optional[dict[str, Any]]
+    notes: dict[str, str] = field(default_factory=dict)
+
+
+_DEPTH_ALIASES: Dict[str, OutputDepth] = {
+    "tldr": OutputDepth.TLDR,
+    "summary": OutputDepth.TLDR,
+    "0": OutputDepth.TLDR,
+    "concise": OutputDepth.CONCISE,
+    "quick": OutputDepth.CONCISE,
+    "1": OutputDepth.CONCISE,
+    "standard": OutputDepth.STANDARD,
+    "default": OutputDepth.STANDARD,
+    "claims": OutputDepth.STANDARD,
+    "2": OutputDepth.STANDARD,
+    "trace": OutputDepth.TRACE,
+    "full": OutputDepth.TRACE,
+    "deep": OutputDepth.TRACE,
+    "debug": OutputDepth.TRACE,
+    "3": OutputDepth.TRACE,
+}
+
+
+_DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
+    OutputDepth.TLDR: DepthPlan(
+        level=OutputDepth.TLDR,
+        include_key_findings=False,
+        key_findings_limit=None,
+        include_citations=True,
+        citation_limit=2,
+        include_claims=False,
+        claim_limit=None,
+        include_reasoning=False,
+        reasoning_limit=None,
+        include_metrics=False,
+        include_raw=False,
+    ),
+    OutputDepth.CONCISE: DepthPlan(
+        level=OutputDepth.CONCISE,
+        include_key_findings=True,
+        key_findings_limit=3,
+        include_citations=True,
+        citation_limit=3,
+        include_claims=False,
+        claim_limit=None,
+        include_reasoning=False,
+        reasoning_limit=None,
+        include_metrics=True,
+        include_raw=False,
+    ),
+    OutputDepth.STANDARD: DepthPlan(
+        level=OutputDepth.STANDARD,
+        include_key_findings=True,
+        key_findings_limit=None,
+        include_citations=True,
+        citation_limit=None,
+        include_claims=True,
+        claim_limit=5,
+        include_reasoning=True,
+        reasoning_limit=8,
+        include_metrics=True,
+        include_raw=False,
+    ),
+    OutputDepth.TRACE: DepthPlan(
+        level=OutputDepth.TRACE,
+        include_key_findings=True,
+        key_findings_limit=None,
+        include_citations=True,
+        citation_limit=None,
+        include_claims=True,
+        claim_limit=None,
+        include_reasoning=True,
+        reasoning_limit=None,
+        include_metrics=True,
+        include_raw=True,
+    ),
+}
+
+
+def get_depth_aliases() -> Dict[str, OutputDepth]:
+    """Return a copy of the registered depth aliases."""
+
+    return dict(_DEPTH_ALIASES)
+
+
+def normalize_depth(depth: Any) -> OutputDepth:
+    """Normalise depth selection into an :class:`OutputDepth`."""
+
+    if depth is None:
+        return OutputDepth.STANDARD
+    if isinstance(depth, OutputDepth):
+        return depth
+    if isinstance(depth, str):
+        key = depth.strip().lower()
+        if key in _DEPTH_ALIASES:
+            return _DEPTH_ALIASES[key]
+        msg = ", ".join(sorted({alias for alias in _DEPTH_ALIASES if alias.isalpha()}))
+        raise ValueError(f"Unknown depth '{depth}'. Valid options: {msg} or 0-3.")
+    if isinstance(depth, int):
+        try:
+            return OutputDepth(depth)
+        except ValueError as exc:  # pragma: no cover - defensive
+            raise ValueError("Depth integers must be between 0 and 3.") from exc
+    raise ValueError(f"Unsupported depth type: {type(depth)!r}")
+
+
+def describe_depth_levels() -> Dict[OutputDepth, str]:
+    """Provide descriptions for each depth level."""
+
+    return {level: level.description for level in OutputDepth}
+
+
+_SECTION_LABELS: Dict[str, str] = {
+    "key_findings": "Key findings",
+    "citations": "Citations",
+    "claim_audits": "Claim audits",
+    "reasoning": "Reasoning trace",
+    "metrics": "Metrics",
+    "raw_response": "Raw response",
+}
+
+
+def _hidden_message(section: str, plan: DepthPlan) -> str:
+    """Return a consistent message for hidden sections."""
+
+    next_level = OutputDepth(min(plan.level + 1, OutputDepth.TRACE))
+    label = _SECTION_LABELS.get(section, section.replace("_", " ").title())
+    if next_level == plan.level:
+        return f"{label} are available only at the {next_level.label} depth."
+    return (
+        f"{label} are hidden at the {plan.level.label} depth. "
+        f"Increase depth to {next_level.label} to view them."
+    )
+
+
+def _truncation_message(section: str, shown: int, total: int, depth: OutputDepth) -> str:
+    """Return a message describing truncated sections."""
+
+    label = _SECTION_LABELS.get(section, section.replace("_", " ").title())
+    return (
+        f"Showing the first {shown} of {total} {label.lower()}. "
+        f"Use the {OutputDepth.TRACE.label} depth for the complete view."
+        if depth != OutputDepth.TRACE
+        else f"Showing {shown} of {total} {label.lower()}."
+    )
+
+
+def _stringify_reasoning(reasoning: Iterable[Any]) -> List[str]:
+    """Normalise reasoning steps into display strings."""
+
+    steps: List[str] = []
+    for step in reasoning:
+        if isinstance(step, str):
+            steps.append(step.strip())
+            continue
+        if isinstance(step, Mapping):
+            for key in ("summary", "content", "text", "message"):
+                value = step.get(key)
+                if isinstance(value, str) and value.strip():
+                    steps.append(value.strip())
+                    break
+            else:
+                steps.append(json.dumps(step, ensure_ascii=False))
+            continue
+        steps.append(str(step))
+    return steps
+
+
+def _generate_key_findings(response: QueryResponse) -> List[str]:
+    """Derive key findings from reasoning or the synthesized answer."""
+
+    findings = [step for step in _stringify_reasoning(response.reasoning) if step]
+    if not findings:
+        answer_lines = [line.strip() for line in response.answer.splitlines() if line.strip()]
+        findings.extend(answer_lines[:3])
+    return findings
+
+
+def _generate_tldr(response: QueryResponse, max_length: int = 240) -> str:
+    """Produce a TL;DR style summary from the answer."""
+
+    answer = (response.answer or "").strip()
+    if not answer:
+        return "No answer generated."
+    match = re.search(r"(?<!\w)([.!?])", answer)
+    if match:
+        cutoff = match.end()
+        snippet = answer[:cutoff]
+    else:
+        snippet = answer[: max_length + 1]
+    if len(snippet) > max_length:
+        snippet = snippet[:max_length].rstrip() + "…"
+    return snippet
+
+
+def _limit_items(sequence: Iterable[Any], limit: Optional[int]) -> tuple[list[Any], Optional[int]]:
+    """Limit a sequence and report the original length when truncated."""
+
+    values = list(sequence)
+    if limit is None:
+        return values, None
+    limited = values[:limit]
+    if len(values) > limit:
+        return limited, len(values)
+    return limited, None
+
+
+def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayload:
+    """Construct a depth-aware payload for formatting and UI layers."""
+
+    depth_level = normalize_depth(depth)
+    plan = _DEPTH_PLANS[depth_level]
+    notes: dict[str, str] = {}
+
+    tldr = _generate_tldr(response)
+    answer = response.answer.strip()
+
+    if plan.include_key_findings:
+        findings_all = _generate_key_findings(response)
+        findings, truncated = _limit_items(findings_all, plan.key_findings_limit)
+        if truncated is not None:
+            notes["key_findings"] = _truncation_message(
+                "key_findings", len(findings), truncated, depth_level
+            )
+    else:
+        findings = []
+        notes["key_findings"] = _hidden_message("key_findings", plan)
+
+    if plan.include_citations:
+        citations, truncated = _limit_items(response.citations, plan.citation_limit)
+        if truncated is not None:
+            notes["citations"] = _truncation_message(
+                "citations", len(citations), truncated, depth_level
+            )
+    else:
+        citations = []
+        notes["citations"] = _hidden_message("citations", plan)
+
+    if plan.include_claims:
+        claim_audits, truncated = _limit_items(response.claim_audits, plan.claim_limit)
+        if truncated is not None:
+            notes["claim_audits"] = _truncation_message(
+                "claim_audits", len(claim_audits), truncated, depth_level
+            )
+    else:
+        claim_audits = []
+        notes["claim_audits"] = _hidden_message("claim_audits", plan)
+
+    if plan.include_reasoning:
+        reasoning_all = _stringify_reasoning(response.reasoning)
+        reasoning, truncated = _limit_items(reasoning_all, plan.reasoning_limit)
+        if truncated is not None:
+            notes["reasoning"] = _truncation_message(
+                "reasoning", len(reasoning), truncated, depth_level
+            )
+    else:
+        reasoning = []
+        notes["reasoning"] = _hidden_message("reasoning", plan)
+
+    if plan.include_metrics:
+        metrics = dict(response.metrics)
+    else:
+        metrics = {}
+        notes["metrics"] = _hidden_message("metrics", plan)
+
+    raw_response = response.model_dump() if plan.include_raw else None
+    if raw_response is None:
+        notes["raw_response"] = _hidden_message("raw_response", plan)
+
+    return DepthPayload(
+        depth=depth_level,
+        tldr=tldr,
+        answer=answer,
+        key_findings=findings,
+        citations=[c for c in citations],
+        claim_audits=[dict(a) for a in claim_audits],
+        reasoning=reasoning,
+        metrics=metrics,
+        raw_response=raw_response,
+        notes=notes,
+    )
+
+
+def _json_safe(value: Any) -> Any:
+    """Convert values into JSON-serialisable structures."""
+
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, Mapping):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+        return [_json_safe(v) for v in value]
+    return str(value)
+
+
+def _format_list_markdown(items: Iterable[Any]) -> str:
+    """Render a sequence as a markdown list."""
+
+    values = [str(item) for item in items if str(item).strip()]
+    if not values:
+        return ""
+    return "\n".join(f"- {value}" for value in values)
+
+
+def _format_list_plain(items: Iterable[Any]) -> str:
+    """Render a sequence as plain text bullets."""
+
+    values = [str(item) for item in items if str(item).strip()]
+    if not values:
+        return ""
+    return "\n".join(f"- {value}" for value in values)
+
+
+def _format_citations_markdown(citations: Iterable[Any]) -> str:
+    """Format citations for markdown output."""
+
+    return _format_list_markdown(citations)
+
+
+def _format_citations_plain(citations: Iterable[Any]) -> str:
+    """Format citations for plain text output."""
+
+    return _format_list_plain(citations)
+
+
+def _format_reasoning_markdown(reasoning: Iterable[str]) -> str:
+    """Format reasoning trace for markdown output."""
+
+    values = [f"{idx + 1}. {step}" for idx, step in enumerate(reasoning)]
+    return "\n".join(values)
+
+
+def _format_reasoning_plain(reasoning: Iterable[str]) -> str:
+    """Format reasoning trace for plain text output."""
+
+    values = [f"{idx + 1}. {step}" for idx, step in enumerate(reasoning)]
+    return "\n".join(values)
+
+
+def _format_metrics_markdown(metrics: Mapping[str, Any]) -> str:
+    """Format metrics for markdown output."""
+
+    if not metrics:
+        return ""
+    return "\n".join(f"- **{key}**: {value}" for key, value in metrics.items())
+
+
+def _format_metrics_plain(metrics: Mapping[str, Any]) -> str:
+    """Format metrics for plain text output."""
+
+    if not metrics:
+        return ""
+    return "\n".join(f"- {key}: {value}" for key, value in metrics.items())
+
+
+def _render_markdown(payload: DepthPayload) -> str:
+    """Render the payload as markdown text."""
+
+    parts: list[str] = ["# TL;DR", payload.tldr or "—"]
+
+    parts.extend(["", "## Answer", payload.answer or "—"])
+
+    parts.append("")
+    parts.append("## Key Findings")
+    key_section = _format_list_markdown(payload.key_findings)
+    if key_section:
+        parts.append(key_section)
+    if note := payload.notes.get("key_findings"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Citations")
+    citations_section = _format_citations_markdown(payload.citations)
+    if citations_section:
+        parts.append(citations_section)
+    if note := payload.notes.get("citations"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Claim Audits")
+    audits_section = _format_claim_audits_markdown(payload.claim_audits)
+    if audits_section:
+        parts.append(audits_section)
+    if note := payload.notes.get("claim_audits"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Reasoning Trace")
+    reasoning_section = _format_reasoning_markdown(payload.reasoning)
+    if reasoning_section:
+        parts.append(reasoning_section)
+    if note := payload.notes.get("reasoning"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Metrics")
+    metrics_section = _format_metrics_markdown(payload.metrics)
+    if metrics_section:
+        parts.append(metrics_section)
+    if note := payload.notes.get("metrics"):
+        parts.append(f"> {note}")
+
+    parts.append("")
+    parts.append("## Depth")
+    parts.append(payload.depth.label)
+
+    parts.append("")
+    parts.append("## Raw Response")
+    if payload.raw_response is not None:
+        parts.append(json.dumps(payload.raw_response, indent=2, ensure_ascii=False))
+    if note := payload.notes.get("raw_response"):
+        parts.append(f"> {note}")
+
+    return "\n".join(parts).strip()
+
+
+def _render_plain(payload: DepthPayload) -> str:
+    """Render the payload as plain text."""
+
+    lines: list[str] = [f"TL;DR:\n{payload.tldr or '—'}", "", f"Answer:\n{payload.answer or '—'}"]
+
+    lines.append("")
+    lines.append("Key Findings:")
+    key_section = _format_list_plain(payload.key_findings)
+    if key_section:
+        lines.append(key_section)
+    if note := payload.notes.get("key_findings"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append("Citations:")
+    citations_section = _format_citations_plain(payload.citations)
+    if citations_section:
+        lines.append(citations_section)
+    if note := payload.notes.get("citations"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append("Claim Audits:")
+    audits_section = _format_claim_audits_plain(payload.claim_audits)
+    if audits_section:
+        lines.append(audits_section)
+    if note := payload.notes.get("claim_audits"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append("Reasoning Trace:")
+    reasoning_section = _format_reasoning_plain(payload.reasoning)
+    if reasoning_section:
+        lines.append(reasoning_section)
+    if note := payload.notes.get("reasoning"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append("Metrics:")
+    metrics_section = _format_metrics_plain(payload.metrics)
+    if metrics_section:
+        lines.append(metrics_section)
+    if note := payload.notes.get("metrics"):
+        lines.append(note)
+
+    lines.append("")
+    lines.append(f"Depth: {payload.depth.label}")
+
+    lines.append("")
+    lines.append("Raw Response:")
+    if payload.raw_response is not None:
+        lines.append(json.dumps(payload.raw_response, indent=2, ensure_ascii=False))
+    if note := payload.notes.get("raw_response"):
+        lines.append(note)
+
+    return "\n".join(lines).strip()
+
+
+def _render_json(payload: DepthPayload) -> str:
+    """Render the payload as JSON."""
+
+    data: Dict[str, Any] = {
+        "depth": payload.depth.label,
+        "tldr": payload.tldr,
+        "answer": payload.answer,
+        "key_findings": [_json_safe(item) for item in payload.key_findings],
+        "citations": [_json_safe(item) for item in payload.citations],
+        "claim_audits": [_json_safe(item) for item in payload.claim_audits],
+        "reasoning": [_json_safe(item) for item in payload.reasoning],
+        "metrics": _json_safe(payload.metrics),
+        "notes": payload.notes,
+    }
+    if payload.raw_response is not None:
+        data["raw_response"] = _json_safe(payload.raw_response)
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
+    """Build template variables from a depth payload."""
+
+    key_markdown = _format_list_markdown(payload.key_findings)
+    key_plain = _format_list_plain(payload.key_findings)
+    citations_markdown = _format_citations_markdown(payload.citations)
+    citations_plain = _format_citations_plain(payload.citations)
+    reasoning_markdown = _format_reasoning_markdown(payload.reasoning)
+    reasoning_plain = _format_reasoning_plain(payload.reasoning)
+    metrics_markdown = _format_metrics_markdown(payload.metrics)
+    metrics_plain = _format_metrics_plain(payload.metrics)
+    claim_audits_markdown = _format_claim_audits_markdown(payload.claim_audits)
+    claim_audits_plain = _format_claim_audits_plain(payload.claim_audits)
+
+    return {
+        "tldr": payload.tldr,
+        "depth_label": payload.depth.label,
+        "key_findings": key_markdown or payload.notes.get("key_findings", ""),
+        "key_findings_markdown": key_markdown,
+        "key_findings_plain": key_plain,
+        "key_findings_list": payload.key_findings,
+        "key_findings_note": payload.notes.get("key_findings", ""),
+        "citations": citations_markdown or payload.notes.get("citations", ""),
+        "citations_markdown": citations_markdown,
+        "citations_plain": citations_plain,
+        "citations_list": payload.citations,
+        "citations_note": payload.notes.get("citations", ""),
+        "claim_audits": claim_audits_markdown or payload.notes.get("claim_audits", ""),
+        "claim_audits_markdown": claim_audits_markdown,
+        "claim_audits_plain": claim_audits_plain,
+        "claim_audits_note": payload.notes.get("claim_audits", ""),
+        "reasoning": reasoning_markdown or payload.notes.get("reasoning", ""),
+        "reasoning_markdown": reasoning_markdown,
+        "reasoning_plain": reasoning_plain,
+        "reasoning_list": payload.reasoning,
+        "reasoning_note": payload.notes.get("reasoning", ""),
+        "metrics": metrics_markdown or payload.notes.get("metrics", ""),
+        "metrics_markdown": metrics_markdown,
+        "metrics_plain": metrics_plain,
+        "metrics_note": payload.notes.get("metrics", ""),
+        "raw_json": (
+            json.dumps(payload.raw_response, indent=2, ensure_ascii=False)
+            if payload.raw_response is not None
+            else ""
+        ),
+        "raw_response_note": payload.notes.get("raw_response", ""),
+        "notes": payload.notes,
+    }
 
 
 class FormatTemplate(BaseModel):
@@ -61,19 +645,11 @@ class FormatTemplate(BaseModel):
     description: Optional[str] = None
     template: str
 
-    def render(self, response: QueryResponse) -> str:
-        """Render the template with the given QueryResponse.
+    def render(
+        self, response: QueryResponse, extra: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Render the template with the given QueryResponse."""
 
-        Args:
-            response: The QueryResponse object to format.
-
-        Returns:
-            The rendered template as a string.
-
-        Raises:
-            KeyError: If a variable referenced in the template is not available in the response.
-        """
-        # Create a dictionary of variables from the response
         variables = {
             "answer": response.answer,
             "citations": "\n".join([f"- {c}" for c in response.citations]),
@@ -81,13 +657,24 @@ class FormatTemplate(BaseModel):
             "metrics": "\n".join([f"- {k}: {v}" for k, v in response.metrics.items()]),
             "claim_audits": _format_claim_audits_markdown(response.claim_audits),
             "claim_audit_count": len(response.claim_audits),
+            "tldr": response.answer,
+            "depth_label": OutputDepth.STANDARD.label,
+            "key_findings": "",
+            "key_findings_note": "",
+            "citations_note": "",
+            "claim_audits_note": "",
+            "reasoning_note": "",
+            "metrics_note": "",
+            "raw_json": "",
+            "raw_response_note": "",
         }
 
-        # Add individual metrics as variables
         for k, v in response.metrics.items():
             variables[f"metric_{k}"] = str(v)
 
-        # Use string.Template for variable substitution
+        if extra:
+            variables.update(extra)
+
         template = string.Template(self.template)
         try:
             return template.substitute(variables)
@@ -111,40 +698,73 @@ class TemplateRegistry:
     _default_templates: Dict[str, Dict[str, Any]] = {
         "markdown": {
             "name": "markdown",
-            "description": "Markdown format with headings and lists",
-            "template": """# Answer
+            "description": "Markdown format with depth-aware sections",
+            "template": """# TL;DR
+${tldr}
+
+## Answer
 ${answer}
+
+## Key Findings
+${key_findings}
+${key_findings_note}
 
 ## Citations
 ${citations}
-
-## Reasoning
-${reasoning}
+${citations_note}
 
 ## Claim Audits
 ${claim_audits}
+${claim_audits_note}
+
+## Reasoning Trace
+${reasoning}
+${reasoning_note}
 
 ## Metrics
 ${metrics}
+${metrics_note}
+
+## Depth
+${depth_label}
+
+## Raw Response
+${raw_json}
+${raw_response_note}
 """,
         },
         "plain": {
             "name": "plain",
             "description": "Simple text format for basic terminal output",
-            "template": """Answer:
+            "template": """TL;DR:
+${tldr}
+
+Answer:
 ${answer}
+
+Key Findings:
+${key_findings}
+${key_findings_note}
 
 Citations:
 ${citations}
-
-Reasoning:
-${reasoning}
+${citations_note}
 
 Claim Audits:
 ${claim_audits}
+${claim_audits_note}
+
+Reasoning Trace:
+${reasoning}
+${reasoning_note}
 
 Metrics:
 ${metrics}
+${metrics_note}
+
+Raw Response:
+${raw_json}
+${raw_response_note}
 """,
         },
     }
@@ -276,38 +896,11 @@ class OutputFormatter:
             log.warning(f"Failed to load templates from config: {e}")
 
     @classmethod
-    def format(cls, result: Any, format_type: str = "markdown") -> None:
-        """Validate and format a query result to the specified output format.
+    def render(
+        cls, result: Any, format_type: str = "markdown", depth: Any = None
+    ) -> str:
+        """Render a query result to a string for the specified format."""
 
-        This method takes a query result (either a QueryResponse object or a
-        dictionary that can be converted to one) and formats it according to
-        the specified format type. The formatted output is written directly
-        to stdout.
-
-        The method first validates that the input conforms to the QueryResponse
-        structure, then formats it according to the specified format type.
-
-        Args:
-            result (Any): The query result to format. Can be a QueryResponse object
-                or a dictionary that can be converted to one.
-            format_type (str, optional): The output format to use. Supported values:
-                - "json": Structured JSON format
-                - "plain" or "text": Simple text format
-                - "markdown": Markdown format with headings and lists
-                - "template:<name>": Custom template format (e.g., "template:html")
-                Defaults to "markdown".
-
-        Raises:
-            AutoresearchValidationError: If the result cannot be validated as a
-                QueryResponse object.
-            KeyError: If the specified template is not found.
-
-        Note:
-            This method writes directly to stdout and does not return a value.
-            For programmatic use where you need the formatted string, you may
-            need to capture stdout or modify this method to return the string.
-        """
-        # Initialize templates if needed
         cls._initialize()
 
         try:
@@ -322,10 +915,74 @@ class OutputFormatter:
             ) from exc
 
         fmt = format_type.lower()
+        payload = build_depth_payload(response, depth)
 
         if fmt == "json":
-            sys.stdout.write(response.model_dump_json(indent=2) + "\n")
-        elif fmt == "graph":
+            return _render_json(payload)
+        if fmt in {"plain", "text"}:
+            try:
+                template = TemplateRegistry.get("plain")
+            except KeyError:
+                return _render_plain(payload)
+            extra = _template_variables_from_payload(payload)
+            overrides = {
+                "key_findings": extra.get("key_findings_plain")
+                or extra.get("key_findings_note", ""),
+                "citations": extra.get("citations_plain")
+                or extra.get("citations_note", ""),
+                "claim_audits": extra.get("claim_audits_plain")
+                or extra.get("claim_audits_note", ""),
+                "reasoning": extra.get("reasoning_plain")
+                or extra.get("reasoning_note", ""),
+                "metrics": extra.get("metrics_plain")
+                or extra.get("metrics_note", ""),
+            }
+            extra.update(overrides)
+            return template.render(response, extra=extra)
+        if fmt == "markdown":
+            try:
+                template = TemplateRegistry.get("markdown")
+            except KeyError:
+                return _render_markdown(payload)
+            extra = _template_variables_from_payload(payload)
+            overrides = {
+                "key_findings": extra.get("key_findings_markdown")
+                or extra.get("key_findings_note", ""),
+                "citations": extra.get("citations_markdown")
+                or extra.get("citations_note", ""),
+                "claim_audits": extra.get("claim_audits_markdown")
+                or extra.get("claim_audits_note", ""),
+                "reasoning": extra.get("reasoning_markdown")
+                or extra.get("reasoning_note", ""),
+                "metrics": extra.get("metrics_markdown")
+                or extra.get("metrics_note", ""),
+            }
+            extra.update(overrides)
+            return template.render(response, extra=extra)
+        if fmt.startswith("template:"):
+            template_name = fmt.split(":", 1)[1]
+            template = TemplateRegistry.get(template_name)
+            extra = _template_variables_from_payload(payload)
+            return template.render(response, extra=extra)
+        if fmt == "graph":
+            raise ValueError(
+                "Graph format cannot be rendered to a string; use format() instead."
+            )
+        return _render_markdown(payload)
+
+    @classmethod
+    def format(
+        cls, result: Any, format_type: str = "markdown", depth: Any = None
+    ) -> None:
+        """Validate and format a query result to the specified output format."""
+
+        fmt = format_type.lower()
+        if fmt == "graph":
+            cls._initialize()
+            if isinstance(result, QueryResponse):
+                response = result
+            else:
+                response = QueryResponse.model_validate(result)
             from rich.tree import Tree
             from rich.console import Console
 
@@ -346,61 +1003,28 @@ class OutputFormatter:
                 metrics_node.add(f"{k}: {v}")
 
             Console(file=sys.stdout, force_terminal=False, color_system=None).print(tree)
-        elif fmt.startswith("template:"):
-            # Custom template format
-            template_name = fmt.split(":", 1)[1]
-            try:
-                template = TemplateRegistry.get(template_name)
-                output = template.render(response)
-                sys.stdout.write(output + "\n")
-            except KeyError as e:
-                log.error(f"Template error: {e}")
-                # Fall back to markdown if template not found
+            return
+
+        try:
+            output = cls.render(result, format_type, depth)
+        except KeyError as err:
+            if fmt.startswith("template:"):
+                log.error(f"Template error: {err}")
                 log.warning(
-                    f"Template '{template_name}' not found, falling back to markdown"
+                    f"Template '{format_type.split(':', 1)[1]}' not found, falling back to markdown"
                 )
-                cls.format(result, "markdown")
-        elif fmt in {"plain", "text"}:
-            try:
-                template = TemplateRegistry.get("plain")
-                output = template.render(response)
-                sys.stdout.write(output + "\n")
-            except KeyError:
-                # Fall back to hardcoded plain format if template not found
-                sys.stdout.write("Answer:\n")
-                sys.stdout.write(response.answer + "\n\n")
-                sys.stdout.write("Citations:\n")
-                for c in response.citations:
-                    sys.stdout.write(f"{c}\n")
-                sys.stdout.write("\nReasoning:\n")
-                for r in response.reasoning:
-                    sys.stdout.write(f"{r}\n")
-                sys.stdout.write("\nClaim Audits:\n")
-                sys.stdout.write(_format_claim_audits_plain(response.claim_audits) + "\n")
-                sys.stdout.write("\nMetrics:\n")
-                for k, v in response.metrics.items():
-                    sys.stdout.write(f"{k}: {v}\n")
-        else:
-            # Markdown output (default)
-            try:
-                template = TemplateRegistry.get("markdown")
-                output = template.render(response)
-                sys.stdout.write(output + "\n")
-            except KeyError:
-                # Fall back to hardcoded markdown format if template not found
-                sys.stdout.write("# Answer\n")
-                sys.stdout.write(response.answer + "\n\n")
-                sys.stdout.write("## Citations\n")
-                for c in response.citations:
-                    sys.stdout.write(f"- {c}\n")
-                sys.stdout.write("\n## Reasoning\n")
-                for r in response.reasoning:
-                    sys.stdout.write(f"- {r}\n")
-                sys.stdout.write("\n## Claim Audits\n")
-                sys.stdout.write(_format_claim_audits_markdown(response.claim_audits) + "\n")
-                sys.stdout.write("\n## Metrics\n")
-                for k, v in response.metrics.items():
-                    sys.stdout.write(f"- **{k}**: {v}\n")
+                output = cls.render(result, "markdown", depth)
+            else:
+                raise
+        except ValueError as err:
+            log.warning(f"{err} Falling back to markdown output.")
+            output = cls.render(result, "markdown", depth)
+
+        if output and not output.endswith("\n"):
+            output += "\n"
+        sys.stdout.write(output)
+
+
 def _format_claim_audits_markdown(audits: list[dict[str, Any]]) -> str:
     """Render claim audits as a Markdown table."""
 
@@ -437,4 +1061,3 @@ def _format_claim_audits_plain(audits: list[dict[str, Any]]) -> str:
             f"- Claim {audit.get('claim_id', '')}: status={status}, entailment={entailment_display}"
         )
     return "\n".join(segments)
-
