@@ -130,6 +130,10 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
   claims before synthesis and citation formatting.
 - **Telemetry:** Record gate inputs and outcomes so policies can be tuned with
   offline evaluation.
+- **Configuration:** Operators can tune `gate_policy_enabled`,
+  `gate_retrieval_overlap_threshold`, `gate_nli_conflict_threshold`,
+  `gate_complexity_threshold`, and `gate_user_overrides` to align the scout
+  policy with domain needs.
 
 ## 10. Evidence Pipeline 2.0
 

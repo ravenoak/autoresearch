@@ -271,6 +271,32 @@ class ConfigModel(BaseModel):
         default_factory=dict,
         description="Named coalitions of agents for message broadcasting",
     )
+    gate_policy_enabled: bool = Field(
+        default=True,
+        description="Enable scout gate heuristics before dialectical debate",
+    )
+    gate_retrieval_overlap_threshold: float = Field(
+        default=0.6,
+        ge=0.0,
+        le=1.0,
+        description="Minimum overlap that still triggers debate for scout evidence",
+    )
+    gate_nli_conflict_threshold: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Contradiction probability that forces multi-loop debate",
+    )
+    gate_complexity_threshold: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Complexity score that escalates to full debate",
+    )
+    gate_user_overrides: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional overrides for gate policy decisions and signals",
+    )
     graph_eviction_policy: str = Field(
         default="LRU",
         description=(
