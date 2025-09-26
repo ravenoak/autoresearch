@@ -3,6 +3,8 @@
 from importlib import util
 from pathlib import Path
 
+import pytest
+
 
 def _load_module():
     path = Path(__file__).resolve().parents[2] / "scripts" / "scheduling_resource_benchmark.py"
@@ -23,12 +25,16 @@ def test_run_benchmark_scaling():
     one_worker, two_workers = results
     assert one_worker["expected_memory"] == 10.0
 
-    # The median throughput should scale noticeably once thread start-up costs
-    # are amortized.
-    assert two_workers["throughput"] >= one_worker["throughput"] * 1.2
+    # Expect near-linear scaling: with twice the workers we target roughly twice the
+    # throughput, but allow ±20% wiggle room for scheduling noise and benchmark
+    # variability.
+    assert two_workers["throughput"] == pytest.approx(
+        one_worker["throughput"] * 2,
+        rel=0.2,
+    )
 
-    # Each individual throughput sample for two workers should comfortably
-    # exceed the single-worker samples to guard against regressions in the
-    # amortization logic. A small tolerance covers scheduler jitter.
+    # Require each sample to comfortably beat the corresponding single-worker
+    # measurement. A 1.5x floor gives headroom for momentary contention while still
+    # flagging regressions that would erode the expected scaling benefit.
     paired_samples = zip(one_worker["throughput_samples"], two_workers["throughput_samples"])
-    assert all(two >= one * 1.1 for one, two in paired_samples)
+    assert all(two >= one * 1.5 for one, two in paired_samples)
