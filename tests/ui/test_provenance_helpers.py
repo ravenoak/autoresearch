@@ -3,8 +3,10 @@ import pytest
 from autoresearch.models import QueryResponse
 from autoresearch.output_format import DepthPayload, build_depth_payload, OutputDepth
 from autoresearch.ui.provenance import (
+    audit_status_rollup,
     extract_graphrag_artifacts,
     generate_socratic_prompts,
+    section_toggle_defaults,
 )
 
 pytestmark = pytest.mark.requires_ui
@@ -42,3 +44,17 @@ def test_extract_graphrag_artifacts_filters_non_graph_metrics(sample_payload) ->
     artifacts = extract_graphrag_artifacts(sample_payload.metrics)
     assert "graphrag_edges" in artifacts
     assert "tokens" not in artifacts
+
+
+def test_audit_status_rollup_orders_known_statuses(sample_payload) -> None:
+    counts = audit_status_rollup(sample_payload.claim_audits)
+    assert list(counts.keys())[0] == "supported"
+    assert counts["supported"] == 1
+
+
+def test_section_toggle_defaults_reflect_payload_sections(sample_payload) -> None:
+    toggles = section_toggle_defaults(sample_payload)
+    assert toggles["tldr"]["available"] is True
+    assert toggles["key_findings"]["value"] is True
+    assert toggles["claim_audits"]["available"] is True
+    assert toggles["full_trace"]["available"] is True

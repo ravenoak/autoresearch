@@ -36,9 +36,11 @@ from .config_utils import (
 )
 from .output_format import OutputFormatter, build_depth_payload, OutputDepth
 from .ui.provenance import (
+    audit_status_rollup,
     depth_sequence,
     extract_graphrag_artifacts,
     generate_socratic_prompts,
+    section_toggle_defaults,
 )
 from .streamlit_ui import (
     apply_accessibility_settings,
@@ -1695,28 +1697,119 @@ def display_results(result: QueryResponse) -> None:
     payload = build_depth_payload(result, selected_depth)
     st.session_state["current_payload"] = payload
 
+    toggle_defaults = section_toggle_defaults(payload)
+    depth_state_key = "last_selected_depth"
+    if st.session_state.get(depth_state_key) != selected_depth.value:
+        for name, config in toggle_defaults.items():
+            st.session_state[f"ui_toggle_{name}"] = (
+                config["value"] if config["available"] else False
+            )
+        st.session_state[depth_state_key] = selected_depth.value
+
+    toggle_widget = getattr(st, "toggle", st.checkbox)
+    toggle_definitions: List[tuple[str, str, str]] = [
+        ("tldr", "Show TL;DR", "Display the auto-generated summary."),
+        (
+            "key_findings",
+            "Show key findings",
+            "Highlight the main evidence-backed points.",
+        ),
+        (
+            "claim_audits",
+            "Show claim table",
+            "Inspect verification outcomes for each claim.",
+        ),
+        (
+            "full_trace",
+            "Show full trace",
+            "Reveal reasoning steps and ReAct traces.",
+        ),
+    ]
+    toggle_states: Dict[str, bool] = {}
+    st.markdown("#### Depth controls")
+    toggle_columns = st.columns(len(toggle_definitions))
+    for column, (name, label, help_text) in zip(toggle_columns, toggle_definitions):
+        config = toggle_defaults[name]
+        state_key = f"ui_toggle_{name}"
+        if state_key not in st.session_state:
+            st.session_state[state_key] = (
+                config["value"] if config["available"] else False
+            )
+        if not config["available"]:
+            st.session_state[state_key] = False
+        with column:
+            toggle_widget(
+                label,
+                value=st.session_state[state_key],
+                help=help_text,
+                disabled=not config["available"],
+                key=state_key,
+            )
+        toggle_states[name] = (
+            st.session_state[state_key] if config["available"] else False
+        )
+
     st.markdown(
         "<div role='region' aria-label='Query results' aria-live='polite'>",
         unsafe_allow_html=True,
     )
     st.markdown("<h2 class='subheader'>TL;DR</h2>", unsafe_allow_html=True)
-    st.write(payload.tldr or "No summary available.")
+    if toggle_states.get("tldr", True) and payload.tldr:
+        st.write(payload.tldr)
+    elif toggle_states.get("tldr", True):
+        st.info("No summary available.")
+    elif not toggle_defaults["tldr"]["available"] and (note := payload.notes.get("tldr")):
+        st.info(note)
+    else:
+        st.caption("Enable 'Show TL;DR' to surface the summary.")
 
     st.markdown("<h2 class='subheader'>Answer</h2>", unsafe_allow_html=True)
     st.markdown(payload.answer, unsafe_allow_html=True)
 
     st.markdown("<h3>Key Findings</h3>", unsafe_allow_html=True)
-    if payload.key_findings:
-        for finding in payload.key_findings:
-            st.markdown(f"- {finding}")
-    if note := payload.notes.get("key_findings"):
-        st.caption(note)
+    if toggle_states.get("key_findings"):
+        if payload.key_findings:
+            for finding in payload.key_findings:
+                st.markdown(f"- {finding}")
+        else:
+            st.info("No key findings available.")
+        if note := payload.notes.get("key_findings"):
+            st.caption(note)
+    elif not toggle_defaults["key_findings"]["available"] and (
+        note := payload.notes.get("key_findings")
+    ):
+        st.info(note)
+    else:
+        st.caption("Enable 'Show key findings' to review highlights.")
 
     prompts = generate_socratic_prompts(payload)
     if prompts:
         with st.expander("Socratic prompts", expanded=False):
             for prompt in prompts:
                 st.markdown(f"- {prompt}")
+
+    with st.expander("Provenance & verification", expanded=False):
+        rollup = audit_status_rollup(payload.claim_audits)
+        if rollup:
+            st.markdown("**Claim status overview**")
+            for status, count in rollup.items():
+                st.markdown(
+                    f"- {status.replace('_', ' ').title()}: {count}",
+                    unsafe_allow_html=False,
+                )
+        elif payload.notes.get("claim_audits"):
+            st.info(payload.notes["claim_audits"])
+        else:
+            st.info("Increase depth to capture claim verification data.")
+
+        artifacts = extract_graphrag_artifacts(result.metrics)
+        if artifacts:
+            st.markdown("**GraphRAG artifacts**")
+            st.json(artifacts)
+        elif payload.notes.get("metrics"):
+            st.caption(payload.notes["metrics"])
+        else:
+            st.caption("GraphRAG metrics appear once runs collect graph evidence.")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -1756,85 +1849,99 @@ def display_results(result: QueryResponse) -> None:
 
     with tab2:
         st.markdown("<h3>Reasoning</h3>", unsafe_allow_html=True)
-        if payload.reasoning:
-            for idx, step in enumerate(payload.reasoning, 1):
-                st.markdown(
-                    f"<div class='reasoning-step' role='listitem'>{idx}. {step}</div>",
-                    unsafe_allow_html=True,
-                )
-        elif note := payload.notes.get("reasoning"):
-            st.info(note)
+        if toggle_states.get("full_trace"):
+            if payload.reasoning:
+                for idx, step in enumerate(payload.reasoning, 1):
+                    st.markdown(
+                        f"<div class='reasoning-step' role='listitem'>{idx}. {step}</div>",
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("No reasoning steps provided")
+            if note := payload.notes.get("reasoning"):
+                st.caption(note)
+        elif not toggle_defaults["full_trace"]["available"]:
+            message = payload.notes.get("reasoning") or "Increase depth to unlock trace details."
+            st.info(message)
         else:
-            st.info("No reasoning steps provided")
+            st.info("Enable 'Show full trace' to inspect agent reasoning.")
 
     with tab3:
         st.markdown("<h3>Claim Audits</h3>", unsafe_allow_html=True)
-        if payload.claim_audits:
-            badge_styles = {
-                "supported": "#0f5132",
-                "unsupported": "#842029",
-                "needs_review": "#664d03",
-            }
-            st.markdown(
-                """
-                <style>
-                .claim-audit-table {width:100%; border-collapse: collapse;}
-                .claim-audit-table th, .claim-audit-table td {
-                    border: 1px solid rgba(151, 151, 151, 0.4);
-                    padding: 0.5rem;
+        if toggle_states.get("claim_audits"):
+            if payload.claim_audits:
+                badge_styles = {
+                    "supported": "#0f5132",
+                    "unsupported": "#842029",
+                    "needs_review": "#664d03",
                 }
-                .claim-audit-badge {
-                    border-radius: 0.5rem;
-                    padding: 0.25rem 0.6rem;
-                    color: #fff;
-                    font-size: 0.85rem;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-            rows: list[str] = []
-            for audit in payload.claim_audits:
-                status_raw = str(audit.get("status", "unknown")).lower()
-                color = badge_styles.get(status_raw, "#6c757d")
-                badge = (
-                    f"<span class='claim-audit-badge' style='background-color:{color}'>"
-                    f"{status_raw.replace('_', ' ').title()}</span>"
+                st.markdown(
+                    """
+                    <style>
+                    .claim-audit-table {width:100%; border-collapse: collapse;}
+                    .claim-audit-table th, .claim-audit-table td {
+                        border: 1px solid rgba(151, 151, 151, 0.4);
+                        padding: 0.5rem;
+                    }
+                    .claim-audit-badge {
+                        border-radius: 0.5rem;
+                        padding: 0.25rem 0.6rem;
+                        color: #fff;
+                        font-size: 0.85rem;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True,
                 )
-                entailment = audit.get("entailment_score")
-                entailment_display = "—" if entailment is None else f"{entailment:.2f}"
-                sources = audit.get("sources") or []
-                primary = sources[0] if sources else {}
-                label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
-                if label and len(label) > 80:
-                    label = label[:77] + "..."
-                rows.append(
-                    "<tr>"
-                    f"<td>{audit.get('claim_id', '')}</td>"
-                    f"<td>{badge}</td>"
-                    f"<td>{entailment_display}</td>"
-                    f"<td>{label}</td>"
-                    "</tr>"
+                rows: list[str] = []
+                for audit in payload.claim_audits:
+                    status_raw = str(audit.get("status", "unknown")).lower()
+                    color = badge_styles.get(status_raw, "#6c757d")
+                    badge = (
+                        f"<span class='claim-audit-badge' style='background-color:{color}'>"
+                        f"{status_raw.replace('_', ' ').title()}</span>"
+                    )
+                    entailment = audit.get("entailment_score")
+                    entailment_display = "—" if entailment is None else f"{entailment:.2f}"
+                    sources = audit.get("sources") or []
+                    primary = sources[0] if sources else {}
+                    label = (
+                        primary.get("title")
+                        or primary.get("url")
+                        or primary.get("snippet")
+                        or ""
+                    )
+                    if label and len(label) > 80:
+                        label = label[:77] + "..."
+                    rows.append(
+                        "<tr>"
+                        f"<td>{audit.get('claim_id', '')}</td>"
+                        f"<td>{badge}</td>"
+                        f"<td>{entailment_display}</td>"
+                        f"<td>{label}</td>"
+                        "</tr>"
+                    )
+                table_html = (
+                    "<table class='claim-audit-table'>"
+                    "<thead><tr><th>Claim ID</th><th>Status</th><th>Entailment</th><th>Top Source</th></tr></thead>"
+                    f"<tbody>{''.join(rows)}</tbody></table>"
                 )
-            table_html = (
-                "<table class='claim-audit-table'>"
-                "<thead><tr><th>Claim ID</th><th>Status</th><th>Entailment</th><th>Top Source</th></tr></thead>"
-                f"<tbody>{''.join(rows)}</tbody></table>"
-            )
-            st.markdown(table_html, unsafe_allow_html=True)
+                st.markdown(table_html, unsafe_allow_html=True)
+            elif note := payload.notes.get("claim_audits"):
+                st.info(note)
+            else:
+                st.info("No claim audits recorded")
             if note := payload.notes.get("claim_audits"):
                 st.caption(note)
-        elif note := payload.notes.get("claim_audits"):
-            st.info(note)
+            st.caption("See the provenance panel above for GraphRAG artifacts.")
+        elif not toggle_defaults["claim_audits"]["available"]:
+            message = (
+                payload.notes.get("claim_audits")
+                or "Increase depth to capture claim verification data."
+            )
+            st.info(message)
         else:
-            st.info("No claim audits recorded")
-
-        artifacts = extract_graphrag_artifacts(result.metrics)
-        if artifacts:
-            st.markdown("### GraphRAG Artifacts")
-            st.json(artifacts)
-        elif payload.notes.get("metrics"):
-            st.caption(payload.notes["metrics"])
+            st.info("Enable 'Show claim table' to inspect verification details.")
 
     with tab4:
         st.markdown("<h3>Metrics</h3>", unsafe_allow_html=True)
@@ -1874,19 +1981,37 @@ def display_results(result: QueryResponse) -> None:
 
     with tab6:
         st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)
-        if payload.reasoning:
-            trace_graph = create_interaction_trace(payload.reasoning)
-            st.graphviz_chart(trace_graph)
-        elif payload.notes.get("reasoning"):
-            st.info(payload.notes["reasoning"])
-        else:
-            st.info("No reasoning steps available")
+        if toggle_states.get("full_trace"):
+            if payload.reasoning:
+                trace_graph = create_interaction_trace(payload.reasoning)
+                st.graphviz_chart(trace_graph)
+            elif payload.notes.get("reasoning"):
+                st.info(payload.notes["reasoning"])
+            else:
+                st.info("No reasoning steps available")
 
-        metrics = st.session_state.get("agent_performance", {})
-        if metrics:
-            st.markdown("### Progress Metrics")
-            progress_graph = create_progress_graph(metrics)
-            st.graphviz_chart(progress_graph)
+            if payload.react_traces:
+                st.markdown("### ReAct events")
+                st.json(payload.react_traces)
+            elif note := payload.notes.get("react_traces"):
+                st.info(note)
+            elif not payload.react_traces:
+                st.caption("No ReAct events captured for this run.")
+
+            metrics = st.session_state.get("agent_performance", {})
+            if metrics:
+                st.markdown("### Progress Metrics")
+                progress_graph = create_progress_graph(metrics)
+                st.graphviz_chart(progress_graph)
+        elif not toggle_defaults["full_trace"]["available"]:
+            message = (
+                payload.notes.get("react_traces")
+                or payload.notes.get("reasoning")
+                or "Increase depth to unlock detailed traces."
+            )
+            st.info(message)
+        else:
+            st.info("Enable 'Show full trace' to inspect the agent trace.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 

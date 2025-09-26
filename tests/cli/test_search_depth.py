@@ -1,6 +1,9 @@
+import json
+
 import pytest
 from typer.testing import CliRunner
 
+from autoresearch.cli_helpers import depth_help_text
 from autoresearch.main.app import app as cli_app
 from autoresearch.models import QueryResponse
 
@@ -87,5 +90,14 @@ def test_cli_depth_trace_json(cli_runner: CliRunner, cli_environment: QueryRespo
         ["search", "depth test", "--depth", "trace", "--output", "json"],
     )
     assert result.exit_code == 0
-    assert '"raw_response"' in result.stdout
-    assert '"key_findings"' in result.stdout
+    data = json.loads(result.stdout)
+    assert "raw_response" in data
+    assert data["sections"]["full_trace"] is True
+    assert data["sections"]["claim_audits"] is True
+
+
+def test_depth_help_text_includes_feature_matrix() -> None:
+    text = depth_help_text()
+    assert "includes TL;DR" in text
+    assert "claim table" in text
+    assert "full trace" in text
