@@ -145,4 +145,119 @@ class OutputFormatter:
             print_metrics(result.metrics)
 ```
 
+## 7. Adaptive Gate (orchestration/gating.py)
+```
+function run_orchestration(query, config):
+    draft, scout_evidence = scout_pass(query, config)
+    signals = compute_signals(draft, scout_evidence, config)
+    decision = gate_policy(signals, config)
+
+    if decision.action == "exit":
+        audited = audit_claims(draft, scout_evidence, config)
+        return finalize(audited, decision, config)
+
+    debate_state = initialize_debate_state(draft, scout_evidence)
+    for cycle in range(decision.max_cycles):
+        thesis = thesis_agent.act(debate_state)
+        antithesis = antithesis_agent.challenge(debate_state, thesis)
+        fact_check = fact_checker.audit(antithesis, config)
+        debate_state.update(thesis, antithesis, fact_check)
+        if debate_state.should_stop():
+            break
+
+    synthesis = synthesis_agent.compose(debate_state)
+    return finalize(synthesis, decision, config)
+```
+
+## 8. Claim Auditing (evidence/audit.py)
+```
+function audit_claims(candidate, evidence, config):
+    claims = extract_claims(candidate)
+    audits = []
+    for claim in claims:
+        retrievals = iterative_retrieval(claim, evidence, config)
+        entailment = score_entailment(claim, retrievals)
+        stability = self_check(claim, config)
+        status = classify_status(entailment, stability, config)
+        audits.append({
+            "claim": claim,
+            "status": status,
+            "sources": top_sources(retrievals),
+            "entailment": entailment,
+            "stability": stability,
+        })
+
+    if unsupported(audits):
+        candidate = rewrite_with_hedges(candidate, audits)
+        return audit_claims(candidate, evidence, config)
+
+    return {
+        "content": candidate,
+        "audits": audits,
+    }
+```
+
+## 9. Planner and Coordinator (planning/coordinator.py)
+```
+function plan_and_execute(query, config):
+    plan = planner_agent.decompose(query, config)
+    coordinator_log = []
+
+    for task in plan.tasks:
+        agent = select_agent(task, config)
+        model = select_model(task, config)
+        result = agent.execute(task, model, config)
+        coordinator_log.append({
+            "task": task,
+            "agent": agent.name,
+            "model": model.name,
+            "result": result.summary,
+        })
+        plan.update_with_result(task, result)
+
+    return plan, coordinator_log
+```
+
+## 10. Graph-Augmented Retrieval (retrieval/graph.py)
+```
+function build_session_graph(evidence):
+    graph = Graph()
+    for doc in evidence:
+        entities = extract_entities(doc)
+        relations = extract_relations(doc)
+        graph.add_entities(entities)
+        graph.add_relations(relations)
+    return graph
+
+function augment_query(graph, query):
+    neighbors = graph.neighbors_of(query.key_entities)
+    summary = graph.community_summary(query.topic)
+    return compose_prompt(query, neighbors, summary)
+
+function contradiction_check(graph, answer):
+    implied = infer_relations(answer)
+    conflicts = []
+    for relation in implied:
+        if graph.contradicts(relation):
+            conflicts.append(relation)
+    return conflicts
+```
+
+## 11. Evaluation Harness (tests/benchmarks/harness.py)
+```
+function run_benchmarks(config, suite):
+    results = []
+    for case in suite.cases:
+        response = Orchestrator.run_query(case.prompt, config)
+        metrics = evaluate_case(case, response)
+        results.append({
+            "case_id": case.id,
+            "metrics": metrics,
+        })
+
+    aggregate = aggregate_metrics(results)
+    persist_results(results, aggregate, config)
+    return aggregate
+```
+
 
