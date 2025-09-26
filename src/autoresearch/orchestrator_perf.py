@@ -22,8 +22,9 @@ from typing import Dict
 # Sleep duration mimics an I/O-bound task that briefly releases the GIL so
 # additional workers can make progress.
 _SLEEP_DURATION = 0.001
-# Require each measurement batch to last at least this long to amortize thread
-# start-up overhead and scheduling jitter.
+# Require each worker's share of a measurement batch to last at least this long
+# to amortize thread start-up overhead and scheduling jitter. The guard is
+# scaled dynamically based on the estimated per-worker batch runtime.
 _MIN_MEASURE_DURATION = 0.05
 # Gather multiple throughput samples per worker count to smooth transient noise
 # without stretching overall runtime excessively.
@@ -115,7 +116,9 @@ def benchmark_scheduler(
 
     Each task allocates memory and sleeps briefly to mimic an I/O-bound
     workload that releases the GIL, allowing throughput to scale with the number
-    of workers.
+    of workers. The benchmark adapts the number of scheduled tasks so each
+    worker remains busy long enough to amortize scheduling overhead even as
+    concurrency scales.
 
     Args:
         workers: Number of worker threads to schedule tasks.
@@ -140,12 +143,33 @@ def benchmark_scheduler(
         profiler = cProfile.Profile()
         profiler.enable()
 
-    effective_tasks = tasks
-    estimated_task_time = tasks * _SLEEP_DURATION
-    if estimated_task_time < _MIN_MEASURE_DURATION:
-        effective_tasks *= math.ceil(
-            _MIN_MEASURE_DURATION / max(estimated_task_time, _SLEEP_DURATION)
-        )
+    # Estimate how long each worker will stay busy for a single measurement
+    # batch. We require the per-worker runtime to exceed the amortization
+    # target so throughput samples have comparable fidelity across worker
+    # counts.
+    min_workers = max(workers, 1)
+    effective_tasks = max(tasks, 1)
+    estimated_per_worker_runtime = (
+        effective_tasks * _SLEEP_DURATION
+    ) / min_workers
+    if estimated_per_worker_runtime < _MIN_MEASURE_DURATION:
+        min_tasks_per_worker = math.ceil(_MIN_MEASURE_DURATION / _SLEEP_DURATION)
+        required_tasks = min_tasks_per_worker * min_workers
+        effective_tasks = max(tasks, required_tasks)
+        # Recompute to ensure the concurrency-aware guard is satisfied in case
+        # rounding created a slight deficit.
+        estimated_per_worker_runtime = (
+            effective_tasks * _SLEEP_DURATION
+        ) / min_workers
+        if estimated_per_worker_runtime < _MIN_MEASURE_DURATION:
+            # Fallback to a loop in degenerate cases (e.g., very small sleep
+            # durations) to avoid a silent infinite shortfall.
+            while (
+                (effective_tasks * _SLEEP_DURATION) / min_workers
+                < _MIN_MEASURE_DURATION
+            ):
+                effective_tasks += min_workers
+
 
     def _warmup(_: int) -> None:
         time.sleep(0)
