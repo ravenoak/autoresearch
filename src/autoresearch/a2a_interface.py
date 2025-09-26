@@ -13,12 +13,33 @@ import time
 from enum import Enum
 from functools import wraps
 from threading import Thread
-from typing import Any, Callable, Dict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Literal,
+    Mapping,
+    MutableMapping,
+    Protocol,
+    Self,
+    TypedDict,
+    cast,
+    TypeVar,
+)
 from uuid import uuid4
 
 import httpx
 import uvicorn
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from .api import capabilities_endpoint
+from .config import ConfigLoader, ConfigModel, get_config
+from .error_utils import format_error_for_a2a, get_error_info
+from .logging_utils import get_logger
+from .orchestration.orchestrator import Orchestrator
+
+logger = get_logger(__name__)
 
 # Import ``pydantic.root_model`` early to avoid compatibility issues when the
 # A2A SDK uses generics with Pydantic 2.
@@ -31,7 +52,7 @@ try:  # pragma: no cover - runtime import patch
 except Exception:  # pragma: no cover - best effort
     pass
 
-try:
+if TYPE_CHECKING:
     from a2a.client import A2AClient as SDKA2AClient
     from a2a.types import (
         Message,
@@ -40,9 +61,108 @@ try:
         SendMessageResponse,
     )
     from a2a.utils.message import get_message_text, new_agent_text_message
+else:
+    class Message(Protocol):
+        """Structural type for messages exchanged with the A2A SDK."""
 
+        metadata: Mapping[str, Any] | None
+
+        @classmethod
+        def model_validate(cls, data: Mapping[str, Any]) -> Self:
+            ...
+
+        def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
+            ...
+
+    class MessageSendParams(Protocol):
+        """Structural type describing message send parameters."""
+
+        message: Message
+        metadata: Mapping[str, Any] | None
+
+        def __init__(self, *, message: Message, metadata: Mapping[str, Any] | None = ...) -> None:
+            ...
+
+    class SendMessageRequest(Protocol):
+        """Structural type describing message send requests."""
+
+        id: str
+        params: MessageSendParams
+
+        def __init__(self, *, id: str, params: MessageSendParams) -> None:
+            ...
+
+    class SendMessageResponse(Protocol):
+        """Structural type for message responses from the A2A SDK."""
+
+        def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
+            ...
+
+    class SDKA2AClient(Protocol):
+        """Structural type for the optional A2A client."""
+
+        async def send_message(self, request: SendMessageRequest) -> SendMessageResponse:
+            ...
+
+    def get_message_text(message: Message) -> str:
+        """Placeholder used when the A2A SDK is absent."""
+
+        raise RuntimeError("A2A SDK is not available at runtime.")
+
+    def new_agent_text_message(
+        text: str, metadata: Mapping[str, Any] | None = None
+    ) -> Message:
+        """Placeholder used when the A2A SDK is absent."""
+
+        raise RuntimeError("A2A SDK is not available at runtime.")
+
+
+A2A_AVAILABLE = False
+
+
+class AgentInfo(TypedDict):
+    """Summary of agent metadata surfaced via the info handler."""
+
+    name: str
+    version: str
+    description: str
+    capabilities: list[str]
+
+
+class InfoResponse(TypedDict):
+    """Response structure returned by ``_handle_info`` on success."""
+
+    status: Literal["success"]
+    agent_info: AgentInfo
+    message: dict[str, Any]
+
+
+try:  # pragma: no cover - optional dependency import
+    from a2a.client import A2AClient as _RuntimeA2AClient
+    from a2a.types import (
+        Message as _RuntimeMessage,
+        MessageSendParams as _RuntimeMessageSendParams,
+        SendMessageRequest as _RuntimeSendMessageRequest,
+        SendMessageResponse as _RuntimeSendMessageResponse,
+    )
+    from a2a.utils.message import (
+        get_message_text as _runtime_get_message_text,
+        new_agent_text_message as _runtime_new_agent_text_message,
+    )
+except ImportError:  # pragma: no cover - dependency missing
+    pass
+else:
     A2A_AVAILABLE = True
+    SDKA2AClient = _RuntimeA2AClient  # noqa: F811
+    Message = _RuntimeMessage  # noqa: F811
+    MessageSendParams = _RuntimeMessageSendParams  # noqa: F811
+    SendMessageRequest = _RuntimeSendMessageRequest  # noqa: F811
+    SendMessageResponse = _RuntimeSendMessageResponse  # noqa: F811
+    get_message_text = _runtime_get_message_text  # noqa: F811
+    new_agent_text_message = _runtime_new_agent_text_message  # noqa: F811
 
+
+if A2A_AVAILABLE:
     class A2AMessageType(str, Enum):
         """Supported message types."""
 
@@ -59,20 +179,25 @@ try:
         type: A2AMessageType
         message: Message
 
+    MessageResponse = Mapping[str, Any]
+    SyncMessageHandler = Callable[[Message], MessageResponse]
+    AsyncMessageHandler = Callable[[Message], Awaitable[MessageResponse]]
+    MessageHandler = SyncMessageHandler | AsyncMessageHandler
+
     class A2AServer:
         """FastAPI/uvicorn server for A2A messages."""
 
         def __init__(self, host: str, port: int) -> None:
             self.host = host
             self.port = port
-            self._handlers: Dict[str, Callable[[Message], Dict[str, Any]]] = {}
+            self._handlers: MutableMapping[str, MessageHandler] = {}
             self._server: uvicorn.Server | None = None
             self._thread: Thread | None = None
 
         def register_handler(
             self,
             message_type: str | A2AMessageType,
-            handler: Callable[[Message], Dict[str, Any]],
+            handler: MessageHandler,
         ) -> None:
             """Register a handler for a given message type.
 
@@ -92,7 +217,7 @@ try:
             key = message_type.value if isinstance(message_type, Enum) else str(message_type)
             self._handlers[key] = handler
 
-        async def _dispatch(self, msg_type: str, message_data: Dict[str, Any]) -> Dict[str, Any]:
+        async def _dispatch(self, msg_type: str, message_data: Mapping[str, Any]) -> dict[str, Any]:
             """Dispatch a request to the appropriate handler."""
 
             handler = self._handlers.get(msg_type)
@@ -100,8 +225,12 @@ try:
                 return {"status": "error", "error": "Unknown message type"}
             message = Message.model_validate(message_data)
             if asyncio.iscoroutinefunction(handler):
-                return await handler(message)
-            return await asyncio.to_thread(handler, message)
+                async_handler = cast(AsyncMessageHandler, handler)
+                response = await async_handler(message)
+            else:
+                sync_handler = cast(SyncMessageHandler, handler)
+                response = await asyncio.to_thread(sync_handler, message)
+            return dict(response)
 
         def start(self) -> None:
             """Start the HTTP server in a background thread."""
@@ -112,8 +241,8 @@ try:
 
             @app.post("/")
             async def handle(
-                payload: Dict[str, Any],
-            ) -> Dict[str, Any]:  # pragma: no cover - network
+                payload: Mapping[str, Any],
+            ) -> dict[str, Any]:  # pragma: no cover - network
                 msg_type = str(payload.get("type", ""))
                 message_data = payload.get("message", {})
                 return await self._dispatch(msg_type, message_data)
@@ -137,19 +266,6 @@ try:
                 self._server.should_exit = True
             if self._thread:
                 self._thread.join()
-
-except ImportError:  # pragma: no cover - dependency missing
-    A2A_AVAILABLE = False
-
-from pydantic import ValidationError
-
-from .api import capabilities_endpoint
-from .config import ConfigLoader, ConfigModel, get_config
-from .error_utils import format_error_for_a2a, get_error_info
-from .logging_utils import get_logger
-from .orchestration.orchestrator import Orchestrator
-
-logger = get_logger(__name__)
 
 
 class A2AInterface:
@@ -181,9 +297,9 @@ class A2AInterface:
         self.orchestrator = Orchestrator()
 
         # Register message handlers
-        self.server.register_handler(A2AMessageType.QUERY, self._handle_query)  # type: ignore[arg-type]
-        self.server.register_handler(A2AMessageType.COMMAND, self._handle_command)  # type: ignore[arg-type]
-        self.server.register_handler(A2AMessageType.INFO, self._handle_info)  # type: ignore[arg-type]
+        self.server.register_handler(A2AMessageType.QUERY, self._handle_query)
+        self.server.register_handler(A2AMessageType.COMMAND, self._handle_command)
+        self.server.register_handler(A2AMessageType.INFO, self._handle_info)
 
     def start(self) -> None:
         """Start the A2A server."""
@@ -195,7 +311,7 @@ class A2AInterface:
         logger.info("Stopping A2A server")
         self.server.stop()
 
-    async def _handle_query(self, message: Message) -> Dict[str, Any]:
+    async def _handle_query(self, message: Message) -> dict[str, Any]:
         """Handle a query message from another agent.
 
         Args:
@@ -226,7 +342,7 @@ class A2AInterface:
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
-            error_data = format_error_for_a2a(error_info)
+            error_data: dict[str, Any] = format_error_for_a2a(error_info)
 
             # Log the error
             logger.error(f"Error processing query: {e}", exc_info=e)
@@ -234,7 +350,7 @@ class A2AInterface:
             # Return error response
             return error_data
 
-    def _handle_command(self, message: Message) -> Dict[str, Any]:
+    def _handle_command(self, message: Message) -> dict[str, Any]:
         """Handle a command message from another agent.
 
         Args:
@@ -244,10 +360,12 @@ class A2AInterface:
             The response A2A message
         """
         command = ""
-        args: Dict[str, Any] = {}
+        args: dict[str, Any] = {}
         if message.metadata:
             command = message.metadata.get("command", "")
-            args = message.metadata.get("args", {})
+            metadata_args = message.metadata.get("args", {})
+            if isinstance(metadata_args, dict):
+                args = dict(metadata_args)
         if not command:
             command = get_message_text(message)
 
@@ -270,7 +388,7 @@ class A2AInterface:
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
-            error_data = format_error_for_a2a(error_info)
+            error_data: dict[str, Any] = format_error_for_a2a(error_info)
 
             # Log the error
             logger.error(f"Error handling command {command}: {e}", exc_info=e)
@@ -278,7 +396,7 @@ class A2AInterface:
             # Return error response
             return error_data
 
-    def _handle_info(self, message: Any) -> Dict[str, Any]:
+    def _handle_info(self, message: Message) -> InfoResponse | dict[str, Any]:
         """Handle an info message from another agent.
 
         Args:
@@ -291,7 +409,7 @@ class A2AInterface:
             # Get package version from the environment or use a default
             version = os.environ.get("AUTORESEARCH_VERSION", "0.1.0")
 
-            agent_info = {
+            agent_info: AgentInfo = {
                 "name": "Autoresearch",
                 "version": version,
                 "description": "A local-first research assistant",
@@ -304,15 +422,16 @@ class A2AInterface:
 
             info_msg: Message = new_agent_text_message("info")
 
-            return {
+            response: InfoResponse = {
                 "status": "success",
                 "agent_info": agent_info,
                 "message": info_msg.model_dump(mode="json"),
             }
+            return dict(response)
         except Exception as e:
             # Get error information with suggestions and code examples
             error_info = get_error_info(e)
-            error_data = format_error_for_a2a(error_info)
+            error_data: dict[str, Any] = format_error_for_a2a(error_info)
 
             # Log the error
             logger.error(f"Error handling info message: {e}", exc_info=e)
@@ -320,25 +439,26 @@ class A2AInterface:
             # Return error response
             return error_data
 
-    def _handle_get_capabilities(self) -> Dict[str, Any]:
+    def _handle_get_capabilities(self) -> dict[str, Any]:
         """Handle a get_capabilities command.
 
         Returns:
             The capabilities information as a dictionary.
         """
-        capabilities = capabilities_endpoint()
+        capabilities: dict[str, Any] = capabilities_endpoint()
         return capabilities
 
-    def _handle_get_config(self) -> Dict[str, Any]:
+    def _handle_get_config(self) -> dict[str, Any]:
         """Handle a get_config command.
 
         Returns:
             The current configuration as a dictionary.
         """
         config = get_config()
-        return config.model_dump(mode="json")
+        config_data: dict[str, Any] = config.model_dump(mode="json")
+        return config_data
 
-    def _handle_set_config(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_set_config(self, args: dict[str, Any]) -> dict[str, Any]:
         """Handle a set_config command.
 
         Args:
@@ -354,11 +474,13 @@ class A2AInterface:
             new_config = ConfigModel(**current)
         except ValidationError as exc:
             error_info = get_error_info(exc)
-            return format_error_for_a2a(error_info)
+            error_response: dict[str, Any] = format_error_for_a2a(error_info)
+            return error_response
 
         loader._config = new_config
         loader.notify_observers(new_config)
-        return new_config.model_dump(mode="json")
+        updated_config: dict[str, Any] = new_config.model_dump(mode="json")
+        return updated_config
 
 
 class A2AClientWrapper:
@@ -378,7 +500,7 @@ class A2AClientWrapper:
 
         logger.info("A2A client initialized")
 
-    def _send_request(self, agent_url: str, params: MessageSendParams) -> Dict[str, Any]:
+    def _send_request(self, agent_url: str, params: MessageSendParams) -> dict[str, Any]:
         """Send a message request and return the raw response as a dict."""
 
         async def _run() -> SendMessageResponse:
@@ -388,9 +510,10 @@ class A2AClientWrapper:
                 return await client.send_message(request)
 
         response = asyncio.run(_run())
-        return response.model_dump(mode="python")
+        response_data: dict[str, Any] = response.model_dump(mode="python")
+        return response_data
 
-    def query_agent(self, agent_url: str, query: str) -> Dict[str, Any]:
+    def query_agent(self, agent_url: str, query: str) -> dict[str, Any]:
         """Send a query to another agent.
 
         Args:
@@ -408,18 +531,21 @@ class A2AClientWrapper:
                 logger.error(f"Error querying agent: {response.get('error')}")
                 return {"error": response.get("error")}
 
-            result = response.get("result", {})
-            if isinstance(result, dict) and result.get("kind") == "message" and result.get("parts"):
-                part = result["parts"][0]
+            raw_result = response.get("result")
+            if isinstance(raw_result, dict) and raw_result.get("kind") == "message" and raw_result.get("parts"):
+                part = raw_result["parts"][0]
                 if isinstance(part, dict) and "text" in part:
                     return {"answer": part["text"]}
-
-            return result
+            if isinstance(raw_result, dict):
+                return raw_result
+            if raw_result is not None:
+                return {"result": raw_result}
+            return {}
         except Exception as e:
             logger.error(f"Error querying agent: {e}")
             return {"error": str(e)}
 
-    def get_agent_capabilities(self, agent_url: str) -> Dict[str, Any]:
+    def get_agent_capabilities(self, agent_url: str) -> dict[str, Any]:
         """Get the capabilities of another agent.
 
         Args:
@@ -436,12 +562,17 @@ class A2AClientWrapper:
                 logger.error(f"Error getting agent capabilities: {response.get('error')}")
                 return {"error": response.get("error")}
 
-            return response.get("result", {})
+            raw_result = response.get("result")
+            if isinstance(raw_result, dict):
+                return raw_result
+            if raw_result is not None:
+                return {"result": raw_result}
+            return {}
         except Exception as e:
             logger.error(f"Error getting agent capabilities: {e}")
             return {"error": str(e)}
 
-    def get_agent_config(self, agent_url: str) -> Dict[str, Any]:
+    def get_agent_config(self, agent_url: str) -> dict[str, Any]:
         """Get the configuration of another agent.
 
         Args:
@@ -458,12 +589,17 @@ class A2AClientWrapper:
                 logger.error(f"Error getting agent config: {response.get('error')}")
                 return {"error": response.get("error")}
 
-            return response.get("result", {})
+            raw_result = response.get("result")
+            if isinstance(raw_result, dict):
+                return raw_result
+            if raw_result is not None:
+                return {"result": raw_result}
+            return {}
         except Exception as e:
             logger.error(f"Error getting agent config: {e}")
             return {"error": str(e)}
 
-    def set_agent_config(self, agent_url: str, config_updates: Dict[str, Any]) -> Dict[str, Any]:
+    def set_agent_config(self, agent_url: str, config_updates: dict[str, Any]) -> dict[str, Any]:
         """Update the configuration of another agent.
 
         Args:
@@ -484,7 +620,12 @@ class A2AClientWrapper:
                 logger.error(f"Error setting agent config: {response.get('error')}")
                 return {"error": response.get("error")}
 
-            return response.get("result", {})
+            raw_result = response.get("result")
+            if isinstance(raw_result, dict):
+                return raw_result
+            if raw_result is not None:
+                return {"result": raw_result}
+            return {}
         except Exception as e:
             logger.error(f"Error setting agent config: {e}")
             return {"error": str(e)}
@@ -492,6 +633,9 @@ class A2AClientWrapper:
 
 # Alias for backward compatibility
 A2AClient = A2AClientWrapper  # noqa: F811
+
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def get_a2a_client() -> A2AClientWrapper:
@@ -507,7 +651,7 @@ def get_a2a_client() -> A2AClientWrapper:
     return A2AClient()
 
 
-def requires_a2a(func: Callable) -> Callable:
+def requires_a2a(func: F) -> F:
     """Check that A2A is available before calling a function.
 
     Args:
@@ -518,9 +662,9 @@ def requires_a2a(func: Callable) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not A2A_AVAILABLE:
             raise ImportError("A2A SDK is not available. Install it with: pip install a2a-sdk")
         return func(*args, **kwargs)
 
-    return wrapper
+    return cast(F, wrapper)
