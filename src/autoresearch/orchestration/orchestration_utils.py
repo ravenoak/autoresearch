@@ -13,6 +13,7 @@ from statistics import mean
 from typing import Iterable, Sequence
 
 from ..config.models import ConfigModel
+from ..search.context import SearchContext
 from .budgeting import _apply_adaptive_token_budget
 from .error_handling import (
     _apply_recovery_strategy,
@@ -189,6 +190,12 @@ class ScoutGatePolicy:
                         values.append(float(item))
                     except (TypeError, ValueError):
                         continue
+        try:
+            graph_signal = SearchContext.get_instance().get_contradiction_signal()
+        except Exception:
+            graph_signal = 0.0
+        if graph_signal:
+            values.append(float(graph_signal))
         if values:
             return float(mean(values))
         return 0.0

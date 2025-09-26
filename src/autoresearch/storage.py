@@ -43,6 +43,7 @@ from typing import (
 from uuid import uuid4
 
 import networkx as nx
+from networkx.readwrite import json_graph
 import rdflib
 
 from .config import ConfigLoader, StorageConfig
@@ -78,6 +79,7 @@ class StorageContext:
     """Container for storage backend instances."""
 
     graph: Optional[nx.DiGraph[Any]] = None
+    kg_graph: Optional[nx.MultiDiGraph[Any]] = None
     db_backend: Optional[DuckDBStorageBackend] = None
     rdf_store: Optional[rdflib.Graph] = None
     config_fingerprint: Optional[str] = None
@@ -302,6 +304,7 @@ def _reset_context(ctx: StorageContext) -> None:
         _kuzu_backend = None
 
     ctx.graph = None
+    ctx.kg_graph = None
     ctx.config_fingerprint = None
 
 
@@ -355,6 +358,7 @@ def setup(
             _reset_context(ctx)
 
         ctx.graph = nx.DiGraph()
+        ctx.kg_graph = nx.MultiDiGraph()
 
         # Initialize DuckDB backend with graceful fallback when VSS is missing
         ctx.db_backend = DuckDBStorageBackend()
@@ -500,6 +504,7 @@ def teardown(
 
         # Reset global variables
         ctx.graph = None
+        ctx.kg_graph = None
         ctx.db_backend = None
         _kuzu_backend = None
         ctx.rdf_store = None
@@ -1157,7 +1162,11 @@ class StorageManager(metaclass=StorageManagerMeta):
                          uninitialized after calling setup(). The error message includes
                          a suggestion to call StorageManager.setup() before performing operations.
         """
-        if StorageManager.context.db_backend is None or StorageManager.context.graph is None:
+        if (
+            StorageManager.context.db_backend is None
+            or StorageManager.context.graph is None
+            or StorageManager.context.kg_graph is None
+        ):
             try:
                 initialize_storage(context=StorageManager.context, state=StorageManager.state)
             except Exception as e:
@@ -1171,6 +1180,11 @@ class StorageManager(metaclass=StorageManagerMeta):
         if StorageManager.context.graph is None:
             raise StorageError(
                 "Graph not initialized",
+                suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
+            )
+        if StorageManager.context.kg_graph is None:
+            raise StorageError(
+                "Knowledge graph not initialized",
                 suggestion="Initialize the storage system by calling StorageManager.setup() before performing operations",
             )
 
@@ -1298,6 +1312,104 @@ class StorageManager(metaclass=StorageManagerMeta):
 
         # Apply ontology reasoning so advanced queries see inferred triples
         run_ontology_reasoner(StorageManager.context.rdf_store)
+
+    @staticmethod
+    def update_knowledge_graph(
+        *,
+        entities: Sequence[Mapping[str, Any]] | None = None,
+        relations: Sequence[Mapping[str, Any]] | None = None,
+        triples: Sequence[tuple[str, str, str]] | None = None,
+    ) -> None:
+        """Persist knowledge graph entities and relations across backends.
+
+        Args:
+            entities: Iterable of entity payloads produced by the knowledge
+                graph pipeline.
+            relations: Iterable of relation payloads mapping entity IDs via
+                predicates.
+            triples: Optional list of ``(subject, predicate, object)`` tuples
+                used for RDF and analytics synchronisation.
+        """
+
+        if not entities and not relations and not triples:
+            return
+
+        StorageManager._ensure_storage_initialized()
+
+        with StorageManager.state.lock:
+            StorageManager._ensure_storage_initialized()
+            backend = StorageManager.context.db_backend
+            kg_graph = StorageManager.context.kg_graph
+            rdf_store = StorageManager.context.rdf_store
+
+            entity_list = list(entities or [])
+            relation_list = list(relations or [])
+
+            if kg_graph is not None:
+                for entity in entity_list:
+                    node_id = str(entity.get("id"))
+                    if not node_id:
+                        continue
+                    attributes = dict(entity.get("attributes", {}))
+                    attributes.setdefault("label", entity.get("label", node_id))
+                    attributes.setdefault("type", entity.get("type", "entity"))
+                    source_value = entity.get("source")
+                    if source_value is not None:
+                        attributes.setdefault("source", source_value)
+                    kg_graph.add_node(node_id, **attributes)
+
+                for relation in relation_list:
+                    subj = str(relation.get("subject_id", ""))
+                    obj = str(relation.get("object_id", ""))
+                    if not subj or not obj:
+                        continue
+                    predicate = str(relation.get("predicate", "")) or "related_to"
+                    weight = float(relation.get("weight", 1.0))
+                    provenance = dict(relation.get("provenance", {}))
+                    kg_graph.add_edge(
+                        subj,
+                        obj,
+                        key=predicate,
+                        predicate=predicate,
+                        weight=weight,
+                        **provenance,
+                    )
+
+            if backend is not None:
+                backend.persist_graph_entities(entity_list)
+                backend.persist_graph_relations(relation_list)
+
+            if rdf_store is not None:
+                rdf_triples: list[tuple[rdflib.term.Node, rdflib.term.Node, rdflib.term.Node]] = []
+                if triples:
+                    for subj_id, pred, obj_id in triples:
+                        subj_ref = rdflib.URIRef(f"urn:kg:{subj_id}")
+                        pred_ref = rdflib.URIRef(f"urn:kgp:{pred}")
+                        obj_ref = rdflib.URIRef(f"urn:kg:{obj_id}")
+                        rdf_triples.append((subj_ref, pred_ref, obj_ref))
+                else:
+                    for relation in relation_list:
+                        subj_id = relation.get("subject_id")
+                        obj_id = relation.get("object_id")
+                        if not subj_id or not obj_id:
+                            continue
+                        predicate = str(relation.get("predicate", "related_to"))
+                        rdf_triples.append(
+                            (
+                                rdflib.URIRef(f"urn:kg:{subj_id}"),
+                                rdflib.URIRef(f"urn:kgp:{predicate}"),
+                                rdflib.URIRef(f"urn:kg:{obj_id}"),
+                            )
+                        )
+                for triple in rdf_triples:
+                    rdf_store.add(triple)
+
+                try:
+                    run_ontology_reasoner(rdf_store)
+                except StorageError:
+                    log.debug(
+                        "Ontology reasoning skipped for knowledge graph update", exc_info=True
+                    )
 
     @staticmethod
     def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
@@ -1740,6 +1852,69 @@ class StorageManager(metaclass=StorageManagerMeta):
             if StorageManager.context.graph is None:
                 raise NotFoundError("Graph not initialized")
             return StorageManager.context.graph
+
+    @staticmethod
+    def get_knowledge_graph(create: bool = True) -> nx.MultiDiGraph[Any] | None:
+        """Return the multi-relational knowledge graph used for reasoning.
+
+        Args:
+            create: When ``True`` initialise storage components if required.
+
+        Returns:
+            The in-memory :class:`networkx.MultiDiGraph` backing the knowledge
+            graph, or ``None`` when ``create`` is ``False`` and the graph has
+            not been initialised.
+
+        Raises:
+            NotFoundError: If initialisation fails or the graph remains
+                unavailable when ``create`` is ``True``.
+        """
+
+        if _delegate and _delegate is not StorageManager:
+            getter = getattr(_delegate, "get_knowledge_graph", None)
+            if callable(getter):
+                return getter(create=create)
+
+        with StorageManager.state.lock:
+            kg_graph = StorageManager.context.kg_graph
+            if kg_graph is None and create:
+                try:
+                    setup(context=StorageManager.context, state=StorageManager.state)
+                except Exception as exc:
+                    raise NotFoundError("Knowledge graph not initialized", cause=exc)
+            kg_graph = StorageManager.context.kg_graph
+            if kg_graph is None and create:
+                raise NotFoundError("Knowledge graph not initialized")
+            return kg_graph
+
+    @staticmethod
+    def export_knowledge_graph_graphml() -> str:
+        """Serialise the knowledge graph into GraphML.
+
+        Returns:
+            GraphML text describing the current knowledge graph, or an empty
+            string when the graph is unavailable.
+        """
+
+        graph = StorageManager.get_knowledge_graph(create=False)
+        if graph is None or not graph.nodes:
+            return ""
+        return "\n".join(list(nx.generate_graphml(graph)))
+
+    @staticmethod
+    def export_knowledge_graph_json() -> str:
+        """Serialise the knowledge graph into node-link JSON.
+
+        Returns:
+            JSON string containing the node-link representation of the current
+            knowledge graph. Returns ``"{}"`` when the graph is unavailable.
+        """
+
+        graph = StorageManager.get_knowledge_graph(create=False)
+        if graph is None or not graph.nodes:
+            return "{}"
+        payload = json_graph.node_link_data(graph)
+        return json.dumps(payload, ensure_ascii=False)
 
     @staticmethod
     def touch_node(node_id: str) -> None:

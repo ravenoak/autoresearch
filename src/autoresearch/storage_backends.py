@@ -292,6 +292,17 @@ class DuckDBStorageBackend:
                 "entailment DOUBLE, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
             )
 
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS kg_entities("
+                "id VARCHAR, label VARCHAR, type VARCHAR, source VARCHAR, "
+                "attributes VARCHAR, ts TIMESTAMP)"
+            )
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS kg_relations("
+                "subject_id VARCHAR, predicate VARCHAR, object_id VARCHAR, "
+                "weight DOUBLE, provenance VARCHAR, ts TIMESTAMP)"
+            )
+
             # Create metadata table for schema versioning
             self._conn.execute("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)")
 
@@ -592,6 +603,85 @@ class DuckDBStorageBackend:
                     )
             except Exception as e:
                 raise StorageError("Failed to persist claim to DuckDB", cause=e)
+
+    def persist_graph_entities(self, entities: Sequence[Mapping[str, Any]]) -> None:
+        """Persist knowledge graph entities into DuckDB.
+
+        Args:
+            entities: Sequence of entity payloads emitted by the knowledge
+                graph pipeline.
+        """
+
+        if not entities:
+            return
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        payloads = [
+            (
+                entity.get("id", ""),
+                entity.get("label", ""),
+                entity.get("type", "entity"),
+                entity.get("source", ""),
+                json.dumps(entity.get("attributes", {}), ensure_ascii=False),
+            )
+            for entity in entities
+        ]
+
+        with self.connection() as conn, self._lock:
+            try:
+                for row in payloads:
+                    conn.execute("DELETE FROM kg_entities WHERE id=?", [row[0]])
+                for row in payloads:
+                    conn.execute(
+                        "INSERT INTO kg_entities VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                        row,
+                    )
+            except Exception as exc:
+                raise StorageError(
+                    "Failed to persist knowledge graph entities", cause=exc
+                )
+
+    def persist_graph_relations(self, relations: Sequence[Mapping[str, Any]]) -> None:
+        """Persist knowledge graph relations into DuckDB.
+
+        Args:
+            relations: Sequence of relation payloads emitted by the knowledge
+                graph pipeline.
+        """
+
+        if not relations:
+            return
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        payloads = [
+            (
+                rel.get("subject_id", ""),
+                rel.get("predicate", ""),
+                rel.get("object_id", ""),
+                float(rel.get("weight", 1.0)),
+                json.dumps(rel.get("provenance", {}), ensure_ascii=False),
+            )
+            for rel in relations
+        ]
+
+        with self.connection() as conn, self._lock:
+            try:
+                for row in payloads:
+                    conn.execute(
+                        "DELETE FROM kg_relations WHERE subject_id=? AND predicate=? AND object_id=?",
+                        [row[0], row[1], row[2]],
+                    )
+                for row in payloads:
+                    conn.execute(
+                        "INSERT INTO kg_relations VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                        row,
+                    )
+            except Exception as exc:
+                raise StorageError(
+                    "Failed to persist knowledge graph relations", cause=exc
+                )
 
     def update_claim(self, claim: Dict[str, Any], partial_update: bool = False) -> None:
         """Update an existing claim in the DuckDB database.
@@ -1089,6 +1179,8 @@ class DuckDBStorageBackend:
                 self._conn.execute("DELETE FROM nodes")
                 self._conn.execute("DELETE FROM edges")
                 self._conn.execute("DELETE FROM embeddings")
+                self._conn.execute("DELETE FROM kg_entities")
+                self._conn.execute("DELETE FROM kg_relations")
             except Exception as e:
                 raise StorageError("Failed to clear DuckDB data", cause=e)
 

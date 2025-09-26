@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, cast
 
 from ..config.loader import get_config
+from ..kg_reasoning import KnowledgeGraphPipeline
 from ..logging_utils import get_logger
 
 # Keep a reference to the original get_config to detect monkeypatching in tests
@@ -105,7 +106,11 @@ def _try_import_sentence_transformers() -> bool:
                 import importlib as _il
 
                 _il.import_module("fastembed")
-                resolved = type("FastEmbedAvailable", (), {})  # sentinel type indicating availability
+                resolved = type(
+                    "FastEmbedAvailable",
+                    (),
+                    {},
+                )  # sentinel type indicating availability
             except Exception:
                 resolved = None
         if resolved is None:
@@ -192,6 +197,8 @@ class SearchContext:
         self.topic_model: BERTopicType | None = None
         self.dictionary: dict[str, int] | None = None
         self.nlp: Language | None = None
+        self.graph_pipeline: KnowledgeGraphPipeline = KnowledgeGraphPipeline()
+        self._graph_summary: dict[str, Any] = {}
         if get_config().search.context_aware.enabled:
             self._initialize_nlp()
 
@@ -240,6 +247,9 @@ class SearchContext:
         for result in results:
             self._extract_entities(result.get("title", ""))
             self._extract_entities(result.get("snippet", ""))
+
+        summary = self.graph_pipeline.ingest(query, results)
+        self._graph_summary = summary.to_dict()
 
     def _extract_entities(self, text: str) -> None:
         """Update entity frequency counts from text.
@@ -320,3 +330,75 @@ class SearchContext:
             log.info("Expanded query: '%s' -> '%s'", query, expanded_query)
             return expanded_query
         return query
+
+    # ------------------------------------------------------------------
+    # Knowledge graph accessors
+    # ------------------------------------------------------------------
+
+    def get_graph_summary(self) -> dict[str, Any]:
+        """Return the most recent knowledge graph ingestion summary.
+
+        Returns:
+            Dictionary containing counts, contradiction metrics, and other
+            metadata recorded during the latest ingestion.
+        """
+
+        return dict(self._graph_summary)
+
+    def get_contradiction_signal(self) -> float:
+        """Return weighted contradiction signal derived from the knowledge graph.
+
+        Returns:
+            Floating-point contradiction score scaled by the configuration
+            weight. Values range between ``0.0`` and ``1.0``.
+        """
+
+        cfg = get_config()
+        context_cfg = getattr(cfg.search, "context_aware", None)
+        weight = float(getattr(context_cfg, "graph_contradiction_weight", 0.0))
+        base_score = self.graph_pipeline.get_contradiction_score()
+        return float(base_score * weight)
+
+    def graph_neighbors(
+        self, label: str, *, direction: str = "out", limit: int = 5
+    ) -> list[dict[str, str]]:
+        """Return neighbours for ``label`` from the knowledge graph.
+
+        Args:
+            label: Canonical label of the entity.
+            direction: Edge direction to traverse (``"out"``, ``"in"``, or
+                ``"both"``).
+            limit: Maximum number of neighbour relations to return.
+
+        Returns:
+            List of neighbour relation dictionaries with subject, predicate,
+            and object labels.
+        """
+
+        return self.graph_pipeline.neighbors(label, direction=direction, limit=limit)
+
+    def graph_paths(
+        self, source: str, target: str, *, max_depth: int = 3, limit: int = 5
+    ) -> list[list[str]]:
+        """Return multi-hop paths between ``source`` and ``target``.
+
+        Args:
+            source: Label of the starting entity.
+            target: Label of the destination entity.
+            max_depth: Maximum traversal depth when searching for paths.
+            limit: Maximum number of distinct paths to return.
+
+        Returns:
+            A list of simple paths represented as ordered entity labels.
+        """
+
+        return self.graph_pipeline.find_paths(source, target, max_depth=max_depth, limit=limit)
+
+    def export_graph_artifacts(self) -> dict[str, str]:
+        """Return serialized GraphML and JSON knowledge graph artefacts.
+
+        Returns:
+            Mapping containing ``"graphml"`` and ``"graph_json"`` payloads.
+        """
+
+        return self.graph_pipeline.export_artifacts()

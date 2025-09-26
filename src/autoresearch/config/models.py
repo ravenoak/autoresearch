@@ -35,6 +35,26 @@ class ContextAwareSearchConfig(BaseModel):
     use_search_history: bool = Field(default=True)
     history_weight: float = Field(default=0.2, ge=0.0, le=1.0)
     max_history_items: int = Field(default=10, ge=1, le=100)
+    graph_pipeline_enabled: bool = Field(
+        default=True,
+        description="Enable knowledge graph construction from retrieval snippets.",
+    )
+    graph_max_entities: int = Field(
+        default=256,
+        ge=1,
+        description="Maximum number of unique entities captured per ingestion batch.",
+    )
+    graph_max_edges: int = Field(
+        default=512,
+        ge=1,
+        description="Maximum number of relations extracted per ingestion batch.",
+    )
+    graph_contradiction_weight: float = Field(
+        default=0.35,
+        ge=0.0,
+        le=1.0,
+        description="Weight applied to contradiction signals derived from the graph.",
+    )
 
 
 class LocalFileConfig(BaseModel):
