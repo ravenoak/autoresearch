@@ -271,6 +271,7 @@ def _execute_agent(
         return
     for attempt in range(retries):
         try:
+            metrics.apply_model_routing(agent_name, config)
             agent = _get_agent(agent_name, agent_factory)
             if not _check_agent_can_execute(agent, agent_name, state, config):
                 return

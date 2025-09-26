@@ -25,6 +25,39 @@ remain zero.
 Running `autoresearch monitor resources` will therefore include ``GPU %`` and
 ``GPU MB`` columns when supported.
 
+## Budget-Aware Model Routing
+
+The orchestration layer now records per-agent token and latency samples so the
+model router can steer high-usage roles toward cost-efficient backends without
+violating service-level objectives. The router consults:
+
+- the moving-average token spend for each agent,
+- the 95th-percentile latency derived from recent executions, and
+- model profiles that describe per-1K token pricing and latency targets.
+
+When an agent consumes more than 80% of its allocated share of the global token
+budget, the router downgrades to a cheaper profile that still satisfies the
+agent's latency SLO. The decision is logged with before/after cost estimates so
+operators can audit the savings. You can visualise the routing behaviour by
+exporting the new `agent_token_samples` and `agent_timings` series via
+`metrics.get_summary()` or the Prometheus counters exposed by the API gateway.
+
+## Telemetry Dashboards
+
+The metrics payload now includes latency percentiles per agent role alongside
+aggregate cost estimates derived from the routing profiles. Dashboards should
+plot the following series to track performance regressions:
+
+- `agent_latency_p95_ms`: 95th-percentile latency per agent, surfaced through
+  the orchestration summary payload.
+- `agent_avg_tokens`: moving-average token consumption emitted as
+  ``avg_tokens_per_call`` in the orchestration logs.
+- `model_routing_cost_savings`: difference between the baseline and routed cost
+  stored in the log event `Budget router selecting cost-efficient model`.
+
+These signals make it easy to confirm that cost savings materialise without
+raising the latency envelope for latency-sensitive agents.
+
 ## Distributed Coordination Benchmarks
 
 ResourceMonitor captured CPU and memory usage while coordinating a simple

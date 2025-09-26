@@ -19,6 +19,8 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 26, 2025
+- Integrated budget-aware model routing, shared retrieval cache namespaces, and
+  telemetry updates that surface cost savings alongside latency percentiles.
 - Logged the Deep Research Enhancement Initiative and five-phase execution plan
   across ROADMAP.md and the new Deep Research Upgrade Plan so the alpha release
   workstream can stage adaptive gating, audits, GraphRAG, evaluation harnesses,
