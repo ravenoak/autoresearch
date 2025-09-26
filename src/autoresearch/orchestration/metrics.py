@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING, Any
 
 from prometheus_client import Counter, Histogram
 
-from autoresearch.token_budget import AgentUsageStats, BudgetRouter, round_with_margin
+from autoresearch.token_budget import (
+    AgentUsageStats,
+    BudgetRouter,
+    RoutingDecision,
+    round_with_margin,
+)
 
 from .circuit_breaker import CircuitBreakerState
 
@@ -20,10 +25,18 @@ if TYPE_CHECKING:  # pragma: no cover
 
 log = logging.getLogger(__name__)
 
-QUERY_COUNTER = Counter("autoresearch_queries_total", "Total number of queries processed")
-ERROR_COUNTER = Counter("autoresearch_errors_total", "Total number of errors during processing")
-TOKENS_IN_COUNTER = Counter("autoresearch_tokens_in_total", "Total input tokens processed")
-TOKENS_OUT_COUNTER = Counter("autoresearch_tokens_out_total", "Total output tokens produced")
+QUERY_COUNTER = Counter(
+    "autoresearch_queries_total", "Total number of queries processed"
+)
+ERROR_COUNTER = Counter(
+    "autoresearch_errors_total", "Total number of errors during processing"
+)
+TOKENS_IN_COUNTER = Counter(
+    "autoresearch_tokens_in_total", "Total input tokens processed"
+)
+TOKENS_OUT_COUNTER = Counter(
+    "autoresearch_tokens_out_total", "Total output tokens produced"
+)
 EVICTION_COUNTER = Counter(
     "autoresearch_duckdb_evictions_total",
     "Total nodes evicted from RAM to DuckDB",
@@ -236,6 +249,7 @@ class OrchestrationMetrics:
         self.gate_events: list[dict[str, Any]] = []
         self.agent_token_samples: dict[str, list[tuple[int, int]]] = {}
         self._max_sample_history = 20
+        self.routing_decisions: list[RoutingDecision] = []
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -304,7 +318,9 @@ class OrchestrationMetrics:
         self.error_counts[agent_name] += 1
         ERROR_COUNTER.inc()
 
-    def record_circuit_breaker(self, agent_name: str, state: CircuitBreakerState) -> None:
+    def record_circuit_breaker(
+        self, agent_name: str, state: CircuitBreakerState
+    ) -> None:
         """Record the circuit breaker ``state`` for ``agent_name``."""
         self.circuit_breakers[agent_name] = state
 
@@ -358,10 +374,32 @@ class OrchestrationMetrics:
 
         self._log_release_tokens()
 
+        latency_summary: dict[str, float] = {}
+        avg_tokens_summary: dict[str, float] = {}
+        for agent, samples in self.agent_token_samples.items():
+            latencies = [
+                duration * 1000.0 for duration in self.agent_timings.get(agent, [])
+            ]
+            stats = AgentUsageStats.from_samples(samples, latencies)
+            if stats is None:
+                continue
+            latency_summary[agent] = stats.p95_latency_ms
+            avg_tokens_summary[agent] = stats.avg_total_tokens
+
+        savings_by_agent: dict[str, float] = {}
+        for decision in self.routing_decisions:
+            savings = decision.cost_savings()
+            if savings is None:
+                continue
+            savings_by_agent.setdefault(decision.agent, 0.0)
+            savings_by_agent[decision.agent] += savings
+        total_savings = sum(savings_by_agent.values())
+
         return {
             "total_duration_seconds": total_duration,
             "cycles_completed": len(self.cycle_durations),
-            "avg_cycle_duration_seconds": total_duration / max(1, len(self.cycle_durations)),
+            "avg_cycle_duration_seconds": total_duration
+            / max(1, len(self.cycle_durations)),
             "total_tokens": {
                 "input": total_tokens_in,
                 "output": total_tokens_out,
@@ -382,6 +420,15 @@ class OrchestrationMetrics:
                 }
                 for ts, cpu, mem, gpu, gpu_mem in self.resource_usage
             ],
+            "agent_latency_p95_ms": latency_summary,
+            "agent_avg_tokens": avg_tokens_summary,
+            "model_routing_decisions": [
+                decision.to_dict() for decision in self.routing_decisions
+            ],
+            "model_routing_cost_savings": {
+                "total": total_savings,
+                "by_agent": savings_by_agent,
+            },
         }
 
     def get_agent_usage_stats(
@@ -415,9 +462,7 @@ class OrchestrationMetrics:
             return 1.0
         return 1.0 / max(len(agents), 1)
 
-    def apply_model_routing(
-        self, agent_name: str, config: "ConfigModel"
-    ) -> str | None:
+    def apply_model_routing(self, agent_name: str, config: "ConfigModel") -> str | None:
         """Update ``config`` with a budget-aware model recommendation."""
 
         routing_cfg = getattr(config, "model_routing", None)
@@ -459,7 +504,7 @@ class OrchestrationMetrics:
             pressure_ratio=routing_cfg.budget_pressure_ratio,
             default_latency_slo_ms=routing_cfg.default_latency_slo_ms,
         )
-        selected = router.select_model(
+        decision = router.select_model_decision(
             agent_name,
             usage,
             agent_budget_tokens=agent_budget_tokens,
@@ -468,6 +513,8 @@ class OrchestrationMetrics:
             preferred_models=preferred,
             current_model=current_model,
         )
+        self.routing_decisions.append(decision)
+        selected = decision.selected_model
         if not selected or selected == current_model:
             return selected
 
@@ -476,17 +523,8 @@ class OrchestrationMetrics:
         agent_cfg_obj = agent_cfg or config.agent_config.setdefault(
             agent_name, AgentConfig()
         )
-        previous_model = agent_cfg_obj.model or config.default_model
         agent_cfg_obj.model = selected
-        log.info(
-            "Applied budget-aware model routing",
-            extra={
-                "agent": agent_name,
-                "previous_model": previous_model,
-                "selected_model": selected,
-                "token_budget": config.token_budget,
-            },
-        )
+        log.info("Applied budget-aware model routing", extra=decision.as_log_extra())
         return selected
 
     # ------------------------------------------------------------------
@@ -529,7 +567,9 @@ class OrchestrationMetrics:
         data[query] = self._total_tokens()
         path.write_text(json.dumps(data, indent=2))
 
-    def check_query_regression(self, query: str, baseline_path: Path, threshold: int = 0) -> bool:
+    def check_query_regression(
+        self, query: str, baseline_path: Path, threshold: int = 0
+    ) -> bool:
         """Return ``True`` if token usage exceeds the baseline."""
         import json
 

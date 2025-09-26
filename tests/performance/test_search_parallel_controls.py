@@ -10,7 +10,9 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.search.core import Search
 
 
-def _configure_search(parallel_enabled: bool, parallel_prefetch: int = 0) -> ConfigModel:
+def _configure_search(
+    parallel_enabled: bool, parallel_prefetch: int = 0
+) -> ConfigModel:
     config = ConfigModel()
     config.search.backends = ["slow", "fast"]
     config.search.parallel_enabled = parallel_enabled
@@ -80,3 +82,50 @@ def test_external_lookup_fans_out_when_parallel_enabled() -> None:
 
     assert set(order) == {"slow", "fast"}
     assert elapsed < 0.09
+
+
+def test_search_cache_sharing_respects_namespace() -> None:
+    """Shared caches allow multiple instances to reuse retrieval results."""
+
+    config = _configure_search(parallel_enabled=True)
+    config.search.backends = []
+    config.search.shared_cache = True
+    config.search.cache_namespace = "perf"
+
+    with ConfigLoader.temporary_instance(search_paths=[]) as loader:
+        loader._config = config
+        first = Search()
+        second = Search()
+
+        payload = [{"title": "cached", "url": ""}]
+        first.cache.cache_results("query", "stub", payload)
+        cached = second.cache.get_cached_results("query", "stub")
+        first.cache.clear()
+        first.reset()
+        second.reset()
+
+    assert cached is not None
+    assert cached[0]["title"] == "cached"
+
+
+def test_search_cache_isolated_when_sharing_disabled() -> None:
+    """Disabling cache sharing yields process-local cache files."""
+
+    config = _configure_search(parallel_enabled=True)
+    config.search.backends = []
+    config.search.shared_cache = False
+    config.search.cache_namespace = "perf"
+
+    with ConfigLoader.temporary_instance(search_paths=[]) as loader:
+        loader._config = config
+        first = Search()
+        second = Search()
+
+        payload = [{"title": "cached", "url": ""}]
+        first.cache.cache_results("query", "stub", payload)
+        cached = second.cache.get_cached_results("query", "stub")
+        first.cache.clear()
+        first.reset()
+        second.reset()
+
+    assert cached is None

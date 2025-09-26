@@ -27,7 +27,7 @@ Running `autoresearch monitor resources` will therefore include ``GPU %`` and
 
 ## Budget-Aware Model Routing
 
-The orchestration layer now records per-agent token and latency samples so the
+The orchestration layer records per-agent token and latency samples so the
 model router can steer high-usage roles toward cost-efficient backends without
 violating service-level objectives. The router consults:
 
@@ -37,10 +37,10 @@ violating service-level objectives. The router consults:
 
 When an agent consumes more than 80% of its allocated share of the global token
 budget, the router downgrades to a cheaper profile that still satisfies the
-agent's latency SLO. The decision is logged with before/after cost estimates so
-operators can audit the savings. You can visualise the routing behaviour by
-exporting the new `agent_token_samples` and `agent_timings` series via
-`metrics.get_summary()` or the Prometheus counters exposed by the API gateway.
+agent's latency SLO. Every evaluation emits a `Budget router evaluated` log
+record with the rolling token averages, percentile latency, and projected cost
+delta so operators can audit the savings. When the orchestrator applies the
+recommendation it emits an `Applied budget-aware model routing` event.
 
 ## Telemetry Dashboards
 
@@ -48,15 +48,32 @@ The metrics payload now includes latency percentiles per agent role alongside
 aggregate cost estimates derived from the routing profiles. Dashboards should
 plot the following series to track performance regressions:
 
-- `agent_latency_p95_ms`: 95th-percentile latency per agent, surfaced through
-  the orchestration summary payload.
-- `agent_avg_tokens`: moving-average token consumption emitted as
-  ``avg_tokens_per_call`` in the orchestration logs.
-- `model_routing_cost_savings`: difference between the baseline and routed cost
-  stored in the log event `Budget router selecting cost-efficient model`.
+- `agent_latency_p95_ms`: 95th-percentile latency per agent surfaced through the
+  orchestration summary payload.
+- `agent_avg_tokens`: moving-average token consumption stored alongside the
+  latency summary for dashboards and structured logs.
+- `model_routing_decisions`: structured records of each routing evaluation,
+  including the baseline and selected models.
+- `model_routing_cost_savings`: cumulative difference between baseline and
+  routed cost estimates derived from the logged decisions.
 
 These signals make it easy to confirm that cost savings materialise without
 raising the latency envelope for latency-sensitive agents.
+
+## Retrieval Cache and Parallel Controls
+
+Search now respects two new knobs in `config.search`:
+
+- `shared_cache` and `cache_namespace` decide whether search instances share a
+  TinyDB cache or work from a private file. Namespacing allows concurrent runs
+  to avoid collisions while still reusing expensive retrievals when desired.
+- `parallel_enabled` and `parallel_prefetch` control backend fan-out. Disabling
+  parallelism forces sequential execution, while prefetching allows a subset of
+  backends to warm their caches before the remaining requests run in a thread
+  pool.
+
+Combine these toggles to simulate customer environments, cap concurrency, or
+quarantine experiments without reconfiguring global state.
 
 ## Distributed Coordination Benchmarks
 
