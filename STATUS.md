@@ -19,6 +19,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 26, 2025
+- Added an `autoresearch evaluate` Typer app and Taskfile shims so the
+  TruthfulQA, FEVER, and HotpotQA curated suites export DuckDB and Parquet
+  telemetry with config signatures, unblocking
+  [build-truthfulness-evaluation-harness](issues/build-truthfulness-evaluation-harness.md).
 - Integrated budget-aware model routing, shared retrieval cache namespaces, and
   telemetry updates that surface cost savings alongside latency percentiles.
 - Instrumented the orchestration summary with `agent_latency_p95_ms`,

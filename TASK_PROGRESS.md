@@ -1,5 +1,7 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-26** we delivered the curated truthfulness harness: `uv run autoresearch evaluate run <suite>` now drives the TruthfulQA, FEVER, and HotpotQA subsets, stores metrics in DuckDB and Parquet under `baseline/evaluation/`, and tags each run with a config signature so we can correlate telemetry. This unblocks [build-truthfulness-evaluation-harness](issues/build-truthfulness-evaluation-harness.md) and documents the licensing and interpretation guidance called out in the status docs.
+
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **2025-09-25** at
 00:15 UTC we reran `uv run task verify`, `uv run task coverage`,
