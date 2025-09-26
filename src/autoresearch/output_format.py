@@ -79,6 +79,8 @@ class FormatTemplate(BaseModel):
             "citations": "\n".join([f"- {c}" for c in response.citations]),
             "reasoning": "\n".join([f"- {r}" for r in response.reasoning]),
             "metrics": "\n".join([f"- {k}: {v}" for k, v in response.metrics.items()]),
+            "claim_audits": _format_claim_audits_markdown(response.claim_audits),
+            "claim_audit_count": len(response.claim_audits),
         }
 
         # Add individual metrics as variables
@@ -119,6 +121,9 @@ ${citations}
 ## Reasoning
 ${reasoning}
 
+## Claim Audits
+${claim_audits}
+
 ## Metrics
 ${metrics}
 """,
@@ -134,6 +139,9 @@ ${citations}
 
 Reasoning:
 ${reasoning}
+
+Claim Audits:
+${claim_audits}
 
 Metrics:
 ${metrics}
@@ -367,6 +375,8 @@ class OutputFormatter:
                 sys.stdout.write("\nReasoning:\n")
                 for r in response.reasoning:
                     sys.stdout.write(f"{r}\n")
+                sys.stdout.write("\nClaim Audits:\n")
+                sys.stdout.write(_format_claim_audits_plain(response.claim_audits) + "\n")
                 sys.stdout.write("\nMetrics:\n")
                 for k, v in response.metrics.items():
                     sys.stdout.write(f"{k}: {v}\n")
@@ -386,6 +396,45 @@ class OutputFormatter:
                 sys.stdout.write("\n## Reasoning\n")
                 for r in response.reasoning:
                     sys.stdout.write(f"- {r}\n")
+                sys.stdout.write("\n## Claim Audits\n")
+                sys.stdout.write(_format_claim_audits_markdown(response.claim_audits) + "\n")
                 sys.stdout.write("\n## Metrics\n")
                 for k, v in response.metrics.items():
                     sys.stdout.write(f"- **{k}**: {v}\n")
+def _format_claim_audits_markdown(audits: list[dict[str, Any]]) -> str:
+    """Render claim audits as a Markdown table."""
+
+    if not audits:
+        return "No claim audits recorded."
+
+    lines = ["| Claim ID | Status | Entailment | Top Source |", "| --- | --- | --- | --- |"]
+    for audit in audits:
+        status = str(audit.get("status", "unknown"))
+        entailment = audit.get("entailment_score")
+        entailment_display = "—" if entailment is None else f"{entailment:.2f}"
+        sources = audit.get("sources") or []
+        primary = sources[0] if sources else {}
+        label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
+        if label and len(label) > 60:
+            label = label[:57] + "..."
+        lines.append(
+            f"| {audit.get('claim_id', '')} | {status} | {entailment_display} | {label} |"
+        )
+    return "\n".join(lines)
+
+
+def _format_claim_audits_plain(audits: list[dict[str, Any]]) -> str:
+    """Render claim audits as plain text."""
+
+    if not audits:
+        return "No claim audits recorded."
+    segments = []
+    for audit in audits:
+        status = str(audit.get("status", "unknown"))
+        entailment = audit.get("entailment_score")
+        entailment_display = "n/a" if entailment is None else f"{entailment:.2f}"
+        segments.append(
+            f"- Claim {audit.get('claim_id', '')}: status={status}, entailment={entailment_display}"
+        )
+    return "\n".join(segments)
+

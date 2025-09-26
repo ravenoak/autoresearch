@@ -61,25 +61,35 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    """
-    Represents a structured response to a user query.
+    """Structured response returned by the orchestration system.
 
-    This class defines the standard format for responses returned by the orchestration system.
-    It includes the final answer, supporting citations, reasoning steps, and execution metrics.
+    The response captures the synthesized answer along with traceability
+    artefacts that downstream clients can audit. Claim verification metadata
+    is represented by the ``claim_audits`` field which mirrors the
+    :class:`~autoresearch.storage.ClaimAuditRecord` payload structure.
 
     Attributes:
-        query (Optional[str]): The original query that produced this response.
-        answer (str): The final answer to the user's query.
-        citations (List[Any]): A list of citations or sources that support the answer.
-        reasoning (List[Any]): A list of reasoning steps or explanations that led to the answer.
-        metrics (Dict[str, Any]): Performance and execution metrics for the query processing.
+        query: The original query that produced this response, if available.
+        answer: The final answer synthesized by the agent cohort.
+        citations: References surfaced during retrieval.
+        reasoning: Ordered reasoning steps exchanged between agents.
+        metrics: Execution metrics describing latency, token usage, etc.
+        claim_audits: Verification metadata for each evaluated claim. Each
+            entry is a mapping containing ``claim_id``, ``status``,
+            ``entailment_score``, ``sources``, ``notes``, and ``created_at``.
     """
 
-    query: Optional[str] = Field(None, description="The original query that produced this response")
+    query: Optional[str] = Field(
+        None, description="The original query that produced this response"
+    )
     answer: str
     citations: List[Any]
     reasoning: List[Any]
     metrics: Dict[str, Any]
+    claim_audits: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="FEVER-style verification metadata for individual claims",
+    )
 
 
 class BatchQueryRequest(BaseModel):

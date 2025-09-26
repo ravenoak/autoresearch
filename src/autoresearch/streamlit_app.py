@@ -1691,6 +1691,28 @@ def format_result_as_markdown(result: QueryResponse) -> str:
         markdown.append("No metrics provided")
         markdown.append("")
 
+    markdown.append("## Claim Audits")
+    markdown.append("")
+    if result.claim_audits:
+        markdown.append("| Claim ID | Status | Entailment | Top Source |")
+        markdown.append("| --- | --- | --- | --- |")
+        for audit in result.claim_audits:
+            status = str(audit.get("status", "unknown"))
+            entailment = audit.get("entailment_score")
+            entailment_display = "—" if entailment is None else f"{entailment:.2f}"
+            sources = audit.get("sources") or []
+            primary = sources[0] if sources else {}
+            label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
+            if label and len(label) > 60:
+                label = label[:57] + "..."
+            markdown.append(
+                f"| {audit.get('claim_id', '')} | {status} | {entailment_display} | {label} |"
+            )
+        markdown.append("")
+    else:
+        markdown.append("No claim audits recorded")
+        markdown.append("")
+
     return "\n".join(markdown)
 
 
@@ -1711,6 +1733,7 @@ def format_result_as_json(result: QueryResponse) -> str:
         "citations": result.citations,
         "reasoning": result.reasoning,
         "metrics": result.metrics,
+        "claim_audits": result.claim_audits,
     }
 
     # Convert to JSON with pretty formatting
@@ -1771,9 +1794,9 @@ def display_results(result: QueryResponse):
             mime="application/json",
         )
 
-    # Create tabs for citations, reasoning, metrics, knowledge graph and trace
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Citations", "Reasoning", "Metrics", "Knowledge Graph", "Trace"]
+    # Create tabs for citations, reasoning, audits, metrics, knowledge graph and trace
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["Citations", "Reasoning", "Claim Audits", "Metrics", "Knowledge Graph", "Trace"]
     )
 
     # Citations tab
@@ -1801,8 +1824,67 @@ def display_results(result: QueryResponse):
         else:
             st.info("No reasoning steps provided")
 
-    # Metrics tab
+    # Claim Audits tab
     with tab3:
+        st.markdown("<h3>Claim Audits</h3>", unsafe_allow_html=True)
+        if result.claim_audits:
+            badge_styles = {
+                "supported": "#0f5132",
+                "unsupported": "#842029",
+                "needs_review": "#664d03",
+            }
+            st.markdown(
+                """
+                <style>
+                .claim-audit-table {width:100%; border-collapse: collapse;}
+                .claim-audit-table th, .claim-audit-table td {
+                    border: 1px solid rgba(151, 151, 151, 0.4);
+                    padding: 0.5rem;
+                }
+                .claim-audit-badge {
+                    border-radius: 0.5rem;
+                    padding: 0.25rem 0.6rem;
+                    color: #fff;
+                    font-size: 0.85rem;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+            rows = []
+            for audit in result.claim_audits:
+                status_raw = str(audit.get("status", "unknown")).lower()
+                color = badge_styles.get(status_raw, "#6c757d")
+                badge = (
+                    f"<span class='claim-audit-badge' style='background-color:{color}'>"
+                    f"{status_raw.replace('_', ' ').title()}</span>"
+                )
+                entailment = audit.get("entailment_score")
+                entailment_display = "—" if entailment is None else f"{entailment:.2f}"
+                sources = audit.get("sources") or []
+                primary = sources[0] if sources else {}
+                label = primary.get("title") or primary.get("url") or primary.get("snippet") or ""
+                if label and len(label) > 80:
+                    label = label[:77] + "..."
+                rows.append(
+                    "<tr>"
+                    f"<td>{audit.get('claim_id', '')}</td>"
+                    f"<td>{badge}</td>"
+                    f"<td>{entailment_display}</td>"
+                    f"<td>{label}</td>"
+                    "</tr>"
+                )
+            table_html = (
+                "<table class='claim-audit-table'>"
+                "<thead><tr><th>Claim ID</th><th>Status</th><th>Entailment</th><th>Top Source</th></tr></thead>"
+                f"<tbody>{''.join(rows)}</tbody></table>"
+            )
+            st.markdown(table_html, unsafe_allow_html=True)
+        else:
+            st.info("No claim audits recorded")
+
+    # Metrics tab
+    with tab4:
         st.markdown("<h3>Metrics</h3>", unsafe_allow_html=True)
         if result.metrics:
             with st.container():
@@ -1817,7 +1899,7 @@ def display_results(result: QueryResponse):
             st.info("No metrics provided")
 
     # Knowledge Graph tab
-    with tab4:
+    with tab5:
         st.markdown("<h3>Knowledge Graph</h3>", unsafe_allow_html=True)
         if result.reasoning and result.citations:
             # Create and display the knowledge graph
@@ -1834,7 +1916,7 @@ def display_results(result: QueryResponse):
             st.info("Not enough information to create a knowledge graph")
 
     # Trace tab
-    with tab5:
+    with tab6:
         st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)
         if result.reasoning:
             trace_graph = create_interaction_trace(result.reasoning)

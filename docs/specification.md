@@ -49,7 +49,13 @@
   - By default (TTY), output is readable Markdown or plaintext, with clear sections for thesis, antithesis, synthesis, and citations.
   - If `--output json` or output is piped, output is schema-validated JSON.
   - User can override with `--output` flag.
-- Output: Schema-validated JSON with `answer`, `citations`, `reasoning`, `metrics` (for automation); Markdown/pretty text for humans.
+- Output: Schema-validated JSON with `answer`, `citations`, `reasoning`,
+  `metrics`, and `claim_audits` (for automation); Markdown/pretty text for
+  humans.
+- `claim_audits` is a FEVER-style array of verification records containing a
+  `claim_id`, `status` (`supported`, `unsupported`, `needs_review`),
+  `entailment_score`, `sources`, optional reviewer `notes`, and a
+  `created_at` timestamp.
 
 ## 5. Reasoning Modes
 

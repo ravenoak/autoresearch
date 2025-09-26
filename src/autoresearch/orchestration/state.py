@@ -25,6 +25,7 @@ class QueryState(BaseModel):
 
     query: str
     claims: list[dict[str, Any]] = Field(default_factory=list)
+    claim_audits: list[dict[str, Any]] = Field(default_factory=list)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     results: dict[str, Any] = Field(default_factory=dict)
     messages: list[dict[str, Any]] = Field(default_factory=list)
@@ -55,7 +56,11 @@ class QueryState(BaseModel):
                 for claim in claims_obj:
                     if not isinstance(claim, Mapping):
                         raise TypeError("each claim must be a mapping")
-                    self.claims.append(dict(claim))
+                    claim_dict = dict(claim)
+                    self.claims.append(claim_dict)
+                    audit_payload = claim_dict.get("audit")
+                    if isinstance(audit_payload, Mapping):
+                        self.claim_audits.append(dict(audit_payload))
 
             sources_obj = result.get("sources")
             if sources_obj is not None:
@@ -80,6 +85,17 @@ class QueryState(BaseModel):
                 if not isinstance(results_obj, Mapping):
                     raise TypeError("results must be a mapping")
                 self.results.update(results_obj)
+
+            audits_obj = result.get("claim_audits")
+            if audits_obj is not None:
+                if not isinstance(audits_obj, Sequence) or isinstance(
+                    audits_obj, (str, bytes)
+                ):
+                    raise TypeError("claim_audits must be a sequence of mappings")
+                for audit in audits_obj:
+                    if not isinstance(audit, Mapping):
+                        raise TypeError("each claim_audit must be a mapping")
+                    self.claim_audits.append(dict(audit))
             # Update timestamp
             self.last_updated = time.time()
 
@@ -182,6 +198,7 @@ class QueryState(BaseModel):
             citations=self.sources,
             reasoning=self.claims,
             metrics=self.metadata,
+            claim_audits=self.claim_audits,
         )
 
     def get_dialectical_structure(self) -> dict[str, Any]:

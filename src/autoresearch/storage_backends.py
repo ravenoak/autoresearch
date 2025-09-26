@@ -10,12 +10,14 @@ from __future__ import annotations
 import os
 import time
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 import importlib.util
+import json
 import duckdb
 import rdflib
 from dotenv import dotenv_values
@@ -284,6 +286,12 @@ class DuckDBStorageBackend:
                 "CREATE TABLE IF NOT EXISTS embeddings(" "node_id VARCHAR, embedding FLOAT[384])"
             )
 
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS claim_audits("
+                "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
+                "entailment DOUBLE, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+            )
+
             # Create metadata table for schema versioning
             self._conn.execute("CREATE TABLE IF NOT EXISTS metadata(key VARCHAR, value VARCHAR)")
 
@@ -380,7 +388,7 @@ class DuckDBStorageBackend:
 
         try:
             current_version = self.get_schema_version()
-            latest_version = 1  # Update this when adding new migrations
+            latest_version = 2  # Update this when adding new migrations
 
             log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
 
@@ -388,16 +396,30 @@ class DuckDBStorageBackend:
             if current_version is None or current_version < latest_version:
                 log.info(f"Running migrations from version {current_version} to {latest_version}")
 
-                # Example migration pattern for future use:
-                # if current_version < 2:
-                #     self._migrate_to_v2()
-                #     current_version = 2
+                if current_version is None or current_version < 2:
+                    self._migrate_to_v2()
+                    current_version = 2
 
                 # Update schema version to latest
                 self.update_schema_version(latest_version)
 
         except Exception as e:
             raise StorageError("Failed to run migrations", cause=e)
+
+    def _migrate_to_v2(self) -> None:
+        """Ensure legacy databases include the claim audit table."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        try:
+            self._conn.execute(
+                "CREATE TABLE IF NOT EXISTS claim_audits("
+                "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
+                "entailment DOUBLE, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+            )
+        except duckdb.Error as exc:  # type: ignore[attr-defined]
+            raise StorageError("Failed to migrate claim audit table", cause=exc)
 
     def create_hnsw_index(self) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index.
@@ -646,6 +668,116 @@ class DuckDBStorageBackend:
             except Exception as e:  # pragma: no cover - unexpected DB failure
                 raise StorageError("Failed to update claim in DuckDB", cause=e)
 
+    def persist_claim_audit(self, audit: Mapping[str, Any]) -> None:
+        """Persist verification metadata for a claim."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        audit_id = audit.get("audit_id")
+        claim_id = audit.get("claim_id")
+        status = audit.get("status")
+        if hasattr(status, "value"):
+            status_value = status.value  # type: ignore[assignment]
+        else:
+            status_value = status
+        if not audit_id or not claim_id or not status_value:
+            raise StorageError("Audit payload missing required identifiers")
+
+        created_raw = audit.get("created_at", time.time())
+        created_at = (
+            created_raw
+            if isinstance(created_raw, datetime)
+            else datetime.fromtimestamp(float(created_raw))
+        )
+
+        sources = audit.get("sources") or []
+        if not isinstance(sources, Sequence) or isinstance(sources, (str, bytes)):
+            raise StorageError("Audit sources must be a sequence")
+        serialised_sources: list[dict[str, Any]] = []
+        for src in sources:
+            if isinstance(src, Mapping):
+                serialised_sources.append(dict(src))
+            else:
+                serialised_sources.append({"value": src})
+
+        payload = [
+            str(audit_id),
+            str(claim_id),
+            str(status_value),
+            audit.get("entailment_score"),
+            json.dumps(serialised_sources),
+            audit.get("notes"),
+            created_at,
+        ]
+
+        with self.connection() as conn, self._lock:
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO claim_audits VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    payload,
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to persist claim audit", cause=exc)
+
+    def list_claim_audits(self, claim_id: str | None = None) -> List[Dict[str, Any]]:
+        """Return stored claim audits ordered by recency."""
+
+        if self._conn is None and self._pool is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        query = (
+            "SELECT audit_id, claim_id, status, entailment, sources, notes, created_at "
+            "FROM claim_audits"
+        )
+        params: list[Any] = []
+        if claim_id:
+            query += " WHERE claim_id=?"
+            params.append(claim_id)
+        query += " ORDER BY created_at DESC"
+
+        with self.connection() as conn, self._lock:
+            try:
+                rows = conn.execute(query, params).fetchall()
+            except Exception as exc:  # pragma: no cover - defensive
+                raise StorageError("Failed to list claim audits", cause=exc)
+
+        audits: List[Dict[str, Any]] = []
+        for row in rows:
+            raw_sources = row[4]
+            parsed_sources: list[Dict[str, Any]] = []
+            if raw_sources:
+                try:
+                    loaded = json.loads(raw_sources)
+                except json.JSONDecodeError:
+                    loaded = []
+                if isinstance(loaded, list):
+                    for src in loaded:
+                        if isinstance(src, Mapping):
+                            parsed_sources.append(dict(src))
+                        else:
+                            parsed_sources.append({"value": src})
+
+            created = row[6]
+            if isinstance(created, datetime):
+                created_ts = created.timestamp()
+            else:
+                created_ts = float(created)
+
+            audits.append(
+                {
+                    "audit_id": row[0],
+                    "claim_id": row[1],
+                    "status": row[2],
+                    "entailment_score": row[3],
+                    "sources": parsed_sources,
+                    "notes": row[5],
+                    "created_at": created_ts,
+                }
+            )
+
+        return audits
+
     def get_claim(self, claim_id: str) -> Dict[str, Any]:
         """Return a persisted claim by ID."""
         if self._conn is None and self._pool is None:
@@ -670,7 +802,10 @@ class DuckDBStorageBackend:
             ).fetchone()
             if emb is not None:
                 result["embedding"] = emb[0]
-            return result
+        audits = self.list_claim_audits(claim_id)
+        if audits:
+            result["audits"] = audits
+        return result
 
     def vector_search(
         self,
