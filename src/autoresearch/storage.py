@@ -770,6 +770,19 @@ class StorageManager(metaclass=StorageManagerMeta):
                 else:
                     current_batch_size = batch_size
 
+                remaining_allowance: int | None = None
+                if use_deterministic_budget:
+                    assert target_node_count is not None
+                    survivor_floor = max(target_node_count, minimum_resident_nodes)
+                    remaining_allowance = max(0, len(graph.nodes) - survivor_floor)
+                    if remaining_allowance <= 0:
+                        log.debug(
+                            "Deterministic mode reached survivor floor (%d nodes); stopping",
+                            survivor_floor,
+                        )
+                        break
+                    current_batch_size = min(current_batch_size, remaining_allowance)
+
                 nodes_to_evict: list[str] = []
 
                 if policy == "hybrid":
@@ -895,6 +908,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                             len(fallback_candidates),
                         )
                     nodes_to_evict.extend(fallback_candidates)
+
+                if remaining_allowance is not None and len(nodes_to_evict) > remaining_allowance:
+                    nodes_to_evict = nodes_to_evict[:remaining_allowance]
 
                 if not nodes_to_evict:
                     break
