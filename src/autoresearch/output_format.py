@@ -62,6 +62,7 @@ class DepthPlan:
     """Plan describing which sections to include for a depth selection."""
 
     level: OutputDepth
+    include_tldr: bool
     include_key_findings: bool
     key_findings_limit: Optional[int]
     include_citations: bool
@@ -93,6 +94,7 @@ class DepthPayload:
     raw_response: Optional[dict[str, Any]]
     task_graph: Optional[dict[str, Any]]
     react_traces: list[dict[str, Any]]
+    sections: dict[str, bool]
     notes: dict[str, str] = field(default_factory=dict)
 
 
@@ -118,6 +120,7 @@ _DEPTH_ALIASES: Dict[str, OutputDepth] = {
 _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
     OutputDepth.TLDR: DepthPlan(
         level=OutputDepth.TLDR,
+        include_tldr=True,
         include_key_findings=False,
         key_findings_limit=None,
         include_citations=True,
@@ -135,6 +138,7 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
     ),
     OutputDepth.CONCISE: DepthPlan(
         level=OutputDepth.CONCISE,
+        include_tldr=True,
         include_key_findings=True,
         key_findings_limit=3,
         include_citations=True,
@@ -152,6 +156,7 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
     ),
     OutputDepth.STANDARD: DepthPlan(
         level=OutputDepth.STANDARD,
+        include_tldr=True,
         include_key_findings=True,
         key_findings_limit=None,
         include_citations=True,
@@ -169,6 +174,7 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
     ),
     OutputDepth.TRACE: DepthPlan(
         level=OutputDepth.TRACE,
+        include_tldr=True,
         include_key_findings=True,
         key_findings_limit=None,
         include_citations=True,
@@ -227,7 +233,22 @@ def describe_depth_levels() -> Dict[OutputDepth, str]:
     return {level: level.description for level in OutputDepth}
 
 
+def describe_depth_features() -> Dict[OutputDepth, Dict[str, bool]]:
+    """Summarise which headline sections are exposed at each depth."""
+
+    features: Dict[OutputDepth, Dict[str, bool]] = {}
+    for depth, plan in _DEPTH_PLANS.items():
+        features[depth] = {
+            "tldr": plan.include_tldr,
+            "key_findings": plan.include_key_findings,
+            "claim_audits": plan.include_claims,
+            "full_trace": plan.include_reasoning and plan.include_react_traces,
+        }
+    return features
+
+
 _SECTION_LABELS: Dict[str, str] = {
+    "tldr": "TL;DR",
     "key_findings": "Key findings",
     "citations": "Citations",
     "claim_audits": "Claim audits",
@@ -331,7 +352,12 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
     plan = _DEPTH_PLANS[depth_level]
     notes: dict[str, str] = {}
 
-    tldr = _generate_tldr(response)
+    if plan.include_tldr:
+        tldr = _generate_tldr(response)
+    else:
+        tldr = ""
+        notes["tldr"] = _hidden_message("tldr", plan)
+
     answer = response.answer.strip()
 
     if plan.include_key_findings:
@@ -428,6 +454,19 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
     if raw_response is None:
         notes["raw_response"] = _hidden_message("raw_response", plan)
 
+    sections = {
+        "tldr": plan.include_tldr,
+        "key_findings": plan.include_key_findings,
+        "citations": plan.include_citations,
+        "claim_audits": plan.include_claims,
+        "reasoning": plan.include_reasoning,
+        "metrics": plan.include_metrics,
+        "raw_response": plan.include_raw,
+        "task_graph": plan.include_task_graph,
+        "react_traces": plan.include_react_traces,
+        "full_trace": plan.include_reasoning and plan.include_react_traces,
+    }
+
     return DepthPayload(
         depth=depth_level,
         tldr=tldr,
@@ -440,6 +479,7 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         raw_response=raw_response,
         task_graph=graph_payload,
         react_traces=react_traces_payload,
+        sections=sections,
         notes=notes,
     )
 
@@ -668,6 +708,8 @@ def _render_markdown(payload: DepthPayload) -> str:
     """Render the payload as markdown text."""
 
     parts: list[str] = ["# TL;DR", payload.tldr or "—"]
+    if note := payload.notes.get("tldr"):
+        parts.append(f"> {note}")
 
     parts.extend(["", "## Answer", payload.answer or "—"])
 
@@ -744,7 +786,10 @@ def _render_markdown(payload: DepthPayload) -> str:
 def _render_plain(payload: DepthPayload) -> str:
     """Render the payload as plain text."""
 
-    lines: list[str] = [f"TL;DR:\n{payload.tldr or '—'}", "", f"Answer:\n{payload.answer or '—'}"]
+    lines: list[str] = [f"TL;DR:\n{payload.tldr or '—'}"]
+    if note := payload.notes.get("tldr"):
+        lines.append(note)
+    lines.extend(["", f"Answer:\n{payload.answer or '—'}"])
 
     lines.append("")
     lines.append("Key Findings:")
@@ -828,6 +873,7 @@ def _render_json(payload: DepthPayload) -> str:
         "reasoning": [_json_safe(item) for item in payload.reasoning],
         "metrics": _json_safe(payload.metrics),
         "notes": payload.notes,
+        "sections": payload.sections,
     }
     if payload.task_graph is not None:
         data["task_graph"] = _json_safe(payload.task_graph)
@@ -858,6 +904,7 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
 
     return {
         "tldr": payload.tldr,
+        "tldr_note": payload.notes.get("tldr", ""),
         "depth_label": payload.depth.label,
         "key_findings": key_markdown or payload.notes.get("key_findings", ""),
         "key_findings_markdown": key_markdown,
@@ -897,6 +944,7 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         ),
         "raw_response_note": payload.notes.get("raw_response", ""),
         "notes": payload.notes,
+        "sections": payload.sections,
     }
 
 
@@ -930,6 +978,7 @@ class FormatTemplate(BaseModel):
             "claim_audits": _format_claim_audits_markdown(response.claim_audits),
             "claim_audit_count": len(response.claim_audits),
             "tldr": response.answer,
+            "tldr_note": "",
             "depth_label": OutputDepth.STANDARD.label,
             "key_findings": "",
             "key_findings_note": "",
@@ -943,6 +992,7 @@ class FormatTemplate(BaseModel):
             "react_traces_note": "",
             "raw_json": "",
             "raw_response_note": "",
+            "sections": {},
         }
 
         for k, v in response.metrics.items():

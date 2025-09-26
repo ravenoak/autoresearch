@@ -276,8 +276,13 @@ autoresearch search "Explain prompt reflection" --depth trace --output json
 ```
 
 Streamlit mirrors the same depth levels through a radio selector above the
-results panel. Adjusting the selector toggles TL;DR summaries, key findings,
-claim tables, GraphRAG artefacts, and agent traces without re-running the
-query. Provenance notes underneath each section highlight when data is hidden
-or truncated, making it explicit when a deeper depth is required for audit
-workflows.
+results panel and augments them with four toggles: **Show TL;DR**, **Show key
+findings**, **Show claim table**, and **Show full trace**. The toggles reset when
+depth changes so that newly available evidence appears automatically while
+letting reviewers silence sections on demand. A dedicated Provenance panel
+summarises claim audit statuses and renders GraphRAG artefacts, while section
+notes continue to explain when information is truncated or hidden.
+
+CLI help text now lists which headline sections are enabled at each depth, and
+JSON output includes a `sections` map so integrations can confirm what data was
+emitted before post-processing.

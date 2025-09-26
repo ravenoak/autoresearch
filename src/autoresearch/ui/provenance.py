@@ -52,3 +52,51 @@ def extract_graphrag_artifacts(metrics: Mapping[str, Any]) -> Dict[str, Any]:
 def depth_sequence() -> List[OutputDepth]:
     """Return the ordered depth options for UI widgets."""
     return [OutputDepth.TLDR, OutputDepth.CONCISE, OutputDepth.STANDARD, OutputDepth.TRACE]
+
+
+def audit_status_rollup(claim_audits: List[Mapping[str, Any]]) -> Dict[str, int]:
+    """Summarise claim audit statuses for quick provenance overviews."""
+
+    if not claim_audits:
+        return {}
+
+    counts: Dict[str, int] = {}
+    for audit in claim_audits:
+        status = str(audit.get("status", "unknown")).lower()
+        counts[status] = counts.get(status, 0) + 1
+
+    ordered: Dict[str, int] = {}
+    for key in ("supported", "needs_review", "unsupported"):
+        value = counts.pop(key, 0)
+        if value:
+            ordered[key] = value
+    for key in sorted(counts):
+        if counts[key]:
+            ordered[key] = counts[key]
+    return ordered
+
+
+def section_toggle_defaults(payload: DepthPayload) -> Dict[str, Dict[str, bool]]:
+    """Return toggle availability and defaults for depth-aware sections."""
+
+    sections = payload.sections
+    return {
+        "tldr": {
+            "available": sections.get("tldr", True),
+            "value": sections.get("tldr", True),
+        },
+        "key_findings": {
+            "available": sections.get("key_findings", False),
+            "value": sections.get("key_findings", False),
+        },
+        "claim_audits": {
+            "available": sections.get("claim_audits", False),
+            "value": sections.get("claim_audits", False),
+        },
+        "full_trace": {
+            "available": sections.get("reasoning", False)
+            or sections.get("react_traces", False),
+            "value": sections.get("reasoning", False)
+            or sections.get("react_traces", False),
+        },
+    }

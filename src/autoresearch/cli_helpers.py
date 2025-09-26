@@ -12,6 +12,7 @@ from fastapi import HTTPException
 
 from .output_format import (
     OutputDepth,
+    describe_depth_features,
     describe_depth_levels,
     get_depth_aliases,
     normalize_depth,
@@ -119,7 +120,26 @@ def depth_help_text() -> str:
     """Return a human-readable description of depth choices."""
 
     descriptions = describe_depth_levels()
-    parts = [f"{depth.label.lower()}: {desc}" for depth, desc in descriptions.items()]
+    features = describe_depth_features()
+    feature_labels = {
+        "tldr": "TL;DR",
+        "key_findings": "key findings",
+        "claim_audits": "claim table",
+        "full_trace": "full trace",
+    }
+    parts: List[str] = []
+    for depth in OutputDepth:
+        desc = descriptions[depth]
+        enabled = [
+            label
+            for key, label in feature_labels.items()
+            if features.get(depth, {}).get(key, False)
+        ]
+        if enabled:
+            desc = f"{desc} (includes {', '.join(enabled)})"
+        else:
+            desc = f"{desc} (answer only)"
+        parts.append(f"{depth.label.lower()}: {desc}")
     aliases = sorted({k for k in get_depth_aliases().keys() if k.isalpha()})
     return (
         " | ".join(parts)
