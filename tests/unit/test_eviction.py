@@ -152,12 +152,14 @@ def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
     assert "c1" not in graph.nodes
     assert "c2" in graph.nodes
     assert "c3" in graph.nodes
+    assert len(graph.nodes) == 2
 
     monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram_factory())
     StorageManager._enforce_ram_budget(1)
     graph = StorageManager.get_graph()
     assert "c2" not in graph.nodes
     assert "c3" in graph.nodes
+    assert len(graph.nodes) == 1
 
 
 def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_schema):
@@ -187,6 +189,7 @@ def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_sche
 
     graph = StorageManager.get_graph()
     assert set(graph.nodes) == {"c2", "c3"}
+    assert len(graph.nodes) == 2
 
 
 def test_initialize_storage_in_memory(monkeypatch):
