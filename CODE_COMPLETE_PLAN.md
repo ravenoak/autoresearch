@@ -61,7 +61,17 @@ Release preparation now focuses on XPASS cleanup and staging
   - Add support for ontology-based reasoning
   - Create tools for knowledge graph visualization
 
-### 1.4 Search System
+### 1.4 Search and Evidence Audit System
+- **Evolve the claim audit ingestion pipeline**
+  - Rework `evidence/__init__.py` to swap lexical scoring for
+    model-based entailment that correlates with
+    `ClaimAuditRecord` severity tiers in `storage.py`.
+  - Add stability checks so `QueryResponse.claim_audits` drops
+    noisy evidence packets and records retry backoffs in
+    `ClaimAuditRecord.meta`.
+  - Thread structured audit provenance through
+    `QueryResponse.claim_audits` so downstream consumers can
+    trace entailment verdicts to individual evidence items.
 - **Complete all search backends**
   - Finalize the local file search implementation
   - Enhance the local git search with better code understanding
@@ -82,13 +92,28 @@ Release preparation now focuses on XPASS cleanup and staging
   - Create more realistic test data
   - Implement comprehensive mock LLM adapters
   - Add parameterized tests for configuration variations
+- **Strengthen audit regression suites**
+  - Add assertions under `tests/evaluation` that verify
+    `evidence/__init__.py` entailment scores align with
+    `ClaimAuditRecord` severity labels.
+  - Capture stability guardrails with fixtures that force audit
+    retries and confirm `QueryResponse.claim_audits` suppresses
+    noisy packets.
+  - Backfill golden benchmarks tied to the extended
+    `evaluation/harness.py` metrics columns.
 
-### 2.2 Integration Tests
+### 2.2 Integration Tests and Benchmarks
 - **Complete cross-component integration tests**
   - Test orchestrator with all agent combinations
   - Verify storage integration with search functionality
   - Test configuration hot-reload with all components
-- **Add performance tests**
+- **Add performance and audit benchmarks**
+  - Extend `evaluation/harness.py` with KPIs that reuse its
+    batch harness for evidence audits, adding dataset splits for
+    adversarial contradiction and stale-source regressions.
+  - Append metrics columns for entailment precision/recall and
+    audit-stability jitter so the harness emits CSVs ready for
+    regression tracking.
   - Implement benchmarks for query processing time
   - Test memory usage under various conditions
   - Verify token usage optimization
@@ -156,6 +181,15 @@ Release preparation now focuses on XPASS cleanup and staging
   - Add more realistic use cases
   - Create domain-specific examples
   - Document advanced configuration scenarios
+- **Document the strengthened audit pipeline**
+  - Add a walkthrough in `docs/` showing how
+    `QueryResponse.claim_audits` exposes entailment verdicts and
+    stability metadata.
+  - Provide configuration examples for tuning
+    `evidence/__init__.py` entailment thresholds and
+    `ClaimAuditRecord` retry policies.
+  - Publish KPI interpretation guidance so readers can map new
+    `evaluation/harness.py` metrics columns to release gates.
 
 ### 4.3 Developer Documentation
 - **Complete architecture documentation**
@@ -166,6 +200,14 @@ Release preparation now focuses on XPASS cleanup and staging
   - Create detailed development setup instructions
   - Document code style and conventions
   - Add pull request templates
+- **Update developer references for audits**
+  - Add API docs clarifying how to extend
+    `QueryResponse.claim_audits` and its storage binding to
+    `ClaimAuditRecord`.
+  - Describe testing hooks in `evaluation/harness.py` for new
+    audit KPIs and dataset onboarding.
+  - Call out stability guardrails so contributors validate retry
+    semantics before merging.
 
 ## 5. Performance and Scalability
 
