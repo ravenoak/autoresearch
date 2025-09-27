@@ -11,7 +11,7 @@ from pydantic import (
 )
 from pydantic_settings import SettingsConfigDict
 
-from ..orchestration import ReasoningMode
+from ..orchestration.reasoning import ReasoningMode
 from .validators import (
     normalize_ranking_weights,
     validate_eviction_policy,

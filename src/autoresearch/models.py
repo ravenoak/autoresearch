@@ -76,7 +76,8 @@ class QueryResponse(BaseModel):
         metrics: Execution metrics describing latency, token usage, etc.
         claim_audits: Verification metadata for each evaluated claim. Each
             entry is a mapping containing ``claim_id``, ``status``,
-            ``entailment_score``, ``sources``, ``notes``, and ``created_at``.
+            ``entailment_score``, ``entailment_variance``, ``instability_flag``,
+            ``sample_size``, ``sources``, ``notes``, and ``created_at``.
     """
 
     query: Optional[str] = Field(

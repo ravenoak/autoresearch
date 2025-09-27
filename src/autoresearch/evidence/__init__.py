@@ -1,8 +1,11 @@
 """Utilities for evidence retrieval expansion and entailment scoring."""
 
+from __future__ import annotations
+
+import math
 import re
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Iterable, List, Sequence
 
 from ..storage import ClaimAuditStatus
 
@@ -40,6 +43,17 @@ class EntailmentBreakdown:
     overlap_ratio: float
     support_ratio: float
     overlapping_terms: List[str]
+
+
+@dataclass(frozen=True)
+class EntailmentAggregate:
+    """Summary statistics derived from multiple entailment checks."""
+
+    mean: float
+    variance: float
+    sample_size: int
+    disagreement: bool
+    scores: List[float]
 
 
 def expand_retrieval_queries(
@@ -119,6 +133,67 @@ def classify_entailment(score: float) -> ClaimAuditStatus:
     return ClaimAuditStatus.from_entailment(score)
 
 
+def sample_paraphrases(text: str, *, max_samples: int = 3) -> List[str]:
+    """Return lightweight paraphrases for retrieval retries."""
+
+    cleaned = " ".join(text.strip().split())
+    if not cleaned:
+        return []
+
+    variants: list[str] = []
+    seen: set[str] = set()
+    base = cleaned.rstrip("?.!")
+    if not base:
+        base = cleaned
+    candidates = [cleaned, base, f"Is it true that {base}?", f"Summarise evidence for {base}"]
+    if len(base.split()) > 3:
+        candidates.append(f"Evidence for whether {base}")
+        candidates.append(f"Counterexamples to {base}")
+
+    for candidate in candidates:
+        normalised = " ".join(candidate.split())
+        key = normalised.lower()
+        if normalised and key not in seen:
+            variants.append(normalised)
+            seen.add(key)
+        if len(variants) >= max_samples:
+            break
+
+    return variants
+
+
+def aggregate_entailment_scores(
+    breakdowns: Sequence[EntailmentBreakdown | float],
+    *,
+    disagreement_threshold: float = 0.25,
+    variance_threshold: float = 0.04,
+) -> EntailmentAggregate:
+    """Aggregate lexical entailment checks into stability diagnostics."""
+
+    scores: list[float] = []
+    for item in breakdowns:
+        try:
+            value = item.score if isinstance(item, EntailmentBreakdown) else float(item)
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(value):
+            continue
+        scores.append(max(0.0, min(1.0, value)))
+
+    if not scores:
+        return EntailmentAggregate(0.0, 0.0, 0, False, [])
+
+    sample_size = len(scores)
+    mean = sum(scores) / sample_size
+    if sample_size > 1:
+        variance = sum((score - mean) ** 2 for score in scores) / (sample_size - 1)
+    else:
+        variance = 0.0
+    spread = max(scores) - min(scores)
+    disagreement = (spread >= disagreement_threshold) or (variance >= variance_threshold)
+    return EntailmentAggregate(mean, variance, sample_size, disagreement, scores)
+
+
 def _tokenize(text: str) -> List[str]:
     return [token for token in re.findall(r"[a-z0-9']+", text.lower()) if token not in _STOPWORDS]
 
@@ -137,7 +212,10 @@ def _extract_keywords(text: str) -> List[str]:
 
 __all__ = [
     "EntailmentBreakdown",
+    "EntailmentAggregate",
+    "aggregate_entailment_scores",
     "classify_entailment",
     "expand_retrieval_queries",
+    "sample_paraphrases",
     "score_entailment",
 ]
