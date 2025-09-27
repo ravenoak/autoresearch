@@ -78,6 +78,8 @@ def test_fact_checker_audit_provenance(adapter: _DummyAdapter, monkeypatch: pyte
     )
     per_claim = claim_audit["provenance"]["backoff"]["per_claim"]
     assert per_claim["claim-1"]["retry_count"] == 0
+    assert "paraphrases" in per_claim["claim-1"]
+    assert claim_audit["provenance"]["backoff"]["total_retries"] == 0
 
 
 def test_synthesizer_support_audit_provenance(adapter: _DummyAdapter) -> None:
@@ -109,3 +111,4 @@ def test_synthesizer_support_audit_provenance(adapter: _DummyAdapter) -> None:
     support_ids = summary_audit["provenance"]["evidence"]["support_audit_ids"]
     assert support_ids, "summary audit should reference support audits"
     assert audits["claim-1"]["audit_id"] in support_ids
+    assert summary_audit["provenance"]["retrieval"]["mode"] == "peer_consensus"

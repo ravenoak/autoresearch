@@ -78,7 +78,10 @@ class QueryResponse(BaseModel):
             entry mirrors :class:`~autoresearch.storage.ClaimAuditRecord` and
             includes ``claim_id``, ``status``, ``entailment_score``,
             ``entailment_variance``, ``instability_flag``, ``sample_size``,
-            ``sources``, ``provenance``, ``notes``, and ``created_at``.
+            ``sources``, ``notes``, ``created_at``, and a structured
+            ``provenance`` mapping. The provenance namespaces (``retrieval``,
+            ``backoff``, ``evidence``) preserve query variants, retry counters,
+            and stable evidence identifiers for downstream traceability.
     """
 
     query: Optional[str] = Field(
@@ -90,7 +93,11 @@ class QueryResponse(BaseModel):
     metrics: Dict[str, Any]
     claim_audits: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="FEVER-style verification metadata with provenance for individual claims",
+        description=(
+            "FEVER-style verification metadata for individual claims, including "
+            "structured provenance with retrieval queries, backoff counters, "
+            "and evidence identifiers"
+        ),
     )
     task_graph: Optional[Dict[str, Any]] = Field(
         default=None,
