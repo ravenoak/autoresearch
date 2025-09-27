@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import traceback
-from typing import Dict
 
 from ..errors import AgentError, NotFoundError, OrchestrationError, TimeoutError
 from ..logging_utils import get_logger
@@ -32,7 +31,7 @@ def _categorize_error(e: Exception) -> str:
 
 def _apply_recovery_strategy(
     agent_name: str, error_category: str, e: Exception, state: QueryState
-) -> dict:
+) -> dict[str, object]:
     """Apply an appropriate recovery strategy based on error category."""
     if error_category == "transient":
         recovery_strategy = "retry_with_backoff"
@@ -104,15 +103,18 @@ def _apply_recovery_strategy(
             f"Applied '{recovery_strategy}' recovery strategy for agent {agent_name}",
             extra={"agent": agent_name, "recovery_strategy": recovery_strategy},
         )
-    return {"recovery_strategy": recovery_strategy, "suggestion": suggestion}
+    return {
+        "recovery_strategy": recovery_strategy,
+        "suggestion": suggestion,
+    }
 
 
 def _handle_agent_error(
     agent_name: str, e: Exception, state: QueryState, metrics: OrchestrationMetrics
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """Handle agent errors with granular recovery strategies."""
     error_category = _categorize_error(e)
-    error_info: Dict[str, object] = {
+    error_info: dict[str, object] = {
         "agent": agent_name,
         "error": str(e),
         "error_type": type(e).__name__,

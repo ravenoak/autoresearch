@@ -10,6 +10,9 @@ __all__ = [
     "ChainOfThoughtStrategy",
     "TaskCoordinator",
     "TaskStatus",
+    "TaskGraph",
+    "TaskNode",
+    "TaskEdge",
 ]
 
 
@@ -18,6 +21,11 @@ def __getattr__(name: str) -> object:
 
     if name in {"TaskCoordinator", "TaskStatus"}:
         module = import_module(".coordinator", __name__)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    if name in {"TaskGraph", "TaskNode", "TaskEdge"}:
+        module = import_module(".task_graph", __name__)
         value = getattr(module, name)
         globals()[name] = value
         return value

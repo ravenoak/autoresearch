@@ -12,11 +12,12 @@ def get_memory_usage() -> float:
 
         process = psutil.Process()
         memory_info = process.memory_info()
-        return memory_info.rss / (1024 * 1024)
+        return float(memory_info.rss) / (1024 * 1024)
     except ImportError:  # pragma: no cover - fallback path
         import resource
 
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        return float(usage.ru_maxrss) / 1024
 
 
 def calculate_result_confidence(result: QueryResponse) -> float:

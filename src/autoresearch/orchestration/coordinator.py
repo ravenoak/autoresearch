@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import heapq
 import time
-from collections import deque
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
 from .phases import DialoguePhase
 from .state import QueryState
@@ -37,11 +37,29 @@ class TaskCoordinator:
         self._dependency_cache: Dict[str, List[str]] = {
             task_id: list(task.get("depends_on", [])) for task_id, task in self._tasks.items()
         }
-        self.state.metadata.setdefault("coordinator", {}).update(
+        self._dependents: Dict[str, List[str]] = {}
+        for task_id, dependencies in self._dependency_cache.items():
+            for dependency in dependencies:
+                self._dependents.setdefault(dependency, []).append(task_id)
+        self._dependency_depth: Dict[str, int] = self._compute_dependency_depths()
+        self._affinity_map: Dict[str, Dict[str, float]] = {}
+        for task_id, task in self._tasks.items():
+            affinity_payload = task.get("affinity")
+            if isinstance(affinity_payload, Mapping):
+                self._affinity_map[task_id] = {
+                    str(tool): float(score)
+                    for tool, score in affinity_payload.items()
+                    if isinstance(score, (int, float))
+                }
+            else:
+                self._affinity_map[task_id] = {}
+        coordinator_meta = self.state.metadata.setdefault("coordinator", {})
+        coordinator_meta.update(
             {
                 "phase": self.phase.value,
                 "task_count": len(self._tasks),
                 "react_trace_count": len(self.state.react_traces),
+                "ordering_strategy": "depth_affinity",
             }
         )
 
@@ -59,26 +77,100 @@ class TaskCoordinator:
             deps = self._dependency_cache.get(task_id, [])
             if all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._status):
                 ready.append(task)
-        ready.sort(key=lambda item: item.get("metadata", {}).get("priority", 0))
+        ready.sort(key=lambda item: self._schedule_key(str(item.get("id"))))
         return ready
+
+    def _compute_dependency_depths(self) -> Dict[str, int]:
+        """Compute dependency depth for each task id."""
+
+        depth: Dict[str, int] = {}
+
+        def resolve(task_id: str, trail: tuple[str, ...] = ()) -> int:
+            if task_id in depth:
+                return depth[task_id]
+            if task_id in trail:
+                return 0
+            deps = [dep for dep in self._dependency_cache.get(task_id, []) if dep in self._tasks]
+            if not deps:
+                depth[task_id] = 0
+                return 0
+            computed = 1 + max(resolve(dep, trail + (task_id,)) for dep in deps)
+            depth[task_id] = computed
+            return computed
+
+        for task_id in self._tasks:
+            resolve(task_id)
+        return depth
+
+    def _schedule_key(self, task_id: str) -> Tuple[int, float, str]:
+        """Return ordering key based on depth and affinity."""
+
+        depth = self._dependency_depth.get(task_id, 0)
+        affinity = self._max_affinity(task_id)
+        return depth, -affinity, task_id
+
+    def _max_affinity(self, task_id: str) -> float:
+        """Return the maximum affinity score for a task."""
+
+        affinity_map = self._affinity_map.get(task_id)
+        if not affinity_map:
+            return 0.0
+        return max(affinity_map.values(), default=0.0)
+
+    def _collect_unlock_events(self) -> List[str]:
+        """Return tasks currently unlocked by satisfied dependencies."""
+
+        unlocked = {
+            candidate
+            for candidate, deps in self._dependency_cache.items()
+            if self._status.get(candidate) in {TaskStatus.PENDING, TaskStatus.RUNNING}
+            and all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._tasks)
+        }
+        return sorted(unlocked, key=self._schedule_key)
+
+    def _affinity_delta(self, task_id: str, tool: str) -> float:
+        """Return the delta between best affinity and selected tool."""
+
+        affinity_map = self._affinity_map.get(task_id, {})
+        if not affinity_map:
+            return 0.0
+        top_score = max(affinity_map.values(), default=0.0)
+        selected_score = affinity_map.get(str(tool), 0.0)
+        return float(top_score - selected_score)
 
     def iter_schedule(self) -> Iterator[dict[str, Any]]:
         """Yield tasks in a dependency-respecting order."""
 
         visited: set[str] = set()
-        queue: deque[str] = deque(task_id for task_id in self._tasks if not self._dependency_cache.get(task_id))
-        queue.extend(task_id for task_id, deps in self._dependency_cache.items() if deps)
+        pending: Dict[str, set[str]] = {
+            task_id: {dep for dep in deps if dep in self._tasks}
+            for task_id, deps in self._dependency_cache.items()
+        }
+        for task_id in self._tasks:
+            pending.setdefault(task_id, set())
 
-        while queue:
-            task_id = queue.popleft()
+        heap: List[Tuple[int, float, str]] = []
+        for task_id, deps in pending.items():
+            if not deps:
+                heapq.heappush(heap, self._schedule_key(task_id))
+
+        while heap:
+            _, _, task_id = heapq.heappop(heap)
             if task_id in visited or task_id not in self._tasks:
-                continue
-            deps = self._dependency_cache.get(task_id, [])
-            if any(self._status.get(dep) != TaskStatus.COMPLETE for dep in deps if dep in self._tasks):
-                queue.append(task_id)
                 continue
             visited.add(task_id)
             yield self._tasks[task_id]
+            for dependent in self._dependents.get(task_id, []):
+                if dependent in visited or dependent not in pending:
+                    continue
+                deps = pending[dependent]
+                deps.discard(task_id)
+                if not deps:
+                    heapq.heappush(heap, self._schedule_key(dependent))
+
+        for task_id in self._tasks:
+            if task_id not in visited:
+                yield self._tasks[task_id]
 
     def start_task(self, task_id: str) -> None:
         """Mark a task as running."""
@@ -128,6 +220,24 @@ class TaskCoordinator:
         if task_id not in self._tasks:
             raise KeyError(f"Unknown task_id '{task_id}'")
         self._step_counter[task_id] += 1
+        metadata_payload = dict(metadata) if metadata else {}
+        unlock_events = self._collect_unlock_events()
+        if unlock_events:
+            merged_events: set[str] = set()
+            existing_unlocks = metadata_payload.get("unlock_events")
+            if isinstance(existing_unlocks, list):
+                merged_events.update(str(item) for item in existing_unlocks)
+            merged_events.update(unlock_events)
+            ordered_unlocks = sorted(merged_events, key=self._schedule_key)
+            metadata_payload["unlock_events"] = ordered_unlocks
+        else:
+            metadata_payload.setdefault("unlock_events", [])
+        if tool is not None:
+            metadata_payload["affinity_delta"] = self._affinity_delta(task_id, tool)
+        metadata_payload.setdefault(
+            "task_depth", self._dependency_depth.get(task_id, 0)
+        )
+
         trace_entry = {
             "task_id": task_id,
             "step": self._step_counter[task_id],
@@ -136,7 +246,7 @@ class TaskCoordinator:
             "action": action.strip(),
             "observation": observation.strip() if isinstance(observation, str) else observation,
             "tool": tool,
-            "metadata": dict(metadata) if metadata else {},
+            "metadata": metadata_payload,
             "timestamp": time.time(),
         }
         self.state.add_react_trace(trace_entry)

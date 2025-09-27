@@ -70,3 +70,41 @@ def test_query_state_update_validates_payload_shapes() -> None:
 
     with pytest.raises(TypeError):
         state.update({"results": ["oops"]})
+
+
+def test_task_graph_normalization_logs_react_entries() -> None:
+    """``set_task_graph`` records normalization warnings in the react log."""
+
+    state = QueryState(query="react-log")
+    warnings = state.set_task_graph(
+        {
+            "tasks": [
+                {
+                    "question": "Investigate topic",
+                    "tools": {"primary": "search"},
+                    "depends_on": ["ghost"],
+                    "affinity": "search:high",
+                }
+            ],
+            "edges": [
+                {
+                    "source": "ghost",
+                    "target": "task-1",
+                }
+            ],
+        }
+    )
+    assert warnings
+    assert any(entry["event"] == "planner.normalization" for entry in state.react_log)
+
+    state.record_planner_trace(
+        prompt="Plan?",
+        raw_response="{}",
+        normalized=state.task_graph,
+        warnings=warnings,
+    )
+    assert state.react_log[-1]["event"] == "planner.trace"
+    assert state.react_log[-1]["metadata"]["warnings"]
+
+    state.set_task_graph({"tasks": [{"id": "clean", "question": "Done"}]})
+    assert len(state.react_log) >= 2

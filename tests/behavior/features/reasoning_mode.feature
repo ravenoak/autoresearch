@@ -131,3 +131,8 @@ Feature: Reasoning Mode Selection
     And no agents should execute
     And the system state should be restored
     And the logs should include "unsupported reasoning mode"
+
+  Scenario: Planner research debate validate telemetry
+    When I simulate a PRDV planner flow
+    Then the planner react log should capture normalization warnings
+    And the coordinator trace metadata should include unlock events

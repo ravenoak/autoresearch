@@ -5,10 +5,11 @@ that private attributes like ``_value`` are accessed through typed utilities
 instead of unchecked ``type: ignore`` directives.
 """
 
+import importlib
 import logging
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from os import getenv
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -200,41 +201,54 @@ def temporary_metrics() -> Iterator[None]:
 
 def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
     """Return CPU, memory, GPU utilization, and GPU memory in MB."""
+
     try:
         import psutil
-
-        cpu = psutil.cpu_percent(interval=None)
-        mem_mb = psutil.Process().memory_info().rss / (1024 * 1024)
-
-        gpu_util = 0.0
-        gpu_mem = 0.0
-        try:
-            import pynvml
-
-            pynvml.nvmlInit()
-            count = pynvml.nvmlDeviceGetCount()
-            for i in range(count):
-                handle = pynvml.nvmlDeviceGetHandleByIndex(i)
-                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
-                mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                gpu_util += float(util.gpu)
-                gpu_mem += mem.used / (1024 * 1024)
-            pynvml.nvmlShutdown()
-            if count:
-                gpu_util /= count
-        except Exception:  # pragma: no cover - optional dependency
-            log.debug(
-                "pynvml unavailable; GPU metrics default to zero",
-                exc_info=True,
-            )
-
-        return cpu, mem_mb, gpu_util, gpu_mem
     except Exception:
         log.debug(
             "psutil unavailable; returning zero system usage metrics",
             exc_info=True,
         )
         return 0.0, 0.0, 0.0, 0.0
+
+    cpu = float(psutil.cpu_percent(interval=None))
+    mem_info = psutil.Process().memory_info()
+    mem_mb = float(mem_info.rss) / (1024 * 1024)
+
+    gpu_util = 0.0
+    gpu_mem = 0.0
+    try:
+        pynvml_module = importlib.import_module("pynvml")
+    except Exception:  # pragma: no cover - optional dependency
+        log.debug(
+            "pynvml unavailable; GPU metrics default to zero",
+            exc_info=True,
+        )
+        return cpu, mem_mb, gpu_util, gpu_mem
+
+    try:
+        pynvml_module.nvmlInit()
+        count = int(pynvml_module.nvmlDeviceGetCount())
+        for index in range(count):
+            handle = pynvml_module.nvmlDeviceGetHandleByIndex(index)
+            utilization = pynvml_module.nvmlDeviceGetUtilizationRates(handle)
+            memory = pynvml_module.nvmlDeviceGetMemoryInfo(handle)
+            gpu_util += float(getattr(utilization, "gpu", 0.0))
+            gpu_mem += float(memory.used) / (1024 * 1024)
+        if count:
+            gpu_util /= count
+    except Exception:  # pragma: no cover - optional dependency
+        log.debug(
+            "Failed to collect GPU metrics via pynvml; defaults applied",
+            exc_info=True,
+        )
+        gpu_util = 0.0
+        gpu_mem = 0.0
+    finally:
+        with suppress(Exception):
+            pynvml_module.nvmlShutdown()
+
+    return cpu, mem_mb, gpu_util, gpu_mem
 
 
 def record_query() -> None:
@@ -598,7 +612,13 @@ class OrchestrationMetrics:
 
     def _total_tokens(self) -> int:
         """Return the total tokens used in the current run."""
-        return sum(v.get("in", 0) + v.get("out", 0) for v in self.token_counts.values())
+
+        total = 0
+        for counts in self.token_counts.values():
+            inbound = int(counts.get("in", 0))
+            outbound = int(counts.get("out", 0))
+            total += inbound + outbound
+        return total
 
     def record_query_tokens(self, query: str, path: Path | None = None) -> None:
         """Persist total token usage for ``query``.
@@ -650,9 +670,10 @@ class OrchestrationMetrics:
             )
             return False
         baseline_total = baseline.get(query)
-        if baseline_total is None:
+        if not isinstance(baseline_total, (int, float)):
             return False
-        return self._total_tokens() > baseline_total + threshold
+        total_tokens = self._total_tokens()
+        return total_tokens > float(baseline_total) + threshold
 
     # ------------------------------------------------------------------
     # Heuristics for prompt compression and budget adjustment

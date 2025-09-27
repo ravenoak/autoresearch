@@ -44,6 +44,31 @@ Operators can tune the gate policy through configuration or the CLI/UI:
 - `core.gate_user_overrides` accepts JSON overrides to force exit/debate or
   pin specific heuristic scores.
 
+### Planner task graph schema
+
+`PlannerAgent` now emits a typed `TaskGraph` payload whose nodes include
+`tools`, `depends_on`, `criteria`, and a numeric `affinity` mapping. The
+planner still returns free-form rationale, yet the structured fields enable
+deterministic scheduling. `QueryState.set_task_graph` normalises the payload,
+coercing strings into lists, pruning missing dependencies, and recording any
+adjustments as `planner.normalization` entries in `react_log`.
+
+### Coordinator depth-affinity ordering
+
+`TaskCoordinator` orders ready tasks by dependency depth and descending tool
+affinity. A max-heap tie-breaker on task id preserves deterministic ordering
+while downstream `react_traces` capture `unlock_events`, `task_depth`, and
+`affinity_delta` metadata. Unlock events list every node whose dependencies are
+resolved (including currently running tasks) so replay tooling can follow the
+PRDV (plan, research, debate, validate) chain.
+
+### ReAct telemetry replay
+
+`QueryState.add_react_log_entry` and `record_planner_trace` persist planner
+prompts, raw responses, structured graphs, and any normalisation warnings. The
+`react_log` pairs with task-level traces to reconstruct planner intent,
+coordinator unlocks, and tool affinity decisions without re-running models.
+
 ## Invariants
 
 ### Parallel merge

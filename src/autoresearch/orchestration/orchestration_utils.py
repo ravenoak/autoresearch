@@ -143,11 +143,11 @@ class ScoutGatePolicy:
 
         if loops <= target_loops:
             return 0
-        budget = getattr(self.config, "token_budget", None)
-        if not budget:
+        budget_value = getattr(self.config, "token_budget", None)
+        if not isinstance(budget_value, (int, float)):
             return 0
-        per_loop = max(1, budget // max(1, loops))
-        return (loops - target_loops) * per_loop
+        per_loop = max(1, int(budget_value) // max(1, loops))
+        return int(loops - target_loops) * per_loop
 
     def _retrieval_overlap(self, state: QueryState) -> float:
         """Return overlap metric from scout retrieval artifacts."""
@@ -222,10 +222,12 @@ class ScoutGatePolicy:
                     entity_count = 0
             entity_score = min(1.0, entity_count / 10.0)
             clauses = features.get("clauses")
-            try:
-                clause_score = float(clauses) / 5.0
-            except (TypeError, ValueError):
-                clause_score = 0.0
+            clause_score = 0.0
+            if clauses is not None:
+                try:
+                    clause_score = float(clauses) / 5.0
+                except (TypeError, ValueError):
+                    clause_score = 0.0
             other_score = max(0.0, min(clause_score, 1.0))
         query_tokens = len(query.split())
         length_score = min(1.0, query_tokens / 200.0)
