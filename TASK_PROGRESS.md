@@ -2,6 +2,12 @@
 
 As of **2025-09-26** we delivered the curated truthfulness harness: `uv run autoresearch evaluate run <suite>` now drives the TruthfulQA, FEVER, and HotpotQA subsets, stores metrics in DuckDB and Parquet under `baseline/evaluation/`, and tags each run with a config signature so we can correlate telemetry. This unblocks [build-truthfulness-evaluation-harness](issues/build-truthfulness-evaluation-harness.md) and documents the licensing and interpretation guidance called out in the status docs.
 
+As of **2025-09-27** the Deep Research execution plan is captured in
+`docs/deep_research_upgrade_plan.md`, the roadmap, and the five new issues
+covering adaptive gating, planner upgrades, session GraphRAG, evaluation, and
+cost-aware routing. These tickets extend the alpha workstream without altering
+existing coverage targets.
+
 This document tracks the progress of tasks for the Autoresearch project,
 organized by phases from the code complete plan. As of **2025-09-25** at
 00:15 UTC we reran `uv run task verify`, `uv run task coverage`,

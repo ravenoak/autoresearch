@@ -1,21 +1,42 @@
 # System Specification: Agentic Serper Search (Enhanced & Clarified)
 
+## 0. Dialectical framing
+
+- **Thesis:** Adaptive orchestration, per-claim audits, planner upgrades,
+  GraphRAG, benchmark harnesses, and layered UX raise truthfulness and research
+  depth.
+- **Antithesis:** Each enhancement risks extra latency, duplicate tooling, or
+  regressions in existing telemetry and workflows.
+- **Synthesis:** Sequence the improvements through five tickets— [adaptive-gate-
+  and-claim-audit-rollout](../issues/adaptive-gate-and-claim-audit-rollout.md),
+  [planner-coordinator-react-upgrade](../issues/planner-coordinator-react-
+  upgrade.md), [session-graph-rag-integration](../issues/session-graph-rag-
+  integration.md), [evaluation-and-layered-ux-expansion](../issues/evaluation-
+  and-layered-ux-expansion.md), and [cost-aware-model-routing](../issues/cost-
+  aware-model-routing.md)—to keep each phase testable and reversible.
+
 ## 1. Architecture
 
 - Modular Python package under `src/autoresearch/`.
-- Entry point: `main.py` (CLI, primary interface for all user and automation workflows).
+- Entry point: `main.py` (CLI, primary interface for all user and automation
+  workflows).
 - Configuration: `config.py` (loads from `.env`, environment, or config file).
-- Core logic: Provided by `orchestration/orchestrator.py` coordinating the `agents` modules.
+- Core logic: Provided by `orchestration/orchestrator.py` coordinating the
+  `agents` modules.
 - Output formatting: `output_format.py` for adaptive, context-aware output.
 - Logging: Centralized, structured, and secure (no secrets).
 
 ## 2. Modules
 
-- **config.py**: Loads, validates, and hot-reloads configuration from `.env`, environment, and TOML.
-- **main.py**: CLI entry point, parses args, loads config, runs agent, outputs context-adaptive results.
-- **api.py**: FastAPI server exposing `/query`, `/query/batch`, streaming, and metrics endpoints.
+- **config.py**: Loads, validates, and hot-reloads configuration from `.env`,
+  environment, and TOML.
+- **main.py**: CLI entry point, parses args, loads config, runs agent, outputs
+  context-adaptive results.
+- **api.py**: FastAPI server exposing `/query`, `/query/batch`, streaming, and
+  metrics endpoints.
 - **logging_utils.py**: Logging setup and helpers.
-- **output_format.py**: Adapts output for human (Markdown/plaintext) or machine (JSON) context.
+- **output_format.py**: Adapts output for human (Markdown/plaintext) or machine
+  (JSON) context.
 - **storage.py**: Persistence for search results and knowledge graph.
 - **models.py**: Pydantic models for structured data.
 - **tracing.py**: OpenTelemetry tracing configuration helpers.
@@ -23,7 +44,8 @@
 - **orchestration/state.py**: Tracks query state between agents.
 - **orchestration/reasoning.py**: Reasoning mode definitions and strategies.
 - **orchestration/metrics.py**: Prometheus metrics collection utilities.
-- **resource_monitor.py**: Tracks CPU and memory usage for Prometheus and the CLI monitor.
+- **resource_monitor.py**: Tracks CPU and memory usage for Prometheus and the
+  CLI monitor.
 - **orchestration/phases.py**: Agent execution phases.
 - **agents/**: Implementations of Synthesizer, Contrarian, FactChecker, etc.
 - **llm/**: Backend adapters for language models.
@@ -35,18 +57,22 @@
 ## 3. Configuration
 
 - `.env` for secrets and API keys.
-- `autoresearch.toml` for structured, hot-reloadable config (agent roster, backend, storage, etc).
+- `autoresearch.toml` for structured, hot-reloadable config (agent roster,
+  backend, storage, etc).
 - CLI arguments override config file and environment.
 - All config is validated (Pydantic or similar).
 
 ## 4. CLI
 
 - Command: `autoresearch [MODE] [OPTIONS]`
-  - Modes: `search`, `monitor`, `config`, etc. The `monitor` mode reports CPU and memory usage and can run interactively.
+  - Modes: `search`, `monitor`, `config`, etc. The `monitor` mode reports CPU
+    and memory usage and can run interactively.
   - `search`: `autoresearch search [OPTIONS] QUESTION`
-- Options for backend, reasoning mode, API keys, model, loops, logging, agent roster, output format, etc.
+- Options for backend, reasoning mode, API keys, model, loops, logging, agent
+  roster, output format, etc.
 - **Adaptive output**:
-  - By default (TTY), output is readable Markdown or plaintext, with clear sections for thesis, antithesis, synthesis, and citations.
+  - By default (TTY), output is readable Markdown or plaintext, with clear
+    sections for thesis, antithesis, synthesis, and citations.
   - If `--output json` or output is piped, output is schema-validated JSON.
   - User can override with `--output` flag.
 - Output: Schema-validated JSON with `answer`, `citations`, `reasoning`,
@@ -54,16 +80,17 @@
   humans.
 - `claim_audits` is a FEVER-style array of verification records containing a
   `claim_id`, `status` (`supported`, `unsupported`, `needs_review`), an
-  `entailment_score`, normalised `sources`, optional reviewer `notes`, a
-  unique `audit_id`, and a `created_at` timestamp.
-- The Streamlit and Markdown renderers surface status badges (🟢 supported,
-  🔴 unsupported, 🟡 needs review) and the highest-ranked source so reviewers
-  can triage evidence at a glance.
+  `entailment_score`, normalised `sources`, optional reviewer `notes`, a unique
+  `audit_id`, and a `created_at` timestamp.
+- The Streamlit and Markdown renderers surface status badges (🟢 supported, 🔴
+  unsupported, 🟡 needs review) and the highest-ranked source so reviewers can
+  triage evidence at a glance.
 
 ## 5. Reasoning Modes
 
 - **Direct**: Single-step answer.
-- **Dialectical**: Thesis, antithesis, synthesis (explicitly modeled and logged; visually distinct for humans, explicit fields for machines).
+- **Dialectical**: Thesis, antithesis, synthesis (explicitly modeled and logged;
+  visually distinct for humans, explicit fields for machines).
 - **Chain-of-thought**: Stepwise reasoning.
 - **Extensible**: New modes can be registered via plugins/config.
 
@@ -73,16 +100,17 @@
 - Execute queries in parallel (thread pool, rate-limited).
 - Truncate/summarize results to fit context window.
 - Attach source metadata to every claim.
-- Backends include web APIs (Serper, Brave) and local options
-  (`local_file`, `local_git`).
-- `local_file` recursively indexes directories specified in `[search.local_file]`;
-  PDF files are parsed with **pdfminer**, DOCX with **python-docx**, and text
-  files directly. Provide a `path` to the directory, an optional list of
-  allowed `file_types`, and an `index_strategy` (e.g., `embedding` or `bm25`).
+- Backends include web APIs (Serper, Brave) and local options (`local_file`,
+  `local_git`).
+- `local_file` recursively indexes directories specified in
+  `[search.local_file]`; PDF files are parsed with **pdfminer**, DOCX with
+  **python-docx**, and text files directly. Provide a `path` to the directory,
+  an optional list of allowed `file_types`, and an `index_strategy` (e.g.,
+  `embedding` or `bm25`).
 - `local_git` scans repositories configured with `[search.local_git]` using
   `repo_path` to the repository, optional `branches`, `history_depth`, and
-  `index_strategy` for incremental or full indexing. Commit messages, diffs,
-  and file revisions are stored for search.
+  `index_strategy` for incremental or full indexing. Commit messages, diffs, and
+  file revisions are stored for search.
 
 Example configuration enabling local sources:
 
@@ -106,11 +134,19 @@ the search workflow like any web provider. Indexed documents are persisted
 through `storage.py`, so local results are cached, retrieved, and inserted into
 the knowledge graph alongside external data.
 
-Local directories are ingested using **ripgrep** when available for fast content extraction. Each file is chunked, embedded, and stored in DuckDB with its path and modification time. On subsequent runs only changed files are re-indexed to keep the index fresh.
+Local directories are ingested using **ripgrep** when available for fast content
+extraction. Each file is chunked, embedded, and stored in DuckDB with its path
+and modification time. On subsequent runs only changed files are re-indexed to
+keep the index fresh.
 
-Git repositories are processed via **GitPython**. The backend walks the commit history, storing commit metadata and file snapshots so queries can reference the exact revision. Incremental indexing keeps the database in sync with the repository without reprocessing unchanged commits.
+Git repositories are processed via **GitPython**. The backend walks the commit
+history, storing commit metadata and file snapshots so queries can reference the
+exact revision. Incremental indexing keeps the database in sync with the
+repository without reprocessing unchanged commits.
 
-Queries against these local indexes leverage DuckDB vector search. Matches return the snippet, file path, and commit hash when applicable so every result is fully attributable.
+Queries against these local indexes leverage DuckDB vector search. Matches
+return the snippet, file path, and commit hash when applicable so every result
+is fully attributable.
 - Results from all backends are persisted via `storage.py` and inserted into the
   knowledge graph for later reasoning.
 
@@ -118,13 +154,15 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 
 - Use LLM to synthesize answer from search results and reasoning mode.
 - Output rationale and answer, with explicit dialectical structure if selected.
-- **For humans, dialectical structure is visually distinct (Markdown sections, headings, etc).**
+- **For humans, dialectical structure is visually distinct (Markdown sections,
+  headings, etc).**
 - **For automation, dialectical structure is explicit in JSON fields.**
 - Validate output schema (Pydantic).
 
 ## 8. Logging & Observability
 
-- Structured logs for all major actions, errors, and reasoning steps (structlog/loguru).
+- Structured logs for all major actions, errors, and reasoning steps
+  (structlog/loguru).
 - Log level and output configurable.
 - No secrets or sensitive info in logs.
 - Prometheus metrics expose gate decisions, debate depth, and audit outcomes.
@@ -132,37 +170,45 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 ## 9. Adaptive Orchestration
 
 - **Scout pass:** Draft a quick answer, run focused retrieval, and extract
-  uncertainty signals (coverage, conflicts, multi-hop likelihood).
+  uncertainty signals (coverage, conflicts, multi-hop likelihood). Record
+  supporting snippets for later audits.
 - **Gate policy:** Decide between early exit and dialectical debate using the
-  scout signals, policy-sensitive topic detection, and budget guards.
+  scout signals, policy-sensitive topic detection, contradiction cues from
+  GraphRAG, and budget guards. Escalate when uncertainty exceeds configured
+  thresholds or when the user forces debate.
 - **Debate stage:** Limit cycles adaptively; ensure the fact checker audits all
-  claims before synthesis and citation formatting.
-- **Telemetry:** Record gate inputs and outcomes so policies can be tuned with
-  offline evaluation.
+  claims before synthesis and citation formatting. Persist thesis/antithesis
+  turns and fact-checker verdicts for replay.
+- **Telemetry:** Record gate inputs, overrides, and outcomes so policies can be
+  tuned with offline evaluation.
 - **Configuration:** Operators can tune `gate_policy_enabled`,
   `gate_retrieval_overlap_threshold`, `gate_nli_conflict_threshold`,
-  `gate_complexity_threshold`, and `gate_user_overrides` to align the scout
-  policy with domain needs.
+  `gate_complexity_threshold`, `gate_graph_contradiction_threshold`, and
+  `gate_user_overrides` to align the scout policy with domain needs.
 
 ## 10. Evidence Pipeline 2.0
 
 - Extract claims from drafts and syntheses at sentence granularity.
-- Run iterative retrieval with query expansion and snippet re-ranking.
+- Run iterative retrieval with query expansion, snippet re-ranking, and GraphRAG
+  context to capture multi-hop support.
 - Score claim support with entailment checks and a self-checking ensemble for
-  instability detection.
+  instability detection. Flag conflicting snippets for contrarian review.
 - Emit per-claim audit records (`supported`, `weak`, `disputed`) containing
-  sources, quotes, entailment scores, and reviewer notes.
+  sources, quotes, entailment scores, reviewer notes, and stability deltas.
 - Block synthesis on unsupported claims; require hedging or removal before
-  completion.
+  completion. Persist audit metadata so clients can render detailed tables.
 
 ## 11. Planner and Coordinator
 
 - Planner agent produces a structured task graph with sub-questions, tool
-  actions, and success criteria (Self-Ask style).
+  actions, and success criteria (Self-Ask style). Each node carries a tool
+  affinity score, latency budget, and suggested model tier.
 - Coordinator consumes the task graph, schedules specialized agents, and logs
-  ReAct traces for replay.
+  ReAct traces for replay. It respects tool affinities while enforcing
+  dependency order and cost ceilings.
 - Each task encodes model preferences, tool requirements, and evidence exit
-  criteria so cheaper models can handle low-risk work.
+  criteria so cheaper models can handle low-risk work. The coordinator records
+  actual routing decisions for evaluation.
 - Planner outputs persist in the query state for observability and debugging.
 - ``QueryState`` records the canonical task graph along with coordinator
   metadata. ``TaskCoordinator`` serialises every ReAct step (thought, action,
@@ -172,20 +218,26 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 ## 12. Graph-Augmented Retrieval
 
 - Build a session-scoped knowledge graph from retrieved entities and relations
-  using existing storage primitives.
+  using existing storage primitives. Support incremental updates as new evidence
+  arrives.
 - Generate community summaries and neighbor expansions for prompt augmentation.
+  Surface canonical entity descriptions back to the planner.
 - Flag contradictions between candidate answers and graph assertions; escalate
-  to contrarian review when inconsistencies appear.
-- Export graphs as JSON or GraphML artifacts for downstream auditing.
+  to contrarian review when inconsistencies appear. Feed contradiction counts
+  into the scout gate signals.
+- Export graphs as JSON or GraphML artifacts for downstream auditing. Attach
+  metadata (source ids, extraction confidence) so evaluations can replay graph
+  construction.
 
 ## 13. Evaluation Harness
 
 - Provide CLI entry points to run TruthfulQA, FEVER, and HotpotQA subsets.
 - Record KPIs: accuracy, citation coverage, contradiction rate, cost, and
-  latency.
-- Store benchmark runs in DuckDB or Parquet for longitudinal analysis.
-- Support A/B comparisons between gate policies, model routings, and retrieval
-  strategies.
+  latency plus planner/tool routing deltas.
+- Store benchmark runs in DuckDB or Parquet for longitudinal analysis with
+  config signatures.
+- Support A/B comparisons between gate policies, model routings, retrieval
+  strategies, and GraphRAG enablement flags.
 - Highlight runs where accuracy drops more than 5% or the contradiction rate
   exceeds 0.10 so gate and routing policies can be reviewed alongside telemetry
   snapshots keyed by the config signature.
@@ -193,12 +245,12 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 ## 14. Layered UX and Outputs
 
 - Layered responses: TL;DR, key findings, per-claim audit table, full debate
-  trace, and downloadable session bundle.
+  trace, and downloadable session bundle with gate decisions and planner traces.
 - Socratic prompts encourage users to clarify scope or request deeper dives.
 - CLI and GUI share `--depth` controls and toggles for graph previews and audit
-  exports.
+  exports. Both surfaces expose per-claim status badges.
 - Session bundles include sources, knowledge graph snapshots, planner traces,
-  and configuration digests for reproducibility.
+  gate telemetry, and configuration digests for reproducibility.
 - Prometheus metrics and OpenTelemetry tracing for performance and debugging.
 
 ## 9. Testing
@@ -211,12 +263,16 @@ Queries against these local indexes leverage DuckDB vector search. Matches retur
 
 ## 10. Extensibility
 
-- New backends, reasoning modes, and agent types can be added via plugins or config.
+- New backends, reasoning modes, and agent types can be added via plugins or
+  config.
 - Agent roster and orchestration are config-driven and hot-reloadable.
 - All extension points are documented and tested.
 
-> **Note:** The CLI is the main entry point for all user and automation workflows, supporting multiple operational modes and extensibility for future interfaces (REST API, MCP, etc.).  
-> **Output must be readable and actionable for humans by default, and dialectically transparent in both human and machine contexts.**
+> **Note:** The CLI is the main entry point for all user and automation
+> workflows, supporting multiple operational modes and extensibility for future
+> interfaces (REST API, MCP, etc.). **Output must be readable and actionable for
+> humans by default, and dialectically transparent in both human and machine
+> contexts.**
 
 
 ## 11. Specification coverage

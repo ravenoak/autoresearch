@@ -68,7 +68,10 @@ class SearchExecutor:
         results = []
         for file in scan_directory(path):
             text = parse_file(file)
-            results.append({ text: text, meta: { path: file, backend: "local_files" } })
+            results.append({
+                text: text,
+                meta: { path: file, backend: "local_files" },
+            })
         return results
 
     function index_git_repo(repo_path):
@@ -76,7 +79,10 @@ class SearchExecutor:
         repo = open_repo(repo_path)
         for commit in repo.history():
             diff = read_commit_diff(repo, commit)
-            results.append({ text: diff, meta: { commit: commit.sha, backend: "local_git" } })
+            results.append({
+                text: diff,
+                meta: { commit: commit.sha, backend: "local_git" },
+            })
         return results
 
     function execute(query):
@@ -94,7 +100,11 @@ class SearchExecutor:
         sources = []
         for item in raw_results:
             embedding = Embedder.embed(item.text)
-            sources.append({ text: item.text, source: item.meta, embedding: embedding })
+            sources.append({
+                text: item.text,
+                source: item.meta,
+                embedding: embedding,
+            })
 
         return merge_sources(sources)
 ```

@@ -18,6 +18,20 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 27, 2025
+- Published the five-ticket Deep Research execution track across the roadmap,
+  code-complete plan, and dedicated strategy doc so each phase is visible next
+  to the alpha release workstream.【F:ROADMAP.md†L6-L28】【F:CODE_COMPLETE_PLAN.md†L1-L40】
+- Reflowed `docs/specification.md` to 80-character lines, added dialectical
+  framing, and cross-linked every phase to its ticket to keep architecture and
+  orchestration expectations synchronized.【F:docs/specification.md†L1-L170】
+- Updated `docs/pseudocode.md` and
+  `docs/deep_research_upgrade_plan.md` with line-wrapped structures that mirror
+  the adaptive gate, GraphRAG, and planner telemetry upgrades.【F:docs/pseudocode.md†L1-L199】【F:docs/deep_research_upgrade_plan.md†L1-L134】
+- Logged new open issues for the adaptive gate, planner upgrade, GraphRAG,
+  evaluation harness, and cost-aware routing phases so work can begin with
+  acceptance criteria already scoped.【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
+
 ## September 26, 2025
 - Added an `autoresearch evaluate` Typer app and Taskfile shims so the
   TruthfulQA, FEVER, and HotpotQA curated suites export DuckDB and Parquet
