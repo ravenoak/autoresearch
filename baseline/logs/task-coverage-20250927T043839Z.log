@@ -1,0 +1,250 @@
+[coverage] syncing dependencies
+Resolved 327 packages in 4ms
+Downloading polars (37.9MiB)
+Downloading spacy (32.4MiB)
+Downloading torch (846.8MiB)
+Downloading marisa-trie (1.2MiB)
+Downloading pillow (6.3MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading scipy (34.0MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading ray (66.9MiB)
+Downloading duckdb-extension-vss (15.7MiB)
+Downloading pydeck (6.6MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading triton (148.4MiB)
+Downloading pandas (11.4MiB)
+Downloading transformers (11.1MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading sympy (6.0MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading blis (11.1MiB)
+Downloading numba (3.3MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading llvmlite (53.7MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading streamlit (9.6MiB)
+Downloading hf-xet (3.0MiB)
+Downloading plotly (9.3MiB)
+Downloading pyarrow (40.8MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading litellm (8.7MiB)
+Downloading nvidia-cufile-cu12 (1.1MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading language-data (5.1MiB)
+Downloading onnxruntime (16.5MiB)
+Downloading tokenizers (3.1MiB)
+Downloading srsly (1.1MiB)
+Downloading nvidia-curand-cu12 (60.7MiB)
+Downloading scikit-learn (9.0MiB)
+ Downloading marisa-trie
+Downloading thinc (4.1MiB)
+ Downloading nvidia-cufile-cu12
+ Downloading srsly
+ Downloading hf-xet
+ Downloading tokenizers
+   Building madoka==0.7.1
+ Downloading pydeck
+ Downloading pillow
+ Downloading nvidia-cuda-cupti-cu12
+ Downloading thinc
+ Downloading blis
+   Building hdbscan==0.8.40
+ Downloading duckdb-extension-vss
+ Downloading streamlit
+ Downloading nvidia-nvjitlink-cu12
+ Downloading polars
+ Downloading numba
+ Downloading onnxruntime
+ Downloading llvmlite
+ Downloading language-data
+ Downloading nvidia-curand-cu12
+ Downloading scikit-learn
+ Downloading litellm
+ Downloading sympy
+ Downloading pandas
+ Downloading pyarrow
+ Downloading nvidia-cuda-nvrtc-cu12
+ Downloading spacy
+ Downloading plotly
+ Downloading transformers
+ Downloading scipy
+ Downloading nvidia-cufft-cu12
+ Downloading triton
+ Downloading ray
+ Downloading nvidia-cusolver-cu12
+ Downloading nvidia-cusparselt-cu12
+ Downloading nvidia-cusparse-cu12
+ Downloading nvidia-nccl-cu12
+ Downloading nvidia-cublas-cu12
+ Downloading nvidia-cudnn-cu12
+      Built madoka==0.7.1
+ Downloading torch
+      Built hdbscan==0.8.40
+Prepared 103 packages in 1m 48s
+Installed 103 packages in 261ms
+ + alembic==1.16.5
+ + altair==5.5.0
+ + asyncer==0.0.8
+ + backoff==2.2.1
+ + bertopic==0.17.3
+ + blinker==1.9.0
+ + blis==1.3.0
+ + catalogue==2.0.10
+ + cloudpathlib==0.22.0
+ + cloudpickle==3.1.1
+ + coloredlogs==15.0.1
+ + colorlog==6.9.0
+ + confection==0.1.5
+ + cymem==2.0.11
+ + diskcache==5.6.3
+ + dspy==3.0.3
+ + dspy-ai==3.0.3
+ + duckdb-extension-vss==1.3.2
+ + fastembed==0.7.3
+ + fastuuid==0.13.5
+ + filelock==3.19.1
+ + flatbuffers==25.9.23
+ + fsspec==2025.9.0
+ + gepa==0.0.7
+ + gitdb==4.0.12
+ + gitpython==3.1.45
+ + hdbscan==0.8.40
+ + hf-xet==1.1.10
+ + httpx-ws==0.8.0
+ + huggingface-hub==0.35.1
+ + humanfriendly==10.0
+ + jinja2==3.1.6
+ + joblib==1.5.2
+ + json-repair==0.51.0
+ + langcodes==3.5.0
+ + language-data==1.3.0
+ + litellm==1.77.4
+ + llvmlite==0.45.0
+ + lmstudio==1.5.0
+ + madoka==0.7.1
+ + magicattr==0.1.6
+ + marisa-trie==1.3.1
+ + mmh3==5.2.0
+ + mpmath==1.3.0
+ + msgpack==1.1.1
+ + msgspec==0.19.0
+ + murmurhash==1.0.13
+ + narwhals==2.5.0
+ + numba==0.62.0
+ + nvidia-cublas-cu12==12.8.4.1
+ + nvidia-cuda-cupti-cu12==12.8.90
+ + nvidia-cuda-nvrtc-cu12==12.8.93
+ + nvidia-cuda-runtime-cu12==12.8.90
+ + nvidia-cudnn-cu12==9.10.2.21
+ + nvidia-cufft-cu12==11.3.3.83
+ + nvidia-cufile-cu12==1.13.1.3
+ + nvidia-curand-cu12==10.3.9.90
+ + nvidia-cusolver-cu12==11.7.3.90
+ + nvidia-cusparse-cu12==12.5.8.93
+ + nvidia-cusparselt-cu12==0.7.1
+ + nvidia-nccl-cu12==2.27.3
+ + nvidia-nvjitlink-cu12==12.8.93
+ + nvidia-nvtx-cu12==12.8.90
+ + onnxruntime==1.23.0
+ + optuna==4.5.0
+ + pandas==2.3.2
+ + pillow==11.3.0
+ + plotly==6.3.0
+ + polars==1.33.1
+ + pondpond==1.4.1
+ + preshed==3.0.10
+ + py-rust-stemmers==0.1.5
+ + pyarrow==21.0.0
+ + pydeck==0.9.1
+ + pynndescent==0.5.13
+ + pytz==2025.2
+ + ray==2.49.2
+ + safetensors==0.6.2
+ + scikit-learn==1.7.2
+ + scipy==1.16.2
+ + sentence-transformers==5.1.1
+ + smart-open==7.3.1
+ + smmap==5.0.2
+ + spacy==3.8.7
+ + spacy-legacy==3.0.12
+ + spacy-loggers==1.0.5
+ + srsly==2.5.1
+ + streamlit==1.50.0
+ + sympy==1.14.0
+ + thinc==8.3.6
+ + threadpoolctl==3.6.0
+ + tokenizers==0.22.1
+ + toml==0.10.2
+ + torch==2.8.0
+ + tornado==6.5.2
+ + transformers==4.56.2
+ + triton==3.4.0
+ + tzdata==2025.2
+ + umap-learn==0.5.9.post2
+ + wasabi==1.1.3
+ + watchdog==6.0.0
+ + weasel==0.4.1
+ + wsproto==1.2.0
+[coverage] erasing previous data
+[coverage] running unit tests
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: httpx-0.35.0, langsmith-0.4.31, hypothesis-6.140.2, anyio-4.11.0, cov-7.0.0, benchmark-5.1.0, bdd-8.1.0
+collecting ... collected 76 items / 1 error
+
+============================================================ ERRORS ============================================================
+___________________________________ ERROR collecting tests/unit/test_additional_coverage.py ____________________________________
+.venv/lib/python3.12/site-packages/_pytest/python.py:498: in importtestmodule
+    mod = import_path(
+.venv/lib/python3.12/site-packages/_pytest/pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+/root/.pyenv/versions/3.12.10/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:186: in exec_module
+    exec(co, module.__dict__)
+tests/unit/test_additional_coverage.py:13: in <module>
+    from autoresearch.streamlit_app import collect_system_metrics, orch_metrics
+src/autoresearch/streamlit_app.py:31: in <module>
+    from .cli_utils import print_success
+E     File "/workspace/autoresearch/src/autoresearch/cli_utils.py", line 287
+E       "
+E       ^
+E   SyntaxError: unterminated string literal (detected at line 287)
+======================================================= warnings summary =======================================================
+.venv/lib/python3.12/site-packages/hdbscan/plots.py:448
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/hdbscan/plots.py:448: SyntaxWarning: invalid escape sequence '\l'
+    axis.set_ylabel('$\lambda$ value')
+
+.venv/lib/python3.12/site-packages/hdbscan/robust_single_linkage_.py:175
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/hdbscan/robust_single_linkage_.py:175: SyntaxWarning: invalid escape sequence '\{'
+    $max \{ core_k(a), core_k(b), 1/\alpha d(a,b) \}$.
+
+.venv/lib/python3.12/site-packages/spacy/cli/_util.py:23
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/spacy/cli/_util.py:23: DeprecationWarning: Importing 'parser.split_arg_string' is deprecated, it will only be available in 'shell_completion' in Click 9.0.
+    from click.parser import split_arg_string
+
+.venv/lib/python3.12/site-packages/weasel/util/config.py:8
+  /workspace/autoresearch/.venv/lib/python3.12/site-packages/weasel/util/config.py:8: DeprecationWarning: Importing 'parser.split_arg_string' is deprecated, it will only be available in 'shell_completion' in Click 9.0.
+    from click.parser import split_arg_string
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================================== short test summary info ====================================================
+ERROR tests/unit/test_additional_coverage.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+================================================= 4 warnings, 1 error in 1.96s =================================================
