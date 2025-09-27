@@ -1686,6 +1686,26 @@ class Search:
         results: List[Dict[str, Any]] = []
         results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
 
+        embedding_backends: Tuple[str, ...] = tuple(cfg.search.embedding_backends)
+        pending_embedding_backends: set[str] = set(embedding_backends)
+        embedding_lookup_invoked = False
+
+        def _record_embedding_backend(
+            name: str, docs: Sequence[Dict[str, Any]] | None
+        ) -> None:
+            """Store embedding backend results without triggering duplicate lookups."""
+
+            pending_embedding_backends.discard(name)
+            if not docs:
+                results_by_backend.setdefault(name, [])
+                return
+
+            normalised_docs = [dict(doc) for doc in docs]
+            for doc in normalised_docs:
+                doc.setdefault("backend", name)
+            results_by_backend[name] = normalised_docs
+            results.extend(normalised_docs)
+
         np_query_embedding: Optional[np.ndarray] = None
         if query_embedding is not None:
             try:
@@ -1706,11 +1726,30 @@ class Search:
             if need_embedding:
                 np_query_embedding = self.compute_query_embedding(search_query)
 
-        if np_query_embedding is not None:
+        if np_query_embedding is not None and pending_embedding_backends:
+            for backend_name in tuple(pending_embedding_backends):
+                cached_embedding = self.cache.get_cached_results(search_query, backend_name)
+                if cached_embedding is None:
+                    continue
+                _record_embedding_backend(backend_name, cached_embedding[:max_results])
+
+        def _ensure_embedding_results() -> None:
+            nonlocal embedding_lookup_invoked
+
+            if embedding_lookup_invoked:
+                return
+            if np_query_embedding is None or not pending_embedding_backends:
+                return
+
+            embedding_lookup_invoked = True
             emb_results = self.embedding_lookup(np_query_embedding, max_results)
-            for name, docs in emb_results.items():
-                results_by_backend[name] = docs
-                results.extend(docs)
+            for backend_name in tuple(pending_embedding_backends):
+                docs = emb_results.get(backend_name)
+                if docs is None:
+                    pending_embedding_backends.discard(backend_name)
+                    results_by_backend.setdefault(backend_name, [])
+                    continue
+                _record_embedding_backend(backend_name, docs)
 
         def run_backend(name: str) -> Tuple[str, List[Dict[str, Any]]]:
             backend = self.backends.get(name)
@@ -1794,6 +1833,8 @@ class Search:
             if backend_results:
                 results_by_backend[name] = backend_results
                 results.extend(backend_results)
+                if name in pending_embedding_backends:
+                    pending_embedding_backends.discard(name)
 
         remaining = [name for name in backend_names if name not in processed]
         log.debug(
@@ -1817,12 +1858,16 @@ class Search:
                     if backend_results:
                         results_by_backend[name] = backend_results
                         results.extend(backend_results)
+                        if name in pending_embedding_backends:
+                            pending_embedding_backends.discard(name)
         elif remaining:
             for candidate in remaining:
                 name, backend_results = run_backend(candidate)
                 if backend_results:
                     results_by_backend[name] = backend_results
                     results.extend(backend_results)
+                    if name in pending_embedding_backends:
+                        pending_embedding_backends.discard(name)
 
         storage_results = self.storage_hybrid_lookup(
             text_query, np_query_embedding, results_by_backend, max_results
@@ -1836,6 +1881,9 @@ class Search:
                 results_by_backend[name] = docs
         if storage_results.get("storage"):
             results_by_backend.pop("duckdb", None)
+            pending_embedding_backends.discard("duckdb")
+
+        _ensure_embedding_results()
         results = []
         for docs in results_by_backend.values():
             results.extend(docs)
