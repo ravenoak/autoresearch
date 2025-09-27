@@ -207,6 +207,47 @@ def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
     assert set(graph.nodes) == set()
 
 
+def test_lru_eviction_with_vss_fallback_preserves_survivors(
+    ensure_duckdb_schema, monkeypatch
+):
+    """Fallback eviction with VSS keeps at least the survivor floor per pass."""
+
+    StorageManager.clear_all()
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
+
+    config = ConfigModel(ram_budget_mb=2)
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    monkeypatch.setattr(StorageManager, "has_vss", staticmethod(lambda: True))
+
+    # Avoid triggering eviction while preparing recency order.
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0.0)
+
+    with freeze_time("2024-01-01") as frozen_time:
+        StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
+        frozen_time.tick(delta=timedelta(seconds=1))
+        StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+        frozen_time.tick(delta=timedelta(seconds=1))
+        StorageManager.persist_claim({"id": "c3", "type": "fact", "content": "c"})
+
+    with StorageManager.state.lock:
+        StorageManager.state.lru.clear()
+
+    # Metrics remain elevated to force the fallback branch on successive iterations.
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 1024.0)
+
+    StorageManager._enforce_ram_budget(1)
+
+    graph = StorageManager.get_graph()
+    assert set(graph.nodes) == {"c2", "c3"}
+    assert "c1" not in graph.nodes
+    assert len(graph.nodes) == 2
+
+
 def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_schema):
     """Deterministic fallback keeps two newest claims even when RAM metrics misbehave."""
 
