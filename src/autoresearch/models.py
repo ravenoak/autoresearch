@@ -75,9 +75,10 @@ class QueryResponse(BaseModel):
         reasoning: Ordered reasoning steps exchanged between agents.
         metrics: Execution metrics describing latency, token usage, etc.
         claim_audits: Verification metadata for each evaluated claim. Each
-            entry is a mapping containing ``claim_id``, ``status``,
-            ``entailment_score``, ``entailment_variance``, ``instability_flag``,
-            ``sample_size``, ``sources``, ``notes``, and ``created_at``.
+            entry mirrors :class:`~autoresearch.storage.ClaimAuditRecord` and
+            includes ``claim_id``, ``status``, ``entailment_score``,
+            ``entailment_variance``, ``instability_flag``, ``sample_size``,
+            ``sources``, ``provenance``, ``notes``, and ``created_at``.
     """
 
     query: Optional[str] = Field(
@@ -89,7 +90,7 @@ class QueryResponse(BaseModel):
     metrics: Dict[str, Any]
     claim_audits: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="FEVER-style verification metadata for individual claims",
+        description="FEVER-style verification metadata with provenance for individual claims",
     )
     task_graph: Optional[Dict[str, Any]] = Field(
         default=None,

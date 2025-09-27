@@ -16,7 +16,7 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...storage import ClaimAuditRecord, ClaimAuditStatus
+from ...storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
 
 log = get_logger(__name__)
 
@@ -112,7 +112,9 @@ class SynthesizerAgent(Agent):
         support_breakdowns: list[EntailmentBreakdown] = []
         best_source: Mapping[str, Any] | None = None
         best_score = -1.0
-        synthesis_source = {"title": "Synthesizer synthesis", "snippet": hypothesis}
+        synthesis_source = ensure_source_id(
+            {"title": "Synthesizer synthesis", "snippet": hypothesis}
+        )
         for claim in state.claims:
             claim_id = claim.get("id")
             content = str(claim.get("content", "")).strip()
@@ -120,11 +122,13 @@ class SynthesizerAgent(Agent):
                 continue
             breakdown = score_entailment(hypothesis, content)
             support_breakdowns.append(breakdown)
-            peer_source = {
-                "claim_id": claim_id,
-                "title": f"{claim.get('type', 'claim').title()} claim",
-                "snippet": content,
-            }
+            peer_source = ensure_source_id(
+                {
+                    "claim_id": claim_id,
+                    "title": f"{claim.get('type', 'claim').title()} claim",
+                    "snippet": content,
+                }
+            )
             if breakdown.score > best_score:
                 best_source = peer_source
                 best_score = breakdown.score
@@ -132,6 +136,18 @@ class SynthesizerAgent(Agent):
                 claim_id,
                 breakdown.score,
                 sources=[synthesis_source],
+                provenance={
+                    "retrieval": {
+                        "mode": "hypothesis_vs_claim",
+                        "hypothesis": hypothesis,
+                        "claim_id": claim_id,
+                    },
+                    "backoff": {"retry_count": 0},
+                    "evidence": {
+                        "source_ids": [synthesis_source["source_id"]],
+                        "peer_claim_id": claim_id,
+                    },
+                },
             )
             support_audits.append(record.to_payload())
 
@@ -174,6 +190,17 @@ class SynthesizerAgent(Agent):
             audit_kwargs["notes"] = "No upstream claims were available for verification."
         if best_source:
             audit_kwargs["verification_sources"] = [best_source]
+        audit_kwargs["provenance"] = {
+            "retrieval": {
+                "mode": "peer_consensus",
+                "related_claim_ids": [c.get("id") for c in state.claims if c.get("id")],
+            },
+            "backoff": {"retry_count": 0},
+            "evidence": {
+                "support_audit_ids": [audit.get("audit_id") for audit in support_audits],
+                "best_source_id": best_source.get("source_id") if best_source else None,
+            },
+        }
 
         return metadata, audit_kwargs, support_audits
 
