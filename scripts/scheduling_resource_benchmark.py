@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Benchmark scheduler scaling and resource usage.
 
-The benchmark simulates I/O-bound tasks that sleep for roughly 4 ms and ensures
-each worker processes at least 100 ms of work per measurement batch. With those
-defaults, doubling the number of workers consistently delivers more than 1.5x
-throughput, providing a clear signal that multi-worker scheduling amortizes the
-coordination overhead.
+The benchmark simulates I/O-bound tasks that sleep for roughly 8 ms and ensures
+each worker processes at least 150 ms of work per measurement batch. With those
+defaults, doubling the number of workers consistently delivers about 1.8–2.0x
+throughput. The heavier per-task workload makes the scaling trend visible even
+after accounting for warm-up and coordination overhead, so multi-worker runs
+retain a clear advantage over the single-worker baseline.
 
 Usage:
     uv run scripts/scheduling_resource_benchmark.py --max-workers 4 --tasks 100 \

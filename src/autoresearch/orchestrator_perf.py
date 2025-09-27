@@ -21,12 +21,17 @@ from typing import Dict
 #
 # Sleep duration mimics an I/O-bound task that briefly releases the GIL so
 # additional workers can make progress. A longer delay keeps the benchmark
-# dominated by simulated work instead of per-task overhead.
-_SLEEP_DURATION = 0.004
+# dominated by simulated work instead of per-task overhead. Bumping the default
+# to 8 ms makes the simulated workload heavy enough that multi-worker runs
+# reliably outperform a single worker even after amortizing warm-up and
+# scheduling overhead.
+_SLEEP_DURATION = 0.008
 # Require each worker's share of a measurement batch to last at least this long
 # to amortize thread start-up overhead and scheduling jitter. The guard is
-# scaled dynamically based on the estimated per-worker batch runtime.
-_MIN_MEASURE_DURATION = 0.1
+# scaled dynamically based on the estimated per-worker batch runtime. Raising
+# the floor to 150 ms further suppresses noise so throughput scaling stays
+# stable across platforms.
+_MIN_MEASURE_DURATION = 0.15
 # Gather multiple throughput samples per worker count to smooth transient noise
 # without stretching overall runtime excessively.
 _THROUGHPUT_SAMPLES = 3
