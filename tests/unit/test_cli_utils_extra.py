@@ -4,6 +4,7 @@ from autoresearch.cli_utils import (
     format_warning,
     format_info,
     print_error,
+    print_warning,
     set_verbosity,
     get_verbosity,
     print_verbose,
@@ -45,6 +46,66 @@ def test_set_verbosity_sets_env(monkeypatch):
     set_verbosity(Verbosity.QUIET)
     assert os.environ["AUTORESEARCH_VERBOSITY"] == "quiet"
     assert get_verbosity() == Verbosity.QUIET
+
+
+@pytest.mark.parametrize(
+    "level",
+    [Verbosity.QUIET, Verbosity.NORMAL, Verbosity.VERBOSE],
+)
+def test_print_error_emits_at_quiet_threshold(level, monkeypatch):
+    records: list[str] = []
+    monkeypatch.setattr(
+        "autoresearch.cli_utils.console.print",
+        lambda message: records.append(str(message)),
+    )
+    previous = get_verbosity()
+    set_verbosity(level)
+    try:
+        print_error("boom", min_verbosity=Verbosity.QUIET)
+    finally:
+        set_verbosity(previous)
+
+    assert records, f"print_error should emit output for level {level}"
+
+
+def test_print_error_suppressed_when_threshold_higher(monkeypatch):
+    records: list[str] = []
+    monkeypatch.setattr(
+        "autoresearch.cli_utils.console.print",
+        lambda message: records.append(str(message)),
+    )
+    previous = get_verbosity()
+    set_verbosity(Verbosity.NORMAL)
+    try:
+        print_error("quiet", min_verbosity=Verbosity.VERBOSE)
+    finally:
+        set_verbosity(previous)
+
+    assert not records
+
+
+@pytest.mark.parametrize(
+    "level, expected",
+    [
+        (Verbosity.QUIET, False),
+        (Verbosity.NORMAL, True),
+        (Verbosity.VERBOSE, True),
+    ],
+)
+def test_print_warning_respects_minimum(level, expected, monkeypatch):
+    records: list[str] = []
+    monkeypatch.setattr(
+        "autoresearch.cli_utils.console.print",
+        lambda message: records.append(str(message)),
+    )
+    previous = get_verbosity()
+    set_verbosity(level)
+    try:
+        print_warning("heads up")
+    finally:
+        set_verbosity(previous)
+
+    assert bool(records) is expected
 
 
 def test_ascii_and_table_empty():
