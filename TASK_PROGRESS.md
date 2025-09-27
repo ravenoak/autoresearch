@@ -1,5 +1,7 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-27** at 04:38 UTC we reran `uv run task coverage`; `baseline/logs/task-coverage-20250927T043839Z.log` captures the extras sync, coverage reset, and the unit suite collecting 76 cases before Pytest aborts on the unterminated string literal in `src/autoresearch/cli_utils.py` surfaced through `tests/unit/test_additional_coverage.py`, so the coverage gate still hinges on patching that CLI formatter. 【F:baseline/logs/task-coverage-20250927T043839Z.log†L200-L228】
+
 As of **2025-09-26** we delivered the curated truthfulness harness: `uv run autoresearch evaluate run <suite>` now drives the TruthfulQA, FEVER, and HotpotQA subsets, stores metrics in DuckDB and Parquet under `baseline/evaluation/`, and tags each run with a config signature so we can correlate telemetry. This unblocks [build-truthfulness-evaluation-harness](issues/build-truthfulness-evaluation-harness.md) and documents the licensing and interpretation guidance called out in the status docs.
 
 As of **2025-09-27** the Deep Research execution plan is captured in
