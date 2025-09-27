@@ -286,27 +286,34 @@ class QueryState(BaseModel):
 
     def __getstate__(self) -> dict[str, Any]:
         """Drop non-serializable members before pickling."""
-        try:
-            state = super().__getstate__()  # type: ignore[misc]
-        except AttributeError:  # pragma: no cover - legacy BaseModel fallback
-            state = self.__dict__.copy()
+
+        state = self.model_dump(mode="python")
         state.pop("_lock", None)
-        private = state.get("__pydantic_private__")
-        if private is not None:
-            try:
-                private_copy = private.copy()  # type: ignore[assignment]
-            except AttributeError:  # pragma: no cover - fallback for exotic mappings
-                private_copy = dict(private)
-            private_copy.pop("_lock", None)
-            state["__pydantic_private__"] = private_copy
+        state.pop("__pydantic_private__", None)
+        state.pop("_abc_impl", None)
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore serialization-safe state and recreate the lock."""
-        try:
-            super().__setstate__(state)  # type: ignore[misc]
-        except AttributeError:  # pragma: no cover - legacy BaseModel fallback
-            self.__dict__.update(state)
+
+        cleaned_state = {
+            key: value
+            for key, value in state.items()
+            if key not in {"_lock", "__pydantic_private__", "_abc_impl"}
+        }
+        restored = type(self).model_validate(cleaned_state)
+
+        self.__dict__.clear()
+        self.__dict__.update(restored.__dict__)
+
+        private_state = getattr(restored, "__pydantic_private__", None)
+        if private_state is not None:
+            object.__setattr__(self, "__pydantic_private__", private_state)
+
+        fields_set = getattr(restored, "__pydantic_fields_set__", None)
+        if fields_set is not None:
+            object.__setattr__(self, "__pydantic_fields_set__", fields_set)
+
         self._ensure_lock()
 
     def synthesize(self) -> QueryResponse:
