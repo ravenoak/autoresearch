@@ -1,0 +1,621 @@
+[release:alpha] syncing dependencies
+++ printf ' --extra %s' dev-minimal test nlp ui vss git distributed analysis llm parsers build
++ uv sync --python-platform x86_64-manylinux_2_28 --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers --extra build
+Resolved 327 packages in 5ms
+Downloading pydeck (6.6MiB)
+Downloading polars (37.9MiB)
+Downloading streamlit (9.6MiB)
+Downloading onnxruntime (16.5MiB)
+Downloading blis (11.1MiB)
+Downloading spacy (32.4MiB)
+Downloading ray (66.9MiB)
+Downloading pandas (11.4MiB)
+Downloading thinc (4.1MiB)
+Downloading pillow (6.3MiB)
+Downloading marisa-trie (1.2MiB)
+Downloading litellm (8.7MiB)
+Downloading sympy (6.0MiB)
+Downloading duckdb-extension-vss (15.7MiB)
+Downloading language-data (5.1MiB)
+Downloading tokenizers (3.1MiB)
+Downloading hf-xet (3.0MiB)
+Downloading srsly (1.1MiB)
+Downloading pyarrow (40.8MiB)
+ Downloading marisa-trie
+   Building madoka==0.7.1
+ Downloading hf-xet
+ Downloading tokenizers
+ Downloading srsly
+ Downloading pydeck
+ Downloading thinc
+ Downloading pillow
+ Downloading blis
+ Downloading duckdb-extension-vss
+ Downloading streamlit
+ Downloading onnxruntime
+ Downloading language-data
+ Downloading litellm
+ Downloading sympy
+ Downloading polars
+ Downloading pandas
+ Downloading spacy
+ Downloading ray
+ Downloading pyarrow
+      Built madoka==0.7.1
+Prepared 91 packages in 15.92s
+Installed 91 packages in 94ms
+ + alembic==1.16.5
+ + altair==5.5.0
+ + asyncer==0.0.8
+ + backoff==2.2.1
+ + bashlex==0.18
+ + blinker==1.9.0
+ + blis==1.3.0
+ + bracex==2.6
+ + build==1.3.0
+ + catalogue==2.0.10
+ + cibuildwheel==3.2.0
+ + cloudpathlib==0.22.0
+ + cloudpickle==3.1.1
+ + coloredlogs==15.0.1
+ + colorlog==6.9.0
+ + confection==0.1.5
+ + cymem==2.0.11
+ + dependency-groups==1.3.1
+ + diskcache==5.6.3
+ + dspy==3.0.3
+ + dspy-ai==3.0.3
+ + duckdb-extension-vss==1.3.2
+ + fastembed==0.7.3
+ + fastuuid==0.13.5
+ + filelock==3.19.1
+ + flatbuffers==25.9.23
+ + fsspec==2025.9.0
+ + gepa==0.0.7
+ + gitdb==4.0.12
+ + gitpython==3.1.45
+ + hf-xet==1.1.10
+ + huggingface-hub==0.35.1
+ + humanfriendly==10.0
+ + humanize==4.13.0
+ + id==1.5.0
+ + jaraco-classes==3.4.0
+ + jaraco-context==6.0.1
+ + jaraco-functools==4.3.0
+ + jeepney==0.9.0
+ + jinja2==3.1.6
+ + joblib==1.5.2
+ + json-repair==0.51.0
+ + keyring==25.6.0
+ + langcodes==3.5.0
+ + language-data==1.3.0
+ + litellm==1.77.4
+ + madoka==0.7.1
+ + magicattr==0.1.6
+ + marisa-trie==1.3.1
+ + mmh3==5.2.0
+ + mpmath==1.3.0
+ + msgpack==1.1.1
+ + murmurhash==1.0.13
+ + narwhals==2.5.0
+ + nh3==0.3.0
+ + onnxruntime==1.23.0
+ + optuna==4.5.0
+ + pandas==2.3.2
+ + patchelf==0.17.2.4
+ + pillow==11.3.0
+ + polars==1.33.1
+ + pondpond==1.4.1
+ + preshed==3.0.10
+ + py-rust-stemmers==0.1.5
+ + pyarrow==21.0.0
+ + pydeck==0.9.1
+ + pyelftools==0.32
+ + pyproject-hooks==1.2.0
+ + pytz==2025.2
+ + ray==2.49.2
+ + readme-renderer==44.0
+ + rfc3986==2.0.0
+ + secretstorage==3.4.0
+ + smart-open==7.3.1
+ + smmap==5.0.2
+ + spacy==3.8.7
+ + spacy-legacy==3.0.12
+ + spacy-loggers==1.0.5
+ + srsly==2.5.1
+ + streamlit==1.50.0
+ + sympy==1.14.0
+ + thinc==8.3.6
+ + tokenizers==0.22.1
+ + toml==0.10.2
+ + tornado==6.5.2
+ + twine==6.2.0
+ + tzdata==2025.2
+ + wasabi==1.1.3
+ + watchdog==6.0.0
+ + weasel==0.4.1
+ + wheel==0.45.1
++ set +x
+[release:alpha] running flake8
++ uv run flake8 src tests
+src/autoresearch/cli_utils.py:36:1: E302 expected 2 blank lines, found 1
+tests/benchmark/test_token_memory.py:14:1: E402 module level import not at top of file
+tests/conftest.py:23:1: E402 module level import not at top of file
+tests/conftest.py:24:1: E402 module level import not at top of file
+tests/conftest.py:25:1: E402 module level import not at top of file
+tests/conftest.py:333:9: E306 expected 1 blank line before a nested definition, found 0
+tests/conftest.py:343:1: W293 blank line contains whitespace
+tests/integration/test_cli_progress.py:41:5: E306 expected 1 blank line before a nested definition, found 0
+tests/integration/test_relevance_ranking_integration.py:3:1: F811 redefinition of unused 'csv' from line 1
+tests/integration/test_relevance_ranking_integration.py:4:1: F811 redefinition of unused 'Path' from line 2
+tests/integration/test_upgrade_path.py:3:1: F401 'subprocess' imported but unused
+tests/integration/test_upgrade_path.py:5:1: F401 'shutil' imported but unused
+tests/targeted/test_gpu_parsers.py:4:1: F811 redefinition of unused 'sys' from line 3
+tests/targeted/test_http_session.py:3:1: F401 'sys' imported but unused
+tests/unit/distributed/test_coordination_properties.py:7:1: F811 redefinition of unused 'sys' from line 5
+tests/unit/evidence/test_stability_utils.py:37:1: W391 blank line at end of file
+tests/unit/test_core_modules_additional.py:77:13: F841 local variable 'target' is assigned to but never used
+tests/unit/test_duckdb_storage_backend_concurrency.py:4:1: F811 redefinition of unused 'threading' from line 1
+tests/unit/test_duckdb_storage_backend_concurrency.py:6:1: F811 redefinition of unused 'MagicMock' from line 2
+tests/unit/test_duckdb_storage_backend_concurrency.py:6:1: F811 redefinition of unused 'patch' from line 2
+tests/unit/test_storage_eviction.py:164:21: E117 over-indented
+tests/unit/test_streamlit_ui.py:53:5: E306 expected 1 blank line before a nested definition, found 0
+tests/unit/test_visualization.py:3:1: F811 redefinition of unused 'sys' from line 1
+tests/unit/test_visualization.py:4:1: F811 redefinition of unused 'ModuleType' from line 2
++ set +x
+[release:alpha] running mypy
++ uv run mypy src
+src/autoresearch/models.py:14: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/models.py:32: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/models.py:63: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/models.py:112: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/agents/feedback.py:3: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/agents/feedback.py:6: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/visualization.py:8: error: Cannot find implementation or library stub for module named "matplotlib"  [import-not-found]
+src/autoresearch/visualization.py:9: error: Cannot find implementation or library stub for module named "matplotlib.pyplot"  [import-not-found]
+src/autoresearch/visualization.py:10: error: Library stubs not installed for "networkx"  [import-untyped]
+src/autoresearch/visualization.py:11: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/tracing.py:40: error: Cannot find implementation or library stub for module named "opentelemetry"  [import-not-found]
+src/autoresearch/tracing.py:41: error: Cannot find implementation or library stub for module named "opentelemetry.sdk.resources"  [import-not-found]
+src/autoresearch/tracing.py:45: error: Cannot find implementation or library stub for module named "opentelemetry.sdk.trace"  [import-not-found]
+src/autoresearch/tracing.py:48: error: Cannot find implementation or library stub for module named "opentelemetry.sdk.trace.export"  [import-not-found]
+src/autoresearch/streamlit_ui.py:4: error: Cannot find implementation or library stub for module named "streamlit"  [import-not-found]
+src/autoresearch/streamlit_ui.py:61: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/utils.py:11: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/orchestration/utils.py:15: error: Returning Any from function declared to return "float"  [no-any-return]
+src/autoresearch/monitor/metrics.py:5: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/monitor/metrics.py:6: error: Cannot find implementation or library stub for module named "prometheus_client"  [import-not-found]
+src/autoresearch/main/Prompt.py:4: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/main/Prompt.py:9: error: Returning Any from function declared to return "str"  [no-any-return]
+src/autoresearch/agents/messages.py:3: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/agents/messages.py:16: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/agents/messages.py:33: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/agents/messages.py:35: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/git/__init__.py:38: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/git/__init__.py:80: error: Function is missing a return type annotation  [no-untyped-def]
+src/git/__init__.py:139: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/git/__init__.py:144: error: Function is missing a return type annotation  [no-untyped-def]
+src/git/__init__.py:144: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/cache.py:18: error: Cannot find implementation or library stub for module named "tinydb"  [import-not-found]
+src/autoresearch/cache.py:107: error: Returning Any from function declared to return "list[dict[str, Any]] | None"  [no-any-return]
+src/autoresearch/monitor/system_monitor.py:7: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/monitor/system_monitor.py:8: error: Cannot find implementation or library stub for module named "prometheus_client"  [import-not-found]
+src/autoresearch/monitor/node_health.py:9: error: Cannot find implementation or library stub for module named "prometheus_client"  [import-not-found]
+src/autoresearch/monitor/node_health.py:93: error: Cannot find implementation or library stub for module named "redis"  [import-not-found]
+src/autoresearch/monitor/node_health.py:118: error: Cannot find implementation or library stub for module named "ray"  [import-not-found]
+src/autoresearch/logging_utils.py:49: error: Cannot find implementation or library stub for module named "structlog"  [import-not-found]
+src/autoresearch/logging_utils.py:50: error: Cannot find implementation or library stub for module named "loguru"  [import-not-found]
+src/autoresearch/logging_utils.py:72: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/api/webhooks.py:8: error: Cannot find implementation or library stub for module named "httpx"  [import-not-found]
+src/autoresearch/test_tools.py:8: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/search/parsers.py:89: error: Cannot find implementation or library stub for module named "pdfminer.high_level"  [import-not-found]
+src/autoresearch/search/parsers.py:97: error: Returning Any from function declared to return "Callable[..., str]"  [no-any-return]
+src/autoresearch/search/parsers.py:109: error: Cannot find implementation or library stub for module named "docx"  [import-not-found]
+src/autoresearch/search/parsers.py:117: error: Returning Any from function declared to return "Callable[[str], object]"  [no-any-return]
+src/autoresearch/search/parsers.py:137: error: Cannot find implementation or library stub for module named "pdfminer.layout"  [import-not-found]
+src/autoresearch/distributed/broker.py:31: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/autoresearch/distributed/broker.py:58: error: Cannot find implementation or library stub for module named "redis"  [import-not-found]
+src/autoresearch/distributed/broker.py:72: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/distributed/broker.py:73: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/distributed/broker.py:74: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+src/autoresearch/distributed/broker.py:103: error: Cannot find implementation or library stub for module named "ray"  [import-not-found]
+src/autoresearch/distributed/broker.py:104: error: Cannot find implementation or library stub for module named "ray.util.queue"  [import-not-found]
+src/autoresearch/orchestration/metrics.py:11: error: Cannot find implementation or library stub for module named "prometheus_client"  [import-not-found]
+src/autoresearch/orchestration/metrics.py:73: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:81: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:82: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:105: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:119: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:127: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:128: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/metrics.py:139: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/orchestration/metrics.py:147: error: Cannot find implementation or library stub for module named "pynvml"  [import-not-found]
+src/autoresearch/orchestration/metrics.py:590: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/autoresearch/config/validators.py:12: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/config/validators.py:87: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/config/validators.py:106: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/config/validators.py:135: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/config/models.py:5: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/config/models.py:12: error: Cannot find implementation or library stub for module named "pydantic_settings"  [import-not-found]
+src/autoresearch/config/models.py:24: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:60: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:67: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:75: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:87: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:114: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:160: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:216: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:242: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:287: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:297: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/models.py:303: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/config/loader.py:14: error: Cannot find implementation or library stub for module named "dotenv"  [import-not-found]
+src/autoresearch/config/loader.py:15: error: Cannot find implementation or library stub for module named "watchfiles"  [import-not-found]
+src/autoresearch/config/loader.py:50: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/config/loader.py:110: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/config/loader.py:236: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/agents/prompts.py:21: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/agents/prompts.py:30: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/agents/prompts.py:560: error: Redundant cast to "dict[str, Any]"  [redundant-cast]
+src/autoresearch/llm/pool.py:5: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/kg_reasoning.py:16: error: Library stubs not installed for "networkx"  [import-untyped]
+src/autoresearch/kg_reasoning.py:16: note: Hint: "python3 -m pip install types-networkx"
+src/autoresearch/kg_reasoning.py:17: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/kg_reasoning.py:20: error: Cannot find implementation or library stub for module named "owlrl"  [import-not-found]
+src/autoresearch/kg_reasoning.py:35: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/kg_reasoning.py:210: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/extensions.py:13: error: Cannot find implementation or library stub for module named "dotenv"  [import-not-found]
+src/autoresearch/extensions.py:82: error: Cannot find implementation or library stub for module named "duckdb"  [import-not-found]
+src/autoresearch/extensions.py:243: error: Cannot find implementation or library stub for module named "duckdb_extension_vss"  [import-not-found]
+src/autoresearch/extensions.py:246: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/llm/adapters.py:17: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/llm/adapters.py:17: note: Hint: "python3 -m pip install types-requests"
+src/autoresearch/llm/adapters.py:17: note: (or run "mypy --install-types" to install all missing stub packages)
+src/autoresearch/storage_backends.py:21: error: Cannot find implementation or library stub for module named "duckdb"  [import-not-found]
+src/autoresearch/storage_backends.py:22: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/storage_backends.py:23: error: Cannot find implementation or library stub for module named "dotenv"  [import-not-found]
+src/autoresearch/storage_backends.py:24: error: Cannot find implementation or library stub for module named "rdflib.plugin"  [import-not-found]
+src/autoresearch/storage_backends.py:37: error: Cannot find implementation or library stub for module named "kuzu"  [import-not-found]
+src/autoresearch/storage_backends.py:133: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/storage_backends.py:133: note: Use "-> None" if function does not return a value
+src/autoresearch/storage_backends.py:214: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:232: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:317: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:442: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:461: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:476: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:817: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage_backends.py:817: error: Item "None" of "Any | None" has no attribute "value"  [union-attr]
+src/autoresearch/storage_backends.py:817: note: Error code "union-attr" not covered by "type: ignore" comment
+src/autoresearch/search/context.py:35: error: Cannot find implementation or library stub for module named "spacy"  [import-not-found]
+src/autoresearch/search/context.py:36: error: Cannot find implementation or library stub for module named "spacy.cli"  [import-not-found]
+src/autoresearch/search/context.py:54: error: Cannot find implementation or library stub for module named "bertopic"  [import-not-found]
+src/autoresearch/search/context.py:119: error: Cannot find implementation or library stub for module named "sentence_transformers"  [import-not-found]
+src/autoresearch/search/context.py:147: error: Cannot find implementation or library stub for module named "spacy.language"  [import-not-found]
+src/autoresearch/storage.py:46: error: Library stubs not installed for "networkx"  [import-untyped]
+src/autoresearch/storage.py:47: error: Library stubs not installed for "networkx.readwrite"  [import-untyped]
+src/autoresearch/storage.py:48: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/storage.py:72: error: Redundant cast to "type[KuzuStorageBackend]"  [redundant-cast]
+src/autoresearch/storage.py:372: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/storage.py:517: error: Call to untyped function "DuckDBStorageBackend" in typed context  [no-untyped-call]
+src/autoresearch/storage.py:523: error: Call to untyped function "DuckDBStorageBackend" in typed context  [no-untyped-call]
+src/autoresearch/storage.py:754: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage.py:774: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage.py:784: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/storage.py:1557: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
+src/autoresearch/storage.py:1558: error: Incompatible types in assignment (expression has type "Any | None", variable has type "str")  [assignment]
+src/autoresearch/storage.py:2202: error: Returning Any from function declared to return "str"  [no-any-return]
+src/autoresearch/orchestration/state.py:8: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/orchestration/state.py:28: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/orchestration/state.py:52: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/state.py:290: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/state.py:297: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/orchestration/state.py:302: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+src/autoresearch/orchestration/state.py:307: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/agents/base.py:5: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/agents/base.py:5: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+src/autoresearch/agents/base.py:35: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/agents/base.py:42: error: Untyped decorator makes function "validate_prompt_templates" untyped  [misc]
+src/autoresearch/agents/base.py:55: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/search/http.py:7: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/search/http.py:8: error: Cannot find implementation or library stub for module named "urllib3.util.retry"  [import-not-found]
+src/autoresearch/orchestration/token_utils.py:138: error: Redundant cast to "Mapping[str, object]"  [redundant-cast]
+src/autoresearch/orchestration/error_handling.py:35: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/distributed/coordinator.py:84: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/search/core.py:65: error: Cannot find implementation or library stub for module named "numpy"  [import-not-found]
+src/autoresearch/search/core.py:66: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/search/core.py:106: error: Cannot find implementation or library stub for module named "rank_bm25"  [import-not-found]
+src/autoresearch/search/core.py:161: error: Cannot find implementation or library stub for module named "sentence_transformers"  [import-not-found]
+src/autoresearch/search/core.py:181: error: Cannot find implementation or library stub for module named "fastembed.text"  [import-not-found]
+src/autoresearch/search/core.py:183: error: Cannot find implementation or library stub for module named "fastembed"  [import-not-found]
+src/autoresearch/search/core.py:610: error: Argument "cache" to "Search" has incompatible type "SearchCache | _SearchCacheView"; expected "SearchCache | None"  [arg-type]
+src/autoresearch/search/core.py:1214: error: Redundant cast to "list[dict[str, Any]]"  [redundant-cast]
+src/autoresearch/search/core.py:1279: error: Returning Any from function declared to return "list[float] | None"  [no-any-return]
+src/autoresearch/search/core.py:1924: error: Argument "cache" to "ExternalLookupResult" has incompatible type "SearchCache | _SearchCacheView"; expected "SearchCache"  [arg-type]
+src/autoresearch/search/core.py:1939: error: Argument "cache" to "ExternalLookupResult" has incompatible type "SearchCache | _SearchCacheView"; expected "SearchCache"  [arg-type]
+src/autoresearch/search/core.py:2189: error: Argument 1 has incompatible type "Callable[[str, int], list[LocalGitResult]]"; expected "Callable[[str, int], list[dict[str, Any]]]"  [arg-type]
+src/autoresearch/orchestration/execution.py:9: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/orchestration/orchestration_utils.py:150: error: Returning Any from function declared to return "int"  [no-any-return]
+src/autoresearch/orchestration/orchestration_utils.py:226: error: Argument 1 to "float" has incompatible type "Any | None"; expected "str | Buffer | SupportsFloat | SupportsIndex"  [arg-type]
+src/autoresearch/orchestration/orchestrator.py:14: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/distributed/executors.py:24: error: Cannot find implementation or library stub for module named "ray"  [import-not-found]
+src/autoresearch/distributed/executors.py:28: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/distributed/executors.py:47: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/distributed/executors.py:52: error: Module "autoresearch.orchestration.orchestrator" does not explicitly export attribute "AgentFactory"  [attr-defined]
+src/autoresearch/distributed/executors.py:58: error: Cannot find implementation or library stub for module named "redis"  [import-not-found]
+src/autoresearch/distributed/executors.py:61: error: Untyped decorator makes function "_execute_agent_remote" untyped  [misc]
+src/autoresearch/distributed/executors.py:66: error: Missing type parameters for generic type "Queue"  [type-arg]
+src/autoresearch/distributed/executors.py:67: error: Missing type parameters for generic type "Queue"  [type-arg]
+src/autoresearch/distributed/executors.py:104: error: Missing type parameters for generic type "Queue"  [type-arg]
+src/autoresearch/distributed/executors.py:105: error: Missing type parameters for generic type "Queue"  [type-arg]
+src/autoresearch/storage_backup.py:435: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/storage_backup.py:435: note: Use "-> None" if function does not return a value
+src/autoresearch/storage_backup.py:477: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/storage_backup.py:477: note: Use "-> None" if function does not return a value
+src/autoresearch/storage_backup.py:525: error: Call to untyped function "BackupScheduler" in typed context  [no-untyped-call]
+src/autoresearch/resource_monitor.py:16: error: Cannot find implementation or library stub for module named "structlog"  [import-not-found]
+src/autoresearch/resource_monitor.py:17: error: Cannot find implementation or library stub for module named "prometheus_client"  [import-not-found]
+src/autoresearch/resource_monitor.py:103: error: Cannot find implementation or library stub for module named "pynvml"  [import-not-found]
+src/autoresearch/resource_monitor.py:140: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/resource_monitor.py:292: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/output_format.py:13: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/output_format.py:1349: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/output_format.py:1758: error: Cannot find implementation or library stub for module named "rich.tree"  [import-not-found]
+src/autoresearch/output_format.py:1759: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/mcp_interface.py:7: error: Cannot find implementation or library stub for module named "anyio"  [import-not-found]
+src/autoresearch/mcp_interface.py:8: error: Cannot find implementation or library stub for module named "fastmcp"  [import-not-found]
+src/autoresearch/mcp_interface.py:26: error: Untyped decorator makes function "research" untyped  [misc]
+src/autoresearch/mcp_interface.py:58: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+src/autoresearch/mcp_interface.py:60: error: Returning Any from function declared to return "dict[str, Any]"  [no-any-return]
+src/autoresearch/data_analysis.py:15: error: Cannot find implementation or library stub for module named "polars"  [import-not-found]
+src/autoresearch/data_analysis.py:17: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/config_utils.py:12: error: Cannot find implementation or library stub for module named "streamlit"  [import-not-found]
+src/autoresearch/config_utils.py:34: error: Cannot find implementation or library stub for module named "tomli_w"  [import-not-found]
+src/autoresearch/llm/capabilities.py:16: error: Library stubs not installed for "requests"  [import-untyped]
+src/autoresearch/llm/capabilities.py:96: error: Returning Any from function declared to return "dict[str, ModelCapabilities]"  [no-any-return]
+src/autoresearch/evaluation/harness.py:14: error: Cannot find implementation or library stub for module named "duckdb"  [import-not-found]
+src/autoresearch/api/utils.py:8: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/utils.py:51: error: Redundant cast to "Any | None"  [redundant-cast]
+src/autoresearch/api/errors.py:5: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/errors.py:6: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/api/errors.py:11: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/api/models.py:11: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/api/models.py:18: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/api/models.py:31: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/api/models.py:31: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/api/models.py:31: note: Error code "no-untyped-def" not covered by "type: ignore" comment
+src/autoresearch/api/deps.py:5: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/deps.py:11: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/api/auth_middleware.py:8: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/auth_middleware.py:9: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/api/auth_middleware.py:10: error: Cannot find implementation or library stub for module named "starlette.middleware.base"  [import-not-found]
+src/autoresearch/api/auth_middleware.py:11: error: Cannot find implementation or library stub for module named "starlette.responses"  [import-not-found]
+src/autoresearch/api/auth_middleware.py:12: error: Cannot find implementation or library stub for module named "starlette.types"  [import-not-found]
+src/autoresearch/api/auth_middleware.py:18: error: Class cannot subclass "BaseHTTPMiddleware" (has type "Any")  [misc]
+src/autoresearch/api/auth_middleware.py:49: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/streaming.py:8: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/api/streaming.py:57: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/middleware.py:7: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/middleware.py:8: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/api/middleware.py:9: error: Cannot find implementation or library stub for module named "limits.util"  [import-not-found]
+src/autoresearch/api/middleware.py:10: error: Cannot find implementation or library stub for module named "starlette.middleware.base"  [import-not-found]
+src/autoresearch/api/middleware.py:27: error: Cannot find implementation or library stub for module named "slowapi"  [import-not-found]
+src/autoresearch/api/middleware.py:29: error: Cannot find implementation or library stub for module named "slowapi.errors"  [import-not-found]
+src/autoresearch/api/middleware.py:30: error: Cannot find implementation or library stub for module named "slowapi.util"  [import-not-found]
+src/autoresearch/api/middleware.py:33: error: Cannot find implementation or library stub for module named "slowapi.wrappers"  [import-not-found]
+src/autoresearch/api/middleware.py:53: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/api/middleware.py:56: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/api/middleware.py:56: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/middleware.py:63: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/api/middleware.py:78: error: Class cannot subclass "BaseHTTPMiddleware" (has type "Any")  [misc]
+src/autoresearch/api/middleware.py:81: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/middleware.py:86: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/api/middleware.py:86: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/middleware.py:114: error: Class cannot subclass "BaseHTTPMiddleware" (has type "Any")  [misc]
+src/autoresearch/api/middleware.py:117: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/middleware.py:122: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/api/middleware.py:122: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/api/routing.py:9: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/api/routing.py:10: error: Cannot find implementation or library stub for module named "fastapi.openapi.docs"  [import-not-found]
+src/autoresearch/api/routing.py:11: error: Cannot find implementation or library stub for module named "fastapi.openapi.utils"  [import-not-found]
+src/autoresearch/api/routing.py:12: error: Cannot find implementation or library stub for module named "fastapi.responses"  [import-not-found]
+src/autoresearch/api/routing.py:18: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/api/routing.py:60: error: Untyped decorator makes function "custom_swagger_ui_html" untyped  [misc]
+src/autoresearch/api/routing.py:71: error: Untyped decorator makes function "get_openapi_schema" untyped  [misc]
+src/autoresearch/api/routing.py:72: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:109: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/autoresearch/api/routing.py:112: error: Untyped decorator makes function "query_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:213: error: Untyped decorator makes function "batch_query_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:266: error: Untyped decorator makes function "async_query_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:318: error: Missing type parameters for generic type "Future"  [type-arg]
+src/autoresearch/api/routing.py:323: error: Untyped decorator makes function "get_query_status" untyped  [misc]
+src/autoresearch/api/routing.py:350: error: Untyped decorator makes function "cancel_query" untyped  [misc]
+src/autoresearch/api/routing.py:374: error: Untyped decorator makes function "health_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:375: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:380: error: Untyped decorator makes function "capabilities_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:381: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:422: error: Untyped decorator makes function "get_config_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:423: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:425: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/autoresearch/api/routing.py:428: error: Untyped decorator makes function "update_config_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:429: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:440: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/autoresearch/api/routing.py:443: error: Untyped decorator makes function "replace_config_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:444: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:453: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/autoresearch/api/routing.py:456: error: Untyped decorator makes function "reload_config_endpoint" untyped  [misc]
+src/autoresearch/api/routing.py:457: error: Missing type parameters for generic type "dict"  [type-arg]
+src/autoresearch/api/routing.py:466: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/autoresearch/api/routing.py:481: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/api/__init__.py:11: error: Module "autoresearch.api.middleware" does not explicitly export attribute "parse"  [attr-defined]
+src/autoresearch/agents/specialized/planner.py:135: error: Argument 1 to "enumerate" has incompatible type "Any | None"; expected "Iterable[Any]"  [arg-type]
+src/autoresearch/agents/specialized/planner.py:182: error: Argument 1 to "dict" has incompatible type "Any | None"; expected "SupportsKeysAndGetItem[Any, Any]"  [arg-type]
+src/autoresearch/agents/dialectical/fact_checker.py:258: error: Argument 1 to "sum" has incompatible type "list[Any | None]"; expected "Iterable[bool]"  [arg-type]
+src/autoresearch/agents/dialectical/fact_checker.py:268: error: Argument 1 to "sum" has incompatible type "list[Any | None]"; expected "Iterable[bool]"  [arg-type]
+src/autoresearch/scheduler_benchmark.py:35: error: Call to untyped function "BackupScheduler" in typed context  [no-untyped-call]
+src/autoresearch/a2a_interface.py:32: error: Cannot find implementation or library stub for module named "httpx"  [import-not-found]
+src/autoresearch/a2a_interface.py:33: error: Cannot find implementation or library stub for module named "uvicorn"  [import-not-found]
+src/autoresearch/a2a_interface.py:34: error: Cannot find implementation or library stub for module named "pydantic"  [import-not-found]
+src/autoresearch/a2a_interface.py:49: error: Cannot find implementation or library stub for module named "pydantic.root_model"  [import-not-found]
+src/autoresearch/a2a_interface.py:56: error: Cannot find implementation or library stub for module named "a2a.client"  [import-not-found]
+src/autoresearch/a2a_interface.py:57: error: Cannot find implementation or library stub for module named "a2a.types"  [import-not-found]
+src/autoresearch/a2a_interface.py:63: error: Cannot find implementation or library stub for module named "a2a.utils.message"  [import-not-found]
+src/autoresearch/a2a_interface.py:176: error: Class cannot subclass "BaseModel" (has type "Any")  [misc]
+src/autoresearch/a2a_interface.py:238: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/a2a_interface.py:242: error: Untyped decorator makes function "handle" untyped  [misc]
+src/autoresearch/api/routes.py:7: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/cli_utils.py:12: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/cli_utils.py:13: error: Cannot find implementation or library stub for module named "rich.table"  [import-not-found]
+src/autoresearch/cli_utils.py:14: error: Cannot find implementation or library stub for module named "rdflib"  [import-not-found]
+src/autoresearch/cli_utils.py:335: error: Library stubs not installed for "tabulate"  [import-untyped]
+src/autoresearch/cli_utils.py:335: note: Hint: "python3 -m pip install types-tabulate"
+src/autoresearch/cli_utils.py:366: error: Cannot find implementation or library stub for module named "rich.progress"  [import-not-found]
+src/autoresearch/cli_utils.py:397: error: "object" has no attribute "ask"  [attr-defined]
+src/autoresearch/monitor/__init__.py:9: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/monitor/__init__.py:10: error: Cannot find implementation or library stub for module named "rich.live"  [import-not-found]
+src/autoresearch/monitor/__init__.py:11: error: Cannot find implementation or library stub for module named "rich.progress"  [import-not-found]
+src/autoresearch/monitor/__init__.py:12: error: Cannot find implementation or library stub for module named "rich.table"  [import-not-found]
+src/autoresearch/monitor/__init__.py:13: error: Cannot find implementation or library stub for module named "rich.tree"  [import-not-found]
+src/autoresearch/monitor/__init__.py:14: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/monitor/__init__.py:36: error: Untyped decorator makes function "init_metrics" untyped  [misc]
+src/autoresearch/monitor/__init__.py:67: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/monitor/__init__.py:67: note: Hint: "python3 -m pip install types-psutil"
+src/autoresearch/monitor/__init__.py:140: error: Untyped decorator makes function "metrics" untyped  [misc]
+src/autoresearch/monitor/__init__.py:162: error: Untyped decorator makes function "resources" untyped  [misc]
+src/autoresearch/monitor/__init__.py:195: error: Untyped decorator makes function "graph" untyped  [misc]
+src/autoresearch/monitor/__init__.py:204: error: Cannot find implementation or library stub for module named "rich.panel"  [import-not-found]
+src/autoresearch/monitor/__init__.py:211: error: Untyped decorator makes function "run" untyped  [misc]
+src/autoresearch/monitor/__init__.py:271: error: Untyped decorator makes function "start" untyped  [misc]
+src/autoresearch/monitor/cli.py:8: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/monitor/cli.py:9: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/monitor/cli.py:17: error: Untyped decorator makes function "serve" untyped  [misc]
+src/autoresearch/cli_helpers.py:7: error: Cannot find implementation or library stub for module named "click"  [import-not-found]
+src/autoresearch/cli_helpers.py:8: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/cli_helpers.py:10: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/cli_helpers.py:11: error: Cannot find implementation or library stub for module named "fastapi"  [import-not-found]
+src/autoresearch/cli_evaluation.py:8: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/cli_evaluation.py:36: error: Untyped decorator makes function "run_suite" untyped  [misc]
+src/autoresearch/cli_backup.py:9: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/cli_backup.py:10: error: Cannot find implementation or library stub for module named "rich.table"  [import-not-found]
+src/autoresearch/cli_backup.py:11: error: Cannot find implementation or library stub for module named "rich.prompt"  [import-not-found]
+src/autoresearch/cli_backup.py:12: error: Cannot find implementation or library stub for module named "rich.progress"  [import-not-found]
+src/autoresearch/cli_backup.py:13: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/cli_backup.py:67: error: Untyped decorator makes function "backup_create" untyped  [misc]
+src/autoresearch/cli_backup.py:130: error: Untyped decorator makes function "backup_restore" untyped  [misc]
+src/autoresearch/cli_backup.py:202: error: Untyped decorator makes function "backup_list" untyped  [misc]
+src/autoresearch/cli_backup.py:259: error: Untyped decorator makes function "backup_schedule" untyped  [misc]
+src/autoresearch/cli_backup.py:320: error: Untyped decorator makes function "backup_recover" untyped  [misc]
+src/autoresearch/main/config_cli.py:6: error: Cannot find implementation or library stub for module named "tomli_w"  [import-not-found]
+src/autoresearch/main/config_cli.py:8: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/main/config_cli.py:20: error: Untyped decorator makes function "config_callback" untyped  [misc]
+src/autoresearch/main/config_cli.py:28: error: Untyped decorator makes function "config_init" untyped  [misc]
+src/autoresearch/main/config_cli.py:82: error: Untyped decorator makes function "config_validate" untyped  [misc]
+src/autoresearch/main/config_cli.py:108: error: Untyped decorator makes function "config_reasoning" untyped  [misc]
+src/autoresearch/main/app.py:11: error: Cannot find implementation or library stub for module named "typer"  [import-not-found]
+src/autoresearch/main/app.py:12: error: Cannot find implementation or library stub for module named "rich.console"  [import-not-found]
+src/autoresearch/main/app.py:64: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:67: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:68: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:84: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:94: error: Untyped decorator makes function "start_watcher" untyped  [misc]
+src/autoresearch/main/app.py:212: error: Untyped decorator makes function "search" untyped  [misc]
+src/autoresearch/main/app.py:410: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/autoresearch/main/app.py:532: error: Untyped decorator makes function "serve" untyped  [misc]
+src/autoresearch/main/app.py:570: error: Untyped decorator makes function "serve_a2a" untyped  [misc]
+src/autoresearch/main/app.py:635: error: Untyped decorator makes function "completion" untyped  [misc]
+src/autoresearch/main/app.py:730: error: Untyped decorator makes function "capabilities" untyped  [misc]
+src/autoresearch/main/app.py:752: error: Cannot find implementation or library stub for module named "autoresearch.main.llm"  [import-not-found]
+src/autoresearch/main/app.py:753: error: Cannot find implementation or library stub for module named "autoresearch.main.orchestration"  [import-not-found]
+src/autoresearch/main/app.py:861: error: Untyped decorator makes function "test_mcp" untyped  [misc]
+src/autoresearch/main/app.py:888: error: Cannot find implementation or library stub for module named "autoresearch.main.test_tools"  [import-not-found]
+src/autoresearch/main/app.py:918: error: Untyped decorator makes function "test_a2a" untyped  [misc]
+src/autoresearch/main/app.py:978: error: Untyped decorator makes function "visualize" untyped  [misc]
+src/autoresearch/main/app.py:1007: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:1019: error: Untyped decorator makes function "visualize_rdf_cli" untyped  [misc]
+src/autoresearch/main/app.py:1029: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/app.py:1034: error: Untyped decorator makes function "sparql_query" untyped  [misc]
+src/autoresearch/main/app.py:1056: error: Untyped decorator makes function "gui" untyped  [misc]
+src/autoresearch/main/app.py:1138: error: Unused "type: ignore" comment  [unused-ignore]
+src/autoresearch/main/__init__.py:11: error: Cannot find implementation or library stub for module named "rich.progress"  [import-not-found]
+src/autoresearch/streamlit_app.py:9: error: Cannot find implementation or library stub for module named "streamlit"  [import-not-found]
+src/autoresearch/streamlit_app.py:10: error: Library stubs not installed for "networkx"  [import-untyped]
+src/autoresearch/streamlit_app.py:11: error: Cannot find implementation or library stub for module named "matplotlib.pyplot"  [import-not-found]
+src/autoresearch/streamlit_app.py:11: error: Cannot find implementation or library stub for module named "matplotlib"  [import-not-found]
+src/autoresearch/streamlit_app.py:17: error: Library stubs not installed for "psutil"  [import-untyped]
+src/autoresearch/streamlit_app.py:24: error: Cannot find implementation or library stub for module named "PIL"  [import-not-found]
+src/autoresearch/streamlit_app.py:179: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:179: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:410: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:430: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:536: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:536: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:558: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:558: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:596: error: Library stubs not installed for "pandas"  [import-untyped]
+src/autoresearch/streamlit_app.py:596: note: Hint: "python3 -m pip install pandas-stubs"
+src/autoresearch/streamlit_app.py:667: error: Cannot find implementation or library stub for module named "altair"  [import-not-found]
+src/autoresearch/streamlit_app.py:815: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:815: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:903: error: Call to untyped function "display_agent_performance" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:909: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:916: error: Function is missing a type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:944: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:944: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:957: error: Call to untyped function "StreamlitLogHandler" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:971: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:971: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:1055: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:1055: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:1142: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:1142: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:1145: error: Call to untyped function "initialize_session_state" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1156: error: Call to untyped function "setup_logging" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1223: error: Call to untyped function "display_config_editor" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1247: error: Call to untyped function "display_metrics_dashboard" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1251: error: Call to untyped function "display_log_viewer" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1255: error: Call to untyped function "display_query_history" in typed context  [no-untyped-call]
+src/autoresearch/streamlit_app.py:1293: error: Function is missing a return type annotation  [no-untyped-def]
+src/autoresearch/streamlit_app.py:1293: note: Use "-> None" if function does not return a value
+src/autoresearch/streamlit_app.py:1792: error: Argument 1 to "audit_status_rollup" has incompatible type "list[dict[str, Any]]"; expected "list[Mapping[str, Any]]"  [arg-type]
+src/autoresearch/streamlit_app.py:1792: note: "list" is invariant -- see https://mypy.readthedocs.io/en/stable/common_issues.html#variance
+src/autoresearch/streamlit_app.py:1792: note: Consider using "Sequence" instead, which is covariant
+src/autoresearch/streamlit_app.py:2102: error: Call to untyped function "main" in typed context  [no-untyped-call]
+Found 392 errors in 73 files (checked 123 source files)
++ set +x
+[release:alpha] linting specs
++ uv run python scripts/lint_specs.py
++ set +x
+[release:alpha] checking release metadata
++ uv run python scripts/check_release_metadata.py
+Release metadata aligned: version=0.1.0a1, date=Unreleased
++ set +x
+[release:alpha] running task verify
++ uv run task verify 'EXTRAS=nlp ui vss git distributed analysis llm parsers build'
+task: Available tasks for this project:
+* behavior:                     Run BDD (behavior) tests with uv
+* check:                        Run lint, type check, and selected fast tests
+* check-env:                    Validate required tool versions
+* check-release-metadata:       Validate release version and date alignment
+* install:                      Initialize dev env with minimal extras. Syncs the dev-minimal and test extras by default. Provide optional groups with EXTRAS, e.g. "nlp" or "parsers". Set EXTRAS="gpu" to include optional GPU packages. Place matching wheels in wheels/gpu to avoid source builds. 
+* integration:                  Run integration tests with uv
+* lint-specs:                   Audit spec files for required sections
+* unit:                         Run unit tests with uv
+task: Task "verify" does not exist
++ set +x
+[release:alpha] running task coverage
++ uv run task coverage 'EXTRAS=nlp ui vss git distributed analysis llm parsers build'
+task: Available tasks for this project:
+* behavior:                     Run BDD (behavior) tests with uv
+* check:                        Run lint, type check, and selected fast tests
+* check-env:                    Validate required tool versions
+* check-release-metadata:       Validate release version and date alignment
+* install:                      Initialize dev env with minimal extras. Syncs the dev-minimal and test extras by default. Provide optional groups with EXTRAS, e.g. "nlp" or "parsers". Set EXTRAS="gpu" to include optional GPU packages. Place matching wheels in wheels/gpu to avoid source builds. 
+* integration:                  Run integration tests with uv
+* lint-specs:                   Audit spec files for required sections
+* unit:                         Run unit tests with uv
+task: Task "coverage" does not exist
++ set +x
+[release:alpha] building distributions
++ uv run python -m build
+* Creating isolated environment: venv+pip...
+* Installing packages in isolated environment:

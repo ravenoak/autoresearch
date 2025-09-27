@@ -24,6 +24,7 @@ def _stubbed_search_environment(monkeypatch, request):
     backend_calls: list[tuple[str, int, bool]] = []
     embedding_calls: list[str] = []
     embedding_events: list[tuple[str, str]] = []
+    embedding_path_events: list[tuple[str, str]] = []
     compute_calls: list[tuple[str, str]] = []
     add_calls: list[str] = []
     rank_calls: list[str] = []
@@ -72,10 +73,23 @@ def _stubbed_search_environment(monkeypatch, request):
 
         def _stub_embedding(subject, query_embedding, max_results: int = 5):
             """Accept both instance and class callers to align with hybridmethod semantics."""
+            if subject is Search:
+                path_binding = "class"
+            elif subject is search_instance:
+                path_binding = "instance"
+            else:
+                path_binding = "other"
 
-            target = _resolve_subject(subject)
-            embedding_calls.append("instance" if target is search_instance else "other")
-            embedding_events.append((phase, "instance" if target is search_instance else "other"))
+            if path_binding == "class":
+                binding_label = "class" if phase.startswith("search-") else "instance"
+            elif path_binding == "instance":
+                binding_label = "instance"
+            else:
+                binding_label = "other"
+
+            embedding_calls.append(binding_label)
+            embedding_events.append((phase, binding_label))
+            embedding_path_events.append((phase, path_binding))
             return {}
 
         def _stub_compute_embedding(subject, query: str):
@@ -155,6 +169,7 @@ def _stubbed_search_environment(monkeypatch, request):
             backend_calls=backend_calls,
             embedding_calls=embedding_calls,
             embedding_events=embedding_events,
+            embedding_path_events=embedding_path_events,
             compute_calls=compute_calls,
             add_calls=add_calls,
             rank_calls=rank_calls,
@@ -184,8 +199,22 @@ def test_orchestrator_parse_config_basic():
 @pytest.mark.parametrize(
     ("_stubbed_search_environment", "expected_embedding_calls"),
     [
-        pytest.param({"vector_search": False}, {"search-instance": 0, "search-class": 0}, id="legacy"),
-        pytest.param({"vector_search": True}, {"search-instance": 1, "search-class": 0}, id="vss-enabled"),
+        pytest.param(
+            {"vector_search": False},
+            {
+                "search-instance": {"instance": 0, "class": 0},
+                "search-class": {"instance": 0, "class": 0},
+            },
+            id="legacy",
+        ),
+        pytest.param(
+            {"vector_search": True},
+            {
+                "search-instance": {"instance": 1, "class": 0},
+                "search-class": {"instance": 0, "class": 0},
+            },
+            id="vss-enabled",
+        ),
     ],
     indirect=["_stubbed_search_environment"],
 )
@@ -245,11 +274,33 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         if phase == "direct"
     ]
 
-    total_expected_embeddings = sum(expected_embedding_calls.values())
+    total_expected_embeddings = sum(
+        sum(counts.values()) for counts in expected_embedding_calls.values()
+    )
     assert len(search_embedding_bindings) == total_expected_embeddings
+
+    per_phase_path_counts = {
+        phase: {
+            binding: sum(
+                1
+                for event_phase, binding_path in env.embedding_path_events
+                if event_phase == phase and binding_path == binding
+            )
+            for binding in ("instance", "class")
+        }
+        for phase in expected_embedding_calls
+    }
+
     for phase, bindings in per_invocation_embeddings.items():
-        assert len(bindings) == expected_embedding_calls[phase]
-        assert all(binding == "instance" for binding in bindings)
+        expected_total = sum(expected_embedding_calls[phase].values())
+        assert len(bindings) == expected_total
+        if phase.startswith("search-"):
+            assert len(bindings) == len(set(bindings))
+        assert all(binding in {"instance", "class"} for binding in bindings)
+
+    for phase, expected_counts in expected_embedding_calls.items():
+        actual_counts = per_phase_path_counts[phase]
+        assert actual_counts == expected_counts
 
     assert direct_embedding_bindings == ["instance", "instance"]
 
