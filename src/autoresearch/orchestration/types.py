@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
-from typing import Protocol, TYPE_CHECKING
+from typing import Any, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover - typing helpers only
     from .state import QueryState
@@ -25,7 +25,7 @@ else:  # pragma: no cover - runtime guard for coverage runs
 # ``execute`` implementations. The concrete object is typically a ``dict`` but a
 # mapping keeps the annotations flexible for tests that substitute custom
 # containers.
-AgentExecutionResult = Mapping[str, object]
+AgentExecutionResult = Mapping[str, Any]
 
 # ``CallbackMap`` mirrors the callback dictionaries passed through the
 # orchestrator. Individual helpers down-cast the stored ``Callable`` into the
@@ -43,7 +43,8 @@ class TracerProtocol(Protocol):
     def start_as_current_span(
         self,
         name: str,
-        attributes: Mapping[str, object] | None = None,
+        *args: object,
+        **kwargs: object,
     ) -> AbstractContextManager[object]:
         """Return a context manager that records a tracing span."""
 

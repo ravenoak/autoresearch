@@ -159,6 +159,7 @@ dev = [
     "tomli-w >=1.2.0",
     "types-requests >=2.32.0; python_version < '3.13'",
     "types-networkx >=3.4.0; python_version < '3.13'",
+    "types-psutil >=5.9.5.20240516; python_version < '3.13'",
     "types-protobuf >=6.30.2.20250516; python_version < '3.13'",
     "hypothesis >=6.135.33",
     "cibuildwheel >=3.0.1; python_version < '3.13'",
@@ -191,6 +192,7 @@ dev-minimal = [
     "mypy >=1.10.0",
     "tomli-w >=1.2.0",
     "redis >=6.2",
+    "types-psutil >=5.9.5.20240516; python_version < '3.13'",
 ]
 
 # Packaging utilities for building and publishing distributions
@@ -242,7 +244,6 @@ markers = [
 
 [tool.mypy]
 python_version = "3.12"
-no_site_packages = true
 strict = true
 
 [tool.flake8]

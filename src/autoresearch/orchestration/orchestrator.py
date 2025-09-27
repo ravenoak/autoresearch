@@ -31,7 +31,7 @@ from .orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
 from .token_utils import _capture_token_usage
-from .types import CallbackMap, CycleCallback
+from .types import CallbackMap, CycleCallback, TracerProtocol
 
 log = get_logger(__name__)
 
@@ -120,7 +120,7 @@ class Orchestrator:
     ) -> QueryResponse:
         """Run a query through dialectical agent cycles."""
         setup_tracing(getattr(config, "tracing_enabled", False))
-        tracer = get_tracer(__name__)
+        tracer_protocol = cast(TracerProtocol, get_tracer(__name__))
         record_query()
         metrics = OrchestrationMetrics()
         callbacks_map: CallbackMap = cast(CallbackMap, callbacks or {})
@@ -313,8 +313,8 @@ class Orchestrator:
                     metrics,
                     callbacks_map,
                     agent_factory,
-                    storage_manager,
-                    tracer,
+                  storage_manager,
+                  tracer_protocol,
                     cb_manager,
                 )
 
@@ -369,7 +369,7 @@ class Orchestrator:
     ) -> QueryResponse:
         """Asynchronous wrapper around :meth:`run_query`."""
         setup_tracing(getattr(config, "tracing_enabled", False))
-        tracer = get_tracer(__name__)
+        tracer_protocol = cast(TracerProtocol, get_tracer(__name__))
         record_query()
         metrics = OrchestrationMetrics()
         callbacks_map: CallbackMap = cast(CallbackMap, callbacks or {})
@@ -483,7 +483,7 @@ class Orchestrator:
                 callbacks_map,
                 agent_factory,
                 storage_manager,
-                tracer,
+                tracer_protocol,
                 concurrent=concurrent,
                 cb_manager=cb_manager,
             )

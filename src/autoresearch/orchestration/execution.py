@@ -23,6 +23,7 @@ from .circuit_breaker import CircuitBreakerManager
 from .error_handling import _handle_agent_error
 from .metrics import OrchestrationMetrics
 from .state import QueryState
+from .token_utils import SupportsExecute
 from .token_utils import _capture_token_usage as capture_token_usage
 from .token_utils import _execute_with_adapter as execute_with_adapter
 from .types import (
@@ -124,7 +125,9 @@ def _execute_agent_with_token_counting(
             log.debug(
                 f"Executing {agent_name}.execute() with token counting adapter"
             )
-            result = execute_with_adapter(agent, state, config, wrapped_adapter)
+            result = execute_with_adapter(
+                cast(SupportsExecute, agent), state, config, wrapped_adapter
+            )
             log.debug(f"Finished {agent_name}.execute()")
         return result
     except TimeoutError:

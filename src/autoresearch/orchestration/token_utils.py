@@ -135,4 +135,4 @@ def _execute_with_adapter(
             "Agent.execute must return a mapping compatible with QueryState.update"
         )
 
-    return cast(AgentExecutionResult, result)
+    return result

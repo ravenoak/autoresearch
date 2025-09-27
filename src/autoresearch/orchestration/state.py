@@ -1,9 +1,10 @@
 """State management for the dialectical reasoning process."""
 
+import re
 import time
 from collections.abc import Mapping, Sequence
 from threading import RLock
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Sequence as SeqType, cast
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -11,6 +12,7 @@ from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
 from ..models import QueryResponse
 from ..search.context import SearchContext
+from .task_graph import TaskGraph
 
 LOCK_TYPE = type(RLock())
 
@@ -41,6 +43,7 @@ class QueryState(BaseModel):
     coalitions: dict[str, list[str]] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
     task_graph: dict[str, Any] = Field(default_factory=_default_task_graph)
+    react_log: list[dict[str, Any]] = Field(default_factory=list)
     react_traces: list[dict[str, Any]] = Field(default_factory=list)
     cycle: int = 0
     primus_index: int = 0
@@ -49,7 +52,7 @@ class QueryState(BaseModel):
 
     _lock: RLock = PrivateAttr(default_factory=RLock)
 
-    def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
+    def model_post_init(self, __context: Any) -> None:
         """Ensure synchronization primitives survive model cloning."""
         super().model_post_init(__context)
         self._ensure_lock()
@@ -141,18 +144,74 @@ class QueryState(BaseModel):
             events = [e for e in events if e.target == recipient]
         return events
 
-    def set_task_graph(self, task_graph: Any) -> None:
+    def set_task_graph(self, task_graph: Any) -> list[dict[str, Any]]:
         """Store the structured planner output for downstream coordination."""
 
         with self._lock:
-            normalized = self._normalise_task_graph(task_graph)
+            normalized, warnings = self._normalise_task_graph(task_graph)
             self.task_graph = normalized
             planner_meta = self.metadata.setdefault("planner", {})
-            planner_meta["task_graph"] = {
+            stats = {
                 "task_count": len(normalized.get("tasks", [])),
                 "edge_count": len(normalized.get("edges", [])),
                 "updated_at": time.time(),
             }
+            planner_meta["task_graph"] = stats
+            if warnings:
+                self.add_react_log_entry(
+                    "planner.normalization",
+                    {
+                        "warnings": list(warnings),
+                        "task_graph_stats": stats,
+                    },
+                )
+        return warnings
+
+    def add_react_log_entry(
+        self,
+        event: str,
+        payload: Mapping[str, Any],
+        *,
+        metadata: Optional[Mapping[str, Any]] = None,
+    ) -> dict[str, Any]:
+        """Append a structured entry to the ReAct event log."""
+
+        entry = {
+            "event": event,
+            "payload": dict(payload),
+            "metadata": dict(metadata) if metadata else {},
+            "cycle": self.cycle,
+            "timestamp": time.time(),
+        }
+        with self._lock:
+            self.react_log.append(entry)
+        return entry
+
+    def record_planner_trace(
+        self,
+        *,
+        prompt: str,
+        raw_response: str,
+        normalized: Mapping[str, Any],
+        warnings: SeqType[Mapping[str, Any] | str] | None = None,
+    ) -> dict[str, Any]:
+        """Record planner prompt/response pairs for replay."""
+
+        warning_payload: list[dict[str, Any]] = []
+        for warning in warnings or []:
+            if isinstance(warning, Mapping):
+                warning_payload.append(dict(warning))
+            else:
+                warning_payload.append({"message": str(warning)})
+        return self.add_react_log_entry(
+            "planner.trace",
+            {
+                "prompt": prompt,
+                "raw_response": raw_response,
+                "task_graph": dict(normalized),
+            },
+            metadata={"warnings": warning_payload} if warning_payload else None,
+        )
 
     def extend_react_traces(self, traces: Any) -> None:
         """Append a batch of ReAct traces captured during execution."""
@@ -182,10 +241,16 @@ class QueryState(BaseModel):
             traces = [trace for trace in traces if trace.get("task_id") == task_id]
         return traces
 
-    def _normalise_task_graph(self, task_graph: Any) -> dict[str, Any]:
+    def _normalise_task_graph(
+        self, task_graph: Any
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Validate and normalise a task graph payload."""
 
-        if isinstance(task_graph, Mapping):
+        warnings: list[dict[str, Any]] = []
+        payload: dict[str, Any]
+        if isinstance(task_graph, TaskGraph):
+            payload = dict(task_graph.to_payload())
+        elif isinstance(task_graph, Mapping):
             payload = dict(task_graph)
         elif isinstance(task_graph, Sequence) and not isinstance(task_graph, (str, bytes)):
             payload = {"tasks": list(task_graph)}
@@ -204,45 +269,217 @@ class QueryState(BaseModel):
             raise TypeError("task_graph['metadata'] must be a mapping")
 
         normalized_tasks: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
         for idx, task in enumerate(tasks_obj, start=1):
             if not isinstance(task, Mapping):
                 raise TypeError("each task must be a mapping")
-            normalized_task: dict[str, Any] = {
-                "id": str(task.get("id") or f"task-{idx}"),
-                "question": task.get("question")
+            task_id = str(task.get("id") or f"task-{idx}")
+            if task_id in seen_ids:
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.duplicate_task_id",
+                        "Duplicate task identifier encountered.",
+                        task_id=task_id,
+                    )
+                )
+            seen_ids.add(task_id)
+            question = str(
+                task.get("question")
                 or task.get("goal")
                 or task.get("description")
-                or "",
-                "tools": list(task.get("tools", [])) if task.get("tools") else [],
-                "depends_on": list(task.get("depends_on", []))
-                if task.get("depends_on")
-                else [],
-                "criteria": list(task.get("criteria", [])) if task.get("criteria") else [],
-                "metadata": dict(task.get("metadata", {}))
-                if isinstance(task.get("metadata"), Mapping)
-                else {},
+                or task.get("prompt")
+                or ""
+            ).strip()
+            if not question:
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.missing_question",
+                        "Task missing question text after normalisation.",
+                        task_id=task_id,
+                    )
+                )
+            tools = self._ensure_list_of_str(
+                task.get("tools"),
+                field="tools",
+                task_id=task_id,
+                warnings=warnings,
+                split_pattern=r",|;|/| and ",
+            )
+            depends_on = self._ensure_list_of_str(
+                task.get("depends_on"),
+                field="depends_on",
+                task_id=task_id,
+                warnings=warnings,
+                split_pattern=r",|;",
+            )
+            criteria = self._ensure_list_of_str(
+                task.get("criteria"),
+                field="criteria",
+                task_id=task_id,
+                warnings=warnings,
+                split_pattern=r",|;",
+            )
+            sub_questions = self._ensure_list_of_str(
+                task.get("sub_questions"),
+                field="sub_questions",
+                task_id=task_id,
+                warnings=warnings,
+            )
+            affinity_raw = task.get("affinity")
+            affinity: dict[str, float] = {}
+            if isinstance(affinity_raw, Mapping):
+                for tool, value in affinity_raw.items():
+                    try:
+                        affinity[str(tool)] = float(value)
+                    except (TypeError, ValueError):
+                        warnings.append(
+                            self._task_graph_warning(
+                                "state.affinity_cast_failed",
+                                "Affinity score is not numeric.",
+                                task_id=task_id,
+                                detail={"tool": str(tool), "value": value},
+                            )
+                        )
+            elif affinity_raw not in (None, {}):
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.affinity_invalid",
+                        "Affinity payload must be a mapping of tool->score.",
+                        task_id=task_id,
+                        detail={"affinity": affinity_raw},
+                    )
+                )
+            metadata_payload = task.get("metadata")
+            if isinstance(metadata_payload, Mapping):
+                metadata = dict(metadata_payload)
+            elif metadata_payload is None:
+                metadata = {}
+            else:
+                metadata = {}
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.metadata_invalid",
+                        "Task metadata payload must be a mapping.",
+                        task_id=task_id,
+                        detail={"metadata": metadata_payload},
+                    )
+                )
+            normalized_task: dict[str, Any] = {
+                "id": task_id,
+                "question": question,
+                "tools": tools,
+                "depends_on": depends_on,
+                "criteria": criteria,
+                "affinity": affinity,
+                "metadata": metadata,
             }
-            sub_questions = task.get("sub_questions")
-            if isinstance(sub_questions, Sequence) and not isinstance(sub_questions, (str, bytes)):
-                normalized_task["sub_questions"] = [str(value) for value in sub_questions]
+            if sub_questions:
+                normalized_task["sub_questions"] = sub_questions
             normalized_tasks.append(normalized_task)
 
+        valid_ids = {task["id"] for task in normalized_tasks}
+        for task in normalized_tasks:
+            filtered_deps: list[str] = []
+            for dep in task.get("depends_on", []):
+                if dep in valid_ids:
+                    filtered_deps.append(dep)
+                else:
+                    warnings.append(
+                        self._task_graph_warning(
+                            "state.dependency_missing",
+                            "Dependency references unknown task id.",
+                            task_id=task["id"],
+                            detail={"dependency": dep},
+                        )
+                    )
+            task["depends_on"] = filtered_deps
+
         normalized_edges: list[dict[str, Any]] = []
+        edge_signatures: set[tuple[str, str, str]] = set()
         for edge in edges_obj:
             if not isinstance(edge, Mapping):
                 raise TypeError("each edge must be a mapping")
+            source = str(edge.get("source"))
+            target = str(edge.get("target"))
+            edge_type = str(edge.get("type", "dependency"))
+            if source not in valid_ids or target not in valid_ids:
+                warnings.append(
+                    self._task_graph_warning(
+                        "state.edge_missing_task",
+                        "Edge references unknown task id.",
+                        detail={"source": source, "target": target},
+                    )
+                )
+                continue
+            signature = (source, target, edge_type)
+            if signature in edge_signatures:
+                continue
+            edge_signatures.add(signature)
             normalized_edges.append(
-                {
-                    "source": str(edge.get("source")),
-                    "target": str(edge.get("target")),
-                    "type": edge.get("type", "dependency"),
-                }
+                {"source": source, "target": target, "type": edge_type}
             )
+
+        for task in normalized_tasks:
+            for dep in task.get("depends_on", []):
+                signature = (dep, task["id"], "dependency")
+                if signature not in edge_signatures:
+                    edge_signatures.add(signature)
+                    normalized_edges.append(
+                        {"source": dep, "target": task["id"], "type": "dependency"}
+                    )
 
         metadata_copy = dict(metadata_obj)
         metadata_copy.setdefault("version", 1)
 
-        return {"tasks": normalized_tasks, "edges": normalized_edges, "metadata": metadata_copy}
+        return {"tasks": normalized_tasks, "edges": normalized_edges, "metadata": metadata_copy}, warnings
+
+    def _ensure_list_of_str(
+        self,
+        value: Any,
+        *,
+        field: str,
+        task_id: str,
+        warnings: list[dict[str, Any]],
+        split_pattern: str | None = None,
+    ) -> list[str]:
+        """Coerce ``value`` into a list of strings with optional splitting."""
+
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            if split_pattern:
+                parts = [segment.strip() for segment in re.split(split_pattern, value) if segment.strip()]
+                return parts
+            trimmed = value.strip()
+            return [trimmed] if trimmed else []
+        if value is None:
+            return []
+        warnings.append(
+            self._task_graph_warning(
+                "state.coerced_field",
+                f"Coerced {field} into list form.",
+                task_id=task_id,
+                detail={"value": value},
+            )
+        )
+        return [str(value)]
+
+    def _task_graph_warning(
+        self,
+        code: str,
+        message: str,
+        *,
+        task_id: str | None = None,
+        detail: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Return a structured warning payload for task graph normalisation."""
+
+        payload: dict[str, Any] = {"code": code, "message": message}
+        if task_id is not None:
+            payload["task_id"] = task_id
+        if detail is not None:
+            payload["detail"] = dict(detail)
+        return payload
 
     # ------------------------------------------------------------------
     # Coalition management utilities
@@ -287,7 +524,7 @@ class QueryState(BaseModel):
     def __getstate__(self) -> dict[str, Any]:
         """Drop non-serializable members before pickling."""
 
-        state = self.model_dump(mode="python")
+        state: dict[str, Any] = self.model_dump(mode="python")
         state.pop("_lock", None)
         state.pop("__pydantic_private__", None)
         state.pop("_abc_impl", None)
@@ -335,6 +572,7 @@ class QueryState(BaseModel):
             metrics["knowledge_graph"] = knowledge_graph_meta
 
         return QueryResponse(
+            query=self.query,
             answer=self.results.get("final_answer", "No answer synthesized"),
             citations=self.sources,
             reasoning=self.claims,

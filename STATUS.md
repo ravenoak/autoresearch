@@ -31,6 +31,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Logged new open issues for the adaptive gate, planner upgrade, GraphRAG,
   evaluation harness, and cost-aware routing phases so work can begin with
   acceptance criteria already scoped.【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
+- Instrumented the planner-coordinator pipeline with typed task graphs,
+  depth-affinity scheduling, and `react_log` telemetry to baseline unlock
+  coverage and tool affinity KPIs for the PRDV flow.【F:docs/specs/orchestration.md†L33-L70】【F:docs/pseudocode.md†L171-L200】
 
 ## September 26, 2025
 - Added an `autoresearch evaluate` Typer app and Taskfile shims so the

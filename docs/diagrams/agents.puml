@@ -133,6 +133,27 @@ package "Orchestration" {
     + update(result): void
   }
 
+  class TaskCoordinator {
+    + ready_tasks(): List[Dict]
+    + iter_schedule(): Iterator[Dict]
+    + record_react_step(task_id, thought, action, tool, metadata): Dict
+  }
+
+  class TaskGraph {
+    + tasks: List[TaskNode]
+    + edges: List[TaskEdge]
+    + metadata: Dict[str, Any]
+  }
+
+  class TaskNode {
+    + id: str
+    + question: str
+    + tools: List[str]
+    + depends_on: List[str]
+    + criteria: List[str]
+    + affinity: Dict[str, float]
+  }
+
   enum DialoguePhase {
     THESIS
     ANTITHESIS
@@ -183,6 +204,8 @@ ContrarianAgent --> ReasoningMode : uses
 FactChecker --> DialoguePhase : uses
 FactChecker --> ReasoningMode : uses
 FactChecker --> Search : uses
+PlannerAgent --> TaskGraph : emits
+TaskCoordinator --> TaskGraph : consumes
 PromptGeneratorMixin --> PromptTemplate : uses
 
 ' Execution flow

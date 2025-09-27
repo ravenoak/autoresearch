@@ -5,12 +5,13 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping, Sequence
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
+from ...orchestration.task_graph import TaskEdge, TaskGraph, TaskNode
 from ...logging_utils import get_logger
 
 log = get_logger(__name__)
@@ -37,8 +38,15 @@ class PlannerAgent(Agent):
                 prompt += f"\n\nPeer feedback:\n{fb}\n"
         research_plan = adapter.generate(prompt, model=model)
 
-        task_graph = self._generate_task_graph(research_plan, state)
-        state.set_task_graph(task_graph)
+        task_graph, planner_warnings = self._generate_task_graph(research_plan, state)
+        normalization_warnings = state.set_task_graph(task_graph)
+        state.record_planner_trace(
+            prompt=prompt,
+            raw_response=research_plan,
+            normalized=state.task_graph,
+            warnings=[*planner_warnings, *normalization_warnings],
+        )
+        task_graph_payload = task_graph.to_payload()
 
         # Create and return the result
         claim = self.create_claim(research_plan, "research_plan")
@@ -47,13 +55,13 @@ class PlannerAgent(Agent):
             metadata={
                 "phase": DialoguePhase.PLANNING,
                 "task_graph": {
-                    "tasks": len(task_graph.get("tasks", [])),
-                    "edges": len(task_graph.get("edges", [])),
+                    "tasks": len(task_graph_payload.get("tasks", [])),
+                    "edges": len(task_graph_payload.get("edges", [])),
                 },
             },
             results={
                 "research_plan": research_plan,
-                "task_graph": task_graph,
+                "task_graph": task_graph_payload,
             },
         )
 
@@ -82,24 +90,33 @@ class PlannerAgent(Agent):
     # Task graph generation helpers
     # ------------------------------------------------------------------
 
-    def _generate_task_graph(self, plan: str, state: QueryState) -> dict[str, Any]:
+    def _generate_task_graph(
+        self, plan: str, state: QueryState
+    ) -> Tuple[TaskGraph, List[dict[str, Any]]]:
         """Transform LLM output into a structured task graph."""
 
+        warnings: List[dict[str, Any]] = []
         parsed = self._parse_json_block(plan)
         if parsed is not None:
-            graph = self._normalise_parsed_payload(parsed)
+            graph = self._normalise_parsed_payload(parsed, warnings)
         else:
-            graph = self._heuristic_graph(plan)
+            warnings.append(
+                self._planner_warning(
+                    "planner.missing_json",
+                    "LLM output did not include structured JSON; applied heuristic",
+                    detail={"excerpt": plan.strip()[:200]},
+                )
+            )
+            graph = self._heuristic_graph(plan, warnings)
 
-        graph.setdefault("metadata", {})
-        graph["metadata"].update(
+        graph.metadata.setdefault("source", self.name)
+        graph.metadata.update(
             {
-                "source": self.name,
                 "cycle": state.cycle,
                 "raw_plan_excerpt": plan.strip()[:5000],
             }
         )
-        return graph
+        return graph, warnings
 
     def _parse_json_block(self, plan: str) -> Any:
         """Attempt to parse a JSON block from the planner output."""
@@ -120,40 +137,74 @@ class PlannerAgent(Agent):
                 continue
         return None
 
-    def _normalise_parsed_payload(self, payload: Any) -> dict[str, Any]:
+    def _normalise_parsed_payload(
+        self, payload: Any, warnings: List[dict[str, Any]]
+    ) -> TaskGraph:
         """Normalise a parsed JSON payload into planner graph schema."""
 
         if isinstance(payload, Mapping):
             tasks_obj = payload.get("tasks")
             edges_obj = payload.get("edges")
             metadata_obj = payload.get("metadata", {})
-            if isinstance(tasks_obj, Sequence):
-                tasks = [self._normalise_task(task, idx) for idx, task in enumerate(tasks_obj, 1)]
-            elif isinstance(payload.get("steps"), Sequence):
+            if isinstance(tasks_obj, Sequence) and not isinstance(tasks_obj, (str, bytes)):
+                task_items = list(tasks_obj)
                 tasks = [
-                    self._normalise_task(task, idx)
-                    for idx, task in enumerate(payload.get("steps"), 1)
+                    self._normalise_task(task, idx, warnings)
+                    for idx, task in enumerate(task_items, 1)
                 ]
             else:
-                tasks = [self._normalise_task(payload, 1)]
-            edges = self._normalise_edges(edges_obj, tasks)
-            metadata = metadata_obj if isinstance(metadata_obj, Mapping) else {}
-            return {"tasks": tasks, "edges": edges, "metadata": dict(metadata)}
+                steps_obj = payload.get("steps")
+                if isinstance(steps_obj, Sequence) and not isinstance(steps_obj, (str, bytes)):
+                    step_items = list(steps_obj)
+                    tasks = [
+                        self._normalise_task(task, idx, warnings)
+                        for idx, task in enumerate(step_items, 1)
+                    ]
+                else:
+                    tasks = [self._normalise_task(payload, 1, warnings)]
+            edges_source = (
+                edges_obj
+                if isinstance(edges_obj, Sequence) and not isinstance(edges_obj, (str, bytes))
+                else []
+            )
+            metadata_source = metadata_obj if isinstance(metadata_obj, Mapping) else {}
+            edges = self._normalise_edges(edges_source, tasks, warnings)
+            metadata = dict(metadata_source)
+            return TaskGraph(tasks=tasks, edges=edges, metadata=metadata)
 
-        if isinstance(payload, Sequence):
-            tasks = [self._normalise_task(task, idx) for idx, task in enumerate(payload, 1)]
-            edges = self._normalise_edges(None, tasks)
-            return {"tasks": tasks, "edges": edges, "metadata": {}}
+        if isinstance(payload, Sequence) and not isinstance(payload, (str, bytes)):
+            seq_items = list(payload)
+            tasks = [
+                self._normalise_task(task, idx, warnings)
+                for idx, task in enumerate(seq_items, 1)
+            ]
+            edges = self._normalise_edges([], tasks, warnings)
+            return TaskGraph(tasks=tasks, edges=edges, metadata={})
 
-        return self._heuristic_graph(str(payload))
+        warnings.append(
+            self._planner_warning(
+                "planner.unsupported_payload",
+                "Planner output shape unsupported; fallback to heuristics",
+            )
+        )
+        return self._heuristic_graph(str(payload), warnings)
 
-    def _heuristic_graph(self, plan: str) -> dict[str, Any]:
+    def _heuristic_graph(
+        self, plan: str, warnings: List[dict[str, Any]]
+    ) -> TaskGraph:
         """Fallback graph construction using simple heuristics."""
 
         entries = self._split_plan_entries(plan)
-        tasks = [self._normalise_task(entry, idx) for idx, entry in enumerate(entries, 1)]
-        edges = self._normalise_edges(None, tasks)
-        return {"tasks": tasks, "edges": edges, "metadata": {"mode": "heuristic"}}
+        tasks = [
+            self._normalise_task(entry, idx, warnings)
+            for idx, entry in enumerate(entries, 1)
+        ]
+        edges = self._normalise_edges(None, tasks, warnings)
+        return TaskGraph(
+            tasks=tasks,
+            edges=edges,
+            metadata={"mode": "heuristic"},
+        )
 
     def _split_plan_entries(self, plan: str) -> List[Any]:
         """Split plan text into task-sized segments."""
@@ -169,36 +220,91 @@ class PlannerAgent(Agent):
 
         return [plan.strip()] if plan.strip() else []
 
-    def _normalise_task(self, task: Any, index: int) -> dict[str, Any]:
+    def _normalise_task(
+        self, task: Any, index: int, warnings: List[dict[str, Any]]
+    ) -> TaskNode:
         """Standardise a task payload into the task graph schema."""
 
+        task_id = f"task-{index}"
+        sub_questions: List[str] = []
+        explanation: str | None = None
+
         if isinstance(task, Mapping):
+            raw_id = task.get("id")
+            if raw_id:
+                task_id = str(raw_id)
+            else:
+                warnings.append(
+                    self._planner_warning(
+                        "planner.generated_id",
+                        "Task missing identifier; generated placeholder.",
+                        task_index=index,
+                    )
+                )
             question = self._extract_question(task)
             tools = self._extract_tools(task.get("tools"))
             depends_on = self._extract_sequence(task.get("depends_on"))
             criteria = self._extract_sequence(task.get("criteria"))
             sub_questions = self._extract_sequence(task.get("sub_questions"))
-            metadata = (
-                dict(task.get("metadata"))
-                if isinstance(task.get("metadata"), Mapping)
-                else {}
+            affinity = self._extract_affinity(
+                task.get("affinity"),
+                warnings,
+                task_id=task_id,
+                task_index=index,
             )
+            metadata_payload = task.get("metadata")
+            if isinstance(metadata_payload, Mapping):
+                metadata = dict(metadata_payload)
+            else:
+                if metadata_payload not in (None, {}):
+                    warnings.append(
+                        self._planner_warning(
+                            "planner.metadata_invalid",
+                            "Task metadata payload must be a mapping.",
+                            task_id=task_id,
+                            task_index=index,
+                            detail={"metadata": metadata_payload},
+                        )
+                    )
+                metadata = {}
+            explanation_value = task.get("explanation")
+            if isinstance(explanation_value, str):
+                explanation = explanation_value.strip() or None
+            if not question:
+                warnings.append(
+                    self._planner_warning(
+                        "planner.missing_question",
+                        "Task is missing question text.",
+                        task_id=task_id,
+                        task_index=index,
+                    )
+                )
         else:
             text = str(task).strip()
             question, tools, sub_questions, criteria = self._extract_from_text(text)
             depends_on = []
+            affinity = {}
             metadata = {"source": "heuristic"}
+            if not question:
+                warnings.append(
+                    self._planner_warning(
+                        "planner.heuristic_empty",
+                        "Heuristic parsing produced an empty question.",
+                        task_index=index,
+                    )
+                )
 
-        node: dict[str, Any] = {
-            "id": str(task.get("id") if isinstance(task, Mapping) and task.get("id") else f"task-{index}"),
-            "question": question,
-            "tools": tools,
-            "depends_on": depends_on,
-            "criteria": criteria,
-            "metadata": metadata,
-        }
-        if sub_questions:
-            node["sub_questions"] = sub_questions
+        node = TaskNode(
+            id=task_id,
+            question=question,
+            tools=tools,
+            depends_on=depends_on,
+            criteria=criteria,
+            affinity=affinity,
+            metadata=metadata,
+            sub_questions=sub_questions or None,
+            explanation=explanation,
+        )
         return node
 
     def _extract_question(self, task: Mapping[str, Any]) -> str:
@@ -223,6 +329,116 @@ class PlannerAgent(Agent):
         if isinstance(value, str):
             return [segment.strip() for segment in re.split(r",|;|/", value) if segment.strip()]
         return []
+
+    def _extract_affinity(
+        self,
+        affinity: Any,
+        warnings: List[dict[str, Any]],
+        *,
+        task_id: str,
+        task_index: int,
+    ) -> Dict[str, float]:
+        """Extract tool affinity scores as a numeric mapping."""
+
+        cleaned: Dict[str, float] = {}
+        if affinity is None:
+            return cleaned
+
+        if isinstance(affinity, Mapping):
+            for tool, value in affinity.items():
+                try:
+                    cleaned[str(tool)] = float(value)
+                except (TypeError, ValueError):
+                    warnings.append(
+                        self._planner_warning(
+                            "planner.affinity_cast_failed",
+                            "Failed to cast affinity score to float.",
+                            task_id=task_id,
+                            task_index=task_index,
+                            detail={"tool": str(tool), "value": value},
+                        )
+                    )
+            return cleaned
+
+        if isinstance(affinity, str):
+            tokens = [chunk.strip() for chunk in re.split(r",|;", affinity) if chunk.strip()]
+            return self._extract_affinity(tokens, warnings, task_id=task_id, task_index=task_index)
+
+        if isinstance(affinity, Sequence) and not isinstance(affinity, (str, bytes)):
+            for entry in affinity:
+                if isinstance(entry, Mapping):
+                    nested = self._extract_affinity(
+                        entry,
+                        warnings,
+                        task_id=task_id,
+                        task_index=task_index,
+                    )
+                    for tool, value in nested.items():
+                        cleaned.setdefault(tool, value)
+                elif isinstance(entry, Sequence) and len(entry) == 2:
+                    tool, value = entry
+                    try:
+                        cleaned[str(tool)] = float(value)
+                    except (TypeError, ValueError):
+                        warnings.append(
+                            self._planner_warning(
+                                "planner.affinity_cast_failed",
+                                "Failed to cast affinity tuple score to float.",
+                                task_id=task_id,
+                                task_index=task_index,
+                                detail={"tool": str(tool), "value": value},
+                            )
+                        )
+                elif isinstance(entry, str):
+                    if ":" in entry:
+                        tool, score = entry.split(":", 1)
+                    elif "=" in entry:
+                        tool, score = entry.split("=", 1)
+                    else:
+                        warnings.append(
+                            self._planner_warning(
+                                "planner.affinity_unparsed",
+                                "Affinity string entry missing delimiter.",
+                                task_id=task_id,
+                                task_index=task_index,
+                                detail={"entry": entry},
+                            )
+                        )
+                        continue
+                    try:
+                        cleaned[tool.strip()] = float(score.strip())
+                    except (TypeError, ValueError):
+                        warnings.append(
+                            self._planner_warning(
+                                "planner.affinity_cast_failed",
+                                "Failed to cast affinity string score to float.",
+                                task_id=task_id,
+                                task_index=task_index,
+                                detail={"tool": tool.strip(), "value": score},
+                            )
+                        )
+                else:
+                    warnings.append(
+                        self._planner_warning(
+                            "planner.affinity_unparsed",
+                            "Unsupported affinity entry type.",
+                            task_id=task_id,
+                            task_index=task_index,
+                            detail={"entry": entry},
+                        )
+                    )
+            return cleaned
+
+        warnings.append(
+            self._planner_warning(
+                "planner.affinity_unparsed",
+                "Unsupported affinity payload type.",
+                task_id=task_id,
+                task_index=task_index,
+                detail={"affinity": affinity},
+            )
+        )
+        return cleaned
 
     def _extract_from_text(self, text: str) -> tuple[str, List[str], List[str], List[str]]:
         """Extract question, tools, and sub-questions from raw text."""
@@ -250,25 +466,55 @@ class PlannerAgent(Agent):
         return question, tools, sub_questions, criteria
 
     def _normalise_edges(
-        self, edges: Any, tasks: List[dict[str, Any]]
-    ) -> List[dict[str, Any]]:
+        self, edges: Any, tasks: List[TaskNode], warnings: List[dict[str, Any]]
+    ) -> List[TaskEdge]:
         """Normalise edge payloads and include dependency edges."""
 
-        normalized: list[dict[str, Any]] = []
+        normalized: list[TaskEdge] = []
         if isinstance(edges, Sequence) and not isinstance(edges, (str, bytes)):
             for edge in edges:
                 if isinstance(edge, Mapping):
                     normalized.append(
-                        {
-                            "source": str(edge.get("source")),
-                            "target": str(edge.get("target")),
-                            "type": edge.get("type", "dependency"),
-                        }
+                        TaskEdge(
+                            source=str(edge.get("source")),
+                            target=str(edge.get("target")),
+                            type=str(edge.get("type", "dependency")),
+                        )
+                    )
+                else:
+                    warnings.append(
+                        self._planner_warning(
+                            "planner.invalid_edge",
+                            "Edge payload must be a mapping.",
+                            detail={"edge": edge},
+                        )
                     )
 
+        existing = {(edge.source, edge.target, edge.type) for edge in normalized}
         for task in tasks:
-            for dep in task.get("depends_on", []):
-                edge = {"source": str(dep), "target": task["id"], "type": "dependency"}
-                if edge not in normalized:
-                    normalized.append(edge)
+            for dep in task.depends_on:
+                signature = (dep, task.id, "dependency")
+                if signature not in existing:
+                    normalized.append(TaskEdge(source=dep, target=task.id))
+                    existing.add(signature)
         return normalized
+
+    def _planner_warning(
+        self,
+        code: str,
+        message: str,
+        *,
+        task_id: str | None = None,
+        task_index: int | None = None,
+        detail: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Create a structured warning entry for planner telemetry."""
+
+        payload: dict[str, Any] = {"code": code, "message": message}
+        if task_id is not None:
+            payload["task_id"] = task_id
+        if task_index is not None:
+            payload["task_index"] = task_index
+        if detail is not None:
+            payload["detail"] = dict(detail)
+        return payload

@@ -2,17 +2,22 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import json
+
 from pytest_bdd import given, parsers, scenario, then, when
 
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError, NotFoundError
 from autoresearch.orchestration import ReasoningMode
+from autoresearch.orchestration.coordinator import TaskCoordinator
 from autoresearch.orchestration.orchestrator import Orchestrator
 from autoresearch.orchestration.orchestration_utils import (
     OrchestrationUtils,
     ScoutGateDecision,
 )
+from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.task_graph import TaskGraph, TaskNode
 
 
 @scenario("../features/reasoning_mode.feature", "Direct mode runs Synthesizer only")
@@ -63,6 +68,14 @@ def test_unsupported_mode():
 
 @scenario(
     "../features/reasoning_mode.feature",
+    "Planner research debate validate telemetry",
+)
+def test_prdv_telemetry():
+    pass
+
+
+@scenario(
+    "../features/reasoning_mode.feature",
     "Direct mode agent failure triggers fallback",
 )
 def test_direct_failure():
@@ -91,6 +104,79 @@ def test_dialectical_failure():
 )
 def test_loop_overflow():
     pass
+
+
+@when("I simulate a PRDV planner flow", target_fixture="prdv_context")
+def simulate_prdv_planner_flow():
+    state = QueryState(query="planner telemetry")
+    graph = TaskGraph(
+        tasks=[
+            TaskNode(
+                id="plan",
+                question="Plan research agenda",
+                tools=["planner"],
+                affinity={"planner": 1.0},
+            ),
+            TaskNode(
+                id="research",
+                question="Research supporting evidence",
+                tools=["search"],
+                depends_on=["plan", "phantom"],
+                affinity={"search": 0.8, "analysis": 0.3},
+            ),
+            TaskNode(
+                id="validate",
+                question="Validate findings",
+                tools=["review"],
+                depends_on=["research"],
+                affinity={"review": 0.7},
+            ),
+        ],
+        metadata={"mode": "prdv"},
+    )
+    payload = graph.to_payload()
+    payload["tasks"][1]["affinity"]["search"] = "strong"
+    warnings = state.set_task_graph(payload)
+    state.record_planner_trace(
+        prompt="Plan the PRDV cycle",
+        raw_response=json.dumps(payload),
+        normalized=state.task_graph,
+        warnings=warnings,
+    )
+    coordinator = TaskCoordinator(state)
+    coordinator.start_task("plan")
+    coordinator.complete_task("plan")
+    coordinator.start_task("research")
+    trace = coordinator.record_react_step(
+        "research",
+        thought="collect expert insight",
+        action="call search",
+        observation="notes gathered",
+        tool="search",
+    )
+    return {"state": state, "trace": trace, "warnings": warnings}
+
+
+@then("the planner react log should capture normalization warnings")
+def assert_prdv_react_log(prdv_context):
+    state: QueryState = prdv_context["state"]
+    normalization_events = [
+        entry for entry in state.react_log if entry["event"] == "planner.normalization"
+    ]
+    assert normalization_events
+    assert normalization_events[-1]["payload"]["warnings"]
+    trace_events = [entry for entry in state.react_log if entry["event"] == "planner.trace"]
+    assert trace_events
+    assert trace_events[-1]["metadata"]["warnings"]
+
+
+@then("the coordinator trace metadata should include unlock events")
+def assert_prdv_trace_metadata(prdv_context):
+    trace = prdv_context["trace"]
+    metadata = trace["metadata"]
+    assert metadata["unlock_events"]
+    assert metadata["task_depth"] == 1
+    assert metadata["affinity_delta"] > 0.0
 
 
 @given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")

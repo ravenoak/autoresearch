@@ -209,23 +209,45 @@ function audit_claims(candidate, evidence, config):
 
 ## 9. Planner and Coordinator (planning/coordinator.py)
 ```
-function plan_and_execute(query, config):
-    plan = planner_agent.decompose(query, config)
-    coordinator_log = []
+class PlannerAgent:
+    function execute(state, config):
+        prompt = build_planner_prompt(state)
+        raw_plan = adapter.generate(prompt, model=config.model)
+        graph = TaskGraph(
+            nodes=parse_nodes(raw_plan),
+            metadata={source: "planner"},
+        )
+        warnings = state.set_task_graph(graph)
+        state.record_planner_trace(
+            prompt=prompt,
+            raw_response=raw_plan,
+            normalized=state.task_graph,
+            warnings=warnings,
+        )
+        return graph
 
-    for task in plan.tasks:
-        agent = select_agent(task, config)
-        model = select_model(task, config)
-        result = agent.execute(task, model, config)
-        coordinator_log.append({
-            "task": task,
-            "agent": agent.name,
-            "model": model.name,
-            "result": result.summary,
-        })
-        plan.update_with_result(task, result)
+class TaskCoordinator:
+    function ready_tasks():
+        ready = [task for task in graph.tasks if deps_complete(task)]
+        return sort(ready, key=(depth(task), -max_affinity(task), task.id))
 
-    return plan, coordinator_log
+    function record_react_step(task_id, thought, action, tool):
+        metadata = {
+            unlock_events: unlocked_tasks(),
+            task_depth: depth(task_id),
+            affinity_delta: top_affinity(task_id) - affinity(task_id, tool),
+        }
+        entry = {
+            task_id: task_id,
+            step: next_step(task_id),
+            phase: phase,
+            thought: thought,
+            action: action,
+            tool: tool,
+            metadata: metadata,
+        }
+        state.add_react_trace(entry)
+        return entry
 ```
 
 ## 10. Graph-Augmented Retrieval (retrieval/graph.py)
