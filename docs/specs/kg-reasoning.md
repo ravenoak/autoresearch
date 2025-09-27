@@ -49,6 +49,71 @@ Helper utilities for ontology reasoning and advanced SPARQL queries.
 3. Return paths as ordered label lists suitable for multi-hop reasoning or
    explanation traces.
 
+## Planned Enhancements
+
+### Extend ingestion without duplicating stores
+- Reuse `StorageManager.update_knowledge_graph` so extracted edges keep the
+  DuckDB, NetworkX, and RDFLib stores consistent instead of creating feature
+  specific caches.
+- Annotate `GraphRelation` payloads with a `features` map that records
+  contradiction support, source confidence, and derived weights before the
+  update call so all backends share identical metadata.
+- Persist contradiction metrics in the summary only after `StorageManager`
+  applies the batch, ensuring multi-process workers observe a single source of
+  truth.
+- Dialectic: a dedicated feature graph would allow bespoke indexes but risks
+  stale divergence; extending the existing pipeline centralises maintenance and
+  keeps ingestion latency bounded to one persistence round-trip.
+
+### Improve contradiction scoring and accessors
+- Extend `_detect_contradictions` to emit per-edge disagreement weights and
+  write them into the `GraphContradiction` objects used by summaries.
+- Cache contradiction weights alongside adjacency data so `neighbors` and
+  `graph_paths` surface conflicting hops without recomputing matches.
+- Add optional filters (for example `include_contradictions`) to accessor
+  methods, defaulting to the current behaviour to keep call sites stable.
+- Socratic check: when a predicate links many alternatives we prefer
+  normalised weights over binary flags to preserve ranking information for
+  downstream scorers.
+
+### SearchContext integration points
+- Record the latest graph summary on ingest and expose the contradiction score
+  plus edge weights through `SearchContext._graph_summary`.
+- Feed the contradiction score into scout gating by scaling the existing
+  novelty or reliability heuristics before scoring expansions.
+- Surface neighbour weights to `SearchContext.entities` enrichment so repeated
+  queries down-weight contentious relations.
+- Alternatives considered: deferring integration to the orchestrator layer
+  would simplify `SearchContext`, but keeping feedback local shortens the
+  control loop between retrieval and reasoning.
+
+### Schema and performance adjustments in `kg_reasoning.py`
+1. Extend `GraphRelation.to_payload` and storage schema bindings to include the
+   feature map while keeping defaults empty for backward compatibility.
+2. Update `GraphExtractionSummary` with cached edge weight aggregates and make
+   `contradiction_score` derive from weighted counts, guarding the computation
+   behind lazy properties to avoid redundant scans.
+3. Ensure `_derive_multi_hop_paths` streams paths from the shared NetworkX
+   graph instead of materialising duplicates, and memoise lookups to cap CPU
+   usage under tight ingestion budgets.
+4. Thread-safe caches: protect the new per-edge feature cache with the existing
+   `_summary_lock` to avoid write contention when multiple threads read
+   neighbours.
+
+### Regression testing strategy
+- Unit: mock `StorageManager.update_knowledge_graph` to assert relation payload
+  expansion and verify contradiction weights are forwarded without creating
+  auxiliary stores.
+- Integration: execute the ingestion path against the in-memory storage backend
+  and validate that `SearchContext` receives weighted contradiction scores and
+  neighbour annotations.
+- Property-style regression: feed crafted snippets that trigger multi-entity
+  conflicts to ensure weighted scoring remains within `[0, 1]` even when many
+  contradictory edges exist.
+- Performance guardrails: reuse the current benchmarks and add assertions on
+  ingestion runtime to confirm memoised accessors keep latency within the
+  existing limits.
+
 ## Invariants
 
 - `register_reasoner` adds exactly one callable per name.
