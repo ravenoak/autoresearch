@@ -224,15 +224,22 @@ alongside the alpha release workstream.
 
 ### 1.4 Search and Evidence Audit System
 - **Evolve the claim audit ingestion pipeline**
-  - Rework `evidence/__init__.py` to swap lexical scoring for
-    model-based entailment that correlates with
-    `ClaimAuditRecord` severity tiers in `storage.py`.
-  - Add stability checks so `QueryResponse.claim_audits` drops
-    noisy evidence packets and records retry backoffs in
-    `ClaimAuditRecord.meta`.
-  - Thread structured audit provenance through
-    `QueryResponse.claim_audits` so downstream consumers can
-    trace entailment verdicts to individual evidence items.
+  - Rework `evidence/__init__.py` to replace lexical scoring with
+    model-based entailment, mapping confidence bands directly to
+    `ClaimAuditRecord` severity tiers in `storage.py` while keeping
+    the adapter extensible for future models.
+  - Harden the persistence layer so `ClaimAuditRecord` instances
+    capture retry backoffs, entailment model metadata, and
+    suppression reasons in `meta`, and add invariants that keep the
+    storage schema backward compatible.
+  - Add stability guards in `QueryResponse.claim_audits` that drop
+    noisy evidence packets, emit jitter diagnostics, and ensure
+    retried audits surface deterministic verdicts to callers.
+  - Thread structured audit provenance—including evidence hashes,
+    entailment model identifiers, and retry lineage—through
+    `QueryResponse.claim_audits` so downstream consumers can trace
+    verdicts to individual evidence items without rehydrating
+    storage.
 - **Complete all search backends**
   - Finalize the local file search implementation
   - Enhance the local git search with better code understanding
@@ -255,13 +262,17 @@ alongside the alpha release workstream.
   - Add parameterized tests for configuration variations
 - **Strengthen audit regression suites**
   - Add assertions under `tests/evaluation` that verify
-    `evidence/__init__.py` entailment scores align with
-    `ClaimAuditRecord` severity labels.
+    `evidence/__init__.py` entailment logits bucket correctly into
+    `ClaimAuditRecord` severity labels and persist round-tripping
+    through DuckDB.
   - Capture stability guardrails with fixtures that force audit
     retries and confirm `QueryResponse.claim_audits` suppresses
-    noisy packets.
+    noisy packets, logging jitter to the response payload when
+    suppression occurs.
   - Backfill golden benchmarks tied to the extended
-    `evaluation/harness.py` metrics columns.
+    `evaluation/harness.py` metrics columns so regression suites
+    flag drift in entailment precision, recall, and stability
+    jitter.
 
 ### 2.2 Integration Tests and Benchmarks
 - **Complete cross-component integration tests**
@@ -269,12 +280,14 @@ alongside the alpha release workstream.
   - Verify storage integration with search functionality
   - Test configuration hot-reload with all components
 - **Add performance and audit benchmarks**
-  - Extend `evaluation/harness.py` with KPIs that reuse its
-    batch harness for evidence audits, adding dataset splits for
-    adversarial contradiction and stale-source regressions.
-  - Append metrics columns for entailment precision/recall and
-    audit-stability jitter so the harness emits CSVs ready for
-    regression tracking.
+  - Extend `evaluation/harness.py` so the existing batch harness
+    runs evidence-audit KPIs, wiring new dataset manifests for
+    adversarial contradiction, stale-source regressions, and
+    long-tail factual drift into the shared loader utilities.
+  - Append metrics columns for entailment precision/recall,
+    calibration loss, and audit-stability jitter, ensuring the
+    harness emits schema-versioned CSVs and parquet exports ready
+    for regression tracking and dashboard ingestion.
   - Implement benchmarks for query processing time
   - Test memory usage under various conditions
   - Verify token usage optimization
@@ -344,13 +357,15 @@ alongside the alpha release workstream.
   - Document advanced configuration scenarios
 - **Document the strengthened audit pipeline**
   - Add a walkthrough in `docs/` showing how
-    `QueryResponse.claim_audits` exposes entailment verdicts and
-    stability metadata.
+    `QueryResponse.claim_audits` exposes entailment verdicts,
+    stability metadata, and provenance fields for each evidence
+    packet.
   - Provide configuration examples for tuning
-    `evidence/__init__.py` entailment thresholds and
-    `ClaimAuditRecord` retry policies.
+    `evidence/__init__.py` entailment thresholds, fallback model
+    selection, and `ClaimAuditRecord` retry policies.
   - Publish KPI interpretation guidance so readers can map new
-    `evaluation/harness.py` metrics columns to release gates.
+    `evaluation/harness.py` metrics columns—including calibration
+    loss and jitter—to release gates and dashboards.
 
 ### 4.3 Developer Documentation
 - **Complete architecture documentation**
@@ -363,12 +378,15 @@ alongside the alpha release workstream.
   - Add pull request templates
 - **Update developer references for audits**
   - Add API docs clarifying how to extend
-    `QueryResponse.claim_audits` and its storage binding to
-    `ClaimAuditRecord`.
+    `QueryResponse.claim_audits`, its storage binding to
+    `ClaimAuditRecord`, and the entailment adapters exposed from
+    `evidence/__init__.py`.
   - Describe testing hooks in `evaluation/harness.py` for new
-    audit KPIs and dataset onboarding.
+    audit KPIs, dataset onboarding, and schema-version migrations
+    on emitted artifacts.
   - Call out stability guardrails so contributors validate retry
-    semantics before merging.
+    semantics, jitter logging, and provenance threading before
+    merging.
 
 ## 5. Performance and Scalability
 
