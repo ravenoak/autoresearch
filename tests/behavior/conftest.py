@@ -43,6 +43,7 @@ ALLOWED_STEP_MODULES = {
     "agent_orchestration_steps.py",
     "circuit_breaker_recovery_steps.py",
     "config_cli_steps.py",
+    "evaluation_steps.py",
     "error_recovery_basic_steps.py",
     "error_recovery_redis_steps.py",
     "parallel_group_merging_steps.py",

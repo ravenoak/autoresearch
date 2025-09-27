@@ -17,6 +17,7 @@ for _mod in [
     "capabilities_cli_steps",
     "api_auth_steps",
     "api_orchestrator_integration_steps",
+    "evaluation_steps",
 ]:
     try:
         __import__(f"tests.behavior.steps.{_mod}")
