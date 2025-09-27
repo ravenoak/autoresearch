@@ -205,9 +205,11 @@ def test_render_evaluation_summary_joins_artifacts(monkeypatch):
 
     assert created_tables
     artifacts_cell = created_tables[0].rows[0][-1]
-    assert (
-        artifacts_cell
-        == "duckdb: artifacts/run.duckdb, "
-        "examples: artifacts/examples.parquet, "
-        "summary: artifacts/summary.parquet"
+    expected = ", ".join(
+        [
+            "duckdb: artifacts/run.duckdb",
+            "examples: artifacts/examples.parquet",
+            "summary: artifacts/summary.parquet",
+        ]
     )
+    assert artifacts_cell == expected

@@ -274,6 +274,8 @@ def render_evaluation_summary(
         if summary.summary_parquet:
             artifacts.append(f"summary: {summary.summary_parquet}")
 
+        artifact_display = ", ".join(artifacts) if artifacts else "—"
+
         table.add_row(
             summary.dataset,
             _format_optional(summary.accuracy),
@@ -284,7 +286,7 @@ def render_evaluation_summary(
             _format_optional(summary.avg_cycles_completed, precision=1),
             _format_percentage(summary.gate_exit_rate),
             summary.run_id,
-            ", ".join(artifacts) if artifacts else "—",
+            artifact_display,
         )
 
     console.print(table)
