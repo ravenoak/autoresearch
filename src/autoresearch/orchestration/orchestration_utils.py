@@ -13,6 +13,7 @@ from statistics import mean
 from typing import Iterable, Sequence
 
 from ..config.models import ConfigModel
+from ..logging_utils import get_logger
 from ..search.context import SearchContext
 from .budgeting import _apply_adaptive_token_budget
 from .error_handling import (
@@ -39,6 +40,9 @@ from .metrics import OrchestrationMetrics
 from .state import QueryState
 from .token_utils import _capture_token_usage, _execute_with_adapter
 from .utils import calculate_result_confidence, get_memory_usage
+
+
+log = get_logger(__name__)
 
 
 @dataclass
@@ -125,9 +129,7 @@ class ScoutGatePolicy:
         state.metadata.setdefault("scout_gate", asdict(decision))
         return decision
 
-    def _auto_decide(
-        self, heuristics: dict[str, float], thresholds: dict[str, float]
-    ) -> bool:
+    def _auto_decide(self, heuristics: dict[str, float], thresholds: dict[str, float]) -> bool:
         """Return ``True`` when multi-loop debate should proceed."""
 
         # Debate when evidence coverage looks insufficient or uncertainty is high.
@@ -293,6 +295,11 @@ class OrchestrationUtils:
         metrics: OrchestrationMetrics,
     ) -> ScoutGateDecision:
         """Evaluate and return the scout gate decision."""
+
+        try:
+            SearchContext.get_instance().apply_scout_metadata(state)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            log.debug("Failed to attach scout metadata", exc_info=exc)
 
         policy = ScoutGatePolicy(config)
         return policy.evaluate(query=query, state=state, loops=loops, metrics=metrics)
