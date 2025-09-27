@@ -39,6 +39,9 @@ class ExampleResult:
     tokens_input: Optional[int] = None
     tokens_output: Optional[int] = None
     tokens_total: Optional[int] = None
+    cycles_completed: Optional[int] = None
+    gate_should_debate: Optional[bool] = None
+    gate_events: Sequence[Mapping[str, Any]] = field(default_factory=list)
     recorded_at: datetime = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
@@ -47,7 +50,12 @@ class ExampleResult:
 
 @dataclass
 class EvaluationSummary:
-    """Aggregated metrics for a benchmark run."""
+    """Aggregated metrics for a benchmark run.
+
+    Captures accuracy, citation coverage, contradiction rate, latency, token
+    usage, and loop/gating telemetry so longitudinal analyses can surface
+    regressions in control flow policies.
+    """
 
     dataset: str
     run_id: str
@@ -61,6 +69,10 @@ class EvaluationSummary:
     avg_tokens_input: Optional[float]
     avg_tokens_output: Optional[float]
     avg_tokens_total: Optional[float]
+    avg_cycles_completed: Optional[float]
+    gate_debate_rate: Optional[float]
+    gate_exit_rate: Optional[float]
+    gated_example_ratio: Optional[float]
     config_signature: str
     duckdb_path: Optional[Path]
     example_parquet: Optional[Path]
@@ -188,11 +200,29 @@ class EvaluationHarness:
     ) -> ExampleResult:
         metrics = response.metrics or {}
         execution_metrics = metrics.get("execution_metrics", {})
+        gate_events_raw = metrics.get("gate_events") or []
         total_tokens = execution_metrics.get("total_tokens", {})
         citations = response.citations or []
         claim_audits = response.claim_audits or []
         contradiction = self._has_contradiction(claim_audits)
         answer = response.answer
+
+        cycles_completed = execution_metrics.get("cycles_completed")
+        if isinstance(cycles_completed, float):
+            cycles_completed = int(cycles_completed)
+        elif cycles_completed is not None and not isinstance(cycles_completed, int):
+            try:
+                cycles_completed = int(cycles_completed)
+            except (TypeError, ValueError):
+                cycles_completed = None
+
+        gate_should_debate: Optional[bool]
+        gate_should_debate = None
+        if gate_events_raw:
+            final_event = gate_events_raw[-1]
+            decision = final_event.get("should_debate")
+            if isinstance(decision, bool):
+                gate_should_debate = decision
 
         result = ExampleResult(
             dataset=example.dataset,
@@ -208,10 +238,14 @@ class EvaluationHarness:
             tokens_input=total_tokens.get("input"),
             tokens_output=total_tokens.get("output"),
             tokens_total=total_tokens.get("total"),
+            cycles_completed=cycles_completed,
+            gate_should_debate=gate_should_debate,
+            gate_events=gate_events_raw,
             metadata={
                 "example_metadata": example.metadata,
                 "claim_audits": claim_audits,
                 "raw_metrics": execution_metrics,
+                "gate_events": gate_events_raw,
             },
         )
         return result
@@ -235,6 +269,19 @@ class EvaluationHarness:
         avg_tokens_in = self._mean_float([r.tokens_input for r in results])
         avg_tokens_out = self._mean_float([r.tokens_output for r in results])
         avg_tokens_total = self._mean_float([r.tokens_total for r in results])
+        avg_cycles_completed = self._mean_float(
+            [float(r.cycles_completed) if r.cycles_completed is not None else None for r in results]
+        )
+
+        gate_decisions = [r.gate_should_debate for r in results if r.gate_should_debate is not None]
+        gated_examples = len(gate_decisions)
+        gate_debate_rate = None
+        gate_exit_rate = None
+        if gated_examples:
+            debate_count = sum(1 for decision in gate_decisions if decision)
+            gate_debate_rate = debate_count / gated_examples
+            gate_exit_rate = (gated_examples - debate_count) / gated_examples
+        gated_example_ratio = (gated_examples / len(results)) if results else None
 
         example_parquet: Optional[Path] = None
         summary_parquet: Optional[Path] = None
@@ -256,6 +303,10 @@ class EvaluationHarness:
                 avg_tokens_in,
                 avg_tokens_out,
                 avg_tokens_total,
+                avg_cycles_completed,
+                gate_debate_rate,
+                gate_exit_rate,
+                gated_example_ratio,
                 config_signature,
             )
         if store_parquet:
@@ -276,6 +327,10 @@ class EvaluationHarness:
             avg_tokens_input=avg_tokens_in,
             avg_tokens_output=avg_tokens_out,
             avg_tokens_total=avg_tokens_total,
+            avg_cycles_completed=avg_cycles_completed,
+            gate_debate_rate=gate_debate_rate,
+            gate_exit_rate=gate_exit_rate,
+            gated_example_ratio=gated_example_ratio,
             config_signature=config_signature,
             duckdb_path=self.duckdb_path if store_duckdb else None,
             example_parquet=example_parquet,
@@ -301,11 +356,23 @@ class EvaluationHarness:
                     tokens_input BIGINT,
                     tokens_output BIGINT,
                     tokens_total BIGINT,
+                    cycles_completed INTEGER,
+                    gate_should_debate BOOLEAN,
+                    gate_events JSON,
                     metadata JSON,
                     recorded_at TIMESTAMP,
                     config_signature VARCHAR
                 )
                 """
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS cycles_completed INTEGER"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_should_debate BOOLEAN"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_events JSON"
             )
             conn.execute(
                 """
@@ -322,9 +389,25 @@ class EvaluationHarness:
                     avg_tokens_input DOUBLE,
                     avg_tokens_output DOUBLE,
                     avg_tokens_total DOUBLE,
+                    avg_cycles_completed DOUBLE,
+                    gate_debate_rate DOUBLE,
+                    gate_exit_rate DOUBLE,
+                    gated_example_ratio DOUBLE,
                     config_signature VARCHAR
                 )
                 """
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS avg_cycles_completed DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS gate_debate_rate DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS gate_exit_rate DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS gated_example_ratio DOUBLE"
             )
 
     def _persist_examples(
@@ -349,6 +432,9 @@ class EvaluationHarness:
                 result.tokens_input,
                 result.tokens_output,
                 result.tokens_total,
+                result.cycles_completed,
+                result.gate_should_debate,
+                json.dumps(result.gate_events, default=str),
                 json.dumps(result.metadata, default=str),
                 result.recorded_at,
                 config_signature,
@@ -357,7 +443,7 @@ class EvaluationHarness:
         ]
         insert_sql = (
             "INSERT INTO evaluation_results VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.executemany(insert_sql, rows)
@@ -385,11 +471,15 @@ class EvaluationHarness:
         avg_tokens_in: Optional[float],
         avg_tokens_out: Optional[float],
         avg_tokens_total: Optional[float],
+        avg_cycles_completed: Optional[float],
+        gate_debate_rate: Optional[float],
+        gate_exit_rate: Optional[float],
+        gated_example_ratio: Optional[float],
         config_signature: str,
     ) -> None:
         insert_sql = (
             "INSERT INTO evaluation_run_summary VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.execute(
@@ -407,6 +497,10 @@ class EvaluationHarness:
                     avg_tokens_in,
                     avg_tokens_out,
                     avg_tokens_total,
+                    avg_cycles_completed,
+                    gate_debate_rate,
+                    gate_exit_rate,
+                    gated_example_ratio,
                     config_signature,
                 ),
             )
