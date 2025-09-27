@@ -99,4 +99,12 @@ def section_toggle_defaults(payload: DepthPayload) -> Dict[str, Dict[str, bool]]
             "value": sections.get("reasoning", False)
             or sections.get("react_traces", False),
         },
+        "knowledge_graph": {
+            "available": sections.get("knowledge_graph", False),
+            "value": sections.get("knowledge_graph", False),
+        },
+        "graph_exports": {
+            "available": sections.get("graph_exports", False),
+            "value": sections.get("graph_exports", False),
+        },
     }

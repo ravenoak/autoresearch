@@ -12,7 +12,12 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from autoresearch.models import QueryResponse
-from autoresearch.output_format import OutputFormatter, FormatTemplate, TemplateRegistry
+from autoresearch.output_format import (
+    OutputDepth,
+    OutputFormatter,
+    FormatTemplate,
+    TemplateRegistry,
+)
 from autoresearch.errors import ValidationError as AutoresearchValidationError
 
 
@@ -151,9 +156,9 @@ def test_format_complex_response(capsys):
 
     # Check metrics formatting
     assert "## Metrics" in captured
-    assert "- tokens: 100" in captured  # Metrics now use plain text format
-    assert "- time: 1.5" in captured
-    assert "- sources: ['web', 'knowledge_base']" in captured
+    assert "- **tokens**: 100" in captured
+    assert "- **time**: 1.5" in captured
+    assert "- **sources**: ['web', 'knowledge_base']" in captured
 
 
 def test_format_template_class():
@@ -369,3 +374,64 @@ def test_format_with_missing_template(capsys):
     assert "# Answer" in captured
     assert "## Citations" in captured
     assert "- Citation" in captured
+
+
+def test_tldr_knowledge_graph_section_requires_summary() -> None:
+    base_resp = QueryResponse(answer="a", citations=[], reasoning=[], metrics={})
+    markdown_without = OutputFormatter.render(base_resp, "markdown", depth=OutputDepth.TLDR)
+    assert "## Knowledge Graph" not in markdown_without
+
+    summary = {
+        "entity_count": 2,
+        "relation_count": 1,
+        "contradictions": [
+            {"subject": "A", "predicate": "contradicts", "objects": ["B"]}
+        ],
+        "multi_hop_paths": [["A", "B", "C"]],
+        "contradiction_score": 0.5,
+    }
+    kg_resp = QueryResponse(
+        answer="a",
+        citations=[],
+        reasoning=[],
+        metrics={
+            "knowledge_graph": {
+                "summary": summary,
+                "exports": {"graphml": True, "graph_json": True},
+            }
+        },
+    )
+    markdown_with = OutputFormatter.render(kg_resp, "markdown", depth=OutputDepth.TLDR)
+    assert "## Knowledge Graph" in markdown_with
+    assert "Entities" in markdown_with
+    assert "## Graph Exports" not in markdown_with
+
+
+def test_trace_graph_exports_section_requires_summary() -> None:
+    base_resp = QueryResponse(answer="trace", citations=[], reasoning=[], metrics={})
+    trace_without = OutputFormatter.render(base_resp, "markdown", depth=OutputDepth.TRACE)
+    assert "## Knowledge Graph" not in trace_without
+    assert "## Graph Exports" not in trace_without
+
+    summary = {
+        "entity_count": 3,
+        "relation_count": 2,
+        "contradictions": [],
+        "multi_hop_paths": [["X", "Y"]],
+        "contradiction_score": 0.0,
+    }
+    kg_resp = QueryResponse(
+        answer="trace",
+        citations=[],
+        reasoning=[],
+        metrics={
+            "knowledge_graph": {
+                "summary": summary,
+                "exports": {"graphml": True, "graph_json": True},
+            }
+        },
+    )
+    trace_with = OutputFormatter.render(kg_resp, "markdown", depth=OutputDepth.TRACE)
+    assert "## Knowledge Graph" in trace_with
+    assert "## Graph Exports" in trace_with
+    assert "--output graphml" in trace_with

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 from ..agents.feedback import FeedbackEvent
 from ..agents.messages import MessageProtocol
 from ..models import QueryResponse
+from ..search.context import SearchContext
 
 LOCK_TYPE = type(RLock())
 
@@ -311,11 +312,26 @@ class QueryState(BaseModel):
     def synthesize(self) -> QueryResponse:
         """Create final response from state."""
         # Default implementation - can be overridden by SynthesizerAgent
+        metrics = dict(self.metadata)
+        graph_summary = SearchContext.get_instance().get_graph_summary()
+        if graph_summary:
+            knowledge_graph_meta: dict[str, Any] = {}
+            existing = metrics.get("knowledge_graph")
+            if isinstance(existing, Mapping):
+                knowledge_graph_meta.update(existing)
+            knowledge_graph_meta["summary"] = graph_summary
+            entity_count = int(graph_summary.get("entity_count", 0) or 0)
+            relation_count = int(graph_summary.get("relation_count", 0) or 0)
+            has_graph = bool(entity_count or relation_count)
+            if has_graph:
+                knowledge_graph_meta["exports"] = {"graphml": True, "graph_json": True}
+            metrics["knowledge_graph"] = knowledge_graph_meta
+
         return QueryResponse(
             answer=self.results.get("final_answer", "No answer synthesized"),
             citations=self.sources,
             reasoning=self.claims,
-            metrics=self.metadata,
+            metrics=metrics,
             claim_audits=self.claim_audits,
             task_graph=self.task_graph if self.task_graph.get("tasks") else None,
             react_traces=list(self.react_traces),
