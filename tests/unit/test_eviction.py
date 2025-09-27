@@ -199,13 +199,12 @@ def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
     monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram_factory())
     StorageManager._enforce_ram_budget(1)
     graph = StorageManager.get_graph()
-    assert "c1" not in graph.nodes
-    assert "c2" in graph.nodes
+    assert set(graph.nodes) == {"c2"}
 
     monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram_factory())
     StorageManager._enforce_ram_budget(1)
     graph = StorageManager.get_graph()
-    assert "c2" not in graph.nodes
+    assert set(graph.nodes) == set()
 
 
 def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_schema):

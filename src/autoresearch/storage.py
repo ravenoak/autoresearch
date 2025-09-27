@@ -1052,6 +1052,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
                 nodes_to_evict: list[str] = []
                 lru_mutated_in_iteration = False
+                lru_node_enqueued = False
 
                 if policy == "hybrid":
                     hybrid_scores: dict[str, float] = {}
@@ -1140,9 +1141,11 @@ class StorageManager(metaclass=StorageManagerMeta):
                 elif policy == "lru":
                     while len(nodes_to_evict) < current_batch_size and StorageManager.state.lru:
                         popped = StorageManager._pop_lru()
+                        if popped is not None:
+                            lru_mutated_in_iteration = True
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
-                            lru_mutated_in_iteration = True
+                            lru_node_enqueued = True
                 else:
                     while len(nodes_to_evict) < current_batch_size and StorageManager.state.lru:
                         popped = StorageManager._pop_lru()
@@ -1162,7 +1165,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     and graph.nodes
                     and (use_deterministic_budget or still_over_target)
                 )
-                if policy == "lru" and lru_mutated_in_iteration:
+                if policy == "lru" and lru_node_enqueued:
                     fallback_needed = False
                 if fallback_needed:
                     missing = current_batch_size - len(nodes_to_evict)

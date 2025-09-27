@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 from hypothesis import HealthCheck, assume, example, given, seed, settings
 from hypothesis import strategies as st
 
+from types import SimpleNamespace
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import EVICTION_COUNTER
 from autoresearch.storage import (
@@ -142,10 +144,15 @@ def test_enforce_ram_budget_reduces_usage_property(params):
         mock_lru = OrderedDict((node_id, index) for index, node_id in enumerate(nodes))
 
     ram_mock = MagicMock(side_effect=ram_sequence + [ram_sequence[-1]] * 5)
-    cfg = MagicMock(
+    storage_cfg = SimpleNamespace(
+        deterministic_node_budget=None,
+        minimum_deterministic_resident_nodes=2,
+    )
+    cfg = SimpleNamespace(
         graph_eviction_policy="lru",
         eviction_batch_size=1,
         eviction_safety_margin=safety,
+        storage=storage_cfg,
     )
 
     with patch.object(StorageManager.context, "graph", mock_graph):
@@ -154,28 +161,47 @@ def test_enforce_ram_budget_reduces_usage_property(params):
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 ram_mock,
             ):
-                with patch(
-                    "autoresearch.config.loader.ConfigLoader.config",
-                    new=cfg,
-                ):
-                    StorageManager._enforce_ram_budget(budget)
+                    with patch(
+                        "autoresearch.config.loader.ConfigLoader.config",
+                        new=cfg,
+                    ):
+                        StorageManager._enforce_ram_budget(budget)
 
-    deterministic_limit = budget if budget > 0 else None
-    limit_gap = max(0, initial_node_count - (deterministic_limit or 0)) if deterministic_limit else 0
+    deterministic_limit, _, minimum_resident_nodes, _ = StorageManager._deterministic_node_limit(
+        budget, cfg
+    )
+    survivor_floor = (
+        max(deterministic_limit, minimum_resident_nodes)
+        if deterministic_limit is not None
+        else None
+    )
+    limit_gap = (
+        max(0, initial_node_count - deterministic_limit)
+        if deterministic_limit is not None
+        else 0
+    )
     expected_evictions = 0 if drop_index is not None else len(reductions)
+    max_evictions = initial_node_count
     if deterministic_limit is not None:
-        expected_evictions = max(expected_evictions, limit_gap)
+        max_evictions = max(0, initial_node_count - (survivor_floor or deterministic_limit))
+        expected_evictions = max(
+            limit_gap,
+            min(expected_evictions, max_evictions),
+        )
 
     assert mock_graph.remove_node.call_count >= expected_evictions
 
     final_measurement = ram_sequence[min(ram_mock.call_count - 1, len(ram_sequence) - 1)]
+    reached_floor = survivor_floor is not None and len(nodes) == survivor_floor
+    exhausted_evictions = min(len(reductions), max_evictions) < len(reductions)
     if drop_index is None:
-        assert final_measurement <= target + 1e-6
+        if not (reached_floor and exhausted_evictions):
+            assert final_measurement <= target + 1e-6
     else:
         assert math.isclose(final_measurement, 0.0, abs_tol=1e-6)
 
-    if deterministic_limit is not None:
-        assert len(nodes) <= deterministic_limit
+    if survivor_floor is not None:
+        assert len(nodes) <= survivor_floor
 
 
 def test_enforce_ram_budget_handles_metric_dropout() -> None:
