@@ -4,8 +4,11 @@ Formatting helpers for command line output and queries.
 
 ## Verbosity
 - `Verbosity` enum controls global output detail.
+- Levels map to explicit priorities (`quiet` = 0, `normal` = 1, `verbose` = 2)
+  so threshold comparisons use numeric ordering.
 - `set_verbosity` syncs environment and global state.
-- `print_*` helpers respect the active level.
+- `print_error` honours the quiet threshold, while `print_warning` requires at
+  least normal verbosity.
 
 ## Utilities
 - `visualize_rdf_cli` renders knowledge graphs.

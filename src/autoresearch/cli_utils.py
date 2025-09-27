@@ -8,7 +8,7 @@ with both color and text-based alternatives, as well as symbolic indicators.
 import os
 import sys
 from enum import Enum
-from typing import Any, Optional, Mapping, Iterable, Sequence, TYPE_CHECKING, cast
+from typing import Any, Iterable, Mapping, Optional, Sequence, TYPE_CHECKING, cast
 from rich.console import Console
 from rich.table import Table
 import rdflib
@@ -21,6 +21,19 @@ class Verbosity(str, Enum):
     QUIET = "quiet"
     NORMAL = "normal"
     VERBOSE = "verbose"
+
+    @property
+    def priority(self) -> int:
+        """Return the numeric priority associated with the verbosity level."""
+
+        return _VERBOSITY_PRIORITIES[self]
+
+
+_VERBOSITY_PRIORITIES: Mapping["Verbosity", int] = {
+    Verbosity.QUIET: 0,
+    Verbosity.NORMAL: 1,
+    Verbosity.VERBOSE: 2,
+}
 
 
 # Global verbosity setting (default: NORMAL)
@@ -125,7 +138,7 @@ def print_success(
         symbol: Whether to include a symbol
         min_verbosity: Minimum verbosity level required to print this message
     """
-    if VERBOSITY.value >= min_verbosity.value:
+    if VERBOSITY.priority >= min_verbosity.priority:
         console.print(format_success(message, symbol))
 
 
@@ -145,7 +158,7 @@ def print_error(
         suggestion: Optional suggestion for resolving the error
         code_example: Optional code example for resolving the error
     """
-    if VERBOSITY.value >= min_verbosity.value:
+    if VERBOSITY.priority >= min_verbosity.priority:
         console.print(format_error(message, symbol))
 
         # Print suggestion if provided
@@ -167,7 +180,7 @@ def print_warning(
         symbol: Whether to include a symbol
         min_verbosity: Minimum verbosity level required to print this message
     """
-    if VERBOSITY.value >= min_verbosity.value:
+    if VERBOSITY.priority >= min_verbosity.priority:
         console.print(format_warning(message, symbol))
 
 
@@ -181,7 +194,7 @@ def print_info(
         symbol: Whether to include a symbol
         min_verbosity: Minimum verbosity level required to print this message
     """
-    if VERBOSITY.value >= min_verbosity.value:
+    if VERBOSITY.priority >= min_verbosity.priority:
         console.print(format_info(message, symbol))
 
 
