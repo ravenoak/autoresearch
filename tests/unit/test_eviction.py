@@ -164,6 +164,50 @@ def test_lru_eviction_sequence(ensure_duckdb_schema, monkeypatch):
     assert len(graph.nodes) == 1
 
 
+def test_lru_eviction_with_vss_two_passes(ensure_duckdb_schema, monkeypatch):
+    """Ensure LRU eviction keeps the newest node during the initial VSS-enabled pass."""
+
+    StorageManager.clear_all()
+    monkeypatch.setattr("autoresearch.storage.run_ontology_reasoner", lambda *_, **__: None)
+
+    config = ConfigModel(ram_budget_mb=2)
+    config.search.context_aware.enabled = False
+    config.storage.rdf_backend = "memory"
+
+    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: config)
+    ConfigLoader()._config = None
+
+    # Avoid triggering eviction while building recency order.
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", lambda: 0)
+
+    with freeze_time("2024-01-01") as frozen_time:
+        StorageManager.persist_claim({"id": "c1", "type": "fact", "content": "a"})
+        frozen_time.tick(delta=timedelta(seconds=1))
+        StorageManager.persist_claim({"id": "c2", "type": "fact", "content": "b"})
+
+    monkeypatch.setattr(StorageManager, "has_vss", staticmethod(lambda: True))
+
+    def fake_ram_factory():
+        calls = {"n": 0}
+
+        def fake_ram() -> float:
+            calls["n"] += 1
+            return 1000.0 if calls["n"] == 1 else 0.0
+
+        return fake_ram
+
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram_factory())
+    StorageManager._enforce_ram_budget(1)
+    graph = StorageManager.get_graph()
+    assert "c1" not in graph.nodes
+    assert "c2" in graph.nodes
+
+    monkeypatch.setattr(StorageManager, "_current_ram_mb", fake_ram_factory())
+    StorageManager._enforce_ram_budget(1)
+    graph = StorageManager.get_graph()
+    assert "c2" not in graph.nodes
+
+
 def test_lru_eviction_respects_minimum_survivors(monkeypatch, ensure_duckdb_schema):
     """Deterministic fallback keeps two newest claims even when RAM metrics misbehave."""
 
