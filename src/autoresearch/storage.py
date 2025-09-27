@@ -10,6 +10,11 @@ The storage system supports claim persistence, vector search, and automatic
 resource management with configurable eviction policies. See
 ``docs/algorithms/cache_eviction.md`` for proofs of the LRU policy.
 
+Custom storage implementations can be injected using
+``StorageDelegateProtocol`` which captures the static interface expected by the
+default manager. This keeps monkeypatched delegates type-safe while satisfying
+the repository's strict typing guidelines.
+
 Note on VSS Extension:
 The vector search functionality requires the DuckDB VSS extension.
 If the extension is not available, the system continues to operate but
@@ -27,7 +32,7 @@ import json
 import os
 import time
 from collections import OrderedDict, deque
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from enum import StrEnum
 from threading import RLock
@@ -40,6 +45,7 @@ from typing import (
     Optional,
     Sequence,
     cast,
+    Protocol,
 )
 from uuid import uuid4
 
@@ -112,7 +118,91 @@ _kuzu_backend: KuzuStorageBackend | None = None
 log = get_logger(__name__)
 
 # Optional injection point for tests
-_delegate: type["StorageManager"] | None = None
+
+
+class StorageDelegateProtocol(Protocol):
+    """Typed interface for swapping :class:`StorageManager` implementations."""
+
+    @staticmethod
+    def setup(db_path: Optional[str], context: StorageContext) -> StorageContext:
+        ...
+
+    @staticmethod
+    def teardown(remove_db: bool, context: StorageContext, state: "StorageState") -> None:
+        ...
+
+    @staticmethod
+    def record_claim_audit(
+        audit: ClaimAuditRecord | Mapping[str, Any]
+    ) -> ClaimAuditRecord:
+        ...
+
+    @staticmethod
+    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]:
+        ...
+
+    @staticmethod
+    def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        ...
+
+    @staticmethod
+    def update_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        ...
+
+    @staticmethod
+    def get_claim(claim_id: str) -> dict[str, Any]:
+        ...
+
+    @staticmethod
+    def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+        ...
+
+    @staticmethod
+    def create_hnsw_index() -> None:
+        ...
+
+    @staticmethod
+    def refresh_vector_index() -> None:
+        ...
+
+    @staticmethod
+    def vector_search(query_embedding: list[float], k: int = 5) -> list[dict[str, Any]]:
+        ...
+
+    @staticmethod
+    def get_graph() -> nx.DiGraph[Any]:
+        ...
+
+    @staticmethod
+    def get_knowledge_graph(create: bool = True) -> nx.MultiDiGraph[Any] | None:
+        ...
+
+    @staticmethod
+    def touch_node(node_id: str) -> None:
+        ...
+
+    @staticmethod
+    def get_duckdb_conn() -> DuckDBConnection:
+        ...
+
+    @staticmethod
+    def connection() -> AbstractContextManager[DuckDBConnection]:
+        ...
+
+    @staticmethod
+    def get_rdf_store() -> rdflib.Graph:
+        ...
+
+    @staticmethod
+    def has_vss() -> bool:
+        ...
+
+    @staticmethod
+    def clear_all() -> None:
+        ...
+
+
+_delegate: StorageDelegateProtocol | None = None
 # Optional queue for distributed persistence
 _message_queue: Any | None = None
 
@@ -467,13 +557,13 @@ def set_message_queue(queue: Any | None) -> None:
     _message_queue = queue
 
 
-def set_delegate(delegate: type["StorageManager"] | None) -> None:
+def set_delegate(delegate: StorageDelegateProtocol | None) -> None:
     """Replace StorageManager implementation globally."""
     global _delegate
     _delegate = delegate
 
 
-def get_delegate() -> type["StorageManager"] | None:
+def get_delegate() -> StorageDelegateProtocol | None:
     """Return the injected StorageManager class if any."""
     return _delegate
 
@@ -751,7 +841,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         st = state or StorageManager.state
         ctx = context or st.context
         if _delegate and _delegate is not StorageManager:
-            _delegate.teardown(remove_db, ctx, st)  # type: ignore[attr-defined]
+            _delegate.teardown(remove_db, ctx, st)
             return
         StorageManager.state = st
         StorageManager.context = ctx
@@ -771,7 +861,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Persist a claim audit entry across storage backends."""
 
         if _delegate and _delegate is not StorageManager:
-            return _delegate.record_claim_audit(audit)  # type: ignore[attr-defined]
+            return _delegate.record_claim_audit(audit)
 
         payload = audit.to_payload() if isinstance(audit, ClaimAuditRecord) else dict(audit)
         return StorageManager._persist_claim_audit_payload(payload)
@@ -781,7 +871,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         """Return persisted claim audits, optionally filtered by claim id."""
 
         if _delegate and _delegate is not StorageManager:
-            return _delegate.list_claim_audits(claim_id)  # type: ignore[attr-defined]
+            return _delegate.list_claim_audits(claim_id)
 
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None

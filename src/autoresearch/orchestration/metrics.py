@@ -1,4 +1,9 @@
-"""Metrics collection for orchestration system."""
+"""Metrics collection for orchestration system.
+
+The helpers in this module wrap Prometheus primitives with runtime guards so
+that private attributes like ``_value`` are accessed through typed utilities
+instead of unchecked ``type: ignore`` directives.
+"""
 
 import logging
 import time
@@ -9,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from prometheus_client import Counter, Histogram
+from prometheus_client.metrics import MetricWrapperBase
 
 from autoresearch.token_budget import (
     AgentUsageStats,
@@ -58,9 +64,89 @@ def ensure_counters_initialized() -> None:
     TOKENS_OUT_COUNTER.inc(0)
 
 
+def _metric_accessor(metric: MetricWrapperBase, attr: str) -> Any | None:
+    """Return a typed accessor for a private Prometheus metric attribute."""
+
+    value = getattr(metric, attr, None)
+    if value is None:
+        return None
+    has_set = hasattr(value, "set")
+    has_get = hasattr(value, "get")
+    if has_set and has_get:
+        return value
+    return None
+
+
+def reset_counter(counter: MetricWrapperBase) -> None:
+    """Reset a Prometheus counter to zero with runtime guards."""
+
+    accessor = _metric_accessor(counter, "_value")
+    if accessor is None:
+        return
+    try:
+        accessor.set(0)
+    except Exception:  # pragma: no cover - defensive
+        log.debug("Failed to reset counter %s; leaving value unchanged", counter, exc_info=True)
+
+
+def snapshot_counter(counter: MetricWrapperBase) -> float:
+    """Return the current value for ``counter`` if accessible."""
+
+    accessor = _metric_accessor(counter, "_value")
+    if accessor is None:
+        return 0.0
+    try:
+        return float(accessor.get())
+    except Exception:  # pragma: no cover - defensive
+        log.debug("Failed to read counter %s; assuming zero", counter, exc_info=True)
+        return 0.0
+
+
+def restore_counter(counter: MetricWrapperBase, value: float) -> None:
+    """Restore ``counter`` to ``value`` if the backing accessor is available."""
+
+    accessor = _metric_accessor(counter, "_value")
+    if accessor is None:
+        return
+    try:
+        accessor.set(value)
+    except Exception:  # pragma: no cover - defensive
+        log.debug(
+            "Failed to restore counter %s to snapshot value %s",
+            counter,
+            value,
+            exc_info=True,
+        )
+
+
+def reset_histogram(histogram: Histogram) -> None:
+    """Reset histogram aggregates without accessing private attributes unchecked."""
+
+    sum_accessor = _metric_accessor(histogram, "_sum")
+    count_accessor = _metric_accessor(histogram, "_count")
+    if sum_accessor is not None:
+        try:
+            sum_accessor.set(0)
+        except Exception:  # pragma: no cover - defensive
+            log.debug(
+                "Failed to reset histogram sum for %s; leaving value unchanged",
+                histogram,
+                exc_info=True,
+            )
+    if count_accessor is not None:
+        try:
+            count_accessor.set(0)
+        except Exception:  # pragma: no cover - defensive
+            log.debug(
+                "Failed to reset histogram count for %s; leaving value unchanged",
+                histogram,
+                exc_info=True,
+            )
+
+
 def reset_metrics() -> None:
     """Reset all Prometheus counters to zero."""
-    counters = [
+    counters: list[MetricWrapperBase] = [
         QUERY_COUNTER,
         ERROR_COUNTER,
         TOKENS_IN_COUNTER,
@@ -68,69 +154,48 @@ def reset_metrics() -> None:
         EVICTION_COUNTER,
         KUZU_QUERY_COUNTER,
     ]
-    for c in counters:
-        try:
-            c._value.set(0)  # type: ignore[attr-defined]
-        except Exception:  # pragma: no cover - defensive
-            log.debug(
-                "Failed to reset counter %s; leaving value unchanged",
-                c,
-                exc_info=True,
-            )
-    try:
-        KUZU_QUERY_TIME._sum.set(0)  # type: ignore[attr-defined]
-        KUZU_QUERY_TIME._count.set(0)  # type: ignore[attr-defined]
-    except Exception:  # pragma: no cover - defensive
-        log.debug(
-            "Failed to reset Kuzu query histogram; leaving values unchanged",
-            exc_info=True,
-        )
+    for counter in counters:
+        reset_counter(counter)
+    reset_histogram(KUZU_QUERY_TIME)
 
 
 @contextmanager
 def temporary_metrics() -> Iterator[None]:
     """Provide a context where metric counters are restored on exit."""
-    snapshot = [
-        c._value.get()
-        for c in [
-            QUERY_COUNTER,
-            ERROR_COUNTER,
-            TOKENS_IN_COUNTER,
-            TOKENS_OUT_COUNTER,
-            EVICTION_COUNTER,
-            KUZU_QUERY_COUNTER,
-        ]
+    counters: list[MetricWrapperBase] = [
+        QUERY_COUNTER,
+        ERROR_COUNTER,
+        TOKENS_IN_COUNTER,
+        TOKENS_OUT_COUNTER,
+        EVICTION_COUNTER,
+        KUZU_QUERY_COUNTER,
     ]
-    hist_sum = KUZU_QUERY_TIME._sum.get()
-    hist_count = KUZU_QUERY_TIME._count.get()  # type: ignore[attr-defined]
+    snapshot = [snapshot_counter(counter) for counter in counters]
+    hist_sum_accessor = _metric_accessor(KUZU_QUERY_TIME, "_sum")
+    hist_count_accessor = _metric_accessor(KUZU_QUERY_TIME, "_count")
+    hist_sum = hist_sum_accessor.get() if hist_sum_accessor is not None else 0
+    hist_count = hist_count_accessor.get() if hist_count_accessor is not None else 0
     try:
         yield
     finally:
-        counters = [
-            QUERY_COUNTER,
-            ERROR_COUNTER,
-            TOKENS_IN_COUNTER,
-            TOKENS_OUT_COUNTER,
-            EVICTION_COUNTER,
-            KUZU_QUERY_COUNTER,
-        ]
-        for c, val in zip(counters, snapshot):
+        for counter, value in zip(counters, snapshot):
+            restore_counter(counter, value)
+        if hist_sum_accessor is not None:
             try:
-                c._value.set(val)  # type: ignore[attr-defined]
+                hist_sum_accessor.set(hist_sum)
             except Exception:  # pragma: no cover
                 log.debug(
-                    "Failed to restore counter %s to snapshot value",
-                    c,
+                    "Failed to restore histogram sum for %s", KUZU_QUERY_TIME, exc_info=True
+                )
+        if hist_count_accessor is not None:
+            try:
+                hist_count_accessor.set(hist_count)
+            except Exception:  # pragma: no cover
+                log.debug(
+                    "Failed to restore histogram count for %s",
+                    KUZU_QUERY_TIME,
                     exc_info=True,
                 )
-        try:
-            KUZU_QUERY_TIME._sum.set(hist_sum)  # type: ignore[attr-defined]
-            KUZU_QUERY_TIME._count.set(hist_count)  # type: ignore[attr-defined]
-        except Exception:  # pragma: no cover
-            log.debug(
-                "Failed to restore Kuzu query histogram snapshot",
-                exc_info=True,
-            )
 
 
 def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302

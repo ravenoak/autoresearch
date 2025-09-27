@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+"""Message brokers for distributed orchestration.
+
+The Redis implementation uses ``RedisClientProtocol`` so strict typing can
+describe the subset of methods accessed at runtime without ``type: ignore``
+directives.
+"""
+
 import json
 import multiprocessing
-from typing import TYPE_CHECKING, Any, Tuple, cast
+from typing import TYPE_CHECKING, Any, Protocol, Sequence, cast
 
 from ..logging_utils import get_logger
 
@@ -55,13 +62,28 @@ class InMemoryBroker:
 
 
 if TYPE_CHECKING:  # pragma: no cover - used for type hints only
-    import redis
+    from redis.client import Redis
+
+
+class RedisClientProtocol(Protocol):
+    """Typed subset of redis client behaviour used by :class:`RedisQueue`."""
+
+    def rpush(self, name: str, value: str) -> int:  # pragma: no cover - thin wrapper
+        ...
+
+    def blpop(
+        self, keys: Sequence[str], timeout: int | None = None
+    ) -> tuple[bytes, bytes] | None:  # pragma: no cover - thin wrapper
+        ...
+
+    def close(self) -> None:  # pragma: no cover - thin wrapper
+        ...
 
 
 class RedisQueue:
     """Minimal queue wrapper backed by Redis lists."""
 
-    def __init__(self, client: "redis.Redis", name: str) -> None:
+    def __init__(self, client: RedisClientProtocol, name: str) -> None:
         self.client = client
         self.name = name
 
@@ -69,8 +91,10 @@ class RedisQueue:
         self.client.rpush(self.name, json.dumps(message))
 
     def get(self) -> dict[str, Any]:
-        key_data = self.client.blpop([self.name])  # type: ignore[arg-type]
-        key, data = cast(Tuple[str, bytes], key_data)  # type: ignore[misc]
+        result = self.client.blpop([self.name])
+        if result is None:  # pragma: no cover - blocking call should not return None
+            raise RuntimeError("Redis BLPOP returned no data")
+        key, data = result
         return json.loads(data)
 
 
@@ -86,7 +110,7 @@ class RedisBroker:
                 " '[distributed]' extra."
             ) from exc
 
-        self.client = redis.Redis.from_url(url or "redis://localhost:6379/0")
+        self.client = cast("Redis", redis.Redis.from_url(url or "redis://localhost:6379/0"))
         self.queue = RedisQueue(self.client, queue_name)
 
     def publish(self, message: dict[str, Any]) -> None:

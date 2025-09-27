@@ -1,7 +1,20 @@
-"""Helper functions for the Streamlit user interface."""
+"""Streamlit UI helpers with typed modal wrappers for strict mypy support."""
+
 from __future__ import annotations
 
+from typing import Any, Callable, ContextManager, cast
+
 import streamlit as st
+
+
+def open_modal(title: str, **kwargs: Any) -> ContextManager[Any]:
+    """Return a typed context manager for ``st.modal`` when available."""
+
+    modal = getattr(st, "modal", None)
+    if modal is None:
+        raise AttributeError("Streamlit does not expose modal support")
+    modal_func = cast(Callable[..., ContextManager[Any]], modal)
+    return modal_func(title, **kwargs)
 
 
 def apply_accessibility_settings() -> None:
@@ -58,7 +71,7 @@ def display_guided_tour() -> None:
     if "show_tour" not in st.session_state:
         st.session_state.show_tour = True
     if st.session_state.show_tour:
-        with st.modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):  # type: ignore[attr-defined]
+        with open_modal("Welcome to Autoresearch", key="guided_tour", aria_modal=True):
             st.markdown(
                 """
                 <div role="dialog" aria-label="Onboarding Tour" aria-modal="true">
