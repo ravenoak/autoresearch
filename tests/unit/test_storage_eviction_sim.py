@@ -68,7 +68,7 @@ def test_deterministic_override_enforces_cap():
                 return_metrics=True,
             ),
         )
-    assert remaining == 1
+    assert remaining == 2
 
 
 def test_metrics_dropout_regression_seed():

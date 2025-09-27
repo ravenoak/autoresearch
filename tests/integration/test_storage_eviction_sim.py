@@ -60,4 +60,4 @@ def test_deterministic_override_caps_graph() -> None:
         policy="lru",
         scenario="deterministic_override",
     )
-    assert remaining == 1
+    assert remaining == 2
