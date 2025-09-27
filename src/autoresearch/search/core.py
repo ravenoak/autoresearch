@@ -470,9 +470,7 @@ class hybridmethod(Generic[T_co, P, R]):
     def __init__(self, func: Callable[Concatenate[T_co, P], R]) -> None:
         self.func = func
 
-    def __get__(
-        self, obj: T_co | None, objtype: type[T_co] | None = None
-    ) -> Callable[P, R]:
+    def __get__(self, obj: T_co | None, objtype: type[T_co] | None = None) -> Callable[P, R]:
         if obj is None:
             if objtype is None or not hasattr(objtype, "get_instance"):
                 raise AttributeError("hybridmethod requires a class with get_instance()")
@@ -1671,12 +1669,12 @@ class Search:
             text_query = query
             query_embedding = None
 
+        context = SearchContext.get_instance()
+
         # Apply context-aware search if enabled
         context_cfg = cfg.search.context_aware
+        search_query = text_query
         if context_cfg.enabled:
-            # Get the search context
-            context = SearchContext.get_instance()
-
             # Expand the query based on context
             expanded_query = context.expand_query(text_query)
 
@@ -1684,10 +1682,6 @@ class Search:
             if expanded_query != text_query:
                 log.info(f"Using context-aware expanded query: '{expanded_query}'")
                 search_query = expanded_query
-            else:
-                search_query = text_query
-        else:
-            search_query = text_query
 
         results: List[Dict[str, Any]] = []
         results_by_backend: Dict[str, List[Dict[str, Any]]] = {}
@@ -1856,14 +1850,18 @@ class Search:
 
             # Update search context if context-aware search is enabled
             if cfg.search.context_aware.enabled:
-                context = SearchContext.get_instance()
-
                 # Add the query and results to the search history
                 context.add_to_history(text_query, ranked_results)
 
                 # Build or update the topic model if topic modeling is enabled
                 if cfg.search.context_aware.use_topic_modeling:
                     context.build_topic_model()
+
+            context.record_scout_observation(
+                text_query,
+                ranked_results,
+                by_backend=results_by_backend,
+            )
 
             bundle = ExternalLookupResult(
                 query=text_query,
@@ -1888,6 +1886,12 @@ class Search:
             },
             cache=self.cache,
             storage=StorageManager,
+        )
+
+        context.record_scout_observation(
+            text_query,
+            fallback_results,
+            by_backend=results_by_backend,
         )
 
         return bundle if return_handles else bundle.results

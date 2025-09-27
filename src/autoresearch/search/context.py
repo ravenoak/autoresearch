@@ -6,7 +6,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence, cast
 
 from ..config.loader import get_config
 from ..kg_reasoning import KnowledgeGraphPipeline
@@ -143,8 +143,10 @@ def _try_import_sentence_transformers() -> bool:
 
 
 if TYPE_CHECKING:  # pragma: no cover - for type checking only
-    from spacy.language import Language
     from bertopic import BERTopic as BERTopicType
+    from spacy.language import Language
+
+    from ..orchestration.state import QueryState
 
 log = get_logger(__name__)
 
@@ -199,6 +201,8 @@ class SearchContext:
         self.nlp: Language | None = None
         self.graph_pipeline: KnowledgeGraphPipeline = KnowledgeGraphPipeline()
         self._graph_summary: dict[str, Any] = {}
+        self._scout_metadata: dict[str, Any] = {}
+        self._scout_lock = threading.Lock()
         if get_config().search.context_aware.enabled:
             self._initialize_nlp()
 
@@ -212,10 +216,7 @@ class SearchContext:
             self.nlp = spacy_mod.load("en_core_web_sm")
             log.info("Initialized spaCy NLP model")
         except OSError:
-            if (
-                os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower()
-                == "true"
-            ):
+            if os.getenv("AUTORESEARCH_AUTO_DOWNLOAD_SPACY_MODEL", "").lower() == "true":
                 try:
                     spacy_mod.cli.download("en_core_web_sm")
                     self.nlp = spacy_mod.load("en_core_web_sm")
@@ -238,9 +239,7 @@ class SearchContext:
         """
         cfg = get_config()
         max_history = cfg.search.context_aware.max_history_items
-        self.search_history.append(
-            {"query": query, "results": results, "timestamp": time.time()}
-        )
+        self.search_history.append({"query": query, "results": results, "timestamp": time.time()})
         if len(self.search_history) > max_history:
             self.search_history = self.search_history[-max_history:]
         self._extract_entities(query)
@@ -250,6 +249,7 @@ class SearchContext:
 
         summary = self.graph_pipeline.ingest(query, results)
         self._graph_summary = summary.to_dict()
+        self._store_scout_complexity(self._graph_summary)
 
     def _extract_entities(self, text: str) -> None:
         """Update entity frequency counts from text.
@@ -319,9 +319,7 @@ class SearchContext:
             return query
         if self.topic_model is None or self.dictionary is None:
             self.build_topic_model()
-        expanded_terms = sorted(
-            self.entities, key=lambda e: self.entities[e], reverse=True
-        )
+        expanded_terms = sorted(self.entities, key=lambda e: self.entities[e], reverse=True)
         if expanded_terms:
             expansion_factor = context_cfg.expansion_factor
             num_terms = max(1, int(len(expanded_terms) * expansion_factor))
@@ -402,3 +400,182 @@ class SearchContext:
         """
 
         return self.graph_pipeline.export_artifacts()
+
+    # ------------------------------------------------------------------
+    # Scout metadata helpers
+    # ------------------------------------------------------------------
+
+    def record_scout_observation(
+        self,
+        query: str,
+        ranked_results: Sequence[Mapping[str, Any]],
+        *,
+        by_backend: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    ) -> None:
+        """Capture retrieval overlap and entailment signals for scout telemetry."""
+
+        from ..evidence import score_entailment
+
+        retrieval_sets: list[list[str]] = []
+        if by_backend:
+            for docs in by_backend.values():
+                identifiers = [self._extract_identifier(doc) for doc in docs if doc]
+                if identifiers:
+                    retrieval_sets.append(identifiers)
+        else:
+            identifiers = [self._extract_identifier(doc) for doc in ranked_results]
+            if identifiers:
+                retrieval_sets.append(identifiers)
+
+        entailment_scores: list[dict[str, float]] = []
+        for doc in ranked_results:
+            snippet = self._extract_text_for_entailment(doc)
+            if not snippet:
+                continue
+            breakdown = score_entailment(query, snippet)
+            conflict = float(max(0.0, 1.0 - breakdown.score))
+            entailment_scores.append(
+                {
+                    "score": float(breakdown.score),
+                    "overlap": float(breakdown.overlap_ratio),
+                    "support": float(breakdown.support_ratio),
+                    "conflict": conflict,
+                }
+            )
+
+        complexity = self._summarise_complexity(query)
+
+        payload = {
+            "query": query,
+            "retrieval_sets": retrieval_sets,
+            "entailment_scores": entailment_scores,
+            "complexity": complexity,
+            "timestamp": time.time(),
+        }
+
+        with self._scout_lock:
+            self._scout_metadata = payload
+
+    def get_scout_metadata(self) -> dict[str, Any]:
+        """Return a copy of the latest scout telemetry."""
+
+        with self._scout_lock:
+            meta = dict(self._scout_metadata)
+        if not meta:
+            return {}
+        cloned = {
+            "query": meta.get("query"),
+            "timestamp": meta.get("timestamp"),
+        }
+        if "retrieval_sets" in meta:
+            cloned["retrieval_sets"] = [list(group) for group in meta.get("retrieval_sets", [])]
+        if "entailment_scores" in meta:
+            cloned["entailment_scores"] = [
+                dict(score) for score in meta.get("entailment_scores", [])
+            ]
+        if "complexity" in meta:
+            cloned["complexity"] = dict(meta.get("complexity", {}))
+        return cloned
+
+    def apply_scout_metadata(self, state: "QueryState") -> bool:
+        """Populate ``state.metadata`` with the latest scout signals."""
+
+        metadata = self.get_scout_metadata()
+        if not metadata:
+            return False
+
+        updated = False
+        retrieval_sets = metadata.get("retrieval_sets")
+        if retrieval_sets and "scout_retrieval_sets" not in state.metadata:
+            state.metadata["scout_retrieval_sets"] = retrieval_sets
+            updated = True
+
+        entailment_scores = metadata.get("entailment_scores")
+        if entailment_scores and "scout_entailment_scores" not in state.metadata:
+            state.metadata["scout_entailment_scores"] = entailment_scores
+            updated = True
+
+        complexity = metadata.get("complexity")
+        if complexity and "scout_complexity_features" not in state.metadata:
+            state.metadata["scout_complexity_features"] = complexity
+            updated = True
+
+        return updated
+
+    def _extract_identifier(self, doc: Mapping[str, Any]) -> str:
+        for key in ("id", "url", "path", "source"):
+            value = doc.get(key)
+            if value:
+                return str(value)
+        title = doc.get("title")
+        snippet = doc.get("snippet")
+        if title or snippet:
+            return str(title or snippet)
+        return str(hash(frozenset(doc.items())))
+
+    def _extract_text_for_entailment(self, doc: Mapping[str, Any]) -> str:
+        snippet = doc.get("snippet")
+        if isinstance(snippet, str) and snippet.strip():
+            return snippet
+        content = doc.get("content")
+        if isinstance(content, str) and content.strip():
+            return content
+        title = doc.get("title")
+        if isinstance(title, str) and title.strip():
+            return title
+        return ""
+
+    def _summarise_complexity(self, query: str) -> dict[str, Any]:
+        entities_sorted = sorted(self.entities.items(), key=lambda item: item[1], reverse=True)
+        entity_labels = [label for label, _ in entities_sorted[:10]]
+        entity_count = len({label for label, count in self.entities.items() if count})
+
+        graph_summary = self.get_graph_summary()
+        hop_lengths: list[int] = []
+        for path in graph_summary.get("multi_hop_paths", []) or []:
+            if isinstance(path, Sequence):
+                hop_lengths.append(max(0, len(path) - 1))
+        hops = max(hop_lengths) if hop_lengths else 0
+
+        clauses = self._estimate_clause_count(query)
+
+        features: dict[str, Any] = {
+            "hops": float(hops),
+            "entities": entity_labels,
+            "entity_count": float(entity_count),
+            "clauses": float(clauses),
+            "query_length": float(len(query.split())),
+        }
+        contradictions = graph_summary.get("contradictions")
+        if isinstance(contradictions, Sequence):
+            features["graph_contradictions"] = float(len(contradictions))
+        return features
+
+    def _estimate_clause_count(self, query: str) -> int:
+        separators = {",", ";", ":"}
+        clause_tokens = {"and", "but", "because", "however", "therefore", "while"}
+        count = 1 if query.strip() else 0
+        count += sum(query.count(sep) for sep in separators)
+        tokens = query.lower().split()
+        count += sum(1 for token in tokens if token in clause_tokens)
+        return max(1, count) if count else 0
+
+    def _store_scout_complexity(self, summary: dict[str, Any]) -> None:
+        """Persist graph-derived features after ingestion."""
+
+        if not summary:
+            return
+        with self._scout_lock:
+            if not self._scout_metadata:
+                return
+            complexity = dict(self._scout_metadata.get("complexity", {}))
+            contradictions = summary.get("contradictions")
+            if isinstance(contradictions, Sequence):
+                complexity["graph_contradictions"] = float(len(contradictions))
+            hop_lengths: list[int] = []
+            for path in summary.get("multi_hop_paths", []) or []:
+                if isinstance(path, Sequence):
+                    hop_lengths.append(max(0, len(path) - 1))
+            if hop_lengths:
+                complexity["hops"] = float(max(hop_lengths))
+            self._scout_metadata["complexity"] = complexity
