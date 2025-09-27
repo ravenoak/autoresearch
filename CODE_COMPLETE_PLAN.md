@@ -5,7 +5,7 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **September 23, 2025**, Autoresearch targets an **0.1.0a1** preview on
+As of **September 27, 2025**, Autoresearch targets an **0.1.0a1** preview on
 **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
 The September 23 verification runs keep `uv run flake8 src tests` and
 `uv run mypy src` green. `uv run pytest tests/unit -q` now passes with six
@@ -16,8 +16,9 @@ and not requires_ui and not requires_vss" -q`) and behavior suite pass.
 `task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
 exercises 908 unit, 331 integration, optional-extra, and 29 behavior tests at
 100% line coverage, matching the expectations captured in `TASK_PROGRESS.md`.
-Release preparation now focuses on XPASS cleanup and staging
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
+Release preparation now focuses on XPASS cleanup, staging
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md), and the
+five deep-research initiatives documented below.
 
 ### Immediate Follow-ups
 
@@ -28,6 +29,31 @@ Release preparation now focuses on XPASS cleanup and staging
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones while keeping optional-extra coverage sweeps synchronized with
   `TASK_PROGRESS.md`.
+- [ ] Execute Phase 1 of the Deep Research program under
+  [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md).
+
+## Deep Research Enhancement Program
+
+The dialectical review of September 26, 2025 adds five tracked initiatives to
+reach the truthfulness, auditability, and UX targets described in the project
+proposal. Each initiative links to the dedicated ticket so progress is visible
+alongside the alpha release workstream.
+
+1. **Adaptive gate and claim audits** – Gate policy, scout signals, and
+   per-claim audit tables tracked in
+   [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md).
+2. **Planner and coordinator ReAct upgrade** – Structured task graphs, tool
+   affinity routing, and telemetry enhancements tracked in
+   [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md).
+3. **Session GraphRAG integration** – Session knowledge graph construction,
+   contradiction checks, and artifact exports tracked in
+   [session-graph-rag-integration](issues/session-graph-rag-integration.md).
+4. **Evaluation and layered UX expansion** – TruthfulQA/FEVER/HotpotQA harness
+   automation, layered outputs, and Socratic controls tracked in
+   [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md).
+5. **Cost-aware model routing** – Role-based model selection, budgets, and
+   telemetry tracked in
+   [cost-aware-model-routing](issues/cost-aware-model-routing.md).
 
 ## 1. Core System Completion
 

@@ -4,7 +4,31 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 24, 2025**.
+[README](README.md). Last updated **September 27, 2025**.
+
+## Deep Research enhancement program
+
+The September 26 dialectical review produced a five-phase execution plan to
+raise factuality while containing cost and latency. Each phase is tracked by a
+dedicated in-repo ticket so progress can be audited without leaving the
+repository:
+
+1. [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md)
+   – implements the scout pass, gate policy signals, and per-claim audit
+   tables.
+2. [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md)
+   – elevates decomposition into a schedulable task graph with ReAct telemetry.
+3. [session-graph-rag-integration](issues/session-graph-rag-integration.md)
+   – constructs session graphs, contradiction checks, and exportable artifacts.
+4. [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md)
+   – widens the benchmark harness, layered output options, and Socratic
+   controls.
+5. [cost-aware-model-routing](issues/cost-aware-model-routing.md) – introduces
+   role-aware model selection, budgets, and telemetry to demonstrate savings.
+
+These tickets align with [docs/deep_research_upgrade_plan.md](docs/deep_research_upgrade_plan.md)
+and the updated specification so release milestones can absorb the upgrades in
+measured increments.
 
 ## Status
 
