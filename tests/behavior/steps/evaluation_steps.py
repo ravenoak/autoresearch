@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,16 +73,6 @@ def assert_summary_output(bdd_context: dict) -> None:
     stdout = result.stdout
 
     assert "Evaluation run complete." in stdout
-    assert "Dataset" in stdout
-    assert "Accuracy" in stdout
-    assert "Citation" in stdout
-    assert "coverage" in stdout
-    assert "Contradic" in stdout
-    assert "latency" in stdout
-    assert "Avg tokens" in stdout
-    assert "in/out" in stdout
-    assert "Avg loops" in stdout
-    assert "gated" in stdout
 
     assert summary.dataset in stdout
     assert summary.run_id.rsplit("-", 1)[0] in stdout
@@ -92,6 +83,30 @@ def assert_summary_output(bdd_context: dict) -> None:
     assert "100.0/25." in stdout  # tokens formatting (table truncation)
     assert "1.0" in stdout  # avg loops formatting
     assert "75.0%" in stdout  # gate exit rate percentage
+
+
+@then("the evaluation summary table should include the metric columns")
+def assert_summary_columns(bdd_context: dict) -> None:
+    """Ensure the rendered summary table exposes each metric column header."""
+
+    stdout = bdd_context["result"].stdout
+    sanitized = re.sub(r"\x1b\[[0-9;]*m", "", stdout)
+    tokens = [
+        "Dataset",
+        "Accuracy",
+        "Citation",
+        "coverage",
+        "Contradic",
+        "latency",
+        "Avg tokens",
+        "in/out",
+        "Avg loops",
+        "exits",
+        "Run ID",
+        "Artifacts",
+    ]
+    for token in tokens:
+        assert token in sanitized
 
 
 @then("the evaluation artifacts should reference the stubbed paths")
@@ -115,5 +130,15 @@ def assert_artifact_listing(bdd_context: dict) -> None:
 )
 def test_evaluate_cli_dry_run() -> None:
     """Scenario: Dry-run evaluation produces telemetry summary and artifacts."""
+
+    return None
+
+
+@scenario(
+    "../features/evaluation_uv_cli.feature",
+    "Dry-run evaluation via uv run surfaces metrics and artifacts",
+)
+def test_evaluate_cli_dry_run_uv() -> None:
+    """Scenario: Dry-run evaluation via uv run surfaces metrics and artifacts."""
 
     return None
