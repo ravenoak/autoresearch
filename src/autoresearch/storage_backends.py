@@ -290,7 +290,7 @@ class DuckDBStorageBackend:
                 "CREATE TABLE IF NOT EXISTS claim_audits("  # noqa: ISC003
                 "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
                 "entailment DOUBLE, variance DOUBLE, instability BOOLEAN, "
-                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, provenance VARCHAR, created_at TIMESTAMP)"
             )
 
             self._conn.execute(
@@ -400,7 +400,7 @@ class DuckDBStorageBackend:
 
         try:
             current_version = self.get_schema_version()
-            latest_version = 3  # Update this when adding new migrations
+            latest_version = 4  # Update this when adding new migrations
 
             log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
 
@@ -415,6 +415,10 @@ class DuckDBStorageBackend:
                 if current_version < 3:
                     self._migrate_to_v3()
                     current_version = 3
+
+                if current_version < 4:
+                    self._migrate_to_v4()
+                    current_version = 4
 
                 # Update schema version to latest
                 self.update_schema_version(latest_version)
@@ -433,7 +437,7 @@ class DuckDBStorageBackend:
                 "CREATE TABLE IF NOT EXISTS claim_audits("  # noqa: ISC003
                 "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
                 "entailment DOUBLE, variance DOUBLE, instability BOOLEAN, "
-                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, provenance VARCHAR, created_at TIMESTAMP)"
             )
         except duckdb.Error as exc:  # type: ignore[attr-defined]
             raise StorageError("Failed to migrate claim audit table", cause=exc)
@@ -457,6 +461,21 @@ class DuckDBStorageBackend:
         except duckdb.Error as exc:  # type: ignore[attr-defined]
             raise StorageError(
                 "Failed to migrate stability metadata columns", cause=exc
+            )
+
+    def _migrate_to_v4(self) -> None:
+        """Add provenance column for structured audit metadata."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        try:
+            self._conn.execute(
+                "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS provenance VARCHAR"
+            )
+        except duckdb.Error as exc:  # type: ignore[attr-defined]
+            raise StorageError(
+                "Failed to migrate provenance column", cause=exc
             )
 
     def create_hnsw_index(self) -> None:
@@ -818,6 +837,8 @@ class DuckDBStorageBackend:
             else:
                 serialised_sources.append({"value": src})
 
+        provenance_json = json.dumps(audit.get("provenance", {}), ensure_ascii=False)
+
         variance_value = audit.get("entailment_variance")
         try:
             variance_serialised = (
@@ -850,6 +871,7 @@ class DuckDBStorageBackend:
             sample_serialised,
             json.dumps(serialised_sources),
             audit.get("notes"),
+            provenance_json,
             created_at,
         ]
 
@@ -863,7 +885,7 @@ class DuckDBStorageBackend:
                     (
                         "INSERT INTO claim_audits "
                         "(audit_id, claim_id, status, entailment, variance, instability, sample_size, "
-                        "sources, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        "sources, notes, provenance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     ),
                     payload,
                 )
@@ -878,7 +900,7 @@ class DuckDBStorageBackend:
 
         query = (
             "SELECT audit_id, claim_id, status, entailment, variance, instability, sample_size, "
-            "sources, notes, created_at FROM claim_audits"
+            "sources, notes, provenance, created_at FROM claim_audits"
         )
         params: list[Any] = []
         if claim_id:
@@ -923,7 +945,16 @@ class DuckDBStorageBackend:
                         else:
                             parsed_sources.append({"value": src})
 
-            created = row[9]
+            raw_provenance = row[9]
+            if raw_provenance:
+                try:
+                    provenance = json.loads(raw_provenance)
+                except json.JSONDecodeError:
+                    provenance = {}
+            else:
+                provenance = {}
+
+            created = row[10]
             if isinstance(created, datetime):
                 created_ts = created.timestamp()
             else:
@@ -940,6 +971,7 @@ class DuckDBStorageBackend:
                     "sample_size": sample_size,
                     "sources": parsed_sources,
                     "notes": row[8],
+                    "provenance": provenance,
                     "created_at": created_ts,
                 }
             )

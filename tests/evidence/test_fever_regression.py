@@ -42,9 +42,11 @@ def test_entailment_scoring_supported_claim() -> None:
         sources=[{"snippet": evidence}],
     )
     payload = record.to_payload()
+    assert payload["provenance"] == {}
     recovered = ClaimAuditRecord.from_payload(payload)
     assert recovered.status == status
     assert recovered.entailment_score == record.entailment_score
+    assert recovered.provenance == {}
 
 
 def test_entailment_scoring_unsupported_claim() -> None:
@@ -65,6 +67,25 @@ def test_claim_audit_record_from_score_overrides_status() -> None:
     )
     assert record.status is ClaimAuditStatus.NEEDS_REVIEW
     assert record.sources[0]["title"] == "Manual review"
+    assert record.provenance == {}
+
+
+def test_claim_audit_record_preserves_provenance_round_trip() -> None:
+    provenance = {
+        "retrieval": {"variants": ["base"]},
+        "backoff": {"retry_count": 1},
+        "evidence": {"ids": ["src-abc"]},
+    }
+    record = ClaimAuditRecord.from_score(
+        "claim-provenance",
+        0.42,
+        sources=[{"title": "Traceable source"}],
+        provenance=provenance,
+    )
+    payload = record.to_payload()
+    assert payload["provenance"] == provenance
+    restored = ClaimAuditRecord.from_payload(payload)
+    assert restored.provenance == provenance
 
 
 def test_claim_generator_attaches_audit_metadata() -> None:
@@ -82,6 +103,7 @@ def test_claim_generator_attaches_audit_metadata() -> None:
     assert "audit" in claim
     assert claim["audit"]["claim_id"] == claim["id"]
     assert claim["audit"]["status"] == ClaimAuditStatus.NEEDS_REVIEW.value
+    assert claim["audit"].get("provenance") == {}
 
     claim2 = harness.create_claim(
         "The Louvre is in Paris.",
@@ -93,3 +115,4 @@ def test_claim_generator_attaches_audit_metadata() -> None:
     assert claim2["audit"]["status"] == ClaimAuditStatus.SUPPORTED.value
     assert claim2["audit"]["entailment_score"] == 0.72
     assert claim2["audit"]["sources"][0]["title"] == "Museums in Paris"
+    assert claim2["audit"].get("provenance") == {}

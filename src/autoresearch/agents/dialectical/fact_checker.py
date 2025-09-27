@@ -17,7 +17,7 @@ from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
 from ...search import Search
-from ...storage import ClaimAuditRecord, ClaimAuditStatus
+from ...storage import ClaimAuditRecord, ClaimAuditStatus, ensure_source_id
 
 log = get_logger(__name__)
 
@@ -38,9 +38,24 @@ class FactChecker(Agent):
         max_results = getattr(
             config, "max_results_per_query", 5
         )  # Default to 5 if not specified
-        raw_sources = Search.external_lookup(state.query, max_results=max_results)
+        lookup_bundle = Search.external_lookup(
+            state.query, max_results=max_results, return_handles=True
+        )
+        if isinstance(lookup_bundle, list):
+            base_candidates = list(lookup_bundle)
+            retrieval_handle: dict[str, Any] | None = None
+            by_backend: Mapping[str, Any] | None = None
+        else:
+            base_candidates = list(getattr(lookup_bundle, "results", []))
+            retrieval_handle = {
+                "cache_namespace": getattr(getattr(lookup_bundle, "cache", None), "namespace", None),
+            }
+            by_backend = getattr(lookup_bundle, "by_backend", None)
+
         sources: list[Dict[str, Any]] = []
         seen_sources: set[tuple[str | None, str | None, str | None]] = set()
+        retrieval_log: list[dict[str, Any]] = []
+        claim_retry_stats: dict[str, dict[str, Any]] = {}
 
         def _source_key(source: Mapping[str, Any]) -> tuple[str | None, str | None, str | None]:
             snippet = source.get("snippet") or source.get("content") or ""
@@ -51,12 +66,38 @@ class FactChecker(Agent):
             )
             return key
 
-        def _register_sources(candidates: Iterable[Mapping[str, Any]]) -> list[Dict[str, Any]]:
+        def _register_sources(
+            candidates: Iterable[Mapping[str, Any]],
+            *,
+            query_text: str,
+            variant_label: str,
+            claim_id: str | None = None,
+            retry_index: int | None = None,
+            backend: str | None = None,
+        ) -> list[Dict[str, Any]]:
             registered: list[Dict[str, Any]] = []
-            for candidate in candidates:
+            serialised = [dict(candidate) for candidate in candidates]
+            retrieval_log.append(
+                {
+                    "query": query_text,
+                    "variant": variant_label,
+                    "claim_id": claim_id,
+                    "retry": retry_index,
+                    "backend": backend,
+                    "result_count": len(serialised),
+                }
+            )
+            for candidate in serialised:
                 enriched = dict(candidate)
                 enriched["checked_claims"] = [c["id"] for c in state.claims]
                 enriched["agent"] = self.name
+                enriched["retrieval_query"] = query_text
+                enriched["query_variant"] = variant_label
+                if claim_id:
+                    enriched["claim_context"] = claim_id
+                if backend:
+                    enriched.setdefault("backend", backend)
+                enriched = ensure_source_id(enriched)
                 key = _source_key(enriched)
                 if key in seen_sources:
                     continue
@@ -65,7 +106,20 @@ class FactChecker(Agent):
                 registered.append(enriched)
             return registered
 
-        _register_sources(raw_sources)
+        if by_backend:
+            for backend_name, backend_results in by_backend.items():
+                _register_sources(
+                    backend_results,
+                    query_text=state.query,
+                    variant_label="base",
+                    backend=str(backend_name),
+                )
+        else:
+            _register_sources(
+                base_candidates,
+                query_text=state.query,
+                variant_label="base",
+            )
 
         query_variations: list[str] = []
         for claim in state.claims:
@@ -85,6 +139,9 @@ class FactChecker(Agent):
             breakdowns: list[EntailmentBreakdown] = []
             best_score = -1.0
             best_source: Dict[str, Any] | None = None
+            considered_ids: set[str] = set()
+            paraphrases_used: list[str] = []
+            retry_count = 0
 
             def _evaluate(source: Mapping[str, Any]) -> None:
                 nonlocal best_score, best_source
@@ -93,6 +150,9 @@ class FactChecker(Agent):
                     return
                 breakdown = score_entailment(claim_text, snippet)
                 breakdowns.append(breakdown)
+                source_id = str(source.get("source_id") or "")
+                if source_id:
+                    considered_ids.add(source_id)
                 if breakdown.score > best_score:
                     best_score = breakdown.score
                     best_source = dict(source)
@@ -103,10 +163,18 @@ class FactChecker(Agent):
             aggregate = aggregate_entailment_scores(breakdowns)
             if aggregate.disagreement:
                 for paraphrase in sample_paraphrases(claim_text, max_samples=2):
+                    retry_count += 1
+                    paraphrases_used.append(paraphrase)
                     new_candidates = Search.external_lookup(
                         paraphrase, max_results=max_results
                     )
-                    registered = _register_sources(new_candidates)
+                    registered = _register_sources(
+                        new_candidates,
+                        query_text=paraphrase,
+                        variant_label="paraphrase",
+                        claim_id=str(claim.get("id", "")) or None,
+                        retry_index=retry_count,
+                    )
                     for source in registered:
                         _evaluate(source)
                     aggregate = aggregate_entailment_scores(breakdowns)
@@ -129,6 +197,36 @@ class FactChecker(Agent):
             else:
                 note = "No retrieval snippets matched the claim."
 
+            claim_id = str(claim.get("id", "")) or None
+            relevant_events = [
+                dict(event)
+                for event in retrieval_log
+                if event.get("claim_id") in {claim_id, None}
+            ]
+            provenance = {
+                "retrieval": {
+                    "base_query": state.query,
+                    "claim_text": claim_text,
+                    "query_variations": list(query_variations),
+                    "events": relevant_events,
+                },
+                "backoff": {
+                    "retry_count": retry_count,
+                    "paraphrases": paraphrases_used,
+                    "max_results": max_results,
+                },
+                "evidence": {
+                    "best_source_id": best_source.get("source_id") if best_source else None,
+                    "considered_source_ids": sorted(considered_ids),
+                    "claim_id": claim_id,
+                },
+            }
+            if claim_id:
+                claim_retry_stats[claim_id] = {
+                    "retry_count": retry_count,
+                    "paraphrases": paraphrases_used,
+                }
+
             record = ClaimAuditRecord.from_score(
                 claim["id"],
                 score_value,
@@ -138,6 +236,7 @@ class FactChecker(Agent):
                 variance=aggregate.variance if aggregate.sample_size else None,
                 instability=aggregate.disagreement if aggregate.sample_size else None,
                 sample_size=aggregate.sample_size or None,
+                provenance=provenance,
             )
             audit_payload = record.to_payload()
             claim_audits.append(audit_payload)
@@ -196,6 +295,26 @@ class FactChecker(Agent):
             if instability_state:
                 summary_note = (summary_note or "") + " Instability detected across claims."
 
+        handle_payload = (
+            retrieval_handle if retrieval_handle and any(retrieval_handle.values()) else None
+        )
+        aggregate_provenance = {
+            "retrieval": {
+                "base_query": state.query,
+                "query_variations": list(query_variations),
+                "events": retrieval_log,
+                "handle": handle_payload,
+            },
+            "backoff": {
+                "per_claim": claim_retry_stats,
+                "total_retries": sum(stats["retry_count"] for stats in claim_retry_stats.values()),
+            },
+            "evidence": {
+                "top_source_ids": [src.get("source_id") for src in top_sources if src.get("source_id")],
+                "claim_audit_ids": [payload.get("audit_id") for payload in claim_audits],
+            },
+        }
+
         claim = self.create_claim(
             verification,
             "verification",
@@ -207,6 +326,7 @@ class FactChecker(Agent):
             instability_flag=instability_state,
             sample_size=total_samples or None,
             notes=summary_note,
+            provenance=aggregate_provenance,
         )
         return self.create_result(
             claims=[claim],

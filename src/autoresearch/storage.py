@@ -21,6 +21,7 @@ if it's enabled in the configuration.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -151,6 +152,29 @@ class ClaimAuditStatus(StrEnum):
         return cls.NEEDS_REVIEW
 
 
+def ensure_source_id(source: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a copy of ``source`` with a stable ``source_id`` fingerprint."""
+
+    enriched = dict(source)
+    existing = enriched.get("source_id") or enriched.get("id")
+    if existing:
+        enriched["source_id"] = str(existing)
+        return enriched
+
+    snippet = enriched.get("snippet") or enriched.get("content") or ""
+    snippet_text = snippet if isinstance(snippet, str) else repr(snippet)
+    fingerprint = "|".join(
+        [
+            str(enriched.get("url", "")),
+            str(enriched.get("title", "")),
+            snippet_text[:200],
+        ]
+    )
+    digest = hashlib.sha256(fingerprint.encode("utf-8", "ignore")).hexdigest()[:12]
+    enriched["source_id"] = f"src-{digest}"
+    return enriched
+
+
 @dataclass(slots=True)
 class ClaimAuditRecord:
     """Structured verification metadata stored alongside claims."""
@@ -163,6 +187,7 @@ class ClaimAuditRecord:
     entailment_variance: float | None = None
     instability_flag: bool | None = None
     sample_size: int | None = None
+    provenance: dict[str, Any] = field(default_factory=dict)
     audit_id: str = field(default_factory=lambda: str(uuid4()))
     created_at: float = field(default_factory=time.time)
 
@@ -178,6 +203,7 @@ class ClaimAuditRecord:
             "instability_flag": self.instability_flag,
             "sample_size": self.sample_size,
             "sources": self.sources,
+            "provenance": dict(self.provenance),
             "notes": self.notes,
             "created_at": self.created_at,
         }
@@ -203,6 +229,17 @@ class ClaimAuditRecord:
                 serialised_sources.append(dict(src))
             else:
                 raise StorageError("each source must be a mapping")
+        provenance_raw = payload.get("provenance") or {}
+        if isinstance(provenance_raw, Mapping):
+            provenance = dict(provenance_raw)
+        elif isinstance(provenance_raw, str):
+            try:
+                parsed = json.loads(provenance_raw)
+            except json.JSONDecodeError:
+                parsed = {}
+            provenance = dict(parsed) if isinstance(parsed, Mapping) else {}
+        else:
+            raise StorageError("provenance must be a mapping")
         created_at = float(payload.get("created_at", time.time()))
         audit_id = payload.get("audit_id") or str(uuid4())
         claim_id = str(payload.get("claim_id", ""))
@@ -242,6 +279,7 @@ class ClaimAuditRecord:
             entailment_variance=variance,
             instability_flag=instability,
             sample_size=sample_size,
+            provenance=provenance,
             audit_id=audit_id,
             created_at=created_at,
         )
@@ -258,8 +296,12 @@ class ClaimAuditRecord:
         variance: float | None = None,
         instability: bool | None = None,
         sample_size: int | None = None,
+        provenance: Mapping[str, Any] | None = None,
     ) -> "ClaimAuditRecord":
         """Build a record from an entailment score and optional metadata."""
+
+        # ``provenance`` captures structured metadata describing how the
+        # entailment decision was produced (e.g., retrieval queries or retries).
 
         resolved_status: ClaimAuditStatus
         if status is None:
@@ -277,6 +319,8 @@ class ClaimAuditRecord:
                 else:
                     raise TypeError("sources must contain mappings")
 
+        provenance_payload = dict(provenance) if provenance else {}
+
         return cls(
             claim_id=claim_id,
             status=resolved_status,
@@ -286,6 +330,7 @@ class ClaimAuditRecord:
             entailment_variance=variance,
             instability_flag=instability,
             sample_size=sample_size,
+            provenance=provenance_payload,
         )
 
 

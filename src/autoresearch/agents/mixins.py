@@ -72,6 +72,7 @@ class ClaimGeneratorMixin:
         instability_flag: bool | None = None,
         sample_size: int | None = None,
         notes: str | None = None,
+        provenance: Mapping[str, Any] | None = None,
     ) -> ClaimPayload:
         """Create a claim with the given content and type.
 
@@ -92,6 +93,8 @@ class ClaimGeneratorMixin:
             sample_size: Number of snippets contributing to the entailment
                 estimate.
             notes: Optional reviewer notes to attach to the audit payload.
+            provenance: Optional structured provenance metadata describing
+                retrieval queries, retry counts, or evidence identifiers.
 
         Returns:
             A dictionary representing the claim.
@@ -131,6 +134,7 @@ class ClaimGeneratorMixin:
                     variance=entailment_variance,
                     instability=instability_flag,
                     sample_size=sample_size,
+                    provenance=provenance,
                 )
             except TypeError as exc:
                 raise TypeError("verification_sources must contain mappings") from exc
