@@ -39,7 +39,7 @@ def _stubbed_search_environment(monkeypatch, request):
 
     cfg = MagicMock()
     cfg.search.backends = ["stub"]
-    cfg.search.embedding_backends = ["vector"] if vector_search_enabled else []
+    cfg.search.embedding_backends = ["duckdb"] if vector_search_enabled else []
     cfg.search.context_aware.enabled = False
     cfg.search.max_workers = 1
     cfg.search.use_bm25 = True
@@ -210,7 +210,7 @@ def test_orchestrator_parse_config_basic():
         pytest.param(
             {"vector_search": True},
             {
-                "search-instance": {"instance": 1, "class": 0},
+                "search-instance": {"instance": 0, "class": 0},
                 "search-class": {"instance": 0, "class": 0},
             },
             id="vss-enabled",
@@ -240,7 +240,7 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert [r["url"] for r in instance_results] == ["u"]
 
     if env.vector_search_enabled:
-        env.set_storage_results({"vector": []})
+        env.set_storage_results({"storage": []})
 
     env.set_phase("search-class")
     bundle = Search.external_lookup("q", max_results=1, return_handles=True)
@@ -250,6 +250,9 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert [r["url"] for r in bundle_results] == ["u"]
     assert bundle.results == bundle_results
     assert bundle.cache is env.search_instance.cache
+    if env.vector_search_enabled:
+        assert "duckdb" in bundle.by_backend
+        assert bundle.by_backend["duckdb"] == []
 
     env.set_phase("direct")
     instance_embedding = env.search_instance.embedding_lookup([0.1], 1)

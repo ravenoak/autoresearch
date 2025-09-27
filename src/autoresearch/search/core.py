@@ -1690,6 +1690,17 @@ class Search:
         pending_embedding_backends: set[str] = set(embedding_backends)
         embedding_lookup_invoked = False
 
+        vss_available: Optional[bool] = None
+
+        def _vss_available() -> bool:
+            nonlocal vss_available
+            if vss_available is None:
+                try:
+                    vss_available = StorageManager.has_vss()
+                except Exception:  # pragma: no cover - optional dependency
+                    vss_available = False
+            return vss_available
+
         def _record_embedding_backend(
             name: str, docs: Sequence[Dict[str, Any]] | None
         ) -> None:
@@ -1698,6 +1709,7 @@ class Search:
             pending_embedding_backends.discard(name)
             if not docs:
                 results_by_backend.setdefault(name, [])
+                self.cache.cache_results(search_query, name, [])
                 return
 
             normalised_docs = [dict(doc) for doc in docs]
@@ -1705,6 +1717,7 @@ class Search:
                 doc.setdefault("backend", name)
             results_by_backend[name] = normalised_docs
             results.extend(normalised_docs)
+            self.cache.cache_results(search_query, name, normalised_docs)
 
         np_query_embedding: Optional[np.ndarray] = None
         if query_embedding is not None:
@@ -1719,10 +1732,7 @@ class Search:
                 or bool(cfg.search.embedding_backends)
             )
             if not need_embedding:
-                try:
-                    need_embedding = StorageManager.has_vss()
-                except Exception:  # pragma: no cover - optional dependency
-                    need_embedding = False
+                need_embedding = _vss_available()
             if need_embedding:
                 np_query_embedding = self.compute_query_embedding(search_query)
 
@@ -1883,8 +1893,27 @@ class Search:
             pending_embedding_backends.difference_update(
                 name for name in storage_results if name in pending_embedding_backends
             )
+
+        storage_docs = storage_results.get("storage") or []
+        vector_storage_docs = [
+            dict(doc) for doc in storage_docs if "vector" in doc.get("storage_sources", [])
+        ]
+
+        duckdb_from_storage = False
+        if (
+            "duckdb" in embedding_backends
+            and np_query_embedding is not None
+            and _vss_available()
+        ):
+            duckdb_docs = vector_storage_docs[:max_results] if vector_storage_docs else []
+            results_by_backend["duckdb"] = [dict(doc) for doc in duckdb_docs]
+            pending_embedding_backends.discard("duckdb")
+            self.cache.cache_results(search_query, "duckdb", results_by_backend["duckdb"])
+            duckdb_from_storage = True
+
         if storage_results.get("storage"):
-            results_by_backend.pop("duckdb", None)
+            if not duckdb_from_storage:
+                results_by_backend.pop("duckdb", None)
             pending_embedding_backends.discard("duckdb")
 
         _ensure_embedding_results()
