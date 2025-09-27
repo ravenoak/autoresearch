@@ -20,15 +20,20 @@ from typing import Dict
 # Tunable parameters to keep the benchmark representative yet stable.
 #
 # Sleep duration mimics an I/O-bound task that briefly releases the GIL so
-# additional workers can make progress.
-_SLEEP_DURATION = 0.001
+# additional workers can make progress. A longer delay keeps the benchmark
+# dominated by simulated work instead of per-task overhead.
+_SLEEP_DURATION = 0.004
 # Require each worker's share of a measurement batch to last at least this long
 # to amortize thread start-up overhead and scheduling jitter. The guard is
 # scaled dynamically based on the estimated per-worker batch runtime.
-_MIN_MEASURE_DURATION = 0.05
+_MIN_MEASURE_DURATION = 0.1
 # Gather multiple throughput samples per worker count to smooth transient noise
 # without stretching overall runtime excessively.
 _THROUGHPUT_SAMPLES = 3
+
+# Public aliases used by CLI helpers to surface the tuned defaults.
+DEFAULT_SLEEP_DURATION = _SLEEP_DURATION
+DEFAULT_MIN_MEASURE_DURATION = _MIN_MEASURE_DURATION
 
 
 def queue_metrics(workers: int, arrival_rate: float, service_rate: float) -> Dict[str, float]:
@@ -111,6 +116,8 @@ def benchmark_scheduler(
     tasks: int,
     mem_per_task: float = 0.0,
     profile: bool = False,
+    sleep_duration: float = _SLEEP_DURATION,
+    min_measure_duration: float = _MIN_MEASURE_DURATION,
 ) -> BenchmarkResult:
     """Measure scheduling throughput and resource usage.
 
@@ -125,18 +132,26 @@ def benchmark_scheduler(
         tasks: Total number of tasks to dispatch.
         mem_per_task: Megabytes of memory to allocate per task.
         profile: Whether to return cProfile statistics for the run.
+        sleep_duration: Time each task blocks to simulate I/O (seconds).
+        min_measure_duration: Minimum per-worker runtime for each measurement
+            batch to amortize overhead (seconds).
 
     Returns:
         BenchmarkResult containing throughput in tasks/s, CPU time, memory usage
         in kilobytes, and optional profiler output.
 
     Raises:
-        ValueError: If ``workers`` or ``tasks`` is not positive.
+        ValueError: If ``workers``, ``tasks``, ``sleep_duration``, or
+            ``min_measure_duration`` is not positive.
     """
     if workers <= 0:
         raise ValueError("workers must be positive")
     if tasks <= 0:
         raise ValueError("tasks must be positive")
+    if sleep_duration <= 0:
+        raise ValueError("sleep_duration must be positive")
+    if min_measure_duration <= 0:
+        raise ValueError("min_measure_duration must be positive")
 
     profiler: cProfile.Profile | None = None
     if profile:
@@ -150,23 +165,23 @@ def benchmark_scheduler(
     min_workers = max(workers, 1)
     effective_tasks = max(tasks, 1)
     estimated_per_worker_runtime = (
-        effective_tasks * _SLEEP_DURATION
+        effective_tasks * sleep_duration
     ) / min_workers
-    if estimated_per_worker_runtime < _MIN_MEASURE_DURATION:
-        min_tasks_per_worker = math.ceil(_MIN_MEASURE_DURATION / _SLEEP_DURATION)
+    if estimated_per_worker_runtime < min_measure_duration:
+        min_tasks_per_worker = math.ceil(min_measure_duration / sleep_duration)
         required_tasks = min_tasks_per_worker * min_workers
         effective_tasks = max(tasks, required_tasks)
         # Recompute to ensure the concurrency-aware guard is satisfied in case
         # rounding created a slight deficit.
         estimated_per_worker_runtime = (
-            effective_tasks * _SLEEP_DURATION
+            effective_tasks * sleep_duration
         ) / min_workers
-        if estimated_per_worker_runtime < _MIN_MEASURE_DURATION:
+        if estimated_per_worker_runtime < min_measure_duration:
             # Fallback to a loop in degenerate cases (e.g., very small sleep
             # durations) to avoid a silent infinite shortfall.
             while (
-                (effective_tasks * _SLEEP_DURATION) / min_workers
-                < _MIN_MEASURE_DURATION
+                (effective_tasks * sleep_duration) / min_workers
+                < min_measure_duration
             ):
                 effective_tasks += min_workers
 
@@ -178,7 +193,7 @@ def benchmark_scheduler(
             buf = bytearray(int(mem_per_task * 1024 * 1024))
         else:
             buf = None
-        time.sleep(_SLEEP_DURATION)
+        time.sleep(sleep_duration)
         if buf is not None:
             del buf
 

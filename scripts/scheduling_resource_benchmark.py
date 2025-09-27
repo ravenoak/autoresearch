@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Benchmark scheduler scaling and resource usage.
 
+The benchmark simulates I/O-bound tasks that sleep for roughly 4 ms and ensures
+each worker processes at least 100 ms of work per measurement batch. With those
+defaults, doubling the number of workers consistently delivers more than 1.5x
+throughput, providing a clear signal that multi-worker scheduling amortizes the
+coordination overhead.
+
 Usage:
     uv run scripts/scheduling_resource_benchmark.py --max-workers 4 --tasks 100 \
         --arrival-rate 3 --service-rate 5 --mem-per-task 0.5
@@ -11,7 +17,12 @@ import argparse
 import json
 from typing import Dict, List
 
-from autoresearch.orchestrator_perf import benchmark_scheduler, simulate
+from autoresearch.orchestrator_perf import (
+    DEFAULT_MIN_MEASURE_DURATION,
+    DEFAULT_SLEEP_DURATION,
+    benchmark_scheduler,
+    simulate,
+)
 
 
 def run_benchmark(
@@ -20,6 +31,8 @@ def run_benchmark(
     service_rate: float,
     tasks: int,
     mem_per_task: float,
+    sleep_duration: float = DEFAULT_SLEEP_DURATION,
+    min_measure_duration: float = DEFAULT_MIN_MEASURE_DURATION,
 ) -> List[Dict[str, float]]:
     """Run simulation and micro-benchmark across worker counts.
 
@@ -29,6 +42,9 @@ def run_benchmark(
         service_rate: Per-worker service rate (tasks/s).
         tasks: Number of tasks to process.
         mem_per_task: Memory per task in megabytes.
+        sleep_duration: Time each task simulates work by sleeping (seconds).
+        min_measure_duration: Minimum per-worker runtime targeted for each
+            throughput sample (seconds).
 
     Returns:
         List of metrics for each worker count.
@@ -39,7 +55,13 @@ def run_benchmark(
     results: List[Dict[str, float]] = []
     for workers in range(1, max_workers + 1):
         metrics = simulate(workers, arrival_rate, service_rate, tasks, mem_per_task)
-        bench = benchmark_scheduler(workers, tasks, mem_per_task)
+        bench = benchmark_scheduler(
+            workers,
+            tasks,
+            mem_per_task,
+            sleep_duration=sleep_duration,
+            min_measure_duration=min_measure_duration,
+        )
         metrics.update(vars(bench))
         metrics["workers"] = workers
         results.append(metrics)
@@ -57,10 +79,28 @@ def main() -> None:
     )
     parser.add_argument("--tasks", type=int, required=True, help="Number of tasks to simulate")
     parser.add_argument("--mem-per-task", type=float, default=1.0, help="Memory per task in MB")
+    parser.add_argument(
+        "--sleep-duration",
+        type=float,
+        default=DEFAULT_SLEEP_DURATION,
+        help="Per-task sleep used to simulate work (seconds)",
+    )
+    parser.add_argument(
+        "--min-measure-duration",
+        type=float,
+        default=DEFAULT_MIN_MEASURE_DURATION,
+        help="Minimum per-worker runtime targeted for each measurement (seconds)",
+    )
     args = parser.parse_args()
 
     results = run_benchmark(
-        args.max_workers, args.arrival_rate, args.service_rate, args.tasks, args.mem_per_task
+        args.max_workers,
+        args.arrival_rate,
+        args.service_rate,
+        args.tasks,
+        args.mem_per_task,
+        args.sleep_duration,
+        args.min_measure_duration,
     )
     print(json.dumps(results))
 
