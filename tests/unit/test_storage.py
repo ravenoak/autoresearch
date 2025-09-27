@@ -29,5 +29,7 @@ def test_record_claim_audit_persists_provenance_round_trip(tmp_path) -> None:
         round_tripped = storage.StorageManager.list_claim_audits("claim-x")
         assert len(round_tripped) == 1
         assert round_tripped[0].provenance == provenance
+        assert round_tripped[0].provenance["backoff"]["retry_count"] == 1
+        assert round_tripped[0].provenance["evidence"]["best_source_id"] == "src-abc"
     finally:
         storage.teardown(remove_db=True, context=ctx)

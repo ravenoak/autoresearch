@@ -177,7 +177,20 @@ def ensure_source_id(source: Mapping[str, Any]) -> dict[str, Any]:
 
 @dataclass(slots=True)
 class ClaimAuditRecord:
-    """Structured verification metadata stored alongside claims."""
+    """Structured verification metadata stored alongside claims.
+
+    The record captures FEVER-style verification attributes together with a
+    ``provenance`` mapping that encodes how the audit was produced. The
+    mapping is expected to contain at least three namespaces:
+
+    - ``retrieval`` – query text, generated variants, and lookup events.
+    - ``backoff`` – retry counters, sampled paraphrases, and rate limiting.
+    - ``evidence`` – stable identifiers for the snippets or prior audits that
+      informed the verdict.
+
+    Downstream consumers can rely on this structure to trace how each claim
+    audit was assembled and to reproduce the retrieval process if needed.
+    """
 
     claim_id: str
     status: ClaimAuditStatus
@@ -192,7 +205,13 @@ class ClaimAuditRecord:
     created_at: float = field(default_factory=time.time)
 
     def to_payload(self) -> dict[str, Any]:
-        """Serialise the record into a JSON-compatible payload."""
+        """Serialise the record into a JSON-compatible payload.
+
+        Returns:
+            dict[str, Any]: A mapping suitable for persistence layers. The
+            ``provenance`` field is copied to avoid mutating the dataclass
+            state when callers adjust nested metadata.
+        """
 
         return {
             "audit_id": self.audit_id,
@@ -210,7 +229,15 @@ class ClaimAuditRecord:
 
     @classmethod
     def from_payload(cls, payload: Mapping[str, Any]) -> "ClaimAuditRecord":
-        """Create a record from a dictionary payload."""
+        """Create a record from a dictionary payload.
+
+        Args:
+            payload: Mapping produced by :meth:`to_payload` or a serialised
+                representation retrieved from storage.
+
+        Returns:
+            ClaimAuditRecord: The reconstructed audit.
+        """
 
         status_value = payload.get("status", ClaimAuditStatus.NEEDS_REVIEW)
         if isinstance(status_value, ClaimAuditStatus):
@@ -319,7 +346,12 @@ class ClaimAuditRecord:
                 else:
                     raise TypeError("sources must contain mappings")
 
-        provenance_payload = dict(provenance) if provenance else {}
+        if provenance is None:
+            provenance_payload: dict[str, Any] = {}
+        elif isinstance(provenance, Mapping):
+            provenance_payload = dict(provenance)
+        else:
+            raise TypeError("provenance must be a mapping")
 
         return cls(
             claim_id=claim_id,
