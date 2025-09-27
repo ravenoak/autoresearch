@@ -38,7 +38,7 @@ def _stubbed_search_environment(monkeypatch, request):
 
     cfg = MagicMock()
     cfg.search.backends = ["stub"]
-    cfg.search.embedding_backends = []
+    cfg.search.embedding_backends = ["vector"] if vector_search_enabled else []
     cfg.search.context_aware.enabled = False
     cfg.search.max_workers = 1
     cfg.search.use_bm25 = True
@@ -205,12 +205,12 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
     env = _stubbed_search_environment
     env.install_backend(docs)
 
-    env.set_phase("search")
+    env.set_phase("search-instance")
     instance_results = env.search_instance.external_lookup("q", max_results=1)
     assert [r["title"] for r in instance_results] == ["T"]
     assert [r["url"] for r in instance_results] == ["u"]
 
-    env.set_phase("search")
+    env.set_phase("search-class")
     bundle = Search.external_lookup("q", max_results=1, return_handles=True)
     assert isinstance(bundle, ExternalLookupResult)
     bundle_results = list(bundle)
@@ -228,8 +228,14 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
     search_embedding_bindings = [
         binding
         for phase, binding in env.embedding_events
-        if phase == "search"
+        if phase.startswith("search-")
     ]
+    per_invocation_embeddings = {
+        phase: [
+            binding for event_phase, binding in env.embedding_events if event_phase == phase
+        ]
+        for phase in ("search-instance", "search-class")
+    }
     direct_embedding_bindings = [
         binding
         for phase, binding in env.embedding_events
@@ -237,11 +243,16 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
     ]
 
     assert len(search_embedding_bindings) == expected_search_embeddings
-    assert all(binding == "instance" for binding in search_embedding_bindings)
+    expected_per_invocation = expected_search_embeddings // 2
+    for phase, bindings in per_invocation_embeddings.items():
+        assert len(bindings) == expected_per_invocation
+        assert all(binding == "instance" for binding in bindings)
 
     assert direct_embedding_bindings == ["instance", "instance"]
 
-    compute_binding = [binding for phase, binding in env.compute_calls if phase == "search"]
+    compute_binding = [
+        binding for phase, binding in env.compute_calls if phase.startswith("search-")
+    ]
     assert len(compute_binding) == expected_search_embeddings
     assert all(binding == "instance" for binding in compute_binding)
 
