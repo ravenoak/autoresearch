@@ -1034,6 +1034,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                 f"aggressive={aggressive_eviction}, batch_size={batch_size}"
             )
 
+            vss_available = StorageManager.has_vss()
+
             while StorageManager.context.graph:
                 graph = StorageManager.context.graph
                 if graph is None or not graph.nodes:
@@ -1201,21 +1203,49 @@ class StorageManager(metaclass=StorageManagerMeta):
                     fallback_needed = False
                 if fallback_needed:
                     missing = current_batch_size - len(nodes_to_evict)
-                    fallback_candidates: list[str] = []
-                    for node_id in list(graph.nodes):
-                        if node_id in nodes_to_evict:
-                            continue
-                        if not graph.has_node(node_id):
-                            continue
-                        fallback_candidates.append(node_id)
-                        if len(fallback_candidates) >= missing:
-                            break
-                    if fallback_candidates:
-                        log.debug(
-                            "Eviction fallback selected %d graph nodes due to stale cache",
-                            len(fallback_candidates),
-                        )
-                    nodes_to_evict.extend(fallback_candidates)
+                    if missing > 0:
+                        fallback_allowance = missing
+                        if remaining_allowance is not None:
+                            fallback_allowance = min(
+                                fallback_allowance,
+                                max(0, remaining_allowance - len(nodes_to_evict)),
+                            )
+
+                        survivor_floor: int | None = None
+                        if use_deterministic_budget:
+                            assert target_node_count is not None
+                            survivor_floor = max(target_node_count, minimum_resident_nodes)
+                        elif policy == "lru" and vss_available:
+                            survivor_floor = max(
+                                minimum_resident_nodes,
+                                _MIN_DETERMINISTIC_SURVIVORS,
+                            )
+
+                        if survivor_floor is not None:
+                            max_evictable = max(
+                                0,
+                                len(graph.nodes)
+                                - survivor_floor
+                                - len(nodes_to_evict),
+                            )
+                            fallback_allowance = min(fallback_allowance, max_evictable)
+
+                        if fallback_allowance > 0:
+                            fallback_candidates: list[str] = []
+                            for node_id in list(graph.nodes):
+                                if node_id in nodes_to_evict:
+                                    continue
+                                if not graph.has_node(node_id):
+                                    continue
+                                fallback_candidates.append(node_id)
+                                if len(fallback_candidates) >= fallback_allowance:
+                                    break
+                            if fallback_candidates:
+                                log.debug(
+                                    "Eviction fallback selected %d graph nodes due to stale cache",
+                                    len(fallback_candidates),
+                                )
+                            nodes_to_evict.extend(fallback_candidates)
 
                 if lru_mutated_in_iteration and len(nodes_to_evict) > current_batch_size:
                     nodes_to_evict = nodes_to_evict[:current_batch_size]
