@@ -1396,21 +1396,23 @@ def _format_claim_audits_markdown(audits: list[dict[str, Any]]) -> str:
         return "No claim audits recorded."
 
     lines = [
-        "| Claim ID | Status | Entailment | Top Source |",
-        "| --- | --- | --- | --- |",
+        "| Claim ID | Status | Entailment | Stability | Top Source |",
+        "| --- | --- | --- | --- | --- |",
     ]
     for audit in audits:
         badge = _render_status_badge(audit.get("status", "unknown"))
         entailment = audit.get("entailment_score")
         entailment_display = "—" if entailment is None else f"{entailment:.2f}"
+        stability = _format_stability_cell(audit)
         sources = audit.get("sources") or []
         primary = sources[0] if sources else {}
         label = _format_source_label(primary)
         lines.append(
-            "| {claim_id} | {badge} | {entailment} | {source} |".format(
+            "| {claim_id} | {badge} | {entailment} | {stability} | {source} |".format(
                 claim_id=audit.get("claim_id", ""),
                 badge=badge,
                 entailment=entailment_display,
+                stability=stability,
                 source=label,
             )
         )
@@ -1427,9 +1429,10 @@ def _format_claim_audits_plain(audits: list[dict[str, Any]]) -> str:
         status = _render_status_badge(audit.get("status", "unknown"), plain=True)
         entailment = audit.get("entailment_score")
         entailment_display = "n/a" if entailment is None else f"{entailment:.2f}"
+        stability = _format_stability_cell(audit, plain=True)
         segments.append(
             f"- Claim {audit.get('claim_id', '')}: {status}, "
-            f"entailment={entailment_display}"
+            f"entailment={entailment_display}, stability={stability}"
         )
         sources = audit.get("sources") or []
         if sources:
@@ -1453,6 +1456,30 @@ def _render_status_badge(status: Any, *, plain: bool = False) -> str:
     if plain:
         return label
     return f"{emoji} {label}"
+
+
+def _format_stability_cell(audit: Mapping[str, Any], *, plain: bool = False) -> str:
+    """Return a human-readable stability indicator for a claim audit."""
+
+    sample_size = audit.get("sample_size")
+    try:
+        sample_value = None if sample_size is None else int(sample_size)
+    except (TypeError, ValueError):
+        sample_value = None
+    variance_value = audit.get("entailment_variance")
+    try:
+        variance = None if variance_value is None else float(variance_value)
+    except (TypeError, ValueError):
+        variance = None
+    instability = audit.get("instability_flag")
+    if sample_value in (None, 0):
+        return "n/a" if plain else "—"
+    variance_label = f"σ²={variance:.3f}" if variance is not None else f"n={sample_value}"
+    if bool(instability):
+        prefix = "Needs review" if plain else "⚠️ Needs review"
+    else:
+        prefix = "Stable" if plain else "🟢 Stable"
+    return f"{prefix} ({variance_label})"
 
 
 def _format_source_label(source: Mapping[str, Any]) -> str:

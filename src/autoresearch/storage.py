@@ -160,6 +160,9 @@ class ClaimAuditRecord:
     entailment_score: float | None = None
     sources: list[dict[str, Any]] = field(default_factory=list)
     notes: str | None = None
+    entailment_variance: float | None = None
+    instability_flag: bool | None = None
+    sample_size: int | None = None
     audit_id: str = field(default_factory=lambda: str(uuid4()))
     created_at: float = field(default_factory=time.time)
 
@@ -171,6 +174,9 @@ class ClaimAuditRecord:
             "claim_id": self.claim_id,
             "status": self.status.value,
             "entailment_score": self.entailment_score,
+            "entailment_variance": self.entailment_variance,
+            "instability_flag": self.instability_flag,
+            "sample_size": self.sample_size,
             "sources": self.sources,
             "notes": self.notes,
             "created_at": self.created_at,
@@ -202,12 +208,40 @@ class ClaimAuditRecord:
         claim_id = str(payload.get("claim_id", ""))
         if not claim_id:
             raise StorageError("claim_id is required for claim audit records")
+        variance_raw = payload.get("entailment_variance")
+        variance: float | None
+        try:
+            variance = None if variance_raw is None else float(variance_raw)
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            variance = None
+
+        instability_raw = payload.get("instability_flag")
+        instability: bool | None
+        if instability_raw is None:
+            instability = None
+        elif isinstance(instability_raw, bool):
+            instability = instability_raw
+        elif isinstance(instability_raw, (int, float)):
+            instability = bool(instability_raw)
+        else:
+            instability = str(instability_raw).strip().lower() in {"true", "1", "yes"}
+
+        sample_raw = payload.get("sample_size")
+        sample_size: int | None
+        try:
+            sample_size = None if sample_raw is None else int(sample_raw)
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            sample_size = None
+
         return cls(
             claim_id=claim_id,
             status=status,
             entailment_score=payload.get("entailment_score"),
             sources=serialised_sources,
             notes=payload.get("notes"),
+            entailment_variance=variance,
+            instability_flag=instability,
+            sample_size=sample_size,
             audit_id=audit_id,
             created_at=created_at,
         )
@@ -221,6 +255,9 @@ class ClaimAuditRecord:
         sources: Sequence[Mapping[str, Any]] | None = None,
         notes: str | None = None,
         status: ClaimAuditStatus | str | None = None,
+        variance: float | None = None,
+        instability: bool | None = None,
+        sample_size: int | None = None,
     ) -> "ClaimAuditRecord":
         """Build a record from an entailment score and optional metadata."""
 
@@ -246,6 +283,9 @@ class ClaimAuditRecord:
             entailment_score=score,
             sources=serialised_sources,
             notes=notes,
+            entailment_variance=variance,
+            instability_flag=instability,
+            sample_size=sample_size,
         )
 
 

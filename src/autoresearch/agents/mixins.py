@@ -68,6 +68,9 @@ class ClaimGeneratorMixin:
         verification_status: ClaimAuditStatus | str | None = None,
         verification_sources: Optional[Sequence[SourcePayload]] = None,
         entailment_score: float | None = None,
+        entailment_variance: float | None = None,
+        instability_flag: bool | None = None,
+        sample_size: int | None = None,
         notes: str | None = None,
     ) -> ClaimPayload:
         """Create a claim with the given content and type.
@@ -82,6 +85,12 @@ class ClaimGeneratorMixin:
             verification_sources: Evidence payloads that informed the
                 verification decision.
             entailment_score: Normalised entailment score in ``[0, 1]``.
+            entailment_variance: Sample variance of entailment scores where
+                available.
+            instability_flag: Boolean indicator that the self-check disagreed
+                with retrieved snippets.
+            sample_size: Number of snippets contributing to the entailment
+                estimate.
             notes: Optional reviewer notes to attach to the audit payload.
 
         Returns:
@@ -102,7 +111,15 @@ class ClaimGeneratorMixin:
             )
         elif any(
             value is not None
-            for value in (verification_status, verification_sources, entailment_score)
+            for value in (
+                verification_status,
+                verification_sources,
+                entailment_score,
+                entailment_variance,
+                instability_flag,
+                sample_size,
+                notes,
+            )
         ):
             try:
                 record = ClaimAuditRecord.from_score(
@@ -111,6 +128,9 @@ class ClaimGeneratorMixin:
                     sources=verification_sources,
                     notes=notes,
                     status=verification_status,
+                    variance=entailment_variance,
+                    instability=instability_flag,
+                    sample_size=sample_size,
                 )
             except TypeError as exc:
                 raise TypeError("verification_sources must contain mappings") from exc

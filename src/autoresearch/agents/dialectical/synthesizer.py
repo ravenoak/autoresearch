@@ -5,15 +5,18 @@ from typing import Any, Dict, List, Mapping
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
 from ...evidence import (
+    EntailmentBreakdown,
+    aggregate_entailment_scores,
     classify_entailment,
     expand_retrieval_queries,
+    sample_paraphrases,
     score_entailment,
 )
 from ...orchestration.phases import DialoguePhase
 from ...orchestration.reasoning import ReasoningMode
 from ...orchestration.state import QueryState
 from ...logging_utils import get_logger
-from ...storage import ClaimAuditRecord
+from ...storage import ClaimAuditRecord, ClaimAuditStatus
 
 log = get_logger(__name__)
 
@@ -106,7 +109,7 @@ class SynthesizerAgent(Agent):
             metadata["query_variations"] = query_variations
 
         support_audits: list[dict[str, Any]] = []
-        support_scores: list[float] = []
+        support_breakdowns: list[EntailmentBreakdown] = []
         best_source: Mapping[str, Any] | None = None
         best_score = -1.0
         synthesis_source = {"title": "Synthesizer synthesis", "snippet": hypothesis}
@@ -116,7 +119,7 @@ class SynthesizerAgent(Agent):
             if not claim_id or not content:
                 continue
             breakdown = score_entailment(hypothesis, content)
-            support_scores.append(breakdown.score)
+            support_breakdowns.append(breakdown)
             peer_source = {
                 "claim_id": claim_id,
                 "title": f"{claim.get('type', 'claim').title()} claim",
@@ -132,14 +135,43 @@ class SynthesizerAgent(Agent):
             )
             support_audits.append(record.to_payload())
 
+        aggregate = aggregate_entailment_scores(support_breakdowns)
+        if aggregate.disagreement:
+            for paraphrase in sample_paraphrases(hypothesis, max_samples=2):
+                for claim in state.claims:
+                    claim_id = claim.get("id")
+                    content = str(claim.get("content", "")).strip()
+                    if not claim_id or not content:
+                        continue
+                    support_breakdowns.append(score_entailment(paraphrase, content))
+                aggregate = aggregate_entailment_scores(support_breakdowns)
+                if not aggregate.disagreement:
+                    break
+
         audit_kwargs: dict[str, Any] = {}
-        if support_scores:
-            aggregate_score = sum(support_scores) / len(support_scores)
-            audit_kwargs["entailment_score"] = aggregate_score
-            audit_kwargs["verification_status"] = classify_entailment(aggregate_score)
-            audit_kwargs["notes"] = (
-                f"Derived from {len(support_scores)} upstream claim(s)."
+        if aggregate.sample_size:
+            audit_kwargs["entailment_score"] = aggregate.mean
+            status = classify_entailment(aggregate.mean)
+            if aggregate.disagreement:
+                status = ClaimAuditStatus.NEEDS_REVIEW
+            audit_kwargs["verification_status"] = status
+            audit_kwargs["entailment_variance"] = (
+                aggregate.variance if aggregate.sample_size else None
             )
+            audit_kwargs["instability_flag"] = (
+                aggregate.disagreement if aggregate.sample_size else None
+            )
+            audit_kwargs["sample_size"] = aggregate.sample_size
+            note = (
+                f"Derived from {aggregate.sample_size} upstream signal(s); "
+                f"variance={aggregate.variance:.3f}."
+            )
+            if aggregate.disagreement:
+                note += " Disagreement detected; manual review advised."
+            audit_kwargs["notes"] = note
+        else:
+            audit_kwargs["verification_status"] = ClaimAuditStatus.NEEDS_REVIEW
+            audit_kwargs["notes"] = "No upstream claims were available for verification."
         if best_source:
             audit_kwargs["verification_sources"] = [best_source]
 

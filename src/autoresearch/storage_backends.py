@@ -287,9 +287,10 @@ class DuckDBStorageBackend:
             )
 
             self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS claim_audits("
+                "CREATE TABLE IF NOT EXISTS claim_audits("  # noqa: ISC003
                 "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
-                "entailment DOUBLE, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+                "entailment DOUBLE, variance DOUBLE, instability BOOLEAN, "
+                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
             )
 
             self._conn.execute(
@@ -399,7 +400,7 @@ class DuckDBStorageBackend:
 
         try:
             current_version = self.get_schema_version()
-            latest_version = 2  # Update this when adding new migrations
+            latest_version = 3  # Update this when adding new migrations
 
             log.info(f"Current schema version: {current_version}, latest version: {latest_version}")
 
@@ -410,6 +411,10 @@ class DuckDBStorageBackend:
                 if current_version is None or current_version < 2:
                     self._migrate_to_v2()
                     current_version = 2
+
+                if current_version < 3:
+                    self._migrate_to_v3()
+                    current_version = 3
 
                 # Update schema version to latest
                 self.update_schema_version(latest_version)
@@ -425,12 +430,34 @@ class DuckDBStorageBackend:
 
         try:
             self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS claim_audits("
+                "CREATE TABLE IF NOT EXISTS claim_audits("  # noqa: ISC003
                 "audit_id VARCHAR, claim_id VARCHAR, status VARCHAR, "
-                "entailment DOUBLE, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
+                "entailment DOUBLE, variance DOUBLE, instability BOOLEAN, "
+                "sample_size INTEGER, sources VARCHAR, notes VARCHAR, created_at TIMESTAMP)"
             )
         except duckdb.Error as exc:  # type: ignore[attr-defined]
             raise StorageError("Failed to migrate claim audit table", cause=exc)
+
+    def _migrate_to_v3(self) -> None:
+        """Ensure stability metadata columns exist on existing claim audit tables."""
+
+        if self._conn is None:
+            raise StorageError("DuckDB connection not initialized")
+
+        try:
+            self._conn.execute(
+                "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS variance DOUBLE"
+            )
+            self._conn.execute(
+                "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS instability BOOLEAN"
+            )
+            self._conn.execute(
+                "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS sample_size INTEGER"
+            )
+        except duckdb.Error as exc:  # type: ignore[attr-defined]
+            raise StorageError(
+                "Failed to migrate stability metadata columns", cause=exc
+            )
 
     def create_hnsw_index(self) -> None:
         """Create a Hierarchical Navigable Small World (HNSW) index.
@@ -791,11 +818,36 @@ class DuckDBStorageBackend:
             else:
                 serialised_sources.append({"value": src})
 
+        variance_value = audit.get("entailment_variance")
+        try:
+            variance_serialised = (
+                None if variance_value is None else float(variance_value)
+            )
+        except (TypeError, ValueError):
+            variance_serialised = None
+
+        instability_value = audit.get("instability_flag")
+        if instability_value is None:
+            instability_serialised = None
+        elif isinstance(instability_value, bool):
+            instability_serialised = instability_value
+        else:
+            instability_serialised = bool(instability_value)
+
+        sample_value = audit.get("sample_size")
+        try:
+            sample_serialised = None if sample_value is None else int(sample_value)
+        except (TypeError, ValueError):
+            sample_serialised = None
+
         payload = [
             str(audit_id),
             str(claim_id),
             str(status_value),
             audit.get("entailment_score"),
+            variance_serialised,
+            instability_serialised,
+            sample_serialised,
             json.dumps(serialised_sources),
             audit.get("notes"),
             created_at,
@@ -804,7 +856,15 @@ class DuckDBStorageBackend:
         with self.connection() as conn, self._lock:
             try:
                 conn.execute(
-                    "INSERT OR REPLACE INTO claim_audits VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "DELETE FROM claim_audits WHERE audit_id=?",
+                    [str(audit_id)],
+                )
+                conn.execute(
+                    (
+                        "INSERT INTO claim_audits "
+                        "(audit_id, claim_id, status, entailment, variance, instability, sample_size, "
+                        "sources, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    ),
                     payload,
                 )
             except Exception as exc:  # pragma: no cover - defensive
@@ -817,8 +877,8 @@ class DuckDBStorageBackend:
             raise StorageError("DuckDB connection not initialized")
 
         query = (
-            "SELECT audit_id, claim_id, status, entailment, sources, notes, created_at "
-            "FROM claim_audits"
+            "SELECT audit_id, claim_id, status, entailment, variance, instability, sample_size, "
+            "sources, notes, created_at FROM claim_audits"
         )
         params: list[Any] = []
         if claim_id:
@@ -834,7 +894,22 @@ class DuckDBStorageBackend:
 
         audits: List[Dict[str, Any]] = []
         for row in rows:
-            raw_sources = row[4]
+            raw_variance = row[4]
+            variance = float(raw_variance) if raw_variance is not None else None
+            raw_instability = row[5]
+            if raw_instability is None:
+                instability_flag = None
+            elif isinstance(raw_instability, bool):
+                instability_flag = raw_instability
+            else:
+                instability_flag = bool(raw_instability)
+            raw_sample = row[6]
+            try:
+                sample_size = None if raw_sample is None else int(raw_sample)
+            except (TypeError, ValueError):
+                sample_size = None
+
+            raw_sources = row[7]
             parsed_sources: list[Dict[str, Any]] = []
             if raw_sources:
                 try:
@@ -848,7 +923,7 @@ class DuckDBStorageBackend:
                         else:
                             parsed_sources.append({"value": src})
 
-            created = row[6]
+            created = row[9]
             if isinstance(created, datetime):
                 created_ts = created.timestamp()
             else:
@@ -860,8 +935,11 @@ class DuckDBStorageBackend:
                     "claim_id": row[1],
                     "status": row[2],
                     "entailment_score": row[3],
+                    "entailment_variance": variance,
+                    "instability_flag": instability_flag,
+                    "sample_size": sample_size,
                     "sources": parsed_sources,
-                    "notes": row[5],
+                    "notes": row[8],
                     "created_at": created_ts,
                 }
             )
