@@ -195,6 +195,8 @@ def application_running(temp_config):
 @when(parsers.parse("I run `{command}`"))
 def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_environment):
     args = shlex.split(command)
+    if len(args) >= 2 and args[0] == "uv" and args[1] == "run":
+        args = args[2:]
     if args and args[0] == "autoresearch":
         args = args[1:]
     result = cli_runner.invoke(cli_app, args, catch_exceptions=False)

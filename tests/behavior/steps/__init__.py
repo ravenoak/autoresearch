@@ -11,6 +11,7 @@ from .common_steps import (
 for _mod in [
     "distributed_execution_steps",
     "config_cli_steps",
+    "evaluation_steps",
     "backup_cli_steps",
     "serve_cli_steps",
     "completion_cli_steps",
