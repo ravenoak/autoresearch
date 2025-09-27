@@ -55,6 +55,10 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
     assert summary.duckdb_path is None
     assert summary.example_parquet is None
     assert summary.summary_parquet is None
+    assert summary.avg_cycles_completed is None
+    assert summary.gate_debate_rate is None
+    assert summary.gate_exit_rate is None
+    assert summary.gated_example_ratio == 0.0
 
 
 def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) -> None:
@@ -67,6 +71,8 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         else:
             answer = "Yes"
             status = "refuted"
+        gate_should_debate = "breathe water" not in query
+        cycles_completed = 3 if gate_should_debate else 1
         return QueryResponse(
             answer=answer,
             citations=[{"source": "test"}],
@@ -75,7 +81,18 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
                 "execution_metrics": {
                     "total_duration_seconds": 1.2,
                     "total_tokens": {"input": 10, "output": 5, "total": 15},
-                }
+                    "cycles_completed": cycles_completed,
+                },
+                "gate_events": [
+                    {
+                        "should_debate": gate_should_debate,
+                        "target_loops": cycles_completed,
+                        "reason": "test_policy",
+                        "tokens_saved_estimate": 42,
+                        "heuristics": {"score": 0.8},
+                        "thresholds": {"min_score": 0.5},
+                    }
+                ],
             },
             claim_audits=[{"status": status}],
         )
@@ -103,6 +120,10 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.avg_tokens_input == pytest.approx(10.0)
     assert summary.avg_tokens_output == pytest.approx(5.0)
     assert summary.avg_tokens_total == pytest.approx(15.0)
+    assert summary.avg_cycles_completed == pytest.approx(2.0)
+    assert summary.gate_debate_rate == pytest.approx(0.5)
+    assert summary.gate_exit_rate == pytest.approx(0.5)
+    assert summary.gated_example_ratio == pytest.approx(1.0)
     assert summary.duckdb_path == tmp_harness.duckdb_path
     assert summary.example_parquet and summary.example_parquet.exists()
     assert summary.summary_parquet and summary.summary_parquet.exists()
@@ -112,4 +133,31 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],
         ).fetchone()[0]
+        gate_rows = conn.execute(
+            """
+            SELECT cycles_completed, gate_should_debate, gate_events
+            FROM evaluation_results
+            WHERE run_id = ?
+            """,
+            [summary.run_id],
+        ).fetchall()
+        summary_row = conn.execute(
+            """
+            SELECT gate_exit_rate, gate_debate_rate, avg_cycles_completed, gated_example_ratio
+            FROM evaluation_run_summary
+            WHERE run_id = ?
+            """,
+            [summary.run_id],
+        ).fetchone()
     assert count == summary.total_examples
+    assert gate_rows
+    assert {row[1] for row in gate_rows} == {True, False}
+    for row in gate_rows:
+        assert row[0] in {1, 3}
+        assert row[2] is not None
+    assert summary_row is not None
+    gate_exit_rate, gate_debate_rate, avg_cycles_completed, gated_ratio = summary_row
+    assert gate_exit_rate == pytest.approx(summary.gate_exit_rate)
+    assert gate_debate_rate == pytest.approx(summary.gate_debate_rate)
+    assert avg_cycles_completed == pytest.approx(summary.avg_cycles_completed)
+    assert gated_ratio == pytest.approx(summary.gated_example_ratio)

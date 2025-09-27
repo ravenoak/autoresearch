@@ -240,6 +240,14 @@ def _format_tokens(summary: "EvaluationSummary") -> str:
     return "/".join(parts)
 
 
+def _format_percentage(value: Optional[float], precision: int = 1) -> str:
+    """Format a ratio as a percentage string."""
+
+    if value is None:
+        return "—"
+    return f"{value * 100:.{precision}f}%"
+
+
 def render_evaluation_summary(
     summaries: Sequence["EvaluationSummary"],
 ) -> None:
@@ -252,6 +260,8 @@ def render_evaluation_summary(
     table.add_column("Contradiction rate")
     table.add_column("Avg latency (s)")
     table.add_column("Avg tokens in/out/total")
+    table.add_column("Avg loops")
+    table.add_column("% gated exits")
     table.add_column("Run ID")
     table.add_column("Artifacts")
 
@@ -271,6 +281,8 @@ def render_evaluation_summary(
             _format_optional(summary.contradiction_rate),
             _format_optional(summary.avg_latency_seconds),
             _format_tokens(summary),
+            _format_optional(summary.avg_cycles_completed, precision=1),
+            _format_percentage(summary.gate_exit_rate),
             summary.run_id,
             "
 ".join(artifacts) if artifacts else "—",
