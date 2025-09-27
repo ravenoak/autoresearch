@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import sys
 import time
@@ -50,7 +51,7 @@ app = typer.Typer(
     help=(
         "Autoresearch CLI entry point.\n\n"
         "Set the reasoning mode using --mode or in autoresearch.toml under "
-        "[core.reasoning_mode]. Valid values: direct, dialectical, "
+        "[core.reasoning_mode]. Valid values: auto, direct, dialectical, "
         "chain-of-thought. Use --primus-start to choose the starting agent "
         "for dialectical reasoning."
     ),
@@ -231,7 +232,10 @@ def search(
         None,
         "--reasoning-mode",
         "--mode",
-        help="Override reasoning mode for this run (direct, dialectical, chain-of-thought)",
+        help=(
+            "Override reasoning mode for this run "
+            "(auto, direct, dialectical, chain-of-thought)"
+        ),
     ),
     loops: Optional[int] = typer.Option(
         None,
@@ -259,6 +263,36 @@ def search(
         None,
         "--token-budget",
         help="Maximum tokens available for this query",
+    ),
+    gate_policy_enabled: Optional[bool] = typer.Option(
+        None,
+        "--gate-policy-enabled",
+        help="Enable scout gate heuristics (true/false).",
+        show_default=False,
+    ),
+    gate_retrieval_overlap_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-overlap-threshold",
+        help="Minimum retrieval overlap that still triggers debate (0-1).",
+        show_default=False,
+    ),
+    gate_nli_conflict_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-conflict-threshold",
+        help="Contradiction probability threshold for debate escalation (0-1).",
+        show_default=False,
+    ),
+    gate_complexity_threshold: Optional[float] = typer.Option(
+        None,
+        "--gate-complexity-threshold",
+        help="Complexity score threshold for debate escalation (0-1).",
+        show_default=False,
+    ),
+    gate_user_overrides: Optional[str] = typer.Option(
+        None,
+        "--gate-overrides",
+        help="JSON overrides for the scout gate policy (e.g. '{\"decision\": \"force_exit\"}').",
+        show_default=False,
     ),
     adaptive_max_factor: Optional[int] = typer.Option(
         None,
@@ -378,6 +412,24 @@ def search(
         updates["circuit_breaker_threshold"] = circuit_breaker_threshold
     if circuit_breaker_cooldown is not None:
         updates["circuit_breaker_cooldown"] = circuit_breaker_cooldown
+    if gate_policy_enabled is not None:
+        updates["gate_policy_enabled"] = gate_policy_enabled
+    if gate_retrieval_overlap_threshold is not None:
+        updates["gate_retrieval_overlap_threshold"] = gate_retrieval_overlap_threshold
+    if gate_nli_conflict_threshold is not None:
+        updates["gate_nli_conflict_threshold"] = gate_nli_conflict_threshold
+    if gate_complexity_threshold is not None:
+        updates["gate_complexity_threshold"] = gate_complexity_threshold
+    if gate_user_overrides is not None:
+        try:
+            overrides = json.loads(gate_user_overrides)
+        except json.JSONDecodeError as exc:
+            print_error(
+                "Invalid JSON for --gate-overrides. Provide a valid JSON object.",
+                detail=str(exc),
+            )
+            raise typer.Exit(code=1) from exc
+        updates["gate_user_overrides"] = overrides
     if primus_start is not None:
         updates["primus_start"] = primus_start
     if agents is not None:

@@ -27,11 +27,11 @@ from ..storage import StorageManager
 from ..tracing import get_tracer, setup_tracing
 from .circuit_breaker import CircuitBreakerManager, CircuitBreakerState
 from .metrics import OrchestrationMetrics, record_query
-from .orchestration_utils import OrchestrationUtils
+from .orchestration_utils import OrchestrationUtils, ScoutGateDecision
 from .reasoning import ChainOfThoughtStrategy, ReasoningMode
 from .state import QueryState
 from .token_utils import _capture_token_usage
-from .types import CallbackMap
+from .types import CallbackMap, CycleCallback
 
 log = get_logger(__name__)
 
@@ -157,6 +157,8 @@ class Orchestrator:
                 group_tokens = max(1, token_budget * config.group_size // total_agents)
                 config.token_budget = group_tokens
 
+        original_mode_setting = getattr(config, "reasoning_mode", ReasoningMode.DIALECTICAL)
+
         if mode == ReasoningMode.CHAIN_OF_THOUGHT:
             strategy = ChainOfThoughtStrategy()
             return strategy.run_query(
@@ -171,13 +173,88 @@ class Orchestrator:
             coalitions=config_params.get("coalitions", {}),
         )
 
-        decision = OrchestrationUtils.evaluate_scout_gate_policy(
-            query=query,
-            config=config,
-            state=state,
-            loops=loops,
-            metrics=metrics,
-        )
+        decision: ScoutGateDecision | None = None
+
+        if mode == ReasoningMode.AUTO:
+            scout_state = state
+            metrics.start_cycle()
+            cycle_start = cast(CycleCallback | None, callbacks_map.get("on_cycle_start"))
+            if cycle_start is not None:
+                cycle_start(0, scout_state)
+            try:
+                config.reasoning_mode = ReasoningMode.DIRECT
+                OrchestrationUtils.execute_agent(
+                    "Synthesizer",
+                    scout_state,
+                    config,
+                    metrics,
+                    callbacks_map,
+                    agent_factory,
+                    storage_manager,
+                    0,
+                    cb_manager,
+                )
+            finally:
+                config.reasoning_mode = original_mode_setting
+            metrics.end_cycle()
+            cycle_end = cast(CycleCallback | None, callbacks_map.get("on_cycle_end"))
+            if cycle_end is not None:
+                cycle_end(0, scout_state)
+            scout_state.metadata["execution_metrics"] = metrics.get_summary()
+            metrics.record_query_tokens(query)
+
+            decision = OrchestrationUtils.evaluate_scout_gate_policy(
+                query=query,
+                config=config,
+                state=scout_state,
+                loops=loops,
+                metrics=metrics,
+            )
+
+            auto_meta = dict(scout_state.metadata.get("auto_mode", {}))
+            auto_meta.update(
+                {
+                    "scout_answer": scout_state.results.get("final_answer"),
+                    "scout_should_debate": decision.should_debate,
+                    "scout_reason": decision.reason,
+                }
+            )
+            scout_state.metadata["auto_mode"] = auto_meta
+
+            if not decision.should_debate:
+                auto_meta["outcome"] = "direct_exit"
+                config.reasoning_mode = original_mode_setting
+                return scout_state.synthesize()
+
+            auto_meta["outcome"] = "escalated"
+            auto_meta["escalation_mode"] = ReasoningMode.DIALECTICAL.value
+            gate_snapshot = scout_state.metadata.get("scout_gate")
+            preserved_metadata = {
+                key: value
+                for key, value in scout_state.metadata.items()
+                if key.startswith("scout_")
+            }
+            state = QueryState(
+                query=query,
+                primus_index=primus_index,
+                coalitions=config_params.get("coalitions", {}),
+            )
+            if gate_snapshot is not None:
+                state.metadata["scout_gate"] = gate_snapshot
+            for key, value in preserved_metadata.items():
+                state.metadata.setdefault(key, value)
+            state.metadata["auto_mode"] = dict(auto_meta)
+            config.reasoning_mode = ReasoningMode.DIALECTICAL
+            mode = ReasoningMode.DIALECTICAL
+
+        if decision is None:
+            decision = OrchestrationUtils.evaluate_scout_gate_policy(
+                query=query,
+                config=config,
+                state=state,
+                loops=loops,
+                metrics=metrics,
+            )
         if decision.target_loops != loops:
             log.info(
                 "Scout gate reduced debate loops",
@@ -202,80 +279,83 @@ class Orchestrator:
             )
         loops = decision.target_loops
 
-        total_agents = sum(len(g) for g in agents)
-        log.info(
-            f"Starting dialectical process with {total_agents} agents in {len(agents)} groups and {loops} loops",
-            extra={
-                "agents": agents,
-                "loops": loops,
-                "primus_index": primus_index,
-                "max_errors": max_errors,
-                "reasoning_mode": str(mode),
-            },
-        )
-
-        for loop in range(loops):
-            log.debug(
-                f"Starting loop {loop + 1}/{loops} with primus_index {primus_index}",
+        try:
+            total_agents = sum(len(g) for g in agents)
+            log.info(
+                f"Starting dialectical process with {total_agents} agents in {len(agents)} groups and {loops} loops",
                 extra={
-                    "loop": loop + 1,
-                    "total_loops": loops,
+                    "agents": agents,
+                    "loops": loops,
                     "primus_index": primus_index,
+                    "max_errors": max_errors,
+                    "reasoning_mode": str(mode),
                 },
             )
 
-            primus_index = OrchestrationUtils.execute_cycle(
-                loop,
-                loops,
-                agents,
-                primus_index,
-                max_errors,
-                state,
-                config,
-                metrics,
-                callbacks_map,
-                agent_factory,
-                storage_manager,
-                tracer,
-                cb_manager,
-            )
-
-            if "error" in state.results:
-                log.error(
-                    f"Aborting dialectical process due to error: {state.results['error']}",
+            for loop in range(loops):
+                log.debug(
+                    f"Starting loop {loop + 1}/{loops} with primus_index {primus_index}",
                     extra={
-                        "error": state.results["error"],
+                        "loop": loop + 1,
+                        "total_loops": loops,
+                        "primus_index": primus_index,
+                    },
+                )
+
+                primus_index = OrchestrationUtils.execute_cycle(
+                    loop,
+                    loops,
+                    agents,
+                    primus_index,
+                    max_errors,
+                    state,
+                    config,
+                    metrics,
+                    callbacks_map,
+                    agent_factory,
+                    storage_manager,
+                    tracer,
+                    cb_manager,
+                )
+
+                if "error" in state.results:
+                    log.error(
+                        f"Aborting dialectical process due to error: {state.results['error']}",
+                        extra={
+                            "error": state.results["error"],
+                            "error_count": state.error_count,
+                        },
+                    )
+                    break
+
+                log.debug(
+                    f"Completed loop {loop + 1}/{loops}, new primus_index: {primus_index}",
+                    extra={
+                        "loop": loop + 1,
+                        "total_loops": loops,
+                        "primus_index": primus_index,
+                        "cycle": state.cycle,
                         "error_count": state.error_count,
                     },
                 )
-                break
 
-            log.debug(
-                f"Completed loop {loop + 1}/{loops}, new primus_index: {primus_index}",
-                extra={
-                    "loop": loop + 1,
-                    "total_loops": loops,
-                    "primus_index": primus_index,
-                    "cycle": state.cycle,
-                    "error_count": state.error_count,
-                },
-            )
+            state.metadata["execution_metrics"] = metrics.get_summary()
+            metrics.record_query_tokens(query)
 
-        state.metadata["execution_metrics"] = metrics.get_summary()
-        metrics.record_query_tokens(query)
+            if "error" in state.results or state.error_count > 0:
+                error_message = state.results.get(
+                    "error", f"Process completed with {state.error_count} errors"
+                )
+                raise OrchestrationError(
+                    error_message,
+                    cause=None,
+                    errors=state.metadata.get("errors", []),
+                    suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured",
+                )
 
-        if "error" in state.results or state.error_count > 0:
-            error_message = state.results.get(
-                "error", f"Process completed with {state.error_count} errors"
-            )
-            raise OrchestrationError(
-                error_message,
-                cause=None,
-                errors=state.metadata.get("errors", []),
-                suggestion="Check the agent execution logs for details on the specific error and ensure all agents are properly configured",
-            )
-
-        return state.synthesize()
+            return state.synthesize()
+        finally:
+            config.reasoning_mode = original_mode_setting
 
     async def run_query_async(
         self,

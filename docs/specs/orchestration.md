@@ -27,6 +27,23 @@ loops, the budget is divided by `max(1, l)` then clamped to `[q + buffer,
 q * factor]`. The lower bound guarantees enough tokens for the query plus a
 margin while the upper bound scales with input size and prevents overruns.
 
+### Auto reasoning gate
+
+`ReasoningMode.AUTO` begins with a single Synthesizer pass to produce a scout
+answer. The orchestrator records the cycle metrics, evaluates the scout gate
+policy, and either returns the direct answer or escalates to full debate with
+`ReasoningMode.DIALECTICAL`. When debate proceeds the scout metadata is carried
+into the new query state so downstream agents can reference the heuristics.
+
+Operators can tune the gate policy through configuration or the CLI/UI:
+
+- `core.gate_policy_enabled` toggles the policy entirely.
+- `core.gate_retrieval_overlap_threshold`,
+  `core.gate_nli_conflict_threshold`, and
+  `core.gate_complexity_threshold` adjust exit heuristics.
+- `core.gate_user_overrides` accepts JSON overrides to force exit/debate or
+  pin specific heuristic scores.
+
 ## Invariants
 
 ### Parallel merge
