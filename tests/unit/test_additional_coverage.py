@@ -1,15 +1,18 @@
 import json
 import types
 from collections import OrderedDict
+from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-from autoresearch import search
+from autoresearch import cli_utils, search
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.output_format import OutputFormatter
 from autoresearch.storage import StorageManager, get_delegate, set_delegate
+from autoresearch.evaluation.harness import EvaluationSummary
 from autoresearch.streamlit_app import collect_system_metrics, orch_metrics
 from autoresearch.streamlit_app import psutil as streamlit_psutil
 from autoresearch.streamlit_app import st as streamlit_st
@@ -152,3 +155,59 @@ def test_streamlit_metrics(monkeypatch):
     assert metrics_data["cpu_percent"] == 10.0
     assert metrics_data["tokens_in_total"] == 1
     assert metrics_data["tokens_out_total"] == 2
+
+
+def test_render_evaluation_summary_joins_artifacts(monkeypatch):
+    now = datetime.now(timezone.utc)
+    summary = EvaluationSummary(
+        dataset="truthfulqa",
+        run_id="run-123",
+        started_at=now,
+        completed_at=now,
+        total_examples=1,
+        accuracy=0.5,
+        citation_coverage=1.0,
+        contradiction_rate=0.0,
+        avg_latency_seconds=2.5,
+        avg_tokens_input=100.0,
+        avg_tokens_output=50.0,
+        avg_tokens_total=150.0,
+        avg_cycles_completed=1.0,
+        gate_debate_rate=0.0,
+        gate_exit_rate=0.25,
+        gated_example_ratio=None,
+        config_signature="cfg",
+        duckdb_path=Path("artifacts/run.duckdb"),
+        example_parquet=Path("artifacts/examples.parquet"),
+        summary_parquet=Path("artifacts/summary.parquet"),
+    )
+
+    created_tables: list["DummyTable"] = []
+
+    class DummyTable:
+        def __init__(self, *args, **kwargs):
+            created_tables.append(self)
+            self.rows: list[tuple[object, ...]] = []
+
+        def add_column(self, *args, **kwargs) -> None:  # pragma: no cover - interface stub
+            return None
+
+        def add_row(self, *args) -> None:
+            self.rows.append(args)
+
+    def fake_print(*_args, **_kwargs) -> None:
+        return None
+
+    monkeypatch.setattr(cli_utils, "Table", DummyTable)
+    monkeypatch.setattr(cli_utils.console, "print", fake_print)
+
+    cli_utils.render_evaluation_summary([summary])
+
+    assert created_tables
+    artifacts_cell = created_tables[0].rows[0][-1]
+    assert (
+        artifacts_cell
+        == "duckdb: artifacts/run.duckdb, "
+        "examples: artifacts/examples.parquet, "
+        "summary: artifacts/summary.parquet"
+    )
