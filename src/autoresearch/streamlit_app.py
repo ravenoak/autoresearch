@@ -1963,6 +1963,55 @@ def display_results(result: QueryResponse) -> None:
 
     with tab5:
         st.markdown("<h3>Knowledge Graph</h3>", unsafe_allow_html=True)
+        summary = payload.knowledge_graph or {}
+        summary_displayed = False
+        if summary:
+            summary_displayed = True
+            counts_lines: list[str] = []
+            if (entities := summary.get("entity_count")) is not None:
+                counts_lines.append(f"- **Entities:** {entities}")
+            if (relations := summary.get("relation_count")) is not None:
+                counts_lines.append(f"- **Relations:** {relations}")
+            if (score := summary.get("contradiction_score")) is not None:
+                counts_lines.append(f"- **Contradiction score:** {score:.2f}")
+            if counts_lines:
+                st.markdown("### Summary")
+                st.markdown("\n".join(counts_lines))
+
+            contradictions = summary.get("contradictions") or []
+            if contradictions:
+                st.markdown("### Contradictions")
+                for item in contradictions:
+                    if isinstance(item, dict):
+                        subject = item.get("subject") or item.get("text")
+                        predicate = item.get("predicate")
+                        objects = item.get("objects") or []
+                        if subject and predicate and isinstance(objects, list):
+                            joined = ", ".join(str(obj) for obj in objects if str(obj).strip())
+                            st.markdown(f"- {subject} — {predicate} → {joined or '—'}")
+                        else:
+                            st.markdown(f"- {item}")
+                    else:
+                        st.markdown(f"- {item}")
+                if note := payload.notes.get("knowledge_graph_contradictions"):
+                    st.caption(note)
+
+            paths = summary.get("multi_hop_paths") or []
+            if paths:
+                st.markdown("### Multi-hop paths")
+                for path in paths:
+                    if isinstance(path, list):
+                        labels = [str(node) for node in path if str(node).strip()]
+                        st.markdown(f"- {' → '.join(labels) if labels else '—'}")
+                    else:
+                        st.markdown(f"- {path}")
+                if note := payload.notes.get("knowledge_graph_paths"):
+                    st.caption(note)
+        elif note := payload.notes.get("knowledge_graph"):
+            st.info(note)
+        else:
+            st.info("Knowledge graph not generated yet.")
+
         if payload.citations and payload.reasoning:
             graph_image = create_knowledge_graph(result)
             import base64
@@ -1974,10 +2023,43 @@ def display_results(result: QueryResponse) -> None:
                 f"<img src='data:image/png;base64,{encoded}' alt='Knowledge graph visualization' style='width:100%;' />",
                 unsafe_allow_html=True,
             )
-        elif payload.notes.get("citations") or payload.notes.get("reasoning"):
-            st.info("Increase depth to view the knowledge graph.")
-        else:
-            st.info("Not enough information to create a knowledge graph")
+        elif not summary_displayed:
+            if payload.notes.get("citations") or payload.notes.get("reasoning"):
+                st.caption("Increase depth to view the knowledge graph visualization.")
+            else:
+                st.caption("Not enough information to render the knowledge graph visualization.")
+
+        if payload.graph_exports:
+            st.markdown("### Graph exports")
+            commands: list[str] = []
+            if payload.graph_exports.get("graphml"):
+                commands.append("`--output graphml`")
+            if payload.graph_exports.get("graph_json"):
+                commands.append("`--output graph-json`")
+            if commands:
+                st.info("CLI shortcuts: " + " or ".join(dict.fromkeys(commands)))
+            from .storage import StorageManager
+
+            if payload.graph_exports.get("graphml"):
+                graphml_data = StorageManager.export_knowledge_graph_graphml()
+                if graphml_data:
+                    st.download_button(
+                        label="Download GraphML",
+                        data=graphml_data,
+                        file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.graphml",
+                        mime="application/graphml+xml",
+                    )
+            if payload.graph_exports.get("graph_json"):
+                graph_json_data = StorageManager.export_knowledge_graph_json()
+                if graph_json_data:
+                    st.download_button(
+                        label="Download Graph JSON",
+                        data=graph_json_data,
+                        file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                        mime="application/json",
+                    )
+        elif note := payload.notes.get("graph_exports"):
+            st.caption(note)
 
     with tab6:
         st.markdown("<h3>Agent Trace</h3>", unsafe_allow_html=True)

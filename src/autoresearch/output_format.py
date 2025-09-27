@@ -9,7 +9,7 @@ import string
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 from pydantic import BaseModel, ValidationError
 from .models import QueryResponse
 from .errors import ValidationError as AutoresearchValidationError
@@ -77,6 +77,10 @@ class DepthPlan:
     task_graph_limit: Optional[int]
     include_react_traces: bool
     react_trace_limit: Optional[int]
+    include_knowledge_graph: bool
+    knowledge_graph_contradiction_limit: Optional[int]
+    knowledge_graph_path_limit: Optional[int]
+    include_graph_exports: bool
 
 
 @dataclass
@@ -94,6 +98,8 @@ class DepthPayload:
     raw_response: Optional[dict[str, Any]]
     task_graph: Optional[dict[str, Any]]
     react_traces: list[dict[str, Any]]
+    knowledge_graph: Optional[dict[str, Any]]
+    graph_exports: dict[str, bool]
     sections: dict[str, bool]
     notes: dict[str, str] = field(default_factory=dict)
 
@@ -135,6 +141,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         task_graph_limit=None,
         include_react_traces=False,
         react_trace_limit=None,
+        include_knowledge_graph=True,
+        knowledge_graph_contradiction_limit=1,
+        knowledge_graph_path_limit=1,
+        include_graph_exports=False,
     ),
     OutputDepth.CONCISE: DepthPlan(
         level=OutputDepth.CONCISE,
@@ -153,6 +163,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         task_graph_limit=None,
         include_react_traces=False,
         react_trace_limit=None,
+        include_knowledge_graph=True,
+        knowledge_graph_contradiction_limit=2,
+        knowledge_graph_path_limit=2,
+        include_graph_exports=False,
     ),
     OutputDepth.STANDARD: DepthPlan(
         level=OutputDepth.STANDARD,
@@ -171,6 +185,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         task_graph_limit=3,
         include_react_traces=False,
         react_trace_limit=None,
+        include_knowledge_graph=True,
+        knowledge_graph_contradiction_limit=3,
+        knowledge_graph_path_limit=3,
+        include_graph_exports=True,
     ),
     OutputDepth.TRACE: DepthPlan(
         level=OutputDepth.TRACE,
@@ -189,6 +207,10 @@ _DEPTH_PLANS: Dict[OutputDepth, DepthPlan] = {
         task_graph_limit=None,
         include_react_traces=True,
         react_trace_limit=None,
+        include_knowledge_graph=True,
+        knowledge_graph_contradiction_limit=None,
+        knowledge_graph_path_limit=None,
+        include_graph_exports=True,
     ),
 }
 
@@ -257,6 +279,10 @@ _SECTION_LABELS: Dict[str, str] = {
     "raw_response": "Raw response",
     "task_graph": "Task graph",
     "react_traces": "ReAct traces",
+    "knowledge_graph": "Knowledge graph",
+    "knowledge_graph_contradictions": "Knowledge graph contradictions",
+    "knowledge_graph_paths": "Knowledge graph paths",
+    "graph_exports": "Graph exports",
 }
 
 
@@ -408,6 +434,102 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         metrics = {}
         notes["metrics"] = _hidden_message("metrics", plan)
 
+    knowledge_graph_payload: Optional[dict[str, Any]] = None
+    graph_exports_payload: dict[str, bool] = {}
+    if plan.include_knowledge_graph:
+        knowledge_meta = response.metrics.get("knowledge_graph")
+        if isinstance(knowledge_meta, Mapping):
+            summary = knowledge_meta.get("summary")
+            if isinstance(summary, Mapping) and summary:
+                summary_payload: dict[str, Any] = {}
+                entity_count = summary.get("entity_count")
+                if isinstance(entity_count, (int, float)):
+                    summary_payload["entity_count"] = int(entity_count)
+                relation_count = summary.get("relation_count")
+                if isinstance(relation_count, (int, float)):
+                    summary_payload["relation_count"] = int(relation_count)
+                contradiction_score = summary.get("contradiction_score")
+                if isinstance(contradiction_score, (int, float)):
+                    summary_payload["contradiction_score"] = float(contradiction_score)
+
+                contradictions_all = summary.get("contradictions") or []
+                if not isinstance(contradictions_all, Sequence) or isinstance(
+                    contradictions_all, (str, bytes)
+                ):
+                    contradictions_all = []
+                limited_contradictions, truncated_contradictions = _limit_items(
+                    contradictions_all, plan.knowledge_graph_contradiction_limit
+                )
+                formatted_contradictions: list[dict[str, Any]] = []
+                for item in limited_contradictions:
+                    if isinstance(item, Mapping):
+                        formatted_contradictions.append(
+                            {
+                                "subject": str(item.get("subject", "")),
+                                "predicate": str(item.get("predicate", "")),
+                                "objects": [str(obj) for obj in item.get("objects", [])],
+                            }
+                        )
+                    else:
+                        formatted_contradictions.append({"text": str(item)})
+                if formatted_contradictions:
+                    summary_payload["contradictions"] = formatted_contradictions
+                if truncated_contradictions is not None:
+                    notes["knowledge_graph_contradictions"] = _truncation_message(
+                        "knowledge_graph_contradictions",
+                        len(formatted_contradictions),
+                        truncated_contradictions,
+                        depth_level,
+                    )
+
+                paths_all = summary.get("multi_hop_paths") or []
+                if not isinstance(paths_all, Sequence) or isinstance(paths_all, (str, bytes)):
+                    paths_all = []
+                limited_paths, truncated_paths = _limit_items(
+                    paths_all, plan.knowledge_graph_path_limit
+                )
+                formatted_paths: list[list[str]] = []
+                for path in limited_paths:
+                    if isinstance(path, Sequence) and not isinstance(path, (str, bytes)):
+                        formatted_paths.append([str(node) for node in path])
+                    else:
+                        formatted_paths.append([str(path)])
+                if formatted_paths:
+                    summary_payload["multi_hop_paths"] = formatted_paths
+                if truncated_paths is not None:
+                    notes["knowledge_graph_paths"] = _truncation_message(
+                        "knowledge_graph_paths",
+                        len(formatted_paths),
+                        truncated_paths,
+                        depth_level,
+                    )
+
+                timestamp = summary.get("timestamp")
+                if isinstance(timestamp, (int, float)):
+                    summary_payload["timestamp"] = float(timestamp)
+
+                knowledge_graph_payload = summary_payload or None
+
+                if plan.include_graph_exports:
+                    exports = knowledge_meta.get("exports")
+                    exports_payload: dict[str, bool] = {}
+                    if isinstance(exports, Mapping):
+                        for fmt in ("graphml", "graph_json"):
+                            exports_payload[fmt] = bool(exports.get(fmt))
+                    elif knowledge_graph_payload:
+                        exports_payload = {"graphml": True, "graph_json": True}
+                    graph_exports_payload = {
+                        fmt: available
+                        for fmt, available in exports_payload.items()
+                        if available
+                    }
+        if knowledge_graph_payload is None and plan.include_graph_exports:
+            graph_exports_payload = {}
+    else:
+        notes["knowledge_graph"] = _hidden_message("knowledge_graph", plan)
+        if plan.include_graph_exports:
+            notes["graph_exports"] = _hidden_message("graph_exports", plan)
+
     if plan.include_task_graph:
         graph_payload: Optional[dict[str, Any]] = None
         if response.task_graph:
@@ -465,6 +587,8 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         "task_graph": plan.include_task_graph,
         "react_traces": plan.include_react_traces,
         "full_trace": plan.include_reasoning and plan.include_react_traces,
+        "knowledge_graph": bool(knowledge_graph_payload),
+        "graph_exports": bool(graph_exports_payload),
     }
 
     return DepthPayload(
@@ -479,6 +603,8 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         raw_response=raw_response,
         task_graph=graph_payload,
         react_traces=react_traces_payload,
+        knowledge_graph=knowledge_graph_payload,
+        graph_exports=graph_exports_payload,
         sections=sections,
         notes=notes,
     )
@@ -554,6 +680,168 @@ def _format_metrics_plain(metrics: Mapping[str, Any]) -> str:
     if not metrics:
         return ""
     return "\n".join(f"- {key}: {value}" for key, value in metrics.items())
+
+
+def _format_knowledge_graph_markdown(summary: Optional[Mapping[str, Any]]) -> str:
+    """Format knowledge graph summary details for markdown output."""
+
+    if not summary:
+        return ""
+
+    lines: list[str] = []
+    counts: list[str] = []
+    entity_count = summary.get("entity_count")
+    if isinstance(entity_count, (int, float)):
+        counts.append(f"- **Entities**: {int(entity_count)}")
+    relation_count = summary.get("relation_count")
+    if isinstance(relation_count, (int, float)):
+        counts.append(f"- **Relations**: {int(relation_count)}")
+    contradiction_score = summary.get("contradiction_score")
+    if isinstance(contradiction_score, (int, float)):
+        counts.append(f"- **Contradiction score**: {float(contradiction_score):.2f}")
+    if counts:
+        lines.extend(counts)
+
+    contradictions = summary.get("contradictions", [])
+    if isinstance(contradictions, Iterable) and not isinstance(contradictions, (str, bytes)):
+        entries = list(contradictions)
+    else:
+        entries = []
+    if entries:
+        if lines:
+            lines.append("")
+        lines.append("**Contradictions**")
+        for item in entries:
+            if isinstance(item, Mapping):
+                subject = item.get("subject") or item.get("text")
+                predicate = item.get("predicate")
+                objects = item.get("objects")
+                if subject and predicate and isinstance(objects, Iterable):
+                    obj_values = [str(obj) for obj in objects if str(obj).strip()]
+                    joined = ", ".join(obj_values) if obj_values else "—"
+                    lines.append(f"- {subject} — {predicate} → {joined}")
+                else:
+                    lines.append(f"- {json.dumps(item, ensure_ascii=False)}")
+            else:
+                lines.append(f"- {item}")
+
+    paths = summary.get("multi_hop_paths", [])
+    if isinstance(paths, Iterable) and not isinstance(paths, (str, bytes)):
+        path_values = list(paths)
+    else:
+        path_values = []
+    if path_values:
+        if lines:
+            lines.append("")
+        lines.append("**Multi-hop paths**")
+        for path in path_values:
+            if isinstance(path, Iterable) and not isinstance(path, (str, bytes)):
+                labels = [str(node) for node in path if str(node).strip()]
+                lines.append(f"- {' → '.join(labels) if labels else '—'}")
+            else:
+                lines.append(f"- {path}")
+
+    return "\n".join(lines).strip()
+
+
+def _format_knowledge_graph_plain(summary: Optional[Mapping[str, Any]]) -> str:
+    """Format knowledge graph summary details for plain text output."""
+
+    if not summary:
+        return ""
+
+    lines: list[str] = []
+    counts: list[str] = []
+    entity_count = summary.get("entity_count")
+    if isinstance(entity_count, (int, float)):
+        counts.append(f"- Entities: {int(entity_count)}")
+    relation_count = summary.get("relation_count")
+    if isinstance(relation_count, (int, float)):
+        counts.append(f"- Relations: {int(relation_count)}")
+    contradiction_score = summary.get("contradiction_score")
+    if isinstance(contradiction_score, (int, float)):
+        counts.append(f"- Contradiction score: {float(contradiction_score):.2f}")
+    if counts:
+        lines.extend(counts)
+
+    contradictions = summary.get("contradictions", [])
+    if isinstance(contradictions, Iterable) and not isinstance(contradictions, (str, bytes)):
+        entries = list(contradictions)
+    else:
+        entries = []
+    if entries:
+        if lines:
+            lines.append("")
+        lines.append("Contradictions:")
+        for item in entries:
+            if isinstance(item, Mapping):
+                subject = item.get("subject") or item.get("text")
+                predicate = item.get("predicate")
+                objects = item.get("objects")
+                if subject and predicate and isinstance(objects, Iterable):
+                    obj_values = [str(obj) for obj in objects if str(obj).strip()]
+                    joined = ", ".join(obj_values) if obj_values else "—"
+                    lines.append(f"- {subject} — {predicate} -> {joined}")
+                else:
+                    lines.append(f"- {json.dumps(item, ensure_ascii=False)}")
+            else:
+                lines.append(f"- {item}")
+
+    paths = summary.get("multi_hop_paths", [])
+    if isinstance(paths, Iterable) and not isinstance(paths, (str, bytes)):
+        path_values = list(paths)
+    else:
+        path_values = []
+    if path_values:
+        if lines:
+            lines.append("")
+        lines.append("Multi-hop paths:")
+        for path in path_values:
+            if isinstance(path, Iterable) and not isinstance(path, (str, bytes)):
+                labels = [str(node) for node in path if str(node).strip()]
+                lines.append(f"- {' -> '.join(labels) if labels else '—'}")
+            else:
+                lines.append(f"- {path}")
+
+    return "\n".join(lines).strip()
+
+
+def _format_graph_exports_markdown(exports: Mapping[str, bool]) -> str:
+    """Format graph export guidance for markdown output."""
+
+    available = [fmt for fmt, flag in exports.items() if flag]
+    if not available:
+        return ""
+
+    label_map = {
+        "graphml": "GraphML",
+        "graph_json": "Graph JSON",
+    }
+    lines = []
+    for fmt in available:
+        label = label_map.get(fmt, fmt.upper())
+        option = "graph-json" if fmt == "graph_json" else fmt
+        lines.append(f"- {label}: run with `--output {option}`")
+    return "\n".join(lines)
+
+
+def _format_graph_exports_plain(exports: Mapping[str, bool]) -> str:
+    """Format graph export guidance for plain text output."""
+
+    available = [fmt for fmt, flag in exports.items() if flag]
+    if not available:
+        return ""
+
+    label_map = {
+        "graphml": "GraphML",
+        "graph_json": "Graph JSON",
+    }
+    lines = []
+    for fmt in available:
+        label = label_map.get(fmt, fmt.upper())
+        option = "graph-json" if fmt == "graph_json" else fmt
+        lines.append(f"- {label}: run with --output {option}")
+    return "\n".join(lines)
 
 
 def _format_task_graph_markdown(task_graph: Optional[Mapping[str, Any]]) -> str:
@@ -753,6 +1041,21 @@ def _render_markdown(payload: DepthPayload) -> str:
     if note := payload.notes.get("metrics"):
         parts.append(f"> {note}")
 
+    if payload.knowledge_graph:
+        parts.append("")
+        parts.append("## Knowledge Graph")
+        knowledge_section = _format_knowledge_graph_markdown(payload.knowledge_graph)
+        if knowledge_section:
+            parts.append(knowledge_section)
+        if note := payload.notes.get("knowledge_graph_contradictions"):
+            parts.append(f"> {note}")
+        if note := payload.notes.get("knowledge_graph_paths"):
+            parts.append(f"> {note}")
+    elif note := payload.notes.get("knowledge_graph"):
+        parts.append("")
+        parts.append("## Knowledge Graph")
+        parts.append(f"> {note}")
+
     parts.append("")
     parts.append("## Task Graph")
     task_graph_section = _format_task_graph_markdown(payload.task_graph)
@@ -767,6 +1070,15 @@ def _render_markdown(payload: DepthPayload) -> str:
     if react_section:
         parts.append(react_section)
     if note := payload.notes.get("react_traces"):
+        parts.append(f"> {note}")
+
+    if payload.graph_exports:
+        parts.append("")
+        parts.append("## Graph Exports")
+        exports_section = _format_graph_exports_markdown(payload.graph_exports)
+        if exports_section:
+            parts.append(exports_section)
+    if note := payload.notes.get("graph_exports"):
         parts.append(f"> {note}")
 
     parts.append("")
@@ -831,6 +1143,21 @@ def _render_plain(payload: DepthPayload) -> str:
     if note := payload.notes.get("metrics"):
         lines.append(note)
 
+    if payload.knowledge_graph:
+        lines.append("")
+        lines.append("Knowledge Graph:")
+        knowledge_section = _format_knowledge_graph_plain(payload.knowledge_graph)
+        if knowledge_section:
+            lines.append(knowledge_section)
+        if note := payload.notes.get("knowledge_graph_contradictions"):
+            lines.append(note)
+        if note := payload.notes.get("knowledge_graph_paths"):
+            lines.append(note)
+    elif note := payload.notes.get("knowledge_graph"):
+        lines.append("")
+        lines.append("Knowledge Graph:")
+        lines.append(note)
+
     lines.append("")
     lines.append("Task Graph:")
     task_graph_section = _format_task_graph_plain(payload.task_graph)
@@ -845,6 +1172,15 @@ def _render_plain(payload: DepthPayload) -> str:
     if react_section:
         lines.append(react_section)
     if note := payload.notes.get("react_traces"):
+        lines.append(note)
+
+    if payload.graph_exports:
+        lines.append("")
+        lines.append("Graph Exports:")
+        exports_section = _format_graph_exports_plain(payload.graph_exports)
+        if exports_section:
+            lines.append(exports_section)
+    if note := payload.notes.get("graph_exports"):
         lines.append(note)
 
     lines.append("")
@@ -879,6 +1215,10 @@ def _render_json(payload: DepthPayload) -> str:
         data["task_graph"] = _json_safe(payload.task_graph)
     if payload.react_traces:
         data["react_traces"] = [_json_safe(item) for item in payload.react_traces]
+    if payload.knowledge_graph:
+        data["knowledge_graph"] = _json_safe(payload.knowledge_graph)
+    if payload.graph_exports:
+        data["graph_exports"] = _json_safe(payload.graph_exports)
     if payload.raw_response is not None:
         data["raw_response"] = _json_safe(payload.raw_response)
     return json.dumps(data, indent=2, ensure_ascii=False)
@@ -901,6 +1241,48 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
     task_graph_plain = _format_task_graph_plain(payload.task_graph)
     react_markdown = _format_react_traces_markdown(payload.react_traces)
     react_plain = _format_react_traces_plain(payload.react_traces)
+    knowledge_markdown = _format_knowledge_graph_markdown(payload.knowledge_graph)
+    knowledge_plain = _format_knowledge_graph_plain(payload.knowledge_graph)
+    graph_exports_markdown = _format_graph_exports_markdown(payload.graph_exports)
+    graph_exports_plain = _format_graph_exports_plain(payload.graph_exports)
+
+    knowledge_section_markdown = ""
+    knowledge_section_plain = ""
+    if payload.knowledge_graph:
+        kg_lines_markdown = ["## Knowledge Graph"]
+        if knowledge_markdown:
+            kg_lines_markdown.append(knowledge_markdown)
+        if note := payload.notes.get("knowledge_graph_contradictions"):
+            kg_lines_markdown.append(f"> {note}")
+        if note := payload.notes.get("knowledge_graph_paths"):
+            kg_lines_markdown.append(f"> {note}")
+        knowledge_section_markdown = "\n".join(kg_lines_markdown).strip()
+
+        kg_lines_plain = ["Knowledge Graph:"]
+        if knowledge_plain:
+            kg_lines_plain.append(knowledge_plain)
+        if note := payload.notes.get("knowledge_graph_contradictions"):
+            kg_lines_plain.append(note)
+        if note := payload.notes.get("knowledge_graph_paths"):
+            kg_lines_plain.append(note)
+        knowledge_section_plain = "\n".join(kg_lines_plain).strip()
+
+    graph_exports_section_markdown = ""
+    graph_exports_section_plain = ""
+    if payload.graph_exports:
+        ge_lines_markdown = ["## Graph Exports"]
+        if graph_exports_markdown:
+            ge_lines_markdown.append(graph_exports_markdown)
+        if note := payload.notes.get("graph_exports"):
+            ge_lines_markdown.append(f"> {note}")
+        graph_exports_section_markdown = "\n".join(ge_lines_markdown).strip()
+
+        ge_lines_plain = ["Graph Exports:"]
+        if graph_exports_plain:
+            ge_lines_plain.append(graph_exports_plain)
+        if note := payload.notes.get("graph_exports"):
+            ge_lines_plain.append(note)
+        graph_exports_section_plain = "\n".join(ge_lines_plain).strip()
 
     return {
         "tldr": payload.tldr,
@@ -937,6 +1319,22 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         "react_traces_markdown": react_markdown,
         "react_traces_plain": react_plain,
         "react_traces_note": payload.notes.get("react_traces", ""),
+        "knowledge_graph": knowledge_markdown or payload.notes.get("knowledge_graph", ""),
+        "knowledge_graph_markdown": knowledge_markdown,
+        "knowledge_graph_plain": knowledge_plain,
+        "knowledge_graph_note": payload.notes.get("knowledge_graph", ""),
+        "knowledge_graph_contradictions_note": payload.notes.get(
+            "knowledge_graph_contradictions", ""
+        ),
+        "knowledge_graph_paths_note": payload.notes.get("knowledge_graph_paths", ""),
+        "graph_exports": graph_exports_markdown or payload.notes.get("graph_exports", ""),
+        "graph_exports_markdown": graph_exports_markdown,
+        "graph_exports_plain": graph_exports_plain,
+        "graph_exports_note": payload.notes.get("graph_exports", ""),
+        "knowledge_graph_section": knowledge_section_markdown,
+        "knowledge_graph_section_plain": knowledge_section_plain,
+        "graph_exports_section": graph_exports_section_markdown,
+        "graph_exports_section_plain": graph_exports_section_plain,
         "raw_json": (
             json.dumps(payload.raw_response, indent=2, ensure_ascii=False)
             if payload.raw_response is not None
@@ -1051,6 +1449,8 @@ ${reasoning_note}
 ${metrics}
 ${metrics_note}
 
+${knowledge_graph_section}
+
 ## Task Graph
 ${task_graph}
 ${task_graph_note}
@@ -1058,6 +1458,8 @@ ${task_graph_note}
 ## ReAct Trace
 ${react_traces}
 ${react_traces_note}
+
+${graph_exports_section}
 
 ## Depth
 ${depth_label}
@@ -1096,6 +1498,8 @@ Metrics:
 ${metrics}
 ${metrics_note}
 
+${knowledge_graph_section}
+
 Task Graph:
 ${task_graph}
 ${task_graph_note}
@@ -1103,6 +1507,8 @@ ${task_graph_note}
 ReAct Trace:
 ${react_traces}
 ${react_traces_note}
+
+${graph_exports_section}
 
 Raw Response:
 ${raw_json}
@@ -1282,6 +1688,12 @@ class OutputFormatter:
                 or extra.get("task_graph_note", ""),
                 "react_traces": extra.get("react_traces_plain")
                 or extra.get("react_traces_note", ""),
+                "knowledge_graph": extra.get("knowledge_graph_plain")
+                or extra.get("knowledge_graph_note", ""),
+                "graph_exports": extra.get("graph_exports_plain")
+                or extra.get("graph_exports_note", ""),
+                "knowledge_graph_section": extra.get("knowledge_graph_section_plain", ""),
+                "graph_exports_section": extra.get("graph_exports_section_plain", ""),
             }
             extra.update(overrides)
             return template.render(response, extra=extra)
@@ -1306,6 +1718,12 @@ class OutputFormatter:
                 or extra.get("task_graph_note", ""),
                 "react_traces": extra.get("react_traces_markdown")
                 or extra.get("react_traces_note", ""),
+                "knowledge_graph": extra.get("knowledge_graph_markdown")
+                or extra.get("knowledge_graph_note", ""),
+                "graph_exports": extra.get("graph_exports_markdown")
+                or extra.get("graph_exports_note", ""),
+                "knowledge_graph_section": extra.get("knowledge_graph_section", ""),
+                "graph_exports_section": extra.get("graph_exports_section", ""),
             }
             extra.update(overrides)
             return template.render(response, extra=extra)

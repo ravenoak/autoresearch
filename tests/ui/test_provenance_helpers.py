@@ -58,3 +58,5 @@ def test_section_toggle_defaults_reflect_payload_sections(sample_payload) -> Non
     assert toggles["key_findings"]["value"] is True
     assert toggles["claim_audits"]["available"] is True
     assert toggles["full_trace"]["available"] is True
+    assert toggles["knowledge_graph"]["available"] is False
+    assert toggles["graph_exports"]["available"] is False

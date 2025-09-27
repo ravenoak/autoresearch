@@ -6,7 +6,7 @@ import importlib
 import os
 import sys
 import time
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 import typer
 from rich.console import Console
@@ -451,6 +451,26 @@ def search(
         print_success("Query processed successfully")
 
         OutputFormatter.format(result, fmt, depth=depth)
+        knowledge_meta = result.metrics.get("knowledge_graph")
+        if isinstance(knowledge_meta, Mapping):
+            summary = knowledge_meta.get("summary")
+            exports_meta = knowledge_meta.get("exports")
+            if isinstance(summary, Mapping) and summary:
+                available: list[str] = []
+                if isinstance(exports_meta, Mapping):
+                    if exports_meta.get("graphml"):
+                        available.append("--output graphml")
+                    if exports_meta.get("graph_json"):
+                        available.append("--output graph-json")
+                if not available and (
+                    summary.get("entity_count") or summary.get("relation_count")
+                ):
+                    available.extend(["--output graphml", "--output graph-json"])
+                if available:
+                    tips = " or ".join(dict.fromkeys(available))
+                    print_info(
+                        f"Graph exports available. Re-run with {tips} to download the knowledge graph."
+                    )
         if visualize:
             OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)
