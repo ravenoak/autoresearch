@@ -1006,6 +1006,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     current_batch_size = min(current_batch_size, remaining_allowance)
 
                 nodes_to_evict: list[str] = []
+                lru_mutated_in_iteration = False
 
                 if policy == "hybrid":
                     hybrid_scores: dict[str, float] = {}
@@ -1061,6 +1062,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                             popped = StorageManager._pop_lru()
                             if popped and StorageManager.context.graph.has_node(popped):
                                 nodes_to_evict.append(popped)
+                                lru_mutated_in_iteration = True
 
                 elif policy == "priority":
                     priority_tiers = {
@@ -1095,11 +1097,13 @@ class StorageManager(metaclass=StorageManagerMeta):
                         popped = StorageManager._pop_lru()
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
+                            lru_mutated_in_iteration = True
                 else:
                     while len(nodes_to_evict) < current_batch_size and StorageManager.state.lru:
                         popped = StorageManager._pop_lru()
                         if popped and StorageManager.context.graph.has_node(popped):
                             nodes_to_evict.append(popped)
+                            lru_mutated_in_iteration = True
 
                 still_over_target = (
                     not use_deterministic_budget
@@ -1113,6 +1117,8 @@ class StorageManager(metaclass=StorageManagerMeta):
                     and graph.nodes
                     and (use_deterministic_budget or still_over_target)
                 )
+                if policy == "lru" and lru_mutated_in_iteration:
+                    fallback_needed = False
                 if fallback_needed:
                     missing = current_batch_size - len(nodes_to_evict)
                     fallback_candidates: list[str] = []
@@ -1130,6 +1136,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                             len(fallback_candidates),
                         )
                     nodes_to_evict.extend(fallback_candidates)
+
+                if lru_mutated_in_iteration and len(nodes_to_evict) > current_batch_size:
+                    nodes_to_evict = nodes_to_evict[:current_batch_size]
 
                 if remaining_allowance is not None and len(nodes_to_evict) > remaining_allowance:
                     nodes_to_evict = nodes_to_evict[:remaining_allowance]
