@@ -182,14 +182,14 @@ def test_orchestrator_parse_config_basic():
 
 
 @pytest.mark.parametrize(
-    ("_stubbed_search_environment", "expected_search_embeddings"),
+    ("_stubbed_search_environment", "expected_embedding_calls"),
     [
-        pytest.param({"vector_search": False}, 0, id="legacy"),
-        pytest.param({"vector_search": True}, 2, id="vss-enabled"),
+        pytest.param({"vector_search": False}, {"search-instance": 0, "search-class": 0}, id="legacy"),
+        pytest.param({"vector_search": True}, {"search-instance": 1, "search-class": 0}, id="vss-enabled"),
     ],
     indirect=["_stubbed_search_environment"],
 )
-def test_search_stub_backend(_stubbed_search_environment, expected_search_embeddings):
+def test_search_stub_backend(_stubbed_search_environment, expected_embedding_calls):
     """Exercise both legacy and vector-enabled lookup flows using the shared stub.
 
     The fixture accepts a feature dictionary so we can simulate environments where the
@@ -209,6 +209,9 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
     instance_results = env.search_instance.external_lookup("q", max_results=1)
     assert [r["title"] for r in instance_results] == ["T"]
     assert [r["url"] for r in instance_results] == ["u"]
+
+    if env.vector_search_enabled:
+        env.set_storage_results({"vector": []})
 
     env.set_phase("search-class")
     bundle = Search.external_lookup("q", max_results=1, return_handles=True)
@@ -242,10 +245,10 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
         if phase == "direct"
     ]
 
-    assert len(search_embedding_bindings) == expected_search_embeddings
-    expected_per_invocation = expected_search_embeddings // 2
+    total_expected_embeddings = sum(expected_embedding_calls.values())
+    assert len(search_embedding_bindings) == total_expected_embeddings
     for phase, bindings in per_invocation_embeddings.items():
-        assert len(bindings) == expected_per_invocation
+        assert len(bindings) == expected_embedding_calls[phase]
         assert all(binding == "instance" for binding in bindings)
 
     assert direct_embedding_bindings == ["instance", "instance"]
@@ -253,7 +256,8 @@ def test_search_stub_backend(_stubbed_search_environment, expected_search_embedd
     compute_binding = [
         binding for phase, binding in env.compute_calls if phase.startswith("search-")
     ]
-    assert len(compute_binding) == expected_search_embeddings
+    expected_compute_calls = 0 if not env.vector_search_enabled else 2
+    assert len(compute_binding) == expected_compute_calls
     assert all(binding == "instance" for binding in compute_binding)
 
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]

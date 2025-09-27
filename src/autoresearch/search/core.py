@@ -1879,6 +1879,10 @@ class Search:
                 results_by_backend[name].extend(docs)
             else:
                 results_by_backend[name] = docs
+        if storage_results:
+            pending_embedding_backends.difference_update(
+                name for name in storage_results if name in pending_embedding_backends
+            )
         if storage_results.get("storage"):
             results_by_backend.pop("duckdb", None)
             pending_embedding_backends.discard("duckdb")
