@@ -195,8 +195,18 @@ def application_running(temp_config):
 @when(parsers.parse("I run `{command}`"))
 def run_cli_command(cli_runner, bdd_context, command, isolate_network, restore_environment):
     args = shlex.split(command)
-    if args and args[0] == "autoresearch":
-        args = args[1:]
+    trimmed_args = args
+    if args and args[0] == "uv":
+        remainder = args[1:]
+        if remainder and remainder[0] == "run":
+            remainder = remainder[1:]
+        while remainder and remainder[0] != "autoresearch":
+            remainder = remainder[1:]
+        if remainder and remainder[0] == "autoresearch":
+            trimmed_args = remainder[1:]
+    elif args and args[0] == "autoresearch":
+        trimmed_args = args[1:]
+    args = trimmed_args
     result = cli_runner.invoke(cli_app, args, catch_exceptions=False)
     bdd_context["result"] = result
 
