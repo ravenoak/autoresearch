@@ -10,6 +10,12 @@ The module includes:
 - A configuration function that sets up both loguru and structlog
 - A helper function to get a properly configured structlog logger
 
+To satisfy the repository's strict typing policy, the module defines a minimal
+``LoguruHandler`` protocol that captures the private attributes accessed while
+bridging standard logging to Loguru. ``InterceptHandler`` uses a guarded helper
+to iterate over handlers without relying on unchecked ``type: ignore``
+annotations.
+
 The logging system supports structured context data, which allows adding key-value
 pairs to log messages that provide additional context for debugging and analysis.
 
@@ -44,10 +50,36 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Optional, cast
+from typing import Iterable, Optional, Protocol, cast
 
 import structlog
 from loguru import logger
+
+
+class LoguruHandler(Protocol):
+    """Minimal protocol covering the attributes accessed on Loguru handlers."""
+
+    _sink: object
+
+
+def _iter_loguru_handlers() -> Iterable[LoguruHandler]:
+    """Yield registered Loguru handlers when available.
+
+    The public ``logger`` API does not expose handler iteration so we retrieve
+    it defensively via ``logger._core``. Runtime checks guard against API
+    changes and keep :class:`InterceptHandler` compatible with newer Loguru
+    releases.
+    """
+
+    core = getattr(logger, "_core", None)
+    handlers = getattr(core, "handlers", None)
+    if handlers is None:
+        return ()
+    if hasattr(handlers, "values"):
+        return cast("Iterable[LoguruHandler]", handlers.values())
+    if isinstance(handlers, Iterable):
+        return cast("Iterable[LoguruHandler]", handlers)
+    return ()
 
 
 class InterceptHandler(logging.Handler):
@@ -69,9 +101,9 @@ class InterceptHandler(logging.Handler):
         """Forward standard logging records to loguru."""
         if getattr(sys.stderr, "closed", False):
             return
-        handlers = logger._core.handlers.values()  # type: ignore[attr-defined]
-        for handler in handlers:
-            stream = getattr(getattr(handler, "_sink", None), "_stream", None)
+        for handler in _iter_loguru_handlers():
+            sink = getattr(handler, "_sink", None)
+            stream = getattr(sink, "_stream", None)
             if getattr(stream, "closed", False):
                 return
         try:

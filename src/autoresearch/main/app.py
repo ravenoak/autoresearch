@@ -19,6 +19,7 @@ from ..cli_helpers import (
 )
 from ..cli_utils import (
     Verbosity,
+    attach_cli_hooks,
     console,
     format_success,
     get_verbosity,
@@ -58,14 +59,13 @@ app = typer.Typer(
     pretty_exceptions_enable=False,
     # Disable pretty exceptions to handle them ourselves
 )
-# ``typer.Typer`` doesn't set ``name`` attribute on the object itself.
-# ``click.testing.CliRunner`` expects a ``name`` attribute when invoking the
-# application. Expose it explicitly so tests can run the CLI via ``CliRunner``.
-app.name = "autoresearch"  # type: ignore[attr-defined]
-# Expose private attributes for tests to monkeypatch CLI helper functions
-# (tests refer to autoresearch.main.app._cli_visualize and _cli_visualize_query)
-app._cli_visualize = _cli_visualize  # type: ignore[attr-defined]
-app._cli_visualize_query = _cli_visualize_query  # type: ignore[attr-defined]
+# Provide test hooks without mutating private Typer attributes directly.
+attach_cli_hooks(
+    app,
+    visualize=_cli_visualize,
+    visualize_query=_cli_visualize_query,
+    name="autoresearch",
+)
 # Expose a patchable orchestrator handle for tests, defaulting to the real class
 try:
     _orchestrator_module = importlib.import_module("autoresearch.orchestration.orchestrator")

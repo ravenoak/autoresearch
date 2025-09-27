@@ -3,12 +3,14 @@
 This module provides utilities for consistent formatting of CLI output
 with accessibility in mind. It includes functions for formatting messages
 with both color and text-based alternatives, as well as symbolic indicators.
+``attach_cli_hooks`` offers a typed helper for exposing test hooks on Typer
+applications without reaching into private attributes directly.
 """
 
 import os
 import sys
 from enum import Enum
-from typing import Any, Iterable, Mapping, Optional, Sequence, TYPE_CHECKING, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, TYPE_CHECKING, cast
 from rich.console import Console
 from rich.table import Table
 import rdflib
@@ -45,6 +47,29 @@ console = Console()
 
 if TYPE_CHECKING:
     from .evaluation import EvaluationSummary
+    import typer
+
+
+def attach_cli_hooks(
+    app: "typer.Typer",
+    visualize: Callable[..., Any],
+    visualize_query: Callable[..., Any],
+    *,
+    name: str,
+) -> None:
+    """Expose monkeypatch hooks on ``app`` using typed attribute assignment.
+
+    Args:
+        app: The Typer application to mutate.
+        visualize: Callable assigned to ``_cli_visualize`` for tests.
+        visualize_query: Callable assigned to ``_cli_visualize_query``.
+        name: Public name exposed to ``CliRunner``.
+    """
+
+    target = cast(object, app)
+    setattr(target, "name", name)
+    setattr(target, "_cli_visualize", visualize)
+    setattr(target, "_cli_visualize_query", visualize_query)
 
 def set_verbosity(level: Verbosity) -> None:
     """Set the global verbosity level.

@@ -1,9 +1,15 @@
 import json
+import logging
 from io import StringIO
+from types import SimpleNamespace
 
 from loguru import logger as loguru_logger
 
-from autoresearch.logging_utils import configure_logging, get_logger
+from autoresearch.logging_utils import (
+    InterceptHandler,
+    configure_logging,
+    get_logger,
+)
 
 
 def test_get_logger():
@@ -26,3 +32,26 @@ def test_structured_output_and_redaction():
     payload = json.loads(record["text"].split(" - ", 1)[1])
     assert payload["token"] == "[REDACTED]"
     assert secret not in record["text"]
+
+
+def test_intercept_handler_handles_closed_stream(monkeypatch):
+    handler = InterceptHandler()
+
+    class DummyHandler:
+        _sink = SimpleNamespace(_stream=SimpleNamespace(closed=True))
+
+    class DummyCore:
+        handlers = {1: DummyHandler()}
+
+    monkeypatch.setattr(loguru_logger, "_core", DummyCore())
+    record = logging.LogRecord(
+        name="unit",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=0,
+        msg="message",
+        args=(),
+        exc_info=None,
+    )
+
+    handler.emit(record)
