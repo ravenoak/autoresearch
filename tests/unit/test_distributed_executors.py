@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import pickle
 import types
 from typing import Dict, Any, Type
 
@@ -80,6 +81,16 @@ def test_execute_agent_remote() -> None:
         if isinstance(msg, dict):
             assert msg["agent"] == "Dummy"
             assert msg["result"]["results"]["final_answer"] == "done"
+
+        enriched = QueryState(query="rich")
+        enriched.claims.append({"id": "c1", "text": "claim"})
+        enriched.metadata["planner"] = {"strategy": "map"}
+        enriched.set_task_graph({"tasks": [{"id": "t1", "question": "Q"}], "edges": []})
+
+        restored_state = pickle.loads(pickle.dumps(enriched))
+        assert restored_state.claims == enriched.claims
+        assert restored_state.metadata["planner"] == enriched.metadata["planner"]
+        assert restored_state.task_graph == enriched.task_graph
     finally:
         _unregister_dummy()
 
