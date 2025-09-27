@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class ReasoningMode(str, Enum):
     """Supported reasoning modes."""
 
+    AUTO = "auto"
     DIRECT = "direct"
     DIALECTICAL = "dialectical"
     CHAIN_OF_THOUGHT = "chain-of-thought"

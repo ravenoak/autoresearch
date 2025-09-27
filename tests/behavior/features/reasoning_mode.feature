@@ -24,6 +24,24 @@ Feature: Reasoning Mode Selection
     And the agent groups should be "Synthesizer"
     And the agents executed should be "Synthesizer"
 
+  Scenario: Auto mode exits after the scout pass
+    Given reasoning mode is "auto"
+    And gate policy forces exit
+    When I run the orchestrator on query "mode test"
+    Then the loops used should be 1
+    And the reasoning mode selected should be "auto"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer"
+
+  Scenario: Auto mode escalates to debate
+    Given reasoning mode is "auto"
+    And gate policy forces debate
+    When I run the orchestrator on query "mode test"
+    Then the loops used should be 2
+    And the reasoning mode selected should be "auto"
+    And the agent groups should be "Synthesizer; Contrarian; FactChecker"
+    And the agents executed should be "Synthesizer, Contrarian, FactChecker"
+
   Scenario: Chain-of-thought mode loops Synthesizer
     Given reasoning mode is "chain-of-thought"
     When I run the orchestrator on query "mode test"

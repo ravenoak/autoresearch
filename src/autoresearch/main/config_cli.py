@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional, Any
 
 import importlib.resources as importlib_resources
+import json
 import tomli_w
 import tomllib
 import typer
@@ -114,13 +115,48 @@ def config_reasoning(
     mode: Optional[str] = typer.Option(None, help="Reasoning mode to use"),
     token_budget: Optional[int] = typer.Option(None, help="Token budget for a single run"),
     max_errors: Optional[int] = typer.Option(None, help="Abort after this many errors"),
+    gate_policy_enabled: Optional[bool] = typer.Option(
+        None, help="Enable scout gate heuristics (true/false)", show_default=False
+    ),
+    gate_retrieval_overlap_threshold: Optional[float] = typer.Option(
+        None,
+        help="Minimum retrieval overlap that still triggers debate",
+        show_default=False,
+    ),
+    gate_nli_conflict_threshold: Optional[float] = typer.Option(
+        None,
+        help="Contradiction probability threshold for debate escalation",
+        show_default=False,
+    ),
+    gate_complexity_threshold: Optional[float] = typer.Option(
+        None,
+        help="Complexity score threshold for debate escalation",
+        show_default=False,
+    ),
+    gate_user_overrides: Optional[str] = typer.Option(
+        None,
+        help="JSON overrides for scout gate decisions",
+        show_default=False,
+    ),
     show: bool = typer.Option(False, "--show", help="Display current reasoning configuration"),
 ) -> None:
     """Get or update reasoning configuration options."""
     cfg = _config_loader.load_config()
     data = cfg.model_dump()
     if show or not any(
-        opt is not None for opt in (loops, primus_start, mode, token_budget, max_errors)
+        opt is not None
+        for opt in (
+            loops,
+            primus_start,
+            mode,
+            token_budget,
+            max_errors,
+            gate_policy_enabled,
+            gate_retrieval_overlap_threshold,
+            gate_nli_conflict_threshold,
+            gate_complexity_threshold,
+            gate_user_overrides,
+        )
     ):
         typer.echo("Current reasoning settings:")
         typer.echo(f"  loops={data.get('loops')}")
@@ -128,6 +164,20 @@ def config_reasoning(
         typer.echo(f"  reasoning_mode={data.get('reasoning_mode')}")
         typer.echo(f"  token_budget={data.get('token_budget')}")
         typer.echo(f"  max_errors={data.get('max_errors', 3)}")
+        typer.echo(f"  gate_policy_enabled={data.get('gate_policy_enabled')}")
+        typer.echo(
+            "  gate_retrieval_overlap_threshold="
+            f"{data.get('gate_retrieval_overlap_threshold')}"
+        )
+        typer.echo(
+            "  gate_nli_conflict_threshold="
+            f"{data.get('gate_nli_conflict_threshold')}"
+        )
+        typer.echo(
+            "  gate_complexity_threshold="
+            f"{data.get('gate_complexity_threshold')}"
+        )
+        typer.echo(f"  gate_user_overrides={data.get('gate_user_overrides')}")
         return
     updates: dict[str, Any] = {}
     if loops is not None:
@@ -140,6 +190,31 @@ def config_reasoning(
         updates["token_budget"] = token_budget
     if max_errors is not None:
         updates["max_errors"] = max_errors
+    if gate_policy_enabled is not None:
+        updates["gate_policy_enabled"] = gate_policy_enabled
+    if gate_retrieval_overlap_threshold is not None:
+        updates["gate_retrieval_overlap_threshold"] = gate_retrieval_overlap_threshold
+    if gate_nli_conflict_threshold is not None:
+        updates["gate_nli_conflict_threshold"] = gate_nli_conflict_threshold
+    if gate_complexity_threshold is not None:
+        updates["gate_complexity_threshold"] = gate_complexity_threshold
+    if gate_user_overrides is not None:
+        try:
+            overrides = json.loads(gate_user_overrides)
+        except json.JSONDecodeError as exc:
+            raise ConfigError(
+                "Invalid JSON for gate_user_overrides",
+                provided=gate_user_overrides,
+                cause=exc,
+            ) from exc
+        if isinstance(overrides, dict):
+            updates["gate_user_overrides"] = overrides
+        else:
+            raise ConfigError(
+                "Invalid JSON for gate_user_overrides",
+                provided=gate_user_overrides,
+                cause=ValueError("Overrides must be a JSON object"),
+            )
     new_cfg = ConfigModel.model_validate({**data, **updates})
     path = next(
         (p for p in _config_loader.search_paths if p.exists()),

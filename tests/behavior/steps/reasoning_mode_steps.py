@@ -9,7 +9,10 @@ from autoresearch.config.models import ConfigModel
 from autoresearch.errors import ConfigError, NotFoundError
 from autoresearch.orchestration import ReasoningMode
 from autoresearch.orchestration.orchestrator import Orchestrator
-from autoresearch.orchestration.orchestration_utils import OrchestrationUtils
+from autoresearch.orchestration.orchestration_utils import (
+    OrchestrationUtils,
+    ScoutGateDecision,
+)
 
 
 @scenario("../features/reasoning_mode.feature", "Direct mode runs Synthesizer only")
@@ -109,6 +112,16 @@ def set_primus_start(config: ConfigModel, index: int):
     return config
 
 
+@given("gate policy forces debate")
+def gate_policy_force_debate(bdd_context):
+    bdd_context["force_gate_debate"] = True
+
+
+@given("gate policy forces exit")
+def gate_policy_force_exit(bdd_context):
+    bdd_context["force_gate_exit"] = True
+
+
 @when(
     parsers.parse('I run the orchestrator on query "{query}"'),
     target_fixture="run_result",
@@ -118,6 +131,7 @@ def run_orchestrator(
     config: ConfigModel,
     isolate_network,
     restore_environment,
+    bdd_context,
 ):
     record: list[str] = []
     params: dict = {}
@@ -145,6 +159,34 @@ def run_orchestrator(
         params.update(out)
         return out
 
+    force_exit = bdd_context.get("force_gate_exit", False)
+    force_debate = bdd_context.get("force_gate_debate", False)
+    original_gate = OrchestrationUtils.evaluate_scout_gate_policy
+
+    def fake_gate(**kwargs):  # noqa: ANN001 - follows orchestrator call pattern
+        if force_debate:
+            decision = ScoutGateDecision(
+                should_debate=True,
+                target_loops=kwargs.get("loops", 1),
+                heuristics={"retrieval_overlap": 0.0, "nli_conflict": 1.0, "complexity": 1.0},
+                thresholds={"retrieval_overlap": 0.6, "nli_conflict": 0.3, "complexity": 0.5},
+                reason="force_debate",
+                tokens_saved=0,
+            )
+        elif force_exit:
+            decision = ScoutGateDecision(
+                should_debate=False,
+                target_loops=1,
+                heuristics={"retrieval_overlap": 1.0, "nli_conflict": 0.0, "complexity": 0.0},
+                thresholds={"retrieval_overlap": 0.6, "nli_conflict": 0.3, "complexity": 0.5},
+                reason="force_exit",
+                tokens_saved=0,
+            )
+        else:
+            decision = original_gate(**kwargs)
+        kwargs["state"].metadata.setdefault("scout_gate", decision.__dict__)
+        return decision
+
     with (
         patch(
             "autoresearch.orchestration.orchestrator.AgentFactory.get",
@@ -153,6 +195,10 @@ def run_orchestrator(
         patch(
             "autoresearch.orchestration.orchestrator.Orchestrator._parse_config",
             side_effect=spy_parse,
+        ),
+        patch(
+            "autoresearch.orchestration.orchestrator.OrchestrationUtils.evaluate_scout_gate_policy",
+            side_effect=fake_gate,
         ),
     ):
         try:

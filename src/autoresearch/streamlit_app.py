@@ -10,6 +10,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
+import json
 from typing import Any, Callable, Dict, List, cast
 import random
 import io
@@ -251,6 +252,83 @@ def display_config_editor():
             help="Number of reasoning loops to perform",
         )
 
+        st.markdown("#### Scout Gate Policy")
+        gate_policy_enabled = st.checkbox(
+            "Enable Scout Gate Policy",
+            value=(
+                preset_config.get("gate_policy_enabled", config.gate_policy_enabled)
+                if preset_config
+                else config.gate_policy_enabled
+            ),
+            help="Toggle scout-mode heuristics before launching debate loops.",
+        )
+        gate_retrieval_overlap_threshold = st.number_input(
+            "Retrieval Overlap Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            step=0.05,
+            value=float(
+                preset_config.get(
+                    "gate_retrieval_overlap_threshold",
+                    config.gate_retrieval_overlap_threshold,
+                )
+                if preset_config
+                else config.gate_retrieval_overlap_threshold
+            ),
+            format="%.2f",
+            help="Overlap scores below this value trigger full debate.",
+        )
+        gate_nli_conflict_threshold = st.number_input(
+            "Conflict Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            step=0.05,
+            value=float(
+                preset_config.get(
+                    "gate_nli_conflict_threshold",
+                    config.gate_nli_conflict_threshold,
+                )
+                if preset_config
+                else config.gate_nli_conflict_threshold
+            ),
+            format="%.2f",
+            help="Contradiction probability above this value forces debate.",
+        )
+        gate_complexity_threshold = st.number_input(
+            "Complexity Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            step=0.05,
+            value=float(
+                preset_config.get(
+                    "gate_complexity_threshold",
+                    config.gate_complexity_threshold,
+                )
+                if preset_config
+                else config.gate_complexity_threshold
+            ),
+            format="%.2f",
+            help="Complexity scores above this value escalate to debate.",
+        )
+        overrides_default = ""
+        overrides_source: Dict[str, Any] | None = None
+        if preset_config and "gate_user_overrides" in preset_config:
+            maybe_overrides = preset_config.get("gate_user_overrides")
+            if isinstance(maybe_overrides, dict):
+                overrides_source = maybe_overrides
+        elif isinstance(config.gate_user_overrides, dict) and config.gate_user_overrides:
+            overrides_source = config.gate_user_overrides
+        if overrides_source:
+            overrides_default = json.dumps(overrides_source, indent=2)
+        gate_user_overrides_text = st.text_area(
+            "Gate Policy Overrides (JSON)",
+            value=overrides_default,
+            help=(
+                "Optional JSON to override heuristic signals or force a "
+                "decision. Leave blank to use automatic heuristics."
+            ),
+        )
+
         # Storage settings
         st.markdown("#### Storage Settings")
         duckdb_path = st.text_input(
@@ -352,10 +430,27 @@ def display_config_editor():
         if submitted:
             try:
                 # Create a dictionary with the updated configuration
+                overrides_payload: Dict[str, Any] = {}
+                overrides_text = gate_user_overrides_text.strip()
+                if overrides_text:
+                    try:
+                        parsed_overrides = json.loads(overrides_text)
+                        if isinstance(parsed_overrides, dict):
+                            overrides_payload = parsed_overrides
+                        else:
+                            raise ValueError("Overrides must be a JSON object")
+                    except (json.JSONDecodeError, ValueError) as exc:
+                        st.sidebar.error(f"Invalid gate override JSON: {exc}")
+                        st.stop()
                 updated_config = {
                     "llm_backend": llm_backend,
                     "reasoning_mode": reasoning_mode,
                     "loops": loops,
+                    "gate_policy_enabled": gate_policy_enabled,
+                    "gate_retrieval_overlap_threshold": gate_retrieval_overlap_threshold,
+                    "gate_nli_conflict_threshold": gate_nli_conflict_threshold,
+                    "gate_complexity_threshold": gate_complexity_threshold,
+                    "gate_user_overrides": overrides_payload,
                     "storage": {
                         "duckdb_path": duckdb_path,
                         "vector_extension": vector_extension,

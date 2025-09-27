@@ -39,6 +39,11 @@ Broader integration and performance coverage remains outstanding, but the
 release gate now has reproducible verification and targeted coverage evidence
 for the regressions that halted the prior alpha sweep.
 
+An AUTO reasoning mode landed with a scout-stage synthesizer pass and a gated
+escalation to dialectical debate. The same change exposed `gate_policy_enabled`
+and the associated thresholds/overrides through the CLI and Streamlit UI so
+operators can tune debate exits without editing TOML by hand.
+
 [verify-log-pass]:
   ../baseline/logs/task-verify-20250925T022717Z.log
 [bm25-normalization]:
