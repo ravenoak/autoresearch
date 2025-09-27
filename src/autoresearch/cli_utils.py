@@ -284,8 +284,7 @@ def render_evaluation_summary(
             _format_optional(summary.avg_cycles_completed, precision=1),
             _format_percentage(summary.gate_exit_rate),
             summary.run_id,
-            "
-".join(artifacts) if artifacts else "—",
+            ", ".join(artifacts) if artifacts else "—",
         )
 
     console.print(table)
