@@ -1,5 +1,15 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-30** at 18:19 UTC direct `task verify` and `task coverage`
+invocations succeed from the Task CLI again. The 17:45 UTC verification sweep
+exercised linting, typing, and the full unit, integration, and behavior matrix
+while streaming the VSS loader and scout gate telemetry, and the 18:19 UTC
+coverage follow-up held the ≥90 % gate with a CLI remediation banner in the log.
+The new evidence lives at
+`baseline/logs/task-verify-20250930T174512Z.log` and
+`baseline/logs/task-coverage-20250930T181947Z.log`, confirming the CLI and VSS
+regressions are resolved before the release sweep resumes.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+
 As of **2025-09-28** at 03:10 UTC `scripts/codex_setup.sh` ensures Go Task
 installs into `.venv/bin`, Taskfile once again exposes the `verify` and
 `coverage` targets, and fresh sweeps reach the substantive failures instead of

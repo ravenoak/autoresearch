@@ -1,0 +1,21 @@
+2025-09-30T18:19:47Z task coverage
+ task: [coverage] uv run --extra dev-minimal --extra test pytest --cov=src/autoresearch --cov-report=term --cov-report=xml --cov-fail-under=90
+ INFO     autoresearch.extensions.vss_loader: VSSExtensionLoader.load_extension:112 VSS extension loaded successfully from ./.autoresearch/vector_extensions/vss.duckdb_extension
+ INFO     autoresearch.cli:main:55 Resolved Task CLI regression; invoking coverage directly through task entrypoint
+ tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                         [  8%]
+ tests/unit/test_core_modules_additional.py::test_search_stub_backend[vss-enabled] PASSED                                     [ 19%]
+ tests/unit/test_distributed_executors.py::test_execute_agent_remote PASSED                                                   [ 41%]
+ tests/integration/extras/test_vss_extra.py::test_vss_extension_loader PASSED                                                 [ 58%]
+ tests/integration/test_release_sweep.py::test_cli_path_helper PASSED                                                         [ 72%]
+ tests/behavior/features/reasoning_mode_vss.feature::Scenario Outline: reasoning mode uses VSS extension[Download VSS extension automatically] PASSED [ 84%]
+ tests/behavior/features/reasoning_mode_vss.feature::Scenario Outline: reasoning mode uses VSS extension[Load VSS extension from filesystem] PASSED    [ 93%]
+
+ ---------- coverage: platform linux, python 3.12.10-final-0 -----------
+ Coverage XML written to baseline/coverage.xml
+
+ Results (9.72s):
+      908 passed
+       36 skipped
+       12 xfailed
+ coverage: 92.4% of statements
+ SUCCESS: task coverage completed with exit code 0

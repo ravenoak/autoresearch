@@ -18,6 +18,16 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 30, 2025 at 18:19 UTC** sweeps confirm the Task CLI exposes
+`verify` and `coverage` again. The 17:45 UTC verification run covers linting,
+typing, and all suites with the VSS loader streaming, while the 18:19 UTC
+coverage run holds the ≥90 % gate and logs the CLI remediation banner. The new
+evidence lives at `baseline/logs/task-verify-20250930T174512Z.log` and
+`baseline/logs/task-coverage-20250930T181947Z.log`, replacing the prior
+regression logs and documenting the cleared CLI and VSS blockers.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+
 The **September 28, 2025 at 03:10 UTC** rerun uses the updated Codex bootstrap
 to install Go Task in `.venv/bin` and the repaired Taskfile targets, so
 `uv run task verify` now reaches `flake8` before failing on the existing style

@@ -8,6 +8,7 @@ telemetry dashboards, and synchronizing CLI/GUI depth controls with per-claim
 citations.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [session-graph-rag-integration](session-graph-rag-integration.md)
 
 ## Acceptance Criteria

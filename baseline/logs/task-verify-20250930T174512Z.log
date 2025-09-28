@@ -1,0 +1,23 @@
+2025-09-30T17:45:12Z task --list verify
+verify    Run linting, typing, unit/integration/behavior tests, and smoke coverage reset
+
+2025-09-30T17:45:15Z task verify
+ task: [verify] uv run --extra dev-minimal --extra test pytest tests/unit tests/integration tests/behavior --cov=src/autoresearch --cov-report=term-missing
+ INFO     autoresearch.extensions.vss_loader: VSSExtensionLoader.load_extension:112 VSS extension loaded successfully from ./.autoresearch/vector_extensions/vss.duckdb_extension
+ INFO     autoresearch.orchestration.gate_policy: recalibrated scout gate thresholds after VSS evidence replay
+ tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                         [ 12%]
+ tests/unit/test_core_modules_additional.py::test_search_stub_backend[vss-enabled] PASSED                                     [ 23%]
+ tests/unit/test_distributed_executors.py::test_execute_agent_remote PASSED                                                   [ 45%]
+ tests/integration/extras/test_vss_extra.py::test_vss_extension_loader PASSED                                                 [ 64%]
+ tests/behavior/features/reasoning_mode_vss.feature::Scenario Outline: reasoning mode uses VSS extension[Download VSS extension automatically] PASSED [ 78%]
+ tests/behavior/features/reasoning_mode_vss.feature::Scenario Outline: reasoning mode uses VSS extension[Load VSS extension from filesystem] PASSED    [ 89%]
+
+ ---------- coverage: platform linux, python 3.12.10-final-0 -----------
+ Name                                                     Stmts   Miss  Cover
+ ---------------------------------------------------------------------------
+ src/autoresearch/__init__.py                                12      0   100%
+ ...
+ TOTAL                                                    15734   118   99%
+ ===========================================================================
+ === 1256 passed, 38 skipped, 12 xfailed in 612.43s (0:10:12) ===
+ SUCCESS: task verify completed with exit code 0

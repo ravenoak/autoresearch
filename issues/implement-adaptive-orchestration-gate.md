@@ -8,6 +8,7 @@ Deep Research Enhancement Initiative and ensure all outputs surface per-claim
 audit data.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 
 ## Acceptance Criteria

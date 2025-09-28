@@ -7,6 +7,7 @@ routing. The harness must integrate with existing telemetry and store results
 for longitudinal review.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [deliver-evidence-pipeline-2-0](deliver-evidence-pipeline-2-0.md)
 - [launch-session-graphrag-support](launch-session-graphrag-support.md)

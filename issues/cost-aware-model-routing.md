@@ -7,6 +7,7 @@ budget policies, routing telemetry, and regression tests that demonstrate cost
 savings alongside quality guarantees.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [evaluation-and-layered-ux-expansion](evaluation-and-layered-ux-expansion.md)
 
 ## Acceptance Criteria

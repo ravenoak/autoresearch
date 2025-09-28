@@ -6,6 +6,7 @@ heterogeneous model routing with budget guards. We need a ticket that captures
 UI, CLI, and orchestration updates plus telemetry and documentation.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [deliver-evidence-pipeline-2-0](deliver-evidence-pipeline-2-0.md)
 - [launch-session-graphrag-support](launch-session-graphrag-support.md)
