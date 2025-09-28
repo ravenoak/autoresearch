@@ -7,6 +7,8 @@ import json
 import os
 import sys
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import typer
@@ -342,6 +344,16 @@ def search(
         "--visualize",
         help="Render an inline knowledge graph after the query completes",
     ),
+    graphml: Optional[Path] = typer.Option(
+        None,
+        "--graphml",
+        help="Write the knowledge graph as GraphML to this path (use '-' for stdout).",
+    ),
+    graph_json: Optional[Path] = typer.Option(
+        None,
+        "--graph-json",
+        help="Write the knowledge graph as Graph JSON to this path (use '-' for stdout).",
+    ),
 ) -> None:
     """Run a search query through the orchestrator and format the result.
 
@@ -360,6 +372,9 @@ def search(
 
         # Display a simple knowledge graph in the terminal
         autoresearch search "What is quantum computing?" --visualize
+
+        # Export knowledge graph artifacts for offline analysis
+        autoresearch search "Explain AI ethics" --graphml graph.graphml --graph-json graph.json
 
         # Limit tokens and run multiple loops
         autoresearch search --loops 3 --token-budget 2000 "Explain AI ethics"
@@ -504,25 +519,81 @@ def search(
 
         OutputFormatter.format(result, fmt, depth=depth)
         knowledge_meta = result.metrics.get("knowledge_graph")
+        summary: Mapping[str, Any] | None = None
+        exports_meta: Mapping[str, Any] | None = None
         if isinstance(knowledge_meta, Mapping):
-            summary = knowledge_meta.get("summary")
-            exports_meta = knowledge_meta.get("exports")
-            if isinstance(summary, Mapping) and summary:
-                available: list[str] = []
-                if isinstance(exports_meta, Mapping):
-                    if exports_meta.get("graphml"):
-                        available.append("--output graphml")
-                    if exports_meta.get("graph_json"):
-                        available.append("--output graph-json")
-                if not available and (
-                    summary.get("entity_count") or summary.get("relation_count")
-                ):
-                    available.extend(["--output graphml", "--output graph-json"])
-                if available:
-                    tips = " or ".join(dict.fromkeys(available))
-                    print_info(
-                        f"Graph exports available. Re-run with {tips} to download the knowledge graph."
-                    )
+            raw_summary = knowledge_meta.get("summary")
+            raw_exports = knowledge_meta.get("exports")
+            if isinstance(raw_summary, Mapping):
+                summary = raw_summary
+            if isinstance(raw_exports, Mapping):
+                exports_meta = raw_exports
+
+        summary_available = bool(summary)
+        if summary_available:
+            suggestions: list[str] = []
+
+            def _add_suggestions(fmt_key: str) -> None:
+                if fmt_key == "graphml":
+                    suggestions.extend(["--graphml <path>", "--output graphml"])
+                elif fmt_key == "graph_json":
+                    suggestions.extend(["--graph-json <path>", "--output graph-json"])
+
+            if exports_meta:
+                if exports_meta.get("graphml"):
+                    _add_suggestions("graphml")
+                if exports_meta.get("graph_json"):
+                    _add_suggestions("graph_json")
+            if not suggestions and summary and (
+                summary.get("entity_count") or summary.get("relation_count")
+            ):
+                _add_suggestions("graphml")
+                _add_suggestions("graph_json")
+            if suggestions:
+                tips = " or ".join(dict.fromkeys(suggestions))
+                print_info(
+                    f"Graph exports available. Re-run with {tips} to download the knowledge graph."
+                )
+
+        export_targets = {
+            "graphml": graphml,
+            "graph_json": graph_json,
+        }
+        export_targets = {
+            fmt: target for fmt, target in export_targets.items() if target is not None
+        }
+        if export_targets:
+            if not summary_available:
+                print_warning(
+                    "Knowledge graph data is not available yet; skipping export commands."
+                )
+            else:
+                for fmt, target in export_targets.items():
+                    if fmt == "graphml":
+                        export_data = StorageManager.export_knowledge_graph_graphml()
+                        label = "GraphML"
+                    else:
+                        export_data = StorageManager.export_knowledge_graph_json()
+                        label = "Graph JSON"
+                    if not isinstance(export_data, str) or not export_data.strip():
+                        print_warning(f"No {label.lower()} payload available to export.")
+                        continue
+                    if isinstance(target, Path) and str(target) == "-":
+                        sys.stdout.write(export_data)
+                        if not export_data.endswith("\n"):
+                            sys.stdout.write("\n")
+                        sys.stdout.flush()
+                    else:
+                        target_path = Path(target)
+                        if target_path.is_dir():
+                            target_path = target_path / (
+                                f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                                + (".graphml" if fmt == "graphml" else ".json")
+                            )
+                        target_path.parent.mkdir(parents=True, exist_ok=True)
+                        target_path.write_text(export_data, encoding="utf-8")
+                        print_success(f"{label} export written to {target_path}")
+
         if visualize:
             OutputFormatter.format(result, "graph")
             visualize_metrics_cli(result.metrics)

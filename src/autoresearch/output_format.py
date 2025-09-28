@@ -100,6 +100,7 @@ class DepthPayload:
     react_traces: list[dict[str, Any]]
     knowledge_graph: Optional[dict[str, Any]]
     graph_exports: dict[str, bool]
+    graph_export_payloads: dict[str, str]
     sections: dict[str, bool]
     notes: dict[str, str] = field(default_factory=dict)
 
@@ -286,6 +287,54 @@ _SECTION_LABELS: Dict[str, str] = {
 }
 
 
+def _canonical_graph_format(name: Any) -> str | None:
+    """Return the canonical identifier for a graph export format."""
+
+    if name is None:
+        return None
+    token = str(name).strip().lower()
+    if not token:
+        return None
+    token = token.replace("-", "_")
+    if token in {"graphml", "graph_json"}:
+        return token
+    if token in {"graphjson"}:
+        return "graph_json"
+    return None
+
+
+def _fetch_graph_exports(formats: Iterable[str]) -> dict[str, str]:
+    """Return serialized graph exports for the requested ``formats``."""
+
+    requested = {
+        canonical
+        for canonical in (_canonical_graph_format(fmt) for fmt in formats)
+        if canonical
+    }
+    if not requested:
+        return {}
+
+    try:  # pragma: no cover - import guards optional extras during docs builds
+        from .knowledge import SessionGraphPipeline
+    except Exception as exc:  # pragma: no cover - dependency may be optional
+        log.debug("SessionGraphPipeline unavailable for graph exports: %s", exc)
+        return {}
+
+    pipeline = SessionGraphPipeline()
+    try:
+        artifacts = pipeline.export_artifacts()
+    except Exception as exc:  # pragma: no cover - downstream storage errors
+        log.debug("Graph export retrieval failed: %s", exc)
+        return {}
+
+    payloads: dict[str, str] = {}
+    for fmt in requested:
+        raw = artifacts.get(fmt) or artifacts.get(fmt.replace("_", "-"))
+        if isinstance(raw, str) and raw.strip():
+            payloads[fmt] = raw
+    return payloads
+
+
 def _hidden_message(section: str, plan: DepthPlan) -> str:
     """Return a consistent message for hidden sections."""
 
@@ -371,12 +420,65 @@ def _limit_items(sequence: Iterable[Any], limit: Optional[int]) -> tuple[list[An
     return limited, None
 
 
-def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayload:
+def build_depth_payload(
+    response: QueryResponse,
+    depth: Any = None,
+    *,
+    graph_preview_enabled: bool | None = None,
+    graph_exports_enabled: bool | None = None,
+    graph_export_formats: Iterable[str] | None = None,
+    prefetch_graph_exports: bool | None = None,
+) -> DepthPayload:
     """Construct a depth-aware payload for formatting and UI layers."""
 
     depth_level = normalize_depth(depth)
     plan = _DEPTH_PLANS[depth_level]
     notes: dict[str, str] = {}
+
+    try:
+        cfg = ConfigLoader().config
+        preferences = (
+            dict(getattr(cfg, "user_preferences", {}))
+            if hasattr(cfg, "user_preferences")
+            else {}
+        )
+    except Exception:  # pragma: no cover - configuration loading failures are logged elsewhere
+        preferences = {}
+
+    preview_allowed = (
+        graph_preview_enabled
+        if graph_preview_enabled is not None
+        else bool(preferences.get("graph_preview_enabled", True))
+    )
+    exports_allowed = (
+        graph_exports_enabled
+        if graph_exports_enabled is not None
+        else bool(preferences.get("graph_exports_enabled", True))
+    )
+    prefetch_allowed = (
+        prefetch_graph_exports
+        if prefetch_graph_exports is not None
+        else bool(preferences.get("prefetch_graph_exports", False))
+    )
+
+    configured_formats: list[str] = []
+    pref_formats = preferences.get("graph_export_formats")
+    if isinstance(pref_formats, Sequence) and not isinstance(pref_formats, (str, bytes)):
+        seen_pref: set[str] = set()
+        for value in pref_formats:
+            canonical = _canonical_graph_format(value)
+            if canonical and canonical not in seen_pref:
+                seen_pref.add(canonical)
+        configured_formats = list(seen_pref)
+
+    explicit_formats: list[str] = []
+    if graph_export_formats is not None:
+        seen_explicit: set[str] = set()
+        for value in graph_export_formats:
+            canonical = _canonical_graph_format(value)
+            if canonical and canonical not in seen_explicit:
+                seen_explicit.add(canonical)
+        explicit_formats = list(seen_explicit)
 
     if plan.include_tldr:
         tldr = _generate_tldr(response)
@@ -436,99 +538,153 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
 
     knowledge_graph_payload: Optional[dict[str, Any]] = None
     graph_exports_payload: dict[str, bool] = {}
+    graph_export_payloads: dict[str, str] = {}
     if plan.include_knowledge_graph:
-        knowledge_meta = response.metrics.get("knowledge_graph")
-        if isinstance(knowledge_meta, Mapping):
-            summary = knowledge_meta.get("summary")
-            if isinstance(summary, Mapping) and summary:
-                summary_payload: dict[str, Any] = {}
-                entity_count = summary.get("entity_count")
-                if isinstance(entity_count, (int, float)):
-                    summary_payload["entity_count"] = int(entity_count)
-                relation_count = summary.get("relation_count")
-                if isinstance(relation_count, (int, float)):
-                    summary_payload["relation_count"] = int(relation_count)
-                contradiction_score = summary.get("contradiction_score")
-                if isinstance(contradiction_score, (int, float)):
-                    summary_payload["contradiction_score"] = float(contradiction_score)
-
-                contradictions_all = summary.get("contradictions") or []
-                if not isinstance(contradictions_all, Sequence) or isinstance(
-                    contradictions_all, (str, bytes)
-                ):
-                    contradictions_all = []
-                limited_contradictions, truncated_contradictions = _limit_items(
-                    contradictions_all, plan.knowledge_graph_contradiction_limit
+        if not preview_allowed:
+            notes["knowledge_graph"] = "Knowledge graph preview disabled by configuration."
+            if plan.include_graph_exports:
+                notes.setdefault(
+                    "graph_exports",
+                    "Graph exports disabled while knowledge graph preview is off.",
                 )
-                formatted_contradictions: list[dict[str, Any]] = []
-                for item in limited_contradictions:
-                    if isinstance(item, Mapping):
-                        formatted_contradictions.append(
-                            {
-                                "subject": str(item.get("subject", "")),
-                                "predicate": str(item.get("predicate", "")),
-                                "objects": [str(obj) for obj in item.get("objects", [])],
-                            }
+        else:
+            knowledge_meta = response.metrics.get("knowledge_graph")
+            if isinstance(knowledge_meta, Mapping):
+                summary = knowledge_meta.get("summary")
+                if isinstance(summary, Mapping) and summary:
+                    summary_payload: dict[str, Any] = {}
+                    entity_count = summary.get("entity_count")
+                    if isinstance(entity_count, (int, float)):
+                        summary_payload["entity_count"] = int(entity_count)
+                    relation_count = summary.get("relation_count")
+                    if isinstance(relation_count, (int, float)):
+                        summary_payload["relation_count"] = int(relation_count)
+                    contradiction_score = summary.get("contradiction_score")
+                    if isinstance(contradiction_score, (int, float)):
+                        summary_payload["contradiction_score"] = float(
+                            contradiction_score
                         )
-                    else:
-                        formatted_contradictions.append({"text": str(item)})
-                if formatted_contradictions:
-                    summary_payload["contradictions"] = formatted_contradictions
-                if truncated_contradictions is not None:
-                    notes["knowledge_graph_contradictions"] = _truncation_message(
-                        "knowledge_graph_contradictions",
-                        len(formatted_contradictions),
-                        truncated_contradictions,
-                        depth_level,
+
+                    contradictions_all = summary.get("contradictions") or []
+                    if not isinstance(contradictions_all, Sequence) or isinstance(
+                        contradictions_all, (str, bytes)
+                    ):
+                        contradictions_all = []
+                    limited_contradictions, truncated_contradictions = _limit_items(
+                        contradictions_all, plan.knowledge_graph_contradiction_limit
                     )
+                    formatted_contradictions: list[dict[str, Any]] = []
+                    for item in limited_contradictions:
+                        if isinstance(item, Mapping):
+                            formatted_contradictions.append(
+                                {
+                                    "subject": str(item.get("subject", "")),
+                                    "predicate": str(item.get("predicate", "")),
+                                    "objects": [str(obj) for obj in item.get("objects", [])],
+                                }
+                            )
+                        else:
+                            formatted_contradictions.append({"text": str(item)})
+                    if formatted_contradictions:
+                        summary_payload["contradictions"] = formatted_contradictions
+                    if truncated_contradictions is not None:
+                        notes["knowledge_graph_contradictions"] = _truncation_message(
+                            "knowledge_graph_contradictions",
+                            len(formatted_contradictions),
+                            truncated_contradictions,
+                            depth_level,
+                        )
 
-                paths_all = summary.get("multi_hop_paths") or []
-                if not isinstance(paths_all, Sequence) or isinstance(paths_all, (str, bytes)):
-                    paths_all = []
-                limited_paths, truncated_paths = _limit_items(
-                    paths_all, plan.knowledge_graph_path_limit
-                )
-                formatted_paths: list[list[str]] = []
-                for path in limited_paths:
-                    if isinstance(path, Sequence) and not isinstance(path, (str, bytes)):
-                        formatted_paths.append([str(node) for node in path])
-                    else:
-                        formatted_paths.append([str(path)])
-                if formatted_paths:
-                    summary_payload["multi_hop_paths"] = formatted_paths
-                if truncated_paths is not None:
-                    notes["knowledge_graph_paths"] = _truncation_message(
-                        "knowledge_graph_paths",
-                        len(formatted_paths),
-                        truncated_paths,
-                        depth_level,
+                    paths_all = summary.get("multi_hop_paths") or []
+                    if not isinstance(paths_all, Sequence) or isinstance(
+                        paths_all, (str, bytes)
+                    ):
+                        paths_all = []
+                    limited_paths, truncated_paths = _limit_items(
+                        paths_all, plan.knowledge_graph_path_limit
                     )
+                    formatted_paths: list[list[str]] = []
+                    for path in limited_paths:
+                        if isinstance(path, Sequence) and not isinstance(
+                            path, (str, bytes)
+                        ):
+                            formatted_paths.append([str(node) for node in path])
+                        else:
+                            formatted_paths.append([str(path)])
+                    if formatted_paths:
+                        summary_payload["multi_hop_paths"] = formatted_paths
+                    if truncated_paths is not None:
+                        notes["knowledge_graph_paths"] = _truncation_message(
+                            "knowledge_graph_paths",
+                            len(formatted_paths),
+                            truncated_paths,
+                            depth_level,
+                        )
 
-                timestamp = summary.get("timestamp")
-                if isinstance(timestamp, (int, float)):
-                    summary_payload["timestamp"] = float(timestamp)
+                    timestamp = summary.get("timestamp")
+                    if isinstance(timestamp, (int, float)):
+                        summary_payload["timestamp"] = float(timestamp)
 
-                knowledge_graph_payload = summary_payload or None
+                    knowledge_graph_payload = summary_payload or None
 
-                if plan.include_graph_exports:
-                    exports = knowledge_meta.get("exports")
-                    exports_payload: dict[str, bool] = {}
-                    if isinstance(exports, Mapping):
-                        for fmt in ("graphml", "graph_json"):
-                            exports_payload[fmt] = bool(exports.get(fmt))
-                    elif knowledge_graph_payload:
-                        exports_payload = {"graphml": True, "graph_json": True}
-                    graph_exports_payload = {
-                        fmt: available
-                        for fmt, available in exports_payload.items()
-                        if available
-                    }
-        if knowledge_graph_payload is None and plan.include_graph_exports:
-            graph_exports_payload = {}
+                    if plan.include_graph_exports:
+                        if not exports_allowed:
+                            notes.setdefault(
+                                "graph_exports",
+                                "Graph exports disabled by configuration.",
+                            )
+                        else:
+                            exports_meta = knowledge_meta.get("exports")
+                            exports_payload: dict[str, bool] = {}
+                            if isinstance(exports_meta, Mapping):
+                                for fmt in ("graphml", "graph_json"):
+                                    exports_payload[fmt] = bool(exports_meta.get(fmt))
+                            elif knowledge_graph_payload:
+                                exports_payload = {"graphml": True, "graph_json": True}
+                            graph_exports_payload = {
+                                fmt: available
+                                for fmt, available in exports_payload.items()
+                                if available
+                            }
+            if (
+                knowledge_graph_payload is None
+                and plan.include_graph_exports
+                and exports_allowed
+            ):
+                graph_exports_payload = {}
     else:
         notes["knowledge_graph"] = _hidden_message("knowledge_graph", plan)
         if plan.include_graph_exports:
             notes["graph_exports"] = _hidden_message("graph_exports", plan)
+
+    available_export_formats = [
+        fmt for fmt, available in graph_exports_payload.items() if available
+    ]
+    fetch_candidates: list[str] = []
+    if knowledge_graph_payload and plan.include_graph_exports and exports_allowed:
+        if explicit_formats:
+            if available_export_formats:
+                fetch_candidates = [
+                    fmt for fmt in explicit_formats if fmt in available_export_formats
+                ]
+            else:
+                fetch_candidates = list(explicit_formats)
+        elif prefetch_allowed:
+            fetch_candidates = list(available_export_formats)
+            if not fetch_candidates:
+                fallback = configured_formats or ["graphml", "graph_json"]
+                fetch_candidates = fallback
+    if fetch_candidates:
+        fetch_candidates = list(dict.fromkeys(fetch_candidates))
+        graph_export_payloads = _fetch_graph_exports(fetch_candidates)
+        if graph_export_payloads:
+            for fmt in graph_export_payloads:
+                graph_exports_payload.setdefault(fmt, True)
+        else:
+            notes.setdefault(
+                "graph_exports",
+                "Graph exports are not available for this session yet.",
+            )
 
     if plan.include_task_graph:
         graph_payload: Optional[dict[str, Any]] = None
@@ -587,8 +743,8 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         "task_graph": plan.include_task_graph,
         "react_traces": plan.include_react_traces,
         "full_trace": plan.include_reasoning and plan.include_react_traces,
-        "knowledge_graph": bool(knowledge_graph_payload),
-        "graph_exports": bool(graph_exports_payload),
+        "knowledge_graph": bool(knowledge_graph_payload) and preview_allowed,
+        "graph_exports": bool(graph_exports_payload) and exports_allowed,
     }
 
     return DepthPayload(
@@ -605,6 +761,7 @@ def build_depth_payload(response: QueryResponse, depth: Any = None) -> DepthPayl
         react_traces=react_traces_payload,
         knowledge_graph=knowledge_graph_payload,
         graph_exports=graph_exports_payload,
+        graph_export_payloads=graph_export_payloads,
         sections=sections,
         notes=notes,
     )
@@ -1219,6 +1376,8 @@ def _render_json(payload: DepthPayload) -> str:
         data["knowledge_graph"] = _json_safe(payload.knowledge_graph)
     if payload.graph_exports:
         data["graph_exports"] = _json_safe(payload.graph_exports)
+    if payload.graph_export_payloads:
+        data["graph_export_payloads"] = _json_safe(payload.graph_export_payloads)
     if payload.raw_response is not None:
         data["raw_response"] = _json_safe(payload.raw_response)
     return json.dumps(data, indent=2, ensure_ascii=False)
@@ -1331,6 +1490,7 @@ def _template_variables_from_payload(payload: DepthPayload) -> Dict[str, Any]:
         "graph_exports_markdown": graph_exports_markdown,
         "graph_exports_plain": graph_exports_plain,
         "graph_exports_note": payload.notes.get("graph_exports", ""),
+        "graph_export_payloads": payload.graph_export_payloads,
         "knowledge_graph_section": knowledge_section_markdown,
         "knowledge_graph_section_plain": knowledge_section_plain,
         "graph_exports_section": graph_exports_section_markdown,
@@ -1644,10 +1804,17 @@ class OutputFormatter:
             log.warning(f"Failed to load templates from config: {e}")
 
     @classmethod
-    def render(
-        cls, result: Any, format_type: str = "markdown", depth: Any = None
-    ) -> str:
-        """Render a query result to a string for the specified format."""
+    def plan_response_depth(
+        cls,
+        result: Any,
+        depth: Any = None,
+        *,
+        graph_preview_enabled: bool | None = None,
+        graph_exports_enabled: bool | None = None,
+        graph_export_formats: Iterable[str] | None = None,
+        prefetch_graph_exports: bool | None = None,
+    ) -> DepthPayload:
+        """Return a :class:`DepthPayload` for the provided ``result``."""
 
         cls._initialize()
 
@@ -1662,8 +1829,34 @@ class OutputFormatter:
                 "Invalid response format", cause=exc
             ) from exc
 
+        return build_depth_payload(
+            response,
+            depth,
+            graph_preview_enabled=graph_preview_enabled,
+            graph_exports_enabled=graph_exports_enabled,
+            graph_export_formats=graph_export_formats,
+            prefetch_graph_exports=prefetch_graph_exports,
+        )
+
+    @classmethod
+    def render(
+        cls, result: Any, format_type: str = "markdown", depth: Any = None
+    ) -> str:
+        """Render a query result to a string for the specified format."""
+
+        try:
+            response = (
+                result
+                if isinstance(result, QueryResponse)
+                else QueryResponse.model_validate(result)
+            )
+        except ValidationError as exc:  # pragma: no cover - handled by caller
+            raise AutoresearchValidationError(
+                "Invalid response format", cause=exc
+            ) from exc
+
         fmt = format_type.lower()
-        payload = build_depth_payload(response, depth)
+        payload = cls.plan_response_depth(response, depth)
 
         if fmt == "json":
             return _render_json(payload)
