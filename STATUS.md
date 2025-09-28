@@ -32,6 +32,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   from the pinned path.【F:baseline/logs/task-verify-20250930T174512Z.log†L6-L13】【F:baseline/logs/task-coverage-20250930T181947Z.log†L3-L11】
 
 ## September 28, 2025
+- Wired `OrchestrationMetrics` with Prometheus-backed `graph_ingestion`
+  counters so GraphRAG ingests report entity, relation, contradiction,
+  neighbour, and latency stats gated by the context-aware toggles.【F:src/autoresearch/orchestration/metrics.py†L60-L83】【F:src/autoresearch/orchestration/metrics.py†L507-L913】
+- Added `tests/integration/test_graph_rag.py` to assert session ingestion
+  telemetry, contradiction signals, planner neighbour exposure, and metrics
+  summaries while keeping storage ephemeral.【F:tests/integration/test_graph_rag.py†L1-L123】
 - Captured back-to-back `uv run task verify` sweeps after the scout gate
   updates: the baseline run resolves dependencies in 6 ms before the existing
   strict mypy wall, and the post-fix run resolves in 9 ms with the same legacy

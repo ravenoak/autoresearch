@@ -42,6 +42,10 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Surface contradiction checks to the scout gate through
      `SearchContext.get_contradiction_signal()` while exposing neighbour
      and path queries to agents for multi-hop reasoning.
+   - Instrument `OrchestrationMetrics` with Prometheus-backed
+     `graph_ingestion` telemetry (entity, relation, contradiction, neighbour,
+     and latency aggregates) guarded by `search.context_aware` toggles so
+     operators can monitor GraphRAG uptake.
    - Export lightweight GraphML or JSON artifacts via the output formatter
      so downstream tools can visualise graph state per session.
 4. **Phase 4 – Evaluation Harness and Layered UX**

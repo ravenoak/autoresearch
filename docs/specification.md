@@ -166,6 +166,11 @@ is fully attributable.
 - Log level and output configurable.
 - No secrets or sensitive info in logs.
 - Prometheus metrics expose gate decisions, debate depth, and audit outcomes.
+- `OrchestrationMetrics` emits `graph_ingestion` telemetry when the session
+  GraphRAG pipeline is active, capturing ingestion counts, entity and relation
+  totals, contradiction scores, sampled planner neighbors, and storage
+  latency. Toggle the feed with `search.context_aware.enabled` and
+  `search.context_aware.graph_pipeline_enabled`.
 
 ## 9. Adaptive Orchestration
 

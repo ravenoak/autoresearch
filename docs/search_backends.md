@@ -82,12 +82,20 @@ signals. Configure these options in the `[search.context_aware]` section:
 [search.context_aware]
 graph_signal_weight = 0.2
 planner_graph_conditioning = true
+graph_pipeline_enabled = true
+graph_contradiction_weight = 0.3
 ```
 
 - `graph_signal_weight` scales supportive similarity signals derived from the
   knowledge graph.
 - `planner_graph_conditioning` injects contradictions, neighbour snippets, and
   provenance sources into planner prompts when enabled.
+- `graph_pipeline_enabled` toggles the session GraphRAG ingest loop. When the
+  pipeline is active, `OrchestrationMetrics` exports `graph_ingestion`
+  counters with entity, relation, contradiction, neighbour, and latency
+  aggregates.
+- `graph_contradiction_weight` tunes how strongly contradictions influence the
+  gate policy and the exported weighted scores.
 
 Gate policy thresholds live at the top level of the configuration:
 
