@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import multiprocessing
 import os
-from typing import Any, Dict, Optional, cast
+from typing import Any, Optional, cast
 
 from .. import search, storage
 from ..agents.registry import AgentFactory
@@ -15,7 +15,12 @@ from ..logging_utils import get_logger
 from ..models import QueryResponse
 from ..orchestration.state import QueryState
 from ._ray import RayLike, RayObjectRef, RemoteFunction, optional_ray
-from .broker import BrokerType, MessageQueueProtocol
+from .broker import (
+    AgentResultMessage,
+    BrokerType,
+    MessageQueueProtocol,
+    STOP_MESSAGE,
+)
 from .coordinator import (
     ResultAggregator,
     StorageCoordinator,
@@ -38,7 +43,7 @@ def _execute_agent_remote(
     storage_queue: MessageQueueProtocol | None = None,
     http_session: Any | None = None,
     llm_session: Any | None = None,
-) -> Dict[str, Any]:
+) -> AgentResultMessage:
     """Execute a single agent in a Ray worker."""
     if storage_queue is not None:
         storage.set_message_queue(storage_queue)
@@ -62,7 +67,12 @@ def _execute_agent_remote(
         llm_pool.set_session(llm_session)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(cast(QueryState, state), config)
-    msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
+    msg: AgentResultMessage = {
+        "action": "agent_result",
+        "agent": agent_name,
+        "result": result,
+        "pid": os.getpid(),
+    }
     if result_queue is not None:
         result_queue.put(msg)
     return msg
@@ -74,13 +84,18 @@ def _execute_agent_process(
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
     storage_queue: MessageQueueProtocol | None = None,
-) -> Dict[str, Any]:
+) -> AgentResultMessage:
     """Execute a single agent in a spawned process."""
     if storage_queue is not None:
         storage.set_message_queue(storage_queue)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(cast(QueryState, state), config)
-    msg = {"action": "agent_result", "agent": agent_name, "result": result, "pid": os.getpid()}
+    msg: AgentResultMessage = {
+        "action": "agent_result",
+        "agent": agent_name,
+        "result": result,
+        "pid": os.getpid(),
+    }
     if result_queue is not None:
         result_queue.put(msg)
     return msg
@@ -122,12 +137,12 @@ class RayExecutor:
         for loop in range(self.config.loops):
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
-            remote_executor: RemoteFunction[Dict[str, Any]] = _execute_agent_remote
-            futures: list[RayObjectRef[Dict[str, Any]]] = [
-                remote_executor.remote(
-                    name,
-                    state,
-                    self.config,
+        remote_executor: RemoteFunction[AgentResultMessage] = _execute_agent_remote
+        futures: list[RayObjectRef[AgentResultMessage]] = [
+            remote_executor.remote(
+                name,
+                state,
+                self.config,
                     self.result_broker.queue if self.result_broker else None,
                     self.broker.queue if self.broker else None,
                     self.http_handle,
@@ -135,12 +150,12 @@ class RayExecutor:
                 )
                 for name in self.config.agents
             ]
-            remote_results = cast(list[Dict[str, Any]], ray.get(futures))
-            results: list[Dict[str, Any]]
-            if self.result_aggregator:
-                results = list(self.result_aggregator.results)
-            else:
-                results = remote_results
+        remote_results = cast(list[AgentResultMessage], ray.get(futures))
+        results: list[AgentResultMessage]
+        if self.result_aggregator:
+            results = list(self.result_aggregator.results)
+        else:
+            results = remote_results
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             for res in results:
@@ -158,7 +173,7 @@ class RayExecutor:
 
         if self.broker and self.storage_coordinator:
             try:
-                self.broker.publish({"action": "stop"})
+                self.broker.publish(STOP_MESSAGE)
             except Exception as e:
                 log.warning("Failed to publish stop message", exc_info=e)
             self.storage_coordinator.join()
@@ -169,7 +184,7 @@ class RayExecutor:
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             try:
-                self.result_broker.publish({"action": "stop"})
+                self.result_broker.publish(STOP_MESSAGE)
             except Exception as e:
                 log.warning("Failed to publish stop to result broker", exc_info=e)
             self.result_aggregator.join()
@@ -204,7 +219,7 @@ class ProcessExecutor:
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
-                results: list[Dict[str, Any]] = pool.starmap(
+                results: list[AgentResultMessage] = pool.starmap(
                     _execute_agent_process,
                     [
                         (
@@ -217,7 +232,7 @@ class ProcessExecutor:
                         for name in self.config.agents
                     ],
                 )
-            aggregated: list[Dict[str, Any]]
+            aggregated: list[AgentResultMessage]
             if self.result_aggregator:
                 aggregated = list(self.result_aggregator.results)
             else:
@@ -237,7 +252,7 @@ class ProcessExecutor:
     def shutdown(self) -> None:
         if self.broker and self.storage_coordinator:
             try:
-                self.broker.publish({"action": "stop"})
+                self.broker.publish(STOP_MESSAGE)
             except Exception as e:
                 log.warning("Failed to publish stop message", exc_info=e)
             self.storage_coordinator.join()
@@ -248,7 +263,7 @@ class ProcessExecutor:
             storage.set_message_queue(None)
         if self.result_broker and self.result_aggregator:
             try:
-                self.result_broker.publish({"action": "stop"})
+                self.result_broker.publish(STOP_MESSAGE)
             except Exception as e:
                 log.warning("Failed to publish stop to result broker", exc_info=e)
             self.result_aggregator.join()

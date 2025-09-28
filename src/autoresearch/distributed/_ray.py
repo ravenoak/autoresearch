@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Protocol, Sequence, TypeVar, cast
+from typing import Any, Callable, Generic, Mapping, Protocol, Sequence, TypeVar, cast
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -50,7 +50,7 @@ class RayLike(Protocol):
 class RayQueueProtocol(Protocol):
     """Minimal queue interface used by :class:`RayBroker`."""
 
-    def put(self, item: dict[str, Any]) -> None:
+    def put(self, item: Mapping[str, Any]) -> None:
         ...
 
     def get(self, *, block: bool = True, timeout: float | None = None) -> dict[str, Any]:

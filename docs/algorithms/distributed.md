@@ -30,10 +30,11 @@ The regression now runs without an `xfail` guard, and
 standard coverage for the distributed executors module.
 
 All brokers now expose a shared `MessageQueueProtocol` so coordinators can
-interact with queues without falling back to `Any`. The Ray executor loads a
-typed shim that falls back to a synchronous stub when the optional dependency
-is unavailable, keeping strict mypy coverage without expanding
-`type: ignore` usage.
+interact with queues without falling back to `Any`. Queue payloads are
+validated against a `BrokerMessage` typed-dict union so serialization bugs fail
+fast. The Ray executor loads a typed shim that falls back to a synchronous stub
+when the optional dependency is unavailable, keeping strict mypy coverage
+without expanding `type: ignore` usage.
 
 ## References
 - [code](../../src/autoresearch/distributed/)

@@ -12,9 +12,11 @@ services. Lightweight alternatives include:
 
 Ray-backed brokers now wrap the runtime queue behind a shared
 `MessageQueueProtocol`, letting the storage coordinator and result aggregator
-share logic with Redis and in-memory brokers. When Ray is not installed the
-typed shim falls back to a synchronous stub so local testing and strict mypy
-checks stay aligned without additional `type: ignore` directives.
+share logic with Redis and in-memory brokers.
+Queue payloads are validated via the `BrokerMessage` typed-dict union, and when
+Ray is not installed the typed shim falls back to a synchronous stub so local
+testing and strict mypy checks
+stay aligned without additional `type: ignore` directives.
 
 ## Redis
 

@@ -28,7 +28,14 @@ from ..config.models import ConfigModel
 from .. import storage
 from ..logging_utils import get_logger
 
-from .broker import BrokerType, MessageQueueProtocol, get_message_broker
+from .broker import (
+    AgentResultMessage,
+    BrokerMessage,
+    BrokerType,
+    MessageQueueProtocol,
+    PersistClaimMessage,
+    get_message_broker,
+)
 
 log = get_logger(__name__)
 
@@ -63,11 +70,13 @@ class StorageCoordinator(multiprocessing.Process):
                     msg = self._queue.get()
                 except (EOFError, OSError):
                     break
-                if msg.get("action") == "stop":
+                action = msg["action"]
+                if action == "stop":
                     break
-                if msg.get("action") == "persist_claim":
+                if action == "persist_claim":
+                    claim_msg = cast(PersistClaimMessage, msg)
                     storage.StorageManager.persist_claim(
-                        msg["claim"], msg.get("partial_update", False)
+                        claim_msg["claim"], claim_msg["partial_update"]
                     )
         finally:
             storage.teardown()
@@ -87,19 +96,20 @@ class ResultAggregator(multiprocessing.Process):
         super().__init__(daemon=True)
         self._queue = queue
         self._manager: SyncManager = multiprocessing.Manager()
-        self.results = cast(ListProxy[dict[str, Any]], self._manager.list())
+        self.results = cast(ListProxy[AgentResultMessage], self._manager.list())
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         try:
             while True:
                 try:
-                    msg = self._queue.get()
+                    msg: BrokerMessage = self._queue.get()
                 except (EOFError, OSError):
                     break
-                if msg.get("action") == "stop":
+                action = msg["action"]
+                if action == "stop":
                     break
-                if msg.get("action") == "agent_result":
-                    self.results.append(msg)
+                if action == "agent_result":
+                    self.results.append(cast(AgentResultMessage, msg))
         finally:
             with contextlib.suppress(Exception):
                 self._queue.close()
@@ -140,7 +150,9 @@ def publish_claim(
         partial_update: Whether to perform a partial update.
     """
     broker.publish(
-        {"action": "persist_claim", "claim": claim, "partial_update": partial_update}
+        PersistClaimMessage(
+            action="persist_claim", claim=claim, partial_update=partial_update
+        )
     )
 
 

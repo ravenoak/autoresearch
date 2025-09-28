@@ -5,14 +5,20 @@ from __future__ import annotations
 import importlib
 import pickle
 import types
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Literal, cast
 
 import pytest
 
 from autoresearch.agents.base import Agent
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
-from autoresearch.distributed.broker import MessageQueueProtocol
+from autoresearch.distributed.broker import (
+    AgentResultMessage,
+    BrokerMessage,
+    InMemoryBroker,
+    PersistClaimMessage,
+    MessageQueueProtocol,
+)
 from autoresearch.distributed.executors import (
     ProcessExecutor,
     RayExecutor,
@@ -20,6 +26,7 @@ from autoresearch.distributed.executors import (
     _execute_agent_remote,
     ray as ray_runtime,
 )
+from autoresearch.distributed.coordinator import publish_claim
 from autoresearch.orchestration.state import QueryState
 
 
@@ -27,12 +34,12 @@ class RecordingQueue(MessageQueueProtocol):
     """Test double that records broker interactions."""
 
     def __init__(self) -> None:
-        self.items: List[Dict[str, Any]] = []
+        self.items: List[BrokerMessage] = []
 
-    def put(self, item: Dict[str, Any]) -> None:
+    def put(self, item: BrokerMessage) -> None:
         self.items.append(item)
 
-    def get(self) -> Dict[str, Any]:
+    def get(self) -> BrokerMessage:
         return self.items.pop(0)
 
     def close(self) -> None:  # pragma: no cover - compatibility shim
@@ -70,8 +77,10 @@ def test_execute_agent_process_records_queue() -> None:
         state = QueryState(query="q")
         queue = RecordingQueue()
         msg = _execute_agent_process("Dummy", state, config, result_queue=queue)
+        assert msg["action"] == "agent_result"
         assert msg["agent"] == "Dummy"
         assert msg["result"]["results"]["final_answer"] == "done"
+        assert msg["pid"] == queue.items[-1]["pid"]
         assert queue.items[-1] == msg
     finally:
         _unregister_dummy()
@@ -108,7 +117,10 @@ def test_execute_agent_remote() -> None:
         if isinstance(msg, dict):
             assert msg["agent"] == "Dummy"
             assert msg["result"]["results"]["final_answer"] == "done"
-        assert queue.items[-1]["agent"] == "Dummy"
+            assert msg["action"] == "agent_result"
+        recorded = queue.items[-1]
+        assert recorded["agent"] == "Dummy"
+        assert recorded["action"] == "agent_result"
 
         enriched = QueryState(query="rich")
         enriched.claims.append({"id": "c1", "text": "claim"})
@@ -163,14 +175,14 @@ def test_process_executor_uses_local_queue(monkeypatch) -> None:
             def __enter__(self) -> "DummyPool":
                 return self
 
-            def __exit__(self, exc_type, exc, tb) -> bool:
+            def __exit__(self, exc_type, exc, tb) -> Literal[False]:
                 return False
 
             def starmap(
                 self,
-                func: Callable[..., Dict[str, Any]],
+                func: Callable[..., AgentResultMessage],
                 args: Iterable[Tuple[Any, ...]],
-            ) -> List[Dict[str, Any]]:
+            ) -> List[AgentResultMessage]:
                 return [func(*call) for call in args]
 
         class DummyContext:
@@ -221,3 +233,17 @@ def test_query_state_ray_round_trip() -> None:
         assert restored.query == "q"
     finally:
         ray_module.shutdown()
+
+
+def test_publish_claim_enqueues_typed_message() -> None:
+    broker = InMemoryBroker()
+    try:
+        claim = {"id": "c1", "text": "claim"}
+        publish_claim(broker, claim, partial_update=True)
+        message = broker.queue.get()
+        assert message["action"] == "persist_claim"
+        typed_message = cast(PersistClaimMessage, message)
+        assert typed_message["claim"] == claim
+        assert typed_message["partial_update"] is True
+    finally:
+        broker.shutdown()
