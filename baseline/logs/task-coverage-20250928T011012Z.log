@@ -1,0 +1,10 @@
+task: Available tasks for this project:
+* behavior:                     Run BDD (behavior) tests with uv
+* check:                        Run lint, type check, and selected fast tests
+* check-env:                    Validate required tool versions
+* check-release-metadata:       Validate release version and date alignment
+* install:                      Initialize dev env with minimal extras. Syncs the dev-minimal and test extras by default. Provide optional groups with EXTRAS, e.g. "nlp" or "parsers". Set EXTRAS="gpu" to include optional GPU packages. Place matching wheels in wheels/gpu to avoid source builds. 
+* integration:                  Run integration tests with uv
+* lint-specs:                   Audit spec files for required sections
+* unit:                         Run unit tests with uv
+task: Task "coverage" does not exist

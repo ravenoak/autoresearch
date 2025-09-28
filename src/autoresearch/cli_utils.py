@@ -283,7 +283,10 @@ def _format_percentage(value: Optional[float], precision: int = 1) -> str:
 
     if value is None:
         return "—"
-    return f"{value * 100:.{precision}f}%"
+
+    percent_value = value * 100
+    format_spec = f".{precision}f"
+    return f"{percent_value:{format_spec}}%"
 
 
 def render_evaluation_summary(
