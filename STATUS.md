@@ -18,6 +18,13 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 30, 2025
+- `task check` now runs `uv run mypy src` without excluding distributed
+  modules so regressions surface during fast feedback sweeps.【F:Taskfile.yml†L69-L82】
+- Distributed brokers and executors gained a shared `MessageQueueProtocol` and
+  a typed Ray shim; the docs explain the new constraint for local runs without
+  Ray.【F:src/autoresearch/distributed/broker.py†L52-L178】【F:src/autoresearch/distributed/_ray.py†L15-L144】【F:docs/algorithms/distributed.md†L32-L36】【F:docs/message_brokers.md†L7-L17】
+
 ## September 28, 2025
 - The new CLI formatter fix still leaves `uv run task verify` and `uv run task
   coverage` blocked because the Go Task CLI only exposes the bootstrap tasks;

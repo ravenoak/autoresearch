@@ -1,21 +1,45 @@
+"""Unit tests for distributed executors with strict typing coverage."""
+
 from __future__ import annotations
 
 import importlib
 import pickle
 import types
-from typing import Dict, Any, Type
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
 import pytest
 
 from autoresearch.agents.base import Agent
 from autoresearch.agents.registry import AgentFactory
 from autoresearch.config.models import ConfigModel
-from autoresearch.orchestration.state import QueryState
+from autoresearch.distributed.broker import MessageQueueProtocol
 from autoresearch.distributed.executors import (
+    ProcessExecutor,
+    RayExecutor,
     _execute_agent_process,
     _execute_agent_remote,
     ray as ray_runtime,
 )
+from autoresearch.orchestration.state import QueryState
+
+
+class RecordingQueue(MessageQueueProtocol):
+    """Test double that records broker interactions."""
+
+    def __init__(self) -> None:
+        self.items: List[Dict[str, Any]] = []
+
+    def put(self, item: Dict[str, Any]) -> None:
+        self.items.append(item)
+
+    def get(self) -> Dict[str, Any]:
+        return self.items.pop(0)
+
+    def close(self) -> None:  # pragma: no cover - compatibility shim
+        return None
+
+    def join_thread(self) -> None:  # pragma: no cover - compatibility shim
+        return None
 
 
 class DummyAgent(Agent):
@@ -39,14 +63,16 @@ def _unregister_dummy() -> None:
     AgentFactory.set_delegate(None)
 
 
-def test_execute_agent_process():
+def test_execute_agent_process_records_queue() -> None:
     _register_dummy()
     try:
         config = ConfigModel(agents=["Dummy"], loops=1)
         state = QueryState(query="q")
-        msg = _execute_agent_process("Dummy", state, config)
+        queue = RecordingQueue()
+        msg = _execute_agent_process("Dummy", state, config, result_queue=queue)
         assert msg["agent"] == "Dummy"
         assert msg["result"]["results"]["final_answer"] == "done"
+        assert queue.items[-1] == msg
     finally:
         _unregister_dummy()
 
@@ -69,7 +95,8 @@ def test_execute_agent_remote() -> None:
     try:
         config = ConfigModel(agents=["Dummy"], loops=1)
         state = QueryState(query="q")
-        msg_ref = _execute_agent_remote.remote("Dummy", state, config)
+        queue = RecordingQueue()
+        msg_ref = _execute_agent_remote.remote("Dummy", state, config, result_queue=queue)
         # Reuse the stub runtime when Ray is unavailable.
         getter = getattr(ray_module, "get", None)
         if not callable(getter):
@@ -81,6 +108,7 @@ def test_execute_agent_remote() -> None:
         if isinstance(msg, dict):
             assert msg["agent"] == "Dummy"
             assert msg["result"]["results"]["final_answer"] == "done"
+        assert queue.items[-1]["agent"] == "Dummy"
 
         enriched = QueryState(query="rich")
         enriched.claims.append({"id": "c1", "text": "claim"})
@@ -92,6 +120,73 @@ def test_execute_agent_remote() -> None:
         assert restored_state.metadata["planner"] == enriched.metadata["planner"]
         assert restored_state.task_graph == enriched.task_graph
     finally:
+        _unregister_dummy()
+
+
+@pytest.mark.requires_distributed
+def test_ray_executor_cycle_callback() -> None:
+    """RayExecutor invokes callbacks with typed state objects."""
+
+    try:
+        importlib.import_module("ray")
+    except Exception:
+        pass
+    else:
+        pytest.skip("RayExecutor callback test relies on the local stub runtime.")
+
+    _register_dummy()
+    try:
+        config = ConfigModel(agents=["Dummy"], loops=1)
+        executor = RayExecutor(config)
+        calls: List[int] = []
+
+        def on_cycle_end(loop: int, state: QueryState) -> None:
+            assert isinstance(state, QueryState)
+            calls.append(loop)
+
+        response = executor.run_query("question", callbacks={"on_cycle_end": on_cycle_end})
+        assert response.answer == "done"
+        assert calls == [0]
+    finally:
+        executor.shutdown()
+        _unregister_dummy()
+
+
+def test_process_executor_uses_local_queue(monkeypatch) -> None:
+    """ProcessExecutor reuses the message queue protocol implementation."""
+
+    _register_dummy()
+    try:
+        config = ConfigModel(agents=["Dummy"], loops=1, distributed=False)
+
+        class DummyPool:
+            def __enter__(self) -> "DummyPool":
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            def starmap(
+                self,
+                func: Callable[..., Dict[str, Any]],
+                args: Iterable[Tuple[Any, ...]],
+            ) -> List[Dict[str, Any]]:
+                return [func(*call) for call in args]
+
+        class DummyContext:
+            def Pool(self, *args, **kwargs) -> DummyPool:  # pragma: no cover - simple shim
+                return DummyPool()
+
+        monkeypatch.setattr(
+            "autoresearch.distributed.executors.multiprocessing.get_context",
+            lambda *_args, **_kwargs: DummyContext(),
+        )
+
+        executor = ProcessExecutor(config)
+        response = executor.run_query("question")
+        assert response.answer == "done"
+    finally:
+        executor.shutdown()
         _unregister_dummy()
 
 

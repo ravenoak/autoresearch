@@ -7,11 +7,13 @@ describe the subset of methods accessed at runtime without ``type: ignore``
 directives.
 """
 
+import contextlib
 import json
 import multiprocessing
-from typing import TYPE_CHECKING, Any, Protocol, Sequence, cast
+from typing import Any, Protocol, Sequence, cast
 
 from ..logging_utils import get_logger
+from ._ray import RayLike, RayQueueProtocol, require_ray, require_ray_queue
 
 log = get_logger(__name__)
 
@@ -35,7 +37,7 @@ class _CountingQueue:
         return item
 
     def empty(self) -> bool:  # pragma: no cover - trivial
-        return self._size.value == 0
+        return bool(self._size.value == 0)
 
     def close(self) -> None:
         self._queue.close()
@@ -49,7 +51,7 @@ class InMemoryBroker:
 
     def __init__(self) -> None:
         """Initialize a local queue without a manager process for speed."""
-        self.queue = _CountingQueue()
+        self.queue: MessageQueueProtocol = _CountingQueue()
 
     def publish(self, message: dict[str, Any]) -> None:
         """Enqueue ``message`` for later retrieval."""
@@ -61,26 +63,38 @@ class InMemoryBroker:
         self.queue.join_thread()
 
 
-if TYPE_CHECKING:  # pragma: no cover - used for type hints only
-    from redis.client import Redis
+class MessageQueueProtocol(Protocol):
+    """Queue operations shared by all broker implementations."""
+
+    def put(self, item: dict[str, Any]) -> None:
+        ...
+
+    def get(self) -> dict[str, Any]:
+        ...
+
+    def close(self) -> None:
+        ...
+
+    def join_thread(self) -> None:
+        ...
 
 
 class RedisClientProtocol(Protocol):
     """Typed subset of redis client behaviour used by :class:`RedisQueue`."""
 
-    def rpush(self, name: str, value: str) -> int:  # pragma: no cover - thin wrapper
+    def rpush(self, name: str, *values: Any) -> Any:  # pragma: no cover - thin wrapper
         ...
 
     def blpop(
-        self, keys: Sequence[str], timeout: int | None = None
-    ) -> tuple[bytes, bytes] | None:  # pragma: no cover - thin wrapper
+        self, keys: Sequence[Any], timeout: int | None = None
+    ) -> Any:  # pragma: no cover - thin wrapper
         ...
 
     def close(self) -> None:  # pragma: no cover - thin wrapper
         ...
 
 
-class RedisQueue:
+class RedisQueue(MessageQueueProtocol):
     """Minimal queue wrapper backed by Redis lists."""
 
     def __init__(self, client: RedisClientProtocol, name: str) -> None:
@@ -94,8 +108,18 @@ class RedisQueue:
         result = self.client.blpop([self.name])
         if result is None:  # pragma: no cover - blocking call should not return None
             raise RuntimeError("Redis BLPOP returned no data")
-        key, data = result
-        return json.loads(data)
+        _, data = result
+        message = json.loads(data)
+        if not isinstance(message, dict):
+            raise TypeError("RedisQueue expected a JSON object payload")
+        return cast(dict[str, Any], message)
+
+    def close(self) -> None:  # pragma: no cover - redis connection handles cleanup
+        with contextlib.suppress(Exception):
+            self.client.close()
+
+    def join_thread(self) -> None:  # pragma: no cover - compatibility shim
+        return None
 
 
 class RedisBroker:
@@ -110,8 +134,9 @@ class RedisBroker:
                 " '[distributed]' extra."
             ) from exc
 
-        self.client = cast("Redis", redis.Redis.from_url(url or "redis://localhost:6379/0"))
-        self.queue = RedisQueue(self.client, queue_name)
+        client = redis.Redis.from_url(url or "redis://localhost:6379/0")
+        self.client = cast(RedisClientProtocol, client)
+        self.queue: MessageQueueProtocol = RedisQueue(self.client, queue_name)
 
     def publish(self, message: dict[str, Any]) -> None:
         self.queue.put(message)
@@ -120,17 +145,38 @@ class RedisBroker:
         self.client.close()
 
 
+class RayMessageQueue(MessageQueueProtocol):
+    """Adapter around Ray's distributed queue with a consistent API."""
+
+    def __init__(self, queue: RayQueueProtocol) -> None:
+        self._queue = queue
+
+    def put(self, message: dict[str, Any]) -> None:
+        self._queue.put(message)
+
+    def get(self) -> dict[str, Any]:
+        return self._queue.get()
+
+    def close(self) -> None:
+        with contextlib.suppress(Exception):
+            self._queue.shutdown()
+
+    def join_thread(self) -> None:  # pragma: no cover - Ray queues are remote actors
+        return None
+
+
 class RayBroker:
     """Message broker backed by Ray's distributed queue."""
 
     def __init__(self, queue_name: str = "autoresearch") -> None:
-        import ray
-        from ray.util.queue import Queue as RayQueue
-
+        ray = require_ray()
+        queue_factory = require_ray_queue()
         if not ray.is_initialized():  # pragma: no cover - optional init
             ray.init(ignore_reinit_error=True, configure_logging=False)
-        self._ray = ray
-        self.queue = RayQueue(actor_options={"name": queue_name})
+        self._ray: RayLike = ray
+        self.queue: MessageQueueProtocol = RayMessageQueue(
+            queue_factory(actor_options={"name": queue_name})
+        )
 
     def publish(self, message: dict[str, Any]) -> None:
         self.queue.put(message)

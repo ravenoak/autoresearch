@@ -20,14 +20,15 @@ from __future__ import annotations
 
 import contextlib
 import multiprocessing
+from multiprocessing.managers import ListProxy, SyncManager
 from multiprocessing.synchronize import Event
-from typing import Any
+from typing import Any, cast
 
 from ..config.models import ConfigModel
 from .. import storage
 from ..logging_utils import get_logger
 
-from .broker import BrokerType, get_message_broker
+from .broker import BrokerType, MessageQueueProtocol, get_message_broker
 
 log = get_logger(__name__)
 
@@ -41,7 +42,12 @@ class StorageCoordinator(multiprocessing.Process):
         ready_event: Optional event set when initialization finishes.
     """
 
-    def __init__(self, queue: Any, db_path: str, ready_event: Event | None = None) -> None:
+    def __init__(
+        self,
+        queue: MessageQueueProtocol,
+        db_path: str,
+        ready_event: Event | None = None,
+    ) -> None:
         super().__init__(daemon=True)
         self._queue = queue
         self._db_path = db_path
@@ -77,11 +83,11 @@ class ResultAggregator(multiprocessing.Process):
         queue: Message queue carrying result dictionaries.
     """
 
-    def __init__(self, queue: Any) -> None:
+    def __init__(self, queue: MessageQueueProtocol) -> None:
         super().__init__(daemon=True)
         self._queue = queue
-        self._manager = multiprocessing.Manager()
-        self.results: multiprocessing.managers.ListProxy[dict[str, Any]] = self._manager.list()  # type: ignore[attr-defined]
+        self._manager: SyncManager = multiprocessing.Manager()
+        self.results = cast(ListProxy[dict[str, Any]], self._manager.list())
 
     def run(self) -> None:  # pragma: no cover - runs in separate process
         try:
