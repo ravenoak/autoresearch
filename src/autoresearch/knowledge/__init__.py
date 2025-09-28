@@ -14,10 +14,13 @@ from .graph import (
     SessionGraphPipeline,
 )
 
+KnowledgeGraphPipeline = SessionGraphPipeline
+
 __all__ = [
     "GraphContradiction",
     "GraphEntity",
     "GraphExtractionSummary",
     "GraphRelation",
     "SessionGraphPipeline",
+    "KnowledgeGraphPipeline",
 ]

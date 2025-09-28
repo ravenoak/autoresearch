@@ -40,7 +40,7 @@ except Exception:  # pragma: no cover - fallback for offline tests
 
 from .config import ConfigLoader
 from .errors import StorageError
-from .knowledge import (  # noqa: F401
+from .knowledge.graph import (  # noqa: F401
     GraphContradiction,
     GraphEntity,
     GraphExtractionSummary,

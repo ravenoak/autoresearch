@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from autoresearch.orchestration.state import QueryState
 from autoresearch.search.context import SearchContext
 from autoresearch.storage import StorageManager
 
@@ -43,6 +44,22 @@ def test_knowledge_graph_multi_hop_paths() -> None:
             len(path) >= 3 and path[0] == "Marie Curie" and path[-1] == "Paris"
             for path in paths
         )
+        stage_meta = context.get_graph_stage_metadata()
+        assert stage_meta.get("paths"), "Graph stage metadata should expose paths"
+        state = QueryState(query=query)
+        applied = context.apply_scout_metadata(state)
+        assert applied, "Scout metadata should be applied to query state"
+        scout_stage = state.metadata.get("scout_stage", {})
+        graph_meta = scout_stage.get("graph")
+        assert graph_meta, "Graph metadata should be persisted in scout stage"
+        assert graph_meta.get("paths"), "Planner metadata should include multi-hop paths"
+        neighbors = graph_meta.get("neighbors", {})
+        assert any(
+            edge.get("target") == "Pierre Curie"
+            for edge in neighbors.get("Marie Curie", [])
+        ), "Expected Marie Curie neighbor to reference Pierre Curie"
+        ingestion = graph_meta.get("ingestion", {})
+        assert ingestion.get("seconds", 0.0) >= 0.0
         backend = StorageManager.context.db_backend
         assert backend is not None
         with backend.connection() as conn:
@@ -81,4 +98,19 @@ def test_knowledge_graph_contradiction_signal() -> None:
         assert signal > 0.0
         summary = context.get_graph_summary()
         assert summary["contradictions"], "Expected contradiction entries in summary"
+        state = QueryState(query=query)
+        assert context.apply_scout_metadata(state)
+        scout_stage = state.metadata.get("scout_stage", {})
+        graph_meta = scout_stage.get("graph")
+        assert graph_meta, "Contradiction metadata should be available"
+        contradictions = graph_meta.get("contradictions", {})
+        assert contradictions.get("items"), "Contradiction items should be surfaced"
+        assert contradictions.get("raw_score") == summary["contradiction_score"]
+        assert contradictions.get("weighted_score") == signal
+        weight = contradictions.get("weight")
+        assert isinstance(weight, float) and weight > 0.0
+        neighbors = graph_meta.get("neighbors", {})
+        assert "Gotham" in neighbors
+        gotham_targets = {edge.get("object") for edge in neighbors["Gotham"]}
+        assert {"Arkham", "Bludhaven"}.issubset(gotham_targets)
     StorageManager.teardown(remove_db=True)
