@@ -7,6 +7,7 @@ relations from evidence, maintain lightweight graph storage, and expose graph
 artifacts plus contradiction signals to the orchestrator.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [planner-coordinator-react-upgrade](planner-coordinator-react-upgrade.md)
 
 ## Acceptance Criteria

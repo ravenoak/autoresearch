@@ -7,6 +7,7 @@ extend the evidence pipeline so every claim is tagged with support status and
 citations before synthesis completes.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [implement-adaptive-orchestration-gate](implement-adaptive-orchestration-gate.md)
 

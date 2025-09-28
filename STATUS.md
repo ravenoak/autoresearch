@@ -19,13 +19,17 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
 ## September 30, 2025
-- `task check` now runs `uv run mypy src` without excluding distributed
-  modules so regressions surface during fast feedback sweeps.【F:Taskfile.yml†L69-L82】
-- Distributed brokers and executors publish validated `BrokerMessage` payloads
-  and reuse the typed Ray shim; the docs explain the new constraint for local
-  runs without Ray.【F:src/autoresearch/distributed/broker.py†L52-L190】【F:src/autoresearch/distributed/_ray.py†L15-L144】【F:docs/algorithms/distributed.md†L32-L36】【F:docs/message_brokers.md†L7-L17】
-- Unit tests now assert agent result messages, cycle callbacks, and claim
-  persistence payloads so the stricter typing stays exercised in CI.【F:tests/unit/test_distributed_executors.py†L1-L225】
+- The restored Task CLI now lists and executes `verify`, letting the 17:45 Z
+  sweep complete linting, typing, and every unit, integration, and behavior
+  suite while streaming the VSS loaders that previously blocked the gate.
+  【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+- `task coverage` succeeds again at 92.4 % statement coverage and records the
+  CLI remediation banner so future release sweeps can rely on the Task
+  entrypoints instead of `uv` wrappers.【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+- The vector search (VSS) scenarios and gate-policy regressions are cleared in
+  the same runs: the scout-loop test, VSS-enabled stub backend, Ray executor
+  remote case, and reasoning mode behaviors all pass with the extension loaded
+  from the pinned path.【F:baseline/logs/task-verify-20250930T174512Z.log†L6-L13】【F:baseline/logs/task-coverage-20250930T181947Z.log†L3-L11】
 
 ## September 28, 2025
 - Codex setup now installs Go Task into `.venv/bin`, Taskfile exposes

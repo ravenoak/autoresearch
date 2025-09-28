@@ -7,6 +7,7 @@ logging ReAct traces. We need richer prompts, tool affinity metadata, and
 telemetry hooks so decomposition quality and routing choices remain auditable.
 
 ## Dependencies
+- [prepare-first-alpha-release](prepare-first-alpha-release.md)
 - [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)
 
 ## Acceptance Criteria
