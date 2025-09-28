@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
 from .phases import DialoguePhase
 from .state import QueryState
+from .task_graph import TaskGraphNode
 
 
 class TaskStatus(str, Enum):
@@ -59,7 +60,7 @@ class TaskCoordinator:
                 "phase": self.phase.value,
                 "task_count": len(self._tasks),
                 "react_trace_count": len(self.state.react_traces),
-                "ordering_strategy": "depth_affinity",
+                "ordering_strategy": "readiness_affinity",
             }
         )
 
@@ -70,15 +71,13 @@ class TaskCoordinator:
     def ready_tasks(self) -> List[dict[str, Any]]:
         """Return tasks whose dependencies have been satisfied."""
 
-        ready: List[dict[str, Any]] = []
-        for task_id, task in self._tasks.items():
-            if self._status.get(task_id) != TaskStatus.PENDING:
-                continue
-            deps = self._dependency_cache.get(task_id, [])
-            if all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._status):
-                ready.append(task)
-        ready.sort(key=lambda item: self._schedule_key(str(item.get("id"))))
-        return ready
+        nodes = [
+            self._build_graph_node(task_id)
+            for task_id in self._tasks
+            if self._status.get(task_id) == TaskStatus.PENDING
+        ]
+        nodes.sort(key=lambda node: node.ordering_key())
+        return [self._tasks[node.id] for node in nodes if node.is_available()]
 
     def _compute_dependency_depths(self) -> Dict[str, int]:
         """Compute dependency depth for each task id."""
@@ -105,9 +104,9 @@ class TaskCoordinator:
     def _schedule_key(self, task_id: str) -> Tuple[int, float, str]:
         """Return ordering key based on depth and affinity."""
 
-        depth = self._dependency_depth.get(task_id, 0)
-        affinity = self._max_affinity(task_id)
-        return depth, -affinity, task_id
+        node = self._build_graph_node(task_id)
+        ready_rank, affinity_score, depth, pending_count, identifier = node.ordering_key()
+        return ready_rank * 1000 + depth + pending_count, affinity_score, identifier
 
     def _max_affinity(self, task_id: str) -> float:
         """Return the maximum affinity score for a task."""
@@ -120,13 +119,15 @@ class TaskCoordinator:
     def _collect_unlock_events(self) -> List[str]:
         """Return tasks currently unlocked by satisfied dependencies."""
 
-        unlocked = {
-            candidate
-            for candidate, deps in self._dependency_cache.items()
-            if self._status.get(candidate) in {TaskStatus.PENDING, TaskStatus.RUNNING}
-            and all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._tasks)
-        }
-        return sorted(unlocked, key=self._schedule_key)
+        candidates: list[TaskGraphNode] = []
+        for candidate, deps in self._dependency_cache.items():
+            status = self._status.get(candidate)
+            if status not in {TaskStatus.PENDING, TaskStatus.RUNNING}:
+                continue
+            if all(self._status.get(dep) == TaskStatus.COMPLETE for dep in deps if dep in self._tasks):
+                candidates.append(self._build_graph_node(candidate))
+        candidates.sort(key=lambda node: node.ordering_key())
+        return [node.id for node in candidates]
 
     def _affinity_delta(self, task_id: str, tool: str) -> float:
         """Return the delta between best affinity and selected tool."""
@@ -237,6 +238,7 @@ class TaskCoordinator:
         metadata_payload.setdefault(
             "task_depth", self._dependency_depth.get(task_id, 0)
         )
+        metadata_payload["scheduler"] = self._scheduler_snapshot(task_id)
 
         trace_entry = {
             "task_id": task_id,
@@ -252,7 +254,69 @@ class TaskCoordinator:
         self.state.add_react_trace(trace_entry)
         coordinator_meta = self.state.metadata.setdefault("coordinator", {})
         coordinator_meta["react_trace_count"] = len(self.state.react_traces)
+        decisions = coordinator_meta.setdefault("decisions", [])
+        decisions.append(
+            {
+                "task_id": task_id,
+                "step": self._step_counter[task_id],
+                "timestamp": trace_entry["timestamp"],
+                "scheduler": metadata_payload["scheduler"],
+            }
+        )
         return trace_entry
+
+    def _build_graph_node(self, task_id: str) -> TaskGraphNode:
+        """Return a :class:`TaskGraphNode` snapshot for scheduling telemetry."""
+
+        task = self._tasks[task_id]
+        status = self._status.get(task_id, TaskStatus.PENDING).value
+        dependencies = [dep for dep in self._dependency_cache.get(task_id, []) if dep in self._tasks]
+        pending_deps = [
+            dep
+            for dep in dependencies
+            if self._status.get(dep) != TaskStatus.COMPLETE
+        ]
+        ready = not pending_deps
+        affinity = dict(self._affinity_map.get(task_id, {}))
+        tools_payload = task.get("tools") or []
+        if isinstance(tools_payload, list):
+            tools = [str(tool).strip() for tool in tools_payload if str(tool).strip()]
+        else:
+            tools = [str(tools_payload)] if tools_payload else []
+        criteria_payload = task.get("criteria") or task.get("exit_criteria") or []
+        if isinstance(criteria_payload, list):
+            criteria = [str(item).strip() for item in criteria_payload if str(item).strip()]
+        else:
+            criteria = [str(criteria_payload)] if criteria_payload else []
+        explanation_value = task.get("explanation")
+        explanation = (
+            explanation_value.strip()
+            if isinstance(explanation_value, str) and explanation_value.strip()
+            else None
+        )
+        return TaskGraphNode(
+            id=task_id,
+            question=str(task.get("question", "")),
+            ready=ready,
+            dependency_depth=self._dependency_depth.get(task_id, 0),
+            pending_dependencies=pending_deps,
+            affinity=affinity,
+            status=status,
+            tools=tools,
+            criteria=criteria,
+            explanation=explanation,
+        )
+
+    def _scheduler_snapshot(self, focus_task: str) -> Dict[str, Any]:
+        """Return scheduler telemetry for the current decision."""
+
+        candidates = [self._build_graph_node(task_id) for task_id in self._tasks]
+        candidates.sort(key=lambda node: node.ordering_key())
+        focus = self._build_graph_node(focus_task)
+        return {
+            "selected": focus.to_snapshot(),
+            "candidates": [node.to_snapshot() for node in candidates],
+        }
 
     def replay_traces(self, task_id: Optional[str] = None) -> List[dict[str, Any]]:
         """Return captured traces for optional replay."""

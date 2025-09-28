@@ -151,6 +151,7 @@ class QueryState(BaseModel):
         """Store the structured planner output for downstream coordination."""
 
         with self._lock:
+            top_level = self._extract_planner_top_level(task_graph)
             normalized, warnings = self._normalise_task_graph(task_graph)
             self.task_graph = normalized
             planner_meta = self.metadata.setdefault("planner", {})
@@ -160,6 +161,9 @@ class QueryState(BaseModel):
                 "updated_at": time.time(),
             }
             planner_meta["task_graph"] = stats
+            telemetry = self._planner_telemetry_snapshot(normalized, top_level)
+            if telemetry["tasks"] or telemetry.get("objectives") or telemetry.get("exit_criteria"):
+                planner_meta["telemetry"] = telemetry
             if warnings:
                 self.add_react_log_entry(
                     "planner.normalization",
@@ -316,19 +320,19 @@ class QueryState(BaseModel):
                 split_pattern=r",|;",
             )
             criteria = self._ensure_list_of_str(
-                task.get("criteria"),
+                task.get("criteria") or task.get("exit_criteria"),
                 field="criteria",
                 task_id=task_id,
                 warnings=warnings,
                 split_pattern=r",|;",
             )
             sub_questions = self._ensure_list_of_str(
-                task.get("sub_questions"),
+                task.get("sub_questions") or task.get("objectives"),
                 field="sub_questions",
                 task_id=task_id,
                 warnings=warnings,
             )
-            affinity_raw = task.get("affinity")
+            affinity_raw = task.get("affinity") or task.get("tool_affinity")
             affinity: dict[str, float] = {}
             if isinstance(affinity_raw, Mapping):
                 for tool, value in affinity_raw.items():
@@ -367,6 +371,11 @@ class QueryState(BaseModel):
                         detail={"metadata": metadata_payload},
                     )
                 )
+            explanation_value = task.get("explanation")
+            explanation: str | None = None
+            if isinstance(explanation_value, str):
+                explanation = explanation_value.strip() or None
+
             normalized_task: dict[str, Any] = {
                 "id": task_id,
                 "question": question,
@@ -378,6 +387,8 @@ class QueryState(BaseModel):
             }
             if sub_questions:
                 normalized_task["sub_questions"] = sub_questions
+            if explanation:
+                normalized_task["explanation"] = explanation
             normalized_tasks.append(normalized_task)
 
         valid_ids = {task["id"] for task in normalized_tasks}
@@ -434,7 +445,11 @@ class QueryState(BaseModel):
         metadata_copy = dict(metadata_obj)
         metadata_copy.setdefault("version", 1)
 
-        return {"tasks": normalized_tasks, "edges": normalized_edges, "metadata": metadata_copy}, warnings
+        return {
+            "tasks": normalized_tasks,
+            "edges": normalized_edges,
+            "metadata": metadata_copy,
+        }, warnings
 
     def _ensure_list_of_str(
         self,
@@ -483,6 +498,69 @@ class QueryState(BaseModel):
         if detail is not None:
             payload["detail"] = dict(detail)
         return payload
+
+    def _extract_planner_top_level(self, task_graph: Any) -> dict[str, Any]:
+        """Capture top-level planner telemetry fields prior to normalisation."""
+
+        payload: Mapping[str, Any] | None = None
+        if isinstance(task_graph, TaskGraph):
+            payload = task_graph.to_payload()
+        elif isinstance(task_graph, Mapping):
+            payload = task_graph
+
+        if payload is None:
+            return {}
+
+        snapshot: dict[str, Any] = {}
+        objectives = self._coerce_general_sequence(payload.get("objectives"))
+        if objectives:
+            snapshot["objectives"] = objectives
+        exit_criteria = self._coerce_general_sequence(payload.get("exit_criteria"))
+        if exit_criteria:
+            snapshot["exit_criteria"] = exit_criteria
+        explanation = payload.get("explanation")
+        if isinstance(explanation, str) and explanation.strip():
+            snapshot["explanation"] = explanation.strip()
+        return snapshot
+
+    def _planner_telemetry_snapshot(
+        self, normalized: Mapping[str, Any], top_level: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Summarise planner telemetry for downstream consumers."""
+
+        tasks_snapshot: list[dict[str, Any]] = []
+        for task in normalized.get("tasks", []):
+            if not isinstance(task, Mapping):
+                continue
+            tasks_snapshot.append(
+                {
+                    "id": str(task.get("id")),
+                    "objectives": list(task.get("sub_questions", [])),
+                    "tool_affinity": dict(task.get("affinity", {})),
+                    "exit_criteria": list(task.get("criteria", [])),
+                    "explanation": task.get("explanation"),
+                }
+            )
+
+        telemetry: dict[str, Any] = {
+            "tasks": tasks_snapshot,
+            "objectives": list(top_level.get("objectives", [])),
+            "exit_criteria": list(top_level.get("exit_criteria", [])),
+        }
+        explanation = top_level.get("explanation")
+        if explanation:
+            telemetry["explanation"] = explanation
+        return telemetry
+
+    def _coerce_general_sequence(self, value: Any) -> list[str]:
+        """Coerce arbitrary payloads into a list of trimmed strings."""
+
+        if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            parts = [segment.strip() for segment in re.split(r",|;|/|\n", value)]
+            return [segment for segment in parts if segment]
+        return []
 
     # ------------------------------------------------------------------
     # Coalition management utilities
