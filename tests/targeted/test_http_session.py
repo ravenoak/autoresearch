@@ -1,6 +1,5 @@
 """Coverage for HTTP session utilities."""
 
-import sys
 from types import SimpleNamespace
 
 from tests.helpers.modules import ensure_stub_module

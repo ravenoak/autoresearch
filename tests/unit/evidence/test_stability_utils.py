@@ -34,4 +34,3 @@ def test_sample_paraphrases_returns_unique_variants() -> None:
     assert variants  # at least one variant
     assert len(set(variant.lower() for variant in variants)) == len(variants)
     assert any(variant.endswith("?") for variant in variants)
-

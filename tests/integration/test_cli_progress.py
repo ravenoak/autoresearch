@@ -38,6 +38,7 @@ def test_cli_progress_and_interactive(monkeypatch):
     monkeypatch.setattr("autoresearch.main.Progress", progress_factory)
 
     prompts = []
+
     def capture_prompt(*_args, **kwargs):
         prompts.append(kwargs.get("default", ""))
         return ""

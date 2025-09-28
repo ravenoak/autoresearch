@@ -50,6 +50,7 @@ class _DummyContext:
 def test_display_guided_tour_dismiss(monkeypatch):
     ctx = _DummyContext()
     calls = {"modal": 0}
+
     def track_modal(*_args, **_kwargs):
         calls["modal"] += 1
         return ctx

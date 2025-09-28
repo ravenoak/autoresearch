@@ -10,6 +10,12 @@ The new evidence lives at
 `baseline/logs/task-coverage-20250930T181947Z.log`, confirming the CLI and VSS
 regressions are resolved before the release sweep resumes.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 
+As of **2025-09-28** at 16:17 UTC the first strict-typing `uv run task verify`
+run completes flake8 and fails in mypy, which surfaces missing stubs and 230
+strict errors across storage, orchestration, and API modules. The strict gate
+remains red while we triage the baseline captured in
+`baseline/logs/task-verify-20250928T161734Z.log`.【F:baseline/logs/task-verify-20250928T161734Z.log†L1-L46】【F:baseline/logs/task-verify-20250928T161734Z.log†L47-L120】
+
 As of **2025-09-28** at 03:10 UTC `scripts/codex_setup.sh` ensures Go Task
 installs into `.venv/bin`, Taskfile once again exposes the `verify` and
 `coverage` targets, and fresh sweeps reach the substantive failures instead of

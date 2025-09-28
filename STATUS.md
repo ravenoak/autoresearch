@@ -32,6 +32,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   from the pinned path.【F:baseline/logs/task-verify-20250930T174512Z.log†L6-L13】【F:baseline/logs/task-coverage-20250930T181947Z.log†L3-L11】
 
 ## September 28, 2025
+- Captured the first strict-typing `uv run task verify` after enabling
+  repo-wide `strict = true`; the 16:17 UTC sweep hits mypy and reports missing
+  stubs plus 230 errors across storage, orchestration, and API modules, so the
+  strict gate stays red while we triage the new baseline.
+  【F:baseline/logs/task-verify-20250928T161734Z.log†L1-L46】
+  【F:baseline/logs/task-verify-20250928T161734Z.log†L47-L120】
 - Codex setup now installs Go Task into `.venv/bin`, Taskfile exposes
   higher-level targets again, and the 03:10 UTC rerun reaches the substantive
   failures: `uv run task verify` halts in `flake8` on long-standing style

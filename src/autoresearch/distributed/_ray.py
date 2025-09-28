@@ -142,4 +142,3 @@ def require_ray_queue() -> RayQueueFactory:
             " '[distributed]' extra."
         ) from exc
     return cast(RayQueueFactory, getattr(module, "Queue"))
-

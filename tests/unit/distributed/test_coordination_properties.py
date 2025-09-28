@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import importlib
+import multiprocessing
 import random
 import sys
-import multiprocessing
-import sys
-from types import ModuleType
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
