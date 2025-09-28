@@ -43,6 +43,16 @@ def test_knowledge_graph_multi_hop_paths() -> None:
             len(path) >= 3 and path[0] == "Marie Curie" and path[-1] == "Paris"
             for path in paths
         )
+        backend = StorageManager.context.db_backend
+        assert backend is not None
+        with backend.connection() as conn:
+            entity_count = conn.execute("SELECT COUNT(*) FROM kg_entities").fetchone()[0]
+            relation_count = conn.execute("SELECT COUNT(*) FROM kg_relations").fetchone()[0]
+        assert entity_count > 0
+        assert relation_count > 0
+        rdf_store = StorageManager.context.rdf_store
+        assert rdf_store is not None
+        assert len(list(rdf_store.triples((None, None, None)))) > 0
     StorageManager.teardown(remove_db=True)
 
 
