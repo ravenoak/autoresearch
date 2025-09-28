@@ -422,6 +422,10 @@ class OrchestrationMetrics:
             "thresholds": decision.thresholds,
             "reason": decision.reason,
             "tokens_saved_estimate": decision.tokens_saved,
+            "rationales": decision.rationales,
+            "coverage": decision.telemetry.get("coverage"),
+            "contradiction_total": decision.telemetry.get("contradiction_total"),
+            "contradiction_samples": decision.telemetry.get("contradiction_samples"),
         }
         self.gate_events.append(event)
 

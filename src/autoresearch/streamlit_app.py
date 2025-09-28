@@ -40,6 +40,7 @@ from .ui.provenance import (
     audit_status_rollup,
     depth_sequence,
     extract_graphrag_artifacts,
+    format_gate_rationales,
     generate_socratic_prompts,
     section_toggle_defaults,
 )
@@ -1892,10 +1893,66 @@ def display_results(result: QueryResponse) -> None:
                     f"- {status.replace('_', ' ').title()}: {count}",
                     unsafe_allow_html=False,
                 )
+            st.caption(
+                "Table columns map to claim ID, verification status, entailment score, "
+                "and the top supporting snippet. Expand JSON export for full provenance."
+            )
         elif payload.notes.get("claim_audits"):
             st.info(payload.notes["claim_audits"])
         else:
             st.info("Increase depth to capture claim verification data.")
+
+        gate_snapshot = (
+            result.metrics.get("scout_gate") if isinstance(result.metrics, dict) else {}
+        )
+        if isinstance(gate_snapshot, dict) and gate_snapshot:
+            st.markdown("**Scout gate decision**")
+            summary_lines = [
+                "- Should debate: {}".format(
+                    "Yes" if gate_snapshot.get("should_debate") else "No"
+                ),
+                f"- Target loops: {gate_snapshot.get('target_loops')}",
+                f"- Reason: {gate_snapshot.get('reason', 'policy')}",
+            ]
+            telemetry = gate_snapshot.get("telemetry") or {}
+            coverage = telemetry.get("coverage") or {}
+            if coverage:
+                summary_lines.append(
+                    "- Audited {audited}/{total} scout claims".format(
+                        audited=coverage.get("audited_claims", 0),
+                        total=coverage.get("total_claims", 0),
+                    )
+                )
+            contradiction_total = telemetry.get("contradiction_total")
+            if isinstance(contradiction_total, (int, float)):
+                summary_lines.append(
+                    f"- Contradiction total: {contradiction_total:.2f}"
+                )
+            for line in summary_lines:
+                st.markdown(line)
+            rationale_lines = format_gate_rationales(gate_snapshot)
+            if rationale_lines:
+                st.markdown("Key signals:")
+                for entry in rationale_lines:
+                    st.markdown(f"- {entry}")
+
+        scout_stage = (
+            result.metrics.get("scout_stage") if isinstance(result.metrics, dict) else {}
+        )
+        if isinstance(scout_stage, dict) and scout_stage.get("snippets"):
+            with st.expander("Scout snippets", expanded=False):
+                for item in scout_stage.get("snippets", []) or []:
+                    title = item.get("title") or item.get("url") or "Snippet"
+                    st.markdown(f"**{title}**")
+                    if item.get("snippet"):
+                        st.write(item["snippet"])
+                    meta = []
+                    if item.get("backend"):
+                        meta.append(f"Backend: {item['backend']}")
+                    if item.get("source_id"):
+                        meta.append(f"Source ID: {item['source_id']}")
+                    if meta:
+                        st.caption(" | ".join(meta))
 
         artifacts = extract_graphrag_artifacts(result.metrics)
         if artifacts:

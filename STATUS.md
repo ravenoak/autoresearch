@@ -32,6 +32,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   from the pinned path.【F:baseline/logs/task-verify-20250930T174512Z.log†L6-L13】【F:baseline/logs/task-coverage-20250930T181947Z.log†L3-L11】
 
 ## September 28, 2025
+- Captured back-to-back `uv run task verify` sweeps after the scout gate
+  updates: the baseline run resolves dependencies in 6 ms before the existing
+  strict mypy wall, and the post-fix run resolves in 9 ms with the same legacy
+  typing failures and no token metrics emitted to compare.【57e095†L1-L11】
+  【dae05e†L1-L13】【373e47†L1-L100】
 - Captured the first strict-typing `uv run task verify` after enabling
   repo-wide `strict = true`; the 16:17 UTC sweep hits mypy and reports missing
   stubs plus 230 errors across storage, orchestration, and API modules, so the

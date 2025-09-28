@@ -8,9 +8,9 @@ other modules without relying on dynamic attribute assignment.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from statistics import mean
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence, Literal, overload
 
 from ..config.models import ConfigModel
 from ..logging_utils import get_logger
@@ -55,6 +55,8 @@ class ScoutGateDecision:
     thresholds: dict[str, float]
     reason: str
     tokens_saved: int
+    rationales: dict[str, dict[str, object]] = field(default_factory=dict)
+    telemetry: dict[str, object] = field(default_factory=dict)
 
 
 class ScoutGatePolicy:
@@ -77,13 +79,27 @@ class ScoutGatePolicy:
             "retrieval_overlap": getattr(self.config, "gate_retrieval_overlap_threshold", 0.6),
             "nli_conflict": getattr(self.config, "gate_nli_conflict_threshold", 0.3),
             "complexity": getattr(self.config, "gate_complexity_threshold", 0.5),
+            "coverage_gap": getattr(self.config, "gate_coverage_gap_threshold", 0.25),
+            "retrieval_confidence": getattr(
+                self.config, "gate_retrieval_confidence_threshold", 0.5
+            ),
         }
+
+        coverage_gap, coverage_details = self._coverage_gap(state, details=True)
+        retrieval_confidence, confidence_details = self._retrieval_confidence(
+            state, details=True
+        )
+        nli_conflict, conflict_details = self._nli_conflict(state, details=True)
 
         heuristics = {
             "retrieval_overlap": self._retrieval_overlap(state),
-            "nli_conflict": self._nli_conflict(state),
+            "nli_conflict": nli_conflict,
             "complexity": self._complexity(query, state),
+            "coverage_gap": coverage_gap,
+            "retrieval_confidence": retrieval_confidence,
         }
+
+        baseline_heuristics = dict(heuristics)
 
         overrides = getattr(self.config, "gate_user_overrides", {})
         signal_overrides = overrides.get("signals", {}) if isinstance(overrides, dict) else {}
@@ -99,6 +115,24 @@ class ScoutGatePolicy:
         if isinstance(overrides, dict):
             decision_override = overrides.get("decision") or overrides.get("mode")
         reason = "policy_enabled" if enabled else "policy_disabled"
+
+        rationales = self._build_rationales(
+            heuristics,
+            thresholds,
+            signal_overrides,
+            baseline_heuristics,
+            {
+                "retrieval_overlap": {
+                    "retrieval_sets": len(
+                        state.metadata.get("scout_retrieval_sets") or []
+                    ),
+                    "source_count": len(state.sources),
+                },
+                "coverage_gap": coverage_details,
+                "retrieval_confidence": confidence_details,
+                "nli_conflict": conflict_details,
+            },
+        )
 
         if decision_override:
             normalized = str(decision_override).lower()
@@ -117,6 +151,13 @@ class ScoutGatePolicy:
 
         tokens_saved = self._estimate_tokens_saved(loops, target_loops)
 
+        telemetry = {
+            "coverage": coverage_details,
+            "retrieval_confidence": confidence_details,
+            "contradiction_total": conflict_details.get("total", 0.0),
+            "contradiction_samples": conflict_details.get("sample_size", 0),
+        }
+
         decision = ScoutGateDecision(
             should_debate=should_debate,
             target_loops=target_loops,
@@ -124,9 +165,29 @@ class ScoutGatePolicy:
             thresholds=thresholds,
             reason=reason,
             tokens_saved=tokens_saved,
+            rationales=rationales,
+            telemetry=telemetry,
         )
         metrics.record_gate_decision(decision)
-        state.metadata.setdefault("scout_gate", asdict(decision))
+        state.metadata["scout_gate"] = asdict(decision)
+
+        scout_stage = state.metadata.setdefault("scout_stage", {})
+        scout_stage["heuristics"] = heuristics
+        scout_stage["rationales"] = rationales
+        scout_stage["coverage"] = coverage_details
+        scout_stage["retrieval_confidence"] = confidence_details
+        if state.sources:
+            scout_stage["snippets"] = [
+                {
+                    "source_id": source.get("source_id"),
+                    "title": source.get("title"),
+                    "url": source.get("url"),
+                    "snippet": source.get("snippet"),
+                    "backend": source.get("backend"),
+                }
+                for source in state.sources[:5]
+                if isinstance(source, dict)
+            ]
         return decision
 
     def _auto_decide(self, heuristics: dict[str, float], thresholds: dict[str, float]) -> bool:
@@ -136,7 +197,17 @@ class ScoutGatePolicy:
         overlap_low = heuristics["retrieval_overlap"] < thresholds["retrieval_overlap"]
         conflict_high = heuristics["nli_conflict"] >= thresholds["nli_conflict"]
         complexity_high = heuristics["complexity"] >= thresholds["complexity"]
-        return overlap_low or conflict_high or complexity_high
+        coverage_gap_high = heuristics["coverage_gap"] >= thresholds["coverage_gap"]
+        confidence_low = (
+            heuristics["retrieval_confidence"] < thresholds["retrieval_confidence"]
+        )
+        return (
+            overlap_low
+            or conflict_high
+            or complexity_high
+            or coverage_gap_high
+            or confidence_low
+        )
 
     def _estimate_tokens_saved(self, loops: int, target_loops: int) -> int:
         """Estimate tokens saved when reducing debate loops."""
@@ -171,7 +242,21 @@ class ScoutGatePolicy:
             return 1.0 - (unique / max(len(state.sources), 1))
         return 0.0
 
-    def _nli_conflict(self, state: QueryState) -> float:
+    @overload
+    def _nli_conflict(
+        self, state: QueryState, *, details: Literal[True]
+    ) -> tuple[float, dict[str, float | int]]:
+        ...
+
+    @overload
+    def _nli_conflict(
+        self, state: QueryState, *, details: Literal[False] = False
+    ) -> float:
+        ...
+
+    def _nli_conflict(
+        self, state: QueryState, *, details: bool = False
+    ) -> float | tuple[float, dict[str, float | int]]:
         """Aggregate contradiction probabilities from scout entailment checks."""
 
         scores = state.metadata.get("scout_entailment_scores")
@@ -199,8 +284,158 @@ class ScoutGatePolicy:
         if graph_signal:
             values.append(float(graph_signal))
         if values:
-            return float(mean(values))
-        return 0.0
+            average = float(mean(values))
+            payload = {
+                "total": float(sum(values)),
+                "sample_size": len(values),
+                "max": float(max(values)),
+            }
+        else:
+            average = 0.0
+            payload = {"total": 0.0, "sample_size": 0, "max": 0.0}
+        if details:
+            return average, payload
+        return average
+
+    @overload
+    def _coverage_gap(
+        self, state: QueryState, *, details: Literal[True]
+    ) -> tuple[float, dict[str, int]]:
+        ...
+
+    @overload
+    def _coverage_gap(
+        self, state: QueryState, *, details: Literal[False] = False
+    ) -> float:
+        ...
+
+    def _coverage_gap(
+        self, state: QueryState, *, details: bool = False
+    ) -> float | tuple[float, dict[str, int]]:
+        """Estimate coverage delta between claims and audits."""
+
+        total_claims = len(state.claims)
+        unique_audits = {
+            str(audit.get("claim_id"))
+            for audit in state.claim_audits
+            if isinstance(audit, dict) and audit.get("claim_id")
+        }
+        audited_claims = len(unique_audits)
+        coverage_ratio = 1.0 if total_claims == 0 else audited_claims / total_claims
+        gap = float(max(0.0, min(1.0, 1.0 - coverage_ratio)))
+        payload = {
+            "total_claims": total_claims,
+            "audited_claims": audited_claims,
+            "audit_records": len(state.claim_audits),
+        }
+        if details:
+            return gap, payload
+        return gap
+
+    @overload
+    def _retrieval_confidence(
+        self, state: QueryState, *, details: Literal[True]
+    ) -> tuple[float, dict[str, float | int]]:
+        ...
+
+    @overload
+    def _retrieval_confidence(
+        self, state: QueryState, *, details: Literal[False] = False
+    ) -> float:
+        ...
+
+    def _retrieval_confidence(
+        self, state: QueryState, *, details: bool = False
+    ) -> float | tuple[float, dict[str, float | int]]:
+        """Compute retrieval confidence from entailment-derived scores."""
+
+        scores = state.metadata.get("scout_entailment_scores")
+        confidences: list[float] = []
+        if isinstance(scores, Sequence):
+            for item in scores:
+                if isinstance(item, dict):
+                    candidate = item.get("support") or item.get("score")
+                else:
+                    candidate = item
+                if candidate is None:
+                    continue
+                try:
+                    confidences.append(float(candidate))
+                except (TypeError, ValueError):
+                    continue
+        if confidences:
+            average = float(max(0.0, min(1.0, mean(confidences))))
+            payload = {
+                "sample_size": len(confidences),
+                "min": float(min(confidences)),
+                "max": float(max(confidences)),
+            }
+        else:
+            average = 0.0
+            payload = {"sample_size": 0, "min": 0.0, "max": 0.0}
+        if details:
+            return average, payload
+        return average
+
+    def _build_rationales(
+        self,
+        heuristics: dict[str, float],
+        thresholds: dict[str, float],
+        overrides: dict[str, object],
+        baseline: dict[str, float],
+        details: Mapping[str, Mapping[str, object]],
+    ) -> dict[str, dict[str, object]]:
+        """Produce structured rationales for each gating signal."""
+
+        rules: dict[str, dict[str, str | bool]] = {
+            "retrieval_overlap": {
+                "direction": "low",
+                "description": "Mean overlap across scout retrieval backends",
+            },
+            "nli_conflict": {
+                "direction": "high",
+                "description": "Aggregated contradiction probability",
+            },
+            "complexity": {
+                "direction": "high",
+                "description": "Query complexity estimate from scout analysis",
+            },
+            "coverage_gap": {
+                "direction": "high",
+                "description": "Share of claims lacking audits in scout stage",
+            },
+            "retrieval_confidence": {
+                "direction": "low",
+                "description": "Average entailment-backed retrieval confidence",
+            },
+        }
+
+        rationales: dict[str, dict[str, object]] = {}
+        for signal, value in heuristics.items():
+            rule = rules.get(signal, {})
+            direction = rule.get("direction", "high")
+            comparator = "<" if direction == "low" else ">="
+            threshold = thresholds.get(signal)
+            triggered = False
+            if threshold is not None:
+                if comparator == "<":
+                    triggered = value < threshold
+                else:
+                    triggered = value >= threshold
+            rationale: dict[str, object] = {
+                "value": value,
+                "threshold": threshold,
+                "comparator": comparator,
+                "triggered": triggered,
+                "description": rule.get("description", ""),
+                "baseline": baseline.get(signal, value),
+            }
+            if signal in overrides:
+                rationale["override"] = overrides[signal]
+            if details.get(signal):
+                rationale["details"] = details[signal]
+            rationales[signal] = rationale
+        return rationales
 
     def _complexity(self, query: str, state: QueryState) -> float:
         """Estimate question complexity using scout features and query length."""
