@@ -1,209 +1,107 @@
-# Autoresearch Output Formats
+# Output Formats
 
-This document describes the available output formats in Autoresearch and their use cases.
+Autoresearch emits multiple views of a completed query so humans and
+integrations can choose the right fidelity. Markdown and plain text target
+interactive reviews, JSON enables downstream automation, and custom templates
+let operators project a consistent report layout.
 
-## Available Formats
+## Standard format features
 
-Autoresearch supports the following output formats:
+Every format exposes the same core artifacts:
 
-1. **Markdown** (default): Rich text format with headings and lists
-2. **JSON**: Structured format for programmatic consumption
-3. **Plain Text**: Simple text format for basic terminal output
-4. **Custom Templates**: User-defined templates for specialized output formats
-
-## Format Details and Use Cases
+- **Answer** – the synthesized response for the query.
+- **Citations** – ranked evidence items with snippets and stable source IDs.
+- **Reasoning** – the ordered dialogue between dialectical agents.
+- **Metrics** – latency, token usage, and gate telemetry captured during the
+  run.
+- **Claim audits** – FEVER-style verification records with provenance maps.
 
 ### Markdown
 
-Markdown is the default output format when running Autoresearch in an interactive terminal. It provides a rich, human-readable format with headings, lists, and other formatting.
+The default Markdown renderer highlights the TL;DR, answer, citations, and claim
+verification table. Enable the trace depth to surface the full reasoning log,
+raw JSON payload, and the audit table that now mirrors the CLI schema.
 
-**Structure:**
-```markdown
-# Answer
-The answer to the query...
-
-## Citations
-- Citation 1
-- Citation 2
-- ...
-
-## Reasoning
-- Reasoning step 1
-- Reasoning step 2
-- ...
-
-## Metrics
-- **metric_name**: value
-- ...
-```
-
-**Use Cases:**
-- Interactive terminal usage
-- Saving results to a file for later reference
-- Including results in documentation or reports
-
-**Example:**
 ```bash
 autoresearch search "What is quantum computing?" --output markdown
 ```
 
 ### JSON
 
-JSON format provides a structured representation of the query results that can be easily parsed by other programs. This is the default format when the output is piped to another program.
+JSON is ideal for programmatic consumers. The payload mirrors the
+`QueryResponse` model and now includes:
 
-**Structure:**
-```json
-{
-  "answer": "The answer to the query...",
-  "citations": [
-    {"text": "Citation 1", "source": "Source 1", "relevance": 0.95},
-    {"text": "Citation 2", "source": "Source 2", "relevance": 0.85}
-  ],
-  "reasoning": [
-    "Reasoning step 1",
-    "Reasoning step 2"
-  ],
-  "metrics": {
-    "metric_name": "value"
-  }
-}
-```
+- `claim_audits`: full FEVER-style audit rows, including `provenance` with the
+  `retrieval`, `backoff`, and `evidence` namespaces.
+- `metrics.scout_gate`: the structured gate decision containing heuristics,
+  thresholds, rationales, and telemetry for coverage and contradiction totals.
+- `metrics.scout_stage`: persisted scout snippets, heuristics, and coverage
+  roll-ups so external dashboards can compare scout and debate phases.
 
-**Use Cases:**
-- Integration with other tools or scripts
-- Storing results in a database
-- Post-processing results with other programs
-
-**Example:**
 ```bash
-autoresearch search "What is quantum computing?" --output json > results.json
+autoresearch search "What is quantum computing?" --depth trace --output json \
+    > result.json
 ```
 
-### Plain Text
+### Plain text
 
-Plain text format provides a simple, unformatted representation of the query results. This is useful for environments where formatting is not supported or needed.
+The plain text view keeps headings, answer, citations, and reasoning bullets but
+omits the table layout. It still lists claim audits in the same order as the
+JSON payload, making it useful for log streaming.
 
-**Structure:**
-```
-Answer:
-The answer to the query...
+### Custom templates
 
-Citations:
-Citation 1
-Citation 2
-...
+Templates use `string.Template` variables such as `${answer}` and
+`${claim_audits}`. The claim audit variable renders Markdown by default, so the
+new provenance fields appear automatically in bespoke reports.
 
-Reasoning:
-Reasoning step 1
-Reasoning step 2
-...
+## Claim audit schema
 
-Metrics:
-metric_name: value
-...
-```
+Each audit row aligns with `ClaimAuditRecord.to_payload()` and now surfaces the
+provenance namespaces alongside headline metrics:
 
-**Use Cases:**
-- Environments without support for rich formatting
-- Simple logging or output capture
-- Maximum compatibility with other tools
+| Field | Description |
+| ----- | ----------- |
+| `claim_id` | Stable identifier for the verified claim. |
+| `status` | `supported`, `unsupported`, or `needs_review`. |
+| `entailment_score` | Mean entailment confidence, if available. |
+| `entailment_variance` | Sample variance supporting the mean score. |
+| `instability_flag` | Boolean marker when entailment signals conflict. |
+| `sample_size` | Number of snippets scored for the audit. |
+| `sources` | Ordered list of evidence snippets with `source_id`. |
+| `provenance` | Structured map with retrieval, backoff, and evidence keys. |
 
-**Example:**
-```bash
-autoresearch search "What is quantum computing?" --output plain
-```
+The CLI and Streamlit table render the same records while exposing the
+provenance map through expandable panels.
 
-### Custom Templates
+## Gate decision telemetry and overrides
 
-Custom templates allow you to define your own output format using the string.Template syntax. This is useful for specialized output formats or integration with specific tools.
+AUTO mode persists the scout decision under `metrics.scout_gate`. The object
+contains:
 
-**Creating a Custom Template:**
+- `heuristics`: final numeric signal values (overlap, conflict, complexity,
+  coverage gap, retrieval confidence).
+- `rationales`: comparator metadata indicating whether each signal crossed its
+  threshold, the original baseline value, and any operator override applied.
+- `telemetry`: coverage counts, contradiction totals, and sample sizes so UX
+  layers and notebooks can quantify debate escalations.
 
-1. Create a template file with the `.tpl` extension
-2. Place it in one of the following locations:
-   - Current directory: `./templates/`
-   - User config directory: `~/.config/autoresearch/templates/`
-   - System-wide config directory: `/etc/autoresearch/templates/`
+Operators can override the policy via `gate_user_overrides` in configuration or
+Streamlit. Overrides record their value in the matching `rationales[*].override`
+field, making reviews and compliance sign-off easier.
 
-**Template Variables:**
-- `${answer}`: The answer to the query
-- `${citations}`: The citations as a formatted string
-- `${reasoning}`: The reasoning steps as a formatted string
-- `${metrics}`: The metrics as a formatted string
-- `${metric_name}`: Individual metrics by name
+## Persisted scout snippets
 
-**Example Template (HTML):**
-```html
-<!-- templates/html.tpl -->
-<html>
-<head><title>Autoresearch Results</title></head>
-<body>
-  <h1>Answer</h1>
-  <p>${answer}</p>
-  
-  <h2>Citations</h2>
-  <ul>
-    ${citations}
-  </ul>
-  
-  <h2>Reasoning</h2>
-  <ol>
-    ${reasoning}
-  </ol>
-  
-  <h2>Metrics</h2>
-  <p>Time taken: ${metric_time_taken}s</p>
-</body>
-</html>
-```
+Before debate resets state, the orchestrator now stores `metrics.scout_stage`
+with:
 
-**Using a Custom Template:**
-```bash
-autoresearch search "What is quantum computing?" --output template:html
-```
+- `heuristics` and `rationales`: the same structures captured in
+  `metrics.scout_gate`.
+- `coverage` and `retrieval_confidence`: the detailed counters backing the
+  heuristics.
+- `snippets`: the first five scout snippets (title, URL, snippet, backend,
+  source ID) so debate participants and dashboards can reference the original
+  retrieval context.
 
-## Configuring Default Output Format
-
-You can set the default output format in your `autoresearch.toml` configuration file:
-
-```toml
-[core]
-output_format = "markdown"  # or "json", "plain", "template:name"
-```
-
-## Defining Custom Templates in Configuration
-
-You can also define custom templates directly in your configuration file:
-
-```toml
-[output_templates.html]
-name = "html"
-description = "HTML output format"
-template = """
-<html>
-<head><title>Autoresearch Results</title></head>
-<body>
-  <h1>Answer</h1>
-  <p>${answer}</p>
-  
-  <h2>Citations</h2>
-  <ul>
-    ${citations}
-  </ul>
-  
-  <h2>Reasoning</h2>
-  <ol>
-    ${reasoning}
-  </ol>
-  
-  <h2>Metrics</h2>
-  <p>Time taken: ${metric_time_taken}s</p>
-</body>
-</html>
-"""
-```
-
-Then use it with:
-```bash
-autoresearch search "What is quantum computing?" --output template:html
-```
+These additions keep the CLI, JSON, and Streamlit views in sync while providing
+traceable hooks for audit and override workflows.

@@ -202,6 +202,15 @@ class SynthesizerAgent(Agent):
             },
         }
 
+        metadata["audit_provenance_synthesizer"] = {
+            "summary": dict(audit_kwargs.get("provenance", {})),
+            "supporting_audits": [
+                dict(audit.get("provenance", {}))
+                for audit in support_audits
+                if isinstance(audit, Mapping) and audit.get("provenance")
+            ],
+        }
+
         return metadata, audit_kwargs, support_audits
 
     @staticmethod

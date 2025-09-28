@@ -250,9 +250,10 @@ class FactChecker(Agent):
 
         # Create and return the result
         valid_scores = [
-            audit.get("entailment_score")
+            float(score)
             for audit in claim_audits
-            if audit.get("entailment_score") is not None
+            for score in [audit.get("entailment_score")]
+            if isinstance(score, (int, float))
         ]
         aggregate_score = (
             sum(valid_scores) / len(valid_scores) if valid_scores else None
@@ -260,18 +261,25 @@ class FactChecker(Agent):
         aggregate_status = classify_entailment(aggregate_score or 0.0)
 
         variance_values = [
-            audit.get("entailment_variance")
+            float(variance)
             for audit in claim_audits
-            if audit.get("entailment_variance") is not None
+            for variance in [audit.get("entailment_variance")]
+            if isinstance(variance, (int, float))
         ]
         aggregate_variance = (
             sum(variance_values) / len(variance_values) if variance_values else None
         )
-        total_samples = sum(int(audit.get("sample_size") or 0) for audit in claim_audits)
-        instability_flags = [
-            audit.get("instability_flag")
+        total_samples = sum(
+            int(sample)
             for audit in claim_audits
-            if audit.get("instability_flag") is not None
+            for sample in [audit.get("sample_size")]
+            if isinstance(sample, (int, float))
+        )
+        instability_flags = [
+            bool(flag)
+            for audit in claim_audits
+            for flag in [audit.get("instability_flag")]
+            if isinstance(flag, bool)
         ]
         instability_state: bool | None
         if instability_flags:
@@ -307,7 +315,12 @@ class FactChecker(Agent):
             },
             "backoff": {
                 "per_claim": claim_retry_stats,
-                "total_retries": sum(stats["retry_count"] for stats in claim_retry_stats.values()),
+                "total_retries": sum(
+                    int(retry)
+                    for stats in claim_retry_stats.values()
+                    for retry in [stats.get("retry_count")]
+                    if isinstance(retry, (int, float))
+                ),
             },
             "evidence": {
                 "top_source_ids": [src.get("source_id") for src in top_sources if src.get("source_id")],
@@ -334,6 +347,7 @@ class FactChecker(Agent):
                 "phase": DialoguePhase.VERIFICATION,
                 "source_count": len(sources),
                 "query_variations": query_variations,
+                "audit_provenance_fact_checker": aggregate_provenance,
             },
             results={"verification": verification},
             sources=sources,

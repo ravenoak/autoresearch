@@ -26,6 +26,12 @@ def generate_socratic_prompts(
         prompts.append(
             f"What additional evidence would strengthen verification of {first_claim}?"
         )
+    gate_snapshot = payload.metrics.get("scout_gate") if payload.metrics else None
+    if isinstance(gate_snapshot, Mapping):
+        for signal in triggered_gate_signals(gate_snapshot):
+            prompts.append(
+                f"How could we address the scout gate's {signal} concern before debate?"
+            )
     prompts.append(
         "Which counterexamples could challenge the TL;DR and should be investigated?"
     )
@@ -108,3 +114,48 @@ def section_toggle_defaults(payload: DepthPayload) -> Dict[str, Dict[str, bool]]
             "value": sections.get("graph_exports", False),
         },
     }
+
+
+def triggered_gate_signals(snapshot: Mapping[str, Any]) -> List[str]:
+    """Return gate signals that triggered escalation."""
+
+    rationales = snapshot.get("rationales")
+    if not isinstance(rationales, Mapping):
+        return []
+    triggered: List[str] = []
+    for key, rationale in rationales.items():
+        if isinstance(rationale, Mapping) and rationale.get("triggered"):
+            triggered.append(key.replace("_", " "))
+    return triggered
+
+
+def format_gate_rationales(snapshot: Mapping[str, Any]) -> List[str]:
+    """Build human-readable rationales for gate decisions."""
+
+    rationales = snapshot.get("rationales")
+    if not isinstance(rationales, Mapping):
+        return []
+
+    lines: List[str] = []
+    for signal, rationale in rationales.items():
+        if not isinstance(rationale, Mapping):
+            continue
+        value = rationale.get("value")
+        threshold = rationale.get("threshold")
+        comparator = rationale.get("comparator", ">=")
+        triggered = bool(rationale.get("triggered"))
+        override = rationale.get("override")
+        description = rationale.get("description", "")
+        value_display = f"{value:.2f}" if isinstance(value, (int, float)) else value
+        threshold_display = (
+            f"{threshold:.2f}" if isinstance(threshold, (int, float)) else threshold
+        )
+        status = "triggered" if triggered else "within threshold"
+        line = (
+            f"{signal.replace('_', ' ').title()}: {value_display} {comparator} "
+            f"{threshold_display} ({status}). {description}".strip()
+        )
+        if override is not None:
+            line += f" Override={override}."
+        lines.append(line)
+    return lines

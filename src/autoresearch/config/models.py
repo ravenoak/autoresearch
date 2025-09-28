@@ -389,6 +389,18 @@ class ConfigModel(BaseModel):
         le=1.0,
         description="Complexity score that escalates to full debate",
     )
+    gate_coverage_gap_threshold: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="Maximum uncovered-claim share before debate escalates",
+    )
+    gate_retrieval_confidence_threshold: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Minimum retrieval confidence required to skip debate",
+    )
     gate_user_overrides: Dict[str, Any] = Field(
         default_factory=dict,
         description="Optional overrides for gate policy decisions and signals",

@@ -174,17 +174,20 @@ is fully attributable.
   supporting snippets for later audits.
 - **Gate policy:** Decide between early exit and dialectical debate using the
   scout signals, policy-sensitive topic detection, contradiction cues from
-  GraphRAG, and budget guards. Escalate when uncertainty exceeds configured
+  GraphRAG, coverage gaps derived from prior audits, retrieval confidence
+  metrics, and budget guards. Escalate when uncertainty exceeds configured
   thresholds or when the user forces debate.
 - **Debate stage:** Limit cycles adaptively; ensure the fact checker audits all
   claims before synthesis and citation formatting. Persist thesis/antithesis
   turns and fact-checker verdicts for replay.
-- **Telemetry:** Record gate inputs, overrides, and outcomes so policies can be
-  tuned with offline evaluation.
+- **Telemetry:** Record gate inputs, rationales, overrides, and outcomes so
+  policies can be tuned with offline evaluation.
 - **Configuration:** Operators can tune `gate_policy_enabled`,
   `gate_retrieval_overlap_threshold`, `gate_nli_conflict_threshold`,
-  `gate_complexity_threshold`, `gate_graph_contradiction_threshold`, and
-  `gate_user_overrides` to align the scout policy with domain needs.
+  `gate_complexity_threshold`, `gate_coverage_gap_threshold`,
+  `gate_retrieval_confidence_threshold`,
+  `gate_graph_contradiction_threshold`, and `gate_user_overrides` to align the
+  scout policy with domain needs.
 
 ## 10. Evidence Pipeline 2.0
 
@@ -194,7 +197,9 @@ is fully attributable.
 - Score claim support with entailment checks and a self-checking ensemble for
   instability detection. Flag conflicting snippets for contrarian review.
 - Emit per-claim audit records (`supported`, `weak`, `disputed`) containing
-  sources, quotes, entailment scores, reviewer notes, and stability deltas.
+  sources, quotes, entailment scores, reviewer notes, stability deltas, and a
+  provenance map with retrieval, backoff, and evidence namespaces so CLI, JSON,
+  and UI surfaces stay consistent.
 - Block synthesis on unsupported claims; require hedging or removal before
   completion. Persist audit metadata so clients can render detailed tables.
 
