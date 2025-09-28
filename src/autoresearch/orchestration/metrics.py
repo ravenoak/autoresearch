@@ -211,7 +211,8 @@ def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
         )
         return 0.0, 0.0, 0.0, 0.0
 
-    cpu = float(psutil.cpu_percent(interval=None))
+    cpu_percent = psutil.cpu_percent(interval=None)
+    cpu = float(cpu_percent if isinstance(cpu_percent, (int, float)) else 0.0)
     mem_info = psutil.Process().memory_info()
     mem_mb = float(mem_info.rss) / (1024 * 1024)
 
@@ -226,6 +227,13 @@ def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
         )
         return cpu, mem_mb, gpu_util, gpu_mem
 
+    def _coerce_to_float(value: object) -> float:
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, list) and value and isinstance(value[0], (int, float)):
+            return float(value[0])
+        return 0.0
+
     try:
         pynvml_module.nvmlInit()
         count = int(pynvml_module.nvmlDeviceGetCount())
@@ -233,8 +241,9 @@ def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
             handle = pynvml_module.nvmlDeviceGetHandleByIndex(index)
             utilization = pynvml_module.nvmlDeviceGetUtilizationRates(handle)
             memory = pynvml_module.nvmlDeviceGetMemoryInfo(handle)
-            gpu_util += float(getattr(utilization, "gpu", 0.0))
-            gpu_mem += float(memory.used) / (1024 * 1024)
+            gpu_value = _coerce_to_float(getattr(utilization, "gpu", 0.0))
+            gpu_util += gpu_value
+            gpu_mem += _coerce_to_float(getattr(memory, "used", 0.0)) / (1024 * 1024)
         if count:
             gpu_util /= count
     except Exception:  # pragma: no cover - optional dependency

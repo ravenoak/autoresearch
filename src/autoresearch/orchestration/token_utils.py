@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Protocol, cast
+from typing import Any, Protocol, TypeGuard, cast
 
 from ..config.models import ConfigModel
 from .metrics import OrchestrationMetrics
@@ -37,6 +37,48 @@ class SupportsAdapterMutation(Protocol):
 
     def get_adapter(self) -> AdapterProtocol:  # pragma: no cover - structural
         """Return the currently configured adapter."""
+
+
+class SupportsAdapterSetter(Protocol):
+    """Protocol for agents that accept temporary adapter injection."""
+
+    def set_adapter(self, adapter: AdapterProtocol) -> None:
+        """Inject a temporary adapter implementation."""
+
+
+class SupportsExecuteWithAdapterSetter(SupportsExecute, SupportsAdapterSetter, Protocol):
+    """Agent protocol combining execution and adapter setter hooks."""
+
+
+class SupportsExecuteWithMutation(
+    SupportsExecuteWithAdapterSetter, SupportsAdapterMutation, Protocol
+):
+    """Agent protocol exposing both setter and getter adapter hooks."""
+
+
+def supports_adapter_mutation(obj: object) -> TypeGuard[SupportsExecuteWithMutation]:
+    """Return ``True`` when ``obj`` exposes ``set_adapter``/``get_adapter`` hooks."""
+
+    set_adapter = getattr(obj, "set_adapter", None)
+    get_adapter = getattr(obj, "get_adapter", None)
+    execute = getattr(obj, "execute", None)
+    return callable(set_adapter) and callable(get_adapter) and callable(execute)
+
+
+def supports_adapter_setter(obj: SupportsExecute) -> TypeGuard[SupportsExecuteWithAdapterSetter]:
+    """Return ``True`` when ``obj`` supports adapter injection via ``set_adapter``."""
+
+    set_adapter = getattr(obj, "set_adapter", None)
+    execute = getattr(obj, "execute", None)
+    return callable(set_adapter) and callable(execute)
+
+
+def is_agent_execution_result(result: object) -> TypeGuard[AgentExecutionResult]:
+    """Return ``True`` for mapping results compatible with :class:`AgentExecutionResult`."""
+
+    if not isinstance(result, Mapping):
+        return False
+    return all(isinstance(key, str) for key in result.keys())
 
 
 @contextmanager
@@ -116,11 +158,11 @@ def _execute_with_adapter(
 
     if "adapter" in sig.parameters:
         result = agent.execute(state, config, adapter=adapter)
-    elif hasattr(agent, "set_adapter"):
-        adapter_agent = cast(SupportsAdapterMutation, agent)
-        original_adapter: AdapterProtocol | None = (
-            adapter_agent.get_adapter() if hasattr(agent, "get_adapter") else None
-        )
+    elif supports_adapter_setter(agent):
+        adapter_agent = agent
+        original_adapter: AdapterProtocol | None = None
+        if supports_adapter_mutation(adapter_agent):
+            original_adapter = adapter_agent.get_adapter()
         try:
             adapter_agent.set_adapter(adapter)
             result = agent.execute(state, config)
@@ -130,7 +172,7 @@ def _execute_with_adapter(
     else:
         result = agent.execute(state, config)
 
-    if not isinstance(result, Mapping):
+    if not is_agent_execution_result(result):
         raise TypeError(
             "Agent.execute must return a mapping compatible with QueryState.update"
         )

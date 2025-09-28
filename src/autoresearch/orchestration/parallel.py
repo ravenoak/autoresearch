@@ -52,15 +52,17 @@ def execute_parallel_query(
     def run_group(group: List[str]) -> QueryResponse:
         from .orchestrator import Orchestrator
 
-        group_config = config.model_copy(
-            update={
-                "agents": group,
+        group_payload = config.model_dump()
+        group_payload.update(
+            {
+                "agents": list(group),
                 "group_size": len(group),
                 "total_groups": len(group_list),
                 "total_agents": total_agents,
             }
         )
-        group_config.token_budget = getattr(config, "token_budget", 4000)
+        group_payload.setdefault("token_budget", getattr(config, "token_budget", 4000))
+        group_config = ConfigModel.model_validate(group_payload)
 
         try:
             return Orchestrator().run_query(query, group_config)
