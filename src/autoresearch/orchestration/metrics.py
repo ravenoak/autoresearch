@@ -426,6 +426,7 @@ class OrchestrationMetrics:
             "coverage": decision.telemetry.get("coverage"),
             "contradiction_total": decision.telemetry.get("contradiction_total"),
             "contradiction_samples": decision.telemetry.get("contradiction_samples"),
+            "graph": decision.telemetry.get("graph"),
         }
         self.gate_events.append(event)
 

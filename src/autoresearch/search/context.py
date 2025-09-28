@@ -433,7 +433,6 @@ class SearchContext:
         if not stage_meta or stored_weight != weight:
             summary = self.get_graph_summary()
             if summary:
-                summary["contradiction_weight"] = weight
                 self._store_graph_metadata(summary)
                 stage_meta = self._graph_stage_metadata.get("contradictions", {})
         if stage_meta:
@@ -448,6 +447,51 @@ class SearchContext:
                 "items": [],
             }
         }
+        return weighted
+
+    def get_similarity_signal(self) -> float:
+        """Return weighted similarity support derived from the knowledge graph."""
+
+        cfg = get_config()
+        context_cfg = getattr(cfg.search, "context_aware", None)
+        weight = float(getattr(context_cfg, "graph_signal_weight", 0.0))
+        stage_meta = self._graph_stage_metadata.get("similarity", {})
+        stored_weight = float(stage_meta.get("weight", -1.0)) if stage_meta else -1.0
+        if not stage_meta or stored_weight != weight:
+            summary = self.get_graph_summary()
+            if summary:
+                self._store_graph_metadata(summary)
+                stage_meta = self._graph_stage_metadata.get("similarity", {})
+        if stage_meta:
+            return float(stage_meta.get("weighted_score", 0.0))
+
+        summary = self.get_graph_summary()
+        if not summary:
+            return 0.0
+
+        relations = summary.get("relation_count", 0.0)
+        entities = summary.get("entity_count", 0.0)
+        try:
+            relation_count = float(relations)
+        except (TypeError, ValueError):
+            relation_count = 0.0
+        try:
+            entity_count = float(entities)
+        except (TypeError, ValueError):
+            entity_count = 0.0
+        if entity_count <= 0.0:
+            return 0.0
+
+        base_score = min(1.0, relation_count / max(entity_count, 1.0))
+        weighted = float(max(0.0, min(base_score * weight, 1.0)))
+        similarity_meta = {
+            "raw_score": base_score,
+            "weighted_score": weighted,
+            "weight": weight,
+            "entity_count": entity_count,
+            "relation_count": relation_count,
+        }
+        self._graph_stage_metadata.setdefault("similarity", similarity_meta)
         return weighted
 
     def graph_neighbors(
@@ -820,6 +864,14 @@ class SearchContext:
         except (TypeError, ValueError):
             relation_count_float = 0.0
 
+        similarity_weight = float(getattr(context_cfg, "graph_signal_weight", 0.0))
+        similarity_raw = 0.0
+        if entity_count_float > 0.0:
+            similarity_raw = min(1.0, relation_count_float / max(entity_count_float, 1.0))
+        similarity_weighted = float(
+            max(0.0, min(similarity_raw * similarity_weight, 1.0))
+        )
+
         metadata: dict[str, Any] = {
             "contradictions": {
                 "raw_score": raw_score,
@@ -834,6 +886,13 @@ class SearchContext:
                 "relation_count": relation_count_float,
             },
             "paths": paths,
+            "similarity": {
+                "raw_score": similarity_raw,
+                "weighted_score": similarity_weighted,
+                "weight": similarity_weight,
+                "entity_count": entity_count_float,
+                "relation_count": relation_count_float,
+            },
         }
         if neighbors:
             metadata["neighbors"] = neighbors

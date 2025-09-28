@@ -15,6 +15,7 @@ from ...orchestration.phases import DialoguePhase
 from ...orchestration.state import QueryState
 from ...orchestration.task_graph import TaskEdge, TaskGraph, TaskNode
 from ...logging_utils import get_logger
+from ...search.context import SearchContext
 
 log = get_logger(__name__)
 
@@ -27,6 +28,7 @@ class PlannerPromptBuilder:
     query: str
     feedback: str | None = None
     existing_graph: Mapping[str, Any] | None = None
+    graph_context: Mapping[str, Any] | None = None
     include_schema_notes: bool = True
     _schema: dict[str, Any] = field(init=False, repr=False)
 
@@ -132,10 +134,141 @@ class PlannerPromptBuilder:
                 f"{prior_summary}"
             )
 
+        if self.graph_context:
+            graph_section = self._format_graph_context(self.graph_context)
+            if graph_section:
+                sections.append(graph_section)
+
         if self.feedback:
             sections.append(f"Peer feedback:\n{self.feedback.strip()}")
 
         return "\n\n".join(section for section in sections if section).strip()
+
+    @staticmethod
+    def _format_float(value: Any) -> str:
+        try:
+            return f"{float(value):.2f}"
+        except (TypeError, ValueError):
+            return "0.00"
+
+    def _format_graph_context(self, context: Mapping[str, Any]) -> str:
+        """Return a compact textual summary of knowledge graph signals."""
+
+        sections: list[str] = []
+
+        similarity = context.get("similarity")
+        if isinstance(similarity, Mapping):
+            weighted = self._format_float(similarity.get("weighted_score"))
+            raw = self._format_float(similarity.get("raw_score"))
+            sections.append(
+                f"- Graph similarity support: {weighted} (raw {raw})"
+            )
+
+        contradictions = context.get("contradictions")
+        if isinstance(contradictions, Mapping):
+            weighted = self._format_float(contradictions.get("weighted_score"))
+            raw = self._format_float(contradictions.get("raw_score"))
+            sections.append(
+                f"- Contradiction score: {weighted} (raw {raw})"
+            )
+            items = contradictions.get("items")
+            if isinstance(items, Sequence):
+                entries = [item for item in items if isinstance(item, Mapping)]
+                preview = entries[:3]
+                if preview:
+                    sections.append("  Contradictory findings:")
+                    for item in preview:
+                        subject = str(item.get("subject") or "?")
+                        predicate = str(item.get("predicate") or "?")
+                        objects = item.get("objects")
+                        if isinstance(objects, Sequence) and objects:
+                            object_preview = ", ".join(
+                                str(obj) for obj in list(objects)[:3]
+                            )
+                            if len(objects) > 3:
+                                object_preview += ", …"
+                        else:
+                            object_preview = "?"
+                        sections.append(
+                            f"    - {subject} --{predicate}--> {object_preview}"
+                        )
+                    remaining = len(entries) - len(preview)
+                    if remaining > 0:
+                        sections.append(f"    - … ({remaining} more)")
+
+        neighbors = context.get("neighbors")
+        if isinstance(neighbors, Mapping):
+            neighbour_lines: list[str] = []
+            for entity, edges in neighbors.items():
+                if len(neighbour_lines) >= 3:
+                    break
+                if not isinstance(edges, Sequence):
+                    continue
+                for edge in edges:
+                    if len(neighbour_lines) >= 3:
+                        break
+                    if not isinstance(edge, Mapping):
+                        continue
+                    predicate = str(edge.get("predicate") or edge.get("relation") or "?")
+                    target = str(edge.get("target") or edge.get("object") or "?")
+                    direction = edge.get("direction")
+                    if direction == "in":
+                        arrow = "←"
+                    elif direction == "both":
+                        arrow = "↔"
+                    else:
+                        arrow = "→"
+                    neighbour_lines.append(
+                        f"  - {entity} {arrow} ({predicate}) {target}"
+                    )
+            if neighbour_lines:
+                sections.append("- Representative neighbours:")
+                sections.extend(neighbour_lines)
+
+        paths = context.get("paths")
+        if isinstance(paths, Sequence):
+            formatted_paths: list[str] = []
+            total_paths = 0
+            for path in paths:
+                if not isinstance(path, Sequence):
+                    continue
+                nodes = [str(node) for node in path if node]
+                if not nodes:
+                    continue
+                total_paths += 1
+                if len(formatted_paths) < 3:
+                    formatted_paths.append(" → ".join(nodes))
+            if formatted_paths:
+                sections.append("- Multi-hop paths:")
+                for item in formatted_paths:
+                    sections.append(f"  - {item}")
+                if total_paths > len(formatted_paths):
+                    sections.append("  - …")
+
+        sources = context.get("sources")
+        if isinstance(sources, Sequence):
+            parsed_sources = [
+                str(source).strip()
+                for source in sources
+                if isinstance(source, str) and source.strip()
+            ]
+            if parsed_sources:
+                preview_sources = parsed_sources[:5]
+                source_line = ", ".join(preview_sources)
+                if len(parsed_sources) > len(preview_sources):
+                    source_line += ", …"
+                sections.append(f"- Provenance sources: {source_line}")
+
+        provenance = context.get("provenance")
+        if isinstance(provenance, Sequence):
+            count = len([item for item in provenance if isinstance(item, Mapping)])
+            if count:
+                sections.append(f"- Provenance records analysed: {count}")
+
+        if not sections:
+            return ""
+        header = "Knowledge graph signals:"
+        return "\n".join([header, *sections])
 
 
 class PlannerAgent(Agent):
@@ -156,11 +289,36 @@ class PlannerAgent(Agent):
         feedback = None
         if getattr(config, "enable_feedback", False):
             feedback = self.format_feedback(state) or None
+        graph_context: Mapping[str, Any] | None = None
+        context_cfg = getattr(config.search, "context_aware", None)
+        if getattr(context_cfg, "planner_graph_conditioning", False):
+            try:
+                search_context = SearchContext.get_instance()
+                graph_metadata = search_context.get_graph_stage_metadata()
+                graph_summary = search_context.get_graph_summary()
+            except Exception:
+                graph_metadata = {}
+                graph_summary = {}
+            payload: dict[str, Any] = {}
+            if isinstance(graph_metadata, Mapping):
+                for key in ("contradictions", "similarity", "neighbors", "paths"):
+                    value = graph_metadata.get(key)
+                    if value:
+                        payload[key] = value
+            if isinstance(graph_summary, Mapping):
+                for key in ("sources", "provenance"):
+                    value = graph_summary.get(key)
+                    if value:
+                        payload[key] = value
+            if payload:
+                graph_context = payload
+
         prompt = PlannerPromptBuilder(
             base_prompt=base_prompt,
             query=state.query,
             feedback=feedback,
             existing_graph=state.task_graph if state.task_graph.get("tasks") else None,
+            graph_context=graph_context,
         ).build()
         research_plan = adapter.generate(prompt, model=model)
 

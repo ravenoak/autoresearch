@@ -83,7 +83,39 @@ class ScoutGatePolicy:
             "retrieval_confidence": getattr(
                 self.config, "gate_retrieval_confidence_threshold", 0.5
             ),
+            "graph_contradiction": getattr(
+                self.config, "gate_graph_contradiction_threshold", 0.25
+            ),
+            "graph_similarity": getattr(
+                self.config, "gate_graph_similarity_threshold", 0.0
+            ),
         }
+
+        graph_contradiction = 0.0
+        graph_similarity = 0.0
+        graph_metadata: dict[str, object] = {}
+        graph_summary: dict[str, object] = {}
+        try:
+            search_context = SearchContext.get_instance()
+        except Exception:
+            search_context = None
+        if search_context is not None:
+            try:
+                graph_contradiction = float(search_context.get_contradiction_signal())
+            except Exception:
+                graph_contradiction = 0.0
+            try:
+                graph_similarity = float(search_context.get_similarity_signal())
+            except Exception:
+                graph_similarity = 0.0
+            try:
+                graph_metadata = search_context.get_graph_stage_metadata()
+            except Exception:
+                graph_metadata = {}
+            try:
+                graph_summary = search_context.get_graph_summary()
+            except Exception:
+                graph_summary = {}
 
         coverage_gap, coverage_details = self._coverage_gap(state, details=True)
         retrieval_confidence, confidence_details = self._retrieval_confidence(
@@ -97,9 +129,20 @@ class ScoutGatePolicy:
             "complexity": self._complexity(query, state),
             "coverage_gap": coverage_gap,
             "retrieval_confidence": retrieval_confidence,
+            "graph_contradiction": graph_contradiction,
+            "graph_similarity": graph_similarity,
         }
 
         baseline_heuristics = dict(heuristics)
+
+        graph_contradiction_details: dict[str, object] = {}
+        contradictions_raw = graph_metadata.get("contradictions")
+        if isinstance(contradictions_raw, Mapping):
+            graph_contradiction_details = dict(contradictions_raw)
+        graph_similarity_details: dict[str, object] = {}
+        similarity_raw = graph_metadata.get("similarity")
+        if isinstance(similarity_raw, Mapping):
+            graph_similarity_details = dict(similarity_raw)
 
         overrides = getattr(self.config, "gate_user_overrides", {})
         signal_overrides = overrides.get("signals", {}) if isinstance(overrides, dict) else {}
@@ -131,6 +174,8 @@ class ScoutGatePolicy:
                 "coverage_gap": coverage_details,
                 "retrieval_confidence": confidence_details,
                 "nli_conflict": conflict_details,
+                "graph_contradiction": graph_contradiction_details,
+                "graph_similarity": graph_similarity_details,
             },
         )
 
@@ -151,12 +196,32 @@ class ScoutGatePolicy:
 
         tokens_saved = self._estimate_tokens_saved(loops, target_loops)
 
+        graph_telemetry: dict[str, object] = {}
+        if graph_contradiction_details:
+            graph_telemetry["contradictions"] = graph_contradiction_details
+        if graph_similarity_details:
+            graph_telemetry["similarity"] = graph_similarity_details
+        neighbors = graph_metadata.get("neighbors")
+        if neighbors:
+            graph_telemetry["neighbors"] = neighbors
+        paths = graph_metadata.get("paths")
+        if paths:
+            graph_telemetry["paths"] = paths
+        sources = graph_summary.get("sources")
+        if isinstance(sources, Sequence):
+            graph_telemetry["sources"] = list(sources)
+        provenance = graph_summary.get("provenance")
+        if isinstance(provenance, Sequence):
+            graph_telemetry["provenance"] = list(provenance)
+
         telemetry = {
             "coverage": coverage_details,
             "retrieval_confidence": confidence_details,
             "contradiction_total": conflict_details.get("total", 0.0),
             "contradiction_samples": conflict_details.get("sample_size", 0),
         }
+        if graph_telemetry:
+            telemetry["graph"] = graph_telemetry
 
         decision = ScoutGateDecision(
             should_debate=should_debate,
@@ -176,6 +241,8 @@ class ScoutGatePolicy:
         scout_stage["rationales"] = rationales
         scout_stage["coverage"] = coverage_details
         scout_stage["retrieval_confidence"] = confidence_details
+        if graph_telemetry:
+            scout_stage["graph_context"] = graph_telemetry
         if state.sources:
             scout_stage["snippets"] = [
                 {
@@ -201,12 +268,22 @@ class ScoutGatePolicy:
         confidence_low = (
             heuristics["retrieval_confidence"] < thresholds["retrieval_confidence"]
         )
+        graph_conflict_high = (
+            heuristics.get("graph_contradiction", 0.0)
+            >= thresholds.get("graph_contradiction", 1.0)
+        )
+        similarity_threshold = thresholds.get("graph_similarity")
+        graph_similarity_low = False
+        if similarity_threshold is not None:
+            graph_similarity_low = heuristics.get("graph_similarity", 1.0) < similarity_threshold
         return (
             overlap_low
             or conflict_high
             or complexity_high
             or coverage_gap_high
             or confidence_low
+            or graph_conflict_high
+            or graph_similarity_low
         )
 
     def _estimate_tokens_saved(self, loops: int, target_loops: int) -> int:
@@ -277,12 +354,6 @@ class ScoutGatePolicy:
                         values.append(float(item))
                     except (TypeError, ValueError):
                         continue
-        try:
-            graph_signal = SearchContext.get_instance().get_contradiction_signal()
-        except Exception:
-            graph_signal = 0.0
-        if graph_signal:
-            values.append(float(graph_signal))
         if values:
             average = float(mean(values))
             payload = {
@@ -407,6 +478,14 @@ class ScoutGatePolicy:
             "retrieval_confidence": {
                 "direction": "low",
                 "description": "Average entailment-backed retrieval confidence",
+            },
+            "graph_contradiction": {
+                "direction": "high",
+                "description": "Weighted contradiction signal from the knowledge graph",
+            },
+            "graph_similarity": {
+                "direction": "low",
+                "description": "Weighted neighbour density from the knowledge graph",
             },
         }
 

@@ -117,6 +117,8 @@ Guidelines:
 6. Anticipate potential challenges or limitations and how to address them
 7. Suggest criteria for evaluating the quality and relevance of information
 8. Create a structured outline with clear sections and subsections
+9. When knowledge graph context is provided, incorporate contradictions, neighbour paths,
+   and provenance cues into the plan
 
 Your research plan should be comprehensive, well-organized, and provide a clear roadmap for conducting thorough research on the topic.
 """,

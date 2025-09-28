@@ -23,6 +23,8 @@ class ContextAwareSearchConfigDump(TypedDict):
     expansion_factor: float
     use_search_history: bool
     max_history_items: int
+    graph_signal_weight: float
+    planner_graph_conditioning: bool
 
 
 class SearchConfigDump(TypedDict):
@@ -39,6 +41,8 @@ class ConfigModelDump(TypedDict):
     adaptive_max_factor: int
     adaptive_min_buffer: int
     search: SearchConfigDump
+    gate_graph_contradiction_threshold: float
+    gate_graph_similarity_threshold: float
 
 
 ContextOverrideValue = bool | float | int
@@ -53,6 +57,8 @@ class ContextAwareSearchConfigStub:
     expansion_factor: float = 0.3
     use_search_history: bool = True
     max_history_items: int = 10
+    graph_signal_weight: float = 0.2
+    planner_graph_conditioning: bool = False
 
 
 @dataclass(slots=True)
@@ -73,6 +79,8 @@ class ConfigModelStub:
     adaptive_max_factor: int = 20
     adaptive_min_buffer: int = 10
     search: SearchConfigStub = field(default_factory=SearchConfigStub)
+    gate_graph_contradiction_threshold: float = 0.25
+    gate_graph_similarity_threshold: float = 0.0
 
     def model_dump(self) -> ConfigModelDump:
         """Return a dictionary representation mirroring ``BaseModel``."""
@@ -95,8 +103,18 @@ class ConfigModelStub:
                     "max_history_items": (
                         self.search.context_aware.max_history_items
                     ),
+                    "graph_signal_weight": (
+                        self.search.context_aware.graph_signal_weight
+                    ),
+                    "planner_graph_conditioning": (
+                        self.search.context_aware.planner_graph_conditioning
+                    ),
                 },
             },
+            "gate_graph_contradiction_threshold": (
+                self.gate_graph_contradiction_threshold
+            ),
+            "gate_graph_similarity_threshold": self.gate_graph_similarity_threshold,
         }
 
 
