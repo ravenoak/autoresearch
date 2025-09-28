@@ -243,8 +243,11 @@ markers = [
 ]
 
 [tool.mypy]
+# Typing strictness guidelines: see docs/dev/typing-strictness.md
 python_version = "3.12"
 strict = true
+warn_unused_configs = true
+no_implicit_optional = true
 
 [tool.flake8]
 max-line-length = 100
