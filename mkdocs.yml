@@ -110,6 +110,7 @@ plugins:
         - inspirational_docs/**
         - algorithms/**
         - specs/**
+        - external_research_papers/**
 theme:
   name: material
   palette:

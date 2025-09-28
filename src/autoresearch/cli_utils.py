@@ -411,11 +411,11 @@ def visualize_query_cli(
 
         from .config import ConfigLoader
         from .orchestration.orchestrator import Orchestrator
-        from .monitor import _collect_system_metrics, _render_metrics
+        from .monitor import _collect_system_metrics
         from .output_format import OutputFormatter
 
         # Lazy import for interactive prompts
-        from . import Prompt
+        from .main import Prompt
 
         loader = ConfigLoader()
         config = loader.load_config()
@@ -469,7 +469,7 @@ def visualize_query_cli(
             _write_placeholder_png(output_path)
 
         metrics = {**result.metrics, **_collect_system_metrics()}
-        console.print(_render_metrics(metrics))
+        visualize_metrics_cli(metrics)
 
     except Exception as e:
         # Any failure before/within orchestration should still yield a file

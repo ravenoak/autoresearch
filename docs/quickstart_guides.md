@@ -70,6 +70,13 @@ autoresearch visualize "What is the capital of France?" graph.png
 autoresearch search "Explain AI ethics" --visualize
 ```
 
+8. **Download graph exports directly after a search:**
+
+```bash
+autoresearch search "Explain AI ethics" --graphml graph.graphml \
+  --graph-json graph.json
+```
+
 ### Configuration
 
 1. **View current configuration:**
@@ -145,6 +152,8 @@ This will start the Streamlit server and open the GUI in your default web browse
      FEVER-style status badges (🟢 supported, 🔴 unsupported,
      🟡 needs review) together with the top evidence snippet and
      entailment score for each claim.
+   - Use the depth toggles above the results to reveal the knowledge graph
+     preview or enable graph export downloads when they are available.
 
 3. **Export results:**
    - Click the "Export" button

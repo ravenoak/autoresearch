@@ -303,6 +303,14 @@ autoresearch search "Explain AI ethics" --visualize
 The `--visualize` option now prints an ASCII summary of query metrics along with
 the knowledge graph table.
 
+To persist the full knowledge graph for offline analysis, write the exports
+directly to disk:
+
+```bash
+autoresearch search "Explain AI ethics" --graphml graph.graphml \
+  --graph-json graph.json
+```
+
 ## API Integration
 
 ### Running as a Service

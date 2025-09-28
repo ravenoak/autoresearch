@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, ContextManager, cast
 
+import contextlib
 import streamlit as st
 
 
@@ -12,7 +13,12 @@ def open_modal(title: str, **kwargs: Any) -> ContextManager[Any]:
 
     modal = getattr(st, "modal", None)
     if modal is None:
-        raise AttributeError("Streamlit does not expose modal support")
+        @contextlib.contextmanager
+        def _fallback_modal(*_: Any, **__: Any) -> ContextManager[Any]:
+            yield None
+
+        return _fallback_modal()
+
     modal_func = cast(Callable[..., ContextManager[Any]], modal)
     return modal_func(title, **kwargs)
 
@@ -47,7 +53,7 @@ def apply_theme_settings() -> None:
         st.markdown(
             """
             <style>
-            body, .stApp {background-color:#1c1c1c !important; color:#e0e0e0 !important;}
+            body, .stApp {background-color:#222 !important; color:#e0e0e0 !important;}
             a {color:#93c5fd !important;}
             .stButton>button {background-color:#444 !important; color:#fff !important;}
             .stSidebar {background-color:#2c2c2c !important;}

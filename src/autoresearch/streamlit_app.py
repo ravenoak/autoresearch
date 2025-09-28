@@ -35,7 +35,7 @@ from .config_utils import (
     get_config_presets,
     apply_preset,
 )
-from .output_format import OutputFormatter, build_depth_payload, OutputDepth
+from .output_format import OutputFormatter, OutputDepth
 from .ui.provenance import (
     audit_status_rollup,
     depth_sequence,
@@ -1127,23 +1127,30 @@ def display_log_viewer():
 
     # Display logs in a table
     if filtered_logs:
-        # Create a DataFrame for the logs
-        import pandas as pd
+        try:
+            import pandas as pd
+        except Exception:
+            st.warning("Log table unavailable; install pandas-compatible extras to enable.")
+        else:
+            dataframe_ctor = getattr(pd, "DataFrame", None)
+            if callable(dataframe_ctor):
+                log_df = dataframe_ctor(
+                    [
+                        {
+                            "Time": log["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
+                            "Level": log["level"],
+                            "Logger": log["logger"],
+                            "Message": log["message"],
+                        }
+                        for log in filtered_logs
+                    ]
+                )
 
-        log_df = pd.DataFrame(
-            [
-                {
-                    "Time": log["timestamp"].strftime("%Y-%m-%d %H:%M:%S"),
-                    "Level": log["level"],
-                    "Logger": log["logger"],
-                    "Message": log["message"],
-                }
-                for log in filtered_logs
-            ]
-        )
-
-        # Display the DataFrame
-        st.dataframe(log_df, use_container_width=True)
+                st.dataframe(log_df, use_container_width=True)
+            else:
+                st.warning(
+                    "Log table unavailable; pandas DataFrame constructor is missing."
+                )
     else:
         st.info("No logs match the current filters")
 
@@ -1210,14 +1217,15 @@ def display_query_input() -> None:
                 help="After typing, press Tab to reach the Run button",
             )
         with col_actions:
-            st.session_state.reasoning_mode = st.selectbox(
+            selected_reasoning_mode = st.selectbox(
                 "Reasoning Mode:",
                 options=[mode.value for mode in ReasoningMode],
                 index=[mode.value for mode in ReasoningMode].index(
                     st.session_state.config.reasoning_mode.value
                 ),
-                key="reasoning_mode",
+                key="reasoning_mode_widget",
             )
+            st.session_state.reasoning_mode = selected_reasoning_mode
             st.session_state.loops = st.slider(
                 "Loops:",
                 min_value=1,
@@ -1790,7 +1798,7 @@ def display_results(result: QueryResponse) -> None:
     selected_depth = OutputDepth(selected_value)
     st.session_state.ui_depth = selected_depth.value
 
-    payload = build_depth_payload(result, selected_depth)
+    payload = OutputFormatter.plan_response_depth(result, selected_depth)
     st.session_state["current_payload"] = payload
 
     toggle_defaults = section_toggle_defaults(payload)
@@ -1820,6 +1828,16 @@ def display_results(result: QueryResponse) -> None:
             "Show full trace",
             "Reveal reasoning steps and ReAct traces.",
         ),
+        (
+            "knowledge_graph",
+            "Show knowledge graph",
+            "Preview knowledge graph metrics and contradictions.",
+        ),
+        (
+            "graph_exports",
+            "Enable graph exports",
+            "Expose download links for GraphML and JSON exports.",
+        ),
     ]
     toggle_states: Dict[str, bool] = {}
     st.markdown("#### Depth controls")
@@ -1844,6 +1862,26 @@ def display_results(result: QueryResponse) -> None:
         toggle_states[name] = (
             st.session_state[state_key] if config["available"] else False
         )
+
+    graph_export_formats: list[str] = []
+    if toggle_states.get("graph_exports"):
+        available_formats = [
+            fmt
+            for fmt, available in payload.graph_exports.items()
+            if available
+        ]
+        if available_formats:
+            graph_export_formats = available_formats
+        elif payload.sections.get("knowledge_graph"):
+            graph_export_formats = ["graphml", "graph_json"]
+    if graph_export_formats:
+        payload = OutputFormatter.plan_response_depth(
+            result,
+            selected_depth,
+            graph_export_formats=graph_export_formats,
+            prefetch_graph_exports=True,
+        )
+        st.session_state["current_payload"] = payload
 
     st.markdown(
         "<div role='region' aria-label='Query results' aria-live='polite'>",
@@ -2115,101 +2153,129 @@ def display_results(result: QueryResponse) -> None:
 
     with tab5:
         st.markdown("<h3>Knowledge Graph</h3>", unsafe_allow_html=True)
-        summary = payload.knowledge_graph or {}
-        summary_displayed = False
-        if summary:
-            summary_displayed = True
-            counts_lines: list[str] = []
-            if (entities := summary.get("entity_count")) is not None:
-                counts_lines.append(f"- **Entities:** {entities}")
-            if (relations := summary.get("relation_count")) is not None:
-                counts_lines.append(f"- **Relations:** {relations}")
-            if (score := summary.get("contradiction_score")) is not None:
-                counts_lines.append(f"- **Contradiction score:** {score:.2f}")
-            if counts_lines:
-                st.markdown("### Summary")
-                st.markdown("\n".join(counts_lines))
+        knowledge_available = toggle_defaults["knowledge_graph"]["available"]
+        graph_exports_available = toggle_defaults["graph_exports"]["available"]
 
-            contradictions = summary.get("contradictions") or []
-            if contradictions:
-                st.markdown("### Contradictions")
-                for item in contradictions:
-                    if isinstance(item, dict):
-                        subject = item.get("subject") or item.get("text")
-                        predicate = item.get("predicate")
-                        objects = item.get("objects") or []
-                        if subject and predicate and isinstance(objects, list):
-                            joined = ", ".join(str(obj) for obj in objects if str(obj).strip())
-                            st.markdown(f"- {subject} — {predicate} → {joined or '—'}")
+        summary_displayed = False
+        if knowledge_available and toggle_states.get("knowledge_graph"):
+            summary = payload.knowledge_graph or {}
+            if summary:
+                summary_displayed = True
+                counts_lines: list[str] = []
+                if (entities := summary.get("entity_count")) is not None:
+                    counts_lines.append(f"- **Entities:** {entities}")
+                if (relations := summary.get("relation_count")) is not None:
+                    counts_lines.append(f"- **Relations:** {relations}")
+                if (score := summary.get("contradiction_score")) is not None:
+                    counts_lines.append(f"- **Contradiction score:** {score:.2f}")
+                if counts_lines:
+                    st.markdown("### Summary")
+                    st.markdown("\n".join(counts_lines))
+
+                contradictions = summary.get("contradictions") or []
+                if contradictions:
+                    st.markdown("### Contradictions")
+                    for item in contradictions:
+                        if isinstance(item, dict):
+                            subject = item.get("subject") or item.get("text")
+                            predicate = item.get("predicate")
+                            objects = item.get("objects") or []
+                            if subject and predicate and isinstance(objects, list):
+                                joined = ", ".join(
+                                    str(obj) for obj in objects if str(obj).strip()
+                                )
+                                st.markdown(
+                                    f"- {subject} — {predicate} → {joined or '—'}"
+                                )
+                            else:
+                                st.markdown(f"- {item}")
                         else:
                             st.markdown(f"- {item}")
-                    else:
-                        st.markdown(f"- {item}")
-                if note := payload.notes.get("knowledge_graph_contradictions"):
-                    st.caption(note)
+                    if note := payload.notes.get("knowledge_graph_contradictions"):
+                        st.caption(note)
 
-            paths = summary.get("multi_hop_paths") or []
-            if paths:
-                st.markdown("### Multi-hop paths")
-                for path in paths:
-                    if isinstance(path, list):
-                        labels = [str(node) for node in path if str(node).strip()]
-                        st.markdown(f"- {' → '.join(labels) if labels else '—'}")
-                    else:
-                        st.markdown(f"- {path}")
-                if note := payload.notes.get("knowledge_graph_paths"):
-                    st.caption(note)
-        elif note := payload.notes.get("knowledge_graph"):
-            st.info(note)
-        else:
-            st.info("Knowledge graph not generated yet.")
-
-        if payload.citations and payload.reasoning:
-            graph_image = create_knowledge_graph(result)
-            import base64
-
-            buffered = io.BytesIO()
-            graph_image.save(buffered, format="PNG")
-            encoded = base64.b64encode(buffered.getvalue()).decode()
-            st.markdown(
-                f"<img src='data:image/png;base64,{encoded}' alt='Knowledge graph visualization' style='width:100%;' />",
-                unsafe_allow_html=True,
-            )
-        elif not summary_displayed:
-            if payload.notes.get("citations") or payload.notes.get("reasoning"):
-                st.caption("Increase depth to view the knowledge graph visualization.")
+                paths = summary.get("multi_hop_paths") or []
+                if paths:
+                    st.markdown("### Multi-hop paths")
+                    for path in paths:
+                        if isinstance(path, list):
+                            labels = [str(node) for node in path if str(node).strip()]
+                            st.markdown(
+                                f"- {' → '.join(labels) if labels else '—'}"
+                            )
+                        else:
+                            st.markdown(f"- {path}")
+                    if note := payload.notes.get("knowledge_graph_paths"):
+                        st.caption(note)
+            elif note := payload.notes.get("knowledge_graph"):
+                st.caption(note)
             else:
-                st.caption("Not enough information to render the knowledge graph visualization.")
+                st.info("Knowledge graph not generated yet.")
+        elif not knowledge_available:
+            message = payload.notes.get("knowledge_graph") or "Knowledge graph not generated yet."
+            st.info(message)
+        elif note := payload.notes.get("knowledge_graph"):
+            st.caption(note)
+        else:
+            st.caption("Enable 'Show knowledge graph' to review provenance details.")
 
-        if payload.graph_exports:
-            st.markdown("### Graph exports")
-            commands: list[str] = []
-            if payload.graph_exports.get("graphml"):
-                commands.append("`--output graphml`")
-            if payload.graph_exports.get("graph_json"):
-                commands.append("`--output graph-json`")
-            if commands:
-                st.info("CLI shortcuts: " + " or ".join(dict.fromkeys(commands)))
-            from .storage import StorageManager
+        if toggle_states.get("knowledge_graph"):
+            if payload.citations and payload.reasoning:
+                graph_image = create_knowledge_graph(result)
+                import base64
 
-            if payload.graph_exports.get("graphml"):
-                graphml_data = StorageManager.export_knowledge_graph_graphml()
-                if graphml_data:
-                    st.download_button(
-                        label="Download GraphML",
-                        data=graphml_data,
-                        file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.graphml",
-                        mime="application/graphml+xml",
+                buffered = io.BytesIO()
+                graph_image.save(buffered, format="PNG")
+                encoded = base64.b64encode(buffered.getvalue()).decode()
+                st.markdown(
+                    f"<img src='data:image/png;base64,{encoded}' alt='Knowledge graph visualization' style='width:100%;' />",
+                    unsafe_allow_html=True,
+                )
+            elif not summary_displayed:
+                if payload.notes.get("citations") or payload.notes.get("reasoning"):
+                    st.caption("Increase depth to view the knowledge graph visualization.")
+                else:
+                    st.caption(
+                        "Not enough information to render the knowledge graph visualization."
                     )
-            if payload.graph_exports.get("graph_json"):
-                graph_json_data = StorageManager.export_knowledge_graph_json()
-                if graph_json_data:
-                    st.download_button(
-                        label="Download Graph JSON",
-                        data=graph_json_data,
-                        file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                        mime="application/json",
-                    )
+
+        if toggle_states.get("graph_exports"):
+            if payload.graph_exports:
+                st.markdown("### Graph exports")
+                commands: list[str] = []
+                if payload.graph_exports.get("graphml"):
+                    commands.extend(["`--graphml <path>`", "`--output graphml`"])
+                if payload.graph_exports.get("graph_json"):
+                    commands.extend(["`--graph-json <path>`", "`--output graph-json`"])
+                if commands:
+                    st.info("CLI shortcuts: " + " or ".join(dict.fromkeys(commands)))
+                exports_data = payload.graph_export_payloads
+                if payload.graph_exports.get("graphml"):
+                    graphml_data = exports_data.get("graphml")
+                    if graphml_data:
+                        st.download_button(
+                            label="Download GraphML",
+                            data=graphml_data,
+                            file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.graphml",
+                            mime="application/graphml+xml",
+                        )
+                if payload.graph_exports.get("graph_json"):
+                    graph_json_data = exports_data.get("graph_json")
+                    if graph_json_data:
+                        st.download_button(
+                            label="Download Graph JSON",
+                            data=graph_json_data,
+                            file_name=f"knowledge_graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json",
+                        )
+                if not exports_data:
+                    st.caption("Graph exports will be ready once the knowledge graph is persisted.")
+            elif note := payload.notes.get("graph_exports"):
+                st.caption(note)
+            else:
+                st.caption("Graph exports will be ready once the knowledge graph is persisted.")
+        elif graph_exports_available and toggle_states.get("knowledge_graph"):
+            st.caption("Enable 'Enable graph exports' to access download links.")
         elif note := payload.notes.get("graph_exports"):
             st.caption(note)
 
