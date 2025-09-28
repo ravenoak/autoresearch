@@ -266,6 +266,8 @@ def describe_depth_features() -> Dict[OutputDepth, Dict[str, bool]]:
             "key_findings": plan.include_key_findings,
             "claim_audits": plan.include_claims,
             "full_trace": plan.include_reasoning and plan.include_react_traces,
+            "knowledge_graph": plan.include_knowledge_graph,
+            "graph_exports": plan.include_graph_exports,
         }
     return features
 

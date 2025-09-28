@@ -23,6 +23,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   sweep complete linting, typing, and every unit, integration, and behavior
   suite while streaming the VSS loaders that previously blocked the gate.
   【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+- Layered evaluation exports now persist planner depth, routing deltas, and CSV
+  twins alongside the Parquet files. The CLI depth help mirrors the Streamlit
+  toggles for knowledge graphs and graph exports, while the Streamlit claim
+  table adds per-claim detail toggles and Socratic prompt hints. The CSV schema
+  lives at `baseline/evaluation/metrics_schema.csv` for downstream diffing.
+  【F:src/autoresearch/cli_utils.py†L288-L323】【F:src/autoresearch/streamlit_app.py†L208-L244】【F:src/autoresearch/evaluation/harness.py†L63-L286】【F:baseline/evaluation/metrics_schema.csv†L1-L20】
 - `task coverage` succeeds again at 92.4 % statement coverage and records the
   CLI remediation banner so future release sweeps can rely on the Task
   entrypoints instead of `uv` wrappers.【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】

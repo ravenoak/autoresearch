@@ -1,0 +1,22 @@
+field,description
+run_id,Unique identifier combining dataset name timestamp and nonce
+config_signature,First 16 hex characters of the orchestrator config SHA-256 digest
+dataset,Lowercase dataset identifier (truthfulqa fever hotpotqa)
+total_examples,Number of prompts processed in the run
+accuracy,Share of correct answers across processed examples
+citation_coverage,Share of answers containing at least one citation
+contradiction_rate,Share of claim audits marked unsupported or refuted
+avg_planner_depth,Average planner dependency depth measured from the task graph
+avg_routing_delta,Average model routing cost savings reported per example
+total_routing_delta,Sum of routing cost savings across the run
+avg_routing_decisions,Average number of routing decisions taken per example
+avg_latency_seconds,Average wall-clock latency in seconds
+avg_tokens_input,Average prompt tokens consumed per example
+avg_tokens_output,Average completion tokens emitted per example
+avg_tokens_total,Average total tokens consumed per example
+avg_cycles_completed,Average number of orchestration cycles completed
+gate_debate_rate,Fraction of gated examples that escalated into debate
+gate_exit_rate,Fraction of gated examples that exited without debate
+gated_example_ratio,Share of examples that triggered the gate policy
+summary_path,Path to the summary parquet or csv artifact for the run
+examples_path,Path to the per-example parquet or csv artifact for the run

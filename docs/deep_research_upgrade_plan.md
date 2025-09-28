@@ -50,9 +50,10 @@ keep truthfulness, verifiability, and cost discipline in balance.
      so downstream tools can visualise graph state per session.
 4. **Phase 4 – Evaluation Harness and Layered UX**
    - Automate TruthfulQA, FEVER, and HotpotQA smoke runs with KPIs.
-   - Add layered summaries, Socratic prompts, and per-claim audits to the
-     UI.
-   - Ensure CLI and GUI share consistent depth controls.
+   - Add layered summaries, Socratic prompts, per-claim audit toggles, and
+     claim badge guidance to the UI.
+   - Ensure CLI and GUI share consistent depth controls and expose the same
+     planner depth and routing metrics in CSV/Parquet exports.
 5. **Phase 5 – Cost-Aware Model Routing**
    - Assign models per role with budget-aware fallbacks.
    - Monitor token, latency, and accuracy metrics for regressions.

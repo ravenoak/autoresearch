@@ -22,7 +22,7 @@ from .evaluation import EvaluationHarness, available_datasets
 evaluation_app = typer.Typer(
     help=(
         "Run curated TruthfulQA, FEVER, and HotpotQA subsets and persist telemetry "
-        "metrics for longitudinal tracking."
+        "metrics for longitudinal tracking, including Parquet and CSV exports."
     )
 )
 
@@ -106,6 +106,10 @@ def run_suite(
             artifact_paths.add(summary.example_parquet)
         if summary.summary_parquet:
             artifact_paths.add(summary.summary_parquet)
+        if summary.example_csv:
+            artifact_paths.add(summary.example_csv)
+        if summary.summary_csv:
+            artifact_paths.add(summary.summary_csv)
 
     if artifact_paths:
         print_info("Artifacts:")

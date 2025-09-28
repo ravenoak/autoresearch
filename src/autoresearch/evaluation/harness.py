@@ -41,6 +41,9 @@ class ExampleResult:
     tokens_total: Optional[int] = None
     cycles_completed: Optional[int] = None
     gate_should_debate: Optional[bool] = None
+    planner_depth: Optional[float] = None
+    routing_delta: Optional[float] = None
+    routing_decision_count: Optional[int] = None
     gate_events: Sequence[Mapping[str, Any]] = field(default_factory=list)
     recorded_at: datetime = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
@@ -73,10 +76,16 @@ class EvaluationSummary:
     gate_debate_rate: Optional[float]
     gate_exit_rate: Optional[float]
     gated_example_ratio: Optional[float]
+    avg_planner_depth: Optional[float]
+    avg_routing_delta: Optional[float]
+    total_routing_delta: Optional[float]
+    avg_routing_decisions: Optional[float]
     config_signature: str
     duckdb_path: Optional[Path]
     example_parquet: Optional[Path]
     summary_parquet: Optional[Path]
+    example_csv: Optional[Path]
+    summary_csv: Optional[Path]
 
 
 class EvaluationHarness:
@@ -224,6 +233,11 @@ class EvaluationHarness:
             if isinstance(decision, bool):
                 gate_should_debate = decision
 
+        planner_depth = self._planner_depth(response)
+        routing_delta, routing_decision_count = self._routing_metrics(
+            execution_metrics
+        )
+
         result = ExampleResult(
             dataset=example.dataset,
             example_id=example.example_id,
@@ -240,6 +254,9 @@ class EvaluationHarness:
             tokens_total=total_tokens.get("total"),
             cycles_completed=cycles_completed,
             gate_should_debate=gate_should_debate,
+            planner_depth=planner_depth,
+            routing_delta=routing_delta,
+            routing_decision_count=routing_decision_count,
             gate_events=gate_events_raw,
             metadata={
                 "example_metadata": example.metadata,
@@ -272,6 +289,17 @@ class EvaluationHarness:
         avg_cycles_completed = self._mean_float(
             [float(r.cycles_completed) if r.cycles_completed is not None else None for r in results]
         )
+        avg_planner_depth = self._mean_float([r.planner_depth for r in results])
+        avg_routing_delta = self._mean_float([r.routing_delta for r in results])
+        total_routing_delta = self._sum_float([r.routing_delta for r in results])
+        avg_routing_decisions = self._mean_float(
+            [
+                float(r.routing_decision_count)
+                if r.routing_decision_count is not None
+                else None
+                for r in results
+            ]
+        )
 
         gate_decisions = [r.gate_should_debate for r in results if r.gate_should_debate is not None]
         gated_examples = len(gate_decisions)
@@ -285,6 +313,8 @@ class EvaluationHarness:
 
         example_parquet: Optional[Path] = None
         summary_parquet: Optional[Path] = None
+        example_csv: Optional[Path] = None
+        summary_csv: Optional[Path] = None
 
         needs_persistence = store_duckdb or store_parquet
         if needs_persistence:
@@ -307,10 +337,19 @@ class EvaluationHarness:
                 gate_debate_rate,
                 gate_exit_rate,
                 gated_example_ratio,
+                avg_planner_depth,
+                avg_routing_delta,
+                total_routing_delta,
+                avg_routing_decisions,
                 config_signature,
             )
         if store_parquet:
-            example_parquet, summary_parquet = self._export_parquet(run_id)
+            (
+                example_parquet,
+                summary_parquet,
+                example_csv,
+                summary_csv,
+            ) = self._export_artifacts(run_id)
         if needs_persistence and not store_duckdb:
             self._purge_run(run_id)
 
@@ -331,10 +370,16 @@ class EvaluationHarness:
             gate_debate_rate=gate_debate_rate,
             gate_exit_rate=gate_exit_rate,
             gated_example_ratio=gated_example_ratio,
+            avg_planner_depth=avg_planner_depth,
+            avg_routing_delta=avg_routing_delta,
+            total_routing_delta=total_routing_delta,
+            avg_routing_decisions=avg_routing_decisions,
             config_signature=config_signature,
             duckdb_path=self.duckdb_path if store_duckdb else None,
             example_parquet=example_parquet,
             summary_parquet=summary_parquet,
+            example_csv=example_csv,
+            summary_csv=summary_csv,
         )
 
     def _ensure_duckdb_schema(self) -> None:
@@ -358,6 +403,9 @@ class EvaluationHarness:
                     tokens_total BIGINT,
                     cycles_completed INTEGER,
                     gate_should_debate BOOLEAN,
+                    planner_depth DOUBLE,
+                    routing_delta DOUBLE,
+                    routing_decision_count INTEGER,
                     gate_events JSON,
                     metadata JSON,
                     recorded_at TIMESTAMP,
@@ -373,6 +421,15 @@ class EvaluationHarness:
             )
             conn.execute(
                 "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS gate_events JSON"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS planner_depth DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS routing_delta DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS routing_decision_count INTEGER"
             )
             conn.execute(
                 """
@@ -393,6 +450,10 @@ class EvaluationHarness:
                     gate_debate_rate DOUBLE,
                     gate_exit_rate DOUBLE,
                     gated_example_ratio DOUBLE,
+                    avg_planner_depth DOUBLE,
+                    avg_routing_delta DOUBLE,
+                    total_routing_delta DOUBLE,
+                    avg_routing_decisions DOUBLE,
                     config_signature VARCHAR
                 )
                 """
@@ -408,6 +469,18 @@ class EvaluationHarness:
             )
             conn.execute(
                 "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS gated_example_ratio DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS avg_planner_depth DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS avg_routing_delta DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS total_routing_delta DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS avg_routing_decisions DOUBLE"
             )
 
     def _persist_examples(
@@ -434,6 +507,9 @@ class EvaluationHarness:
                 result.tokens_total,
                 result.cycles_completed,
                 result.gate_should_debate,
+                result.planner_depth,
+                result.routing_delta,
+                result.routing_decision_count,
                 json.dumps(result.gate_events, default=str),
                 json.dumps(result.metadata, default=str),
                 result.recorded_at,
@@ -443,7 +519,7 @@ class EvaluationHarness:
         ]
         insert_sql = (
             "INSERT INTO evaluation_results VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.executemany(insert_sql, rows)
@@ -475,11 +551,15 @@ class EvaluationHarness:
         gate_debate_rate: Optional[float],
         gate_exit_rate: Optional[float],
         gated_example_ratio: Optional[float],
+        avg_planner_depth: Optional[float],
+        avg_routing_delta: Optional[float],
+        total_routing_delta: Optional[float],
+        avg_routing_decisions: Optional[float],
         config_signature: str,
     ) -> None:
         insert_sql = (
             "INSERT INTO evaluation_run_summary VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.execute(
@@ -501,17 +581,25 @@ class EvaluationHarness:
                     gate_debate_rate,
                     gate_exit_rate,
                     gated_example_ratio,
+                    avg_planner_depth,
+                    avg_routing_delta,
+                    total_routing_delta,
+                    avg_routing_decisions,
                     config_signature,
                 ),
             )
 
-    def _export_parquet(self, run_id: str) -> tuple[Path, Path]:
+    def _export_artifacts(self, run_id: str) -> tuple[Path, Path, Path, Path]:
         timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         example_parquet = self.output_dir / f"{run_id}_examples_{timestamp}.parquet"
         summary_parquet = self.output_dir / f"{run_id}_summary_{timestamp}.parquet"
+        example_csv = self.output_dir / f"{run_id}_examples_{timestamp}.csv"
+        summary_csv = self.output_dir / f"{run_id}_summary_{timestamp}.csv"
         with duckdb.connect(self._duckdb_uri()) as conn:
             sanitized_examples = str(example_parquet).replace("'", "''")
             sanitized_summary = str(summary_parquet).replace("'", "''")
+            sanitized_examples_csv = str(example_csv).replace("'", "''")
+            sanitized_summary_csv = str(summary_csv).replace("'", "''")
             conn.execute(
                 f"COPY (SELECT * FROM evaluation_results WHERE run_id = ?) "
                 f"TO '{sanitized_examples}' (FORMAT PARQUET)",
@@ -522,7 +610,17 @@ class EvaluationHarness:
                 f"TO '{sanitized_summary}' (FORMAT PARQUET)",
                 [run_id],
             )
-        return example_parquet, summary_parquet
+            conn.execute(
+                f"COPY (SELECT * FROM evaluation_results WHERE run_id = ?) "
+                f"TO '{sanitized_examples_csv}' (FORMAT CSV, HEADER TRUE)",
+                [run_id],
+            )
+            conn.execute(
+                f"COPY (SELECT * FROM evaluation_run_summary WHERE run_id = ?) "
+                f"TO '{sanitized_summary_csv}' (FORMAT CSV, HEADER TRUE)",
+                [run_id],
+            )
+        return example_parquet, summary_parquet, example_csv, summary_csv
 
     @staticmethod
     def _mean_boolean(values: Iterable[Optional[bool]]) -> Optional[float]:
@@ -537,6 +635,13 @@ class EvaluationHarness:
         if not filtered:
             return None
         return sum(filtered) / len(filtered)
+
+    @staticmethod
+    def _sum_float(values: Iterable[Optional[float]]) -> Optional[float]:
+        filtered = [value for value in values if value is not None]
+        if not filtered:
+            return None
+        return sum(filtered)
 
     @staticmethod
     def _normalise_datasets(datasets: Sequence[str]) -> List[str]:
@@ -595,6 +700,79 @@ class EvaluationHarness:
     @staticmethod
     def _normalise_text(text: str) -> str:
         return " ".join(text.strip().lower().split())
+
+    def _planner_depth(self, response: QueryResponse) -> Optional[float]:
+        graph_payload: Any = getattr(response, "task_graph", None)
+        if isinstance(graph_payload, Mapping):
+            depth = self._task_graph_depth(graph_payload)
+            if depth is not None:
+                return depth
+        metrics = getattr(response, "metrics", {})
+        planner_meta = metrics.get("planner") if isinstance(metrics, Mapping) else None
+        if isinstance(planner_meta, Mapping):
+            telemetry = planner_meta.get("task_graph")
+            if isinstance(telemetry, Mapping):
+                depth_val = telemetry.get("max_depth") or telemetry.get("depth")
+                if isinstance(depth_val, (int, float)):
+                    return float(depth_val)
+        return None
+
+    def _task_graph_depth(self, payload: Mapping[str, Any]) -> Optional[float]:
+        tasks_raw = payload.get("tasks")
+        if not isinstance(tasks_raw, Sequence):
+            return None
+        nodes: dict[str, list[str]] = {}
+        for entry in tasks_raw:
+            if not isinstance(entry, Mapping):
+                continue
+            node_id = str(entry.get("id", "")).strip() or str(len(nodes))
+            depends_raw = entry.get("depends_on")
+            if isinstance(depends_raw, Sequence) and not isinstance(depends_raw, (str, bytes)):
+                depends = [str(dep).strip() for dep in depends_raw if str(dep).strip()]
+            else:
+                depends = []
+            nodes[node_id] = depends
+        if not nodes:
+            return None
+
+        memo: dict[str, int] = {}
+
+        def depth(node_id: str, trail: set[str]) -> int:
+            if node_id in memo:
+                return memo[node_id]
+            if node_id in trail:
+                return 1
+            trail.add(node_id)
+            dependencies = nodes.get(node_id, [])
+            if not dependencies:
+                memo[node_id] = 1
+            else:
+                memo[node_id] = 1 + max(depth(dep, trail) for dep in dependencies if dep in nodes)
+            trail.remove(node_id)
+            return memo[node_id]
+
+        try:
+            return float(max(depth(node, set()) for node in nodes))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _routing_metrics(
+        execution_metrics: Mapping[str, Any]
+    ) -> tuple[Optional[float], Optional[int]]:
+        savings_meta = execution_metrics.get("model_routing_cost_savings")
+        routing_delta: Optional[float] = None
+        if isinstance(savings_meta, Mapping):
+            total = savings_meta.get("total")
+            try:
+                routing_delta = float(total)
+            except (TypeError, ValueError):
+                routing_delta = None
+        decisions = execution_metrics.get("model_routing_decisions")
+        routing_count: Optional[int] = None
+        if isinstance(decisions, Sequence) and not isinstance(decisions, (str, bytes)):
+            routing_count = len(decisions)
+        return routing_delta, routing_count
 
     def _duckdb_uri(self) -> str:
         return str(self.duckdb_path)
