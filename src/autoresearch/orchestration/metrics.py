@@ -7,8 +7,9 @@ instead of unchecked ``type: ignore`` directives.
 
 import importlib
 import logging
+import math
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from os import getenv
 from pathlib import Path
@@ -56,6 +57,30 @@ KUZU_QUERY_TIME = Histogram(
     "autoresearch_kuzu_query_seconds",
     "Time spent executing Kuzu queries",
 )
+GRAPH_BUILD_COUNTER = Counter(
+    "autoresearch_graph_ingestions_total",
+    "Total knowledge graph ingestion runs captured",
+)
+GRAPH_ENTITY_COUNTER = Counter(
+    "autoresearch_graph_entities_total",
+    "Total entities processed during graph ingestions",
+)
+GRAPH_RELATION_COUNTER = Counter(
+    "autoresearch_graph_relations_total",
+    "Total relations processed during graph ingestions",
+)
+GRAPH_CONTRADICTION_COUNTER = Counter(
+    "autoresearch_graph_contradictions_total",
+    "Total contradictions detected during graph ingestions",
+)
+GRAPH_NEIGHBOR_COUNTER = Counter(
+    "autoresearch_graph_neighbor_edges_total",
+    "Total neighbor edges exposed to the planner",
+)
+GRAPH_BUILD_SECONDS = Histogram(
+    "autoresearch_graph_ingestion_seconds",
+    "Latency of knowledge graph ingestion runs",
+)
 
 
 def ensure_counters_initialized() -> None:
@@ -63,6 +88,11 @@ def ensure_counters_initialized() -> None:
     QUERY_COUNTER.inc(0)
     TOKENS_IN_COUNTER.inc(0)
     TOKENS_OUT_COUNTER.inc(0)
+    GRAPH_BUILD_COUNTER.inc(0)
+    GRAPH_ENTITY_COUNTER.inc(0)
+    GRAPH_RELATION_COUNTER.inc(0)
+    GRAPH_CONTRADICTION_COUNTER.inc(0)
+    GRAPH_NEIGHBOR_COUNTER.inc(0)
 
 
 def _metric_accessor(metric: MetricWrapperBase, attr: str) -> Any | None:
@@ -101,6 +131,18 @@ def snapshot_counter(counter: MetricWrapperBase) -> float:
     except Exception:  # pragma: no cover - defensive
         log.debug("Failed to read counter %s; assuming zero", counter, exc_info=True)
         return 0.0
+
+
+def _coerce_float(value: Any) -> float:
+    """Return ``value`` converted to ``float`` with NaN/inf protection."""
+
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(result):
+        return 0.0
+    return result
 
 
 def restore_counter(counter: MetricWrapperBase, value: float) -> None:
@@ -154,10 +196,16 @@ def reset_metrics() -> None:
         TOKENS_OUT_COUNTER,
         EVICTION_COUNTER,
         KUZU_QUERY_COUNTER,
+        GRAPH_BUILD_COUNTER,
+        GRAPH_ENTITY_COUNTER,
+        GRAPH_RELATION_COUNTER,
+        GRAPH_CONTRADICTION_COUNTER,
+        GRAPH_NEIGHBOR_COUNTER,
     ]
     for counter in counters:
         reset_counter(counter)
     reset_histogram(KUZU_QUERY_TIME)
+    reset_histogram(GRAPH_BUILD_SECONDS)
 
 
 @contextmanager
@@ -170,33 +218,55 @@ def temporary_metrics() -> Iterator[None]:
         TOKENS_OUT_COUNTER,
         EVICTION_COUNTER,
         KUZU_QUERY_COUNTER,
+        GRAPH_BUILD_COUNTER,
+        GRAPH_ENTITY_COUNTER,
+        GRAPH_RELATION_COUNTER,
+        GRAPH_CONTRADICTION_COUNTER,
+        GRAPH_NEIGHBOR_COUNTER,
     ]
     snapshot = [snapshot_counter(counter) for counter in counters]
-    hist_sum_accessor = _metric_accessor(KUZU_QUERY_TIME, "_sum")
-    hist_count_accessor = _metric_accessor(KUZU_QUERY_TIME, "_count")
-    hist_sum = hist_sum_accessor.get() if hist_sum_accessor is not None else 0
-    hist_count = hist_count_accessor.get() if hist_count_accessor is not None else 0
+    histograms: list[Histogram] = [KUZU_QUERY_TIME, GRAPH_BUILD_SECONDS]
+    histogram_snapshots: list[
+        tuple[
+            Histogram,
+            Any | None,
+            Any,
+            Any | None,
+            Any,
+        ]
+    ] = []
+    for histogram in histograms:
+        sum_accessor = _metric_accessor(histogram, "_sum")
+        count_accessor = _metric_accessor(histogram, "_count")
+        sum_value = sum_accessor.get() if sum_accessor is not None else 0
+        count_value = count_accessor.get() if count_accessor is not None else 0
+        histogram_snapshots.append(
+            (histogram, sum_accessor, sum_value, count_accessor, count_value)
+        )
     try:
         yield
     finally:
         for counter, value in zip(counters, snapshot):
             restore_counter(counter, value)
-        if hist_sum_accessor is not None:
-            try:
-                hist_sum_accessor.set(hist_sum)
-            except Exception:  # pragma: no cover
-                log.debug(
-                    "Failed to restore histogram sum for %s", KUZU_QUERY_TIME, exc_info=True
-                )
-        if hist_count_accessor is not None:
-            try:
-                hist_count_accessor.set(hist_count)
-            except Exception:  # pragma: no cover
-                log.debug(
-                    "Failed to restore histogram count for %s",
-                    KUZU_QUERY_TIME,
-                    exc_info=True,
-                )
+        for histogram, sum_accessor, sum_value, count_accessor, count_value in histogram_snapshots:
+            if sum_accessor is not None:
+                try:
+                    sum_accessor.set(sum_value)
+                except Exception:  # pragma: no cover
+                    log.debug(
+                        "Failed to restore histogram sum for %s",
+                        histogram,
+                        exc_info=True,
+                    )
+            if count_accessor is not None:
+                try:
+                    count_accessor.set(count_value)
+                except Exception:  # pragma: no cover
+                    log.debug(
+                        "Failed to restore histogram count for %s",
+                        histogram,
+                        exc_info=True,
+                    )
 
 
 def _get_system_usage() -> tuple[float, float, float, float]:  # noqa: E302
@@ -338,6 +408,7 @@ class OrchestrationMetrics:
         self.agent_token_samples: dict[str, list[tuple[int, int]]] = {}
         self._max_sample_history = 20
         self.routing_decisions: list[RoutingDecision] = []
+        self.graph_ingestions: list[dict[str, Any]] = []
 
     def start_cycle(self) -> None:
         """Mark the start of a new cycle."""
@@ -428,7 +499,185 @@ class OrchestrationMetrics:
             "contradiction_samples": decision.telemetry.get("contradiction_samples"),
             "graph": decision.telemetry.get("graph"),
         }
+        graph_meta = event.get("graph")
+        if isinstance(graph_meta, Mapping) and graph_meta:
+            self.record_graph_build(graph_meta)
         self.gate_events.append(event)
+
+    def record_graph_build(
+        self,
+        metadata: Mapping[str, Any] | None,
+        *,
+        summary: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Capture telemetry about a knowledge graph ingestion run."""
+
+        if not metadata or not isinstance(metadata, Mapping):
+            return
+
+        ingestion_meta = metadata.get("ingestion")
+        entity_count = 0.0
+        relation_count = 0.0
+        ingestion_seconds = 0.0
+        storage_latency: dict[str, float] = {}
+        if isinstance(ingestion_meta, Mapping):
+            entity_count = max(0.0, _coerce_float(ingestion_meta.get("entity_count")))
+            relation_count = max(0.0, _coerce_float(ingestion_meta.get("relation_count")))
+            ingestion_seconds = max(0.0, _coerce_float(ingestion_meta.get("seconds")))
+            latency_meta = ingestion_meta.get("storage_latency")
+            if isinstance(latency_meta, Mapping):
+                for key, value in latency_meta.items():
+                    storage_latency[str(key)] = max(0.0, _coerce_float(value))
+
+        if entity_count <= 0.0 and relation_count <= 0.0 and not metadata.get("paths"):
+            # Skip empty ingestions that did not add any graph structure.
+            return
+
+        GRAPH_BUILD_COUNTER.inc()
+        if entity_count > 0.0:
+            GRAPH_ENTITY_COUNTER.inc(entity_count)
+        if relation_count > 0.0:
+            GRAPH_RELATION_COUNTER.inc(relation_count)
+        if ingestion_seconds > 0.0:
+            GRAPH_BUILD_SECONDS.observe(ingestion_seconds)
+
+        contradictions_meta = metadata.get("contradictions")
+        contradiction_count = 0
+        raw_contradiction_score = 0.0
+        weighted_contradiction_score = 0.0
+        contradiction_weight = 0.0
+        contradiction_sample: list[dict[str, Any]] = []
+        if isinstance(contradictions_meta, Mapping):
+            items_raw = contradictions_meta.get("items")
+            if isinstance(items_raw, Sequence):
+                contradiction_count = len(items_raw)
+                for item in items_raw:
+                    if not isinstance(item, Mapping):
+                        continue
+                    subject = str(item.get("subject", ""))
+                    predicate = str(item.get("predicate", ""))
+                    objects_value = item.get("objects")
+                    objects: list[str] = []
+                    if isinstance(objects_value, Sequence):
+                        for obj in objects_value:
+                            objects.append(str(obj))
+                    contradiction_sample.append(
+                        {
+                            "subject": subject,
+                            "predicate": predicate,
+                            "objects": objects,
+                        }
+                    )
+                    if len(contradiction_sample) >= 5:
+                        break
+            raw_contradiction_score = max(
+                0.0, _coerce_float(contradictions_meta.get("raw_score"))
+            )
+            weighted_contradiction_score = max(
+                0.0, _coerce_float(contradictions_meta.get("weighted_score"))
+            )
+            contradiction_weight = max(
+                0.0, _coerce_float(contradictions_meta.get("weight"))
+            )
+        if contradiction_count > 0:
+            GRAPH_CONTRADICTION_COUNTER.inc(contradiction_count)
+
+        neighbors_raw = metadata.get("neighbors")
+        neighbor_node_count = 0
+        neighbor_edge_count = 0
+        neighbor_sample: dict[str, list[dict[str, str]]] = {}
+        if isinstance(neighbors_raw, Mapping):
+            for node, edges in neighbors_raw.items():
+                if not isinstance(edges, Sequence):
+                    continue
+                neighbor_node_count += 1
+                edge_list = list(edges)
+                neighbor_edge_count += len(edge_list)
+                if len(neighbor_sample) >= 3:
+                    continue
+                sanitized_edges: list[dict[str, str]] = []
+                for edge in edge_list[:5]:
+                    if not isinstance(edge, Mapping):
+                        continue
+                    sanitized_edges.append(
+                        {
+                            "target": str(edge.get("target", "")),
+                            "predicate": str(edge.get("predicate", "")),
+                            "direction": str(edge.get("direction", "")),
+                        }
+                    )
+                if sanitized_edges:
+                    neighbor_sample[str(node)] = sanitized_edges
+        if neighbor_edge_count > 0:
+            GRAPH_NEIGHBOR_COUNTER.inc(neighbor_edge_count)
+
+        paths_raw = metadata.get("paths")
+        path_count = 0
+        path_sample: list[list[str]] = []
+        if isinstance(paths_raw, Sequence):
+            for path in paths_raw:
+                if not isinstance(path, Sequence):
+                    continue
+                serialised = [str(node) for node in path]
+                if not serialised:
+                    continue
+                path_count += 1
+                if len(path_sample) < 3:
+                    path_sample.append(serialised)
+
+        similarity_meta = metadata.get("similarity")
+        similarity_raw = 0.0
+        similarity_weighted = 0.0
+        similarity_weight = 0.0
+        if isinstance(similarity_meta, Mapping):
+            similarity_raw = max(0.0, _coerce_float(similarity_meta.get("raw_score")))
+            similarity_weighted = max(
+                0.0, _coerce_float(similarity_meta.get("weighted_score"))
+            )
+            similarity_weight = max(0.0, _coerce_float(similarity_meta.get("weight")))
+
+        provenance_count = 0
+        if summary and isinstance(summary, Mapping):
+            provenance = summary.get("provenance")
+            if isinstance(provenance, Sequence):
+                provenance_count = len(provenance)
+
+        record = {
+            "timestamp": time.time(),
+            "entity_count": entity_count,
+            "relation_count": relation_count,
+            "ingestion_seconds": ingestion_seconds,
+            "storage_latency": storage_latency,
+            "contradiction_count": float(contradiction_count),
+            "contradiction_score": raw_contradiction_score,
+            "contradiction_weighted": weighted_contradiction_score,
+            "contradiction_weight": contradiction_weight,
+            "contradiction_sample": contradiction_sample,
+            "neighbor_node_count": float(neighbor_node_count),
+            "neighbor_edge_count": float(neighbor_edge_count),
+            "neighbor_sample": neighbor_sample,
+            "path_count": float(path_count),
+            "path_sample": path_sample,
+            "similarity_score": similarity_raw,
+            "similarity_weighted": similarity_weighted,
+            "similarity_weight": similarity_weight,
+            "provenance_count": float(provenance_count),
+        }
+
+        self.graph_ingestions.append(record)
+        if len(self.graph_ingestions) > self._max_sample_history:
+            del self.graph_ingestions[0 : len(self.graph_ingestions) - self._max_sample_history]
+
+        log.info(
+            "Recorded graph ingestion metrics",
+            extra={
+                "graph_entities": entity_count,
+                "graph_relations": relation_count,
+                "graph_contradictions": contradiction_count,
+                "graph_neighbors": neighbor_edge_count,
+                "graph_ingestion_seconds": ingestion_seconds,
+            },
+        )
 
     def _log_release_tokens(self) -> None:
         """Persist token counts for this release."""
@@ -488,6 +737,145 @@ class OrchestrationMetrics:
             savings_by_agent[decision.agent] += savings
         total_savings = sum(savings_by_agent.values())
 
+        graph_summary_payload: dict[str, Any] | None = None
+        if self.graph_ingestions:
+            runs = len(self.graph_ingestions)
+            totals: dict[str, float | dict[str, float]] = {
+                "entity_count": 0.0,
+                "relation_count": 0.0,
+                "ingestion_seconds": 0.0,
+                "contradiction_count": 0.0,
+                "contradiction_score": 0.0,
+                "contradiction_weighted": 0.0,
+                "contradiction_weight": 0.0,
+                "neighbor_node_count": 0.0,
+                "neighbor_edge_count": 0.0,
+                "path_count": 0.0,
+                "provenance_count": 0.0,
+                "similarity_score": 0.0,
+                "similarity_weighted": 0.0,
+                "similarity_weight": 0.0,
+            }
+            storage_totals: dict[str, float] = {}
+            for record in self.graph_ingestions:
+                totals["entity_count"] = float(totals["entity_count"]) + _coerce_float(
+                    record.get("entity_count")
+                )
+                totals["relation_count"] = float(totals["relation_count"]) + _coerce_float(
+                    record.get("relation_count")
+                )
+                totals["ingestion_seconds"] = float(
+                    totals["ingestion_seconds"]
+                ) + _coerce_float(record.get("ingestion_seconds"))
+                totals["contradiction_count"] = float(
+                    totals["contradiction_count"]
+                ) + _coerce_float(record.get("contradiction_count"))
+                totals["contradiction_score"] = float(
+                    totals["contradiction_score"]
+                ) + _coerce_float(record.get("contradiction_score"))
+                totals["contradiction_weighted"] = float(
+                    totals["contradiction_weighted"]
+                ) + _coerce_float(record.get("contradiction_weighted"))
+                totals["contradiction_weight"] = float(
+                    totals["contradiction_weight"]
+                ) + _coerce_float(record.get("contradiction_weight"))
+                totals["neighbor_node_count"] = float(
+                    totals["neighbor_node_count"]
+                ) + _coerce_float(record.get("neighbor_node_count"))
+                totals["neighbor_edge_count"] = float(
+                    totals["neighbor_edge_count"]
+                ) + _coerce_float(record.get("neighbor_edge_count"))
+                totals["path_count"] = float(totals["path_count"]) + _coerce_float(
+                    record.get("path_count")
+                )
+                totals["provenance_count"] = float(
+                    totals["provenance_count"]
+                ) + _coerce_float(record.get("provenance_count"))
+                totals["similarity_score"] = float(
+                    totals["similarity_score"]
+                ) + _coerce_float(record.get("similarity_score"))
+                totals["similarity_weighted"] = float(
+                    totals["similarity_weighted"]
+                ) + _coerce_float(record.get("similarity_weighted"))
+                totals["similarity_weight"] = float(
+                    totals["similarity_weight"]
+                ) + _coerce_float(record.get("similarity_weight"))
+                latency_meta = record.get("storage_latency")
+                if isinstance(latency_meta, Mapping):
+                    for key, value in latency_meta.items():
+                        storage_totals[str(key)] = storage_totals.get(str(key), 0.0) + _coerce_float(
+                            value
+                        )
+            totals["storage_latency"] = dict(storage_totals)
+            averages: dict[str, float | dict[str, float]] = {}
+            numeric_keys = [
+                "entity_count",
+                "relation_count",
+                "ingestion_seconds",
+                "contradiction_count",
+                "contradiction_score",
+                "contradiction_weighted",
+                "contradiction_weight",
+                "neighbor_node_count",
+                "neighbor_edge_count",
+                "path_count",
+                "provenance_count",
+                "similarity_score",
+                "similarity_weighted",
+                "similarity_weight",
+            ]
+            for key in numeric_keys:
+                averages[key] = float(totals[key]) / runs if runs else 0.0
+            averages["storage_latency"] = {
+                key: value / runs if runs else 0.0 for key, value in storage_totals.items()
+            }
+
+            latest_raw = self.graph_ingestions[-1]
+            latest_payload = dict(latest_raw)
+            latency_payload = latest_payload.get("storage_latency")
+            if isinstance(latency_payload, Mapping):
+                latest_payload["storage_latency"] = {
+                    str(key): _coerce_float(value) for key, value in latency_payload.items()
+                }
+            else:
+                latest_payload["storage_latency"] = {}
+            contradiction_sample = latest_payload.get("contradiction_sample")
+            if isinstance(contradiction_sample, Sequence):
+                latest_payload["contradiction_sample"] = [
+                    dict(item) for item in contradiction_sample if isinstance(item, Mapping)
+                ]
+            else:
+                latest_payload["contradiction_sample"] = []
+            neighbor_sample = latest_raw.get("neighbor_sample")
+            if isinstance(neighbor_sample, Mapping):
+                latest_payload["neighbor_sample"] = {
+                    str(node): [
+                        dict(edge)
+                        for edge in edges
+                        if isinstance(edge, Mapping)
+                    ]
+                    for node, edges in neighbor_sample.items()
+                    if isinstance(edges, Sequence)
+                }
+            else:
+                latest_payload["neighbor_sample"] = {}
+            path_sample = latest_raw.get("path_sample")
+            if isinstance(path_sample, Sequence):
+                latest_payload["path_sample"] = [
+                    [str(node) for node in path]
+                    for path in path_sample
+                    if isinstance(path, Sequence)
+                ]
+            else:
+                latest_payload["path_sample"] = []
+
+            graph_summary_payload = {
+                "runs": runs,
+                "totals": totals,
+                "averages": averages,
+                "latest": latest_payload,
+            }
+
         return {
             "total_duration_seconds": total_duration,
             "cycles_completed": len(self.cycle_durations),
@@ -522,6 +910,7 @@ class OrchestrationMetrics:
                 "total": total_savings,
                 "by_agent": savings_by_agent,
             },
+            "graph_ingestion": graph_summary_payload or {},
         }
 
     def get_agent_usage_stats(
