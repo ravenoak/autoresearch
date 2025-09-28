@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence, cast
 
 from ..config.loader import get_config
-from ..kg_reasoning import KnowledgeGraphPipeline
+from ..knowledge import SessionGraphPipeline
 from ..logging_utils import get_logger
 
 # Keep a reference to the original get_config to detect monkeypatching in tests
@@ -199,7 +199,7 @@ class SearchContext:
         self.topic_model: BERTopicType | None = None
         self.dictionary: dict[str, int] | None = None
         self.nlp: Language | None = None
-        self.graph_pipeline: KnowledgeGraphPipeline = KnowledgeGraphPipeline()
+        self.graph_pipeline: SessionGraphPipeline = SessionGraphPipeline()
         self._graph_summary: dict[str, Any] = {}
         self._scout_metadata: dict[str, Any] = {}
         self._scout_lock = threading.Lock()
@@ -390,7 +390,7 @@ class SearchContext:
             A list of simple paths represented as ordered entity labels.
         """
 
-        return self.graph_pipeline.find_paths(source, target, max_depth=max_depth, limit=limit)
+        return self.graph_pipeline.paths(source, target, max_depth=max_depth, limit=limit)
 
     def export_graph_artifacts(self) -> dict[str, str]:
         """Return serialized GraphML and JSON knowledge graph artefacts.
