@@ -1,4 +1,5 @@
 import types
+from collections import defaultdict
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -71,6 +72,15 @@ def _stubbed_search_environment(monkeypatch, request):
 
             return search_instance if subject is Search else subject
 
+        lookup_binding_counts = defaultdict(lambda: {"instance": 0, "class": 0})
+        lookup_path_counts = defaultdict(lambda: {"instance": 0, "class": 0})
+        compute_binding_counts = defaultdict(lambda: {"instance": 0, "class": 0})
+
+        vector_event_counters = {
+            "lookup": lookup_path_counts,
+            "compute": compute_binding_counts,
+        }
+
         def _stub_embedding(subject, query_embedding, max_results: int = 5):
             """Accept both instance and class callers to align with hybridmethod semantics."""
             if subject is Search:
@@ -90,13 +100,21 @@ def _stubbed_search_environment(monkeypatch, request):
             embedding_calls.append(binding_label)
             embedding_events.append((phase, binding_label))
             embedding_path_events.append((phase, path_binding))
+
+            if binding_label in {"instance", "class"}:
+                lookup_binding_counts[phase][binding_label] += 1
+            if path_binding in {"instance", "class"}:
+                lookup_path_counts[phase][path_binding] += 1
             return {}
 
         def _stub_compute_embedding(subject, query: str):
             """Return a deterministic embedding when vector search extras are simulated."""
 
             target = _resolve_subject(subject)
-            compute_calls.append((phase, "instance" if target is search_instance else "other"))
+            binding = "instance" if target is search_instance else "other"
+            compute_calls.append((phase, binding))
+            if binding in {"instance", "class"}:
+                compute_binding_counts[phase][binding] += 1
             if vector_search_enabled:
                 return [0.42]
             return None
@@ -170,6 +188,10 @@ def _stubbed_search_environment(monkeypatch, request):
             embedding_calls=embedding_calls,
             embedding_events=embedding_events,
             embedding_path_events=embedding_path_events,
+            embedding_lookup_binding_counts=lookup_binding_counts,
+            embedding_lookup_path_counts=lookup_path_counts,
+            compute_binding_counts=compute_binding_counts,
+            vector_search_event_counters=vector_event_counters,
             compute_calls=compute_calls,
             add_calls=add_calls,
             rank_calls=rank_calls,
@@ -202,16 +224,30 @@ def test_orchestrator_parse_config_basic():
         pytest.param(
             {"vector_search": False},
             {
-                "search-instance": {"instance": 0, "class": 0},
-                "search-class": {"instance": 0, "class": 0},
+                "lookup": {
+                    "search-instance": {"instance": 0, "class": 0},
+                    "search-class": {"instance": 0, "class": 0},
+                    "direct": {"instance": 2, "class": 0},
+                },
+                "compute": {
+                    "search-instance": {"instance": 0, "class": 0},
+                    "search-class": {"instance": 0, "class": 0},
+                },
             },
             id="legacy",
         ),
         pytest.param(
             {"vector_search": True},
             {
-                "search-instance": {"instance": 0, "class": 0},
-                "search-class": {"instance": 0, "class": 0},
+                "lookup": {
+                    "search-instance": {"instance": 0, "class": 0},
+                    "search-class": {"instance": 0, "class": 0},
+                    "direct": {"instance": 2, "class": 0},
+                },
+                "compute": {
+                    "search-instance": {"instance": 1, "class": 0},
+                    "search-class": {"instance": 1, "class": 0},
+                },
             },
             id="vss-enabled",
         ),
@@ -260,59 +296,61 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert instance_embedding == {}
     assert class_embedding == {}
 
-    search_embedding_bindings = [
+    expected_lookup = expected_embedding_calls["lookup"]
+    expected_compute = expected_embedding_calls["compute"]
+
+    search_lookup_bindings = [
         binding
         for phase, binding in env.embedding_events
         if phase.startswith("search-")
     ]
-    per_invocation_embeddings = {
+    total_expected_search_lookup = sum(
+        sum(counts.values())
+        for phase, counts in expected_lookup.items()
+        if phase.startswith("search-")
+    )
+    assert len(search_lookup_bindings) == total_expected_search_lookup
+
+    per_phase_lookup_bindings = {
         phase: [
             binding for event_phase, binding in env.embedding_events if event_phase == phase
         ]
-        for phase in ("search-instance", "search-class")
+        for phase in expected_lookup
     }
-    direct_embedding_bindings = [
-        binding
-        for phase, binding in env.embedding_events
-        if phase == "direct"
-    ]
 
-    total_expected_embeddings = sum(
-        sum(counts.values()) for counts in expected_embedding_calls.values()
-    )
-    assert len(search_embedding_bindings) == total_expected_embeddings
-
-    per_phase_path_counts = {
+    lookup_path_counts = {
         phase: {
-            binding: sum(
-                1
-                for event_phase, binding_path in env.embedding_path_events
-                if event_phase == phase and binding_path == binding
-            )
+            binding: env.embedding_lookup_path_counts.get(phase, {}).get(binding, 0)
             for binding in ("instance", "class")
         }
-        for phase in expected_embedding_calls
+        for phase in expected_lookup
     }
 
-    for phase, bindings in per_invocation_embeddings.items():
-        expected_total = sum(expected_embedding_calls[phase].values())
+    for phase, bindings in per_phase_lookup_bindings.items():
+        expected_total = sum(expected_lookup[phase].values())
         assert len(bindings) == expected_total
         if phase.startswith("search-"):
             assert len(bindings) == len(set(bindings))
         assert all(binding in {"instance", "class"} for binding in bindings)
 
-    for phase, expected_counts in expected_embedding_calls.items():
-        actual_counts = per_phase_path_counts[phase]
-        assert actual_counts == expected_counts
+    assert lookup_path_counts == expected_lookup
 
-    assert direct_embedding_bindings == ["instance", "instance"]
+    if "direct" in expected_lookup:
+        direct_expected = ["instance"] * sum(expected_lookup["direct"].values())
+        assert per_phase_lookup_bindings["direct"] == direct_expected
 
-    compute_binding = [
-        binding for phase, binding in env.compute_calls if phase.startswith("search-")
-    ]
-    expected_compute_calls = 0 if not env.vector_search_enabled else 2
-    assert len(compute_binding) == expected_compute_calls
-    assert all(binding == "instance" for binding in compute_binding)
+    compute_counts = {
+        phase: {
+            binding: sum(
+                1
+                for call_phase, binding_label in env.compute_calls
+                if call_phase == phase and binding_label == binding
+            )
+            for binding in ("instance", "class")
+        }
+        for phase in expected_compute
+    }
+    assert compute_counts == expected_compute
 
     assert env.backend_calls == [("q", 1, False), ("q", 1, False)]
     assert env.add_calls[:2] == ["instance", "instance"]

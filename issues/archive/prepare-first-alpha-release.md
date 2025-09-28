@@ -84,7 +84,12 @@ alpha tag. 【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e
 - Updated `docs/release_plan.md` and STATUS.md with the passing 2025-09-25
   `uv run task verify` sweep and targeted coverage rerun, citing the BM25
   normalization, parallel payload, and numpy stub fixes that cleared the
-  regressions. Supporting links:
+  regressions. The same plan entry now notes the four-call VSS evidence
+  captured by the refreshed stubbed search regression and its reproduction
+  log so reviewers can track the deterministic vector search counts.
+  【F:tests/unit/test_core_modules_additional.py†L15-L210】
+  【3335ae†L1-L7】
+  Supporting links:
   - [docs/release_plan.md][plan-status]
   - [STATUS.md][status-sept25]
   - [src/autoresearch/search/core.py][bm25-normalization]
