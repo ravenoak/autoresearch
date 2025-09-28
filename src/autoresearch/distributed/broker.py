@@ -10,7 +10,7 @@ directives.
 import contextlib
 import json
 import multiprocessing
-from typing import Any, Protocol, Sequence, cast
+from typing import Any, Literal, Protocol, Sequence, TypedDict, cast
 
 from ..logging_utils import get_logger
 from ._ray import RayLike, RayQueueProtocol, require_ray, require_ray_queue
@@ -18,19 +18,72 @@ from ._ray import RayLike, RayQueueProtocol, require_ray, require_ray_queue
 log = get_logger(__name__)
 
 
+class AgentResultMessage(TypedDict):
+    """Agent execution result emitted by executors and aggregators."""
+
+    action: Literal["agent_result"]
+    agent: str
+    result: dict[str, Any]
+    pid: int
+
+
+class PersistClaimMessage(TypedDict):
+    """Request for the storage coordinator to persist a claim."""
+
+    action: Literal["persist_claim"]
+    claim: dict[str, Any]
+    partial_update: bool
+
+
+class StopMessage(TypedDict):
+    """Sentinel instructing background workers to stop processing."""
+
+    action: Literal["stop"]
+
+
+BrokerMessage = AgentResultMessage | PersistClaimMessage | StopMessage
+
+
+def _ensure_broker_message(payload: dict[str, Any]) -> BrokerMessage:
+    """Validate queue payloads so strict typing stays intact."""
+
+    action = payload.get("action")
+    if action == "agent_result":
+        if not isinstance(payload.get("agent"), str):
+            raise TypeError("agent_result messages require an agent name")
+        if not isinstance(payload.get("result"), dict):
+            raise TypeError("agent_result messages require a result mapping")
+        if not isinstance(payload.get("pid"), int):
+            raise TypeError("agent_result messages require a worker pid")
+        return cast(AgentResultMessage, payload)
+    if action == "persist_claim":
+        if not isinstance(payload.get("claim"), dict):
+            raise TypeError("persist_claim messages require a claim mapping")
+        partial_update = payload.get("partial_update")
+        if not isinstance(partial_update, bool):
+            raise TypeError("persist_claim messages require a boolean flag")
+        return cast(PersistClaimMessage, payload)
+    if action == "stop":
+        return cast(StopMessage, payload)
+    raise TypeError(f"Unsupported broker message action: {action!r}")
+
+
+STOP_MESSAGE: StopMessage = {"action": "stop"}
+
+
 class _CountingQueue:
     """Wrap ``multiprocessing.Queue`` with a reliable ``empty`` check."""
 
     def __init__(self) -> None:
-        self._queue: multiprocessing.Queue[dict[str, Any]] = multiprocessing.Queue()
+        self._queue: multiprocessing.Queue[BrokerMessage] = multiprocessing.Queue()
         self._size = multiprocessing.Value("i", 0)
 
-    def put(self, item: dict[str, Any]) -> None:
+    def put(self, item: BrokerMessage) -> None:
         self._queue.put(item)
         with self._size.get_lock():
             self._size.value += 1
 
-    def get(self) -> dict[str, Any]:
+    def get(self) -> BrokerMessage:
         item = self._queue.get()
         with self._size.get_lock():
             self._size.value -= 1
@@ -53,7 +106,7 @@ class InMemoryBroker:
         """Initialize a local queue without a manager process for speed."""
         self.queue: MessageQueueProtocol = _CountingQueue()
 
-    def publish(self, message: dict[str, Any]) -> None:
+    def publish(self, message: BrokerMessage) -> None:
         """Enqueue ``message`` for later retrieval."""
         self.queue.put(message)
 
@@ -66,10 +119,10 @@ class InMemoryBroker:
 class MessageQueueProtocol(Protocol):
     """Queue operations shared by all broker implementations."""
 
-    def put(self, item: dict[str, Any]) -> None:
+    def put(self, item: BrokerMessage) -> None:
         ...
 
-    def get(self) -> dict[str, Any]:
+    def get(self) -> BrokerMessage:
         ...
 
     def close(self) -> None:
@@ -101,10 +154,10 @@ class RedisQueue(MessageQueueProtocol):
         self.client = client
         self.name = name
 
-    def put(self, message: dict[str, Any]) -> None:
+    def put(self, message: BrokerMessage) -> None:
         self.client.rpush(self.name, json.dumps(message))
 
-    def get(self) -> dict[str, Any]:
+    def get(self) -> BrokerMessage:
         result = self.client.blpop([self.name])
         if result is None:  # pragma: no cover - blocking call should not return None
             raise RuntimeError("Redis BLPOP returned no data")
@@ -112,7 +165,7 @@ class RedisQueue(MessageQueueProtocol):
         message = json.loads(data)
         if not isinstance(message, dict):
             raise TypeError("RedisQueue expected a JSON object payload")
-        return cast(dict[str, Any], message)
+        return _ensure_broker_message(cast(dict[str, Any], message))
 
     def close(self) -> None:  # pragma: no cover - redis connection handles cleanup
         with contextlib.suppress(Exception):
@@ -138,7 +191,7 @@ class RedisBroker:
         self.client = cast(RedisClientProtocol, client)
         self.queue: MessageQueueProtocol = RedisQueue(self.client, queue_name)
 
-    def publish(self, message: dict[str, Any]) -> None:
+    def publish(self, message: BrokerMessage) -> None:
         self.queue.put(message)
 
     def shutdown(self) -> None:
@@ -151,11 +204,14 @@ class RayMessageQueue(MessageQueueProtocol):
     def __init__(self, queue: RayQueueProtocol) -> None:
         self._queue = queue
 
-    def put(self, message: dict[str, Any]) -> None:
+    def put(self, message: BrokerMessage) -> None:
         self._queue.put(message)
 
-    def get(self) -> dict[str, Any]:
-        return self._queue.get()
+    def get(self) -> BrokerMessage:
+        payload = self._queue.get()
+        if not isinstance(payload, dict):
+            raise TypeError("RayQueue expected a mapping payload")
+        return _ensure_broker_message(payload)
 
     def close(self) -> None:
         with contextlib.suppress(Exception):
@@ -178,7 +234,7 @@ class RayBroker:
             queue_factory(actor_options={"name": queue_name})
         )
 
-    def publish(self, message: dict[str, Any]) -> None:
+    def publish(self, message: BrokerMessage) -> None:
         self.queue.put(message)
 
     def shutdown(self) -> None:

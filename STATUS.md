@@ -21,9 +21,11 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 ## September 30, 2025
 - `task check` now runs `uv run mypy src` without excluding distributed
   modules so regressions surface during fast feedback sweeps.【F:Taskfile.yml†L69-L82】
-- Distributed brokers and executors gained a shared `MessageQueueProtocol` and
-  a typed Ray shim; the docs explain the new constraint for local runs without
-  Ray.【F:src/autoresearch/distributed/broker.py†L52-L178】【F:src/autoresearch/distributed/_ray.py†L15-L144】【F:docs/algorithms/distributed.md†L32-L36】【F:docs/message_brokers.md†L7-L17】
+- Distributed brokers and executors publish validated `BrokerMessage` payloads
+  and reuse the typed Ray shim; the docs explain the new constraint for local
+  runs without Ray.【F:src/autoresearch/distributed/broker.py†L52-L190】【F:src/autoresearch/distributed/_ray.py†L15-L144】【F:docs/algorithms/distributed.md†L32-L36】【F:docs/message_brokers.md†L7-L17】
+- Unit tests now assert agent result messages, cycle callbacks, and claim
+  persistence payloads so the stricter typing stays exercised in CI.【F:tests/unit/test_distributed_executors.py†L1-L225】
 
 ## September 28, 2025
 - Codex setup now installs Go Task into `.venv/bin`, Taskfile exposes

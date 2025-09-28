@@ -74,7 +74,7 @@ tasks:
             {{if .EXTRAS}}{{range splitList " " .EXTRAS}} --extra {{.}}{{end}}{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
       - uv run flake8 src
-      - uv run mypy src
+      - uv run mypy src # distributed modules included; no exclude flag
       - task lint-specs
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
