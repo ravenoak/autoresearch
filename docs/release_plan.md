@@ -18,6 +18,15 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 28, 2025 at 01:10 UTC** rerun attempt shows `uv run task
+verify` and `uv run task coverage` immediately exiting with "Task \"verify\"
+does not exist" / "Task \"coverage\" does not exist" because the Go Task CLI
+only exposes the bootstrap targets in the current shell. The failure banners
+are archived at
+`baseline/logs/task-verify-20250928T011001Z.log` and
+`baseline/logs/task-coverage-20250928T011012Z.log` so we can follow up on the
+Taskfile layout before the next verification sweep.【F:baseline/logs/task-verify-20250928T011001Z.log†L1-L13】【F:baseline/logs/task-coverage-20250928T011012Z.log†L1-L13】
+
 `uv run task verify` succeeded on **September 25, 2025 at 02:27:17 Z**
 after we normalized BM25 scores, remapped parallel aggregator payloads into
 claim-friendly maps, and hardened the numpy stub to generate deterministic

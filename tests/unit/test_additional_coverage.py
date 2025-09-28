@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from autoresearch import cli_utils, search
+from autoresearch.cli_utils import format_success, render_evaluation_summary
 from autoresearch.orchestration import metrics
 from autoresearch.orchestration.circuit_breaker import CircuitBreakerManager
 from autoresearch.output_format import OutputFormatter
@@ -213,3 +214,13 @@ def test_render_evaluation_summary_joins_artifacts(monkeypatch):
         ]
     )
     assert artifacts_cell == expected
+
+
+def test_cli_utils_format_helpers_importable():
+    assert format_success("Completed") == "[bold green]✓[/bold green] Completed"
+    assert format_success("Completed", symbol=False) == "[bold green]Completed[/bold green]"
+
+    # Rendering helper should be importable and callable. Rendering side-effects are
+    # exercised in ``test_render_evaluation_summary_joins_artifacts``; here we simply
+    # ensure the symbol resolves via direct import to guard against syntax regressions.
+    assert render_evaluation_summary is cli_utils.render_evaluation_summary

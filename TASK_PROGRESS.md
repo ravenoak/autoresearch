@@ -1,5 +1,15 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-28** at 01:10 UTC fresh `uv run task verify` and
+`uv run task coverage` attempts immediately exit because the Go Task CLI only
+lists the eight bootstrap targets (`behavior`, `check`, `check-env`,
+`check-release-metadata`, `install`, `integration`, `lint-specs`, and `unit`).
+The new logs capture the failure banner so we can revisit the Taskfile layout
+after landing the CLI formatter fix:
+`baseline/logs/task-verify-20250928T011001Z.log` and
+`baseline/logs/task-coverage-20250928T011012Z.log` record the missing-task
+errors.【F:baseline/logs/task-verify-20250928T011001Z.log†L1-L13】【F:baseline/logs/task-coverage-20250928T011012Z.log†L1-L13】
+
 As of **2025-09-27** at 04:38 UTC we reran `uv run task coverage`; `baseline/logs/task-coverage-20250927T043839Z.log` captures the extras sync, coverage reset, and the unit suite collecting 76 cases before Pytest aborts on the unterminated string literal in `src/autoresearch/cli_utils.py` surfaced through `tests/unit/test_additional_coverage.py`, so the coverage gate still hinges on patching that CLI formatter. 【F:baseline/logs/task-coverage-20250927T043839Z.log†L200-L228】
 
 As of **2025-09-26** we delivered the curated truthfulness harness: `uv run autoresearch evaluate run <suite>` now drives the TruthfulQA, FEVER, and HotpotQA subsets, stores metrics in DuckDB and Parquet under `baseline/evaluation/`, and tags each run with a config signature so we can correlate telemetry. This unblocks [build-truthfulness-evaluation-harness](issues/build-truthfulness-evaluation-harness.md) and documents the licensing and interpretation guidance called out in the status docs.

@@ -18,6 +18,17 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 28, 2025
+- The new CLI formatter fix still leaves `uv run task verify` and `uv run task
+  coverage` blocked because the Go Task CLI only exposes the bootstrap tasks;
+  both commands return "Task \"verify\" does not exist" / "Task \"coverage\"
+  does not exist" with the logs archived at
+  `baseline/logs/task-verify-20250928T011001Z.log` and
+  `baseline/logs/task-coverage-20250928T011012Z.log`. The Taskfile layout needs
+  a follow-up pass so the higher-level targets are reachable again before we
+  can capture new success logs.
+  【F:baseline/logs/task-verify-20250928T011001Z.log†L1-L13】【F:baseline/logs/task-coverage-20250928T011012Z.log†L1-L13】
+
 ## September 27, 2025
 - Published the five-ticket Deep Research execution track across the roadmap,
   code-complete plan, and dedicated strategy doc so each phase is visible next
