@@ -4,14 +4,18 @@ from __future__ import annotations
 
 import multiprocessing
 import os
-from dataclasses import dataclass
-from queue import Queue
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
 from .. import search, storage
+from ..agents.registry import AgentFactory
+from ..config.models import ConfigModel
+from ..interfaces import CallbackMap, QueryStateLike
 from ..llm import pool as llm_pool
 from ..logging_utils import get_logger
-from .broker import BrokerType
+from ..models import QueryResponse
+from ..orchestration.state import QueryState
+from ._ray import RayLike, RayObjectRef, RemoteFunction, optional_ray
+from .broker import BrokerType, MessageQueueProtocol
 from .coordinator import (
     ResultAggregator,
     StorageCoordinator,
@@ -20,42 +24,9 @@ from .coordinator import (
     start_storage_coordinator,
 )
 
-try:  # pragma: no cover - optional dependency
-    import ray
-except Exception:  # pragma: no cover - missing or faulty install
-    import types
-
-    def _remote(func):
-        return types.SimpleNamespace(remote=lambda *a, **k: func(*a, **k))
-
-    @dataclass(frozen=True)
-    class RayStub:
-        init: Callable[..., None]
-        shutdown: Callable[..., None]
-        remote: Callable[[Callable[..., Any]], Any]
-        get: Callable[[Any], Any]
-        put: Callable[[Any], Any]
-        ObjectRef: type
-
-    ray = RayStub(
-        init=lambda *a, **k: None,
-        shutdown=lambda *a, **k: None,
-        remote=_remote,
-        get=lambda x: x,
-        put=lambda x: x,
-        ObjectRef=object,
-    )  # type: ignore[assignment]
-
-from ..config.models import ConfigModel
-from ..interfaces import CallbackMap, QueryStateLike
-from ..models import QueryResponse
-from ..orchestration.orchestrator import AgentFactory
-from ..orchestration.state import QueryState
+ray: RayLike = optional_ray()
 
 log = get_logger(__name__)
-
-if TYPE_CHECKING:  # pragma: no cover - used for type hints only
-    import redis  # noqa: F401
 
 
 @ray.remote
@@ -63,8 +34,8 @@ def _execute_agent_remote(
     agent_name: str,
     state: QueryStateLike,
     config: ConfigModel,
-    result_queue: Queue | None = None,
-    storage_queue: Queue | None = None,
+    result_queue: MessageQueueProtocol | None = None,
+    storage_queue: MessageQueueProtocol | None = None,
     http_session: Any | None = None,
     llm_session: Any | None = None,
 ) -> Dict[str, Any]:
@@ -73,7 +44,7 @@ def _execute_agent_remote(
         storage.set_message_queue(storage_queue)
     if http_session is not None:
         try:
-            if ray and isinstance(http_session, ray.ObjectRef):
+            if isinstance(http_session, ray.ObjectRef):
                 http_session = ray.get(http_session)
         except Exception as e:
             log.warning("Failed to retrieve HTTP session", exc_info=e)
@@ -82,7 +53,7 @@ def _execute_agent_remote(
         search.set_http_session(http_session)
     if llm_session is not None:
         try:
-            if ray and isinstance(llm_session, ray.ObjectRef):
+            if isinstance(llm_session, ray.ObjectRef):
                 llm_session = ray.get(llm_session)
         except Exception as e:
             log.warning("Failed to retrieve LLM session", exc_info=e)
@@ -101,8 +72,8 @@ def _execute_agent_process(
     agent_name: str,
     state: QueryStateLike,
     config: ConfigModel,
-    result_queue: Queue | None = None,
-    storage_queue: Queue | None = None,
+    result_queue: MessageQueueProtocol | None = None,
+    storage_queue: MessageQueueProtocol | None = None,
 ) -> Dict[str, Any]:
     """Execute a single agent in a spawned process."""
     if storage_queue is not None:
@@ -136,8 +107,8 @@ class RayExecutor:
         self.result_broker: Optional[BrokerType] = None
         self.http_session = search.get_http_session()
         self.llm_session = llm_pool.get_session()
-        self.http_handle = ray.put(self.http_session)
-        self.llm_handle = ray.put(self.llm_session)
+        self.http_handle: RayObjectRef[Any] = ray.put(self.http_session)
+        self.llm_handle: RayObjectRef[Any] = ray.put(self.llm_session)
         should_start = getattr(config, "distributed", False) or config.distributed_config.enabled
         if should_start:
             self.storage_coordinator, self.broker = start_storage_coordinator(config)
@@ -151,8 +122,9 @@ class RayExecutor:
         for loop in range(self.config.loops):
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
-            futures = [
-                _execute_agent_remote.remote(
+            remote_executor: RemoteFunction[Dict[str, Any]] = _execute_agent_remote
+            futures: list[RayObjectRef[Dict[str, Any]]] = [
+                remote_executor.remote(
                     name,
                     state,
                     self.config,
@@ -163,10 +135,12 @@ class RayExecutor:
                 )
                 for name in self.config.agents
             ]
-            remote_results = ray.get(futures)
-            results = (
-                list(self.result_aggregator.results) if self.result_aggregator else remote_results
-            )
+            remote_results = cast(list[Dict[str, Any]], ray.get(futures))
+            results: list[Dict[str, Any]]
+            if self.result_aggregator:
+                results = list(self.result_aggregator.results)
+            else:
+                results = remote_results
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             for res in results:
@@ -203,7 +177,7 @@ class RayExecutor:
                 self.result_broker.shutdown()
             except Exception as e:
                 log.warning("Failed to shutdown result broker", exc_info=e)
-        if ray and hasattr(ray, "shutdown"):
+        if hasattr(ray, "shutdown"):
             ray.shutdown()
 
 
@@ -230,7 +204,7 @@ class ProcessExecutor:
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             with ctx.Pool(processes=self.config.distributed_config.num_cpus) as pool:
-                results = pool.starmap(
+                results: list[Dict[str, Any]] = pool.starmap(
                     _execute_agent_process,
                     [
                         (
@@ -243,7 +217,11 @@ class ProcessExecutor:
                         for name in self.config.agents
                     ],
                 )
-            aggregated = list(self.result_aggregator.results) if self.result_aggregator else results
+            aggregated: list[Dict[str, Any]]
+            if self.result_aggregator:
+                aggregated = list(self.result_aggregator.results)
+            else:
+                aggregated = results
             if self.result_aggregator:
                 self.result_aggregator.results[:] = []
             for res in aggregated:

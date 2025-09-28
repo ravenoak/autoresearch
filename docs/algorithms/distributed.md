@@ -29,6 +29,12 @@ The regression now runs without an `xfail` guard, and
 [`SPEC_COVERAGE.md`](../../SPEC_COVERAGE.md) records the Ray path as
 standard coverage for the distributed executors module.
 
+All brokers now expose a shared `MessageQueueProtocol` so coordinators can
+interact with queues without falling back to `Any`. The Ray executor loads a
+typed shim that falls back to a synchronous stub when the optional dependency
+is unavailable, keeping strict mypy coverage without expanding
+`type: ignore` usage.
+
 ## References
 - [code](../../src/autoresearch/distributed/)
 - [spec](../specs/distributed.md)

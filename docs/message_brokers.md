@@ -4,6 +4,18 @@ Autoresearch can coordinate distributed workers through a pluggable broker layer
 The default `memory` broker uses an in-process queue and requires no external
 services. Lightweight alternatives include:
 
+## Ray distributed queue
+
+- **Pros**: integrates with Ray executors and scales with the object store.
+- **Cons**: requires the optional `distributed` extra and a running Ray
+  cluster.
+
+Ray-backed brokers now wrap the runtime queue behind a shared
+`MessageQueueProtocol`, letting the storage coordinator and result aggregator
+share logic with Redis and in-memory brokers. When Ray is not installed the
+typed shim falls back to a synchronous stub so local testing and strict mypy
+checks stay aligned without additional `type: ignore` directives.
+
 ## Redis
 
 - **Pros**: simple to deploy, minimal overhead, widely available.
