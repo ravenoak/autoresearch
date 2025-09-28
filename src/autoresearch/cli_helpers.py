@@ -17,6 +17,7 @@ from .output_format import (
     get_depth_aliases,
     normalize_depth,
 )
+from .ui.provenance import depth_sequence
 
 from .cli_utils import (
     print_error,
@@ -126,9 +127,11 @@ def depth_help_text() -> str:
         "key_findings": "key findings",
         "claim_audits": "claim table",
         "full_trace": "full trace",
+        "knowledge_graph": "knowledge graph",
+        "graph_exports": "graph exports",
     }
     parts: List[str] = []
-    for depth in OutputDepth:
+    for depth in depth_sequence():
         desc = descriptions[depth]
         enabled = [
             label

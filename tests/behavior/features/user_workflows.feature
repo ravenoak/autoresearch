@@ -19,3 +19,9 @@ Feature: User workflows
     Given the Streamlit application is running
     When I run a query in the Streamlit interface
     Then the results should be displayed in a tabbed interface
+
+  Scenario: Layered UX exposes claim toggles and prompts
+    Given a layered depth payload with claim audits
+    When I derive layered UX guidance
+    Then the layered payload exposes claim toggles
+    And Socratic prompts include claim follow-ups

@@ -2117,6 +2117,37 @@ def display_results(result: QueryResponse) -> None:
                     f"<tbody>{''.join(rows)}</tbody></table>"
                 )
                 st.markdown(table_html, unsafe_allow_html=True)
+                st.markdown("### Claim details", unsafe_allow_html=True)
+                for index, audit in enumerate(payload.claim_audits):
+                    claim_id = str(audit.get("claim_id") or index + 1)
+                    toggle_key = f"ui_claim_details_{claim_id}_{index}"
+                    default_state = st.session_state.get(toggle_key, False)
+                    show_details = toggle_widget(
+                        f"Show details for claim {claim_id}",
+                        key=toggle_key,
+                        value=default_state,
+                        help="Reveal full provenance, notes, and Socratic follow-ups.",
+                    )
+                    if show_details:
+                        status_label = str(audit.get("status", "unknown")).replace("_", " ").title()
+                        entailment_score = audit.get("entailment_score")
+                        entailment_display = (
+                            "—" if entailment_score is None else f"{entailment_score:.2f}"
+                        )
+                        st.markdown(f"- **Status:** {status_label}")
+                        st.markdown(f"- **Entailment:** {entailment_display}")
+                        if audit.get("notes"):
+                            st.markdown(f"- **Notes:** {audit['notes']}")
+                        sources = audit.get("sources") or []
+                        if sources:
+                            st.markdown("- **Sources:**")
+                            for source in sources:
+                                title = source.get("title") or source.get("url") or "Source"
+                                st.markdown(f"  - {title}")
+                        st.json(audit)
+                st.caption(
+                    "Claim badges: supported (green), needs review (amber), unsupported (red)."
+                )
             elif note := payload.notes.get("claim_audits"):
                 st.info(note)
             else:

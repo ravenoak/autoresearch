@@ -279,6 +279,25 @@ def _format_tokens(summary: "EvaluationSummary") -> str:
     return "/".join(parts)
 
 
+def _format_planner_depth(summary: "EvaluationSummary") -> str:
+    """Format planner depth statistics for display."""
+
+    return _format_optional(summary.avg_planner_depth, precision=1)
+
+
+def _format_routing(summary: "EvaluationSummary") -> str:
+    """Format routing delta metrics as ``avg/total``."""
+
+    avg = _format_optional(summary.avg_routing_delta)
+    total = _format_optional(summary.total_routing_delta)
+    if avg == "—" and total == "—":
+        return "—"
+    decision_avg = _format_optional(summary.avg_routing_decisions, precision=1)
+    if decision_avg != "—":
+        return f"{avg}/{total} (avg {decision_avg} routes)"
+    return f"{avg}/{total}"
+
+
 def _format_percentage(value: Optional[float], precision: int = 1) -> str:
     """Format a ratio as a percentage string."""
 
@@ -302,11 +321,14 @@ def render_evaluation_summary(
     table.add_column("Accuracy")
     table.add_column("Citation coverage")
     table.add_column("Contradiction rate")
+    table.add_column("Planner depth")
+    table.add_column("Routing Δ (avg/total)")
     table.add_column("Avg latency (s)")
     table.add_column("Avg tokens in/out/total")
     table.add_column("Avg loops")
     table.add_column("% gated exits")
     table.add_column("Run ID")
+    table.add_column("Config")
     table.add_column("Artifacts")
 
     for summary in summaries:
@@ -317,6 +339,10 @@ def render_evaluation_summary(
             artifacts.append(f"examples: {summary.example_parquet}")
         if summary.summary_parquet:
             artifacts.append(f"summary: {summary.summary_parquet}")
+        if summary.example_csv:
+            artifacts.append(f"examples.csv: {summary.example_csv}")
+        if summary.summary_csv:
+            artifacts.append(f"summary.csv: {summary.summary_csv}")
 
         artifact_display = ", ".join(artifacts) if artifacts else "—"
 
@@ -325,11 +351,14 @@ def render_evaluation_summary(
             _format_optional(summary.accuracy),
             _format_optional(summary.citation_coverage),
             _format_optional(summary.contradiction_rate),
+            _format_planner_depth(summary),
+            _format_routing(summary),
             _format_optional(summary.avg_latency_seconds),
             _format_tokens(summary),
             _format_optional(summary.avg_cycles_completed, precision=1),
             _format_percentage(summary.gate_exit_rate),
             summary.run_id,
+            summary.config_signature,
             artifact_display,
         )
 

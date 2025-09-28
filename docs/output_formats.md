@@ -16,6 +16,26 @@ Every format exposes the same core artifacts:
   run.
 - **Claim audits** – FEVER-style verification records with provenance maps.
 
+## Layered UX and exports
+
+Depth controls in the CLI (`--depth`) and Streamlit share the same sequence of
+levels—TL;DR, Concise, Standard, and Trace. Each level now publishes its enabled
+sections so operators know when TL;DR summaries, key findings, claim tables,
+knowledge graph panels, and graph exports are available. The Streamlit radio
+syncs with these options and surfaces toggle switches for each section.
+
+Claim audits gain dedicated toggles per row. Selecting **Show details for
+claim** reveals the audit JSON, top sources, and analyst notes. Badges mirror
+the CLI table: green (supported), amber (needs review), and red (unsupported).
+The Socratic prompt expander reuses the same depth payload to recommend
+follow-up questions grounded in the visible findings, citations, and claim
+statuses.
+
+Evaluation runs export the enriched metrics as Parquet and CSV pairs. The CSVs
+include the config signature, citation coverage, contradiction rate, average
+planner depth, routing deltas, and average routing decision count so telemetry
+pipelines can diff regressions without re-opening the database files.
+
 ### Markdown
 
 The default Markdown renderer highlights the TL;DR, answer, citations, and claim
