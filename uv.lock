@@ -276,7 +276,10 @@ dev-minimal = [
     { name = "pytest-httpx" },
     { name = "redis" },
     { name = "tomli-w" },
+    { name = "types-protobuf", marker = "python_full_version < '3.13'" },
     { name = "types-psutil", marker = "python_full_version < '3.13'" },
+    { name = "types-requests", marker = "python_full_version < '3.13'" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13'" },
 ]
 distributed = [
     { name = "ray" },
@@ -297,6 +300,10 @@ full = [
     { name = "slowapi" },
     { name = "spacy", marker = "python_full_version < '3.13'" },
     { name = "streamlit" },
+    { name = "types-protobuf", marker = "python_full_version < '3.13'" },
+    { name = "types-psutil", marker = "python_full_version < '3.13'" },
+    { name = "types-requests", marker = "python_full_version < '3.13'" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13'" },
 ]
 git = [
     { name = "gitpython", marker = "python_full_version < '3.13'" },
@@ -340,6 +347,12 @@ test = [
     { name = "responses" },
     { name = "tomli-w" },
     { name = "uvicorn" },
+]
+typing-stubs = [
+    { name = "types-protobuf", marker = "python_full_version < '3.13'" },
+    { name = "types-psutil", marker = "python_full_version < '3.13'" },
+    { name = "types-requests", marker = "python_full_version < '3.13'" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13'" },
 ]
 ui = [
     { name = "streamlit" },
@@ -474,15 +487,26 @@ requires-dist = [
     { name = "typer", marker = "extra == 'dev'", specifier = ">=0.16.0" },
     { name = "types-networkx", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=3.4.0" },
     { name = "types-protobuf", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=6.30.2.20250516" },
+    { name = "types-protobuf", marker = "python_full_version < '3.13' and extra == 'dev-minimal'", specifier = ">=6.30.2.20250516" },
+    { name = "types-protobuf", marker = "python_full_version < '3.13' and extra == 'full'", specifier = ">=6.30.2.20250516" },
+    { name = "types-protobuf", marker = "python_full_version < '3.13' and extra == 'typing-stubs'", specifier = ">=6.30.2.20250516" },
     { name = "types-psutil", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=5.9.5.20240516" },
     { name = "types-psutil", marker = "python_full_version < '3.13' and extra == 'dev-minimal'", specifier = ">=5.9.5.20240516" },
+    { name = "types-psutil", marker = "python_full_version < '3.13' and extra == 'full'", specifier = ">=5.9.5.20240516" },
+    { name = "types-psutil", marker = "python_full_version < '3.13' and extra == 'typing-stubs'", specifier = ">=5.9.5.20240516" },
     { name = "types-requests", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=2.32.0" },
+    { name = "types-requests", marker = "python_full_version < '3.13' and extra == 'dev-minimal'", specifier = ">=2.32.0" },
+    { name = "types-requests", marker = "python_full_version < '3.13' and extra == 'full'", specifier = ">=2.32.0" },
+    { name = "types-requests", marker = "python_full_version < '3.13' and extra == 'typing-stubs'", specifier = ">=2.32.0" },
     { name = "types-tabulate", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=0.9.0" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13' and extra == 'dev-minimal'", specifier = ">=0.9.0" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13' and extra == 'full'", specifier = ">=0.9.0" },
+    { name = "types-tabulate", marker = "python_full_version < '3.13' and extra == 'typing-stubs'", specifier = ">=0.9.0" },
     { name = "uvicorn", marker = "extra == 'dev'", specifier = ">=0.35.0" },
     { name = "uvicorn", marker = "extra == 'test'", specifier = ">=0.35.0" },
     { name = "watchfiles", specifier = ">=1.1.0" },
 ]
-provides-extras = ["minimal", "nlp", "gpu", "ui", "vss", "parsers", "git", "docs", "distributed", "analysis", "llm", "test", "full", "dev", "dev-minimal", "build"]
+provides-extras = ["minimal", "typing-stubs", "nlp", "gpu", "ui", "vss", "parsers", "git", "docs", "distributed", "analysis", "llm", "test", "full", "dev", "dev-minimal", "build"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest-httpx", specifier = ">=0.35.0" }]
