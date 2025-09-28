@@ -26,6 +26,17 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   Ray.【F:src/autoresearch/distributed/broker.py†L52-L178】【F:src/autoresearch/distributed/_ray.py†L15-L144】【F:docs/algorithms/distributed.md†L32-L36】【F:docs/message_brokers.md†L7-L17】
 
 ## September 28, 2025
+- Codex setup now installs Go Task into `.venv/bin`, Taskfile exposes
+  higher-level targets again, and the 03:10 UTC rerun reaches the substantive
+  failures: `uv run task verify` halts in `flake8` on long-standing style
+  violations while `uv run task coverage` fails in the scout gate policy test
+  after syncing every optional extra. The logs live at
+  `baseline/logs/task-verify-20250928T031021Z.log` and
+  `baseline/logs/task-coverage-20250928T031031Z.log` for reference.
+  【F:scripts/codex_setup.sh†L1-L66】【F:Taskfile.yml†L1-L136】
+  【F:baseline/logs/task-verify-20250928T031021Z.log†L1-L68】
+  【F:baseline/logs/task-coverage-20250928T031031Z.log†L1-L120】
+  【F:baseline/logs/task-coverage-20250928T031031Z.log†L200-L280】
 - The new CLI formatter fix still leaves `uv run task verify` and `uv run task
   coverage` blocked because the Go Task CLI only exposes the bootstrap tasks;
   both commands return "Task \"verify\" does not exist" / "Task \"coverage\"

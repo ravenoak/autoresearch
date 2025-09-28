@@ -1,5 +1,17 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-28** at 03:10 UTC `scripts/codex_setup.sh` ensures Go Task
+installs into `.venv/bin`, Taskfile once again exposes the `verify` and
+`coverage` targets, and fresh sweeps reach the substantive failures instead of
+exiting early. `uv run task verify` now stops in `flake8`, which reports the
+pre-existing style violations across orchestration, storage, and benchmark
+modules, while `uv run task coverage` completes the extras sync and fails in
+`tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low`
+after the scout gate keeps the debate loop enabled. The new logs,
+`baseline/logs/task-verify-20250928T031021Z.log` and
+`baseline/logs/task-coverage-20250928T031031Z.log`, capture the upgraded
+pipeline progression.【F:scripts/codex_setup.sh†L1-L66】【F:Taskfile.yml†L1-L136】【F:baseline/logs/task-verify-20250928T031021Z.log†L1-L68】【F:baseline/logs/task-coverage-20250928T031031Z.log†L1-L120】【F:baseline/logs/task-coverage-20250928T031031Z.log†L200-L280】
+
 As of **2025-09-28** at 01:10 UTC fresh `uv run task verify` and
 `uv run task coverage` attempts immediately exit because the Go Task CLI only
 lists the eight bootstrap targets (`behavior`, `check`, `check-env`,

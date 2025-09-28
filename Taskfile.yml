@@ -100,29 +100,29 @@ tasks:
     desc: "Run BDD (behavior) tests with uv"
 
 
-evaluation:truthfulqa:
-  cmds:
-    - |
-        uv run autoresearch evaluate run truthfulqa{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
-  desc: "Run the curated TruthfulQA evaluation harness"
+  evaluation:truthfulqa:
+    cmds:
+      - |
+          uv run autoresearch evaluate run truthfulqa{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
+    desc: "Run the curated TruthfulQA evaluation harness"
 
-evaluation:fever:
-  cmds:
-    - |
-        uv run autoresearch evaluate run fever{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
-  desc: "Run the curated FEVER evaluation harness"
+  evaluation:fever:
+    cmds:
+      - |
+          uv run autoresearch evaluate run fever{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
+    desc: "Run the curated FEVER evaluation harness"
 
-evaluation:hotpotqa:
-  cmds:
-    - |
-        uv run autoresearch evaluate run hotpotqa{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
-  desc: "Run the curated HotpotQA evaluation harness"
+  evaluation:hotpotqa:
+    cmds:
+      - |
+          uv run autoresearch evaluate run hotpotqa{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
+    desc: "Run the curated HotpotQA evaluation harness"
 
-evaluation:all:
-  cmds:
-    - |
-        uv run autoresearch evaluate run all{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
-  desc: "Run all curated truthfulness evaluation harnesses"
+  evaluation:all:
+    cmds:
+      - |
+          uv run autoresearch evaluate run all{{if .LIMIT}} --limit {{.LIMIT}}{{end}}{{if .DRY_RUN}} --dry-run{{end}}
+    desc: "Run all curated truthfulness evaluation harnesses"
 
 
 

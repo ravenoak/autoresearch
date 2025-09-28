@@ -18,14 +18,24 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The **September 28, 2025 at 01:10 UTC** rerun attempt shows `uv run task
-verify` and `uv run task coverage` immediately exiting with "Task \"verify\"
-does not exist" / "Task \"coverage\" does not exist" because the Go Task CLI
-only exposes the bootstrap targets in the current shell. The failure banners
-are archived at
-`baseline/logs/task-verify-20250928T011001Z.log` and
-`baseline/logs/task-coverage-20250928T011012Z.log` so we can follow up on the
-Taskfile layout before the next verification sweep.【F:baseline/logs/task-verify-20250928T011001Z.log†L1-L13】【F:baseline/logs/task-coverage-20250928T011012Z.log†L1-L13】
+The **September 28, 2025 at 03:10 UTC** rerun uses the updated Codex bootstrap
+to install Go Task in `.venv/bin` and the repaired Taskfile targets, so
+`uv run task verify` now reaches `flake8` before failing on the existing style
+regressions while `uv run task coverage` completes the extras sync and then
+fails in `tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low`.
+The new evidence lives at
+`baseline/logs/task-verify-20250928T031021Z.log` and
+`baseline/logs/task-coverage-20250928T031031Z.log`.
+【F:scripts/codex_setup.sh†L1-L66】【F:Taskfile.yml†L1-L136】
+【F:baseline/logs/task-verify-20250928T031021Z.log†L1-L68】
+【F:baseline/logs/task-coverage-20250928T031031Z.log†L1-L120】
+【F:baseline/logs/task-coverage-20250928T031031Z.log†L200-L280】
+
+The earlier **September 28, 2025 at 01:10 UTC** attempt still records the
+"Task \"verify\" does not exist" / "Task \"coverage\" does not exist" failure
+from before the Taskfile repair; those logs remain archived for comparison.
+【F:baseline/logs/task-verify-20250928T011001Z.log†L1-L13】
+【F:baseline/logs/task-coverage-20250928T011012Z.log†L1-L13】
 
 `uv run task verify` succeeded on **September 25, 2025 at 02:27:17 Z**
 after we normalized BM25 scores, remapped parallel aggregator payloads into
