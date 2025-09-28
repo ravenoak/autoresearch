@@ -7,7 +7,7 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Generator, Protocol, cast
+from typing import Any, Callable, Protocol, cast
 from unittest.mock import MagicMock, _patch, patch
 from uuid import uuid4
 import multiprocessing
@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover - Python < 3.8
 import pytest
 from pytest_httpx import httpx_mock  # noqa: F401
 from tests.optional_imports import import_or_skip
+from tests.typing_helpers import TypedFixture
 
 try:
     from typer.testing import CliRunner
@@ -110,7 +111,7 @@ def _flush_resource_tracker_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def _terminate_active_children() -> Generator[None, None, None]:
+def _terminate_active_children() -> TypedFixture[None]:
     """Terminate stray multiprocessing children after each test."""
     yield
     for proc in multiprocessing.active_children():
@@ -119,7 +120,7 @@ def _terminate_active_children() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def _clear_resource_tracker_cache() -> Generator[None, None, None]:
+def _clear_resource_tracker_cache() -> TypedFixture[None]:
     """Clear resource tracker caches before and after each test."""
     _flush_resource_tracker_cache()
     yield
@@ -127,7 +128,7 @@ def _clear_resource_tracker_cache() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def _drain_multiprocessing_resources() -> Generator[None, None, None]:
+def _drain_multiprocessing_resources() -> TypedFixture[None]:
     """Unlink all multiprocessing resources registered during a test."""
     yield
     tracker = _get_resource_tracker()
@@ -147,7 +148,7 @@ def _drain_multiprocessing_resources() -> Generator[None, None, None]:
 @pytest.fixture(autouse=True)
 def _cleanup_multiprocessing_queues(
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Ensure multiprocessing queues are closed and joined."""
     global _QUEUE_FACTORY
     _QUEUE_FACTORY = multiprocessing.Queue
@@ -166,7 +167,7 @@ def _cleanup_multiprocessing_queues(
 @pytest.fixture(autouse=True)
 def _cleanup_multiprocessing_pools(
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Ensure multiprocessing pools are closed and joined."""
     created: list[multiprocessing.pool.Pool] = []
     seen_ids: set[int] = set()
@@ -357,7 +358,7 @@ _init_redis()
 
 
 @pytest.fixture(scope="session")
-def redis_service() -> Generator[object, None, None]:
+def redis_service() -> TypedFixture[object]:
     """Yield a Redis client backed by a lightweight service."""
     if not REDIS_AVAILABLE or _redis_factory is None:
         pytest.skip("redis not available")
@@ -378,7 +379,7 @@ VSS_AVAILABLE = _module_available("duckdb_extension_vss")
 @pytest.fixture(autouse=True)
 def stub_vss_extension_download(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest, tmp_path: Path
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Prevent network calls when loading the DuckDB VSS extension."""
     if os.getenv("REAL_VSS_TEST") or request.node.get_closest_marker("real_vss"):
         yield
@@ -411,7 +412,7 @@ def stub_vss_extension_download(
 
 
 @pytest.fixture(autouse=True)
-def reset_config_loader_instance() -> Generator[None, None, None]:
+def reset_config_loader_instance() -> TypedFixture[None]:
     """Reset ConfigLoader singleton before each test."""
     ConfigLoader.reset_instance()
     yield
@@ -421,7 +422,7 @@ def reset_config_loader_instance() -> Generator[None, None, None]:
 @pytest.fixture(autouse=True)
 def isolate_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Use temporary working directory and cache file for each test."""
     monkeypatch.chdir(tmp_path)
     cache_path = tmp_path / "cache.json"
@@ -436,7 +437,7 @@ def isolate_paths(
 
 
 @pytest.fixture(autouse=True)
-def reset_registries() -> Generator[None, None, None]:
+def reset_registries() -> TypedFixture[None]:
     """Restore global registries after each test."""
     agent_reg = AgentRegistry._registry.copy()
     agent_fact = AgentFactory._registry.copy()
@@ -455,7 +456,7 @@ set_storage_delegate(None)
 
 
 @pytest.fixture
-def duckdb_path(tmp_path: Path) -> Generator[str, None, None]:
+def duckdb_path(tmp_path: Path) -> TypedFixture[str]:
     """Create a fresh DuckDB schema and return its path."""
     db_file = tmp_path / "kg.duckdb"
     storage.teardown(remove_db=True)
@@ -468,7 +469,7 @@ def duckdb_path(tmp_path: Path) -> Generator[str, None, None]:
 @pytest.fixture
 def ensure_duckdb_schema(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[str, None, None]:
+) -> TypedFixture[str]:
     """Ensure StorageManager setup creates required DuckDB tables."""
     db_file = tmp_path / "kg.duckdb"
     StorageManager.teardown(remove_db=True)
@@ -482,7 +483,7 @@ def ensure_duckdb_schema(
 
 
 @pytest.fixture
-def storage_manager(duckdb_path: str) -> Generator[ModuleType, None, None]:
+def storage_manager(duckdb_path: str) -> TypedFixture[ModuleType]:
     """Initialize storage using a prepared DuckDB path and clean up."""
     storage.initialize_storage(duckdb_path)
     set_storage_delegate(storage.StorageManager)
@@ -492,7 +493,7 @@ def storage_manager(duckdb_path: str) -> Generator[ModuleType, None, None]:
 
 
 @pytest.fixture
-def config_watcher() -> Generator[ConfigLoader, None, None]:
+def config_watcher() -> TypedFixture[ConfigLoader]:
     """Provide a ConfigLoader that is cleaned up after use."""
     loader = ConfigLoader()
     yield loader
@@ -502,7 +503,7 @@ def config_watcher() -> Generator[ConfigLoader, None, None]:
 @pytest.fixture(autouse=True)
 def stop_config_watcher(
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Ensure ConfigLoader watcher threads are cleaned up quickly."""
 
     def fast_stop(self):
@@ -518,7 +519,7 @@ def stop_config_watcher(
 
 
 @pytest.fixture(autouse=True)
-def reset_rate_limiting() -> Generator[None, None, None]:
+def reset_rate_limiting() -> TypedFixture[None]:
     """Clear API rate limiter state and request log before each test."""
     reset_limiter_state()
     reset_request_log()
@@ -528,7 +529,7 @@ def reset_rate_limiting() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def reset_orchestration_metrics() -> Generator[None, None, None]:
+def reset_orchestration_metrics() -> TypedFixture[None]:
     """Reset global orchestration counters before and after each test."""
     metrics.reset_metrics()
     yield
@@ -536,7 +537,7 @@ def reset_orchestration_metrics() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def cleanup_storage() -> Generator[None, None, None]:
+def cleanup_storage() -> TypedFixture[None]:
     """Remove any persistent storage state between tests."""
     # Use module-level teardown to avoid delegate recursion
     def _safe_teardown(stage: str) -> None:
@@ -555,7 +556,7 @@ def cleanup_storage() -> Generator[None, None, None]:
 @pytest.fixture(autouse=True)
 def initialize_storage(
     request: pytest.FixtureRequest, tmp_path: Path, cleanup_storage: None
-) -> Generator[None, None, None]:
+) -> TypedFixture[None]:
     """Create storage tables for storage-related tests."""
     filename = request.node.path.name
     if filename.startswith("test_storage_") or filename == "test_main_backup_commands.py":
@@ -571,7 +572,7 @@ def initialize_storage(
 
 
 @pytest.fixture(autouse=True)
-def restore_sys_modules() -> Generator[None, None, None]:
+def restore_sys_modules() -> TypedFixture[None]:
     """Remove non-module entries from ``sys.modules`` between tests."""
     orig_modules = {k: v for k, v in sys.modules.items() if isinstance(v, ModuleType)}
     for name, module in list(sys.modules.items()):
@@ -813,7 +814,7 @@ def realistic_claims(claim_factory):
 @pytest.fixture
 def realistic_claim_batch(
     claim_factory,
-) -> Generator[list[dict[str, object]], None, None]:
+) -> TypedFixture[list[dict[str, object]]]:
     """Yield a diverse batch of realistic claim dictionaries."""
 
     claims = [
@@ -843,7 +844,7 @@ def sample_eval_data():
 
 
 @pytest.fixture
-def dummy_llm_adapter() -> Generator[object, None, None]:
+def dummy_llm_adapter() -> TypedFixture[object]:
     """Register and provide a dummy LLM adapter for tests."""
     from autoresearch.llm.adapters import DummyAdapter
 
@@ -853,7 +854,7 @@ def dummy_llm_adapter() -> Generator[object, None, None]:
 
 
 @pytest.fixture
-def mock_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> Generator[object, None, None]:
+def mock_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> TypedFixture[object]:
     """Provide a configurable mock LLM adapter for tests."""
 
     from autoresearch.llm.adapters import DummyAdapter
@@ -877,7 +878,7 @@ def mock_llm_adapter(monkeypatch: pytest.MonkeyPatch) -> Generator[object, None,
 @pytest.fixture
 def flexible_llm_adapter(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
-) -> Generator[object, None, None]:
+) -> TypedFixture[object]:
     """Register a configurable LLM adapter returning custom prompt responses."""
 
     from autoresearch.llm.adapters import DummyAdapter
