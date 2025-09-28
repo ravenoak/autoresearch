@@ -116,6 +116,8 @@ def simulate_prdv_planner_flow():
                 question="Plan research agenda",
                 tools=["planner"],
                 affinity={"planner": 1.0},
+                sub_questions=["Clarify scope"],
+                explanation="Outline the planning cadence",
             ),
             TaskNode(
                 id="research",
@@ -123,6 +125,8 @@ def simulate_prdv_planner_flow():
                 tools=["search"],
                 depends_on=["plan", "phantom"],
                 affinity={"search": 0.8, "analysis": 0.3},
+                criteria=["Document findings"],
+                explanation="Gather the strongest sources",
             ),
             TaskNode(
                 id="validate",
@@ -130,12 +134,20 @@ def simulate_prdv_planner_flow():
                 tools=["review"],
                 depends_on=["research"],
                 affinity={"review": 0.7},
+                criteria=["Cross-check evidence"],
             ),
         ],
         metadata={"mode": "prdv"},
     )
     payload = graph.to_payload()
     payload["tasks"][1]["affinity"]["search"] = "strong"
+    payload["objectives"] = ["Deliver planner-coordinator telemetry"]
+    payload["exit_criteria"] = ["All phases recorded"]
+    payload["explanation"] = "Ensure telemetry demonstrates readiness ordering"
+    payload["tasks"][0]["tool_affinity"] = payload["tasks"][0].get("affinity", {})
+    payload["tasks"][0]["objectives"] = payload["tasks"][0].get("sub_questions", [])
+    payload["tasks"][1]["tool_affinity"] = payload["tasks"][1].get("affinity", {})
+    payload["tasks"][1]["exit_criteria"] = payload["tasks"][1].get("criteria", [])
     warnings = state.set_task_graph(payload)
     state.record_planner_trace(
         prompt="Plan the PRDV cycle",
@@ -177,6 +189,20 @@ def assert_prdv_trace_metadata(prdv_context):
     assert metadata["unlock_events"]
     assert metadata["task_depth"] == 1
     assert metadata["affinity_delta"] > 0.0
+    assert metadata["scheduler"]["selected"]["id"] == "research"
+
+
+@then("the telemetry snapshot should include scheduler context")
+def assert_prdv_telemetry_snapshot(prdv_context):
+    state: QueryState = prdv_context["state"]
+    telemetry = state.metadata["planner"]["telemetry"]
+    assert telemetry["objectives"] == ["Deliver planner-coordinator telemetry"]
+    assert telemetry["exit_criteria"] == ["All phases recorded"]
+    assert telemetry["tasks"], "Planner tasks should be tracked"
+    coordinator_meta = state.metadata["coordinator"]
+    assert coordinator_meta["decisions"], "Coordinator decisions should persist"
+    last_decision = coordinator_meta["decisions"][-1]
+    assert last_decision["scheduler"]["selected"]["id"] == "research"
 
 
 @given(parsers.parse("loops is set to {count:d} in configuration"), target_fixture="config")

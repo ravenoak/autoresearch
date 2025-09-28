@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass, field
+from textwrap import dedent
 from collections.abc import Mapping, Sequence
 from typing import Any, Dict, List, Tuple
 
@@ -15,6 +17,125 @@ from ...orchestration.task_graph import TaskEdge, TaskGraph, TaskNode
 from ...logging_utils import get_logger
 
 log = get_logger(__name__)
+
+
+@dataclass(slots=True)
+class PlannerPromptBuilder:
+    """Compose a planner prompt that enforces structured JSON output."""
+
+    base_prompt: str
+    query: str
+    feedback: str | None = None
+    existing_graph: Mapping[str, Any] | None = None
+    include_schema_notes: bool = True
+    _schema: dict[str, Any] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        """Initialise the JSON schema shared with the language model."""
+
+        self._schema = {
+            "type": "object",
+            "required": ["tasks", "edges", "metadata"],
+            "properties": {
+                "objectives": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Shared research goals across the plan.",
+                },
+                "exit_criteria": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Signals that confirm the plan is complete.",
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["id", "question"],
+                        "properties": {
+                            "id": {"type": "string"},
+                            "question": {"type": "string"},
+                            "objectives": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "tools": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "tool_affinity": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "number",
+                                },
+                            },
+                            "depends_on": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "exit_criteria": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "explanation": {"type": "string"},
+                        },
+                    },
+                },
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["source", "target"],
+                        "properties": {
+                            "source": {"type": "string"},
+                            "target": {"type": "string"},
+                            "type": {
+                                "type": "string",
+                                "enum": ["dependency", "related", "evidence"],
+                            },
+                        },
+                    },
+                },
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "version": {"type": "integer"},
+                        "notes": {"type": "string"},
+                    },
+                },
+            },
+        }
+
+    def build(self) -> str:
+        """Return the final planner prompt with JSON schema guidance."""
+
+        sections: list[str] = [self.base_prompt.strip()]
+        if self.include_schema_notes:
+            schema_text = json.dumps(self._schema, indent=2, sort_keys=True)
+            notes = dedent(
+                """
+                You must respond with JSON that validates against the schema below.
+                - Populate ``objectives`` with decomposed questions for each task.
+                - Store numeric tool scores in ``tool_affinity`` with values in ``[0, 1]``.
+                - Provide concrete "exit_criteria" that confirm completion.
+                - Summarise rationale for the task in "explanation".
+                - Avoid prose outside the JSON object.
+                """
+            ).strip()
+            sections.append(notes)
+            sections.append(schema_text)
+
+        if self.existing_graph and self.existing_graph.get("tasks"):
+            prior_summary = json.dumps(self.existing_graph, indent=2)[:2000]
+            sections.append(
+                "Current task graph context (truncate to stay concise):\n"
+                f"{prior_summary}"
+            )
+
+        if self.feedback:
+            sections.append(f"Peer feedback:\n{self.feedback.strip()}")
+
+        return "\n\n".join(section for section in sections if section).strip()
 
 
 class PlannerAgent(Agent):
@@ -31,11 +152,16 @@ class PlannerAgent(Agent):
         model = self.get_model(config)
 
         # Generate a research plan using the prompt template
-        prompt = self.generate_prompt("planner.research_plan", query=state.query)
+        base_prompt = self.generate_prompt("planner.research_plan", query=state.query)
+        feedback = None
         if getattr(config, "enable_feedback", False):
-            fb = self.format_feedback(state)
-            if fb:
-                prompt += f"\n\nPeer feedback:\n{fb}\n"
+            feedback = self.format_feedback(state) or None
+        prompt = PlannerPromptBuilder(
+            base_prompt=base_prompt,
+            query=state.query,
+            feedback=feedback,
+            existing_graph=state.task_graph if state.task_graph.get("tasks") else None,
+        ).build()
         research_plan = adapter.generate(prompt, model=model)
 
         task_graph, planner_warnings = self._generate_task_graph(research_plan, state)
@@ -244,10 +370,14 @@ class PlannerAgent(Agent):
             question = self._extract_question(task)
             tools = self._extract_tools(task.get("tools"))
             depends_on = self._extract_sequence(task.get("depends_on"))
-            criteria = self._extract_sequence(task.get("criteria"))
-            sub_questions = self._extract_sequence(task.get("sub_questions"))
+            criteria = self._extract_sequence(
+                task.get("criteria") or task.get("exit_criteria")
+            )
+            sub_questions = self._extract_sequence(
+                task.get("sub_questions") or task.get("objectives")
+            )
             affinity = self._extract_affinity(
-                task.get("affinity"),
+                task.get("affinity") or task.get("tool_affinity"),
                 warnings,
                 task_id=task_id,
                 task_index=index,

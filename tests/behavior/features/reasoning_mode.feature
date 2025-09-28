@@ -136,3 +136,4 @@ Feature: Reasoning Mode Selection
     When I simulate a PRDV planner flow
     Then the planner react log should capture normalization warnings
     And the coordinator trace metadata should include unlock events
+    And the telemetry snapshot should include scheduler context

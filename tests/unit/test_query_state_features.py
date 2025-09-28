@@ -108,3 +108,36 @@ def test_task_graph_normalization_logs_react_entries() -> None:
 
     state.set_task_graph({"tasks": [{"id": "clean", "question": "Done"}]})
     assert len(state.react_log) >= 2
+
+
+def test_task_graph_telemetry_persists() -> None:
+    """Planner telemetry is captured and survives serialization."""
+
+    state = QueryState(query="telemetry")
+    payload = {
+        "objectives": ["Understand the research landscape"],
+        "exit_criteria": ["All findings validated"],
+        "tasks": [
+            {
+                "id": "scope",
+                "question": "Define project scope",
+                "objectives": ["List constraints"],
+                "tools": ["planning"],
+                "tool_affinity": {"planning": 0.8},
+                "exit_criteria": ["Stakeholders aligned"],
+                "explanation": "Clarifies success metrics",
+            }
+        ],
+    }
+    state.set_task_graph(payload)
+    telemetry = state.metadata["planner"]["telemetry"]
+    assert telemetry["objectives"] == ["Understand the research landscape"]
+    assert telemetry["exit_criteria"] == ["All findings validated"]
+    assert telemetry["tasks"][0]["objectives"] == ["List constraints"]
+    assert telemetry["tasks"][0]["tool_affinity"]["planning"] == 0.8
+    assert telemetry["tasks"][0]["exit_criteria"] == ["Stakeholders aligned"]
+    assert telemetry["tasks"][0]["explanation"] == "Clarifies success metrics"
+
+    cloudpickle = pytest.importorskip("cloudpickle")
+    restored = cloudpickle.loads(cloudpickle.dumps(state))
+    assert restored.metadata["planner"]["telemetry"] == telemetry

@@ -78,7 +78,12 @@ def test_task_coordinator_schedules_dependencies(state_with_graph: QueryState) -
         "t1",
         "t2",
     ]
-    assert (
-        state_with_graph.metadata["coordinator"]["ordering_strategy"]
-        == "depth_affinity"
-    )
+    coordinator_meta = state_with_graph.metadata["coordinator"]
+    assert coordinator_meta["ordering_strategy"] == "readiness_affinity"
+    assert coordinator_meta["decisions"], "scheduler decisions should be captured"
+    decision_snapshot = coordinator_meta["decisions"][-1]
+    assert decision_snapshot["task_id"] == "t2"
+    scheduler_meta = trace["metadata"]["scheduler"]
+    assert scheduler_meta["selected"]["id"] == "t2"
+    assert scheduler_meta["selected"]["status"] == TaskStatus.RUNNING.value
+    assert scheduler_meta["candidates"][0]["ready"] is True

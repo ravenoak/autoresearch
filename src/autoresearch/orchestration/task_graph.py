@@ -84,6 +84,58 @@ class TaskNode:
 
 
 @dataclass(slots=True)
+class TaskGraphNode:
+    """Scheduler-friendly snapshot of a task node."""
+
+    id: str
+    question: str
+    ready: bool
+    dependency_depth: int
+    pending_dependencies: List[str] = field(default_factory=list)
+    affinity: Dict[str, float] = field(default_factory=dict)
+    status: str = "pending"
+    tools: List[str] = field(default_factory=list)
+    criteria: List[str] = field(default_factory=list)
+    explanation: str | None = None
+
+    def max_affinity(self) -> float:
+        """Return the maximum affinity score across known tools."""
+
+        if not self.affinity:
+            return 0.0
+        return max(self.affinity.values(), default=0.0)
+
+    def ordering_key(self) -> tuple[int, float, int, int, str]:
+        """Return a deterministic sort key for scheduling decisions."""
+
+        ready_rank = 0 if self.ready else 1
+        affinity_score = -self.max_affinity()
+        pending_count = len(self.pending_dependencies)
+        return ready_rank, affinity_score, self.dependency_depth, pending_count, self.id
+
+    def is_available(self) -> bool:
+        """Return ``True`` when the task can be scheduled immediately."""
+
+        return self.ready and self.status == "pending"
+
+    def to_snapshot(self) -> Dict[str, Any]:
+        """Convert the node into a serialisable scheduler snapshot."""
+
+        return {
+            "id": self.id,
+            "question": self.question,
+            "ready": self.ready,
+            "status": self.status,
+            "dependency_depth": self.dependency_depth,
+            "pending_dependencies": list(self.pending_dependencies),
+            "tools": list(self.tools),
+            "criteria": list(self.criteria),
+            "explanation": self.explanation,
+            "max_affinity": self.max_affinity(),
+        }
+
+
+@dataclass(slots=True)
 class TaskGraph:
     """Typed container for planner task graphs."""
 
@@ -200,6 +252,7 @@ __all__ = [
     "TaskGraph",
     "TaskGraphPayload",
     "TaskNode",
+    "TaskGraphNode",
     "TaskNodePayload",
     "TaskEdge",
     "TaskEdgePayload",

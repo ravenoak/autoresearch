@@ -209,33 +209,54 @@ function audit_claims(candidate, evidence, config):
 
 ## 9. Planner and Coordinator (planning/coordinator.py)
 ```
+class PlannerPromptBuilder:
+    function build(state):
+        schema = json_schema(
+            objectives=array(str),
+            exit_criteria=array(str),
+            tasks=array({
+                id: str,
+                question: str,
+                objectives: array(str),
+                tool_affinity: map(str -> float),
+                exit_criteria: array(str),
+                explanation: str,
+            }),
+        )
+        return base_prompt + schema + planner_feedback(state)
+
 class PlannerAgent:
     function execute(state, config):
-        prompt = build_planner_prompt(state)
+        prompt = PlannerPromptBuilder.build(state)
         raw_plan = adapter.generate(prompt, model=config.model)
-        graph = TaskGraph(
-            nodes=parse_nodes(raw_plan),
-            metadata={source: "planner"},
-        )
-        warnings = state.set_task_graph(graph)
+        warnings = state.set_task_graph(parse_json(raw_plan))
         state.record_planner_trace(
             prompt=prompt,
             raw_response=raw_plan,
             normalized=state.task_graph,
             warnings=warnings,
         )
-        return graph
+        return state.task_graph
 
 class TaskCoordinator:
     function ready_tasks():
-        ready = [task for task in graph.tasks if deps_complete(task)]
-        return sort(ready, key=(depth(task), -max_affinity(task), task.id))
+        nodes = [TaskGraphNode(task) for task in state.task_graph.tasks]
+        sorted_nodes = sort(
+            nodes,
+            key=(ready_rank(node), -node.max_affinity(), depth(node), node.id),
+        )
+        return [node for node in sorted_nodes if node.is_available()]
 
     function record_react_step(task_id, thought, action, tool):
+        scheduler = {
+            selected: TaskGraphNode(task_id).snapshot(),
+            candidates: [node.snapshot() for node in ready_tasks()],
+        }
         metadata = {
             unlock_events: unlocked_tasks(),
             task_depth: depth(task_id),
             affinity_delta: top_affinity(task_id) - affinity(task_id, tool),
+            scheduler: scheduler,
         }
         entry = {
             task_id: task_id,
@@ -247,6 +268,9 @@ class TaskCoordinator:
             metadata: metadata,
         }
         state.add_react_trace(entry)
+        state.metadata.coordinator.decisions.append(
+            {task_id: task_id, step: entry.step, scheduler: scheduler}
+        )
         return entry
 ```
 
@@ -291,5 +315,3 @@ function run_benchmarks(config, suite):
     persist_results(results, aggregate, config)
     return aggregate
 ```
-
-

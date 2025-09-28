@@ -1,17 +1,28 @@
-# Orchestration Concurrency
+# Orchestration Workflow
 
-The orchestration layer coordinates agents and queries while guarding
-against race conditions.
+The orchestration layer coordinates planning, task execution, and synthesis
+while retaining thread safety and reproducible telemetry.
 
-- Each query builds a fresh `QueryState`. The state now uses an
-  internal re-entrant lock to serialize updates across threads. Agent
-  results, messages and errors are merged within the lock to avoid
-  corruption when cycles run concurrently.
-- The orchestrator may execute agents in parallel or process multiple
-  queries at once. Separate `QueryState` instances ensure one query's
-  data cannot leak into another.
-- Thread pools and `asyncio` tasks power parallelism. Work units are
-  kept small and hold locks briefly, preserving responsiveness.
+- Every query instantiates a dedicated `QueryState`. Updates are guarded by a
+  re-entrant lock so agents cannot interleave writes.
+- Planner output is normalised into a typed task graph. The new
+  `PlannerPromptBuilder` instructs the LLM to emit JSON including
+  `objectives`, `tool_affinity`, `exit_criteria`, and `explanation` for each
+  task. These fields are mapped onto the runtime `TaskNode` data structure.
+- `QueryState.set_task_graph` captures planner telemetry, aggregating the
+  objectives, exit criteria, and per-task affinity/explanation data. The
+  telemetry is serialisation-safe and restored with the state.
+- `TaskCoordinator` converts planner payloads into `TaskGraphNode` snapshots.
+  Nodes sort by readiness, affinity, dependency depth, then identifier. Every
+  ReAct step records the scheduler snapshot so downstream tools can replay the
+  decision trail.
+- Planner and coordinator metadata flow into the `react_log`, agent results,
+  and behaviour scenarios for observability.
 
-This strategy provides predictable results even when agent execution or
-query submission is highly concurrent.
+## Socratic Q/A
+
+- **Question:** How do we know the scheduler prefers actionable tasks rather
+  than deep dependency chains?
+- **Answer:** We inspect the telemetry snapshots. Ready tasks bubble to the top
+  of each `scheduler.candidates` list, and coordinator decisions persist across
+  serialisation, confirming the readiness-first ordering.
