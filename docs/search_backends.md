@@ -72,3 +72,29 @@ produced:
 | bm25    | 1.00      | 1.00   | 1.93              |
 | semantic| 0.50      | 1.00   | 1.99              |
 | hybrid  | 0.75      | 1.00   | 2.20              |
+
+## Knowledge graph conditioning
+
+Context-aware search can enrich the planner and gate policy with knowledge graph
+signals. Configure these options in the `[search.context_aware]` section:
+
+```toml
+[search.context_aware]
+graph_signal_weight = 0.2
+planner_graph_conditioning = true
+```
+
+- `graph_signal_weight` scales supportive similarity signals derived from the
+  knowledge graph.
+- `planner_graph_conditioning` injects contradictions, neighbour snippets, and
+  provenance sources into planner prompts when enabled.
+
+Gate policy thresholds live at the top level of the configuration:
+
+```toml
+gate_graph_contradiction_threshold = 0.25
+gate_graph_similarity_threshold = 0.0
+```
+
+Tuning these values lets you balance how strongly graph contradictions or sparse
+similarity encourage a multi-agent debate.

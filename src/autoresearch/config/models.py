@@ -55,6 +55,19 @@ class ContextAwareSearchConfig(BaseModel):
         le=1.0,
         description="Weight applied to contradiction signals derived from the graph.",
     )
+    graph_signal_weight: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Weight applied to supportive similarity signals derived from the graph.",
+    )
+    planner_graph_conditioning: bool = Field(
+        default=False,
+        description=(
+            "Inject knowledge graph contradictions, neighbours, and provenance into planner "
+            "prompts when true."
+        ),
+    )
 
 
 class LocalFileConfig(BaseModel):
@@ -400,6 +413,22 @@ class ConfigModel(BaseModel):
         ge=0.0,
         le=1.0,
         description="Minimum retrieval confidence required to skip debate",
+    )
+    gate_graph_contradiction_threshold: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Weighted contradiction score from the knowledge graph that triggers debate."
+        ),
+    )
+    gate_graph_similarity_threshold: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Minimum weighted graph similarity signal required to skip multi-loop debate."
+        ),
     )
     gate_user_overrides: Dict[str, Any] = Field(
         default_factory=dict,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.metrics import OrchestrationMetrics
 from autoresearch.orchestration.orchestration_utils import (
@@ -95,6 +97,8 @@ def test_scout_gate_reduces_loops_when_signals_low() -> None:
     assert state.metadata["scout_gate"]["should_debate"] is False
     assert "coverage_gap" in decision.heuristics
     assert "retrieval_confidence" in decision.heuristics
+    assert "graph_contradiction" in decision.heuristics
+    assert "graph_similarity" in decision.heuristics
     scout_stage = state.metadata.get("scout_stage", {})
     assert scout_stage.get("heuristics") == decision.heuristics
     assert scout_stage.get("rationales") == decision.rationales
@@ -193,3 +197,78 @@ def test_scout_gate_flags_coverage_gap_and_confidence() -> None:
     assert decision.rationales["coverage_gap"]["triggered"] is True
     assert decision.rationales["retrieval_confidence"]["triggered"] is True
     assert metrics.gate_events[-1]["coverage"]["total_claims"] == 3
+
+
+def test_scout_gate_applies_graph_thresholds() -> None:
+    """Graph contradictions and similarity thresholds influence debate choice."""
+
+    config = _make_config(
+        loops=2,
+        gate_retrieval_overlap_threshold=0.0,
+        gate_nli_conflict_threshold=1.0,
+        gate_complexity_threshold=1.0,
+        gate_coverage_gap_threshold=1.0,
+        gate_retrieval_confidence_threshold=0.0,
+        gate_graph_contradiction_threshold=0.2,
+        gate_graph_similarity_threshold=0.3,
+    )
+    state = QueryState(query="Graph reasoning", primus_index=0, coalitions={})
+    metrics = OrchestrationMetrics()
+    policy = ScoutGatePolicy(config)
+
+    with SearchContext.temporary_instance() as context:
+        context._graph_stage_metadata = {  # type: ignore[attr-defined]
+            "contradictions": {
+                "raw_score": 0.8,
+                "weighted_score": 0.28,
+                "weight": config.search.context_aware.graph_contradiction_weight,
+                "items": [
+                    {
+                        "subject": "Policy A",
+                        "predicate": "conflicts_with",
+                        "objects": ["Policy B", "Policy C"],
+                    }
+                ],
+            },
+            "similarity": {
+                "raw_score": 0.2,
+                "weighted_score": 0.1,
+                "weight": config.search.context_aware.graph_signal_weight,
+                "entity_count": 5.0,
+                "relation_count": 1.0,
+            },
+            "neighbors": {
+                "Policy A": [
+                    {
+                        "predicate": "relates_to",
+                        "target": "Policy D",
+                        "direction": "out",
+                    }
+                ]
+            },
+            "paths": [["Policy A", "Policy B", "Policy E"]],
+        }
+        context._graph_summary = {  # type: ignore[attr-defined]
+            "sources": ["https://example.com/policy-a", "https://example.com/policy-b"],
+            "provenance": [{"source": "https://example.com/policy-a"}],
+            "relation_count": 4,
+            "entity_count": 3,
+        }
+        decision = policy.evaluate(
+            query=state.query,
+            state=state,
+            loops=config.loops,
+            metrics=metrics,
+        )
+
+    assert decision.should_debate is True
+    assert decision.heuristics["graph_contradiction"] == pytest.approx(0.28)
+    assert decision.heuristics["graph_similarity"] == pytest.approx(0.1)
+    assert decision.rationales["graph_contradiction"]["triggered"] is True
+    assert decision.rationales["graph_similarity"]["triggered"] is True
+    graph_payload = decision.telemetry.get("graph") or {}
+    assert graph_payload.get("contradictions", {}).get("weighted_score") == pytest.approx(0.28)
+    assert graph_payload.get("similarity", {}).get("weighted_score") == pytest.approx(0.1)
+    assert graph_payload.get("sources", [])[0] == "https://example.com/policy-a"
+    scout_stage = state.metadata.get("scout_stage", {})
+    assert scout_stage.get("graph_context") == graph_payload
