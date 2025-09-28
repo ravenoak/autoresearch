@@ -85,10 +85,10 @@ alpha tag. 【6c5abf†L1-L1】【16543c†L1-L1】【84bbfd†L1-L4】【5b4d9e
   `uv run task verify` sweep and targeted coverage rerun, citing the BM25
   normalization, parallel payload, and numpy stub fixes that cleared the
   regressions. The same plan entry now notes the four-call VSS evidence
-  captured by the refreshed stubbed search regression and its reproduction
+  captured by the refreshed stubbed search regression and the reproduction
   log so reviewers can track the deterministic vector search counts.
-  【F:tests/unit/test_core_modules_additional.py†L15-L210】
-  【3335ae†L1-L7】
+  【F:tests/unit/test_core_modules_additional.py†L18-L379】
+  【22e0d1†L1-L11】
   Supporting links:
   - [docs/release_plan.md][plan-status]
   - [STATUS.md][status-sept25]
