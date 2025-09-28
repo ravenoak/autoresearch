@@ -25,6 +25,9 @@ def _default_task_graph() -> dict[str, Any]:
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..interfaces import QueryStateLike  # noqa: F401
+    PrivateLockAttr = PrivateAttr[RLock]
+else:  # pragma: no cover - runtime alias
+    PrivateLockAttr = PrivateAttr
 
 
 class QueryState(BaseModel):
@@ -50,7 +53,7 @@ class QueryState(BaseModel):
     last_updated: float = Field(default_factory=time.time)
     error_count: int = 0
 
-    _lock: RLock = PrivateAttr(default_factory=RLock)
+    _lock: PrivateLockAttr = cast(PrivateLockAttr, PrivateAttr(default_factory=RLock))
 
     def model_post_init(self, __context: Any) -> None:
         """Ensure synchronization primitives survive model cloning."""

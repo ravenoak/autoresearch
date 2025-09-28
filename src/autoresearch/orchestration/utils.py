@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any, Deque
 
 from ..models import QueryResponse
@@ -20,6 +22,53 @@ def get_memory_usage() -> float:
         return float(usage.ru_maxrss) / 1024
 
 
+@dataclass(frozen=True)
+class TokenUsageSnapshot:
+    """Summary of token usage statistics emitted by orchestration metrics."""
+
+    total: float
+    max_tokens: float
+
+    @property
+    def utilization_ratio(self) -> float:
+        """Return the utilisation ratio guarding against division by zero."""
+
+        if self.max_tokens <= 0:
+            return 0.0
+        return self.total / self.max_tokens
+
+
+@dataclass(frozen=True)
+class MetricsSnapshot:
+    """Typed view over the metrics payload emitted in query responses."""
+
+    token_usage: TokenUsageSnapshot | None = None
+    errors: Sequence[object] | None = None
+
+    @staticmethod
+    def _to_float(value: object) -> float | None:
+        if isinstance(value, (int, float)):
+            return float(value)
+        return None
+
+    @classmethod
+    def from_mapping(cls, metrics: Mapping[str, object]) -> "MetricsSnapshot":
+        token_usage_data = metrics.get("token_usage")
+        token_usage: TokenUsageSnapshot | None = None
+        if isinstance(token_usage_data, Mapping):
+            total = cls._to_float(token_usage_data.get("total"))
+            max_tokens = cls._to_float(token_usage_data.get("max_tokens"))
+            if total is not None and max_tokens is not None:
+                token_usage = TokenUsageSnapshot(total=total, max_tokens=max_tokens)
+
+        errors_data = metrics.get("errors")
+        errors: Sequence[object] | None = None
+        if isinstance(errors_data, Sequence) and not isinstance(errors_data, (str, bytes)):
+            errors = tuple(errors_data)
+
+        return cls(token_usage=token_usage, errors=errors)
+
+
 def calculate_result_confidence(result: QueryResponse) -> float:
     """Compute a naive confidence score for a query result."""
     confidence = 0.5
@@ -32,19 +81,23 @@ def calculate_result_confidence(result: QueryResponse) -> float:
         reasoning_length = len(result.reasoning)
         confidence += min(0.2, 0.01 * reasoning_length)
 
-    if getattr(result, "metrics", None) and "token_usage" in result.metrics:
-        tokens = result.metrics["token_usage"]
-        if "total" in tokens and "max_tokens" in tokens:
-            ratio = tokens["total"] / max(1, tokens["max_tokens"])
-            if 0.3 <= ratio <= 0.9:
-                confidence += 0.1
-            elif ratio > 0.9:
-                confidence -= 0.1
+    metrics_snapshot = MetricsSnapshot()
+    metrics_payload = getattr(result, "metrics", None)
+    if isinstance(metrics_payload, Mapping):
+        metrics_snapshot = MetricsSnapshot.from_mapping(metrics_payload)
 
-    if getattr(result, "metrics", None) and "errors" in result.metrics:
-        error_count = len(result.metrics["errors"])
-        if error_count > 0:
-            confidence -= min(0.4, 0.1 * error_count)
+    token_usage = metrics_snapshot.token_usage
+    if token_usage is not None:
+        ratio = token_usage.utilization_ratio
+        if 0.3 <= ratio <= 0.9:
+            confidence += 0.1
+        elif ratio > 0.9:
+            confidence -= 0.1
+
+    errors = metrics_snapshot.errors
+    if errors:
+        error_count = len(errors)
+        confidence -= min(0.4, 0.1 * error_count)
 
     return max(0.1, min(1.0, confidence))
 
