@@ -40,7 +40,10 @@ def _stubbed_search_environment(monkeypatch, request):
 
     cfg = MagicMock()
     cfg.search.backends = ["stub"]
-    cfg.search.embedding_backends = ["duckdb"] if vector_search_enabled else []
+    if vector_search_enabled:
+        cfg.search.embedding_backends = ["duckdb", "shadow"]
+    else:
+        cfg.search.embedding_backends = []
     cfg.search.context_aware.enabled = False
     cfg.search.max_workers = 1
     cfg.search.use_bm25 = True
@@ -80,6 +83,32 @@ def _stubbed_search_environment(monkeypatch, request):
             "lookup": lookup_path_counts,
             "compute": compute_binding_counts,
         }
+
+        vector_search_counts_log: list[dict[str, Any]] = []
+
+        def _freeze_counts(source: dict[str, dict[str, int]]) -> dict[str, dict[str, int]]:
+            return {
+                phase: {binding: counts.get(binding, 0) for binding in ("instance", "class")}
+                for phase, counts in source.items()
+            }
+
+        def record_vector_counts(label: str = "snapshot") -> dict[str, Any] | None:
+            """Persist the current vector-search counters for downstream assertions."""
+
+            if not vector_search_enabled:
+                return None
+
+            snapshot = {
+                "label": label,
+                "phase": phase,
+                "lookup_paths": _freeze_counts(lookup_path_counts),
+                "lookup_bindings": _freeze_counts(lookup_binding_counts),
+                "compute_bindings": _freeze_counts(compute_binding_counts),
+                "events": list(embedding_events),
+                "path_events": list(embedding_path_events),
+            }
+            vector_search_counts_log.append(snapshot)
+            return snapshot
 
         def _stub_embedding(subject, query_embedding, max_results: int = 5):
             """Accept both instance and class callers to align with hybridmethod semantics."""
@@ -199,6 +228,8 @@ def _stubbed_search_environment(monkeypatch, request):
             cache_probes=cache_probes,
             set_phase=set_phase,
             vector_search_enabled=vector_search_enabled,
+            record_vector_counts=record_vector_counts,
+            vector_search_counts_log=vector_search_counts_log,
             install_backend=install_backend,
             set_storage_results=set_storage_results,
         )
@@ -240,8 +271,8 @@ def test_orchestrator_parse_config_basic():
             {"vector_search": True},
             {
                 "lookup": {
-                    "search-instance": {"instance": 0, "class": 0},
-                    "search-class": {"instance": 0, "class": 0},
+                    "search-instance": {"instance": 1, "class": 0},
+                    "search-class": {"instance": 1, "class": 0},
                     "direct": {"instance": 2, "class": 0},
                 },
                 "compute": {
@@ -296,6 +327,11 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     assert instance_embedding == {}
     assert class_embedding == {}
 
+    snapshot = None
+    if env.vector_search_enabled:
+        snapshot = env.record_vector_counts("post-direct")
+        assert snapshot is not None
+
     expected_lookup = expected_embedding_calls["lookup"]
     expected_compute = expected_embedding_calls["compute"]
 
@@ -334,6 +370,12 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
         assert all(binding in {"instance", "class"} for binding in bindings)
 
     assert lookup_path_counts == expected_lookup
+
+    if env.vector_search_enabled:
+        assert env.vector_search_counts_log
+        assert snapshot is not None
+        assert snapshot["lookup_paths"] == lookup_path_counts
+        assert snapshot["events"] == env.embedding_events
 
     if "direct" in expected_lookup:
         direct_expected = ["instance"] * sum(expected_lookup["direct"].values())
