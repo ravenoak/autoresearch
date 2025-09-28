@@ -71,6 +71,7 @@ def attach_cli_hooks(
     setattr(target, "_cli_visualize", visualize)
     setattr(target, "_cli_visualize_query", visualize_query)
 
+
 def set_verbosity(level: Verbosity) -> None:
     """Set the global verbosity level.
 
@@ -285,8 +286,10 @@ def _format_percentage(value: Optional[float], precision: int = 1) -> str:
         return "—"
 
     percent_value = value * 100
-    format_spec = f".{precision}f"
-    return f"{percent_value:{format_spec}}%"
+    formatted = f"{percent_value:.{precision}f}"
+    if formatted.startswith("-0") and percent_value == 0:
+        formatted = formatted.replace("-0", "0", 1)
+    return f"{formatted}%"
 
 
 def render_evaluation_summary(
@@ -410,6 +413,7 @@ def visualize_query_cli(
         from .orchestration.orchestrator import Orchestrator
         from .monitor import _collect_system_metrics, _render_metrics
         from .output_format import OutputFormatter
+
         # Lazy import for interactive prompts
         from . import Prompt
 
@@ -451,6 +455,7 @@ def visualize_query_cli(
 
         try:
             from .visualization import save_knowledge_graph
+
             save_knowledge_graph(result, output_path, layout=layout)
             print_success(f"Graph written to {output_path}")
         except Exception as e:  # pragma: no cover - optional dependency

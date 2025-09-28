@@ -133,9 +133,7 @@ def test_streamlit_metrics(monkeypatch):
     assert fake_st.session_state["agent_performance"]["A"]["executions"] == 1
     fake_psutil = types.SimpleNamespace(
         cpu_percent=lambda interval=None: 10.0,
-        virtual_memory=lambda: types.SimpleNamespace(
-            percent=20.0, used=1024**3, total=2 * 1024**3
-        ),
+        virtual_memory=lambda: types.SimpleNamespace(percent=20.0, used=1024**3, total=2 * 1024**3),
         Process=lambda pid=None: types.SimpleNamespace(
             memory_info=lambda: types.SimpleNamespace(rss=50 * 1024**2)
         ),
@@ -214,6 +212,12 @@ def test_render_evaluation_summary_joins_artifacts(monkeypatch):
         ]
     )
     assert artifacts_cell == expected
+
+
+def test_format_percentage_variants():
+    assert cli_utils._format_percentage(None) == "—"
+    assert cli_utils._format_percentage(0.1234, precision=1) == "12.3%"
+    assert cli_utils._format_percentage(-0.0, precision=1) == "0.0%"
 
 
 def test_cli_utils_format_helpers_importable():

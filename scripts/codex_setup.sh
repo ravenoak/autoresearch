@@ -33,12 +33,14 @@ if [[ "$(uname -s)" != "Linux" ]]; then
     exit 1
 fi
 
-SCRIPT_DIR="$(dirname "$0")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/setup_common.sh"
 
 # Ensure Go Task is available before platform-specific setup
 "$SCRIPT_DIR/bootstrap.sh"
-ensure_venv_bin_on_path "$PWD/.venv/bin"
+VENV_BIN="$PWD/.venv/bin"
+ensure_venv_bin_on_path "$VENV_BIN"
+export PATH="$VENV_BIN:$PATH"
 if ! task --version >/dev/null 2>&1; then
     echo "Go Task installation failed. See docs/installation.md for manual steps." >&2
     exit 1
