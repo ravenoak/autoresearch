@@ -141,12 +141,14 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   【F:src/autoresearch/search/core.py†L705-L760】
   【F:src/autoresearch/orchestration/parallel.py†L145-L182】
   【F:tests/stubs/numpy.py†L12-L81】
-- [x] Removed duplicate DuckDB embedding lookups in the VSS path by reusing
-  storage vector hits and caching backend payloads; the updated
+- [x] Revalidated the DuckDB vector path now emits four embedding-related
+  events (two compute calls and two lookups) while the legacy path stays at
+  the direct-only pair. The refreshed
   `tests/unit/test_core_modules_additional.py::test_search_stub_backend`
-  asserts the single-call flow across legacy and vector modes.
-  【F:src/autoresearch/search/core.py†L1698-L1950】
-  【F:tests/unit/test_core_modules_additional.py†L15-L180】
+  captures the breakdown and the stubbed reproduction log shows the
+  deterministic counts for the vector flow.
+  【F:tests/unit/test_core_modules_additional.py†L15-L210】
+  【3335ae†L1-L7】
 - [x] `uv run --extra build python -m build` succeeded out of band and archived
   `baseline/logs/python-build-20250925T001554Z.log`, so packaging is ready to
   resume once verify and coverage pass.
