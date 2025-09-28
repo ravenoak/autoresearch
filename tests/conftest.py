@@ -2,28 +2,30 @@ import contextlib
 import importlib
 import importlib.util
 import logging
+import multiprocessing
+import multiprocessing.pool
 import os
 import sys
 from collections.abc import Mapping
+from multiprocessing import resource_tracker
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Protocol, cast
 from unittest.mock import MagicMock, _patch, patch
 from uuid import uuid4
-import multiprocessing
-import multiprocessing.pool
-from multiprocessing import resource_tracker
+
+import pytest
+from pytest_httpx import httpx_mock  # noqa: F401
+
+from tests.optional_imports import import_or_skip
+from tests.typing_helpers import TypedFixture
+
 
 shared_memory: ModuleType | None
 try:
     from multiprocessing import shared_memory
 except ImportError:  # pragma: no cover - Python < 3.8
     shared_memory = None
-
-import pytest
-from pytest_httpx import httpx_mock  # noqa: F401
-from tests.optional_imports import import_or_skip
-from tests.typing_helpers import TypedFixture
 
 try:
     from typer.testing import CliRunner
@@ -331,6 +333,7 @@ def _init_redis() -> None:
         import redis
 
         redis.Redis.from_url(REDIS_URL, socket_connect_timeout=1).ping()
+
         def _make_client() -> _RedisClient:
             return cast(_RedisClient, redis.Redis.from_url(REDIS_URL))
 
@@ -341,7 +344,7 @@ def _init_redis() -> None:
             import fakeredis
 
             _fakeredis_server = fakeredis.FakeServer()
-            
+
             def _make_fake_client() -> _RedisClient:
                 return cast(
                     _RedisClient,

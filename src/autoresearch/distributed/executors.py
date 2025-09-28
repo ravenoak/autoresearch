@@ -143,29 +143,29 @@ class RayExecutor:
                 name,
                 state,
                 self.config,
-                    self.result_broker.queue if self.result_broker else None,
-                    self.broker.queue if self.broker else None,
-                    self.http_handle,
-                    self.llm_handle,
-                )
-                for name in self.config.agents
-            ]
+                self.result_broker.queue if self.result_broker else None,
+                self.broker.queue if self.broker else None,
+                self.http_handle,
+                self.llm_handle,
+            )
+            for name in self.config.agents
+        ]
         remote_results = cast(list[AgentResultMessage], ray.get(futures))
         results: list[AgentResultMessage]
         if self.result_aggregator:
             results = list(self.result_aggregator.results)
+            self.result_aggregator.results[:] = []
         else:
             results = remote_results
-            if self.result_aggregator:
-                self.result_aggregator.results[:] = []
-            for res in results:
-                state.update(res["result"])
-                if self.broker:
-                    for claim in res["result"].get("claims", []):
-                        publish_claim(self.broker, claim)
-            if callbacks.get("on_cycle_end"):
-                callbacks["on_cycle_end"](loop, state)
-            state.cycle += 1
+
+        for res in results:
+            state.update(res["result"])
+            if self.broker:
+                for claim in res["result"].get("claims", []):
+                    publish_claim(self.broker, claim)
+        if callbacks.get("on_cycle_end"):
+            callbacks["on_cycle_end"](loop, state)
+        state.cycle += 1
         return state.synthesize()
 
     def shutdown(self) -> None:

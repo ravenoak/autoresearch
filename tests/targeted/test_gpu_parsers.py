@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import sys
 from typing import Generator
 from types import ModuleType, SimpleNamespace
 

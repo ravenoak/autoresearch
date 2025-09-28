@@ -23,4 +23,3 @@ def test_query_state_cloudpickle_serialization_preserves_fields() -> None:
     assert restored.claims == state.claims
     assert restored.metadata["planner"] == state.metadata["planner"]
     assert restored.task_graph == state.task_graph
-

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
 from tests.helpers.modules import ensure_stub_module
@@ -10,8 +12,6 @@ ensure_stub_module("docx", {"Document": object})
 ensure_stub_module(
     "pdfminer.high_level", {"extract_text": lambda *a, **k: ""}
 )
-
-from typing import cast
 
 from scripts.benchmark_token_memory import run_benchmark  # noqa: E402
 

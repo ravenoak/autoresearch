@@ -313,8 +313,8 @@ class Orchestrator:
                     metrics,
                     callbacks_map,
                     agent_factory,
-                  storage_manager,
-                  tracer_protocol,
+                    storage_manager,
+                    tracer_protocol,
                     cb_manager,
                 )
 

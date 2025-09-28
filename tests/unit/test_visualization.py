@@ -1,7 +1,5 @@
 import sys
 from types import ModuleType
-import sys
-from types import ModuleType
 from unittest.mock import MagicMock
 
 import pytest

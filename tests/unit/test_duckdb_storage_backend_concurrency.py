@@ -1,7 +1,4 @@
 import threading
-from unittest.mock import MagicMock, patch
-
-import threading
 from typing import Generator
 from unittest.mock import MagicMock, patch
 

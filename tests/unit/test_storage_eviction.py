@@ -161,11 +161,11 @@ def test_enforce_ram_budget_reduces_usage_property(params):
                 "autoresearch.storage.StorageManager._current_ram_mb",
                 ram_mock,
             ):
-                    with patch(
-                        "autoresearch.config.loader.ConfigLoader.config",
-                        new=cfg,
-                    ):
-                        StorageManager._enforce_ram_budget(budget)
+                with patch(
+                    "autoresearch.config.loader.ConfigLoader.config",
+                    new=cfg,
+                ):
+                    StorageManager._enforce_ram_budget(budget)
 
     deterministic_limit, _, minimum_resident_nodes, _ = StorageManager._deterministic_node_limit(
         budget, cfg

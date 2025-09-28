@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, TypedDict
+from typing import Any, Dict, Iterable, List, Mapping, TypedDict
 
 
 class TaskEdgePayload(TypedDict, total=False):
