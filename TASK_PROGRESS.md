@@ -1,5 +1,25 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-30** at 18:20 UTC the `task release:alpha` sweep is fully
+auditable through the Task CLI: the 17:45 UTC verify run,
+18:19 UTC coverage rerun, and 02:54 UTC packaging dry run now live at
+`baseline/logs/task-verify-20250930T174512Z.log`,
+`baseline/logs/task-coverage-20250930T181947Z.log`,
+`baseline/logs/build-20250929T025418Z.log`,
+`baseline/logs/twine-check-20250929T025438Z.log`, and
+`baseline/logs/publish-dev-20250929T025443Z.log`. The updated
+`prepare-first-alpha-release` issue threads those logs, while the archived
+`adaptive-gate-and-claim-audit-rollout` ticket records the Phase 1 gate
+completion and the upgrade plan notes the CLI scope adjustments surfaced during
+testing.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/build-20250929T025418Z.log†L1-L12】
+【F:baseline/logs/twine-check-20250929T025438Z.log†L1-L2】
+【F:baseline/logs/publish-dev-20250929T025443Z.log†L1-L13】
+【F:issues/prepare-first-alpha-release.md†L4-L27】
+【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】
+【F:docs/deep_research_upgrade_plan.md†L18-L45】
+
 As of **2025-09-29** at 01:33 UTC the targeted stub backend regression check
 (`uv run --extra test pytest tests/unit/test_core_modules_additional.py::test_search_stub_backend -vv`)
 passes for both legacy and DuckDB VSS parameterizations, and the follow-up

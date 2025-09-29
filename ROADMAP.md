@@ -13,7 +13,7 @@ raise factuality while containing cost and latency. Each phase is tracked by a
 dedicated in-repo ticket so progress can be audited without leaving the
 repository:
 
-1. [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md)
+1. [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md)
    – implements the scout pass, gate policy signals, and per-claim audit
    tables.
 2. [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md)

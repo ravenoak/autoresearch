@@ -59,7 +59,7 @@ def monitor_cli_setup(monkeypatch: pytest.MonkeyPatch) -> MonitorSetup:
         monkeypatch.setattr("autoresearch.main.Prompt.ask", _ask)
         monkeypatch.setattr(Orchestrator, "run_query", dummy_run_query)
         monkeypatch.setattr("autoresearch.monitor.Orchestrator", Orchestrator)
-        monkeypatch.setattr("sys.stdout.isatty", lambda: True)
+        monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
         return cfg
 
     return _apply

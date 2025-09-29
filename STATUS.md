@@ -27,6 +27,26 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
 
 ## September 30, 2025
+- `task release:alpha` now stitches the 17:45 UTC verify sweep, 18:19 UTC
+  coverage rerun, and 02:54 UTC packaging dry run into a single auditable
+  trail. The logs at
+  `baseline/logs/task-verify-20250930T174512Z.log`,
+  `baseline/logs/task-coverage-20250930T181947Z.log`,
+  `baseline/logs/build-20250929T025418Z.log`,
+  `baseline/logs/twine-check-20250929T025438Z.log`, and
+  `baseline/logs/publish-dev-20250929T025443Z.log` now backstop
+  `issues/prepare-first-alpha-release.md`, while
+  `docs/deep_research_upgrade_plan.md` records the Phase 1 gating completion
+  and its CLI scope adjustments. The archived
+  `issues/archive/adaptive-gate-and-claim-audit-rollout.md` ticket closes the
+  adaptive gate milestone with citations to those runs.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+  【F:baseline/logs/build-20250929T025418Z.log†L1-L12】
+  【F:baseline/logs/twine-check-20250929T025438Z.log†L1-L2】
+  【F:baseline/logs/publish-dev-20250929T025443Z.log†L1-L13】
+  【F:issues/prepare-first-alpha-release.md†L4-L27】
+  【F:docs/deep_research_upgrade_plan.md†L18-L45】
+  【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】
 - The restored Task CLI now lists and executes `verify`, letting the 17:45 Z
   sweep complete linting, typing, and every unit, integration, and behavior
   suite while streaming the VSS loaders that previously blocked the gate.
@@ -94,9 +114,9 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 - Updated `docs/pseudocode.md` and
   `docs/deep_research_upgrade_plan.md` with line-wrapped structures that mirror
   the adaptive gate, GraphRAG, and planner telemetry upgrades.【F:docs/pseudocode.md†L1-L199】【F:docs/deep_research_upgrade_plan.md†L1-L134】
-- Logged new open issues for the adaptive gate, planner upgrade, GraphRAG,
-  evaluation harness, and cost-aware routing phases so work can begin with
-  acceptance criteria already scoped.【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
+  - Logged new open issues for the adaptive gate, planner upgrade, GraphRAG,
+    evaluation harness, and cost-aware routing phases so work can begin with
+    acceptance criteria already scoped.【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
 - Instrumented the planner-coordinator pipeline with typed task graphs,
   depth-affinity scheduling, and `react_log` telemetry to baseline unlock
   coverage and tool affinity KPIs for the PRDV flow.【F:docs/specs/orchestration.md†L33-L70】【F:docs/pseudocode.md†L171-L200】

@@ -26,6 +26,13 @@ keep truthfulness, verifiability, and cost discipline in balance.
      tailor the decision boundary.
    - Extend the evidence pipeline to record per-claim support status.
    - Update response formats so clients can render audit tables.
+   - Status: complete. The 17:45 UTC verify sweep and 18:19 UTC coverage rerun
+     now back the release pipeline, while testing tightened CLI toggles,
+     layered exports, and audit detail controls captured in STATUS.md and the
+     release plan.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+     【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+     【F:STATUS.md†L21-L38】
+     【F:docs/release_plan.md†L18-L33】
 2. **Phase 2 – Planner and Coordinator Evolution**
    - Promote planner outputs into a schedulable task graph.
    - Capture ReAct traces for transparency and replay.

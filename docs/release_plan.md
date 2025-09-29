@@ -18,6 +18,28 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 30, 2025** sweep finally linked every release gate through the
+Task CLI. `task release:alpha` now references the 17:45 UTC verify log, the
+18:19 UTC coverage rerun, and the 02:54 UTC packaging evidence so reviewers can
+audit the trail end-to-end. The logs live at
+`baseline/logs/task-verify-20250930T174512Z.log`,
+`baseline/logs/task-coverage-20250930T181947Z.log`,
+`baseline/logs/build-20250929T025418Z.log`,
+`baseline/logs/twine-check-20250929T025438Z.log`, and
+`baseline/logs/publish-dev-20250929T025443Z.log`, all cross-linked from
+`issues/prepare-first-alpha-release.md`. Phase 1 of the deep research upgrade
+plan is now archived in
+`issues/archive/adaptive-gate-and-claim-audit-rollout.md`, and
+`docs/deep_research_upgrade_plan.md` captures the CLI and evidence-pipeline
+adjustments surfaced during testing.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/build-20250929T025418Z.log†L1-L12】
+【F:baseline/logs/twine-check-20250929T025438Z.log†L1-L2】
+【F:baseline/logs/publish-dev-20250929T025443Z.log†L1-L13】
+【F:issues/prepare-first-alpha-release.md†L4-L27】
+【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】
+【F:docs/deep_research_upgrade_plan.md†L18-L45】
+
 The **September 29, 2025 at 00:08 UTC** sweep reran
 `uv run task release:alpha` with the deep research phases recorded below.
 Extras synced cleanly before `uv run flake8 src tests` failed on the unused
@@ -49,7 +71,7 @@ Deep research tickets stay referenced for release sign-off:
 These references align with the acceptance criteria in
 [prepare-first-alpha-release][prepare-alpha].
 
-[phase1-ticket]: ../issues/adaptive-gate-and-claim-audit-rollout.md
+[phase1-ticket]: ../issues/archive/adaptive-gate-and-claim-audit-rollout.md
 [phase2-ticket]: ../issues/planner-coordinator-react-upgrade.md
 [phase3-ticket]: ../issues/session-graph-rag-integration.md
 [phase4-ticket]: ../issues/evaluation-and-layered-ux-expansion.md

@@ -30,7 +30,7 @@ five deep-research initiatives documented below.
   milestones while keeping optional-extra coverage sweeps synchronized with
   `TASK_PROGRESS.md`.
 - [ ] Execute Phase 1 of the Deep Research program under
-  [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md).
+  [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md).
 
 ## Deep Research Enhancement Program
 
@@ -41,7 +41,7 @@ alongside the alpha release workstream.
 
 1. **Adaptive gate and claim audits** – Gate policy, scout signals, and
    per-claim audit tables tracked in
-   [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md).
+  [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md).
 2. **Planner and coordinator ReAct upgrade** – Structured task graphs, tool
    affinity routing, and telemetry enhancements tracked in
    [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md).

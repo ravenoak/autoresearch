@@ -6,6 +6,21 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Captured the first end-to-end `task release:alpha` sweep with the Task CLI:
+  the 17:45 Z verify run, 18:19 Z coverage run, and 02:54 Z packaging logs now
+  anchor `prepare-first-alpha-release` while archiving Phase 1 of the deep
+  research program. The verify log documents the VSS loader and scout gate
+  replay, the coverage log confirms the ≥90 % bar with the CLI remediation
+  banner, and the build, twine check, plus TestPyPI dry run evidence keep the
+  release trail auditable alongside the updated upgrade plan and archived
+  gating ticket.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+  【F:baseline/logs/build-20250929T025418Z.log†L1-L12】
+  【F:baseline/logs/twine-check-20250929T025438Z.log†L1-L2】
+  【F:baseline/logs/publish-dev-20250929T025443Z.log†L1-L13】
+  【F:issues/prepare-first-alpha-release.md†L4-L27】
+  【F:docs/deep_research_upgrade_plan.md†L18-L45】
+  【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】
 - Documented the Deep Research Enhancement Initiative phases in the roadmap and
   created `docs/deep_research_upgrade_plan.md` to coordinate adaptive gating,
   per-claim audits, GraphRAG, evaluation harnesses, and cost-aware routing
@@ -24,13 +39,13 @@ Reference issues by slugged filename (for example,
   【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
 - Logged the deep research phase tickets directly in the release narrative so
   their closure stays visible alongside the alpha acceptance criteria:
-  [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md),
+  [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md),
   [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md),
   [session-graph-rag-integration](issues/session-graph-rag-integration.md),
   [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md),
   and [cost-aware-model-routing](issues/cost-aware-model-routing.md) align with
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
-  【F:docs/release_plan.md†L18-L44】【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】
+  【F:docs/release_plan.md†L18-L44】【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L38】
   【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】
   【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
   【F:issues/prepare-first-alpha-release.md†L13-L34】

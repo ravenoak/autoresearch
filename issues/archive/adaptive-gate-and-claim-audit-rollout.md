@@ -8,7 +8,7 @@ configuration toggles, and audit table plumbing so downstream clients can
 inspect support status for every claim.
 
 ## Dependencies
-- [prepare-first-alpha-release](prepare-first-alpha-release.md)
+- [prepare-first-alpha-release](../prepare-first-alpha-release.md)
 
 ## Acceptance Criteria
 - Gate policy module computes overlap, conflict, multi-hop, and graph
@@ -23,5 +23,17 @@ inspect support status for every claim.
 - Unit and integration tests cover gate decisions, override behavior, and audit
   serialization.
 
+## Resolution
+- `task verify` at 17:45 UTC and `task coverage` at 18:19 UTC now capture the
+  VSS loader replay, scout gate telemetry, and audit tables that satisfy the
+  gating acceptance criteria.【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+- `docs/deep_research_upgrade_plan.md` and `docs/release_plan.md` describe the
+  CLI toggles, layered exports, and release-trail linkage produced during
+  testing.【F:docs/deep_research_upgrade_plan.md†L18-L45】【F:docs/release_plan.md†L18-L33】
+- `issues/prepare-first-alpha-release.md` threads the verify, coverage, and
+  packaging logs so reviewers can audit the gating evidence without rerunning
+  the sweep.【F:issues/prepare-first-alpha-release.md†L4-L27】
+
 ## Status
-Open
+Archived
