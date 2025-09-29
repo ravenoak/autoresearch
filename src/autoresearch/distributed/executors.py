@@ -13,12 +13,14 @@ from ..interfaces import CallbackMap, QueryStateLike
 from ..llm import pool as llm_pool
 from ..logging_utils import get_logger
 from ..models import QueryResponse
+from ..typing.http import RequestsSessionProtocol
 from ..orchestration.state import QueryState
 from ._ray import RayLike, RayObjectRef, RemoteFunction, optional_ray
 from .broker import (
     AgentResultMessage,
     BrokerType,
     MessageQueueProtocol,
+    StorageBrokerQueueProtocol,
     STOP_MESSAGE,
 )
 from .coordinator import (
@@ -34,37 +36,53 @@ ray: RayLike = optional_ray()
 log = get_logger(__name__)
 
 
+def _resolve_requests_session(session_handle: Any | None) -> RequestsSessionProtocol | None:
+    """Materialise a shared HTTP session from a Ray handle or direct instance."""
+
+    if session_handle is None:
+        return None
+
+    resolved = session_handle
+    try:
+        if isinstance(resolved, ray.ObjectRef):
+            resolved = ray.get(resolved)
+    except Exception as exc:  # pragma: no cover - defensive guard
+        log.warning("Failed to retrieve distributed session", exc_info=exc)
+        return None
+
+    if isinstance(resolved, RequestsSessionProtocol):
+        return resolved
+
+    log.warning(
+        "Received unexpected session payload for distributed worker: %s",
+        type(resolved).__name__,
+    )
+    return None
+
+
 @ray.remote
 def _execute_agent_remote(
     agent_name: str,
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: MessageQueueProtocol | None = None,
+    storage_queue: StorageBrokerQueueProtocol | None = None,
     http_session: Any | None = None,
     llm_session: Any | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a Ray worker."""
     if storage_queue is not None:
         storage.set_message_queue(storage_queue)
-    if http_session is not None:
-        try:
-            if isinstance(http_session, ray.ObjectRef):
-                http_session = ray.get(http_session)
-        except Exception as e:
-            log.warning("Failed to retrieve HTTP session", exc_info=e)
+    resolved_http = _resolve_requests_session(http_session)
+    if resolved_http is not None:
         from .. import search
 
-        search.set_http_session(http_session)
-    if llm_session is not None:
-        try:
-            if isinstance(llm_session, ray.ObjectRef):
-                llm_session = ray.get(llm_session)
-        except Exception as e:
-            log.warning("Failed to retrieve LLM session", exc_info=e)
+        search.set_http_session(resolved_http)
+    resolved_llm = _resolve_requests_session(llm_session)
+    if resolved_llm is not None:
         from ..llm import pool as llm_pool
 
-        llm_pool.set_session(llm_session)
+        llm_pool.set_session(resolved_llm)
     agent = AgentFactory.get(agent_name)
     result = agent.execute(cast(QueryState, state), config)
     msg: AgentResultMessage = {
@@ -83,7 +101,7 @@ def _execute_agent_process(
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: MessageQueueProtocol | None = None,
+    storage_queue: StorageBrokerQueueProtocol | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a spawned process."""
     if storage_queue is not None:
