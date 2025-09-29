@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping
+from typing import Any, AsyncIterable, Iterable, Mapping
 
 
 class Response:
@@ -41,7 +41,10 @@ class PlainTextResponse(Response):
 class StreamingResponse(Response):
     def __init__(
         self,
-        content: Iterable[bytes] | Iterable[str],
+        content: Iterable[bytes]
+        | Iterable[str]
+        | AsyncIterable[bytes]
+        | AsyncIterable[str],
         status_code: int = ...,
         headers: Mapping[str, str] | None = ...,
         media_type: str | None = ...,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Protocol, cast
 
 import pytest
@@ -37,6 +37,7 @@ class HttpResponse(Protocol):
 
     status_code: int
     text: str
+    headers: Mapping[str, str]
 
     def json(self) -> dict[str, object]: ...
 
@@ -178,6 +179,17 @@ def check_status(test_context: dict[str, object], status: int) -> None:
         assert "detail" in data
 
 
+@then(
+    parsers.parse('the response should include header "{header}" with value "{value}"')
+)
+def check_response_header(
+    test_context: dict[str, object], header: str, value: str
+) -> None:
+    response = _get_response(test_context, "response")
+    assert header in response.headers
+    assert response.headers[header] == value
+
+
 @then(parsers.parse("the first response status should be {status:d}"))
 def check_first_status(test_context: dict[str, object], status: int) -> None:
     response = _get_response(test_context, "resp1")
@@ -196,6 +208,13 @@ def check_second_status(test_context: dict[str, object], status: int) -> None:
     else:
         data = response.json()
         assert "error" not in data
+
+
+@then(parsers.parse("the request logger should record {count:d} hits"))
+def check_request_logger_hits(count: int) -> None:
+    snapshot = get_request_logger().snapshot()
+    total_hits = sum(snapshot.values())
+    assert total_hits == count
 
 
 @scenario("../features/api_auth.feature", "Invalid API key")

@@ -35,6 +35,10 @@ October 6, 2025: strict typing for the configuration loader, validators, and
 Git stub now passes a targeted mypy sweep, unblocking the config milestone for
 the alpha gate.【aa0591†L1-L2】
 
+October 9, 2025: the HTTP API middleware and request state now expose explicit
+types, and a dedicated mypy sweep plus integration coverage confirm the API
+typing gap is closed ahead of the alpha tag.【F:src/autoresearch/api/middleware.py†L18-L169】【F:tests/integration/api/test_middleware_state.py†L1-L91】
+
 ## Dependencies
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)

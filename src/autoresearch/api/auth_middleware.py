@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import secrets
-from typing import cast
+from typing import Awaitable, Callable
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
 
-from ..config import ConfigLoader
+from ..config import APIConfig
 from .utils import verify_bearer_token
 
 
@@ -46,7 +45,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             headers={"WWW-Authenticate": scheme},
         )
 
-    def _resolve_role(self, key: str | None, cfg) -> tuple[str, JSONResponse | None]:
+    def _resolve_role(
+        self, key: str | None, cfg: APIConfig
+    ) -> tuple[str, JSONResponse | None]:
         """Return the role for ``key`` or an error response.
 
         Args:
@@ -74,14 +75,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         return "anonymous", None
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         """Authenticate requests using API keys or bearer tokens."""
 
         if request.scope.get("type") != "http":
             return await call_next(request)
 
         app_state = request.app.state
-        loader = cast(ConfigLoader, app_state.config_loader)
+        loader = app_state.config_loader
         loader._config = loader.load_config()
         cfg = loader._config.api
 

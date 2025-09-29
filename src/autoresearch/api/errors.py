@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import Request
-from fastapi.responses import PlainTextResponse, Response
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
 
 
 def handle_rate_limit(request: Request, exc: Exception) -> Response:
     """Translate rate limit exceptions into HTTP responses."""
-    from .middleware import _rate_limit_exceeded_handler  # type: ignore
+    from .middleware import _rate_limit_exceeded_handler
 
     result = _rate_limit_exceeded_handler(request, exc)
     if isinstance(result, Response):

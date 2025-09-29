@@ -15,11 +15,13 @@ Feature: API Authentication and Rate Limiting
     Given the API requires a bearer token "token"
     When I send a query "test" with header "Authorization" set to "Bearer bad"
     Then the response status should be 401
+    And the response should include header "WWW-Authenticate" with value "Bearer"
 
   Scenario: Missing credentials
     Given the API requires an API key "secret"
     When I send a query "test" without credentials
     Then the response status should be 401
+    And the response should include header "WWW-Authenticate" with value "API-Key"
 
   Scenario: Insufficient permission
     Given the API requires an API key "secret" with role "user" and no permissions
@@ -31,3 +33,4 @@ Feature: API Authentication and Rate Limiting
     When I send two queries to the API
     Then the first response status should be 200
     And the second response status should be 429
+    And the request logger should record 2 hits

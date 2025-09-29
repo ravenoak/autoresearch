@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable, Iterable, Mapping, MutableMapping
+from asyncio import Future
+from contextlib import AbstractContextManager
+from typing import Any, Awaitable, Callable, Iterable, Mapping, MutableMapping, Protocol
 
+from autoresearch.api.utils import RequestLogger
+from autoresearch.config import ConfigLoader
+from .params import Depends as DependsDependency
 from .responses import Response
 
 Scope = Mapping[str, Any]
@@ -9,6 +14,25 @@ Receive = Callable[[], Awaitable[Any]]
 Send = Callable[[dict[str, Any]], Awaitable[Any]]
 RequestHandler = Callable[..., Any]
 RouteDecorator = Callable[[RequestHandler], RequestHandler]
+
+
+class FastAPIState(Protocol):
+    limiter: Any
+    request_logger: RequestLogger
+    config_loader: ConfigLoader
+    async_tasks: MutableMapping[str, Future[Any]]
+    watch_ctx: AbstractContextManager[Any] | None
+
+    def __setattr__(self, name: str, value: Any) -> None: ...
+
+
+class RequestState(Protocol):
+    permissions: set[str] | None
+    www_authenticate: str
+    view_rate_limit: tuple[Any, list[str]]
+    role: str
+
+    def __setattr__(self, name: str, value: Any) -> None: ...
 
 
 class HTTPException(Exception):
@@ -25,7 +49,8 @@ class HTTPException(Exception):
 
 class Request:
     app: Any
-    state: Any
+    state: RequestState
+    scope: MutableMapping[str, Any]
     headers: Mapping[str, str]
     query_params: Mapping[str, str]
     path_params: MutableMapping[str, Any]
@@ -36,6 +61,8 @@ class Request:
 
 
 class APIRouter:
+    routes: list[Any]
+
     def add_api_route(
         self,
         path: str,
@@ -59,6 +86,7 @@ class APIRouter:
 
 class FastAPI:
     router: APIRouter
+    state: FastAPIState
 
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
 
@@ -83,7 +111,9 @@ class FastAPI:
     def delete(self, path: str, *args: Any, **kwargs: Any) -> RouteDecorator: ...
 
 
-def Depends(dependency: Callable[..., Any] | None = ..., *, use_cache: bool = ...) -> Any: ...
+def Depends(
+    dependency: Callable[..., Any] | None = ..., *, use_cache: bool = ...
+) -> DependsDependency: ...
 
 
 __all__ = [

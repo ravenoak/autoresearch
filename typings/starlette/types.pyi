@@ -1,6 +1,6 @@
-from typing import Any, Awaitable, Callable, Mapping
+from typing import Any, Awaitable, Callable, MutableMapping
 
-Scope = Mapping[str, Any]
+Scope = MutableMapping[str, Any]
 Receive = Callable[[], Awaitable[Any]]
 Send = Callable[[dict[str, Any]], Awaitable[Any]]
 ASGIApp = Callable[[Scope, Receive, Send], Awaitable[Any]]
