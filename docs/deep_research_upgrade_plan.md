@@ -56,6 +56,10 @@ keep truthfulness, verifiability, and cost discipline in balance.
      operators can monitor GraphRAG uptake.
    - Export lightweight GraphML or JSON artifacts via the output formatter
      so downstream tools can visualise graph state per session.
+   - Document how to toggle `search.context_aware.planner_graph_conditioning`
+     for planner prompts, and cover the cues with
+     `tests/behavior/features/reasoning_modes/planner_graph_conditioning.feature`
+     so regression sweeps keep contradiction and neighbour hints intact.
 4. **Phase 4 – Evaluation Harness and Layered UX**
    - Automate TruthfulQA, FEVER, and HotpotQA smoke runs with KPIs.
    - Add layered summaries, Socratic prompts, per-claim audit toggles, and

@@ -21,5 +21,12 @@ coordinate schema updates, graph exports, and orchestration integration.
   referenced in output bundles.
 - Documentation and diagrams explain the graph flow and operator controls.
 
+## QA Coverage
+
+- Behavior coverage now lives in
+  `tests/behavior/features/reasoning_modes/planner_graph_conditioning.feature`
+  to prove planner prompts surface contradiction and neighbour cues when graph
+  conditioning is enabled.
+
 ## Status
 Open

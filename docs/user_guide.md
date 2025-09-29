@@ -19,6 +19,18 @@ trace**, **Show knowledge graph**, and **Enable graph exports**. Toggle defaults
 are bound to the current depth so that moving to deeper views surfaces more
 context without retaining stale preferences.
 
+## Planner graph conditioning
+
+Knowledge graph signals can be threaded into planner prompts when retrieval
+surfaces contradictions or informative neighbours. Enable the feature in
+`search.context_aware` by setting `planner_graph_conditioning = true` after the
+graph pipeline has been validated for your deployment. The toggle works best
+for sessions that ingest at least one retrieval batch; the planner reuses
+stored contradictions, neighbour previews, and provenance to seed the prompt.
+The AUTO workflow now ships with
+`tests/behavior/features/reasoning_modes/planner_graph_conditioning.feature` so
+operators can confirm the cues before enabling the option in production.
+
 ## Provenance verification
 
 Claim verification is surfaced through the dedicated Provenance panel. Claim

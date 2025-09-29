@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+import json
+from typing import Any, Callable
 
 from pytest_bdd import given, parsers, scenarios, then, when
 from unittest.mock import patch
 
+from autoresearch.agents.specialized.planner import PlannerAgent
+from autoresearch.config.loader import temporary_config
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration import ReasoningMode
@@ -14,13 +17,14 @@ from autoresearch.orchestration.orchestration_utils import (
     OrchestrationUtils,
     ScoutGateDecision,
 )
+from autoresearch.orchestration.state import QueryState
 from autoresearch.search.context import SearchContext
 
-if TYPE_CHECKING:
-    from autoresearch.orchestration.state import QueryState
+from tests.helpers import make_config_model
 
 
 scenarios("../features/reasoning_modes/auto_planner_cycle.feature")
+scenarios("../features/reasoning_modes/planner_graph_conditioning.feature")
 
 
 @given("the planner proposes verification tasks")
@@ -303,3 +307,198 @@ def assert_planner_snapshot(
     telemetry = planner_meta.get("telemetry", {})
     expected_objectives = bdd_context["task_graph"].get("objectives")
     assert telemetry.get("objectives") == expected_objectives
+
+
+@given("planner graph conditioning is enabled in configuration")
+def enable_planner_graph_conditioning(config: ConfigModel) -> ConfigModel:
+    stub = make_config_model(
+        context_overrides={"planner_graph_conditioning": True}
+    )
+    context_stub = stub.search.context_aware
+    context_cfg = config.search.context_aware
+    context_cfg.enabled = context_stub.enabled
+    context_cfg.use_query_expansion = context_stub.use_query_expansion
+    context_cfg.expansion_factor = context_stub.expansion_factor
+    context_cfg.use_search_history = context_stub.use_search_history
+    context_cfg.max_history_items = context_stub.max_history_items
+    context_cfg.graph_signal_weight = context_stub.graph_signal_weight
+    context_cfg.planner_graph_conditioning = (
+        context_stub.planner_graph_conditioning
+    )
+    context_cfg.graph_pipeline_enabled = True
+    config.reasoning_mode = ReasoningMode.DIRECT
+    return config
+
+
+@given("the knowledge graph metadata includes contradictions and neighbours")
+def configure_graph_metadata(bdd_context: dict[str, Any]) -> None:
+    stage_metadata = {
+        "contradictions": {
+            "raw_score": 0.8,
+            "weighted_score": 0.4,
+            "items": [
+                {
+                    "subject": "Battery pack",
+                    "predicate": "conflicts_with",
+                    "objects": ["Lab stress test"],
+                },
+                {
+                    "subject": "Battery pack",
+                    "predicate": "aligns_with",
+                    "objects": ["Spec sheet summary"],
+                },
+            ],
+        },
+        "neighbors": {
+            "Battery pack": [
+                {
+                    "predicate": "supported_by",
+                    "target": "Thermal audit",
+                    "direction": "out",
+                },
+                {
+                    "predicate": "contradicted_by",
+                    "target": "Field report",
+                    "direction": "in",
+                },
+            ],
+            "Graph driver": [
+                {
+                    "predicate": "linked_to",
+                    "target": "Sensor log",
+                    "direction": "both",
+                }
+            ],
+        },
+        "similarity": {
+            "raw_score": 0.6,
+            "weighted_score": 0.3,
+        },
+        "paths": [["Battery pack", "Graph driver", "Sensor log"]],
+    }
+    summary = {
+        "sources": [
+            "https://example.com/thermal-audit",
+            "https://example.com/field-report",
+        ],
+        "provenance": [
+            {"subject": "Battery pack", "object": "Thermal audit"},
+            {"subject": "Graph driver", "object": "Sensor log"},
+        ],
+    }
+    bdd_context["graph_stage_metadata"] = stage_metadata
+    bdd_context["graph_summary"] = summary
+
+
+@when(
+    parsers.parse('I execute the planner for query "{query}"'),
+    target_fixture="planner_graph_conditioning_result",
+)
+def execute_planner_with_graph_context(
+    query: str,
+    config: ConfigModel,
+    bdd_context: dict[str, Any],
+    monkeypatch,
+) -> dict[str, Any]:
+    stage_metadata = bdd_context["graph_stage_metadata"]
+    graph_summary = bdd_context["graph_summary"]
+    adapter_prompts: list[str] = []
+
+    class StaticAdapter:
+        def generate(self, prompt: str, model: str | None = None) -> str:
+            adapter_prompts.append(prompt)
+            plan_payload = {
+                "objectives": [
+                    "Resolve contradictory evidence",
+                    "Prioritise graph-supported leads",
+                ],
+                "exit_criteria": [
+                    "Conflicts reconciled",
+                    "Neighbour review complete",
+                ],
+                "tasks": [
+                    {
+                        "id": "graph-review",
+                        "question": "Compare conflicting neighbours",
+                        "objectives": [
+                            "List contradictory triples",
+                            "Summarise supporting neighbours",
+                        ],
+                        "tools": ["search", "graph"],
+                        "exit_criteria": ["Contradictions resolved"],
+                        "explanation": "Leverage graph conditioning cues.",
+                    }
+                ],
+                "edges": [],
+                "metadata": {"version": 1, "notes": "graph conditioned plan"},
+            }
+            return json.dumps(plan_payload)
+
+    adapter = StaticAdapter()
+    monkeypatch.setattr(
+        PlannerAgent,
+        "get_adapter",
+        lambda self, cfg: adapter,
+    )
+    monkeypatch.setattr(
+        PlannerAgent,
+        "get_model",
+        lambda self, cfg: "test-model",
+    )
+    planner = PlannerAgent()
+    state = QueryState(query=query)
+
+    with temporary_config(config):
+        with SearchContext.temporary_instance() as search_context:
+            search_context._graph_stage_metadata = dict(stage_metadata)
+            search_context._graph_summary = dict(graph_summary)
+            result = planner.execute(state, config)
+
+    trace_entries = [
+        entry for entry in state.react_log if entry.get("event") == "planner.trace"
+    ]
+    if not trace_entries:
+        msg = "Planner trace was not recorded during graph conditioning run"
+        raise AssertionError(msg)
+    prompt = trace_entries[-1]["payload"]["prompt"]
+    telemetry = state.metadata.get("planner", {}).get("telemetry", {})
+
+    return {
+        "state": state,
+        "result": result,
+        "prompt": prompt,
+        "telemetry": telemetry,
+        "adapter_prompts": adapter_prompts,
+    }
+
+
+@then("the planner prompt should include contradiction and neighbour cues")
+def assert_planner_prompt_cues(
+    planner_graph_conditioning_result: dict[str, Any]
+) -> None:
+    prompt = planner_graph_conditioning_result["prompt"]
+    assert "Knowledge graph signals:" in prompt
+    assert "- Contradiction score: 0.40 (raw 0.80)" in prompt
+    assert "Contradictory findings:" in prompt
+    assert "    - Battery pack --conflicts_with--> Lab stress test" in prompt
+    assert "- Representative neighbours:" in prompt
+    assert "  - Battery pack → (supported_by) Thermal audit" in prompt
+    assert "  - Battery pack ← (contradicted_by) Field report" in prompt
+    assert "  - Graph driver ↔ (linked_to) Sensor log" in prompt
+
+
+@then("the planner telemetry should record objectives and tasks")
+def assert_planner_graph_telemetry(
+    planner_graph_conditioning_result: dict[str, Any]
+) -> None:
+    telemetry = planner_graph_conditioning_result["telemetry"]
+    tasks = telemetry.get("tasks", [])
+    assert tasks, "Planner telemetry should record task snapshots"
+    first_task = tasks[0]
+    assert first_task.get("id") == "graph-review"
+    assert first_task.get("explanation") == "Leverage graph conditioning cues."
+    assert first_task.get("exit_criteria") == ["Contradictions resolved"]
+    assert first_task.get("objectives") == [
+        "List contradictory triples",
+        "Summarise supporting neighbours",
+    ]
