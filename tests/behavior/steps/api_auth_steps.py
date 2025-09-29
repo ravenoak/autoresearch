@@ -10,17 +10,17 @@ from typing import TYPE_CHECKING, Protocol, cast
 import pytest
 from pytest_bdd import parsers
 
-from autoresearch.api import (  # type: ignore[import-untyped]
+from autoresearch.api import (
     config_loader,
     get_request_logger,
 )
-from autoresearch.config.loader import ConfigLoader  # type: ignore[import-untyped]
-from autoresearch.config.models import (  # type: ignore[import-untyped]
+from autoresearch.config.loader import ConfigLoader
+from autoresearch.config.models import (
     APIConfig,
     ConfigModel,
 )
-from autoresearch.models import QueryResponse  # type: ignore[import-untyped]
-from autoresearch.orchestration.orchestrator import (  # type: ignore[import-untyped]
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.orchestrator import (
     Orchestrator,
 )
 

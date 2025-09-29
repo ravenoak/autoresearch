@@ -1,1 +1,2 @@
 recursive-include typings *.pyi
+include src/autoresearch/py.typed
