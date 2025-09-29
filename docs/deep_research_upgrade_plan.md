@@ -27,7 +27,8 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Extend the evidence pipeline to record per-claim support status.
    - Update response formats so clients can render audit tables.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
-     gate decisions and audit badges stay regression-proof.
+     gate decisions and audit badges stay regression-proof, including CLI
+     orchestration to confirm telemetry exposes verification badges end to end.
    - **Status:** Completed. Release sweep logs show the gate recalibrating after
      VSS evidence replay and the CLI path helper coverage that guards the Task
      entrypoint. Scope expanded slightly to persist the telemetry used in those
