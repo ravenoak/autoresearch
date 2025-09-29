@@ -15,6 +15,25 @@ Reference issues by slugged filename (for example,
   harness, and layered UX outputs.
 - Opened coordination and execution tickets for the deep research upgrades to
   stage Phase 1 through Phase 5 deliverables before the alpha release.
+- Refreshed release readiness documentation: `scripts/setup.sh` now appends the
+  Task PATH helper automatically, `docs/releasing.md` explains the behaviour,
+  and `docs/release_plan.md` records the latest `uv run task release:alpha`
+  sweep with the TestPyPI stage deferred per the active directive.
+  【F:scripts/setup.sh†L9-L93】【F:docs/releasing.md†L11-L15】
+  【F:docs/release_plan.md†L18-L44】【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
+  【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+- Logged the deep research phase tickets directly in the release narrative so
+  their closure stays visible alongside the alpha acceptance criteria:
+  [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md),
+  [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md),
+  [session-graph-rag-integration](issues/session-graph-rag-integration.md),
+  [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md),
+  and [cost-aware-model-routing](issues/cost-aware-model-routing.md) align with
+  [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
+  【F:docs/release_plan.md†L18-L44】【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】
+  【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】
+  【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
+  【F:issues/prepare-first-alpha-release.md†L13-L34】
 
 ## [0.1.0a1] - Unreleased
 - Local-first orchestrator coordinating multiple agents for research

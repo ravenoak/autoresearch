@@ -1,5 +1,13 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-29** at 00:08 UTC we reran `uv run task release:alpha` after
+closing out the deep research phase tracking below. Extras synced before
+`uv run flake8 src tests` reported the unused `os` import in
+`tests/integration/test_streamlit_gui.py`, so the sweep stopped before verify,
+coverage, packaging, or TestPyPI. The log at
+`baseline/logs/release-alpha-20250929T000814Z.log` and its summary document the
+intentional TestPyPI deferral under the current directive.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+
 As of **2025-09-30** at 18:19 UTC direct `task verify` and `task coverage`
 invocations succeed from the Task CLI again. The 17:45 UTC verification sweep
 exercised linting, typing, and the full unit, integration, and behavior matrix
