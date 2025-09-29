@@ -51,6 +51,7 @@ ALLOWED_STEP_MODULES = {
     "visualization_cli_steps.py",
     "reasoning_modes_all_steps.py",
     "reasoning_modes_auto_steps.py",
+    "reasoning_modes_auto_cli_cycle_steps.py",
     "reasoning_modes_steps.py",
 }
 
