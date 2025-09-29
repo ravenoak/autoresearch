@@ -44,6 +44,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    TypeAlias,
     cast,
     Protocol,
 )
@@ -79,6 +80,17 @@ if _has_kuzu:  # pragma: no cover - optional dependency
 
 # Use "Any" for DuckDB connections due to incomplete upstream type hints.
 DuckDBConnection = Any
+
+JSONMapping: TypeAlias = Mapping[str, object]
+JSONDict: TypeAlias = dict[str, object]
+JSONDictList: TypeAlias = list[JSONDict]
+
+
+class StorageQueueProtocol(Protocol):
+    """Protocol for background queues used to persist storage commands."""
+
+    def put(self, item: JSONMapping) -> None:
+        ...
 
 
 @dataclass
@@ -133,7 +145,7 @@ class StorageDelegateProtocol(Protocol):
 
     @staticmethod
     def record_claim_audit(
-        audit: ClaimAuditRecord | Mapping[str, Any]
+        audit: ClaimAuditRecord | JSONMapping
     ) -> ClaimAuditRecord:
         ...
 
@@ -142,19 +154,19 @@ class StorageDelegateProtocol(Protocol):
         ...
 
     @staticmethod
-    def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None:
         ...
 
     @staticmethod
-    def update_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def update_claim(claim: JSONDict, partial_update: bool = False) -> None:
         ...
 
     @staticmethod
-    def get_claim(claim_id: str) -> dict[str, Any]:
+    def get_claim(claim_id: str) -> JSONDict:
         ...
 
     @staticmethod
-    def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
         ...
 
     @staticmethod
@@ -166,7 +178,7 @@ class StorageDelegateProtocol(Protocol):
         ...
 
     @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5) -> list[dict[str, Any]]:
+    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList:
         ...
 
     @staticmethod
@@ -204,7 +216,7 @@ class StorageDelegateProtocol(Protocol):
 
 _delegate: StorageDelegateProtocol | None = None
 # Optional queue for distributed persistence
-_message_queue: Any | None = None
+_message_queue: StorageQueueProtocol | None = None
 
 _cached_config: StorageConfig | None = None
 
@@ -242,7 +254,7 @@ class ClaimAuditStatus(StrEnum):
         return cls.NEEDS_REVIEW
 
 
-def ensure_source_id(source: Mapping[str, Any]) -> dict[str, Any]:
+def ensure_source_id(source: JSONMapping) -> JSONDict:
     """Return a copy of ``source`` with a stable ``source_id`` fingerprint."""
 
     enriched = dict(source)
@@ -285,20 +297,20 @@ class ClaimAuditRecord:
     claim_id: str
     status: ClaimAuditStatus
     entailment_score: float | None = None
-    sources: list[dict[str, Any]] = field(default_factory=list)
+    sources: list[JSONDict] = field(default_factory=list)
     notes: str | None = None
     entailment_variance: float | None = None
     instability_flag: bool | None = None
     sample_size: int | None = None
-    provenance: dict[str, Any] = field(default_factory=dict)
+    provenance: JSONDict = field(default_factory=dict)
     audit_id: str = field(default_factory=lambda: str(uuid4()))
     created_at: float = field(default_factory=time.time)
 
-    def to_payload(self) -> dict[str, Any]:
+    def to_payload(self) -> JSONDict:
         """Serialise the record into a JSON-compatible payload.
 
         Returns:
-            dict[str, Any]: A mapping suitable for persistence layers. The
+            JSONDict: A mapping suitable for persistence layers. The
             ``provenance`` field is copied to avoid mutating the dataclass
             state when callers adjust nested metadata.
         """
@@ -318,7 +330,7 @@ class ClaimAuditRecord:
         }
 
     @classmethod
-    def from_payload(cls, payload: Mapping[str, Any]) -> "ClaimAuditRecord":
+    def from_payload(cls, payload: JSONMapping) -> "ClaimAuditRecord":
         """Create a record from a dictionary payload.
 
         Args:
@@ -337,11 +349,11 @@ class ClaimAuditRecord:
                 status = ClaimAuditStatus(str(status_value))
             except ValueError as exc:  # pragma: no cover - defensive
                 raise StorageError("Invalid claim audit status") from exc
-        sources = payload.get("sources") or []
-        if not isinstance(sources, Sequence) or isinstance(sources, (str, bytes)):
+        sources_raw = payload.get("sources") or []
+        if not isinstance(sources_raw, Sequence) or isinstance(sources_raw, (str, bytes)):
             raise StorageError("sources must be a sequence of mappings")
-        serialised_sources: list[dict[str, Any]] = []
-        for src in sources:
+        serialised_sources: list[JSONDict] = []
+        for src in sources_raw:
             if isinstance(src, Mapping):
                 serialised_sources.append(dict(src))
             else:
@@ -357,12 +369,18 @@ class ClaimAuditRecord:
             provenance = dict(parsed) if isinstance(parsed, Mapping) else {}
         else:
             raise StorageError("provenance must be a mapping")
-        created_at = float(payload.get("created_at", time.time()))
-        audit_id = payload.get("audit_id") or str(uuid4())
-        claim_id = str(payload.get("claim_id", ""))
+        created_at_value = payload.get("created_at")
+        if created_at_value is None:
+            created_at = time.time()
+        else:
+            created_at = float(cast(float | int | str, created_at_value))
+        audit_id_value = payload.get("audit_id")
+        audit_id = str(audit_id_value) if audit_id_value is not None else str(uuid4())
+        claim_id_value = payload.get("claim_id")
+        claim_id = str(claim_id_value) if claim_id_value is not None else ""
         if not claim_id:
             raise StorageError("claim_id is required for claim audit records")
-        variance_raw = payload.get("entailment_variance")
+        variance_raw = cast(float | int | str | None, payload.get("entailment_variance"))
         variance: float | None
         try:
             variance = None if variance_raw is None else float(variance_raw)
@@ -380,19 +398,36 @@ class ClaimAuditRecord:
         else:
             instability = str(instability_raw).strip().lower() in {"true", "1", "yes"}
 
-        sample_raw = payload.get("sample_size")
+        sample_raw = cast(int | float | str | None, payload.get("sample_size"))
         sample_size: int | None
         try:
             sample_size = None if sample_raw is None else int(sample_raw)
         except (TypeError, ValueError):  # pragma: no cover - defensive
             sample_size = None
 
+        notes_value = payload.get("notes")
+        if notes_value is None or isinstance(notes_value, str):
+            notes = cast(str | None, notes_value)
+        else:
+            notes = str(notes_value)
+
+        score_value = payload.get("entailment_score")
+        if isinstance(score_value, (float, int)):
+            score = float(score_value)
+        elif isinstance(score_value, str):
+            try:
+                score = float(score_value)
+            except ValueError:
+                score = None
+        else:
+            score = None
+
         return cls(
             claim_id=claim_id,
             status=status,
-            entailment_score=payload.get("entailment_score"),
+            entailment_score=score,
             sources=serialised_sources,
-            notes=payload.get("notes"),
+            notes=notes,
             entailment_variance=variance,
             instability_flag=instability,
             sample_size=sample_size,
@@ -407,13 +442,13 @@ class ClaimAuditRecord:
         claim_id: str,
         score: float | None,
         *,
-        sources: Sequence[Mapping[str, Any]] | None = None,
+        sources: Sequence[JSONMapping] | None = None,
         notes: str | None = None,
         status: ClaimAuditStatus | str | None = None,
         variance: float | None = None,
         instability: bool | None = None,
         sample_size: int | None = None,
-        provenance: Mapping[str, Any] | None = None,
+        provenance: JSONMapping | None = None,
     ) -> "ClaimAuditRecord":
         """Build a record from an entailment score and optional metadata."""
 
@@ -428,7 +463,7 @@ class ClaimAuditRecord:
         else:
             resolved_status = ClaimAuditStatus(str(status))
 
-        serialised_sources: list[dict[str, Any]] = []
+        serialised_sources: list[JSONDict] = []
         if sources:
             for src in sources:
                 if isinstance(src, Mapping):
@@ -437,7 +472,7 @@ class ClaimAuditRecord:
                     raise TypeError("sources must contain mappings")
 
         if provenance is None:
-            provenance_payload: dict[str, Any] = {}
+            provenance_payload: JSONDict = {}
         elif isinstance(provenance, Mapping):
             provenance_payload = dict(provenance)
         else:
@@ -551,7 +586,7 @@ def _reset_context(ctx: StorageContext) -> None:
     ctx.config_fingerprint = None
 
 
-def set_message_queue(queue: Any | None) -> None:
+def set_message_queue(queue: StorageQueueProtocol | None) -> None:
     """Configure a message queue for distributed persistence."""
     global _message_queue
     _message_queue = queue
@@ -856,7 +891,7 @@ class StorageManager(metaclass=StorageManagerMeta):
 
     @staticmethod
     def record_claim_audit(
-        audit: ClaimAuditRecord | Mapping[str, Any]
+        audit: ClaimAuditRecord | JSONMapping
     ) -> ClaimAuditRecord:
         """Persist a claim audit entry across storage backends."""
 
@@ -1392,7 +1427,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             )
 
     @staticmethod
-    def _validate_claim(claim: dict[str, Any]) -> None:
+    def _validate_claim(claim: JSONDict) -> None:
         """Validate claim data before persistence to ensure it meets required format.
 
         This method checks that the claim:
@@ -1474,7 +1509,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             )
 
     @staticmethod
-    def _persist_to_networkx(claim: dict[str, Any]) -> None:
+    def _persist_to_networkx(claim: JSONDict) -> None:
         """Persist a claim to the in-memory NetworkX graph.
 
         This method adds the claim as a node in the NetworkX graph, with its attributes
@@ -1517,7 +1552,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 )
 
     @staticmethod
-    def _persist_claim_audit_payload(audit_payload: Mapping[str, Any]) -> ClaimAuditRecord:
+    def _persist_claim_audit_payload(audit_payload: JSONMapping) -> ClaimAuditRecord:
         """Persist verification metadata across storage backends."""
 
         record = ClaimAuditRecord.from_payload(dict(audit_payload))
@@ -1531,7 +1566,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         return record
 
     @staticmethod
-    def _persist_to_duckdb(claim: dict[str, Any]) -> None:
+    def _persist_to_duckdb(claim: JSONDict) -> None:
         """Persist a claim to the DuckDB relational database.
 
         This method inserts the claim into three tables in DuckDB:
@@ -1558,14 +1593,14 @@ class StorageManager(metaclass=StorageManagerMeta):
         StorageManager.context.db_backend.persist_claim(claim)
 
     @staticmethod
-    def _persist_to_kuzu(claim: dict[str, Any]) -> None:
+    def _persist_to_kuzu(claim: JSONDict) -> None:
         """Persist a claim to the Kuzu graph database."""
         if _kuzu_backend is None:
             return
         _kuzu_backend.persist_claim(claim)
 
     @staticmethod
-    def _persist_to_rdf(claim: dict[str, Any]) -> None:
+    def _persist_to_rdf(claim: JSONDict) -> None:
         """Persist a claim to the RDFLib semantic graph store.
 
         This method adds the claim's attributes as triples in the RDF store,
@@ -1601,8 +1636,8 @@ class StorageManager(metaclass=StorageManagerMeta):
     @staticmethod
     def update_knowledge_graph(
         *,
-        entities: Sequence[Mapping[str, Any]] | None = None,
-        relations: Sequence[Mapping[str, Any]] | None = None,
+        entities: Sequence[JSONMapping] | None = None,
+        relations: Sequence[JSONMapping] | None = None,
         triples: Sequence[tuple[str, str, str]] | None = None,
     ) -> None:
         """Persist knowledge graph entities and relations across backends.
@@ -1697,7 +1732,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     )
 
     @staticmethod
-    def persist_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None:
         """Persist a claim to all storage backends with support for incremental updates.
 
         This method validates the claim, ensures storage is initialized, and then
@@ -1859,7 +1894,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageManager._enforce_ram_budget(budget)
 
     @staticmethod
-    def update_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def update_claim(claim: JSONDict, partial_update: bool = False) -> None:
         """Update an existing claim across storage backends.
 
         This method delegates to the configured database backend. When a message
@@ -1899,7 +1934,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 StorageManager._persist_claim_audit_payload(payload)
 
     @staticmethod
-    def get_claim(claim_id: str) -> dict[str, Any]:
+    def get_claim(claim_id: str) -> JSONDict:
         """Retrieve a persisted claim from DuckDB."""
         if _delegate and _delegate is not StorageManager:
             return _delegate.get_claim(claim_id)
@@ -1909,7 +1944,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         return StorageManager.context.db_backend.get_claim(claim_id)
 
     @staticmethod
-    def _update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def _update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
         """Update an existing claim in the RDF store.
 
         This method updates an existing claim in the RDF store, either by completely
@@ -1936,7 +1971,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         run_ontology_reasoner(StorageManager.context.rdf_store)
 
     @staticmethod
-    def update_rdf_claim(claim: dict[str, Any], partial_update: bool = False) -> None:
+    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
         """Public wrapper around :func:`_update_rdf_claim`."""
         if _delegate and _delegate is not StorageManager:
             return _delegate.update_rdf_claim(claim, partial_update)
@@ -2050,7 +2085,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         return f"[{', '.join(str(x) for x in query_embedding)}]"
 
     @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5) -> list[dict[str, Any]]:
+    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList:
         """Search for claims by vector similarity.
 
         This method performs a vector similarity search using the provided query

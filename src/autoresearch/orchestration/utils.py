@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Deque
+from typing import Deque, TypeVar
 
 from ..models import QueryResponse
 
@@ -102,7 +102,10 @@ def calculate_result_confidence(result: QueryResponse) -> float:
     return max(0.1, min(1.0, confidence))
 
 
-def enqueue_with_limit(queue: Deque[Any], item: Any, limit: int) -> bool:
+T = TypeVar("T")
+
+
+def enqueue_with_limit(queue: Deque[T], item: T, limit: int) -> bool:
     """Append an item if the queue is below a size limit.
 
     Args:

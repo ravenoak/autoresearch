@@ -17,6 +17,11 @@ from pytest_bdd import scenario as _scenario
 from pytest_bdd import then as _then
 from pytest_bdd import when as _when
 
+from autoresearch.config.models import ConfigModel
+from autoresearch.models import QueryResponse
+from autoresearch.orchestration.state import QueryState
+from autoresearch.orchestration.types import AgentExecutionResult, CallbackMap
+
 R_co = TypeVar("R_co")
 T = TypeVar("T")
 
@@ -49,6 +54,38 @@ class ScenarioFactory(Protocol):
     ) -> StepDecorator[None]: ...
 
 
+class AgentTestProtocol(Protocol):
+    """Protocol capturing the agent surface used within tests."""
+
+    def can_execute(self, state: QueryState, config: ConfigModel) -> bool: ...
+
+    def execute(
+        self,
+        state: QueryState,
+        config: ConfigModel,
+        **kwargs: object,
+    ) -> AgentExecutionResult: ...
+
+
+class AgentFactoryProtocol(Protocol):
+    """Protocol for factories that resolve agent instances by name."""
+
+    @staticmethod
+    def get(name: str) -> AgentTestProtocol: ...
+
+
+class QueryRunner(Protocol):
+    """Protocol mirroring :meth:`Orchestrator.run_query` call semantics."""
+
+    def __call__(
+        self,
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: object,
+    ) -> QueryResponse: ...
+
+
 given = cast("StepFactory[Any]", _given)
 when = cast("StepFactory[Any]", _when)
 then = cast("StepFactory[Any]", _then)
@@ -59,6 +96,9 @@ __all__ = [
     "StepDecorator",
     "StepFactory",
     "ScenarioFactory",
+    "AgentTestProtocol",
+    "AgentFactoryProtocol",
+    "QueryRunner",
     "given",
     "when",
     "then",

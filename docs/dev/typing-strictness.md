@@ -15,66 +15,70 @@
 - There are no `ignore_missing_imports` toggles or per-package allowlists, so
   missing stubs for optional extras surface directly in strict runs.
 
-## Strict run snapshot (2025-09-28 16:08 UTC)
+## Strict run snapshot (2025-09-29 02:23 UTC)
 
-- Command: `uv run mypy --strict src tests`.
-- Result: 4,122 errors across 511 files (740 checked). Tests dominate the
-  totals, but strict diagnostics also flag newer orchestration helpers and
-  monitoring utilities.
+- Command: `uv run --extra dev-minimal --extra test mypy --strict`
+  `src/autoresearch/orchestration src/autoresearch/storage.py`
+  `tests/unit tests/integration`.
+- Result: 2,434 errors across 346 files (423 checked). Freshly typed helpers
+  in [tests/typing_helpers.py](../../tests/typing_helpers.py),
+  [tests/unit/test_orchestrator_helpers.py]
+  (../../tests/unit/test_orchestrator_helpers.py), and
+  [tests/integration/test_monitor_metrics.py]
+  (../../tests/integration/test_monitor_metrics.py) now pass strict checks, but
+  storage and behaviour suites remain the dominant sources of noise.
 - Dominant categories observed:
-  - Missing annotations in orchestrator helpers and behaviour steps, notably
-    [tests/unit/test_orchestrator_helpers.py]
-    (../../tests/unit/test_orchestrator_helpers.py) and
-    [tests/behavior/steps/api_async_query_steps.py]
-    (../../tests/behavior/steps/api_async_query_steps.py), plus related
-    fixtures that wrap refactored helper modules.
-  - Third-party stub gaps for optional extras (`streamlit`, `ray`, `networkx`,
-    `matplotlib`, `duckdb_extension_vss`, `spacy.cli`) despite the vendored
-    stubs path, highlighting where additional packages or shim updates are
-    still required.
-  - HTTP and cache helpers returning `Any` or using incorrect attributes in
-    [src/autoresearch/cache.py](../../src/autoresearch/cache.py),
-    [src/autoresearch/monitor/system_monitor.py]
-    (../../src/autoresearch/monitor/system_monitor.py), and
-    [src/autoresearch/llm/pool.py](../../src/autoresearch/llm/pool.py).
-  - Graph-backed storage modules such as
-    [src/autoresearch/storage_backends.py]
-    (../../src/autoresearch/storage_backends.py) and
-    [src/autoresearch/storage.py](../../src/autoresearch/storage.py) where
-    strict rdflib typing uncovers attribute and return-type mismatches surfaced
-    by the new helpers.
+  - Thousands of lingering `no-untyped-def` violations in behaviour, API, and
+    distributed orchestration tests such as
+    [tests/integration/test_api_auth.py]
+    (../../tests/integration/test_api_auth.py) and
+    [tests/unit/test_reasoning_modes.py]
+    (../../tests/unit/test_reasoning_modes.py).
+  - Missing third-party stubs for extras like `dspy`, `PIL`, and `fastmcp`
+    despite the newly vendored shims for
+    [typings/streamlit](../../typings/streamlit/__init__.pyi),
+    [typings/ray](../../typings/ray/__init__.pyi),
+    [typings/networkx](../../typings/networkx/__init__.pyi), and
+    [typings/duckdb_extension_vss]
+    (../../typings/duckdb_extension_vss/__init__.pyi).
+  - NetworkX and rdflib integration in
+    [src/autoresearch/storage.py](../../src/autoresearch/storage.py) still
+    assumes mutable node views and graph methods (`close`, `store`) that strict
+    typing flags as missing or misused.
+  - Token metrics coercion in
+    [src/autoresearch/orchestration/metrics.py]
+    (../../src/autoresearch/orchestration/metrics.py) continues to cast nested
+    dictionaries to `float`, yielding `arg-type` failures under strict mode.
 - Exclusions: none. The strict preset applies globally, and remaining
   suppressions must be justified inline.
 
 ## Representative modules and triage notes
 
-- **Tests (unit, integration, behaviour)** – Thousands of missing annotations
-  across orchestrator, API, and CLI suites (see
-  [tests/integration/test_monitor_metrics.py]
-  (../../tests/integration/test_monitor_metrics.py) and
-  [tests/behavior/steps/agent_orchestration_steps.py]
-  (../../tests/behavior/steps/agent_orchestration_steps.py)).
-  Establishing shared fixtures and helper protocols for the refactored
-  behaviour steps will eliminate large swaths of `no-untyped-def` noise.
-- **Optional extras and vendored stubs** – Import errors for `streamlit`,
-  `ray`, `duckdb_extension_vss`, and `matplotlib` show where additional stub
-  packages or expanded files under `typings/` are still required so that
-  orchestration helpers and UI modules type-check.
-- **Core orchestration utilities** – Recent helper refactors in
+- **Tests (unit, integration, behaviour)** – Typed fixtures and helper
+  protocols now live in
+  [tests/typing_helpers.py](../../tests/typing_helpers.py), giving orchestrator
+  helpers deterministic types. The remaining backlog clusters around behaviour
+  suites and distributed orchestration tests that still rely on untyped
+  factories.
+- **Optional extras and vendored stubs** – Newly vendored shims for Ray,
+  Streamlit, NetworkX, and the DuckDB VSS extension unblock strict checking in
+  CLI tests, but gaps remain for `dspy`, `PIL`, and `fastmcp`. Additional stub
+  updates are required before enabling strict checks for the behaviour suite.
+- **Core orchestration utilities** –
   [src/autoresearch/orchestration/utils.py]
-  (../../src/autoresearch/orchestration/utils.py),
-  [src/autoresearch/orchestration/orchestrator.py]
-  (../../src/autoresearch/orchestration/orchestrator.py), and
+  (../../src/autoresearch/orchestration/utils.py) and
   [src/autoresearch/orchestration/token_utils.py]
-  (../../src/autoresearch/orchestration/token_utils.py) surface `Any` returns,
-  redundant casts, and TypedDict misuse that ripple into behaviour-step
-  assertions.
-- **Monitoring and API layers** – Modules such as
-  [src/autoresearch/monitor/metrics.py]
-  (../../src/autoresearch/monitor/metrics.py) and
-  [src/autoresearch/api/auth.py](../../src/autoresearch/api/auth.py) require
-  concrete protocol definitions for Starlette/FastAPI integration, aligning
-  them with the orchestrator helpers relied on by the new behaviour suites.
+  (../../src/autoresearch/orchestration/token_utils.py) now expose typed data
+  classes and protocols, yet downstream call sites (notably
+  [src/autoresearch/orchestration/metrics.py]
+  (../../src/autoresearch/orchestration/metrics.py)) still rely on `Any`
+  conversions that must be tightened.
+- **Monitoring and API layers** –
+  [tests/integration/test_monitor_metrics.py]
+  (../../tests/integration/test_monitor_metrics.py) now executes under strict
+  typing, but broader FastAPI and CLI suites await typed fixtures and response
+  protocols before we can reduce their `attr-defined` and `no-untyped-def`
+  noise.
 
 ## TYPE_CHECKING usage review
 

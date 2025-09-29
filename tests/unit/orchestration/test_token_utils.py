@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from typing import Any, cast
+
 from autoresearch.config.models import ConfigModel
 from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.token_utils import (
     AdapterProtocol,
+    SupportsExecute,
     _execute_with_adapter,
     is_agent_execution_result,
     supports_adapter_mutation,
@@ -32,7 +35,14 @@ class KwargAgent:
     def __init__(self) -> None:
         self.adapter: AdapterProtocol | None = None
 
-    def execute(self, state: QueryState, config: ConfigModel, *, adapter: AdapterProtocol) -> dict[str, object]:
+    def execute(
+        self,
+        state: QueryState,
+        config: ConfigModel,
+        *,
+        adapter: AdapterProtocol,
+        **_: object,
+    ) -> dict[str, Any]:
         self.adapter = adapter
         return {"agent": "kwarg", "query": state.query, "backend": config.llm_backend}
 
@@ -49,7 +59,9 @@ class MutableAgent:
     def get_adapter(self) -> AdapterProtocol:
         return self._adapter
 
-    def execute(self, state: QueryState, config: ConfigModel) -> dict[str, object]:
+    def execute(
+        self, state: QueryState, config: ConfigModel, **_: object
+    ) -> dict[str, Any]:
         return {
             "agent": "mutable",
             "adapter_id": id(self._adapter),
@@ -61,14 +73,18 @@ class MutableAgent:
 class StatelessAgent:
     """Agent lacking adapter mutation hooks."""
 
-    def execute(self, state: QueryState, config: ConfigModel) -> dict[str, object]:
+    def execute(
+        self, state: QueryState, config: ConfigModel, **_: object
+    ) -> dict[str, Any]:
         return {"agent": "stateless", "query": state.query, "backend": config.llm_backend}
 
 
 class InvalidResultAgent:
     """Agent returning a non-mapping result."""
 
-    def execute(self, state: QueryState, config: ConfigModel) -> object:  # pragma: no cover - negative path
+    def execute(
+        self, state: QueryState, config: ConfigModel, **_: object
+    ) -> object:  # pragma: no cover - negative path
         return [state.query, config.llm_backend]
 
 
@@ -83,13 +99,14 @@ def config_model() -> ConfigModel:
 
 
 def test_execute_with_adapter_kwarg(query_state: QueryState, config_model: ConfigModel) -> None:
-    agent = KwargAgent()
+    kwarg_agent = KwargAgent()
+    agent = cast(SupportsExecute, kwarg_agent)
     adapter = RecordingAdapter()
 
     result = _execute_with_adapter(agent, query_state, config_model, adapter)
 
     assert result["agent"] == "kwarg"
-    assert agent.adapter is adapter
+    assert kwarg_agent.adapter is adapter
 
 
 def test_execute_with_mutation_hooks_restores_original(query_state: QueryState, config_model: ConfigModel) -> None:
@@ -113,7 +130,7 @@ def test_execute_without_adapter_hooks(query_state: QueryState, config_model: Co
 
 
 def test_execute_raises_for_non_mapping_result(query_state: QueryState, config_model: ConfigModel) -> None:
-    agent = InvalidResultAgent()
+    agent = cast(SupportsExecute, InvalidResultAgent())
     adapter = RecordingAdapter()
 
     with pytest.raises(TypeError):
