@@ -6,6 +6,9 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Strengthened Streamlit UI typing by expanding local stubs and optional
+  dependency shims so strict mypy passes on the UI stack without introducing
+  runtime dependencies.
 - Documented the Deep Research Enhancement Initiative phases in the roadmap and
   created `docs/deep_research_upgrade_plan.md` to coordinate adaptive gating,
   per-claim audits, GraphRAG, evaluation harnesses, and cost-aware routing

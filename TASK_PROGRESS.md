@@ -18,6 +18,12 @@ The remaining alpha checklist items focus on lifting the TestPyPI dry-run hold
 and scheduling the release sign-off meeting once the publish directive changes.
 Track progress via the open checkbox in `docs/release_plan.md` and the updated
 alpha ticket.
+
+Strict type coverage now includes the Streamlit UI stack thanks to freshly
+curated stubs for Streamlit, pandas, polars, matplotlib, PIL, altair, and
+rank_bm25. The new coverage unblocks `mypy --strict` on the UI modules and adds
+integration coverage for the modal fallback when Streamlit lacks native modal
+support.
 【F:docs/release_plan.md†L200-L209】【F:issues/prepare-first-alpha-release.md†L36-L57】
 
 As of **2025-09-29** at 03:58 UTC the refreshed `uv run task verify` log shows

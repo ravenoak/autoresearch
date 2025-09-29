@@ -21,9 +21,10 @@ class _PolarsDataFrame(Protocol):
 class _PolarsNamespace(Protocol):
     """Protocol describing the attributes accessed on the ``polars`` module."""
 
-    DataFrame: type[_PolarsDataFrame]
+    def DataFrame(self, data: Any) -> _PolarsDataFrame: ...
 
 
+_polars: Any | None
 try:  # pragma: no cover - optional dependency
     import polars as _polars
 except Exception:  # pragma: no cover - optional dependency
