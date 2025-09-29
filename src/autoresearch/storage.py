@@ -72,6 +72,7 @@ from .storage_typing import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
+    from .distributed.broker import PersistClaimMessage, StorageBrokerQueueProtocol
 
 # Typed reference to the optional Kuzu backend.
 KuzuBackend: type[KuzuStorageBackend] | None = None
@@ -89,13 +90,6 @@ if _has_kuzu:  # pragma: no cover - optional dependency
 
 # Alias the DuckDB protocol for readability within this module.
 DuckDBConnection = DuckDBConnectionProtocol
-
-
-class StorageQueueProtocol(Protocol):
-    """Protocol for background queues used to persist storage commands."""
-
-    def put(self, item: JSONMapping) -> None:
-        ...
 
 
 @dataclass
@@ -134,6 +128,20 @@ _default_state = StorageState()
 _kuzu_backend: KuzuStorageBackend | None = None
 log = get_logger(__name__)
 
+# Reusable typing helpers -------------------------------------------------
+
+
+def _persist_claim_message(claim: JSONDict, partial_update: bool) -> "PersistClaimMessage":
+    """Return a broker-compatible payload for claim persistence."""
+
+    payload: "PersistClaimMessage" = {
+        "action": "persist_claim",
+        "claim": claim,
+        "partial_update": partial_update,
+    }
+    return payload
+
+
 # Optional injection point for tests
 
 
@@ -141,87 +149,66 @@ class StorageDelegateProtocol(Protocol):
     """Typed interface for swapping :class:`StorageManager` implementations."""
 
     @staticmethod
-    def setup(db_path: Optional[str], context: StorageContext) -> StorageContext:
-        ...
+    def setup(db_path: Optional[str], context: StorageContext) -> StorageContext: ...
 
     @staticmethod
-    def teardown(remove_db: bool, context: StorageContext, state: "StorageState") -> None:
-        ...
+    def teardown(remove_db: bool, context: StorageContext, state: "StorageState") -> None: ...
 
     @staticmethod
-    def record_claim_audit(
-        audit: ClaimAuditRecord | JSONMapping
-    ) -> ClaimAuditRecord:
-        ...
+    def record_claim_audit(audit: ClaimAuditRecord | JSONMapping) -> ClaimAuditRecord: ...
 
     @staticmethod
-    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]:
-        ...
+    def list_claim_audits(claim_id: str | None = None) -> list[ClaimAuditRecord]: ...
 
     @staticmethod
-    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None:
-        ...
+    def persist_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
 
     @staticmethod
-    def update_claim(claim: JSONDict, partial_update: bool = False) -> None:
-        ...
+    def update_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
 
     @staticmethod
-    def get_claim(claim_id: str) -> JSONDict:
-        ...
+    def get_claim(claim_id: str) -> JSONDict: ...
 
     @staticmethod
-    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
-        ...
+    def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None: ...
 
     @staticmethod
-    def create_hnsw_index() -> None:
-        ...
+    def create_hnsw_index() -> None: ...
 
     @staticmethod
-    def refresh_vector_index() -> None:
-        ...
+    def refresh_vector_index() -> None: ...
 
     @staticmethod
-    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList:
-        ...
+    def vector_search(query_embedding: list[float], k: int = 5) -> JSONDictList: ...
 
     @staticmethod
-    def get_graph() -> nx.DiGraph[Any]:
-        ...
+    def get_graph() -> nx.DiGraph[Any]: ...
 
     @staticmethod
-    def get_knowledge_graph(create: bool = True) -> nx.MultiDiGraph[Any] | None:
-        ...
+    def get_knowledge_graph(create: bool = True) -> nx.MultiDiGraph[Any] | None: ...
 
     @staticmethod
-    def touch_node(node_id: str) -> None:
-        ...
+    def touch_node(node_id: str) -> None: ...
 
     @staticmethod
-    def get_duckdb_conn() -> DuckDBConnection:
-        ...
+    def get_duckdb_conn() -> DuckDBConnection: ...
 
     @staticmethod
-    def connection() -> AbstractContextManager[DuckDBConnection]:
-        ...
+    def connection() -> AbstractContextManager[DuckDBConnection]: ...
 
     @staticmethod
-    def get_rdf_store() -> rdflib.Graph:
-        ...
+    def get_rdf_store() -> rdflib.Graph: ...
 
     @staticmethod
-    def has_vss() -> bool:
-        ...
+    def has_vss() -> bool: ...
 
     @staticmethod
-    def clear_all() -> None:
-        ...
+    def clear_all() -> None: ...
 
 
 _delegate: StorageDelegateProtocol | None = None
 # Optional queue for distributed persistence
-_message_queue: StorageQueueProtocol | None = None
+_message_queue: "StorageBrokerQueueProtocol | None" = None
 
 _cached_config: StorageConfig | None = None
 
@@ -591,7 +578,7 @@ def _reset_context(ctx: StorageContext) -> None:
     ctx.config_fingerprint = None
 
 
-def set_message_queue(queue: StorageQueueProtocol | None) -> None:
+def set_message_queue(queue: "StorageBrokerQueueProtocol | None") -> None:
     """Configure a message queue for distributed persistence."""
     global _message_queue
     _message_queue = queue
@@ -895,19 +882,13 @@ class StorageManager(metaclass=StorageManagerMeta):
         return max(0.0, process_mb - StorageManager.state.baseline_mb)
 
     @staticmethod
-    def record_claim_audit(
-        audit: ClaimAuditRecord | JSONMapping
-    ) -> ClaimAuditRecord:
+    def record_claim_audit(audit: ClaimAuditRecord | JSONMapping) -> ClaimAuditRecord:
         """Persist a claim audit entry across storage backends."""
 
         if _delegate and _delegate is not StorageManager:
             return _delegate.record_claim_audit(audit)
 
-        payload = (
-            audit.to_payload()
-            if isinstance(audit, ClaimAuditRecord)
-            else to_json_dict(audit)
-        )
+        payload = audit.to_payload() if isinstance(audit, ClaimAuditRecord) else to_json_dict(audit)
         return StorageManager._persist_claim_audit_payload(payload)
 
     @staticmethod
@@ -1356,9 +1337,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                         if survivor_floor is not None:
                             max_evictable = max(
                                 0,
-                                len(graph.nodes)
-                                - survivor_floor
-                                - len(nodes_to_evict),
+                                len(graph.nodes) - survivor_floor - len(nodes_to_evict),
                             )
                             fallback_allowance = min(fallback_allowance, max_evictable)
 
@@ -1539,11 +1518,7 @@ class StorageManager(metaclass=StorageManagerMeta):
         state = StorageManager.state
         with state.lock:
             attributes_raw = claim.get("attributes")
-            attrs = (
-                to_json_dict(attributes_raw)
-                if isinstance(attributes_raw, Mapping)
-                else {}
-            )
+            attrs = to_json_dict(attributes_raw) if isinstance(attributes_raw, Mapping) else {}
             if "confidence" in claim:
                 attrs["confidence"] = claim["confidence"]
             if "audit" in claim:
@@ -1684,9 +1659,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                         continue
                     attributes_raw = entity.get("attributes")
                     attributes = (
-                        to_json_dict(attributes_raw)
-                        if isinstance(attributes_raw, Mapping)
-                        else {}
+                        to_json_dict(attributes_raw) if isinstance(attributes_raw, Mapping) else {}
                     )
                     attributes.setdefault("label", entity.get("label", node_id))
                     attributes.setdefault("type", entity.get("type", "entity"))
@@ -1704,9 +1677,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     weight = float(relation.get("weight", 1.0))
                     provenance_raw = relation.get("provenance")
                     provenance = (
-                        to_json_dict(provenance_raw)
-                        if isinstance(provenance_raw, Mapping)
-                        else {}
+                        to_json_dict(provenance_raw) if isinstance(provenance_raw, Mapping) else {}
                     )
                     kg_graph.add_edge(
                         subj,
@@ -1738,7 +1709,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                         subj_id = str(subj_id_raw)
                         obj_id = str(obj_id_raw)
                         predicate_raw = relation.get("predicate", "related_to")
-                        predicate = str(predicate_raw) if predicate_raw is not None else "related_to"
+                        predicate = (
+                            str(predicate_raw) if predicate_raw is not None else "related_to"
+                        )
                         rdf_triples.append(
                             (
                                 rdflib.URIRef(f"urn:kg:{subj_id}"),
@@ -1786,13 +1759,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             return _delegate.persist_claim(claim, partial_update)
 
         if _message_queue is not None:
-            _message_queue.put(
-                {
-                    "action": "persist_claim",
-                    "claim": claim,
-                    "partial_update": partial_update,
-                }
-            )
+            _message_queue.put(_persist_claim_message(claim, partial_update))
             return
 
         # Validate claim
@@ -1944,13 +1911,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             return _delegate.update_claim(claim, partial_update)
 
         if _message_queue is not None:
-            _message_queue.put(
-                {
-                    "action": "update_claim",
-                    "claim": claim,
-                    "partial_update": partial_update,
-                }
-            )
+            _message_queue.put(_persist_claim_message(claim, partial_update))
             return
 
         StorageManager._ensure_storage_initialized()

@@ -104,7 +104,7 @@ class InMemoryBroker:
 
     def __init__(self) -> None:
         """Initialize a local queue without a manager process for speed."""
-        self.queue: MessageQueueProtocol = _CountingQueue()
+        self.queue: StorageBrokerQueueProtocol = _CountingQueue()
 
     def publish(self, message: BrokerMessage) -> None:
         """Enqueue ``message`` for later retrieval."""
@@ -119,17 +119,19 @@ class InMemoryBroker:
 class MessageQueueProtocol(Protocol):
     """Queue operations shared by all broker implementations."""
 
-    def put(self, item: BrokerMessage) -> None:
-        ...
+    def put(self, item: BrokerMessage) -> None: ...
 
-    def get(self) -> BrokerMessage:
-        ...
+    def get(self) -> BrokerMessage: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
-    def join_thread(self) -> None:
-        ...
+    def join_thread(self) -> None: ...
+
+
+class StorageBrokerQueueProtocol(MessageQueueProtocol, Protocol):
+    """Queue protocol compatible with both broker and storage interfaces."""
+
+    def put(self, item: BrokerMessage) -> None: ...
 
 
 class RedisClientProtocol(Protocol):
@@ -189,7 +191,7 @@ class RedisBroker:
 
         client = redis.Redis.from_url(url or "redis://localhost:6379/0")
         self.client = cast(RedisClientProtocol, client)
-        self.queue: MessageQueueProtocol = RedisQueue(self.client, queue_name)
+        self.queue: StorageBrokerQueueProtocol = RedisQueue(self.client, queue_name)
 
     def publish(self, message: BrokerMessage) -> None:
         self.queue.put(message)
@@ -230,7 +232,7 @@ class RayBroker:
         if not ray.is_initialized():  # pragma: no cover - optional init
             ray.init(ignore_reinit_error=True, configure_logging=False)
         self._ray: RayLike = ray
-        self.queue: MessageQueueProtocol = RayMessageQueue(
+        self.queue: StorageBrokerQueueProtocol = RayMessageQueue(
             queue_factory(actor_options={"name": queue_name})
         )
 

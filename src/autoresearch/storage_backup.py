@@ -4,19 +4,48 @@ This module provides functionality for backing up and restoring the storage syst
 including scheduled backups, rotation policies, compression, and point-in-time recovery.
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 import tarfile
 import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List
 
 from .errors import BackupError
 from .logging_utils import get_logger
 from .config import ConfigLoader
 
 log = get_logger(__name__)
+
+
+def _resolve_storage_paths(
+    backup_dir: str | None,
+    db_path: str | None,
+    rdf_path: str | None,
+) -> tuple[str, str, str]:
+    """Resolve backup locations using the runtime configuration as a fallback."""
+
+    cfg = ConfigLoader().config.storage
+    backup_source = backup_dir if backup_dir is not None else getattr(cfg, "backup_dir", "backups")
+    duckdb_cfg = getattr(cfg, "duckdb", None)
+    db_source = db_path if db_path is not None else getattr(duckdb_cfg, "path", "kg.duckdb")
+    rdf_source = rdf_path if rdf_path is not None else getattr(cfg, "rdf_path", "kg.rdf")
+    resolved_backup_dir = os.fspath(backup_source)
+    resolved_db_path = os.fspath(db_source)
+    resolved_rdf_path = os.fspath(rdf_source)
+    return resolved_backup_dir, resolved_db_path, resolved_rdf_path
+
+
+def _start_timer(interval_seconds: float, callback: Callable[[], None]) -> threading.Timer:
+    """Create and start a daemonised timer for recurring backups."""
+
+    timer = threading.Timer(interval_seconds, callback)
+    timer.daemon = True
+    timer.start()
+    return timer
 
 
 @dataclass
@@ -45,7 +74,7 @@ def _create_backup(
     db_path: str,
     rdf_path: str,
     compress: bool = True,
-    config: Optional[BackupConfig] = None,
+    config: BackupConfig | None = None,
 ) -> BackupInfo:
     """Create a backup of the storage system.
 
@@ -244,9 +273,7 @@ def _restore_backup(
                                     else:
                                         member_file = tar.extractfile(member)
                                         if member_file:
-                                            os.makedirs(
-                                                os.path.dirname(member_path), exist_ok=True
-                                            )
+                                            os.makedirs(os.path.dirname(member_path), exist_ok=True)
                                             with open(member_path, "wb") as f:
                                                 f.write(member_file.read())
                     except KeyError:
@@ -273,9 +300,7 @@ def _restore_backup(
             if os.path.exists(rdf_source_path):
                 if os.path.isdir(rdf_source_path):
                     # If it's a directory, copy the whole directory
-                    shutil.copytree(
-                        rdf_source_path, rdf_target_path, dirs_exist_ok=True
-                    )
+                    shutil.copytree(rdf_source_path, rdf_target_path, dirs_exist_ok=True)
                 else:
                     # If it's a file, copy it directly
                     shutil.copy2(rdf_source_path, rdf_target_path)
@@ -325,9 +350,7 @@ def _list_backups(backup_dir: str) -> List[BackupInfo]:
 
                 # Extract timestamp from filename
                 timestamp_str = (
-                    filename.replace("backup_", "")
-                    .replace(".tar.gz", "")
-                    .replace(".tgz", "")
+                    filename.replace("backup_", "").replace(".tar.gz", "").replace(".tgz", "")
                 )
                 try:
                     timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
@@ -338,16 +361,12 @@ def _list_backups(backup_dir: str) -> List[BackupInfo]:
                 size = os.path.getsize(path)
 
                 backups.append(
-                    BackupInfo(
-                        path=path, timestamp=timestamp, compressed=True, size=size
-                    )
+                    BackupInfo(path=path, timestamp=timestamp, compressed=True, size=size)
                 )
 
         # Look for uncompressed backups
         for dirname in os.listdir(backup_dir):
-            if dirname.startswith("backup_") and os.path.isdir(
-                os.path.join(backup_dir, dirname)
-            ):
+            if dirname.startswith("backup_") and os.path.isdir(os.path.join(backup_dir, dirname)):
                 path = os.path.join(backup_dir, dirname)
 
                 # Extract timestamp from dirname
@@ -366,9 +385,7 @@ def _list_backups(backup_dir: str) -> List[BackupInfo]:
                 )
 
                 backups.append(
-                    BackupInfo(
-                        path=path, timestamp=timestamp, compressed=False, size=size
-                    )
+                    BackupInfo(path=path, timestamp=timestamp, compressed=False, size=size)
                 )
 
         # Sort by timestamp (newest first)
@@ -407,7 +424,7 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
 
         # Apply max_backups policy (keep the newest ones)
         if config.max_backups > 0 and len(backups) > config.max_backups:
-            to_delete.extend(backups[config.max_backups:])
+            to_delete.extend(backups[config.max_backups :])
 
         # Apply retention_days policy
         if config.retention_days > 0:
@@ -432,11 +449,11 @@ def _apply_rotation_policy(backup_dir: str, config: BackupConfig) -> None:
 class BackupScheduler:
     """Scheduler for periodic backups."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the backup scheduler."""
-        self._timer = None
-        self._running = False
-        self._lock = threading.Lock()
+        self._timer: threading.Timer | None = None
+        self._running: bool = False
+        self._lock = threading.RLock()
 
     def schedule(
         self,
@@ -474,7 +491,9 @@ class BackupScheduler:
             )
 
             # Define the backup function
-            def do_backup():
+            interval_seconds = float(interval_hours) * 3600.0
+
+            def do_backup() -> None:
                 try:
                     _create_backup(
                         backup_dir=backup_dir,
@@ -489,17 +508,10 @@ class BackupScheduler:
                     # Schedule next backup if still running
                     with self._lock:
                         if self._running:
-                            self._timer = threading.Timer(
-                                interval_hours * 3600,  # Convert hours to seconds
-                                do_backup,
-                            )
-                            self._timer.daemon = True
-                            self._timer.start()
+                            self._timer = _start_timer(interval_seconds, do_backup)
 
             # Start the first backup
-            self._timer = threading.Timer(0, do_backup)  # Start immediately
-            self._timer.daemon = True
-            self._timer.start()
+            self._timer = _start_timer(0.0, do_backup)
 
             log.info(f"Scheduled backups every {interval_hours} hours to {backup_dir}")
 
@@ -516,7 +528,7 @@ class BackupScheduler:
 class BackupManager:
     """Manager for backup and restore operations."""
 
-    _scheduler = None
+    _scheduler: BackupScheduler | None = None
 
     @classmethod
     def get_scheduler(cls) -> BackupScheduler:
@@ -527,11 +539,11 @@ class BackupManager:
 
     @staticmethod
     def create_backup(
-        backup_dir: Optional[str] = None,
-        db_path: Optional[str] = None,
-        rdf_path: Optional[str] = None,
+        backup_dir: str | None = None,
+        db_path: str | None = None,
+        rdf_path: str | None = None,
         compress: bool = True,
-        config: Optional[BackupConfig] = None,
+        config: BackupConfig | None = None,
     ) -> BackupInfo:
         """Create a backup of the storage system.
 
@@ -550,26 +562,14 @@ class BackupManager:
         Raises:
             BackupError: If the backup operation fails
         """
-        # Get paths from configuration if not provided
-        cfg = ConfigLoader().config.storage
-
-        if backup_dir is None:
-            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
-
-        if db_path is None:
-            db_path = (
-                cfg.duckdb.path
-                if hasattr(cfg, "duckdb") and hasattr(cfg.duckdb, "path")
-                else "kg.duckdb"
-            )
-
-        if rdf_path is None:
-            rdf_path = cfg.rdf_path if hasattr(cfg, "rdf_path") else "kg.rdf"
+        resolved_backup_dir, resolved_db_path, resolved_rdf_path = _resolve_storage_paths(
+            backup_dir, db_path, rdf_path
+        )
 
         return _create_backup(
-            backup_dir=backup_dir,
-            db_path=db_path,
-            rdf_path=rdf_path,
+            backup_dir=resolved_backup_dir,
+            db_path=resolved_db_path,
+            rdf_path=resolved_rdf_path,
             compress=compress,
             config=config,
         )
@@ -577,7 +577,7 @@ class BackupManager:
     @staticmethod
     def restore_backup(
         backup_path: str,
-        target_dir: Optional[str] = None,
+        target_dir: str | None = None,
         db_filename: str = "db.duckdb",
         rdf_filename: str = "store.rdf",
     ) -> Dict[str, str]:
@@ -606,7 +606,7 @@ class BackupManager:
         )
 
     @staticmethod
-    def list_backups(backup_dir: Optional[str] = None) -> List[BackupInfo]:
+    def list_backups(backup_dir: str | None = None) -> List[BackupInfo]:
         """List all backups in the specified directory.
 
         Args:
@@ -619,16 +619,15 @@ class BackupManager:
             BackupError: If the backup directory doesn't exist or can't be read
         """
         if backup_dir is None:
-            cfg = ConfigLoader().config.storage
-            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
+            backup_dir, _, _ = _resolve_storage_paths(None, None, None)
 
         return _list_backups(backup_dir)
 
     @staticmethod
     def schedule_backup(
-        backup_dir: Optional[str] = None,
-        db_path: Optional[str] = None,
-        rdf_path: Optional[str] = None,
+        backup_dir: str | None = None,
+        db_path: str | None = None,
+        rdf_path: str | None = None,
         interval_hours: int = 24,
         compress: bool = True,
         max_backups: int = 5,
@@ -645,21 +644,7 @@ class BackupManager:
             max_backups: Maximum number of backups to keep
             retention_days: Maximum age of backups in days
         """
-        # Get paths from configuration if not provided
-        cfg = ConfigLoader().config.storage
-
-        if backup_dir is None:
-            backup_dir = cfg.backup_dir if hasattr(cfg, "backup_dir") else "backups"
-
-        if db_path is None:
-            db_path = (
-                cfg.duckdb.path
-                if hasattr(cfg, "duckdb") and hasattr(cfg.duckdb, "path")
-                else "kg.duckdb"
-            )
-
-        if rdf_path is None:
-            rdf_path = cfg.rdf_path if hasattr(cfg, "rdf_path") else "kg.rdf"
+        backup_dir, db_path, rdf_path = _resolve_storage_paths(backup_dir, db_path, rdf_path)
 
         # Schedule the backup
         scheduler = BackupManager.get_scheduler()
@@ -681,7 +666,7 @@ class BackupManager:
 
     @staticmethod
     def restore_point_in_time(
-        backup_dir: str, target_time: datetime, target_dir: Optional[str] = None
+        backup_dir: str, target_time: datetime, target_dir: str | None = None
     ) -> Dict[str, str]:
         """Restore to a specific point in time.
 
@@ -725,11 +710,11 @@ class BackupManager:
 
 
 def create_backup(
-    backup_dir: Optional[str] = None,
-    db_path: Optional[str] = None,
-    rdf_path: Optional[str] = None,
+    backup_dir: str | None = None,
+    db_path: str | None = None,
+    rdf_path: str | None = None,
     compress: bool = True,
-    config: Optional[BackupConfig] = None,
+    config: BackupConfig | None = None,
 ) -> BackupInfo:
     """Public API to create a storage backup."""
     return BackupManager.create_backup(
@@ -743,7 +728,7 @@ def create_backup(
 
 def restore_backup(
     backup_path: str,
-    target_dir: Optional[str] = None,
+    target_dir: str | None = None,
     db_filename: str = "db.duckdb",
     rdf_filename: str = "store.rdf",
 ) -> Dict[str, str]:
@@ -756,15 +741,15 @@ def restore_backup(
     )
 
 
-def list_backups(backup_dir: Optional[str] = None) -> List[BackupInfo]:
+def list_backups(backup_dir: str | None = None) -> List[BackupInfo]:
     """Public API to list available backups."""
     return BackupManager.list_backups(backup_dir)
 
 
 def schedule_backup(
-    backup_dir: Optional[str] = None,
-    db_path: Optional[str] = None,
-    rdf_path: Optional[str] = None,
+    backup_dir: str | None = None,
+    db_path: str | None = None,
+    rdf_path: str | None = None,
     interval_hours: int = 24,
     compress: bool = True,
     max_backups: int = 5,
@@ -790,7 +775,7 @@ def stop_scheduled_backups() -> None:
 def restore_point_in_time(
     backup_dir: str,
     target_time: datetime,
-    target_dir: Optional[str] = None,
+    target_dir: str | None = None,
 ) -> Dict[str, str]:
     """Public API to restore to a specific point in time."""
     return BackupManager.restore_point_in_time(
