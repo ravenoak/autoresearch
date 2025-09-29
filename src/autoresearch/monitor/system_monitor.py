@@ -1,11 +1,24 @@
 from __future__ import annotations
 
+import math
 import threading
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import psutil
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge
+
+
+def _coerce_float(value: Any) -> float:
+    """Return ``value`` converted to ``float`` with NaN/inf protection."""
+
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(result):
+        return 0.0
+    return result
 
 
 def _gauge(name: str, description: str, registry: CollectorRegistry) -> Gauge:
@@ -67,9 +80,22 @@ class SystemMonitor:
 
     @staticmethod
     def collect() -> Dict[str, float]:
-        cpu = psutil.cpu_percent(interval=None)
-        mem = psutil.virtual_memory()
+        cpu_value: float = 0.0
+        mem_percent: float = 0.0
+
+        try:
+            cpu_raw = psutil.cpu_percent(interval=None)
+            cpu_value = _coerce_float(cpu_raw)
+        except Exception:
+            cpu_value = 0.0
+
+        try:
+            mem = psutil.virtual_memory()
+            mem_percent = _coerce_float(getattr(mem, "percent", 0.0))
+        except Exception:
+            mem_percent = 0.0
+
         return {
-            "cpu_percent": float(cpu),
-            "memory_percent": float(mem.percent),
+            "cpu_percent": cpu_value,
+            "memory_percent": mem_percent,
         }

@@ -153,6 +153,17 @@ def _coerce_float(value: Any) -> float:
     return result
 
 
+def _coerce_float_dict(mapping: Mapping[str, Any] | None) -> dict[str, float]:
+    """Return ``mapping`` with all values coerced to finite floats."""
+
+    if not isinstance(mapping, Mapping):
+        return {}
+    result: dict[str, float] = {}
+    for key, value in mapping.items():
+        result[str(key)] = _coerce_float(value)
+    return result
+
+
 def restore_counter(counter: MetricWrapperBase, value: float) -> None:
     """Restore ``counter`` to ``value`` if the backing accessor is available."""
 
@@ -577,10 +588,12 @@ class OrchestrationMetrics:
             entity_count = max(0.0, _coerce_float(ingestion_meta.get("entity_count")))
             relation_count = max(0.0, _coerce_float(ingestion_meta.get("relation_count")))
             ingestion_seconds = max(0.0, _coerce_float(ingestion_meta.get("seconds")))
-            latency_meta = ingestion_meta.get("storage_latency")
-            if isinstance(latency_meta, Mapping):
-                for key, value in latency_meta.items():
-                    storage_latency[str(key)] = max(0.0, _coerce_float(value))
+            storage_latency = {
+                key: max(0.0, value)
+                for key, value in _coerce_float_dict(
+                    ingestion_meta.get("storage_latency")
+                ).items()
+            }
 
         if entity_count <= 0.0 and relation_count <= 0.0 and not metadata.get("paths"):
             # Skip empty ingestions that did not add any graph structure.
@@ -793,7 +806,7 @@ class OrchestrationMetrics:
         graph_summary_payload: dict[str, Any] | None = None
         if self.graph_ingestions:
             runs = len(self.graph_ingestions)
-            totals: dict[str, float | dict[str, float]] = {
+            totals: dict[str, float] = {
                 "entity_count": 0.0,
                 "relation_count": 0.0,
                 "ingestion_seconds": 0.0,
@@ -811,97 +824,36 @@ class OrchestrationMetrics:
             }
             storage_totals: dict[str, float] = {}
             for record in self.graph_ingestions:
-                totals["entity_count"] = float(totals["entity_count"]) + _coerce_float(
-                    record.get("entity_count")
-                )
-                totals["relation_count"] = float(totals["relation_count"]) + _coerce_float(
-                    record.get("relation_count")
-                )
-                totals["ingestion_seconds"] = float(
-                    totals["ingestion_seconds"]
-                ) + _coerce_float(record.get("ingestion_seconds"))
-                totals["contradiction_count"] = float(
-                    totals["contradiction_count"]
-                ) + _coerce_float(record.get("contradiction_count"))
-                totals["contradiction_score"] = float(
-                    totals["contradiction_score"]
-                ) + _coerce_float(record.get("contradiction_score"))
-                totals["contradiction_weighted"] = float(
-                    totals["contradiction_weighted"]
-                ) + _coerce_float(record.get("contradiction_weighted"))
-                totals["contradiction_weight"] = float(
-                    totals["contradiction_weight"]
-                ) + _coerce_float(record.get("contradiction_weight"))
-                totals["neighbor_node_count"] = float(
-                    totals["neighbor_node_count"]
-                ) + _coerce_float(record.get("neighbor_node_count"))
-                totals["neighbor_edge_count"] = float(
-                    totals["neighbor_edge_count"]
-                ) + _coerce_float(record.get("neighbor_edge_count"))
-                totals["path_count"] = float(totals["path_count"]) + _coerce_float(
-                    record.get("path_count")
-                )
-                totals["provenance_count"] = float(
-                    totals["provenance_count"]
-                ) + _coerce_float(record.get("provenance_count"))
-                totals["similarity_score"] = float(
-                    totals["similarity_score"]
-                ) + _coerce_float(record.get("similarity_score"))
-                totals["similarity_weighted"] = float(
-                    totals["similarity_weighted"]
-                ) + _coerce_float(record.get("similarity_weighted"))
-                totals["similarity_weight"] = float(
-                    totals["similarity_weight"]
-                ) + _coerce_float(record.get("similarity_weight"))
+                for key in totals:
+                    totals[key] += _coerce_float(record.get(key))
                 latency_meta = record.get("storage_latency")
                 if isinstance(latency_meta, Mapping):
                     for key, value in latency_meta.items():
-                        storage_totals[str(key)] = storage_totals.get(str(key), 0.0) + _coerce_float(
+                        name = str(key)
+                        storage_totals[name] = storage_totals.get(name, 0.0) + _coerce_float(
                             value
                         )
-            totals["storage_latency"] = dict(storage_totals)
-            averages: dict[str, float | dict[str, float]] = {}
-            numeric_keys = [
-                "entity_count",
-                "relation_count",
-                "ingestion_seconds",
-                "contradiction_count",
-                "contradiction_score",
-                "contradiction_weighted",
-                "contradiction_weight",
-                "neighbor_node_count",
-                "neighbor_edge_count",
-                "path_count",
-                "provenance_count",
-                "similarity_score",
-                "similarity_weighted",
-                "similarity_weight",
-            ]
-            for key in numeric_keys:
-                averages[key] = float(totals[key]) / runs if runs else 0.0
+            averages: dict[str, float | dict[str, float]] = {
+                key: (totals[key] / runs if runs else 0.0) for key in totals
+            }
             averages["storage_latency"] = {
                 key: value / runs if runs else 0.0 for key, value in storage_totals.items()
             }
-
-            latest_raw = self.graph_ingestions[-1]
-            latest_payload = dict(latest_raw)
-            latency_payload = latest_payload.get("storage_latency")
-            if isinstance(latency_payload, Mapping):
-                latest_payload["storage_latency"] = {
-                    str(key): _coerce_float(value) for key, value in latency_payload.items()
-                }
-            else:
-                latest_payload["storage_latency"] = {}
-            contradiction_sample = latest_payload.get("contradiction_sample")
+            latest_raw = dict(self.graph_ingestions[-1])
+            for key in totals:
+                latest_raw[key] = _coerce_float(latest_raw.get(key))
+            storage_latest = _coerce_float_dict(latest_raw.get("storage_latency"))
+            latest_raw["storage_latency"] = storage_latest
+            contradiction_sample = latest_raw.get("contradiction_sample")
             if isinstance(contradiction_sample, Sequence):
-                latest_payload["contradiction_sample"] = [
+                latest_raw["contradiction_sample"] = [
                     dict(item) for item in contradiction_sample if isinstance(item, Mapping)
                 ]
             else:
-                latest_payload["contradiction_sample"] = []
+                latest_raw["contradiction_sample"] = []
             neighbor_sample = latest_raw.get("neighbor_sample")
             if isinstance(neighbor_sample, Mapping):
-                latest_payload["neighbor_sample"] = {
+                latest_raw["neighbor_sample"] = {
                     str(node): [
                         dict(edge)
                         for edge in edges
@@ -911,22 +863,23 @@ class OrchestrationMetrics:
                     if isinstance(edges, Sequence)
                 }
             else:
-                latest_payload["neighbor_sample"] = {}
+                latest_raw["neighbor_sample"] = {}
             path_sample = latest_raw.get("path_sample")
             if isinstance(path_sample, Sequence):
-                latest_payload["path_sample"] = [
+                latest_raw["path_sample"] = [
                     [str(node) for node in path]
                     for path in path_sample
                     if isinstance(path, Sequence)
                 ]
             else:
-                latest_payload["path_sample"] = []
+                latest_raw["path_sample"] = []
 
             graph_summary_payload = {
                 "runs": runs,
                 "totals": totals,
+                "totals_storage_latency": dict(storage_totals),
                 "averages": averages,
-                "latest": latest_payload,
+                "latest": latest_raw,
             }
 
         return {

@@ -12,10 +12,10 @@ def test_get_usage_psutil(monkeypatch):
 
     class FakeProcess:
         def memory_info(self):
-            return types.SimpleNamespace(rss=100 * 1024 * 1024)
+            return types.SimpleNamespace(rss="104857600")
 
     fake_psutil = types.SimpleNamespace(
-        cpu_percent=lambda interval=None: 5.0,
+        cpu_percent=lambda interval=None: "5.0",
         Process=lambda: FakeProcess(),
     )
     monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
@@ -35,6 +35,24 @@ def test_get_usage_no_psutil(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     monkeypatch.setitem(sys.modules, "psutil", None)
+    cpu, mem = _get_usage()
+    assert cpu == 0.0
+    assert mem == 0.0
+
+
+def test_get_usage_handles_runtime_errors(monkeypatch):
+    class FakeProcess:
+        def memory_info(self):
+            raise RuntimeError("boom")
+
+    def cpu_percent(interval=None):
+        raise RuntimeError("nope")
+
+    fake_psutil = types.SimpleNamespace(
+        cpu_percent=cpu_percent,
+        Process=lambda: FakeProcess(),
+    )
+    monkeypatch.setitem(sys.modules, "psutil", fake_psutil)
     cpu, mem = _get_usage()
     assert cpu == 0.0
     assert mem == 0.0
