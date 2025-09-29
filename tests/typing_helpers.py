@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Generator
+
 from typing import (
+    TYPE_CHECKING,
     Any,
     Protocol,
     TypeAlias,
@@ -19,8 +21,10 @@ from pytest_bdd import when as _when
 
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
-from autoresearch.orchestration.state import QueryState
 from autoresearch.orchestration.types import AgentExecutionResult, CallbackMap
+
+if TYPE_CHECKING:
+    from autoresearch.orchestration.state import QueryState
 
 R_co = TypeVar("R_co")
 T = TypeVar("T")

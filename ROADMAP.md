@@ -198,6 +198,8 @@ details. The phases integrate with existing milestones as follows:
 1. **Phase 1 – Adaptive Gate and Claim Audits** (feeds alpha readiness)
    - Implement scout pass signals, gating policy, and per-claim audit exports.
    - Update response schemas and clients to display audit tables.
+   - Extend behavior coverage with the AUTO planner → scout gate → verify loop
+     so gate decisions and audit badges remain observable in CI.
    - Track metrics for early-exit accuracy and cost deltas in STATUS.md.
 2. **Phase 2 – Planner and Coordinator Evolution** (bridges 0.1.0 scope)
    - Promote planner outputs to task graphs with coordinator scheduling.
