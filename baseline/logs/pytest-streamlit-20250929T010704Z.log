@@ -1,0 +1,6 @@
+Command: uv run --extra test pytest tests/integration/test_streamlit_gui.py -q
+Timestamp (UTC): 20250929T010704Z
+
+
+1 skipped in 0.26s
+Status: success
