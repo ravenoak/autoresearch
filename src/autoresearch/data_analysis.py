@@ -9,25 +9,40 @@ raises :class:`RuntimeError`.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-
-try:
-    import polars as pl
-except Exception:  # pragma: no cover - optional dependency
-    pl = None  # type: ignore
+from typing import Any, Dict, Optional, Protocol, cast
 
 from .config import ConfigLoader
 
 
+class _PolarsDataFrame(Protocol):
+    """Protocol representing the subset of :class:`polars.DataFrame` we rely on."""
+
+
+class _PolarsNamespace(Protocol):
+    """Protocol describing the attributes accessed on the ``polars`` module."""
+
+    DataFrame: type[_PolarsDataFrame]
+
+
+try:  # pragma: no cover - optional dependency
+    import polars as _polars
+except Exception:  # pragma: no cover - optional dependency
+    _polars = None
+
+pl = cast(Optional[_PolarsNamespace], _polars)
+
+
 def metrics_dataframe(
     metrics: Dict[str, Any], polars_enabled: Optional[bool] = None
-) -> "pl.DataFrame":
+) -> _PolarsDataFrame:
     """Return a Polars DataFrame summarizing agent timings."""
     cfg = ConfigLoader().config.analysis
     if polars_enabled is None:
         polars_enabled = cfg.polars_enabled
     if not polars_enabled or pl is None:
         raise RuntimeError("Polars analysis is disabled")
+
+    assert pl is not None
 
     rows = []
     for agent, timings in metrics.get("agent_timings", {}).items():

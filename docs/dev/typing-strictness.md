@@ -89,6 +89,12 @@
   This pattern aligns with the preferred approach—runtime availability remains
   optional while type checkers benefit from the annotations. New strict work
   should follow the same structure for optional dependencies.
+- [src/autoresearch/data_analysis.py]
+  (../../src/autoresearch/data_analysis.py) and
+  [src/autoresearch/kg_reasoning.py]
+  (../../src/autoresearch/kg_reasoning.py) now use lightweight protocols to
+  represent optional extras. Follow the same pattern—define sentinel classes or
+  protocols instead of `type: ignore` when guarding imports.
 
 ## Suggested sequencing towards strict gating
 

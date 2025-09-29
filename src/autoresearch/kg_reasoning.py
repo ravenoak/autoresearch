@@ -3,40 +3,13 @@
 from __future__ import annotations
 
 from importlib import import_module
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Protocol, cast
 
 import logging
 import threading
 import time
 import warnings
 import rdflib
-
-try:  # pragma: no cover - optional dependency
-    import owlrl
-except Exception:  # pragma: no cover - fallback for offline tests
-    class _DeductiveClosure:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            """No-op constructor for fallback reasoner."""
-
-        def expand(self, graph: rdflib.Graph) -> None:
-            """No-op expansion when owlrl is unavailable."""
-
-    @dataclass(frozen=True)
-    class OwlRLStub:
-        OWLRL_Semantics: object
-        RDFS_Semantics: object
-        DeductiveClosure: type
-
-    owlrl = OwlRLStub(  # type: ignore
-        OWLRL_Semantics=object(),
-        RDFS_Semantics=object(),
-        DeductiveClosure=_DeductiveClosure,
-    )
-    warnings.warn(
-        "owlrl not installed; ontology reasoning will be skipped",
-        RuntimeWarning,
-    )
 
 from .config import ConfigLoader
 from .errors import StorageError
@@ -47,6 +20,52 @@ from .knowledge.graph import (  # noqa: F401
     GraphRelation,
     SessionGraphPipeline,
 )
+
+
+class _DeductiveClosureProtocol(Protocol):
+    """Protocol for the ``DeductiveClosure`` class returned by ``owlrl``."""
+
+    def __init__(self, semantics: object) -> None:
+        """Initialise the closure with the provided semantics."""
+
+    def expand(self, graph: rdflib.Graph) -> None:
+        """Expand the provided graph in-place."""
+
+
+class _OwlrlNamespace(Protocol):
+    """Protocol describing the subset of attributes accessed on ``owlrl``."""
+
+    OWLRL_Semantics: object
+    RDFS_Semantics: object
+    DeductiveClosure: type[_DeductiveClosureProtocol]
+
+
+try:  # pragma: no cover - optional dependency
+    import owlrl as _owlrl_module
+except Exception:  # pragma: no cover - fallback for offline tests
+    class _DeductiveClosureFallback:
+        """No-op closure used when ``owlrl`` cannot be imported."""
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            """Accept arbitrary arguments to mirror the real API."""
+
+        def expand(self, graph: rdflib.Graph) -> None:
+            """Perform no reasoning when ``owlrl`` is unavailable."""
+
+    class _OwlrlFallback:
+        OWLRL_Semantics: object = object()
+        RDFS_Semantics: object = object()
+        DeductiveClosure: type[_DeductiveClosureProtocol] = _DeductiveClosureFallback
+
+    warnings.warn(
+        "owlrl not installed; ontology reasoning will be skipped",
+        RuntimeWarning,
+    )
+    _owlrl: _OwlrlNamespace = cast(_OwlrlNamespace, _OwlrlFallback())
+else:
+    _owlrl = cast(_OwlrlNamespace, _owlrl_module)
+
+owlrl: _OwlrlNamespace = _owlrl
 
 
 # Registry for pluggable ontology reasoners

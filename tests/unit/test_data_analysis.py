@@ -1,3 +1,7 @@
+import builtins
+import importlib
+from typing import Any
+
 import pytest
 
 from tests.optional_imports import import_or_skip
@@ -27,3 +31,28 @@ def test_metrics_dataframe_polars_missing(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr("autoresearch.data_analysis.pl", None)
     with pytest.raises(RuntimeError):
         metrics_dataframe(metrics, polars_enabled=True)
+
+
+def test_metrics_dataframe_reload_without_polars(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import autoresearch.data_analysis as module
+
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args: Any, **kwargs: Any):
+        if name == "polars":
+            raise ImportError("polars missing during test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    module = importlib.reload(module)
+    assert module.pl is None
+
+    metrics = {"agent_timings": {"A": [1.0]}}
+    with pytest.raises(RuntimeError):
+        module.metrics_dataframe(metrics, polars_enabled=True)
+
+    monkeypatch.setattr(builtins, "__import__", real_import)
+    module = importlib.reload(module)
+    globals()["metrics_dataframe"] = module.metrics_dataframe
