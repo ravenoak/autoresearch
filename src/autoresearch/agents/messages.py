@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 import time
-from typing import Optional
+from typing import Any, Optional
 from enum import Enum
 
 
@@ -30,6 +30,6 @@ class AgentMessage(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Return message as plain dictionary."""
         return self.model_dump(by_alias=True)

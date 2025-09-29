@@ -31,6 +31,7 @@ from uuid import uuid4
 
 import httpx
 import uvicorn
+from uvicorn.config import Config as UvicornConfig
 from pydantic import BaseModel, ValidationError
 
 from .api import capabilities_endpoint
@@ -60,7 +61,6 @@ if TYPE_CHECKING:
         SendMessageRequest,
         SendMessageResponse,
     )
-    from a2a.utils.message import get_message_text, new_agent_text_message
 else:
     class Message(Protocol):
         """Structural type for messages exchanged with the A2A SDK."""
@@ -104,20 +104,15 @@ else:
         async def send_message(self, request: SendMessageRequest) -> SendMessageResponse:
             ...
 
-    def get_message_text(message: Message) -> str:
-        """Placeholder used when the A2A SDK is absent."""
-
-        raise RuntimeError("A2A SDK is not available at runtime.")
-
-    def new_agent_text_message(
-        text: str, metadata: Mapping[str, Any] | None = None
-    ) -> Message:
-        """Placeholder used when the A2A SDK is absent."""
-
-        raise RuntimeError("A2A SDK is not available at runtime.")
-
-
 A2A_AVAILABLE = False
+
+_RuntimeA2AClient: type[Any] | None = None
+_RuntimeMessage: type[Any] | None = None
+_RuntimeMessageSendParams: type[Any] | None = None
+_RuntimeSendMessageRequest: type[Any] | None = None
+_RuntimeSendMessageResponse: type[Any] | None = None
+_runtime_get_message_text: Callable[[Message], str] | None = None
+_runtime_new_agent_text_message: Callable[..., Message] | None = None
 
 
 class AgentInfo(TypedDict):
@@ -153,13 +148,97 @@ except ImportError:  # pragma: no cover - dependency missing
     pass
 else:
     A2A_AVAILABLE = True
-    SDKA2AClient = _RuntimeA2AClient  # noqa: F811
-    Message = _RuntimeMessage  # noqa: F811
-    MessageSendParams = _RuntimeMessageSendParams  # noqa: F811
-    SendMessageRequest = _RuntimeSendMessageRequest  # noqa: F811
-    SendMessageResponse = _RuntimeSendMessageResponse  # noqa: F811
-    get_message_text = _runtime_get_message_text  # noqa: F811
-    new_agent_text_message = _runtime_new_agent_text_message  # noqa: F811
+    _RuntimeA2AClient = _RuntimeA2AClient
+    _RuntimeMessage = _RuntimeMessage
+    _RuntimeMessageSendParams = _RuntimeMessageSendParams
+    _RuntimeSendMessageRequest = _RuntimeSendMessageRequest
+    _RuntimeSendMessageResponse = _RuntimeSendMessageResponse
+    _runtime_get_message_text = _runtime_get_message_text
+    _runtime_new_agent_text_message = _runtime_new_agent_text_message
+
+
+def _require_runtime_cls(name: str, value: type[Any] | None) -> type[Any]:
+    if value is None:
+        raise RuntimeError(f"A2A SDK is not available: missing {name} runtime class")
+    return value
+
+
+def _require_runtime_fn(name: str, func: Callable[..., Any] | None) -> Callable[..., Any]:
+    if func is None:
+        raise RuntimeError(f"A2A SDK is not available: missing {name} runtime helper")
+    return func
+
+
+def get_message_model_cls() -> type[Message]:
+    """Return the runtime message class provided by the A2A SDK."""
+
+    return cast("type[Message]", _require_runtime_cls("Message", _RuntimeMessage))
+
+
+def get_message_send_params_cls() -> type[MessageSendParams]:
+    """Return the runtime send-params class provided by the A2A SDK."""
+
+    return cast(
+        "type[MessageSendParams]",
+        _require_runtime_cls("MessageSendParams", _RuntimeMessageSendParams),
+    )
+
+
+def get_send_message_request_cls() -> type[SendMessageRequest]:
+    """Return the runtime send-message request class."""
+
+    return cast(
+        "type[SendMessageRequest]",
+        _require_runtime_cls("SendMessageRequest", _RuntimeSendMessageRequest),
+    )
+
+
+def get_sdk_client_cls() -> type[SDKA2AClient]:
+    """Return the runtime A2A client class."""
+
+    return cast("type[SDKA2AClient]", _require_runtime_cls("SDKA2AClient", _RuntimeA2AClient))
+
+
+def get_message_text(message: Message) -> str:
+    """Proxy to the runtime ``get_message_text`` helper."""
+
+    func = cast(Callable[[Message], str], _require_runtime_fn("get_message_text", _runtime_get_message_text))
+    return func(message)
+
+
+def new_agent_text_message(
+    text: str,
+    metadata: Mapping[str, Any] | None = None,
+) -> Message:
+    """Create a runtime message object using the SDK helper."""
+
+    func = cast(
+        Callable[[str, Mapping[str, Any] | None], Message],
+        _require_runtime_fn("new_agent_text_message", _runtime_new_agent_text_message),
+    )
+    return func(text, metadata)
+
+
+def create_message_send_params(
+    *,
+    message: Message,
+    metadata: Mapping[str, Any] | None = None,
+) -> MessageSendParams:
+    """Instantiate ``MessageSendParams`` using the runtime class."""
+
+    params_cls = get_message_send_params_cls()
+    return params_cls(message=message, metadata=metadata)
+
+
+def create_send_message_request(
+    *,
+    request_id: str,
+    params: MessageSendParams,
+) -> SendMessageRequest:
+    """Instantiate ``SendMessageRequest`` using the runtime class."""
+
+    request_cls = get_send_message_request_cls()
+    return request_cls(id=request_id, params=params)
 
 
 if A2A_AVAILABLE:
@@ -223,7 +302,8 @@ if A2A_AVAILABLE:
             handler = self._handlers.get(msg_type)
             if handler is None:
                 return {"status": "error", "error": "Unknown message type"}
-            message = Message.model_validate(message_data)
+            message_cls = get_message_model_cls()
+            message = message_cls.model_validate(message_data)
             if asyncio.iscoroutinefunction(handler):
                 async_handler = cast(AsyncMessageHandler, handler)
                 response = await async_handler(message)
@@ -247,9 +327,15 @@ if A2A_AVAILABLE:
                 message_data = payload.get("message", {})
                 return await self._dispatch(msg_type, message_data)
 
-            config = uvicorn.Config(app, host=self.host, port=self.port, log_level="info")
-            self._server = uvicorn.Server(config)
-            server = self._server
+            asgi_app = cast(Any, app)
+            config = UvicornConfig(
+                app=asgi_app,
+                host=self.host,
+                port=self.port,
+                log_level="info",
+            )
+            server = uvicorn.Server(config)
+            self._server = server
 
             def run() -> None:
                 asyncio.run(server.serve())
@@ -505,8 +591,12 @@ class A2AClientWrapper:
 
         async def _run() -> SendMessageResponse:
             async with httpx.AsyncClient() as http_client:
-                client = SDKA2AClient(http_client, url=agent_url)
-                request = SendMessageRequest(id=str(uuid4()), params=params)
+                client_cls = get_sdk_client_cls()
+                client = client_cls(http_client, url=agent_url)
+                request = create_send_message_request(
+                    request_id=str(uuid4()),
+                    params=params,
+                )
                 return await client.send_message(request)
 
         response = asyncio.run(_run())
@@ -524,7 +614,9 @@ class A2AClientWrapper:
             The response from the agent
         """
         try:
-            params = MessageSendParams(message=new_agent_text_message(query))
+            params = create_message_send_params(
+                message=new_agent_text_message(query)
+            )
             response = self._send_request(agent_url, params)
 
             if "error" in response:
@@ -555,7 +647,9 @@ class A2AClientWrapper:
             The capabilities of the agent
         """
         try:
-            params = MessageSendParams(message=new_agent_text_message("get_capabilities"))
+            params = create_message_send_params(
+                message=new_agent_text_message("get_capabilities")
+            )
             response = self._send_request(agent_url, params)
 
             if "error" in response:
@@ -582,7 +676,9 @@ class A2AClientWrapper:
             The configuration of the agent
         """
         try:
-            params = MessageSendParams(message=new_agent_text_message("get_config"))
+            params = create_message_send_params(
+                message=new_agent_text_message("get_config")
+            )
             response = self._send_request(agent_url, params)
 
             if "error" in response:
@@ -610,7 +706,7 @@ class A2AClientWrapper:
             The result of the configuration update
         """
         try:
-            params = MessageSendParams(
+            params = create_message_send_params(
                 message=new_agent_text_message("set_config"),
                 metadata={"args": config_updates},
             )

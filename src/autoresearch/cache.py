@@ -13,7 +13,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from tinydb import TinyDB, Query
 
@@ -102,9 +102,11 @@ class SearchCache:
             & (Query().query == query)
             & (Query().backend == backend)
         )
-        row = db.get(condition)
+        row = cast(Optional[Dict[str, Any]], db.get(condition))
         if row:
-            return deepcopy(row.get("results", []))
+            results_raw = row.get("results", [])
+            results = cast(List[Dict[str, Any]], deepcopy(results_raw))
+            return results
         return None
 
     def clear(self, namespace: str | None = None) -> None:

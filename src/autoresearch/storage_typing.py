@@ -28,7 +28,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported for typing only
     import kuzu
     import rdflib
     from rdflib.query import Result as RDFQueryResult
-    from rdflib.term import Identifier as RDFNode
+    from rdflib.term import Node as RDFNode
 
 else:  # pragma: no cover - executed only at runtime
     RDFNode = Any  # type: ignore[assignment]
