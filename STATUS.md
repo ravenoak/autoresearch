@@ -27,6 +27,15 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
 
 ## September 30, 2025
+- `task release:alpha` completed at 19:04 UTC with the scout gate, CLI path
+  helper, and VSS loader all green. The verify and coverage stages recorded the
+  recalibrated gate telemetry and 92.4 % statement rate, and the packaging step
+  produced fresh 0.1.0a1 wheels archived at
+  `baseline/logs/python-build-20250929T030953Z.log`. The release plan and
+  alpha ticket now cite the trio of logs for traceability.
+  【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+  【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:docs/release_plan.md†L18-L48】
+  【F:issues/prepare-first-alpha-release.md†L1-L34】
 - The restored Task CLI now lists and executes `verify`, letting the 17:45 Z
   sweep complete linting, typing, and every unit, integration, and behavior
   suite while streaming the VSS loaders that previously blocked the gate.
@@ -96,7 +105,7 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   the adaptive gate, GraphRAG, and planner telemetry upgrades.【F:docs/pseudocode.md†L1-L199】【F:docs/deep_research_upgrade_plan.md†L1-L134】
 - Logged new open issues for the adaptive gate, planner upgrade, GraphRAG,
   evaluation harness, and cost-aware routing phases so work can begin with
-  acceptance criteria already scoped.【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
+  acceptance criteria already scoped.【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L42】【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
 - Instrumented the planner-coordinator pipeline with typed task graphs,
   depth-affinity scheduling, and `react_log` telemetry to baseline unlock
   coverage and tool affinity KPIs for the PRDV flow.【F:docs/specs/orchestration.md†L33-L70】【F:docs/pseudocode.md†L171-L200】

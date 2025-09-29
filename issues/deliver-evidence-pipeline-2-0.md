@@ -4,7 +4,10 @@
 Phase 1 of the Deep Research Enhancement Initiative requires per-claim audits,
 iterative retrieval, entailment scoring, and self-checking ensembles. We must
 extend the evidence pipeline so every claim is tagged with support status and
-citations before synthesis completes.
+citations before synthesis completes. The release sweep now persists the gate
+telemetry and audit badges, so downstream evidence exports must ingest those
+fields while we continue expanding retrieval depth.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:docs/deep_research_upgrade_plan.md†L19-L34】
 
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)

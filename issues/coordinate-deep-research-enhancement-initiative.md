@@ -4,7 +4,10 @@
 We adopted the September 26, 2025 dialectical plan that sequences adaptive
 gating, per-claim audits, planner upgrades, GraphRAG, evaluation harnesses, and
 cost-aware routing. Execution requires coordinated scheduling across existing
-roadmap milestones, documentation updates, and telemetry tracking.
+roadmap milestones, documentation updates, and telemetry tracking. Phase 1 is
+now complete; the release sweep and deep research plan confirm the gate and
+audit telemetry ship in the alpha pipeline while later phases remain in flight.
+【F:docs/deep_research_upgrade_plan.md†L19-L34】【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
 
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)

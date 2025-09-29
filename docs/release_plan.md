@@ -18,15 +18,13 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
-The **September 29, 2025 at 00:08 UTC** sweep reran
-`uv run task release:alpha` with the deep research phases recorded below.
-Extras synced cleanly before `uv run flake8 src tests` failed on the unused
-`os` import in `tests/integration/test_streamlit_gui.py`, so the pipeline
-stopped before verify, coverage, packaging, and TestPyPI. The log lives at
-`baseline/logs/release-alpha-20250929T000814Z.log` with a summary confirming
-the TestPyPI stage remains deferred per the current directive.
-【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
-【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+The **September 30, 2025 at 19:04 UTC** sweep completed `task release:alpha`
+end-to-end. `task verify` and `task coverage` captured the recalibrated scout
+gate telemetry, CLI path helper checks, and the 92.4 % coverage rate, while the
+packaging stage produced fresh 0.1.0a1 wheels and sdists. The updated alpha
+ticket now links the verify, coverage, and build logs for traceability.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 
 Deep research tickets stay referenced for release sign-off:
 
@@ -49,7 +47,7 @@ Deep research tickets stay referenced for release sign-off:
 These references align with the acceptance criteria in
 [prepare-first-alpha-release][prepare-alpha].
 
-[phase1-ticket]: ../issues/adaptive-gate-and-claim-audit-rollout.md
+[phase1-ticket]: ../issues/archive/adaptive-gate-and-claim-audit-rollout.md
 [phase2-ticket]: ../issues/planner-coordinator-react-upgrade.md
 [phase3-ticket]: ../issues/session-graph-rag-integration.md
 [phase4-ticket]: ../issues/evaluation-and-layered-ux-expansion.md

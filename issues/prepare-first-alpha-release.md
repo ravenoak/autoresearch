@@ -12,6 +12,14 @@ release:alpha` sweep, and finalizing docs and packaging guidance before tagging.
 so roadmap consumers can follow the remediation of the CLI and VSS regressions.
 【F:STATUS.md†L21-L29】【F:TASK_PROGRESS.md†L1-L10】【F:docs/release_plan.md†L19-L27】
 
+The September 30, 2025 sweep at 19:04 UTC now completes `task release:alpha`
+via the Task CLI, recording the recalibrated scout gate telemetry, CLI path
+helper checks, and the refreshed 0.1.0a1 wheels. The verify, coverage, and
+build logs are linked from the release plan, changelog, and status rollup so
+auditors can trace the alpha evidence without leaving the repo.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:CHANGELOG.md†L9-L20】
+
 ## Dependencies
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)
