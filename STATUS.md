@@ -46,6 +46,16 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   sweep complete linting, typing, and every unit, integration, and behavior
   suite while streaming the VSS loaders that previously blocked the gate.
   【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+- XPASS cleanup closed out the unit-suite promotions and Phase 1 of the deep
+  research initiative. The release plan archives the XPASS, heuristics proof,
+  and packaging tickets while the deep research plan records the Phase 1
+  completion tied to the September 30 verify and coverage logs.
+  【F:docs/release_plan.md†L214-L236】【F:docs/deep_research_upgrade_plan.md†L19-L36】
+- The remaining alpha checklist items center on the TestPyPI dry run stay and
+  release sign-off coordination. Track the open checkbox in the release plan
+  and the acceptance criteria in the alpha ticket for the publish directive
+  update.
+  【F:docs/release_plan.md†L200-L209】【F:issues/prepare-first-alpha-release.md†L36-L57】
 - Layered evaluation exports now persist planner depth, routing deltas, and CSV
   twins alongside the Parquet files. The CLI depth help mirrors the Streamlit
   toggles for knowledge graphs and graph exports, while the Streamlit claim

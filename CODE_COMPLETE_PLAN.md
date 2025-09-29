@@ -5,31 +5,42 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **September 27, 2025**, Autoresearch targets an **0.1.0a1** preview on
+As of **September 30, 2025**, Autoresearch targets an **0.1.0a1** preview on
 **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-The September 23 verification runs keep `uv run flake8 src tests` and
-`uv run mypy src` green. `uv run pytest tests/unit -q` now passes with six
-XPASS cases tracked in
+The 19:04 UTC `task release:alpha` sweep now records the recalibrated scout
+gate telemetry, CLI path helper checks, and the 92.4 % statement coverage rate
+captured in the September 30 verify and coverage logs, keeping packaging in
+sync with the staged 0.1.0a1 artifacts.
+[prepare-first-alpha-release](issues/prepare-first-alpha-release.md) references
+the same evidence so reviewers can trace the CLI remediation and coverage
+metrics from the logs to the roadmap.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:TASK_PROGRESS.md†L1-L10】
+
+XPASS cleanup and the Phase 1 Deep Research objectives are complete: the unit
+suite no longer reports XPASS cases after archiving
 [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md),
-and both the integration suite (`uv run pytest tests/integration -m "not slow
-and not requires_ui and not requires_vss" -q`) and behavior suite pass.
-`task coverage EXTRAS="nlp ui vss git distributed analysis llm parsers gpu"`
-exercises 908 unit, 331 integration, optional-extra, and 29 behavior tests at
-100% line coverage, matching the expectations captured in `TASK_PROGRESS.md`.
-Release preparation now focuses on XPASS cleanup, staging
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md), and the
-five deep-research initiatives documented below.
+and the adaptive gate rollout now publishes audit telemetry through the same
+Task CLI paths validated in the September 30 sweeps.
+Phase 1 remains documented with the completion note in the deep research plan.
+【F:docs/release_plan.md†L214-L233】【F:docs/deep_research_upgrade_plan.md†L19-L36】
+
+The remaining alpha checklist items focus on the TestPyPI dry run and release
+sign-off once the publish directive lifts. `docs/release_plan.md` tracks the
+open TestPyPI item alongside the archived XPASS and heuristics proof tickets so
+the alpha gate stays transparent.
+【F:docs/release_plan.md†L200-L236】
 
 ### Immediate Follow-ups
 
-- [ ] Retire the six XPASS cases documented in
+- [x] Retire the six XPASS cases documented in
   [retire-stale-xfail-markers-in-unit-suite](issues/archive/retire-stale-xfail-markers-in-unit-suite.md)
   so the unit suite fails fast on regressions.
 - [ ] Complete the
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md)
   milestones while keeping optional-extra coverage sweeps synchronized with
   `TASK_PROGRESS.md`.
-- [ ] Execute Phase 1 of the Deep Research program under
+- [x] Execute Phase 1 of the Deep Research program under
   [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md).
 
 ## Deep Research Enhancement Program
