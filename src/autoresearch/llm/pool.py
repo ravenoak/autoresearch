@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, cast
 from threading import Lock
+
 import requests
 
 from ..config.loader import get_config
+from ..typing.http import RequestsSessionProtocol
 
-_session: Optional[requests.Session] = None
+_session: Optional[RequestsSessionProtocol] = None
 _lock = Lock()
 
 
-def set_session(session: requests.Session) -> None:
+def set_session(session: RequestsSessionProtocol) -> None:
     """Inject a pre-created HTTP session."""
     global _session
     with _lock:
@@ -25,7 +27,7 @@ _adapters: Dict[str, "LLMAdapter"] = {}
 _adapter_lock = Lock()
 
 
-def get_session() -> requests.Session:
+def get_session() -> RequestsSessionProtocol:
     """Return a pooled HTTP session for LLM adapters."""
     global _session
     with _lock:
@@ -39,7 +41,8 @@ def get_session() -> requests.Session:
             )
             session.mount("http://", adapter)
             session.mount("https://", adapter)
-            _session = session
+            _session = cast(RequestsSessionProtocol, session)
+        assert _session is not None
         return _session
 
 

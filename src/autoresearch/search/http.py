@@ -2,22 +2,23 @@ from __future__ import annotations
 
 import atexit
 import threading
-from typing import Optional
+from typing import Optional, cast
 
 import requests
 from urllib3.util.retry import Retry
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
+from ..typing.http import RequestsSessionProtocol
 
 log = get_logger(__name__)
 
-_http_session: Optional[requests.Session] = None
+_http_session: Optional[RequestsSessionProtocol] = None
 _http_lock = threading.Lock()
 _atexit_registered = False
 
 
-def set_http_session(session: requests.Session) -> None:
+def set_http_session(session: RequestsSessionProtocol) -> None:
     """Inject an existing HTTP session (for distributed workers)."""
     global _http_session, _atexit_registered
     with _http_lock:
@@ -27,7 +28,7 @@ def set_http_session(session: requests.Session) -> None:
             _atexit_registered = True
 
 
-def get_http_session() -> requests.Session:
+def get_http_session() -> RequestsSessionProtocol:
     """Return a pooled HTTP session."""
     global _http_session, _atexit_registered
     with _http_lock:
@@ -48,10 +49,11 @@ def get_http_session() -> requests.Session:
             )
             session.mount("http://", adapter)
             session.mount("https://", adapter)
-            _http_session = session
+            _http_session = cast(RequestsSessionProtocol, session)
             if not _atexit_registered:
                 atexit.register(close_http_session)
                 _atexit_registered = True
+        assert _http_session is not None
         return _http_session
 
 

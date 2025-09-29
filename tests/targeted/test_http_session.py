@@ -14,19 +14,53 @@ ensure_stub_module(
 )
 ensure_stub_module("docx", {"Document": object})
 
+from autoresearch.typing.http import RequestsSessionProtocol  # noqa: E402
 import autoresearch.search.http as http  # noqa: E402
+
+
+class DummyResponse:
+    def __init__(self) -> None:
+        self.raise_called = False
+        self._headers: dict[str, str] = {}
+        self.status_code = 200
+
+    def raise_for_status(self) -> None:
+        self.raise_called = True
+
+    def json(self) -> dict[str, str]:
+        return {"ok": "true"}
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return self._headers
 
 
 class DummySession:
     def __init__(self) -> None:
         self.mounted: list[tuple[str, object]] = []
         self.closed = False
+        self.requests: list[tuple[str, str]] = []
+        self._headers: dict[str, str] = {}
+
+    def request(self, method, url, **kwargs):
+        self.requests.append((method, url))
+        return DummyResponse()
 
     def mount(self, prefix, adapter) -> None:
         self.mounted.append((prefix, adapter))
 
     def close(self) -> None:
         self.closed = True
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return self._headers
+
+    def get(self, url, **kwargs):
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url, **kwargs):
+        return self.request("POST", url, **kwargs)
 
 
 def test_get_http_session_creates_and_reuses(monkeypatch):
@@ -43,8 +77,10 @@ def test_get_http_session_creates_and_reuses(monkeypatch):
     second = http.get_http_session()
 
     assert isinstance(first, DummySession)
+    assert isinstance(first, RequestsSessionProtocol)
     assert first is second
     assert calls == [http.close_http_session]
+    assert [prefix for prefix, _ in first.mounted] == ["http://", "https://"]
     http.close_http_session()
 
 
@@ -56,8 +92,22 @@ def test_set_and_close_http_session(monkeypatch):
     http.set_http_session(dummy)
 
     assert http.get_http_session() is dummy
+    assert isinstance(dummy, RequestsSessionProtocol)
     assert calls == [http.close_http_session]
 
     http.close_http_session()
     assert dummy.closed
     assert http._http_session is None
+
+
+def test_protocol_request_usage() -> None:
+    """Dummy session satisfies the protocol and returns responses."""
+
+    session = DummySession()
+    assert isinstance(session, RequestsSessionProtocol)
+
+    response = session.get("https://example.com")
+    assert isinstance(response, DummyResponse)
+    assert response.raise_called is False
+    response.raise_for_status()
+    assert response.raise_called is True

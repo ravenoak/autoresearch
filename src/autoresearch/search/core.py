@@ -65,18 +65,15 @@ from weakref import WeakSet
 import numpy as np
 import requests
 
-from ..cache import (
-    SearchCache,
-)
+from ..cache import SearchCache, _SearchCacheView
 from ..cache import cache_results as _cache_results
-from ..cache import (
-    get_cache,
-)
+from ..cache import get_cache
 from ..cache import get_cached_results as _get_cached_results
 from ..config.loader import get_config
 from ..errors import ConfigError, NotFoundError, SearchError, StorageError
 from ..logging_utils import get_logger
 from ..storage import StorageManager
+from ..typing.http import RequestsSessionProtocol
 from . import storage as search_storage
 from .context import SearchContext
 from .http import close_http_session, get_http_session
@@ -427,7 +424,7 @@ class ExternalLookupResult:
     query: str
     results: List[Dict[str, Any]]
     by_backend: Dict[str, List[Dict[str, Any]]]
-    cache: SearchCache
+    cache: SearchCache | _SearchCacheView
     storage: type[StorageManager]
 
     def __iter__(self) -> Iterator[Dict[str, Any]]:
@@ -532,7 +529,9 @@ class Search:
     _shared_instance: ClassVar[Optional["Search"]] = None
     _instances: ClassVar[WeakSet["Search"]] = WeakSet()
 
-    def __init__(self, cache: Optional[SearchCache] = None) -> None:
+    def __init__(
+        self, cache: SearchCache | _SearchCacheView | None = None
+    ) -> None:
         self.backends: Dict[str, Callable[[str, int], List[Dict[str, Any]]]] = dict(
             self._default_backends
         )
@@ -580,7 +579,7 @@ class Search:
         return cls._shared_instance
 
     @staticmethod
-    def get_http_session() -> requests.Session:
+    def get_http_session() -> RequestsSessionProtocol:
         """Expose pooled HTTP session."""
         return get_http_session()
 
