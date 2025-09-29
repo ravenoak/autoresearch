@@ -73,6 +73,16 @@ work.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L37-L49�
 【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
 【F:issues/archive/fix-testing-guidelines-gpu-link.md†L32-L34】
 【F:issues/archive/fix-release-plan-issue-links.md†L26-L28】
+The September 30, 2025 verify (17:45:12 UTC) and coverage (18:19:47 UTC) sweeps
+restore the Task CLI path with 92.4 % statement coverage; the alpha ticket,
+status rollup, task progress log, and code-complete plan all reference the logs
+so the remaining TestPyPI dry-run hold and sign-off coordination stay visible.
+XPASS cleanup and Phase 1 of the deep research initiative remain archived in the
+release plan while the deep research plan records the completion rationale.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:issues/prepare-first-alpha-release.md†L1-L57】【F:STATUS.md†L21-L69】
+【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L40】
+【F:docs/release_plan.md†L18-L38】【F:docs/deep_research_upgrade_plan.md†L19-L36】
 The spec template lint cleanup is archived as
 [spec lint template ticket (archived)][restore-spec-lint-template-compliance-archived].
 Fresh September 24 planning added

@@ -9,6 +9,17 @@ three logs so release reviewers can audit the evidence trail.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 
+XPASS cleanup is complete and the Phase 1 deep research objectives are now
+green; the release plan archives the XPASS, heuristics proof, and packaging
+tickets alongside the Phase 1 completion note in the deep research plan.
+【F:docs/release_plan.md†L214-L236】【F:docs/deep_research_upgrade_plan.md†L19-L36】
+
+The remaining alpha checklist items focus on lifting the TestPyPI dry-run hold
+and scheduling the release sign-off meeting once the publish directive changes.
+Track progress via the open checkbox in `docs/release_plan.md` and the updated
+alpha ticket.
+【F:docs/release_plan.md†L200-L209】【F:issues/prepare-first-alpha-release.md†L36-L57】
+
 As of **2025-09-29** at 03:58 UTC the refreshed `uv run task verify` log shows
 the `[verify][lint]` and `[verify][mypy]` banners before strict typing halts in
 `src/git` and the Streamlit UI, so coverage remains pending even though the

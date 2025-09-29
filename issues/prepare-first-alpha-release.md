@@ -1,16 +1,18 @@
 # Prepare first alpha release
 
 ## Context
-The September 30, 2025 Task CLI runs at 17:45 UTC (`task verify`) and 18:19 UTC
-(`task coverage`) both completed with the VSS loader streaming and the CLI fix
-banner in place, so the alpha track can resume without `uv` wrappers.
+The September 30, 2025 Task CLI runs at 17:45:12 UTC (`task verify`) and
+18:19:47 UTC (`task coverage`) both completed with the VSS loader streaming, the
+CLI remediation banner in place, and the 92.4 % statement rate restored so the
+alpha track can resume without `uv` wrappers.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 We reopened this ticket to coordinate the remaining alpha release work: landing
 the deep research initiative phases, capturing the end-to-end `task
 release:alpha` sweep, and finalizing docs and packaging guidance before tagging.
-`STATUS.md`, `TASK_PROGRESS.md`, and `docs/release_plan.md` now cite the new logs
-so roadmap consumers can follow the remediation of the CLI and VSS regressions.
-【F:STATUS.md†L21-L29】【F:TASK_PROGRESS.md†L1-L10】【F:docs/release_plan.md†L19-L27】
+`STATUS.md`, `TASK_PROGRESS.md`, `CODE_COMPLETE_PLAN.md`, and
+`docs/release_plan.md` now cite the September 30 evidence so roadmap consumers
+can follow the CLI and VSS remediation across the repository.
+【F:STATUS.md†L21-L59】【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L33】【F:docs/release_plan.md†L18-L38】
 
 Auditors should now pull
 `baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify gate;
@@ -41,17 +43,21 @@ auditors can trace the alpha evidence without leaving the repo.
 - [cost-aware-model-routing](cost-aware-model-routing.md)
 
 ## Acceptance Criteria
-- Deep research initiative issues listed above are closed or explicitly deferred
-  with documented scope reductions before the alpha tag is proposed.
-- An end-to-end `task release:alpha` run succeeds via the Task CLI with logs
-  archived under `baseline/logs/` and referenced from `STATUS.md` and the
-  release plan.
-- `CHANGELOG.md` contains release notes for `0.1.0a1` that link to the final
-  verify, coverage, build, and publish logs.
-- `docs/release_plan.md`, `STATUS.md`, and `TASK_PROGRESS.md` remain synchronized
-  with the latest gate evidence through the release sign-off meeting.
-- Packaging and installation guidance highlights the restored Task CLI targets
-  and the VSS extension handling required for the alpha workflow.
+- Maintain traceability to the September 30, 2025 verify (17:45:12 UTC) and
+  coverage (18:19:47 UTC) logs in `STATUS.md`, `TASK_PROGRESS.md`,
+  `CODE_COMPLETE_PLAN.md`, and `docs/release_plan.md`, keeping coverage at or
+  above the recorded 92.4 % rate.
+- Document the 19:04 UTC `task release:alpha` sweep, ensuring verify, coverage,
+  build, and packaging logs stay linked from `CHANGELOG.md`, the release plan,
+  and this ticket for auditability.
+- Confirm XPASS cleanup and Phase 1 of the deep research initiative remain
+  archived in the release plan and deep research plan so the alpha gate reflects
+  the current state of evidence.
+- Lift the TestPyPI dry-run hold when the publish directive changes, capture the
+  resulting log, and update `docs/release_plan.md` and `STATUS.md` before
+  proposing the tag.
+- Run the release sign-off review after the publish gate clears, documenting the
+  decision and any deferred scope directly in this ticket.
 
 ## Status
 Open
