@@ -5,7 +5,10 @@ The dialectical review highlighted that we need a scout pass and gate policy to
 reduce cost on easy queries while keeping per-claim verification reliable. This
 issue tracks Phase 1 of the deep research program, covering gating heuristics,
 configuration toggles, and audit table plumbing so downstream clients can
-inspect support status for every claim.
+inspect support status for every claim. The September 30, 2025 release sweep
+records the recalibrated gate telemetry and CLI path helper checks, confirming
+the rollout is complete.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 
 ## Dependencies
 - [prepare-first-alpha-release](prepare-first-alpha-release.md)
@@ -24,4 +27,4 @@ inspect support status for every claim.
   serialization.
 
 ## Status
-Open
+Archived

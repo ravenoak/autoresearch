@@ -8,7 +8,7 @@
 - **Antithesis:** Each enhancement risks extra latency, duplicate tooling, or
   regressions in existing telemetry and workflows.
 - **Synthesis:** Sequence the improvements through five tickets— [adaptive-gate-
-  and-claim-audit-rollout](../issues/adaptive-gate-and-claim-audit-rollout.md),
+  and-claim-audit-rollout](../issues/archive/adaptive-gate-and-claim-audit-rollout.md),
   [planner-coordinator-react-upgrade](../issues/planner-coordinator-react-
   upgrade.md), [session-graph-rag-integration](../issues/session-graph-rag-
   integration.md), [evaluation-and-layered-ux-expansion](../issues/evaluation-

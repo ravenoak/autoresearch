@@ -28,6 +28,11 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Update response formats so clients can render audit tables.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof.
+   - **Status:** Completed. Release sweep logs show the gate recalibrating after
+     VSS evidence replay and the CLI path helper coverage that guards the Task
+     entrypoint. Scope expanded slightly to persist the telemetry used in those
+     checks so release pipelines can audit gate thresholds post-run.
+     【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 2. **Phase 2 – Planner and Coordinator Evolution**
    - Promote planner outputs into a schedulable task graph.
    - Capture ReAct traces for transparency and replay.

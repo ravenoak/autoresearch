@@ -17,20 +17,21 @@ Reference issues by slugged filename (for example,
   stage Phase 1 through Phase 5 deliverables before the alpha release.
 - Refreshed release readiness documentation: `scripts/setup.sh` now appends the
   Task PATH helper automatically, `docs/releasing.md` explains the behaviour,
-  and `docs/release_plan.md` records the latest `uv run task release:alpha`
-  sweep with the TestPyPI stage deferred per the active directive.
+  and `docs/release_plan.md` now documents the successful
+  `task release:alpha` sweep alongside the new verify, coverage, and build logs
+  so auditors can trace the alpha sign-off.
   【F:scripts/setup.sh†L9-L93】【F:docs/releasing.md†L11-L15】
-  【F:docs/release_plan.md†L18-L44】【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
-  【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+  【F:docs/release_plan.md†L18-L48】【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+  【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】
 - Logged the deep research phase tickets directly in the release narrative so
   their closure stays visible alongside the alpha acceptance criteria:
-  [adaptive-gate-and-claim-audit-rollout](issues/adaptive-gate-and-claim-audit-rollout.md),
+  [adaptive-gate-and-claim-audit-rollout](issues/archive/adaptive-gate-and-claim-audit-rollout.md),
   [planner-coordinator-react-upgrade](issues/planner-coordinator-react-upgrade.md),
   [session-graph-rag-integration](issues/session-graph-rag-integration.md),
   [evaluation-and-layered-ux-expansion](issues/evaluation-and-layered-ux-expansion.md),
   and [cost-aware-model-routing](issues/cost-aware-model-routing.md) align with
   [prepare-first-alpha-release](issues/prepare-first-alpha-release.md).
-  【F:docs/release_plan.md†L18-L44】【F:issues/adaptive-gate-and-claim-audit-rollout.md†L1-L42】
+  【F:docs/release_plan.md†L18-L44】【F:issues/archive/adaptive-gate-and-claim-audit-rollout.md†L1-L42】
   【F:issues/planner-coordinator-react-upgrade.md†L1-L44】【F:issues/session-graph-rag-integration.md†L1-L44】
   【F:issues/evaluation-and-layered-ux-expansion.md†L1-L44】【F:issues/cost-aware-model-routing.md†L1-L44】
   【F:issues/prepare-first-alpha-release.md†L13-L34】
@@ -112,6 +113,12 @@ Reference issues by slugged filename (for example,
   deterministic fixtures that now pass without an XFAIL marker.【F:src/autoresearch/search/core.py†L199-L203】【F:src/autoresearch/search/core.py†L803-L880】【F:tests/unit/test_property_search_ranking.py†L12-L235】【F:tests/unit/test_ranking_idempotence.py†L1-L53】
 
 ### Packaging Staging
+- Captured the September 30, 2025 `task release:alpha` sweep with clean verify,
+  coverage, and packaging stages. The new logs show the scout gate telemetry,
+  VSS loader, CLI path helper, and wheel build succeeding end-to-end, clearing
+  the final blockers for alpha tagging.
+  【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+  【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 - Logged consecutive `uv run task release:alpha` sweeps halting at
   `tests/unit/test_core_modules_additional.py::test_search_stub_backend` until
   the stub fixture accepts the optional `return_handles` argument, keeping the
