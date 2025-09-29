@@ -18,6 +18,14 @@ checks are required. `task verify` always syncs the `dev-minimal` and `test`
 extras; supplying `EXTRAS` now adds optional groups on top of that baseline
 (e.g., `EXTRAS="ui"` installs `dev-minimal`, `test`, and `ui`).
 
+## September 29, 2025
+- Reran `uv run task release:alpha` at 00:08 UTC; extras synced before
+  `uv run flake8 src tests` flagged the unused `os` import in
+  `tests/integration/test_streamlit_gui.py`, so the sweep stopped before verify,
+  coverage, packaging, or TestPyPI ran.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
+- Archived a summary noting the TestPyPI stage remains skipped per the active
+  directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+
 ## September 30, 2025
 - The restored Task CLI now lists and executes `verify`, letting the 17:45 Z
   sweep complete linting, typing, and every unit, integration, and behavior

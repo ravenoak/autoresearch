@@ -8,9 +8,11 @@ Follow these steps to publish a new version of Autoresearch.
 binary on `PATH`; see [STATUS.md][status-cli] for the current availability
 notes. Before running any release workflow, pick one of the supported helpers:
 
-- **Source the PATH helper.** Run `./scripts/setup.sh` once, then start new
-  shells with `eval "$(./scripts/setup.sh --print-path)"` to load the Task
-  binary and synced extras.
+- **Source the PATH helper.** Run `./scripts/setup.sh` once; it now writes
+  `.autoresearch/path.sh` with both `.venv/bin` and the detected Task
+  installation directory so new shells expose the CLI automatically. Start
+  new terminals with `eval "$(./scripts/setup.sh --print-path)"` to load
+  Task without rerunning the installer.
 - **Use `uv run task …` wrappers.** The `uv` launcher injects the packaged
   Task CLI, so commands like `uv run task release:alpha` work even when the
   helper is not sourced.

@@ -18,6 +18,45 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 
 ## Status
 
+The **September 29, 2025 at 00:08 UTC** sweep reran
+`uv run task release:alpha` with the deep research phases recorded below.
+Extras synced cleanly before `uv run flake8 src tests` failed on the unused
+`os` import in `tests/integration/test_streamlit_gui.py`, so the pipeline
+stopped before verify, coverage, packaging, and TestPyPI. The log lives at
+`baseline/logs/release-alpha-20250929T000814Z.log` with a summary confirming
+the TestPyPI stage remains deferred per the current directive.
+【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
+【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+
+Deep research tickets stay referenced for release sign-off:
+
+- **Phase 1 – Adaptive gate and claim audits:** See
+  [adaptive-gate-and-claim-audit-rollout][phase1-ticket] for the gating
+  heuristics, scout pass, and audit tables.
+- **Phase 2 – Planner and coordinator upgrades:**
+  [planner-coordinator-react-upgrade][phase2-ticket] records the ReAct
+  telemetry and scheduling refinements.
+- **Phase 3 – Session GraphRAG integration:**
+  [session-graph-rag-integration][phase3-ticket] covers graph ingestion,
+  contradiction checks, and telemetry.
+- **Phase 4 – Evaluation harness and layered UX:**
+  [evaluation-and-layered-ux-expansion][phase4-ticket] captures the
+  TruthfulQA automation and multi-layer interface work.
+- **Phase 5 – Cost-aware model routing:**
+  [cost-aware-model-routing][phase5-ticket] details the budget-aware routing,
+  telemetry, and tuning guides.
+
+These references align with the acceptance criteria in
+[prepare-first-alpha-release][prepare-alpha].
+
+[phase1-ticket]: ../issues/adaptive-gate-and-claim-audit-rollout.md
+[phase2-ticket]: ../issues/planner-coordinator-react-upgrade.md
+[phase3-ticket]: ../issues/session-graph-rag-integration.md
+[phase4-ticket]: ../issues/evaluation-and-layered-ux-expansion.md
+[phase5-ticket]: ../issues/cost-aware-model-routing.md
+[prepare-alpha]: ../issues/prepare-first-alpha-release.md
+[scout-gate-test]: ../tests/unit/orchestration/test_gate_policy.py
+
 The **September 30, 2025 at 18:19 UTC** sweeps confirm the Task CLI exposes
 `verify` and `coverage` again. The 17:45 UTC verification run covers linting,
 typing, and all suites with the VSS loader streaming, while the 18:19 UTC
@@ -31,8 +70,9 @@ regression logs and documenting the cleared CLI and VSS blockers.
 The **September 28, 2025 at 03:10 UTC** rerun uses the updated Codex bootstrap
 to install Go Task in `.venv/bin` and the repaired Taskfile targets, so
 `uv run task verify` now reaches `flake8` before failing on the existing style
-regressions while `uv run task coverage` completes the extras sync and then
-fails in `tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low`.
+regressions while `uv run task coverage` completes the extras sync before
+failing in the scout gate regression test (see
+[scout-gate-test][scout-gate-test]).
 The new evidence lives at
 `baseline/logs/task-verify-20250928T031021Z.log` and
 `baseline/logs/task-coverage-20250928T031031Z.log`.
@@ -128,11 +168,13 @@ default optional extras (excluding `gpu`). It then runs lint, type checks, spec
 lint, the verify and coverage tasks, packaging builds, metadata checks, and the
 TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
 
-- [ ] Source the Task PATH helper or invoke release commands through
+- [x] Source the Task PATH helper or invoke release commands through
   `uv run task …` as described in
-  [releasing.md](releasing.md#preparing-the-environment) so the CLI is
-  available in fresh shells. Reference the [STATUS.md][status-cli] log when
-  that guidance changes.
+  [releasing.md](releasing.md#preparing-the-environment). `scripts/setup.sh`
+  now refreshes `.autoresearch/path.sh` with the Task installation directory,
+  so the helper exposes the CLI in new shells without manual edits.
+  Reference the [STATUS.md][status-cli] log when that guidance changes.
+  【F:scripts/setup.sh†L9-L93】【F:docs/releasing.md†L11-L15】
 
 - [x] `uv run --extra dev-minimal --extra test flake8 src tests` ran as part of
   the sweep before coverage began and the log advanced to the mypy step without
@@ -174,8 +216,9 @@ TestPyPI dry run. Pass `EXTRAS="gpu"` when GPU wheels are staged.
   resume once verify and coverage pass.
   【F:baseline/logs/python-build-20250925T001554Z.log†L1-L14】
 - [ ] Dry-run publish to TestPyPI remains on hold per the release plan until
-  the verify and coverage regressions are cleared.
-  【F:baseline/logs/release-alpha-20250924T184646Z.log†L448-L485】
+  the verify and coverage regressions are cleared and the directive to skip the
+  publish stage is lifted.
+  【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L7-L10】
 - [x] Archived
   [issues/archive/retire-stale-xfail-markers-in-unit-suite.md],
   [issues/archive/refresh-token-budget-monotonicity-proof.md], and
