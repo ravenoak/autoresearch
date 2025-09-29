@@ -23,5 +23,12 @@ artifacts plus contradiction signals to the orchestrator.
   and `docs/deep_research_upgrade_plan.md` describe graph usage patterns and
   guardrails.
 
+## QA Coverage
+
+- Scenario coverage in
+  `tests/behavior/features/reasoning_modes/planner_graph_conditioning.feature`
+  now exercises planner graph conditioning prompts and telemetry so graph
+  signals stay regression-proof.
+
 ## Status
 Open
