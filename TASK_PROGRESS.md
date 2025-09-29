@@ -1,5 +1,15 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-29** at 01:33 UTC the targeted stub backend regression check
+(`uv run --extra test pytest tests/unit/test_core_modules_additional.py::test_search_stub_backend -vv`)
+passes for both legacy and DuckDB VSS parameterizations, and the follow-up
+`uv run task release:alpha` rerun still stops in `mypy` with 237 legacy and
+optional-module errors before spec linting or packaging begin. The targeted
+pytest output confirms the four-call profile across lookup phases, while the
+release sweep log `baseline/logs/release-alpha-20250929T013228Z.log` and its
+summary document the persistent type-check failures spanning graph, FastAPI,
+storage, and monitoring modules.【39e768†L1-L6】【F:baseline/logs/release-alpha-20250929T013228Z.log†L1-L80】【F:baseline/logs/release-alpha-20250929T013228Z.summary.md†L1-L5】
+
 As of **2025-09-29** at 01:07 UTC the unused `os` import in
 `tests/integration/test_streamlit_gui.py` is gone, the pandas fallback stub
 remains, and targeted lint plus UI regression runs are green. Fresh logs at
