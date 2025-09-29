@@ -9,6 +9,16 @@ three logs so release reviewers can audit the evidence trail.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 
+As of **2025-09-29** at 03:58 UTC the refreshed `uv run task verify` log shows
+the `[verify][lint]` and `[verify][mypy]` banners before strict typing halts in
+`src/git` and the Streamlit UI, so coverage remains pending even though the
+Taskfile now routes optional extras to the embedded `task coverage` call using
+the same wiring as the standalone target. Reviewers can audit the failure and
+lint success in `baseline/logs/task-verify-20250929T035829Z.log` while we work
+down the strict typing backlog.
+【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
+【F:Taskfile.yml†L360-L392】
+
 As of **2025-09-29** at 01:33 UTC the targeted stub backend regression check
 (`uv run --extra test pytest tests/unit/test_core_modules_additional.py::test_search_stub_backend -vv`)
 passes for both legacy and DuckDB VSS parameterizations, confirming the

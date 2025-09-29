@@ -25,6 +25,12 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   coverage, packaging, or TestPyPI ran.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
 - Archived a summary noting the TestPyPI stage remains skipped per the active
   directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
+- Captured the 03:58 UTC `uv run task verify` output with the new
+  `[verify][lint]` and `[verify][mypy]` banners streaming before strict typing
+  fails in `src/git` and the Streamlit UI, keeping coverage blocked while the
+  coverage invocation now shares the same extras wiring as `task coverage`.
+  【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
+  【F:Taskfile.yml†L360-L392】
 
 ## September 30, 2025
 - `task release:alpha` completed at 19:04 UTC with the scout gate, CLI path

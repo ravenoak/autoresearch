@@ -12,6 +12,15 @@ release:alpha` sweep, and finalizing docs and packaging guidance before tagging.
 so roadmap consumers can follow the remediation of the CLI and VSS regressions.
 【F:STATUS.md†L21-L29】【F:TASK_PROGRESS.md†L1-L10】【F:docs/release_plan.md†L19-L27】
 
+Auditors should now pull
+`baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify gate;
+the run prints the `[verify][lint]` and `[verify][mypy]` success banners before
+strict typing fails in `src/git` and the Streamlit UI, and the Taskfile now
+passes optional extras through to the embedded `task coverage` call so the
+coverage configuration mirrors the standalone sweep once these strict errors
+clear.【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
+【F:Taskfile.yml†L360-L392】
+
 The September 30, 2025 sweep at 19:04 UTC now completes `task release:alpha`
 via the Task CLI, recording the recalibrated scout gate telemetry, CLI path
 helper checks, and the refreshed 0.1.0a1 wheels. The verify, coverage, and

@@ -26,6 +26,16 @@ ticket now links the verify, coverage, and build logs for traceability.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 
+Reviewers auditing the current verify gate should inspect
+`baseline/logs/task-verify-20250929T035829Z.log`, which now streams
+`[verify][lint]` and `[verify][mypy]` banners before strict typing stops in
+`src/git` and the Streamlit UI; coverage will remain pending until those
+failures clear, but the Taskfile now forwards optional extras to the embedded
+`task coverage` call so coverage totals match the standalone run.
+【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】
+【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
+【F:Taskfile.yml†L360-L392】
+
 Deep research tickets stay referenced for release sign-off:
 
 - **Phase 1 – Adaptive gate and claim audits:** See
