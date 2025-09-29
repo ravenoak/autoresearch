@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from types import SimpleNamespace
+from types import SimpleNamespace, TracebackType
+from typing import Iterable, Iterator
 from uuid import uuid4
 
 __all__ = ["Repo", "GitSearcher", "SearchResult"]
@@ -35,7 +36,11 @@ class Repo:
             self.author = SimpleNamespace(name="stub")
             self.committed_datetime = datetime.now()
 
-        def diff(self, parent=None, create_patch: bool | None = None) -> list[SimpleNamespace]:
+        def diff(
+            self,
+            parent: "Repo.Commit" | None = None,
+            create_patch: bool | None = None,
+        ) -> list[SimpleNamespace]:
             """Return an empty diff list."""
 
             return []
@@ -77,7 +82,7 @@ class Repo:
             self.repo._head = Repo.Head(commit)
             return commit
 
-    def __new__(cls, path: str | Path | None = None):
+    def __new__(cls, path: str | Path | None = None) -> "Repo":
         if path is not None:
             repo_path = Path(path)
             if repo_path in cls._registry:
@@ -136,12 +141,21 @@ class Repo:
 
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         """Invoke :meth:`close` when leaving a ``with`` block."""
 
         self.close()
 
-    def iter_commits(self, branches=None, max_count: int | None = None):
+    def iter_commits(
+        self,
+        branches: Iterable[str] | None = None,
+        max_count: int | None = None,
+    ) -> Iterator["Repo.Commit"]:
         """Yield commits from newest to oldest.
 
         Args:

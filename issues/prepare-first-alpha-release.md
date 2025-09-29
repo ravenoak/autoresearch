@@ -31,6 +31,10 @@ auditors can trace the alpha evidence without leaving the repo.
 【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:CHANGELOG.md†L9-L20】
 
+October 6, 2025: strict typing for the configuration loader, validators, and
+Git stub now passes a targeted mypy sweep, unblocking the config milestone for
+the alpha gate.【aa0591†L1-L2】
+
 ## Dependencies
 - [coordinate-deep-research-enhancement-initiative](coordinate-deep-research-enhancement-initiative.md)
 - [adaptive-gate-and-claim-audit-rollout](adaptive-gate-and-claim-audit-rollout.md)

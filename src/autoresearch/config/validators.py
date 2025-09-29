@@ -6,10 +6,10 @@ from ..errors import ConfigError
 from ..orchestration import ReasoningMode
 
 if TYPE_CHECKING:
-    from .models import SearchConfig
+    from .models import ConfigModel, SearchConfig, StorageConfig
 
 
-def validate_rdf_backend(cls, v: str) -> str:
+def validate_rdf_backend(cls: type["StorageConfig"], v: str) -> str:
     """Validate the RDF backend configuration."""
     valid_backends = ["oxigraph", "berkeleydb", "memory"]
     if v not in valid_backends:
@@ -84,7 +84,7 @@ def normalize_ranking_weights(self: "SearchConfig") -> "SearchConfig":
     return self
 
 
-def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
+def validate_reasoning_mode(cls: type["ConfigModel"], v: ReasoningMode | str) -> ReasoningMode:
     """Validate and convert the reasoning mode configuration."""
     if isinstance(v, ReasoningMode):
         return v
@@ -103,7 +103,7 @@ def validate_reasoning_mode(cls, v: ReasoningMode | str) -> ReasoningMode:
         ) from exc
 
 
-def validate_token_budget(cls, v: int | str | None) -> int | None:
+def validate_token_budget(cls: type["ConfigModel"], v: int | str | None) -> int | None:
     """Ensure the token budget is positive when provided."""
     if v is None:
         return None
@@ -132,7 +132,7 @@ def validate_token_budget(cls, v: int | str | None) -> int | None:
     return v
 
 
-def validate_eviction_policy(cls, v: str | object) -> str:
+def validate_eviction_policy(cls: type["ConfigModel"], v: str | object) -> str:
     """Validate the graph eviction policy configuration."""
     valid_policies = {
         "lru": "LRU",
