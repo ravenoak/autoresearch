@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Protocol, TypeGuard, cast
+from typing import Protocol, TypeGuard, cast
 
 from ..config.models import ConfigModel
 from .metrics import OrchestrationMetrics
@@ -13,7 +13,7 @@ from .types import AgentExecutionResult
 class AdapterProtocol(Protocol):
     """Structural protocol capturing the ``generate`` method used by adapters."""
 
-    def generate(self, prompt: str, model: str | None = None, **kwargs: Any) -> str:
+    def generate(self, prompt: str, model: str | None = None, **kwargs: object) -> str:
         """Generate a response for ``prompt``."""
 
 
@@ -24,7 +24,7 @@ class SupportsExecute(Protocol):
         self,
         state: QueryState,
         config: ConfigModel,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> AgentExecutionResult:
         """Execute the agent with optional keyword arguments."""
 
@@ -65,7 +65,7 @@ def supports_adapter_mutation(obj: object) -> TypeGuard[SupportsExecuteWithMutat
     return callable(set_adapter) and callable(get_adapter) and callable(execute)
 
 
-def supports_adapter_setter(obj: SupportsExecute) -> TypeGuard[SupportsExecuteWithAdapterSetter]:
+def supports_adapter_setter(obj: object) -> TypeGuard[SupportsExecuteWithAdapterSetter]:
     """Return ``True`` when ``obj`` supports adapter injection via ``set_adapter``."""
 
     set_adapter = getattr(obj, "set_adapter", None)
@@ -119,7 +119,7 @@ def _capture_token_usage(
                     self.inner = inner
 
                 def generate(
-                    self, prompt: str, model: str | None = None, **kwargs: Any
+                    self, prompt: str, model: str | None = None, **kwargs: object
                 ) -> str:
                     prompt = metrics.compress_prompt_if_needed(prompt, tb)
                     return self.inner.generate(prompt, model=model, **kwargs)

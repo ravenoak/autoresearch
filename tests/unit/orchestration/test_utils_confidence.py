@@ -7,7 +7,7 @@ from autoresearch.orchestration.utils import MetricsSnapshot, TokenUsageSnapshot
 
 
 def build_response(**overrides: object) -> QueryResponse:
-    base = {
+    base: dict[str, object] = {
         "answer": "result",
         "citations": [],
         "reasoning": [],
