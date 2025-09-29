@@ -6,7 +6,7 @@ from threading import Lock
 import requests
 
 from ..config.loader import get_config
-from ..typing.http import RequestsSessionProtocol
+from ..typing.http import RequestsAdapterProtocol, RequestsSessionProtocol
 
 _session: Optional[RequestsSessionProtocol] = None
 _lock = Lock()
@@ -35,7 +35,7 @@ def get_session() -> RequestsSessionProtocol:
             cfg = get_config()
             size = getattr(cfg, "llm_pool_size", 2)
             session = requests.Session()
-            adapter = requests.adapters.HTTPAdapter(
+            adapter: RequestsAdapterProtocol = requests.adapters.HTTPAdapter(
                 pool_connections=size,
                 pool_maxsize=size,
             )

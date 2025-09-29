@@ -607,5 +607,5 @@ def render_prompt(name: str, **kwargs: Any) -> str:
     Raises:
         KeyError: If the template is not found or a required variable is missing.
     """
-    template: PromptTemplate = get_prompt_template(name)
+    template = get_prompt_template(name)
     return template.render(**kwargs)

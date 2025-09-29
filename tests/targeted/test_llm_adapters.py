@@ -7,7 +7,7 @@ import requests
 
 from autoresearch.errors import LLMError
 from autoresearch.llm import adapters
-from autoresearch.typing.http import RequestsSessionProtocol
+from autoresearch.typing.http import RequestsAdapterProtocol, RequestsSessionProtocol
 
 
 class RecordingResponse:
@@ -35,7 +35,7 @@ class RecordingSession:
         self.requests: list[tuple[str, str, dict[str, Any]]] = []
         self._headers: dict[str, str] = {}
 
-    def mount(self, prefix: str, adapter: object) -> None:
+    def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         self.mounted.append((prefix, adapter))
 
     def close(self) -> None:
@@ -105,7 +105,9 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
         def post(self, *args: Any, **kwargs: Any) -> RecordingResponse:
             return boom(*args, **kwargs)
 
-        def mount(self, *args: Any, **kwargs: Any) -> None:  # pragma: no cover - not invoked
+        def mount(
+            self, prefix: str, adapter: RequestsAdapterProtocol
+        ) -> None:  # pragma: no cover - not invoked
             return None
 
         def close(self) -> None:  # pragma: no cover - not invoked
@@ -125,6 +127,30 @@ def test_adapter_generate_wraps_request_exceptions(monkeypatch, adapter_factory)
     monkeypatch.setattr(adapters, "get_session", lambda: session)
     monkeypatch.setenv("OPENAI_API_KEY", "token")
     monkeypatch.setenv("OPENROUTER_API_KEY", "token")
+
+    adapter = adapter_factory()
+
+    with pytest.raises(LLMError):
+        adapter.generate("prompt")
+
+
+@pytest.mark.parametrize(
+    "adapter_factory",
+    [
+        adapters.OpenAIAdapter,
+        adapters.OpenRouterAdapter,
+    ],
+)
+def test_adapter_requires_api_key(monkeypatch, adapter_factory):
+    """Adapters validate API keys before performing network calls."""
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    def _unexpected_session() -> RequestsSessionProtocol:  # pragma: no cover - fail fast
+        raise AssertionError("Session should not be requested without credentials")
+
+    monkeypatch.setattr(adapters, "get_session", _unexpected_session)
 
     adapter = adapter_factory()
 
