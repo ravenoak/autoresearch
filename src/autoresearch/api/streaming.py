@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi.responses import StreamingResponse
 
@@ -54,7 +54,7 @@ async def query_stream_endpoint(request: QueryRequestV1) -> StreamingResponse:
         for url in getattr(config.api, "webhooks", []):
             webhooks.notify_webhook(url, response, timeout, retries, backoff)
 
-    def on_cycle_end(loop_idx: int, state) -> None:
+    def on_cycle_end(loop_idx: int, state: Any) -> None:
         partial = state.synthesize()
         queue.put_nowait(QueryResponseV1(**partial.model_dump()).model_dump_json())
 

@@ -6,9 +6,11 @@ declares an explicit ``version`` field which currently defaults to
 ``"1"``.
 """
 
-from typing import ClassVar, List
+from typing import Callable, ClassVar
 
 from pydantic import BaseModel, Field
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 from ..models import BatchQueryRequest, QueryRequest, QueryResponse
 from ..orchestration.reasoning import ReasoningMode
@@ -28,7 +30,11 @@ class VersionedModel(BaseModel):
     version: str = Field(description="API version identifier")
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema, handler):  # type: ignore[override]
+    def __get_pydantic_json_schema__(
+        cls,
+        core_schema: CoreSchema,
+        handler: Callable[[CoreSchema], JsonSchemaValue],
+    ) -> JsonSchemaValue:
         schema = handler(core_schema)
         enum = sorted(SUPPORTED_VERSIONS | DEPRECATED_VERSIONS)
         schema["properties"]["version"]["enum"] = enum
@@ -56,7 +62,7 @@ class BatchQueryRequestV1(VersionedModel, BatchQueryRequest):
 
     __version__ = "1"
     version: str = Field(default="1", description="API version for the request")
-    queries: List[QueryRequestV1]
+    queries: tuple[QueryRequestV1, ...]
 
 
 class BatchQueryResponseV1(VersionedModel):
@@ -66,7 +72,7 @@ class BatchQueryResponseV1(VersionedModel):
     version: str = Field(default="1", description="API version for the response")
     page: int = Field(ge=1, description="Current page number")
     page_size: int = Field(ge=1, description="Number of results per page")
-    results: List[QueryResponseV1]
+    results: tuple[QueryResponseV1, ...]
 
 
 class AsyncQueryResponseV1(VersionedModel):

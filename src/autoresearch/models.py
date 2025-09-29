@@ -112,4 +112,7 @@ class QueryResponse(BaseModel):
 class BatchQueryRequest(BaseModel):
     """Request model for executing multiple queries."""
 
-    queries: List[QueryRequest] = Field(..., description="List of queries to execute sequentially")
+    queries: tuple[QueryRequest, ...] = Field(
+        ...,
+        description="Tuple of queries to execute sequentially",
+    )

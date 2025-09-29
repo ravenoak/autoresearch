@@ -11,7 +11,6 @@ from .middleware import RateLimitExceeded as _RateLimitExceeded
 from .middleware import (
     dynamic_limit,
     get_remote_address,
-    parse,
 )
 from .models import (
     AsyncQueryResponseV1,
@@ -46,7 +45,6 @@ __all__ = [
     "capabilities_endpoint",
     "get_remote_address",
     "limiter",
-    "parse",
     "RateLimitExceeded",
     "Limiter",
     "query_endpoint",

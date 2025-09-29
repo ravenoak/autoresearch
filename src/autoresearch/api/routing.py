@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, List, Optional, cast
+from typing import Any, Optional, cast
 from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
@@ -15,6 +16,7 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
+from starlette.responses import HTMLResponse
 from pydantic import ValidationError
 
 from ..config import ConfigLoader, ConfigModel, get_config
@@ -58,7 +60,7 @@ router.post("/query/stream", dependencies=[require_permission("query")])(query_s
 
 
 @router.get("/docs", include_in_schema=False, dependencies=[require_permission("docs")])
-async def custom_swagger_ui_html() -> Response:
+async def custom_swagger_ui_html() -> HTMLResponse:
     """Serve custom Swagger UI documentation."""
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
@@ -69,7 +71,7 @@ async def custom_swagger_ui_html() -> Response:
 
 
 @router.get("/openapi.json", include_in_schema=False, dependencies=[require_permission("docs")])
-async def get_openapi_schema(request: Request) -> dict:
+async def get_openapi_schema(request: Request) -> dict[str, Any]:
     """Serve the OpenAPI schema for the API."""
     openapi_schema = get_openapi(
         title="Autoresearch API",
@@ -125,7 +127,7 @@ async def query_endpoint(
         ``QueryResponseV1``.
     """
     validate_version(request.version)
-    config = get_config()
+    config: ConfigModel = get_config()
 
     if stream:
         return await query_stream_endpoint(request)
@@ -256,10 +258,11 @@ async def batch_query_endpoint(
         for idx, query in enumerate(selected):
             tg.create_task(run_one(idx, query, results))
 
+    finalized_results = tuple(cast(QueryResponseV1, result) for result in results)
     return BatchQueryResponseV1(
         page=page,
         page_size=page_size,
-        results=cast(List[QueryResponseV1], results),
+        results=finalized_results,
     )
 
 
@@ -277,7 +280,7 @@ async def async_query_endpoint(
         AsyncQueryResponseV1: ``query_id`` for tracking the background task.
     """
     validate_version(request.version)
-    config = get_config()
+    config: ConfigModel = get_config()
     if request.reasoning_mode is not None:
         config.reasoning_mode = ReasoningMode(request.reasoning_mode.value)
     if request.loops is not None:
@@ -286,7 +289,7 @@ async def async_query_endpoint(
         config.llm_backend = request.llm_backend
 
     task_id = str(uuid4())
-    config_copy: ConfigModel = config.model_copy(deep=True)
+    config_copy: ConfigModel = cast(ConfigModel, cast(Any, config).model_copy(deep=True))
 
     async def runner() -> QueryResponseV1 | Any:
         try:
@@ -315,7 +318,7 @@ async def async_query_endpoint(
                 metrics={"error": error_info.message, "error_details": error_data},
             )
 
-    future: asyncio.Future = asyncio.create_task(runner())
+    future: asyncio.Task[QueryResponseV1] = asyncio.create_task(runner())
     http_request.app.state.async_tasks[task_id] = future
     return AsyncQueryResponseV1(query_id=task_id)
 
@@ -372,13 +375,13 @@ router.get("/metrics", dependencies=[require_permission("metrics")])(metrics_end
 
 
 @router.get("/health", dependencies=[require_permission("health")])
-def health_endpoint(_: None = None) -> dict:
+def health_endpoint(_: None = None) -> dict[str, str]:
     """Simple health check endpoint."""
     return {"status": "ok"}
 
 
 @router.get("/capabilities", dependencies=[require_permission("capabilities")])
-def capabilities_endpoint(_: None = None) -> dict:
+def capabilities_endpoint(_: None = None) -> dict[str, Any]:
     """Return server capability metadata."""
     config = get_config()
     reasoning_modes = [m.value for m in ReasoningMode]
@@ -420,15 +423,17 @@ def capabilities_endpoint(_: None = None) -> dict:
 
 
 @router.get("/config", dependencies=[require_permission("config")])
-def get_config_endpoint(_: None = None) -> dict:
+def get_config_endpoint(_: None = None) -> dict[str, Any]:
     """Return the current configuration."""
     return get_config().model_dump(mode="json")
 
 
 @router.put("/config", dependencies=[require_permission("config")])
-def update_config_endpoint(updates: dict, request: Request, _: None = None) -> dict:
+def update_config_endpoint(
+    updates: dict[str, Any], request: Request, _: None = None
+) -> dict[str, Any]:
     """Update configuration at runtime."""
-    loader = cast(ConfigLoader, request.app.state.config_loader)
+    loader: ConfigLoader = request.app.state.config_loader
     current = loader.config.model_dump(mode="python")
     current.update(updates)
     try:
@@ -441,9 +446,11 @@ def update_config_endpoint(updates: dict, request: Request, _: None = None) -> d
 
 
 @router.post("/config", dependencies=[require_permission("config")])
-def replace_config_endpoint(new_config: dict, request: Request, _: None = None) -> dict:
+def replace_config_endpoint(
+    new_config: dict[str, Any], request: Request, _: None = None
+) -> dict[str, Any]:
     """Replace the entire configuration at runtime."""
-    loader = cast(ConfigLoader, request.app.state.config_loader)
+    loader: ConfigLoader = request.app.state.config_loader
     try:
         new_cfg = ConfigModel(**new_config)
     except ValidationError as exc:
@@ -454,9 +461,9 @@ def replace_config_endpoint(new_config: dict, request: Request, _: None = None) 
 
 
 @router.delete("/config", dependencies=[require_permission("config")])
-def reload_config_endpoint(request: Request, _: None = None) -> dict:
+def reload_config_endpoint(request: Request, _: None = None) -> dict[str, Any]:
     """Reload configuration from disk and discard runtime changes."""
-    loader = cast(ConfigLoader, request.app.state.config_loader)
+    loader: ConfigLoader = request.app.state.config_loader
     try:
         new_cfg = loader.load_config()
     except Exception as exc:  # pragma: no cover - defensive
@@ -478,7 +485,7 @@ def create_app(
         request_logger = create_request_logger()
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         try:
             StorageManager.setup()
         except Exception:  # pragma: no cover - defensive for environments without storage
@@ -514,7 +521,8 @@ def create_app(
     app.state.limiter = limiter
     app.state.request_logger = request_logger
     app.state.config_loader = loader
-    app.state.async_tasks = {}
+    async_tasks: dict[str, asyncio.Future[QueryResponseV1]] = {}
+    app.state.async_tasks = async_tasks
 
     if SLOWAPI_STUB:
         app.add_middleware(
@@ -530,11 +538,17 @@ def create_app(
         )
 
     app.include_router(router)
-    app.add_exception_handler(RateLimitExceeded, handle_rate_limit)
+    app.add_exception_handler(
+        RateLimitExceeded,
+        cast(
+            Callable[[Request, BaseException], Awaitable[Response] | Response],
+            handle_rate_limit,
+        ),
+    )
     return app
 
 
 # Default application instance used by the package
 app = create_app()
-config_loader = cast(ConfigLoader, app.state.config_loader)
+config_loader: ConfigLoader = app.state.config_loader
 limiter = app.state.limiter

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import importlib
 import types
-from typing import Any, Callable, cast
+from typing import Any, Awaitable, Callable, cast
 
-from fastapi import Request, Response
-from fastapi.responses import PlainTextResponse
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
 from limits.util import parse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
 from ..config import get_config
 from .auth_middleware import AuthMiddleware
@@ -50,17 +51,19 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
         return request.client.host if request.client else "unknown"
 
     class _FallbackLimiter:  # pragma: no cover - simple stub
-        def __init__(self, *_, **__):
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
             self.limiter = types.SimpleNamespace(hit=lambda *_a, **_k: True)
 
-        def _inject_headers(self, response: Response, *_a, **_k):
+        def _inject_headers(
+            self, response: Response, *_args: object, **_kwargs: object
+        ) -> Response:
             return response
 
     def _fallback_rate_limit_exceeded_handler(*_a: Any, **_k: Any) -> Response:
         return PlainTextResponse("rate limit exceeded", status_code=429)
 
     class _FallbackLimit:  # pragma: no cover - simple stub
-        def __init__(self, *_, **__):
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
             pass
 
     RateLimitExceeded = _FallbackRateLimitExceeded
@@ -78,12 +81,18 @@ def dynamic_limit() -> str:
 class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
     """Simplified rate limiting used when SlowAPI is unavailable."""
 
-    def __init__(self, app, request_logger: RequestLogger, limiter: Limiter):
+    def __init__(
+        self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter
+    ) -> None:
         super().__init__(app)
         self.request_logger = request_logger
         self.limiter = limiter
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
@@ -107,19 +116,27 @@ class FallbackRateLimitMiddleware(BaseHTTPMiddleware):
                 return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
         response = await call_next(request)
         if cfg_limit and not SLOWAPI_STUB:
-            response = self.limiter._inject_headers(response, request.state.view_rate_limit)
+            response = cast(
+                Response, self.limiter._inject_headers(response, request.state.view_rate_limit)
+            )
         return response
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting using SlowAPI's limiter with dynamic configuration."""
 
-    def __init__(self, app, request_logger: RequestLogger, limiter: Limiter):
+    def __init__(
+        self, app: ASGIApp, request_logger: RequestLogger, limiter: Limiter
+    ) -> None:
         super().__init__(app)
         self.request_logger = request_logger
         self.limiter = limiter
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         cfg_limit = getattr(get_config().api, "rate_limit", 0)
         if cfg_limit:
             ip = get_remote_address(request)
@@ -140,7 +157,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
                 return handle_rate_limit(request, RateLimitExceeded(limit_wrapper))
             response = await call_next(request)
-            return self.limiter._inject_headers(response, request.state.view_rate_limit)
+            return cast(
+                Response, self.limiter._inject_headers(response, request.state.view_rate_limit)
+            )
         return await call_next(request)
 
 

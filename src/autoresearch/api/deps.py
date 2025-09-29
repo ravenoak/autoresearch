@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from fastapi import Depends, Request
+from fastapi.params import Depends as DependsDependency
 
 from ..orchestration.orchestrator import Orchestrator
 from .utils import enforce_permission
 
 
-def require_permission(permission: str):
+def require_permission(permission: str) -> DependsDependency:
     """Ensure the requesting client has a specific permission.
 
     Raises HTTP 401 with a ``WWW-Authenticate`` header when authentication
