@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Mapping, Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    ValidationError,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic.functional_validators import model_validator
 from pydantic_settings import SettingsConfigDict
 
 from ..orchestration.reasoning import ReasoningMode
@@ -139,7 +134,7 @@ class RoleRoutingPolicy(BaseModel):
         le=1.0,
         description=(
             "Minimum confidence required to stay on the preferred routing "
-            "profile; below this threshold the router escalates",
+            "profile; below this threshold the router escalates"
         ),
     )
     escalation_model: str | None = Field(
@@ -170,7 +165,7 @@ class ModelRoutingConfig(BaseModel):
         le=1.0,
         description=(
             "Fraction of an agent's token share that must remain before routing "
-            "prefers cheaper models",
+            "prefers cheaper models"
         ),
     )
     strategy_name: str = Field(
@@ -535,7 +530,7 @@ class ConfigModel(BaseModel):
     )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ConfigModel":
+    def from_dict(cls, data: Mapping[str, Any]) -> "ConfigModel":
         try:
             return cls(**data)
         except ValidationError:
@@ -548,4 +543,4 @@ class ConfigModel(BaseModel):
                         continue
             return model
 
-    model_config = SettingsConfigDict(extra="ignore")
+    model_config: ClassVar[SettingsConfigDict] = {"extra": "ignore"}
