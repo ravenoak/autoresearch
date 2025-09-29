@@ -60,6 +60,7 @@ release_date = "Unreleased" # keep in sync with autoresearch.__release_date__
 include-package-data = true
 
 [tool.setuptools.package-data]
+"autoresearch" = ["py.typed"]
 "autoresearch.examples" = ["autoresearch.toml", ".env.example"]
 
 [tool.setuptools.data-files]
