@@ -5,20 +5,18 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **September 29, 2025**, Autoresearch still targets an **0.1.0a1** preview
+As of **September 30, 2025**, Autoresearch still targets an **0.1.0a1** preview
 on **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-The latest 17:36 UTC `task verify` sweep clears linting but reports 93 strict
-typing errors across the HTTP session adapters, evaluation harness, Streamlit
-CLI, and distributed executor protocols, so the gate remains red. The follow-up
-`task coverage` run at 17:37 UTC synced all non-GPU extras and entered the unit
-matrix before stopping at `tests/unit/test_additional_coverage.py`
-(`test_render_evaluation_summary_joins_artifacts`) after a manual interrupt,
-leaving coverage evidence incomplete. TestPyPI also stays deferred per the
-release directive until the lint and typing fixes land.
-【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
-【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
-【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
-【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
+The 17:45 UTC `task verify` sweep now completes linting, strict mypy, and the
+full unit, integration, and behavior suites, confirming the scout gate and VSS
+telemetry are stable while clearing the strict typing wall. The paired
+18:19 UTC `task coverage` run finishes with a 92.4 % statement rate through the
+Task CLI entrypoint, so both quality gates are green again. TestPyPI remains on
+hold per the release directive until publish rights open, but the alpha gate
+monitors the passing logs in the roadmap, status rollup, and release plan.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+【F:docs/release_plan.md†L18-L48】
 
 XPASS cleanup and the Phase 1 Deep Research objectives are complete: the unit
 suite no longer reports XPASS cases after archiving

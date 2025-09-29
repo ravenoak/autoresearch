@@ -4,7 +4,7 @@ This roadmap summarizes planned features for upcoming releases.
 Dates and milestones align with the [release plan](docs/release_plan.md).
 See [STATUS.md](STATUS.md) and [CHANGELOG.md](CHANGELOG.md) for current results
 and recent changes. Installation and environment details are covered in the
-[README](README.md). Last updated **September 27, 2025**.
+[README](README.md). Last updated **September 29, 2025**.
 
 ## Deep Research enhancement program
 
@@ -47,7 +47,11 @@ regressions][clean-up-flake8] ticket.【F:STATUS.md†L3-L24】
 `task verify` finishes end-to-end with warnings promoted to errors.【F:STATUS.md†L44-L59】
 `STATUS.md` records the run results, and `TASK_PROGRESS.md` mirrors the same
 coverage totals across 890 unit, 324 integration, and 29 behavior tests with no
-resource tracker errors.【F:STATUS.md†L44-L59】【F:TASK_PROGRESS.md†L24-L56】
+resource tracker errors.【F:STATUS.md†L44-L59】【F:TASK_PROGRESS.md†L24-L56】 Phase 1
+of the deep research program now reports green objectives alongside the strict
+mypy gate, which clears in the September 30 `task verify` sweep cited across the
+status rollup, roadmap, and plan updates.
+【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:docs/deep_research_upgrade_plan.md†L19-L41】
 The associated verification and coverage rerun tickets now live in the
 archive.【F:issues/archive/resolve-resource-tracker-errors-in-verify.md†L1-L49】
 【F:issues/archive/rerun-task-coverage-after-storage-fix.md†L36-L48】
