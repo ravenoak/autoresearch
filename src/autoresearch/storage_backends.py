@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from queue import Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, cast
 
 import importlib.util
 import json
@@ -28,18 +28,26 @@ from .errors import NotFoundError, StorageError
 from .extensions import VSSExtensionLoader
 from .logging_utils import get_logger
 from .orchestration.metrics import KUZU_QUERY_COUNTER, KUZU_QUERY_TIME
+from .storage_typing import (
+    DuckDBConnectionProtocol,
+    GraphProtocol,
+    JSONDict,
+    as_duckdb_connection,
+    as_graph_protocol,
+    to_json_dict,
+)
 from .storage_utils import initialize_schema_version_without_fetchone
 
-# Use "Any" for DuckDB connection due to incomplete type hints in duckdb.
-DuckDBConnection = Any
+DuckDBConnection = DuckDBConnectionProtocol
 
 if TYPE_CHECKING:  # pragma: no cover - type hints only
     import kuzu
 
 log = get_logger(__name__)
+DuckDBError = cast(type[BaseException], getattr(duckdb, "Error", Exception))
 
 
-def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
+def init_rdf_store(backend: str, path: str) -> GraphProtocol:
     """Initialize an RDFLib store with explicit driver checks.
 
     Args:
@@ -57,10 +65,12 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
         StorageError: If the requested backend or its driver is unavailable.
     """
 
+    graph: rdflib.Graph
+
     if backend == "memory":
         graph = rdflib.Graph()
-        setattr(graph.store, "identifier", "Memory")
-        return graph
+        setattr(cast(Any, graph).store, "identifier", "Memory")
+        return as_graph_protocol(graph)
 
     if backend == "berkeleydb":
         store_name = "Sleepycat"
@@ -87,9 +97,9 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
 
     try:
         graph = rdflib.Graph(store=store_name)
-        graph.open(rdf_path)
+        cast(Any, graph).open(rdf_path)
         # Record the backend name for debugging and tests
-        setattr(graph.store, "identifier", store_name)
+        setattr(cast(Any, graph).store, "identifier", store_name)
     except Exception as e:  # pragma: no cover - plugin may be missing
         if "No plugin registered" in str(e):
             raise StorageError(
@@ -105,18 +115,18 @@ def init_rdf_store(backend: str, path: str) -> rdflib.Graph:
             log.warning("Falling back to in-memory RDF store due to lock issue: %s", e)
             graph = rdflib.Graph()
             # Preserve the configured backend identifier for observability/tests
-            setattr(graph.store, "identifier", "OxiGraph")
-            return graph
+            setattr(cast(Any, graph).store, "identifier", "OxiGraph")
+            return as_graph_protocol(graph)
         # If the oxrdflib/pyoxigraph import chain fails at import time, gracefully fall back.
         if isinstance(e, ImportError):
             log.warning("Falling back to in-memory RDF store due to ImportError: %s", e)
             graph = rdflib.Graph()
             # Preserve the configured backend identifier for observability/tests
-            setattr(graph.store, "identifier", "OxiGraph")
-            return graph
+            setattr(cast(Any, graph).store, "identifier", "OxiGraph")
+            return as_graph_protocol(graph)
         raise StorageError("Failed to open RDF store", cause=e)
 
-    return graph
+    return as_graph_protocol(graph)
 
 
 class DuckDBStorageBackend:
@@ -130,13 +140,13 @@ class DuckDBStorageBackend:
     between multiple storage backends (DuckDB, NetworkX, RDFLib).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the DuckDB storage backend."""
-        self._conn: Optional[DuckDBConnection] = None
+        self._conn: Optional[DuckDBConnectionProtocol] = None
         self._path: Optional[str] = None
         self._lock = Lock()
         self._has_vss: bool = False
-        self._pool: Optional[Queue[DuckDBConnection]] = None
+        self._pool: Optional[Queue[DuckDBConnectionProtocol]] = None
         self._max_connections: int = 1
 
     def setup(self, db_path: Optional[str] = None, skip_migrations: bool = False) -> None:
@@ -181,7 +191,7 @@ class DuckDBStorageBackend:
             self._path = path
 
             try:
-                self._conn = duckdb.connect(path)
+                self._conn = as_duckdb_connection(duckdb.connect(path))
             except Exception as e:
                 log.error(f"Failed to connect to DuckDB database: {e}")
                 self._conn = None
@@ -200,7 +210,7 @@ class DuckDBStorageBackend:
                 self._pool = Queue(maxsize=self._max_connections)
                 self._pool.put(self._conn)
                 for _ in range(self._max_connections - 1):
-                    self._pool.put(duckdb.connect(path))
+                    self._pool.put(as_duckdb_connection(duckdb.connect(path)))
 
             # Load VSS extension if enabled
             if cfg.vector_extension:
@@ -211,10 +221,10 @@ class DuckDBStorageBackend:
                         log.info("VSS extension loaded successfully")
                     else:
                         log.warning("VSS extension not available")
-                except (duckdb.Error, StorageError) as e:  # type: ignore[attr-defined]
+                except (DuckDBError, StorageError) as e:
                     log.error(f"Failed to load VSS extension: {e}")
                     self._has_vss = False
-                    last_exc = e
+                    last_exc = e if isinstance(e, Exception) else Exception(str(e))
 
                 if not self._has_vss:
                     env_offline = Path(".env.offline")
@@ -229,10 +239,10 @@ class DuckDBStorageBackend:
                                     log.info("VSS extension loaded from offline cache")
                                 else:
                                     log.warning("VSS extension offline fallback unavailable")
-                            except (duckdb.Error, StorageError) as e:  # type: ignore[attr-defined]
+                            except (DuckDBError, StorageError) as e:
                                 log.error(f"Offline VSS load failed: {e}")
                                 self._has_vss = False
-                                last_exc = e
+                                last_exc = e if isinstance(e, Exception) else Exception(str(e))
 
                 if (
                     not self._has_vss
@@ -314,7 +324,7 @@ class DuckDBStorageBackend:
             if not skip_migrations:
                 self._run_migrations()
 
-        except duckdb.Error as e:  # type: ignore[attr-defined]
+        except DuckDBError as e:
             raise StorageError(f"DuckDB error while creating tables: {e}") from e
         except StorageError:
             raise
@@ -439,8 +449,9 @@ class DuckDBStorageBackend:
                 "entailment DOUBLE, variance DOUBLE, instability BOOLEAN, "
                 "sample_size INTEGER, sources VARCHAR, notes VARCHAR, provenance VARCHAR, created_at TIMESTAMP)"
             )
-        except duckdb.Error as exc:  # type: ignore[attr-defined]
-            raise StorageError("Failed to migrate claim audit table", cause=exc)
+        except DuckDBError as exc:
+            cause = exc if isinstance(exc, Exception) else Exception(str(exc))
+            raise StorageError("Failed to migrate claim audit table", cause=cause)
 
     def _migrate_to_v3(self) -> None:
         """Ensure stability metadata columns exist on existing claim audit tables."""
@@ -458,9 +469,10 @@ class DuckDBStorageBackend:
             self._conn.execute(
                 "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS sample_size INTEGER"
             )
-        except duckdb.Error as exc:  # type: ignore[attr-defined]
+        except DuckDBError as exc:
+            cause = exc if isinstance(exc, Exception) else Exception(str(exc))
             raise StorageError(
-                "Failed to migrate stability metadata columns", cause=exc
+                "Failed to migrate stability metadata columns", cause=cause
             )
 
     def _migrate_to_v4(self) -> None:
@@ -473,9 +485,10 @@ class DuckDBStorageBackend:
             self._conn.execute(
                 "ALTER TABLE claim_audits ADD COLUMN IF NOT EXISTS provenance VARCHAR"
             )
-        except duckdb.Error as exc:  # type: ignore[attr-defined]
+        except DuckDBError as exc:
+            cause = exc if isinstance(exc, Exception) else Exception(str(exc))
             raise StorageError(
-                "Failed to migrate provenance column", cause=exc
+                "Failed to migrate provenance column", cause=cause
             )
 
     def create_hnsw_index(self) -> None:
@@ -599,7 +612,7 @@ class DuckDBStorageBackend:
             except Exception as e:  # pragma: no cover - unexpected DB failure
                 raise StorageError("Failed to refresh HNSW index", cause=e)
 
-    def persist_claim(self, claim: Dict[str, Any]) -> None:
+    def persist_claim(self, claim: JSONDict) -> None:
         """Persist a claim to the DuckDB database.
 
         This method inserts the claim into three tables in DuckDB:
@@ -729,7 +742,7 @@ class DuckDBStorageBackend:
                     "Failed to persist knowledge graph relations", cause=exc
                 )
 
-    def update_claim(self, claim: Dict[str, Any], partial_update: bool = False) -> None:
+    def update_claim(self, claim: JSONDict, partial_update: bool = False) -> None:
         """Update an existing claim in the DuckDB database.
 
         Args:
@@ -813,10 +826,8 @@ class DuckDBStorageBackend:
         audit_id = audit.get("audit_id")
         claim_id = audit.get("claim_id")
         status = audit.get("status")
-        if hasattr(status, "value"):
-            status_value = status.value  # type: ignore[assignment]
-        else:
-            status_value = status
+        status_obj = getattr(status, "value", status)
+        status_value = None if status_obj is None else str(status_obj)
         if not audit_id or not claim_id or not status_value:
             raise StorageError("Audit payload missing required identifiers")
 
@@ -830,14 +841,18 @@ class DuckDBStorageBackend:
         sources = audit.get("sources") or []
         if not isinstance(sources, Sequence) or isinstance(sources, (str, bytes)):
             raise StorageError("Audit sources must be a sequence")
-        serialised_sources: list[dict[str, Any]] = []
+        serialised_sources: list[JSONDict] = []
         for src in sources:
             if isinstance(src, Mapping):
-                serialised_sources.append(dict(src))
+                serialised_sources.append(to_json_dict(src))
             else:
                 serialised_sources.append({"value": src})
 
-        provenance_json = json.dumps(audit.get("provenance", {}), ensure_ascii=False)
+        provenance_payload = audit.get("provenance")
+        provenance_json = json.dumps(
+            to_json_dict(provenance_payload if isinstance(provenance_payload, Mapping) else {}),
+            ensure_ascii=False,
+        )
 
         variance_value = audit.get("entailment_variance")
         try:
@@ -892,7 +907,7 @@ class DuckDBStorageBackend:
             except Exception as exc:  # pragma: no cover - defensive
                 raise StorageError("Failed to persist claim audit", cause=exc)
 
-    def list_claim_audits(self, claim_id: str | None = None) -> List[Dict[str, Any]]:
+    def list_claim_audits(self, claim_id: str | None = None) -> list[JSONDict]:
         """Return stored claim audits ordered by recency."""
 
         if self._conn is None and self._pool is None:
@@ -914,7 +929,7 @@ class DuckDBStorageBackend:
             except Exception as exc:  # pragma: no cover - defensive
                 raise StorageError("Failed to list claim audits", cause=exc)
 
-        audits: List[Dict[str, Any]] = []
+        audits: list[JSONDict] = []
         for row in rows:
             raw_variance = row[4]
             variance = float(raw_variance) if raw_variance is not None else None
@@ -932,7 +947,7 @@ class DuckDBStorageBackend:
                 sample_size = None
 
             raw_sources = row[7]
-            parsed_sources: list[Dict[str, Any]] = []
+            parsed_sources: list[JSONDict] = []
             if raw_sources:
                 try:
                     loaded = json.loads(raw_sources)
@@ -941,18 +956,23 @@ class DuckDBStorageBackend:
                 if isinstance(loaded, list):
                     for src in loaded:
                         if isinstance(src, Mapping):
-                            parsed_sources.append(dict(src))
+                            parsed_sources.append(to_json_dict(src))
                         else:
                             parsed_sources.append({"value": src})
 
             raw_provenance = row[9]
             if raw_provenance:
                 try:
-                    provenance = json.loads(raw_provenance)
+                    provenance_loaded = json.loads(raw_provenance)
                 except json.JSONDecodeError:
-                    provenance = {}
+                    provenance_loaded = {}
             else:
-                provenance = {}
+                provenance_loaded = {}
+            provenance = (
+                to_json_dict(provenance_loaded)
+                if isinstance(provenance_loaded, Mapping)
+                else {}
+            )
 
             created = row[10]
             if isinstance(created, datetime):
@@ -978,7 +998,7 @@ class DuckDBStorageBackend:
 
         return audits
 
-    def get_claim(self, claim_id: str) -> Dict[str, Any]:
+    def get_claim(self, claim_id: str) -> JSONDict:
         """Return a persisted claim by ID."""
         if self._conn is None and self._pool is None:
             raise StorageError("DuckDB connection not initialized")
@@ -990,7 +1010,7 @@ class DuckDBStorageBackend:
             ).fetchone()
             if row is None:
                 raise NotFoundError("Claim not found")
-            result: Dict[str, Any] = {
+            result: JSONDict = {
                 "id": row[0],
                 "type": row[1],
                 "content": row[2],
@@ -1009,12 +1029,12 @@ class DuckDBStorageBackend:
 
     def vector_search(
         self,
-        query_embedding: List[float],
+        query_embedding: Sequence[float],
         k: int = 5,
         similarity_threshold: float = 0.0,
         include_metadata: bool = False,
-        filter_types: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        filter_types: Sequence[str] | None = None,
+    ) -> list[JSONDict]:
         """Search for claims by vector similarity with advanced options.
 
         This method performs an optimized vector similarity search using the provided query
@@ -1336,7 +1356,7 @@ class KuzuStorageBackend:
         if self._conn is None:
             raise StorageError("Kuzu connection not initialized")
         start = time.time()
-        result: "kuzu.QueryResult" = self._conn.execute(query, params or {})
+        result = cast("kuzu.QueryResult", self._conn.execute(query, params or {}))
         KUZU_QUERY_COUNTER.inc()
         KUZU_QUERY_TIME.observe(time.time() - start)
         return result
@@ -1361,6 +1381,6 @@ class KuzuStorageBackend:
             {"id": claim_id},
         )
         if res.has_next():
-            row = res.get_next()
+            row = cast(Sequence[Any], res.get_next())
             return {"id": claim_id, "content": row[0], "confidence": row[1]}
         raise NotFoundError("Claim not found")

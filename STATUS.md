@@ -31,6 +31,16 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   coverage invocation now shares the same extras wiring as `task coverage`.
   【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
   【F:Taskfile.yml†L360-L392】
+- Eliminated the remaining `Any` return from
+  `StorageManager.get_knowledge_graph` by casting the delegate hook to a typed
+  callable, unblocking mypy across the storage modules.
+- Added storage integration coverage that patches `run_ontology_reasoner` so
+  the typed contract is exercised without requiring the optional `owlrl`
+  backend during CI runs.
+- `uv run mypy src/autoresearch/storage.py src/autoresearch/storage_backends.py
+  src/autoresearch/kg_reasoning.py` and `uv run pytest tests/unit/storage
+  tests/integration/test_storage.py` now pass, while the full `uv run task
+  verify` continues to surface 151 legacy mypy errors in unrelated modules.
 
 ## September 30, 2025
 - `task release:alpha` completed at 19:04 UTC with the scout gate, CLI path
@@ -69,6 +79,10 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   the same runs: the scout-loop test, VSS-enabled stub backend, Ray executor
   remote case, and reasoning mode behaviors all pass with the extension loaded
   from the pinned path.【F:baseline/logs/task-verify-20250930T174512Z.log†L6-L13】【F:baseline/logs/task-coverage-20250930T181947Z.log†L3-L11】
+- Tightened storage typing by introducing runtime-checkable DuckDB/RDF
+  protocols, audit persistence helpers, and dedicated tests validating graph
+  add/remove flows and claim-audit serialization. The strict mypy gate now
+  passes for the storage modules covered by the new helpers.
 
 ## September 28, 2025
 - Wired `OrchestrationMetrics` with Prometheus-backed `graph_ingestion`

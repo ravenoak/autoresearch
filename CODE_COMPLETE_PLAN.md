@@ -97,6 +97,8 @@ alongside the alpha release workstream.
   - Implement more sophisticated reasoning capabilities
   - Add support for ontology-based reasoning
   - Create tools for knowledge graph visualization
+- ~~Introduce typed storage protocols and audited persistence helpers~~ (implemented via `storage_typing.py`,
+  typed eviction bookkeeping, delegate-safe knowledge graph accessors, and storage contract tests)
 
 ### 1.4 Search and Evidence Audit System
 - **Evolve the claim audit ingestion pipeline**
