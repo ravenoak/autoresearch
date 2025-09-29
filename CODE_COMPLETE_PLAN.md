@@ -5,17 +5,20 @@ Based on a thorough analysis of the Autoresearch codebase, I've developed a comp
 
 ## Status
 
-As of **September 30, 2025**, Autoresearch targets an **0.1.0a1** preview on
-**September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
-The 19:04 UTC `task release:alpha` sweep now records the recalibrated scout
-gate telemetry, CLI path helper checks, and the 92.4 % statement coverage rate
-captured in the September 30 verify and coverage logs, keeping packaging in
-sync with the staged 0.1.0a1 artifacts.
-[prepare-first-alpha-release](issues/prepare-first-alpha-release.md) references
-the same evidence so reviewers can trace the CLI remediation and coverage
-metrics from the logs to the roadmap.
-【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
-【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:TASK_PROGRESS.md†L1-L10】
+As of **September 29, 2025**, Autoresearch still targets an **0.1.0a1** preview
+on **September 15, 2026** and a final **0.1.0** release on **October 1, 2026**.
+The latest 17:36 UTC `task verify` sweep clears linting but reports 93 strict
+typing errors across the HTTP session adapters, evaluation harness, Streamlit
+CLI, and distributed executor protocols, so the gate remains red. The follow-up
+`task coverage` run at 17:37 UTC synced all non-GPU extras and entered the unit
+matrix before stopping at `tests/unit/test_additional_coverage.py`
+(`test_render_evaluation_summary_joins_artifacts`) after a manual interrupt,
+leaving coverage evidence incomplete. TestPyPI also stays deferred per the
+release directive until the lint and typing fixes land.
+【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
+【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
 
 XPASS cleanup and the Phase 1 Deep Research objectives are complete: the unit
 suite no longer reports XPASS cases after archiving

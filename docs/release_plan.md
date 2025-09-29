@@ -27,14 +27,22 @@ ticket now links the verify, coverage, and build logs for traceability.
 【F:baseline/logs/python-build-20250929T030953Z.log†L1-L13】【F:issues/prepare-first-alpha-release.md†L1-L34】
 
 Reviewers auditing the current verify gate should inspect
-`baseline/logs/task-verify-20250929T035829Z.log`, which now streams
-`[verify][lint]` and `[verify][mypy]` banners before strict typing stops in
-`src/git` and the Streamlit UI; coverage will remain pending until those
-failures clear, but the Taskfile now forwards optional extras to the embedded
-`task coverage` call so coverage totals match the standalone run.
-【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】
-【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
-【F:Taskfile.yml†L360-L392】
+`baseline/logs/task-verify-20250929T173615Z.log`, which advances through
+`flake8` before surfacing 93 strict typing errors across 28 modules,
+including the HTTP session adapters, evaluation harness, Streamlit CLI, and
+distributed executor protocols. Coverage remains blocked until those fixes
+land. The follow-up coverage attempt at 17:37 UTC synced every non-GPU
+optional extra and began the unit matrix, but the log at
+`baseline/logs/task-coverage-20250929T173738Z.log` stops at the unit
+coverage check for `tests/unit/test_additional_coverage.py`
+(`test_render_evaluation_summary_joins_artifacts`) after a manual interrupt
+at roughly 10 % progress. The TestPyPI dry run
+stays deferred under the release directive while we clear the strict typing
+wall and unblock the coverage sweep.
+【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
+【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
 
 Deep research tickets stay referenced for release sign-off:
 

@@ -1,0 +1,225 @@
+task: [coverage] echo "[coverage] syncing dependencies"
+[coverage] syncing dependencies
+task: [coverage] uv sync \
+   --extra dev-minimal --extra test --extra nlp --extra ui --extra vss --extra git --extra distributed --extra analysis --extra llm --extra parsers \
+  
+
+Resolved 328 packages in 8ms
+   Building madoka==0.7.1
+Downloading language-data (5.1MiB)
+Downloading polars (37.9MiB)
+Downloading litellm (8.7MiB)
+Downloading pyarrow (40.8MiB)
+Downloading ray (66.9MiB)
+Downloading sympy (6.0MiB)
+Downloading streamlit (9.6MiB)
+Downloading pandas (11.4MiB)
+Downloading spacy (32.4MiB)
+ Downloading streamlit
+ Downloading language-data
+ Downloading litellm
+ Downloading polars
+ Downloading sympy
+ Downloading pandas
+ Downloading pyarrow
+ Downloading spacy
+ Downloading ray
+      Built madoka==0.7.1
+Prepared 11 packages in 22.70s
+Installed 70 packages in 128ms
+ + alembic==1.16.5
+ + altair==5.5.0
+ + asyncer==0.0.8
+ + backoff==2.2.1
+ + blinker==1.9.0
+ + blis==1.3.0
+ + catalogue==2.0.10
+ + cloudpathlib==0.22.0
+ + cloudpickle==3.1.1
+ + coloredlogs==15.0.1
+ + colorlog==6.9.0
+ + confection==0.1.5
+ + cymem==2.0.11
+ + diskcache==5.6.3
+ + dspy==3.0.3
+ + dspy-ai==3.0.3
+ + duckdb-extension-vss==1.3.2
+ + fastembed==0.7.3
+ + fastuuid==0.13.5
+ + filelock==3.19.1
+ + flatbuffers==25.9.23
+ + fsspec==2025.9.0
+ + gepa==0.0.7
+ + gitdb==4.0.12
+ + gitpython==3.1.45
+ + hf-xet==1.1.10
+ + huggingface-hub==0.35.1
+ + humanfriendly==10.0
+ + jinja2==3.1.6
+ + joblib==1.5.2
+ + json-repair==0.51.0
+ + langcodes==3.5.0
+ + language-data==1.3.0
+ + litellm==1.77.4
+ + madoka==0.7.1
+ + magicattr==0.1.6
+ + marisa-trie==1.3.1
+ + mmh3==5.2.0
+ + mpmath==1.3.0
+ + msgpack==1.1.1
+ + murmurhash==1.0.13
+ + narwhals==2.5.0
+ + onnxruntime==1.23.0
+ + optuna==4.5.0
+ + pandas==2.3.2
+ + pillow==11.3.0
+ + polars==1.33.1
+ + pondpond==1.4.1
+ + preshed==3.0.10
+ + py-rust-stemmers==0.1.5
+ + pyarrow==21.0.0
+ + pydeck==0.9.1
+ + pytz==2025.2
+ + ray==2.49.2
+ + smart-open==7.3.1
+ + smmap==5.0.2
+ + spacy==3.8.7
+ + spacy-legacy==3.0.12
+ + spacy-loggers==1.0.5
+ + srsly==2.5.1
+ + streamlit==1.50.0
+ + sympy==1.14.0
+ + thinc==8.3.6
+ + tokenizers==0.22.1
+ + toml==0.10.2
+ + tornado==6.5.2
+ + tzdata==2025.2
+ + wasabi==1.1.3
+ + watchdog==6.0.0
+ + weasel==0.4.1
+task: [coverage] echo "[coverage] erasing previous data"
+[coverage] erasing previous data
+task: [coverage] uv run coverage erase
+task: [coverage] echo "[coverage] running unit tests"
+[coverage] running unit tests
+task: [coverage] uv run pytest -vv --maxfail=1 --durations=10 -x tests/unit -m 'not slow' \
+  --cov=src --cov-report=term-missing --cov-append
+
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- /workspace/autoresearch/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /workspace/autoresearch
+configfile: pytest.ini
+plugins: httpx-0.35.0, bdd-8.1.0, hypothesis-6.140.2, anyio-4.11.0, langsmith-0.4.31, cov-7.0.0, benchmark-5.1.0
+collecting ... collected 1038 items / 25 deselected / 1013 selected
+
+tests/unit/config/test_loader_types.py::test_load_config_file_returns_defaults_when_missing PASSED                       [  0%]
+tests/unit/config/test_loader_types.py::test_load_config_file_rejects_non_mapping PASSED                                 [  0%]
+tests/unit/config/test_loader_types.py::test_env_storage_override_round_trips PASSED                                     [  0%]
+tests/unit/config/test_loader_types.py::test_normalize_ranking_weights_balances_missing_values PASSED                    [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_converges_to_minimum PASSED                        [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_requires_identifier PASSED                         [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_election_accepts_strings PASSED                             [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_is_idempotent PASSED                     [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_message_processing_returns_copy PASSED                      [  0%]
+tests/unit/distributed/test_coordination_properties.py::test_module_exports_helpers PASSED                               [  0%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_stable PASSED                              [  1%]
+tests/unit/evidence/test_stability_utils.py::test_aggregate_entailment_scores_unstable PASSED                            [  1%]
+tests/unit/evidence/test_stability_utils.py::test_sample_paraphrases_returns_unique_variants PASSED                      [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_ingest_records_provenance PASSED                [  1%]
+tests/unit/knowledge/test_graph_pipeline.py::test_session_graph_pipeline_neighbors_uses_storage PASSED                   [  1%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_scaled_by_loops_and_limits PASSED                      [  1%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_minimum_buffer_applied PASSED                          [  1%]
+tests/unit/orchestration/test_budgeting_algorithm.py::test_budget_unchanged_within_bounds PASSED                         [  1%]
+tests/unit/orchestration/test_circuit_breaker_determinism.py::test_circuit_breaker_determinism_and_recovery PASSED       [  1%]
+tests/unit/orchestration/test_circuit_breaker_thresholds.py::test_circuit_breaker_threshold_and_recovery PASSED          [  1%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_reduces_loops_when_signals_low PASSED                      [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_respects_force_debate_override PASSED                      [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_flags_coverage_gap_and_confidence PASSED                   [  2%]
+tests/unit/orchestration/test_gate_policy.py::test_scout_gate_applies_graph_thresholds PASSED                            [  2%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_circuit_breaker_sim_is_deterministic PASSED             [  2%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_parallel_execution_sim_is_deterministic PASSED          [  2%]
+tests/unit/orchestration/test_orchestration_simulations.py::test_cli_runs_modes PASSED                                   [  2%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_returns_direct_answer_when_gate_exits PASSED     [  2%]
+tests/unit/orchestration/test_orchestrator_auto_mode.py::test_auto_mode_escalates_to_debate_when_gate_requires_loops PASSED [  2%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_error_and_timeout PASSED                  [  2%]
+tests/unit/orchestration/test_parallel_execute.py::test_execute_parallel_query_all_fail PASSED                           [  3%]
+tests/unit/orchestration/test_parallel_merge_invariant.py::test_parallel_merge_invariant PASSED                          [  3%]
+tests/unit/orchestration/test_query_state_features.py::test_query_state_cloudpickle_serialization_preserves_fields PASSED [  3%]
+tests/unit/orchestration/test_task_coordinator.py::test_task_coordinator_schedules_dependencies PASSED                   [  3%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_adapter_kwarg PASSED                                     [  3%]
+tests/unit/orchestration/test_token_utils.py::test_execute_with_mutation_hooks_restores_original PASSED                  [  3%]
+tests/unit/orchestration/test_token_utils.py::test_execute_without_adapter_hooks PASSED                                  [  3%]
+tests/unit/orchestration/test_token_utils.py::test_execute_raises_for_non_mapping_result PASSED                          [  3%]
+tests/unit/orchestration/test_token_utils.py::test_type_guards_detect_adapter_features PASSED                            [  3%]
+tests/unit/orchestration/test_token_utils.py::test_is_agent_execution_result_guard PASSED                                [  3%]
+tests/unit/orchestration/test_utils_confidence.py::test_metrics_snapshot_parses_token_usage PASSED                       [  4%]
+tests/unit/orchestration/test_utils_confidence.py::test_confidence_adjusts_with_metrics_payload PASSED                   [  4%]
+tests/unit/search/test_property_ranking_monotonicity.py::test_monotonic_ranking PASSED                                   [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_query_expansion_converges PASSED                             [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_reset_instance_creates_new_singleton PASSED                  [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_extract_entities_with_spacy PASSED                           [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_build_topic_model_with_insufficient_docs PASSED              [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_imports_disabled PASSED                                  [  4%]
+tests/unit/search/test_query_expansion_convergence.py::test_try_import_sentence_transformers_success PASSED              [  4%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_ranking_converges SKIPPED (CollectorRegistry duplication
+in test environment)                                                                                                     [  4%]
+tests/unit/search/test_ranking_convergence_simulation.py::test_invalid_weights_raise SKIPPED (CollectorRegistry
+duplication in test environment)                                                                                         [  5%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_weighted_sum PASSED                                       [  5%]
+tests/unit/search/test_ranking_formula.py::test_combine_scores_requires_convex_weights PASSED                            [  5%]
+tests/unit/search/test_ranking_formula.py::test_duckdb_scores_used_without_semantic PASSED                               [  5%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weighted_combination PASSED                                 [  5%]
+tests/unit/search/test_ranking_formula.py::test_rank_results_weight_fallback PASSED                                      [  5%]
+tests/unit/search/test_session_retry.py::test_http_session_retries_and_reuse PASSED                                      [  5%]
+tests/unit/search/test_session_retry.py::test_http_session_recovery PASSED                                               [  5%]
+tests/unit/search/test_simulate_rate_limit.py::test_default_backoff PASSED                                               [  5%]
+tests/unit/search/test_simulate_rate_limit.py::test_custom_backoff PASSED                                                [  5%]
+tests/unit/storage/test_claim_audit_persistence.py::test_persist_claim_audit_payload_updates_backends PASSED             [  6%]
+tests/unit/storage/test_protocols.py::test_to_json_dict_returns_copy PASSED                                              [  6%]
+tests/unit/storage/test_protocols.py::test_init_rdf_store_supports_protocol PASSED                                       [  6%]
+tests/unit/test_a2a_concurrency_sim.py::test_simulation_counts PASSED                                                    [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_init PASSED                                                     [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_start PASSED                                                    [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_stop PASSED                                                     [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query PASSED                                             [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_capabilities PASSED                          [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_get_config PASSED                                [  6%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_set_config PASSED                                [  7%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_command_unknown PASSED                                   [  7%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_info PASSED                                              [  7%]
+tests/unit/test_a2a_interface.py::TestA2AInterface::test_handle_query_concurrent PASSED                                  [  7%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_init PASSED                                                        [  7%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_query_agent PASSED                                                 [  7%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_capabilities PASSED                                      [  7%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_get_agent_config PASSED                                            [  7%]
+tests/unit/test_a2a_interface.py::TestA2AClient::test_set_agent_config PASSED                                            [  7%]
+tests/unit/test_a2a_interface.py::test_get_a2a_client PASSED                                                             [  7%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_available PASSED                                           [  7%]
+tests/unit/test_a2a_interface.py::test_requires_a2a_decorator_not_available PASSED                                       [  8%]
+tests/unit/test_a2a_interface.py::test_handle_query_exception PASSED                                                     [  8%]
+tests/unit/test_a2a_interface.py::test_handle_set_config_invalid PASSED                                                  [  8%]
+tests/unit/test_a2a_interface.py::test_dispatch_simulation_invariants PASSED                                             [  8%]
+tests/unit/test_a2a_interface.py::test_simulation_event_order PASSED                                                     [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_init PASSED                                                [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent PASSED                                         [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_capabilities PASSED                              [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_get_agent_config PASSED                                    [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_set_agent_config PASSED                                    [  8%]
+tests/unit/test_a2a_interface.py::TestA2AClientExtended::test_query_agent_error PASSED                                   [  9%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_success PASSED                                                      [  9%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_timeout PASSED                                                      [  9%]
+tests/unit/test_a2a_mcp_handshake.py::test_handshake_recovery PASSED                                                     [  9%]
+tests/unit/test_additional_algorithm_docs.py::test_algorithm_docs_exist PASSED                                           [  9%]
+tests/unit/test_additional_coverage.py::test_log_release_tokens_invalid_json PASSED                                      [  9%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_transitions PASSED                                          [  9%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_recovery PASSED                                             [  9%]
+tests/unit/test_additional_coverage.py::test_circuit_breaker_success_decrements PASSED                                   [  9%]
+tests/unit/test_additional_coverage.py::test_http_session_reuse_and_close PASSED                                         [  9%]
+tests/unit/test_additional_coverage.py::test_set_get_delegate PASSED                                                     [ 10%]
+tests/unit/test_additional_coverage.py::test_pop_low_score_missing_confidence PASSED                                     [ 10%]
+tests/unit/test_additional_coverage.py::test_output_formatter_invalid PASSED                                             [ 10%]
+tests/unit/test_additional_coverage.py::test_streamlit_metrics PASSED                                                    [ 10%]
+tests/unit/test_additional_coverage.py::test_render_evaluation_summary_joins_artifacts FAILED                            [ 10%]

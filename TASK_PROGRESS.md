@@ -26,15 +26,19 @@ integration coverage for the modal fallback when Streamlit lacks native modal
 support.
 【F:docs/release_plan.md†L200-L209】【F:issues/prepare-first-alpha-release.md†L36-L57】
 
-As of **2025-09-29** at 03:58 UTC the refreshed `uv run task verify` log shows
-the `[verify][lint]` and `[verify][mypy]` banners before strict typing halts in
-`src/git` and the Streamlit UI, so coverage remains pending even though the
-Taskfile now routes optional extras to the embedded `task coverage` call using
-the same wiring as the standalone target. Reviewers can audit the failure and
-lint success in `baseline/logs/task-verify-20250929T035829Z.log` while we work
-down the strict typing backlog.
-【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
-【F:Taskfile.yml†L360-L392】
+As of **2025-09-29** at 17:36 UTC the new `task verify` sweep clears linting but
+still reports 93 strict typing errors across the HTTP session adapters,
+evaluation harness, Streamlit CLI, and distributed executor protocols. The
+matching `task coverage` run at 17:37 UTC synced all non-GPU extras and began
+the unit suite before we manually interrupted the log while running
+`tests/unit/test_additional_coverage.py`
+(`test_render_evaluation_summary_joins_artifacts`),
+so coverage evidence remains incomplete while the TestPyPI dry run stays on
+hold under the release directive.
+【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
+【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
+【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
 
 As of **2025-09-29** at 01:33 UTC the targeted stub backend regression check
 (`uv run --extra test pytest tests/unit/test_core_modules_additional.py::test_search_stub_backend -vv`)

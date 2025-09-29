@@ -25,12 +25,20 @@ extras; supplying `EXTRAS` now adds optional groups on top of that baseline
   coverage, packaging, or TestPyPI ran.【F:baseline/logs/release-alpha-20250929T000814Z.log†L1-L41】
 - Archived a summary noting the TestPyPI stage remains skipped per the active
   directive until the lint regression clears.【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L1-L12】
-- Captured the 03:58 UTC `uv run task verify` output with the new
-  `[verify][lint]` and `[verify][mypy]` banners streaming before strict typing
-  fails in `src/git` and the Streamlit UI, keeping coverage blocked while the
-  coverage invocation now shares the same extras wiring as `task coverage`.
-  【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
-  【F:Taskfile.yml†L360-L392】
+- Captured the 17:36 UTC `task verify` run with the strict typing fixes in
+  place; linting passes, but 93 strict errors remain across the HTTP session
+  adapters, evaluation harness, Streamlit CLI, and distributed executor
+  protocols. The paired `task coverage` attempt at 17:37 UTC synced all
+  optional extras except GPU and began the unit suite before we interrupted at
+  `tests/unit/test_additional_coverage.py`
+  (`test_render_evaluation_summary_joins_artifacts`), leaving the coverage
+  evidence incomplete. The TestPyPI dry run remains
+  deferred until the lint and typing issues clear per the active release
+  directive.
+  【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
+  【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
+  【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
+  【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
 - Eliminated the remaining `Any` return from
   `StorageManager.get_knowledge_graph` by casting the delegate hook to a typed
   callable, unblocking mypy across the storage modules.
