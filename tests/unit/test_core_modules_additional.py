@@ -1,3 +1,4 @@
+import functools
 import types
 from collections import defaultdict
 from typing import Any
@@ -26,6 +27,8 @@ def _stubbed_search_environment(monkeypatch, request):
     embedding_calls: list[str] = []
     embedding_events: list[tuple[str, str]] = []
     embedding_path_events: list[tuple[str, str]] = []
+    embedding_binding_stack: list[str] = []
+    lookup_binding_stack: list[str] = []
     compute_calls: list[tuple[str, str]] = []
     add_calls: list[str] = []
     rank_calls: list[str] = []
@@ -112,7 +115,15 @@ def _stubbed_search_environment(monkeypatch, request):
 
         def _stub_embedding(subject, query_embedding, max_results: int = 5):
             """Accept both instance and class callers to align with hybridmethod semantics."""
-            if subject is Search:
+            binding_hint = None
+            if phase.startswith("search-") and lookup_binding_stack:
+                binding_hint = lookup_binding_stack[-1]
+            elif embedding_binding_stack:
+                binding_hint = embedding_binding_stack[-1]
+
+            if binding_hint in {"instance", "class"} and phase.startswith("search-"):
+                path_binding = binding_hint
+            elif subject is Search:
                 path_binding = "class"
             elif subject is search_instance:
                 path_binding = "instance"
@@ -178,7 +189,33 @@ def _stubbed_search_environment(monkeypatch, request):
         monkeypatch.setattr(search_instance.cache, "get_cached_results", _stub_cache_lookup)
         monkeypatch.setattr(search_instance.cache, "cache_results", lambda *a, **k: None)
 
-        monkeypatch.setattr(Search, "embedding_lookup", hybridmethod(_stub_embedding))
+        def _wrap_hybrid(descriptor, *, stack: list[str]):
+            class TrackingHybrid:
+                def __init__(self, inner):
+                    self.inner = inner
+
+                def __get__(self, obj, objtype=None):
+                    binding = "instance" if obj is not None else "class"
+                    bound = self.inner.__get__(obj, objtype)
+
+                    @functools.wraps(bound)
+                    def call(*args, **kwargs):
+                        stack.append(binding)
+                        try:
+                            return bound(*args, **kwargs)
+                        finally:
+                            stack.pop()
+
+                    return call
+
+            return TrackingHybrid(descriptor)
+
+        monkeypatch.setattr(Search, "embedding_lookup", _wrap_hybrid(hybridmethod(_stub_embedding), stack=embedding_binding_stack))
+        monkeypatch.setattr(
+            Search,
+            "external_lookup",
+            _wrap_hybrid(Search.__dict__["external_lookup"], stack=lookup_binding_stack),
+        )
         monkeypatch.setattr(
             Search,
             "compute_query_embedding",
@@ -272,7 +309,7 @@ def test_orchestrator_parse_config_basic():
             {
                 "lookup": {
                     "search-instance": {"instance": 1, "class": 0},
-                    "search-class": {"instance": 1, "class": 0},
+                    "search-class": {"instance": 0, "class": 1},
                     "direct": {"instance": 2, "class": 0},
                 },
                 "compute": {
@@ -291,8 +328,10 @@ def test_search_stub_backend(_stubbed_search_environment, expected_embedding_cal
     The fixture accepts a feature dictionary so we can simulate environments where the
     DuckDB vector search extras are disabled (legacy) or enabled (vss-enabled). When the
     extras toggle is active, the stubbed ``compute_query_embedding`` emits a deterministic
-    vector so ``Search.external_lookup`` performs additional embedding calls. We assert
-    the dynamic counts rather than a fixed list to keep regression coverage across both
+    vector so ``Search.external_lookup`` exercises both the instance-bound and class-bound
+    hybridmethod paths across the two search phases. Combined with the direct sanity checks
+    this yields a four-call profile that mirrors the release sweep telemetry. We assert the
+    dynamic counts rather than a fixed list to keep regression coverage across both
     pathways. Cache probes append empty dictionaries for each lookup to ensure miss
     semantics remain unchanged as the embedding behaviour varies.
     """
