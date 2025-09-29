@@ -39,12 +39,12 @@ from threading import RLock
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     Iterator,
     Mapping,
     Optional,
     Sequence,
-    TypeAlias,
     cast,
     Protocol,
 )
@@ -53,13 +53,22 @@ from uuid import uuid4
 import networkx as nx
 from networkx.readwrite import json_graph
 import rdflib
-
 from .config import ConfigLoader, StorageConfig
 from .errors import ConfigError, NotFoundError, StorageError
 from .kg_reasoning import run_ontology_reasoner
 from .logging_utils import get_logger
 from .orchestration.metrics import EVICTION_COUNTER
 from .storage_backends import DuckDBStorageBackend, init_rdf_store
+from .storage_typing import (
+    DuckDBConnectionProtocol,
+    GraphProtocol,
+    JSONDict,
+    JSONDictList,
+    JSONMapping,
+    RDFTriple,
+    ensure_mutable_mapping,
+    to_json_dict,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
@@ -76,14 +85,10 @@ except Exception:  # pragma: no cover - defensive
 if _has_kuzu:  # pragma: no cover - optional dependency
     from .storage_backends import KuzuStorageBackend as _KuzuStorageBackend
 
-    KuzuBackend = cast(type[_KuzuStorageBackend], _KuzuStorageBackend)
+    KuzuBackend = _KuzuStorageBackend
 
-# Use "Any" for DuckDB connections due to incomplete upstream type hints.
-DuckDBConnection = Any
-
-JSONMapping: TypeAlias = Mapping[str, object]
-JSONDict: TypeAlias = dict[str, object]
-JSONDictList: TypeAlias = list[JSONDict]
+# Alias the DuckDB protocol for readability within this module.
+DuckDBConnection = DuckDBConnectionProtocol
 
 
 class StorageQueueProtocol(Protocol):
@@ -100,7 +105,7 @@ class StorageContext:
     graph: Optional[nx.DiGraph[Any]] = None
     kg_graph: Optional[nx.MultiDiGraph[Any]] = None
     db_backend: Optional[DuckDBStorageBackend] = None
-    rdf_store: Optional[rdflib.Graph] = None
+    rdf_store: Optional[GraphProtocol] = None
     config_fingerprint: Optional[str] = None
 
 
@@ -257,7 +262,7 @@ class ClaimAuditStatus(StrEnum):
 def ensure_source_id(source: JSONMapping) -> JSONDict:
     """Return a copy of ``source`` with a stable ``source_id`` fingerprint."""
 
-    enriched = dict(source)
+    enriched = to_json_dict(source)
     existing = enriched.get("source_id") or enriched.get("id")
     if existing:
         enriched["source_id"] = str(existing)
@@ -324,7 +329,7 @@ class ClaimAuditRecord:
             "instability_flag": self.instability_flag,
             "sample_size": self.sample_size,
             "sources": self.sources,
-            "provenance": dict(self.provenance),
+            "provenance": ensure_mutable_mapping(self.provenance),
             "notes": self.notes,
             "created_at": self.created_at,
         }
@@ -355,18 +360,18 @@ class ClaimAuditRecord:
         serialised_sources: list[JSONDict] = []
         for src in sources_raw:
             if isinstance(src, Mapping):
-                serialised_sources.append(dict(src))
+                serialised_sources.append(to_json_dict(src))
             else:
                 raise StorageError("each source must be a mapping")
         provenance_raw = payload.get("provenance") or {}
         if isinstance(provenance_raw, Mapping):
-            provenance = dict(provenance_raw)
+            provenance = to_json_dict(provenance_raw)
         elif isinstance(provenance_raw, str):
             try:
                 parsed = json.loads(provenance_raw)
             except json.JSONDecodeError:
                 parsed = {}
-            provenance = dict(parsed) if isinstance(parsed, Mapping) else {}
+            provenance = to_json_dict(parsed) if isinstance(parsed, Mapping) else {}
         else:
             raise StorageError("provenance must be a mapping")
         created_at_value = payload.get("created_at")
@@ -407,7 +412,7 @@ class ClaimAuditRecord:
 
         notes_value = payload.get("notes")
         if notes_value is None or isinstance(notes_value, str):
-            notes = cast(str | None, notes_value)
+            notes = notes_value
         else:
             notes = str(notes_value)
 
@@ -467,14 +472,14 @@ class ClaimAuditRecord:
         if sources:
             for src in sources:
                 if isinstance(src, Mapping):
-                    serialised_sources.append(dict(src))
+                    serialised_sources.append(to_json_dict(src))
                 else:
                     raise TypeError("sources must contain mappings")
 
         if provenance is None:
             provenance_payload: JSONDict = {}
         elif isinstance(provenance, Mapping):
-            provenance_payload = dict(provenance)
+            provenance_payload = to_json_dict(provenance)
         else:
             raise TypeError("provenance must be a mapping")
 
@@ -898,7 +903,11 @@ class StorageManager(metaclass=StorageManagerMeta):
         if _delegate and _delegate is not StorageManager:
             return _delegate.record_claim_audit(audit)
 
-        payload = audit.to_payload() if isinstance(audit, ClaimAuditRecord) else dict(audit)
+        payload = (
+            audit.to_payload()
+            if isinstance(audit, ClaimAuditRecord)
+            else to_json_dict(audit)
+        )
         return StorageManager._persist_claim_audit_payload(payload)
 
     @staticmethod
@@ -1161,6 +1170,14 @@ class StorageManager(metaclass=StorageManagerMeta):
 
             vss_available = StorageManager.has_vss()
 
+            def _compute_survivor_floor() -> int | None:
+                if use_deterministic_budget:
+                    assert target_node_count is not None
+                    return max(target_node_count, minimum_resident_nodes)
+                if policy == "lru" and vss_available:
+                    return max(minimum_resident_nodes, _MIN_DETERMINISTIC_SURVIVORS)
+                return None
+
             while StorageManager.context.graph:
                 graph = StorageManager.context.graph
                 if graph is None or not graph.nodes:
@@ -1197,9 +1214,9 @@ class StorageManager(metaclass=StorageManagerMeta):
                     current_batch_size = batch_size
 
                 remaining_allowance: int | None = None
+                survivor_floor = _compute_survivor_floor()
                 if use_deterministic_budget:
-                    assert target_node_count is not None
-                    survivor_floor = max(target_node_count, minimum_resident_nodes)
+                    assert survivor_floor is not None
                     remaining_allowance = max(0, len(graph.nodes) - survivor_floor)
                     if remaining_allowance <= 0:
                         log.debug(
@@ -1334,16 +1351,6 @@ class StorageManager(metaclass=StorageManagerMeta):
                             fallback_allowance = min(
                                 fallback_allowance,
                                 max(0, remaining_allowance - len(nodes_to_evict)),
-                            )
-
-                        survivor_floor: int | None = None
-                        if use_deterministic_budget:
-                            assert target_node_count is not None
-                            survivor_floor = max(target_node_count, minimum_resident_nodes)
-                        elif policy == "lru" and vss_available:
-                            survivor_floor = max(
-                                minimum_resident_nodes,
-                                _MIN_DETERMINISTIC_SURVIVORS,
                             )
 
                         if survivor_floor is not None:
@@ -1531,7 +1538,12 @@ class StorageManager(metaclass=StorageManagerMeta):
         """
         state = StorageManager.state
         with state.lock:
-            attrs = dict(claim.get("attributes", {}))
+            attributes_raw = claim.get("attributes")
+            attrs = (
+                to_json_dict(attributes_raw)
+                if isinstance(attributes_raw, Mapping)
+                else {}
+            )
             if "confidence" in claim:
                 attrs["confidence"] = claim["confidence"]
             if "audit" in claim:
@@ -1555,7 +1567,7 @@ class StorageManager(metaclass=StorageManagerMeta):
     def _persist_claim_audit_payload(audit_payload: JSONMapping) -> ClaimAuditRecord:
         """Persist verification metadata across storage backends."""
 
-        record = ClaimAuditRecord.from_payload(dict(audit_payload))
+        record = ClaimAuditRecord.from_payload(to_json_dict(audit_payload))
         StorageManager._ensure_storage_initialized()
         assert StorageManager.context.db_backend is not None
         StorageManager.context.db_backend.persist_claim_audit(record.to_payload())
@@ -1631,7 +1643,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageManager.context.rdf_store.add((subj, pred, obj))
 
         # Apply ontology reasoning so advanced queries see inferred triples
-        run_ontology_reasoner(StorageManager.context.rdf_store)
+        run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
 
     @staticmethod
     def update_knowledge_graph(
@@ -1670,7 +1682,12 @@ class StorageManager(metaclass=StorageManagerMeta):
                     node_id = str(entity.get("id"))
                     if not node_id:
                         continue
-                    attributes = dict(entity.get("attributes", {}))
+                    attributes_raw = entity.get("attributes")
+                    attributes = (
+                        to_json_dict(attributes_raw)
+                        if isinstance(attributes_raw, Mapping)
+                        else {}
+                    )
                     attributes.setdefault("label", entity.get("label", node_id))
                     attributes.setdefault("type", entity.get("type", "entity"))
                     source_value = entity.get("source")
@@ -1685,7 +1702,12 @@ class StorageManager(metaclass=StorageManagerMeta):
                         continue
                     predicate = str(relation.get("predicate", "")) or "related_to"
                     weight = float(relation.get("weight", 1.0))
-                    provenance = dict(relation.get("provenance", {}))
+                    provenance_raw = relation.get("provenance")
+                    provenance = (
+                        to_json_dict(provenance_raw)
+                        if isinstance(provenance_raw, Mapping)
+                        else {}
+                    )
                     kg_graph.add_edge(
                         subj,
                         obj,
@@ -1700,7 +1722,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                 backend.persist_graph_relations(relation_list)
 
             if rdf_store is not None:
-                rdf_triples: list[tuple[rdflib.term.Node, rdflib.term.Node, rdflib.term.Node]] = []
+                rdf_triples: list[RDFTriple] = []
                 if triples:
                     for subj_id, pred, obj_id in triples:
                         subj_ref = rdflib.URIRef(f"urn:kg:{subj_id}")
@@ -1709,11 +1731,14 @@ class StorageManager(metaclass=StorageManagerMeta):
                         rdf_triples.append((subj_ref, pred_ref, obj_ref))
                 else:
                     for relation in relation_list:
-                        subj_id = relation.get("subject_id")
-                        obj_id = relation.get("object_id")
-                        if not subj_id or not obj_id:
+                        subj_id_raw = relation.get("subject_id")
+                        obj_id_raw = relation.get("object_id")
+                        if not subj_id_raw or not obj_id_raw:
                             continue
-                        predicate = str(relation.get("predicate", "related_to"))
+                        subj_id = str(subj_id_raw)
+                        obj_id = str(obj_id_raw)
+                        predicate_raw = relation.get("predicate", "related_to")
+                        predicate = str(predicate_raw) if predicate_raw is not None else "related_to"
                         rdf_triples.append(
                             (
                                 rdflib.URIRef(f"urn:kg:{subj_id}"),
@@ -1725,7 +1750,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     rdf_store.add(triple)
 
                 try:
-                    run_ontology_reasoner(rdf_store)
+                    run_ontology_reasoner(cast(rdflib.Graph, rdf_store))
                 except StorageError:
                     log.debug(
                         "Ontology reasoning skipped for knowledge graph update", exc_info=True
@@ -1793,11 +1818,11 @@ class StorageManager(metaclass=StorageManagerMeta):
                 is_update = True
                 if partial_update:
                     # Get the existing claim data
-                    existing_claim = StorageManager.context.graph.nodes[claim_id].copy()
+                    existing_claim = dict(StorageManager.context.graph.nodes[claim_id])
 
                     # Merge the new claim data with the existing data
                     # Note: We're careful not to modify the input claim
-                    merged_claim = existing_claim.copy()
+                    merged_claim = dict(existing_claim)
 
                     # Ensure the claim id is preserved for downstream persistence
                     merged_claim["id"] = claim_id
@@ -1854,10 +1879,16 @@ class StorageManager(metaclass=StorageManagerMeta):
             StorageManager._persist_to_networkx(claim_to_persist)
 
             audit_payload = claim_to_persist.get("audit")
-            if isinstance(audit_payload, Mapping):
-                payload = dict(audit_payload)
-                payload.setdefault("claim_id", claim_id)
-                StorageManager._persist_claim_audit_payload(payload)
+            if audit_payload:
+                if isinstance(audit_payload, ClaimAuditRecord):
+                    payload = audit_payload.to_payload()
+                elif isinstance(audit_payload, Mapping):
+                    payload = to_json_dict(audit_payload)
+                else:
+                    payload = None
+                if payload is not None:
+                    payload.setdefault("claim_id", claim_id)
+                    StorageManager._persist_claim_audit_payload(payload)
 
             # For database backends, use different methods for updates vs. new claims
             assert StorageManager.context.db_backend is not None
@@ -1927,11 +1958,17 @@ class StorageManager(metaclass=StorageManagerMeta):
         StorageManager.context.db_backend.update_claim(claim, partial_update)
 
         audit_payload = claim.get("audit")
-        if isinstance(audit_payload, Mapping):
-            payload = dict(audit_payload)
-            payload.setdefault("claim_id", claim.get("id", ""))
-            if payload.get("claim_id"):
-                StorageManager._persist_claim_audit_payload(payload)
+        if audit_payload:
+            if isinstance(audit_payload, ClaimAuditRecord):
+                payload = audit_payload.to_payload()
+            elif isinstance(audit_payload, Mapping):
+                payload = to_json_dict(audit_payload)
+            else:
+                payload = None
+            if payload is not None:
+                payload.setdefault("claim_id", claim.get("id", ""))
+                if payload.get("claim_id"):
+                    StorageManager._persist_claim_audit_payload(payload)
 
     @staticmethod
     def get_claim(claim_id: str) -> JSONDict:
@@ -1968,7 +2005,7 @@ class StorageManager(metaclass=StorageManagerMeta):
             obj = rdflib.Literal(v)
             StorageManager.context.rdf_store.add((subj, pred, obj))
         # Apply ontology reasoning so updates expose inferred triples
-        run_ontology_reasoner(StorageManager.context.rdf_store)
+        run_ontology_reasoner(cast(rdflib.Graph, StorageManager.context.rdf_store))
 
     @staticmethod
     def update_rdf_claim(claim: JSONDict, partial_update: bool = False) -> None:
@@ -2191,21 +2228,28 @@ class StorageManager(metaclass=StorageManagerMeta):
         """
 
         if _delegate and _delegate is not StorageManager:
-            getter = getattr(_delegate, "get_knowledge_graph", None)
-            if callable(getter):
-                return getter(create=create)
+            getter = cast(
+                Callable[[bool], nx.MultiDiGraph[Any] | None] | None,
+                getattr(_delegate, "get_knowledge_graph", None),
+            )
+            if getter is not None:
+                return getter(create)
 
-        with StorageManager.state.lock:
-            kg_graph = StorageManager.context.kg_graph
-            if kg_graph is None and create:
+        state = StorageManager.state
+        with state.lock:
+            context = state.context
+            kg_graph_opt = context.kg_graph
+            if kg_graph_opt is None and create:
                 try:
-                    setup(context=StorageManager.context, state=StorageManager.state)
+                    setup(context=context, state=StorageManager.state)
                 except Exception as exc:
                     raise NotFoundError("Knowledge graph not initialized", cause=exc)
-            kg_graph = StorageManager.context.kg_graph
-            if kg_graph is None and create:
-                raise NotFoundError("Knowledge graph not initialized")
-            return kg_graph
+            kg_graph_opt = context.kg_graph
+            if kg_graph_opt is None:
+                if create:
+                    raise NotFoundError("Knowledge graph not initialized")
+                return None
+            return kg_graph_opt
 
     @staticmethod
     def export_knowledge_graph_graphml() -> str:
@@ -2340,7 +2384,7 @@ class StorageManager(metaclass=StorageManagerMeta):
                     raise NotFoundError("RDF store not initialized", cause=e)
             if StorageManager.context.rdf_store is None:
                 raise NotFoundError("RDF store not initialized")
-            return StorageManager.context.rdf_store
+            return cast(rdflib.Graph, StorageManager.context.rdf_store)
 
     @staticmethod
     def get_rdf_backend_identifier() -> str:
@@ -2354,7 +2398,9 @@ class StorageManager(metaclass=StorageManagerMeta):
             NotFoundError: If the RDF store is not initialized.
         """
         store = StorageManager.get_rdf_store()
-        return getattr(store.store, "identifier", store.store.__class__.__name__)
+        backend_handle = cast(Any, store).store
+        identifier = getattr(backend_handle, "identifier", backend_handle.__class__.__name__)
+        return str(identifier)
 
     @staticmethod
     def has_vss() -> bool:
@@ -2436,25 +2482,26 @@ class StorageManager(metaclass=StorageManagerMeta):
         cfg = _get_config()
         store = StorageManager.get_rdf_store()
         configured_backend = getattr(cfg, "rdf_backend", "memory").lower()
-        actual_backend = getattr(
-            store.store,
-            "identifier",
-            store.store.__class__.__name__,
+        backend_handle = cast(Any, store).store
+        actual_backend = str(
+            getattr(backend_handle, "identifier", backend_handle.__class__.__name__)
         ).lower()
         if configured_backend == "memory" and actual_backend not in {"memory", "iomemory"}:
             preserved_triples = list(store.triples((None, None, None)))
-            preserved_namespaces = list(store.namespaces())
+            preserved_namespaces = list(cast(Any, store).namespaces())
             with StorageManager.state.lock:
                 _reset_context(StorageManager.context)
                 setup(context=StorageManager.context, state=StorageManager.state)
-                store = StorageManager.context.rdf_store or StorageManager.get_rdf_store()
+                restored = StorageManager.context.rdf_store or StorageManager.get_rdf_store()
+                rdf_store = cast(rdflib.Graph, restored)
                 for prefix, namespace in preserved_namespaces:
                     try:
-                        store.bind(prefix, namespace, override=True)
+                        cast(Any, rdf_store).bind(prefix, namespace, override=True)
                     except Exception:  # pragma: no cover - namespace restoration best-effort
                         log.debug("Failed to restore namespace binding", exc_info=True)
                 for triple in preserved_triples:
-                    store.add(triple)
+                    rdf_store.add(triple)
+                store = rdf_store
         run_ontology_reasoner(store, engine)
 
     @staticmethod

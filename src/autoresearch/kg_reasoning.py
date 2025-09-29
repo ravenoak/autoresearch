@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any, Callable, Dict, Optional, Protocol, cast
+from typing import Any, Callable, Dict, Optional, Protocol, Sized, cast
 
 import logging
 import threading
@@ -140,7 +140,7 @@ def run_ontology_reasoner(
     reasoner = str(reasoner_setting)
 
     logger = logging.getLogger(__name__)
-    triple_count = len(store)
+    triple_count = len(cast(Sized, store))
     logger.info(
         "Starting ontology reasoning with %d triples using %s", triple_count, reasoner
     )
@@ -224,14 +224,14 @@ def run_ontology_reasoner(
     elapsed = time.perf_counter() - start_time
     logger.info(
         "Completed ontology reasoning with %d triples in %.2f seconds",
-        len(store),
+        len(cast(Sized, store)),
         elapsed,
     )
 
 
 def query_with_reasoning(
     store: rdflib.Graph, query: str, engine: Optional[str] = None
-):
+) -> rdflib.query.Result:
     """Run a SPARQL query with ontology reasoning applied first.
 
     Args:
