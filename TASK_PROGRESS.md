@@ -1,5 +1,13 @@
 # Autoresearch Project - Task Progress
 
+As of **2025-09-29** at 01:07 UTC the unused `os` import in
+`tests/integration/test_streamlit_gui.py` is gone, the pandas fallback stub
+remains, and targeted lint plus UI regression runs are green. Fresh logs at
+`baseline/logs/flake8-20250929T010657Z.log` and
+`baseline/logs/pytest-streamlit-20250929T010704Z.log` capture the clean
+`flake8` exit and the expected Streamlit skip banner under the `.[test]`
+extra.
+
 As of **2025-09-29** at 00:08 UTC we reran `uv run task release:alpha` after
 closing out the deep research phase tracking below. Extras synced before
 `uv run flake8 src tests` reported the unused `os` import in
