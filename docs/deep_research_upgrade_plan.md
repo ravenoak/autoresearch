@@ -29,11 +29,19 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof, including CLI
      orchestration to confirm telemetry exposes verification badges end to end.
-   - **Status:** Completed. Release sweep logs show the gate recalibrating after
-     VSS evidence replay and the CLI path helper coverage that guards the Task
-     entrypoint. Scope expanded slightly to persist the telemetry used in those
-     checks so release pipelines can audit gate thresholds post-run.
-     【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+   - **Status:** In progress. The September 29 rerun confirms the scout gate and
+     lint stages pass, but 93 strict typing errors still block `task verify`
+     across the HTTP session adapters, evaluation harness, Streamlit CLI, and
+     distributed executor protocols. The matching `task coverage` sweep synced
+     every non-GPU extra before stopping at
+     `tests/unit/test_additional_coverage.py`
+     (`test_render_evaluation_summary_joins_artifacts`) after a manual
+     interrupt, so coverage evidence remains incomplete while TestPyPI stays
+     deferred under the release directive.
+     【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
+     【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
+     【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
+     【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
 2. **Phase 2 – Planner and Coordinator Evolution**
    - Promote planner outputs into a schedulable task graph.
    - Capture ReAct traces for transparency and replay.
