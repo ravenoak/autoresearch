@@ -26,6 +26,8 @@ keep truthfulness, verifiability, and cost discipline in balance.
      tailor the decision boundary.
    - Extend the evidence pipeline to record per-claim support status.
    - Update response formats so clients can render audit tables.
+   - Add behavior coverage for the AUTO planner → scout gate → verify loop so
+     gate decisions and audit badges stay regression-proof.
 2. **Phase 2 – Planner and Coordinator Evolution**
    - Promote planner outputs into a schedulable task graph.
    - Capture ReAct traces for transparency and replay.
