@@ -75,7 +75,7 @@ class AgentFactoryProtocol(Protocol):
     """Protocol for factories that resolve agent instances by name."""
 
     @staticmethod
-    def get(name: str) -> AgentTestProtocol: ...
+    def get(name: str, llm_adapter: object | None = None) -> AgentTestProtocol: ...
 
 
 class QueryRunner(Protocol):

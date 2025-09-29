@@ -435,6 +435,28 @@ def assert_cli_verification_loop(auto_cli_cycle: dict[str, Any]) -> None:
     assert badge_rollup.get("needs_review", 0) >= 1
 
 
+@then("the AUTO metrics should record scout samples and agreement")
+def assert_cli_scout_samples(auto_cli_cycle: dict[str, Any]) -> None:
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    response: QueryResponse = auto_cli_cycle["response"]
+    metrics: dict[str, Any] = payload.get("metrics", {})
+    auto_mode = metrics.get("auto_mode", {})
+    samples = auto_mode.get("scout_samples")
+    assert isinstance(samples, list) and samples
+    assert auto_mode.get("scout_sample_count") == len(samples)
+    agreement = auto_mode.get("scout_agreement")
+    assert agreement is not None
+    for sample in samples:
+        assert "answer" in sample
+        assert "claims" in sample
+    scout_stage = metrics.get("scout_stage", {})
+    assert isinstance(scout_stage, dict)
+    heuristics = scout_stage.get("heuristics", {})
+    assert heuristics.get("scout_agreement") == agreement
+    assert response.metrics.get("scout_samples") == samples
+    assert response.metrics.get("auto_mode", {}).get("scout_agreement") == agreement
+
+
 @then("the CLI should exit directly without escalation")
 def assert_cli_direct_exit(auto_cli_cycle: dict[str, Any]) -> None:
     payload: dict[str, Any] = auto_cli_cycle["payload"]

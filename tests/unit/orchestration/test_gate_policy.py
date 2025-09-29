@@ -99,9 +99,12 @@ def test_scout_gate_reduces_loops_when_signals_low() -> None:
     assert "retrieval_confidence" in decision.heuristics
     assert "graph_contradiction" in decision.heuristics
     assert "graph_similarity" in decision.heuristics
+    assert decision.heuristics.get("scout_agreement") == 1.0
     scout_stage = state.metadata.get("scout_stage", {})
     assert scout_stage.get("heuristics") == decision.heuristics
     assert scout_stage.get("rationales") == decision.rationales
+    agreement = scout_stage.get("agreement", {})
+    assert agreement.get("sample_count") == 0
     assert scout_stage.get("snippets"), "scout snippets should be persisted"
     assert state.metadata["scout_retrieval_sets"]
     assert state.metadata["scout_entailment_scores"]
@@ -165,6 +168,7 @@ def test_scout_gate_flags_coverage_gap_and_confidence() -> None:
         loops=3,
         gate_coverage_gap_threshold=0.2,
         gate_retrieval_confidence_threshold=0.6,
+        gate_scout_agreement_threshold=0.9,
     )
     state = QueryState(
         query="Evaluate conflicting climate claims",
@@ -181,6 +185,24 @@ def test_scout_gate_flags_coverage_gap_and_confidence() -> None:
         {"score": 0.3, "support": 0.2, "conflict": 0.8},
         {"score": 0.4, "support": 0.35, "conflict": 0.7},
     ]
+    state.metadata["scout_samples"] = [
+        {
+            "index": 0,
+            "answer": "Claim one is credible based on current data.",
+            "claims": [
+                {"id": "c1", "content": "Claim one is credible."},
+                {"id": "c2", "content": "Claim two lacks support."},
+            ],
+        },
+        {
+            "index": 1,
+            "answer": "Claim one is refuted and claim two is verified.",
+            "claims": [
+                {"id": "c1", "content": "Claim one is refuted."},
+                {"id": "c2", "content": "Claim two is verified."},
+            ],
+        },
+    ]
     metrics = OrchestrationMetrics()
     policy = ScoutGatePolicy(config)
 
@@ -194,8 +216,10 @@ def test_scout_gate_flags_coverage_gap_and_confidence() -> None:
     assert decision.should_debate is True
     assert decision.heuristics["coverage_gap"] > 0.0
     assert decision.heuristics["retrieval_confidence"] < 0.6
+    assert decision.heuristics["scout_agreement"] < config.gate_scout_agreement_threshold
     assert decision.rationales["coverage_gap"]["triggered"] is True
     assert decision.rationales["retrieval_confidence"]["triggered"] is True
+    assert decision.rationales["scout_agreement"]["triggered"] is True
     assert metrics.gate_events[-1]["coverage"]["total_claims"] == 3
 
 

@@ -6,6 +6,9 @@ Reference issues by slugged filename (for example,
 `issues/archive/example-issue.md`) and avoid numeric prefixes.
 
 ## [Unreleased]
+- Added AUTO-mode scout sampling controls (`core.auto_scout_samples`) and
+  agreement gating (`core.gate_scout_agreement_threshold`) so per-sample scout
+  metadata persists for heuristics, telemetry, and regression coverage.
 - Strengthened Streamlit UI typing by expanding local stubs and optional
   dependency shims so strict mypy passes on the UI stack without introducing
   runtime dependencies.

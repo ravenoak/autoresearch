@@ -43,6 +43,10 @@ Operators can tune the gate policy through configuration or the CLI/UI:
   `core.gate_complexity_threshold` adjust exit heuristics.
 - `core.gate_user_overrides` accepts JSON overrides to force exit/debate or
   pin specific heuristic scores.
+- `core.auto_scout_samples` configures the count of fast Synthesizer scout
+  probes captured before the gate decision.
+- `core.gate_scout_agreement_threshold` sets the minimum agreement score
+  among scout samples required to stay in direct mode.
 
 ### Planner task graph schema
 
