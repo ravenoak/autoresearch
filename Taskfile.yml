@@ -367,16 +367,27 @@ tasks:
             $(printf ' --extra %s' $extras) \
             {{if contains .EXTRAS "gpu"}}--find-links wheels/gpu{{end}}
       - task check-env EXTRAS="{{.EXTRAS}}"
-      - uv run flake8 src tests
-      - uv run mypy src
-      - uv run mypy tests/unit tests/integration
+      - |
+          set -eu
+          uv run flake8 src tests
+          echo "[verify][lint] flake8 passed"
+      - |
+          set -eu
+          uv run mypy src
+          echo "[verify][mypy] src passed"
+      - |
+          set -eu
+          uv run mypy tests/unit tests/integration
+          echo "[verify][mypy] tests passed"
       - task: mypy:strict-suite
+      - echo "[verify][mypy] strict suite passed"
       - task lint-specs
+      - echo "[verify][lint] spec lint passed"
       - task check-release-metadata
       - uv run python scripts/check_spec_tests.py
       - task: coverage
         vars:
-          EXTRAS: "{{.EXTRAS}}"
+          EXTRAS: "{{.USER_EXTRAS}}"
       - uv run coverage html
       - uv run coverage report --fail-under={{.COVERAGE_MINIMUM}}
       - uv run python scripts/check_token_regression.py --threshold 5
