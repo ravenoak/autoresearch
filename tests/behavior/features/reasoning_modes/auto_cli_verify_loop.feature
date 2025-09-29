@@ -10,3 +10,8 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     Then the CLI scout gate decision should escalate to debate
     And the CLI audit badges should include "supported" and "needs_review"
     And the CLI output should record verification loop metrics
+
+  Scenario: AUTO mode CLI run exits directly when the scout gate declines debate
+    Given the scout gate will force a direct exit
+    When I run the AUTO reasoning CLI for query "scout gate direct exit rehearsal"
+    Then the CLI should exit directly without escalation

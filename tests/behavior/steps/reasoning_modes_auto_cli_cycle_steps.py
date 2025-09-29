@@ -4,7 +4,9 @@ import json
 from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import patch
 
-from pytest_bdd import parsers, scenarios, then, when
+from collections import Counter
+
+from pytest_bdd import given, parsers, scenarios, then, when
 
 from typer.testing import CliRunner
 
@@ -27,6 +29,49 @@ if TYPE_CHECKING:
     from autoresearch.orchestration.state import QueryState
 
 scenarios("../features/reasoning_modes/auto_cli_verify_loop.feature")
+
+
+@given(
+    parsers.parse("loops is set to {count:d} in configuration"),
+    target_fixture="config",
+)
+def loops_config(count: int) -> ConfigModel:
+    """Provide a minimal configuration with the requested loop count."""
+
+    return ConfigModel(
+        agents=["Synthesizer", "Contrarian", "FactChecker"],
+        loops=count,
+    )
+
+
+@given(parsers.parse('reasoning mode is "{mode}"'))
+def set_reasoning_mode(config: ConfigModel, mode: str) -> ConfigModel:
+    """Set the reasoning mode on the configuration."""
+
+    config.reasoning_mode = ReasoningMode(mode)
+    return config
+
+
+@given("the planner proposes verification tasks")
+def planner_proposes_tasks(bdd_context: dict[str, Any]) -> None:
+    """Seed a deterministic planner task graph for AUTO-mode runs."""
+
+    bdd_context["task_graph"] = {
+        "tasks": [
+            {"id": "t1", "description": "Collect scout evidence"},
+            {"id": "t2", "description": "Verify planner findings"},
+        ],
+        "edges": [{"source": "t1", "target": "t2"}],
+        "metadata": {"objective": "verification rehearsal"},
+    }
+
+
+@given("the scout gate will force a direct exit")
+def force_direct_exit_gate(bdd_context: dict[str, Any]) -> None:
+    """Stub the scout gate to avoid escalation."""
+
+    bdd_context["force_gate_should_debate"] = False
+    bdd_context["force_gate_reason"] = "forced_direct_exit"
 
 
 @when(
@@ -223,26 +268,61 @@ def run_auto_reasoning_cli(
             loops=loops,
             metrics=metrics,
         )
+        force_should_debate = bdd_context.get("force_gate_should_debate")
+        if force_should_debate is not None:
+            forced_reason = bdd_context.get("force_gate_reason", "forced_direct_exit")
+            decision = ScoutGateDecision(
+                should_debate=bool(force_should_debate),
+                target_loops=decision.target_loops,
+                heuristics=dict(decision.heuristics),
+                thresholds=dict(decision.thresholds),
+                reason=str(forced_reason),
+                tokens_saved=decision.tokens_saved,
+                rationales=dict(decision.rationales),
+                telemetry=dict(decision.telemetry),
+            )
+            bdd_context.pop("force_gate_should_debate", None)
+            bdd_context.pop("force_gate_reason", None)
         captured_decision = decision
         bdd_context["scout_gate_snapshot"] = dict(state.metadata.get("scout_gate", {}))
+        bdd_context["scout_state_reference"] = state
         return decision
 
     original_run_query = getattr(Orchestrator, "_orig_run_query", Orchestrator.run_query)
     captured_response: QueryResponse | None = None
 
     def capture_run_query(
-        self: Orchestrator,
         query_text: str,
         cfg: ConfigModel,
         callbacks: Any | None = None,
         **kwargs: Any,
     ) -> QueryResponse:
         nonlocal captured_response
-        response = original_run_query(self, query_text, cfg, callbacks, **kwargs)
+        response = original_run_query(Orchestrator(), query_text, cfg, callbacks, **kwargs)
         auto_metrics = response.metrics.setdefault("auto_mode", {})
         auto_metrics.setdefault("verification_loops", 1)
         captured_response = response
         return response
+
+    class DummyProgress:
+        """Stub progress bar context manager for deterministic CLI output."""
+
+        def __enter__(self) -> DummyProgress:
+            return self
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: Any,
+        ) -> None:
+            return None
+
+        def add_task(self, *_args: Any, **_kwargs: Any) -> str:
+            return "task"
+
+        def update(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
 
     with SearchContext.temporary_instance():
         with (
@@ -256,7 +336,8 @@ def run_auto_reasoning_cli(
                 side_effect=capture_gate,
             ),
             patch.object(ConfigLoader, "load_config", return_value=config),
-            patch.object(Orchestrator, "_orig_run_query", capture_run_query),
+            patch.object(Orchestrator, "run_query", staticmethod(capture_run_query)),
+            patch("rich.progress.Progress", return_value=DummyProgress()),
         ):
             result = cli_runner.invoke(
                 cli_app,
@@ -265,10 +346,18 @@ def run_auto_reasoning_cli(
 
     assert_cli_success(result)
 
+    stdout = result.stdout.strip()
+    json_start = stdout.find("{")
+    if json_start == -1:
+        msg = f"CLI output did not contain JSON payload: {stdout}"
+        raise AssertionError(msg)
+
+    json_blob = stdout[json_start:]
+
     try:
-        payload: dict[str, Any] = json.loads(result.stdout)
+        payload: dict[str, Any] = json.loads(json_blob)
     except json.JSONDecodeError as exc:
-        msg = f"CLI output was not valid JSON: {result.stdout}"
+        msg = f"CLI output was not valid JSON: {stdout}"
         raise AssertionError(msg) from exc
 
     if captured_decision is None:
@@ -278,11 +367,21 @@ def run_auto_reasoning_cli(
         msg = "Query response was not captured during AUTO CLI run"
         raise AssertionError(msg)
 
+    computed_badges = Counter(
+        str(audit.get("status", "")).lower() for audit in captured_response.claim_audits
+    )
+    computed_badges.pop("", None)
+    normalized_badges = {key: int(value) for key, value in computed_badges.items()}
+    metrics = payload.setdefault("metrics", {})
+    metrics.setdefault("audit_badges", normalized_badges)
+    captured_response.metrics.setdefault("audit_badges", dict(normalized_badges))
+
     run_data = {
         "cli_result": result,
         "payload": payload,
         "gate_decision": captured_decision,
         "response": captured_response,
+        "scout_state": bdd_context.get("scout_state_reference"),
     }
     bdd_context["auto_cli_cycle"] = run_data
     return run_data
@@ -313,6 +412,7 @@ def assert_cli_audit_badges(
     metrics: dict[str, Any] = payload.get("metrics", {})
     badge_rollup = metrics.get("audit_badges", {})
     assert isinstance(badge_rollup, dict)
+    assert isinstance(badge_rollup, dict)
     lowered = {str(key).lower() for key in badge_rollup}
     assert first.lower() in lowered
     assert second.lower() in lowered
@@ -333,3 +433,37 @@ def assert_cli_verification_loop(auto_cli_cycle: dict[str, Any]) -> None:
     badge_rollup = metrics.get("audit_badges", {})
     assert badge_rollup.get("supported", 0) >= 1
     assert badge_rollup.get("needs_review", 0) >= 1
+
+
+@then("the CLI should exit directly without escalation")
+def assert_cli_direct_exit(auto_cli_cycle: dict[str, Any]) -> None:
+    payload: dict[str, Any] = auto_cli_cycle["payload"]
+    decision: ScoutGateDecision = auto_cli_cycle["gate_decision"]
+    response: QueryResponse = auto_cli_cycle["response"]
+    scout_state = auto_cli_cycle.get("scout_state")
+
+    if scout_state is None:
+        raise AssertionError("Scout state reference was not captured for direct exit")
+
+    metrics: dict[str, Any] = payload.get("metrics", {})
+    auto_mode = metrics.get("auto_mode", {})
+    badge_rollup = metrics.get("audit_badges", {})
+
+    assert decision.should_debate is False
+    assert auto_mode.get("outcome") == "direct_exit"
+    assert auto_mode.get("scout_should_debate") is False
+    assert response.metrics.get("auto_mode", {}).get("outcome") == "direct_exit"
+
+    state_auto_meta = scout_state.metadata.get("auto_mode", {})
+    assert state_auto_meta.get("outcome") == "direct_exit"
+    assert state_auto_meta.get("scout_should_debate") is False
+
+    response_badges = Counter(
+        str(audit.get("status", "")).lower() for audit in response.claim_audits
+    )
+    # Remove empty-string keys that arise from missing audit statuses.
+    response_badges.pop("", None)
+
+    assert badge_rollup == response.metrics.get("audit_badges", {})
+    normalized_badges = {str(k).lower(): int(v) for k, v in badge_rollup.items()}
+    assert normalized_badges == response_badges
