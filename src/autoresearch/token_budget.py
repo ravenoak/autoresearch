@@ -108,6 +108,7 @@ class RoutingDecision:
     cost_before: float | None
     cost_after: float | None
     pressure_ratio: float
+    metadata: dict[str, Any] | None = None
 
     def cost_savings(self) -> float | None:
         """Return the estimated currency saved by routing decisions."""
@@ -132,6 +133,8 @@ class RoutingDecision:
             "cost_savings": self.cost_savings(),
             "pressure_ratio": self.pressure_ratio,
         }
+        if self.metadata:
+            payload["metadata"] = dict(self.metadata)
         if self.usage is not None:
             payload.update(
                 {

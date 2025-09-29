@@ -56,9 +56,38 @@ plot the following series to track performance regressions:
   including the baseline and selected models.
 - `model_routing_cost_savings`: cumulative difference between baseline and
   routed cost estimates derived from the logged decisions.
+- `model_routing_overrides`: the gate and planner escalation requests that
+  forced more capable models into the debate.
+- `model_routing_strategy`: the active routing profile (for example,
+  `balanced`, `cost_saver`, or `premium`) recorded with each run.
 
 These signals make it easy to confirm that cost savings materialise without
 raising the latency envelope for latency-sensitive agents.
+
+The `OrchestrationMetrics.persist_model_routing_metrics` helper appends these
+series as JSON Lines to ``AUTORESEARCH_ROUTING_METRICS`` (defaulting to
+``tests/integration/baselines/model_routing.json``). Dashboards can tail this
+file to display the chosen strategy, overrides, latency percentiles, and cost
+deltas without re-running orchestrations.
+
+## Role-Aware Routing Policies
+
+`config.model_routing.role_policies` maps each agent to preferred and allowed
+models, a token share or explicit budget, and a `confidence_threshold` that
+triggers escalations. When the scout gate or planner reports confidence below
+this threshold, the orchestrator registers a routing override that prioritises
+the policy's `escalation_model` and records the override in telemetry. This
+ensures expensive models are only invoked when evidence coverage looks weak or
+the planner produces low-confidence plans.
+
+## Routing Strategy Comparisons
+
+`EvaluationHarness.compare_routing_strategies` summarises accuracy, latency,
+token usage, and cost deltas between a baseline configuration and alternative
+model routing strategies. The helper accepts two sets of
+`EvaluationSummary` results and returns the difference in key metrics so teams
+can quantify the trade-offs between aggressive cost-saving strategies and
+premium accuracy-focused profiles before rolling them out broadly.
 
 ## Retrieval Cache and Parallel Controls
 

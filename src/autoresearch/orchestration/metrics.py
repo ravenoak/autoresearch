@@ -6,10 +6,12 @@ instead of unchecked ``type: ignore`` directives.
 """
 
 import importlib
+import json
 import logging
 import math
 import time
 from collections.abc import Iterator, Mapping, Sequence
+from dataclasses import replace
 from contextlib import contextmanager, suppress
 from os import getenv
 from pathlib import Path
@@ -26,10 +28,16 @@ from autoresearch.token_budget import (
 )
 
 from .circuit_breaker import CircuitBreakerState
+from .model_routing import (
+    RoutingOverrideRequest,
+    ingest_state_overrides,
+    resolve_agent_directives,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..config.models import ConfigModel
     from .orchestration_utils import ScoutGateDecision
+    from .state import QueryState
 
 log = logging.getLogger(__name__)
 
@@ -408,6 +416,8 @@ class OrchestrationMetrics:
         self.agent_token_samples: dict[str, list[tuple[int, int]]] = {}
         self._max_sample_history = 20
         self.routing_decisions: list[RoutingDecision] = []
+        self.routing_override_requests: list[RoutingOverrideRequest] = []
+        self.routing_strategy: str | None = None
         self.graph_ingestions: list[dict[str, Any]] = []
 
     def start_cycle(self) -> None:
@@ -482,6 +492,49 @@ class OrchestrationMetrics:
     ) -> None:
         """Record the circuit breaker ``state`` for ``agent_name``."""
         self.circuit_breakers[agent_name] = state
+
+    def _register_override(
+        self, override: RoutingOverrideRequest
+    ) -> RoutingOverrideRequest:
+        """Deduplicate and record routing overrides."""
+
+        for existing in self.routing_override_requests:
+            if (
+                existing.agent.lower() == override.agent.lower()
+                and existing.source == override.source
+                and existing.reason == override.reason
+                and existing.requested_model == override.requested_model
+                and existing.threshold == override.threshold
+            ):
+                return existing
+        self.routing_override_requests.append(override)
+        log.info("Registered routing override", extra=override.as_log_extra())
+        return override
+
+    def request_model_escalation(
+        self,
+        agent_name: str,
+        *,
+        model: str | None,
+        source: str,
+        reason: str,
+        confidence: float | None = None,
+        threshold: float | None = None,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> RoutingOverrideRequest:
+        """Register a routing override triggered by control policies."""
+
+        extra_metadata = dict(metadata) if isinstance(metadata, Mapping) else {}
+        override = RoutingOverrideRequest(
+            agent=agent_name,
+            requested_model=model,
+            source=source,
+            reason=reason,
+            confidence=confidence,
+            threshold=threshold,
+            metadata=extra_metadata,
+        )
+        return self._register_override(override)
 
     def record_gate_decision(self, decision: "ScoutGateDecision") -> None:
         """Record the scout gate ``decision`` for telemetry and analysis."""
@@ -910,6 +963,10 @@ class OrchestrationMetrics:
                 "total": total_savings,
                 "by_agent": savings_by_agent,
             },
+            "model_routing_overrides": [
+                override.to_dict() for override in self.routing_override_requests
+            ],
+            "model_routing_strategy": self.routing_strategy,
             "graph_ingestion": graph_summary_payload or {},
         }
 
@@ -944,7 +1001,12 @@ class OrchestrationMetrics:
             return 1.0
         return 1.0 / max(len(agents), 1)
 
-    def apply_model_routing(self, agent_name: str, config: "ConfigModel") -> str | None:
+    def apply_model_routing(
+        self,
+        agent_name: str,
+        config: "ConfigModel",
+        state: "QueryState | None" = None,
+    ) -> str | None:
         """Update ``config`` with a budget-aware model recommendation."""
 
         routing_cfg = getattr(config, "model_routing", None)
@@ -955,27 +1017,44 @@ class OrchestrationMetrics:
         ):
             return None
 
+        self.routing_strategy = routing_cfg.strategy_name
+
+        if state is not None:
+            overrides_payload = state.metadata.get("routing_overrides")
+            state_overrides = ingest_state_overrides(overrides_payload)
+            if state_overrides:
+                state.metadata["routing_overrides"] = []
+                for override in state_overrides:
+                    self._register_override(override)
+
         agent_cfg = config.agent_config.get(agent_name)
-        preferred = agent_cfg.preferred_models if agent_cfg else None
-        allowed = agent_cfg.allowed_models if agent_cfg else None
-        if preferred is not None and len(preferred) == 0:
-            preferred = None
-        if allowed is not None and len(allowed) == 0:
-            allowed = None
-        latency_slo = agent_cfg.latency_slo_ms if agent_cfg else None
-        current_model = (
-            agent_cfg.model if agent_cfg and agent_cfg.model else config.default_model
+        directives = resolve_agent_directives(
+            agent_name,
+            config,
+            routing_cfg,
+            agent_cfg,
+            self.routing_override_requests,
         )
 
-        token_share = agent_cfg.token_share if agent_cfg else None
+        token_share = directives.token_share
         if token_share is None:
             token_share = self._default_token_share(config, agent_name)
-        else:
-            token_share = max(0.0, min(float(token_share), 1.0))
-
-        agent_budget_tokens = None
-        if config.token_budget is not None:
+        agent_budget_tokens = directives.budget_tokens
+        if agent_budget_tokens is None and config.token_budget is not None:
             agent_budget_tokens = max(config.token_budget * token_share, 0.0)
+
+        latency_slo = directives.latency_slo_ms
+        allowed = directives.allowed_models
+        preferred = directives.preferred_models
+        if allowed is not None and not allowed:
+            allowed = None
+        if preferred is not None and not preferred:
+            preferred = None
+        current_model = (
+            agent_cfg.model
+            if agent_cfg and agent_cfg.model
+            else directives.default_model or config.default_model
+        )
 
         usage = self.get_agent_usage_stats(
             agent_name, routing_cfg.default_latency_slo_ms
@@ -995,18 +1074,37 @@ class OrchestrationMetrics:
             preferred_models=preferred,
             current_model=current_model,
         )
+
+        metadata: dict[str, Any] = {
+            "policy": directives.policy_name,
+            "strategy": directives.strategy_name,
+            "token_share": token_share,
+            "budget_tokens": agent_budget_tokens,
+        }
+        if directives.override is not None:
+            metadata["override"] = directives.override.to_dict()
+        decision = replace(decision, metadata=metadata)
         self.routing_decisions.append(decision)
+
         selected = decision.selected_model
-        if not selected or selected == current_model:
-            return selected
+        if not selected:
+            return None
 
         from ..config.models import AgentConfig  # Local import to avoid cycles
 
         agent_cfg_obj = agent_cfg or config.agent_config.setdefault(
             agent_name, AgentConfig()
         )
+        previous_value = agent_cfg_obj.model
         agent_cfg_obj.model = selected
-        log.info("Applied budget-aware model routing", extra=decision.as_log_extra())
+
+        if previous_value != selected:
+            log.info("Applied budget-aware model routing", extra=decision.as_log_extra())
+        else:
+            log.debug(
+                "Routing retained existing model", extra=decision.as_log_extra()
+            )
+
         return selected
 
     # ------------------------------------------------------------------
@@ -1054,6 +1152,29 @@ class OrchestrationMetrics:
 
         data[query] = self._total_tokens()
         path.write_text(json.dumps(data, indent=2))
+
+    def persist_model_routing_metrics(self, path: Path | None = None) -> None:
+        """Append routing telemetry to ``path`` for dashboard ingestion."""
+
+        summary = self.get_summary()
+        record = {
+            "timestamp": time.time(),
+            "strategy": summary.get("model_routing_strategy"),
+            "decisions": summary.get("model_routing_decisions", []),
+            "overrides": summary.get("model_routing_overrides", []),
+            "agent_latency_p95_ms": summary.get("agent_latency_p95_ms", {}),
+            "agent_avg_tokens": summary.get("agent_avg_tokens", {}),
+        }
+        if path is None:
+            path = Path(
+                getenv(
+                    "AUTORESEARCH_ROUTING_METRICS",
+                    "tests/integration/baselines/model_routing.json",
+                )
+            )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record) + "\n")
 
     def check_query_regression(
         self, query: str, baseline_path: Path, threshold: int = 0

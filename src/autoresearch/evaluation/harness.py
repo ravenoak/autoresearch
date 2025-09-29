@@ -45,6 +45,7 @@ class ExampleResult:
     routing_delta: Optional[float] = None
     routing_decision_count: Optional[int] = None
     gate_events: Sequence[Mapping[str, Any]] = field(default_factory=list)
+    routing_strategy: Optional[str] = None
     recorded_at: datetime = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
@@ -80,12 +81,26 @@ class EvaluationSummary:
     avg_routing_delta: Optional[float]
     total_routing_delta: Optional[float]
     avg_routing_decisions: Optional[float]
+    routing_strategy: Optional[str]
     config_signature: str
     duckdb_path: Optional[Path]
     example_parquet: Optional[Path]
     summary_parquet: Optional[Path]
     example_csv: Optional[Path]
     summary_csv: Optional[Path]
+
+
+@dataclass
+class RoutingStrategyComparison:
+    """Delta between two routing strategies on a single dataset."""
+
+    dataset: str
+    baseline_strategy: str
+    variant_strategy: str
+    accuracy_delta: Optional[float]
+    routing_delta_diff: Optional[float]
+    latency_delta: Optional[float]
+    tokens_delta: Optional[float]
 
 
 class EvaluationHarness:
@@ -237,6 +252,7 @@ class EvaluationHarness:
         routing_delta, routing_decision_count = self._routing_metrics(
             execution_metrics
         )
+        routing_strategy = execution_metrics.get("model_routing_strategy")
 
         result = ExampleResult(
             dataset=example.dataset,
@@ -258,6 +274,7 @@ class EvaluationHarness:
             routing_delta=routing_delta,
             routing_decision_count=routing_decision_count,
             gate_events=gate_events_raw,
+            routing_strategy=routing_strategy,
             metadata={
                 "example_metadata": example.metadata,
                 "claim_audits": claim_audits,
@@ -300,6 +317,14 @@ class EvaluationHarness:
                 for r in results
             ]
         )
+        routing_strategy = next(
+            (
+                result.routing_strategy
+                for result in results
+                if result.routing_strategy
+            ),
+            None,
+        )
 
         gate_decisions = [r.gate_should_debate for r in results if r.gate_should_debate is not None]
         gated_examples = len(gate_decisions)
@@ -341,6 +366,7 @@ class EvaluationHarness:
                 avg_routing_delta,
                 total_routing_delta,
                 avg_routing_decisions,
+                routing_strategy,
                 config_signature,
             )
         if store_parquet:
@@ -374,6 +400,7 @@ class EvaluationHarness:
             avg_routing_delta=avg_routing_delta,
             total_routing_delta=total_routing_delta,
             avg_routing_decisions=avg_routing_decisions,
+            routing_strategy=routing_strategy,
             config_signature=config_signature,
             duckdb_path=self.duckdb_path if store_duckdb else None,
             example_parquet=example_parquet,
@@ -409,6 +436,7 @@ class EvaluationHarness:
                     gate_events JSON,
                     metadata JSON,
                     recorded_at TIMESTAMP,
+                    routing_strategy VARCHAR,
                     config_signature VARCHAR
                 )
                 """
@@ -430,6 +458,9 @@ class EvaluationHarness:
             )
             conn.execute(
                 "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS routing_decision_count INTEGER"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_results ADD COLUMN IF NOT EXISTS routing_strategy VARCHAR"
             )
             conn.execute(
                 """
@@ -454,6 +485,7 @@ class EvaluationHarness:
                     avg_routing_delta DOUBLE,
                     total_routing_delta DOUBLE,
                     avg_routing_decisions DOUBLE,
+                    routing_strategy VARCHAR,
                     config_signature VARCHAR
                 )
                 """
@@ -481,6 +513,9 @@ class EvaluationHarness:
             )
             conn.execute(
                 "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS avg_routing_decisions DOUBLE"
+            )
+            conn.execute(
+                "ALTER TABLE evaluation_run_summary ADD COLUMN IF NOT EXISTS routing_strategy VARCHAR"
             )
 
     def _persist_examples(
@@ -513,13 +548,14 @@ class EvaluationHarness:
                 json.dumps(result.gate_events, default=str),
                 json.dumps(result.metadata, default=str),
                 result.recorded_at,
+                result.routing_strategy,
                 config_signature,
             )
             for result in results
         ]
         insert_sql = (
             "INSERT INTO evaluation_results VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.executemany(insert_sql, rows)
@@ -555,11 +591,12 @@ class EvaluationHarness:
         avg_routing_delta: Optional[float],
         total_routing_delta: Optional[float],
         avg_routing_decisions: Optional[float],
+        routing_strategy: Optional[str],
         config_signature: str,
     ) -> None:
         insert_sql = (
             "INSERT INTO evaluation_run_summary VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         with duckdb.connect(self._duckdb_uri()) as conn:
             conn.execute(
@@ -585,6 +622,7 @@ class EvaluationHarness:
                     avg_routing_delta,
                     total_routing_delta,
                     avg_routing_decisions,
+                    routing_strategy,
                     config_signature,
                 ),
             )
@@ -642,6 +680,45 @@ class EvaluationHarness:
         if not filtered:
             return None
         return sum(filtered)
+
+    @staticmethod
+    def compare_routing_strategies(
+        baseline: Sequence[EvaluationSummary],
+        variants: Sequence[EvaluationSummary],
+    ) -> list[RoutingStrategyComparison]:
+        """Compare routing accuracy and cost deltas across strategies."""
+
+        def _delta(base_val: Optional[float], variant_val: Optional[float]) -> Optional[float]:
+            if base_val is None or variant_val is None:
+                return None
+            return variant_val - base_val
+
+        baseline_map = {summary.dataset: summary for summary in baseline}
+        comparisons: list[RoutingStrategyComparison] = []
+        for variant in variants:
+            base = baseline_map.get(variant.dataset)
+            if base is None:
+                continue
+            comparisons.append(
+                RoutingStrategyComparison(
+                    dataset=variant.dataset,
+                    baseline_strategy=base.routing_strategy
+                    or base.config_signature,
+                    variant_strategy=variant.routing_strategy
+                    or variant.config_signature,
+                    accuracy_delta=_delta(base.accuracy, variant.accuracy),
+                    routing_delta_diff=_delta(
+                        base.total_routing_delta, variant.total_routing_delta
+                    ),
+                    latency_delta=_delta(
+                        base.avg_latency_seconds, variant.avg_latency_seconds
+                    ),
+                    tokens_delta=_delta(
+                        base.avg_tokens_total, variant.avg_tokens_total
+                    ),
+                )
+            )
+        return comparisons
 
     @staticmethod
     def _normalise_datasets(datasets: Sequence[str]) -> List[str]:

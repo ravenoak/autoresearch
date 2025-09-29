@@ -58,6 +58,11 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Assign models per role with budget-aware fallbacks.
    - Monitor token, latency, and accuracy metrics for regressions.
    - Publish tuning guides for operators.
+   - Persist routing decisions, overrides, and the active strategy via
+     `persist_model_routing_metrics` so dashboards can chart savings without
+     replaying runs. Initial simulations report roughly two currency units of
+     savings for the `cost_saver` policy while still logging gate-driven
+     escalations to premium models.【F:tests/performance/test_budget_router.py†L103-L152】
 
 ## Cross-Cutting Requirements
 
