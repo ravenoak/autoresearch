@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Mapping, MutableMapping
 
 from . import exceptions
-from .adapters import HTTPAdapter
+from .adapters import BaseAdapter, HTTPAdapter
 
 
 class Response:
@@ -31,10 +31,10 @@ class Session:
 
     def close(self) -> None: ...
 
-    def mount(self, prefix: str, adapter: HTTPAdapter) -> None: ...
+    def mount(self, prefix: str, adapter: BaseAdapter) -> None: ...
 
     @property
-    def headers(self) -> Mapping[str, str]: ...
+    def headers(self) -> MutableMapping[str, str]: ...
 
 
 def get(url: str, *args: Any, **kwargs: Any) -> Response: ...
@@ -51,6 +51,7 @@ Timeout = exceptions.Timeout
 
 __all__ = [
     "HTTPAdapter",
+    "BaseAdapter",
     "RequestException",
     "Response",
     "Session",

@@ -6,9 +6,14 @@ precise. Modules should import the most specific type available instead of
 depending on vendor-specific classes directly.
 """
 
-from .http import RequestsResponseProtocol, RequestsSessionProtocol
+from .http import (
+    RequestsAdapterProtocol,
+    RequestsResponseProtocol,
+    RequestsSessionProtocol,
+)
 
 __all__ = [
+    "RequestsAdapterProtocol",
     "RequestsResponseProtocol",
     "RequestsSessionProtocol",
 ]

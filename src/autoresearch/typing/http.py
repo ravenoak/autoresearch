@@ -2,7 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Mapping, MutableMapping, Protocol, runtime_checkable
+
+
+if TYPE_CHECKING:  # pragma: no cover - imported for typing only
+    from requests.adapters import BaseAdapter as RequestsAdapterProtocol
+else:
+
+    @runtime_checkable
+    class RequestsAdapterProtocol(Protocol):
+        """Structural type for ``requests.adapters.BaseAdapter`` implementations."""
+
+        def close(self) -> None:
+            """Release any open network resources."""
 
 
 @runtime_checkable
@@ -27,10 +39,10 @@ class RequestsSessionProtocol(Protocol):
     """Structural type for ``requests.Session`` objects."""
 
     @property
-    def headers(self) -> Mapping[str, str]:
+    def headers(self) -> MutableMapping[str, str]:
         """Return default headers sent with each request."""
 
-    def mount(self, prefix: str, adapter: Any) -> None:
+    def mount(self, prefix: str, adapter: RequestsAdapterProtocol) -> None:
         """Register an adapter that handles the given URL prefix."""
 
     def close(self) -> None:
@@ -46,3 +58,10 @@ class RequestsSessionProtocol(Protocol):
 
     def post(self, url: str, *args: Any, **kwargs: Any) -> RequestsResponseProtocol:
         """Issue a POST request."""
+
+
+__all__ = [
+    "RequestsAdapterProtocol",
+    "RequestsResponseProtocol",
+    "RequestsSessionProtocol",
+]

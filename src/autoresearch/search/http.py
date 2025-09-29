@@ -9,7 +9,7 @@ from urllib3.util.retry import Retry
 
 from ..config.loader import get_config
 from ..logging_utils import get_logger
-from ..typing.http import RequestsSessionProtocol
+from ..typing.http import RequestsAdapterProtocol, RequestsSessionProtocol
 
 log = get_logger(__name__)
 
@@ -42,7 +42,7 @@ def get_http_session() -> RequestsSessionProtocol:
                 status_forcelist=[500, 502, 503, 504],
                 allowed_methods=["GET", "POST"],
             )
-            adapter = requests.adapters.HTTPAdapter(
+            adapter: RequestsAdapterProtocol = requests.adapters.HTTPAdapter(
                 pool_connections=size,
                 pool_maxsize=size,
                 max_retries=retries,

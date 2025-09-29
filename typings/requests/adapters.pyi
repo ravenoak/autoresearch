@@ -1,8 +1,14 @@
-from typing import Any
+from typing import Any, Protocol
 
 
-class HTTPAdapter:
+class BaseAdapter(Protocol):
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def close(self) -> None: ...
+
+
+class HTTPAdapter(BaseAdapter):
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
 
 
-__all__ = ["HTTPAdapter"]
+__all__ = ["BaseAdapter", "HTTPAdapter"]

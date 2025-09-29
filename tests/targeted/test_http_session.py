@@ -14,7 +14,10 @@ ensure_stub_module(
 )
 ensure_stub_module("docx", {"Document": object})
 
-from autoresearch.typing.http import RequestsSessionProtocol  # noqa: E402
+from autoresearch.typing.http import (  # noqa: E402
+    RequestsAdapterProtocol,
+    RequestsSessionProtocol,
+)
 import autoresearch.search.http as http  # noqa: E402
 
 
@@ -35,6 +38,14 @@ class DummyResponse:
         return self._headers
 
 
+class DummyAdapter:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class DummySession:
     def __init__(self) -> None:
         self.mounted: list[tuple[str, object]] = []
@@ -46,7 +57,7 @@ class DummySession:
         self.requests.append((method, url))
         return DummyResponse()
 
-    def mount(self, prefix, adapter) -> None:
+    def mount(self, prefix, adapter: RequestsAdapterProtocol) -> None:
         self.mounted.append((prefix, adapter))
 
     def close(self) -> None:
@@ -111,3 +122,27 @@ def test_protocol_request_usage() -> None:
     assert response.raise_called is False
     response.raise_for_status()
     assert response.raise_called is True
+
+
+def test_protocol_headers_are_mutable() -> None:
+    """Sessions expose mutable headers consistent with the protocol."""
+
+    session = DummySession()
+    session.headers["User-Agent"] = "autoresearch-tests"
+
+    assert session.headers["User-Agent"] == "autoresearch-tests"
+
+
+def test_adapter_protocol_supports_close() -> None:
+    """Adapters satisfying the protocol can be mounted and closed."""
+
+    session = DummySession()
+    adapter = DummyAdapter()
+
+    assert isinstance(adapter, RequestsAdapterProtocol)
+
+    session.mount("http://", adapter)
+    assert session.mounted == [("http://", adapter)]
+
+    adapter.close()
+    assert adapter.closed is True
