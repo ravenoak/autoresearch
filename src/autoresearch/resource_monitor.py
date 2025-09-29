@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import contextlib
 import importlib.util
+import math
 import os
 import threading
 import time
 from functools import lru_cache
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge, start_http_server
@@ -41,6 +42,18 @@ def _gpu_extra_enabled() -> bool:
             if importlib.util.find_spec(module_name) is not None:
                 return True
     return False
+
+
+def _coerce_float(value: Any) -> float:
+    """Return ``value`` converted to ``float`` with NaN/inf protection."""
+
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(result):
+        return 0.0
+    return result
 
 
 def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
@@ -116,8 +129,8 @@ def _get_gpu_stats() -> tuple[float, float]:
                     handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                     util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                     mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                    util_total += float(util.gpu)
-                    mem_total += mem.used / (1024 * 1024)
+                    util_total += _coerce_float(getattr(util, "gpu", 0.0))
+                    mem_total += _coerce_float(mem.used) / (1024 * 1024)
                 if count:
                     util_total /= count
                 return util_total, mem_total
@@ -164,8 +177,8 @@ def _get_gpu_stats() -> tuple[float, float]:
         for line in output.strip().splitlines():
             try:
                 util_str, mem_str = line.split(",")
-                utils.append(float(util_str.strip()))
-                mems.append(float(mem_str.strip()))
+                utils.append(_coerce_float(util_str.strip()))
+                mems.append(_coerce_float(mem_str.strip()))
             except Exception:
                 continue
         if utils:
@@ -182,12 +195,13 @@ def _get_gpu_stats() -> tuple[float, float]:
 
 def _get_usage() -> tuple[float, float]:
     """Return CPU percent and memory usage in MB."""
+
     try:
         import psutil
 
-        cpu = psutil.cpu_percent(interval=None)
-        mem = psutil.Process().memory_info().rss / (1024 * 1024)
-        return cpu, mem
+        cpu_raw = psutil.cpu_percent(interval=None)
+        mem_info = psutil.Process().memory_info()
+        return _coerce_float(cpu_raw), _coerce_float(mem_info.rss) / (1024 * 1024)
     except Exception:
         return 0.0, 0.0
 

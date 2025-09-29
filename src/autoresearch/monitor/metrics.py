@@ -13,8 +13,13 @@ async def metrics_endpoint(_: None = None) -> PlainTextResponse:
         PlainTextResponse: Prometheus metrics with ``200`` status code.
     """
 
+    payload = generate_latest()
+    if isinstance(payload, bytes):
+        body = payload.decode("utf-8", "replace")
+    else:  # pragma: no cover - defensive fallback
+        body = str(payload)
     return PlainTextResponse(
-        generate_latest(),
+        body,
         media_type=CONTENT_TYPE_LATEST,
         status_code=200,
     )

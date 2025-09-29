@@ -20,8 +20,28 @@ def test_system_monitor_collects(monkeypatch):
 
 
 def test_collect_returns_expected_dict(monkeypatch):
-    monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: 55.0)
-    mem = type("mem", (), {"percent": 44.0})()
+    monkeypatch.setattr(psutil, "cpu_percent", lambda interval=None: "55.0")
+    mem = type("mem", (), {"percent": "44.0"})()
     monkeypatch.setattr(psutil, "virtual_memory", lambda: mem)
     data = SystemMonitor.collect()
     assert data == {"cpu_percent": 55.0, "memory_percent": 44.0}
+
+
+def test_collect_handles_failures(monkeypatch):
+    calls: dict[str, int] = {"cpu": 0, "mem": 0}
+
+    def cpu_percent(interval=None):
+        calls["cpu"] += 1
+        raise RuntimeError("boom")
+
+    class BrokenMem:
+        def __getattr__(self, name: str) -> float:
+            calls["mem"] += 1
+            raise AttributeError(name)
+
+    monkeypatch.setattr(psutil, "cpu_percent", cpu_percent)
+    monkeypatch.setattr(psutil, "virtual_memory", lambda: BrokenMem())
+
+    data = SystemMonitor.collect()
+    assert data == {"cpu_percent": 0.0, "memory_percent": 0.0}
+    assert calls == {"cpu": 1, "mem": 1}
