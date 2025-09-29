@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Tuple, cast
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -95,7 +95,8 @@ def save_rdf_graph(
     plt.figure(figsize=(8, 6))
     nodes: dict[str, int] = {}
     idx = 0
-    for s, p, o in graph:
+    triples = cast(Iterable[Tuple[Any, Any, Any]], graph)
+    for s, p, o in triples:
         s_str, o_str = str(s), str(o)
         if s_str not in nodes:
             nodes[s_str] = idx

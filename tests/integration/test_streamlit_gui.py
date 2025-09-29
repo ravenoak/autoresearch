@@ -38,6 +38,15 @@ def test_guided_tour_dialog_role():
     assert any("role=\"dialog\"" in b for b in bodies)
 
 
+def test_guided_tour_modal_fallback(monkeypatch):
+    monkeypatch.delattr("streamlit.modal", raising=False)
+    at = AppTest.from_file(APP_FILE)
+    at.session_state["show_tour"] = True
+    at.run()
+    bodies = [m.proto.body for m in at.markdown]
+    assert any("Welcome to Autoresearch" in b for b in bodies)
+
+
 def test_main_content_live_region():
     at = AppTest.from_file(APP_FILE)
     at.session_state["show_tour"] = False

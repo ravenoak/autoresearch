@@ -2,25 +2,33 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, ContextManager, cast
+from typing import Any, Callable, ContextManager, Iterator, Optional, cast
 
 import contextlib
 import streamlit as st
 
 
-def open_modal(title: str, **kwargs: Any) -> ContextManager[Any]:
+ModalCallable = Callable[..., ContextManager[None]]
+
+
+def open_modal(title: str, **kwargs: Any) -> ContextManager[None]:
     """Return a typed context manager for ``st.modal`` when available."""
 
-    modal = getattr(st, "modal", None)
-    if modal is None:
+    modal_attr = getattr(st, "modal", None)
+    modal_callable: Optional[ModalCallable]
+    if callable(modal_attr):
+        modal_callable = cast(ModalCallable, modal_attr)
+    else:
+        modal_callable = None
+
+    if modal_callable is None:
         @contextlib.contextmanager
-        def _fallback_modal(*_: Any, **__: Any) -> ContextManager[Any]:
+        def _fallback_modal(*_: Any, **__: Any) -> Iterator[None]:
             yield None
 
         return _fallback_modal()
 
-    modal_func = cast(Callable[..., ContextManager[Any]], modal)
-    return modal_func(title, **kwargs)
+    return modal_callable(title, **kwargs)
 
 
 def apply_accessibility_settings() -> None:

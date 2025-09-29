@@ -6,12 +6,14 @@ This module provides a web-based GUI for Autoresearch using Streamlit.
 It allows users to run queries, view results, and configure settings.
 """
 
+from __future__ import annotations
+
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
 import json
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Callable, Dict, List, Mapping, Protocol, Sequence, cast
 import random
 import io
 import time
@@ -50,6 +52,13 @@ from .streamlit_ui import (
     display_guided_tour,
     display_help_sidebar,
 )
+
+
+class _PILImage(Protocol):
+    def save(self, fp: Any, format: str | None = ...) -> None: ...
+
+    def close(self) -> None: ...
+
 
 # Configure matplotlib to use a non-interactive backend
 matplotlib.use("Agg")
@@ -178,7 +187,7 @@ def _trigger_rerun() -> None:
     rerun()
 
 
-def display_config_editor():
+def display_config_editor() -> None:
     """Display the configuration editor interface in the sidebar."""
     # Load configuration
     config_loader = ConfigLoader()
@@ -503,7 +512,7 @@ def display_config_editor():
                 st.sidebar.error(f"Error saving configuration: {str(e)}")
 
 
-def on_config_change(config):
+def on_config_change(config: ConfigModel) -> None:
     """Handle configuration changes.
 
     This function is called when the configuration changes, either through
@@ -525,7 +534,7 @@ def on_config_change(config):
 
 def track_agent_performance(
     agent_name: str, duration: float, tokens: int, success: bool = True
-):
+) -> None:
     """Track agent performance metrics.
 
     Args:
@@ -584,21 +593,27 @@ def collect_system_metrics() -> Dict[str, Any]:
         Dict[str, Any]: A dictionary of system metrics
     """
     # Get CPU usage
-    cpu_percent = psutil.cpu_percent(interval=0.1)
+    cpu_percent_raw = psutil.cpu_percent(interval=0.1)
+    cpu_percent = float(
+        cpu_percent_raw[0] if isinstance(cpu_percent_raw, list) else cpu_percent_raw
+    )
 
     # Get memory usage
     memory = psutil.virtual_memory()
-    memory_percent = memory.percent
-    memory_used = memory.used / (1024 * 1024 * 1024)  # Convert to GB
-    memory_total = memory.total / (1024 * 1024 * 1024)  # Convert to GB
+    memory_percent = cast(float, getattr(memory, "percent", 0.0))
+    memory_used = cast(float, getattr(memory, "used", 0.0)) / (1024 * 1024 * 1024)
+    memory_total = cast(float, getattr(memory, "total", 0.0)) / (1024 * 1024 * 1024)
 
     # Get process information
     process = psutil.Process(os.getpid())
     process_memory = process.memory_info().rss / (1024 * 1024)  # Convert to MB
 
-    token_usage = st.session_state.get(
-        "token_usage",
-        {"total": 0, "prompt": 0, "completion": 0, "last_query": 0},
+    token_usage = cast(
+        Dict[str, Any],
+        st.session_state.get(
+            "token_usage",
+            {"total": 0, "prompt": 0, "completion": 0, "last_query": 0},
+        ),
     )
 
     # Aggregate total tokens using Prometheus counters
@@ -629,7 +644,7 @@ def collect_system_metrics() -> Dict[str, Any]:
     }
 
 
-def update_metrics_periodically():
+def update_metrics_periodically() -> None:
     """Update system metrics periodically in the background."""
     while True:
         # Collect metrics
@@ -651,7 +666,7 @@ def update_metrics_periodically():
         time.sleep(1)
 
 
-def display_agent_performance():
+def display_agent_performance() -> None:
     """Display agent performance visualization."""
     st.markdown("<h2 class='subheader'>Agent Performance</h2>", unsafe_allow_html=True)
 
@@ -691,7 +706,7 @@ def display_agent_performance():
         # Create a DataFrame for the summary
         import pandas as pd
 
-        summary_data = []
+        summary_data: list[Dict[str, Any]] = []
 
         for agent_name, metrics in agent_performance.items():
             avg_duration = (
@@ -908,8 +923,14 @@ def display_agent_performance():
             st.info("Please select an agent")
 
 
-def display_metrics_dashboard():
+def display_metrics_dashboard() -> None:
     """Display the system metrics dashboard."""
+    try:
+        import pandas as pd
+    except Exception:
+        st.warning("Pandas is required to render the metrics dashboard.")
+        return
+
     # Create tabs for different metrics
     metrics_tab1, metrics_tab2 = st.tabs(["System Metrics", "Agent Performance"])
 
@@ -920,35 +941,42 @@ def display_metrics_dashboard():
         col1, col2, col3 = st.columns(3)
 
         # Get current metrics
-        metrics = st.session_state.get("current_metrics", collect_system_metrics())
+        metrics_dict = cast(
+            Dict[str, Any], st.session_state.get("current_metrics", collect_system_metrics())
+        )
+        cpu_percent = float(metrics_dict.get("cpu_percent", 0.0))
+        memory_percent = float(metrics_dict.get("memory_percent", 0.0))
+        memory_used = float(metrics_dict.get("memory_used", 0.0))
+        memory_total = float(metrics_dict.get("memory_total", 0.0))
+        process_memory = float(metrics_dict.get("process_memory", 0.0))
 
         # Display CPU usage
         with col1:
             st.markdown("### CPU Usage")
-            st.progress(metrics["cpu_percent"] / 100)
-            st.markdown(f"{metrics['cpu_percent']:.1f}%")
+            st.progress(cpu_percent / 100)
+            st.markdown(f"{cpu_percent:.1f}%")
 
         # Display memory usage
         with col2:
             st.markdown("### Memory Usage")
-            st.progress(metrics["memory_percent"] / 100)
+            st.progress(memory_percent / 100)
             st.markdown(
-                f"{metrics['memory_used']:.1f} GB / {metrics['memory_total']:.1f} GB ({metrics['memory_percent']:.1f}%)"
+                f"{memory_used:.1f} GB / {memory_total:.1f} GB ({memory_percent:.1f}%)"
             )
 
         # Display process memory
         with col3:
             st.markdown("### Process Memory")
-            st.markdown(f"{metrics['process_memory']:.1f} MB")
+            st.markdown(f"{process_memory:.1f} MB")
 
         # Display system health
-        status = metrics.get("health", "OK")
+        status = cast(str, metrics_dict.get("health", "OK"))
         color = "green" if status == "OK" else "orange" if status == "WARNING" else "red"
         st.markdown(f"### Health: <span style='color:{color}'>{status}</span>", unsafe_allow_html=True)
 
         # Display token usage
         st.markdown("### Token Usage")
-        token_usage = metrics["token_usage"]
+        token_usage = cast(Dict[str, Any], metrics_dict.get("token_usage", {}))
 
         # Create columns for token metrics
         col1, col2, col3, col4 = st.columns(4)
@@ -967,9 +995,9 @@ def display_metrics_dashboard():
 
         extra1, extra2 = st.columns(2)
         with extra1:
-            st.metric("Total Input Tokens", metrics["tokens_in_total"])
+            st.metric("Total Input Tokens", int(metrics_dict.get("tokens_in_total", 0)))
         with extra2:
-            st.metric("Total Output Tokens", metrics["tokens_out_total"])
+            st.metric("Total Output Tokens", int(metrics_dict.get("tokens_out_total", 0)))
 
         # Display metrics history chart
         if (
@@ -979,17 +1007,14 @@ def display_metrics_dashboard():
             st.markdown("### Metrics History")
 
             # Create a chart for CPU and memory usage
+            history = cast(list[Dict[str, Any]], st.session_state.system_metrics)
             chart_data = {
-                "time": list(range(len(st.session_state.system_metrics))),
-                "cpu": [m["cpu_percent"] for m in st.session_state.system_metrics],
-                "memory": [
-                    m["memory_percent"] for m in st.session_state.system_metrics
-                ],
+                "time": list(range(len(history))),
+                "cpu": [float(m.get("cpu_percent", 0.0)) for m in history],
+                "memory": [float(m.get("memory_percent", 0.0)) for m in history],
             }
 
             # Create a DataFrame for the chart
-            import pandas as pd
-
             df = pd.DataFrame(chart_data)
 
             # Display the chart
@@ -1002,22 +1027,21 @@ def display_metrics_dashboard():
 class StreamlitLogHandler(logging.Handler):
     """Custom log handler that stores logs in Streamlit's session state."""
 
-    def __init__(self, level=logging.INFO):
+    def __init__(self, level: int = logging.INFO) -> None:
         """Initialize the handler with the specified log level."""
         super().__init__(level)
         self.setFormatter(
             logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         )
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """Store the log record in Streamlit's session state."""
         try:
             # Format the log message
             log_entry = self.format(record)
 
             # Initialize logs list in session state if it doesn't exist
-            if "logs" not in st.session_state:
-                st.session_state.logs = []
+            logs = cast(list[dict[str, Any]], st.session_state.setdefault("logs", []))
 
             # Add the log entry to the session state
             log_dict = {
@@ -1027,17 +1051,17 @@ class StreamlitLogHandler(logging.Handler):
                 "message": record.getMessage(),
                 "formatted": log_entry,
             }
-            st.session_state.logs.append(log_dict)
+            logs.append(log_dict)
 
             # Keep only the last 1000 log entries to avoid memory issues
-            if len(st.session_state.logs) > 1000:
-                st.session_state.logs = st.session_state.logs[-1000:]
+            if len(logs) > 1000:
+                del logs[:-1000]
 
         except Exception:
             self.handleError(record)
 
 
-def setup_logging():
+def setup_logging() -> None:
     """Set up the logging system with the custom handler."""
     # Get the root logger
     root_logger = logging.getLogger()
@@ -1064,7 +1088,7 @@ def setup_logging():
     logging.info("Logging system initialized for Streamlit GUI")
 
 
-def display_log_viewer():
+def display_log_viewer() -> None:
     """Display the log viewer with filtering capabilities."""
     st.markdown("<h2 class='subheader'>Log Viewer</h2>", unsafe_allow_html=True)
 
@@ -1155,7 +1179,7 @@ def display_log_viewer():
         st.info("No logs match the current filters")
 
 
-def initialize_session_state():
+def initialize_session_state() -> None:
     """Initialize Streamlit session state variables."""
     # Initialize configuration
     if "config" not in st.session_state:
@@ -1243,7 +1267,7 @@ def display_query_input() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-def main():
+def main() -> None:
     """Run the Streamlit app."""
     # Initialize session state
     initialize_session_state()
@@ -1394,8 +1418,14 @@ def store_query_history(query: str, result: QueryResponse, config: ConfigModel) 
     logging.info(f"Query stored in history: {query[:50]}...")
 
 
-def display_query_history():
+def display_query_history() -> None:
     """Display query history and allow rerunning previous queries."""
+    try:
+        import pandas as pd
+    except Exception:
+        st.warning("Pandas is required to display query history.")
+        return
+
     st.markdown("<h2 class='subheader'>Query History</h2>", unsafe_allow_html=True)
 
     # Get query history from session state
@@ -1406,8 +1436,6 @@ def display_query_history():
         return
 
     # Create a DataFrame for the history
-    import pandas as pd
-
     history_data = []
 
     for i, entry in enumerate(reversed(history)):
@@ -1631,7 +1659,7 @@ def display_query_history():
                 logging.error(f"Error rerunning query: {str(e)}", exc_info=e)
 
 
-def create_knowledge_graph(result: QueryResponse) -> Image.Image:
+def create_knowledge_graph(result: QueryResponse) -> _PILImage:
     """Create a knowledge graph visualization from the query response.
 
     Args:
@@ -1923,7 +1951,9 @@ def display_results(result: QueryResponse) -> None:
                 st.markdown(f"- {prompt}")
 
     with st.expander("Provenance & verification", expanded=False):
-        rollup = audit_status_rollup(payload.claim_audits)
+        claim_audits_raw = payload.claim_audits or []
+        claim_audits = cast(Sequence[Mapping[str, Any]], claim_audits_raw)
+        rollup = audit_status_rollup(list(claim_audits))
         if rollup:
             st.markdown("**Claim status overview**")
             for status, count in rollup.items():
