@@ -289,7 +289,7 @@ async def async_query_endpoint(
         config.llm_backend = request.llm_backend
 
     task_id = str(uuid4())
-    config_copy: ConfigModel = cast(ConfigModel, cast(Any, config).model_copy(deep=True))
+    config_copy = config.model_copy(deep=True)
 
     async def runner() -> QueryResponseV1 | Any:
         try:

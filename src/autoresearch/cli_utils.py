@@ -207,6 +207,7 @@ def print_success(
 
 def print_error(
     message: str,
+    *,
     symbol: bool = True,
     min_verbosity: Verbosity = Verbosity.QUIET,
     suggestion: Optional[str] = None,
@@ -453,7 +454,9 @@ def sparql_query_cli(query: str, engine: str | None = None, apply_reasoning: boo
         return
 
     rows = [list(cast(Iterable[rdflib.term.Node], r)) for r in res]
-    headers = [str(v) for v in (res.vars or [])]
+    raw_headers = getattr(res, "vars", None)
+    header_values = list(raw_headers) if raw_headers else []
+    headers = [str(v) for v in header_values]
     console.print(tabulate(rows, headers=headers, tablefmt="github"))
 
 

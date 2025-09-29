@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, List, Mapping, Optional
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Self, cast
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic.functional_validators import model_validator
@@ -558,5 +558,16 @@ class ConfigModel(BaseModel):
                     except Exception:  # pragma: no cover - ignore bad fields
                         continue
             return model
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool = False,
+    ) -> Self:
+        """Return a cloned configuration while preserving ``ConfigModel`` typing."""
+
+        base_model = cast(Any, super(ConfigModel, self))
+        return cast(Self, base_model.model_copy(update=update, deep=deep))
 
     model_config: ClassVar[SettingsConfigDict] = {"extra": "ignore"}

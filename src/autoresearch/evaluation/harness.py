@@ -5,13 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from contextlib import closing, contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Sequence, cast
 from uuid import uuid4
 
 import duckdb
+from duckdb import DuckDBPyConnection
 
 from ..config.models import ConfigModel
 from ..models import QueryResponse
@@ -203,7 +205,8 @@ class EvaluationHarness:
                     )
                 )
                 continue
-            response = runner(example.prompt, config.model_copy(deep=True))
+            config_copy = config.model_copy(deep=True)
+            response = runner(example.prompt, config_copy)
             results.append(self._build_result(example, response))
         return results
 
@@ -410,7 +413,7 @@ class EvaluationHarness:
         )
 
     def _ensure_duckdb_schema(self) -> None:
-        with duckdb.connect(self._duckdb_uri()) as conn:
+        with self._open_duckdb() as conn:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS evaluation_results (
@@ -557,11 +560,12 @@ class EvaluationHarness:
             "INSERT INTO evaluation_results VALUES ("
             "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        with duckdb.connect(self._duckdb_uri()) as conn:
-            conn.executemany(insert_sql, rows)
+        with self._open_duckdb() as conn:
+            executemany = cast(Any, conn).executemany
+            executemany(insert_sql, rows)
 
     def _purge_run(self, run_id: str) -> None:
-        with duckdb.connect(self._duckdb_uri()) as conn:
+        with self._open_duckdb() as conn:
             conn.execute(
                 "DELETE FROM evaluation_results WHERE run_id = ?", [run_id]
             )
@@ -598,7 +602,7 @@ class EvaluationHarness:
             "INSERT INTO evaluation_run_summary VALUES ("
             "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        with duckdb.connect(self._duckdb_uri()) as conn:
+        with self._open_duckdb() as conn:
             conn.execute(
                 insert_sql,
                 (
@@ -633,7 +637,7 @@ class EvaluationHarness:
         summary_parquet = self.output_dir / f"{run_id}_summary_{timestamp}.parquet"
         example_csv = self.output_dir / f"{run_id}_examples_{timestamp}.csv"
         summary_csv = self.output_dir / f"{run_id}_summary_{timestamp}.csv"
-        with duckdb.connect(self._duckdb_uri()) as conn:
+        with self._open_duckdb() as conn:
             sanitized_examples = str(example_parquet).replace("'", "''")
             sanitized_summary = str(summary_parquet).replace("'", "''")
             sanitized_examples_csv = str(example_csv).replace("'", "''")
@@ -812,24 +816,33 @@ class EvaluationHarness:
         if not nodes:
             return None
 
-        memo: dict[str, int] = {}
+        memo: dict[str, float] = {}
 
-        def depth(node_id: str, trail: set[str]) -> int:
+        def depth(node_id: str, trail: set[str]) -> float:
             if node_id in memo:
                 return memo[node_id]
             if node_id in trail:
-                return 1
+                return 1.0
             trail.add(node_id)
             dependencies = nodes.get(node_id, [])
             if not dependencies:
-                memo[node_id] = 1
+                memo[node_id] = 1.0
             else:
-                memo[node_id] = 1 + max(depth(dep, trail) for dep in dependencies if dep in nodes)
+                memo[node_id] = 1.0 + max(
+                    depth(dep, trail) for dep in dependencies if dep in nodes
+                )
             trail.remove(node_id)
             return memo[node_id]
 
         try:
-            return float(max(depth(node, set()) for node in nodes))
+            max_depth = 0.0
+            for node in nodes:
+                depth_value = depth(node, cast(set[str], set()))
+                if depth_value > max_depth:
+                    max_depth = depth_value
+            if max_depth == 0.0:
+                return None
+            return max_depth
         except ValueError:
             return None
 
@@ -842,7 +855,7 @@ class EvaluationHarness:
         if isinstance(savings_meta, Mapping):
             total = savings_meta.get("total")
             try:
-                routing_delta = float(total)
+                routing_delta = float(cast(float | int | str, total))
             except (TypeError, ValueError):
                 routing_delta = None
         decisions = execution_metrics.get("model_routing_decisions")
@@ -850,6 +863,13 @@ class EvaluationHarness:
         if isinstance(decisions, Sequence) and not isinstance(decisions, (str, bytes)):
             routing_count = len(decisions)
         return routing_delta, routing_count
+
+    @contextmanager
+    def _open_duckdb(self) -> Iterator[DuckDBPyConnection]:
+        """Yield a DuckDB connection ensuring it is always closed."""
+
+        with closing(duckdb.connect(self._duckdb_uri())) as connection:
+            yield connection
 
     def _duckdb_uri(self) -> str:
         return str(self.duckdb_path)

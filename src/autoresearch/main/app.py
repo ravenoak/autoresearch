@@ -442,7 +442,7 @@ def search(
         except json.JSONDecodeError as exc:
             print_error(
                 "Invalid JSON for --gate-overrides. Provide a valid JSON object.",
-                detail=str(exc),
+                suggestion=str(exc),
             )
             raise typer.Exit(code=1) from exc
         updates["gate_user_overrides"] = overrides
@@ -475,7 +475,7 @@ def search(
 
         from . import Progress, Prompt
 
-        def on_cycle_end(loop: int, state) -> None:
+        def on_cycle_end(loop: int, state: Any) -> None:
             progress.update(task, advance=1)
             if interactive and loop < loops - 1:
                 refinement = Prompt.ask(
@@ -556,12 +556,12 @@ def search(
                     f"Graph exports available. Re-run with {tips} to download the knowledge graph."
                 )
 
-        export_targets = {
+        raw_targets: dict[str, str | Path | None] = {
             "graphml": graphml,
             "graph_json": graph_json,
         }
-        export_targets = {
-            fmt: target for fmt, target in export_targets.items() if target is not None
+        export_targets: dict[str, str | Path] = {
+            fmt: target for fmt, target in raw_targets.items() if target is not None
         }
         if export_targets:
             if not summary_available:
@@ -873,8 +873,8 @@ def capabilities(
         # Display capabilities in Markdown format
         autoresearch capabilities --output markdown
     """
-    from .llm import get_available_adapters
-    from .orchestration import ReasoningMode
+    from ..llm.registry import get_available_adapters
+    from ..orchestration.reasoning import ReasoningMode
 
     config = _config_loader.load_config()
 
@@ -1009,7 +1009,7 @@ def test_mcp(
         # Output results in JSON format
         autoresearch test_mcp --output json
     """
-    from .test_tools import MCPTestClient, format_test_results
+    from ..test_tools import MCPTestClient, format_test_results
 
     # Create the MCP test client
     client = MCPTestClient(host=host, port=port)
@@ -1067,7 +1067,7 @@ def test_a2a(
         # Output results in JSON format
         autoresearch test_a2a --output json
     """
-    from .test_tools import A2ATestClient, format_test_results
+    from ..test_tools import A2ATestClient, format_test_results
 
     # Create the A2A test client
     client = A2ATestClient(host=host, port=port)

@@ -19,15 +19,29 @@ for name in list(sys.modules):
     if name.startswith("a2a"):
         del sys.modules[name]
 
-from a2a.types import Message  # noqa: E402
+from a2a.types import Message, MessageSendParams  # noqa: E402
 from a2a.utils.message import get_message_text, new_agent_text_message  # noqa: E402
 
-from autoresearch.a2a_interface import A2A_AVAILABLE, A2AInterface  # noqa: E402
+from autoresearch.a2a_interface import (  # noqa: E402
+    A2A_AVAILABLE,
+    A2AInterface,
+    create_message_send_params,
+    get_message_model_cls,
+)
 from autoresearch.config.loader import ConfigLoader  # noqa: E402
 from autoresearch.config.models import ConfigModel  # noqa: E402
 from scripts.a2a_concurrency_sim import run_simulation  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
+
+
+def test_runtime_bindings_match_sdk() -> None:
+    """The helper accessors should expose the SDK runtime classes."""
+
+    assert get_message_model_cls() is Message
+    message = new_agent_text_message("hello")
+    params = create_message_send_params(message=message)
+    assert isinstance(params, MessageSendParams)
 
 
 @pytest.fixture

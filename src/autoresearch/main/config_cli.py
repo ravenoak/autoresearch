@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Any, Optional
 
 import importlib.resources as importlib_resources
 import json
+
 import tomli_w
 import tomllib
 import typer
@@ -23,7 +24,8 @@ def config_callback(ctx: typer.Context) -> None:
     """Manage configuration commands."""
     if ctx.invoked_subcommand is None:
         config = _config_loader.load_config()
-        typer.echo(config.json(indent=2))
+        payload = config.model_dump(mode="json")
+        typer.echo(json.dumps(payload, indent=2))
 
 
 @config_app.command("init")
