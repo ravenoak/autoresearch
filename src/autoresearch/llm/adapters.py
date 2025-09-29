@@ -14,7 +14,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 import os
+
 import requests
+
+from ..typing.http import RequestsResponseProtocol, RequestsSessionProtocol
 from .pool import get_session
 
 
@@ -136,8 +139,10 @@ class LMStudioAdapter(LLMAdapter):
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
             }
-            session = get_session()
-            resp = session.post(self.endpoint, json=payload, timeout=30)
+            session: RequestsSessionProtocol = get_session()
+            resp: RequestsResponseProtocol = session.post(
+                self.endpoint, json=payload, timeout=30
+            )
             resp.raise_for_status()
             data: Dict[str, Any] = resp.json()
             return str(

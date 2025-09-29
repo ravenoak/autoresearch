@@ -16,7 +16,7 @@ defined in configuration files or registered programmatically.
 """
 
 import string
-from typing import Any, ClassVar, Dict, Optional, cast
+from typing import Any, ClassVar, Dict, Mapping, Optional
 
 from pydantic import BaseModel, Field
 
@@ -554,13 +554,21 @@ Your verification should be objective, balanced, and focused on factual accuracy
         prompt_config: PromptRegistryConfig
         if prompt_templates_config is None:
             prompt_config = {}
+        elif isinstance(prompt_templates_config, Mapping):
+            prompt_config = {
+                str(name): dict(template)
+                for name, template in prompt_templates_config.items()
+            }
         else:
-            prompt_config = cast(PromptRegistryConfig, prompt_templates_config)
+            raise ConfigError(
+                "Prompt templates configuration must be a mapping of template names to definitions"
+            )
 
         for name, template_config in prompt_config.items():
             try:
-                template_data = cast(PromptTemplateConfig, template_config)
-                template = PromptTemplate(**template_data)
+                if not isinstance(template_config, Mapping):
+                    raise TypeError("Template configuration must be a mapping")
+                template = PromptTemplate(**dict(template_config))
                 cls.register(name, template)
             except Exception as e:
                 raise ConfigError(f"Invalid prompt template configuration for '{name}': {str(e)}")

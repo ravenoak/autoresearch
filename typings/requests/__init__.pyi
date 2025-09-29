@@ -1,61 +1,62 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, MutableMapping, overload
+from typing import Any, Mapping
 
-
-class RequestException(Exception): ...
+from . import exceptions
+from .adapters import HTTPAdapter
 
 
 class Response:
     status_code: int
-    headers: Mapping[str, str]
     text: str
 
-    def json(self) -> Any: ...
+    def __init__(self, *, status_code: int = 200, text: str = "", content: Any = ...) -> None: ...
+
+    def json(self, **kwargs: Any) -> Any: ...
+
+    def raise_for_status(self) -> None: ...
+
+    @property
+    def headers(self) -> Mapping[str, str]: ...
 
 
 class Session:
-    headers: MutableMapping[str, str]
+    def __init__(self) -> None: ...
 
-    def get(
-        self,
-        url: str,
-        *,
-        params: Mapping[str, Any] | None = ...,
-        headers: Mapping[str, str] | None = ...,
-        timeout: float | tuple[float, float] | None = ...,
-    ) -> Response: ...
+    def get(self, url: str, *args: Any, **kwargs: Any) -> Response: ...
 
-    def post(
-        self,
-        url: str,
-        *,
-        json: Any = ...,
-        data: Any = ...,
-        headers: Mapping[str, str] | None = ...,
-        timeout: float | tuple[float, float] | None = ...,
-    ) -> Response: ...
+    def post(self, url: str, *args: Any, **kwargs: Any) -> Response: ...
+
+    def request(self, method: str, url: str, *args: Any, **kwargs: Any) -> Response: ...
 
     def close(self) -> None: ...
 
+    def mount(self, prefix: str, adapter: HTTPAdapter) -> None: ...
 
-def get(
-    url: str,
-    *,
-    params: Mapping[str, Any] | None = ...,
-    headers: Mapping[str, str] | None = ...,
-    timeout: float | tuple[float, float] | None = ...,
-) -> Response: ...
+    @property
+    def headers(self) -> Mapping[str, str]: ...
 
 
-def post(
-    url: str,
-    *,
-    json: Any = ...,
-    data: Any = ...,
-    headers: Mapping[str, str] | None = ...,
-    timeout: float | tuple[float, float] | None = ...,
-) -> Response: ...
+def get(url: str, *args: Any, **kwargs: Any) -> Response: ...
 
 
-__all__ = ["RequestException", "Response", "Session", "get", "post"]
+def post(url: str, *args: Any, **kwargs: Any) -> Response: ...
+
+
+def request(method: str, url: str, *args: Any, **kwargs: Any) -> Response: ...
+
+
+RequestException = exceptions.RequestException
+Timeout = exceptions.Timeout
+
+__all__ = [
+    "HTTPAdapter",
+    "RequestException",
+    "Response",
+    "Session",
+    "Timeout",
+    "exceptions",
+    "get",
+    "post",
+    "request",
+]
