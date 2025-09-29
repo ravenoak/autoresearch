@@ -13,7 +13,7 @@ def run_visualize_query(
     def fake_visualize(q, output, layout='spring'):
         Path(output).touch()
 
-    monkeypatch.setattr('autoresearch.main.app._cli_visualize_query', fake_visualize)
+    monkeypatch.setattr(cli_app.visualization_hooks, "visualize_query", fake_visualize)
     result = cli_runner.invoke(
         cli_app, ['visualize', query, str(output_path)], catch_exceptions=False
     )
@@ -22,7 +22,7 @@ def run_visualize_query(
 
 @when('I run `autoresearch visualize-rdf rdf_graph.png`')
 def run_visualize_rdf(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
-    monkeypatch.setattr('autoresearch.main.app._cli_visualize', lambda *a, **k: None)
+    monkeypatch.setattr(cli_app.visualization_hooks, "visualize", lambda *a, **k: None)
     result = cli_runner.invoke(cli_app, ['visualize-rdf', 'rdf_graph.png'], catch_exceptions=False)
     bdd_context['result'] = result
 
@@ -31,7 +31,7 @@ def run_visualize_rdf(cli_runner, bdd_context, monkeypatch, temp_config, isolate
 def run_visualize_missing(cli_runner, bdd_context, monkeypatch, temp_config, isolate_network):
     def _raise(*a, **k):
         raise RuntimeError('missing output')
-    monkeypatch.setattr('autoresearch.main.app._cli_visualize_query', _raise)
+    monkeypatch.setattr(cli_app.visualization_hooks, "visualize_query", _raise)
     result = cli_runner.invoke(cli_app, ['visualize', 'What is quantum computing?'], catch_exceptions=False)
     bdd_context['result'] = result
 

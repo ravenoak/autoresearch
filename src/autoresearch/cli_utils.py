@@ -9,8 +9,19 @@ applications without reaching into private attributes directly.
 
 import os
 import sys
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, TYPE_CHECKING, cast
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    TYPE_CHECKING,
+    cast,
+)
 from rich.console import Console
 from rich.table import Table
 import rdflib
@@ -50,26 +61,52 @@ if TYPE_CHECKING:
     import typer
 
 
+class VisualizationHooks(Protocol):
+    """Protocol describing visualization hook accessors exposed on CLI apps."""
+
+    visualize: Callable[..., Any]
+    visualize_query: Callable[..., Any]
+
+
+@dataclass
+class _VisualizationHookStore:
+    """Mutable container for visualization hooks used by the Typer app."""
+
+    visualize: Callable[..., Any]
+    visualize_query: Callable[..., Any]
+
+
+class _SupportsVisualizationHooks(Protocol):
+    """Protocol for Typer apps mutated by :func:`attach_cli_hooks`."""
+
+    visualization_hooks: VisualizationHooks
+
+
 def attach_cli_hooks(
     app: "typer.Typer",
     visualize: Callable[..., Any],
     visualize_query: Callable[..., Any],
     *,
     name: str,
-) -> None:
+) -> VisualizationHooks:
     """Expose monkeypatch hooks on ``app`` using typed attribute assignment.
 
     Args:
         app: The Typer application to mutate.
-        visualize: Callable assigned to ``_cli_visualize`` for tests.
-        visualize_query: Callable assigned to ``_cli_visualize_query``.
+        visualize: Callable assigned as the visualization hook for tests.
+        visualize_query: Callable assigned as the query visualization hook.
         name: Public name exposed to ``CliRunner``.
+
+    Returns:
+        A mutable container exposing the visualization hooks for typed access.
     """
 
+    hook_store = _VisualizationHookStore(visualize=visualize, visualize_query=visualize_query)
     target = cast(object, app)
     setattr(target, "name", name)
-    setattr(target, "_cli_visualize", visualize)
-    setattr(target, "_cli_visualize_query", visualize_query)
+    hook_target = cast(_SupportsVisualizationHooks, target)
+    hook_target.visualization_hooks = cast(VisualizationHooks, hook_store)
+    return cast(VisualizationHooks, hook_store)
 
 
 def set_verbosity(level: Verbosity) -> None:

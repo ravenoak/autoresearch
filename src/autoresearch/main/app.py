@@ -22,6 +22,7 @@ from ..cli_helpers import (
 )
 from ..cli_utils import (
     Verbosity,
+    VisualizationHooks,
     attach_cli_hooks,
     console,
     format_success,
@@ -63,7 +64,7 @@ app = typer.Typer(
     # Disable pretty exceptions to handle them ourselves
 )
 # Provide test hooks without mutating private Typer attributes directly.
-attach_cli_hooks(
+visualization_hooks: VisualizationHooks = attach_cli_hooks(
     app,
     visualize=_cli_visualize,
     visualize_query=_cli_visualize_query,
@@ -84,7 +85,7 @@ from ..cli_evaluation import evaluation_app as _evaluation_app  # noqa: E402
 
 from .config_cli import config_app as _config_app, config_init  # noqa: E402  # isort: skip
 
-config_app = _config_app  # type: ignore[has-type]
+config_app: typer.Typer = _config_app
 app.add_typer(config_app, name="config")
 
 backup_app = _backup_app
@@ -1127,7 +1128,7 @@ def visualize(
     """Run a query and render a knowledge graph."""
     try:
         # Call through the Typer app attribute so tests can monkeypatch it
-        app._cli_visualize_query(  # type: ignore[attr-defined]
+        visualization_hooks.visualize_query(
             query,
             output,
             layout=layout,
@@ -1149,7 +1150,7 @@ def visualize_rdf_cli(
     """Generate a PNG visualization of the RDF knowledge graph."""
     try:
         # Call through the Typer app attribute so tests can monkeypatch it
-        app._cli_visualize(output)  # type: ignore[attr-defined]
+        visualization_hooks.visualize(output)
     except Exception:
         raise typer.Exit(1)
 
