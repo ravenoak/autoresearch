@@ -175,6 +175,21 @@ class Orchestrator:
 
         decision: ScoutGateDecision | None = None
 
+        def _capture_scout_sample(sample_state: QueryState, sample_index: int) -> dict[str, Any]:
+            """Return a normalized snapshot of a scout sample."""
+
+            claims_snapshot: list[dict[str, Any]] = []
+            for claim in sample_state.claims:
+                if isinstance(claim, dict):
+                    claims_snapshot.append(dict(claim))
+            return {
+                "index": sample_index,
+                "answer": sample_state.results.get("final_answer"),
+                "claims": claims_snapshot,
+            }
+
+        scout_samples: list[dict[str, Any]] = []
+
         if mode == ReasoningMode.AUTO:
             scout_state = state
             metrics.start_cycle()
@@ -203,6 +218,35 @@ class Orchestrator:
             scout_state.metadata["execution_metrics"] = metrics.get_summary()
             metrics.record_query_tokens(query)
 
+            scout_samples.append(_capture_scout_sample(scout_state, 0))
+
+            extra_samples = max(0, int(getattr(config, "auto_scout_samples", 0)))
+            if extra_samples:
+                for sample_index in range(1, extra_samples + 1):
+                    sample_state = QueryState(
+                        query=query,
+                        primus_index=primus_index,
+                        coalitions=config_params.get("coalitions", {}),
+                    )
+                    try:
+                        config.reasoning_mode = ReasoningMode.DIRECT
+                        OrchestrationUtils.execute_agent(
+                            "Synthesizer",
+                            sample_state,
+                            config,
+                            metrics,
+                            callbacks_map,
+                            agent_factory,
+                            storage_manager,
+                            0,
+                            cb_manager,
+                        )
+                    finally:
+                        config.reasoning_mode = original_mode_setting
+                    scout_samples.append(_capture_scout_sample(sample_state, sample_index))
+
+            scout_state.metadata["scout_samples"] = list(scout_samples)
+
             decision = OrchestrationUtils.evaluate_scout_gate_policy(
                 query=query,
                 config=config,
@@ -217,6 +261,9 @@ class Orchestrator:
                     "scout_answer": scout_state.results.get("final_answer"),
                     "scout_should_debate": decision.should_debate,
                     "scout_reason": decision.reason,
+                    "scout_samples": list(scout_samples),
+                    "scout_sample_count": len(scout_samples),
+                    "scout_agreement": decision.heuristics.get("scout_agreement"),
                 }
             )
             scout_state.metadata["auto_mode"] = auto_meta

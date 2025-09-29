@@ -502,9 +502,25 @@ class ConfigModel(BaseModel):
             "Minimum weighted graph similarity signal required to skip multi-loop debate."
         ),
     )
+    gate_scout_agreement_threshold: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Minimum agreement score among scout samples required to skip debate."
+        ),
+    )
     gate_user_overrides: Dict[str, Any] = Field(
         default_factory=dict,
         description="Optional overrides for gate policy decisions and signals",
+    )
+    auto_scout_samples: int = Field(
+        default=2,
+        ge=0,
+        description=(
+            "Number of additional fast Synthesizer samples gathered during AUTO scout "
+            "mode before evaluating the gate."
+        ),
     )
     graph_eviction_policy: str = Field(
         default="LRU",

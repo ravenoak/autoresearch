@@ -8,7 +8,9 @@ other modules without relying on dynamic attribute assignment.
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
+from itertools import combinations
 from statistics import mean
 from typing import Iterable, Mapping, Sequence, Literal, overload
 
@@ -90,6 +92,9 @@ class ScoutGatePolicy:
             "graph_similarity": getattr(
                 self.config, "gate_graph_similarity_threshold", 0.0
             ),
+            "scout_agreement": getattr(
+                self.config, "gate_scout_agreement_threshold", 0.7
+            ),
         }
 
         graph_contradiction = 0.0
@@ -124,6 +129,8 @@ class ScoutGatePolicy:
         )
         nli_conflict, conflict_details = self._nli_conflict(state, details=True)
 
+        agreement_score, agreement_details = self._scout_agreement(state, details=True)
+
         heuristics = {
             "retrieval_overlap": self._retrieval_overlap(state),
             "nli_conflict": nli_conflict,
@@ -132,6 +139,7 @@ class ScoutGatePolicy:
             "retrieval_confidence": retrieval_confidence,
             "graph_contradiction": graph_contradiction,
             "graph_similarity": graph_similarity,
+            "scout_agreement": agreement_score,
         }
 
         baseline_heuristics = dict(heuristics)
@@ -177,6 +185,7 @@ class ScoutGatePolicy:
                 "nli_conflict": conflict_details,
                 "graph_contradiction": graph_contradiction_details,
                 "graph_similarity": graph_similarity_details,
+                "scout_agreement": agreement_details,
             },
         )
 
@@ -223,6 +232,8 @@ class ScoutGatePolicy:
         }
         if graph_telemetry:
             telemetry["graph"] = graph_telemetry
+        if agreement_details:
+            telemetry["scout_agreement"] = agreement_details
 
         evaluate_gate_confidence_escalations(
             config=self.config,
@@ -248,6 +259,7 @@ class ScoutGatePolicy:
         scout_stage["rationales"] = rationales
         scout_stage["coverage"] = coverage_details
         scout_stage["retrieval_confidence"] = confidence_details
+        scout_stage["agreement"] = agreement_details
         if graph_telemetry:
             scout_stage["graph_context"] = graph_telemetry
         if state.sources:
@@ -283,6 +295,12 @@ class ScoutGatePolicy:
         graph_similarity_low = False
         if similarity_threshold is not None:
             graph_similarity_low = heuristics.get("graph_similarity", 1.0) < similarity_threshold
+        agreement_threshold = thresholds.get("scout_agreement")
+        scout_disagreement = False
+        if agreement_threshold is not None:
+            scout_disagreement = (
+                heuristics.get("scout_agreement", 1.0) < agreement_threshold
+            )
         return (
             overlap_low
             or conflict_high
@@ -291,6 +309,7 @@ class ScoutGatePolicy:
             or confidence_low
             or graph_conflict_high
             or graph_similarity_low
+            or scout_disagreement
         )
 
     def _estimate_tokens_saved(self, loops: int, target_loops: int) -> int:
@@ -455,6 +474,93 @@ class ScoutGatePolicy:
             return average, payload
         return average
 
+    @staticmethod
+    def _normalize_answer(text: str) -> set[str]:
+        """Return normalized token set for scout agreement calculations."""
+
+        if not isinstance(text, str):
+            return set()
+        return {token for token in re.findall(r"[a-z0-9]+", text.lower()) if token}
+
+    def _scout_agreement(
+        self, state: QueryState, *, details: bool = False
+    ) -> float | tuple[float, dict[str, object]]:
+        """Estimate agreement across stored scout samples."""
+
+        raw_samples = state.metadata.get("scout_samples")
+        samples: list[Mapping[str, object]] = []
+        if isinstance(raw_samples, Sequence):
+            for entry in raw_samples:
+                if isinstance(entry, Mapping):
+                    samples.append(entry)
+
+        if not samples:
+            score = 1.0
+            payload: dict[str, object] = {
+                "sample_count": 0,
+                "pairwise_scores": [],
+                "basis": "answer_claim_tokens",
+            }
+            return (score, payload) if details else score
+
+        token_sets: list[set[str]] = []
+        answers: list[str] = []
+        for entry in samples:
+            entry_tokens: set[str] = set()
+            answer = entry.get("answer")
+            if isinstance(answer, str):
+                answers.append(answer)
+                entry_tokens |= self._normalize_answer(answer)
+            claims = entry.get("claims")
+            if isinstance(claims, Sequence):
+                for claim in claims:
+                    if isinstance(claim, Mapping):
+                        content = claim.get("content")
+                        if isinstance(content, str):
+                            entry_tokens |= self._normalize_answer(content)
+            token_sets.append(entry_tokens)
+
+        if len(token_sets) <= 1:
+            score = 1.0
+            payload = {
+                "sample_count": len(token_sets),
+                "pairwise_scores": [],
+                "basis": "answer_claim_tokens",
+                "answers": answers,
+            }
+            return (score, payload) if details else score
+
+        pairwise_scores: list[float] = []
+        for left_idx, right_idx in combinations(range(len(token_sets)), 2):
+            left_tokens = token_sets[left_idx]
+            right_tokens = token_sets[right_idx]
+            union = left_tokens | right_tokens
+            if not union:
+                pairwise_scores.append(1.0)
+            else:
+                pairwise_scores.append(len(left_tokens & right_tokens) / len(union))
+
+        if pairwise_scores:
+            score = float(sum(pairwise_scores) / len(pairwise_scores))
+            min_score = float(min(pairwise_scores))
+            max_score = float(max(pairwise_scores))
+        else:
+            score = 1.0
+            min_score = 1.0
+            max_score = 1.0
+
+        payload = {
+            "sample_count": len(token_sets),
+            "pairwise_scores": [float(value) for value in pairwise_scores],
+            "basis": "answer_claim_tokens",
+            "answers": answers,
+            "min": min_score,
+            "max": max_score,
+            "mean": score,
+        }
+
+        return (score, payload) if details else score
+
     def _build_rationales(
         self,
         heuristics: dict[str, float],
@@ -493,6 +599,10 @@ class ScoutGatePolicy:
             "graph_similarity": {
                 "direction": "low",
                 "description": "Weighted neighbour density from the knowledge graph",
+            },
+            "scout_agreement": {
+                "direction": "low",
+                "description": "Pairwise agreement score across scout samples",
             },
         }
 

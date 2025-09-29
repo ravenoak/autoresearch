@@ -276,6 +276,20 @@ def assert_gate_escalation(auto_cycle_result: dict[str, Any]) -> None:
     assert float(heuristics.get("coverage_gap", 0.0)) >= 0.25
 
 
+@then("the AUTO metrics should record scout samples and agreement")
+def assert_auto_scout_samples(auto_cycle_result: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cycle_result["response"]
+    auto_mode = response.metrics.get("auto_mode", {})
+    samples = auto_mode.get("scout_samples")
+    assert isinstance(samples, list) and samples
+    assert auto_mode.get("scout_sample_count") == len(samples)
+    agreement = auto_mode.get("scout_agreement")
+    assert agreement is not None
+    heuristics = response.metrics.get("scout_stage", {}).get("heuristics", {})
+    assert heuristics.get("scout_agreement") == agreement
+    assert response.metrics.get("scout_samples") == samples
+
+
 @then(
     parsers.parse(
         'the auto mode audit badges should include "{first}" and "{second}"'
