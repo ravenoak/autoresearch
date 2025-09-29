@@ -1,3 +1,4 @@
+import builtins
 import importlib
 import sys
 from types import ModuleType
@@ -5,6 +6,7 @@ from types import ModuleType
 import pytest
 import rdflib
 import threading
+from typing import Any
 
 from autoresearch.config.models import ConfigModel, StorageConfig
 from autoresearch.config.loader import ConfigLoader
@@ -155,6 +157,33 @@ def test_run_ontology_reasoner_without_owlrl(monkeypatch):
     g = rdflib.Graph()
     _patch_config(monkeypatch, "owlrl")
     kr.run_ontology_reasoner(g)
+
+
+def test_run_ontology_reasoner_reload_without_owlrl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import autoresearch.kg_reasoning as module
+
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args: Any, **kwargs: Any):
+        if name == "owlrl":
+            raise ImportError("owlrl missing during test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    module = importlib.reload(module)
+    assert isinstance(module.owlrl.DeductiveClosure, type)
+
+    g = rdflib.Graph()
+    _patch_config(monkeypatch, "owlrl")
+    module.run_ontology_reasoner(g)
+
+    monkeypatch.setattr(builtins, "__import__", real_import)
+    module = importlib.reload(module)
+    globals()["run_ontology_reasoner"] = module.run_ontology_reasoner
+    globals()["query_with_reasoning"] = module.query_with_reasoning
+    globals()["register_reasoner"] = module.register_reasoner
 
 
 def test_run_ontology_reasoner_timeout(monkeypatch):
