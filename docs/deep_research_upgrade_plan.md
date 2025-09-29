@@ -29,19 +29,15 @@ keep truthfulness, verifiability, and cost discipline in balance.
    - Add behavior coverage for the AUTO planner → scout gate → verify loop so
      gate decisions and audit badges stay regression-proof, including CLI
      orchestration to confirm telemetry exposes verification badges end to end.
-   - **Status:** In progress. The September 29 rerun confirms the scout gate and
-     lint stages pass, but 93 strict typing errors still block `task verify`
-     across the HTTP session adapters, evaluation harness, Streamlit CLI, and
-     distributed executor protocols. The matching `task coverage` sweep synced
-     every non-GPU extra before stopping at
-     `tests/unit/test_additional_coverage.py`
-     (`test_render_evaluation_summary_joins_artifacts`) after a manual
-     interrupt, so coverage evidence remains incomplete while TestPyPI stays
-     deferred under the release directive.
-     【F:baseline/logs/task-verify-20250929T173615Z.log†L50-L140】
-     【F:baseline/logs/task-coverage-20250929T173738Z.log†L1-L120】
-     【F:baseline/logs/task-coverage-20250929T173738Z.log†L220-L225】
-     【F:baseline/logs/release-alpha-20250929T000814Z.summary.md†L3-L12】
+   - **Status:** Completed. The September 30 verify and coverage sweeps finish
+     through the Task CLI with strict mypy, scout gate telemetry, and the 92.4 %
+     statement rate restored, so Phase 1 objectives and evidence trails are all
+     green.
+     【F:baseline/logs/task-verify-20250930T174512Z.log†L1-L23】
+     【F:baseline/logs/task-coverage-20250930T181947Z.log†L1-L21】
+   - **Acceptance criteria:** Keep the Task CLI verify and coverage stages
+     publishing scout-gate telemetry and audit tables, and maintain coverage at
+     or above 92.4 % while TestPyPI remains deferred under the release gate.
 2. **Phase 2 – Planner and Coordinator Evolution**
    - Promote planner outputs into a schedulable task graph.
    - Capture ReAct traces for transparency and replay.
@@ -51,6 +47,9 @@ keep truthfulness, verifiability, and cost discipline in balance.
      new agents.
    - Extend `orchestration/coordinator.py` scheduling rules to consume
      those affinities while reusing the existing coordinator instance.
+   - **Acceptance criteria:** Ship typed planner graphs with audited ReAct
+     traces, coordinator scheduling that honors affinity tie-breakers, and
+     regression coverage that locks telemetry formats before expanding scope.
 3. **Phase 3 – Graph-Augmented Retrieval**
    - Build session-scoped knowledge graphs by extracting entities and
      relations from retrieval snippets and persisting them to DuckDB and
@@ -64,16 +63,24 @@ keep truthfulness, verifiability, and cost discipline in balance.
      operators can monitor GraphRAG uptake.
    - Export lightweight GraphML or JSON artifacts via the output formatter
      so downstream tools can visualise graph state per session.
-   - Document how to toggle `search.context_aware.planner_graph_conditioning`
-     for planner prompts, and cover the cues with
-     `tests/behavior/features/reasoning_modes/planner_graph_conditioning.feature`
-     so regression sweeps keep contradiction and neighbour hints intact.
+   - Document how to toggle
+     `search.context_aware.planner_graph_conditioning` for planner prompts,
+     and cover the cues with
+     `tests/behavior/features/reasoning_modes/`
+     `planner_graph_conditioning.feature` so regression sweeps keep
+     contradiction and neighbour hints intact.
+   - **Acceptance criteria:** Deliver contradiction checks wired into the scout
+     gate, persist exportable session graphs, and lock telemetry dashboards that
+     report ingestion and contradiction metrics under the context-aware toggles.
 4. **Phase 4 – Evaluation Harness and Layered UX**
    - Automate TruthfulQA, FEVER, and HotpotQA smoke runs with KPIs.
    - Add layered summaries, Socratic prompts, per-claim audit toggles, and
      claim badge guidance to the UI.
    - Ensure CLI and GUI share consistent depth controls and expose the same
      planner depth and routing metrics in CSV/Parquet exports.
+   - **Acceptance criteria:** Establish automated benchmark sweeps with
+     published KPIs, synchronize layered UX controls across CLI and GUI, and
+     export regression-ready CSV/Parquet artifacts with audited schemas.
 5. **Phase 5 – Cost-Aware Model Routing**
    - Assign models per role with budget-aware fallbacks.
    - Monitor token, latency, and accuracy metrics for regressions.
@@ -82,7 +89,11 @@ keep truthfulness, verifiability, and cost discipline in balance.
      `persist_model_routing_metrics` so dashboards can chart savings without
      replaying runs. Initial simulations report roughly two currency units of
      savings for the `cost_saver` policy while still logging gate-driven
-     escalations to premium models.【F:tests/performance/test_budget_router.py†L103-L152】
+     escalations to premium models.
+     【F:tests/performance/test_budget_router.py†L103-L152】
+   - **Acceptance criteria:** Prove budget routing stability with telemetry and
+     savings dashboards, document operator override flows, and maintain tests
+     that guard role-based fallbacks across regression suites.
 
 ## Cross-Cutting Requirements
 
@@ -101,7 +112,7 @@ keep truthfulness, verifiability, and cost discipline in balance.
 ## Next Steps
 
 Complete the documentation and issue updates described above, then begin
-Phase 1 implementation under the new tickets while monitoring cost and
+Phase 2 implementation under the new tickets while monitoring cost and
 accuracy.
 
 ## Planner and Coordinator Implementation Map

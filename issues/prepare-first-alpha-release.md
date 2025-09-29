@@ -14,14 +14,14 @@ release:alpha` sweep, and finalizing docs and packaging guidance before tagging.
 can follow the CLI and VSS remediation across the repository.
 【F:STATUS.md†L21-L59】【F:TASK_PROGRESS.md†L1-L20】【F:CODE_COMPLETE_PLAN.md†L9-L33】【F:docs/release_plan.md†L18-L38】
 
-Auditors should now pull
-`baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify gate;
-the run prints the `[verify][lint]` and `[verify][mypy]` success banners before
-strict typing fails in `src/git` and the Streamlit UI, and the Taskfile now
-passes optional extras through to the embedded `task coverage` call so the
-coverage configuration mirrors the standalone sweep once these strict errors
-clear.【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L60】【F:baseline/logs/task-verify-20250929T035829Z.log†L80-L200】
-【F:Taskfile.yml†L360-L392】
+For historical context, retain
+`baseline/logs/task-verify-20250929T035829Z.log` when reviewing the verify
+gate—the log shows the final red strict-typing wall in the HTTP layer before we
+finished hardening the adapters and CLI. The Taskfile still passes optional
+extras through to the embedded `task coverage` call so the configuration mirrors
+the standalone sweep, but current gate reviews should prioritize the September
+30 evidence now that the strict typing pipeline has recovered.
+【F:baseline/logs/task-verify-20250929T035829Z.log†L1-L200】【F:Taskfile.yml†L360-L392】
 
 The September 30, 2025 sweep at 19:04 UTC now completes `task release:alpha`
 via the Task CLI, recording the recalibrated scout gate telemetry, CLI path
