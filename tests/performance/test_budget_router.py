@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import json
+
 from autoresearch.config.models import (
     AgentConfig,
     ConfigModel,
     ModelRouteProfile,
     ModelRoutingConfig,
+    RoleRoutingPolicy,
 )
 from autoresearch.orchestration.metrics import OrchestrationMetrics
+from autoresearch.orchestration.model_routing import evaluate_gate_confidence_escalations
+from autoresearch.orchestration.state import QueryState
 
 
 def _make_base_config() -> ConfigModel:
@@ -35,6 +40,19 @@ def _make_base_config() -> ConfigModel:
             ),
         },
     )
+    config.model_routing.strategy_name = "cost_saver"
+    config.model_routing.role_policies = {
+        "Synthesizer": RoleRoutingPolicy(
+            preferred_models=["premium", "efficient"],
+            token_share=0.5,
+            confidence_threshold=0.6,
+            escalation_model="premium",
+        ),
+        "Contrarian": RoleRoutingPolicy(
+            preferred_models=["premium", "efficient"],
+            token_share=0.5,
+        ),
+    }
     return config
 
 
@@ -105,3 +123,71 @@ def test_metrics_summary_reports_cost_and_latency() -> None:
     assert avg_tokens >= 2600.0
     assert decisions[-1]["selected_model"] == "efficient"
     assert savings["total"] > 0
+    assert summary["model_routing_strategy"] == "cost_saver"
+    assert decisions[-1]["metadata"]["strategy"] == "cost_saver"
+    assert "token_share" in decisions[-1]["metadata"]
+
+
+def test_gate_confidence_escalation_registers_override() -> None:
+    """Gate heuristics should surface routing overrides for low confidence."""
+
+    config = _make_base_config()
+    metrics = OrchestrationMetrics()
+
+    overrides = evaluate_gate_confidence_escalations(
+        config=config,
+        metrics=metrics,
+        heuristics={"retrieval_confidence": 0.4},
+    )
+
+    assert overrides
+    assert metrics.routing_override_requests
+    assert overrides[0].agent == "Synthesizer"
+    assert metrics.routing_override_requests[-1].source == "scout_gate"
+
+
+def test_state_override_consumed_by_metrics(tmp_path) -> None:
+    """Planner-provided overrides propagate through metrics into decisions."""
+
+    config = _make_base_config()
+    metrics = OrchestrationMetrics()
+    state = QueryState(query="planner override")
+    state.metadata["routing_overrides"] = [
+        {
+            "agent": "Synthesizer",
+            "model": "premium",
+            "reason": "planner_low_confidence",
+            "source": "planner",
+            "confidence": 0.3,
+            "threshold": 0.6,
+        }
+    ]
+
+    metrics.record_tokens("Synthesizer", tokens_in=250, tokens_out=140)
+    metrics.apply_model_routing("Synthesizer", config, state)
+
+    overrides = [
+        override
+        for override in metrics.routing_override_requests
+        if override.source == "planner"
+    ]
+    assert overrides
+    assert overrides[0].requested_model == "premium"
+
+
+def test_persist_model_routing_metrics(tmp_path) -> None:
+    """Routing telemetry is appended to disk for dashboard ingestion."""
+
+    config = _make_base_config()
+    metrics = OrchestrationMetrics()
+    metrics.record_tokens("Synthesizer", tokens_in=500, tokens_out=250)
+    metrics.apply_model_routing("Synthesizer", config)
+
+    output = tmp_path / "routing.jsonl"
+    metrics.persist_model_routing_metrics(output)
+
+    lines = output.read_text().strip().splitlines()
+    assert lines
+    payload = json.loads(lines[-1])
+    assert payload["strategy"] == "cost_saver"
+    assert payload["decisions"]

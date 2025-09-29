@@ -219,6 +219,11 @@ is fully attributable.
 - Each task encodes model preferences, tool requirements, and evidence exit
   criteria so cheaper models can handle low-risk work. The coordinator records
   actual routing decisions for evaluation.
+- Routing configuration exposes per-role policies with preferred and allowed
+  models, reserved token budgets, and `confidence_threshold` settings. When the
+  scout gate or planner reports confidence below this threshold the orchestrator
+  registers an override that escalates to the policy's `escalation_model` and
+  logs the decision for downstream audits.
 - Planner outputs persist in the query state for observability and debugging.
 - ``QueryState`` records the canonical task graph along with coordinator
   metadata. ``TaskCoordinator`` serialises every ReAct step (thought, action,
@@ -248,6 +253,10 @@ is fully attributable.
   config signatures.
 - Support A/B comparisons between gate policies, model routings, retrieval
   strategies, and GraphRAG enablement flags.
+- Persist the active routing strategy and override events so dashboards can
+  visualise escalation frequency. Provide `EvaluationHarness.compare_routing_
+  strategies` to contrast accuracy, latency, token usage, and cost savings
+  across routing configurations.
 - Highlight runs where accuracy drops more than 5% or the contradiction rate
   exceeds 0.10 so gate and routing policies can be reviewed alongside telemetry
   snapshots keyed by the config signature.

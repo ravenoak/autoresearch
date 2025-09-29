@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -9,7 +11,7 @@ import duckdb
 import pytest
 
 from autoresearch.config.models import ConfigModel
-from autoresearch.evaluation import EvaluationHarness
+from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
 from autoresearch.models import QueryResponse
 
 
@@ -65,6 +67,7 @@ def test_dry_run_respects_limit_and_skips_runner(tmp_harness: EvaluationHarness)
     assert summary.total_routing_delta is None
     assert summary.example_csv is None
     assert summary.summary_csv is None
+    assert summary.routing_strategy is None
 
 
 def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) -> None:
@@ -94,6 +97,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
                 {"agent": "synthesizer", "recommendation": "alt"}
             ]
             * routing_decisions,
+            "model_routing_strategy": "balanced",
         }
         gate_events = [
             {
@@ -160,6 +164,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.avg_routing_delta == pytest.approx(5.5)
     assert summary.total_routing_delta == pytest.approx(11.0)
     assert summary.avg_routing_decisions == pytest.approx(1.5)
+    assert summary.routing_strategy == "balanced"
     assert summary.duckdb_path == tmp_harness.duckdb_path
     assert summary.example_parquet and summary.example_parquet.exists()
     assert summary.summary_parquet and summary.summary_parquet.exists()
@@ -174,7 +179,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         example_rows = conn.execute(
             """
             SELECT cycles_completed, gate_should_debate, planner_depth,
-                   routing_delta, routing_decision_count
+                   routing_delta, routing_decision_count, routing_strategy
             FROM evaluation_results
             WHERE run_id = ?
             ORDER BY example_id
@@ -185,7 +190,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
             """
             SELECT gate_exit_rate, gate_debate_rate, avg_cycles_completed,
                    gated_example_ratio, avg_planner_depth, avg_routing_delta,
-                   total_routing_delta, avg_routing_decisions
+                   total_routing_delta, avg_routing_decisions, routing_strategy
             FROM evaluation_run_summary
             WHERE run_id = ?
             """,
@@ -194,11 +199,19 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert count == summary.total_examples
     assert example_rows
     assert {row[1] for row in example_rows} == {True, False}
-    for cycles, _debate, depth, routing_delta, routing_count in example_rows:
+    for (
+        cycles,
+        _debate,
+        depth,
+        routing_delta,
+        routing_count,
+        routing_strategy,
+    ) in example_rows:
         assert cycles in {1, 3}
         assert depth == pytest.approx(3.0)
         assert routing_delta in {5.0, 6.0}
         assert routing_count in {1, 2}
+        assert routing_strategy == "balanced"
     assert summary_row is not None
     (
         gate_exit_rate,
@@ -209,6 +222,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
         avg_routing,
         total_routing,
         avg_routing_decisions,
+        summary_strategy,
     ) = summary_row
     assert gate_exit_rate == pytest.approx(summary.gate_exit_rate)
     assert gate_debate_rate == pytest.approx(summary.gate_debate_rate)
@@ -218,3 +232,59 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert avg_routing == pytest.approx(summary.avg_routing_delta)
     assert total_routing == pytest.approx(summary.total_routing_delta)
     assert avg_routing_decisions == pytest.approx(summary.avg_routing_decisions)
+    assert summary_strategy == "balanced"
+
+
+def test_compare_routing_strategies() -> None:
+    """Comparisons report deltas between baseline and variant strategies."""
+
+    base = EvaluationSummary(
+        dataset="truthfulqa",
+        run_id="baseline",
+        started_at=datetime.now(tz=timezone.utc),
+        completed_at=datetime.now(tz=timezone.utc),
+        total_examples=1,
+        accuracy=0.5,
+        citation_coverage=0.5,
+        contradiction_rate=0.1,
+        avg_latency_seconds=1.0,
+        avg_tokens_input=10.0,
+        avg_tokens_output=5.0,
+        avg_tokens_total=15.0,
+        avg_cycles_completed=2.0,
+        gate_debate_rate=0.5,
+        gate_exit_rate=0.5,
+        gated_example_ratio=1.0,
+        avg_planner_depth=3.0,
+        avg_routing_delta=5.0,
+        total_routing_delta=10.0,
+        avg_routing_decisions=2.0,
+        routing_strategy="balanced",
+        config_signature="base",
+        duckdb_path=None,
+        example_parquet=None,
+        summary_parquet=None,
+        example_csv=None,
+        summary_csv=None,
+    )
+    variant = replace(
+        base,
+        run_id="variant",
+        accuracy=0.6,
+        total_routing_delta=8.0,
+        avg_latency_seconds=0.9,
+        avg_tokens_total=14.0,
+        routing_strategy="aggressive",
+    )
+
+    comparisons = EvaluationHarness.compare_routing_strategies([base], [variant])
+
+    assert len(comparisons) == 1
+    comparison = comparisons[0]
+    assert comparison.dataset == "truthfulqa"
+    assert comparison.baseline_strategy == "balanced"
+    assert comparison.variant_strategy == "aggressive"
+    assert comparison.accuracy_delta == pytest.approx(0.1)
+    assert comparison.routing_delta_diff == pytest.approx(-2.0)
+    assert comparison.latency_delta == pytest.approx(-0.1)
+    assert comparison.tokens_delta == pytest.approx(-1.0)

@@ -332,6 +332,40 @@ class PlannerAgent(Agent):
         )
         task_graph_payload = task_graph.to_payload()
 
+        plan_confidence = self._estimate_plan_confidence(task_graph_payload)
+        planner_meta = state.metadata.setdefault("planner", {})
+        telemetry_snapshot = planner_meta.setdefault("telemetry", {})
+        telemetry_snapshot["confidence"] = plan_confidence
+
+        routing_cfg = getattr(config, "model_routing", None)
+        if routing_cfg and getattr(routing_cfg, "enabled", False):
+            overrides = state.metadata.setdefault("routing_overrides", [])
+            for agent_name, policy in routing_cfg.role_policies.items():
+                threshold = getattr(policy, "confidence_threshold", None)
+                if threshold is None or plan_confidence >= threshold:
+                    continue
+                existing = [
+                    entry
+                    for entry in overrides
+                    if isinstance(entry, Mapping)
+                    and str(entry.get("agent", "")).lower()
+                    == agent_name.lower()
+                    and entry.get("reason") == "planner_low_confidence"
+                ]
+                if existing:
+                    continue
+                overrides.append(
+                    {
+                        "agent": agent_name,
+                        "model": policy.escalation_model
+                        or policy.default_model,
+                        "reason": "planner_low_confidence",
+                        "source": "planner",
+                        "confidence": plan_confidence,
+                        "threshold": threshold,
+                    }
+                )
+
         # Create and return the result
         claim = self.create_claim(research_plan, "research_plan")
         result = self.create_result(
@@ -362,6 +396,28 @@ class PlannerAgent(Agent):
                 self.send_message(state, "Planning complete")
 
         return result
+
+    def _estimate_plan_confidence(self, payload: Mapping[str, Any]) -> float:
+        """Heuristically score planner confidence from the structured payload."""
+
+        tasks = payload.get("tasks")
+        if not isinstance(tasks, Sequence) or not tasks:
+            return 0.35
+        task_count = len(tasks)
+        confidence = 0.75
+        if task_count < 3:
+            confidence -= 0.15
+        elif task_count > 6:
+            confidence += 0.05
+        has_exit_criteria = any(
+            isinstance(task, Mapping) and task.get("exit_criteria") for task in tasks
+        )
+        if not has_exit_criteria:
+            confidence -= 0.1
+        edges = payload.get("edges")
+        if isinstance(edges, Sequence) and len(edges) >= task_count:
+            confidence += 0.05
+        return max(0.2, min(0.95, confidence))
 
     def can_execute(self, state: QueryState, config: ConfigModel) -> bool:
         """Best executed at the beginning of the research process."""

@@ -37,6 +37,7 @@ from .execution import (
     _rotate_list,
 )
 from .metrics import OrchestrationMetrics
+from .model_routing import evaluate_gate_confidence_escalations
 from .state import QueryState
 from .token_utils import _capture_token_usage, _execute_with_adapter
 from .utils import calculate_result_confidence, get_memory_usage
@@ -222,6 +223,12 @@ class ScoutGatePolicy:
         }
         if graph_telemetry:
             telemetry["graph"] = graph_telemetry
+
+        evaluate_gate_confidence_escalations(
+            config=self.config,
+            metrics=metrics,
+            heuristics=heuristics,
+        )
 
         decision = ScoutGateDecision(
             should_debate=should_debate,

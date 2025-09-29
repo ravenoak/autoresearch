@@ -96,6 +96,61 @@ class ModelRouteProfile(BaseModel):
         description="Relative quality score; higher values are preferred",
     )
 
+    def cost_per_token(self) -> float:
+        """Return blended per-token cost for the profile."""
+
+        return (self.prompt_cost_per_1k + self.completion_cost_per_1k) / 1000.0
+
+
+class RoleRoutingPolicy(BaseModel):
+    """Role-specific routing preferences and escalation thresholds."""
+
+    preferred_models: List[str] = Field(
+        default_factory=list,
+        description="Ordered list of preferred models when budget allows",
+    )
+    allowed_models: List[str] = Field(
+        default_factory=list,
+        description="Allowlist restricting eligible models for the role",
+    )
+    default_model: str | None = Field(
+        default=None,
+        description="Model applied when no prior selection exists",
+    )
+    token_budget: int | None = Field(
+        default=None,
+        ge=0,
+        description="Optional absolute token ceiling reserved for the role",
+    )
+    token_share: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of the global token budget reserved for the role",
+    )
+    latency_slo_ms: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Role-specific latency objective in milliseconds",
+    )
+    confidence_threshold: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Minimum confidence required to stay on the preferred routing "
+            "profile; below this threshold the router escalates",
+        ),
+    )
+    escalation_model: str | None = Field(
+        default=None,
+        description="Preferred model when escalating due to low confidence",
+    )
+    escalation_reason: str | None = Field(
+        default=None,
+        description="Optional human-readable escalation rationale",
+    )
+
 
 class ModelRoutingConfig(BaseModel):
     """Global configuration controlling budget-aware model routing."""
@@ -118,10 +173,32 @@ class ModelRoutingConfig(BaseModel):
             "prefers cheaper models",
         ),
     )
+    strategy_name: str = Field(
+        default="balanced",
+        description="Identifier for the active routing strategy variant",
+    )
+    role_policies: Dict[str, RoleRoutingPolicy] = Field(
+        default_factory=dict,
+        description="Mapping of agent roles to routing policies",
+    )
     model_profiles: Dict[str, ModelRouteProfile] = Field(
         default_factory=dict,
         description="Cost and latency metadata for eligible models",
     )
+
+    def policy_for(self, agent_name: str) -> tuple[str | None, RoleRoutingPolicy | None]:
+        """Return ``(key, policy)`` for ``agent_name`` when configured."""
+
+        if not agent_name:
+            return None, None
+        lowered = agent_name.lower()
+        for key, policy in self.role_policies.items():
+            if key.lower() == lowered:
+                return key, policy
+        wildcard = self.role_policies.get("*")
+        if wildcard is not None:
+            return "*", wildcard
+        return None, None
 
 
 class SearchConfig(BaseModel):
