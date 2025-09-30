@@ -1,6 +1,4 @@
 import asyncio
-import pytest
-
 from autoresearch.monitor import metrics as monitor_metrics
 
 

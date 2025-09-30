@@ -1,4 +1,4 @@
-"""Storage backup and restore functionality for the Autoresearch project.
+"""Storage backup and restore utilities with typed helpers.
 
 This module provides functionality for backing up and restoring the storage system,
 including scheduled backups, rotation policies, compression, and point-in-time recovery.
@@ -12,13 +12,16 @@ import tarfile
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, ClassVar
 
+from .config import ConfigLoader
 from .errors import BackupError
 from .logging_utils import get_logger
-from .config import ConfigLoader
 
 log = get_logger(__name__)
+
+
+TimerCallback = Callable[[], None]
 
 
 def _resolve_storage_paths(
@@ -39,7 +42,7 @@ def _resolve_storage_paths(
     return resolved_backup_dir, resolved_db_path, resolved_rdf_path
 
 
-def _start_timer(interval_seconds: float, callback: Callable[[], None]) -> threading.Timer:
+def _start_timer(interval_seconds: float, callback: TimerCallback) -> threading.Timer:
     """Create and start a daemonised timer for recurring backups."""
 
     timer = threading.Timer(interval_seconds, callback)
@@ -56,7 +59,7 @@ class BackupInfo:
     timestamp: datetime
     compressed: bool
     size: int
-    metadata: Dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass
@@ -196,7 +199,7 @@ def _restore_backup(
     target_dir: str,
     db_filename: str = "db.duckdb",
     rdf_filename: str = "store.rdf",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Restore a backup to the specified directory.
 
     Args:
@@ -323,7 +326,7 @@ def _restore_backup(
         raise BackupError(f"Failed to restore backup: {e}") from e
 
 
-def _list_backups(backup_dir: str) -> List[BackupInfo]:
+def _list_backups(backup_dir: str) -> list[BackupInfo]:
     """List all backups in the specified directory.
 
     Args:
@@ -510,8 +513,9 @@ class BackupScheduler:
                         if self._running:
                             self._timer = _start_timer(interval_seconds, do_backup)
 
-            # Start the first backup
-            self._timer = _start_timer(0.0, do_backup)
+            # Start the first backup immediately. The callback schedules the
+            # recurring timer and updates ``self._timer`` when it completes.
+            _start_timer(0.0, do_backup)
 
             log.info(f"Scheduled backups every {interval_hours} hours to {backup_dir}")
 
@@ -528,7 +532,7 @@ class BackupScheduler:
 class BackupManager:
     """Manager for backup and restore operations."""
 
-    _scheduler: BackupScheduler | None = None
+    _scheduler: ClassVar[BackupScheduler | None] = None
 
     @classmethod
     def get_scheduler(cls) -> BackupScheduler:
@@ -580,7 +584,7 @@ class BackupManager:
         target_dir: str | None = None,
         db_filename: str = "db.duckdb",
         rdf_filename: str = "store.rdf",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Restore a backup to the specified directory.
 
         Args:
@@ -606,7 +610,7 @@ class BackupManager:
         )
 
     @staticmethod
-    def list_backups(backup_dir: str | None = None) -> List[BackupInfo]:
+    def list_backups(backup_dir: str | None = None) -> list[BackupInfo]:
         """List all backups in the specified directory.
 
         Args:
@@ -667,7 +671,7 @@ class BackupManager:
     @staticmethod
     def restore_point_in_time(
         backup_dir: str, target_time: datetime, target_dir: str | None = None
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Restore to a specific point in time.
 
         This method finds the backup closest to the specified time
@@ -731,7 +735,7 @@ def restore_backup(
     target_dir: str | None = None,
     db_filename: str = "db.duckdb",
     rdf_filename: str = "store.rdf",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Public API to restore a backup."""
     return BackupManager.restore_backup(
         backup_path=backup_path,
@@ -741,7 +745,7 @@ def restore_backup(
     )
 
 
-def list_backups(backup_dir: str | None = None) -> List[BackupInfo]:
+def list_backups(backup_dir: str | None = None) -> list[BackupInfo]:
     """Public API to list available backups."""
     return BackupManager.list_backups(backup_dir)
 
@@ -776,7 +780,7 @@ def restore_point_in_time(
     backup_dir: str,
     target_time: datetime,
     target_dir: str | None = None,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Public API to restore to a specific point in time."""
     return BackupManager.restore_point_in_time(
         backup_dir=backup_dir,

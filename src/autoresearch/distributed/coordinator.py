@@ -139,9 +139,7 @@ def start_storage_coordinator(config: ConfigModel) -> tuple[StorageCoordinator, 
     return coordinator, broker
 
 
-def publish_claim(
-    broker: BrokerType, claim: dict[str, Any], partial_update: bool = False
-) -> None:
+def publish_claim(broker: BrokerType, claim: dict[str, Any], partial_update: bool = False) -> None:
     """Publish a claim persistence request to the broker.
 
     Args:
@@ -150,9 +148,7 @@ def publish_claim(
         partial_update: Whether to perform a partial update.
     """
     broker.publish(
-        PersistClaimMessage(
-            action="persist_claim", claim=claim, partial_update=partial_update
-        )
+        PersistClaimMessage(action="persist_claim", claim=claim, partial_update=partial_update)
     )
 
 
@@ -167,7 +163,9 @@ def start_result_aggregator(config: ConfigModel) -> tuple[ResultAggregator, Brok
     """
 
     dist_cfg = config.distributed_config
-    broker = get_message_broker(getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None))
+    broker = get_message_broker(
+        getattr(dist_cfg, "message_broker", None), getattr(dist_cfg, "broker_url", None)
+    )
     aggregator = ResultAggregator(broker.queue)
     aggregator.start()
     return aggregator, broker

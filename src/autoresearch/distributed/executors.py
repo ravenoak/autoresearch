@@ -20,7 +20,7 @@ from .broker import (
     AgentResultMessage,
     BrokerType,
     MessageQueueProtocol,
-    StorageBrokerQueueProtocol,
+    StorageQueueProtocol,
     STOP_MESSAGE,
 )
 from .coordinator import (
@@ -66,7 +66,7 @@ def _execute_agent_remote(
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: StorageBrokerQueueProtocol | None = None,
+    storage_queue: StorageQueueProtocol | None = None,
     http_session: Any | None = None,
     llm_session: Any | None = None,
 ) -> AgentResultMessage:
@@ -101,7 +101,7 @@ def _execute_agent_process(
     state: QueryStateLike,
     config: ConfigModel,
     result_queue: MessageQueueProtocol | None = None,
-    storage_queue: StorageBrokerQueueProtocol | None = None,
+    storage_queue: StorageQueueProtocol | None = None,
 ) -> AgentResultMessage:
     """Execute a single agent in a spawned process."""
     if storage_queue is not None:

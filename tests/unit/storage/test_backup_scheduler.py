@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 
 from autoresearch import storage_backup
-from autoresearch.storage_backup import BackupConfig, BackupInfo, BackupScheduler
+from autoresearch.storage_backup import (
+    BackupConfig,
+    BackupInfo,
+    BackupScheduler,
+    TimerCallback,
+)
 
 
 @pytest.fixture()
@@ -37,7 +42,7 @@ def scheduler_environment(
     monkeypatch.setattr(storage_backup, "_create_backup", fake_create_backup)
 
     class DummyTimer:
-        def __init__(self, interval: float, callback: Callable[[], None]) -> None:
+        def __init__(self, interval: float, callback: TimerCallback) -> None:
             self.interval = interval
             self.callback = callback
             self.started = False
@@ -54,7 +59,7 @@ def scheduler_environment(
         def cancel(self) -> None:
             self.cancelled = True
 
-    def fake_start_timer(interval: float, callback: Callable[[], None]) -> DummyTimer:
+    def fake_start_timer(interval: float, callback: TimerCallback) -> DummyTimer:
         timer = DummyTimer(interval, callback)
         timers.append(timer)
         timer.start()

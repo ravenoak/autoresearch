@@ -72,7 +72,11 @@ from .storage_typing import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .storage_backends import KuzuStorageBackend
-    from .distributed.broker import PersistClaimMessage, StorageBrokerQueueProtocol
+    from .distributed.broker import (
+        PersistClaimMessage,
+        StorageBrokerQueueProtocol,
+        StorageQueueProtocol,
+    )
 
 # Typed reference to the optional Kuzu backend.
 KuzuBackend: type[KuzuStorageBackend] | None = None
@@ -208,7 +212,7 @@ class StorageDelegateProtocol(Protocol):
 
 _delegate: StorageDelegateProtocol | None = None
 # Optional queue for distributed persistence
-_message_queue: "StorageBrokerQueueProtocol | None" = None
+_message_queue: "StorageQueueProtocol | StorageBrokerQueueProtocol | None" = None
 
 _cached_config: StorageConfig | None = None
 
@@ -578,7 +582,9 @@ def _reset_context(ctx: StorageContext) -> None:
     ctx.config_fingerprint = None
 
 
-def set_message_queue(queue: "StorageBrokerQueueProtocol | None") -> None:
+def set_message_queue(
+    queue: "StorageQueueProtocol | StorageBrokerQueueProtocol | None",
+) -> None:
     """Configure a message queue for distributed persistence."""
     global _message_queue
     _message_queue = queue
