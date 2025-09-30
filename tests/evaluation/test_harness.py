@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ import pytest
 from autoresearch.config.models import ConfigModel
 from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
 from autoresearch.models import QueryResponse
+from tests.unit.typing_helpers import build_summary_fixture
 
 
 @pytest.fixture
@@ -171,7 +173,7 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
     assert summary.example_csv and summary.example_csv.exists()
     assert summary.summary_csv and summary.summary_csv.exists()
 
-    with duckdb.connect(str(summary.duckdb_path)) as conn:
+    with closing(duckdb.connect(str(summary.duckdb_path))) as conn:
         count = conn.execute(
             "SELECT COUNT(*) FROM evaluation_results WHERE run_id = ?",
             [summary.run_id],
@@ -238,11 +240,8 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
 def test_compare_routing_strategies() -> None:
     """Comparisons report deltas between baseline and variant strategies."""
 
-    base = EvaluationSummary(
-        dataset="truthfulqa",
+    base = build_summary_fixture(
         run_id="baseline",
-        started_at=datetime.now(tz=timezone.utc),
-        completed_at=datetime.now(tz=timezone.utc),
         total_examples=1,
         accuracy=0.5,
         citation_coverage=0.5,
@@ -261,6 +260,8 @@ def test_compare_routing_strategies() -> None:
         avg_routing_decisions=2.0,
         routing_strategy="balanced",
         config_signature="base",
+        started_at=datetime.now(tz=timezone.utc),
+        completed_at=datetime.now(tz=timezone.utc),
         duckdb_path=None,
         example_parquet=None,
         summary_parquet=None,
