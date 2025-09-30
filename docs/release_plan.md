@@ -21,13 +21,19 @@ STATUS.md, ROADMAP.md, and CHANGELOG.md for aligned progress. Phase 3
 The **September 30, 2025 at 14:28 UTC** `task verify` rerun recorded after the
 final-answer audit documentation now halts in the existing
 `QueryState.model_copy` strict-typing gap while the new `audit.*` policy knobs
-settle into the registry. The paired **14:30 UTC** `task coverage` sweep limits
-itself to the base extras, reaches the Pydantic `A2AMessage` schema blocker, and
-captures the evidence needed to continue reconciling operator-acknowledged
-audits without toggling the TestPyPI directive. These logs keep the release gate
-current while the documentation changes land.
-【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】
-【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
+settle into the registry. On **September 30, 2025 at 15:15 UTC** we patched the
+`A2AMessage` schema to accept the SDK's concrete messages and added
+`test_a2a_message_accepts_sdk_message` so a regression test guards the fix.
+【F:baseline/logs/task-verify-20250930T142820Z.log†L1-L36】【F:src/autoresearch/a2a_interface.py†L66-L77】
+【F:src/autoresearch/a2a_interface.py†L269-L275】【F:tests/unit/test_a2a_interface.py†L82-L90】
+The dedicated unit run confirms a real SDK envelope now validates, while the
+behavior suite no longer surfaces the prior Pydantic failure and instead stops
+on pre-existing orchestration and storage prerequisites.
+【cfb7bf†L1-L2】【ab7ebf†L1-L13】
+The full coverage sweep still stalls while attempting to install GPU extras in
+this environment, so we retain the earlier **14:30 UTC** coverage log as the
+latest complete evidence until the extras sync can succeed.
+【583440†L1-L29】【F:baseline/logs/task-coverage-20250930T143024Z.log†L1-L41】
 
 The **September 30, 2025 at 14:55 UTC** verify sweep reaches
 `uv run mypy src` without tripping the `QueryState.model_copy` regression,

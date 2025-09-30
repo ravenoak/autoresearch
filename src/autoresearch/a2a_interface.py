@@ -22,6 +22,7 @@ from typing import (
     Mapping,
     MutableMapping,
     Protocol,
+    runtime_checkable,
     Self,
     TypedDict,
     cast,
@@ -32,7 +33,7 @@ from uuid import uuid4
 import httpx
 import uvicorn
 from uvicorn.config import Config as UvicornConfig
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, ConfigDict
 
 from .api import capabilities_endpoint
 from .config import ConfigLoader, ConfigModel, get_config
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
         SendMessageResponse,
     )
 else:
+    @runtime_checkable
     class Message(Protocol):
         """Structural type for messages exchanged with the A2A SDK."""
 
@@ -266,6 +268,8 @@ if A2A_AVAILABLE:
 
     class A2AMessage(BaseModel):
         """Message wrapper used by the A2A interface."""
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
         type: A2AMessageType
         message: Message
