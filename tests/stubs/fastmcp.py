@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable
-from types import ModuleType
-from typing import Any, Callable, Dict, Protocol, cast
+from types import ModuleType, TracebackType
+from typing import Any, Callable, Protocol, cast
 
 from ._registry import install_stub_module
 
 
 class FastMCP:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.tools: Dict[str, Callable[..., Awaitable[Any] | Any]] = {}
+        self.tools: dict[str, Callable[..., Awaitable[Any] | Any]] = {}
 
     def tool(self, func: Callable[..., Awaitable[Any] | Any]) -> Callable[..., Awaitable[Any] | Any]:
         self.tools[func.__name__] = func
@@ -32,7 +32,12 @@ class Client:
     async def __aenter__(self) -> Client:
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - trivial
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:  # pragma: no cover - trivial
         return None
 
     async def call_tool(self, name: str, params: dict[str, Any]) -> Any:

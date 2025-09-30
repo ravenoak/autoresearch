@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
-from types import ModuleType, SimpleNamespace
-from typing import Any, Protocol, Sequence, cast
+from types import ModuleType, SimpleNamespace, TracebackType
+from typing import Any, ContextManager, Protocol, Sequence, cast
 
 from ._registry import install_stub_module
 
@@ -35,16 +35,21 @@ class StreamlitModule(Protocol):
 
     def columns(self, *args: Any, **kwargs: Any) -> Sequence[SimpleNamespace]: ...
 
-    def container(self) -> SimpleNamespace: ...
+    def container(self) -> ContextManager[SimpleNamespace]: ...
 
-    def modal(self, *args: Any, **kwargs: Any) -> SimpleNamespace: ...
+    def modal(self, *args: Any, **kwargs: Any) -> ContextManager[SimpleNamespace]: ...
 
 
 class _ContextManager(SimpleNamespace):
-    def __enter__(self) -> None:  # pragma: no cover - trivial
-        return None
+    def __enter__(self) -> SimpleNamespace:  # pragma: no cover - trivial
+        return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - trivial
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:  # pragma: no cover - trivial
         return None
 
 
@@ -77,10 +82,10 @@ class _StreamlitModule(ModuleType):
     def columns(self, *args: Any, **kwargs: Any) -> Sequence[SimpleNamespace]:
         return (SimpleNamespace(), SimpleNamespace())
 
-    def container(self) -> SimpleNamespace:
+    def container(self) -> ContextManager[SimpleNamespace]:
         return _ContextManager()
 
-    def modal(self, *args: Any, **kwargs: Any) -> SimpleNamespace:
+    def modal(self, *args: Any, **kwargs: Any) -> ContextManager[SimpleNamespace]:
         return _ContextManager()
 
 

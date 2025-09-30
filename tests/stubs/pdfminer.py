@@ -4,24 +4,24 @@ from __future__ import annotations
 
 import importlib.util
 from types import ModuleType
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 from ._registry import install_stub_module
 
 
-def extract_text(*args, **kwargs) -> str:
+def extract_text(*args: Any, **kwargs: Any) -> str:
     return ""
 
 
 class PdfminerHighLevelModule(Protocol):
-    def extract_text(self, *args, **kwargs) -> str: ...
+    def extract_text(self, *args: Any, **kwargs: Any) -> str: ...
 
 
 class _PdfminerHighLevelModule(ModuleType):
     def __init__(self) -> None:
         super().__init__("pdfminer.high_level")
 
-    def extract_text(self, *args, **kwargs) -> str:
+    def extract_text(self, *args: Any, **kwargs: Any) -> str:
         return extract_text(*args, **kwargs)
 
 
