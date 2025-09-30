@@ -9,7 +9,11 @@ checking.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Sequence
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable, Iterable, Sequence
+
+from autoresearch.evaluation.harness import EvaluationSummary
 
 
 @dataclass(slots=True)
@@ -103,6 +107,74 @@ def make_runtime_config(
         distributed_config=DistributedConfig(enabled=distributed_enabled),
         storage=storage or StorageConfig(),
     )
+
+
+def build_summary_fixture(
+    *,
+    dataset: str = "truthfulqa",
+    run_id: str = "run-123",
+    started_at: datetime | None = None,
+    completed_at: datetime | None = None,
+    total_examples: int = 1,
+    config_signature: str = "cfg",
+    accuracy: float | None = 0.5,
+    citation_coverage: float | None = 1.0,
+    contradiction_rate: float | None = 0.0,
+    avg_latency_seconds: float | None = 2.5,
+    avg_tokens_input: float | None = 100.0,
+    avg_tokens_output: float | None = 50.0,
+    avg_tokens_total: float | None = 150.0,
+    avg_cycles_completed: float | None = 1.0,
+    gate_debate_rate: float | None = 0.0,
+    gate_exit_rate: float | None = 0.25,
+    gated_example_ratio: float | None = 1.0,
+    avg_planner_depth: float | None = 2.5,
+    avg_routing_delta: float | None = 1.75,
+    total_routing_delta: float | None = 3.5,
+    avg_routing_decisions: float | None = 1.5,
+    routing_strategy: str | None = "balanced",
+    duckdb_path: Path | None = None,
+    example_parquet: Path | None = None,
+    summary_parquet: Path | None = None,
+    example_csv: Path | None = None,
+    summary_csv: Path | None = None,
+    **overrides: Any,
+) -> EvaluationSummary:
+    """Construct a populated :class:`EvaluationSummary` for tests."""
+
+    started = started_at or datetime.now(tz=timezone.utc)
+    completed = completed_at or started
+    summary_kwargs: dict[str, Any] = {
+        "dataset": dataset,
+        "run_id": run_id,
+        "started_at": started,
+        "completed_at": completed,
+        "total_examples": total_examples,
+        "config_signature": config_signature,
+        "accuracy": accuracy,
+        "citation_coverage": citation_coverage,
+        "contradiction_rate": contradiction_rate,
+        "avg_latency_seconds": avg_latency_seconds,
+        "avg_tokens_input": avg_tokens_input,
+        "avg_tokens_output": avg_tokens_output,
+        "avg_tokens_total": avg_tokens_total,
+        "avg_cycles_completed": avg_cycles_completed,
+        "gate_debate_rate": gate_debate_rate,
+        "gate_exit_rate": gate_exit_rate,
+        "gated_example_ratio": gated_example_ratio,
+        "avg_planner_depth": avg_planner_depth,
+        "avg_routing_delta": avg_routing_delta,
+        "total_routing_delta": total_routing_delta,
+        "avg_routing_decisions": avg_routing_decisions,
+        "routing_strategy": routing_strategy,
+        "duckdb_path": duckdb_path,
+        "example_parquet": example_parquet,
+        "summary_parquet": summary_parquet,
+        "example_csv": example_csv,
+        "summary_csv": summary_csv,
+    }
+    summary_kwargs.update(overrides)
+    return EvaluationSummary(**summary_kwargs)
 
 
 @dataclass(slots=True)

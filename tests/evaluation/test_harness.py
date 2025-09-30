@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from contextlib import closing
 from dataclasses import replace
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -14,6 +13,7 @@ import pytest
 from autoresearch.config.models import ConfigModel
 from autoresearch.evaluation import EvaluationHarness, EvaluationSummary
 from autoresearch.models import QueryResponse
+from tests.unit.typing_helpers import build_summary_fixture
 
 
 @pytest.fixture
@@ -239,12 +239,9 @@ def test_harness_persists_results_and_artifacts(tmp_harness: EvaluationHarness) 
 def test_compare_routing_strategies() -> None:
     """Comparisons report deltas between baseline and variant strategies."""
 
-    base = EvaluationSummary(
-        dataset="truthfulqa",
+    base = build_summary_fixture(
         run_id="baseline",
-        started_at=datetime.now(tz=timezone.utc),
-        completed_at=datetime.now(tz=timezone.utc),
-        total_examples=1,
+        config_signature="base",
         accuracy=0.5,
         citation_coverage=0.5,
         contradiction_rate=0.1,
@@ -261,7 +258,6 @@ def test_compare_routing_strategies() -> None:
         total_routing_delta=10.0,
         avg_routing_decisions=2.0,
         routing_strategy="balanced",
-        config_signature="base",
         duckdb_path=None,
         example_parquet=None,
         summary_parquet=None,
