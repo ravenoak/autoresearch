@@ -2,11 +2,10 @@
 
 import asyncio
 import time
+from typing import Any, Callable, cast
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-from a2a.types import Message
-from a2a.utils.message import get_message_text
 
 from autoresearch.a2a_interface import (
     A2AInterface,
@@ -17,12 +16,15 @@ from autoresearch.a2a_interface import (
     requires_a2a,
     A2A_AVAILABLE,
 )
-from a2a.utils.message import new_agent_text_message
 from scripts.a2a_concurrency_sim import run_simulation
 
-
-# Skip all tests if A2A SDK is not available
-pytestmark = pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
+if A2A_AVAILABLE:
+    from a2a.types import Message
+    from a2a.utils.message import get_message_text, new_agent_text_message
+else:  # pragma: no cover - exercised via regression test
+    Message = cast(Any, None)
+    get_message_text = cast(Callable[[Any], str], lambda message: "")
+    new_agent_text_message = cast(Callable[..., Any], lambda *args, **kwargs: None)
 
 
 @pytest.fixture
@@ -44,6 +46,9 @@ def mock_send_request():
 @pytest.fixture
 def make_a2a_message():
     """Create a real A2A message for tests."""
+
+    if not A2A_AVAILABLE:  # pragma: no cover - runtime skip
+        pytest.skip("A2A SDK not available")
 
     def _make(**metadata):
         msg = new_agent_text_message("")
@@ -90,6 +95,21 @@ def test_a2a_message_accepts_sdk_message(make_a2a_message):
     assert envelope.message is sdk_message
 
 
+def test_runtime_requirements_raise(monkeypatch):
+    """Missing runtime classes or helpers should produce helpful errors."""
+
+    import autoresearch.a2a_interface as module
+
+    monkeypatch.setattr(module, "_RuntimeMessage", None)
+    with pytest.raises(RuntimeError):
+        module.get_message_model_cls()
+
+    monkeypatch.setattr(module, "_runtime_get_message_text", None)
+    with pytest.raises(RuntimeError):
+        module.get_message_text(cast(Any, MagicMock()))
+
+
+@pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 class TestA2AInterface:
     """Tests for the A2AInterface class."""
 
@@ -240,6 +260,7 @@ class TestA2AInterface:
         assert calls_sorted[1][1] > calls_sorted[2][0]
 
 
+@pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 class TestA2AClient:
     """Tests for the A2AClient class."""
 
@@ -378,6 +399,7 @@ def test_simulation_event_order() -> None:
     assert counts == {0: 3, 1: 3}
 
 
+@pytest.mark.skipif(not A2A_AVAILABLE, reason="A2A SDK not available")
 class TestA2AClientExtended(TestA2AClient):
     def test_query_agent_error(self, mock_send_request):
         client = A2AClient()

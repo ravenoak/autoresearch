@@ -5,11 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from contextlib import closing, contextmanager
+from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Sequence, cast
+from typing import Any, Callable, ContextManager, Iterable, List, Mapping, Optional, Sequence, cast
 from uuid import uuid4
 
 import duckdb
@@ -205,7 +205,7 @@ class EvaluationHarness:
                     )
                 )
                 continue
-            config_copy = config.model_copy(update={}, deep=True)
+            config_copy = config.model_copy(deep=True)
             response = runner(example.prompt, config_copy)
             results.append(self._build_result(example, response))
         return results
@@ -302,23 +302,32 @@ class EvaluationHarness:
         accuracy = self._mean_boolean([r.correct for r in results])
         citation_coverage = self._mean_boolean([r.has_citations for r in results])
         contradiction_rate = self._mean_boolean([r.contradiction for r in results])
-        avg_latency = self._mean_float([r.latency_seconds for r in results])
-        avg_tokens_in = self._mean_float([r.tokens_input for r in results])
-        avg_tokens_out = self._mean_float([r.tokens_output for r in results])
-        avg_tokens_total = self._mean_float([r.tokens_total for r in results])
-        avg_cycles_completed = self._mean_float(
-            [float(r.cycles_completed) if r.cycles_completed is not None else None for r in results]
+        avg_latency = self._mean_float(
+            [self._coerce_optional_float(r.latency_seconds) for r in results]
         )
-        avg_planner_depth = self._mean_float([r.planner_depth for r in results])
-        avg_routing_delta = self._mean_float([r.routing_delta for r in results])
-        total_routing_delta = self._sum_float([r.routing_delta for r in results])
+        avg_tokens_in = self._mean_float(
+            [self._coerce_optional_float(r.tokens_input) for r in results]
+        )
+        avg_tokens_out = self._mean_float(
+            [self._coerce_optional_float(r.tokens_output) for r in results]
+        )
+        avg_tokens_total = self._mean_float(
+            [self._coerce_optional_float(r.tokens_total) for r in results]
+        )
+        avg_cycles_completed = self._mean_float(
+            [self._coerce_optional_float(r.cycles_completed) for r in results]
+        )
+        avg_planner_depth = self._mean_float(
+            [self._coerce_optional_float(r.planner_depth) for r in results]
+        )
+        avg_routing_delta = self._mean_float(
+            [self._coerce_optional_float(r.routing_delta) for r in results]
+        )
+        total_routing_delta = self._sum_float(
+            [self._coerce_optional_float(r.routing_delta) for r in results]
+        )
         avg_routing_decisions = self._mean_float(
-            [
-                float(r.routing_decision_count)
-                if r.routing_decision_count is not None
-                else None
-                for r in results
-            ]
+            [self._coerce_optional_float(r.routing_decision_count) for r in results]
         )
         routing_strategy = next(
             (
@@ -672,6 +681,19 @@ class EvaluationHarness:
         return sum(filtered) / len(filtered)
 
     @staticmethod
+    def _coerce_optional_float(
+        value: float | int | str | None,
+    ) -> Optional[float]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
     def _mean_float(values: Iterable[Optional[float]]) -> Optional[float]:
         filtered = [value for value in values if value is not None]
         if not filtered:
@@ -864,12 +886,10 @@ class EvaluationHarness:
             routing_count = len(decisions)
         return routing_delta, routing_count
 
-    @contextmanager
-    def _open_duckdb(self) -> Iterator[DuckDBPyConnection]:
-        """Yield a DuckDB connection ensuring it is always closed."""
+    def _open_duckdb(self) -> ContextManager[DuckDBPyConnection]:
+        """Return a context manager that closes DuckDB connections reliably."""
 
-        with closing(duckdb.connect(self._duckdb_uri())) as connection:
-            yield connection
+        return closing(duckdb.connect(self._duckdb_uri()))
 
     def _duckdb_uri(self) -> str:
         return str(self.duckdb_path)
