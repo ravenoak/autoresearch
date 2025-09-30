@@ -62,6 +62,17 @@ def _coerce_float(value: Any) -> float:
     return result
 
 
+def _flatten_numeric(value: Any) -> list[float]:
+    """Return ``value`` flattened into numeric samples."""
+
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        flattened: list[float] = []
+        for item in value:
+            flattened.extend(_flatten_numeric(item))
+        return flattened
+    return [_coerce_float(value)]
+
+
 def _log_gpu_dependency_missing(dependency: str, error: Exception) -> None:
     """Log missing optional GPU dependencies at an informational level."""
 
@@ -129,17 +140,19 @@ def _get_gpu_stats() -> tuple[float, float]:
             pynvml.nvmlInit()
             try:
                 count = pynvml.nvmlDeviceGetCount()
-                util_total = 0.0
-                mem_total = 0.0
+                util_samples: list[float] = []
+                mem_samples: list[float] = []
                 for i in range(count):
                     handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                     util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                     mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                    util_total += _coerce_float(getattr(util, "gpu", 0.0))
-                    mem_total += _coerce_float(mem.used) / (1024 * 1024)
-                if count:
-                    util_total /= count
-                return util_total, mem_total
+                    util_samples.extend(_flatten_numeric(getattr(util, "gpu", 0.0)))
+                    mem_samples.extend(
+                        _flatten_numeric(_coerce_float(mem.used) / (1024 * 1024))
+                    )
+                avg_util = sum(util_samples) / len(util_samples) if util_samples else 0.0
+                total_mem = sum(mem_samples)
+                return avg_util, total_mem
             finally:
                 with contextlib.suppress(Exception):
                     pynvml.nvmlShutdown()
@@ -178,13 +191,13 @@ def _get_gpu_stats() -> tuple[float, float]:
                 timeout=1,
             )
             output = completed.stdout
-        utils = []
-        mems = []
+        utils: list[float] = []
+        mems: list[float] = []
         for line in output.strip().splitlines():
             try:
                 util_str, mem_str = line.split(",")
-                utils.append(_coerce_float(util_str.strip()))
-                mems.append(_coerce_float(mem_str.strip()))
+                utils.extend(_flatten_numeric(util_str.strip()))
+                mems.extend(_flatten_numeric(mem_str.strip()))
             except Exception:
                 continue
         if utils:
@@ -206,8 +219,11 @@ def _get_usage() -> tuple[float, float]:
         import psutil
 
         cpu_raw = psutil.cpu_percent(interval=None)
+        cpu_samples = _flatten_numeric(cpu_raw)
+        cpu_value = sum(cpu_samples) / len(cpu_samples) if cpu_samples else 0.0
         mem_info = psutil.Process().memory_info()
-        return _coerce_float(cpu_raw), _coerce_float(mem_info.rss) / (1024 * 1024)
+        mem_value = _coerce_float(mem_info.rss) / (1024 * 1024)
+        return cpu_value, mem_value
     except Exception:
         return 0.0, 0.0
 
