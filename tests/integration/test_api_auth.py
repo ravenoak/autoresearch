@@ -1,83 +1,117 @@
-import asyncio
+from __future__ import annotations
 
+import asyncio
+from typing import cast
+
+import pytest
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from fastapi.testclient import TestClient
+from requests import Response as HTTPResponse
 
 from autoresearch.api.utils import generate_bearer_token
 from autoresearch.config.loader import ConfigLoader
 from autoresearch.config.models import APIConfig, ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.orchestrator import Orchestrator
+from autoresearch.orchestration.types import CallbackMap
+from tests.typing_helpers import QueryRunner
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch: pytest.MonkeyPatch) -> ConfigModel:
     cfg = ConfigModel(api=APIConfig())
     ConfigLoader.reset_instance()
-    monkeypatch.setattr(ConfigLoader, "load_config", lambda self: cfg)
-    monkeypatch.setattr(
-        Orchestrator,
-        "run_query",
-        lambda q, c, callbacks=None, **k: QueryResponse(
-            answer="ok", citations=[], reasoning=[], metrics={}
-        ),
-    )
+
+    def _load_config_stub(self: ConfigLoader) -> ConfigModel:
+        return cfg
+
+    def _run_query_stub(
+        query: str,
+        config: ConfigModel,
+        callbacks: CallbackMap | None = None,
+        **kwargs: object,
+    ) -> QueryResponse:
+        return QueryResponse(answer="ok", citations=[], reasoning=[], metrics={})
+
+    run_query_stub: QueryRunner = _run_query_stub
+    monkeypatch.setattr(ConfigLoader, "load_config", _load_config_stub)
+    monkeypatch.setattr(Orchestrator, "run_query", run_query_stub)
     return cfg
 
 
-def test_http_bearer_token(monkeypatch, api_client):
+def test_http_bearer_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     token = generate_bearer_token()
     cfg.api.bearer_token = token
 
-    resp = api_client.post(
-        "/query", json={"query": "q"}, headers={"Authorization": f"Bearer {token}"}
+    resp = cast(
+        HTTPResponse,
+        api_client.post(
+            "/query", json={"query": "q"}, headers={"Authorization": f"Bearer {token}"}
+        ),
     )
     assert resp.status_code == 200
 
-    resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"})
+    resp = cast(
+        HTTPResponse,
+        api_client.post(
+            "/query", json={"query": "q"}, headers={"Authorization": "Bearer bad"}
+        ),
+    )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid token"
 
 
-def test_role_assignments(monkeypatch, api_client):
+def test_role_assignments(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"adm": "admin"}
     token = generate_bearer_token()
     cfg.api.bearer_token = token
 
     @api_client.app.get("/whoami")
-    async def whoami(request: Request):
+    async def whoami(request: Request) -> JSONResponse:
         return JSONResponse({"role": request.state.role})
 
-    resp_key = api_client.get("/whoami", headers={"X-API-Key": "adm"})
+    resp_key = cast(HTTPResponse, api_client.get("/whoami", headers={"X-API-Key": "adm"}))
     assert resp_key.status_code == 200
     assert resp_key.json() == {"role": "admin"}
 
-    resp_token = api_client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
+    resp_token = cast(
+        HTTPResponse,
+        api_client.get("/whoami", headers={"Authorization": f"Bearer {token}"}),
+    )
     assert resp_token.status_code == 200
     assert resp_token.json() == {"role": "user"}
 
-    resp_bad = api_client.get("/whoami", headers={"X-API-Key": "bad"})
+    resp_bad = cast(
+        HTTPResponse, api_client.get("/whoami", headers={"X-API-Key": "bad"})
+    )
     assert resp_bad.status_code == 401
     assert resp_bad.json()["detail"] == "Invalid API key"
 
-    resp_missing = api_client.get("/whoami")
+    resp_missing = cast(HTTPResponse, api_client.get("/whoami"))
     assert resp_missing.status_code == 401
     assert resp_missing.json()["detail"] == "Missing token"
 
 
-def test_rate_limit(monkeypatch, api_client):
+def test_rate_limit(monkeypatch: pytest.MonkeyPatch, api_client: TestClient) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.rate_limit = 1
 
-    resp1 = api_client.post("/query", json={"query": "q"})
+    resp1 = cast(HTTPResponse, api_client.post("/query", json={"query": "q"}))
     assert resp1.status_code == 200
-    resp2 = api_client.post("/query", json={"query": "q"})
+    resp2 = cast(HTTPResponse, api_client.post("/query", json={"query": "q"}))
     assert resp2.status_code == 429
     assert resp2.text == "rate limit exceeded"
 
 
-def test_rate_limit_configurable(monkeypatch, api_client):
+def test_rate_limit_configurable(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.rate_limit = 2
 
@@ -86,7 +120,9 @@ def test_rate_limit_configurable(monkeypatch, api_client):
     assert api_client.post("/query", json={"query": "q"}).status_code == 429
 
 
-def test_role_permissions(monkeypatch, api_client):
+def test_role_permissions(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"adm": "admin", "usr": "user"}
     cfg.api.role_permissions = {"admin": ["query"], "user": []}
@@ -98,30 +134,39 @@ def test_role_permissions(monkeypatch, api_client):
     assert denied.status_code == 403
 
 
-def test_single_api_key(monkeypatch, api_client):
+def test_single_api_key(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
 
     ok = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "secret"})
     assert ok.status_code == 200
 
-    missing = api_client.post("/query", json={"query": "q"})
+    missing = cast(HTTPResponse, api_client.post("/query", json={"query": "q"}))
     assert missing.status_code == 401
     assert missing.json()["detail"] == "Missing API key"
     assert missing.headers["WWW-Authenticate"] == "API-Key"
 
 
-def test_invalid_api_key(monkeypatch, api_client):
+def test_invalid_api_key(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"good": "user"}
 
-    bad = api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"})
+    bad = cast(
+        HTTPResponse,
+        api_client.post("/query", json={"query": "q"}, headers={"X-API-Key": "bad"}),
+    )
     assert bad.status_code == 401
     assert bad.json()["detail"] == "Invalid API key"
     assert bad.headers["WWW-Authenticate"] == "API-Key"
 
 
-def test_api_key_or_token(monkeypatch, api_client):
+def test_api_key_or_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Either a valid API key or bearer token authenticates the request."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
@@ -136,41 +181,53 @@ def test_api_key_or_token(monkeypatch, api_client):
     )
     assert ok_token.status_code == 200
 
-    missing = api_client.post("/query", json={"query": "q"})
+    missing = cast(HTTPResponse, api_client.post("/query", json={"query": "q"}))
     assert missing.status_code == 401
     assert missing.json()["detail"] == "Missing token"
 
 
-def test_invalid_api_key_with_valid_token(monkeypatch, api_client):
+def test_invalid_api_key_with_valid_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Invalid API key causes rejection even when token is valid."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     token = generate_bearer_token()
     cfg.api.bearer_token = token
-    resp = api_client.post(
-        "/query",
-        json={"query": "q"},
-        headers={"X-API-Key": "bad", "Authorization": f"Bearer {token}"},
+    resp = cast(
+        HTTPResponse,
+        api_client.post(
+            "/query",
+            json={"query": "q"},
+            headers={"X-API-Key": "bad", "Authorization": f"Bearer {token}"},
+        ),
     )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid API key"
 
 
-def test_invalid_token_with_valid_api_key(monkeypatch, api_client):
+def test_invalid_token_with_valid_api_key(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Invalid bearer token is rejected even with a valid API key."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
     cfg.api.bearer_token = generate_bearer_token()
-    resp = api_client.post(
-        "/query",
-        json={"query": "q"},
-        headers={"X-API-Key": "secret", "Authorization": "Bearer bad"},
+    resp = cast(
+        HTTPResponse,
+        api_client.post(
+            "/query",
+            json={"query": "q"},
+            headers={"X-API-Key": "secret", "Authorization": "Bearer bad"},
+        ),
     )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid token"
 
 
-def test_query_status_and_cancel(monkeypatch, api_client):
+def test_query_status_and_cancel(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"adm": "admin"}
     cfg.api.role_permissions = {"admin": ["query"]}
@@ -189,27 +246,38 @@ def test_query_status_and_cancel(monkeypatch, api_client):
     assert cancel.status_code == 200
 
 
-def test_invalid_bearer_token(monkeypatch, api_client):
+def test_invalid_bearer_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Invalid bearer token should return 401."""
     cfg = _setup(monkeypatch)
     cfg.api.bearer_token = generate_bearer_token()
-    resp = api_client.post("/query", json={"query": "q"}, headers={"Authorization": "Bearer wrong"})
+    resp = cast(
+        HTTPResponse,
+        api_client.post(
+            "/query", json={"query": "q"}, headers={"Authorization": "Bearer wrong"}
+        ),
+    )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid token"
     assert resp.headers["WWW-Authenticate"] == "Bearer"
 
 
-def test_missing_bearer_token(monkeypatch, api_client):
+def test_missing_bearer_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Requests without a token are rejected."""
     cfg = _setup(monkeypatch)
     cfg.api.bearer_token = generate_bearer_token()
-    resp = api_client.post("/query", json={"query": "q"})
+    resp = cast(HTTPResponse, api_client.post("/query", json={"query": "q"}))
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Missing token"
     assert resp.headers["WWW-Authenticate"] == "Bearer"
 
 
-def test_permission_denied(monkeypatch, api_client):
+def test_permission_denied(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """API key lacking permission results in 403."""
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"u": "user"}
@@ -218,7 +286,9 @@ def test_permission_denied(monkeypatch, api_client):
     assert resp.status_code == 403
 
 
-def test_docs_protected(monkeypatch, api_client):
+def test_docs_protected(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Documentation endpoints require authentication when configured."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
@@ -233,7 +303,9 @@ def test_docs_protected(monkeypatch, api_client):
     assert openapi.status_code == 200
 
 
-def test_invalid_key_and_token(monkeypatch, api_client):
+def test_invalid_key_and_token(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     """Both credentials invalid results in 401."""
     cfg = _setup(monkeypatch)
     cfg.api.api_key = "secret"
@@ -246,7 +318,9 @@ def test_invalid_key_and_token(monkeypatch, api_client):
     assert resp.status_code == 401
 
 
-def test_query_status_permission_denied(monkeypatch, api_client):
+def test_query_status_permission_denied(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"u": "user"}
     cfg.api.role_permissions = {"user": []}
@@ -255,7 +329,9 @@ def test_query_status_permission_denied(monkeypatch, api_client):
     assert resp.status_code == 403
 
 
-def test_cancel_query_permission_denied(monkeypatch, api_client):
+def test_cancel_query_permission_denied(
+    monkeypatch: pytest.MonkeyPatch, api_client: TestClient
+) -> None:
     cfg = _setup(monkeypatch)
     cfg.api.api_keys = {"u": "user"}
     cfg.api.role_permissions = {"user": []}
@@ -264,7 +340,7 @@ def test_cancel_query_permission_denied(monkeypatch, api_client):
     assert resp.status_code == 403
 
 
-def test_verify_bearer_token_reexport():
+def test_verify_bearer_token_reexport() -> None:
     """``verify_bearer_token`` remains available via ``api.auth``."""
     from autoresearch.api.auth import verify_bearer_token as exported
 

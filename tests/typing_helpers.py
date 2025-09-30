@@ -12,7 +12,10 @@ from typing import (
     TypeVar,
     cast,
     overload,
+    TypedDict,
 )
+
+import networkx as nx
 
 from pytest_bdd import given as _given
 from pytest_bdd import scenario as _scenario
@@ -22,9 +25,12 @@ from pytest_bdd import when as _when
 from autoresearch.config.models import ConfigModel
 from autoresearch.models import QueryResponse
 from autoresearch.orchestration.types import AgentExecutionResult, CallbackMap
+from autoresearch.storage import StorageContext
 
 if TYPE_CHECKING:
     from autoresearch.orchestration.state import QueryState
+    from autoresearch.storage_backends import DuckDBStorageBackend
+    from autoresearch.storage_typing import GraphProtocol
 
 R_co = TypeVar("R_co")
 T = TypeVar("T")
@@ -90,6 +96,57 @@ class QueryRunner(Protocol):
     ) -> QueryResponse: ...
 
 
+class GraphContradictionMetadata(TypedDict):
+    raw_score: float
+    weighted_score: float
+    weight: float
+    items: list[dict[str, object]]
+
+
+class GraphSimilarityMetadata(TypedDict, total=False):
+    raw_score: float
+    weighted_score: float
+    weight: float
+    entity_count: float
+    relation_count: float
+
+
+class GraphStageMetadata(TypedDict, total=False):
+    contradictions: GraphContradictionMetadata
+    similarity: GraphSimilarityMetadata
+    neighbors: dict[str, list[dict[str, object]]]
+    paths: list[list[str]]
+
+
+class GraphSummaryMetadata(TypedDict, total=False):
+    sources: list[str]
+    provenance: list[dict[str, object]]
+    relation_count: int
+    entity_count: int
+
+
+class SearchContextGraphAttributes(Protocol):
+    """Protocol exposing private graph context attributes for tests."""
+
+    _graph_stage_metadata: GraphStageMetadata
+    _graph_summary: GraphSummaryMetadata
+
+
+def make_storage_context(
+    *,
+    kg_graph: nx.MultiDiGraph[Any] | None = None,
+    db_backend: object | None = None,
+    rdf_store: object | None = None,
+) -> StorageContext:
+    """Return a :class:`StorageContext` populated with typed test doubles."""
+
+    context = StorageContext()
+    context.kg_graph = kg_graph
+    context.db_backend = cast("DuckDBStorageBackend | None", db_backend)
+    context.rdf_store = cast("GraphProtocol | None", rdf_store)
+    return context
+
+
 given = cast("StepFactory[Any]", _given)
 when = cast("StepFactory[Any]", _when)
 then = cast("StepFactory[Any]", _then)
@@ -103,6 +160,10 @@ __all__ = [
     "AgentTestProtocol",
     "AgentFactoryProtocol",
     "QueryRunner",
+    "GraphStageMetadata",
+    "GraphSummaryMetadata",
+    "SearchContextGraphAttributes",
+    "make_storage_context",
     "given",
     "when",
     "then",
