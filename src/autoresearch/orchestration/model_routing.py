@@ -32,7 +32,7 @@ class RoutingOverrideRequest:
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-friendly representation of the override."""
 
-        payload = {
+        payload: dict[str, Any] = {
             "agent": self.agent,
             "requested_model": self.requested_model,
             "source": self.source,

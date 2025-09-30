@@ -177,24 +177,24 @@ class PlannerPromptBuilder:
                 preview = entries[:3]
                 if preview:
                     sections.append("  Contradictory findings:")
-                    for item in preview:
-                        subject = str(item.get("subject") or "?")
-                        predicate = str(item.get("predicate") or "?")
-                        objects = item.get("objects")
-                        if isinstance(objects, Sequence) and objects:
-                            object_preview = ", ".join(
-                                str(obj) for obj in list(objects)[:3]
-                            )
-                            if len(objects) > 3:
-                                object_preview += ", …"
-                        else:
-                            object_preview = "?"
-                        sections.append(
-                            f"    - {subject} --{predicate}--> {object_preview}"
+                for item_mapping in preview:
+                    subject = str(item_mapping.get("subject") or "?")
+                    predicate = str(item_mapping.get("predicate") or "?")
+                    objects = item_mapping.get("objects")
+                    if isinstance(objects, Sequence) and objects:
+                        object_preview = ", ".join(
+                            str(obj) for obj in list(objects)[:3]
                         )
-                    remaining = len(entries) - len(preview)
-                    if remaining > 0:
-                        sections.append(f"    - … ({remaining} more)")
+                        if len(objects) > 3:
+                            object_preview += ", …"
+                    else:
+                        object_preview = "?"
+                    sections.append(
+                        f"    - {subject} --{predicate}--> {object_preview}"
+                    )
+                remaining = len(entries) - len(preview)
+                if remaining > 0:
+                    sections.append(f"    - … ({remaining} more)")
 
         neighbors = context.get("neighbors")
         if isinstance(neighbors, Mapping):
@@ -240,8 +240,8 @@ class PlannerPromptBuilder:
                     formatted_paths.append(" → ".join(nodes))
             if formatted_paths:
                 sections.append("- Multi-hop paths:")
-                for item in formatted_paths:
-                    sections.append(f"  - {item}")
+                for path_summary in formatted_paths:
+                    sections.append(f"  - {path_summary}")
                 if total_paths > len(formatted_paths):
                     sections.append("  - …")
 

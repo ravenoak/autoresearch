@@ -1,6 +1,6 @@
 """FactChecker agent verifies claims against external sources."""
 
-from typing import Any, Dict, Iterable, Mapping
+from typing import Any, Dict, Iterable, Mapping, Sequence
 
 from ...agents.base import Agent, AgentRole
 from ...config import ConfigModel
@@ -33,6 +33,7 @@ class FactChecker(Agent):
 
         adapter = self.get_adapter(config)
         model = self.get_model(config)
+        planner_snapshot = self._planner_provenance(state)
 
         # Retrieve external references
         max_results = getattr(
@@ -221,6 +222,8 @@ class FactChecker(Agent):
                     "claim_id": claim_id,
                 },
             }
+            if planner_snapshot:
+                provenance["planner"] = dict(planner_snapshot)
             if claim_id:
                 claim_retry_stats[claim_id] = {
                     "retry_count": retry_count,
@@ -327,6 +330,8 @@ class FactChecker(Agent):
                 "claim_audit_ids": [payload.get("audit_id") for payload in claim_audits],
             },
         }
+        if planner_snapshot:
+            aggregate_provenance["planner"] = dict(planner_snapshot)
 
         claim = self.create_claim(
             verification,
@@ -341,14 +346,18 @@ class FactChecker(Agent):
             notes=summary_note,
             provenance=aggregate_provenance,
         )
+        metadata_payload = {
+            "phase": DialoguePhase.VERIFICATION,
+            "source_count": len(sources),
+            "query_variations": query_variations,
+            "audit_provenance_fact_checker": aggregate_provenance,
+        }
+        if planner_snapshot:
+            metadata_payload["planner_provenance"] = dict(planner_snapshot)
+
         return self.create_result(
             claims=[claim],
-            metadata={
-                "phase": DialoguePhase.VERIFICATION,
-                "source_count": len(sources),
-                "query_variations": query_variations,
-                "audit_provenance_fact_checker": aggregate_provenance,
-            },
+            metadata=metadata_payload,
             results={"verification": verification},
             sources=sources,
             claim_audits=claim_audits,
@@ -360,3 +369,27 @@ class FactChecker(Agent):
             return False
         has_claims = len(state.claims) > 0
         return super().can_execute(state, config) and has_claims
+
+    @staticmethod
+    def _planner_provenance(state: QueryState) -> dict[str, Any]:
+        """Capture planner telemetry for verification provenance."""
+
+        snapshot: dict[str, Any] = {}
+        planner_meta = state.metadata.get("planner")
+        if isinstance(planner_meta, Mapping):
+            stats = planner_meta.get("task_graph")
+            if isinstance(stats, Mapping):
+                snapshot["task_graph_stats"] = dict(stats)
+            telemetry = planner_meta.get("telemetry")
+            if isinstance(telemetry, Mapping):
+                snapshot["telemetry"] = dict(telemetry)
+        tasks = state.task_graph.get("tasks") if isinstance(state.task_graph, Mapping) else None
+        if isinstance(tasks, Sequence):
+            task_ids = [
+                str(task.get("id"))
+                for task in tasks
+                if isinstance(task, Mapping) and task.get("id")
+            ]
+            if task_ids:
+                snapshot["task_ids"] = task_ids
+        return snapshot

@@ -22,6 +22,7 @@ from autoresearch.orchestration.orchestration_utils import (
     ScoutGateDecision,
 )
 from autoresearch.search.context import SearchContext
+from autoresearch.output_format import OutputDepth, OutputFormatter
 
 from tests.behavior.steps.common_steps import assert_cli_success
 
@@ -148,6 +149,20 @@ def run_auto_reasoning_cli(
                     "url": "https://example.com/verify",
                 },
             ]
+            if "unsupported" in state.query:
+                scout_claims.append(
+                    {
+                        "id": "c_unsupported",
+                        "type": "synthesis",
+                        "content": "Planner asserts an unverified capability without evidence.",
+                        "audit": {
+                            "claim_id": "c_unsupported",
+                            "status": "unsupported",
+                            "entailment": 0.1,
+                            "sources": ["src-verify"],
+                        },
+                    }
+                )
             state.metadata.setdefault("planner", {})["task_graph"] = task_graph
             if cfg.reasoning_mode == ReasoningMode.DIRECT:
                 return {
@@ -225,6 +240,16 @@ def run_auto_reasoning_cli(
                     "sources": ["src-verify"],
                 },
             ]
+            if "unsupported" in _state.query:
+                audits.append(
+                    {
+                        "claim_id": "c_unsupported",
+                        "status": "unsupported",
+                        "entailment": 0.12,
+                        "stability": 0.05,
+                        "sources": ["src-verify"],
+                    }
+                )
             return {
                 "claim_audits": audits,
                 "metadata": {
@@ -324,6 +349,15 @@ def run_auto_reasoning_cli(
         def update(self, *_args: Any, **_kwargs: Any) -> None:
             return None
 
+    def fake_external_lookup(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        return [
+            {
+                "title": "Retry placeholder evidence",
+                "snippet": "No public confirmation for the unsupported capability.",
+                "url": "https://example.com/unsupported",
+            }
+        ]
+
     with SearchContext.temporary_instance():
         with (
             patch(
@@ -338,6 +372,10 @@ def run_auto_reasoning_cli(
             patch.object(ConfigLoader, "load_config", return_value=config),
             patch.object(Orchestrator, "run_query", staticmethod(capture_run_query)),
             patch("rich.progress.Progress", return_value=DummyProgress()),
+            patch(
+                "autoresearch.search.Search.external_lookup",
+                side_effect=fake_external_lookup,
+            ),
         ):
             result = cli_runner.invoke(
                 cli_app,
@@ -489,3 +527,25 @@ def assert_cli_direct_exit(auto_cli_cycle: dict[str, Any]) -> None:
     assert badge_rollup == response.metrics.get("audit_badges", {})
     normalized_badges = {str(k).lower(): int(v) for k, v in badge_rollup.items()}
     assert normalized_badges == response_badges
+
+
+@then("the CLI TLDR should warn about unsupported claims")
+def assert_cli_tldr_warning(auto_cli_cycle: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cli_cycle["response"]
+    depth_payload = OutputFormatter.plan_response_depth(response, OutputDepth.TLDR)
+    tldr = depth_payload.tldr or ""
+    caution_note = depth_payload.notes.get("key_findings", "")
+    combined = f"{tldr} {caution_note}".lower()
+    assert "unsupported claims" in combined
+    assert "⚠️" in depth_payload.answer or "unsupported" in combined
+
+
+@then("the CLI key findings should omit unsupported claims")
+def assert_cli_key_findings_filtered(auto_cli_cycle: dict[str, Any]) -> None:
+    response: QueryResponse = auto_cli_cycle["response"]
+    depth_payload = OutputFormatter.plan_response_depth(response, OutputDepth.CONCISE)
+    unsupported_fragment = "unverified capability"
+    for finding in depth_payload.key_findings:
+        assert unsupported_fragment not in finding.lower()
+    note = depth_payload.notes.get("key_findings", "")
+    assert "unsupported claims" in note.lower() or "require review" in note.lower()

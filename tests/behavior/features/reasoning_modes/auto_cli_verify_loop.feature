@@ -17,3 +17,16 @@ Feature: AUTO CLI reasoning captures planner, scout gate, and verification loop
     When I run the AUTO reasoning CLI for query "scout gate direct exit rehearsal"
     Then the CLI should exit directly without escalation
     And the AUTO metrics should record scout samples and agreement
+
+  Scenario: AUTO direct exit hedges unsupported claims
+    Given the scout gate will force a direct exit
+    When I run the AUTO reasoning CLI for query "unsupported direct exit rehearsal"
+    Then the CLI should exit directly without escalation
+    And the CLI TLDR should warn about unsupported claims
+    And the CLI key findings should omit unsupported claims
+
+  Scenario: AUTO debate flow hedges unsupported claims
+    When I run the AUTO reasoning CLI for query "unsupported debate rehearsal"
+    Then the CLI scout gate decision should escalate to debate
+    And the CLI TLDR should warn about unsupported claims
+    And the CLI key findings should omit unsupported claims

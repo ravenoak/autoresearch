@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 import requests
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, Mapping
 from dataclasses import dataclass
 from threading import Lock
 
@@ -89,7 +89,36 @@ class CapabilityProber:
             return {}
 
         # Probe the provider
-        capabilities = probe_method()
+        capabilities_raw = probe_method()
+        capabilities: Dict[str, ModelCapabilities]
+        if not isinstance(capabilities_raw, dict):
+            logger.warning(
+                "Probe for provider %s returned non-mapping payload: %s",
+                provider_name,
+                type(capabilities_raw).__name__,
+            )
+            capabilities = {}
+        else:
+            capabilities = {}
+            for model, payload in capabilities_raw.items():
+                key = str(model)
+                if isinstance(payload, ModelCapabilities):
+                    capabilities[key] = payload
+                    continue
+                if isinstance(payload, Mapping):
+                    try:
+                        capabilities[key] = ModelCapabilities(**payload)
+                        continue
+                    except Exception:  # pragma: no cover - defensive
+                        logger.debug(
+                            "Failed to coerce capabilities payload for %s:%s", provider_name, key
+                        )
+                logger.debug(
+                    "Ignoring capability entry for %s:%s with unsupported payload type %s",
+                    provider_name,
+                    key,
+                    type(payload).__name__,
+                )
         self._capabilities_cache[provider_name] = capabilities
         self._providers_probed.add(provider_name)
 
