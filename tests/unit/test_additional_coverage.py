@@ -1,7 +1,6 @@
 import json
 import types
 from collections import OrderedDict
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -22,6 +21,7 @@ from autoresearch.streamlit_app import track_agent_performance
 from autoresearch.typing.http import HTTPAdapter
 
 from .typing_helpers import (
+    build_summary_fixture,
     make_llm_pool_config,
     make_psutil_stub,
     make_runtime_config,
@@ -218,51 +218,33 @@ def dummy_table(monkeypatch: pytest.MonkeyPatch) -> list[_DummyTable]:
 
 @pytest.fixture
 def populated_summary() -> EvaluationSummary:
-    now = datetime.now(timezone.utc)
-    return EvaluationSummary(
-        dataset="truthfulqa",
-        run_id="run-123",
-        started_at=now,
-        completed_at=now,
+    return build_summary_fixture(
         total_examples=2,
-        config_signature="cfg",
-        accuracy=0.5,
-        citation_coverage=1.0,
-        contradiction_rate=0.0,
-        avg_latency_seconds=2.5,
-        avg_tokens_input=100.0,
-        avg_tokens_output=50.0,
-        avg_tokens_total=150.0,
-        avg_cycles_completed=1.0,
-        gate_debate_rate=0.0,
-        gate_exit_rate=0.25,
-        gated_example_ratio=1.0,
+        example_csv=Path("artifacts/examples.csv"),
+        summary_csv=Path("artifacts/summary.csv"),
         avg_planner_depth=2.5,
         avg_routing_delta=1.75,
         total_routing_delta=3.5,
         avg_routing_decisions=1.5,
         routing_strategy="balanced",
-        example_csv=Path("artifacts/examples.csv"),
-        summary_csv=Path("artifacts/summary.csv"),
     )
 
 
 def test_render_evaluation_summary_joins_artifacts(
     dummy_table: list[_DummyTable],
 ) -> None:
-    now = datetime.now(timezone.utc)
-    summary = EvaluationSummary(
-        dataset="truthfulqa",
-        run_id="run-123",
-        started_at=now,
-        completed_at=now,
+    summary = build_summary_fixture(
         total_examples=1,
-        config_signature="cfg",
         duckdb_path=Path("artifacts/run.duckdb"),
         example_parquet=Path("artifacts/examples.parquet"),
         summary_parquet=Path("artifacts/summary.parquet"),
         example_csv=Path("artifacts/examples.csv"),
         summary_csv=Path("artifacts/summary.csv"),
+        avg_planner_depth=None,
+        avg_routing_delta=None,
+        total_routing_delta=None,
+        avg_routing_decisions=None,
+        routing_strategy=None,
     )
 
     render_evaluation_summary([summary])
