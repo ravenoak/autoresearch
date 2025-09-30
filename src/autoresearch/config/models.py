@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, List, Mapping, Optional
+import copy
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Self
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from pydantic.functional_validators import model_validator
@@ -577,12 +578,14 @@ class ConfigModel(BaseModel):
         *,
         update: Mapping[str, Any] | None = None,
         deep: bool = False,
-    ) -> "ConfigModel":
-        """Return a cloned configuration while preserving ``ConfigModel`` typing."""
+    ) -> Self:
+        """Return a cloned configuration while preserving model typing."""
 
         payload = self.model_dump(mode="python")
+        if deep:
+            payload = copy.deepcopy(payload)
         if update:
             payload = {**payload, **dict(update)}
-        return ConfigModel.model_validate(payload)
+        return type(self).model_validate(payload)
 
     model_config: ClassVar[SettingsConfigDict] = {"extra": "ignore"}

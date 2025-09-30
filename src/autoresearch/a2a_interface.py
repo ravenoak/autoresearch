@@ -147,28 +147,32 @@ class InfoResponse(TypedDict):
 
 
 try:  # pragma: no cover - optional dependency import
-    from a2a.client import A2AClient as _RuntimeA2AClient
+    from a2a.client import A2AClient as _ImportedA2AClient
     from a2a.types import (
-        Message as _RuntimeMessage,
-        MessageSendParams as _RuntimeMessageSendParams,
-        SendMessageRequest as _RuntimeSendMessageRequest,
-        SendMessageResponse as _RuntimeSendMessageResponse,
+        Message as _ImportedMessage,
+        MessageSendParams as _ImportedMessageSendParams,
+        SendMessageRequest as _ImportedSendMessageRequest,
+        SendMessageResponse as _ImportedSendMessageResponse,
     )
     from a2a.utils.message import (
-        get_message_text as _runtime_get_message_text,
-        new_agent_text_message as _runtime_new_agent_text_message,
+        get_message_text as _imported_get_message_text,
+        new_agent_text_message as _imported_new_agent_text_message,
     )
 except ImportError:  # pragma: no cover - dependency missing
     pass
 else:
+    _RuntimeA2AClient = cast("type[Any]", _ImportedA2AClient)
+    _RuntimeMessage = cast("type[Any]", _ImportedMessage)
+    _RuntimeMessageSendParams = cast("type[Any]", _ImportedMessageSendParams)
+    _RuntimeSendMessageRequest = cast("type[Any]", _ImportedSendMessageRequest)
+    _RuntimeSendMessageResponse = cast("type[Any]", _ImportedSendMessageResponse)
+    _runtime_get_message_text = cast(
+        Callable[[Message], str], _imported_get_message_text
+    )
+    _runtime_new_agent_text_message = cast(
+        Callable[..., Message], _imported_new_agent_text_message
+    )
     A2A_AVAILABLE = True
-    _RuntimeA2AClient = _RuntimeA2AClient
-    _RuntimeMessage = _RuntimeMessage
-    _RuntimeMessageSendParams = _RuntimeMessageSendParams
-    _RuntimeSendMessageRequest = _RuntimeSendMessageRequest
-    _RuntimeSendMessageResponse = _RuntimeSendMessageResponse
-    _runtime_get_message_text = _runtime_get_message_text
-    _runtime_new_agent_text_message = _runtime_new_agent_text_message
 
 
 def _require_runtime_cls(name: str, value: type[Any] | None) -> type[Any]:
